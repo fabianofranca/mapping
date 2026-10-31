@@ -4,30 +4,14 @@
   "id": "badge",
   "name": "Badge",
   "description": "Indicador de notificação: pontinho de 6 (small) ou contador de 16 com o texto em onError (large), na cor error. Ancorado ao canto de um ícone pelo BadgedBox.",
-  "size": {
-    "width": 32,
-    "height": 16
-  },
-  "minSize": {
-    "width": 6,
-    "height": 6
-  },
-  "sizing": {
-    "width": "hug",
-    "height": "hug"
-  },
-  "preview": {
-    "count": "3",
-    "style": "large"
-  },
+  "size": { "width": 32, "height": 16 },
+  "minSize": { "width": 6, "height": 6 },
+  "sizing": { "width": "hug", "height": "hug" },
+  "preview": { "count": "3", "style": "large" },
   "template": {
     "type": "frame",
     "name": "badge",
-    "layout": {
-      "type": "row",
-      "align": "center",
-      "justify": "center"
-    },
+    "layout": { "type": "row", "align": "center", "justify": "center" },
     "children": [
       {
         "type": "frame",

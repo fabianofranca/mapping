@@ -180,8 +180,10 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Segue os padrões da MD2.
 
-- [ ] As famílias de ação, seleção e comunicação estáveis na tag fixada (as da fase MD3 na tabela da MD2: icon button, segmented button, radio button, slider, search, date picker, time picker, badge, snackbar, tooltip, progress indicator e secure text field), cada uma com `code`, `variants`, componente, documento e exemplos; o teste da biblioteca cobre os tipos novos
-- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+- [x] As famílias de ação, seleção e comunicação estáveis na tag fixada (as da fase MD3 na tabela da MD2: icon button, segmented button, radio button, slider, search, date picker, time picker, badge, snackbar, tooltip, progress indicator e secure text field), cada uma com `code`, `variants`, componente, documento e exemplos; o teste da biblioteca cobre os tipos novos
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+
+**Registro da MD3.** 13 tipos novos na camada Componentes (39 no total): `icon-button` e `icon-toggle-button` (`variants` em `style`), `segmented-button` (`selection`; o `repeat` das opções), `radio-button`, `slider` (`type`; valores em décimos, porque o componente não faz aritmética), `search-bar` (`style`; opt-in), `date-picker` (`selection`), `time-picker` (`mode`; opt-in), `badge`, `snackbar`, `tooltip` (`style`; opt-in), `progress-indicator` (`shape`) e `secure-text-field` (`style`). Estáveis no commit fixado, sem opt-in: os botões de ícone, o segmented, o radio, o slider (overload `value`/`onValueChange`), o date picker, o badge, o snackbar, o progress e o secure text field; com `@ExperimentalMaterial3Api`: search bar, time picker e tooltip (o `notes` diz o opt-in). Desvios: o slider segue o desenho 1.4.0 (trilho de 16 dp); `date-picker.json` e `time-picker.json` têm 120 KB e 98 KB (desenho de 31 dias e do relógio); `secure-text-field` tem `hasText` em vez de um `value`; `rememberTooltipPositionProvider` usa `TooltipAnchorPosition.Above`, porque o overload sem argumento é deprecated.
 
 #### MD4 — Navegação e contenção
 

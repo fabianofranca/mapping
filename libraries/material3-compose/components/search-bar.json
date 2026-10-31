@@ -4,18 +4,9 @@
   "id": "search-bar",
   "name": "Search bar",
   "description": "Barra de busca de 56 com forma full: ícone inicial, consulta ou dica e ícone final. Expandida, o container cresce e ganha o divisor dos resultados (bar ocupa a tela, docked abre embaixo do campo).",
-  "size": {
-    "width": 360,
-    "height": 56
-  },
-  "minSize": {
-    "width": 120,
-    "height": 56
-  },
-  "sizing": {
-    "width": "fill",
-    "height": 56
-  },
+  "size": { "width": 360, "height": 56 },
+  "minSize": { "width": 120, "height": 56 },
+  "sizing": { "width": "fill", "height": 56 },
   "preview": {
     "query": "",
     "placeholder": "Pesquisar",
@@ -27,9 +18,7 @@
   "template": {
     "type": "frame",
     "name": "search bar",
-    "layout": {
-      "type": "none"
-    },
+    "layout": { "type": "none" },
     "cornerRadius": {
       "$if": { "$and": [{ "$eq": ["expanded", "true"] }, { "$eq": ["style", "bar"] }] },
       "then": 0,
@@ -40,17 +29,8 @@
       {
         "type": "frame",
         "name": "campo de entrada",
-        "layout": {
-          "type": "row",
-          "gap": 16,
-          "padding": [0, 16],
-          "align": "center"
-        },
-        "anchors": {
-          "left": 0,
-          "right": 0,
-          "top": 0
-        },
+        "layout": { "type": "row", "gap": 16, "padding": [0, 16], "align": "center" },
+        "anchors": { "left": 0, "right": 0, "top": 0 },
         "height": 56,
         "children": [
           {
@@ -150,11 +130,7 @@
       {
         "type": "rect",
         "name": "divisor",
-        "anchors": {
-          "left": 0,
-          "right": 0,
-          "top": 56
-        },
+        "anchors": { "left": 0, "right": 0, "top": 56 },
         "height": 1,
         "fill": "#79747E",
         "visible": { "$eq": ["expanded", "true"] }

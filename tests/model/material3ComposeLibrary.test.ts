@@ -1,6 +1,6 @@
 // Biblioteca Material 3 (Compose) (`libraries/material3-compose/`, pronta para uso e aplicada pela pessoa):
 // a especialização (`formatVersion` 9) com as estruturas de layout e conteúdo e os componentes do
-// Material 3 do Jetpack Compose, 26 tipos em três camadas, cada um com `code.compose` (símbolo e arquivo no
+// Material 3 do Jetpack Compose, 39 tipos em três camadas, cada um com `code.compose` (símbolo e arquivo no
 // androidx, no commit fixado), componente que desenha, documento e exemplos. As variantes que trocam o
 // símbolo (`variants`) e os ícones por `suggestions` seguem o padrão da biblioteca.
 import { readdirSync, readFileSync } from 'node:fs';
@@ -26,6 +26,15 @@ const LAYERS: Record<string, string[]> = {
   components: [
     ...['top-app-bar', 'button', 'fab', 'extended-fab', 'text-field', 'switch'],
     ...['checkbox', 'chip', 'card', 'list-item', 'navigation-bar', 'bottom-sheet'],
+    ...[
+      'icon-button',
+      'icon-toggle-button',
+      'segmented-button',
+      'radio-button',
+      'slider',
+    ],
+    ...['search-bar', 'date-picker', 'time-picker', 'badge', 'snackbar', 'tooltip'],
+    ...['progress-indicator', 'secure-text-field'],
   ],
 };
 const ALL_TYPES = Object.values(LAYERS).flat();
@@ -107,6 +116,51 @@ const VARIANT_SYMBOLS: Record<
     field: 'style',
     symbols: { modal: 'ModalBottomSheet', standard: 'BottomSheetScaffold' },
   },
+  'icon-button': {
+    field: 'style',
+    symbols: {
+      standard: 'IconButton',
+      filled: 'FilledIconButton',
+      tonal: 'FilledTonalIconButton',
+      outlined: 'OutlinedIconButton',
+    },
+  },
+  'icon-toggle-button': {
+    field: 'style',
+    symbols: {
+      standard: 'IconToggleButton',
+      filled: 'FilledIconToggleButton',
+      tonal: 'FilledTonalIconToggleButton',
+      outlined: 'OutlinedIconToggleButton',
+    },
+  },
+  'segmented-button': {
+    field: 'selection',
+    symbols: {
+      single: 'SingleChoiceSegmentedButtonRow',
+      multi: 'MultiChoiceSegmentedButtonRow',
+    },
+  },
+  slider: { field: 'type', symbols: { single: 'Slider', range: 'RangeSlider' } },
+  'search-bar': {
+    field: 'style',
+    symbols: { bar: 'SearchBar', docked: 'DockedSearchBar' },
+  },
+  'date-picker': {
+    field: 'selection',
+    symbols: { single: 'DatePicker', range: 'DateRangePicker' },
+  },
+  'time-picker': { field: 'mode', symbols: { picker: 'TimePicker', input: 'TimeInput' } },
+  badge: { field: 'style', symbols: { small: 'Badge', large: 'Badge' } },
+  tooltip: { field: 'style', symbols: { plain: 'PlainTooltip', rich: 'RichTooltip' } },
+  'progress-indicator': {
+    field: 'shape',
+    symbols: { circular: 'CircularProgressIndicator', linear: 'LinearProgressIndicator' },
+  },
+  'secure-text-field': {
+    field: 'style',
+    symbols: { filled: 'SecureTextField', outlined: 'OutlinedSecureTextField' },
+  },
 };
 
 /** Avisos que a biblioteca aceita (arquivo, caminho, mensagem), em ordem: ver o teste dos avisos. */
@@ -135,6 +189,20 @@ const FIXED_WARNINGS: [string, string, string][] = [
       ['layers[2].annotationTypes[8].fields[6]', 'height', 'card'],
       ['layers[2].annotationTypes[8].fields[7]', 'weight', 'card'],
       ['layers[2].annotationTypes[11].fields[3]', 'sheetPeekHeight', 'bottom-sheet'],
+      ['layers[2].annotationTypes[12].fields[1]', 'contentDescription', 'icon-button'],
+      [
+        'layers[2].annotationTypes[13].fields[1]',
+        'contentDescription',
+        'icon-toggle-button',
+      ],
+      ['layers[2].annotationTypes[16].fields[6]', 'width', 'slider'],
+      ['layers[2].annotationTypes[16].fields[7]', 'weight', 'slider'],
+      ['layers[2].annotationTypes[17].fields[6]', 'width', 'search-bar'],
+      ['layers[2].annotationTypes[17].fields[7]', 'height', 'search-bar'],
+      ['layers[2].annotationTypes[17].fields[8]', 'weight', 'search-bar'],
+      ['layers[2].annotationTypes[24].fields[9]', 'width', 'secure-text-field'],
+      ['layers[2].annotationTypes[24].fields[10]', 'height', 'secure-text-field'],
+      ['layers[2].annotationTypes[24].fields[11]', 'weight', 'secure-text-field'],
     ] as const
   ).map(([path, key, type]): [string, string, string] => [
     SPEC_FILE,
@@ -182,12 +250,12 @@ describe('biblioteca Material 3 (Compose)', () => {
     );
   });
 
-  it('tem 26 tipos nas camadas layout, content e components, na ordem', () => {
+  it('tem 39 tipos nas camadas layout, content e components, na ordem', () => {
     expect(spec.layers.map((l) => l.id)).toEqual(Object.keys(LAYERS));
     for (const layer of spec.layers) {
       expect(layer.annotationTypes.map((t) => t.id)).toEqual(LAYERS[layer.id]);
     }
-    expect(types).toHaveLength(26);
+    expect(types).toHaveLength(39);
   });
 
   it('valida sem erro nos três níveis, com os avisos conhecidos', () => {
@@ -196,9 +264,9 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(report.ok).toBe(true);
     expect(report.summary).toMatchObject({
       level: 3,
-      types: 26,
-      components: 26,
-      docs: 26,
+      types: 39,
+      components: 39,
+      docs: 39,
     });
     const all = report.warnings.map((w): [string, string, string] => [
       w.file,

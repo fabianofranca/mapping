@@ -4,18 +4,9 @@
   "id": "time-picker",
   "name": "Time picker",
   "description": "Seletor de hora em um diálogo de 328: no modo picker, os campos de hora e minuto e o relógio de 256 com o seletor; no modo input, só os campos com os rótulos. Sem 24 horas, mostra o AM/PM.",
-  "size": {
-    "width": 328,
-    "height": 456
-  },
-  "minSize": {
-    "width": 328,
-    "height": 143
-  },
-  "sizing": {
-    "width": 328,
-    "height": "hug"
-  },
+  "size": { "width": 328, "height": 456 },
+  "minSize": { "width": 328, "height": 143 },
+  "sizing": { "width": 328, "height": "hug" },
   "preview": {
     "title": "Selecionar horário",
     "mode": "picker",
@@ -27,19 +18,14 @@
   "template": {
     "type": "frame",
     "name": "time picker",
-    "layout": {
-      "type": "column",
-      "padding": 24
-    },
+    "layout": { "type": "column", "padding": 24 },
     "cornerRadius": 28,
     "fill": "#ECE6F0",
     "children": [
       {
         "type": "frame",
         "name": "cabeçalho",
-        "layout": {
-          "type": "column"
-        },
+        "layout": { "type": "column" },
         "width": "fill",
         "height": 36,
         "visible": { "$has": "title" },
@@ -62,9 +48,7 @@
       {
         "type": "frame",
         "name": "mostrador",
-        "layout": {
-          "type": "column"
-        },
+        "layout": { "type": "column" },
         "width": "fill",
         "height": "hug",
         "visible": { "$not": { "$eq": ["mode", "input"] } },
@@ -72,21 +56,14 @@
           {
             "type": "frame",
             "name": "hora e minuto",
-            "layout": {
-              "type": "row",
-              "align": "start"
-            },
+            "layout": { "type": "row", "align": "start" },
             "width": "fill",
             "height": 80,
             "children": [
               {
                 "type": "frame",
                 "name": "hora",
-                "layout": {
-                  "type": "row",
-                  "align": "center",
-                  "justify": "center"
-                },
+                "layout": { "type": "row", "align": "center", "justify": "center" },
                 "width": 96,
                 "height": 80,
                 "cornerRadius": 8,
@@ -177,11 +154,7 @@
               {
                 "type": "frame",
                 "name": "dois pontos",
-                "layout": {
-                  "type": "row",
-                  "align": "center",
-                  "justify": "center"
-                },
+                "layout": { "type": "row", "align": "center", "justify": "center" },
                 "width": 24,
                 "height": 80,
                 "children": [
@@ -193,20 +166,18 @@
                       "family": "Roboto",
                       "size": 57,
                       "weight": 400,
-                      "lineHeight": 64
+                      "lineHeight": 64,
+                      "align": "center"
                     },
-                    "color": "#1D1B20"
+                    "color": "#1D1B20",
+                    "width": "fill"
                   }
                 ]
               },
               {
                 "type": "frame",
                 "name": "minuto",
-                "layout": {
-                  "type": "row",
-                  "align": "center",
-                  "justify": "center"
-                },
+                "layout": { "type": "row", "align": "center", "justify": "center" },
                 "width": 96,
                 "height": 80,
                 "cornerRadius": 8,
@@ -309,29 +280,20 @@
               {
                 "type": "frame",
                 "name": "AM e PM",
-                "layout": {
-                  "type": "column"
-                },
+                "layout": { "type": "column" },
                 "width": 52,
                 "height": 80,
                 "cornerRadius": 8,
-                "stroke": {
-                  "color": "#79747E",
-                  "width": 1,
-                  "align": "inside"
-                },
+                "clip": true,
+                "stroke": { "color": "#79747E", "width": 1, "align": "inside" },
                 "visible": { "$eq": ["is24Hour", "false"] },
                 "children": [
                   {
                     "type": "frame",
                     "name": "AM",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": "fill",
-                    "height": 40,
+                    "height": "fill",
                     "fill": {
                       "$if": {
                         "$not": {
@@ -392,15 +354,18 @@
                     ]
                   },
                   {
+                    "type": "rect",
+                    "name": "divisor",
+                    "width": "fill",
+                    "height": 1,
+                    "fill": "#79747E"
+                  },
+                  {
                     "type": "frame",
                     "name": "PM",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": "fill",
-                    "height": 40,
+                    "height": "fill",
                     "fill": {
                       "$if": {
                         "$or": [
@@ -470,696 +435,19 @@
           {
             "type": "frame",
             "name": "área do relógio",
-            "layout": {
-              "type": "row",
-              "justify": "center"
-            },
+            "layout": { "type": "row", "justify": "center" },
             "width": "fill",
             "height": 256,
             "children": [
               {
                 "type": "frame",
                 "name": "relógio",
-                "layout": {
-                  "type": "none"
-                },
+                "layout": { "type": "none" },
                 "width": 256,
                 "height": 256,
                 "cornerRadius": 128,
                 "fill": "#E6E0E9",
                 "children": [
-                  {
-                    "type": "text",
-                    "name": "número 0",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "00",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "12",
-                        "else": "00"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 116.0,
-                      "top": 15.0
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 1",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "05",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "1",
-                        "else": "1"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 166.5,
-                      "top": 28.53
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 2",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "10",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "2",
-                        "else": "2"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 203.47,
-                      "top": 65.5
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 3",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "15",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "3",
-                        "else": "3"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 217.0,
-                      "top": 116.0
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 4",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "20",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "4",
-                        "else": "4"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 203.47,
-                      "top": 166.5
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 5",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "25",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "5",
-                        "else": "5"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 166.5,
-                      "top": 203.47
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 6",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "30",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "6",
-                        "else": "6"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 116.0,
-                      "top": 217.0
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 7",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "35",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "7",
-                        "else": "7"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 65.5,
-                      "top": 203.47
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 8",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "40",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "8",
-                        "else": "8"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 28.53,
-                      "top": 166.5
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 9",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "45",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "9",
-                        "else": "9"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 15.0,
-                      "top": 116.0
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 10",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "50",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "10",
-                        "else": "10"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 28.53,
-                      "top": 65.5
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número 11",
-                    "text": {
-                      "$if": { "$eq": ["selection", "minute"] },
-                      "then": "55",
-                      "else": {
-                        "$if": { "$eq": ["is24Hour", "false"] },
-                        "then": "11",
-                        "else": "11"
-                      }
-                    },
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 65.5,
-                      "top": 28.53
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 0",
-                    "text": "12",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 116.0,
-                      "top": 47.0
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 1",
-                    "text": "13",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 150.5,
-                      "top": 56.24
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 2",
-                    "text": "14",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 175.76,
-                      "top": 81.5
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 3",
-                    "text": "15",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 185.0,
-                      "top": 116.0
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 4",
-                    "text": "16",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 175.76,
-                      "top": 150.5
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 5",
-                    "text": "17",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 150.5,
-                      "top": 175.76
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 6",
-                    "text": "18",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 116.0,
-                      "top": 185.0
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 7",
-                    "text": "19",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 81.5,
-                      "top": 175.76
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 8",
-                    "text": "20",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 56.24,
-                      "top": 150.5
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 9",
-                    "text": "21",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 47.0,
-                      "top": 116.0
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 10",
-                    "text": "22",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 56.24,
-                      "top": 81.5
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "text",
-                    "name": "número interno 11",
-                    "text": "23",
-                    "font": {
-                      "family": "Roboto",
-                      "size": 16,
-                      "weight": 400,
-                      "lineHeight": 24,
-                      "letterSpacing": 0.5,
-                      "align": "center",
-                      "verticalAlign": "middle"
-                    },
-                    "color": "#1D1B20",
-                    "width": 24,
-                    "height": 24,
-                    "anchors": {
-                      "left": 81.5,
-                      "top": 56.24
-                    },
-                    "visible": {
-                      "$and": [
-                        { "$not": { "$eq": ["is24Hour", "false"] } },
-                        { "$not": { "$eq": ["selection", "minute"] } }
-                      ]
-                    }
-                  },
                   {
                     "type": "path",
                     "name": "seletor",
@@ -1299,14 +587,11 @@
                       }
                     },
                     "fill": "#6750A4",
-                    "anchors": {
-                      "left": 0,
-                      "top": 0
-                    }
+                    "anchors": { "left": 0, "top": 0 }
                   },
                   {
                     "type": "text",
-                    "name": "número 0 marcado",
+                    "name": "número 0",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "00",
@@ -1325,42 +610,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "0"] },
+                                          { "$eq": ["hour", "12"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "0"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "0"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 116.0,
-                      "top": 15.0
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "0"] },
-                                  { "$eq": ["hour", "12"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "0"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "0"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 116.0, "top": 15.0 }
                   },
                   {
                     "type": "text",
-                    "name": "número 1 marcado",
+                    "name": "número 1",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "05",
@@ -1379,42 +675,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "1"] },
+                                          { "$eq": ["hour", "13"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "1"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "5"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 166.5,
-                      "top": 28.53
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "1"] },
-                                  { "$eq": ["hour", "13"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "1"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "5"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 166.5, "top": 28.53 }
                   },
                   {
                     "type": "text",
-                    "name": "número 2 marcado",
+                    "name": "número 2",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "10",
@@ -1433,42 +740,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "2"] },
+                                          { "$eq": ["hour", "14"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "2"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "10"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 203.47,
-                      "top": 65.5
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "2"] },
-                                  { "$eq": ["hour", "14"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "2"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "10"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 203.47, "top": 65.5 }
                   },
                   {
                     "type": "text",
-                    "name": "número 3 marcado",
+                    "name": "número 3",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "15",
@@ -1487,42 +805,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "3"] },
+                                          { "$eq": ["hour", "15"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "3"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "15"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 217.0,
-                      "top": 116.0
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "3"] },
-                                  { "$eq": ["hour", "15"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "3"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "15"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 217.0, "top": 116.0 }
                   },
                   {
                     "type": "text",
-                    "name": "número 4 marcado",
+                    "name": "número 4",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "20",
@@ -1541,42 +870,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "4"] },
+                                          { "$eq": ["hour", "16"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "4"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "20"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 203.47,
-                      "top": 166.5
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "4"] },
-                                  { "$eq": ["hour", "16"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "4"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "20"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 203.47, "top": 166.5 }
                   },
                   {
                     "type": "text",
-                    "name": "número 5 marcado",
+                    "name": "número 5",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "25",
@@ -1595,42 +935,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "5"] },
+                                          { "$eq": ["hour", "17"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "5"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "25"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 166.5,
-                      "top": 203.47
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "5"] },
-                                  { "$eq": ["hour", "17"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "5"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "25"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 166.5, "top": 203.47 }
                   },
                   {
                     "type": "text",
-                    "name": "número 6 marcado",
+                    "name": "número 6",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "30",
@@ -1649,42 +1000,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "6"] },
+                                          { "$eq": ["hour", "18"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "6"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "30"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 116.0,
-                      "top": 217.0
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "6"] },
-                                  { "$eq": ["hour", "18"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "6"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "30"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 116.0, "top": 217.0 }
                   },
                   {
                     "type": "text",
-                    "name": "número 7 marcado",
+                    "name": "número 7",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "35",
@@ -1703,42 +1065,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "7"] },
+                                          { "$eq": ["hour", "19"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "7"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "35"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 65.5,
-                      "top": 203.47
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "7"] },
-                                  { "$eq": ["hour", "19"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "7"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "35"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 65.5, "top": 203.47 }
                   },
                   {
                     "type": "text",
-                    "name": "número 8 marcado",
+                    "name": "número 8",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "40",
@@ -1757,42 +1130,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "8"] },
+                                          { "$eq": ["hour", "20"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "8"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "40"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 28.53,
-                      "top": 166.5
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "8"] },
-                                  { "$eq": ["hour", "20"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "8"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "40"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 28.53, "top": 166.5 }
                   },
                   {
                     "type": "text",
-                    "name": "número 9 marcado",
+                    "name": "número 9",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "45",
@@ -1811,42 +1195,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "9"] },
+                                          { "$eq": ["hour", "21"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "9"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "45"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 15.0,
-                      "top": 116.0
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "9"] },
-                                  { "$eq": ["hour", "21"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "9"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "45"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 15.0, "top": 116.0 }
                   },
                   {
                     "type": "text",
-                    "name": "número 10 marcado",
+                    "name": "número 10",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "50",
@@ -1865,42 +1260,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "10"] },
+                                          { "$eq": ["hour", "22"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "10"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "50"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 28.53,
-                      "top": 65.5
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "10"] },
-                                  { "$eq": ["hour", "22"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "10"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "50"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 28.53, "top": 65.5 }
                   },
                   {
                     "type": "text",
-                    "name": "número 11 marcado",
+                    "name": "número 11",
                     "text": {
                       "$if": { "$eq": ["selection", "minute"] },
                       "then": "55",
@@ -1919,42 +1325,53 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$and": [
+                              { "$not": { "$eq": ["selection", "minute"] } },
+                              {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      { "$eq": ["is24Hour", "false"] },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["hour", "11"] },
+                                          { "$eq": ["hour", "23"] }
+                                        ]
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$not": { "$eq": ["is24Hour", "false"] } },
+                                      { "$eq": ["hour", "11"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "$and": [
+                              { "$eq": ["selection", "minute"] },
+                              { "$eq": ["minute", "55"] }
+                            ]
+                          }
+                        ]
+                      },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 65.5,
-                      "top": 28.53
-                    },
-                    "visible": {
-                      "$or": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["selection", "minute"] } },
-                            {
-                              "$if": { "$eq": ["is24Hour", "false"] },
-                              "then": {
-                                "$or": [
-                                  { "$eq": ["hour", "11"] },
-                                  { "$eq": ["hour", "23"] }
-                                ]
-                              },
-                              "else": { "$eq": ["hour", "11"] }
-                            }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$eq": ["selection", "minute"] },
-                            { "$eq": ["minute", "55"] }
-                          ]
-                        }
-                      ]
-                    }
+                    "anchors": { "left": 65.5, "top": 28.53 }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 0 marcado",
+                    "name": "número interno 0",
                     "text": "12",
                     "font": {
                       "family": "Roboto",
@@ -1965,28 +1382,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "12"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 116.0,
-                      "top": 47.0
-                    },
+                    "anchors": { "left": 116.0, "top": 47.0 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "12"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 1 marcado",
+                    "name": "número interno 1",
                     "text": "13",
                     "font": {
                       "family": "Roboto",
@@ -1997,28 +1410,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "13"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 150.5,
-                      "top": 56.24
-                    },
+                    "anchors": { "left": 150.5, "top": 56.24 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "13"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 2 marcado",
+                    "name": "número interno 2",
                     "text": "14",
                     "font": {
                       "family": "Roboto",
@@ -2029,28 +1438,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "14"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 175.76,
-                      "top": 81.5
-                    },
+                    "anchors": { "left": 175.76, "top": 81.5 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "14"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 3 marcado",
+                    "name": "número interno 3",
                     "text": "15",
                     "font": {
                       "family": "Roboto",
@@ -2061,28 +1466,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "15"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 185.0,
-                      "top": 116.0
-                    },
+                    "anchors": { "left": 185.0, "top": 116.0 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "15"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 4 marcado",
+                    "name": "número interno 4",
                     "text": "16",
                     "font": {
                       "family": "Roboto",
@@ -2093,28 +1494,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "16"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 175.76,
-                      "top": 150.5
-                    },
+                    "anchors": { "left": 175.76, "top": 150.5 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "16"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 5 marcado",
+                    "name": "número interno 5",
                     "text": "17",
                     "font": {
                       "family": "Roboto",
@@ -2125,28 +1522,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "17"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 150.5,
-                      "top": 175.76
-                    },
+                    "anchors": { "left": 150.5, "top": 175.76 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "17"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 6 marcado",
+                    "name": "número interno 6",
                     "text": "18",
                     "font": {
                       "family": "Roboto",
@@ -2157,28 +1550,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "18"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 116.0,
-                      "top": 185.0
-                    },
+                    "anchors": { "left": 116.0, "top": 185.0 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "18"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 7 marcado",
+                    "name": "número interno 7",
                     "text": "19",
                     "font": {
                       "family": "Roboto",
@@ -2189,28 +1578,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "19"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 81.5,
-                      "top": 175.76
-                    },
+                    "anchors": { "left": 81.5, "top": 175.76 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "19"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 8 marcado",
+                    "name": "número interno 8",
                     "text": "20",
                     "font": {
                       "family": "Roboto",
@@ -2221,28 +1606,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "20"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 56.24,
-                      "top": 150.5
-                    },
+                    "anchors": { "left": 56.24, "top": 150.5 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "20"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 9 marcado",
+                    "name": "número interno 9",
                     "text": "21",
                     "font": {
                       "family": "Roboto",
@@ -2253,28 +1634,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "21"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 47.0,
-                      "top": 116.0
-                    },
+                    "anchors": { "left": 47.0, "top": 116.0 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "21"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 10 marcado",
+                    "name": "número interno 10",
                     "text": "22",
                     "font": {
                       "family": "Roboto",
@@ -2285,28 +1662,24 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "22"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 56.24,
-                      "top": 81.5
-                    },
+                    "anchors": { "left": 56.24, "top": 81.5 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "22"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   },
                   {
                     "type": "text",
-                    "name": "número interno 11 marcado",
+                    "name": "número interno 11",
                     "text": "23",
                     "font": {
                       "family": "Roboto",
@@ -2317,22 +1690,18 @@
                       "align": "center",
                       "verticalAlign": "middle"
                     },
-                    "color": "#FFFFFF",
+                    "color": {
+                      "$if": { "$eq": ["hour", "23"] },
+                      "then": "#FFFFFF",
+                      "else": "#1D1B20"
+                    },
                     "width": 24,
                     "height": 24,
-                    "anchors": {
-                      "left": 81.5,
-                      "top": 56.24
-                    },
+                    "anchors": { "left": 81.5, "top": 56.24 },
                     "visible": {
                       "$and": [
-                        {
-                          "$and": [
-                            { "$not": { "$eq": ["is24Hour", "false"] } },
-                            { "$not": { "$eq": ["selection", "minute"] } }
-                          ]
-                        },
-                        { "$eq": ["hour", "23"] }
+                        { "$not": { "$eq": ["is24Hour", "false"] } },
+                        { "$not": { "$eq": ["selection", "minute"] } }
                       ]
                     }
                   }
@@ -2345,9 +1714,7 @@
       {
         "type": "frame",
         "name": "campos",
-        "layout": {
-          "type": "column"
-        },
+        "layout": { "type": "column" },
         "width": "fill",
         "height": "hug",
         "visible": { "$eq": ["mode", "input"] },
@@ -2355,31 +1722,21 @@
           {
             "type": "frame",
             "name": "hora e minuto",
-            "layout": {
-              "type": "row",
-              "align": "start"
-            },
+            "layout": { "type": "row", "align": "start" },
             "width": "fill",
             "height": 95,
             "children": [
               {
                 "type": "frame",
                 "name": "campo da hora",
-                "layout": {
-                  "type": "column",
-                  "gap": 7
-                },
+                "layout": { "type": "column", "gap": 7 },
                 "width": 96,
                 "height": "hug",
                 "children": [
                   {
                     "type": "frame",
                     "name": "hora",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 96,
                     "height": 72,
                     "cornerRadius": 8,
@@ -2496,11 +1853,7 @@
               {
                 "type": "frame",
                 "name": "dois pontos",
-                "layout": {
-                  "type": "row",
-                  "align": "center",
-                  "justify": "center"
-                },
+                "layout": { "type": "row", "align": "center", "justify": "center" },
                 "width": 24,
                 "height": 72,
                 "children": [
@@ -2512,30 +1865,25 @@
                       "family": "Roboto",
                       "size": 45,
                       "weight": 400,
-                      "lineHeight": 52
+                      "lineHeight": 52,
+                      "align": "center"
                     },
-                    "color": "#1D1B20"
+                    "color": "#1D1B20",
+                    "width": "fill"
                   }
                 ]
               },
               {
                 "type": "frame",
                 "name": "campo do minuto",
-                "layout": {
-                  "type": "column",
-                  "gap": 7
-                },
+                "layout": { "type": "column", "gap": 7 },
                 "width": 96,
                 "height": "hug",
                 "children": [
                   {
                     "type": "frame",
                     "name": "minuto",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 96,
                     "height": 72,
                     "cornerRadius": 8,
@@ -2664,29 +2012,20 @@
               {
                 "type": "frame",
                 "name": "AM e PM",
-                "layout": {
-                  "type": "column"
-                },
+                "layout": { "type": "column" },
                 "width": 52,
                 "height": 72,
                 "cornerRadius": 8,
-                "stroke": {
-                  "color": "#79747E",
-                  "width": 1,
-                  "align": "inside"
-                },
+                "clip": true,
+                "stroke": { "color": "#79747E", "width": 1, "align": "inside" },
                 "visible": { "$eq": ["is24Hour", "false"] },
                 "children": [
                   {
                     "type": "frame",
                     "name": "AM",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": "fill",
-                    "height": 36,
+                    "height": "fill",
                     "fill": {
                       "$if": {
                         "$not": {
@@ -2747,15 +2086,18 @@
                     ]
                   },
                   {
+                    "type": "rect",
+                    "name": "divisor",
+                    "width": "fill",
+                    "height": 1,
+                    "fill": "#79747E"
+                  },
+                  {
                     "type": "frame",
                     "name": "PM",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": "fill",
-                    "height": 36,
+                    "height": "fill",
                     "fill": {
                       "$if": {
                         "$or": [

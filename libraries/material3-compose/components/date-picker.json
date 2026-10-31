@@ -4,18 +4,9 @@
   "id": "date-picker",
   "name": "Date picker",
   "description": "Calendário de mês de 360 de largura: cabeçalho com título e a data escolhida, mês exibido com setas e a grade de dias com o dia marcado (single) ou o intervalo (range). A grade é sempre um mês de 31 dias que começa numa quarta-feira.",
-  "size": {
-    "width": 360,
-    "height": 469
-  },
-  "minSize": {
-    "width": 360,
-    "height": 469
-  },
-  "sizing": {
-    "width": 360,
-    "height": "hug"
-  },
+  "size": { "width": 360, "height": 469 },
+  "minSize": { "width": 360, "height": 469 },
+  "sizing": { "width": 360, "height": "hug" },
   "preview": {
     "title": "",
     "headline": "qua., 15 de out.",
@@ -29,18 +20,14 @@
   "template": {
     "type": "frame",
     "name": "date picker",
-    "layout": {
-      "type": "column"
-    },
+    "layout": { "type": "column" },
     "cornerRadius": 28,
     "fill": "#ECE6F0",
     "children": [
       {
         "type": "frame",
         "name": "cabeçalho",
-        "layout": {
-          "type": "none"
-        },
+        "layout": { "type": "none" },
         "width": "fill",
         "height": 120,
         "children": [
@@ -52,9 +39,7 @@
               "then": { "$field": "title" },
               "else": {
                 "$switch": "selection",
-                "cases": {
-                  "range": "Selecionar datas"
-                },
+                "cases": { "range": "Selecionar datas" },
                 "default": "Selecionar data"
               }
             },
@@ -66,11 +51,7 @@
               "letterSpacing": 0.5
             },
             "color": "#49454F",
-            "anchors": {
-              "left": 24,
-              "right": 72,
-              "top": 16
-            }
+            "anchors": { "left": 24, "right": 72, "top": 16 }
           },
           {
             "type": "text",
@@ -80,9 +61,7 @@
               "then": { "$field": "headline" },
               "else": {
                 "$switch": "selection",
-                "cases": {
-                  "range": "Início – Fim"
-                },
+                "cases": { "range": "Início – Fim" },
                 "default": "Data selecionada"
               }
             },
@@ -101,11 +80,7 @@
               }
             },
             "color": "#1D1B20",
-            "anchors": {
-              "left": 24,
-              "right": 72,
-              "bottom": 12
-            }
+            "anchors": { "left": 24, "right": 72, "bottom": 12 }
           },
           {
             "type": "path",
@@ -115,10 +90,7 @@
             "viewBox": [24, 24],
             "d": "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
             "fill": "#49454F",
-            "anchors": {
-              "right": 24,
-              "bottom": 24
-            },
+            "anchors": { "right": 24, "bottom": 24 },
             "visible": { "$not": { "$eq": ["showModeToggle", "false"] } }
           }
         ]
@@ -176,11 +148,7 @@
           {
             "type": "frame",
             "name": "anterior",
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
-            },
+            "layout": { "type": "row", "align": "center", "justify": "center" },
             "width": 48,
             "height": 48,
             "children": [
@@ -198,11 +166,7 @@
           {
             "type": "frame",
             "name": "próximo",
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
-            },
+            "layout": { "type": "row", "align": "center", "justify": "center" },
             "width": 48,
             "height": 48,
             "children": [
@@ -222,21 +186,14 @@
       {
         "type": "frame",
         "name": "dias da semana",
-        "layout": {
-          "type": "row",
-          "padding": [0, 12]
-        },
+        "layout": { "type": "row", "padding": [0, 12] },
         "width": "fill",
         "height": 48,
         "children": [
           {
             "type": "frame",
             "name": "dia da semana 1",
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
-            },
+            "layout": { "type": "row", "align": "center", "justify": "center" },
             "width": 48,
             "height": 48,
             "children": [
@@ -258,11 +215,7 @@
           {
             "type": "frame",
             "name": "dia da semana 2",
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
-            },
+            "layout": { "type": "row", "align": "center", "justify": "center" },
             "width": 48,
             "height": 48,
             "children": [
@@ -284,11 +237,7 @@
           {
             "type": "frame",
             "name": "dia da semana 3",
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
-            },
+            "layout": { "type": "row", "align": "center", "justify": "center" },
             "width": 48,
             "height": 48,
             "children": [
@@ -310,11 +259,7 @@
           {
             "type": "frame",
             "name": "dia da semana 4",
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
-            },
+            "layout": { "type": "row", "align": "center", "justify": "center" },
             "width": 48,
             "height": 48,
             "children": [
@@ -336,11 +281,7 @@
           {
             "type": "frame",
             "name": "dia da semana 5",
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
-            },
+            "layout": { "type": "row", "align": "center", "justify": "center" },
             "width": 48,
             "height": 48,
             "children": [
@@ -362,11 +303,7 @@
           {
             "type": "frame",
             "name": "dia da semana 6",
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
-            },
+            "layout": { "type": "row", "align": "center", "justify": "center" },
             "width": 48,
             "height": 48,
             "children": [
@@ -388,11 +325,7 @@
           {
             "type": "frame",
             "name": "dia da semana 7",
-            "layout": {
-              "type": "row",
-              "align": "center",
-              "justify": "center"
-            },
+            "layout": { "type": "row", "align": "center", "justify": "center" },
             "width": 48,
             "height": 48,
             "children": [
@@ -416,105 +349,118 @@
       {
         "type": "frame",
         "name": "dias",
-        "layout": {
-          "type": "column"
-        },
+        "layout": { "type": "column" },
         "width": "fill",
         "height": "hug",
         "children": [
           {
             "type": "frame",
             "name": "semana 1",
-            "layout": {
-              "type": "row",
-              "padding": [0, 12]
-            },
+            "layout": { "type": "none" },
             "width": "fill",
             "height": 48,
             "children": [
               {
                 "type": "frame",
-                "name": "vazio",
-                "width": 48,
-                "height": 48,
-                "children": []
-              },
-              {
-                "type": "frame",
-                "name": "vazio",
-                "width": 48,
-                "height": 48,
-                "children": []
-              },
-              {
-                "type": "frame",
-                "name": "vazio",
-                "width": 48,
-                "height": 48,
-                "children": []
-              },
-              {
-                "type": "frame",
-                "name": "célula 1",
+                "name": "faixa do intervalo",
                 "layout": {
-                  "type": "none"
+                  "type": "row",
+                  "padding": {
+                    "$switch": "rangeStartDay",
+                    "cases": {
+                      "2": [0, 0, 0, 228],
+                      "3": [0, 0, 0, 276],
+                      "4": [0, 0, 0, 324]
+                    },
+                    "default": [0, 0, 0, 156]
+                  }
                 },
-                "width": 48,
-                "height": 48,
+                "anchors": { "left": 0, "right": 0, "top": 4, "bottom": 4 },
+                "visible": {
+                  "$and": [
+                    { "$eq": ["selection", "range"] },
+                    { "$has": "rangeStartDay" },
+                    { "$has": "rangeEndDay" },
+                    {
+                      "$or": [
+                        { "$eq": ["rangeStartDay", "1"] },
+                        { "$eq": ["rangeStartDay", "2"] },
+                        { "$eq": ["rangeStartDay", "3"] },
+                        { "$eq": ["rangeStartDay", "4"] }
+                      ]
+                    },
+                    { "$and": [{ "$has": "rangeEndDay" }, { "$not": { "$or": [] } }] }
+                  ]
+                },
                 "children": [
                   {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
+                    "type": "frame",
+                    "name": "direita",
+                    "layout": {
+                      "type": "row",
+                      "padding": {
+                        "$switch": "rangeEndDay",
+                        "cases": {
+                          "1": [0, 180, 0, 0],
+                          "2": [0, 132, 0, 0],
+                          "3": [0, 84, 0, 0]
+                        },
+                        "default": [0, 12, 0, 0]
+                      }
                     },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "1"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "1"] } }
-                      ]
-                    }
+                    "width": "fill",
+                    "height": "fill",
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "faixa",
+                        "width": "fill",
+                        "height": "fill",
+                        "fill": "#E8DEF8"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dias",
+                "layout": {
+                  "type": "row",
+                  "gap": 8,
+                  "padding": [0, 16],
+                  "align": "center"
+                },
+                "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "vazio",
+                    "width": 40,
+                    "height": 40,
+                    "children": []
                   },
                   {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "1"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "1"] } }
-                      ]
-                    }
+                    "type": "frame",
+                    "name": "vazio",
+                    "width": 40,
+                    "height": 40,
+                    "children": []
+                  },
+                  {
+                    "type": "frame",
+                    "name": "vazio",
+                    "width": 40,
+                    "height": 40,
+                    "children": []
                   },
                   {
                     "type": "frame",
                     "name": "dia 1",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -579,101 +525,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 2",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "1"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "2"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "2"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "2"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "2"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 2",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -738,107 +597,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 3",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "3"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "3"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "3"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "3"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 3",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -903,109 +669,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 4",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "4"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "4"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "4"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "4"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 4",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -1078,115 +749,117 @@
           {
             "type": "frame",
             "name": "semana 2",
-            "layout": {
-              "type": "row",
-              "padding": [0, 12]
-            },
+            "layout": { "type": "none" },
             "width": "fill",
             "height": 48,
             "children": [
               {
                 "type": "frame",
-                "name": "célula 5",
+                "name": "faixa do intervalo",
                 "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
+                  "type": "row",
+                  "padding": {
+                    "$switch": "rangeStartDay",
+                    "cases": {
+                      "6": [0, 0, 0, 84],
+                      "7": [0, 0, 0, 132],
+                      "8": [0, 0, 0, 180],
+                      "9": [0, 0, 0, 228],
+                      "10": [0, 0, 0, 276],
+                      "11": [0, 0, 0, 324]
                     },
-                    "fill": "#E8DEF8",
-                    "visible": {
+                    "default": [0, 0, 0, 12]
+                  }
+                },
+                "anchors": { "left": 0, "right": 0, "top": 4, "bottom": 4 },
+                "visible": {
+                  "$and": [
+                    { "$eq": ["selection", "range"] },
+                    { "$has": "rangeStartDay" },
+                    { "$has": "rangeEndDay" },
+                    {
+                      "$or": [
+                        { "$eq": ["rangeStartDay", "1"] },
+                        { "$eq": ["rangeStartDay", "2"] },
+                        { "$eq": ["rangeStartDay", "3"] },
+                        { "$eq": ["rangeStartDay", "4"] },
+                        { "$eq": ["rangeStartDay", "5"] },
+                        { "$eq": ["rangeStartDay", "6"] },
+                        { "$eq": ["rangeStartDay", "7"] },
+                        { "$eq": ["rangeStartDay", "8"] },
+                        { "$eq": ["rangeStartDay", "9"] },
+                        { "$eq": ["rangeStartDay", "10"] },
+                        { "$eq": ["rangeStartDay", "11"] }
+                      ]
+                    },
+                    {
                       "$and": [
-                        { "$eq": ["selection", "range"] },
+                        { "$has": "rangeEndDay" },
                         {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] }
-                                ]
-                              }
-                            }
-                          ]
+                          "$not": {
+                            "$or": [
+                              { "$eq": ["rangeEndDay", "1"] },
+                              { "$eq": ["rangeEndDay", "2"] },
+                              { "$eq": ["rangeEndDay", "3"] },
+                              { "$eq": ["rangeEndDay", "4"] }
+                            ]
+                          }
                         }
                       ]
                     }
-                  },
+                  ]
+                },
+                "children": [
                   {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
+                    "type": "frame",
+                    "name": "direita",
+                    "layout": {
+                      "type": "row",
+                      "padding": {
+                        "$switch": "rangeEndDay",
+                        "cases": {
+                          "5": [0, 324, 0, 0],
+                          "6": [0, 276, 0, 0],
+                          "7": [0, 228, 0, 0],
+                          "8": [0, 180, 0, 0],
+                          "9": [0, 132, 0, 0],
+                          "10": [0, 84, 0, 0]
+                        },
+                        "default": [0, 12, 0, 0]
+                      }
                     },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "5"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "5"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "5"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "5"] } }
-                      ]
-                    }
-                  },
+                    "width": "fill",
+                    "height": "fill",
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "faixa",
+                        "width": "fill",
+                        "height": "fill",
+                        "fill": "#E8DEF8"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dias",
+                "layout": {
+                  "type": "row",
+                  "gap": 8,
+                  "padding": [0, 16],
+                  "align": "center"
+                },
+                "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                "children": [
                   {
                     "type": "frame",
                     "name": "dia 5",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -1251,113 +924,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 6",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] },
-                                  { "$eq": ["rangeEndDay", "6"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "6"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "6"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "6"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "6"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 6",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -1422,115 +996,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 7",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] },
-                            { "$eq": ["rangeStartDay", "6"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] },
-                                  { "$eq": ["rangeEndDay", "6"] },
-                                  { "$eq": ["rangeEndDay", "7"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "7"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "7"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "7"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "7"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 7",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -1595,117 +1068,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 8",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] },
-                            { "$eq": ["rangeStartDay", "6"] },
-                            { "$eq": ["rangeStartDay", "7"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] },
-                                  { "$eq": ["rangeEndDay", "6"] },
-                                  { "$eq": ["rangeEndDay", "7"] },
-                                  { "$eq": ["rangeEndDay", "8"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "8"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "8"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "8"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "8"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 8",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -1770,119 +1140,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 9",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] },
-                            { "$eq": ["rangeStartDay", "6"] },
-                            { "$eq": ["rangeStartDay", "7"] },
-                            { "$eq": ["rangeStartDay", "8"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] },
-                                  { "$eq": ["rangeEndDay", "6"] },
-                                  { "$eq": ["rangeEndDay", "7"] },
-                                  { "$eq": ["rangeEndDay", "8"] },
-                                  { "$eq": ["rangeEndDay", "9"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "9"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "9"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "9"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "9"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 9",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -1947,121 +1212,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 10",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] },
-                            { "$eq": ["rangeStartDay", "6"] },
-                            { "$eq": ["rangeStartDay", "7"] },
-                            { "$eq": ["rangeStartDay", "8"] },
-                            { "$eq": ["rangeStartDay", "9"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] },
-                                  { "$eq": ["rangeEndDay", "6"] },
-                                  { "$eq": ["rangeEndDay", "7"] },
-                                  { "$eq": ["rangeEndDay", "8"] },
-                                  { "$eq": ["rangeEndDay", "9"] },
-                                  { "$eq": ["rangeEndDay", "10"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "10"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "10"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "10"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "10"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 10",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -2126,123 +1284,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 11",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] },
-                            { "$eq": ["rangeStartDay", "6"] },
-                            { "$eq": ["rangeStartDay", "7"] },
-                            { "$eq": ["rangeStartDay", "8"] },
-                            { "$eq": ["rangeStartDay", "9"] },
-                            { "$eq": ["rangeStartDay", "10"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] },
-                                  { "$eq": ["rangeEndDay", "6"] },
-                                  { "$eq": ["rangeEndDay", "7"] },
-                                  { "$eq": ["rangeEndDay", "8"] },
-                                  { "$eq": ["rangeEndDay", "9"] },
-                                  { "$eq": ["rangeEndDay", "10"] },
-                                  { "$eq": ["rangeEndDay", "11"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "11"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "11"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "11"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "11"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 11",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -2315,129 +1364,133 @@
           {
             "type": "frame",
             "name": "semana 3",
-            "layout": {
-              "type": "row",
-              "padding": [0, 12]
-            },
+            "layout": { "type": "none" },
             "width": "fill",
             "height": 48,
             "children": [
               {
                 "type": "frame",
-                "name": "célula 12",
+                "name": "faixa do intervalo",
                 "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
+                  "type": "row",
+                  "padding": {
+                    "$switch": "rangeStartDay",
+                    "cases": {
+                      "13": [0, 0, 0, 84],
+                      "14": [0, 0, 0, 132],
+                      "15": [0, 0, 0, 180],
+                      "16": [0, 0, 0, 228],
+                      "17": [0, 0, 0, 276],
+                      "18": [0, 0, 0, 324]
                     },
-                    "fill": "#E8DEF8",
-                    "visible": {
+                    "default": [0, 0, 0, 12]
+                  }
+                },
+                "anchors": { "left": 0, "right": 0, "top": 4, "bottom": 4 },
+                "visible": {
+                  "$and": [
+                    { "$eq": ["selection", "range"] },
+                    { "$has": "rangeStartDay" },
+                    { "$has": "rangeEndDay" },
+                    {
                       "$and": [
-                        { "$eq": ["selection", "range"] },
+                        { "$has": "rangeStartDay" },
                         {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] },
-                            { "$eq": ["rangeStartDay", "6"] },
-                            { "$eq": ["rangeStartDay", "7"] },
-                            { "$eq": ["rangeStartDay", "8"] },
-                            { "$eq": ["rangeStartDay", "9"] },
-                            { "$eq": ["rangeStartDay", "10"] },
-                            { "$eq": ["rangeStartDay", "11"] }
-                          ]
-                        },
+                          "$not": {
+                            "$or": [
+                              { "$eq": ["rangeStartDay", "19"] },
+                              { "$eq": ["rangeStartDay", "20"] },
+                              { "$eq": ["rangeStartDay", "21"] },
+                              { "$eq": ["rangeStartDay", "22"] },
+                              { "$eq": ["rangeStartDay", "23"] },
+                              { "$eq": ["rangeStartDay", "24"] },
+                              { "$eq": ["rangeStartDay", "25"] },
+                              { "$eq": ["rangeStartDay", "26"] },
+                              { "$eq": ["rangeStartDay", "27"] },
+                              { "$eq": ["rangeStartDay", "28"] },
+                              { "$eq": ["rangeStartDay", "29"] },
+                              { "$eq": ["rangeStartDay", "30"] },
+                              { "$eq": ["rangeStartDay", "31"] }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "$and": [
+                        { "$has": "rangeEndDay" },
                         {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] },
-                                  { "$eq": ["rangeEndDay", "6"] },
-                                  { "$eq": ["rangeEndDay", "7"] },
-                                  { "$eq": ["rangeEndDay", "8"] },
-                                  { "$eq": ["rangeEndDay", "9"] },
-                                  { "$eq": ["rangeEndDay", "10"] },
-                                  { "$eq": ["rangeEndDay", "11"] },
-                                  { "$eq": ["rangeEndDay", "12"] }
-                                ]
-                              }
-                            }
-                          ]
+                          "$not": {
+                            "$or": [
+                              { "$eq": ["rangeEndDay", "1"] },
+                              { "$eq": ["rangeEndDay", "2"] },
+                              { "$eq": ["rangeEndDay", "3"] },
+                              { "$eq": ["rangeEndDay", "4"] },
+                              { "$eq": ["rangeEndDay", "5"] },
+                              { "$eq": ["rangeEndDay", "6"] },
+                              { "$eq": ["rangeEndDay", "7"] },
+                              { "$eq": ["rangeEndDay", "8"] },
+                              { "$eq": ["rangeEndDay", "9"] },
+                              { "$eq": ["rangeEndDay", "10"] },
+                              { "$eq": ["rangeEndDay", "11"] }
+                            ]
+                          }
                         }
                       ]
                     }
-                  },
+                  ]
+                },
+                "children": [
                   {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
+                    "type": "frame",
+                    "name": "direita",
+                    "layout": {
+                      "type": "row",
+                      "padding": {
+                        "$switch": "rangeEndDay",
+                        "cases": {
+                          "12": [0, 324, 0, 0],
+                          "13": [0, 276, 0, 0],
+                          "14": [0, 228, 0, 0],
+                          "15": [0, 180, 0, 0],
+                          "16": [0, 132, 0, 0],
+                          "17": [0, 84, 0, 0]
+                        },
+                        "default": [0, 12, 0, 0]
+                      }
                     },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "12"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "12"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "12"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "12"] } }
-                      ]
-                    }
-                  },
+                    "width": "fill",
+                    "height": "fill",
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "faixa",
+                        "width": "fill",
+                        "height": "fill",
+                        "fill": "#E8DEF8"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dias",
+                "layout": {
+                  "type": "row",
+                  "gap": 8,
+                  "padding": [0, 16],
+                  "align": "center"
+                },
+                "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                "children": [
                   {
                     "type": "frame",
                     "name": "dia 12",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -2502,127 +1555,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 13",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] },
-                            { "$eq": ["rangeStartDay", "6"] },
-                            { "$eq": ["rangeStartDay", "7"] },
-                            { "$eq": ["rangeStartDay", "8"] },
-                            { "$eq": ["rangeStartDay", "9"] },
-                            { "$eq": ["rangeStartDay", "10"] },
-                            { "$eq": ["rangeStartDay", "11"] },
-                            { "$eq": ["rangeStartDay", "12"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] },
-                                  { "$eq": ["rangeEndDay", "6"] },
-                                  { "$eq": ["rangeEndDay", "7"] },
-                                  { "$eq": ["rangeEndDay", "8"] },
-                                  { "$eq": ["rangeEndDay", "9"] },
-                                  { "$eq": ["rangeEndDay", "10"] },
-                                  { "$eq": ["rangeEndDay", "11"] },
-                                  { "$eq": ["rangeEndDay", "12"] },
-                                  { "$eq": ["rangeEndDay", "13"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "13"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "13"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "13"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "13"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 13",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -2687,129 +1627,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 14",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] },
-                            { "$eq": ["rangeStartDay", "6"] },
-                            { "$eq": ["rangeStartDay", "7"] },
-                            { "$eq": ["rangeStartDay", "8"] },
-                            { "$eq": ["rangeStartDay", "9"] },
-                            { "$eq": ["rangeStartDay", "10"] },
-                            { "$eq": ["rangeStartDay", "11"] },
-                            { "$eq": ["rangeStartDay", "12"] },
-                            { "$eq": ["rangeStartDay", "13"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] },
-                                  { "$eq": ["rangeEndDay", "6"] },
-                                  { "$eq": ["rangeEndDay", "7"] },
-                                  { "$eq": ["rangeEndDay", "8"] },
-                                  { "$eq": ["rangeEndDay", "9"] },
-                                  { "$eq": ["rangeEndDay", "10"] },
-                                  { "$eq": ["rangeEndDay", "11"] },
-                                  { "$eq": ["rangeEndDay", "12"] },
-                                  { "$eq": ["rangeEndDay", "13"] },
-                                  { "$eq": ["rangeEndDay", "14"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "14"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "14"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "14"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "14"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 14",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -2874,131 +1699,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 15",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] },
-                            { "$eq": ["rangeStartDay", "6"] },
-                            { "$eq": ["rangeStartDay", "7"] },
-                            { "$eq": ["rangeStartDay", "8"] },
-                            { "$eq": ["rangeStartDay", "9"] },
-                            { "$eq": ["rangeStartDay", "10"] },
-                            { "$eq": ["rangeStartDay", "11"] },
-                            { "$eq": ["rangeStartDay", "12"] },
-                            { "$eq": ["rangeStartDay", "13"] },
-                            { "$eq": ["rangeStartDay", "14"] }
-                          ]
-                        },
-                        {
-                          "$and": [
-                            { "$has": "rangeEndDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeEndDay", "1"] },
-                                  { "$eq": ["rangeEndDay", "2"] },
-                                  { "$eq": ["rangeEndDay", "3"] },
-                                  { "$eq": ["rangeEndDay", "4"] },
-                                  { "$eq": ["rangeEndDay", "5"] },
-                                  { "$eq": ["rangeEndDay", "6"] },
-                                  { "$eq": ["rangeEndDay", "7"] },
-                                  { "$eq": ["rangeEndDay", "8"] },
-                                  { "$eq": ["rangeEndDay", "9"] },
-                                  { "$eq": ["rangeEndDay", "10"] },
-                                  { "$eq": ["rangeEndDay", "11"] },
-                                  { "$eq": ["rangeEndDay", "12"] },
-                                  { "$eq": ["rangeEndDay", "13"] },
-                                  { "$eq": ["rangeEndDay", "14"] },
-                                  { "$eq": ["rangeEndDay", "15"] }
-                                ]
-                              }
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "15"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "15"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "15"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "15"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 15",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -3063,125 +1771,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 16",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeStartDay", "1"] },
-                            { "$eq": ["rangeStartDay", "2"] },
-                            { "$eq": ["rangeStartDay", "3"] },
-                            { "$eq": ["rangeStartDay", "4"] },
-                            { "$eq": ["rangeStartDay", "5"] },
-                            { "$eq": ["rangeStartDay", "6"] },
-                            { "$eq": ["rangeStartDay", "7"] },
-                            { "$eq": ["rangeStartDay", "8"] },
-                            { "$eq": ["rangeStartDay", "9"] },
-                            { "$eq": ["rangeStartDay", "10"] },
-                            { "$eq": ["rangeStartDay", "11"] },
-                            { "$eq": ["rangeStartDay", "12"] },
-                            { "$eq": ["rangeStartDay", "13"] },
-                            { "$eq": ["rangeStartDay", "14"] },
-                            { "$eq": ["rangeStartDay", "15"] }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "17"] },
-                            { "$eq": ["rangeEndDay", "18"] },
-                            { "$eq": ["rangeEndDay", "19"] },
-                            { "$eq": ["rangeEndDay", "20"] },
-                            { "$eq": ["rangeEndDay", "21"] },
-                            { "$eq": ["rangeEndDay", "22"] },
-                            { "$eq": ["rangeEndDay", "23"] },
-                            { "$eq": ["rangeEndDay", "24"] },
-                            { "$eq": ["rangeEndDay", "25"] },
-                            { "$eq": ["rangeEndDay", "26"] },
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "16"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "16"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "16"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "16"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 16",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -3246,131 +1843,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 17",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "17"] },
-                                  { "$eq": ["rangeStartDay", "18"] },
-                                  { "$eq": ["rangeStartDay", "19"] },
-                                  { "$eq": ["rangeStartDay", "20"] },
-                                  { "$eq": ["rangeStartDay", "21"] },
-                                  { "$eq": ["rangeStartDay", "22"] },
-                                  { "$eq": ["rangeStartDay", "23"] },
-                                  { "$eq": ["rangeStartDay", "24"] },
-                                  { "$eq": ["rangeStartDay", "25"] },
-                                  { "$eq": ["rangeStartDay", "26"] },
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "18"] },
-                            { "$eq": ["rangeEndDay", "19"] },
-                            { "$eq": ["rangeEndDay", "20"] },
-                            { "$eq": ["rangeEndDay", "21"] },
-                            { "$eq": ["rangeEndDay", "22"] },
-                            { "$eq": ["rangeEndDay", "23"] },
-                            { "$eq": ["rangeEndDay", "24"] },
-                            { "$eq": ["rangeEndDay", "25"] },
-                            { "$eq": ["rangeEndDay", "26"] },
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "17"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "17"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "17"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "17"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 17",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -3435,129 +1915,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 18",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "18"] },
-                                  { "$eq": ["rangeStartDay", "19"] },
-                                  { "$eq": ["rangeStartDay", "20"] },
-                                  { "$eq": ["rangeStartDay", "21"] },
-                                  { "$eq": ["rangeStartDay", "22"] },
-                                  { "$eq": ["rangeStartDay", "23"] },
-                                  { "$eq": ["rangeStartDay", "24"] },
-                                  { "$eq": ["rangeStartDay", "25"] },
-                                  { "$eq": ["rangeStartDay", "26"] },
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "19"] },
-                            { "$eq": ["rangeEndDay", "20"] },
-                            { "$eq": ["rangeEndDay", "21"] },
-                            { "$eq": ["rangeEndDay", "22"] },
-                            { "$eq": ["rangeEndDay", "23"] },
-                            { "$eq": ["rangeEndDay", "24"] },
-                            { "$eq": ["rangeEndDay", "25"] },
-                            { "$eq": ["rangeEndDay", "26"] },
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "18"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "18"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "18"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "18"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 18",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -3630,131 +1995,121 @@
           {
             "type": "frame",
             "name": "semana 4",
-            "layout": {
-              "type": "row",
-              "padding": [0, 12]
-            },
+            "layout": { "type": "none" },
             "width": "fill",
             "height": 48,
             "children": [
               {
                 "type": "frame",
-                "name": "célula 19",
+                "name": "faixa do intervalo",
                 "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
+                  "type": "row",
+                  "padding": {
+                    "$switch": "rangeStartDay",
+                    "cases": {
+                      "20": [0, 0, 0, 84],
+                      "21": [0, 0, 0, 132],
+                      "22": [0, 0, 0, 180],
+                      "23": [0, 0, 0, 228],
+                      "24": [0, 0, 0, 276],
+                      "25": [0, 0, 0, 324]
                     },
-                    "fill": "#E8DEF8",
-                    "visible": {
+                    "default": [0, 0, 0, 12]
+                  }
+                },
+                "anchors": { "left": 0, "right": 0, "top": 4, "bottom": 4 },
+                "visible": {
+                  "$and": [
+                    { "$eq": ["selection", "range"] },
+                    { "$has": "rangeStartDay" },
+                    { "$has": "rangeEndDay" },
+                    {
                       "$and": [
-                        { "$eq": ["selection", "range"] },
+                        { "$has": "rangeStartDay" },
                         {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "19"] },
-                                  { "$eq": ["rangeStartDay", "20"] },
-                                  { "$eq": ["rangeStartDay", "21"] },
-                                  { "$eq": ["rangeStartDay", "22"] },
-                                  { "$eq": ["rangeStartDay", "23"] },
-                                  { "$eq": ["rangeStartDay", "24"] },
-                                  { "$eq": ["rangeStartDay", "25"] },
-                                  { "$eq": ["rangeStartDay", "26"] },
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "20"] },
-                            { "$eq": ["rangeEndDay", "21"] },
-                            { "$eq": ["rangeEndDay", "22"] },
-                            { "$eq": ["rangeEndDay", "23"] },
-                            { "$eq": ["rangeEndDay", "24"] },
-                            { "$eq": ["rangeEndDay", "25"] },
-                            { "$eq": ["rangeEndDay", "26"] },
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
+                          "$not": {
+                            "$or": [
+                              { "$eq": ["rangeStartDay", "26"] },
+                              { "$eq": ["rangeStartDay", "27"] },
+                              { "$eq": ["rangeStartDay", "28"] },
+                              { "$eq": ["rangeStartDay", "29"] },
+                              { "$eq": ["rangeStartDay", "30"] },
+                              { "$eq": ["rangeStartDay", "31"] }
+                            ]
+                          }
                         }
                       ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
                     },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "19"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "19"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
+                    {
+                      "$or": [
                         { "$eq": ["rangeEndDay", "19"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "19"] } }
+                        { "$eq": ["rangeEndDay", "20"] },
+                        { "$eq": ["rangeEndDay", "21"] },
+                        { "$eq": ["rangeEndDay", "22"] },
+                        { "$eq": ["rangeEndDay", "23"] },
+                        { "$eq": ["rangeEndDay", "24"] },
+                        { "$eq": ["rangeEndDay", "25"] },
+                        { "$eq": ["rangeEndDay", "26"] },
+                        { "$eq": ["rangeEndDay", "27"] },
+                        { "$eq": ["rangeEndDay", "28"] },
+                        { "$eq": ["rangeEndDay", "29"] },
+                        { "$eq": ["rangeEndDay", "30"] },
+                        { "$eq": ["rangeEndDay", "31"] }
                       ]
                     }
-                  },
+                  ]
+                },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "direita",
+                    "layout": {
+                      "type": "row",
+                      "padding": {
+                        "$switch": "rangeEndDay",
+                        "cases": {
+                          "19": [0, 324, 0, 0],
+                          "20": [0, 276, 0, 0],
+                          "21": [0, 228, 0, 0],
+                          "22": [0, 180, 0, 0],
+                          "23": [0, 132, 0, 0],
+                          "24": [0, 84, 0, 0]
+                        },
+                        "default": [0, 12, 0, 0]
+                      }
+                    },
+                    "width": "fill",
+                    "height": "fill",
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "faixa",
+                        "width": "fill",
+                        "height": "fill",
+                        "fill": "#E8DEF8"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dias",
+                "layout": {
+                  "type": "row",
+                  "gap": 8,
+                  "padding": [0, 16],
+                  "align": "center"
+                },
+                "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                "children": [
                   {
                     "type": "frame",
                     "name": "dia 19",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -3819,125 +2174,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 20",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "20"] },
-                                  { "$eq": ["rangeStartDay", "21"] },
-                                  { "$eq": ["rangeStartDay", "22"] },
-                                  { "$eq": ["rangeStartDay", "23"] },
-                                  { "$eq": ["rangeStartDay", "24"] },
-                                  { "$eq": ["rangeStartDay", "25"] },
-                                  { "$eq": ["rangeStartDay", "26"] },
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "21"] },
-                            { "$eq": ["rangeEndDay", "22"] },
-                            { "$eq": ["rangeEndDay", "23"] },
-                            { "$eq": ["rangeEndDay", "24"] },
-                            { "$eq": ["rangeEndDay", "25"] },
-                            { "$eq": ["rangeEndDay", "26"] },
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "20"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "20"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "20"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "20"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 20",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -4002,123 +2246,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 21",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "21"] },
-                                  { "$eq": ["rangeStartDay", "22"] },
-                                  { "$eq": ["rangeStartDay", "23"] },
-                                  { "$eq": ["rangeStartDay", "24"] },
-                                  { "$eq": ["rangeStartDay", "25"] },
-                                  { "$eq": ["rangeStartDay", "26"] },
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "22"] },
-                            { "$eq": ["rangeEndDay", "23"] },
-                            { "$eq": ["rangeEndDay", "24"] },
-                            { "$eq": ["rangeEndDay", "25"] },
-                            { "$eq": ["rangeEndDay", "26"] },
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "21"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "21"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "21"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "21"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 21",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -4183,121 +2318,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 22",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "22"] },
-                                  { "$eq": ["rangeStartDay", "23"] },
-                                  { "$eq": ["rangeStartDay", "24"] },
-                                  { "$eq": ["rangeStartDay", "25"] },
-                                  { "$eq": ["rangeStartDay", "26"] },
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "23"] },
-                            { "$eq": ["rangeEndDay", "24"] },
-                            { "$eq": ["rangeEndDay", "25"] },
-                            { "$eq": ["rangeEndDay", "26"] },
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "22"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "22"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "22"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "22"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 22",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -4362,119 +2390,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 23",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "23"] },
-                                  { "$eq": ["rangeStartDay", "24"] },
-                                  { "$eq": ["rangeStartDay", "25"] },
-                                  { "$eq": ["rangeStartDay", "26"] },
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "24"] },
-                            { "$eq": ["rangeEndDay", "25"] },
-                            { "$eq": ["rangeEndDay", "26"] },
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "23"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "23"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "23"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "23"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 23",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -4539,117 +2462,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 24",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "24"] },
-                                  { "$eq": ["rangeStartDay", "25"] },
-                                  { "$eq": ["rangeStartDay", "26"] },
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "25"] },
-                            { "$eq": ["rangeEndDay", "26"] },
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "24"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "24"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "24"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "24"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 24",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -4714,115 +2534,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 25",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "25"] },
-                                  { "$eq": ["rangeStartDay", "26"] },
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "26"] },
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "25"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "25"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "25"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "25"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 25",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -4895,117 +2614,96 @@
           {
             "type": "frame",
             "name": "semana 5",
-            "layout": {
-              "type": "row",
-              "padding": [0, 12]
-            },
+            "layout": { "type": "none" },
             "width": "fill",
             "height": 48,
             "children": [
               {
                 "type": "frame",
-                "name": "célula 26",
+                "name": "faixa do intervalo",
                 "layout": {
-                  "type": "none"
+                  "type": "row",
+                  "padding": {
+                    "$switch": "rangeStartDay",
+                    "cases": {
+                      "27": [0, 0, 0, 84],
+                      "28": [0, 0, 0, 132],
+                      "29": [0, 0, 0, 180],
+                      "30": [0, 0, 0, 228],
+                      "31": [0, 0, 0, 276]
+                    },
+                    "default": [0, 0, 0, 12]
+                  }
                 },
-                "width": 48,
-                "height": 48,
+                "anchors": { "left": 0, "right": 0, "top": 4, "bottom": 4 },
+                "visible": {
+                  "$and": [
+                    { "$eq": ["selection", "range"] },
+                    { "$has": "rangeStartDay" },
+                    { "$has": "rangeEndDay" },
+                    { "$and": [{ "$has": "rangeStartDay" }, { "$not": { "$or": [] } }] },
+                    {
+                      "$or": [
+                        { "$eq": ["rangeEndDay", "26"] },
+                        { "$eq": ["rangeEndDay", "27"] },
+                        { "$eq": ["rangeEndDay", "28"] },
+                        { "$eq": ["rangeEndDay", "29"] },
+                        { "$eq": ["rangeEndDay", "30"] },
+                        { "$eq": ["rangeEndDay", "31"] }
+                      ]
+                    }
+                  ]
+                },
                 "children": [
                   {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "26"] },
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
+                    "type": "frame",
+                    "name": "direita",
+                    "layout": {
+                      "type": "row",
+                      "padding": {
+                        "$switch": "rangeEndDay",
+                        "cases": {
+                          "26": [0, 324, 0, 0],
+                          "27": [0, 276, 0, 0],
+                          "28": [0, 228, 0, 0],
+                          "29": [0, 180, 0, 0],
+                          "30": [0, 132, 0, 0]
                         },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "27"] },
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
+                        "default": [0, 60, 0, 0]
+                      }
                     },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "26"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "26"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "26"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "26"] } }
-                      ]
-                    }
-                  },
+                    "width": "fill",
+                    "height": "fill",
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "faixa",
+                        "width": "fill",
+                        "height": "fill",
+                        "fill": "#E8DEF8"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "dias",
+                "layout": {
+                  "type": "row",
+                  "gap": 8,
+                  "padding": [0, 16],
+                  "align": "center"
+                },
+                "anchors": { "left": 0, "right": 0, "top": 0, "bottom": 0 },
+                "children": [
                   {
                     "type": "frame",
                     "name": "dia 26",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -5070,111 +2768,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 27",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "27"] },
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "28"] },
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "27"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "27"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "27"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "27"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 27",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -5239,109 +2840,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 28",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "28"] },
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "29"] },
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "28"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "28"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "28"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "28"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 28",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -5406,107 +2912,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 29",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "29"] },
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        {
-                          "$or": [
-                            { "$eq": ["rangeEndDay", "30"] },
-                            { "$eq": ["rangeEndDay", "31"] }
-                          ]
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "29"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "29"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "29"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "29"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 29",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -5571,101 +2984,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 30",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        {
-                          "$and": [
-                            { "$has": "rangeStartDay" },
-                            {
-                              "$not": {
-                                "$or": [
-                                  { "$eq": ["rangeStartDay", "30"] },
-                                  { "$eq": ["rangeStartDay", "31"] }
-                                ]
-                              }
-                            }
-                          ]
-                        },
-                        { "$eq": ["rangeEndDay", "31"] }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "30"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "30"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "30"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "30"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 30",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -5730,71 +3056,14 @@
                         }
                       }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "frame",
-                "name": "célula 31",
-                "layout": {
-                  "type": "none"
-                },
-                "width": 48,
-                "height": 48,
-                "children": [
-                  {
-                    "type": "rect",
-                    "name": "início da faixa",
-                    "anchors": {
-                      "left": 24,
-                      "right": 0,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeStartDay", "31"] },
-                        { "$has": "rangeEndDay" },
-                        { "$not": { "$eq": ["rangeEndDay", "31"] } }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "rect",
-                    "name": "fim da faixa",
-                    "anchors": {
-                      "left": 0,
-                      "right": 24,
-                      "top": 4,
-                      "bottom": 4
-                    },
-                    "fill": "#E8DEF8",
-                    "visible": {
-                      "$and": [
-                        { "$eq": ["selection", "range"] },
-                        { "$eq": ["rangeEndDay", "31"] },
-                        { "$has": "rangeStartDay" },
-                        { "$not": { "$eq": ["rangeStartDay", "31"] } }
-                      ]
-                    }
                   },
                   {
                     "type": "frame",
                     "name": "dia 31",
-                    "layout": {
-                      "type": "row",
-                      "align": "center",
-                      "justify": "center"
-                    },
+                    "layout": { "type": "row", "align": "center", "justify": "center" },
                     "width": 40,
                     "height": 40,
                     "cornerRadius": 20,
-                    "anchors": {
-                      "centerX": true,
-                      "centerY": true
-                    },
                     "fill": {
                       "$if": {
                         "$or": [
@@ -5859,15 +3128,15 @@
                         }
                       }
                     ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "vazio",
+                    "width": 40,
+                    "height": 40,
+                    "children": []
                   }
                 ]
-              },
-              {
-                "type": "frame",
-                "name": "vazio",
-                "width": 48,
-                "height": 48,
-                "children": []
               }
             ]
           }

@@ -3916,6 +3916,1495 @@
               }
             }
           ]
+        },
+        {
+          "id": "icon-button",
+          "name": "Icon button",
+          "description": "Botão só com ícone para uma ação (editar, adicionar, mais opções). Standard, filled, tonal ou outlined.",
+          "labelField": "icon",
+          "component": "components/icon-button.json",
+          "doc": "docs/icon-button.md",
+          "fields": [
+            {
+              "key": "icon",
+              "label": "Ícone",
+              "type": "string",
+              "required": true,
+              "default": "Favorite",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone do botão."
+            },
+            {
+              "key": "contentDescription",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Texto de acessibilidade do botão (vai no `contentDescription` do Icon). Vazio = sem nome para leitores de tela."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "standard",
+              "options": ["standard", "filled", "tonal", "outlined"],
+              "description": "standard (IconButton), filled (FilledIconButton), tonal (FilledTonalIconButton) ou outlined (OutlinedIconButton)."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita o botão."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.IconButton",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/IconButton.kt",
+              "params": {
+                "enabled": "enabled"
+              },
+              "notes": "`onClick` liga à lógica da tela e o ícone vai em `content = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }` (sem `contentDescription`, passe `null`). O container é de 40 dp com forma full; nenhum estilo exige opt-in. A 1.4.0 não traz os ícones: o app adiciona `androidx.compose.material:material-icons-core` (ou `-extended`) ou usa um Material Symbol com `painterResource`.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "filled": {
+                    "symbol": "androidx.compose.material3.FilledIconButton"
+                  },
+                  "tonal": {
+                    "symbol": "androidx.compose.material3.FilledTonalIconButton"
+                  },
+                  "outlined": {
+                    "symbol": "androidx.compose.material3.OutlinedIconButton"
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "icon": "Edit",
+                "contentDescription": "Editar",
+                "style": "standard"
+              }
+            },
+            {
+              "name": "Preenchido",
+              "values": {
+                "icon": "Add",
+                "contentDescription": "Adicionar",
+                "style": "filled"
+              }
+            },
+            {
+              "name": "Contornado desabilitado",
+              "values": {
+                "icon": "Settings",
+                "contentDescription": "Ajustes",
+                "style": "outlined",
+                "enabled": "false"
+              }
+            }
+          ]
+        },
+        {
+          "id": "icon-toggle-button",
+          "name": "Icon toggle button",
+          "description": "Botão de ícone que liga e desliga (favoritar, fixar, silenciar). Standard, filled, tonal ou outlined, ligado ou desligado.",
+          "labelField": "icon",
+          "component": "components/icon-toggle-button.json",
+          "doc": "docs/icon-toggle-button.md",
+          "fields": [
+            {
+              "key": "icon",
+              "label": "Ícone",
+              "type": "string",
+              "required": true,
+              "default": "Favorite",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone do botão."
+            },
+            {
+              "key": "contentDescription",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Texto de acessibilidade do botão (vai no `contentDescription` do Icon). Vazio = sem nome para leitores de tela."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "standard",
+              "options": ["standard", "filled", "tonal", "outlined"],
+              "description": "standard (IconToggleButton), filled (FilledIconToggleButton), tonal (FilledTonalIconToggleButton) ou outlined (OutlinedIconToggleButton)."
+            },
+            {
+              "key": "checked",
+              "label": "Ligado",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true liga o botão (cor de seleção do estilo)."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita o botão."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.IconToggleButton",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/IconButton.kt",
+              "params": {
+                "checked": "checked",
+                "enabled": "enabled"
+              },
+              "notes": "`onCheckedChange` liga à lógica da tela e o ícone vai em `content = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }`. É costume trocar o ícone quando ligado (por exemplo `Icons.Filled.Favorite` ligado e `Icons.Outlined.FavoriteBorder` desligado): o desenho usa o mesmo `icon` nos dois estados. Nenhum estilo exige opt-in. A 1.4.0 não traz os ícones: o app adiciona `androidx.compose.material:material-icons-core` (ou `-extended`) ou usa um Material Symbol com `painterResource`.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "filled": {
+                    "symbol": "androidx.compose.material3.FilledIconToggleButton"
+                  },
+                  "tonal": {
+                    "symbol": "androidx.compose.material3.FilledTonalIconToggleButton"
+                  },
+                  "outlined": {
+                    "symbol": "androidx.compose.material3.OutlinedIconToggleButton"
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Desligado",
+              "values": {
+                "icon": "Favorite",
+                "contentDescription": "Favoritar",
+                "style": "standard",
+                "checked": "false"
+              }
+            },
+            {
+              "name": "Preenchido ligado",
+              "values": {
+                "icon": "Favorite",
+                "contentDescription": "Favoritar",
+                "style": "filled",
+                "checked": "true"
+              }
+            },
+            {
+              "name": "Contornado ligado",
+              "values": {
+                "icon": "Notifications",
+                "contentDescription": "Notificações",
+                "style": "outlined",
+                "checked": "true"
+              }
+            }
+          ]
+        },
+        {
+          "id": "segmented-button",
+          "name": "Segmented button",
+          "description": "Linha de dois a cinco segmentos para escolher uma opção (seleção única) ou várias (seleção múltipla). Cada linha de Opções é um segmento.",
+          "component": "components/segmented-button.json",
+          "doc": "docs/segmented-button.md",
+          "fields": [
+            {
+              "key": "options",
+              "label": "Opções",
+              "type": "table",
+              "required": true,
+              "columns": [
+                {
+                  "key": "label",
+                  "label": "Rótulo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Texto do segmento."
+                },
+                {
+                  "key": "icon",
+                  "label": "Ícone",
+                  "type": "string",
+                  "suggestions": [
+                    "Home",
+                    "Search",
+                    "Person",
+                    "Menu",
+                    "MoreVert",
+                    "Add",
+                    "Check",
+                    "Close",
+                    "ArrowBack",
+                    "Favorite",
+                    "Edit",
+                    "Delete",
+                    "Share",
+                    "Notifications",
+                    "Settings",
+                    "Info",
+                    "Star",
+                    "Email",
+                    "Phone",
+                    "Place",
+                    "DateRange",
+                    "ShoppingCart",
+                    "AccountCircle",
+                    "KeyboardArrowRight",
+                    "KeyboardArrowDown",
+                    "Refresh",
+                    "Clear",
+                    "Done",
+                    "Lock",
+                    "List"
+                  ],
+                  "description": "Ícone do segmento desmarcado; marcado, o segmento mostra o check. Vazio = só o texto (e o check quando marcado)."
+                },
+                {
+                  "key": "selected",
+                  "label": "Selecionado",
+                  "type": "enum",
+                  "default": "false",
+                  "options": ["true", "false"],
+                  "description": "true marca o segmento. Na seleção única, só um."
+                }
+              ],
+              "description": "Um segmento por linha, na ordem em que aparecem (de dois a cinco)."
+            },
+            {
+              "key": "selection",
+              "label": "Seleção",
+              "type": "enum",
+              "default": "single",
+              "options": ["single", "multi"],
+              "description": "single (SingleChoiceSegmentedButtonRow) marca um segmento; multi (MultiChoiceSegmentedButtonRow) aceita vários."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita os segmentos."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.SingleChoiceSegmentedButtonRow",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SegmentedButton.kt",
+              "params": {
+                "enabled": "enabled"
+              },
+              "notes": "Um `SegmentedButton` por linha de `options`, dentro de `SingleChoiceSegmentedButtonRow { … }`: `selected`, `onClick`, `shape = SegmentedButtonDefaults.itemShape(index = <posição da linha>, count = <número de linhas>)` (obrigatório), `enabled = <enabled>` (parâmetro do segmento, não da linha), `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` (o check) e `label = { Text(<label>) }`. Com a coluna `icon` preenchida, passe `inactiveContent = { Icon(Icons.Filled.<icon>, contentDescription = null, Modifier.size(SegmentedButtonDefaults.IconSize)) }` ao `SegmentedButtonDefaults.Icon`. O `SegmentedButton` é função de extensão do escopo da linha: importe `androidx.compose.material3.SegmentedButton`. Nenhum tipo exige opt-in. A 1.4.0 não traz os ícones: o app adiciona `androidx.compose.material:material-icons-core` (ou `-extended`) ou usa um Material Symbol com `painterResource`.",
+              "variants": {
+                "field": "selection",
+                "cases": {
+                  "multi": {
+                    "symbol": "androidx.compose.material3.MultiChoiceSegmentedButtonRow",
+                    "notes": "Um `SegmentedButton` por linha de `options`, dentro de `MultiChoiceSegmentedButtonRow { … }`, com `checked = <selected>` e `onCheckedChange` no lugar de `selected` e `onClick` (cada segmento liga e desliga sozinho); `shape = SegmentedButtonDefaults.itemShape(index = <posição da linha>, count = <número de linhas>)`, `enabled = <enabled>`, `icon = { SegmentedButtonDefaults.Icon(active = <selected>) }` e `label = { Text(<label>) }`. Importe `androidx.compose.material3.SegmentedButton`."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Seleção única",
+              "values": {
+                "selection": "single"
+              }
+            },
+            {
+              "name": "Seleção múltipla",
+              "values": {
+                "selection": "multi"
+              }
+            },
+            {
+              "name": "Desabilitado",
+              "values": {
+                "selection": "single",
+                "enabled": "false"
+              }
+            }
+          ]
+        },
+        {
+          "id": "radio-button",
+          "name": "Radio button",
+          "description": "Opção exclusiva de um grupo: marcar uma desmarca as outras. Use um por opção.",
+          "labelField": "label",
+          "component": "components/radio-button.json",
+          "doc": "docs/radio-button.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Rótulo",
+              "type": "string",
+              "description": "Texto ao lado do botão (o RadioButton em si não tem rótulo)."
+            },
+            {
+              "key": "selected",
+              "label": "Selecionado",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true marca a opção."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita a opção."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.RadioButton",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/RadioButton.kt",
+              "params": {
+                "selected": "selected",
+                "enabled": "enabled"
+              },
+              "notes": "O RadioButton não tem rótulo: o `label` vira um `Text` ao lado, numa `Row`. O padrão de acessibilidade é a `Row` inteira selecionável, `Modifier.selectable(selected = <selected>, onClick = { … }, role = Role.RadioButton)`, com `RadioButton(selected = <selected>, onClick = null)` dentro; sem a `Row` selecionável, `onClick` liga à lógica da tela. Um grupo é uma `Column` (ou `Modifier.selectableGroup()`) com um RadioButton por opção. Não exige opt-in."
+            }
+          },
+          "examples": [
+            {
+              "name": "Selecionado",
+              "values": {
+                "label": "Cartão de crédito",
+                "selected": "true"
+              }
+            },
+            {
+              "name": "Não selecionado",
+              "values": {
+                "label": "Boleto",
+                "selected": "false"
+              }
+            },
+            {
+              "name": "Desabilitado",
+              "values": {
+                "label": "Pix",
+                "selected": "false",
+                "enabled": "false"
+              }
+            }
+          ]
+        },
+        {
+          "id": "slider",
+          "name": "Slider",
+          "description": "Escolhe um valor (single) ou um intervalo (range) deslizando a alça por um trilho, com valores de 0 a 1.",
+          "component": "components/slider.json",
+          "doc": "docs/slider.md",
+          "fields": [
+            {
+              "key": "type",
+              "label": "Tipo",
+              "type": "enum",
+              "default": "single",
+              "options": ["single", "range"],
+              "description": "single (Slider) escolhe um valor; range (RangeSlider) escolhe um intervalo com duas alças."
+            },
+            {
+              "key": "value",
+              "label": "Valor",
+              "type": "enum",
+              "default": "0.5",
+              "options": [
+                "0",
+                "0.1",
+                "0.2",
+                "0.3",
+                "0.4",
+                "0.5",
+                "0.6",
+                "0.7",
+                "0.8",
+                "0.9",
+                "1"
+              ],
+              "description": "Posição da alça no tipo single, de 0 a 1 em décimos (valueRange 0f..1f). Ignorado no range."
+            },
+            {
+              "key": "valueStart",
+              "label": "Início do intervalo",
+              "type": "enum",
+              "default": "0.2",
+              "options": [
+                "0",
+                "0.1",
+                "0.2",
+                "0.3",
+                "0.4",
+                "0.5",
+                "0.6",
+                "0.7",
+                "0.8",
+                "0.9",
+                "1"
+              ],
+              "description": "Início do intervalo no tipo range, de 0 a 1 em décimos. Ignorado no single."
+            },
+            {
+              "key": "valueEnd",
+              "label": "Fim do intervalo",
+              "type": "enum",
+              "default": "0.8",
+              "options": [
+                "0",
+                "0.1",
+                "0.2",
+                "0.3",
+                "0.4",
+                "0.5",
+                "0.6",
+                "0.7",
+                "0.8",
+                "0.9",
+                "1"
+              ],
+              "description": "Fim do intervalo no tipo range, de 0 a 1 em décimos, maior ou igual ao início. Ignorado no single."
+            },
+            {
+              "key": "steps",
+              "label": "Passos",
+              "type": "number",
+              "description": "Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 5 e 9."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita o slider."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "fill",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "fill ocupa toda a largura disponível, wrap usa a largura mínima do Compose e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Slider",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Slider.kt",
+              "params": {
+                "steps": "steps",
+                "enabled": "enabled"
+              },
+              "notes": "`Slider(value = <value>f, onValueChange = { … })`: `value` e `onValueChange` ligam a um estado da tela, `valueRange` fica no padrão `0f..1f` e `steps` só entra quando preenchido e maior que 0; `onValueChangeFinished` é opcional. Use a sobrecarga estável `(value, onValueChange, modifier, enabled, valueRange, steps, onValueChangeFinished, colors, interactionSource)`: as que recebem `SliderState` ou os espaços `thumb` e `track` exigem `@OptIn(ExperimentalMaterial3Api::class)` e não são as indicadas aqui. Tamanho: `fill` vira `Modifier.fillMaxWidth()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).",
+              "variants": {
+                "field": "type",
+                "cases": {
+                  "range": {
+                    "symbol": "androidx.compose.material3.RangeSlider",
+                    "notes": "`RangeSlider(value = <valueStart>f..<valueEnd>f, onValueChange = { range -> … })`: o valor é um `ClosedFloatingPointRange<Float>` (`range.start`, `range.endInclusive`) ligado a um estado da tela, com `valueRange = 0f..1f`. Use a sobrecarga estável `(value, onValueChange, …, steps, onValueChangeFinished, colors)`; a que recebe `RangeSliderState` exige `@OptIn(ExperimentalMaterial3Api::class)` e não é a indicada aqui. Tamanho: `fill` vira `Modifier.fillMaxWidth()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Valor único",
+              "values": {
+                "type": "single",
+                "value": "0.5"
+              }
+            },
+            {
+              "name": "Com passos",
+              "values": {
+                "type": "single",
+                "value": "0.4",
+                "steps": 4
+              }
+            },
+            {
+              "name": "Intervalo",
+              "values": {
+                "type": "range",
+                "valueStart": "0.2",
+                "valueEnd": "0.8"
+              }
+            }
+          ]
+        },
+        {
+          "id": "search-bar",
+          "name": "Search bar",
+          "description": "Barra de busca. Bar é a barra que se expande para a tela inteira; docked abre os resultados logo abaixo do campo (telas largas).",
+          "labelField": "placeholder",
+          "component": "components/search-bar.json",
+          "doc": "docs/search-bar.md",
+          "fields": [
+            {
+              "key": "query",
+              "label": "Consulta",
+              "type": "string",
+              "description": "Texto digitado na busca. Vazio = mostra a dica (placeholder)."
+            },
+            {
+              "key": "placeholder",
+              "label": "Dica",
+              "type": "string",
+              "description": "Texto de dica quando a consulta está vazia."
+            },
+            {
+              "key": "leadingIcon",
+              "label": "Ícone inicial",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone antes do texto (costuma ser Search). Vazio = sem ícone."
+            },
+            {
+              "key": "trailingIcon",
+              "label": "Ícone final",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone depois do texto (por exemplo Close para limpar). Vazio = sem ícone."
+            },
+            {
+              "key": "expanded",
+              "label": "Expandida",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true abre a busca: o container ganha o divisor dos resultados (as marcações filhas são os resultados)."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "bar",
+              "options": ["bar", "docked"],
+              "description": "bar (SearchBar) ou docked (DockedSearchBar)."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.SearchBar",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SearchBar.kt",
+              "params": {
+                "expanded": "expanded"
+              },
+              "notes": "Exige @OptIn(ExperimentalMaterial3Api::class): toda a família SearchBar é experimental no commit fixado. Use a sobrecarga `SearchBar(inputField, expanded, onExpandedChange, …, content)`; as sobrecargas com `query` e `active` estão `@Deprecated`. O campo vai em `inputField = { SearchBarDefaults.InputField(query = <query>, onQueryChange = …, onSearch = …, expanded = <expanded>, onExpandedChange = …, placeholder = { Text(<placeholder>) }, leadingIcon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null) }, trailingIcon = { Icon(Icons.Filled.<trailingIcon>, contentDescription = null) }) }`, com `query` e `expanded` ligados a estados da tela; `placeholder`, `leadingIcon` e `trailingIcon` só entram quando preenchidos. As marcações filhas (resultados e sugestões) vão em `content = { … }` (uma Column), que só aparece com `expanded = true`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "docked": {
+                    "symbol": "androidx.compose.material3.DockedSearchBar",
+                    "notes": "Exige o mesmo @OptIn(ExperimentalMaterial3Api::class). `DockedSearchBar(inputField, expanded, onExpandedChange, …, content)` recebe o mesmo `inputField` (`SearchBarDefaults.InputField(query = <query>, …, expanded = <expanded>, …)`) e o mesmo `content`, mas os resultados abrem num painel logo abaixo do campo, com cantos de 28, em vez de ocupar a tela: serve para telas largas (tablet e desktop). `placeholder`, `leadingIcon` e `trailingIcon` seguem como na base."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Barra com dica",
+              "values": {
+                "placeholder": "Pesquisar músicas",
+                "leadingIcon": "Search",
+                "style": "bar"
+              }
+            },
+            {
+              "name": "Com consulta",
+              "values": {
+                "query": "jazz",
+                "placeholder": "Pesquisar músicas",
+                "leadingIcon": "Search",
+                "trailingIcon": "Close",
+                "style": "bar"
+              }
+            },
+            {
+              "name": "Docked expandida",
+              "values": {
+                "query": "jaz",
+                "placeholder": "Pesquisar",
+                "leadingIcon": "Search",
+                "trailingIcon": "Close",
+                "expanded": "true",
+                "style": "docked"
+              }
+            }
+          ]
+        },
+        {
+          "id": "date-picker",
+          "name": "Date picker",
+          "description": "Seletor de data em calendário. Single escolhe um dia; range escolhe um intervalo. Em diálogo, envolva com DatePickerDialog.",
+          "labelField": "title",
+          "component": "components/date-picker.json",
+          "doc": "docs/date-picker.md",
+          "fields": [
+            {
+              "key": "title",
+              "label": "Título",
+              "type": "string",
+              "description": "Texto pequeno no topo (title). Vazio = o padrão do M3 (Selecionar data / Selecionar datas)."
+            },
+            {
+              "key": "headline",
+              "label": "Manchete",
+              "type": "string",
+              "description": "Data escolhida, em destaque no cabeçalho (headline), já formatada, como em qua., 15 de out. Vazio = o padrão do M3."
+            },
+            {
+              "key": "displayedMonth",
+              "label": "Mês exibido",
+              "type": "string",
+              "description": "Nome do mês e do ano mostrados no calendário, como em Outubro de 2025. É o estado inicial, não um parâmetro. A grade desenhada é sempre de 31 dias começando numa quarta-feira."
+            },
+            {
+              "key": "selection",
+              "label": "Seleção",
+              "type": "enum",
+              "default": "single",
+              "options": ["single", "range"],
+              "description": "single escolhe um dia (DatePicker); range escolhe um intervalo (DateRangePicker)."
+            },
+            {
+              "key": "selectedDay",
+              "label": "Dia escolhido",
+              "type": "number",
+              "description": "Dia do mês (1 a 31) marcado no estilo single. Vazio = nenhum dia."
+            },
+            {
+              "key": "rangeStartDay",
+              "label": "Dia inicial",
+              "type": "number",
+              "description": "Primeiro dia do intervalo (1 a 31), no estilo range."
+            },
+            {
+              "key": "rangeEndDay",
+              "label": "Dia final",
+              "type": "number",
+              "description": "Último dia do intervalo (1 a 31), no estilo range."
+            },
+            {
+              "key": "showModeToggle",
+              "label": "Alternar modo",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false esconde o ícone que alterna entre calendário e digitação."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.DatePicker",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/DatePicker.kt",
+              "params": {
+                "showModeToggle": "showModeToggle"
+              },
+              "notes": "Não exige opt-in: `DatePicker`, `DateRangePicker`, `DatePickerDialog` e `rememberDatePickerState` com milissegundos (`Long`) são estáveis; só as sobrecargas com `java.time` pedem @OptIn(ExperimentalMaterial3Api::class). O estado vem de `val state = rememberDatePickerState(initialSelectedDateMillis = <selectedDay no mês de displayedMonth, em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia de displayedMonth, em milissegundos UTC>)` e a chamada é `DatePicker(state = state, showModeToggle = <showModeToggle>)`; `title = { Text(<title>) }` e `headline = { Text(<headline>) }` só entram quando preenchidos (sem eles o composable desenha os padrões, e a manchete sai sozinha da data escolhida). `displayedMonth` e `selectedDay` não são parâmetros: são o estado inicial. O resultado vem de `state.selectedDateMillis`. Em diálogo, envolva com `DatePickerDialog(onDismissRequest = …, confirmButton = { TextButton(onClick = …) { Text(\"OK\") } }, dismissButton = { … }) { DatePicker(state = state) }`.",
+              "variants": {
+                "field": "selection",
+                "cases": {
+                  "range": {
+                    "symbol": "androidx.compose.material3.DateRangePicker",
+                    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/DateRangePicker.kt",
+                    "notes": "Não exige opt-in. O estado vem de `val state = rememberDateRangePickerState(initialSelectedStartDateMillis = <rangeStartDay em milissegundos UTC>, initialSelectedEndDateMillis = <rangeEndDay em milissegundos UTC>, initialDisplayedMonthMillis = <primeiro dia de displayedMonth, em milissegundos UTC>)` e a chamada é `DateRangePicker(state = state, showModeToggle = <showModeToggle>)`, com `title` e `headline` como na base. O resultado vem de `state.selectedStartDateMillis` e `state.selectedEndDateMillis`. Em diálogo, envolva com `DatePickerDialog` (arquivo `DatePickerDialog.kt`), como o `DatePicker`."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Um dia",
+              "values": {
+                "headline": "qua., 15 de out.",
+                "displayedMonth": "Outubro de 2025",
+                "selection": "single",
+                "selectedDay": 15
+              }
+            },
+            {
+              "name": "Intervalo",
+              "values": {
+                "headline": "9 out – 16 out",
+                "displayedMonth": "Outubro de 2025",
+                "selection": "range",
+                "rangeStartDay": 9,
+                "rangeEndDay": 16
+              }
+            },
+            {
+              "name": "Sem escolha",
+              "values": {
+                "displayedMonth": "Outubro de 2025",
+                "selection": "single",
+                "showModeToggle": "false"
+              }
+            }
+          ]
+        },
+        {
+          "id": "time-picker",
+          "name": "Time picker",
+          "description": "Seletor de hora. Picker mostra os campos de hora e minuto com o relógio; input mostra só os campos para digitar. Exige opt-in experimental.",
+          "labelField": "title",
+          "component": "components/time-picker.json",
+          "doc": "docs/time-picker.md",
+          "fields": [
+            {
+              "key": "title",
+              "label": "Título",
+              "type": "string",
+              "description": "Título do diálogo (o `title` do TimePickerDialog). Vazio = sem título."
+            },
+            {
+              "key": "mode",
+              "label": "Modo",
+              "type": "enum",
+              "default": "picker",
+              "options": ["picker", "input"],
+              "description": "picker é o relógio (TimePicker); input são só os campos de hora e minuto (TimeInput)."
+            },
+            {
+              "key": "hour",
+              "label": "Hora",
+              "type": "number",
+              "description": "Hora de 0 a 23 (initialHour), sempre no formato de 24 horas."
+            },
+            {
+              "key": "minute",
+              "label": "Minuto",
+              "type": "number",
+              "description": "Minuto de 0 a 59 (initialMinute)."
+            },
+            {
+              "key": "is24Hour",
+              "label": "24 horas",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "true usa 24 horas; false usa 12 horas com o seletor AM/PM."
+            },
+            {
+              "key": "selection",
+              "label": "Em seleção",
+              "type": "enum",
+              "default": "hour",
+              "options": ["hour", "minute"],
+              "description": "Qual parte está sendo escolhida (o relógio mostra as horas ou os minutos). É o estado inicial, não um parâmetro."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.TimePicker",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TimePicker.kt",
+              "params": {
+                "hour": "initialHour",
+                "minute": "initialMinute",
+                "is24Hour": "is24Hour"
+              },
+              "notes": "Exige @OptIn(ExperimentalMaterial3Api::class): `TimePicker`, `TimeInput`, `rememberTimePickerState` e `TimePickerState` são experimentais no commit fixado. Os nomes de `params` são os de `rememberTimePickerState(initialHour = <hour>, initialMinute = <minute>, is24Hour = <is24Hour>)`, que cria o estado; a chamada é `TimePicker(state = state)`. O composable não tem título nem botões: em diálogo use `TimePickerDialog(onDismissRequest = …, confirmButton = { … }, title = { Text(<title>) }) { TimePicker(state = state) }` (o `TimePickerDialog` é estável). O resultado vem de `state.hour` e `state.minute`; `selection` é o `state.selection` inicial (`TimePickerSelectionMode.Hour` ou `Minute`).",
+              "variants": {
+                "field": "mode",
+                "cases": {
+                  "input": {
+                    "symbol": "androidx.compose.material3.TimeInput",
+                    "notes": "Exige o mesmo @OptIn(ExperimentalMaterial3Api::class). `TimeInput(state = state)` usa o mesmo `state` de `rememberTimePickerState(initialHour = <hour>, initialMinute = <minute>, is24Hour = <is24Hour>)`, mas desenha só os campos de hora e minuto, sem o relógio; `selection` diz qual campo começa em foco. Em diálogo, use o `TimePickerDialog` como na base."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Relógio, horas",
+              "values": {
+                "title": "Selecionar horário",
+                "mode": "picker",
+                "hour": 14,
+                "minute": 30,
+                "is24Hour": "true",
+                "selection": "hour"
+              }
+            },
+            {
+              "name": "Relógio, minutos em 12 horas",
+              "values": {
+                "title": "Selecionar horário",
+                "mode": "picker",
+                "hour": 9,
+                "minute": 45,
+                "is24Hour": "false",
+                "selection": "minute"
+              }
+            },
+            {
+              "name": "Campos",
+              "values": {
+                "title": "Informe o horário",
+                "mode": "input",
+                "hour": 8,
+                "minute": 5,
+                "is24Hour": "false"
+              }
+            }
+          ]
+        },
+        {
+          "id": "badge",
+          "name": "Badge",
+          "description": "Indicador de notificação. Small é só um ponto; large mostra um contador. Ancore-o ao canto de um ícone.",
+          "labelField": "count",
+          "component": "components/badge.json",
+          "doc": "docs/badge.md",
+          "fields": [
+            {
+              "key": "count",
+              "label": "Contador",
+              "type": "string",
+              "description": "Texto do contador (por exemplo 3 ou 99+). Só vale no estilo large."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "small",
+              "options": ["small", "large"],
+              "description": "small é um ponto sem conteúdo; large é o contador com o texto de count."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Badge",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Badge.kt",
+              "notes": "`Badge()` sem `content` desenha o ponto de 6dp. O Badge sozinho não se posiciona: para ancorá-lo ao canto de um ícone use `BadgedBox(badge = { Badge() }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`, que cuida do deslocamento. Cores padrão `error` (fundo) e `onError` (texto); `containerColor` e `contentColor` só entram para mudá-las. Nem Badge nem BadgedBox exigem opt-in.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "large": {
+                    "symbol": "androidx.compose.material3.Badge",
+                    "notes": "`Badge(content = { Text(<count>) })` desenha o contador de 16dp, que cresce com o texto (use `99+` para valores grandes). Ancorado: `BadgedBox(badge = { Badge { Text(<count>) } }) { Icon(Icons.Filled.Notifications, contentDescription = …) }`. Não exige opt-in."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Ponto",
+              "values": {
+                "style": "small"
+              }
+            },
+            {
+              "name": "Contador",
+              "values": {
+                "count": "3",
+                "style": "large"
+              }
+            },
+            {
+              "name": "Muitos itens",
+              "values": {
+                "count": "99+",
+                "style": "large"
+              }
+            }
+          ]
+        },
+        {
+          "id": "snackbar",
+          "name": "Snackbar",
+          "description": "Aviso rápido e temporário na parte de baixo da tela, com uma mensagem curta, uma ação opcional e, se quiser, o botão de fechar.",
+          "labelField": "message",
+          "component": "components/snackbar.json",
+          "doc": "docs/snackbar.md",
+          "fields": [
+            {
+              "key": "message",
+              "label": "Mensagem",
+              "type": "string",
+              "required": true,
+              "description": "Texto do snackbar."
+            },
+            {
+              "key": "actionLabel",
+              "label": "Ação",
+              "type": "string",
+              "description": "Texto do botão de ação. Vazio = sem ação."
+            },
+            {
+              "key": "dismissAction",
+              "label": "Botão de fechar",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true mostra o botão de fechar (ícone Close) depois da ação."
+            },
+            {
+              "key": "actionOnNewLine",
+              "label": "Ação em nova linha",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true põe a ação abaixo da mensagem, para textos longos (a altura do retângulo passa de 48 para 68)."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Snackbar",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Snackbar.kt",
+              "params": {
+                "actionOnNewLine": "actionOnNewLine"
+              },
+              "notes": "Estável, sem opt-in. O snackbar costuma ser mostrado pelo `SnackbarHost` (arquivo `SnackbarHost.kt`) no slot `snackbarHost` do Scaffold: `snackbarHost = { SnackbarHost(snackbarHostState) }`, com `val snackbarHostState = remember { SnackbarHostState() }`, e aparece com `scope.launch { snackbarHostState.showSnackbar(message = <message>, actionLabel = <actionLabel>, withDismissAction = <dismissAction>) }`; nesse caso a `Snackbar` é a padrão do host e não se chama à mão. Para um visual próprio, use `Snackbar(action = { TextButton(onClick = …) { Text(<actionLabel>) } }, dismissAction = { IconButton(onClick = …) { Icon(Icons.Filled.Close, contentDescription = …) } }, actionOnNewLine = <actionOnNewLine>) { Text(<message>) }`: `action` só entra com `actionLabel` preenchido e `dismissAction` só com `dismissAction = true`."
+            }
+          },
+          "examples": [
+            {
+              "name": "Só mensagem",
+              "values": {
+                "message": "Arquivo salvo"
+              }
+            },
+            {
+              "name": "Com ação",
+              "values": {
+                "message": "Mensagem arquivada",
+                "actionLabel": "Desfazer"
+              }
+            },
+            {
+              "name": "Com ação e fechar",
+              "values": {
+                "message": "Sem conexão",
+                "actionLabel": "Tentar de novo",
+                "dismissAction": "true"
+              }
+            }
+          ]
+        },
+        {
+          "id": "tooltip",
+          "name": "Tooltip",
+          "description": "Dica que aparece ao lado de um elemento (a âncora) ao tocar, pressionar ou passar o ponteiro. Plain traz só um texto curto; rich traz título, texto e uma ação.",
+          "labelField": "text",
+          "component": "components/tooltip.json",
+          "doc": "docs/tooltip.md",
+          "fields": [
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "plain",
+              "options": ["plain", "rich"],
+              "description": "plain (PlainTooltip, só texto) ou rich (RichTooltip, com título e ação)."
+            },
+            {
+              "key": "text",
+              "label": "Texto",
+              "type": "string",
+              "required": true,
+              "description": "Texto do tooltip."
+            },
+            {
+              "key": "title",
+              "label": "Título",
+              "type": "string",
+              "description": "Título do tooltip rich. Vazio = sem título. Só vale em rich."
+            },
+            {
+              "key": "action",
+              "label": "Ação",
+              "type": "string",
+              "description": "Texto do botão de ação do tooltip rich. Vazio = sem ação. Só vale em rich."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.PlainTooltip",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Tooltip.kt",
+              "notes": "Exige @OptIn(ExperimentalMaterial3Api::class) (TooltipBox, PlainTooltip e RichTooltip são experimentais no commit fixado). O tooltip não existe sozinho: envolve o elemento âncora em `TooltipBox(positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above), tooltip = { PlainTooltip { Text(<text>) } }, state = rememberTooltipState()) { <âncora> }`; o overload `rememberTooltipPositionProvider()` sem argumento está `@Deprecated` no commit fixado, por isso o argumento de posição (`Above`, `Below`, `Start`, `End`, `Left`, `Right`). O `PlainTooltip` e o `RichTooltip` são extensões do `TooltipScope` recebido pela lambda `tooltip`. A âncora é a marcação sob o tooltip; o texto vai na lambda `content` do `PlainTooltip`.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "rich": {
+                    "symbol": "androidx.compose.material3.RichTooltip",
+                    "notes": "Exige @OptIn(ExperimentalMaterial3Api::class). Mesmo `TooltipBox`, com `tooltip = { RichTooltip(title = { Text(<title>) }, action = { TextButton(onClick = { /* ... */ }) { Text(<action>) } }) { Text(<text>) } }`, `state = rememberTooltipState(isPersistent = true)` quando há `action` (para o tooltip não sumir antes do toque) e `TooltipBox(hasAction = true, …)`. `title` e `action` só entram quando preenchidos; o `text` vai na lambda final (parâmetro `text`)."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Plain",
+              "values": {
+                "style": "plain",
+                "text": "Adicionar aos favoritos"
+              }
+            },
+            {
+              "name": "Rich com título",
+              "values": {
+                "style": "rich",
+                "title": "Modo avião",
+                "text": "Desliga o Wi-Fi, o Bluetooth e os dados móveis."
+              }
+            },
+            {
+              "name": "Rich com ação",
+              "values": {
+                "style": "rich",
+                "title": "Sincronização",
+                "text": "Suas fotos são copiadas para a nuvem quando há Wi-Fi.",
+                "action": "Saiba mais"
+              }
+            }
+          ]
+        },
+        {
+          "id": "progress-indicator",
+          "name": "Progress indicator",
+          "description": "Indicador de progresso. Circular gira no lugar; linear é uma barra. Com valor entre 0 e 1 é determinado; sem valor é indeterminado.",
+          "component": "components/progress-indicator.json",
+          "doc": "docs/progress-indicator.md",
+          "fields": [
+            {
+              "key": "shape",
+              "label": "Forma",
+              "type": "enum",
+              "default": "circular",
+              "options": ["circular", "linear"],
+              "description": "circular (CircularProgressIndicator) ou linear (LinearProgressIndicator)."
+            },
+            {
+              "key": "progress",
+              "label": "Progresso",
+              "type": "number",
+              "description": "Progresso de 0 a 1. Vazio = indeterminado (o desenho mostra um arco ou uma barra parcial; o desenho aproxima o valor ao centésimo)."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.CircularProgressIndicator",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ProgressIndicator.kt",
+              "params": {
+                "progress": "progress"
+              },
+              "notes": "Estável, sem opt-in. Com `progress` preenchido, passe-o como lambda: `progress = { <progress>f }` (ou ligado ao estado da tela, por exemplo `progress = { uploadProgress }`); o overload com `progress: Float` está `@Deprecated`. Com `progress` vazio, chame sem o parâmetro (indeterminado). O tamanho vem do `Modifier` (`Modifier.size(<largura da marcação>.dp)` no circular, que tem 48 dp por padrão; `Modifier.fillMaxWidth()` no linear).",
+              "variants": {
+                "field": "shape",
+                "cases": {
+                  "linear": {
+                    "symbol": "androidx.compose.material3.LinearProgressIndicator",
+                    "notes": "Estável, sem opt-in. Com `progress` preenchido, `progress = { <progress>f }`; vazio é indeterminado (sem o parâmetro). A barra ocupa a largura da marcação: `Modifier.fillMaxWidth()` ou `Modifier.width(<largura da marcação>.dp)`."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Circular indeterminado",
+              "values": {
+                "shape": "circular"
+              }
+            },
+            {
+              "name": "Circular a 60%",
+              "values": {
+                "shape": "circular",
+                "progress": 0.6
+              }
+            },
+            {
+              "name": "Linear a 30%",
+              "values": {
+                "shape": "linear",
+                "progress": 0.3
+              }
+            }
+          ]
+        },
+        {
+          "id": "secure-text-field",
+          "name": "Secure text field",
+          "description": "Campo de senha: o texto digitado fica mascarado. Filled tem fundo preenchido; outlined tem contorno.",
+          "labelField": "label",
+          "component": "components/secure-text-field.json",
+          "doc": "docs/secure-text-field.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Rótulo",
+              "type": "string",
+              "required": true,
+              "description": "Rótulo flutuante do campo."
+            },
+            {
+              "key": "hasText",
+              "label": "Com texto digitado",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true mostra o campo preenchido, com os caracteres mascarados (ou escondidos). Só afeta o desenho: o texto vive no TextFieldState, não na anotação."
+            },
+            {
+              "key": "placeholder",
+              "label": "Dica",
+              "type": "string",
+              "description": "Texto de dica quando o campo está vazio."
+            },
+            {
+              "key": "supportingText",
+              "label": "Texto de apoio",
+              "type": "string",
+              "description": "Texto de apoio ou de erro abaixo do campo."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "filled",
+              "options": ["filled", "outlined"],
+              "description": "filled (SecureTextField) ou outlined (OutlinedSecureTextField)."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita o campo."
+            },
+            {
+              "key": "isError",
+              "label": "Em erro",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true pinta o campo como erro."
+            },
+            {
+              "key": "leadingIcon",
+              "label": "Ícone inicial",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone antes do texto. Vazio = sem ícone."
+            },
+            {
+              "key": "trailingIcon",
+              "label": "Ícone final",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone depois do texto, em geral o botão de mostrar ou esconder a senha. Vazio = sem ícone."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.SecureTextField",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SecureTextField.kt",
+              "params": {
+                "enabled": "enabled",
+                "isError": "isError"
+              },
+              "notes": "Estável, sem opt-in. Em vez de `value`/`onValueChange`, o campo recebe `state = rememberTextFieldState()` (`androidx.compose.foundation.text.input.TextFieldState`), que guarda o texto; `hasText` só afeta o desenho e não é parâmetro. `label`, `placeholder` e `supportingText` preenchidos viram `{ Text(<campo>) }`; `leadingIcon` e `trailingIcon` viram `{ Icon(Icons.Filled.<nome>, contentDescription = null) }` (para mostrar e esconder a senha, ligue o ícone a um `textObfuscationMode` que alterne `TextObfuscationMode.Visible` e `TextObfuscationMode.RevealLastTyped`). Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "outlined": {
+                    "symbol": "androidx.compose.material3.OutlinedSecureTextField"
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Preenchido",
+              "values": {
+                "label": "Senha",
+                "style": "filled"
+              }
+            },
+            {
+              "name": "Contornado com texto",
+              "values": {
+                "label": "Senha",
+                "hasText": "true",
+                "style": "outlined",
+                "leadingIcon": "Lock",
+                "trailingIcon": "Done"
+              }
+            },
+            {
+              "name": "Em erro",
+              "values": {
+                "label": "Senha",
+                "hasText": "true",
+                "supportingText": "Senha incorreta",
+                "style": "outlined",
+                "isError": "true"
+              }
+            }
+          ]
         }
       ]
     }
