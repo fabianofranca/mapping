@@ -2,6 +2,7 @@ import { useId, useMemo } from 'preact/hooks';
 import { t } from '../../i18n';
 import {
   type Catalog,
+  type CatalogCodeVariants,
   type CatalogEntry,
   type CatalogField,
   type Project,
@@ -93,6 +94,81 @@ function PropertiesTable({ fields }: { readonly fields: readonly CatalogField[] 
   );
 }
 
+/** Caminho de um arquivo do repositório: link quando o `repo` da especialização dá a URL. */
+function CodePath({
+  path,
+  href,
+}: {
+  readonly path: string;
+  readonly href: string | null;
+}) {
+  return href !== null ? (
+    <a href={href} target="_blank" rel="noreferrer noopener">
+      <code>{path}</code>
+    </a>
+  ) : (
+    <code class="muted">{path}</code>
+  );
+}
+
+/** Tabela valor da variante → símbolo (e arquivo), abaixo da base do `code`. */
+function VariantsTable({
+  variants,
+  specId,
+  platformId,
+  project,
+}: {
+  readonly variants: CatalogCodeVariants;
+  readonly specId: string;
+  readonly platformId: string;
+  readonly project: Project | null;
+}) {
+  return (
+    <div class="catalog-table-wrap">
+      <table class="catalog-table" data-variants={platformId}>
+        <caption class="catalog-variants-caption">
+          {t('catalog.page.codeVariants', { field: variants.fieldLabel })}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">{t('catalog.page.variantValue')}</th>
+            <th scope="col">{t('catalog.page.variantSymbol')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {variants.cases.map((kase) => (
+            <tr key={kase.value}>
+              <th scope="row">
+                <code>{kase.value}</code>
+              </th>
+              <td>
+                <code>{kase.symbol}</code>
+                {kase.path !== undefined && (
+                  <>
+                    {' '}
+                    <CodePath
+                      path={kase.path}
+                      href={
+                        project !== null
+                          ? codeLink(project, {
+                              specId,
+                              platform: platformId,
+                              path: kase.path,
+                            })
+                          : null
+                      }
+                    />
+                  </>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function CodeSection({
   entry,
   specId,
@@ -127,13 +203,7 @@ function CodeSection({
               {code.path !== undefined && (
                 <>
                   {' '}
-                  {href !== null ? (
-                    <a href={href} target="_blank" rel="noreferrer noopener">
-                      <code>{code.path}</code>
-                    </a>
-                  ) : (
-                    <code class="muted">{code.path}</code>
-                  )}
+                  <CodePath path={code.path} href={href} />
                 </>
               )}
             </p>
@@ -170,6 +240,14 @@ function CodeSection({
               </dl>
             )}
             {code.notes !== undefined && <p class="muted">{code.notes}</p>}
+            {code.variants !== undefined && (
+              <VariantsTable
+                variants={code.variants}
+                specId={specId}
+                platformId={code.platform.id}
+                project={project}
+              />
+            )}
           </li>
         );
       })}

@@ -4,6 +4,21 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão em `docs/history/`.
 
+## [Não lançado] Biblioteca Material 3 (épico `epic/material3`, MCP 0.12.0, schema v13)
+
+### Adicionado
+
+- Especialização `formatVersion` 9 com `variants` no `code` de uma plataforma: um campo `enum` do tipo escolhe a variante do código, que troca o `symbol` (em Compose, `Button`, `OutlinedButton`, `TextButton`), o `path` e as `notes` e soma `params` e `values` aos da base. Um nível só; as versões 1 a 8 continuam aceitas sem mudança, e `variants` numa versão anterior é o erro `só é permitido com formatVersion 9`, no caminho exato.
+- Tabela de variantes no Catálogo: abaixo do código da plataforma, "Variantes (campo)" lista cada valor e o símbolo dele.
+- Roteiro de teste R16 (Variantes no código), feito pelo agente sozinho.
+
+### Alterado
+
+- MCP: `get_code_hints`, `get_annotation` e `get_marking` devolvem o `code` já resolvido para a variante de cada anotação (sem `variants` na saída); `get_specialization` e `get_component` continuam devolvendo o JSON cru.
+- MCP: `find_by_code` compara com o código resolvido de cada anotação (buscar o símbolo da base só traz as anotações da base, o de uma variante só as dela; buscar por `path` traz todas). Nas especializações 1 a 8 nada muda.
+- A "Definição" dos Detalhes mostra o arquivo e o símbolo da variante da anotação.
+- `validate_specialization`, `validate_library` e `apply_specialization` aceitam a `formatVersion` 9, com os mesmos erros da app.
+
 ## [Não lançado] Imagens remotas (épico `epic/imagens-remotas`, MCP 0.11.0, schema v13)
 
 ### Adicionado

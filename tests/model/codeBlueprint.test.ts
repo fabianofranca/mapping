@@ -14,6 +14,7 @@ import {
   type Project,
 } from '../../src/model';
 import { ANDROID_REPO, codeProject, idGen, layerOf, withSpecRepo } from './specFixtures';
+import { BUTTON_PATH, TEXT_BUTTON_PATH, variantsProject } from './variantsFixtures';
 
 function codeOf(fn: () => unknown): string | null {
   try {
@@ -381,5 +382,63 @@ describe('codeBlueprint', () => {
     expect(codeOf(() => codeBlueprint(codeProject(), 'MF', 'web'))).toBe(
       'unknown-platform',
     );
+  });
+});
+
+describe('codeBlueprint com variants (formatVersion 9)', () => {
+  const annotationOf = (blueprint: ReturnType<typeof codeBlueprint>, id: string) => {
+    const found = blueprint.root.annotations.find((a) => a.annotationId === id);
+    if (found) return found;
+    for (const child of blueprint.root.children) {
+      const inChild = child.annotations.find((a) => a.annotationId === id);
+      if (inChild) return inChild;
+    }
+    throw new Error(`anotação ${id} fora da árvore`);
+  };
+
+  const blueprintOf = (markingId: string) =>
+    codeBlueprint(variantsProject(), markingId, 'compose');
+
+  it('o valor padrão (sem valor) usa a base; outlined devolve o OutlinedButton', () => {
+    const filled = annotationOf(blueprintOf('MBF'), 'BF');
+    expect(filled.symbol).toBe('androidx.compose.material3.Button');
+    expect(filled.path).toBe(BUTTON_PATH);
+    expect(filled.notes).toBe('content = { Text(label) }');
+
+    const outlined = annotationOf(blueprintOf('MBO'), 'BO');
+    expect(outlined.symbol).toBe('androidx.compose.material3.OutlinedButton');
+    expect(outlined.path).toBe(BUTTON_PATH);
+    expect(outlined.pathUrl).toBe(
+      `https://github.com/androidx/androidx/blob/main/${BUTTON_PATH}`,
+    );
+    expect(outlined.params).toEqual([{ key: 'label', name: 'text', value: 'Outlined' }]);
+  });
+
+  it('o caso troca symbol, path e notes', () => {
+    const text = annotationOf(blueprintOf('MBT'), 'BT');
+    expect(text.symbol).toBe('androidx.compose.material3.TextButton');
+    expect(text.path).toBe(TEXT_BUTTON_PATH);
+    expect(text.pathUrl).toBe(
+      `https://github.com/androidx/androidx/blob/main/${TEXT_BUTTON_PATH}`,
+    );
+    expect(text.notes).toBe('sem fundo');
+  });
+
+  it('params e values do caso somam aos da base e traduzem o enum', () => {
+    const tonal = annotationOf(blueprintOf('MBN'), 'BN');
+    expect(tonal.symbol).toBe('androidx.compose.material3.FilledTonalButton');
+    expect(tonal.params).toEqual([
+      { key: 'label', name: 'text', value: 'Tonal' },
+      // `size` só está nos params do caso; `large` é traduzido pelo values do caso.
+      { key: 'size', name: 'sizeHint', value: 'XL' },
+    ]);
+    // O valor do mapping continua o do mapping.
+    expect(tonal.values).toMatchObject({ style: 'tonal', size: 'large' });
+  });
+
+  it('o tipo sem variants não muda', () => {
+    const card = annotationOf(blueprintOf('MCD'), 'CD');
+    expect(card.symbol).toBe('androidx.compose.material3.Card');
+    expect(card.params).toEqual([]);
   });
 });

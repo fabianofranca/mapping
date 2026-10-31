@@ -4,6 +4,7 @@ import {
   platformRepoOf,
   type ProjectPlatform,
 } from './codeLocations';
+import { resolveCode } from './codeVariants';
 import { fail } from './errors';
 import { projectIndex } from './projectIndex';
 import { instanceLabel, parseRefValue, refLabel, resolveRef, tableRows } from './refs';
@@ -137,9 +138,15 @@ function paramValue(
     : mapped;
 }
 
-function codeFor(resolved: ResolvedType, platformId: string): SpecCode | null {
+/** O `code` da plataforma já resolvido pelos valores da anotação (`variants`); `null` sem `code`. */
+function codeFor(
+  resolved: ResolvedType,
+  platformId: string,
+  values: Readonly<Record<string, JsonValue>>,
+): SpecCode | null {
   const code = resolved.type.code;
-  return code && Object.hasOwn(code, platformId) ? (code[platformId] ?? null) : null;
+  const own = code && Object.hasOwn(code, platformId) ? code[platformId] : undefined;
+  return own === undefined ? null : resolveCode(own, values, resolved.type.fields);
 }
 
 /**
@@ -166,7 +173,7 @@ export function codeBlueprint(
   ): BlueprintAnnotation => {
     seen.add(a.id);
     const values = a.values ?? {};
-    const code = codeFor(resolved, platformId);
+    const code = codeFor(resolved, platformId, values);
     const fields = resolved.type.fields;
     const params: BlueprintParam[] = [];
     const mapped: Record<string, JsonValue> = {};

@@ -31,6 +31,7 @@ import {
   specProject,
   withSpecRepo,
 } from './specFixtures';
+import { BUTTON_PATH, TEXT_BUTTON_PATH, variantsProject } from './variantsFixtures';
 
 // Código de instanciação das especializações (etapa 3b; schema v11): plataformas com o `repo`
 // de cada especialização, o clone local do projeto, link (pela especialização dona do tipo) e
@@ -534,5 +535,107 @@ describe('exemplos', () => {
       .find((t) => t.id === 'screen');
     expect(screen?.code).toBeUndefined();
     expect(screen?.fields.map((f) => f.key)).toEqual(['nome', 'rota']);
+  });
+});
+
+describe('findByCode com variants (formatVersion 9)', () => {
+  const annotationIds = (p: Project, query: Parameters<typeof findByCode>[1]) =>
+    findByCode(p, query).map((m) => m.annotations.map((a) => a.annotationId).sort());
+
+  it('pelo símbolo da base traz só os botões da base, sem os outlined', () => {
+    const p = variantsProject();
+    // BF não tem valor (default filled); BO, BT e BN têm outro estilo.
+    expect(annotationIds(p, { symbol: 'androidx.compose.material3.Button' })).toEqual([
+      ['BF'],
+    ]);
+  });
+
+  it('pelo símbolo de um caso traz só as anotações dele; o code do resultado é o cru', () => {
+    const p = variantsProject();
+    expect(
+      annotationIds(p, { symbol: 'androidx.compose.material3.OutlinedButton' }),
+    ).toEqual([['BO']]);
+    const [match] = findByCode(p, { symbol: 'androidx.compose.material3.TextButton' });
+    expect(match?.annotations.map((a) => a.annotationId)).toEqual(['BT']);
+    expect(match?.code).toHaveLength(1);
+    expect(match?.code[0]?.platform).toBe('compose');
+    expect(match?.code[0]?.code.variants?.field).toBe('style');
+  });
+
+  it('um tipo que casa e não tem anotação que case aparece com a lista vazia', () => {
+    let p = variantsProject();
+    p = { ...p, annotations: p.annotations.filter((a) => a.id !== 'BO') };
+    const found = findByCode(p, { symbol: 'androidx.compose.material3.OutlinedButton' });
+    expect(found.map((m) => `${m.specId}/${m.typeId}`)).toEqual(['m3/button']);
+    expect(found[0]?.annotations).toEqual([]);
+  });
+
+  it('pelo path traz todas quando os casos não trocam o path; o caso que troca, só ele', () => {
+    const p = variantsProject();
+    // BF, BO e BN usam o path da base; o text troca para TextButton.kt.
+    expect(annotationIds(p, { path: BUTTON_PATH }).flat().sort()).toEqual([
+      'BF',
+      'BN',
+      'BO',
+      'CD',
+    ]);
+    expect(annotationIds(p, { path: 'TextButton.kt' })).toEqual([['BT']]);
+    const types = findByCode(p, { path: 'Button.kt' }).map((m) => m.typeId);
+    expect(types).toEqual(['button', 'card']);
+  });
+
+  it('com symbol e path, a mesma entrada resolvida precisa casar com os dois', () => {
+    const p = variantsProject();
+    expect(
+      annotationIds(p, {
+        symbol: 'androidx.compose.material3.TextButton',
+        path: 'TextButton.kt',
+      }),
+    ).toEqual([['BT']]);
+    // OutlinedButton fica no Button.kt da base: com o path do TextButton, nenhum caso casa.
+    expect(
+      findByCode(p, {
+        symbol: 'androidx.compose.material3.OutlinedButton',
+        path: 'TextButton.kt',
+      }),
+    ).toEqual([]);
+  });
+
+  it('sem variants (especialização 8) o resultado é o de sempre', () => {
+    const p = codeProject();
+    expect(findByCode(p, { symbol: 'com.app.ds.DSButton' }).map((m) => m.typeId)).toEqual(
+      ['button'],
+    );
+    expect(
+      findByCode(p, { symbol: 'com.app.ds.DSButton' })[0]?.annotations.map(
+        (a) => a.annotationId,
+      ),
+    ).toEqual(['AB']);
+  });
+});
+
+describe('typeCodeDefinitions com variants (formatVersion 9)', () => {
+  it('usa o path e o symbol do caso da anotação', () => {
+    const p = variantsProject();
+    const type = typeOfAnnotation(
+      p,
+      p.annotations.find((a) => a.id === 'BT')!,
+    )!;
+    const definition = (values: Record<string, string> | null) =>
+      typeCodeDefinitions(p, 'm3', type.type, values)[0];
+    expect(definition({ style: 'text' })).toMatchObject({
+      path: TEXT_BUTTON_PATH,
+      fileName: 'TextButton.kt',
+      symbol: 'androidx.compose.material3.TextButton',
+    });
+    expect(definition({ style: 'outlined' })).toMatchObject({
+      path: BUTTON_PATH,
+      symbol: 'androidx.compose.material3.OutlinedButton',
+    });
+    // Sem valores: o default do campo (filled, sem caso) e a base.
+    expect(definition(null)).toMatchObject({ path: BUTTON_PATH });
+    expect(typeCodeDefinitions(p, 'm3', type.type)[0]?.symbol).toBe(
+      'androidx.compose.material3.Button',
+    );
   });
 });

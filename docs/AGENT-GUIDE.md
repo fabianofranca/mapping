@@ -384,9 +384,19 @@ Em `get_marking`, `get_annotation`, `find_by_code` e `get_component`, o `code` d
 - `localFile` e `exists` vêm da sobreposição local do projeto. `localFile` é o caminho **relativo ao diretório de trabalho do cliente** (o repositório, no Claude Code), calculado com o `localPath` da plataforma; `exists` diz se o arquivo está lá (o servidor só confere, não o lê). Sem `localPath`, os dois são `null`. Se o `localPath` leva para fora do diretório de trabalho, vêm `null` e `localFileProblem: "outside-workdir"`: por segurança, o servidor não confere (nem revela) o que está fora.
 - Num `get_component` por `path` (pacote sem projeto), `localFile` e `exists` são sempre `null`: não há projeto para dizer onde fica o clone.
 
+### Variantes do código (`variants`) e os espaços do Compose
+
+A especialização `formatVersion` 9 pode declarar `variants` no `code` de uma plataforma: um campo `enum` do tipo escolhe a variante, e a variante troca o que se chama (em Compose, `style = outlined` é `OutlinedButton`, não `Button`). O formato está em [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Variantes do código".
+
+- **O código por anotação já vem resolvido.** O `code` que `get_code_hints`, `get_annotation` e `get_marking` devolvem é o da **variante da anotação**: o `symbol`, o `definition` (o `path` do caso, se ele trocar o arquivo), as `notes`, os `params` e os `values` já combinados (`symbol`, `path` e `notes` do caso substituem os da base; `params` e `values` se somam). Sem valor no campo vale o `default` dele; valor sem caso usa a base. A resposta **nunca traz `variants`**: use o `symbol` que veio, sem procurar a variante você mesmo.
+- **`get_specialization` e `get_component` mostram o cru**, com `variants` (o campo, os casos e o que cada um troca). Serve para entender a biblioteca, não para escrever a chamada de uma anotação.
+- **Os espaços (lambdas) não são campos.** `onClick`, `icon = { … }` e `content` aparecem nas `notes`, não em `params`: o `params` passa só os valores simples (`enabled`, `label`, `contentDescription`) e as `notes` dizem como montar os espaços, por exemplo `content = { Text(label) }` ou `icon = { Icon(Icons.Filled.<nome>, contentDescription = null) }`. Escreva o espaço como as `notes` pedem, com o valor do campo que elas citam; um campo que só alimenta um espaço não vai como argumento.
+
 ### `find_by_code`: de um arquivo ou símbolo para o mapeamento
 
 `find_by_code({ project?, path?, symbol? })` responde: **que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados**. Acha os **tipos** das especializações aplicadas cujo `code` tem esse `path` (`code.<plataforma>.path`) ou `symbol` (`code.<plataforma>.symbol`) e as **anotações desses tipos**. Serve para quem está num arquivo da biblioteca e quer saber o que dele aparece nas telas. `path` casa com o caminho inteiro ou com os **últimos segmentos inteiros** (`DSButton.kt` acha `app/…/DSButton.kt`; `Button.kt` não); `symbol`, por igualdade; informando os dois, a **mesma plataforma** precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Sem `path` nem `symbol` falha com `missing-query`.
+
+**Em especialização 9, a busca compara com o código resolvido de cada anotação.** Buscar `androidx.compose.material3.Button` traz só os botões da base (`filled`), e `androidx.compose.material3.OutlinedButton` só os `outlined`; o tipo `Button` aparece nos dois casos, e `annotations` lista só as anotações cujo código resolvido casa. Um tipo que casa por algum caso, mas não tem anotação nessa variante, aparece com `annotations` vazio. Buscar por `path` continua achando todos os casos que apontam para o arquivo (e o da base). O `code` do tipo no resultado é o cru, com `variants`. Nas versões 1 a 8 nada muda.
 
 ```json
 {
@@ -444,6 +454,10 @@ O **repositório é da biblioteca**: cada especialização declara o da própria
 ### O que o servidor nunca faz
 
 Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas.
+
+### Mudança na versão 0.12.0 (Biblioteca Material 3)
+
+A especialização `formatVersion` 9 traz `variants` no `code`. `get_code_hints`, `get_annotation` e `get_marking` devolvem o `code` **já resolvido** para a variante de cada anotação; `get_specialization` e `get_component` mostram o cru; `find_by_code` compara com o código resolvido de cada anotação. Nenhuma tool nova. Ver "Variantes do código (`variants`) e os espaços do Compose".
 
 ### Mudança na versão 0.11.0 (Imagens remotas)
 
