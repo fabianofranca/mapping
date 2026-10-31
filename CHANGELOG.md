@@ -14,7 +14,7 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 ### Alterado
 
-- MCP: `get_code_hints`, `get_annotation` e `get_marking` devolvem o `code` já resolvido para a variante de cada anotação (sem `variants` na saída); `get_specialization` e `get_component` continuam devolvendo o JSON cru.
+- MCP: `get_annotation` e `get_marking` devolvem o `code` já resolvido para a variante de cada anotação (sem `variants` na saída); `get_code_hints` mantém o `code` cru da base em `types` e traz o `code` resolvido da variante nas anotações da `tree` de tipos com `variants`; `get_specialization` e `get_component` continuam devolvendo o JSON cru.
 - MCP: `find_by_code` compara com o código resolvido de cada anotação (buscar o símbolo da base só traz as anotações da base, o de uma variante só as dela; buscar por `path` traz todas). Nas especializações 1 a 8 nada muda.
 - A "Definição" dos Detalhes mostra o arquivo e o símbolo da variante da anotação.
 - `validate_specialization`, `validate_library` e `apply_specialization` aceitam a `formatVersion` 9, com os mesmos erros da app.
