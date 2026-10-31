@@ -223,6 +223,16 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Fora (decidido):** mudança de schema, de formato de proposta ou do MCP; desenhar componentes na visão Atual; regras novas para imagens criadas ou removidas.
 - **Depende de:** etapa Biblioteca e etapa Marcações espaciais, notas e setas (concluídas).
 
+## Etapa — Sugestões no campo de texto (concluída, épico `epic/sugestoes-campo`)
+
+- **Concluída em 2026-10-30** (fases SG1 e SG2, PRs #248, #249 e #250; o épico é o PR #247); histórico em [`history/PLAN-etapa-sugestoes-campo.md`](history/PLAN-etapa-sugestoes-campo.md). Especialização `formatVersion` 8 e MCP 0.10.0; sem schema novo (continua v13), formato de proposta (3) nem de componente (2) novos.
+- **Objetivo:** facilitar o preenchimento do Tipo na biblioteca Kotlin, que era um campo de texto livre sem nenhuma opção; `enum` não serve, porque trava o valor e o tipo precisa aceitar `String?` e `List<Endereco>`.
+- **Entrou:**
+  - **SG1, `suggestions`:** lista de sugestões em campo e coluna `string`, que não restringe o valor; o campo vira um combobox que completa a palavra sob o cursor; biblioteca Kotlin com a lista fixa de 24 tipos; MCP 0.10.0.
+  - **SG2, `linkedRef`:** a lista ganha, antes das fixas, as declarações mapeadas que um `ref` irmão aceita (com o nome do tipo do alvo); escolher uma e confirmar grava o texto e o `ref` juntos, numa entrada do desfazer; roteiro R14 e `examples/sugestoes-kotlin.zip`; rodada dirigida do Cowork (24 de 26 passos ✅, os 2 achados baixos tratados).
+- **Fora (decidido):** sugestões tiradas dos valores já usados no projeto; sugestões em `number`; campo de vários valores; coluna `ref` nova em Funções › Retorno; aceitar a sugestão com Tab.
+- **Depende de:** etapa Biblioteca (concluída).
+
 ## Evoluções
 
 Só depois do marco (alcançado em 2026-10-16), se a ferramenta se provar útil.

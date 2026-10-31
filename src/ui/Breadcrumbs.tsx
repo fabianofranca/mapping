@@ -133,11 +133,15 @@ export function Breadcrumbs({
                         : 'marking'
                   }
                 />
-                <span class="crumb-name">{crumb.name}</span>
+                <span class="crumb-name" title={crumb.name}>
+                  {crumb.name}
+                </span>
               </button>
             ) : (
               <span class="crumb crumb-static" aria-label={crumb.label}>
-                <span class="crumb-name">{crumb.name}</span>
+                <span class="crumb-name" title={crumb.name}>
+                  {crumb.name}
+                </span>
               </span>
             )}
           </span>

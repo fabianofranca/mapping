@@ -220,6 +220,30 @@ describe('store: excluir e trancar a seleção', () => {
     expect(store.canUndo.value).toBe(false);
   });
 
+  it('wrapItems cria a marcação pai, devolve o id e é uma entrada de desfazer', () => {
+    const { store, actions } = setup();
+    const before = project(store);
+    const result = actions.wrapItems([mark('a1'), mark('a3')]);
+    expect(result).toEqual({ ok: true, value: 'x' });
+    expect(marking(store, 'x')?.containerId).toBe('A');
+    expect(marking(store, 'a1')?.parentId).toBe('x');
+    expect(marking(store, 'a3')?.parentId).toBe('x');
+    expect(store.revision.value).toBe(1);
+    expect(store.undo()).toBe(true);
+    expect(marking(store, 'x')).toBeUndefined();
+    expect(project(store).markings).toEqual(before.markings);
+    expect(store.canUndo.value).toBe(false);
+  });
+
+  it('wrapItems sem nada que entre falha sem entrada', () => {
+    const { store, actions } = setup();
+    expect(actions.wrapItems([mark('N')])).toEqual({
+      ok: false,
+      error: 'invalid-parent',
+    });
+    expect(store.canUndo.value).toBe(false);
+  });
+
   it('as actions respeitam o bloqueio de gesto', () => {
     const { store, actions } = setup();
     store.beginGesture();

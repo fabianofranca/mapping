@@ -8,6 +8,7 @@ import {
   projectIndex,
   refLabel,
   resolveRef,
+  type JsonValue,
   type SpecField,
 } from '../model';
 import {
@@ -21,6 +22,7 @@ import { classes } from './controls/classes';
 import { useDetailsExtension } from './DetailsExtension';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
+import { linkedFieldTargets } from './linkedRef';
 import { Property } from './PropertyGrid';
 import { RefPicker, type RefFieldDef } from './RefPicker';
 import { TableField } from './TableField';
@@ -53,6 +55,25 @@ export function TypedField({
   const label = fieldLabel(field);
   // Texto livre: o campo da anotação aceita várias linhas; a célula de tabela, não.
   const Editor = field.type === 'string' ? StringEditor : SimpleEditor;
+  // `linkedRef`: alvos do `ref` irmão na lista, gravados junto com o texto.
+  const linkedKey = field.type === 'string' ? field.linkedRef : undefined;
+  const targets =
+    linkedKey === undefined ? null : linkedFieldTargets(project, annotation, linkedKey);
+  const linked =
+    targets && linkedKey !== undefined
+      ? {
+          items: targets.items,
+          onSetLinked: (text: JsonValue, itemId: string) => {
+            const ref = targets.find(itemId);
+            return ref
+              ? actions.setFieldValues(annotation.id, {
+                  [field.key]: text,
+                  [linkedKey]: { ...ref },
+                })
+              : actions.setFieldValue(annotation.id, field.key, text);
+          },
+        }
+      : undefined;
 
   return (
     <Property
@@ -76,6 +97,7 @@ export function TypedField({
           label={label}
           readOnly={readOnly}
           invalid={issue !== undefined}
+          linked={linked}
           onSet={(next) => actions.setFieldValue(annotation.id, field.key, next)}
         />
       )}

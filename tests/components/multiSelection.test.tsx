@@ -86,9 +86,52 @@ describe('painel com vários itens', () => {
     ).toBe(true);
   });
 
+  it('Envolver cria a marcação pai e a deixa selecionada sozinha', async () => {
+    const { harness, user } = renderPanel();
+    await user.click(screen.getByRole('button', { name: t('multi.wrap') }));
+    const created = harness
+      .project()
+      .markings.find(
+        (m) => m.parentId === null && !['M1', 'M2', 'M3', 'M4'].includes(m.id),
+      );
+    expect(created).toBeTruthy();
+    expect(created?.containerId).toBeNull();
+    expect(harness.project().containers.find((c) => c.id === 'I2')?.parentId).toBe(
+      created?.id,
+    );
+    expect(selectedItems(harness.ui)).toEqual([{ kind: 'marking', id: created?.id }]);
+    harness.store.undo();
+    expect(harness.project().markings.map((m) => m.id)).toEqual(['M1', 'M2', 'M3', 'M4']);
+  });
+
+  it('Envolver fica desabilitado sem nada que entre, com a dica', () => {
+    const harness = createHarness(sampleProject());
+    const arrow = { kind: 'arrow', id: 'S' } as const;
+    const note = { kind: 'marking', id: 'N' } as const;
+    // Item inexistente não conta: nada entra.
+    renderLive(harness, (p) => (
+      <MultiSelectionPanel
+        project={p}
+        items={[arrow, note]}
+        readOnly={false}
+        onDelete={vi.fn()}
+      />
+    ));
+    const button = screen.getByRole('button', {
+      name: t('multi.wrap'),
+    }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.title).toBe(t('multi.wrapBlocked'));
+  });
+
   it('somente leitura: tudo desabilitado', () => {
     renderPanel(true);
-    for (const name of ['multi.lock', 'multi.unlock', 'multi.delete'] as const) {
+    for (const name of [
+      'multi.wrap',
+      'multi.lock',
+      'multi.unlock',
+      'multi.delete',
+    ] as const) {
       expect(
         (screen.getByRole('button', { name: t(name) }) as HTMLButtonElement).disabled,
       ).toBe(true);
