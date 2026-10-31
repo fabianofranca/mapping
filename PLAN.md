@@ -132,7 +132,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 - [x] Skill `spec-author`: quando usar `variants` (a variante troca o símbolo), um nível só, a versão mínima 9 só com `variants` (revisão do `SKILL.md`)
 - [x] Roteiro novo na seção 8 do `docs/TESTING.md`, feito pelo agente sozinho (cliente MCP por stdio: aplicar uma especialização 9 pequena, criar anotações em duas variantes, conferir `get_code_hints` e `find_by_code`; na app, a "Definição" e o Catálogo pela extensão), com o teste de `tests/tooling/testingGuide.test.ts`
 - [x] `CHANGELOG.md` (seção `[Não lançado]` da etapa)
-- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
 
 #### MD2 — Base da biblioteca: plataforma, layout e os 15 refeitos
 

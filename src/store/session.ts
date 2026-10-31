@@ -1097,11 +1097,23 @@ export function openSession(options: SessionOptions): ProjectSession {
           if (blob) specAssets.set(path, blob);
         }
       }
+      // A cópia citada que a app não lê (`spec: null`: inválida, `formatVersion` maior ou `id`
+      // diferente) não está em `specFiles`: vai no zip como está no armazenamento (texto cru,
+      // sem alteração). Cópia que não existe lá continua fora.
+      const specs = specFiles(p);
+      for (const s of p.specializations) {
+        if (s.spec || specs.has(s.file)) continue;
+        const raw = await storage.readSpec(s.file).catch((e: unknown) => {
+          reportError('session.readSpec', e);
+          return null;
+        });
+        if (raw !== null) specs.set(s.file, raw);
+      }
       const withProposals = await proposals.collect();
       return {
         mapping: serialize({ ...p, revision: disk.revision }),
         images,
-        specs: specFiles(p),
+        specs,
         ...(specAssets.size > 0 ? { specAssets } : {}),
         proposals: withProposals.proposals,
         proposalImages: withProposals.images,

@@ -19,6 +19,10 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 - A "Definição" dos Detalhes mostra o arquivo e o símbolo da variante da anotação.
 - `validate_specialization`, `validate_library` e `apply_specialization` aceitam a `formatVersion` 9, com os mesmos erros da app.
 
+### Corrigido
+
+- O zip exportado passa a levar, sem alteração, a cópia em `specs/` de uma especialização que a app não consegue ler (versão de formato maior, arquivo inválido ou `id` diferente); antes ela ficava de fora e o zip citava uma cópia ausente.
+
 ## [Não lançado] Imagens remotas (épico `epic/imagens-remotas`, MCP 0.11.0, schema v13)
 
 ### Adicionado

@@ -1,4 +1,5 @@
 // @vitest-environment node
+import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   addTableRow,
@@ -14,6 +15,7 @@ import {
 import { AUTOSAVE_DELAY_MS } from '../../src/storage/autosave';
 import { createFolderStorage } from '../../src/storage/folder';
 import { loadProject } from '../../src/storage/loadProject';
+import { openLocalLibrary } from '../../src/storage/local';
 import { openSession, type ProjectSession } from '../../src/store/session';
 import { readProjectZip, writeProjectZip } from '../../src/storage/zip';
 import { clearReportedErrors } from '../../src/utils/report';
@@ -325,6 +327,85 @@ describe.each<Layout>(['flat', 'package'])(
       for (const [path, text] of f.futureExtras) {
         expect.soft(await read.files.specAssets?.get(path)?.text()).toBe(text);
       }
+    });
+
+    it('zip → neste dispositivo → zip: a cópia ilegível e o pacote dela ida e volta como estavam', async () => {
+      const f = fixture(layout);
+      const { session: s } = await openLikeApp(f.root);
+      session = s;
+      s.actions.renameMarking('M4', 'Renomeada');
+      await save(s);
+
+      // O JSZip e o IndexedDB de teste usam temporizadores: o resto roda com o relógio de verdade.
+      vi.useRealTimers();
+      const first = await readProjectZip(await writeProjectZip(await s.collectFiles()));
+      expect(first.ok).toBe(true);
+      if (!first.ok) return;
+
+      // Importa o zip para o IndexedDB, como `importZip`, e abre como a app.
+      const library = await openLocalLibrary();
+      if (!library) throw new Error('IndexedDB indisponível');
+      const id = 'ida-e-volta';
+      let local: ProjectSession | null = null;
+      try {
+        await library.create(id, first.files, { unexported: false });
+        const storage = library.open(id);
+        const loaded = await loadProject(storage);
+        if (!loaded.ok) throw new Error(`loadProject: ${loaded.error}`);
+        expect(
+          loaded.project.specializations.find((x) => x.id === 'futuro')?.spec,
+        ).toBeNull();
+        local = openSession({
+          storage,
+          project: loaded.project,
+          readOnly: loaded.readOnly,
+          loadedText: loaded.text,
+          libraryIssues: loaded.libraryIssues,
+          prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
+          now: () => NOW,
+        });
+        const again = await readProjectZip(
+          await writeProjectZip(await local.collectFiles()),
+        );
+        expect(again.ok).toBe(true);
+        if (!again.ok) return;
+
+        expect(rawOf(parse(again.files.mapping), 'futuro')).toEqual(
+          rawOf(parse(f.mappingText), 'futuro'),
+        );
+        expect.soft(again.files.specs.get(f.futureFile)).toBe(f.futureText);
+        expect.soft(again.files.specs.get(f.validFile)).toBe(f.validText);
+        for (const [path, text] of f.futureExtras) {
+          expect.soft(await again.files.specAssets?.get(path)?.text()).toBe(text);
+        }
+        // O mesmo conjunto de arquivos de `specs/` da primeira exportação.
+        expect([...again.files.specs.keys()].sort()).toEqual(
+          [...first.files.specs.keys()].sort(),
+        );
+        expect([...(again.files.specAssets?.keys() ?? [])].sort()).toEqual(
+          [...(first.files.specAssets?.keys() ?? [])].sort(),
+        );
+      } finally {
+        await local?.close();
+        await library.remove(id);
+        library.close();
+      }
+    });
+
+    it('cópia citada que não existe no armazenamento continua fora do zip', async () => {
+      const f = fixture(layout);
+      const { session: s } = await openLikeApp(f.root);
+      session = s;
+      // Some do disco entre a abertura e a exportação (alteração externa).
+      const parts = f.futureFile.split('/');
+      const name = parts.pop() ?? '';
+      let dir = f.root;
+      for (const part of parts) dir = await dir.getDirectoryHandle(part);
+      await dir.removeEntry(name);
+      vi.useRealTimers();
+      const collected = await s.collectFiles();
+      expect(collected.specs.has(f.futureFile)).toBe(false);
+      expect(collected.specs.get(f.validFile)).toBe(f.validText);
     });
   },
 );
