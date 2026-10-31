@@ -13,6 +13,7 @@ import { renderOrder } from './components/screen';
 import type { Size } from './geometry';
 import { type LibraryFile, type LibraryReport, validateLibrary } from './library';
 import { defaultValues, nodeProbeLibrary, withoutNodePrefix } from './libraryDrawing';
+import { resolveCode } from './codeVariants';
 import { packageSpecNameOf } from './libraryPackage';
 import {
   type FieldType,
@@ -48,6 +49,22 @@ export interface CatalogField {
   readonly accepts?: SpecRefAccepts;
 }
 
+/** Um caso de `variants` já resolvido sobre a base: o símbolo (e o arquivo) do valor. */
+export interface CatalogCodeVariantCase {
+  /** Valor do campo da variante (uma das `options`). */
+  readonly value: string;
+  readonly symbol: string;
+  readonly path?: string;
+}
+
+/** `variants` do `code` para a interface: o campo e a tabela valor → símbolo, na ordem das `options`. */
+export interface CatalogCodeVariants {
+  readonly field: string;
+  /** `label` do campo ou, sem ele, a `key`. */
+  readonly fieldLabel: string;
+  readonly cases: readonly CatalogCodeVariantCase[];
+}
+
 /** `code` do tipo em uma plataforma. A UI monta os links com o `repo` da especialização (`codeLink`). */
 export interface CatalogCode {
   readonly platform: {
@@ -60,6 +77,8 @@ export interface CatalogCode {
   readonly params?: Readonly<Record<string, string>>;
   readonly values?: Readonly<Record<string, Readonly<Record<string, string>>>>;
   readonly notes?: string;
+  /** Presente com `variants` na especialização: o resto é a base. */
+  readonly variants?: CatalogCodeVariants;
 }
 
 /** Elementos de um sistema externo a que o tipo corresponde. */
@@ -159,11 +178,35 @@ function fieldOf(field: SpecField | SpecColumn): CatalogField {
   }
 }
 
+/** `variants` do `code` para a tabela do Catálogo; `undefined` sem `variants` ou sem campo `enum`. */
+function variantsOf(
+  type: SpecAnnotationType,
+  code: NonNullable<SpecAnnotationType['code']>[string],
+): CatalogCodeVariants | undefined {
+  const { variants } = code;
+  if (variants === undefined) return undefined;
+  const field = type.fields.find((f) => f.key === variants.field);
+  if (field?.type !== 'enum') return undefined;
+  const cases = field.options.flatMap((value) => {
+    if (!Object.hasOwn(variants.cases, value)) return [];
+    const resolved = resolveCode(code, { [field.key]: value }, type.fields);
+    return [
+      {
+        value,
+        symbol: resolved.symbol,
+        ...(resolved.path === undefined ? {} : { path: resolved.path }),
+      },
+    ];
+  });
+  return { field: field.key, fieldLabel: field.label ?? field.key, cases };
+}
+
 function codeOf(spec: Spec, type: SpecAnnotationType): CatalogCode[] {
   const platforms = new Map((spec.platforms ?? []).map((p) => [p.id, p]));
   const out: CatalogCode[] = [];
   for (const [id, code] of Object.entries(type.code ?? {})) {
     const platform = platforms.get(id);
+    const variants = variantsOf(type, code);
     out.push({
       platform: {
         id,
@@ -175,6 +218,7 @@ function codeOf(spec: Spec, type: SpecAnnotationType): CatalogCode[] {
       ...(code.params === undefined ? {} : { params: code.params }),
       ...(code.values === undefined ? {} : { values: code.values }),
       ...(code.notes === undefined ? {} : { notes: code.notes }),
+      ...(variants === undefined ? {} : { variants }),
     });
   }
   return out;

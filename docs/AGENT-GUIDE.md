@@ -278,7 +278,7 @@ Quando o projeto aplica uma especialização com **plataformas** (veja `platform
 2. **`get_code_hints(ref, platform)`** devolve as **chamadas a escrever**, em três partes:
    - `types`: o código de instanciação de cada tipo usado na árvore, **uma vez só**, por `specId/typeId`: `name`, `symbol`, `definition`, `params`, `values` e `notes`. `symbol: null` não aparece aqui: o tipo **não tem `code`** nessa plataforma e vai para `unmappedTypes`;
    - `repos`: por plataforma, o `url` e a `ref` do repositório (da especialização) e o `localPath` do clone local (do projeto); vazio se não houver nenhum dos dois;
-   - `tree`: a árvore que espelha a marcação e as descendentes. Cada anotação traz `type` (a chave de `types`), `label`, `layer`, `args`, `values` e `linked`.
+   - `tree`: a árvore que espelha a marcação e as descendentes. Cada anotação traz `type` (a chave de `types`), `label`, `layer`, `args`, `values` e `linked`; nos tipos que têm `variants` (especialização 9), traz também `code`, o código **resolvido** da variante dela (`symbol`, `definition`, `params`, `values`, `notes`, sem `variants`). **Quando a anotação tem `code`, use-o no lugar do de `types`** (o de `types` é o da base, e pode trazer `variants`); sem `code` na anotação, vale o de `types`.
 3. **Abra a `definition` de cada tipo** que você vai usar. Se `exists` é `true`, leia o arquivo em `localFile` (relativo ao diretório de trabalho do cliente); senão, abra a `url` (o arquivo no repositório da especialização, na `ref` dela). Leia a assinatura do `symbol` antes de chamá-lo.
 4. **Escreva as chamadas** na solução, uma por anotação da árvore: `args` é `{ field, name, value }`, com o **nome do parâmetro** no código e o valor **já traduzido** (o enum `primary` vira o `ButtonStyle.Primary`). Campo que não está em `args` não é passado. Respeite as `notes` do tipo (elas costumam dizer detalhes como "use o valor do campo id") e o `linked`: as anotações vinculadas ficam sob a dona (o `onClick` sob o `Button`) e entram na chamada dela do jeito que as `notes` mandarem. `values` são os valores como estão no mapeamento (sem traduzir), com os `ref` resolvidos pelo rótulo do alvo (ex.: `dado: "User.name"`).
 5. O servidor **não lê nem grava código**. Se você tem o clone do repositório da plataforma fora do caminho esperado, proponha um `set_platform_repo` com `localPath` (ver "Repositórios por plataforma"); sem clone, a `url` basta.
@@ -384,9 +384,19 @@ Em `get_marking`, `get_annotation`, `find_by_code` e `get_component`, o `code` d
 - `localFile` e `exists` vêm da sobreposição local do projeto. `localFile` é o caminho **relativo ao diretório de trabalho do cliente** (o repositório, no Claude Code), calculado com o `localPath` da plataforma; `exists` diz se o arquivo está lá (o servidor só confere, não o lê). Sem `localPath`, os dois são `null`. Se o `localPath` leva para fora do diretório de trabalho, vêm `null` e `localFileProblem: "outside-workdir"`: por segurança, o servidor não confere (nem revela) o que está fora.
 - Num `get_component` por `path` (pacote sem projeto), `localFile` e `exists` são sempre `null`: não há projeto para dizer onde fica o clone.
 
+### Variantes do código (`variants`) e os espaços do Compose
+
+A especialização `formatVersion` 9 pode declarar `variants` no `code` de uma plataforma: um campo `enum` do tipo escolhe a variante, e a variante troca o que se chama (em Compose, `style = outlined` é `OutlinedButton`, não `Button`). O formato está em [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Variantes do código".
+
+- **O código por anotação já vem resolvido.** O `code` que `get_annotation` e `get_marking` devolvem é o da **variante da anotação**, e o `get_code_hints` o traz na própria anotação da `tree` (veja abaixo): o `symbol`, o `definition` (o `path` do caso, se ele trocar o arquivo), as `notes`, os `params` e os `values` já combinados (`symbol`, `path` e `notes` do caso substituem os da base; `params` e `values` se somam). Sem valor no campo vale o `default` dele; valor sem caso usa a base. O `code` da anotação **nunca traz `variants`**: use o `symbol` que veio, sem procurar a variante você mesmo. No `get_code_hints`, o `types["spec/tipo"]` é o código **cru** da base e **pode trazer `variants`** (serve para entender o tipo): **quando a anotação tem `code`, use-o no lugar do de `types`**.
+- **`get_specialization` e `get_component` mostram o cru**, com `variants` (o campo, os casos e o que cada um troca). Serve para entender a biblioteca, não para escrever a chamada de uma anotação.
+- **Os espaços (lambdas) não são campos.** `onClick`, `icon = { … }` e `content` aparecem nas `notes`, não em `params`: o `params` passa só os valores simples (`enabled`, `label`, `contentDescription`) e as `notes` dizem como montar os espaços, por exemplo `content = { Text(label) }` ou `icon = { Icon(Icons.Filled.<nome>, contentDescription = null) }`. Escreva o espaço como as `notes` pedem, com o valor do campo que elas citam; um campo que só alimenta um espaço não vai como argumento.
+
 ### `find_by_code`: de um arquivo ou símbolo para o mapeamento
 
 `find_by_code({ project?, path?, symbol? })` responde: **que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados**. Acha os **tipos** das especializações aplicadas cujo `code` tem esse `path` (`code.<plataforma>.path`) ou `symbol` (`code.<plataforma>.symbol`) e as **anotações desses tipos**. Serve para quem está num arquivo da biblioteca e quer saber o que dele aparece nas telas. `path` casa com o caminho inteiro ou com os **últimos segmentos inteiros** (`DSButton.kt` acha `app/…/DSButton.kt`; `Button.kt` não); `symbol`, por igualdade; informando os dois, a **mesma plataforma** precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Sem `path` nem `symbol` falha com `missing-query`.
+
+**Em especialização 9, a busca compara com o código resolvido de cada anotação.** Buscar `androidx.compose.material3.Button` traz só os botões da base (`filled`), e `androidx.compose.material3.OutlinedButton` só os `outlined`; o tipo `Button` aparece nos dois casos, e `annotations` lista só as anotações cujo código resolvido casa. Um tipo que casa por algum caso, mas não tem anotação nessa variante, aparece com `annotations` vazio. Buscar por `path` continua achando todos os casos que apontam para o arquivo (e o da base). O `code` do tipo no resultado é o cru, com `variants`. Nas versões 1 a 8 nada muda.
 
 ```json
 {
@@ -444,6 +454,10 @@ O **repositório é da biblioteca**: cada especialização declara o da própria
 ### O que o servidor nunca faz
 
 Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas.
+
+### Mudança na versão 0.12.0 (Biblioteca Material 3)
+
+A especialização `formatVersion` 9 traz `variants` no `code`. `get_annotation` e `get_marking` devolvem o `code` **já resolvido** para a variante de cada anotação e `get_code_hints` o traz na anotação da `tree` (o `types` é o cru da base); `get_specialization` e `get_component` mostram o cru; `find_by_code` compara com o código resolvido de cada anotação. Nenhuma tool nova. Ver "Variantes do código (`variants`) e os espaços do Compose".
 
 ### Mudança na versão 0.11.0 (Imagens remotas)
 

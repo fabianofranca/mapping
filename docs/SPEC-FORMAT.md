@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 8)
+# Formato da especialização (`formatVersion` 1 a 9)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -10,13 +10,14 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - Uma especialização **não cita outra pelo nome**. A ligação entre elas é feita por **referências fortes** (tipo `ref`) que escolhem os alvos por **etiquetas**.
 - Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
 - A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido. A cópia mantém a `formatVersion` com que foi aplicada.
-- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 8; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 9; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
 - A `formatVersion` 6 é a 5 mais `containers`: a lista de **tamanhos prontos de container** que o diálogo **Novo container** oferece quando a especialização está aplicada (ver "Containers (tamanhos prontos)"). A 6 é aditiva: as versões 1 a 5 continuam aceitas sem mudança, e `containers` numa versão anterior é o erro `só é permitido com formatVersion 6`, no caminho exato. O núcleo da app não traz tamanhos de dispositivo; só **Personalizado** e **Tamanho da seleção**.
 - A `formatVersion` 7 é a 6 mais `floating` no tipo de anotação (o tipo cuja instância é uma **marcação flutuante**, um comentário solto sobre o canvas: ver "Tipo flutuante"), `appliesTo` no tipo (a que a anotação se aplica: marcação, seta ou ambas: ver "Onde o tipo se aplica") e `ref` como tipo de coluna de `table` (uma lista de referências como dado: ver "Tipos de valor"). A 7 é aditiva: as versões 1 a 6 continuam aceitas sem mudança, e cada chave da 7 numa versão anterior é o erro `só é permitido com formatVersion 7`, no caminho exato.
 - A `formatVersion` 8 é a 7 mais `suggestions` e `linkedRef` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor, e os alvos mapeados na mesma lista: ver "Sugestões de texto" e "Alvos mapeados na lista (`linkedRef`)"). A 8 é aditiva: as versões 1 a 7 continuam aceitas sem mudança, e `suggestions` ou `linkedRef` numa versão anterior é o erro `só é permitido com formatVersion 8`, no caminho exato.
+- A `formatVersion` 9 é a 8 mais `variants` na entrada de `code`: o campo `enum` do tipo que escolhe a variante do código de instanciação, como o `style` de um botão que em Compose troca o composable (`Button`, `OutlinedButton`, `TextButton`; ver "Variantes do código (`variants`)"). A 9 é aditiva: as versões 1 a 8 continuam aceitas sem mudança, e `variants` numa versão anterior é o erro `só é permitido com formatVersion 9`, no caminho exato. Só sobe para a 9 a especialização que usa `variants`.
 
 Arquivos de apoio:
 
@@ -70,7 +71,7 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `8`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`. A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `9`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`. A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
@@ -193,6 +194,7 @@ Uma **plataforma** é um alvo de código em que o agente escreve a solução: o 
 | `params`    | entrada de `code` (opcional)    | Com que nome cada campo do tipo é passado na chamada: chave de um campo do tipo → nome do parâmetro. Campos fora de `params` não são passados.                                                                                                                       |
 | `values`    | entrada de `code` (opcional)    | Como cada valor de `enum` é escrito no código: chave de um campo `enum` → (valor no mapping → texto no código). Valor sem tradução é passado como está.                                                                                                              |
 | `notes`     | entrada de `code` (opcional)    | Orientação livre para o agente que escreve a chamada: o que passar além dos campos, ordem, cuidados.                                                                                                                                                                 |
+| `variants`  | entrada de `code` (opcional)    | A partir da `formatVersion` 9. Um campo `enum` do tipo escolhe a variante do código, que troca `symbol`, `path` e `notes` e soma `params` e `values` (ver "Variantes do código").                                                                                    |
 
 O `repo` de uma plataforma tem três propriedades:
 
@@ -295,6 +297,64 @@ O `repo` de uma plataforma tem três propriedades:
 - `bff` é uma plataforma como as outras: o `symbol` é a **função Kotlin que gera o nó JSON** do Button (`com.app.bff.sdui.button`), com o arquivo dela em `path`, e não o nome do nó (`"button"`) que sai no JSON.
 - `params` diz o nome do parâmetro que recebe cada campo (`estilo` vai em `style` no Android e em `variant` no BFF); `values` diz como o valor `primary` é escrito no Android (`ButtonStyle.Primary`).
 - Cada plataforma declara o `repo` da biblioteca dela; os arquivos de `path` são relativos à raiz desse repositório.
+
+### Variantes do código (`variants`)
+
+Em algumas plataformas a variante de um componente troca **o que se chama**, não um parâmetro: em Compose, o botão preenchido é `Button`, o contornado é `OutlinedButton` e o de texto é `TextButton`. A `formatVersion` 9 deixa a entrada de `code` de uma plataforma declarar `variants`: um campo `enum` do tipo escolhe, pelo valor que a anotação tem, o que muda no `code`.
+
+| Propriedade      | Onde                         | Descrição                                                                                                                                                                         |
+| ---------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `variants`       | entrada de `code` (opcional) | A partir da `formatVersion` 9. `{ field, cases }`: o campo que escolhe a variante e o que muda em cada valor dele.                                                                |
+| `variants.field` | obrigatória                  | A `key` de um campo `enum` do tipo, do nível de cima. Coluna de `table` não conta.                                                                                                |
+| `variants.cases` | obrigatória                  | Objeto de valor do campo (uma das `options` dele) → caso, com ao menos um caso. O caso tem `symbol`, `path`, `params`, `values` e `notes`, todos opcionais, e não pode ser vazio. |
+
+**Como o caso se combina com a base** (a entrada de `code` sem `variants`):
+
+- `symbol`, `path` e `notes` do caso **substituem** os da base (só os que o caso declara; o resto vem da base).
+- `params` e `values` do caso **se somam** aos da base, chave por chave: o caso acrescenta ou troca a entrada daquela chave (em `values`, a tradução do caso para um campo substitui a da base para aquele campo).
+- Quando a anotação tem um valor no campo, esse valor escolhe o caso. Sem valor, vale o `default` do campo; sem `default`, a base. Valor sem caso também usa a base.
+- **Um nível só.** Um campo escolhe a variante e o caso não tem `variants`. Duas dimensões (por exemplo, estilo e tamanho) viram um `enum` que as junta (`filled-large`) ou dois tipos, como o FAB e o Extended FAB do Compose.
+- O resultado resolvido nunca traz `variants`: o servidor MCP (`get_code_hints`, `get_marking`, `get_annotation`, `find_by_code`) e a "Definição" dos Detalhes mostram o código **já resolvido** para a variante da anotação; `get_specialization`, `get_component` e o Catálogo mostram o JSON cru (o Catálogo ainda lista a tabela variante → símbolo). O detalhe do uso está no [`AGENT-GUIDE.md`](AGENT-GUIDE.md).
+
+```json
+{
+  "id": "button",
+  "name": "Button",
+  "fields": [
+    { "key": "label", "type": "string", "required": true },
+    { "key": "enabled", "type": "enum", "options": ["true", "false"], "default": "true" },
+    {
+      "key": "style",
+      "type": "enum",
+      "options": ["filled", "outlined", "text", "tonal"],
+      "default": "filled"
+    }
+  ],
+  "code": {
+    "compose": {
+      "symbol": "androidx.compose.material3.Button",
+      "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt",
+      "params": { "enabled": "enabled" },
+      "notes": "content = { Text(label) }",
+      "variants": {
+        "field": "style",
+        "cases": {
+          "outlined": { "symbol": "androidx.compose.material3.OutlinedButton" },
+          "text": { "symbol": "androidx.compose.material3.TextButton" },
+          "tonal": {
+            "symbol": "androidx.compose.material3.FilledTonalButton",
+            "notes": "content = { Text(label) }; a cor vem do tema tonal."
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Uma anotação com `style = outlined` é instanciada com `OutlinedButton` (o `path` e o `params` são os da base, porque o caso só trocou o `symbol`); uma com `style = filled` (o `default`, sem caso) usa `Button`. A especialização precisa declarar `formatVersion: 9` e a plataforma `compose` em `platforms`.
+
+**Regras de validação:** `variants` só a partir da `formatVersion` 9 (`só é permitido com formatVersion 9`, no caminho `…code.<plataforma>.variants`); `field` obrigatório, a `key` de um campo `enum` do tipo (`"x" não é um campo do tipo` ou `"x" deve ser um campo enum do tipo`, no caminho `…variants.field`); `cases` com ao menos um caso (`declare ao menos um caso`); cada chave de `cases` uma das `options` do campo (`"v" não está nas options de "field"`, no caminho `…variants.cases.<v>`); caso vazio é erro (`caso vazio: declare symbol, path, params, values ou notes`); `params` e `values` do caso seguem as regras dos da base (chaves de campos do tipo; `values` só de campo `enum` e só com opções dele); `path` do caso, a mesma regra do `path` da base; qualquer outra propriedade em `variants` ou no caso é recusada.
 
 ## Containers (tamanhos prontos)
 
@@ -836,7 +896,7 @@ O pacote Material 3 do repositório (`examples/libraries/material3/`) passa pelo
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 8), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 9), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada**;
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo;
@@ -846,6 +906,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `accepts` com pelo menos uma etiqueta ou `free: true`; etiquetas no formato `[a-z0-9-]+`;
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
+- **v9, `variants`:** só a partir da `formatVersion` 9 (numa versão anterior o erro é `só é permitido com formatVersion 9`, no caminho `…code.<plataforma>.variants`); `field` é a `key` de um campo `enum` do tipo (nível de cima); `cases` não vazio, com chaves nas `options` do campo e casos não vazios; `params` e `values` dos casos como os da base; um nível só (o caso não tem `variants`); qualquer outra propriedade é recusada (ver "Variantes do código");
 - **v8, `suggestions`:** só a partir da `formatVersion` 8 (numa versão anterior o erro é `só é permitido com formatVersion 8`, no caminho `…fields[n].suggestions` ou `…columns[m].suggestions`); só em campo ou coluna `string`; lista não vazia, até 200 itens, de textos únicos, não vazios e sem espaço nas pontas; não restringe o valor, e o `default` pode ficar fora da lista;
 - **v8, `linkedRef`:** só a partir da `formatVersion` 8 (numa versão anterior o erro é `só é permitido com formatVersion 8`, no caminho `…fields[n].linkedRef` ou `…columns[m].linkedRef`); só em campo ou coluna `string`; a `key` precisa ser a de um campo `ref` do mesmo tipo (na coluna, de uma coluna `ref` da mesma `table`); não restringe o valor e independe de `suggestions`;
 - **v7, `floating`, `appliesTo` e coluna `ref`:** só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho exato: `…annotationTypes[n].floating`, `…annotationTypes[n].appliesTo`, `…fields[n].columns[m].type`); `floating` booleano; `appliesTo` não vazio, sem repetição, só com `marking` e `arrow`, e um tipo que não se aplica a marcações (só `arrow`) não pode ter `component` nem `floating`;

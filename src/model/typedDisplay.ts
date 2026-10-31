@@ -1,4 +1,5 @@
 import { findPlatform } from './codeLocations';
+import { resolveCode } from './codeVariants';
 import {
   DEFAULT_LABEL_TEXTS,
   instanceLabel,
@@ -251,15 +252,19 @@ export interface CodeDefinition {
 
 /**
  * "Definição" de um tipo: uma entrada por plataforma cujo `code` tem `path` (o arquivo que
- * define o símbolo), na ordem do `code`. `specId` é a especialização dona do tipo.
+ * define o símbolo), na ordem do `code`. `specId` é a especialização dona do tipo. Com
+ * `values` (os da anotação), o `path` e o `symbol` são os do caso de `variants` que eles
+ * escolhem (`resolveCode`); sem `values`, valem o `default` do campo ou a base.
  */
 export function typeCodeDefinitions(
   p: Project,
   specId: string,
-  type: Pick<SpecAnnotationType, 'code'>,
+  type: Pick<SpecAnnotationType, 'code'> & Partial<Pick<SpecAnnotationType, 'fields'>>,
+  values?: Readonly<Record<string, JsonValue>> | null,
 ): CodeDefinition[] {
-  return Object.entries(type.code ?? {}).flatMap(([platform, code]) =>
-    code.path === undefined
+  return Object.entries(type.code ?? {}).flatMap(([platform, own]) => {
+    const code = resolveCode(own, values, type.fields ?? []);
+    return code.path === undefined
       ? []
       : [
           {
@@ -270,8 +275,8 @@ export function typeCodeDefinitions(
             fileName: fileNameOf(code.path),
             symbol: code.symbol,
           },
-        ],
-  );
+        ];
+  });
 }
 
 /** Valores crus de uma anotação de tipo inexistente (somente leitura). */

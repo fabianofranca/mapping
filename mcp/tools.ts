@@ -372,6 +372,7 @@ export function registerTools(
     {
       description:
         'As chamadas a escrever numa plataforma a partir de uma marcação, com o código de instanciação de cada tipo. `types` traz, por `specId/typeId`, o `symbol` (o que se chama para criar uma instância), a `definition` (o arquivo que o define, para ler a assinatura: `path`, `url` e `ref` do `repo` da especialização, `localFile` e `exists` pelo clone local), `params`, `values` e `notes`. `repos` traz o repositório da plataforma (`url`, `ref`, `localPath`). A `tree` espelha a marcação e as descendentes e, em cada anotação tipada, traz `type` (a chave de `types`), `label`, `layer`, `args` (os argumentos da chamada, com os valores da instância já traduzidos), `values` (valores de referência resolvidos, ex: `User.name`) e os eventos vinculados sob a dona (`linked`), sem arquivo por anotação. ' +
+        'Especialização 9: `types` traz o `code` cru da base (pode ter `variants`) e, nas anotações de tipo com `variants`, a `tree` traz `code` com o código resolvido da variante (`symbol`, `definition`, `params`, `values`, `notes`, sem `variants`; o `symbol` de um Button `outlined` é o do caso `outlined`): quando a anotação tem `code`, use-o no lugar do de `types`. ' +
         'Tipos em `unmappedTypes` não têm código de instanciação nesta plataforma.',
       inputSchema: { ref: refArg, platform: platformArg, project: optionalProjectArg },
       annotations: READ_ONLY,
@@ -387,7 +388,7 @@ export function registerTools(
     'find_by_code',
     {
       description:
-        'Do código para o mapeamento (que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados): os tipos das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) e/ou símbolo (`code.<plataforma>.symbol`), com as anotações desses tipos. `path` casa com o caminho inteiro ou com os últimos segmentos (`DSButton.kt` casa com `app/…/DSButton.kt`; `Button.kt` não); `symbol` casa por igualdade; com os dois, a mesma plataforma precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Devolve o tipo, o `code` (`symbol` e `definition`) das plataformas que casaram e as referências `mapping://` da anotação, da marcação e do container. Não abre arquivos de código.',
+        'Do código para o mapeamento (que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados): os tipos das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) e/ou símbolo (`code.<plataforma>.symbol`), com as anotações desses tipos. `path` casa com o caminho inteiro ou com os últimos segmentos (`DSButton.kt` casa com `app/…/DSButton.kt`; `Button.kt` não); `symbol` casa por igualdade; com os dois, a mesma plataforma precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Em especialização 9 (`variants`), a busca compara com o código resolvido de cada anotação: o símbolo da base só traz as anotações da base e o de uma variante só as dela; `path` traz todas as que apontam para o arquivo. Devolve o tipo, o `code` cru (`symbol` e `definition`, com `variants`) das plataformas que casaram e as referências `mapping://` da anotação, da marcação e do container. Não abre arquivos de código.',
       inputSchema: {
         project: projectArg
           .optional()
@@ -824,7 +825,7 @@ export function registerTools(
     'validate_specialization',
     {
       description:
-        'Valida um arquivo de especialização (`path`, dentro das raízes) ou um texto JSON (`text`), sem aplicar a nenhum projeto. Aceita a formatVersion 4, mas valida só o ARQUIVO (para o pacote inteiro use validate_library). Devolve os MESMOS erros que a importação da app, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), e avisos que não impedem a importação (plataforma declarada e não usada, tipo sem `code`). É o ciclo gerar, validar, corrigir.',
+        'Valida um arquivo de especialização (`path`, dentro das raízes) ou um texto JSON (`text`), sem aplicar a nenhum projeto. Aceita qualquer formatVersion de 1 a 9, mas valida só o ARQUIVO (para o pacote inteiro use validate_library). Devolve os MESMOS erros que a importação da app, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), e avisos que não impedem a importação (plataforma declarada e não usada, tipo sem `code`). É o ciclo gerar, validar, corrigir.',
       inputSchema: {
         path: z
           .string()

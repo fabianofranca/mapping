@@ -442,6 +442,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
           'A formatVersion 7 é a 6 mais floating no tipo de anotação (o tipo cuja instância é uma marcação flutuante, um comentário solto sobre o canvas: seção "Tipo flutuante"), appliesTo no tipo (onde a anotação se aplica: marcação, seta ou ambas: seção "Onde o tipo se aplica") e ref como tipo de coluna de table (uma lista de referências como dado). As versões 1 a 6 continuam aceitas.',
           'A formatVersion 8 acrescenta `suggestions` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor) e `linkedRef` (liga o texto a um campo/coluna `ref` do mesmo tipo/tabela: a lista de sugestões também mostra os alvos mapeados que esse `ref` aceita).',
+          'A formatVersion 9 acrescenta `variants` na entrada de `code`: um campo enum do tipo escolhe a variante do código (em Compose, `Button`, `OutlinedButton` ou `TextButton`), que troca symbol, path e notes e soma params e values (seção "Plataformas e code"). As versões 1 a 8 continuam aceitas.',
         ],
       },
     ],
@@ -452,7 +453,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 8), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 9), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -662,6 +663,10 @@ const ptBR: readonly HelpSection[] = [
             term: 'notes',
             text: 'Orientação livre para o agente que escreve a chamada: o que passar além dos campos, ordem, cuidados.',
           },
+          {
+            term: 'variants',
+            text: 'Opcional (formatVersion 9). Um campo enum do tipo escolhe a variante do código: { field, cases }. Cada valor do campo (uma das options) tem um caso que troca symbol, path e notes e soma params e values aos da base; um nível só, e o caso não pode ser vazio. A anotação é lida pelo código já resolvido para o valor dela.',
+          },
         ],
       },
       { kind: 'p', text: 'O repo de uma plataforma tem três propriedades:' },
@@ -688,6 +693,7 @@ const ptBR: readonly HelpSection[] = [
           'Como o agente chega ao arquivo: pelo urlTemplate do repo da plataforma, na especialização dona do tipo, com {path} trocado pelo path (a app mostra esse link na linha "Definição" logo depois de aplicar a especialização); ou pelo clone local, que o projeto pode informar em Configurações › Repositórios de código (platformRepos[plataforma].localPath, uma sobreposição local: o caminho local do arquivo é o localPath mais o path).',
           'Plataformas com o mesmo id em especializações diferentes são o mesmo alvo de código. Cada especialização declara o repo da própria biblioteca, e eles podem diferir: o link de um tipo usa o repo da especialização dele.',
           'code só vale em especializações que declaram platforms; os ids citados precisam estar em platforms, e as chaves de params e values precisam ser campos do tipo.',
+          'variants só a partir da formatVersion 9 (antes, o erro é só é permitido com formatVersion 9, no caminho code.<plataforma>.variants); field é a key de um campo enum do tipo; cases não vazio, com chaves nas options do campo e casos não vazios; params e values dos casos seguem as regras dos da base.',
           'Plataforma em que algum tipo tem path e que não declara repo gera um aviso da especialização (path-without-repo), não um erro: o arquivo é citado, mas o agente não sabe em que repositório procurá-lo.',
         ],
       },
@@ -984,7 +990,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 8), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 9), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
@@ -1047,6 +1053,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
           'formatVersion 7 is 6 plus floating on the annotation type (the type whose instance is a floating marking, a loose comment over the canvas: section "Floating type"), appliesTo on the type (what the annotation applies to: marking, arrow or both: section "What the type applies to") and ref as a column type of table (a list of references as data). Versions 1 to 6 are still accepted.',
           'formatVersion 8 adds `suggestions` to `string` fields and columns (vocabulary suggested while typing, without restricting the value) and `linkedRef` (links the text to a `ref` field/column of the same type/table: the suggestion list also shows the mapped targets that `ref` accepts).',
+          'formatVersion 9 adds `variants` to the `code` entry: an enum field of the type picks the code variant (in Compose, `Button`, `OutlinedButton` or `TextButton`), which replaces symbol, path and notes and adds to params and values (section "Platforms and code"). Versions 1 to 8 are still accepted.',
         ],
       },
     ],
@@ -1057,7 +1064,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 8), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 9), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -1270,6 +1277,10 @@ const enUS: readonly HelpSection[] = [
             term: 'notes',
             text: 'Free-form guidance for the agent writing the call: what to pass besides the fields, order, caveats.',
           },
+          {
+            term: 'variants',
+            text: 'Optional (formatVersion 9). An enum field of the type picks the code variant: { field, cases }. Each value of the field (one of its options) has a case that replaces symbol, path and notes and adds to the base params and values; one level only, and a case cannot be empty. The annotation is read through the code already resolved for its value.',
+          },
         ],
       },
       { kind: 'p', text: 'The repo of a platform has three properties:' },
@@ -1296,6 +1307,7 @@ const enUS: readonly HelpSection[] = [
           'How the agent reaches the file: through the urlTemplate of the platform repo, in the specialization that owns the type, with {path} replaced by the path (the app shows this link in the "Definition" line right after the specialization is applied); or through the local clone, which the project can report in Settings › Code repositories (platformRepos[platform].localPath, a local overlay: the local path of the file is the localPath plus the path).',
           'Platforms with the same id in different specializations are the same code target. Each specialization declares the repo of its own library, and they may differ: the link of a type uses the repo of its specialization.',
           'code only works in specializations that declare platforms; the ids it cites must exist in platforms, and the keys of params and values must be fields of the type.',
+          'variants only from formatVersion 9 (before it the error is only allowed with formatVersion 9, at code.<platform>.variants); field is the key of an enum field of the type; cases is not empty, with keys in the field options and non-empty cases; the params and values of the cases follow the rules of the base ones.',
           'A platform where some type has a path and that does not declare repo produces a specialization warning (path-without-repo), not an error: the file is cited, but the agent does not know which repository to look in.',
         ],
       },
@@ -1592,7 +1604,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 8), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 9), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type;',

@@ -108,6 +108,7 @@ function TypedBody({
           project={project}
           specId={resolved.spec.id}
           type={resolved.type}
+          values={annotation.values}
         />
       </PropertyGrid>
     </>

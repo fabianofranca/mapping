@@ -253,6 +253,12 @@
   margin: 0;
 }
 
+.catalog-variants-caption {
+  padding-block-end: var(--space-1);
+  font: var(--t-text-small);
+  text-align: start;
+}
+
 .catalog-value-pair {
   margin-inline-end: var(--space-2);
 }

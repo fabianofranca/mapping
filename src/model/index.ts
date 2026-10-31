@@ -55,6 +55,7 @@ export * from './issues';
 export * from './typedDisplay';
 export * from './codeLocations';
 export * from './codeBlueprint';
+export * from './codeVariants';
 export * from './sources';
 export * from './remoteImages';
 export * from './proposal';
