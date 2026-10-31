@@ -192,7 +192,7 @@
                   "EndOverlay": "FabPosition.EndOverlay"
                 }
               },
-              "notes": "O espaço de cada marcação filha vem do tipo dela: `top-app-bar` vai em `topBar`, `navigation-bar` em `bottomBar`, `fab` e `extended-fab` em `floatingActionButton` e o resto em `content = { innerPadding -> … }`, aplicando `Modifier.padding(innerPadding)` ao primeiro filho do conteúdo. Com width e height `fill`, use `Modifier.fillMaxSize()`; `snackbarHost` e `contentWindowInsets` ficam nos padrões."
+              "notes": "O espaço de cada marcação filha vem do tipo dela: `top-app-bar` vai em `topBar`, `navigation-bar` em `bottomBar`, `fab` e `extended-fab` em `floatingActionButton` e o resto em `content = { innerPadding -> … }`, aplicando `Modifier.padding(innerPadding)` ao primeiro filho do conteúdo. Um `bottom-sheet` `modal` vai no conteúdo (o `ModalBottomSheet` abre sobre a tela); o `standard` é o próprio `BottomSheetScaffold` e substitui o Scaffold. Com width e height `fill`, use `Modifier.fillMaxSize()`; `snackbarHost` e `contentWindowInsets` ficam nos padrões."
             }
           },
           "examples": [
