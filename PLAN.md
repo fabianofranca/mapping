@@ -1,6 +1,6 @@
 # Mapping — Plano de desenvolvimento
 
-> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje a etapa em andamento é a **Imagens remotas**, épico `epic/imagens-remotas`; a **Marcação pai**, épico `epic/marcacao-pai`, aguarda o fechamento; a Sugestões no campo de texto foi a última concluída). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje as etapas em andamento são a **Biblioteca Material 3**, épico `epic/material3`, que nasceu do `epic/imagens-remotas` e só vai para a `main` depois dele, e a **Imagens remotas**, épico `epic/imagens-remotas`, que espera a rodada do Cowork; a **Marcação pai**, épico `epic/marcacao-pai`, aguarda o fechamento; a Sugestões no campo de texto foi a última concluída). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 
 ## Produto
 
@@ -68,6 +68,108 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/redesign/HANDOFF-REVIEW-DETAILS.md`](docs/redesign/HANDOFF-REVIEW-DETAILS.md) | Design dos Detalhes na revisão (etapa 9, aprovado; referência): marcador e popover por campo, cabeçalho do item, “Outras mudanças”, comportamento, textos e decisões |
 
 ---
+
+## Etapa — Biblioteca Material 3 (em andamento, épico `epic/material3`)
+
+- **Objetivo:** o dono pediu (2026-10-31) uma especialização **completa** do Material 3 que sirva de verdade para um agente gerar código, como a biblioteca Kotlin, e não mais um exemplo. Hoje `examples/libraries/material3/` tem 15 tipos (11 do catálogo do M3 e 4 estruturas de layout), sem `platforms` nem `code`: o agente adivinha a API pelo nome. Para gerar código, o agente precisa da árvore da tela (estruturas de layout com alinhamento e tamanho), de todos os componentes do catálogo com as variantes, e de dizer com que composable se cria cada um.
+- **Base:** o épico nasce do `epic/imagens-remotas` (decisão do dono em 2026-10-31), e não da `main`, porque os componentes com imagem (Image, Card com mídia, List item com avatar, Carousel) usam o nó `image` do componente (`formatVersion` 3). Ele só vai para a `main` **depois** do `epic/imagens-remotas`; até lá, o PR dele para a `main` mostra também os commits das Imagens remotas, e cada mudança que entrar no `epic/imagens-remotas` entra aqui por merge (nunca rebase).
+- **Versões:** especialização `formatVersion` 9 (`variants` no `code`; as versões 1 a 8 continuam aceitas sem mudança) e MCP 0.12.0. Schema do `mapping.json` (v13), formato da proposta (3) e do componente (3, das Imagens remotas) sem mudança.
+- **Coordenador e esforço** (regra da seção "Uso de modelos" do [`CLAUDE.md`](CLAUDE.md)):
+
+| Fase | Coordenador | Esforço do coordenador | Subagentes                                                                                                       |
+| ---- | ----------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| MD1  | Opus        | high                   | Sonnet high (modelo, validador, `resolveCode`); Sonnet medium (docs, JSON Schema, skill, MCP); Haiku low          |
+| MD2  | Opus        | high                   | Sonnet high (pesquisa das assinaturas no androidx e os tipos de layout); Sonnet medium (documentos); Haiku low    |
+| MD3  | Sonnet      | medium                 | Sonnet medium; Haiku low                                                                                         |
+| MD4  | Sonnet      | medium                 | Sonnet medium; Haiku low                                                                                         |
+| MD5  | Sonnet      | medium                 | Sonnet medium; Haiku low                                                                                         |
+
+### Decisões
+
+1. **`variants` no `code` (especialização `formatVersion` 9).** Em Compose, a variante do M3 troca o composable (`Button`, `FilledTonalButton`, `OutlinedButton`, `TextButton`, `ElevatedButton`), não um parâmetro; o `code` de hoje tem um só `symbol` por plataforma. A entrada de `code` de uma plataforma ganha `variants` opcional: `{ "field": "<chave>", "cases": { "<valor>": { symbol?, path?, params?, values?, notes? } } }`.
+   - `field` é a `key` de um campo `enum` do próprio tipo (nível de cima, não coluna de `table`); cada chave de `cases` é uma das `options` dele; um caso vazio é erro. Qualquer outra propriedade é recusada.
+   - O caso declara só o que muda: `symbol`, `path` e `notes` **substituem** os da base; `params` e `values` **se somam** aos da base, chave por chave (o `ExtendedFloatingActionButton` acrescenta `"label": "text"`). Valor sem caso usa a base.
+   - Anotação sem valor no campo usa o `default` do campo; sem `default`, a base.
+   - **Um nível só:** um campo escolhe a variante. Duas dimensões viram um `enum` que as junta ou dois tipos (FAB e Extended FAB são tipos separados, como no Compose).
+   - `variants` numa versão anterior à 9 é o erro `só é permitido com formatVersion 9`, no caminho exato, como as outras chaves por versão.
+2. **Um só lugar resolve o caso.** Função pura `resolveCode(code, values, fields)` em `src/model/`, que devolve a entrada com o caso aplicado (sem `variants`). Todo leitor de `code` por anotação passa por ela: `codeBlueprint` (`get_code_hints`), `codeLocations` (`find_by_code`), `typedDisplay` (a "Definição" nos Detalhes, com o `path` do caso da anotação). O Catálogo mostra a base e uma tabela variante → símbolo; `get_specialization` devolve o JSON cru, com `variants`.
+3. **`find_by_code` compara com o código resolvido de cada anotação.** Numa especialização 9, buscar `androidx.compose.material3.Button` traz só os botões da base (filled), e `OutlinedButton` só os outlined; buscar por `path` continua achando todos os casos que apontam para o arquivo. Nas versões 1 a 8 nada muda. `docs/AGENT-GUIDE.md` registra.
+4. **Compatibilidade.** Para trás: total (sem `variants`, `resolveCode` devolve a base, que é o `code` de hoje; cópias em `specs/` abrem sem migração). Para frente: a app e o MCP antigos recusam a 9 (validador estrito: versão e chave desconhecidas), nunca ignoram `variants` em silêncio. Projeto com uma cópia que a app não lê abre com as anotações como "tipo inexistente": a MD1 prova por teste que editar e gravar outra coisa nesse projeto **preserva** os valores dessas anotações e a cópia em `specs/` (integridade do `mapping.json`). Só sobe para a 9 a especialização que usa `variants`: Kotlin e notas ficam na 8.
+5. **Biblioteca nova em `libraries/material3-compose/`**, ao lado de `kotlin/`: pronta para uso, **não embutida** (a pessoa aplica pela pasta ou pelo zip), escrita à mão (skill `spec-author`), validada por teste próprio no molde de `tests/model/kotlinLibrary.test.ts` e listada em `libraries/README.md`. Não é gerada pelo laboratório (`lab/` é experimento fora do produto).
+6. **`id` `material3-compose`, nome "Material 3 (Compose)", `version` 1**, sem compatibilidade com o exemplo (decisão do dono: nenhum projeto real o usa). Ids de tipo pelo nome do componente em `[a-z0-9-]` (`button`, `top-app-bar`, `lazy-column`); a `key` de cada campo é o **nome do parâmetro do Compose** quando houver um (`enabled`, `label`, `contentDescription`), para o agente não traduzir. `examples/libraries/material3/` **fica como está**, como base fixa dos testes de catálogo, desempenho, MCP, e2e, guia e projeto de exemplo (uma biblioteca que cresce não serve de base fixa).
+7. **Só Jetpack Compose** (decisão do dono). Uma plataforma, `compose` (`language: "kotlin"`), com `repo` no androidx (`https://github.com/androidx/androidx`, `urlTemplate` para o arquivo e `ref` numa tag de release estável do `compose.material3`, escolhida na MD2). O `path` é relativo à raiz do androidx (`compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt`); os tipos da `foundation` (Box, Row, Column, Lazy*, Spacer, Image) apontam para o mesmo repositório. Outra plataforma (Flutter, por exemplo) entra depois como mais uma entrada em `platforms` e no `code`, sem quebrar nada.
+8. **Só o que é estável no `compose.material3` fixado.** Componentes e variantes que no Compose exigem `@ExperimentalMaterial3ExpressiveApi` ficam fora (seção "Fora"); os que exigem `@ExperimentalMaterial3Api` mas são de uso corrente (date picker, time picker, search bar, top app bar) entram, com o opt-in dito no `notes`. A lista exata sai da MD2, conferindo o código na tag fixada.
+9. **Estruturas de layout e conteúdo** (MD2): Scaffold, Surface, Box, Row, Column, LazyColumn, LazyRow, LazyVerticalGrid, FlowRow, Spacer, Text, Icon, Image e HorizontalPager. Rolagem sem lazy é um campo do Column e do Row (`scroll`), não um tipo. Alinhamento e distribuição viram campos com o nome do parâmetro (`horizontalArrangement`, `verticalAlignment`, `verticalArrangement`, `horizontalAlignment`, `contentAlignment`), com as opções do Compose (`Start`, `Center`, `SpaceBetween`…); tamanho vira `width` e `height` (`wrap`, `fill`, `fixed`) e `weight` (número, opcional), que o `notes` traduz para `Modifier.fillMaxWidth()`, `Modifier.weight(1f)`. Pertencimento continua só pela geometria: o agente sabe o espaço do Scaffold pelo tipo do filho (Top app bar no `topBar`, Navigation bar no `bottomBar`, FAB no `floatingActionButton`), o que o `notes` do Scaffold diz.
+10. **Espaços (lambdas) no `notes`.** `onClick`, `icon = { … }` e `content` não são campos: o `params` passa os valores simples e o `notes` diz como montar os espaços (`content = { Text(label) }`). O padrão é escrito uma vez no documento da biblioteca e em `docs/AGENT-GUIDE.md`.
+11. **Ícones por `suggestions`.** Campo de ícone é `string` com `suggestions` (os nomes mais comuns de `Icons.Filled`), que não restringe o valor; o `notes` diz `Icon(Icons.Filled.<nome>, contentDescription = …)`. O componente desenha o ícone que conhece e o reservado nos outros.
+12. **Imagem remota.** O tipo Image, a mídia do Card, o avatar do List item e os itens do Carousel usam o nó `image` com o `src` ligado a um campo `string` (a URL), seguindo as Imagens remotas. No código, `Image` da `foundation` recebe um `Painter`: o `notes` diz que URL remota usa o carregador de imagens do app (por exemplo, Coil `AsyncImage`), que fica fora do androidx e da biblioteca.
+13. **Cobertura do catálogo.** Todas as famílias do catálogo do M3 com API estável no Compose fixado (MD2 a MD4), cada uma com todas as variantes (decisão 1), componente que desenha, documento e de um a três exemplos. Os 15 tipos do exemplo são refeitos na MD2 com o que faltava: Top app bar small, center, medium e large; Text field filled e outlined; FAB small, regular e large com a cor tertiary; Chip assist, filter, input e suggestion; Bottom sheet modal e standard; Navigation bar de 3 a 5 destinos (`repeat`); Checkbox com o estado indeterminado; List item de uma a três linhas.
+14. **Versão da biblioteca.** Quando o `ref` do androidx subir, sobe o `version` da biblioteca e as `migrations` cobrem campos renomeados (formato da etapa Biblioteca).
+
+### Fora (de propósito)
+
+- Componentes e variantes do M3 Expressive que no Compose ainda exigem `@ExperimentalMaterial3ExpressiveApi` (button group, split button, FAB menu, loading indicator, toolbar flutuante e as formas novas): entram numa versão futura da biblioteca, quando ficarem estáveis.
+- Flutter, Material Web e qualquer outra plataforma.
+- Tema escuro e cores dinâmicas no desenho dos componentes (o desenho é o tema claro baseline, como no exemplo).
+- Variantes aninhadas (mais de um campo escolhendo o símbolo).
+- O BFF de SDUI de quem usa a biblioteca: fica numa especialização própria, que declara a plataforma dele.
+
+### Fases
+
+#### MD1 — `variants` no `code` (formato, modelo e MCP)
+
+**Coordenador:** Opus. **Esforço:** high; subagentes Sonnet high (modelo, validador, `resolveCode`), Sonnet medium (docs, JSON Schema, skill, MCP), Haiku low. Decisões 1 a 4. Antes de começar, o coordenador confere o modelo da sessão (regra do `CLAUDE.md`).
+
+**Toca em:** `src/model/spec.ts`, `src/model/` (`resolveCode` novo), `src/model/codeBlueprint.ts`, `src/model/codeLocations.ts`, `src/model/typedDisplay.ts`, `src/model/catalog.ts`, a interface do Catálogo, `mcp/`, `docs/spec.schema.json`, `docs/SPEC-FORMAT.md`, `docs/AGENT-GUIDE.md`, `docs/MCP.md`, `mcp/version.ts`, `.claude/skills/spec-author/SKILL.md`, `src/i18n/specHelp.ts`, `CHANGELOG.md`, `tests/`.
+
+- [ ] `formatVersion` 9 no parser (`SPEC_FORMAT_VERSION`, `SPEC_FORMAT_VERSIONS`) e `variants` na entrada de `code`, com a decisão 1 (testes: v1 a v8 sem mudança; `variants` numa 8 é erro no caminho; `field` ausente, que não existe, que não é `enum` ou que é coluna de `table`; chave de `cases` fora das `options`; caso vazio; propriedade desconhecida no `variants` e no caso)
+- [ ] `resolveCode` puro com a decisão 1 (testes: valor com caso, valor sem caso, sem valor com e sem `default`, `symbol`/`path`/`notes` substituídos, `params`/`values` somados, entrada sem `variants` devolvida igual)
+- [ ] `get_code_hints` (`codeBlueprint`), `find_by_code` (`codeLocations`) e a "Definição" dos Detalhes (`typedDisplay`) pelo código resolvido de cada anotação, com a decisão 3 (testes de modelo e de `tests/mcp/`: Button outlined devolve `OutlinedButton`; busca pelo símbolo da base não traz os outlined; busca por `path` traz todos; especialização 8 sem mudança)
+- [ ] Catálogo com a base e a tabela variante → símbolo; textos em pt-BR e en-US (teste de componente e de paridade de `tests/i18n/`)
+- [ ] Integridade (decisão 4): projeto com uma cópia em `specs/` que a app não lê (`formatVersion` maior que a suportada) abre, edita outra marcação e grava sem perder os valores das anotações daquela especialização nem a cópia (teste de `tests/storage/` ou `tests/store/`); se não preservar, parar e registrar no PR para decidir com o dono
+- [ ] `validate_specialization`, `validate_library` e `apply_specialization` aceitam a 9 com os mesmos erros da app (testes de `tests/mcp/`)
+- [ ] JSON Schema `docs/spec.schema.json` com a v9 (teste dos schemas), `docs/SPEC-FORMAT.md` (a seção "Plataformas e code" com `variants` e um exemplo), `docs/AGENT-GUIDE.md` (o código já vem resolvido; a mudança do `find_by_code`; o padrão dos espaços da decisão 10), `docs/MCP.md` e MCP 0.12.0 em `mcp/version.ts` (teste `tests/mcp/version.test.ts`)
+- [ ] Skill `spec-author`: quando usar `variants` (a variante troca o símbolo), um nível só, a versão mínima 9 só com `variants` (revisão do `SKILL.md`)
+- [ ] Roteiro novo na seção 8 do `docs/TESTING.md`, feito pelo agente sozinho (cliente MCP por stdio: aplicar uma especialização 9 pequena, criar anotações em duas variantes, conferir `get_code_hints` e `find_by_code`; na app, a "Definição" e o Catálogo pela extensão), com o teste de `tests/tooling/testingGuide.test.ts`
+- [ ] `CHANGELOG.md` (seção `[Não lançado]` da etapa)
+- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
+
+#### MD2 — Base da biblioteca: plataforma, layout e os 15 refeitos
+
+**Coordenador:** Opus (define os padrões que as fases MD3 e MD4 copiam). **Esforço:** high; subagentes Sonnet high (pesquisa das assinaturas no código do androidx na tag fixada e os tipos de layout), Sonnet medium (documentos), Haiku low. Decisões 5 a 13.
+
+- [ ] Tag do `compose.material3` fixada no `repo.ref` e a lista de famílias estáveis nela (decisão 8), registrada no PR e no documento da biblioteca; o ambiente alcança o código do androidx pela rede (se não alcançar, parar e avisar o dono)
+- [ ] `libraries/material3-compose/` com a especialização v9 (`id`, nome, `version` 1, `platforms` com o `repo`, os `containers` de dispositivo, as fontes), `libraries/README.md` e `docs/SPEC-FORMAT.md` (a lista de bibliotecas)
+- [ ] Estruturas de layout e conteúdo da decisão 9, com `code` (`symbol`, `path`, `params`, `notes`), componente, documento e exemplos
+- [ ] Os 15 tipos do exemplo refeitos com `code`, `variants` e as variantes da decisão 13; ícones por `suggestions` (decisão 11); imagem pelo nó `image` (decisão 12)
+- [ ] Documento da biblioteca com o padrão dos espaços (decisão 10), do Scaffold e de tamanho e alinhamento
+- [ ] `tests/model/material3ComposeLibrary.test.ts` no molde de `kotlinLibrary.test.ts`: `validateLibrary` sem erros, todo tipo com `code.compose`, todo `path` dentro de `compose/`, toda `variants` resolvendo para um símbolo, todo arquivo do disco citado, todo exemplo desenhando
+- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+
+#### MD3 — Ações, seleção e comunicação
+
+**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Segue os padrões da MD2.
+
+- [ ] As famílias de ação, seleção e comunicação estáveis na tag fixada (por exemplo icon button, segmented button, radio button, slider, search, date picker, time picker, badge, snackbar, tooltip, progress indicator), cada uma com `code`, `variants`, componente, documento e exemplos; o teste da biblioteca cobre os tipos novos
+- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+
+#### MD4 — Navegação e contenção
+
+**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Segue os padrões da MD2.
+
+- [ ] As famílias de navegação e contenção estáveis na tag fixada (por exemplo navigation rail, navigation drawer, tabs, bottom app bar, dialog, side sheet, menu, carousel, divider), cada uma com `code`, `variants`, componente, documento e exemplos; o teste da biblioteca cobre os tipos novos
+- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+
+#### MD5 — Roteiro e fechamento técnico
+
+**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low.
+
+- [ ] Roteiro na seção 8 do `docs/TESTING.md`, feito pelo agente sozinho: aplicar `libraries/material3-compose/`, mapear uma tela com Scaffold, Top app bar, LazyColumn com List items, um Button outlined e um FAB, e conferir pelo MCP que `get_code_hints` devolve a árvore com os composables certos (teste de `tests/tooling/testingGuide.test.ts`)
+- [ ] Zip da biblioteca para aplicar pela app (`examples/` ou o próprio `libraries/`, decisão registrada no PR), conferido por teste
+- [ ] PR da MD5 aberto com o rótulo `mcp-rc` (última fase do épico)
+- [ ] Rodada dirigida do Cowork, quando o dono puder, e o relato entre os documentos da etapa
+- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-material3.md`, `CHANGELOG.md`, `CLAUDE.md` e `docs/ROADMAP.md` (quando o dono decidir mesclar o épico, depois do `epic/imagens-remotas`)
+- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
 
 ## Etapa — Imagens remotas (em andamento, épico `epic/imagens-remotas`)
 
