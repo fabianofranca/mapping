@@ -1,0 +1,3923 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 9,
+  "id": "material3-compose",
+  "name": "Material 3 (Compose)",
+  "version": 1,
+  "description": "Material Design 3 (tema claro baseline) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
+  "platforms": [
+    {
+      "id": "compose",
+      "name": "Jetpack Compose",
+      "language": "kotlin",
+      "repo": {
+        "url": "https://github.com/androidx/androidx",
+        "urlTemplate": "https://github.com/androidx/androidx/blob/5113b82a4ed6416d6344efa50e41db8cb65928ff/{path}",
+        "ref": "5113b82a4ed6416d6344efa50e41db8cb65928ff"
+      }
+    }
+  ],
+  "containers": [
+    {
+      "id": "phone",
+      "name": "Celular",
+      "width": 360,
+      "height": 800
+    },
+    {
+      "id": "phone-large",
+      "name": "Celular grande",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "id": "tablet",
+      "name": "Tablet",
+      "width": 800,
+      "height": 1280
+    },
+    {
+      "id": "desktop",
+      "name": "Desktop",
+      "width": 1440,
+      "height": 900
+    }
+  ],
+  "fonts": [
+    {
+      "family": "Roboto",
+      "file": "fonts/Roboto-Regular.ttf",
+      "weight": 400
+    },
+    {
+      "family": "Roboto",
+      "file": "fonts/Roboto-Medium.ttf",
+      "weight": 500
+    }
+  ],
+  "layers": [
+    {
+      "id": "layout",
+      "name": "Layout",
+      "color": "#7D5260",
+      "annotationTypes": [
+        {
+          "id": "scaffold",
+          "name": "Scaffold",
+          "description": "Estrutura de uma tela do Material 3: barra do topo, barra de baixo, botão flutuante e conteúdo. Cada marcação filha vai para o espaço do Scaffold pelo tipo dela.",
+          "component": "components/scaffold.json",
+          "doc": "docs/scaffold.md",
+          "fields": [
+            {
+              "key": "containerColor",
+              "label": "Cor do fundo",
+              "type": "enum",
+              "default": "background",
+              "options": [
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema usado como fundo da tela."
+            },
+            {
+              "key": "floatingActionButtonPosition",
+              "label": "Posição do botão flutuante",
+              "type": "enum",
+              "default": "End",
+              "options": ["Start", "Center", "End", "EndOverlay"],
+              "description": "Onde fica o FAB (FabPosition). EndOverlay o sobrepõe à barra de baixo."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "fill",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "fill",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Scaffold",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Scaffold.kt",
+              "params": {
+                "containerColor": "containerColor",
+                "floatingActionButtonPosition": "floatingActionButtonPosition"
+              },
+              "values": {
+                "containerColor": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
+                },
+                "floatingActionButtonPosition": {
+                  "Start": "FabPosition.Start",
+                  "Center": "FabPosition.Center",
+                  "End": "FabPosition.End",
+                  "EndOverlay": "FabPosition.EndOverlay"
+                }
+              },
+              "notes": "O espaço de cada marcação filha vem do tipo dela: `top-app-bar` vai em `topBar`, `navigation-bar` em `bottomBar`, `fab` e `extended-fab` em `floatingActionButton` e o resto em `content = { innerPadding -> … }`, aplicando `Modifier.padding(innerPadding)` ao primeiro filho do conteúdo. Com width e height `fill`, use `Modifier.fillMaxSize()`; `snackbarHost` e `contentWindowInsets` ficam nos padrões."
+            }
+          },
+          "examples": [
+            {
+              "name": "Tela padrão",
+              "values": {
+                "containerColor": "background",
+                "floatingActionButtonPosition": "End",
+                "width": "fill",
+                "height": "fill"
+              }
+            },
+            {
+              "name": "FAB ao centro",
+              "values": {
+                "containerColor": "surface",
+                "floatingActionButtonPosition": "Center",
+                "width": "fill",
+                "height": "fill"
+              }
+            }
+          ]
+        },
+        {
+          "id": "surface",
+          "name": "Surface",
+          "description": "Superfície com cor, forma e elevação tonal que agrupa conteúdo. Use para painéis, cartões simples e áreas com fundo próprio.",
+          "component": "components/surface.json",
+          "doc": "docs/surface.md",
+          "fields": [
+            {
+              "key": "color",
+              "label": "Cor",
+              "type": "enum",
+              "default": "surface",
+              "options": [
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema usado como cor da superfície."
+            },
+            {
+              "key": "shape",
+              "label": "Forma",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "extraSmall", "small", "medium", "large", "extraLarge"],
+              "description": "Forma do recorte da superfície. none = retângulo."
+            },
+            {
+              "key": "tonalElevation",
+              "label": "Elevação tonal (dp)",
+              "type": "number",
+              "description": "Elevação tonal em dp (tonalElevation). Vazio = 0."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Surface",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Surface.kt",
+              "params": {
+                "color": "color",
+                "shape": "shape"
+              },
+              "values": {
+                "color": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
+                },
+                "shape": {
+                  "none": "RectangleShape",
+                  "extraSmall": "MaterialTheme.shapes.extraSmall",
+                  "small": "MaterialTheme.shapes.small",
+                  "medium": "MaterialTheme.shapes.medium",
+                  "large": "MaterialTheme.shapes.large",
+                  "extraLarge": "MaterialTheme.shapes.extraLarge"
+                }
+              },
+              "notes": "Os filhos vão no `content`, que aceita um só nó raiz (use Row, Column ou Box para vários). `tonalElevation` entra como `tonalElevation = <tonalElevation>.dp` só quando preenchido. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Painel",
+              "values": {
+                "color": "surfaceContainer",
+                "shape": "medium",
+                "tonalElevation": 1
+              }
+            },
+            {
+              "name": "Tela cheia",
+              "values": {
+                "color": "background",
+                "shape": "none",
+                "width": "fill",
+                "height": "fill"
+              }
+            }
+          ]
+        },
+        {
+          "id": "box",
+          "name": "Box",
+          "description": "Empilha os filhos uns sobre os outros e os posiciona por alinhamento. Use para sobreposições, ícones sobre imagens e áreas de fundo.",
+          "component": "components/box.json",
+          "doc": "docs/box.md",
+          "fields": [
+            {
+              "key": "contentAlignment",
+              "label": "Alinhamento do conteúdo",
+              "type": "enum",
+              "default": "TopStart",
+              "options": [
+                "TopStart",
+                "TopCenter",
+                "TopEnd",
+                "CenterStart",
+                "Center",
+                "CenterEnd",
+                "BottomStart",
+                "BottomCenter",
+                "BottomEnd"
+              ],
+              "description": "Onde os filhos ficam dentro do Box (Alignment)."
+            },
+            {
+              "key": "background",
+              "label": "Fundo",
+              "type": "enum",
+              "default": "none",
+              "options": [
+                "none",
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema usado como fundo (Modifier.background). none = sem fundo."
+            },
+            {
+              "key": "padding",
+              "label": "Margem interna (dp)",
+              "type": "number",
+              "description": "Modifier.padding em dp. Vazio = 0."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.foundation.layout.Box",
+              "path": "compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Box.kt",
+              "params": {
+                "contentAlignment": "contentAlignment"
+              },
+              "values": {
+                "contentAlignment": {
+                  "TopStart": "Alignment.TopStart",
+                  "TopCenter": "Alignment.TopCenter",
+                  "TopEnd": "Alignment.TopEnd",
+                  "CenterStart": "Alignment.CenterStart",
+                  "Center": "Alignment.Center",
+                  "CenterEnd": "Alignment.CenterEnd",
+                  "BottomStart": "Alignment.BottomStart",
+                  "BottomCenter": "Alignment.BottomCenter",
+                  "BottomEnd": "Alignment.BottomEnd"
+                },
+                "background": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
+                }
+              },
+              "notes": "Os filhos vão no `content`, empilhados na ordem; cada um pode ter `Modifier.align(...)`. `background` vira `Modifier.background(<cor>)` (omita com `none`) e `padding` vira `Modifier.padding(<padding>.dp)`, nessa ordem depois do tamanho. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Sobreposição centralizada",
+              "values": {
+                "contentAlignment": "Center",
+                "background": "primaryContainer",
+                "padding": 16,
+                "width": "fill",
+                "height": "fixed"
+              }
+            },
+            {
+              "name": "Cantinho",
+              "values": {
+                "contentAlignment": "TopEnd",
+                "background": "none"
+              }
+            }
+          ]
+        },
+        {
+          "id": "row",
+          "name": "Row",
+          "description": "Coloca os filhos em linha, da esquerda para a direita. Use para barras de ações, pares ícone e texto e qualquer linha de componentes.",
+          "component": "components/row.json",
+          "doc": "docs/row.md",
+          "fields": [
+            {
+              "key": "horizontalArrangement",
+              "label": "Distribuição horizontal",
+              "type": "enum",
+              "default": "Start",
+              "options": [
+                "Start",
+                "End",
+                "Center",
+                "SpaceBetween",
+                "SpaceAround",
+                "SpaceEvenly"
+              ],
+              "description": "Como os filhos se distribuem no eixo horizontal (Arrangement)."
+            },
+            {
+              "key": "verticalAlignment",
+              "label": "Alinhamento vertical",
+              "type": "enum",
+              "default": "Top",
+              "options": ["Top", "CenterVertically", "Bottom"],
+              "description": "Como os filhos se alinham no eixo vertical (Alignment)."
+            },
+            {
+              "key": "spacing",
+              "label": "Espaçamento (dp)",
+              "type": "number",
+              "description": "Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0."
+            },
+            {
+              "key": "background",
+              "label": "Fundo",
+              "type": "enum",
+              "default": "none",
+              "options": [
+                "none",
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema usado como fundo (Modifier.background). none = sem fundo."
+            },
+            {
+              "key": "padding",
+              "label": "Margem interna (dp)",
+              "type": "number",
+              "description": "Modifier.padding em dp. Vazio = 0."
+            },
+            {
+              "key": "scroll",
+              "label": "Rolagem",
+              "type": "enum",
+              "default": "false",
+              "options": ["false", "true"],
+              "description": "true torna o conteúdo rolável sem usar lazy (verticalScroll/horizontalScroll com rememberScrollState)."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.foundation.layout.Row",
+              "path": "compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Row.kt",
+              "params": {
+                "horizontalArrangement": "horizontalArrangement",
+                "verticalAlignment": "verticalAlignment"
+              },
+              "values": {
+                "horizontalArrangement": {
+                  "Start": "Arrangement.Start",
+                  "End": "Arrangement.End",
+                  "Center": "Arrangement.Center",
+                  "SpaceBetween": "Arrangement.SpaceBetween",
+                  "SpaceAround": "Arrangement.SpaceAround",
+                  "SpaceEvenly": "Arrangement.SpaceEvenly"
+                },
+                "verticalAlignment": {
+                  "Top": "Alignment.Top",
+                  "CenterVertically": "Alignment.CenterVertically",
+                  "Bottom": "Alignment.Bottom"
+                },
+                "background": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
+                }
+              },
+              "notes": "Os filhos vão no `content`. Com `spacing`, passe `Arrangement.spacedBy(<spacing>.dp)` no lugar de `horizontalArrangement` (para manter Center ou End use `Arrangement.spacedBy(<spacing>.dp, Alignment.CenterHorizontally)` ou `Alignment.End`). Monte o `modifier` na ordem tamanho, `background`, `padding` e, com `scroll = true`, `Modifier.horizontalScroll(rememberScrollState())`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Barra de ações",
+              "values": {
+                "horizontalArrangement": "SpaceBetween",
+                "verticalAlignment": "CenterVertically",
+                "width": "fill"
+              }
+            },
+            {
+              "name": "Linha espaçada",
+              "values": {
+                "horizontalArrangement": "Start",
+                "verticalAlignment": "CenterVertically",
+                "spacing": 8,
+                "padding": 16
+              }
+            },
+            {
+              "name": "Rolagem horizontal",
+              "values": {
+                "scroll": "true",
+                "spacing": 12,
+                "width": "fill"
+              }
+            }
+          ]
+        },
+        {
+          "id": "column",
+          "name": "Column",
+          "description": "Coloca os filhos em coluna, de cima para baixo. Use para blocos de conteúdo, formulários e qualquer pilha vertical.",
+          "component": "components/column.json",
+          "doc": "docs/column.md",
+          "fields": [
+            {
+              "key": "verticalArrangement",
+              "label": "Distribuição vertical",
+              "type": "enum",
+              "default": "Top",
+              "options": [
+                "Top",
+                "Bottom",
+                "Center",
+                "SpaceBetween",
+                "SpaceAround",
+                "SpaceEvenly"
+              ],
+              "description": "Como os filhos se distribuem no eixo vertical (Arrangement)."
+            },
+            {
+              "key": "horizontalAlignment",
+              "label": "Alinhamento horizontal",
+              "type": "enum",
+              "default": "Start",
+              "options": ["Start", "CenterHorizontally", "End"],
+              "description": "Como os filhos se alinham no eixo horizontal (Alignment)."
+            },
+            {
+              "key": "spacing",
+              "label": "Espaçamento (dp)",
+              "type": "number",
+              "description": "Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0."
+            },
+            {
+              "key": "background",
+              "label": "Fundo",
+              "type": "enum",
+              "default": "none",
+              "options": [
+                "none",
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema usado como fundo (Modifier.background). none = sem fundo."
+            },
+            {
+              "key": "padding",
+              "label": "Margem interna (dp)",
+              "type": "number",
+              "description": "Modifier.padding em dp. Vazio = 0."
+            },
+            {
+              "key": "scroll",
+              "label": "Rolagem",
+              "type": "enum",
+              "default": "false",
+              "options": ["false", "true"],
+              "description": "true torna o conteúdo rolável sem usar lazy (verticalScroll/horizontalScroll com rememberScrollState)."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.foundation.layout.Column",
+              "path": "compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Column.kt",
+              "params": {
+                "verticalArrangement": "verticalArrangement",
+                "horizontalAlignment": "horizontalAlignment"
+              },
+              "values": {
+                "verticalArrangement": {
+                  "Top": "Arrangement.Top",
+                  "Bottom": "Arrangement.Bottom",
+                  "Center": "Arrangement.Center",
+                  "SpaceBetween": "Arrangement.SpaceBetween",
+                  "SpaceAround": "Arrangement.SpaceAround",
+                  "SpaceEvenly": "Arrangement.SpaceEvenly"
+                },
+                "horizontalAlignment": {
+                  "Start": "Alignment.Start",
+                  "CenterHorizontally": "Alignment.CenterHorizontally",
+                  "End": "Alignment.End"
+                },
+                "background": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
+                }
+              },
+              "notes": "Os filhos vão no `content`. Com `spacing`, passe `Arrangement.spacedBy(<spacing>.dp)` no lugar de `verticalArrangement` (para manter Center ou Bottom use `Arrangement.spacedBy(<spacing>.dp, Alignment.CenterVertically)` ou `Alignment.Bottom`). Monte o `modifier` na ordem tamanho, `background`, `padding` e, com `scroll = true`, `Modifier.verticalScroll(rememberScrollState())`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Pilha espaçada",
+              "values": {
+                "verticalArrangement": "Top",
+                "horizontalAlignment": "Start",
+                "spacing": 8,
+                "padding": 16,
+                "width": "fill"
+              }
+            },
+            {
+              "name": "Conteúdo centralizado",
+              "values": {
+                "verticalArrangement": "Center",
+                "horizontalAlignment": "CenterHorizontally",
+                "width": "fill",
+                "height": "fill"
+              }
+            },
+            {
+              "name": "Com rolagem",
+              "values": {
+                "spacing": 16,
+                "scroll": "true",
+                "width": "fill",
+                "height": "fill"
+              }
+            }
+          ]
+        },
+        {
+          "id": "lazy-column",
+          "name": "LazyColumn",
+          "description": "Lista vertical rolável que só compõe o que aparece. Use para listas longas de List items, cartões ou linhas.",
+          "component": "components/lazy-column.json",
+          "doc": "docs/lazy-column.md",
+          "fields": [
+            {
+              "key": "verticalArrangement",
+              "label": "Distribuição vertical",
+              "type": "enum",
+              "default": "Top",
+              "options": [
+                "Top",
+                "Bottom",
+                "Center",
+                "SpaceBetween",
+                "SpaceAround",
+                "SpaceEvenly"
+              ],
+              "description": "Como os itens se distribuem no eixo vertical (Arrangement)."
+            },
+            {
+              "key": "horizontalAlignment",
+              "label": "Alinhamento horizontal",
+              "type": "enum",
+              "default": "Start",
+              "options": ["Start", "CenterHorizontally", "End"],
+              "description": "Como os itens se alinham no eixo horizontal (Alignment)."
+            },
+            {
+              "key": "spacing",
+              "label": "Espaçamento entre itens (dp)",
+              "type": "number",
+              "description": "Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0."
+            },
+            {
+              "key": "contentPadding",
+              "label": "Margem do conteúdo (dp)",
+              "type": "number",
+              "description": "Margem interna da lista em dp (PaddingValues). Vazio = 0."
+            },
+            {
+              "key": "reverseLayout",
+              "label": "Layout invertido",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true começa pelo fim da lista (reverseLayout)."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "fill",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "fill",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.foundation.lazy.LazyColumn",
+              "path": "compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyDsl.kt",
+              "params": {
+                "verticalArrangement": "verticalArrangement",
+                "horizontalAlignment": "horizontalAlignment",
+                "reverseLayout": "reverseLayout"
+              },
+              "values": {
+                "verticalArrangement": {
+                  "Top": "Arrangement.Top",
+                  "Bottom": "Arrangement.Bottom",
+                  "Center": "Arrangement.Center",
+                  "SpaceBetween": "Arrangement.SpaceBetween",
+                  "SpaceAround": "Arrangement.SpaceAround",
+                  "SpaceEvenly": "Arrangement.SpaceEvenly"
+                },
+                "horizontalAlignment": {
+                  "Start": "Alignment.Start",
+                  "CenterHorizontally": "Alignment.CenterHorizontally",
+                  "End": "Alignment.End"
+                }
+              },
+              "notes": "Cada marcação filha vira um `item { … }` no `content` (filhas iguais e repetidas viram `items(lista) { … }`). `contentPadding` vira `PaddingValues(<contentPadding>.dp)` e `spacing` vira `Arrangement.spacedBy(<spacing>.dp)` no lugar de `verticalArrangement`. A lista precisa de altura limitada (`fill`, `fixed` ou `weight`). Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Lista da tela",
+              "values": {
+                "spacing": 8,
+                "contentPadding": 16,
+                "width": "fill",
+                "height": "fill"
+              }
+            },
+            {
+              "name": "Lista compacta",
+              "values": {
+                "verticalArrangement": "Top",
+                "width": "fill",
+                "height": "fixed"
+              }
+            }
+          ]
+        },
+        {
+          "id": "lazy-row",
+          "name": "LazyRow",
+          "description": "Lista horizontal rolável que só compõe o que aparece. Use para carrosséis simples de cartões, chips e miniaturas.",
+          "component": "components/lazy-row.json",
+          "doc": "docs/lazy-row.md",
+          "fields": [
+            {
+              "key": "horizontalArrangement",
+              "label": "Distribuição horizontal",
+              "type": "enum",
+              "default": "Start",
+              "options": [
+                "Start",
+                "End",
+                "Center",
+                "SpaceBetween",
+                "SpaceAround",
+                "SpaceEvenly"
+              ],
+              "description": "Como os itens se distribuem no eixo horizontal (Arrangement)."
+            },
+            {
+              "key": "verticalAlignment",
+              "label": "Alinhamento vertical",
+              "type": "enum",
+              "default": "Top",
+              "options": ["Top", "CenterVertically", "Bottom"],
+              "description": "Como os itens se alinham no eixo vertical (Alignment)."
+            },
+            {
+              "key": "spacing",
+              "label": "Espaçamento entre itens (dp)",
+              "type": "number",
+              "description": "Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0."
+            },
+            {
+              "key": "contentPadding",
+              "label": "Margem do conteúdo (dp)",
+              "type": "number",
+              "description": "Margem interna da lista em dp (PaddingValues). Vazio = 0."
+            },
+            {
+              "key": "reverseLayout",
+              "label": "Layout invertido",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true começa pelo fim da lista (reverseLayout)."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.foundation.lazy.LazyRow",
+              "path": "compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyDsl.kt",
+              "params": {
+                "horizontalArrangement": "horizontalArrangement",
+                "verticalAlignment": "verticalAlignment",
+                "reverseLayout": "reverseLayout"
+              },
+              "values": {
+                "horizontalArrangement": {
+                  "Start": "Arrangement.Start",
+                  "End": "Arrangement.End",
+                  "Center": "Arrangement.Center",
+                  "SpaceBetween": "Arrangement.SpaceBetween",
+                  "SpaceAround": "Arrangement.SpaceAround",
+                  "SpaceEvenly": "Arrangement.SpaceEvenly"
+                },
+                "verticalAlignment": {
+                  "Top": "Alignment.Top",
+                  "CenterVertically": "Alignment.CenterVertically",
+                  "Bottom": "Alignment.Bottom"
+                }
+              },
+              "notes": "Cada marcação filha vira um `item { … }` no `content` (filhas iguais e repetidas viram `items(lista) { … }`). `contentPadding` vira `PaddingValues(<contentPadding>.dp)` e `spacing` vira `Arrangement.spacedBy(<spacing>.dp)` no lugar de `horizontalArrangement`. A lista precisa de largura limitada (`fill` ou `fixed`). Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Carrossel de chips",
+              "values": {
+                "spacing": 8,
+                "contentPadding": 16,
+                "verticalAlignment": "CenterVertically",
+                "width": "fill"
+              }
+            },
+            {
+              "name": "Faixa de cartões",
+              "values": {
+                "horizontalArrangement": "Start",
+                "spacing": 12,
+                "width": "fill",
+                "height": "fixed"
+              }
+            }
+          ]
+        },
+        {
+          "id": "lazy-vertical-grid",
+          "name": "LazyVerticalGrid",
+          "description": "Grade vertical rolável que só compõe o que aparece. Use para galerias e catálogos em colunas.",
+          "component": "components/lazy-vertical-grid.json",
+          "doc": "docs/lazy-vertical-grid.md",
+          "fields": [
+            {
+              "key": "columns",
+              "label": "Colunas",
+              "type": "number",
+              "default": 2,
+              "description": "Número de colunas fixas (GridCells.Fixed)."
+            },
+            {
+              "key": "minColumnWidth",
+              "label": "Largura mínima da coluna (dp)",
+              "type": "number",
+              "description": "Se preenchida, as colunas se adaptam a esta largura (GridCells.Adaptive) e o número de colunas é ignorado."
+            },
+            {
+              "key": "verticalSpacing",
+              "label": "Espaçamento vertical (dp)",
+              "type": "number",
+              "description": "Espaço entre as linhas da grade em dp (verticalArrangement)."
+            },
+            {
+              "key": "horizontalSpacing",
+              "label": "Espaçamento horizontal (dp)",
+              "type": "number",
+              "description": "Espaço entre as colunas da grade em dp (horizontalArrangement)."
+            },
+            {
+              "key": "contentPadding",
+              "label": "Margem do conteúdo (dp)",
+              "type": "number",
+              "description": "Margem interna da grade em dp (PaddingValues). Vazio = 0."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.foundation.lazy.grid.LazyVerticalGrid",
+              "path": "compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt",
+              "notes": "Passe `columns = GridCells.Fixed(<columns>)`; com `minColumnWidth` preenchido use `GridCells.Adaptive(<minColumnWidth>.dp)` no lugar. Cada marcação filha vira um `item { … }` (filhas iguais e repetidas viram `items(lista) { … }`). `verticalSpacing` e `horizontalSpacing` viram `Arrangement.spacedBy(<n>.dp)` em `verticalArrangement` e `horizontalArrangement`, e `contentPadding` vira `PaddingValues(<contentPadding>.dp)`; a grade precisa de altura limitada. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Galeria de duas colunas",
+              "values": {
+                "columns": 2,
+                "verticalSpacing": 8,
+                "horizontalSpacing": 8,
+                "contentPadding": 16,
+                "width": "fill",
+                "height": "fill"
+              }
+            },
+            {
+              "name": "Grade adaptativa",
+              "values": {
+                "minColumnWidth": 120,
+                "verticalSpacing": 12,
+                "horizontalSpacing": 12,
+                "width": "fill",
+                "height": "fill"
+              }
+            }
+          ]
+        },
+        {
+          "id": "flow-row",
+          "name": "FlowRow",
+          "description": "Linha que quebra para a linha de baixo quando os filhos não cabem. Use para grupos de chips e etiquetas.",
+          "component": "components/flow-row.json",
+          "doc": "docs/flow-row.md",
+          "fields": [
+            {
+              "key": "horizontalArrangement",
+              "label": "Distribuição horizontal",
+              "type": "enum",
+              "default": "Start",
+              "options": [
+                "Start",
+                "End",
+                "Center",
+                "SpaceBetween",
+                "SpaceAround",
+                "SpaceEvenly"
+              ],
+              "description": "Como os filhos se distribuem em cada linha (Arrangement)."
+            },
+            {
+              "key": "verticalArrangement",
+              "label": "Distribuição vertical",
+              "type": "enum",
+              "default": "Top",
+              "options": [
+                "Top",
+                "Bottom",
+                "Center",
+                "SpaceBetween",
+                "SpaceAround",
+                "SpaceEvenly"
+              ],
+              "description": "Como as linhas se distribuem no eixo vertical (Arrangement)."
+            },
+            {
+              "key": "itemVerticalAlignment",
+              "label": "Alinhamento vertical dos itens",
+              "type": "enum",
+              "default": "Top",
+              "options": ["Top", "CenterVertically", "Bottom"],
+              "description": "Como os itens se alinham dentro de cada linha (Alignment)."
+            },
+            {
+              "key": "maxItemsInEachRow",
+              "label": "Máximo de itens por linha",
+              "type": "number",
+              "description": "Limite de itens em cada linha (Int). Vazio = sem limite."
+            },
+            {
+              "key": "maxLines",
+              "label": "Máximo de linhas",
+              "type": "number",
+              "description": "Limite de linhas (Int). Vazio = sem limite."
+            },
+            {
+              "key": "spacing",
+              "label": "Espaçamento horizontal (dp)",
+              "type": "number",
+              "description": "Espaço entre os itens de uma linha em dp (Arrangement.spacedBy)."
+            },
+            {
+              "key": "verticalSpacing",
+              "label": "Espaçamento vertical (dp)",
+              "type": "number",
+              "description": "Espaço entre as linhas em dp (Arrangement.spacedBy)."
+            },
+            {
+              "key": "padding",
+              "label": "Margem interna (dp)",
+              "type": "number",
+              "description": "Modifier.padding em dp. Vazio = 0."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.foundation.layout.FlowRow",
+              "path": "compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/FlowLayout.kt",
+              "params": {
+                "horizontalArrangement": "horizontalArrangement",
+                "verticalArrangement": "verticalArrangement",
+                "itemVerticalAlignment": "itemVerticalAlignment",
+                "maxItemsInEachRow": "maxItemsInEachRow",
+                "maxLines": "maxLines"
+              },
+              "values": {
+                "horizontalArrangement": {
+                  "Start": "Arrangement.Start",
+                  "End": "Arrangement.End",
+                  "Center": "Arrangement.Center",
+                  "SpaceBetween": "Arrangement.SpaceBetween",
+                  "SpaceAround": "Arrangement.SpaceAround",
+                  "SpaceEvenly": "Arrangement.SpaceEvenly"
+                },
+                "verticalArrangement": {
+                  "Top": "Arrangement.Top",
+                  "Bottom": "Arrangement.Bottom",
+                  "Center": "Arrangement.Center",
+                  "SpaceBetween": "Arrangement.SpaceBetween",
+                  "SpaceAround": "Arrangement.SpaceAround",
+                  "SpaceEvenly": "Arrangement.SpaceEvenly"
+                },
+                "itemVerticalAlignment": {
+                  "Top": "Alignment.Top",
+                  "CenterVertically": "Alignment.CenterVertically",
+                  "Bottom": "Alignment.Bottom"
+                }
+              },
+              "notes": "Os filhos vão no `content`. `spacing` e `verticalSpacing` viram `Arrangement.spacedBy(<n>.dp)` em `horizontalArrangement` e `verticalArrangement`; `maxItemsInEachRow` e `maxLines` entram só quando preenchidos, e `padding` vira `Modifier.padding(<padding>.dp)`. Use o overload sem o parâmetro `overflow`, que é o estável. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Grupo de chips",
+              "values": {
+                "spacing": 8,
+                "verticalSpacing": 8,
+                "width": "fill"
+              }
+            },
+            {
+              "name": "Duas linhas no máximo",
+              "values": {
+                "spacing": 12,
+                "maxLines": 2,
+                "itemVerticalAlignment": "CenterVertically",
+                "width": "fill"
+              }
+            }
+          ]
+        },
+        {
+          "id": "spacer",
+          "name": "Spacer",
+          "description": "Espaço vazio entre dois componentes. Use para afastar vizinhos com uma medida fixa ou, com peso, para empurrá-los para as pontas.",
+          "component": "components/spacer.json",
+          "doc": "docs/spacer.md",
+          "fields": [
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "fixed",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "fixed",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.foundation.layout.Spacer",
+              "path": "compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Spacer.kt",
+              "notes": "`Spacer` só recebe um `Modifier`: `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)`, `fill` vira `fillMaxWidth()`/`fillMaxHeight()` e `weight` vira `Modifier.weight(<weight>f)` (o uso comum, para empurrar vizinhos numa Row ou Column). `wrap` não ocupa espaço; não tem filhos."
+            }
+          },
+          "examples": [
+            {
+              "name": "Espaço de 16 dp",
+              "values": {
+                "width": "fixed",
+                "height": "fixed"
+              }
+            },
+            {
+              "name": "Empurra para a ponta",
+              "values": {
+                "weight": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "horizontal-pager",
+          "name": "HorizontalPager",
+          "description": "Páginas que se alternam com o deslize horizontal. Use para onboarding, galerias de uma imagem por vez e abas deslizantes.",
+          "component": "components/horizontal-pager.json",
+          "doc": "docs/horizontal-pager.md",
+          "fields": [
+            {
+              "key": "contentPadding",
+              "label": "Margem do conteúdo (dp)",
+              "type": "number",
+              "description": "Margem interna do pager em dp (PaddingValues). Vazio = 0."
+            },
+            {
+              "key": "pageSpacing",
+              "label": "Espaço entre páginas (dp)",
+              "type": "number",
+              "description": "Espaço entre as páginas em dp (pageSpacing). Vazio = 0."
+            },
+            {
+              "key": "verticalAlignment",
+              "label": "Alinhamento vertical",
+              "type": "enum",
+              "default": "CenterVertically",
+              "options": ["Top", "CenterVertically", "Bottom"],
+              "description": "Como cada página se alinha no eixo vertical (Alignment)."
+            },
+            {
+              "key": "userScrollEnabled",
+              "label": "Rolagem pelo usuário",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false trava o deslize (só troca de página por código)."
+            },
+            {
+              "key": "reverseLayout",
+              "label": "Layout invertido",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true começa pela última página."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.foundation.pager.HorizontalPager",
+              "path": "compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/pager/Pager.kt",
+              "params": {
+                "verticalAlignment": "verticalAlignment",
+                "userScrollEnabled": "userScrollEnabled",
+                "reverseLayout": "reverseLayout"
+              },
+              "values": {
+                "verticalAlignment": {
+                  "Top": "Alignment.Top",
+                  "CenterVertically": "Alignment.CenterVertically",
+                  "Bottom": "Alignment.Bottom"
+                }
+              },
+              "notes": "Cada marcação filha é uma página: crie `val pagerState = rememberPagerState(pageCount = { <número de filhas> })`, passe `state = pagerState` e escolha a filha pelo índice no `pageContent = { page -> … }`. `contentPadding` vira `PaddingValues(<contentPadding>.dp)` e `pageSpacing` vira `pageSpacing = <pageSpacing>.dp`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Páginas de onboarding",
+              "values": {
+                "verticalAlignment": "CenterVertically",
+                "width": "fill",
+                "height": "fill"
+              }
+            },
+            {
+              "name": "Páginas espiando",
+              "values": {
+                "contentPadding": 32,
+                "pageSpacing": 16,
+                "width": "fill",
+                "height": "fixed"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "content",
+      "name": "Conteúdo",
+      "color": "#625B71",
+      "annotationTypes": [
+        {
+          "id": "text",
+          "name": "Text",
+          "description": "Texto na tipografia do tema. Use para títulos, parágrafos, rótulos e qualquer texto solto.",
+          "labelField": "text",
+          "component": "components/text.json",
+          "doc": "docs/text.md",
+          "fields": [
+            {
+              "key": "text",
+              "label": "Texto",
+              "type": "string",
+              "required": true,
+              "description": "O texto exibido."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "bodyLarge",
+              "options": [
+                "displayLarge",
+                "displayMedium",
+                "displaySmall",
+                "headlineLarge",
+                "headlineMedium",
+                "headlineSmall",
+                "titleLarge",
+                "titleMedium",
+                "titleSmall",
+                "bodyLarge",
+                "bodyMedium",
+                "bodySmall",
+                "labelLarge",
+                "labelMedium",
+                "labelSmall"
+              ],
+              "description": "Papel da tipografia do tema (MaterialTheme.typography)."
+            },
+            {
+              "key": "color",
+              "label": "Cor",
+              "type": "enum",
+              "options": [
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema. Vazio = cor do conteúdo (LocalContentColor)."
+            },
+            {
+              "key": "textAlign",
+              "label": "Alinhamento do texto",
+              "type": "enum",
+              "options": ["Start", "Center", "End", "Justify"],
+              "description": "Alinhamento horizontal do texto (TextAlign). Vazio = padrão do Compose."
+            },
+            {
+              "key": "maxLines",
+              "label": "Máximo de linhas",
+              "type": "number",
+              "description": "Limite de linhas (Int). Vazio = sem limite."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Text",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Text.kt",
+              "params": {
+                "text": "text",
+                "style": "style",
+                "color": "color",
+                "textAlign": "textAlign",
+                "maxLines": "maxLines"
+              },
+              "values": {
+                "style": {
+                  "displayLarge": "MaterialTheme.typography.displayLarge",
+                  "displayMedium": "MaterialTheme.typography.displayMedium",
+                  "displaySmall": "MaterialTheme.typography.displaySmall",
+                  "headlineLarge": "MaterialTheme.typography.headlineLarge",
+                  "headlineMedium": "MaterialTheme.typography.headlineMedium",
+                  "headlineSmall": "MaterialTheme.typography.headlineSmall",
+                  "titleLarge": "MaterialTheme.typography.titleLarge",
+                  "titleMedium": "MaterialTheme.typography.titleMedium",
+                  "titleSmall": "MaterialTheme.typography.titleSmall",
+                  "bodyLarge": "MaterialTheme.typography.bodyLarge",
+                  "bodyMedium": "MaterialTheme.typography.bodyMedium",
+                  "bodySmall": "MaterialTheme.typography.bodySmall",
+                  "labelLarge": "MaterialTheme.typography.labelLarge",
+                  "labelMedium": "MaterialTheme.typography.labelMedium",
+                  "labelSmall": "MaterialTheme.typography.labelSmall"
+                },
+                "color": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
+                },
+                "textAlign": {
+                  "Start": "TextAlign.Start",
+                  "Center": "TextAlign.Center",
+                  "End": "TextAlign.End",
+                  "Justify": "TextAlign.Justify"
+                }
+              },
+              "notes": "`color` e `textAlign` só entram quando preenchidos; com `maxLines`, considere `overflow = TextOverflow.Ellipsis`. Se o app usa recursos de string, o `text` vira `stringResource(R.string.x)`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Título de tela",
+              "values": {
+                "text": "Configurações",
+                "style": "headlineMedium"
+              }
+            },
+            {
+              "name": "Parágrafo",
+              "values": {
+                "text": "Texto de apoio com uma frase um pouco mais longa.",
+                "style": "bodyMedium",
+                "color": "onSurfaceVariant"
+              }
+            },
+            {
+              "name": "Rótulo centralizado",
+              "values": {
+                "text": "Salvar",
+                "style": "labelLarge",
+                "textAlign": "Center",
+                "width": "fill"
+              }
+            }
+          ]
+        },
+        {
+          "id": "icon",
+          "name": "Icon",
+          "description": "Ícone de 24 dp da família Material. Use sozinho ou dentro de botões, campos e itens de lista.",
+          "labelField": "imageVector",
+          "component": "components/icon.json",
+          "doc": "docs/icon.md",
+          "fields": [
+            {
+              "key": "imageVector",
+              "label": "Ícone",
+              "type": "string",
+              "required": true,
+              "default": "Home",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Nome do ícone em Icons.Filled (por exemplo Home). A lista sugere os mais comuns, mas aceita qualquer nome."
+            },
+            {
+              "key": "contentDescription",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Texto de acessibilidade do ícone. Vazio = decorativo (null)."
+            },
+            {
+              "key": "tint",
+              "label": "Cor",
+              "type": "enum",
+              "options": [
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema usado no ícone. Vazio = cor do conteúdo (LocalContentColor)."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Icon",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Icon.kt",
+              "params": {
+                "contentDescription": "contentDescription",
+                "tint": "tint"
+              },
+              "values": {
+                "tint": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
+                }
+              },
+              "notes": "O ícone vem de `Icons.Filled.<imageVector>`, por exemplo `Icon(imageVector = Icons.Filled.Home, contentDescription = <contentDescription>)`; sem descrição use `contentDescription = null`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`. `tint` só entra quando preenchido; o tamanho é o padrão de 24 dp."
+            }
+          },
+          "examples": [
+            {
+              "name": "Início",
+              "values": {
+                "imageVector": "Home",
+                "contentDescription": "Início"
+              }
+            },
+            {
+              "name": "Favorito colorido",
+              "values": {
+                "imageVector": "Favorite",
+                "tint": "error"
+              }
+            }
+          ]
+        },
+        {
+          "id": "image",
+          "name": "Image",
+          "description": "Imagem com escala e descrição. Use para fotos, capas e ilustrações, de recurso local ou de uma URL.",
+          "labelField": "url",
+          "component": "components/image.json",
+          "doc": "docs/image.md",
+          "fields": [
+            {
+              "key": "url",
+              "label": "URL da imagem",
+              "type": "string",
+              "required": true,
+              "description": "Endereço https:// da imagem. O componente a exibe no canvas; no código ela passa pelo carregador de imagens do app."
+            },
+            {
+              "key": "contentDescription",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Texto de acessibilidade da imagem. Vazio = decorativa (null)."
+            },
+            {
+              "key": "contentScale",
+              "label": "Escala",
+              "type": "enum",
+              "default": "Fit",
+              "options": [
+                "Crop",
+                "Fit",
+                "FillBounds",
+                "FillWidth",
+                "FillHeight",
+                "Inside",
+                "None"
+              ],
+              "description": "Como a imagem preenche o espaço (ContentScale)."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.foundation.Image",
+              "path": "compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/Image.kt",
+              "params": {
+                "contentDescription": "contentDescription",
+                "contentScale": "contentScale"
+              },
+              "values": {
+                "contentScale": {
+                  "Crop": "ContentScale.Crop",
+                  "Fit": "ContentScale.Fit",
+                  "FillBounds": "ContentScale.FillBounds",
+                  "FillWidth": "ContentScale.FillWidth",
+                  "FillHeight": "ContentScale.FillHeight",
+                  "Inside": "ContentScale.Inside",
+                  "None": "ContentScale.None"
+                }
+              },
+              "notes": "`Image` recebe um `Painter`: imagem local é `Image(painter = painterResource(R.drawable.x), contentDescription, contentScale)`; a `url` remota usa o carregador de imagens do app (por exemplo Coil `AsyncImage(model = <url>, contentDescription, contentScale)`), que fica fora do androidx e desta biblioteca. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Capa recortada",
+              "values": {
+                "url": "https://example.com/capa.jpg",
+                "contentDescription": "Capa do álbum",
+                "contentScale": "Crop",
+                "width": "fill",
+                "height": "fixed"
+              }
+            },
+            {
+              "name": "Ilustração inteira",
+              "values": {
+                "url": "https://example.com/ilustracao.png",
+                "contentScale": "Fit",
+                "width": "fill"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "components",
+      "name": "Componentes",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "top-app-bar",
+          "name": "Top app bar",
+          "description": "Barra do topo da tela com título, ícone de navegação e ações. Small é a padrão; Center centraliza o título; Medium e Large têm título grande que colapsa ao rolar.",
+          "labelField": "title",
+          "component": "components/top-app-bar.json",
+          "doc": "docs/top-app-bar.md",
+          "fields": [
+            {
+              "key": "title",
+              "label": "Título",
+              "type": "string",
+              "required": true,
+              "description": "Título da tela."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "small",
+              "options": ["small", "center", "medium", "large"],
+              "description": "small, center (título centralizado), medium ou large (título grande em duas linhas)."
+            },
+            {
+              "key": "navigationIcon",
+              "label": "Ícone de navegação",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone à esquerda (Menu ou ArrowBack, por exemplo). Vazio = sem ícone."
+            },
+            {
+              "key": "actionIcon1",
+              "label": "Ação 1",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Primeiro ícone de ação à direita. Vazio = sem ação."
+            },
+            {
+              "key": "actionIcon2",
+              "label": "Ação 2",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Segundo ícone de ação à direita. Vazio = sem ação."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.TopAppBar",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt",
+              "notes": "`title = { Text(<title>) }`; com `navigationIcon` preenchido, `navigationIcon = { IconButton(onClick = …) { Icon(Icons.Filled.<navigationIcon>, contentDescription = …) } }`, e cada `actionIcon1`/`actionIcon2` preenchido vira um `IconButton` dentro de `actions = { … }`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`. Nenhuma das quatro variantes exige opt-in; só o `scrollBehavior` (`TopAppBarDefaults.pinnedScrollBehavior()` e parentes) exige `@OptIn(ExperimentalMaterial3Api::class)`.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "center": {
+                    "symbol": "androidx.compose.material3.CenterAlignedTopAppBar"
+                  },
+                  "medium": {
+                    "symbol": "androidx.compose.material3.MediumTopAppBar"
+                  },
+                  "large": {
+                    "symbol": "androidx.compose.material3.LargeTopAppBar"
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "title": "Início",
+                "style": "small",
+                "navigationIcon": "Menu",
+                "actionIcon1": "Search",
+                "actionIcon2": "MoreVert"
+              }
+            },
+            {
+              "name": "Centralizada",
+              "values": {
+                "title": "Perfil",
+                "style": "center",
+                "navigationIcon": "ArrowBack"
+              }
+            },
+            {
+              "name": "Grande",
+              "values": {
+                "title": "Configurações",
+                "style": "large",
+                "navigationIcon": "ArrowBack"
+              }
+            }
+          ]
+        },
+        {
+          "id": "button",
+          "name": "Button",
+          "description": "Botão de ação. Filled é a ênfase alta, tonal e elevated a média, outlined e text a baixa.",
+          "labelField": "label",
+          "component": "components/button.json",
+          "doc": "docs/button.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Rótulo",
+              "type": "string",
+              "required": true,
+              "description": "Texto do botão."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "filled",
+              "options": ["filled", "tonal", "outlined", "text", "elevated"],
+              "description": "filled (Button), tonal (FilledTonalButton), outlined, text ou elevated."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita o botão."
+            },
+            {
+              "key": "icon",
+              "label": "Ícone",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone antes do texto. Vazio = só texto."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Button",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt",
+              "params": {
+                "enabled": "enabled"
+              },
+              "notes": "`onClick` liga à lógica da tela e o texto vai em `content = { Text(<label>) }`. Com `icon` preenchido, ponha antes do texto `Icon(Icons.Filled.<icon>, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))` e `Spacer(Modifier.size(ButtonDefaults.IconSpacing))`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "tonal": {
+                    "symbol": "androidx.compose.material3.FilledTonalButton"
+                  },
+                  "outlined": {
+                    "symbol": "androidx.compose.material3.OutlinedButton"
+                  },
+                  "text": {
+                    "symbol": "androidx.compose.material3.TextButton"
+                  },
+                  "elevated": {
+                    "symbol": "androidx.compose.material3.ElevatedButton"
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Preenchido",
+              "values": {
+                "label": "Salvar",
+                "style": "filled"
+              }
+            },
+            {
+              "name": "Contornado",
+              "values": {
+                "label": "Cancelar",
+                "style": "outlined"
+              }
+            },
+            {
+              "name": "Com ícone",
+              "values": {
+                "label": "Adicionar",
+                "style": "tonal",
+                "icon": "Add"
+              }
+            }
+          ]
+        },
+        {
+          "id": "fab",
+          "name": "FAB",
+          "description": "Botão de ação flutuante para a ação principal da tela. Small, regular ou large.",
+          "labelField": "contentDescription",
+          "component": "components/fab.json",
+          "doc": "docs/fab.md",
+          "fields": [
+            {
+              "key": "icon",
+              "label": "Ícone",
+              "type": "string",
+              "required": true,
+              "default": "Add",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone do botão."
+            },
+            {
+              "key": "contentDescription",
+              "label": "Descrição",
+              "type": "string",
+              "description": "Texto de acessibilidade do botão."
+            },
+            {
+              "key": "size",
+              "label": "Tamanho",
+              "type": "enum",
+              "default": "regular",
+              "options": ["small", "regular", "large"],
+              "description": "small (40 dp), regular (56 dp) ou large (96 dp)."
+            },
+            {
+              "key": "containerColor",
+              "label": "Cor do botão",
+              "type": "enum",
+              "default": "primaryContainer",
+              "options": [
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema usado no fundo do botão."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.FloatingActionButton",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt",
+              "params": {
+                "containerColor": "containerColor"
+              },
+              "values": {
+                "containerColor": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
+                }
+              },
+              "notes": "O ícone vai em `content = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }` e `onClick` liga à lógica da tela. `size` troca o composable (Small, regular, Large). Dentro de um Scaffold, o FAB vai em `floatingActionButton`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.",
+              "variants": {
+                "field": "size",
+                "cases": {
+                  "small": {
+                    "symbol": "androidx.compose.material3.SmallFloatingActionButton"
+                  },
+                  "large": {
+                    "symbol": "androidx.compose.material3.LargeFloatingActionButton"
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Adicionar",
+              "values": {
+                "icon": "Add",
+                "contentDescription": "Adicionar",
+                "size": "regular"
+              }
+            },
+            {
+              "name": "Pequeno terciário",
+              "values": {
+                "icon": "Edit",
+                "size": "small",
+                "containerColor": "tertiaryContainer"
+              }
+            },
+            {
+              "name": "Grande",
+              "values": {
+                "icon": "Add",
+                "size": "large"
+              }
+            }
+          ]
+        },
+        {
+          "id": "extended-fab",
+          "name": "Extended FAB",
+          "description": "Botão de ação flutuante com ícone e texto. Use quando a ação precisa de um rótulo.",
+          "labelField": "text",
+          "component": "components/extended-fab.json",
+          "doc": "docs/extended-fab.md",
+          "fields": [
+            {
+              "key": "text",
+              "label": "Texto",
+              "type": "string",
+              "required": true,
+              "description": "Rótulo do botão."
+            },
+            {
+              "key": "icon",
+              "label": "Ícone",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone antes do texto. Vazio = só texto."
+            },
+            {
+              "key": "expanded",
+              "label": "Expandido",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false recolhe o botão para só o ícone."
+            },
+            {
+              "key": "containerColor",
+              "label": "Cor do botão",
+              "type": "enum",
+              "default": "primaryContainer",
+              "options": [
+                "primary",
+                "onPrimary",
+                "primaryContainer",
+                "onPrimaryContainer",
+                "secondary",
+                "onSecondary",
+                "secondaryContainer",
+                "onSecondaryContainer",
+                "tertiary",
+                "onTertiary",
+                "tertiaryContainer",
+                "onTertiaryContainer",
+                "error",
+                "onError",
+                "errorContainer",
+                "onErrorContainer",
+                "background",
+                "onBackground",
+                "surface",
+                "onSurface",
+                "surfaceVariant",
+                "onSurfaceVariant",
+                "surfaceTint",
+                "inverseSurface",
+                "inverseOnSurface",
+                "inversePrimary",
+                "outline",
+                "outlineVariant",
+                "scrim",
+                "surfaceBright",
+                "surfaceDim",
+                "surfaceContainerLowest",
+                "surfaceContainerLow",
+                "surfaceContainer",
+                "surfaceContainerHigh",
+                "surfaceContainerHighest"
+              ],
+              "description": "Papel de cor do tema usado no fundo do botão."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.ExtendedFloatingActionButton",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButton.kt",
+              "params": {
+                "expanded": "expanded",
+                "containerColor": "containerColor"
+              },
+              "values": {
+                "containerColor": {
+                  "primary": "MaterialTheme.colorScheme.primary",
+                  "onPrimary": "MaterialTheme.colorScheme.onPrimary",
+                  "primaryContainer": "MaterialTheme.colorScheme.primaryContainer",
+                  "onPrimaryContainer": "MaterialTheme.colorScheme.onPrimaryContainer",
+                  "secondary": "MaterialTheme.colorScheme.secondary",
+                  "onSecondary": "MaterialTheme.colorScheme.onSecondary",
+                  "secondaryContainer": "MaterialTheme.colorScheme.secondaryContainer",
+                  "onSecondaryContainer": "MaterialTheme.colorScheme.onSecondaryContainer",
+                  "tertiary": "MaterialTheme.colorScheme.tertiary",
+                  "onTertiary": "MaterialTheme.colorScheme.onTertiary",
+                  "tertiaryContainer": "MaterialTheme.colorScheme.tertiaryContainer",
+                  "onTertiaryContainer": "MaterialTheme.colorScheme.onTertiaryContainer",
+                  "error": "MaterialTheme.colorScheme.error",
+                  "onError": "MaterialTheme.colorScheme.onError",
+                  "errorContainer": "MaterialTheme.colorScheme.errorContainer",
+                  "onErrorContainer": "MaterialTheme.colorScheme.onErrorContainer",
+                  "background": "MaterialTheme.colorScheme.background",
+                  "onBackground": "MaterialTheme.colorScheme.onBackground",
+                  "surface": "MaterialTheme.colorScheme.surface",
+                  "onSurface": "MaterialTheme.colorScheme.onSurface",
+                  "surfaceVariant": "MaterialTheme.colorScheme.surfaceVariant",
+                  "onSurfaceVariant": "MaterialTheme.colorScheme.onSurfaceVariant",
+                  "surfaceTint": "MaterialTheme.colorScheme.surfaceTint",
+                  "inverseSurface": "MaterialTheme.colorScheme.inverseSurface",
+                  "inverseOnSurface": "MaterialTheme.colorScheme.inverseOnSurface",
+                  "inversePrimary": "MaterialTheme.colorScheme.inversePrimary",
+                  "outline": "MaterialTheme.colorScheme.outline",
+                  "outlineVariant": "MaterialTheme.colorScheme.outlineVariant",
+                  "scrim": "MaterialTheme.colorScheme.scrim",
+                  "surfaceBright": "MaterialTheme.colorScheme.surfaceBright",
+                  "surfaceDim": "MaterialTheme.colorScheme.surfaceDim",
+                  "surfaceContainerLowest": "MaterialTheme.colorScheme.surfaceContainerLowest",
+                  "surfaceContainerLow": "MaterialTheme.colorScheme.surfaceContainerLow",
+                  "surfaceContainer": "MaterialTheme.colorScheme.surfaceContainer",
+                  "surfaceContainerHigh": "MaterialTheme.colorScheme.surfaceContainerHigh",
+                  "surfaceContainerHighest": "MaterialTheme.colorScheme.surfaceContainerHighest"
+                }
+              },
+              "notes": "Use a sobrecarga `ExtendedFloatingActionButton(text = { Text(<text>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }, onClick = …, expanded = <expanded>)`; sem `icon`, use a de `content = { Text(<text>) }`. Dentro de um Scaffold, vai em `floatingActionButton`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`."
+            }
+          },
+          "examples": [
+            {
+              "name": "Criar",
+              "values": {
+                "text": "Criar",
+                "icon": "Add"
+              }
+            },
+            {
+              "name": "Recolhido",
+              "values": {
+                "text": "Editar",
+                "icon": "Edit",
+                "expanded": "false",
+                "containerColor": "secondaryContainer"
+              }
+            }
+          ]
+        },
+        {
+          "id": "text-field",
+          "name": "Text field",
+          "description": "Campo de texto. Filled tem fundo preenchido; outlined tem contorno.",
+          "labelField": "label",
+          "component": "components/text-field.json",
+          "doc": "docs/text-field.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Rótulo",
+              "type": "string",
+              "required": true,
+              "description": "Rótulo flutuante do campo."
+            },
+            {
+              "key": "value",
+              "label": "Valor",
+              "type": "string",
+              "description": "Texto digitado no campo."
+            },
+            {
+              "key": "placeholder",
+              "label": "Dica",
+              "type": "string",
+              "description": "Texto de dica quando o campo está vazio."
+            },
+            {
+              "key": "supportingText",
+              "label": "Texto de apoio",
+              "type": "string",
+              "description": "Texto de apoio ou de erro abaixo do campo."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "filled",
+              "options": ["filled", "outlined"],
+              "description": "filled (TextField) ou outlined (OutlinedTextField)."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita o campo."
+            },
+            {
+              "key": "isError",
+              "label": "Em erro",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true pinta o campo como erro."
+            },
+            {
+              "key": "singleLine",
+              "label": "Linha única",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true limita o campo a uma linha."
+            },
+            {
+              "key": "maxLines",
+              "label": "Máximo de linhas",
+              "type": "number",
+              "description": "Limite de linhas (Int). Vazio = sem limite."
+            },
+            {
+              "key": "leadingIcon",
+              "label": "Ícone inicial",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone antes do texto. Vazio = sem ícone."
+            },
+            {
+              "key": "trailingIcon",
+              "label": "Ícone final",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone depois do texto. Vazio = sem ícone."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.TextField",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TextField.kt",
+              "params": {
+                "value": "value",
+                "enabled": "enabled",
+                "isError": "isError",
+                "singleLine": "singleLine",
+                "maxLines": "maxLines"
+              },
+              "notes": "`value` e `onValueChange` ligam a um estado da tela. `label`, `placeholder` e `supportingText` preenchidos viram `{ Text(<campo>) }`; `leadingIcon` e `trailingIcon` viram `{ Icon(Icons.Filled.<nome>, contentDescription = null) }`. `maxLines` só entra quando preenchido; filled e outlined não exigem opt-in. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "outlined": {
+                    "symbol": "androidx.compose.material3.OutlinedTextField",
+                    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/OutlinedTextField.kt"
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Preenchido",
+              "values": {
+                "label": "Nome",
+                "style": "filled"
+              }
+            },
+            {
+              "name": "Contornado com dica",
+              "values": {
+                "label": "E-mail",
+                "placeholder": "nome@exemplo.com",
+                "style": "outlined",
+                "leadingIcon": "Email",
+                "singleLine": "true"
+              }
+            },
+            {
+              "name": "Em erro",
+              "values": {
+                "label": "Senha",
+                "value": "123",
+                "supportingText": "Mínimo de 8 caracteres",
+                "style": "outlined",
+                "isError": "true",
+                "trailingIcon": "Lock"
+              }
+            }
+          ]
+        },
+        {
+          "id": "switch",
+          "name": "Switch",
+          "description": "Chave liga e desliga. Use para configurações com efeito imediato.",
+          "labelField": "label",
+          "component": "components/switch.json",
+          "doc": "docs/switch.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Rótulo",
+              "type": "string",
+              "description": "Texto ao lado da chave (o Switch em si não tem rótulo)."
+            },
+            {
+              "key": "checked",
+              "label": "Ligado",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true liga a chave."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita a chave."
+            },
+            {
+              "key": "thumbIcon",
+              "label": "Ícone no polegar",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true mostra um ícone de marca no polegar quando ligada."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Switch",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Switch.kt",
+              "params": {
+                "checked": "checked",
+                "enabled": "enabled"
+              },
+              "notes": "`onCheckedChange` liga à lógica da tela. O Switch não tem rótulo: o `label` vira um `Text` ao lado, numa `Row`. Com `thumbIcon = true`, passe `thumbContent = { Icon(Icons.Filled.Check, contentDescription = null, Modifier.size(SwitchDefaults.IconSize)) }`."
+            }
+          },
+          "examples": [
+            {
+              "name": "Desligada",
+              "values": {
+                "label": "Notificações",
+                "checked": "false"
+              }
+            },
+            {
+              "name": "Ligada com ícone",
+              "values": {
+                "label": "Modo avião",
+                "checked": "true",
+                "thumbIcon": "true"
+              }
+            }
+          ]
+        },
+        {
+          "id": "checkbox",
+          "name": "Checkbox",
+          "description": "Caixa de seleção. Marcada, desmarcada ou indeterminada (parte de um grupo marcada).",
+          "labelField": "label",
+          "component": "components/checkbox.json",
+          "doc": "docs/checkbox.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Rótulo",
+              "type": "string",
+              "description": "Texto ao lado da caixa (o Checkbox em si não tem rótulo)."
+            },
+            {
+              "key": "state",
+              "label": "Estado",
+              "type": "enum",
+              "default": "unchecked",
+              "options": ["unchecked", "checked", "indeterminate"],
+              "description": "unchecked, checked ou indeterminate (TriStateCheckbox)."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita a caixa."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Checkbox",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Checkbox.kt",
+              "params": {
+                "state": "checked",
+                "enabled": "enabled"
+              },
+              "values": {
+                "state": {
+                  "checked": "true",
+                  "unchecked": "false"
+                }
+              },
+              "notes": "`onCheckedChange` liga à lógica da tela. O Checkbox não tem rótulo: o `label` vira um `Text` ao lado, numa `Row`. O estado `indeterminate` troca para `TriStateCheckbox`.",
+              "variants": {
+                "field": "state",
+                "cases": {
+                  "indeterminate": {
+                    "symbol": "androidx.compose.material3.TriStateCheckbox",
+                    "params": {
+                      "state": "state"
+                    },
+                    "values": {
+                      "state": {
+                        "indeterminate": "ToggleableState.Indeterminate"
+                      }
+                    },
+                    "notes": "`TriStateCheckbox(state = ToggleableState.Indeterminate, onClick = …)` recebe `onClick` no lugar de `onCheckedChange`; importe `androidx.compose.ui.state.ToggleableState`. O `label` vira um `Text` ao lado, numa `Row`."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Desmarcada",
+              "values": {
+                "label": "Aceito os termos",
+                "state": "unchecked"
+              }
+            },
+            {
+              "name": "Marcada",
+              "values": {
+                "label": "Lembrar de mim",
+                "state": "checked"
+              }
+            },
+            {
+              "name": "Indeterminada",
+              "values": {
+                "label": "Selecionar tudo",
+                "state": "indeterminate"
+              }
+            }
+          ]
+        },
+        {
+          "id": "chip",
+          "name": "Chip",
+          "description": "Chip compacto. Assist sugere uma ação, filter filtra conteúdo, input representa um valor digitado e suggestion propõe uma resposta. Cada estilo tem a versão elevated.",
+          "labelField": "label",
+          "component": "components/chip.json",
+          "doc": "docs/chip.md",
+          "fields": [
+            {
+              "key": "label",
+              "label": "Rótulo",
+              "type": "string",
+              "required": true,
+              "description": "Texto do chip."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "assist",
+              "options": [
+                "assist",
+                "assist-elevated",
+                "filter",
+                "filter-elevated",
+                "input",
+                "suggestion",
+                "suggestion-elevated"
+              ],
+              "description": "assist, filter, input ou suggestion, cada um também na versão elevated."
+            },
+            {
+              "key": "selected",
+              "label": "Selecionado",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true marca o chip. Só vale nos estilos filter e input."
+            },
+            {
+              "key": "enabled",
+              "label": "Habilitado",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false desabilita o chip."
+            },
+            {
+              "key": "leadingIcon",
+              "label": "Ícone inicial",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone antes do texto. Vazio = sem ícone."
+            },
+            {
+              "key": "trailingIcon",
+              "label": "Ícone final",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone depois do texto. Vazio = sem ícone. Não existe em suggestion."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.AssistChip",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Chip.kt",
+              "params": {
+                "enabled": "enabled"
+              },
+              "notes": "`onClick` liga à lógica da tela e `label = { Text(<label>) }`. `leadingIcon` e `trailingIcon` preenchidos viram `{ Icon(Icons.Filled.<nome>, contentDescription = null, Modifier.size(AssistChipDefaults.IconSize)) }`. Nenhum estilo exige opt-in.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "assist-elevated": {
+                    "symbol": "androidx.compose.material3.ElevatedAssistChip"
+                  },
+                  "filter": {
+                    "symbol": "androidx.compose.material3.FilterChip",
+                    "params": {
+                      "selected": "selected"
+                    },
+                    "notes": "`selected` e `onClick` ligam ao estado do filtro e `label = { Text(<label>) }`. Com `selected = true` é costume `leadingIcon = { Icon(Icons.Filled.Done, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize)) }`; `trailingIcon` preenchido vira um `Icon` do mesmo tamanho."
+                  },
+                  "filter-elevated": {
+                    "symbol": "androidx.compose.material3.ElevatedFilterChip",
+                    "params": {
+                      "selected": "selected"
+                    },
+                    "notes": "`selected` e `onClick` ligam ao estado do filtro e `label = { Text(<label>) }`. Com `selected = true` é costume `leadingIcon = { Icon(Icons.Filled.Done, contentDescription = null, Modifier.size(FilterChipDefaults.IconSize)) }`; `trailingIcon` preenchido vira um `Icon` do mesmo tamanho."
+                  },
+                  "input": {
+                    "symbol": "androidx.compose.material3.InputChip",
+                    "params": {
+                      "selected": "selected"
+                    },
+                    "notes": "`selected` e `onClick` ligam ao estado do valor e `label = { Text(<label>) }`. `trailingIcon` costuma ser `Icons.Filled.Close` para remover o valor; o `avatar` (imagem circular) é opcional e não é campo."
+                  },
+                  "suggestion": {
+                    "symbol": "androidx.compose.material3.SuggestionChip",
+                    "notes": "`onClick` liga à lógica da tela e `label = { Text(<label>) }`. O SuggestionChip tem um só ícone, chamado `icon`: `icon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null, Modifier.size(SuggestionChipDefaults.IconSize)) }`."
+                  },
+                  "suggestion-elevated": {
+                    "symbol": "androidx.compose.material3.ElevatedSuggestionChip",
+                    "notes": "`onClick` liga à lógica da tela e `label = { Text(<label>) }`. O ElevatedSuggestionChip tem um só ícone, chamado `icon`: `icon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null, Modifier.size(SuggestionChipDefaults.IconSize)) }`."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Assist",
+              "values": {
+                "label": "Adicionar ao calendário",
+                "style": "assist",
+                "leadingIcon": "DateRange"
+              }
+            },
+            {
+              "name": "Filtro selecionado",
+              "values": {
+                "label": "Aberto agora",
+                "style": "filter",
+                "selected": "true"
+              }
+            },
+            {
+              "name": "Valor digitado",
+              "values": {
+                "label": "ana@exemplo.com",
+                "style": "input",
+                "trailingIcon": "Close"
+              }
+            }
+          ]
+        },
+        {
+          "id": "card",
+          "name": "Card",
+          "description": "Cartão que agrupa conteúdo relacionado. Filled e elevated destacam pelo fundo e pela sombra; outlined, pelo contorno.",
+          "labelField": "title",
+          "component": "components/card.json",
+          "doc": "docs/card.md",
+          "fields": [
+            {
+              "key": "title",
+              "label": "Título",
+              "type": "string",
+              "required": true,
+              "description": "Título do cartão."
+            },
+            {
+              "key": "subtitle",
+              "label": "Subtítulo",
+              "type": "string",
+              "description": "Linha de apoio abaixo do título."
+            },
+            {
+              "key": "supportingText",
+              "label": "Texto",
+              "type": "string",
+              "description": "Parágrafo de apoio do cartão."
+            },
+            {
+              "key": "media",
+              "label": "Imagem (URL)",
+              "type": "string",
+              "description": "Endereço https:// da imagem no topo do cartão. Vazio = sem imagem."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "filled",
+              "options": ["filled", "elevated", "outlined"],
+              "description": "filled (Card), elevated ou outlined."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.Card",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Card.kt",
+              "notes": "O conteúdo vai em `content` (uma Column): `media` no topo, depois `title`, `subtitle` e `supportingText` em `Text`. A `media` remota usa o carregador de imagens do app (por exemplo Coil `AsyncImage(model = <media>, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth())`), fora do androidx. Cartão clicável usa a sobrecarga com `onClick`. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "elevated": {
+                    "symbol": "androidx.compose.material3.ElevatedCard"
+                  },
+                  "outlined": {
+                    "symbol": "androidx.compose.material3.OutlinedCard"
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Cartão simples",
+              "values": {
+                "title": "Resumo da semana",
+                "subtitle": "12 a 18 de outubro",
+                "supportingText": "Você concluiu 8 de 10 tarefas.",
+                "style": "filled",
+                "width": "fill"
+              }
+            },
+            {
+              "name": "Com imagem",
+              "values": {
+                "title": "Praia do Rosa",
+                "supportingText": "Fim de semana de sol.",
+                "media": "https://example.com/praia.jpg",
+                "style": "elevated",
+                "width": "fill"
+              }
+            },
+            {
+              "name": "Contornado",
+              "values": {
+                "title": "Plano gratuito",
+                "style": "outlined",
+                "width": "fill"
+              }
+            }
+          ]
+        },
+        {
+          "id": "list-item",
+          "name": "List item",
+          "description": "Item de lista de uma a três linhas, com conteúdo à esquerda e à direita. Use dentro de listas.",
+          "labelField": "headlineContent",
+          "component": "components/list-item.json",
+          "doc": "docs/list-item.md",
+          "fields": [
+            {
+              "key": "headlineContent",
+              "label": "Título",
+              "type": "string",
+              "required": true,
+              "description": "Linha principal do item."
+            },
+            {
+              "key": "overlineContent",
+              "label": "Sobretítulo",
+              "type": "string",
+              "description": "Linha pequena acima do título. Vazio = sem linha."
+            },
+            {
+              "key": "supportingContent",
+              "label": "Texto de apoio",
+              "type": "string",
+              "description": "Linha de apoio abaixo do título. Vazio = sem linha."
+            },
+            {
+              "key": "leadingIcon",
+              "label": "Ícone inicial",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone à esquerda. Vazio = sem ícone."
+            },
+            {
+              "key": "leadingImage",
+              "label": "Avatar (URL)",
+              "type": "string",
+              "description": "Endereço https:// do avatar à esquerda. Vazio = sem avatar."
+            },
+            {
+              "key": "trailingContent",
+              "label": "Texto final",
+              "type": "string",
+              "description": "Texto curto à direita (hora, valor). Vazio = sem texto."
+            },
+            {
+              "key": "trailingIcon",
+              "label": "Ícone final",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone à direita. Vazio = sem ícone."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.ListItem",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ListItem.kt",
+              "notes": "`headlineContent = { Text(<headlineContent>) }`; `overlineContent`, `supportingContent` e `trailingContent` preenchidos viram `{ Text(<campo>) }` (o item tem de uma a três linhas conforme o preenchimento). `leadingIcon` e `trailingIcon` viram `leadingContent`/`trailingContent` com `Icon(Icons.Filled.<nome>, contentDescription = null)`; `leadingImage` é um avatar de `Modifier.size(40.dp).clip(CircleShape)` que, remoto, usa o carregador de imagens do app (por exemplo Coil `AsyncImage`)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Uma linha",
+              "values": {
+                "headlineContent": "Wi-Fi",
+                "leadingIcon": "Settings"
+              }
+            },
+            {
+              "name": "Duas linhas",
+              "values": {
+                "headlineContent": "Ana Souza",
+                "supportingContent": "Vamos almoçar?",
+                "trailingContent": "12:30",
+                "leadingImage": "https://example.com/ana.jpg"
+              }
+            },
+            {
+              "name": "Três linhas",
+              "values": {
+                "overlineContent": "Hoje",
+                "headlineContent": "Reunião de planejamento",
+                "supportingContent": "Sala 3, com a equipe de produto.",
+                "trailingIcon": "KeyboardArrowRight"
+              }
+            }
+          ]
+        },
+        {
+          "id": "navigation-bar",
+          "name": "Navigation bar",
+          "description": "Barra de navegação inferior com três a cinco destinos. Cada linha de Itens é um destino.",
+          "component": "components/navigation-bar.json",
+          "doc": "docs/navigation-bar.md",
+          "fields": [
+            {
+              "key": "items",
+              "label": "Itens",
+              "type": "table",
+              "required": true,
+              "columns": [
+                {
+                  "key": "label",
+                  "label": "Rótulo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Texto do destino."
+                },
+                {
+                  "key": "icon",
+                  "label": "Ícone",
+                  "type": "string",
+                  "suggestions": [
+                    "Home",
+                    "Search",
+                    "Person",
+                    "Menu",
+                    "MoreVert",
+                    "Add",
+                    "Check",
+                    "Close",
+                    "ArrowBack",
+                    "Favorite",
+                    "Edit",
+                    "Delete",
+                    "Share",
+                    "Notifications",
+                    "Settings",
+                    "Info",
+                    "Star",
+                    "Email",
+                    "Phone",
+                    "Place",
+                    "DateRange",
+                    "ShoppingCart",
+                    "AccountCircle",
+                    "KeyboardArrowRight",
+                    "KeyboardArrowDown",
+                    "Refresh",
+                    "Clear",
+                    "Done",
+                    "Lock",
+                    "List"
+                  ],
+                  "description": "Ícone do destino."
+                },
+                {
+                  "key": "selected",
+                  "label": "Selecionado",
+                  "type": "enum",
+                  "default": "false",
+                  "options": ["true", "false"],
+                  "description": "true marca o destino atual."
+                }
+              ],
+              "description": "Um destino por linha, na ordem em que aparecem na barra (de três a cinco)."
+            },
+            {
+              "key": "alwaysShowLabel",
+              "label": "Sempre mostrar o rótulo",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false mostra o rótulo só no destino selecionado."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.NavigationBar",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationBar.kt",
+              "notes": "Um `NavigationBarItem` por linha de `items`, dentro de `NavigationBar { … }`: `selected`, `onClick`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` e `alwaysShowLabel = <alwaysShowLabel>` (parâmetro do item, não da barra). Dentro de um Scaffold, a barra vai em `bottomBar`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`."
+            }
+          },
+          "examples": [
+            {
+              "name": "Sempre com rótulo",
+              "values": {
+                "alwaysShowLabel": "true"
+              }
+            },
+            {
+              "name": "Rótulo só no ativo",
+              "values": {
+                "alwaysShowLabel": "false"
+              }
+            }
+          ]
+        },
+        {
+          "id": "bottom-sheet",
+          "name": "Bottom sheet",
+          "description": "Folha que sobe da parte de baixo da tela. Modal cobre a tela com um scrim e se dispensa; standard fica ao lado do conteúdo.",
+          "labelField": "title",
+          "component": "components/bottom-sheet.json",
+          "doc": "docs/bottom-sheet.md",
+          "fields": [
+            {
+              "key": "title",
+              "label": "Título",
+              "type": "string",
+              "description": "Título no topo da folha."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "modal",
+              "options": ["modal", "standard"],
+              "description": "modal (ModalBottomSheet) ou standard (BottomSheetScaffold)."
+            },
+            {
+              "key": "dragHandle",
+              "label": "Alça de arraste",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false remove a alça no topo da folha."
+            },
+            {
+              "key": "sheetPeekHeight",
+              "label": "Altura recolhida (dp)",
+              "type": "number",
+              "default": 56,
+              "description": "Altura visível da folha recolhida em dp. Só vale no estilo standard."
+            },
+            {
+              "key": "items",
+              "label": "Itens",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "label",
+                  "label": "Rótulo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Texto da ação."
+                },
+                {
+                  "key": "icon",
+                  "label": "Ícone",
+                  "type": "string",
+                  "suggestions": [
+                    "Home",
+                    "Search",
+                    "Person",
+                    "Menu",
+                    "MoreVert",
+                    "Add",
+                    "Check",
+                    "Close",
+                    "ArrowBack",
+                    "Favorite",
+                    "Edit",
+                    "Delete",
+                    "Share",
+                    "Notifications",
+                    "Settings",
+                    "Info",
+                    "Star",
+                    "Email",
+                    "Phone",
+                    "Place",
+                    "DateRange",
+                    "ShoppingCart",
+                    "AccountCircle",
+                    "KeyboardArrowRight",
+                    "KeyboardArrowDown",
+                    "Refresh",
+                    "Clear",
+                    "Done",
+                    "Lock",
+                    "List"
+                  ],
+                  "description": "Ícone da ação. Vazio = sem ícone."
+                }
+              ],
+              "description": "Ações da folha, uma por linha."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.ModalBottomSheet",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ModalBottomSheet.kt",
+              "notes": "Exige @OptIn(ExperimentalMaterial3Api::class). `onDismissRequest` e `sheetState = rememberModalBottomSheetState()` ligam à lógica da tela, e o scrim é desenhado pelo próprio composable. O `content` (uma Column) traz o `title` em `Text` com `MaterialTheme.typography.titleLarge` e, para cada linha de `items`, `ListItem(headlineContent = { Text(<label>) }, leadingContent = { Icon(Icons.Filled.<icon>, contentDescription = null) })`. Com `dragHandle` em `false`, passe `dragHandle = null`.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "standard": {
+                    "symbol": "androidx.compose.material3.BottomSheetScaffold",
+                    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/BottomSheetScaffold.kt",
+                    "notes": "Exige @OptIn(ExperimentalMaterial3Api::class). O conteúdo da folha vai em `sheetContent = { … }` (uma Column com o `title` e os `items`, como no modal) e `sheetPeekHeight = <sheetPeekHeight>.dp`; o conteúdo da tela atrás da folha vai em `content = { innerPadding -> … }`. Com `dragHandle` em `false`, passe `sheetDragHandle = null`; `scaffoldState = rememberBottomSheetScaffoldState()` liga à lógica da tela."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Modal",
+              "values": {
+                "title": "Compartilhar",
+                "style": "modal",
+                "dragHandle": "true"
+              }
+            },
+            {
+              "name": "Standard recolhida",
+              "values": {
+                "title": "Detalhes",
+                "style": "standard",
+                "sheetPeekHeight": 96
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
