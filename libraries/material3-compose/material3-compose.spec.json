@@ -5405,6 +5405,1584 @@
               }
             }
           ]
+        },
+        {
+          "id": "divider",
+          "name": "Divider",
+          "description": "Linha fina que separa conteúdo. Horizontal separa itens de uma lista ou seções de uma coluna; vertical separa itens lado a lado numa linha.",
+          "component": "components/divider.json",
+          "doc": "docs/divider.md",
+          "fields": [
+            {
+              "key": "orientation",
+              "label": "Orientação",
+              "type": "enum",
+              "default": "horizontal",
+              "options": ["horizontal", "vertical"],
+              "description": "horizontal (HorizontalDivider) ou vertical (VerticalDivider)."
+            },
+            {
+              "key": "thickness",
+              "label": "Espessura (dp)",
+              "type": "number",
+              "description": "Espessura da linha em dp. Vazio = 1 (o padrão do Compose). O desenho aproxima valores de 1 a 4."
+            },
+            {
+              "key": "inset",
+              "label": "Recuo (dp)",
+              "type": "number",
+              "description": "Recuo nas duas pontas da linha, em dp. Vazio = de ponta a ponta (sem recuo)."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.HorizontalDivider",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Divider.kt",
+              "params": {
+                "thickness": "thickness"
+              },
+              "notes": "Estável, sem opt-in. `thickness` é um `Dp`: escreva `thickness = <thickness>.dp` (sem o campo, fica o padrão de 1 dp). O `HorizontalDivider` já ocupa a largura toda do pai (`fillMaxWidth()` por dentro); para um recuo nas pontas use `Modifier.padding(horizontal = <inset>.dp)`. A cor padrão é `DividerDefaults.color` (outline variant); só passe `color` se o tema pedir outra. Numa `Column` ou `LazyColumn` vai entre os itens; dentro de um `ListItem` use a posição entre um item e o seguinte.",
+              "variants": {
+                "field": "orientation",
+                "cases": {
+                  "vertical": {
+                    "symbol": "androidx.compose.material3.VerticalDivider",
+                    "notes": "Estável, sem opt-in. `thickness = <thickness>.dp` (sem o campo, 1 dp). O `VerticalDivider` já ocupa a altura toda do pai (`fillMaxHeight()` por dentro); dentro de uma `Row`, dê a altura à linha com `Modifier.height(<altura da marcação>.dp)` ou deixe a `Row` limitar. Para um recuo no alto e embaixo use `Modifier.padding(vertical = <inset>.dp)`."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Horizontal",
+              "values": {
+                "orientation": "horizontal"
+              }
+            },
+            {
+              "name": "Horizontal com recuo",
+              "values": {
+                "orientation": "horizontal",
+                "thickness": 1,
+                "inset": 16
+              }
+            },
+            {
+              "name": "Vertical",
+              "values": {
+                "orientation": "vertical",
+                "thickness": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "alert-dialog",
+          "name": "Alert dialog",
+          "description": "Diálogo que interrompe o fluxo para pedir uma decisão ou dar uma informação: ícone opcional, título, texto e até dois botões de texto. Standard monta o conteúdo; basic deixa o conteúdo por conta de quem chama.",
+          "labelField": "title",
+          "component": "components/alert-dialog.json",
+          "doc": "docs/alert-dialog.md",
+          "fields": [
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "standard",
+              "options": ["standard", "basic"],
+              "description": "standard (AlertDialog, com título, texto e botões) ou basic (BasicAlertDialog, só a janela: o conteúdo é montado à mão e exige opt-in)."
+            },
+            {
+              "key": "title",
+              "label": "Título",
+              "type": "string",
+              "description": "Título do diálogo. Vazio = sem título."
+            },
+            {
+              "key": "text",
+              "label": "Texto",
+              "type": "string",
+              "description": "Texto de apoio com os detalhes. Vazio = sem texto."
+            },
+            {
+              "key": "confirmButton",
+              "label": "Botão de confirmar",
+              "type": "string",
+              "required": true,
+              "description": "Rótulo do botão que confirma a ação (obrigatório no AlertDialog)."
+            },
+            {
+              "key": "dismissButton",
+              "label": "Botão de dispensar",
+              "type": "string",
+              "description": "Rótulo do botão que dispensa o diálogo. Vazio = só o botão de confirmar."
+            },
+            {
+              "key": "icon",
+              "label": "Ícone",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone acima do título. Vazio = sem ícone."
+            },
+            {
+              "key": "contentDescription",
+              "label": "Descrição do ícone",
+              "type": "string",
+              "description": "Texto de acessibilidade do ícone (vai no `contentDescription` do Icon). Vazio = ícone decorativo."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.AlertDialog",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AlertDialog.kt",
+              "notes": "Estável, sem opt-in: use o overload com `confirmButton` (o de `content` está `@Deprecated` e é experimental). `AlertDialog(onDismissRequest = { … }, confirmButton = { TextButton(onClick = { … }) { Text(<confirmButton>) } }, dismissButton = { TextButton(onClick = { … }) { Text(<dismissButton>) } }, icon = { … }, title = { Text(<title>) }, text = { Text(<text>) })`. `dismissButton`, `icon`, `title` e `text` só entram quando o campo está preenchido (os parâmetros são opcionais e `null` por padrão). `onDismissRequest` fecha o diálogo (limpa o estado que o mostra) e não é chamado pelos botões. Com `icon` preenchido: `icon = { Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>) }` (sem `contentDescription`, passe `null`); com ícone, o título fica centralizado. A largura vai de 280 a 560 dp pelo conteúdo e o diálogo é uma janela sobre a tela, não parte do layout: declare-o onde o estado que o abre vive (`if (showDialog) AlertDialog(…)`).",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "basic": {
+                    "symbol": "androidx.compose.material3.BasicAlertDialog",
+                    "notes": "Exige @OptIn(ExperimentalMaterial3Api::class) (o `BasicAlertDialog` é experimental no commit fixado). Só abre a janela: `BasicAlertDialog(onDismissRequest = { … }) { … }`, e o conteúdo não tem estilo próprio. Para parecer o diálogo do M3, monte `Surface(shape = AlertDialogDefaults.shape, tonalElevation = AlertDialogDefaults.TonalElevation) { Column(Modifier.padding(24.dp)) { … } }` com `Text(<title>, style = MaterialTheme.typography.headlineSmall)`, `Text(<text>, style = MaterialTheme.typography.bodyMedium)` e uma `Row(Modifier.align(Alignment.End))` com `TextButton`s para `dismissButton` e `confirmButton` (espaçamento de 24 dp entre as partes e 8 dp entre os botões). Com `icon` preenchido, o ícone vai antes do título, centralizado: `Icon(Icons.Filled.<icon>, contentDescription = <contentDescription>)` (sem `contentDescription`, passe `null`)."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Confirmação com ícone",
+              "values": {
+                "style": "standard",
+                "icon": "Delete",
+                "title": "Descartar rascunho?",
+                "text": "O rascunho será apagado e não poderá ser recuperado.",
+                "confirmButton": "Descartar",
+                "dismissButton": "Cancelar"
+              }
+            },
+            {
+              "name": "Só informação",
+              "values": {
+                "style": "standard",
+                "title": "Sincronização concluída",
+                "text": "Seus dados estão atualizados em todos os dispositivos.",
+                "confirmButton": "OK"
+              }
+            },
+            {
+              "name": "Basic com título e texto",
+              "values": {
+                "style": "basic",
+                "title": "Sair da conta?",
+                "text": "Você precisará entrar de novo para ver suas mensagens.",
+                "confirmButton": "Sair",
+                "dismissButton": "Cancelar"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dropdown-menu",
+          "name": "Dropdown menu",
+          "description": "Menu suspenso com uma lista de ações ou de opções. Menu abre sobre um elemento âncora (um botão de ícone, por exemplo); exposed fica preso a um campo de texto e escolhe um valor entre as opções.",
+          "component": "components/dropdown-menu.json",
+          "doc": "docs/dropdown-menu.md",
+          "fields": [
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "menu",
+              "options": ["menu", "exposed"],
+              "description": "menu (DropdownMenu, popup ancorado a um elemento) ou exposed (ExposedDropdownMenuBox, campo de texto com o menu preso a ele; exige opt-in)."
+            },
+            {
+              "key": "items",
+              "label": "Itens",
+              "type": "table",
+              "required": true,
+              "columns": [
+                {
+                  "key": "text",
+                  "label": "Texto",
+                  "type": "string",
+                  "required": true,
+                  "description": "Texto do item."
+                },
+                {
+                  "key": "leadingIcon",
+                  "label": "Ícone à esquerda",
+                  "type": "string",
+                  "suggestions": [
+                    "Home",
+                    "Search",
+                    "Person",
+                    "Menu",
+                    "MoreVert",
+                    "Add",
+                    "Check",
+                    "Close",
+                    "ArrowBack",
+                    "Favorite",
+                    "Edit",
+                    "Delete",
+                    "Share",
+                    "Notifications",
+                    "Settings",
+                    "Info",
+                    "Star",
+                    "Email",
+                    "Phone",
+                    "Place",
+                    "DateRange",
+                    "ShoppingCart",
+                    "AccountCircle",
+                    "KeyboardArrowRight",
+                    "KeyboardArrowDown",
+                    "Refresh",
+                    "Clear",
+                    "Done",
+                    "Lock",
+                    "List"
+                  ],
+                  "description": "Ícone antes do texto. Vazio = sem ícone."
+                },
+                {
+                  "key": "trailingIcon",
+                  "label": "Ícone à direita",
+                  "type": "string",
+                  "suggestions": [
+                    "Home",
+                    "Search",
+                    "Person",
+                    "Menu",
+                    "MoreVert",
+                    "Add",
+                    "Check",
+                    "Close",
+                    "ArrowBack",
+                    "Favorite",
+                    "Edit",
+                    "Delete",
+                    "Share",
+                    "Notifications",
+                    "Settings",
+                    "Info",
+                    "Star",
+                    "Email",
+                    "Phone",
+                    "Place",
+                    "DateRange",
+                    "ShoppingCart",
+                    "AccountCircle",
+                    "KeyboardArrowRight",
+                    "KeyboardArrowDown",
+                    "Refresh",
+                    "Clear",
+                    "Done",
+                    "Lock",
+                    "List"
+                  ],
+                  "description": "Ícone depois do texto. Vazio = sem ícone."
+                },
+                {
+                  "key": "enabled",
+                  "label": "Habilitado",
+                  "type": "enum",
+                  "default": "true",
+                  "options": ["true", "false"],
+                  "description": "false desabilita o item (texto esmaecido)."
+                }
+              ],
+              "description": "Um item por linha, na ordem em que aparecem no menu."
+            },
+            {
+              "key": "expanded",
+              "label": "Aberto",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "true mostra o menu; false o esconde (no exposed sobra só o campo). No código é o estado `expanded` da tela."
+            },
+            {
+              "key": "label",
+              "label": "Rótulo do campo",
+              "type": "string",
+              "description": "Rótulo do campo de texto do exposed. Vazio = sem rótulo. Só vale em exposed."
+            },
+            {
+              "key": "value",
+              "label": "Valor do campo",
+              "type": "string",
+              "description": "Opção escolhida, mostrada no campo de texto do exposed. Só vale em exposed."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.DropdownMenu",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Menu.kt",
+              "params": {
+                "expanded": "expanded"
+              },
+              "notes": "Estável, sem opt-in. O menu é um popup ancorado ao composable onde é declarado: ponha-o num `Box` junto do elemento âncora (o `IconButton` que o abre) e ligue `expanded` a um estado da tela (`var expanded by remember { mutableStateOf(<expanded>) }`), com `onDismissRequest = { expanded = false }`. Dentro, um `DropdownMenuItem` por linha de `items`: `text = { Text(<text>) }`, `onClick = { expanded = false; … }`, `leadingIcon = { Icon(Icons.Filled.<leadingIcon>, contentDescription = null) }` e `trailingIcon = { Icon(Icons.Filled.<trailingIcon>, contentDescription = null) }` só quando preenchidos, e `enabled = <enabled>`. A largura vai de 112 a 280 dp pelo conteúdo. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "exposed": {
+                    "symbol": "androidx.compose.material3.ExposedDropdownMenuBox",
+                    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ExposedDropdownMenu.kt",
+                    "notes": "Exige @OptIn(ExperimentalMaterial3Api::class) (o `ExposedDropdownMenuBox` e o `ExposedDropdownMenu` são experimentais no commit fixado). `ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) { … }`, com `expanded` ligado a um estado da tela (`var expanded by remember { mutableStateOf(<expanded>) }`). Dentro vão um `TextField` (ou `OutlinedTextField`, como no tipo text-field) com `value = <value>`, `onValueChange = {}`, `readOnly = true`, `label = { Text(<label>) }`, `trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }` e `Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)` (o `menuAnchor()` sem argumentos está `@Deprecated`), e depois `ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) { … }`, extensão do `ExposedDropdownMenuBoxScope`, com um `DropdownMenuItem` por linha de `items` (`onClick` guarda a escolha, atualiza `<value>` e fecha com `expanded = false`; `contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding`). O menu tem a largura do campo (`matchAnchorWidth = true`, o padrão)."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Menu aberto",
+              "values": {
+                "style": "menu",
+                "expanded": "true"
+              }
+            },
+            {
+              "name": "Campo exposto fechado",
+              "values": {
+                "style": "exposed",
+                "expanded": "false",
+                "label": "País",
+                "value": "Brasil"
+              }
+            },
+            {
+              "name": "Campo exposto aberto",
+              "values": {
+                "style": "exposed",
+                "expanded": "true",
+                "label": "Idioma",
+                "value": "Português"
+              }
+            }
+          ]
+        },
+        {
+          "id": "navigation-rail",
+          "name": "Navigation rail",
+          "description": "Barra de navegação lateral para telas largas. A rail estreita (rail), a wide (wide) e a wide modal (modal-wide) têm um destino por linha de Itens.",
+          "component": "components/navigation-rail.json",
+          "doc": "docs/navigation-rail.md",
+          "fields": [
+            {
+              "key": "items",
+              "label": "Itens",
+              "type": "table",
+              "required": true,
+              "columns": [
+                {
+                  "key": "label",
+                  "label": "Rótulo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Texto do destino."
+                },
+                {
+                  "key": "icon",
+                  "label": "Ícone",
+                  "type": "string",
+                  "suggestions": [
+                    "Home",
+                    "Search",
+                    "Person",
+                    "Menu",
+                    "MoreVert",
+                    "Add",
+                    "Check",
+                    "Close",
+                    "ArrowBack",
+                    "Favorite",
+                    "Edit",
+                    "Delete",
+                    "Share",
+                    "Notifications",
+                    "Settings",
+                    "Info",
+                    "Star",
+                    "Email",
+                    "Phone",
+                    "Place",
+                    "DateRange",
+                    "ShoppingCart",
+                    "AccountCircle",
+                    "KeyboardArrowRight",
+                    "KeyboardArrowDown",
+                    "Refresh",
+                    "Clear",
+                    "Done",
+                    "Lock",
+                    "List"
+                  ],
+                  "description": "Ícone do destino."
+                },
+                {
+                  "key": "selected",
+                  "label": "Selecionado",
+                  "type": "enum",
+                  "default": "false",
+                  "options": ["true", "false"],
+                  "description": "true marca o destino atual."
+                }
+              ],
+              "description": "Um destino por linha, na ordem em que aparecem na rail, de cima para baixo."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "rail",
+              "options": ["rail", "wide", "modal-wide"],
+              "description": "rail (NavigationRail, 80 de largura), wide (WideNavigationRail, recolhida ou expandida) ou modal-wide (ModalWideNavigationRail, que expande sobre a tela)."
+            },
+            {
+              "key": "initialValue",
+              "label": "Estado inicial",
+              "type": "enum",
+              "default": "Expanded",
+              "options": ["Collapsed", "Expanded"],
+              "description": "Só para wide e modal-wide: Expanded mostra o ícone ao lado do rótulo; Collapsed, o ícone acima (rememberWideNavigationRailState)."
+            },
+            {
+              "key": "alwaysShowLabel",
+              "label": "Sempre mostrar o rótulo",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "Só para rail: false mostra o rótulo só no destino selecionado."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.NavigationRail",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt",
+              "notes": "Estável, sem opt-in. Um `NavigationRailItem` por linha de `items`, dentro de `NavigationRail { … }`: `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` e `alwaysShowLabel = <alwaysShowLabel>` (parâmetro do item, não da rail). O slot `header = { … }` da rail (um FAB ou o botão de menu) não é um campo. A largura mínima é de 80 dp, vinda do composable; a altura enche a tela (`fillMaxHeight`). O Scaffold não tem slot para a rail: ela vai numa `Row` antes do conteúdo, dentro de `content = { innerPadding -> Row(Modifier.padding(innerPadding)) { rail; Box(Modifier.weight(1f)) { … } } }`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "wide": {
+                    "symbol": "androidx.compose.material3.WideNavigationRail",
+                    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRail.kt",
+                    "params": {
+                      "initialValue": "initialValue"
+                    },
+                    "values": {
+                      "initialValue": {
+                        "Collapsed": "WideNavigationRailValue.Collapsed",
+                        "Expanded": "WideNavigationRailValue.Expanded"
+                      }
+                    },
+                    "notes": "Estável, sem opt-in. `WideNavigationRail(state = rememberWideNavigationRailState(initialValue = <initialValue>)) { … }` (`initialValue` é parâmetro de `rememberWideNavigationRailState`; o composable lê o mesmo `state`). Um `WideNavigationRailItem` por linha de `items`: `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` e `railExpanded = state.targetValue == WideNavigationRailValue.Expanded` (obrigatório e igual em todos os itens; o `iconPosition` do item acompanha: ao lado do rótulo expandida, acima dele recolhida). O `label` é anulável. `alwaysShowLabel` não existe aqui. O slot `header = { … }` não é um campo. A rail recolhida tem 96 dp de largura e a expandida de 220 a 360 dp, vindas do composable. Fora do Scaffold: ela vai numa `Row` antes do conteúdo, dentro de `content = { innerPadding -> … }`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`."
+                  },
+                  "modal-wide": {
+                    "symbol": "androidx.compose.material3.ModalWideNavigationRail",
+                    "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRail.kt",
+                    "params": {
+                      "initialValue": "initialValue"
+                    },
+                    "values": {
+                      "initialValue": {
+                        "Collapsed": "WideNavigationRailValue.Collapsed",
+                        "Expanded": "WideNavigationRailValue.Expanded"
+                      }
+                    },
+                    "notes": "Estável, sem opt-in. `ModalWideNavigationRail(state = rememberWideNavigationRailState(initialValue = <initialValue>)) { … }`: recolhida, fica no lugar como a wide; expandida, abre numa janela modal sobre a tela, com scrim; quem expande e recolhe é o `state` (`expand()`, `collapse()` e `toggle()`, numa coroutine), e `hideOnCollapse = true` faz a rail sair da tela ao recolher. Um `WideNavigationRailItem` por linha de `items`: `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` e `railExpanded = state.targetValue == WideNavigationRailValue.Expanded` (obrigatório e igual em todos os itens; o `iconPosition` do item acompanha: ao lado do rótulo expandida, acima dele recolhida). O `label` é anulável. O slot `header = { … }` não é um campo. Fica ao lado do conteúdo, numa `Row` antes dele, dentro de `content = { innerPadding -> … }` do Scaffold; o `Scaffold` não tem slot para ela. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Rail estreita",
+              "values": {
+                "style": "rail",
+                "alwaysShowLabel": "true"
+              }
+            },
+            {
+              "name": "Wide expandida",
+              "values": {
+                "style": "wide",
+                "initialValue": "Expanded"
+              }
+            },
+            {
+              "name": "Modal expandida",
+              "values": {
+                "style": "modal-wide",
+                "initialValue": "Expanded"
+              }
+            }
+          ]
+        },
+        {
+          "id": "short-navigation-bar",
+          "name": "Short navigation bar",
+          "description": "Barra de navegação curta, inferior, com três a seis destinos. Cada linha de Itens é um destino; o ícone fica acima ou ao lado do rótulo.",
+          "component": "components/short-navigation-bar.json",
+          "doc": "docs/short-navigation-bar.md",
+          "fields": [
+            {
+              "key": "items",
+              "label": "Itens",
+              "type": "table",
+              "required": true,
+              "columns": [
+                {
+                  "key": "label",
+                  "label": "Rótulo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Texto do destino."
+                },
+                {
+                  "key": "icon",
+                  "label": "Ícone",
+                  "type": "string",
+                  "suggestions": [
+                    "Home",
+                    "Search",
+                    "Person",
+                    "Menu",
+                    "MoreVert",
+                    "Add",
+                    "Check",
+                    "Close",
+                    "ArrowBack",
+                    "Favorite",
+                    "Edit",
+                    "Delete",
+                    "Share",
+                    "Notifications",
+                    "Settings",
+                    "Info",
+                    "Star",
+                    "Email",
+                    "Phone",
+                    "Place",
+                    "DateRange",
+                    "ShoppingCart",
+                    "AccountCircle",
+                    "KeyboardArrowRight",
+                    "KeyboardArrowDown",
+                    "Refresh",
+                    "Clear",
+                    "Done",
+                    "Lock",
+                    "List"
+                  ],
+                  "description": "Ícone do destino."
+                },
+                {
+                  "key": "selected",
+                  "label": "Selecionado",
+                  "type": "enum",
+                  "default": "false",
+                  "options": ["true", "false"],
+                  "description": "true marca o destino atual."
+                }
+              ],
+              "description": "Um destino por linha, na ordem em que aparecem na barra (de três a cinco com o ícone acima; até seis com o ícone ao lado)."
+            },
+            {
+              "key": "arrangement",
+              "label": "Distribuição",
+              "type": "enum",
+              "default": "EqualWeight",
+              "options": ["EqualWeight", "Centered"],
+              "description": "EqualWeight reparte a largura por igual (telas estreitas); Centered agrupa os itens no centro (telas médias; o desenho ocupa 80% da largura)."
+            },
+            {
+              "key": "iconPosition",
+              "label": "Posição do ícone",
+              "type": "enum",
+              "default": "Top",
+              "options": ["Top", "Start"],
+              "description": "Top põe o ícone acima do rótulo; Start põe o ícone ao lado dele (parâmetro do item, o mesmo em todos)."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.ShortNavigationBar",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ShortNavigationBar.kt",
+              "params": {
+                "arrangement": "arrangement"
+              },
+              "values": {
+                "arrangement": {
+                  "EqualWeight": "ShortNavigationBarArrangement.EqualWeight",
+                  "Centered": "ShortNavigationBarArrangement.Centered"
+                },
+                "iconPosition": {
+                  "Top": "NavigationItemIconPosition.Top",
+                  "Start": "NavigationItemIconPosition.Start"
+                }
+              },
+              "notes": "Estável, sem opt-in. Um `ShortNavigationBarItem` por linha de `items`, dentro de `ShortNavigationBar(arrangement = <arrangement>) { … }`: `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }`, `label = { Text(<label>) }` (o `label` é anulável, mas a barra mostra sempre o rótulo), e `iconPosition = <iconPosition>` (parâmetro do item, não da barra: repita o valor em todos). Dentro de um Scaffold, a barra vai em `bottomBar`. A altura mínima é de 64 dp, vinda do composable; a largura é a da tela. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`."
+            }
+          },
+          "examples": [
+            {
+              "name": "Ícone acima, distribuída",
+              "values": {
+                "arrangement": "EqualWeight",
+                "iconPosition": "Top"
+              }
+            },
+            {
+              "name": "Ícone ao lado, centralizada",
+              "values": {
+                "arrangement": "Centered",
+                "iconPosition": "Start"
+              }
+            },
+            {
+              "name": "Ícone acima, centralizada",
+              "values": {
+                "arrangement": "Centered",
+                "iconPosition": "Top"
+              }
+            }
+          ]
+        },
+        {
+          "id": "navigation-drawer",
+          "name": "Navigation drawer",
+          "description": "Folha de navegação lateral. Modal cobre a tela com um scrim; dismissible empurra o conteúdo e se dispensa; permanent fica sempre à vista. Cada linha de Itens é um destino.",
+          "labelField": "headline",
+          "component": "components/navigation-drawer.json",
+          "doc": "docs/navigation-drawer.md",
+          "fields": [
+            {
+              "key": "headline",
+              "label": "Cabeçalho",
+              "type": "string",
+              "description": "Título opcional no topo da folha, acima dos itens."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "modal",
+              "options": ["modal", "dismissible", "permanent"],
+              "description": "modal (ModalNavigationDrawer), dismissible (DismissibleNavigationDrawer) ou permanent (PermanentNavigationDrawer)."
+            },
+            {
+              "key": "items",
+              "label": "Itens",
+              "type": "table",
+              "required": true,
+              "columns": [
+                {
+                  "key": "label",
+                  "label": "Rótulo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Texto do destino."
+                },
+                {
+                  "key": "icon",
+                  "label": "Ícone",
+                  "type": "string",
+                  "suggestions": [
+                    "Home",
+                    "Search",
+                    "Person",
+                    "Menu",
+                    "MoreVert",
+                    "Add",
+                    "Check",
+                    "Close",
+                    "ArrowBack",
+                    "Favorite",
+                    "Edit",
+                    "Delete",
+                    "Share",
+                    "Notifications",
+                    "Settings",
+                    "Info",
+                    "Star",
+                    "Email",
+                    "Phone",
+                    "Place",
+                    "DateRange",
+                    "ShoppingCart",
+                    "AccountCircle",
+                    "KeyboardArrowRight",
+                    "KeyboardArrowDown",
+                    "Refresh",
+                    "Clear",
+                    "Done",
+                    "Lock",
+                    "List"
+                  ],
+                  "description": "Ícone do destino."
+                },
+                {
+                  "key": "selected",
+                  "label": "Selecionado",
+                  "type": "enum",
+                  "default": "false",
+                  "options": ["true", "false"],
+                  "description": "true marca o destino atual."
+                },
+                {
+                  "key": "badge",
+                  "label": "Selo",
+                  "type": "string",
+                  "description": "Texto curto no fim da linha (um contador, por exemplo). Vazio = sem selo."
+                }
+              ],
+              "description": "Um destino por linha, na ordem em que aparecem na folha."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.ModalNavigationDrawer",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationDrawer.kt",
+              "notes": "Estável, sem opt-in. `ModalNavigationDrawer(drawerContent = { ModalDrawerSheet { … } }, drawerState = rememberDrawerState(DrawerValue.Closed)) { <conteúdo da tela> }`; dentro da `ModalDrawerSheet`: um `NavigationDrawerItem` por linha de `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }` (anulável), `badge = { Text(<badge>) }` (anulável) e `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; o `headline` vira um `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` antes dos itens. A marcação é a folha: o conteúdo da tela vai no último parâmetro (`content`) e o scrim é do composable. Abrir e fechar: `drawerState.open()` e `close()` numa coroutine. O drawer envolve o `Scaffold` (`ModalNavigationDrawer { Scaffold { … } }`), não ocupa slot dele. A largura (até 360 dp) é do composable, e `Modifier.width(<largura da marcação>.dp)` ajusta a folha. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "dismissible": {
+                    "symbol": "androidx.compose.material3.DismissibleNavigationDrawer",
+                    "notes": "Estável, sem opt-in. `DismissibleNavigationDrawer(drawerContent = { DismissibleDrawerSheet { … } }, drawerState = rememberDrawerState(DrawerValue.Closed)) { <conteúdo da tela> }`; dentro da `DismissibleDrawerSheet`: um `NavigationDrawerItem` por linha de `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }` (anulável), `badge = { Text(<badge>) }` (anulável) e `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; o `headline` vira um `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` antes dos itens. Sem scrim: ao abrir, a folha empurra o conteúdo ao lado dela. Abrir e fechar: `drawerState.open()` e `close()` numa coroutine. O drawer envolve o `Scaffold` (`DismissibleNavigationDrawer { Scaffold { … } }`), não ocupa slot dele. A largura (até 360 dp) é do composable. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`."
+                  },
+                  "permanent": {
+                    "symbol": "androidx.compose.material3.PermanentNavigationDrawer",
+                    "notes": "Estável, sem opt-in. `PermanentNavigationDrawer(drawerContent = { PermanentDrawerSheet { … } }) { <conteúdo da tela> }`, sem `drawerState` (sempre visível, ao lado do conteúdo numa `Row`); dentro da `PermanentDrawerSheet`: um `NavigationDrawerItem` por linha de `items`: `label = { Text(<label>) }`, `selected = <selected>`, `onClick = { /* lógica da tela */ }`, `icon = { Icon(Icons.Filled.<icon>, contentDescription = null) }` (anulável), `badge = { Text(<badge>) }` (anulável) e `modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)`; o `headline` vira um `Text(<headline>, Modifier.padding(16.dp), style = MaterialTheme.typography.titleSmall)` antes dos itens. O drawer envolve o `Scaffold` (`PermanentNavigationDrawer { Scaffold { … } }`), não ocupa slot dele. A largura (de 240 a 360 dp) é do composable, e `PermanentDrawerSheet(Modifier.width(<largura da marcação>.dp))` a ajusta. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`."
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Modal com cabeçalho",
+              "values": {
+                "style": "modal",
+                "headline": "Mapping"
+              }
+            },
+            {
+              "name": "Dismissible",
+              "values": {
+                "style": "dismissible",
+                "headline": "Pastas"
+              }
+            },
+            {
+              "name": "Permanente sem cabeçalho",
+              "values": {
+                "style": "permanent"
+              }
+            }
+          ]
+        },
+        {
+          "id": "tabs",
+          "name": "Tabs",
+          "description": "Fileira de abas para trocar entre vistas de um mesmo nível. Primary fica sob a barra do topo; Secondary separa conteúdo dentro de uma área; as roláveis aceitam mais abas do que cabem. Cada linha de Abas é uma aba.",
+          "component": "components/tabs.json",
+          "doc": "docs/tabs.md",
+          "fields": [
+            {
+              "key": "items",
+              "label": "Abas",
+              "type": "table",
+              "required": true,
+              "columns": [
+                {
+                  "key": "label",
+                  "label": "Rótulo",
+                  "type": "string",
+                  "required": true,
+                  "description": "Texto da aba."
+                },
+                {
+                  "key": "icon",
+                  "label": "Ícone",
+                  "type": "string",
+                  "suggestions": [
+                    "Home",
+                    "Search",
+                    "Person",
+                    "Menu",
+                    "MoreVert",
+                    "Add",
+                    "Check",
+                    "Close",
+                    "ArrowBack",
+                    "Favorite",
+                    "Edit",
+                    "Delete",
+                    "Share",
+                    "Notifications",
+                    "Settings",
+                    "Info",
+                    "Star",
+                    "Email",
+                    "Phone",
+                    "Place",
+                    "DateRange",
+                    "ShoppingCart",
+                    "AccountCircle",
+                    "KeyboardArrowRight",
+                    "KeyboardArrowDown",
+                    "Refresh",
+                    "Clear",
+                    "Done",
+                    "Lock",
+                    "List"
+                  ],
+                  "description": "Ícone da aba. Vazio = só o texto."
+                },
+                {
+                  "key": "selected",
+                  "label": "Selecionada",
+                  "type": "enum",
+                  "default": "false",
+                  "options": ["true", "false"],
+                  "description": "true marca a aba atual (o selectedTabIndex da fileira)."
+                }
+              ],
+              "description": "Uma aba por linha, na ordem em que aparecem; só uma com Selecionada = true."
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "primary",
+              "options": [
+                "primary",
+                "secondary",
+                "primary-scrollable",
+                "secondary-scrollable"
+              ],
+              "description": "primary (indicador de 3 no tamanho do rótulo), secondary (indicador de 2 na largura da aba) ou a versão rolável de cada um (abas com a largura do conteúdo, no mínimo 90, e recuo inicial de 52)."
+            },
+            {
+              "key": "iconPosition",
+              "label": "Posição do ícone",
+              "type": "enum",
+              "default": "top",
+              "options": ["top", "leading"],
+              "description": "top (Tab) põe o ícone acima do texto, e a fileira passa de 48 para 72; leading (LeadingIconTab) põe o ícone à esquerda do texto, em 48. Só vale para as abas com ícone e texto."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.PrimaryTabRow",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TabRow.kt",
+              "notes": "A fileira é `PrimaryTabRow(selectedTabIndex = <índice da linha de items com selected = true>) { … }` (`style` escolhe a fileira). Dentro, uma aba por linha de `items`: com `iconPosition = top` (ou sem ícone), `Tab(selected = <selected>, onClick = …, text = { Text(<label>) }, icon = { Icon(Icons.Filled.<icon>, contentDescription = null) })` (omita `icon` quando a coluna estiver vazia); com `iconPosition = leading`, `LeadingIconTab(selected, onClick, text = { Text(<label>) }, icon = { Icon(…) })`, que pede `text` e `icon`. `Tab` e `LeadingIconTab` estão em `Tab.kt`, do mesmo pacote, e vêm de `androidx.compose.material3`. `TabRow` e `ScrollableTabRow` estão `@Deprecated` (substituídos pelas quatro fileiras): não os use. As quatro fileiras e as duas abas são estáveis, sem opt-in. A fileira fixa reparte a largura por igual; as roláveis (`edgePadding` 52, `minTabWidth` 90, `scrollState`) deixam cada aba com a largura do conteúdo. Largura e posição vêm do `Modifier` (a fileira não tem tamanho próprio; costuma ir sob o `TopAppBar` ou acima do conteúdo da página). Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`.",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "secondary": {
+                    "symbol": "androidx.compose.material3.SecondaryTabRow"
+                  },
+                  "primary-scrollable": {
+                    "symbol": "androidx.compose.material3.PrimaryScrollableTabRow"
+                  },
+                  "secondary-scrollable": {
+                    "symbol": "androidx.compose.material3.SecondaryScrollableTabRow"
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Primárias com ícone acima",
+              "values": {
+                "style": "primary",
+                "iconPosition": "top"
+              }
+            },
+            {
+              "name": "Secundárias com ícone à esquerda",
+              "values": {
+                "style": "secondary",
+                "iconPosition": "leading"
+              }
+            },
+            {
+              "name": "Primárias roláveis",
+              "values": {
+                "style": "primary-scrollable",
+                "iconPosition": "leading"
+              }
+            }
+          ]
+        },
+        {
+          "id": "bottom-app-bar",
+          "name": "Bottom app bar",
+          "description": "Barra de baixo da tela com até quatro ações em ícone e, opcional, um botão de ação flutuante (FAB) embutido à direita. No Scaffold vai em bottomBar.",
+          "component": "components/bottom-app-bar.json",
+          "doc": "docs/bottom-app-bar.md",
+          "fields": [
+            {
+              "key": "actionIcon1",
+              "label": "Ação 1",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Primeiro ícone de ação, à esquerda. Vazio = sem ação."
+            },
+            {
+              "key": "actionIcon2",
+              "label": "Ação 2",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Segundo ícone de ação. Vazio = sem ação."
+            },
+            {
+              "key": "actionIcon3",
+              "label": "Ação 3",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Terceiro ícone de ação. Vazio = sem ação."
+            },
+            {
+              "key": "actionIcon4",
+              "label": "Ação 4",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Quarto ícone de ação. Vazio = sem ação."
+            },
+            {
+              "key": "floatingActionButton",
+              "label": "Botão flutuante",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone do FAB embutido à direita (parâmetro floatingActionButton). Vazio = sem FAB."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.BottomAppBar",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/AppBar.kt",
+              "notes": "Overload estável `BottomAppBar(actions = { … }, floatingActionButton = { … })`, sem `scrollBehavior` (o overload com `scrollBehavior` exige `@OptIn(ExperimentalMaterial3Api::class)` e não é usado aqui). Cada `actionIcon1` a `actionIcon4` preenchido vira um `IconButton(onClick = …) { Icon(Icons.Filled.<actionIconN>, contentDescription = …) }` dentro de `actions = { … }` (escopo de `RowScope`, da esquerda para a direita). Com `floatingActionButton` preenchido, `floatingActionButton = { FloatingActionButton(onClick = …, containerColor = BottomAppBarDefaults.bottomAppBarFabColor, elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation()) { Icon(Icons.Filled.<floatingActionButton>, contentDescription = …) } }`; vazio = omita o parâmetro. Dentro de um Scaffold, a barra vai em `bottomBar`. A altura (80, mais a barra de navegação do sistema) é do componente: largura e posição vêm do `Modifier`. Desde a material3 1.4.0 os ícones pedem `androidx.compose.material:material-icons-core` (ou `-extended`) ou um Material Symbol baixado com `painterResource`; os que espelham (ArrowBack, KeyboardArrowRight, List) ficam em `Icons.AutoMirrored.Filled`."
+            }
+          },
+          "examples": [
+            {
+              "name": "Com botão flutuante",
+              "values": {
+                "actionIcon1": "Check",
+                "actionIcon2": "Edit",
+                "actionIcon3": "Favorite",
+                "floatingActionButton": "Add"
+              }
+            },
+            {
+              "name": "Quatro ações",
+              "values": {
+                "actionIcon1": "Home",
+                "actionIcon2": "Search",
+                "actionIcon3": "Person",
+                "actionIcon4": "Settings"
+              }
+            },
+            {
+              "name": "Uma ação e botão",
+              "values": {
+                "actionIcon1": "Search",
+                "floatingActionButton": "Edit"
+              }
+            }
+          ]
+        },
+        {
+          "id": "carousel",
+          "name": "Carousel",
+          "description": "Carrossel horizontal de itens com imagem e rótulo. Multi-browse mostra um item grande com vizinhos menores, uncontained mantém itens de largura fixa e centered-hero centra um item grande.",
+          "component": "components/carousel.json",
+          "doc": "docs/carousel.md",
+          "fields": [
+            {
+              "key": "items",
+              "label": "Itens",
+              "type": "table",
+              "required": true,
+              "description": "Um item do carrossel por linha, na ordem em que aparecem.",
+              "columns": [
+                {
+                  "key": "image",
+                  "label": "Imagem (URL)",
+                  "type": "string",
+                  "required": true,
+                  "description": "Endereço https:// da imagem do item. Vazio = o reservado no lugar da imagem."
+                },
+                {
+                  "key": "label",
+                  "label": "Rótulo",
+                  "type": "string",
+                  "description": "Texto sobre a imagem, na base do item. Vazio = sem texto."
+                }
+              ]
+            },
+            {
+              "key": "style",
+              "label": "Estilo",
+              "type": "enum",
+              "default": "multi-browse",
+              "options": ["multi-browse", "uncontained", "centered-hero"],
+              "description": "multi-browse (HorizontalMultiBrowseCarousel), uncontained (HorizontalUncontainedCarousel) ou centered-hero (HorizontalCenteredHeroCarousel)."
+            },
+            {
+              "key": "preferredItemWidth",
+              "label": "Largura preferida do item (dp)",
+              "type": "number",
+              "description": "Só no multi-browse (obrigatório no Compose): a largura que os itens grandes querem ter; o carrossel a ajusta para caber um número inteiro de itens."
+            },
+            {
+              "key": "itemWidth",
+              "label": "Largura do item (dp)",
+              "type": "number",
+              "description": "Só no uncontained (obrigatório no Compose): a largura fixa de cada item."
+            },
+            {
+              "key": "itemSpacing",
+              "label": "Espaço entre itens (dp)",
+              "type": "number",
+              "description": "Espaço entre os itens em dp (itemSpacing). Vazio = 0 no código; o desenho usa 8."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/carousel/Carousel.kt",
+              "params": {
+                "itemSpacing": "itemSpacing"
+              },
+              "notes": "Exige @OptIn(ExperimentalMaterial3Api::class) (os três carrosséis, o `CarouselState` e o `CarouselItemScope` são experimentais no commit fixado). `state = rememberCarouselState { <número de linhas de items> }` (o `itemCount` é a lambda final) e `content = { index -> … }` desenha o item `items[index]`, dentro do `CarouselItemScope`: imagem remota com o carregador do app (por exemplo Coil `AsyncImage(model = <image>, contentDescription = <label>, contentScale = ContentScale.Crop, modifier = Modifier.height(205.dp).maskClip(MaterialTheme.shapes.extraLarge))`, fora do androidx); `maskClip` é do escopo do item e dá o recorte que acompanha a rolagem; um `label` preenchido vira um `Text(<label>)` sobre a imagem, num `Box`. A largura do item é um parâmetro obrigatório conforme o estilo: `preferredItemWidth = <preferredItemWidth>.dp` no multi-browse e `itemWidth = <itemWidth>.dp` no uncontained; o centered-hero não leva largura (o `maxItemWidth` opcional não é mapeado). `itemSpacing` vira `<itemSpacing>.dp`. A altura vem do item (`Modifier.height(…)`), não do carrossel. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow).",
+              "variants": {
+                "field": "style",
+                "cases": {
+                  "multi-browse": {
+                    "params": {
+                      "preferredItemWidth": "preferredItemWidth"
+                    }
+                  },
+                  "uncontained": {
+                    "symbol": "androidx.compose.material3.carousel.HorizontalUncontainedCarousel",
+                    "params": {
+                      "itemWidth": "itemWidth"
+                    }
+                  },
+                  "centered-hero": {
+                    "symbol": "androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel"
+                  }
+                }
+              }
+            }
+          },
+          "examples": [
+            {
+              "name": "Multi-browse",
+              "values": {
+                "style": "multi-browse",
+                "preferredItemWidth": 186,
+                "itemSpacing": 8,
+                "width": "fill",
+                "height": "fixed"
+              }
+            },
+            {
+              "name": "Uncontained",
+              "values": {
+                "style": "uncontained",
+                "itemWidth": 140,
+                "itemSpacing": 12,
+                "width": "fill",
+                "height": "fixed"
+              }
+            },
+            {
+              "name": "Hero centrado",
+              "values": {
+                "style": "centered-hero",
+                "itemSpacing": 8,
+                "width": "fill",
+                "height": "fixed"
+              }
+            }
+          ]
+        },
+        {
+          "id": "pull-to-refresh",
+          "name": "PullToRefreshBox",
+          "description": "Área que atualiza o conteúdo ao puxar para baixo, com o indicador circular no topo. As marcações filhas são o conteúdo, que precisa rolar.",
+          "component": "components/pull-to-refresh.json",
+          "doc": "docs/pull-to-refresh.md",
+          "fields": [
+            {
+              "key": "isRefreshing",
+              "label": "Atualizando",
+              "type": "enum",
+              "default": "false",
+              "options": ["true", "false"],
+              "description": "true mostra o spinner (atualização em curso, isRefreshing = true); false mostra o indicador em arrasto, com a seta."
+            },
+            {
+              "key": "contentAlignment",
+              "label": "Alinhamento do conteúdo",
+              "type": "enum",
+              "default": "TopStart",
+              "options": [
+                "TopStart",
+                "TopCenter",
+                "TopEnd",
+                "CenterStart",
+                "Center",
+                "CenterEnd",
+                "BottomStart",
+                "BottomCenter",
+                "BottomEnd"
+              ],
+              "description": "Onde o conteúdo fica dentro do Box (Alignment)."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.pulltorefresh.PullToRefreshBox",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/pulltorefresh/PullToRefresh.kt",
+              "params": {
+                "isRefreshing": "isRefreshing",
+                "contentAlignment": "contentAlignment"
+              },
+              "values": {
+                "contentAlignment": {
+                  "TopStart": "Alignment.TopStart",
+                  "TopCenter": "Alignment.TopCenter",
+                  "TopEnd": "Alignment.TopEnd",
+                  "CenterStart": "Alignment.CenterStart",
+                  "Center": "Alignment.Center",
+                  "CenterEnd": "Alignment.CenterEnd",
+                  "BottomStart": "Alignment.BottomStart",
+                  "BottomCenter": "Alignment.BottomCenter",
+                  "BottomEnd": "Alignment.BottomEnd"
+                }
+              },
+              "notes": "Estável, sem opt-in. `isRefreshing` liga a um estado da tela (`var isRefreshing by remember { mutableStateOf(false) }`) e `onRefresh = { /* inicia a atualização e põe isRefreshing em true; ao terminar, volta a false */ }`. As marcações filhas formam o `content` (um `BoxScope`) e precisam rolar (`LazyColumn` ou `Modifier.verticalScroll`), porque o gesto vem da rolagem aninhada. O `indicator` e o `state` (`rememberPullToRefreshState()`) ficam nos padrões: o indicador circular de 40 dp no topo. `contentAlignment` é o do próprio Box. Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Atualizando",
+              "values": {
+                "isRefreshing": "true",
+                "width": "fill",
+                "height": "fill"
+              }
+            },
+            {
+              "name": "Em repouso",
+              "values": {
+                "isRefreshing": "false",
+                "width": "fill",
+                "height": "fill"
+              }
+            }
+          ]
+        },
+        {
+          "id": "swipe-to-dismiss",
+          "name": "SwipeToDismissBox",
+          "description": "Item que se dispensa deslizando para um lado ou para o outro, revelando um fundo com ícone (excluir, arquivar). Use em itens de lista.",
+          "labelField": "title",
+          "component": "components/swipe-to-dismiss.json",
+          "doc": "docs/swipe-to-dismiss.md",
+          "fields": [
+            {
+              "key": "title",
+              "label": "Título",
+              "type": "string",
+              "required": true,
+              "description": "Linha principal do item que se dispensa (o conteúdo é do app; o desenho mostra um item de lista)."
+            },
+            {
+              "key": "supportingText",
+              "label": "Texto de apoio",
+              "type": "string",
+              "description": "Linha de apoio abaixo do título. Vazio = sem linha."
+            },
+            {
+              "key": "direction",
+              "label": "Estado do deslize",
+              "type": "enum",
+              "default": "Settled",
+              "options": ["Settled", "StartToEnd", "EndToStart"],
+              "description": "Settled é o item em repouso; StartToEnd e EndToStart mostram o item deslizado e o fundo revelado (SwipeToDismissBoxValue)."
+            },
+            {
+              "key": "enableDismissFromStartToEnd",
+              "label": "Dispensar do início para o fim",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false impede o deslize no sentido da leitura (enableDismissFromStartToEnd)."
+            },
+            {
+              "key": "enableDismissFromEndToStart",
+              "label": "Dispensar do fim para o início",
+              "type": "enum",
+              "default": "true",
+              "options": ["true", "false"],
+              "description": "false impede o deslize contra o sentido da leitura (enableDismissFromEndToStart)."
+            },
+            {
+              "key": "icon",
+              "label": "Ícone do fundo",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List"
+              ],
+              "description": "Ícone do fundo revelado (o desenho mostra Delete, Done, Check, Favorite, Edit, Star, Share, Add e Close; outros caem em Delete). Vazio = Delete."
+            },
+            {
+              "key": "width",
+              "label": "Largura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+            },
+            {
+              "key": "height",
+              "label": "Altura",
+              "type": "enum",
+              "default": "wrap",
+              "options": ["wrap", "fill", "fixed"],
+              "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+            },
+            {
+              "key": "weight",
+              "label": "Peso (weight)",
+              "type": "number",
+              "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            }
+          ],
+          "code": {
+            "compose": {
+              "symbol": "androidx.compose.material3.SwipeToDismissBox",
+              "path": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SwipeToDismissBox.kt",
+              "params": {
+                "direction": "initialValue",
+                "enableDismissFromStartToEnd": "enableDismissFromStartToEnd",
+                "enableDismissFromEndToStart": "enableDismissFromEndToStart"
+              },
+              "values": {
+                "direction": {
+                  "Settled": "SwipeToDismissBoxValue.Settled",
+                  "StartToEnd": "SwipeToDismissBoxValue.StartToEnd",
+                  "EndToStart": "SwipeToDismissBoxValue.EndToStart"
+                }
+              },
+              "notes": "Estável, sem opt-in. Use o overload com `onDismiss` (o que só recebe `content` e `backgroundContent` e lê `state.currentValue` está `@Deprecated`). `state = rememberSwipeToDismissBoxState(initialValue = <direction>)`: o campo `direction` é o `initialValue` do estado (não é parâmetro do `SwipeToDismissBox`) e, em geral, fica em `Settled`; os dois `enableDismiss…` são parâmetros do box. `onDismiss = { value -> … }` remove o item (o app trata `StartToEnd` e `EndToStart`). `backgroundContent` (um `RowScope`) é o fundo revelado: um `Box(Modifier.fillMaxSize().background(<cor>).padding(horizontal = 24.dp), contentAlignment = if (state.dismissDirection == SwipeToDismissBoxValue.StartToEnd) Alignment.CenterStart else Alignment.CenterEnd) { Icon(Icons.Filled.<icon>, contentDescription = null) }`; as cores do fundo são do app. O `content` (um `RowScope`) é o item, em geral um `ListItem` ou `Card` (a marcação filha, ou o que o app já tem). Tamanho: `fill` vira `Modifier.fillMaxWidth()`/`fillMaxHeight()`, `fixed` vira `Modifier.width(<largura da marcação>.dp)`/`height(<altura da marcação>.dp)` e `weight` vira `Modifier.weight(<weight>f)` (só dentro de Row, Column ou FlowRow)."
+            }
+          },
+          "examples": [
+            {
+              "name": "Em repouso",
+              "values": {
+                "title": "Reunião de equipe",
+                "supportingText": "Hoje, 14:00",
+                "direction": "Settled",
+                "icon": "Delete",
+                "width": "fill"
+              }
+            },
+            {
+              "name": "Excluir arrastando para o início",
+              "values": {
+                "title": "Reunião de equipe",
+                "supportingText": "Hoje, 14:00",
+                "direction": "EndToStart",
+                "enableDismissFromStartToEnd": "false",
+                "icon": "Delete",
+                "width": "fill"
+              }
+            },
+            {
+              "name": "Concluir arrastando para o fim",
+              "values": {
+                "title": "Convite de Ana",
+                "direction": "StartToEnd",
+                "enableDismissFromEndToStart": "false",
+                "icon": "Done",
+                "width": "fill"
+              }
+            }
+          ]
         }
       ]
     }

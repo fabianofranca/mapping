@@ -1,0 +1,177 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "pull-to-refresh",
+  "name": "Pull to refresh",
+  "description": "Área que atualiza o conteúdo ao ser puxada para baixo: o indicador circular de 40 fica no topo (spinner enquanto atualiza, seta enquanto é puxado) e as marcações filhas são o conteúdo.",
+  "size": {
+    "width": 360,
+    "height": 400
+  },
+  "minSize": {
+    "width": 120,
+    "height": 120
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "fill"
+  },
+  "preview": {
+    "isRefreshing": "true",
+    "contentAlignment": "TopStart",
+    "width": "fill",
+    "height": "fill",
+    "weight": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "pull to refresh",
+    "fill": "#FEF7FF",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "slot",
+        "name": "content",
+        "width": "fill",
+        "height": "fill",
+        "layout": {
+          "type": "none"
+        },
+        "label": {
+          "$concat": [
+            "PullToRefreshBox · ",
+            {
+              "$field": "contentAlignment",
+              "default": "TopStart"
+            },
+            " · ",
+            {
+              "$field": "width",
+              "default": "wrap"
+            },
+            " × ",
+            {
+              "$field": "height",
+              "default": "wrap"
+            },
+            {
+              "$if": {
+                "$has": "weight"
+              },
+              "then": {
+                "$concat": [
+                  " · weight ",
+                  {
+                    "$field": "weight"
+                  }
+                ]
+              },
+              "else": ""
+            }
+          ]
+        }
+      },
+      {
+        "type": "frame",
+        "name": "indicador atualizando",
+        "width": 40,
+        "height": 40,
+        "cornerRadius": 20,
+        "fill": "#ECE6F0",
+        "shadow": {
+          "color": "rgba(0, 0, 0, 0.3)",
+          "y": 2,
+          "blur": 6
+        },
+        "anchors": {
+          "centerX": true,
+          "top": 40
+        },
+        "visible": {
+          "$field": "isRefreshing"
+        },
+        "layout": {
+          "type": "none"
+        },
+        "children": [
+          {
+            "type": "path",
+            "name": "anel",
+            "width": 20,
+            "height": 20,
+            "viewBox": [20, 20],
+            "anchors": {
+              "centerX": true,
+              "centerY": true
+            },
+            "d": "M10 3.25A6.75 6.75 0 1 1 3.25 10",
+            "fill": "none",
+            "stroke": {
+              "color": "#49454F",
+              "width": 2.5
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "indicador puxando",
+        "width": 40,
+        "height": 40,
+        "cornerRadius": 20,
+        "fill": "#ECE6F0",
+        "shadow": {
+          "color": "rgba(0, 0, 0, 0.3)",
+          "y": 2,
+          "blur": 6
+        },
+        "anchors": {
+          "centerX": true,
+          "top": 8
+        },
+        "visible": {
+          "$not": {
+            "$field": "isRefreshing"
+          }
+        },
+        "layout": {
+          "type": "none"
+        },
+        "children": [
+          {
+            "type": "path",
+            "name": "anel",
+            "width": 20,
+            "height": 20,
+            "viewBox": [20, 20],
+            "anchors": {
+              "centerX": true,
+              "centerY": true
+            },
+            "d": "M10 3.25A6.75 6.75 0 1 1 3.25 10",
+            "fill": "none",
+            "stroke": {
+              "color": "#49454F",
+              "width": 2.5
+            }
+          },
+          {
+            "type": "path",
+            "name": "seta",
+            "width": 20,
+            "height": 20,
+            "viewBox": [20, 20],
+            "anchors": {
+              "centerX": true,
+              "centerY": true
+            },
+            "d": "M1.25 10h4L3.25 6.5z",
+            "fill": "#49454F"
+          }
+        ]
+      }
+    ]
+  }
+}

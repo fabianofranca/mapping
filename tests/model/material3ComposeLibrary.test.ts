@@ -1,6 +1,6 @@
 // Biblioteca Material 3 (Compose) (`libraries/material3-compose/`, pronta para uso e aplicada pela pessoa):
 // a especialização (`formatVersion` 9) com as estruturas de layout e conteúdo e os componentes do
-// Material 3 do Jetpack Compose, 39 tipos em três camadas, cada um com `code.compose` (símbolo e arquivo no
+// Material 3 do Jetpack Compose, 50 tipos em três camadas, cada um com `code.compose` (símbolo e arquivo no
 // androidx, no commit fixado), componente que desenha, documento e exemplos. As variantes que trocam o
 // símbolo (`variants`) e os ícones por `suggestions` seguem o padrão da biblioteca.
 import { readdirSync, readFileSync } from 'node:fs';
@@ -35,6 +35,9 @@ const LAYERS: Record<string, string[]> = {
     ],
     ...['search-bar', 'date-picker', 'time-picker', 'badge', 'snackbar', 'tooltip'],
     ...['progress-indicator', 'secure-text-field'],
+    ...['divider', 'alert-dialog', 'dropdown-menu', 'navigation-rail'],
+    ...['short-navigation-bar', 'navigation-drawer', 'tabs', 'bottom-app-bar'],
+    ...['carousel', 'pull-to-refresh', 'swipe-to-dismiss'],
   ],
 };
 const ALL_TYPES = Object.values(LAYERS).flat();
@@ -48,10 +51,12 @@ const ICONS = [
 ];
 const ICON_KEYS = [
   ...['icon', 'imageVector', 'navigationIcon', 'actionIcon1', 'actionIcon2'],
+  ...['actionIcon3', 'actionIcon4', 'floatingActionButton'],
   ...['leadingIcon', 'trailingIcon'],
 ];
 
 const MATERIAL = 'androidx.compose.material3.';
+const CAROUSEL = 'androidx.compose.material3.carousel.';
 /** tipo → campo da variante e valor → símbolo esperado (o valor ausente cai no `default` do campo). */
 const VARIANT_SYMBOLS: Record<
   string,
@@ -161,6 +166,51 @@ const VARIANT_SYMBOLS: Record<
     field: 'style',
     symbols: { filled: 'SecureTextField', outlined: 'OutlinedSecureTextField' },
   },
+  divider: {
+    field: 'orientation',
+    symbols: { horizontal: 'HorizontalDivider', vertical: 'VerticalDivider' },
+  },
+  'alert-dialog': {
+    field: 'style',
+    symbols: { standard: 'AlertDialog', basic: 'BasicAlertDialog' },
+  },
+  'dropdown-menu': {
+    field: 'style',
+    symbols: { menu: 'DropdownMenu', exposed: 'ExposedDropdownMenuBox' },
+  },
+  'navigation-rail': {
+    field: 'style',
+    symbols: {
+      rail: 'NavigationRail',
+      wide: 'WideNavigationRail',
+      'modal-wide': 'ModalWideNavigationRail',
+    },
+  },
+  'navigation-drawer': {
+    field: 'style',
+    symbols: {
+      modal: 'ModalNavigationDrawer',
+      dismissible: 'DismissibleNavigationDrawer',
+      permanent: 'PermanentNavigationDrawer',
+    },
+  },
+  tabs: {
+    field: 'style',
+    symbols: {
+      primary: 'PrimaryTabRow',
+      secondary: 'SecondaryTabRow',
+      'primary-scrollable': 'PrimaryScrollableTabRow',
+      'secondary-scrollable': 'SecondaryScrollableTabRow',
+    },
+  },
+  carousel: {
+    field: 'style',
+    symbols: {
+      'multi-browse': CAROUSEL + 'HorizontalMultiBrowseCarousel',
+      uncontained: CAROUSEL + 'HorizontalUncontainedCarousel',
+      'centered-hero': CAROUSEL + 'HorizontalCenteredHeroCarousel',
+    },
+  },
 };
 
 /** Avisos que a biblioteca aceita (arquivo, caminho, mensagem), em ordem: ver o teste dos avisos. */
@@ -203,6 +253,16 @@ const FIXED_WARNINGS: [string, string, string][] = [
       ['layers[2].annotationTypes[24].fields[9]', 'width', 'secure-text-field'],
       ['layers[2].annotationTypes[24].fields[10]', 'height', 'secure-text-field'],
       ['layers[2].annotationTypes[24].fields[11]', 'weight', 'secure-text-field'],
+      ['layers[2].annotationTypes[26].fields[0]', 'style', 'alert-dialog'],
+      ['layers[2].annotationTypes[26].fields[6]', 'contentDescription', 'alert-dialog'],
+      ['layers[2].annotationTypes[33].fields[2]', 'preferredItemWidth', 'carousel'],
+      ['layers[2].annotationTypes[33].fields[3]', 'itemWidth', 'carousel'],
+      ['layers[2].annotationTypes[33].fields[5]', 'width', 'carousel'],
+      ['layers[2].annotationTypes[33].fields[6]', 'height', 'carousel'],
+      ['layers[2].annotationTypes[33].fields[7]', 'weight', 'carousel'],
+      ['layers[2].annotationTypes[35].fields[6]', 'width', 'swipe-to-dismiss'],
+      ['layers[2].annotationTypes[35].fields[7]', 'height', 'swipe-to-dismiss'],
+      ['layers[2].annotationTypes[35].fields[8]', 'weight', 'swipe-to-dismiss'],
     ] as const
   ).map(([path, key, type]): [string, string, string] => [
     SPEC_FILE,
@@ -250,12 +310,12 @@ describe('biblioteca Material 3 (Compose)', () => {
     );
   });
 
-  it('tem 39 tipos nas camadas layout, content e components, na ordem', () => {
+  it('tem 50 tipos nas camadas layout, content e components, na ordem', () => {
     expect(spec.layers.map((l) => l.id)).toEqual(Object.keys(LAYERS));
     for (const layer of spec.layers) {
       expect(layer.annotationTypes.map((t) => t.id)).toEqual(LAYERS[layer.id]);
     }
-    expect(types).toHaveLength(39);
+    expect(types).toHaveLength(50);
   });
 
   it('valida sem erro nos três níveis, com os avisos conhecidos', () => {
@@ -264,9 +324,9 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(report.ok).toBe(true);
     expect(report.summary).toMatchObject({
       level: 3,
-      types: 39,
-      components: 39,
-      docs: 39,
+      types: 50,
+      components: 50,
+      docs: 50,
     });
     const all = report.warnings.map((w): [string, string, string] => [
       w.file,
@@ -366,7 +426,10 @@ describe('biblioteca Material 3 (Compose)', () => {
       // Valor ausente cai no default do campo.
       const absent = resolveCode(code!, {}, type.fields);
       const dflt = field?.type === 'enum' ? field.default : undefined;
-      expect(absent.symbol).toBe(MATERIAL + expected.symbols[dflt ?? '']!);
+      const dfltSymbol = expected.symbols[dflt ?? '']!;
+      expect(absent.symbol).toBe(
+        dfltSymbol.includes('.') ? dfltSymbol : MATERIAL + dfltSymbol,
+      );
     },
   );
 
@@ -431,7 +494,10 @@ describe('biblioteca Material 3 (Compose)', () => {
 
   it('navigation-bar e bottom-sheet repetem as linhas da tabela (componente com repeat)', () => {
     const catalog = buildCatalog(files);
-    for (const id of ['navigation-bar', 'bottom-sheet']) {
+    for (const id of [
+      ...['navigation-bar', 'bottom-sheet', 'dropdown-menu', 'navigation-rail'],
+      ...['short-navigation-bar', 'navigation-drawer', 'tabs', 'carousel'],
+    ]) {
       expect(findEntry(catalog, id)?.component?.formatVersion, id).toBeGreaterThanOrEqual(
         2,
       );

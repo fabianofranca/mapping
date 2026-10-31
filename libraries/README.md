@@ -21,13 +21,13 @@ Especialização `formatVersion` 9 (`id` `material3-compose`) que mapeia os comp
 
 **Versão fixada.** `androidx.compose.material3:material3` **1.4.0**, o commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` do androidx (o espelho do GitHub não tem tags, por isso o commit; é o que `platforms[].repo` e o `path` de cada tipo apontam). Nenhum tipo exige a API expressiva: ela nem existe como composable público nesse commit.
 
-**Camadas e tipos desta versão (39).**
+**Camadas e tipos desta versão (50).**
 
 - Layout: `scaffold`, `surface`, `box`, `row`, `column`, `lazy-column`, `lazy-row`, `lazy-vertical-grid`, `flow-row`, `spacer`, `horizontal-pager`.
 - Conteúdo: `text`, `icon`, `image`.
-- Componentes: `top-app-bar`, `button`, `fab`, `extended-fab`, `text-field`, `switch`, `checkbox`, `chip`, `card`, `list-item`, `navigation-bar`, `bottom-sheet`, `icon-button`, `icon-toggle-button`, `segmented-button`, `radio-button`, `slider`, `search-bar`, `date-picker`, `time-picker`, `badge`, `snackbar`, `tooltip`, `progress-indicator`, `secure-text-field`.
+- Componentes: `top-app-bar`, `button`, `fab`, `extended-fab`, `text-field`, `switch`, `checkbox`, `chip`, `card`, `list-item`, `navigation-bar`, `bottom-sheet`, `icon-button`, `icon-toggle-button`, `segmented-button`, `radio-button`, `slider`, `search-bar`, `date-picker`, `time-picker`, `badge`, `snackbar`, `tooltip`, `progress-indicator`, `secure-text-field`, `divider`, `alert-dialog`, `dropdown-menu`, `navigation-rail`, `short-navigation-bar`, `navigation-drawer`, `tabs`, `bottom-app-bar`, `carousel`, `pull-to-refresh`, `swipe-to-dismiss`.
 
-Cada tipo tem componente, documento em `material3-compose/docs/` e de um a três exemplos. A fase seguinte (navegação e contenção) acrescenta tipos à camada Componentes.
+Cada tipo tem componente, documento em `material3-compose/docs/` e de um a três exemplos. O catálogo do Material 3 estável no Compose fixado está completo (o side sheet não tem composable público).
 
 **Padrões.**
 
