@@ -5,7 +5,9 @@ import { BUILD_ID } from '../utils/build';
 import { CHANNEL } from '../utils/channel';
 import { writeClipboardText } from '../utils/clipboard';
 import { formatBuildInfo } from '../utils/report';
+import { allowedOrigins } from '../store/imagePermissions';
 import { Dialog } from './Dialog';
+import { PrivacySettings } from './PrivacySettings';
 import { PlatformRepos } from './PlatformRepos';
 import { SettingsBar } from './SettingsBar';
 import { Button } from './controls';
@@ -31,7 +33,12 @@ function About() {
   const copy = async () =>
     setCopied(
       await writeClipboardText(
-        formatBuildInfo({ build: BUILD_ID, channel: CHANNEL, schema: SCHEMA_VERSION }),
+        formatBuildInfo({
+          build: BUILD_ID,
+          channel: CHANNEL,
+          schema: SCHEMA_VERSION,
+          remoteImageOrigins: allowedOrigins.peek().length,
+        }),
       ),
     );
   const channel = t(
@@ -54,6 +61,12 @@ function About() {
       <p>
         <span class="muted">{t('about.schema')}: </span>
         <span>{SCHEMA_VERSION}</span>
+      </p>
+      <p>
+        <span class="muted">{t('about.remoteImages')}: </span>
+        <span data-testid="remote-image-origins">
+          {t('about.remoteImagesValue', { count: allowedOrigins.value.length })}
+        </span>
       </p>
       <p>
         <Button size="sm" onClick={() => void copy()}>
@@ -94,6 +107,7 @@ export function SettingsDialog({
         {t('settings.shortcuts')}
       </Button>
       {repos && <PlatformRepos project={project} readOnly={readOnly} />}
+      <PrivacySettings />
       <About />
     </Dialog>
   );

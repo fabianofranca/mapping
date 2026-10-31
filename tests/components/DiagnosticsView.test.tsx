@@ -1,7 +1,11 @@
-import { cleanup, render, screen } from '@testing-library/preact';
+import { act, cleanup, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
+import {
+  clearRemoteImageIssues,
+  reportRemoteImageIssue,
+} from '../../src/store/diagnostics';
 import { createAutoSaver } from '../../src/storage/autosave';
 import {
   DiagnosticsActions,
@@ -212,5 +216,30 @@ describe('Diagnóstico: biblioteca', () => {
     const text = writeText.mock.calls[0]?.[0] ?? '';
     expect(text).toContain('pendingSave: no');
     expect(text).not.toContain('conteúdo maior que a caixa');
+  });
+});
+
+describe('Diagnóstico: imagens remotas', () => {
+  it('lista as falhas e bloqueios com a URL encurtada e o motivo; só some com a sessão', () => {
+    clearRemoteImageIssues();
+    render(<Diagnostics />);
+    expect(
+      screen.queryByRole('region', { name: t('diagnostics.remoteImages') }),
+    ).toBeNull();
+    act(() => {
+      reportRemoteImageIssue(
+        'https://cdn.a.com/img/x.png?token=segredo#f',
+        'blocked-consent',
+      );
+      reportRemoteImageIssue('https://cdn.a.com/img/x.png?token=segredo#f', 'failed');
+      reportRemoteImageIssue('https://b.com/y.png', 'timeout');
+    });
+    const section = screen.getByRole('region', { name: t('diagnostics.remoteImages') });
+    expect(section.textContent).toContain('https://cdn.a.com/img/x.png');
+    expect(section.textContent).not.toContain('segredo');
+    expect(section.textContent).toContain(t('diagnostics.imageReason.blocked-consent'));
+    expect(section.textContent).not.toContain(t('diagnostics.imageReason.failed'));
+    expect(section.textContent).toContain(t('diagnostics.imageReason.timeout'));
+    clearRemoteImageIssues();
   });
 });

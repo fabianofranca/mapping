@@ -1,7 +1,8 @@
 import { useContext, useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { SCHEMA_VERSION } from '../model';
-import { markDiagnosticsSeen } from '../store/diagnostics';
+import { markDiagnosticsSeen, remoteImageIssues } from '../store/diagnostics';
+import { allowedOrigins } from '../store/imagePermissions';
 import { locale, theme } from '../store/settings';
 import { BUILD_ID } from '../utils/build';
 import { CHANNEL } from '../utils/channel';
@@ -34,6 +35,7 @@ function diagnosticsInfo(editor: EditorContextValue | null): DiagnosticsInfo {
     build: BUILD_ID,
     channel: CHANNEL,
     schema: SCHEMA_VERSION,
+    remoteImageOrigins: allowedOrigins.peek().length,
     storage: editor?.open.kind ?? null,
     userAgent: navigator.userAgent,
     window: { width: window.innerWidth, height: window.innerHeight },
@@ -281,6 +283,27 @@ export function DiagnosticsComponents() {
   );
 }
 
+/** Falhas e bloqueios de imagem remota da sessão (URL encurtada e motivo). */
+export function DiagnosticsRemoteImages() {
+  const issues = remoteImageIssues.value;
+  if (issues.length === 0) return null;
+  return (
+    <section class="diagnostics-images" aria-label={t('diagnostics.remoteImages')}>
+      <h3>{t('diagnostics.remoteImages')}</h3>
+      <p class="muted">{t('diagnostics.remoteImagesHint')}</p>
+      <ul>
+        {issues.map((issue) => (
+          <li key={issue.url}>
+            <code>{issue.url}</code>
+            {': '}
+            {t(`diagnostics.imageReason.${issue.reason}`)}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /**
  * Conteúdo da janela Diagnóstico (B4). Enquanto está à vista, os erros novos contam
  * como vistos: o ponto de alerta da faixa só acende com a janela fechada.
@@ -292,6 +315,7 @@ export function DiagnosticsView() {
     <div class="diagnostics-view">
       <DiagnosticsLibrary />
       <DiagnosticsComponents />
+      <DiagnosticsRemoteImages />
       <DiagnosticsTable />
     </div>
   );
