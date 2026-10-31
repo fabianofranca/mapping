@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
-  "title": "Mapping — componente (mapping-component, formatVersion 1 e 2)",
-  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) só existe na formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo.",
+  "title": "Mapping — componente (mapping-component, formatVersion 1, 2 e 3)",
+  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres).",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -11,7 +11,7 @@
       "const": "mapping-component"
     },
     "formatVersion": {
-      "enum": [1, 2]
+      "enum": [1, 2, 3]
     },
     "id": {
       "type": "string",
@@ -1382,6 +1382,22 @@
         }
       }
     },
+    "size_noHug": {
+      "description": "Tamanho do nó image: px, \"fill\" ou \"NN%\" (hug é erro, a arrumação não depende da imagem baixada).",
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "const": "fill"
+        },
+        {
+          "type": "string",
+          "pattern": "^\\d+(\\.\\d+)?%$"
+        }
+      ]
+    },
     "size": {
       "description": "Tamanho de nó: px, \"fill\", \"hug\" ou \"NN%\".",
       "anyOf": [
@@ -1883,8 +1899,73 @@
         },
         {
           "$ref": "#/$defs/node_repeat"
+        },
+        {
+          "$ref": "#/$defs/node_image"
         }
       ]
+    },
+    "node_image": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "formatVersion 3. Imagem remota: o src é um literal https:// ou exatamente { \"$field\": campo } (sem default, $concat, $if nem $switch). O campo ligado precisa ser string; o schema não confere isso, o validador da biblioteca sim. O fill é o fundo atrás da imagem.",
+      "required": ["type", "src"],
+      "properties": {
+        "type": {
+          "const": "image"
+        },
+        "name": {
+          "type": "string"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "width": {
+          "$ref": "#/$defs/size_noHug"
+        },
+        "height": {
+          "$ref": "#/$defs/size_noHug"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
+        },
+        "fill": {
+          "$ref": "#/$defs/expr_fill"
+        },
+        "stroke": {
+          "$ref": "#/$defs/stroke"
+        },
+        "shadow": {
+          "$ref": "#/$defs/shadow"
+        },
+        "cornerRadius": {
+          "$ref": "#/$defs/expr_cornerRadius"
+        },
+        "src": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^https://"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["$field"],
+              "properties": {
+                "$field": {
+                  "$ref": "#/$defs/fieldKey"
+                }
+              }
+            }
+          ]
+        },
+        "fit": {
+          "enum": ["cover", "contain", "fill"]
+        }
+      }
     },
     "node_repeat": {
       "type": "object",

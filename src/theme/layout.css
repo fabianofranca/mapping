@@ -437,3 +437,41 @@ a.home-nav-item {
 .repo-warning {
   margin: 0;
 }
+
+/* Configurações › Privacidade */
+.privacy-subtitle {
+  margin: 0;
+  font: var(--t-text-small);
+  font-weight: 600;
+}
+
+.privacy-origins {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.privacy-origin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.privacy-origin code {
+  overflow-wrap: anywhere;
+}
+
+.privacy-switch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.privacy-warning {
+  margin: 0;
+  padding-left: var(--space-6);
+}

@@ -552,6 +552,41 @@ export const ptBR = {
   'about.build': 'Versão',
   'about.channel': 'Canal',
   'about.schema': 'Versão do formato',
+  'imageConsent.message':
+    'Este projeto tem imagens de {origins}. Ao permitir, esses sites ficam sabendo quando você abre o projeto e de qual endereço IP.',
+  'imageConsent.allow': 'Permitir estas',
+  'imageConsent.dismiss': 'Agora não',
+  'imageConsent.insecure': 'sem criptografia',
+  'imageConsent.local': 'rede local',
+  'privacy.title': 'Privacidade',
+  'privacy.intro':
+    'Imagens de outros sites só aparecem depois que você permite a origem. A permissão vale só neste navegador e não vai no projeto nem no zip.',
+  'privacy.origins': 'Origens permitidas',
+  'privacy.noOrigins': 'Nenhuma origem permitida neste navegador.',
+  'privacy.revoke': 'Revogar',
+  'privacy.revokeOrigin': 'Revogar {origin}',
+  'privacy.anyOrigin': 'Permitir imagens de qualquer origem',
+  'privacy.anyOriginWarning':
+    'Risco: qualquer projeto que você abrir passa a poder carregar imagens de qualquer site, que fica sabendo que você abriu o projeto e qual é o seu endereço IP. Não vale para a rede local.',
+  'privacy.http': 'Permitir imagens sem criptografia (http)',
+  'privacy.httpWarning':
+    'Quem está na mesma rede vê o endereço da imagem e pode trocá-la. Na app publicada, o navegador pode bloquear conteúdo misto.',
+  'privacy.localNetwork': 'Permitir imagens da rede local',
+  'privacy.localNetworkWarning':
+    'Um projeto pode descobrir aparelhos da sua rede, e um pedido pode disparar uma ação num aparelho mal feito. Cada origem local sempre pede o seu consentimento.',
+  'privacy.noCors': 'Mostrar imagens de servidores sem CORS',
+  'privacy.noCorsWarning':
+    'Sem CORS o navegador manda os cookies daquele site junto com o pedido, e o site pode reconhecer quem está logado nele.',
+  'about.remoteImages': 'Imagens remotas',
+  'about.remoteImagesValue': '{count} origens permitidas neste navegador',
+  'diagnostics.remoteImages': 'Imagens remotas',
+  'diagnostics.remoteImagesHint':
+    'Imagens que não foram mostradas nesta sessão e o motivo.',
+  'diagnostics.imageReason.blocked-consent': 'origem sem permissão',
+  'diagnostics.imageReason.invalid': 'endereço não aceito',
+  'diagnostics.imageReason.failed': 'não carregou',
+  'diagnostics.imageReason.too-large': 'imagem grande demais',
+  'diagnostics.imageReason.timeout': 'demorou demais',
   'about.copy': 'Copiar',
   'home.projects': 'Projetos',
   'home.sideLabel': 'Tela inicial',

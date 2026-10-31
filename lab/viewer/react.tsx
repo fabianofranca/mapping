@@ -12,6 +12,8 @@
  *   `fontsVersion` → `redraw`.
  * - `interactive` (padrão `true`) → `setInteractive`: com `false` o canvas não seleciona nem
  *   avisa `onHover`/`onClick`; `selection` e `hover` do hospedeiro continuam valendo.
+ * - `remoteImages` e `allowOrigin` valem só na criação (imagens remotas, desligadas por padrão;
+ *   `allowOrigin` é lida por ref, então uma função nova a cada render não recria o viewer).
  * - `fit` e `padding` valem só na criação (mudá-los depois não reenquadra). Para reenquadrar
  *   a pedido, use `createViewer` direto e chame `viewer.fit()`.
  */
@@ -40,6 +42,10 @@ export interface MappingViewerProps {
   readonly fit?: ViewerOptions['fit'];
   /** Só na criação do viewer (mudar depois não tem efeito). */
   readonly padding?: number;
+  /** Só na criação do viewer: liga as imagens remotas (padrão `false`). */
+  readonly remoteImages?: boolean;
+  /** Origens aceitas (padrão: recusa tudo). Vale com `remoteImages`; lida a cada pedido. */
+  readonly allowOrigin?: ViewerOptions['allowOrigin'];
   readonly className?: string;
   /** Mesclado sobre o padrão `{ width: '100%', height: '100%' }`. */
   readonly style?: CSSProperties;
@@ -84,6 +90,8 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
       fit: initial.fit,
       padding: initial.padding,
       interactive: initial.interactive,
+      remoteImages: initial.remoteImages,
+      allowOrigin: (origin) => latest.current.allowOrigin?.(origin) === true,
       onHover: (id) => latest.current.onHover?.(id),
       onClick: (id, point) => latest.current.onClick?.(id, point),
       onWarnings: (warnings) => latest.current.onWarnings?.(warnings),

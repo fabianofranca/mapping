@@ -1,6 +1,6 @@
 // Guia interativo (`public/guia/index.html`): gerado do template `scripts/guia/template.html`
 // e do projeto de exemplo (`examples/exemplo-completo/`), a fonte única dos dados. O CSS usa
-// os tokens da app (`renderTokensCss`) e a página leva a mesma CSP do `index.html`.
+// os tokens da app (`renderTokensCss`) e a página leva a CSP do perfil `static` (a da app sem imagem remota nem Trusted Types).
 // `npm run build:guia` grava o arquivo (e o `npm run build` o regera antes do Vite);
 // tests/examples/guia.test.ts prova que o repositório está em dia.
 import { readFileSync } from 'node:fs';
@@ -105,5 +105,5 @@ export function guiaHtml(root = process.cwd()): string {
     '/*__DATA__*/ null',
     inlineJson(guiaData(root)),
   );
-  return applyCsp(html);
+  return applyCsp(html, 'static');
 }

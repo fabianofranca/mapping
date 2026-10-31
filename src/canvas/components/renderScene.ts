@@ -24,6 +24,14 @@ import {
   type Stroke,
   hasChildren,
 } from '../../model/components/scene';
+import {
+  type RemoteImageView,
+  type RemoteImageViewState,
+  loadEmbeddedImage,
+} from './imageLoader';
+
+/** Única origem de imagem que o renderizador carrega sozinho (herança do laboratório). */
+const DATA_URL = /^data:/i;
 
 /** Cores do reservado de imagem e da caixa de nó desconhecido. */
 export interface RenderPalette {
@@ -42,7 +50,21 @@ export const DEFAULT_PALETTE: RenderPalette = {
   unknownLine: '#d81b60',
 };
 
+/** O que a função de imagem remota devolve: a vista completa ou só o estado (reservado). */
+export type RemoteImageResult = RemoteImageView | RemoteImageViewState;
+
 export interface RenderOptions {
+  /**
+   * Resolve a URL do nó `image` do componente (RI3): já passada pela política de URL e pelo
+   * consentimento, com o carregador por trás. Sem ela, toda imagem remota é o reservado. O
+   * `renderScene` nunca cria `Image` para URL remota.
+   */
+  readonly remoteImage?: (url: string) => RemoteImageResult;
+  /**
+   * `true` quando o resultado será lido de volta (`toDataURL`, `toBlob`, `getImageData`):
+   * imagem `opaque` (carregada sem CORS) não é desenhada, o reservado entra no lugar dela.
+   */
+  readonly pixelSafe?: boolean;
   /** Uma imagem embutida (`data:`) terminou de carregar: hora de redesenhar. */
   readonly onImageLoaded?: () => void;
   /** Cores do reservado e do nó desconhecido (padrão: `DEFAULT_PALETTE`). */
@@ -57,6 +79,8 @@ export interface RenderResult {
   readonly byId: ReadonlyMap<string, Konva.Group>;
   /** Aproximações feitas ao desenhar (além das do conversor). */
   readonly warnings: readonly string[];
+  /** URLs remotas (`url` do preenchimento `image`) que a cena usa, sem repetir. */
+  readonly imageUrls: readonly string[];
 }
 
 export const SCENE_ID_ATTR = 'sceneId';
@@ -71,6 +95,7 @@ type ShapeWithFill = Konva.Shape;
 class Renderer {
   readonly byId = new Map<string, Konva.Group>();
   readonly warnings = new Set<string>();
+  readonly imageUrls = new Set<string>();
 
   private readonly palette: RenderPalette;
 
@@ -296,7 +321,15 @@ class Renderer {
   }
 
   private imageFill(shape: ShapeWithFill, paint: Paint & { type: 'image' }, box: Box) {
-    if (!paint.src) {
+    // `paint.url` é a imagem remota do nó `image` do componente: o renderizador não a baixa; a
+    // função das opções devolve o estado (e a imagem pronta, já passada pela política e pelo
+    // consentimento). Tudo menos `loaded`/`opaque` é o reservado, sem aviso (estado normal).
+    if (!paint.src && paint.url !== undefined) {
+      this.imageUrls.add(paint.url);
+      return this.remoteImageFill(shape, paint, paint.url, box);
+    }
+    // Só a imagem embutida (`data:`) é carregada aqui; qualquer outro esquema vira reservado.
+    if (!paint.src || !DATA_URL.test(paint.src)) {
       this.warnings.add('imagem sem pixels desenhada como reservado');
       return placeholder(shape, box, this.palette);
     }
@@ -308,31 +341,68 @@ class Renderer {
         cornerRadius: shape.cornerRadius(),
         opacity: paint.opacity ?? 1,
       });
-      const element = new Image();
-      element.onload = () => {
-        image.image(element);
-        this.options.onImageLoaded?.();
-      };
-      element.onerror = () => {
-        this.warnings.add('uma imagem embutida não pôde ser decodificada');
-      };
-      element.src = paint.src;
+      loadEmbeddedImage(paint.src, {
+        onLoad: (element) => {
+          image.image(element);
+          this.options.onImageLoaded?.();
+        },
+        onError: () => {
+          this.warnings.add('uma imagem embutida não pôde ser decodificada');
+        },
+      });
       return [image];
     }
     // Imagem como preenchimento de elipse/caminho: o Konva usa `fillPatternImage`.
-    const element = new Image();
-    element.onload = () => {
-      shape.fillPriority('pattern');
-      shape.fillPatternImage(element);
-      shape.fillPatternScale({
-        x: box.width / Math.max(1, element.naturalWidth),
-        y: box.height / Math.max(1, element.naturalHeight),
-      });
-      this.options.onImageLoaded?.();
-    };
-    element.src = paint.src;
+    loadEmbeddedImage(paint.src, {
+      onLoad: (element) => {
+        shape.fillPriority('pattern');
+        shape.fillPatternImage(element);
+        shape.fillPatternScale({
+          x: box.width / Math.max(1, element.naturalWidth),
+          y: box.height / Math.max(1, element.naturalHeight),
+        });
+        this.options.onImageLoaded?.();
+      },
+    });
     shape.fill(this.palette.placeholderFill);
     return [shape];
+  }
+
+  private remoteImageFill(
+    shape: ShapeWithFill,
+    paint: Paint & { type: 'image' },
+    url: string,
+    box: Box,
+  ): Konva.Shape[] {
+    const view = this.resolveRemote(url);
+    const drawable =
+      view.image !== undefined &&
+      (view.state === 'loaded' || (view.state === 'opaque' && !this.options.pixelSafe));
+    if (!drawable || view.image === undefined || !(shape instanceof KonvaRect)) {
+      return placeholder(shape, box, this.palette);
+    }
+    const size = sourceSize(view);
+    if (size === null) return placeholder(shape, box, this.palette);
+    const image = new KonvaImage({
+      image: view.image,
+      ...imageFit(paint.fit ?? 'cover', box, size),
+      cornerRadius: shape.cornerRadius(),
+      opacity: paint.opacity ?? 1,
+      listening: true,
+    });
+    return [image];
+  }
+
+  /** A função das opções pode lançar ou devolver só o estado: nenhum dos dois derruba o desenho. */
+  private resolveRemote(url: string): RemoteImageView {
+    const resolve = this.options.remoteImage;
+    if (!resolve) return { state: 'invalid' };
+    try {
+      const result = resolve(url);
+      return typeof result === 'string' ? { state: result } : result;
+    } catch {
+      return { state: 'failed' };
+    }
   }
 
   private rectStroke(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape {
@@ -386,6 +456,63 @@ class Renderer {
         return;
     }
   }
+}
+
+/** Largura e altura da fonte de uma imagem pronta; `null` se não houver como saber. */
+function sourceSize(view: RemoteImageView): { width: number; height: number } | null {
+  let width = view.width;
+  let height = view.height;
+  const image = view.image;
+  if ((width === undefined || height === undefined) && image) {
+    if ('naturalWidth' in image) {
+      width = image.naturalWidth;
+      height = image.naturalHeight;
+    } else if ('width' in image && typeof image.width === 'number') {
+      width = image.width;
+      height = (image as { height: number }).height;
+    }
+  }
+  if (!width || !height || width <= 0 || height <= 0) return null;
+  return { width, height };
+}
+
+/**
+ * Posição, tamanho e recorte do `KonvaImage` para o `fit`: `cover` recorta o centro da fonte para
+ * cobrir a caixa, `contain` encaixa a fonte inteira no centro, `fill` estica.
+ */
+export function imageFit(
+  fit: 'cover' | 'contain' | 'fill',
+  box: Box,
+  source: { width: number; height: number },
+): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  crop?: { x: number; y: number; width: number; height: number };
+} {
+  if (fit === 'fill') return { x: 0, y: 0, width: box.width, height: box.height };
+  if (fit === 'contain') {
+    const scale = Math.min(box.width / source.width, box.height / source.height);
+    const width = source.width * scale;
+    const height = source.height * scale;
+    return { x: (box.width - width) / 2, y: (box.height - height) / 2, width, height };
+  }
+  const scale = Math.max(box.width / source.width, box.height / source.height);
+  const cropWidth = box.width / scale;
+  const cropHeight = box.height / scale;
+  return {
+    x: 0,
+    y: 0,
+    width: box.width,
+    height: box.height,
+    crop: {
+      x: (source.width - cropWidth) / 2,
+      y: (source.height - cropHeight) / 2,
+      width: cropWidth,
+      height: cropHeight,
+    },
+  };
 }
 
 /** Reservado de imagem: a forma em cinza, com um X. */
@@ -513,7 +640,12 @@ function roundedRectPath(
 export function renderScene(scene: Scene, options: RenderOptions = {}): RenderResult {
   const renderer = new Renderer(options);
   const root = renderer.render(scene.root);
-  return { root, byId: renderer.byId, warnings: [...renderer.warnings] };
+  return {
+    root,
+    byId: renderer.byId,
+    warnings: [...renderer.warnings],
+    imageUrls: [...renderer.imageUrls],
+  };
 }
 
 /** O id do nó da cena dono de um alvo de evento do Konva (forma ou contêiner), se houver. */

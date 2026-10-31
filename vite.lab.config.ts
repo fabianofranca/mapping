@@ -4,8 +4,8 @@
 // build (`--mode components`, `--mode react`): o vite-plugin-singlefile embute tudo numa
 // entrada só. A página `react` usa React de verdade (sem o plugin `preact()`, que apelida
 // react para preact/compat): é a prova de que o visualizador embutível roda num hospedeiro React.
-// Experimentos fora do produto: sem service worker nem manifest; a CSP é a mesma da app
-// (nenhuma requisição de rede, nada embutido sem hash). Os tokens da app (`tokensCss()`) entram
+// Experimentos fora do produto: sem service worker nem manifest; a CSP é a do perfil `static`
+// (nenhuma requisição de rede, nada embutido sem hash, sem Trusted Types). Os tokens da app (`tokensCss()`) entram
 // só na página `components`; a `react` tem variáveis próprias (`--demo-*`) em `react.css`.
 import { defineConfig, type Plugin } from 'vite';
 import preact from '@preact/preset-vite';
@@ -26,7 +26,7 @@ function contentSecurityPolicy(): Plugin {
         const html = bundle['index.html'];
         if (html?.type !== 'asset')
           throw new Error('index.html não encontrado no bundle');
-        html.source = applyCsp(String(html.source));
+        html.source = applyCsp(String(html.source), 'static');
       },
     },
   };

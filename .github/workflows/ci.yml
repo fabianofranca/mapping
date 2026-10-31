@@ -52,6 +52,30 @@ jobs:
             exit 1
           fi
           echo "PR de $HEAD para $BASE: permitido."
+      # Toda entrega de epic/* para a main atualiza o CHANGELOG.md no próprio PR do épico
+      # (CLAUDE.md, "Fluxo de trabalho"). Dependabot e PRs para outro branch não entram.
+      - name: Changelog atualizado
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "$BASE" != "main" ]; then
+            echo "PR para $BASE: o changelog só é exigido nos PRs para a main."
+            exit 0
+          fi
+          case "$HEAD" in
+            epic/*) ;;
+            *) echo "PR de $HEAD: o changelog só é exigido nos épicos."; exit 0 ;;
+          esac
+          if gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep -qx 'CHANGELOG.md'; then
+            echo "CHANGELOG.md atualizado neste PR."
+          else
+            echo "::error::A entrega de $HEAD para a main precisa atualizar o CHANGELOG.md (nova seção no topo)."
+            exit 1
+          fi
 
   check:
     runs-on: ubuntu-latest

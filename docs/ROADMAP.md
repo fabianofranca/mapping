@@ -21,6 +21,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - Testes: o build falha se a CSP faltar ou se os hashes não baterem com os blocos embutidos; um teste Playwright confirma que uma requisição para um host externo é bloqueada.
 - **Depende de:** nada. Pode rodar em paralelo com as fases do redesign.
 - **Resultado:** `pwa/csp.ts` + plugin `contentSecurityPolicy` (`vite.config.ts`); o build falha sem CSP ou com hash divergente; testes em `tests/app/cspBuild.test.ts`, `tests/e2e/csp.spec.ts` e `tests/e2e/cspServiceWorker.spec.ts`. Documentação em [`ARCHITECTURE.md`](ARCHITECTURE.md#content-security-policy-etapa-24) e no README. O zod passou a rodar em `jitless` (sem `eval`).
+- **Depois (etapa Imagens remotas, épico `epic/imagens-remotas`, RI2):** o `img-src` da app passou a liberar `https:` e `http:` e a CSP ganhou Trusted Types (`require-trusted-types-for 'script'; trusted-types default`) e o `<meta name="referrer" content="no-referrer">`; `connect-src 'none'` continua. O guia e o lab usam o perfil `static` (a política desta etapa, sem imagem remota). Ver [`ARCHITECTURE.md`](ARCHITECTURE.md#content-security-policy-etapa-24).
 
 ## Etapa 2.5 — Trava de marcações e imagens (concluída)
 

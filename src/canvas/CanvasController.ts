@@ -41,6 +41,10 @@ import {
 import { arrowShape, visibleArrowShapes, type ArrowShape } from './arrowGeometry';
 import { ComponentLayerRenderer } from './components/componentLayer';
 import { konvaMeasurer } from './components/konvaMeasurer';
+import {
+  type RemoteImageSource,
+  sharedRemoteImageSource,
+} from './components/remoteImages';
 import { imageAt, imagesBounds } from './imageGeometry';
 import { watchSpaceKey } from './input/keyboard';
 import { PointerInput } from './input/pointer';
@@ -83,6 +87,11 @@ export interface CanvasControllerOptions {
    * "como ficaria" (ou o atual, na visão Atual) com as marcas de revisão.
    */
   readonly review?: ReviewState;
+  /**
+   * Imagens remotas dos componentes (RI3): as duas portas da app e o carregador. Padrão: a fonte
+   * de produção; os testes passam uma falsa.
+   */
+  readonly remoteImages?: RemoteImageSource;
 }
 
 /** Sem setas à vista ("Mostrar setas" desligado, Ver limpo): sempre o mesmo array. */
@@ -101,6 +110,11 @@ export class CanvasController {
   private readonly derived: EditorDerived;
   private readonly viewState: CanvasViewState;
   private readonly review: ReviewState | null;
+  private readonly remoteImages: RemoteImageSource;
+  /** URLs cujas imagens mudaram desde o último quadro (o quadro refaz só as marcações delas). */
+  private readonly changedImageUrls = new Set<string>();
+  /** O consentimento ou um interruptor mudou: o quadro refaz todas as marcações com imagem. */
+  private allImagesChanged = false;
   /** Último ponto de tela do mouse, lido no quadro (não a cada `pointermove`). */
   private cursorPoint: Point | null = null;
   private cursorRequest: number | null = null;
@@ -272,6 +286,7 @@ export class CanvasController {
     this.derived = options.derived;
     this.viewState = options.view;
     this.review = options.review ?? null;
+    this.remoteImages = options.remoteImages ?? sharedRemoteImageSource();
 
     // Os desenhos medem texto com o Konva (o layout bate com o que é pintado) e se redesenham
     // quando o medidor muda; o modelo e o store nunca importam o Konva.
@@ -330,6 +345,19 @@ export class CanvasController {
       this.view.observe(),
       watchTheme(() => (this.tokens.value = readCanvasTokens())),
       effect(() => this.loadBitmaps()),
+      // Imagem remota que termina (ou falha, ou sai do cache): refaz só as marcações dela, num
+      // quadro só (`requestRender` coalesce várias no mesmo quadro).
+      this.remoteImages.subscribe((url) => {
+        if (this.destroyed) return;
+        this.changedImageUrls.add(url);
+        this.requestRender();
+      }),
+      // Consentimento ou interruptor mudou: todas as marcações com imagem remota são refeitas.
+      effect(() => {
+        void this.remoteImages.gate.value;
+        this.allImagesChanged = true;
+        this.requestRender();
+      }),
       // O effect só agenda: várias mudanças no mesmo quadro geram um desenho só.
       effect(() => {
         void this.frame.value;
@@ -458,6 +486,7 @@ export class CanvasController {
       onImageLoaded: () => {
         if (!this.destroyed) this.requestRender();
       },
+      remoteImage: (url) => this.remoteImages.resolve(url),
     });
   }
 
@@ -581,6 +610,8 @@ export class CanvasController {
     this.stage.position({ x: v.x, y: v.y });
     this.stage.scale({ x: v.scale, y: v.scale });
 
+    this.refreshRemoteImages();
+
     let placementsChanged = last === null;
     if (scaleChanged || !sameFrame(last, frame, IMAGE_KEYS)) {
       const next = this.images.render(frame);
@@ -618,7 +649,9 @@ export class CanvasController {
     // Para os testes e2e esperarem o quadro, e não um tempo fixo: enquadramentos e
     // imagens com bitmap já desenhados (o DOM só é tocado quando eles mudam).
     const canvasMarkings = this.countCanvasMarkings(frame.project);
-    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}`;
+    const componentImages =
+      this.componentLayer.imageCount + this.floatingLayer.imageCount;
+    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${componentImages}`;
     if (drawn !== this.published) {
       this.published = drawn;
       const host = this.stage.container();
@@ -627,7 +660,18 @@ export class CanvasController {
       host.dataset.components = String(this.drawnComponents);
       host.dataset.canvasMarkings = String(canvasMarkings);
       host.dataset.arrows = String(this.drawnArrows);
+      host.dataset.componentImages = String(componentImages);
     }
+  }
+
+  /** Refaz as marcações cujas imagens remotas mudaram desde o último quadro. */
+  private refreshRemoteImages(): void {
+    if (!this.allImagesChanged && this.changedImageUrls.size === 0) return;
+    const urls = this.allImagesChanged ? null : new Set(this.changedImageUrls);
+    this.allImagesChanged = false;
+    this.changedImageUrls.clear();
+    this.componentLayer.refreshImages(urls);
+    this.floatingLayer.refreshImages(urls);
   }
 
   /** Quantas marcações do canvas (sem container) o quadro tem; recontado só quando o projeto muda. */

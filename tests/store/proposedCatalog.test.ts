@@ -418,3 +418,44 @@ describe('catálogo do Proposto: fontes', () => {
     expect(fake.clear).toHaveBeenCalled();
   });
 });
+
+describe('imagens remotas no Proposto (RI3)', () => {
+  it('a origem do pacote criado pela proposta só entra na visão Proposto', async () => {
+    const imageText = {
+      format: 'mapping-component',
+      formatVersion: 3,
+      id: 'text',
+      name: 'text',
+      size: { width: 100, height: 40 },
+      template: {
+        type: 'frame',
+        layout: { type: 'none' },
+        fill: '#EEEEEE',
+        children: [
+          {
+            type: 'image',
+            src: 'https://cdn.proposta.example/x.png',
+            width: 100,
+            height: 40,
+          },
+        ],
+      },
+    };
+    const base = baseProject();
+    const { proposal } = createsExtra(base);
+    const h = await openHarness({
+      project: base,
+      proposals: [proposal],
+      files: packageFiles('extra', 'proposals/P1/', {
+        'specs/test/components/text.json': JSON.stringify(imageText),
+      }),
+    });
+    const { derived } = setup(h);
+    await open(h, 'proposed');
+    expect(derived.pendingImageOrigins.value.map((o) => o.origin)).toEqual([
+      'https://cdn.proposta.example',
+    ]);
+    h.review.setView('current');
+    expect(derived.pendingImageOrigins.value).toEqual([]);
+  });
+});

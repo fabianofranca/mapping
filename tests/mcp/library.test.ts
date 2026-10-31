@@ -26,6 +26,7 @@ import { connect, type Connection } from './workspace';
 // B2). O pacote de prova é o Material 3 de `examples/libraries/material3/`.
 
 const MATERIAL3 = 'examples/libraries/material3';
+const PESSOAS = 'examples/libraries/pessoas';
 
 interface Issue {
   file: string;
@@ -92,6 +93,18 @@ beforeAll(async () => {
   };
   delete screen.screen.device;
   writeFileSync(example, JSON.stringify(screen));
+
+  // Pessoas (nó image) e a cópia com o campo da foto trocado para number.
+  cpSync(PESSOAS, join(root, 'lib', 'pessoas'), { recursive: true });
+  cpSync(PESSOAS, join(root, 'imagem-errada', 'pessoas'), { recursive: true });
+  const pessoasSpec = join(root, 'imagem-errada', 'pessoas', 'pessoas.spec.json');
+  writeFileSync(
+    pessoasSpec,
+    readFileSync(pessoasSpec, 'utf8').replace(
+      /("key": "foto",\s*"label": "Foto",\s*"type": )"string"/,
+      '$1"number"',
+    ),
+  );
 
   mkdirSync(join(root, 'vazia'));
   writeFileSync(join(root, 'vazia', 'LEIA-ME.md'), 'nada aqui');
@@ -172,6 +185,27 @@ describe('validate_specialization com containers (v6)', () => {
     expect(result.valid).toBe(false);
     expect(result.errors.some((e) => e.startsWith('containers[1].id:'))).toBe(true);
     expect(result.errors.some((e) => e.startsWith('containers[1].width:'))).toBe(true);
+  });
+});
+
+describe('validate_library com o nó image', () => {
+  it('aprova a biblioteca de pessoas, sem erro nem aviso', async () => {
+    const result = ok(
+      await mcp.call<Validated>('validate_library', { path: 'lib/pessoas' }),
+    );
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('recusa o src ligado a um campo que não é string', async () => {
+    const result = ok(
+      await mcp.call<Validated>('validate_library', { path: 'imagem-errada/pessoas' }),
+    );
+    expect(result.valid).toBe(false);
+    expect(result.errors.map((e) => e.message).join('\n')).toMatch(
+      /o src da imagem lê "foto"/,
+    );
   });
 });
 
