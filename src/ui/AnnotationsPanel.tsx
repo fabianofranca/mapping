@@ -363,6 +363,13 @@ function LayerGroup({
     annotations.length > 1 ? String(annotations.length) : null,
   ].filter((s) => s !== null);
 
+  // O resumo corta com reticências na janela estreita: o `title` mostra o texto inteiro.
+  const summary = empty
+    ? t('annotation.emptySection')
+    : collapsed && first
+      ? annotationSummary(project, first)
+      : '';
+
   const heading = (
     <>
       <span class="layer-dot" aria-hidden="true" />
@@ -372,12 +379,8 @@ function LayerGroup({
       {meta.length > 0 && (
         <span class="layer-group-meta">{` · ${meta.join(' · ')}`}</span>
       )}
-      <span class="layer-group-summary">
-        {empty
-          ? t('annotation.emptySection')
-          : collapsed && first
-            ? annotationSummary(project, first)
-            : ''}
+      <span class="layer-group-summary" title={summary || undefined}>
+        {summary}
       </span>
       {changes && <span class="details-section-changes">{changes}</span>}
       {incomplete && (

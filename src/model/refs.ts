@@ -101,6 +101,29 @@ export function resolveRef(p: Project, ref: RefValue): ResolvedRef | null {
   return { kind: 'field', annotation, key: ref.key, field };
 }
 
+/**
+ * Texto que representa o alvo para ser escrito num campo de texto (`linkedRef`): o nome da
+ * declaração, não o rótulo "Dono.Campo" de `refLabel`. Campo simples: o valor (texto não vazio;
+ * número e data viram texto); linha de `table`: o valor da coluna `rowLabel`; tupla livre: a
+ * `key`. `null` se o alvo não resolve ou não tem texto.
+ */
+export function refTargetText(p: Project, ref: RefValue): string | null {
+  const target = resolveRef(p, ref);
+  if (!target) return null;
+  const text = (value: JsonValue | undefined): string | null =>
+    nonEmptyString(value) ? value : typeof value === 'number' ? String(value) : null;
+  switch (target.kind) {
+    case 'entry':
+      return nonEmptyString(target.entry.key) ? target.entry.key : null;
+    case 'row': {
+      const rowLabel = target.field?.type === 'table' ? target.field.rowLabel : undefined;
+      return rowLabel ? text(target.row[rowLabel]) : null;
+    }
+    case 'field':
+      return text(target.annotation.values?.[target.key]);
+  }
+}
+
 /** Rótulo da instância: `name`; se vazio, o valor do `labelField` do tipo. */
 export function instanceLabel(p: Project, a: Annotation): string | null {
   if (a.name) return a.name;

@@ -640,6 +640,7 @@ export const enUS: Dictionary = {
   'typed.enumNone': '(none)',
   'typed.invalidNumber': 'Type a number (use a dot or comma for decimals).',
   'typed.invalidValue': 'Invalid value for this field.',
+  'suggestions.listLabel': 'Suggestions',
   'typed.unknownType':
     'The type "{type}" no longer exists in the specialization. The annotation is read-only.',
   'typed.convertToFree': 'Convert to free annotation',
@@ -931,6 +932,9 @@ export const enUS: Dictionary = {
   'multi.containers': '{count} container(s)',
   'multi.markings': '{count} marking(s)',
   'multi.delete': 'Delete',
+  'multi.wrap': 'Wrap',
+  'multi.wrapBlocked': 'Notes and arrows can’t go inside a parent marking',
+  'multi.wrapFailed': 'Couldn’t create the parent marking',
   'multi.lock': 'Lock',
   'multi.unlock': 'Unlock',
   'multi.deleteTitle': 'Delete {count} items?',
