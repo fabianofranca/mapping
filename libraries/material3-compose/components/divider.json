@@ -1,0 +1,223 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "divider",
+  "name": "Divider",
+  "description": "Linha de 1 em outline variant, horizontal ou vertical, centrada na caixa da marcação, com recuo opcional nas pontas. O desenho aproxima a espessura de 1 a 4 dp.",
+  "size": {
+    "width": 360,
+    "height": 16
+  },
+  "minSize": {
+    "width": 40,
+    "height": 1
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 1
+  },
+  "preview": {
+    "orientation": "horizontal",
+    "thickness": 1,
+    "inset": 0
+  },
+  "template": {
+    "type": "frame",
+    "name": "divider",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "horizontal",
+        "layout": {
+          "type": "row",
+          "gap": {
+            "$field": "inset",
+            "default": 0
+          },
+          "align": "center"
+        },
+        "visible": {
+          "$not": {
+            "$eq": ["orientation", "vertical"]
+          }
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "ponta esquerda",
+            "width": 0,
+            "height": 1,
+            "children": []
+          },
+          {
+            "type": "frame",
+            "name": "linha",
+            "width": "fill",
+            "height": "hug",
+            "layout": {
+              "type": "column"
+            },
+            "children": [
+              {
+                "type": "rect",
+                "name": "linha 1",
+                "fill": "#CAC4D0",
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      {
+                        "$eq": ["thickness", "2"]
+                      },
+                      {
+                        "$eq": ["thickness", "3"]
+                      },
+                      {
+                        "$eq": ["thickness", "4"]
+                      }
+                    ]
+                  }
+                },
+                "width": "fill",
+                "height": 1
+              },
+              {
+                "type": "rect",
+                "name": "linha 2",
+                "fill": "#CAC4D0",
+                "visible": {
+                  "$eq": ["thickness", "2"]
+                },
+                "width": "fill",
+                "height": 2
+              },
+              {
+                "type": "rect",
+                "name": "linha 3",
+                "fill": "#CAC4D0",
+                "visible": {
+                  "$eq": ["thickness", "3"]
+                },
+                "width": "fill",
+                "height": 3
+              },
+              {
+                "type": "rect",
+                "name": "linha 4",
+                "fill": "#CAC4D0",
+                "visible": {
+                  "$eq": ["thickness", "4"]
+                },
+                "width": "fill",
+                "height": 4
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "ponta direita",
+            "width": 0,
+            "height": 1,
+            "children": []
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "vertical",
+        "layout": {
+          "type": "column",
+          "gap": {
+            "$field": "inset",
+            "default": 0
+          },
+          "align": "center"
+        },
+        "visible": {
+          "$eq": ["orientation", "vertical"]
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "ponta de cima",
+            "width": 1,
+            "height": 0,
+            "children": []
+          },
+          {
+            "type": "frame",
+            "name": "linha",
+            "width": "hug",
+            "height": "fill",
+            "layout": {
+              "type": "row"
+            },
+            "children": [
+              {
+                "type": "rect",
+                "name": "linha 1",
+                "fill": "#CAC4D0",
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      {
+                        "$eq": ["thickness", "2"]
+                      },
+                      {
+                        "$eq": ["thickness", "3"]
+                      },
+                      {
+                        "$eq": ["thickness", "4"]
+                      }
+                    ]
+                  }
+                },
+                "width": 1,
+                "height": "fill"
+              },
+              {
+                "type": "rect",
+                "name": "linha 2",
+                "fill": "#CAC4D0",
+                "visible": {
+                  "$eq": ["thickness", "2"]
+                },
+                "width": 2,
+                "height": "fill"
+              },
+              {
+                "type": "rect",
+                "name": "linha 3",
+                "fill": "#CAC4D0",
+                "visible": {
+                  "$eq": ["thickness", "3"]
+                },
+                "width": 3,
+                "height": "fill"
+              },
+              {
+                "type": "rect",
+                "name": "linha 4",
+                "fill": "#CAC4D0",
+                "visible": {
+                  "$eq": ["thickness", "4"]
+                },
+                "width": 4,
+                "height": "fill"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "ponta de baixo",
+            "width": 1,
+            "height": 0,
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}
