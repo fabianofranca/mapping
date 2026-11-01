@@ -1,6 +1,6 @@
 # Roadmap
 
-Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar. Hoje não há etapa em andamento nem detalhada.
+Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar. Hoje não há etapa em andamento; a etapa detalhada é a Exemplos enxutos (`epic/exemplos-enxutos`, fases EX1 a EX3 no `PLAN.md`), que só começa depois que o `epic/material3` entrar na `main`.
 
 ## Princípio
 
@@ -212,6 +212,18 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Fora (decidido):** grupos que se cruzam; seleção por laço; container dentro de container; o visualizador embutível (`dist-viewer/`); layout de celular. Ficaram para depois: `rect` em fração do container, `members` em `get_container`, restrições de origem e destino de seta por tipo e a rodada dirigida do Cowork (a critério do dono).
 - **Depende de:** etapa Container (concluída).
 - **Próxima etapa:** nenhuma detalhada; a ordem do que vier é do dono, entre as "Evoluções" abaixo. Nada entra antes de o `PLAN.md` detalhar a etapa.
+
+## Etapa — Biblioteca Material 3 (concluída, épico `epic/material3`)
+
+- **Concluída em 2026-11-01** (fases MD1 a MD5, PRs #261, #262, #263, #265, #269 e #270; o épico é o PR #260); histórico em [`history/PLAN-etapa-material3.md`](history/PLAN-etapa-material3.md). Especialização `formatVersion` 9 e MCP 0.12.0; sem schema (v13), formato de proposta (3) nem de componente (3) novos.
+- **Objetivo:** uma especialização **completa** do Material 3 que sirva de verdade para um agente gerar código, como a biblioteca Kotlin, e não mais um exemplo: a árvore da tela (estruturas de layout com alinhamento e tamanho), todos os componentes do catálogo com as variantes e o composable de cada um.
+- **Entrou:**
+  - **MD1, `variants` no `code`:** a variante troca o `symbol` (`Button`, `OutlinedButton`); `resolveCode`, `find_by_code` pelo código resolvido e a tabela de variantes no Catálogo.
+  - **MD2 a MD4, a biblioteca `libraries/material3-compose/`:** 50 tipos (layout, conteúdo e componentes) para Jetpack Compose, fixados no androidx `compose.material3` 1.4.0, cada um com `code`, componente, documento e exemplos.
+  - **MD5, zip e roteiro:** `examples/material3-compose.zip`, roteiro R17 e a rodada dirigida do Cowork (35 de 36 passos ✅, o ❌ era texto velho do guia).
+  - **Ajustes da biblioteca (PR #270):** o validador não avisa campo que o `code` usa e desenha só o tamanho inicial; `minSize` só onde há mínimo oficial; a fonte Roboto no pacote; 0 avisos.
+- **Fora (decidido):** M3 Expressive, Flutter e outras plataformas, tema escuro no desenho, variantes aninhadas, o BFF de SDUI. Ficaram para depois: `minSize` de um eixo só (mudança de formato) e três ajustes pequenos do Catálogo.
+- **Depende de:** etapa Imagens remotas (concluída).
 
 ## Etapa — Imagens remotas (concluída, épico `epic/imagens-remotas`)
 

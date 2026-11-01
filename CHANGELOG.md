@@ -4,13 +4,14 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão em `docs/history/`.
 
-## [Não lançado] Biblioteca Material 3 (épico `epic/material3`, MCP 0.12.0, schema v13)
+## Biblioteca Material 3 — 2026-11-01 (épico `epic/material3`, PR #260, MCP 0.12.0, schema v13)
 
 ### Adicionado
 
 - Especialização `formatVersion` 9 com `variants` no `code` de uma plataforma: um campo `enum` do tipo escolhe a variante do código, que troca o `symbol` (em Compose, `Button`, `OutlinedButton`, `TextButton`), o `path` e as `notes` e soma `params` e `values` aos da base. Um nível só; as versões 1 a 8 continuam aceitas sem mudança, e `variants` numa versão anterior é o erro `só é permitido com formatVersion 9`, no caminho exato.
 - Tabela de variantes no Catálogo: abaixo do código da plataforma, "Variantes (campo)" lista cada valor e o símbolo dele.
 - Roteiro de teste R16 (Variantes no código), feito pelo agente sozinho.
+- A biblioteca **Material 3 (Compose)** traz a fonte Roboto (400 e 500, `.woff2` do Fontsource, licença OFL em `fonts/LICENSE-Roboto.txt`) e valida sem nenhum aviso.
 - `examples/material3-compose.zip`: o pacote `libraries/material3-compose/` compactado (o conteúdo na raiz), para aplicar em Especializações › **Aplicar zip…**; gerado por `npm run build:material3-zip` e conferido por teste.
 - Roteiro de teste R17 (Biblioteca Material 3 (Compose)), feito pelo agente sozinho: confere o zip e o pacote, aplica o zip na app, mapeia uma tela (Scaffold, Top app bar, LazyColumn com List items, Button outlined e FAB) por proposta e confere que `get_code_hints` devolve a árvore com os composables certos (`Scaffold`, `TopAppBar`, `LazyColumn`, `ListItem`, `OutlinedButton`, `FloatingActionButton`).
 - Biblioteca **Material 3 (Compose)** pronta para uso em `libraries/material3-compose/` (especialização `formatVersion` 9, não embutida: aplique pela pasta ou por um zip dela): 50 tipos em três camadas (Layout: Scaffold, Surface, Box, Row, Column, LazyColumn, LazyRow, LazyVerticalGrid, FlowRow, Spacer, HorizontalPager; Conteúdo: Text, Icon, Image; Componentes: Top app bar, Button, FAB, Extended FAB, Text field, Switch, Checkbox, Chip, Card, List item, Navigation bar, Bottom sheet, Icon button, Icon toggle button, Segmented button, Radio button, Slider, Search bar, Date picker, Time picker, Badge, Snackbar, Tooltip, Progress indicator, Secure text field, Divider, Alert dialog, Dropdown menu, Navigation rail, Short navigation bar, Navigation drawer, Tabs, Bottom app bar, Carousel, Pull to refresh, Swipe to dismiss), cada um com o composable do `compose.material3` 1.4.0 no `code` (o arquivo no androidx, os parâmetros e as variantes que trocam o composable), componente, documento e exemplos.
