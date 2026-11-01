@@ -28,12 +28,13 @@ O Mapping é uma app web para marcar áreas retangulares em imagens, organizá-l
 | 16          | R14 — Sugestões no campo de texto e alvos mapeados                                                          | `sugestoes-kotlin.zip` (seção 2)                                                                                                                                                               | 20 min           |
 | 17          | R15 — Imagens remotas                                                                                       | o pacote `examples/libraries/pessoas/` e a shell (servidor local, `python3`)                                                                                                                   | 30 min           |
 | 18          | R16 — Variantes no código                                                                                   | uma especialização `formatVersion` 9 pequena (descrita no próprio roteiro), a shell e o MCP (seção 6)                                                                                          | 25 min           |
+| 19          | R17 — Biblioteca Material 3 (Compose)                                                                       | `examples/material3-compose.zip` (seção 2), a shell e o MCP (seção 6)                                                                                                                          | 25 min           |
 | sob demanda | RP — App instalado (PWA), nos **roteiros sob demanda (manuais)**                                            | versão principal ou preview (`https:`) e o app instalável; só quando o dono pedir                                                                                                              | 15 min           |
 | sob demanda | RF — `index.html` por `file://` (antes R0.5), nos **roteiros sob demanda (manuais)**                        | shell com acesso ao GitHub Pages e o Chrome do computador; só quando o dono pedir                                                                                                              | 10 min           |
 | sob demanda | RA — Fechar a aba no meio da gravação (antes R6.2), nos **roteiros sob demanda (manuais)**                  | a pasta `principal` e um `tela2.png`; só quando o dono pedir                                                                                                                                   | 10 min           |
 | sob demanda | RB — Esc no meio de um arraste logo depois de renomear (antes R6.1), nos **roteiros sob demanda (manuais)** | a pasta `principal`; só quando o dono pedir                                                                                                                                                    | 5 min            |
 
-Os tempos são aproximados (pelo número de passos); registre o tempo real no relato. Sem o MCP, faça da linha 4 só o passo 2 da seção 6 (o repositório de teste e as pastas, sem o `mapping-mcp.js`), rode o R3.1 a R3.5 e pule o R3.6 e o R5, marcando-os como "não executado (sem MCP)". Os roteiros principais (R0 a R16) são feitos para um agente com controle do computador executar **sozinho**. Os **roteiros sob demanda (manuais)**, hoje o RP, o RF, o RA e o RB, não fazem parte da rodada completa nem da dirigida: rodam à parte, numa sessão sob demanda, só quando o dono pedir (fim da seção 8). As dependências entre os roteiros estão no começo da seção 8. A seção 9 (teste manual avançado) é um roteiro à parte, depois de uma rodada completa sem achados altos ou médios.
+Os tempos são aproximados (pelo número de passos); registre o tempo real no relato. Sem o MCP, faça da linha 4 só o passo 2 da seção 6 (o repositório de teste e as pastas, sem o `mapping-mcp.js`), rode o R3.1 a R3.5 e pule o R3.6 e o R5, marcando-os como "não executado (sem MCP)". Os roteiros principais (R0 a R17) são feitos para um agente com controle do computador executar **sozinho**. Os **roteiros sob demanda (manuais)**, hoje o RP, o RF, o RA e o RB, não fazem parte da rodada completa nem da dirigida: rodam à parte, numa sessão sob demanda, só quando o dono pedir (fim da seção 8). As dependências entre os roteiros estão no começo da seção 8. A seção 9 (teste manual avançado) é um roteiro à parte, depois de uma rodada completa sem achados altos ou médios.
 
 O que este guia **não** testa: se um painel é fácil de achar ou se um texto é claro para quem não leu a documentação. Isso fica com pessoas, no uso real.
 
@@ -66,6 +67,7 @@ Em qualquer forma:
 - **Exemplo de proposta** `proposta-exemplo.zip`: no repositório, em `examples/`.
 - **Exemplo de proposta com componentes novos** `proposta-componentes.zip` (R13): no repositório, em `examples/`; gerado por `npm run build:proposal-components`.
 - **Exemplo de sugestões no campo de texto** `sugestoes-kotlin.zip` (R14): no repositório, em `examples/`; gerado por `npm run build:suggestions-kotlin`.
+- **Biblioteca Material 3 (Compose)** `material3-compose.zip` (R17): no repositório, em `examples/`; é o pacote `libraries/material3-compose/` compactado (o conteúdo na raiz do zip), gerado por `npm run build:material3-zip`.
 - **Biblioteca e imagem de teste das imagens remotas** (R15): no repositório, a pasta `examples/libraries/pessoas/` e o arquivo `public/imagens-teste/foto.png` (a app publicada serve o mesmo arquivo em `…/imagens-teste/foto.png`); a shell precisa de `python3` para o servidor local do R15.1.
 - **Como pegar os arquivos de `examples/`:** clone o repositório (`git clone https://github.com/fabianofranca/mapping`) ou, no GitHub, abra cada arquivo e use **Download raw file**. Os "Baixar exemplo…" da Ajuda vão direto para a pasta de downloads do navegador; mova os arquivos para a pasta de trabalho.
 - Para o **R3**, um repositório de teste (seção 6, passo 2). Só para o **R3.6 e o R5** (MCP): **Node 20 ou mais novo** (`node --version`), o **Claude Code** instalado e o `mapping-mcp.js` (seção 6).
@@ -222,7 +224,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - Como criar marcações e anotações, como adicionar imagem e a notação "**Marcação** › **Tipo** · campo = valor" estão na seção 5; "desenhe" é sempre no modo **Desenhar**.
 - _Itálico no fim do Esperado_ marca uma **regressão conhecida**: algo que já quebrou numa rodada anterior e é conferido de novo, não o objetivo do passo.
 - **[pessoa]** marca os passos que um agente com controle do computador não faz sozinho (apêndice A). Quem testa à mão pode ignorar a marca. O "ou `ferramenta`" ao lado nomeia o que a substitui para o agente: o dialog-pilot nos diálogos nativos (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`, `click_button`) e o cliente MCP por stdio nos pedidos ao Claude Code. Nos roteiros principais, nenhum passo fica sem substituto (um teste confere); o arrastar do gerenciador de arquivos e a confirmação de instalar o app só aparecem nos roteiros sob demanda.
-- **Regra para quem altera os roteiros (agentes e pessoas).** Os roteiros principais (R0 a R16) são feitos para um agente com controle do computador executar **sozinho**: todo passo novo ou alterado precisa ter um jeito de o agente fazê-lo (extensão do navegador, dialog-pilot, shell ou cliente MCP por stdio) e dizê-lo na Ação.
+- **Regra para quem altera os roteiros (agentes e pessoas).** Os roteiros principais (R0 a R17) são feitos para um agente com controle do computador executar **sozinho**: todo passo novo ou alterado precisa ter um jeito de o agente fazê-lo (extensão do navegador, dialog-pilot, shell ou cliente MCP por stdio) e dizê-lo na Ação.
 - **Teste que precisa do dono.** Se um teste precisa de interação do dono e **não é muito relevante**, ele vai para os **roteiros sob demanda (manuais)** (fim desta seção).
 - **Teste que precisa do dono e é muito relevante.** Se precisa de interação do dono e **é muito relevante** (risco de perda de dados, integridade do `mapping.json`, segurança), o agente **não decide sozinho**: avisa o dono, na conversa e na descrição do PR, para decidirem juntos; enquanto não decidirem, o passo fica onde está, marcado como **pendente de decisão**.
 
@@ -246,6 +248,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - R14 usa só o `sugestoes-kotlin.zip` (projeto **Sugestões Kotlin** neste dispositivo, R14.1 a R14.19, em sequência, sempre na célula **Tipo** da linha `ativo` de **Usuario**, que volta a ficar vazia, junto com o **Tipo mapeado**, a cada passo); não depende de nenhum outro roteiro nem do MCP.
 - R15 usa a pasta própria `remotas` (projeto em pasta, pacote `examples/libraries/pessoas/`), a imagem de teste do Pages e um servidor local que a shell sobe no R15.1; R15.2 a R15.12 seguem em sequência, não dependem de nenhum outro roteiro nem do MCP.
 - R16 usa a pasta própria `variantes` (criada pelo MCP no R16.3), a especialização `m3-mini.json` que a shell escreve no R16.1, o MCP por stdio e, nos passos R16.4, R16.9 e R16.10, a app; R16.1 a R16.10 seguem em sequência, não dependem de nenhum outro roteiro. Sem o MCP, marque todos "não executado (sem MCP)".
+- R17 usa a pasta própria `tela-m3` (criada pelo MCP no R17.2), o `material3-compose.zip` (conferido e descompactado em `RAIZ/m3` no R17.1, aplicado na app no R17.3), o MCP por stdio e, nos passos R17.3, R17.5 e R17.9, a app; R17.1 a R17.9 seguem em sequência, não dependem de nenhum outro roteiro. Sem o MCP, marque todos "não executado (sem MCP)".
 - R11 não precisa de arquivo nem de MCP: o guia e o exemplo vêm no build; o exemplo abre uma cópia nova **Neste dispositivo** a cada clique, e o R11.8 a apaga.
 - R10 usa o pacote `examples/libraries/material3/` (R10.1 a R10.6, sem projeto, e uma cópia `mat-link` no R10.5); R10.7 usa o projeto `telas` do R9 (com o Material 3 aplicado); R10.8 cria o projeto próprio `vazio`; nenhum passo precisa do MCP.
 - R9 usa o projeto próprio `telas` (pasta nova, sem imagem) e o pacote `examples/libraries/material3/`; R9.1 a R9.12 não precisam do MCP; R9.13 a R9.15 e R9.18 a R9.20 usam a seção 6 e o MCP (o `add_container` existe a partir do épico Container), em `design/mapeamentos/telas` (mova a pasta `telas` para lá com o projeto fechado).
@@ -769,9 +772,177 @@ O campo somente leitura (revisão de propostas) não mostra lista; isso é cober
 | R16.9  | **Definição nos Detalhes.** Na app (extensão do navegador), selecione **Cancelar**, abra **Detalhes** (`Ctrl+Shift+3`) e leia a linha **Definição**; passe o mouse nela e leia a dica; repita com **Salvar**.                                                                                                                                                                                                                                                                                                                                                                                                     | **Tela:** a linha mostra "Jetpack Compose · Button.kt" nas duas; a dica da **Cancelar** traz o símbolo `androidx.compose.material3.OutlinedButton`, a da **Salvar** traz `androidx.compose.material3.Button`.                                                                                                                                                                                                                                                                                |
 | R16.10 | **Tabela de variantes no Catálogo.** Abra o **Catálogo** (`Ctrl+Shift+9`), a especialização **M3 mini**, o tipo **Button** e leia o código da plataforma.                                                                                                                                                                                                                                                                                                                                                                                                                                                         | **Tela:** a base mostra o `symbol` `androidx.compose.material3.Button` e o arquivo `compose/material3/Button.kt`; embaixo, a tabela **Variantes (style)** com as linhas `outlined` → `OutlinedButton` e `text` → `TextButton` (na ordem das `options`).                                                                                                                                                                                                                                      |
 
+### R17 — Biblioteca Material 3 (Compose)
+
+**O que cobre:** a etapa Biblioteca Material 3 (MD5): o pacote pronto `libraries/material3-compose/` (50 tipos, `formatVersion` 9, só Jetpack Compose), entregue em `examples/material3-compose.zip`. Os passos conferem o zip e o pacote pelo MCP (`validate_library`), a aplicação do zip na app (**Aplicar zip…**), o mapeamento de uma tela de contatos feita só com a biblioteca (Scaffold, Top app bar, LazyColumn com dois List items, um Button `outlined` e um FAB) por uma proposta do MCP e, no fim, que o agente lê a **árvore da tela com o composable certo em cada nó**: `get_code_hints` devolve `Scaffold` > `TopAppBar`, `LazyColumn` > `ListItem` ×2, `OutlinedButton` e `FloatingActionButton`, e a variante `outlined` troca o símbolo (`OutlinedButton`) sem mudar o arquivo (`Button.kt`). **Regra a conferir no fim:** nenhum `code` de anotação traz `variants`; só o `types` do `get_code_hints` e o JSON cru da especialização trazem.
+
+**Preparo.** Seção 6 pronta (o repositório de teste e o `mapping-mcp.js`); os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6) e `REPO` é o clone do repositório do Mapping, onde está `examples/material3-compose.zip`. O pacote vem **sem os arquivos da fonte Roboto** (`fonts/` só traz um `LEIA-ME.txt`): os textos saem na fonte do sistema, e isso é esperado. O lote de operações do R17.4 (sem `apply_specialization`: o zip já foi aplicado na app no R17.3):
+
+```json
+[
+  {
+    "op": "add_container",
+    "as": "$tela",
+    "name": "Contatos",
+    "width": 360,
+    "height": 800,
+    "background": "#FFFFFF"
+  },
+  {
+    "op": "create_marking",
+    "as": "$sc",
+    "container": "$tela",
+    "name": "Tela",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 800
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$tb",
+    "container": "$tela",
+    "name": "Barra",
+    "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 64
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$lc",
+    "container": "$tela",
+    "name": "Lista",
+    "rect": {
+      "x": 0,
+      "y": 64,
+      "width": 360,
+      "height": 560
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$l1",
+    "container": "$tela",
+    "name": "Ana",
+    "rect": {
+      "x": 0,
+      "y": 70,
+      "width": 360,
+      "height": 56
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$l2",
+    "container": "$tela",
+    "name": "Bruno",
+    "rect": {
+      "x": 0,
+      "y": 130,
+      "width": 360,
+      "height": 56
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$bt",
+    "container": "$tela",
+    "name": "Cancelar",
+    "rect": {
+      "x": 16,
+      "y": 640,
+      "width": 140,
+      "height": 48
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$fb",
+    "container": "$tela",
+    "name": "Novo",
+    "rect": {
+      "x": 280,
+      "y": 700,
+      "width": 56,
+      "height": 56
+    }
+  },
+  {
+    "op": "create_annotation",
+    "marking": "$sc",
+    "type": "material3-compose/scaffold",
+    "values": {}
+  },
+  {
+    "op": "create_annotation",
+    "marking": "$tb",
+    "type": "material3-compose/top-app-bar",
+    "values": {
+      "title": "Contatos"
+    }
+  },
+  {
+    "op": "create_annotation",
+    "marking": "$lc",
+    "type": "material3-compose/lazy-column",
+    "values": {}
+  },
+  {
+    "op": "create_annotation",
+    "marking": "$l1",
+    "type": "material3-compose/list-item",
+    "values": {
+      "headlineContent": "Ana"
+    }
+  },
+  {
+    "op": "create_annotation",
+    "marking": "$l2",
+    "type": "material3-compose/list-item",
+    "values": {
+      "headlineContent": "Bruno"
+    }
+  },
+  {
+    "op": "create_annotation",
+    "marking": "$bt",
+    "type": "material3-compose/button",
+    "values": {
+      "label": "Cancelar",
+      "style": "outlined"
+    }
+  },
+  {
+    "op": "create_annotation",
+    "marking": "$fb",
+    "type": "material3-compose/fab",
+    "values": {
+      "icon": "Add"
+    }
+  }
+]
+```
+
+| Passo | Ação                                                                                                                                                                                                                                                                                                                                         | Esperado                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R17.1 | **Conferir o zip e o pacote.** Pela shell: `unzip -Z1 REPO/examples/material3-compose.zip` (lista o conteúdo), `unzip -Z1 REPO/examples/material3-compose.zip \| grep -c '^components/'` e o mesmo com `'^docs/'`; depois `unzip -q REPO/examples/material3-compose.zip -d RAIZ/m3`. Pelo cliente stdio, `validate_library` com `path` `m3`. | **Resposta (shell):** a lista traz `material3-compose.spec.json` na raiz do zip (sem pasta-raiz), e as duas contagens dão `50`. **Resposta (MCP):** `valid: true`, sem erros; `spec` com `id` `material3-compose`, `formatVersion` 9, `types` 50, `components` 50 e `docs` 50 (avisos da validação não impedem).                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| R17.2 | **Criar o projeto.** Pelo cliente stdio, `create_project` com `path` `tela-m3` e `name` `Tela M3`.                                                                                                                                                                                                                                           | **Resposta:** `created: true`, `schemaVersion` 13 e `revision` 0. **Disco:** `RAIZ/tela-m3/mapping.json` sem container nem marcação; o projeto nasce só com a biblioteca de notas aplicada (`specs/notas/`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| R17.3 | **Aplicar o zip na app.** Na app (extensão do navegador), **Abrir pasta** (`select_folder`) e escolha `RAIZ/tela-m3`; **Especializações** › **Aplicar zip…** (`open_file`) e escolha `REPO/examples/material3-compose.zip`; confira a janela do pacote e **Aplicar**; feche a janela e espere **Salvo**.                                     | **Tela:** a janela do pacote **Material 3 (Compose)** com 0 erros (avisos que não impedem) e a especialização aplicada, na lista de Especializações, com as camadas **Layout**, **Conteúdo** e **Componentes**; **Diagnóstico** (`Ctrl+Shift+6`) sem erro. **Disco:** `specs/material3-compose/` com `material3-compose.spec.json`, `components/` (50 arquivos), `docs/` (50) e `fonts/`; no `mapping.json`, uma entrada de `specializations` com `id` `material3-compose` e `file` `specs/material3-compose/material3-compose.spec.json`, e as três camadas novas.                                                                                                                                                              |
+| R17.4 | **Propor a tela.** Pelo cliente stdio, `propose_changes` em `tela-m3` com o lote acima (um container **Contatos** em branco, 360 × 800, sete marcações e uma anotação em cada).                                                                                                                                                              | **Resposta:** a proposta volta com id e sem erro; `created` lista o container, as sete marcações e as sete anotações, e a hierarquia vem da geometria: a **Barra**, a **Lista**, o **Cancelar** e o **Novo** dentro da **Tela**, e a **Ana** e o **Bruno** dentro da **Lista** (o caminho de cada marcação mostra isso: `Contatos › Tela › Lista › Ana`). **Disco:** o `mapping.json` de `tela-m3` ainda sem o container (a proposta não grava).                                                                                                                                                                                                                                                                                 |
+| R17.5 | **Aceitar na app.** Na app, **Propostas** › **Revisar** a proposta, **Aceitar tudo**, **Aplicar aceitas** e **Sair da revisão**.                                                                                                                                                                                                             | **Tela:** o container **Contatos** com as sete marcações, desenhadas com os componentes do Material 3 (a barra superior "Contatos", os itens de lista "Ana" e "Bruno", o botão com contorno "Cancelar" e o botão flutuante); na **Árvore**, **Barra**, **Lista**, **Cancelar** e **Novo** são filhos de **Tela**, e **Ana** e **Bruno** filhos de **Lista**; **Diagnóstico** sem erro. **Disco:** o `mapping.json` com 1 item em `containers`, 7 em `markings` e as sete anotações tipadas; na do botão, `style` `outlined`.                                                                                                                                                                                                     |
+| R17.6 | **A árvore com os composables.** Pelo cliente stdio, `list_markings` do projeto `tela-m3` e, com a referência da marcação **Tela**, `get_code_hints` com `platform` `compose`.                                                                                                                                                               | **Resposta:** a `tree` tem a **Tela** na raiz (anotação `material3-compose/scaffold`) e, em `children`, nesta ordem, a **Barra** (`top-app-bar`), a **Lista** (`lazy-column`, com `children` **Ana** e **Bruno**, ambos `list-item`), o **Cancelar** (`button`) e o **Novo** (`fab`). O composable de cada nó é o `code.symbol` da anotação, quando ela traz `code` (os tipos com `variants`), ou o `symbol` de `types["material3-compose/<tipo>"]`: `androidx.compose.material3.Scaffold`, `…TopAppBar`, `androidx.compose.foundation.lazy.LazyColumn`, `…ListItem` (nos dois), `…OutlinedButton` e `…FloatingActionButton`. Os `args` do Scaffold já vêm traduzidos (`containerColor` `MaterialTheme.colorScheme.background`). |
+| R17.7 | **A variante troca o símbolo.** Pelo cliente stdio, `get_code_hints` da marcação **Cancelar** (`platform` `compose`) e `get_annotation` da anotação dela.                                                                                                                                                                                    | **Resposta:** o `code` da anotação traz `symbol` `androidx.compose.material3.OutlinedButton` e `definition.path` terminando em `/material3/Button.kt` (o mesmo arquivo da base; o caso só trocou o `symbol`), sem `variants`, e o `url` aponta para o commit fixado `5113b82a4ed6416d6344efa50e41db8cb65928ff` do androidx. Em `get_code_hints`, `types["material3-compose/button"]` é o cru da base: `symbol` `androidx.compose.material3.Button` e `variants` com `field` `style`.                                                                                                                                                                                                                                             |
+| R17.8 | **`find_by_code` pela variante.** Pelo cliente stdio, `find_by_code` com `project` `tela-m3` e `symbol` `androidx.compose.material3.OutlinedButton`; depois com `symbol` `androidx.compose.material3.Button`.                                                                                                                                | **Resposta:** o 1º traz o tipo **Button** com **uma** anotação (a do **Cancelar**); o 2º não traz nenhuma anotação do **Cancelar** (nenhum botão está em `filled`; a busca compara com o código resolvido de cada anotação).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| R17.9 | **Definição e Catálogo.** Na app (extensão do navegador), selecione **Cancelar** e leia a linha **Definição** nos Detalhes (`Ctrl+Shift+3`), passando o mouse nela; depois abra o **Catálogo** (`Ctrl+Shift+9`), a especialização **Material 3 (Compose)**, o tipo **Button** e leia o código da plataforma.                                 | **Tela:** a **Definição** mostra "Jetpack Compose · Button.kt" e a dica traz o símbolo `androidx.compose.material3.OutlinedButton`. No Catálogo, a base mostra `androidx.compose.material3.Button` e o arquivo, e a tabela **Variantes (style)** traz, na ordem das `options`, `tonal` → `FilledTonalButton`, `outlined` → `OutlinedButton`, `text` → `TextButton` e `elevated` → `ElevatedButton`.                                                                                                                                                                                                                                                                                                                              |
+
 ### Roteiros sob demanda (manuais)
 
-**Critério de entrada.** Os roteiros principais (R0 a R16) são feitos para um agente com controle do computador executar sozinho. Um teste vai para cá quando precisa de interação do dono e **não é muito relevante** (a regra está nas convenções do começo desta seção). Estes roteiros **só rodam quando o dono pedir**, numa sessão sob demanda (`docs/TESTING-COWORK.md`): nunca entram na rodada completa nem na dirigida, e fora da sessão pedida nem aparecem no relato. Os códigos e o conteúdo não mudam. O R0.5 e o R6.2 já migraram para cá (RF e RA), por decisão do dono, depois de não funcionarem sozinhos na rodada de 2026-10-18.
+**Critério de entrada.** Os roteiros principais (R0 a R17) são feitos para um agente com controle do computador executar sozinho. Um teste vai para cá quando precisa de interação do dono e **não é muito relevante** (a regra está nas convenções do começo desta seção). Estes roteiros **só rodam quando o dono pedir**, numa sessão sob demanda (`docs/TESTING-COWORK.md`): nunca entram na rodada completa nem na dirigida, e fora da sessão pedida nem aparecem no relato. Os códigos e o conteúdo não mudam. O R0.5 e o R6.2 já migraram para cá (RF e RA), por decisão do dono, depois de não funcionarem sozinhos na rodada de 2026-10-18.
 
 #### RP — App instalado (PWA)
 
