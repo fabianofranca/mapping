@@ -42,7 +42,7 @@ const EXCEPTIONS: Record<string, string> = {
   'spec:layers[].annotationTypes[].fields[].columns[].type=table':
     'o schema declara a coluna com a forma do campo, mas uma coluna de coluna não existe',
   'spec:fonts[].style':
-    'exemplo exige um arquivo de fonte no pacote (sem ele o validador avisa); decisão do dono pendente no PR da EX1',
+    'exemplo exige um arquivo de fonte no pacote (sem ele o validador avisa); decisão do dono (2026-11-01): a fonte é fixa no cliente mobile, não no SDUI',
   'spec:fonts[].style=italic':
     'idem fonts[].style: sem arquivo de fonte em nenhuma biblioteca de exemplo',
   'spec:fonts[].style=normal':

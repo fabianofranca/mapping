@@ -263,7 +263,7 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 
 ## Onde ver cada recurso
 
-Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executável, de `sources` e de migração estão na `sdui-backend`; os que dependem de arquivo de fonte e de itálico (`fonts[].style`) não têm exemplo, por decisão pendente do dono (ficam em `EXCEPTIONS` do teste `tests/examples/featureCoverage.test.ts`, que diz qual exemplo cobre cada chave e cada valor).
+Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executável, de `sources` e de migração estão na `sdui-backend`; os que dependem de arquivo de fonte e de itálico (`fonts[].style`) não têm exemplo, por decisão do dono (a fonte é fixa no cliente mobile, fora do SDUI; ficam em `EXCEPTIONS` do teste `tests/examples/featureCoverage.test.ts`, que diz qual exemplo cobre cada chave e cada valor).
 
 ### Especialização
 
