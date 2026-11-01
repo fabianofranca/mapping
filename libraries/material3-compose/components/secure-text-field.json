@@ -20,7 +20,7 @@
     "label": "Senha",
     "hasText": "true",
     "placeholder": "",
-    "supportingText": "Mínimo de 8 caracteres",
+    "supportingText": "",
     "style": "filled",
     "enabled": "true",
     "isError": "false",

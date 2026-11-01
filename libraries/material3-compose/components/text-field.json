@@ -20,7 +20,7 @@
     "label": "Nome",
     "value": "Maria Silva",
     "placeholder": "",
-    "supportingText": "Como no documento",
+    "supportingText": "",
     "style": "filled",
     "enabled": "true",
     "isError": "false",
