@@ -577,7 +577,7 @@ A declaração é a chave `origins` da raiz: uma lista, uma entrada por sistema 
             "anchor": { "path": "anchor" },
             "margin": { "path": "margin" }
           },
-          { "path": "modal", "anchor": "bottom", "scrim": "m3-scrim" }
+          { "path": "modal", "anchor": "bottom", "scrim": "sdui-scrim" }
         ]
       },
       "booleans": { "true": "sim", "false": "não" },
@@ -594,13 +594,12 @@ Como o desenho é calculado (tamanhos `fill`/`hug`, âncoras da tela, avisos do 
 Com a v4, uma especialização é uma **biblioteca**: um **pacote**, que é a **pasta da especialização**, com tudo o que ela cita. O arquivo da especialização fica na raiz da pasta.
 
 ```
-material3/
-  material3.spec.json          a especialização (formatVersion 6)
-  components/m3-button.json    um arquivo por componente (mapping-component)
-  docs/m3-button.md            o documento markdown do tipo
+sdui-backend/
+  sdui-backend.spec.json       a especialização (formatVersion 9)
+  components/sdui-button.json  um arquivo por componente (mapping-component)
+  docs/sdui-button.md          o documento markdown do tipo
   examples/settings.sdui.json  uma tela de exemplo de um sistema externo
-  fonts/Roboto-Regular.ttf     as fontes do desenho
-  fonts/LEIA-ME.txt
+  fonts/Roboto-Regular.woff2   as fontes do desenho (opcional)
 ```
 
 Os nomes das pastas (`components/`, `docs/`, `examples/`, `fonts/`) são convenção; o que vale é o caminho citado. **Todo caminho citado** pela especialização é relativo ao arquivo dela, com `/`, **sem `..`**, sem `/` no começo e sem letra de unidade (a mesma regra do `path` do `code`), e termina na extensão esperada:
@@ -877,9 +876,9 @@ Com `delete`, a anotação de `selo` é **apagada, e as vinculadas a ela também
 
 ```json
 {
-  "file": "material3.spec.json",
+  "file": "sdui-backend.spec.json",
   "path": "layers[0].annotationTypes[2].component",
-  "message": "arquivo não encontrado: components/m3-fab.json",
+  "message": "arquivo não encontrado: components/sdui-fab.json",
   "severity": "error"
 }
 ```

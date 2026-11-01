@@ -521,8 +521,8 @@
           <p>
             Um agente lê o projeto com <code>get_project</code> e sugere mudanças com
             <code>propose_changes</code>. Quando o tipo é ambíguo (como “Button”), informe
-            <code>specId/typeId</code>, por exemplo <code>material3/m3-button</code>. As
-            sugestões chegam na janela Propostas, nunca direto no projeto.
+            <code>specId/typeId</code>, por exemplo <code>material3-compose/button</code>.
+            As sugestões chegam na janela Propostas, nunca direto no projeto.
           </p>
         </div>
       </section>
@@ -607,7 +607,7 @@
       }
       function m3(m) {
         const r = m.rect,
-          a = anns(m.id).find((x) => x.type && x.type.specId === 'material3'),
+          a = anns(m.id).find((x) => x.type && x.type.specId === 'material3-compose'),
           t = a ? a.type.typeId : '',
           v = (a && a.values) || {},
           g = [];
@@ -624,15 +624,15 @@
           e.textContent = s;
           g.push(e);
         };
-        const on = (value) => value === 'sim';
+        const on = (value) => value === 'true';
         const X = r.x,
           Y = r.y,
           W = r.width,
           H = r.height;
-        if (t === 'm3-top-app-bar') {
+        if (t === 'top-app-bar') {
           add('rect', { x: X, y: Y, width: W, height: H, fill: M3.bar });
           txt(X + 16, Y + 40, v.title || '', 20);
-        } else if (t === 'm3-chip') {
+        } else if (t === 'chip') {
           const sel = on(v.selected);
           add('rect', {
             x: X,
@@ -644,7 +644,7 @@
             stroke: sel ? M3.container : M3.outline,
           });
           txt(X + W / 2, Y + H / 2 + 5, v.label || '', 13, M3.text, 'middle');
-        } else if (t === 'm3-text-field') {
+        } else if (t === 'text-field') {
           add('rect', {
             x: X,
             y: Y + 8,
@@ -656,10 +656,10 @@
           });
           txt(X + 14, Y + 22, v.label || '', 11, M3.primary);
           txt(X + 16, Y + 40, v.value || v.placeholder || '', 16);
-          if (v.supporting) txt(X + 16, Y + H - 4, v.supporting, 12, M3.textSoft);
-        } else if (t === 'm3-switch') {
+          if (v.supportingText) txt(X + 16, Y + H - 4, v.supportingText, 12, M3.textSoft);
+        } else if (t === 'switch') {
           txt(X, Y + 21, v.label || '', 16);
-          const sel = on(v.selected);
+          const sel = on(v.checked);
           add('rect', {
             x: X + W - 52,
             y: Y + 4,
@@ -675,8 +675,8 @@
             r: sel ? 12 : 8,
             fill: sel ? M3.onPrimary : M3.outlineStrong,
           });
-        } else if (t === 'm3-checkbox') {
-          const checked = on(v.checked);
+        } else if (t === 'checkbox') {
+          const checked = v.state === 'checked';
           add('rect', {
             x: X,
             y: Y + 8,
@@ -688,8 +688,8 @@
             'stroke-width': 2,
           });
           txt(X + 30, Y + 25, v.label || '', 16);
-        } else if (t === 'm3-card') {
-          const outlined = v.variant === 'outlined';
+        } else if (t === 'card') {
+          const outlined = v.style === 'outlined';
           add('rect', {
             x: X,
             y: Y,
@@ -700,13 +700,13 @@
             stroke: outlined ? M3.outline : 'none',
             'stroke-width': 1.5,
           });
-          txt(X + 16, Y + 32, v.headline || '', 18);
-          if (v.subhead) txt(X + 16, Y + 54, v.subhead, 13, M3.textSoft);
-          wrap(v.body || '', Math.floor((W - 32) / 7)).forEach((line, i) =>
+          txt(X + 16, Y + 32, v.title || '', 18);
+          if (v.subtitle) txt(X + 16, Y + 54, v.subtitle, 13, M3.textSoft);
+          wrap(v.supportingText || '', Math.floor((W - 32) / 7)).forEach((line, i) =>
             txt(X + 16, Y + 82 + i * 18, line, 13),
           );
-        } else if (t === 'm3-button') {
-          const tonal = v.variant === 'tonal';
+        } else if (t === 'button') {
+          const tonal = v.style === 'tonal';
           add('rect', {
             x: X,
             y: Y,
@@ -723,21 +723,22 @@
             tonal ? M3.primary : M3.onPrimary,
             'middle',
           );
-        } else if (t === 'm3-navigation-bar') {
+        } else if (t === 'navigation-bar') {
           add('rect', { x: X, y: Y, width: W, height: H, fill: M3.bar });
-          [v.label1, v.label2, v.label3].forEach((s, i) => {
-            const cx = X + W / 6 + (i * W) / 3;
+          const items = v.items || [];
+          items.forEach((item, i) => {
+            const cx = X + W / (2 * items.length) + (i * W) / items.length;
             add('rect', {
               x: cx - 32,
               y: Y + 12,
               width: 64,
               height: 30,
               rx: 15,
-              fill: String(i + 1) === v.active ? M3.container : 'none',
+              fill: on(item.selected) ? M3.container : 'none',
             });
-            txt(cx, Y + 62, s || '', 12, M3.text, 'middle');
+            txt(cx, Y + 62, item.label || '', 12, M3.text, 'middle');
           });
-        } else if (t === 'm3-list-item') {
+        } else if (t === 'list-item') {
           add('line', {
             x1: X + 16,
             x2: X + W - 16,
@@ -746,15 +747,22 @@
             stroke: M3.outline,
           });
           add('circle', { cx: X + 40, cy: Y + H / 2, r: 20, fill: M3.container });
-          txt(X + 40, Y + H / 2 + 6, v.initials || '', 16, M3.primary, 'middle');
-          txt(X + 76, Y + H / 2 - 2, v.headline || '', 16);
-          txt(X + 76, Y + H / 2 + 18, v.supporting || '', 13, M3.textSoft);
-        } else if (t === 'm3-fab') {
+          txt(
+            X + 40,
+            Y + H / 2 + 6,
+            (v.headlineContent || '').slice(0, 1),
+            16,
+            M3.primary,
+            'middle',
+          );
+          txt(X + 76, Y + H / 2 - 2, v.headlineContent || '', 16);
+          txt(X + 76, Y + H / 2 + 18, v.supportingContent || '', 13, M3.textSoft);
+        } else if (t === 'fab') {
           add('rect', { x: X, y: Y, width: W, height: H, rx: 16, fill: M3.container });
           txt(
             X + W / 2,
             Y + H / 2 + 8,
-            v.icon === 'add' ? '+' : '?',
+            v.icon === 'Add' ? '+' : '?',
             24,
             M3.primary,
             'middle',
@@ -1020,7 +1028,7 @@
           t: 'Camadas',
           img: 'Cadastro',
           sel: ['Cadastro', 'Cadastrar'],
-          p: 'Uma marcação pode ter várias anotações, cada uma em uma <b>camada</b> (janela <b>Camadas</b>, <kbd>Ctrl+Shift+2</kbd>). O botão Cadastrar tem componente, dois eventos e uma nota. Camadas ligadas a uma especialização (SDUI, Modelo de dados, Material 3) trazem campos prontos; as livres (Dúvidas, Model) aceitam o que você quiser.',
+          p: 'Uma marcação pode ter várias anotações, cada uma em uma <b>camada</b> (janela <b>Camadas</b>, <kbd>Ctrl+Shift+2</kbd>). O botão Cadastrar tem componente, dois eventos e uma nota. Camadas ligadas a uma especialização (SDUI, Modelo de dados, Material 3 para Compose) trazem campos prontos; as livres (Dúvidas, Model) aceitam o que você quiser.',
           try: 'Oculte a camada “Eventos” e veja o contorno mudar de cor.',
         },
         {
@@ -1069,15 +1077,15 @@
           t: 'Container sem foto com Material 3',
           img: 'Configurações',
           sel: ['Configurações', 'Filtros'],
-          p: 'Sem foto, o container é um canvas de cor lisa e os componentes <b>Material 3</b> são desenhados na hora. O <b>Row</b> “Filtros” é um componente com slot: use <b>Arrumar</b> (<kbd>Alt+Shift+A</kbd>) para distribuir os chips.',
+          p: 'Sem foto, o container é um canvas de cor lisa e os componentes <b>Material 3</b> (a biblioteca <b>material3-compose</b>) são desenhados na hora. O <b>Row</b> “Filtros” é um componente com slot: use <b>Arrumar</b> (<kbd>Alt+Shift+A</kbd>) para distribuir os chips.',
           try: 'Selecione um chip e veja que o pai é o Row.',
         },
         {
           t: 'Componente com slot e filho',
           img: 'Configurações',
-          sel: ['Configurações', 'Gerenciar plano'],
-          p: 'O botão “Gerenciar plano” está dentro do Card “Sua conta”. Cards, Boxes, Rows e Columns têm slot e levam os filhos junto.',
-          try: 'Clique em “Sua conta” e depois no botão.',
+          sel: ['Configurações', 'Notificações'],
+          p: 'Os dois Switches e o Checkbox estão dentro da Column “Preferências”. Box, Row, Column e Surface têm slot e levam os filhos junto.',
+          try: 'Clique em “Preferências” e depois em “Notificações”.',
         },
         {
           t: 'Mais um container',

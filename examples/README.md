@@ -190,11 +190,11 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 
 **O que dá para ver.**
 
-- Quatro telas lado a lado: Cadastro e Login (com foto), Configurações e Detalhes do pedido (container sem foto, com componentes Material 3 desenhados com os textos das anotações).
-- Nove camadas e quatro especializações aplicadas: SDUI, Modelo de dados, Material 3 e Notas. Há anotações de todos os tipos principais (Button, Input, Text, onClick, onHold, onChange, Screen, classe e endpoint) e livres (Model e Dúvidas).
+- Quatro telas lado a lado: Cadastro e Login (com foto), Configurações e Detalhes do pedido (container sem foto, com componentes da `material3-compose` desenhados com os textos das anotações).
+- Dez camadas e quatro especializações aplicadas: SDUI, Modelo de dados, `material3-compose` (uma camada para o layout, com Row e Column, e outra para os componentes) e Notas. Há anotações de todos os tipos principais (Button, Input, Text, onClick, onHold, onChange, Screen, classe e endpoint) e livres (Model e Dúvidas).
 - Casos de edição: uma marcação trancada (**Título**), uma com posição a revisar (**Idade**, em **Incompletas**), uma nota flutuante da biblioteca de notas e as marcações aninhadas na **Árvore**.
-- Uma proposta aberta, **Tela de Perfil e ajuste no Cadastro**, com dez mudanças para praticar a revisão: aceitar, rejeitar com nota e aplicar.
-- O **Arrumar** (`Alt+Shift+A`) de um Row com chips, o **Catálogo** com a **Paleta** e o **Diagnóstico**.
+- Uma proposta aberta, **Tela de Perfil e ajuste no Cadastro**, com dez mudanças para praticar a revisão (os tipos são os da `material3-compose`: `top-app-bar`, `list-item` e `button`): aceitar, rejeitar com nota e aplicar.
+- O **Arrumar** (`Alt+Shift+A`) de um Row com chips e a Column **Preferências** com os dois Switches e o Checkbox dentro, o **Catálogo** com a **Paleta** e o **Diagnóstico**.
 
 **Roteiros.** R11.
 
@@ -214,11 +214,11 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 
 ### `examples/proposta-componentes.zip`
 
-**O que é.** O projeto **Telas** (uma tela em branco de 360 × 800 com o Material 3 aplicado) e uma proposta aberta que cria componentes.
+**O que é.** O projeto **Telas** (uma tela em branco de 360 × 800 com a `material3-compose` aplicada) e uma proposta aberta que cria componentes `button`. O zip leva o pacote aplicado (`specs/material3-compose/`) e uma cópia dele, com outro id (`m3novo`), no pacote da proposta.
 
 **Como abrir.** **Abrir zip** com o arquivo; **Propostas** › **Revisar** em **Componentes novos**.
 
-**O que dá para ver.** Na visão **Proposto**, os componentes que a proposta cria, desenhados com a marca de criada, em cada caso de revisão: o **Existente** alterado (Label `Antigo` vira `Novo valor`), **Pendente**, **Aceito**, **Rejeitado** (só o fantasma pontilhado, nas duas visões), **Inválido** (retângulo de 3 × 3), **Sem rótulo** (campo obrigatório faltando) e **Do pacote** (um tipo que só existe no pacote da proposta, que não é gravado em `specs/`). Também a legenda das marcas, nos dois idiomas.
+**O que dá para ver.** Na visão **Proposto**, os componentes que a proposta cria, desenhados com a marca de criada, em cada caso de revisão: o **Existente** alterado (o Rótulo `Antigo` vira `Novo valor`), **Pendente**, **Aceito**, **Rejeitado** (só o fantasma pontilhado, nas duas visões), **Inválido** (retângulo de 3 × 3), **Sem rótulo** (campo obrigatório faltando) e **Do pacote** (um tipo que só existe no pacote da proposta, que não é gravado em `specs/`). Também a legenda das marcas, nos dois idiomas.
 
 **Roteiros.** R13.
 

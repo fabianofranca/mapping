@@ -1,0 +1,183 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "row",
+  "name": "Row",
+  "description": "Linha do Compose: as filhas se enfileiram pela ordem, com spacing, padding e alinhamentos dos campos.",
+  "size": {
+    "width": 380,
+    "height": 48
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "horizontalArrangement": "Start",
+    "verticalAlignment": "Top",
+    "spacing": 8,
+    "background": "none",
+    "padding": 0,
+    "scroll": "false",
+    "width": "wrap",
+    "height": "wrap",
+    "weight": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "row",
+    "clip": false,
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$switch": "background",
+      "cases": {
+        "primary": "#6750A4",
+        "onPrimary": "#FFFFFF",
+        "primaryContainer": "#EADDFF",
+        "onPrimaryContainer": "#21005D",
+        "secondary": "#625B71",
+        "onSecondary": "#FFFFFF",
+        "secondaryContainer": "#E8DEF8",
+        "onSecondaryContainer": "#1D192B",
+        "tertiary": "#7D5260",
+        "onTertiary": "#FFFFFF",
+        "tertiaryContainer": "#FFD8E4",
+        "onTertiaryContainer": "#31111D",
+        "error": "#B3261E",
+        "onError": "#FFFFFF",
+        "errorContainer": "#F9DEDC",
+        "onErrorContainer": "#410E0B",
+        "background": "#FEF7FF",
+        "onBackground": "#1D1B20",
+        "surface": "#FEF7FF",
+        "onSurface": "#1D1B20",
+        "surfaceVariant": "#E7E0EC",
+        "onSurfaceVariant": "#49454F",
+        "surfaceTint": "#6750A4",
+        "inverseSurface": "#322F35",
+        "inverseOnSurface": "#F5EFF7",
+        "inversePrimary": "#D0BCFF",
+        "outline": "#79747E",
+        "outlineVariant": "#CAC4D0",
+        "scrim": "#000000",
+        "surfaceBright": "#FEF7FF",
+        "surfaceDim": "#DED8E1",
+        "surfaceContainerLowest": "#FFFFFF",
+        "surfaceContainerLow": "#F7F2FA",
+        "surfaceContainer": "#F3EDF7",
+        "surfaceContainerHigh": "#ECE6F0",
+        "surfaceContainerHighest": "#E6E0E9"
+      },
+      "default": "rgba(0, 0, 0, 0)"
+    },
+    "children": [
+      {
+        "type": "slot",
+        "name": "content",
+        "label": {
+          "$concat": [
+            "Row",
+            " · ",
+            {
+              "$field": "width",
+              "default": "wrap"
+            },
+            " × ",
+            {
+              "$field": "height",
+              "default": "wrap"
+            },
+            {
+              "$if": {
+                "$has": "weight"
+              },
+              "then": {
+                "$concat": [
+                  " · weight ",
+                  {
+                    "$field": "weight"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$eq": ["scroll", "true"]
+              },
+              "then": " · scroll",
+              "else": ""
+            },
+            {
+              "$if": {
+                "$and": [
+                  {
+                    "$has": "horizontalArrangement"
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["horizontalArrangement", "Start"]
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$concat": [
+                  " · ",
+                  {
+                    "$field": "horizontalArrangement"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$and": [
+                  {
+                    "$has": "verticalAlignment"
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["verticalAlignment", "Top"]
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$concat": [
+                  " · ",
+                  {
+                    "$field": "verticalAlignment"
+                  }
+                ]
+              },
+              "else": ""
+            }
+          ]
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "row",
+          "gap": {
+            "$field": "spacing",
+            "default": 0
+          },
+          "padding": {
+            "$field": "padding",
+            "default": 0
+          },
+          "align": "start",
+          "justify": "start"
+        }
+      }
+    ]
+  }
+}
