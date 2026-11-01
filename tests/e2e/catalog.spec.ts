@@ -50,7 +50,7 @@ test('Abrir biblioteca: lista, página do Button e playground que redesenha', as
 
   // Validação no topo e os 15 componentes na lista, por camada.
   const validation = screen.getByRole('region', { name: 'Validação do pacote' });
-  await expect(validation).toContainText('0 erro(s) e 42 aviso(s)');
+  await expect(validation).toContainText('0 erro(s) e 3 aviso(s)');
   const list = screen.getByRole('navigation', { name: 'Componentes' });
   await expect(list.locator('button[data-type-id]')).toHaveCount(15);
 
