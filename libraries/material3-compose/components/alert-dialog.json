@@ -8,10 +8,6 @@
     "width": 312,
     "height": 240
   },
-  "minSize": {
-    "width": 280,
-    "height": 112
-  },
   "sizing": {
     "width": 312,
     "height": "hug"

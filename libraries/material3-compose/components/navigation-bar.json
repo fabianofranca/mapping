@@ -8,10 +8,6 @@
     "width": 412,
     "height": 80
   },
-  "minSize": {
-    "width": 240,
-    "height": 64
-  },
   "sizing": {
     "width": "fill",
     "height": 80
