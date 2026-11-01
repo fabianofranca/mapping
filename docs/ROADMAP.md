@@ -213,6 +213,18 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Depende de:** etapa Container (concluída).
 - **Próxima etapa:** nenhuma detalhada; a ordem do que vier é do dono, entre as "Evoluções" abaixo. Nada entra antes de o `PLAN.md` detalhar a etapa.
 
+## Etapa — Imagens remotas (concluída, épico `epic/imagens-remotas`)
+
+- **Concluída em 2026-10-31** (fases RI0 a RI4, PRs #252 a #255); histórico em [`history/PLAN-etapa-imagens-remotas.md`](history/PLAN-etapa-imagens-remotas.md). Componente `formatVersion` 3 e MCP 0.11.0; sem schema (v13), especialização nem formato de proposta novos (v3).
+- **Objetivo:** um componente de uma especialização pode mostrar uma imagem remota (URL `https:`) no canvas, de qualquer origem e para qualquer especialização, com o máximo de segurança possível.
+- **Entrou:**
+  - **RI1, formato e política:** nó `image` no componente, política pura de URL, validador, reservado no MCP (que nunca baixa a imagem) e a biblioteca de exemplo `pessoas`.
+  - **RI2, CSP:** `https:` e `http:` no `img-src`, Trusted Types, `no-referrer` e um só criador de imagem remota (lint).
+  - **RI3, carregador e consentimento:** carregador com limites, consentimento por origem (faixa e Configurações › Privacidade), interruptores de qualquer origem, `http`, rede local e servidor sem CORS, Diagnóstico e galeria do Catálogo.
+  - **RI4, visualizador e roteiro:** visualizador embutível 0.3.0 com `remoteImages` e `allowOrigin`; roteiro R15, imagem de teste e servidor local; duas rodadas dirigidas do Cowork.
+- **Fora (decidido):** imagem local no pacote, imagem com cookie ou cabeçalho de autenticação, o MCP baixar a imagem, imagem como preenchimento de `ellipse` e `path`. Ficaram para depois: nova tentativa quando o aviso de rede local do Chrome estoura o tempo limite, conferência do Trusted Types no Edge e lista de origens fixada no build.
+- **Depende de:** etapa Biblioteca (concluída).
+
 ## Etapa — Proposto com componentes (concluída, épico `epic/proposto-componentes`)
 
 - **Concluída em 2026-10-24** (fases PC1 e PC2, PRs #227 e #228; o épico é o PR #226); histórico em [`history/PLAN-etapa-proposto-componentes.md`](history/PLAN-etapa-proposto-componentes.md). Sem schema, formato de proposta nem MCP novos (schema v13 e MCP 0.9.0 continuam).
