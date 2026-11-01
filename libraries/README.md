@@ -57,4 +57,4 @@ Sem `minSize`, por não haver mínimo oficial nos dois eixos: os contêineres e 
 
 **Fora desta versão.** A API expressiva (`ButtonGroup`, `ToggleButton`, `FloatingActionButtonMenu` e parentes), que não existe como composable público no commit fixado; o side sheet; e o Scrim, que o `ModalBottomSheet` já desenha.
 
-As fontes (`fonts/`) não são versionadas: veja `material3-compose/fonts/LEIA-ME.txt` (a ausência delas gera dois avisos aceitos). O teste `tests/model/material3ComposeLibrary.test.ts` valida o pacote.
+As fontes (`fonts/`) vêm no pacote: a Roboto 400 e 500 em `.woff2` (subconjunto latino, Fontsource 5.3.0, licença OFL em `fonts/LICENSE-Roboto.txt`; veja `material3-compose/fonts/LEIA-ME.txt`), então a biblioteca valida **sem nenhum aviso**. O teste `tests/model/material3ComposeLibrary.test.ts` valida o pacote.
