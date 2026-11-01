@@ -772,35 +772,54 @@ describe('validateLibrary: contrato de versão (previous)', () => {
   });
 });
 
+/** O botão do pacote mini com tamanho (inicial e mínimo) de 20×40: o conteúdo não cabe. */
+function tinyButton(files: readonly LibraryFile[]): LibraryFile[] {
+  const box = { width: 20, height: 40 };
+  return patch(
+    patch(files, 'components/mini-button.json', ['minSize'], box),
+    'components/mini-button.json',
+    ['size'],
+    box,
+  );
+}
+
 describe('validateLibrary: nível 3 (prova de desenho)', () => {
   it('conteúdo que não cabe vira aviso (aproximado), com o caso e o tamanho', () => {
+    const report = validate(tinyButton(miniPackage()));
+    expect(report.ok).toBe(true);
+    // O preview e os dois exemplos de valores, no tamanho inicial.
+    expect(report.warnings.map(brief)).toEqual([
+      [
+        'warning',
+        'components/mini-button.json',
+        'preview',
+        'tipo "mini-button", o preview, tamanho inicial 20×40: conteúdo maior que a caixa: button (aproximado)',
+      ],
+      [
+        'warning',
+        SPEC,
+        'layers[0].annotationTypes[0].examples[0]',
+        'tipo "mini-button", o exemplo "Primário", tamanho inicial 20×40: conteúdo maior que a caixa: button (aproximado)',
+      ],
+      [
+        'warning',
+        SPEC,
+        'layers[0].annotationTypes[0].examples[1]',
+        'tipo "mini-button", o exemplo "Texto", tamanho inicial 20×40: conteúdo maior que a caixa: button (aproximado)',
+      ],
+    ]);
+  });
+
+  it('o tamanho mínimo não é desenhado: o conteúdo que só não cabe nele não avisa', () => {
     const files = patch(miniPackage(), 'components/mini-button.json', ['minSize'], {
       width: 20,
       height: 40,
     });
     const report = validate(files);
     expect(report.ok).toBe(true);
-    // preview e os dois exemplos de valores, no tamanho mínimo; o tamanho inicial cabe.
-    expect(report.warnings.map(brief)).toEqual([
-      [
-        'warning',
-        'components/mini-button.json',
-        'preview',
-        'tipo "mini-button", o preview, tamanho mínimo 20×40: conteúdo maior que a caixa: button (aproximado)',
-      ],
-      [
-        'warning',
-        SPEC,
-        'layers[0].annotationTypes[0].examples[0]',
-        'tipo "mini-button", o exemplo "Primário", tamanho mínimo 20×40: conteúdo maior que a caixa: button (aproximado)',
-      ],
-      [
-        'warning',
-        SPEC,
-        'layers[0].annotationTypes[0].examples[1]',
-        'tipo "mini-button", o exemplo "Texto", tamanho mínimo 20×40: conteúdo maior que a caixa: button (aproximado)',
-      ],
-    ]);
+    expect(
+      report.warnings.map((w) => w.message).filter((m) => m.includes('mínimo')),
+    ).toEqual([]);
   });
 
   it('exemplo de sistema externo: propriedade desconhecida e tipo sem tipo de anotação são avisos', () => {
@@ -880,10 +899,7 @@ describe('validateLibrary: nível por nível', () => {
   function brokenAtEveryLevel(): LibraryFile[] {
     let files = patch(miniPackage(), 'components/mini-card.json', ['formatVersion'], 9);
     files = patch(files, SPEC, [...TYPE0, 'sources', 0, 'slot'], 'content');
-    return patch(files, 'components/mini-button.json', ['minSize'], {
-      width: 20,
-      height: 40,
-    });
+    return tinyButton(files);
   }
 
   it('level 1 só produz issues do nível 1', () => {
@@ -911,7 +927,7 @@ describe('validateLibrary: nível por nível', () => {
     expect(report.issues.map((i) => [i.severity, i.file])).toEqual([
       ['error', 'components/mini-card.json'], // 1: componente inválido
       ['error', SPEC], // 2: slot que o componente não tem
-      ['warning', 'components/mini-button.json'], // 3: preview no tamanho mínimo
+      ['warning', 'components/mini-button.json'], // 3: preview no tamanho inicial
       ['warning', SPEC], // 3: exemplo "Primário"
       ['warning', SPEC], // 3: exemplo "Texto"
       ['warning', SPEC], // 3: a tela de exemplo da origem usa o cartão, que não tem componente
@@ -942,21 +958,6 @@ describe('validateLibrary: Material 3', () => {
       : []),
   ];
 
-  /** Os avisos do preview no tamanho mínimo: o medidor aproximado é folgado no que o navegador mede. */
-  const MIN_SIZE_WARNINGS = [
-    'components/m3-button.json',
-    'components/m3-fab.json',
-    'components/m3-text-field.json',
-    'components/m3-switch.json',
-    'components/m3-chip.json',
-    'components/m3-card.json',
-    'components/m3-list-item.json',
-    'components/m3-navigation-bar.json',
-    'components/m3-navigation-bar.json',
-    'components/m3-navigation-bar.json',
-    'components/m3-bottom-sheet.json',
-  ];
-
   it('zero erros; os avisos são os que o teste lista', () => {
     const report = validate(m3Files(true));
     expect(report.errors.map(brief)).toEqual([]);
@@ -973,9 +974,9 @@ describe('validateLibrary: Material 3', () => {
       .filter((w) => w.path.startsWith('preview.'))
       .map((w) => `${w.file}:${w.path}`);
     expect(previews).toEqual([]);
+    // O tamanho mínimo não é desenhado: sem aviso de conteúdo maior que a caixa nele.
     const drawing = report.warnings.filter((w) => w.message.endsWith('(aproximado)'));
-    expect(drawing.map((w) => w.file)).toEqual(MIN_SIZE_WARNINGS);
-    expect(drawing.every((w) => w.message.includes('tamanho mínimo'))).toBe(true);
+    expect(drawing.every((w) => w.message.includes('tamanho inicial'))).toBe(true);
     // A tela de exemplo do SDUI está no pacote de teste, mas o M3_SPEC não a declara.
     const others = report.warnings.filter(
       (w) => !w.path.startsWith('preview.') && !w.message.endsWith('(aproximado)'),

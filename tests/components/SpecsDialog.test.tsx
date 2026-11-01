@@ -365,18 +365,18 @@ describe('SpecsDialog: pacote da biblioteca', () => {
     expect(screen.getByRole('button', { name: 'Aplicar zip…' })).toBeTruthy();
   });
 
-  it('pasta: valida (0 erros, 42 avisos), lista os avisos e aplica copiando o pacote', async () => {
+  it('pasta: valida (0 erros, 3 avisos), lista os avisos e aplica copiando o pacote', async () => {
     fakePicker(await memoryDir(material3()));
     const { harness, user } = setup();
     await chooseDirectory(user);
     const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
-    expect(within(dialog).getByText(/0 erro\(s\) e 42 aviso\(s\)\./)).toBeTruthy();
+    expect(within(dialog).getByText(/0 erro\(s\) e 3 aviso\(s\)\./)).toBeTruthy();
     expect(within(dialog).getByText(/Os avisos não impedem aplicar/)).toBeTruthy();
     // Os avisos vêm agrupados por arquivo e a lista rola sozinha.
     expect(
       within(dialog).getByRole('group', { name: 'Problemas do pacote' }),
     ).toBeTruthy();
-    expect(within(dialog).getAllByText('aviso').length).toBe(42);
+    expect(within(dialog).getAllByText('aviso').length).toBe(3);
     await user.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
     await screen.findByText(/"Material Design 3 \(baseline\)" aplicada/);
     const entry = harness.project().specializations[0];
@@ -397,7 +397,7 @@ describe('SpecsDialog: pacote da biblioteca', () => {
       const { harness, view } = setup();
       chooseZip(await zipOf(material3(), root));
       const dialog = await dialogTitled('Pacote "Material Design 3 (baseline)"', 30_000);
-      expect(within(dialog).getByText(/0 erro\(s\) e 42 aviso\(s\)\./)).toBeTruthy();
+      expect(within(dialog).getByText(/0 erro\(s\) e 3 aviso\(s\)\./)).toBeTruthy();
       fireEvent.click(within(dialog).getByRole('button', { name: 'Aplicar' }));
       await screen.findByText(/aplicada/);
       expect(harness.project().specializations[0]?.file).toBe(
