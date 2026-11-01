@@ -16,7 +16,6 @@ import { writeProjectZip } from '../../src/storage/zip';
 import { clearReportedErrors } from '../../src/utils/report';
 import { cadastroProject } from '../model/specFixtures';
 import { emptyProject, sampleProject } from '../model/fixtures';
-import { exampleProjectBlob } from '../../src/app/exampleProject';
 import { readInvalidFixture } from '../model/invalidFixtures';
 import { legacyJson } from '../model/legacyShape';
 import {
@@ -450,8 +449,9 @@ describe('importar zip', () => {
     library?.close();
   });
 
-  it('o projeto de exemplo embutido abre pelo mesmo importZip, só como projeto local', async () => {
-    expect((await app.importZip(exampleProjectBlob())).ok).toBe(true);
+  it('o projeto de exemplo (zip do repositório) abre pelo importZip, só como projeto local', async () => {
+    const zip = new Blob([readFileSync('examples/exemplo-completo.zip')]);
+    expect((await app.importZip(zip)).ok).toBe(true);
     const current = await openedOf(app);
     expect(current.kind).toBe('local');
     expect(current.unexported.value).toBe(false);

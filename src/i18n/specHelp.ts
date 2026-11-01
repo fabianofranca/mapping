@@ -372,7 +372,7 @@ const ORIGINS_EXCERPT = `{
             "anchor": { "path": "anchor" },
             "margin": { "path": "margin" }
           },
-          { "path": "modal", "anchor": "bottom", "scrim": "m3-scrim" }
+          { "path": "modal", "anchor": "bottom", "scrim": "sdui-scrim" }
         ]
       },
       "booleans": { "true": "sim", "false": "não" },
@@ -382,13 +382,12 @@ const ORIGINS_EXCERPT = `{
 }`;
 
 /** A árvore de um pacote de biblioteca (a pasta da especialização, v4). */
-const PACKAGE_TREE = `material3/
-  material3.spec.json          a especialização (formatVersion 6)
-  components/m3-button.json    um arquivo por componente (mapping-component)
-  docs/m3-button.md            o documento markdown do tipo
+const PACKAGE_TREE = `sdui-backend/
+  sdui-backend.spec.json       a especialização (formatVersion 9)
+  components/sdui-button.json  um arquivo por componente (mapping-component)
+  docs/sdui-button.md          o documento markdown do tipo
   examples/settings.sdui.json  uma tela de exemplo de um sistema externo
-  fonts/Roboto-Regular.ttf     as fontes do desenho
-  fonts/LEIA-ME.txt`;
+  fonts/Roboto-Regular.woff2   as fontes do desenho (opcional)`;
 
 /** Trecho do contrato de versão (`migrations`, v4). */
 const MIGRATIONS_EXCERPT = `{
@@ -415,9 +414,9 @@ const MIGRATIONS_EXCERPT = `{
 
 /** Um problema do validador da biblioteca. */
 const ISSUE_EXCERPT = `{
-  "file": "material3.spec.json",
+  "file": "sdui-backend.spec.json",
   "path": "layers[0].annotationTypes[2].component",
-  "message": "arquivo não encontrado: components/m3-fab.json",
+  "message": "arquivo não encontrado: components/sdui-fab.json",
   "severity": "error"
 }`;
 
@@ -748,7 +747,7 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'A 5 continua aceita: uma especialização sem containers só aparece na lista com Personalizado e Tamanho da seleção. A lista está fora do contrato de versão: acrescentar, mudar ou remover tamanhos nunca é quebra nem pede migração. O pacote Material 3 do repositório traz Celular 360 × 800, Celular grande 412 × 915, Tablet 800 × 1280 e Desktop 1440 × 900.',
+        text: 'A 5 continua aceita: uma especialização sem containers só aparece na lista com Personalizado e Tamanho da seleção. A lista está fora do contrato de versão: acrescentar, mudar ou remover tamanhos nunca é quebra nem pede migração. A biblioteca material3-compose do repositório traz Celular 360 × 800, Celular grande 412 × 915, Tablet 800 × 1280 e Desktop 1440 × 900.',
       },
     ],
   },
@@ -900,7 +899,7 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'No app, Especializações › Aplicar pasta… (Chrome e Edge) ou Aplicar zip… confere o pacote pelos três níveis: erros bloqueiam, avisos deixam aplicar. Aplicar copia a pasta inteira para specs/<id>/ no projeto; Atualizar de pasta… ou de zip… regrava a cópia e Remover a apaga. Uma especialização v4 ou v5 que não cita nenhum arquivo do pacote (sem component, doc, examples, fonts nem origins) vale como arquivo .json isolado; a que cita é recusada em .json: a biblioteca precisa da pasta inteira. O repositório traz um pacote completo, o Material 3, em examples/libraries/material3/, gerado por npm run build:examples.',
+        text: 'No app, Especializações › Aplicar pasta… (Chrome e Edge) ou Aplicar zip… confere o pacote pelos três níveis: erros bloqueiam, avisos deixam aplicar. Aplicar copia a pasta inteira para specs/<id>/ no projeto; Atualizar de pasta… ou de zip… regrava a cópia e Remover a apaga. Uma especialização v4 ou v5 que não cita nenhum arquivo do pacote (sem component, doc, examples, fonts nem origins) vale como arquivo .json isolado; a que cita é recusada em .json: a biblioteca precisa da pasta inteira. O repositório traz bibliotecas completas em libraries/ (por exemplo, a material3-compose, com 50 tipos do Material 3 para Jetpack Compose e a fonte Roboto) e, em examples/libraries/sdui-backend/, o exemplo da origem executável.',
       },
     ],
   },
@@ -975,7 +974,7 @@ const ptBR: readonly HelpSection[] = [
       { kind: 'code', code: ISSUE_EXCERPT },
       {
         kind: 'p',
-        text: 'O pacote Material 3 do repositório passa com zero erros e 42 avisos (duas fontes ausentes e 40 de conteúdo maior que a caixa na prova de desenho). O app, o servidor MCP e a skill vão chamar a mesma validação; isso chega em uma fase seguinte da etapa Biblioteca.',
+        text: 'A biblioteca material3-compose do repositório passa com zero erros e zero avisos. O app, o servidor MCP e a skill vão chamar a mesma validação; isso chega em uma fase seguinte da etapa Biblioteca.',
       },
     ],
   },
@@ -1362,7 +1361,7 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'Version 5 is still accepted: a specialization without containers only shows Custom and Selection size in the list. The list is outside the version contract: adding, changing or removing sizes is never a break and needs no migration. The repository Material 3 package brings Phone 360 × 800, Large phone 412 × 915, Tablet 800 × 1280 and Desktop 1440 × 900.',
+        text: 'Version 5 is still accepted: a specialization without containers only shows Custom and Selection size in the list. The list is outside the version contract: adding, changing or removing sizes is never a break and needs no migration. The repository’s material3-compose library brings Phone 360 × 800, Large phone 412 × 915, Tablet 800 × 1280 and Desktop 1440 × 900.',
       },
     ],
   },
@@ -1514,7 +1513,7 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'In the app, Specializations › Apply folder… (Chrome and Edge) or Apply zip… checks the package through the three levels: errors block, warnings let you apply. Applying copies the whole folder to specs/<id>/ in the project; Update from folder… or from zip… rewrites the copy and Remove deletes it. A v4 or v5 specialization that cites no package file (no component, doc, examples, fonts or origins) works as a lone .json file; one that does is refused as a .json: the library needs the whole folder. The repository ships a complete package, Material 3, in examples/libraries/material3/, generated by npm run build:examples.',
+        text: 'In the app, Specializations › Apply folder… (Chrome and Edge) or Apply zip… checks the package through the three levels: errors block, warnings let you apply. Applying copies the whole folder to specs/<id>/ in the project; Update from folder… or from zip… rewrites the copy and Remove deletes it. A v4 or v5 specialization that cites no package file (no component, doc, examples, fonts or origins) works as a lone .json file; one that does is refused as a .json: the library needs the whole folder. The repository ships complete libraries in libraries/ (for example material3-compose, with 50 Material 3 types for Jetpack Compose and the Roboto font) and, in examples/libraries/sdui-backend/, the example of the executable origin.',
       },
     ],
   },
@@ -1589,7 +1588,7 @@ const enUS: readonly HelpSection[] = [
       { kind: 'code', code: ISSUE_EXCERPT },
       {
         kind: 'p',
-        text: 'The repository’s Material 3 package passes with zero errors and 42 warnings (two missing fonts and 40 of content larger than the box in the drawing proof). The app, the MCP server and the skill will call the same validation; that arrives in a later phase of the Library stage.',
+        text: 'The repository’s material3-compose library passes with zero errors and zero warnings. The app, the MCP server and the skill will call the same validation; that arrives in a later phase of the Library stage.',
       },
     ],
   },

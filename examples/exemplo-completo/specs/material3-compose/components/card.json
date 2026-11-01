@@ -1,0 +1,142 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 3,
+  "id": "card",
+  "name": "Card",
+  "description": "Card de forma medium (12): mídia opcional no topo, título, subtítulo e texto; filled, elevated (sombra) ou outlined (contorno).",
+  "size": {
+    "width": 360,
+    "height": 244
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "title": "Praia do Rosa",
+    "subtitle": "Santa Catarina",
+    "supportingText": "Fim de semana de sol.",
+    "media": "https://example.com/praia.jpg",
+    "style": "elevated"
+  },
+  "template": {
+    "type": "frame",
+    "name": "card",
+    "cornerRadius": 12,
+    "fill": {
+      "$switch": "style",
+      "cases": {
+        "elevated": "#F7F2FA",
+        "outlined": "#FEF7FF"
+      },
+      "default": "#E6E0E9"
+    },
+    "stroke": {
+      "color": {
+        "$if": {
+          "$eq": ["style", "outlined"]
+        },
+        "then": "#CAC4D0",
+        "else": "rgba(0, 0, 0, 0)"
+      },
+      "width": 1,
+      "align": "inside"
+    },
+    "shadow": {
+      "color": {
+        "$if": {
+          "$eq": ["style", "elevated"]
+        },
+        "then": "rgba(0, 0, 0, 0.3)",
+        "else": "rgba(0, 0, 0, 0)"
+      },
+      "y": 1,
+      "blur": 3
+    },
+    "layout": {
+      "type": "column",
+      "gap": 0
+    },
+    "children": [
+      {
+        "type": "image",
+        "name": "mídia",
+        "src": {
+          "$field": "media"
+        },
+        "fit": "cover",
+        "width": "fill",
+        "height": 140,
+        "fill": "#E6E0E9",
+        "visible": {
+          "$has": "media"
+        }
+      },
+      {
+        "type": "frame",
+        "name": "conteúdo",
+        "width": "fill",
+        "height": "hug",
+        "layout": {
+          "type": "column",
+          "gap": 4,
+          "padding": 16
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "title",
+              "default": "Title"
+            },
+            "font": {
+              "family": "Roboto",
+              "size": 16,
+              "weight": 500,
+              "lineHeight": 24
+            },
+            "color": "#1D1B20",
+            "width": "fill"
+          },
+          {
+            "type": "text",
+            "name": "subtítulo",
+            "text": {
+              "$field": "subtitle"
+            },
+            "font": {
+              "family": "Roboto",
+              "size": 14,
+              "weight": 400,
+              "lineHeight": 20
+            },
+            "color": "#49454F",
+            "width": "fill",
+            "visible": {
+              "$has": "subtitle"
+            }
+          },
+          {
+            "type": "text",
+            "name": "apoio",
+            "text": {
+              "$field": "supportingText"
+            },
+            "font": {
+              "family": "Roboto",
+              "size": 14,
+              "weight": 400,
+              "lineHeight": 20
+            },
+            "color": "#49454F",
+            "width": "fill",
+            "visible": {
+              "$has": "supportingText"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

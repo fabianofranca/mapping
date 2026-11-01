@@ -15,7 +15,6 @@ import { guideUrl } from '../utils/guideLink';
 import { matchesSearch } from '../utils/search';
 import { MAX_PACKAGE_BYTES, MAX_PACKAGE_FILES } from '../model';
 import { canPickDirectory } from '../ui/specPackageImport';
-import { exampleProjectBlob } from './exampleProject';
 import {
   createFolderProject,
   createLocalProject,
@@ -190,9 +189,6 @@ export function Home() {
   /** Alvo do foco quando o diálogo fecha sem a linha que o abriu. */
   const rowLeft = () => recentRowTarget(listSection.current, removedAt.current);
 
-  /** O mesmo importador do "Abrir zip", com o zip do exemplo embutido no build. */
-  const onOpenExample = () => void run(() => importZip(exampleProjectBlob()));
-
   const onZipChosen = async (input: HTMLInputElement) => {
     const file = input.files?.[0];
     input.value = '';
@@ -242,7 +238,6 @@ export function Home() {
     },
     onOpenFolder: () => void onOpenFolder(),
     onOpenZip: () => zipInput.current?.click(),
-    onOpenExample,
     // Pasta onde o navegador deixa escolher uma; senão, o zip do pacote.
     onOpenLibrary: () =>
       canPickDirectory()
@@ -609,7 +604,6 @@ interface HomeActions {
   readonly onNew: () => void;
   readonly onOpenFolder: () => void;
   readonly onOpenZip: () => void;
-  readonly onOpenExample: () => void;
   readonly onOpenLibrary: () => void;
 }
 
@@ -620,7 +614,6 @@ function HomeButtons({
   onNew,
   onOpenFolder,
   onOpenZip,
-  onOpenExample,
   onOpenLibrary,
 }: HomeActions) {
   return (
@@ -639,12 +632,6 @@ function HomeButtons({
         <Button disabled={busy} onClick={onOpenZip}>
           <Icon name="upload" />
           {t('home.openZip')}
-        </Button>
-      )}
-      {available.local && (
-        <Button disabled={busy} title={t('home.openExampleHint')} onClick={onOpenExample}>
-          <Icon name="file" />
-          {t('home.openExample')}
         </Button>
       )}
       <Button disabled={busy} title={t('catalog.home.openHint')} onClick={onOpenLibrary}>
