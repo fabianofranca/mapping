@@ -26,7 +26,7 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 - O zip exportado passa a levar, sem alteração, a cópia em `specs/` de uma especialização que a app não consegue ler (versão de formato maior, arquivo inválido ou `id` diferente); antes ela ficava de fora e o zip citava uma cópia ausente.
 
-## [Não lançado] Imagens remotas (épico `epic/imagens-remotas`, MCP 0.11.0, schema v13)
+## Imagens remotas — 2026-11-01 (épico `epic/imagens-remotas`, MCP 0.11.0, schema v13)
 
 ### Adicionado
 
