@@ -120,7 +120,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 **Coordenador:** Opus. **Esforço:** high; subagentes Sonnet medium. Decisões 1, 2 e 7.
 
 - [x] Etapa replanejada neste `PLAN.md` (a primeira versão deixava sem dono os testes da `pessoas`, o `proposta-componentes.zip`, o R3.14 a R3.17 e os recursos da origem que o `biblioteca.json` não mostra)
-- [ ] `tests/examples/featureCoverage.test.ts` com `LEAVING`, `PENDING_AFTER_REMOVAL` e `MISSING_TODAY`
+- [x] `tests/examples/featureCoverage.test.ts` com `LEAVING`, `PENDING_AFTER_REMOVAL` e `MISSING_TODAY` (172 recursos de especialização, derivados do `specSchema`, e 131 de componente; a origem, que o schema não declara, e o componente, lido à mão, em listas conferidas contra o código)
 - [ ] Guia dos exemplos (`examples/README.md`, decisão 7) do estado de hoje, com o que sai marcado, e `tests/examples/examplesReadme.test.ts`
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
@@ -129,8 +129,8 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 **Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Decisões 1 a 3 e 6.
 
 - [ ] `examples/libraries/sdui-backend/` (decisão 3) validada por teste no molde de `tests/model/libraryExamples.test.ts`, sem erro nem aviso no Diagnóstico
-- [ ] Exemplos para o que estiver em `MISSING_TODAY`, de preferência na `sdui-backend` ou na `analytics`; a lista fica vazia
-- [ ] `PENDING_AFTER_REMOVAL` vazia (a `sdui-backend` cobre o que só a `material3` antiga e o `biblioteca.json` mostravam)
+- [ ] Exemplos para os 39 recursos de `MISSING_TODAY` (passos de migração, colunas `date`/`number` e com `sources`, `linkedRef` em campo, `appliesTo: marking`, `containers[].background`, `fonts[].style`, `font.decoration`, `verticalAlign`, `fillRule` e outros; a lista está no teste), de preferência na `sdui-backend` ou na `analytics`; a lista fica vazia. O que não couber sem ferir o "Fora" (ex.: `fonts[].style` pede arquivo de fonte) vai para `EXCEPTIONS` com a justificativa e é levado ao dono no PR
+- [ ] `PENDING_AFTER_REMOVAL` vazia (hoje 48 recursos: `origins` inteira, `sources` de tipo e de campo, `migrations`; a `sdui-backend` cobre o que só a `material3` antiga e o `biblioteca.json` mostravam)
 - [ ] R10 com os passos da origem na `sdui-backend` (a seção de origens e a galeria com a tela de exemplo); `docs/SPEC-FORMAT.md` e `libraries/README.md` apontam para ela como o exemplo de `origins`, `sources` e `migrations`; seção dela no guia dos exemplos e a tabela "Onde ver cada recurso" atualizada
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
