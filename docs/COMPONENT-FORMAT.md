@@ -360,7 +360,7 @@ Quase todo atributo aceita, no lugar de um literal, uma **expressão** sobre os 
 
 **`$field` numa condição lê o campo por veracidade**, nunca como texto: o campo é verdadeiro quando não está vazio e o valor, sem diferença de maiúsculas, não é `""`, `"não"`, `"nao"`, `"no"`, `"false"`, `"0"` nem `"off"`; um número é verdadeiro quando diferente de 0. É assim que os booleanos funcionam: **um booleano é um campo `enum` com `["sim", "não"]`**, e `{ "$field": "selected" }` vale `sim`. O mesmo vale em `visible: { "$field": "x" }`. Os operadores `$eq`, `$has`, `$not`, `$and` e `$or` podem aparecer direto em `visible` e `italic`; `$field` fica como expressão.
 
-Uma expressão que cita um campo que o **tipo não declara** é erro do validador da biblioteca (o desenho não acha o valor); campo do tipo que o desenho não usa é aviso.
+Uma expressão que cita um campo que o **tipo não declara** é erro do validador da biblioteca (o desenho não acha o valor); campo do tipo que o desenho não usa é aviso, **a menos que o `code` do tipo o use**: chave de `params` ou de `values`, o `field` de `variants` (ou dos casos dela) ou uma palavra inteira das `notes` (é o caso de `width`, `height`, `weight` e `contentDescription`, que viram modificador ou argumento no código e não mudam o desenho).
 
 ## Avisos do motor
 

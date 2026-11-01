@@ -213,7 +213,11 @@ const VARIANT_SYMBOLS: Record<
   },
 };
 
-/** Avisos que a biblioteca aceita (arquivo, caminho, mensagem), em ordem: ver o teste dos avisos. */
+/**
+ * Avisos que a biblioteca aceita (arquivo, caminho, mensagem): as duas fontes que não vêm no
+ * pacote. Os campos que só o `code` usa (modificadores, `contentDescription`) não avisam: o
+ * validador os conta como usados pelo `code`.
+ */
 const FIXED_WARNINGS: [string, string, string][] = [
   [
     SPEC_FILE,
@@ -225,50 +229,6 @@ const FIXED_WARNINGS: [string, string, string][] = [
     'fonts[1].file',
     'arquivo da fonte "Roboto" não encontrado: fonts/Roboto-Medium.ttf; o desenho usa a fonte do sistema',
   ],
-  ...(
-    [
-      ['layers[1].annotationTypes[1].fields[1]', 'contentDescription', 'icon'],
-      ['layers[2].annotationTypes[1].fields[4]', 'width', 'button'],
-      ['layers[2].annotationTypes[1].fields[5]', 'height', 'button'],
-      ['layers[2].annotationTypes[1].fields[6]', 'weight', 'button'],
-      ['layers[2].annotationTypes[2].fields[1]', 'contentDescription', 'fab'],
-      ['layers[2].annotationTypes[4].fields[11]', 'width', 'text-field'],
-      ['layers[2].annotationTypes[4].fields[12]', 'height', 'text-field'],
-      ['layers[2].annotationTypes[4].fields[13]', 'weight', 'text-field'],
-      ['layers[2].annotationTypes[8].fields[5]', 'width', 'card'],
-      ['layers[2].annotationTypes[8].fields[6]', 'height', 'card'],
-      ['layers[2].annotationTypes[8].fields[7]', 'weight', 'card'],
-      ['layers[2].annotationTypes[11].fields[3]', 'sheetPeekHeight', 'bottom-sheet'],
-      ['layers[2].annotationTypes[12].fields[1]', 'contentDescription', 'icon-button'],
-      [
-        'layers[2].annotationTypes[13].fields[1]',
-        'contentDescription',
-        'icon-toggle-button',
-      ],
-      ['layers[2].annotationTypes[16].fields[6]', 'width', 'slider'],
-      ['layers[2].annotationTypes[16].fields[7]', 'weight', 'slider'],
-      ['layers[2].annotationTypes[17].fields[6]', 'width', 'search-bar'],
-      ['layers[2].annotationTypes[17].fields[7]', 'height', 'search-bar'],
-      ['layers[2].annotationTypes[17].fields[8]', 'weight', 'search-bar'],
-      ['layers[2].annotationTypes[24].fields[9]', 'width', 'secure-text-field'],
-      ['layers[2].annotationTypes[24].fields[10]', 'height', 'secure-text-field'],
-      ['layers[2].annotationTypes[24].fields[11]', 'weight', 'secure-text-field'],
-      ['layers[2].annotationTypes[26].fields[0]', 'style', 'alert-dialog'],
-      ['layers[2].annotationTypes[26].fields[6]', 'contentDescription', 'alert-dialog'],
-      ['layers[2].annotationTypes[33].fields[2]', 'preferredItemWidth', 'carousel'],
-      ['layers[2].annotationTypes[33].fields[3]', 'itemWidth', 'carousel'],
-      ['layers[2].annotationTypes[33].fields[5]', 'width', 'carousel'],
-      ['layers[2].annotationTypes[33].fields[6]', 'height', 'carousel'],
-      ['layers[2].annotationTypes[33].fields[7]', 'weight', 'carousel'],
-      ['layers[2].annotationTypes[35].fields[6]', 'width', 'swipe-to-dismiss'],
-      ['layers[2].annotationTypes[35].fields[7]', 'height', 'swipe-to-dismiss'],
-      ['layers[2].annotationTypes[35].fields[8]', 'weight', 'swipe-to-dismiss'],
-    ] as const
-  ).map(([path, key, type]): [string, string, string] => [
-    SPEC_FILE,
-    path,
-    `o campo "${key}" do tipo "${type}" não é usado pelo desenho do componente components/${type}.json`,
-  ]),
 ];
 
 function listDisk(dir: string): string[] {
@@ -319,6 +279,11 @@ describe('biblioteca Material 3 (Compose)', () => {
   });
 
   it('valida sem erro nos três níveis, com os avisos conhecidos', () => {
+    expect(
+      validateLibrary({ files, specPath: SPEC_FILE }).warnings.filter((w) =>
+        w.message.includes('não é usado pelo desenho'),
+      ),
+    ).toEqual([]);
     const report = validateLibrary({ files, specPath: SPEC_FILE });
     expect(report.errors).toEqual([]);
     expect(report.ok).toBe(true);
@@ -334,7 +299,7 @@ describe('biblioteca Material 3 (Compose)', () => {
       w.message,
     ]);
     const fixedKeys = new Set(FIXED_WARNINGS.map(key3));
-    // As duas fontes ausentes e os campos de modificador que o desenho não usa.
+    // As duas fontes ausentes; nenhum campo fica sem uso (o desenho ou o `code` o usa).
     expect(
       all
         .filter((w) => fixedKeys.has(key3(w)))

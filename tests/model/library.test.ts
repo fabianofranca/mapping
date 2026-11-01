@@ -452,6 +452,41 @@ describe('validateLibrary: nível 2 (coerência entre arquivos)', () => {
     ]);
   });
 
+  it('campo que o desenho não usa mas o code usa (params, values, variants ou notes) não é aviso', () => {
+    // Quatro campos extras no primeiro tipo; nenhum é desenhado pelo componente.
+    const fieldsAt = ['layers', 0, 'annotationTypes', 0, 'fields'] as const;
+    const base = miniPackage();
+    const type = (
+      JSON.parse(base[0]?.text ?? '{}') as {
+        layers: { annotationTypes: { fields: unknown[] }[] }[];
+      }
+    ).layers[0]?.annotationTypes[0];
+    const extras = [
+      { key: 'porParams', type: 'string' },
+      { key: 'porValues', type: 'enum', options: ['a', 'b'] },
+      { key: 'porNotes', type: 'string' },
+      { key: 'esquecido', type: 'string' },
+    ];
+    let files = patch(base, SPEC, [...fieldsAt], [...(type?.fields ?? []), ...extras]);
+    files = patch(files, SPEC, ['formatVersion'], 9);
+    files = patch(files, SPEC, ['platforms'], [{ id: 'web', name: 'Web' }]);
+    files = patch(files, SPEC, ['layers', 0, 'annotationTypes', 0, 'code'], {
+      web: {
+        symbol: 'MiniButton',
+        params: { porParams: 'p' },
+        values: { porValues: { a: 'A', b: 'B' } },
+        notes: 'O `porNotes` vira o modificador; esquecido_nao conta.',
+      },
+    });
+    const unused = validate(files)
+      .warnings.filter((w) => w.message.includes('não é usado pelo desenho'))
+      .map((w) => w.message.match(/o campo "(\w+)"/)?.[1]);
+    expect(unused).toContain('esquecido');
+    for (const key of ['porParams', 'porValues', 'porNotes']) {
+      expect(unused, key).not.toContain(key);
+    }
+  });
+
   it('slot declarado que não existe no componente (e componente sem slot)', () => {
     const wrongName = patch(
       miniPackage(),
