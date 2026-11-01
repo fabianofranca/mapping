@@ -80,8 +80,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     env:
-      # Orçamento do dist/index.html (autocontido; 1.868.223 bytes, ~1,78 MB em 2026-11-01, com o exemplo embutido: ~385 KB em base64, desde que o exemplo leva a biblioteca material3-compose com a Roboto; era 1.569.402 bytes com o exemplo de ~87 KB). Só aqui.
-      INDEX_HTML_MAX_BYTES: 2097152
+      # Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64). Só aqui.
+      INDEX_HTML_MAX_BYTES: 1572864
     steps:
       - uses: actions/checkout@v7
         with:

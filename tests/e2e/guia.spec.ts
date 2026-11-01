@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { watchViolations } from './helpers';
 
 // Guia interativo (`dist/guia/`) e projeto de exemplo da tela inicial. Rodam contra o
@@ -89,11 +90,15 @@ test.describe('guia interativo', () => {
 });
 
 test.describe('projeto de exemplo', () => {
-  test('Abrir projeto de exemplo abre o editor com a proposta pendente para revisar', async ({
+  test('Abrir zip com o exemplo abre o editor com a proposta pendente para revisar', async ({
     page,
   }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'Abrir projeto de exemplo' }).click();
+    await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
+      name: 'exemplo-completo.zip',
+      mimeType: 'application/zip',
+      buffer: readFileSync('examples/exemplo-completo.zip'),
+    });
     await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
 
     // A proposta de exemplo chega na janela Propostas (Ctrl+Shift+7) e abre para revisão.

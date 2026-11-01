@@ -143,7 +143,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Toca em:** `examples/exemplo-completo/` (troca `specs/material3/` por `specs/material3-compose/` e as 21 anotações `m3-*`), `tests/examples/exampleProject.test.ts`, `scripts/guia/template.html` e `public/guia/` (`npm run build:guia`), `examples/exemplo-completo.zip` (`npm run build:example`), `tests/e2e/proposedComponentsFixture.ts`, os e2e que o usam, `examples/proposta-componentes.zip` (`npm run build:proposal-components`), `tests/examples/proposalComponents.test.ts`, `src/i18n/specHelp.ts` (os exemplos da ajuda com ids `m3-*`), R13 do `docs/TESTING.md`.
 
-- [x] Projeto de exemplo e zip com a `material3-compose` (a cópia conferida por teste) e o tamanho do zip registrado no PR (289.104 bytes, eram 64.988; o `dist/index.html` foi a 1.868.223 bytes e o orçamento do CI subiu de 1,5 para 2 MiB)
+- [x] Projeto de exemplo e zip com a `material3-compose` (a cópia conferida por teste) e o tamanho do zip registrado no PR (289.104 bytes, eram 64.988). Decisão do dono (2026-11-01): embutir o zip levaria o `dist/index.html` a 1.868.223 bytes, acima do orçamento de 1,5 MiB, então o botão **Abrir projeto de exemplo** e o zip embutido saíram (`src/app/exampleProject.ts`) e a app orienta a baixar `examples/exemplo-completo.zip` do repositório (Ajuda e guia); o orçamento fica em 1,5 MiB (1.482.050 bytes)
 - [x] Guia interativo regenerado, com os textos falando dos tipos da `material3-compose`
 - [x] `proposta-componentes.zip` com a `material3-compose` (inclusive o tipo que só existe no pacote da proposta) e o R13 reescrito
 - [x] Ajuda da especialização (`specHelp.ts`) sem ids do pacote antigo, em pt-BR e en-US

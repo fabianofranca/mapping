@@ -53,7 +53,7 @@ describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
   });
 
   it('orçamento do dist/index.html num só lugar, com o tamanho no resumo do job', () => {
-    expect(ci.match(/INDEX_HTML_MAX_BYTES: (\d+)/)?.[1]).toBe(String(2 * 1024 * 1024));
+    expect(ci.match(/INDEX_HTML_MAX_BYTES: (\d+)/)?.[1]).toBe(String(1.5 * 1024 * 1024));
     expect(ci.match(/INDEX_HTML_MAX_BYTES:/g)).toHaveLength(1);
     expect(ci).toContain('GITHUB_STEP_SUMMARY');
   });

@@ -1,15 +1,15 @@
 # Guia interativo e projeto de exemplo
 
-A app traz um **guia interativo** (uma página à parte, `guia/`) e um **projeto de exemplo** (o botão **Abrir projeto de exemplo** da tela inicial). Os dois saem do mesmo projeto, `examples/exemplo-completo/`, a fonte única: o guia nunca fica diferente do exemplo.
+A app traz um **guia interativo** (uma página à parte, `guia/`) e um **projeto de exemplo** (o `examples/exemplo-completo.zip` do repositório, que a pessoa baixa e abre pelo **Abrir zip**; a app não o embute). Os dois saem do mesmo projeto, `examples/exemplo-completo/`, a fonte única: o guia nunca fica diferente do exemplo.
 
 ## O que é cada coisa
 
-| Peça                         | Onde                                      | Como entra na app                                                                                                                                                                      |
-| ---------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Projeto de exemplo (a fonte) | `examples/exemplo-completo/`              | Uma pasta de projeto comum: `mapping.json` (schema v13), `images/`, `specs/` (SDUI, Modelo de dados, Notas e a biblioteca `material3-compose`) e `proposals/` com uma proposta aberta. |
-| Zip do exemplo               | `examples/exemplo-completo.zip`           | Gerado da pasta (`npm run build:example`). A app o embute como data URI (`src/app/exampleProject.ts`, `?inline`) e o entrega ao mesmo `importZip` do **Abrir zip**.                    |
-| Guia                         | `public/guia/index.html`                  | Gerado do template `scripts/guia/template.html` e do `mapping.json` do exemplo (`npm run build:guia`). O Vite o copia para `dist/guia/`, ao lado do `dist/index.html` único.           |
-| Pontos de entrada            | Tela inicial, **Ajuda**, botão do exemplo | Link **Guia interativo** na lateral da tela inicial e primeira seção da **Ajuda** (os dois abrem outra aba, `rel="noopener noreferrer"`); botão **Abrir projeto de exemplo**.          |
+| Peça                         | Onde                            | Como entra na app                                                                                                                                                                              |
+| ---------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Projeto de exemplo (a fonte) | `examples/exemplo-completo/`    | Uma pasta de projeto comum: `mapping.json` (schema v13), `images/`, `specs/` (SDUI, Modelo de dados, Notas e a biblioteca `material3-compose`) e `proposals/` com uma proposta aberta.         |
+| Zip do exemplo               | `examples/exemplo-completo.zip` | Gerado da pasta (`npm run build:example`). Não vai embutido na app: a pessoa o baixa do repositório e o abre pelo **Abrir zip** (o mesmo `importZip`); a **Ajuda** e o guia dizem onde baixar. |
+| Guia                         | `public/guia/index.html`        | Gerado do template `scripts/guia/template.html` e do `mapping.json` do exemplo (`npm run build:guia`). O Vite o copia para `dist/guia/`, ao lado do `dist/index.html` único.                   |
+| Pontos de entrada            | Tela inicial, **Ajuda**         | Link **Guia interativo** na lateral da tela inicial e primeira seção da **Ajuda** (os dois abrem outra aba, `rel="noopener noreferrer"`).                                                      |
 
 ## Como o guia é gerado
 
@@ -44,11 +44,11 @@ npm run build:guia      # public/guia/index.html, do template e do exemplo
 - `pwa/sw.js` põe `./guia/index.html` no precache e serve a navegação para `guia/` (e `guia/index.html`) do cache: o guia funciona sem internet. O carimbo do `sw.js` (`vite.config.ts`) leva o conteúdo do guia, então mudar só o guia também dispara o aviso de nova versão.
 - O `deploy.yml` copia `dist/` inteiro: a versão principal fica em `/guia/` e o preview em `/preview/guia/`, sem mudança no workflow.
 - Aberto como arquivo (`file://`), o `index.html` costuma estar sozinho (é o artefato avulso do deploy): a app não mostra o link do guia (`src/utils/guideLink.ts`).
-- O zip do exemplo (289 KB, com a biblioteca `material3-compose` e a Roboto) soma cerca de 385 KB ao `dist/index.html` (data URI em base64); o orçamento do CI do `index.html` subiu de 1,5 para 2 MiB por isso (1.868.223 bytes em 2026-11-01).
+- O zip do exemplo (289 KB, com a biblioteca `material3-compose` e a Roboto) **não** entra no `dist/index.html`: embuti-lo levaria o arquivo a 1.868.223 bytes (acima do orçamento de 1,5 MiB), então o botão **Abrir projeto de exemplo** saiu e a app orienta a baixar o zip do repositório.
 
 ## O que abrir o exemplo grava
 
-O mesmo que o **Abrir zip** (é o mesmo `importZip`): uma cópia nova do projeto no IndexedDB (**Neste dispositivo**), que passa a aparecer em **Projetos recentes**, e o pedido de armazenamento persistente do navegador. Não grava nada em pasta nem em **pastas recentes**. Cada clique cria **outra cópia** (nome **exemplo-completo**); **Excluir**, na lista, apaga a cópia. Teste: `tests/app/controller.test.ts` ("o projeto de exemplo embutido abre pelo mesmo importZip").
+Abrir o exemplo é o **Abrir zip** com o arquivo baixado (o mesmo `importZip`): uma cópia nova do projeto no IndexedDB (**Neste dispositivo**), que passa a aparecer em **Projetos recentes**, e o pedido de armazenamento persistente do navegador. Não grava nada em pasta nem em **pastas recentes**. Cada abertura cria **outra cópia** (nome **exemplo-completo**); **Excluir**, na lista, apaga a cópia. Teste: `tests/app/controller.test.ts` ("o projeto de exemplo (zip do repositório) abre pelo importZip").
 
 ## Testes
 

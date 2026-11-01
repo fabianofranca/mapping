@@ -16,7 +16,7 @@ import { readProjectZip } from '../../src/storage/zip';
 import { EXAMPLE_DIR, EXAMPLE_ZIP, exampleFiles } from '../../scripts/exampleProject.mjs';
 
 // `examples/exemplo-completo/` é o projeto de exemplo (a fonte); o zip e o guia (`public/guia/`)
-// saem dela. A app embute o zip no botão "Abrir projeto de exemplo" da tela inicial. Para gerar
+// saem dela. O zip é o que a pessoa baixa do repositório (a app não o embute). Para gerar
 // o zip de novo: `npm run build:example`.
 
 const HINT = 'Rode `npm run build:example` para regerar examples/exemplo-completo.zip.';

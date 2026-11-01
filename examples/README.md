@@ -10,7 +10,7 @@ Os exemplos moram em três lugares:
 
 O teste `tests/examples/featureCoverage.test.ts` garante que todo recurso dos formatos de especialização e de componente tenha pelo menos um exemplo. O teste `tests/examples/examplesReadme.test.ts` garante que cada exemplo do disco tenha uma seção aqui e que nenhuma seção aponte para algo que não existe mais.
 
-Os nomes dos botões vêm da app em português. Na tela inicial: **Abrir pasta**, **Abrir zip**, **Abrir projeto de exemplo** e **Abrir biblioteca**. Em **Especializações**: **Aplicar especialização…**, **Aplicar pasta…** (só no Chrome e no Edge), **Aplicar zip…** e **Atualizar de pasta…**. O **Catálogo** abre com `Ctrl+Shift+9`. Os roteiros `R…` estão em [`docs/TESTING.md`](../docs/TESTING.md).
+Os nomes dos botões vêm da app em português. Na tela inicial: **Abrir pasta**, **Abrir zip** e **Abrir biblioteca**. Em **Especializações**: **Aplicar especialização…**, **Aplicar pasta…** (só no Chrome e no Edge), **Aplicar zip…** e **Atualizar de pasta…**. O **Catálogo** abre com `Ctrl+Shift+9`. Os roteiros `R…` estão em [`docs/TESTING.md`](../docs/TESTING.md).
 
 ## Bibliotecas prontas (`libraries/`)
 
@@ -186,7 +186,7 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 
 **O que é.** O projeto de exemplo da app, com quatro telas, e a fonte do guia interativo. A pasta e o zip têm o mesmo conteúdo; o zip é o que a app embute.
 
-**Como abrir.** Tela inicial › **Abrir projeto de exemplo** (grava só uma cópia **Neste dispositivo**, nada em pasta). Ou **Abrir zip** com o `examples/exemplo-completo.zip`, ou **Abrir pasta** na pasta. O guia: link **Guia interativo** na tela inicial e na **Ajuda**.
+**Como abrir.** Baixe o `examples/exemplo-completo.zip` do repositório e use **Abrir zip** na tela inicial (grava só uma cópia **Neste dispositivo**, nada em pasta), ou **Abrir pasta** na pasta. A app não embute o exemplo. O guia: link **Guia interativo** na tela inicial e na **Ajuda**.
 
 **O que dá para ver.**
 
