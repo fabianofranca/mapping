@@ -1,0 +1,57 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "sdui-column",
+  "name": "Column",
+  "description": "Container vertical: os filhos se empilham pela ordem, com spacing e padding.",
+  "size": {
+    "width": 380,
+    "height": 200
+  },
+  "minSize": {
+    "width": 24,
+    "height": 24
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "spacing": 8,
+    "padding": 0
+  },
+  "template": {
+    "type": "frame",
+    "name": "column",
+    "clip": false,
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "slot",
+        "name": "content",
+        "label": "Column",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "column",
+          "gap": {
+            "$field": "spacing",
+            "default": 8
+          },
+          "padding": {
+            "$field": "padding",
+            "default": 0
+          },
+          "align": "start",
+          "justify": "start"
+        }
+      }
+    ]
+  }
+}

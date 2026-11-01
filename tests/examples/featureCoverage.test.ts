@@ -41,6 +41,12 @@ const EXCEPTIONS: Record<string, string> = {
     'tipo removido na etapa 9; o parser o aceita só para ignorá-lo e avisar',
   'spec:layers[].annotationTypes[].fields[].columns[].type=table':
     'o schema declara a coluna com a forma do campo, mas uma coluna de coluna não existe',
+  'spec:fonts[].style':
+    'exemplo exige um arquivo de fonte no pacote (sem ele o validador avisa); decisão do dono pendente no PR da EX1',
+  'spec:fonts[].style=italic':
+    'idem fonts[].style: sem arquivo de fonte em nenhuma biblioteca de exemplo',
+  'spec:fonts[].style=normal':
+    'idem fonts[].style: sem arquivo de fonte em nenhuma biblioteca de exemplo',
 };
 
 /**
@@ -58,99 +64,10 @@ const LEAVING: string[] = [
  * remoção. Cada item sai daqui quando ganhar exemplo fora de LEAVING; com LEAVING vazio, esta
  * lista é vazia.
  */
-const PENDING_AFTER_REMOVAL: string[] = [
-  'spec:layers[].annotationTypes[].fields[].sources',
-  'spec:layers[].annotationTypes[].fields[].sources[].name',
-  'spec:layers[].annotationTypes[].fields[].sources[].path',
-  'spec:layers[].annotationTypes[].fields[].sources[].system',
-  'spec:layers[].annotationTypes[].fields[].sources[].values',
-  'spec:layers[].annotationTypes[].sources',
-  'spec:layers[].annotationTypes[].sources[].ignore',
-  'spec:layers[].annotationTypes[].sources[].name',
-  'spec:layers[].annotationTypes[].sources[].slot',
-  'spec:layers[].annotationTypes[].sources[].system',
-  'spec:migrations',
-  'spec:migrations[].from',
-  'spec:migrations[].steps',
-  'spec:migrations[].steps[].from',
-  'spec:migrations[].steps[].op',
-  'spec:migrations[].steps[].op=rename-field',
-  'spec:migrations[].steps[].to',
-  'spec:migrations[].steps[].type',
-  'spec:migrations[].to',
-  'spec:origins',
-  'spec:origins[]',
-  'spec:origins[].booleans',
-  'spec:origins[].booleans.false',
-  'spec:origins[].booleans.true',
-  'spec:origins[].examples',
-  'spec:origins[].examples[].file',
-  'spec:origins[].examples[].name',
-  'spec:origins[].name',
-  'spec:origins[].node',
-  'spec:origins[].node.children',
-  'spec:origins[].node.props',
-  'spec:origins[].node.type',
-  'spec:origins[].screen',
-  'spec:origins[].screen.background',
-  'spec:origins[].screen.height',
-  'spec:origins[].screen.id',
-  'spec:origins[].screen.name',
-  'spec:origins[].screen.roots',
-  'spec:origins[].screen.roots[].anchor',
-  'spec:origins[].screen.roots[].margin',
-  'spec:origins[].screen.roots[].path',
-  'spec:origins[].screen.roots[].scrim',
-  'spec:origins[].screen.width',
-  'spec:origins[].system',
-  'spec:origins[].valueSource.default',
-  'spec:origins[].valueSource.path',
-  'spec:origins[].valueSource.values',
-  'spec:origins[].valueSource=literal',
-];
+const PENDING_AFTER_REMOVAL: string[] = [];
 
 /** Recursos sem exemplo hoje; ganham exemplo nesta etapa. */
-const MISSING_TODAY: string[] = [
-  'spec:containers[].background',
-  'spec:fonts[].style',
-  'spec:fonts[].style=italic',
-  'spec:fonts[].style=normal',
-  'spec:layers[].annotationTypes[].appliesTo[]=marking',
-  'spec:layers[].annotationTypes[].examples[].file',
-  'spec:layers[].annotationTypes[].examples[].system',
-  'spec:layers[].annotationTypes[].fields[].columns[].accepts.free',
-  'spec:layers[].annotationTypes[].fields[].columns[].sources',
-  'spec:layers[].annotationTypes[].fields[].columns[].sources[].name',
-  'spec:layers[].annotationTypes[].fields[].columns[].sources[].path',
-  'spec:layers[].annotationTypes[].fields[].columns[].sources[].system',
-  'spec:layers[].annotationTypes[].fields[].columns[].sources[].values',
-  'spec:layers[].annotationTypes[].fields[].columns[].type=date',
-  'spec:layers[].annotationTypes[].fields[].columns[].type=number',
-  'spec:layers[].annotationTypes[].fields[].linkedRef',
-  'spec:layers[].annotationTypes[].sources[].id',
-  'spec:migrations[].steps[].default',
-  'spec:migrations[].steps[].field',
-  'spec:migrations[].steps[].mode',
-  'spec:migrations[].steps[].mode=convert',
-  'spec:migrations[].steps[].mode=delete',
-  'spec:migrations[].steps[].op=fill-field',
-  'spec:migrations[].steps[].op=map-values',
-  'spec:migrations[].steps[].op=remove-field',
-  'spec:migrations[].steps[].op=remove-type',
-  'spec:migrations[].steps[].op=rename-type',
-  'spec:migrations[].steps[].values',
-  'component:font.decoration',
-  'component:font.decoration=line-through',
-  'component:font.decoration=none',
-  'component:font.decoration=underline',
-  'component:font.verticalAlign=bottom',
-  'component:font.verticalAlign=top',
-  'component:image.src=literal',
-  'component:layout.align=end',
-  'component:node.path.fillRule',
-  'component:path.fillRule=evenodd',
-  'component:path.fillRule=nonzero',
-];
+const MISSING_TODAY: string[] = [];
 
 // ---------------------------------------------------------------------------------------
 
