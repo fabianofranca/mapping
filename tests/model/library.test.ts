@@ -337,7 +337,7 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     const report = validate(files);
     expect(report.ok).toBe(false);
     expect(report.errors.map(brief)).toEqual([
-      ['error', 'components/mini-button.json', 'formatVersion', 'esperava 1 ou 2'],
+      ['error', 'components/mini-button.json', 'formatVersion', 'esperava 1, 2 ou 3'],
     ]);
     // O botão não passa pelo nível 3, mas a tela de exemplo da origem ainda o usa e avisa.
     expect(report.warnings.map(brief)).toEqual([

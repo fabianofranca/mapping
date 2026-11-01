@@ -233,6 +233,8 @@ function Gallery({
   readonly renderer: CatalogRenderer;
   readonly fontsEpoch: number;
 }) {
+  // Uma imagem remota que termina de carregar (ou o consentimento que muda) invalida a entrada.
+  const imagesEpoch = renderer.imagesEpoch.value;
   const items = useMemo((): GalleryItem[] => {
     const make = (
       key: string,
@@ -254,6 +256,7 @@ function Gallery({
             width: drawing.root.width,
             height: drawing.root.height,
             fontsEpoch,
+            imagesEpoch,
           },
           () => drawing.root,
         );
@@ -270,7 +273,7 @@ function Gallery({
       list.push(make(`ex-${i}`, example.name, example.description, example));
     });
     return list;
-  }, [catalog, entry, specId, version, renderer, fontsEpoch]);
+  }, [catalog, entry, specId, version, renderer, fontsEpoch, imagesEpoch]);
 
   if (items.length === 0) return <p class="muted">{t('catalog.gallery.empty')}</p>;
   return (

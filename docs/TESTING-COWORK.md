@@ -102,7 +102,7 @@ Siga o apêndice A do guia: shell para o disco, colar ou injetar arquivos, esper
 
 ## 5. O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, R0 a R13 (**sem o RP**), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Os roteiros principais são feitos para você executar **sozinho**; nenhum passo deles fica com o dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
+**Rodada completa (padrão).** Todos os roteiros, R0 a R15 (**sem o RP**), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8; a seção 9 do guia (teste manual avançado) não entra, é do dono. Os roteiros principais são feitos para você executar **sozinho**; nenhum passo deles fica com o dono. Sem o MCP, faça da seção 6 só o passo 2 (o repositório de teste, que o R3.1 a R3.5 usam) e marque o R3.6 e o R5 como "não executado (sem MCP)".
 
 **Rodada dirigida.** O dono aponta o alvo de um destes três jeitos:
 
@@ -230,3 +230,30 @@ As fases PC1 e PC2 do épico `epic/proposto-componentes` (etapa descrita no [`PL
 Na **passada visual**, olhe com atenção o canvas na **Proposto** e na **Atual** nos temas claro e escuro: a linha tracejada de criada, o fantasma pontilhado do **Rejeitado** (nome legível, ✕ visível), a linha vermelha e o ⚠ do **Inválido**, a linha dupla do **Existente**, a legenda das marcas, os botões desenhados cortados ou sobrepostos pelos selos e o **Detalhes** com a marca de decisão. Em cada caso do R13, confira também a captura em zoom (`Ctrl+=`), não só o `data-components`.
 
 **Relato:** o mesmo template, em `docs/history/relato-<data>-proposto-componentes.md`; use o código da fase (PC1 ou PC2) na coluna **Achado de origem** e liste em "O que atrapalhou" o que o R13 deixou ambíguo (por exemplo, a posição de cada marcação no canvas ou o texto exato de uma dica). Se algo da lista não puder ser executado, marque "não executado (motivo)".
+
+## 12. Rodada dirigida da etapa Imagens remotas
+
+As fases RI1 a RI4 do épico `epic/imagens-remotas` (etapa descrita no [`PLAN.md`](../PLAN.md); o histórico vai para `docs/history/PLAN-etapa-imagens-remotas.md` quando a etapa fechar) fizeram um componente de uma especialização mostrar uma imagem de um endereço `https:` (o nó `image`, componente `formatVersion` 3), com a segurança em camadas: política de URL, consentimento por origem, interruptores de Privacidade (qualquer origem, `http`, rede local, servidor sem CORS), a CSP com `https:` e Trusted Types, o carregador com limites e o Diagnóstico. O servidor MCP (0.10.0) nunca baixa a imagem. Vale como o modo dirigido "pelas fases de um plano", sobre o **preview do PR do épico** (`epic/imagens-remotas` → `main`; o preview é publicado sozinho a cada PR aberto ou atualizado, seção 2, item 9). O visualizador embutível (RI4) não tem tela na app: ele é conferido pelos testes automatizados.
+
+**Antes de começar**
+
+- O **build id** esperado é o do último commit do `epic/imagens-remotas`. Confira em **Configurações** › **Sobre**; se o preview mostrar outro build, siga o item 9 da seção 2 (dispare o Deploy do branch).
+- **Sem MCP:** nenhum passo desta rodada usa o MCP nem o Claude Code.
+- A imagem de teste é a do **preview** (`https://fabianofranca.github.io/mapping/preview/imagens-teste/foto.png`); o R15 explica o `PAGES`. A pasta `examples/libraries/pessoas/` e o `public/imagens-teste/foto.png` vêm do clone do repositório (seção 2 do guia), e o computador do Chrome precisa de **Node 20 ou mais novo** para o servidor local do R15.1 (`scripts/servidor-imagens.mjs`). **A shell (`device_bash`) pode ser uma VM, e o `127.0.0.1` dela não é o do Chrome:** o servidor sobe no computador do Chrome, pelo duplo clique no `iniciar-servidor.cmd` (Explorer, controle do computador), e a shell só lê o `servidor.log` pela pasta de trabalho compartilhada. Se o Chrome não abrir `http://127.0.0.1:8765/foto.png` depois disso, marque o R15.8 a R15.11 "não executado (servidor local inalcançável)" e avise o dono: são passos de segurança.
+- Registre em "Estado prévio do navegador" as origens que a **Privacidade** já lista e os interruptores ligados: o R15 parte de "nenhuma origem, quatro interruptores desligados" e o R15.12 devolve a esse estado. **Não limpe** os dados do site; revogue e desligue só o que o roteiro mexeu.
+
+**Lista dirigida** (depois do **R0 inteiro**):
+
+| Passos         | Fase      | O que confere                                                                                                                     |
+| -------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| R15.1 a R15.2  | RI1       | O Avatar da biblioteca `pessoas` desenha o reservado sem foto; o servidor local sem CORS sobe no computador do Chrome             |
+| R15.3 a R15.6  | RI3       | Faixa de consentimento por origem, **Permitir estas**, persistência no navegador, nada gravado no projeto nem no zip, **Revogar** |
+| R15.7          | RI3       | Política de URL: `http:`, rede local e texto que não é endereço não geram pedido (o servidor local não registra nada)             |
+| R15.8 a R15.11 | RI3       | Interruptores `http`, rede local, servidor sem CORS e qualquer origem; a rede local sempre pede consentimento próprio             |
+| R15.12         | RI3       | Limpeza: a Privacidade volta ao estado inicial                                                                                    |
+| R10.1 a R10.4  | regressão | O Catálogo e a galeria (que usam as mesmas duas portas) continuam desenhando os exemplos do Material 3                            |
+| R8.1b e R8.2   | regressão | Tema escuro e inglês: a faixa de consentimento e a Privacidade legíveis nos dois temas e sem texto em português no inglês         |
+
+Na **passada visual**, olhe a faixa de consentimento (texto cortado, botões visíveis), o círculo da foto (quatro quadrantes, bordas limpas, nada esticado) e a janela **Privacidade** (avisos legíveis, interruptores alinhados) nos temas claro e escuro.
+
+**Relato:** o mesmo template, em `docs/history/relato-<data>-imagens-remotas.md`; use o código da fase (RI1 a RI3) na coluna **Achado de origem** e liste em "O que atrapalhou" o que o R15 deixou ambíguo (por exemplo, um pedido de acesso à rede local do Chrome ou o proxy da shell barrando o `curl`). Se algo da lista não puder ser executado, marque "não executado (motivo)".

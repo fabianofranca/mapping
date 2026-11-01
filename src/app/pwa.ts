@@ -2,6 +2,7 @@
 import { signal } from '@preact/signals';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 import { reportError } from '../utils/report';
+import { SERVICE_WORKER_URL } from './trustedTypes';
 
 /** Há uma versão nova baixada, esperando o usuário aceitar. */
 export const updateReady = signal(false);
@@ -56,7 +57,7 @@ function trackInstalling(worker: ServiceWorker | null): void {
 export async function registerServiceWorker(): Promise<void> {
   if (!canRegisterServiceWorker(location.protocol, navigator)) return;
   try {
-    const registration = await navigator.serviceWorker.register('./sw.js');
+    const registration = await navigator.serviceWorker.register(SERVICE_WORKER_URL);
     if (registration.waiting && navigator.serviceWorker.controller) {
       waiting = registration.waiting;
       updateReady.value = true;

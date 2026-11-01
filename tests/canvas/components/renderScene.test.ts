@@ -2,10 +2,12 @@
 import Konva from 'konva';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { installFakeCanvas } from '../harness';
+import type { RemoteImageView } from '../../../src/canvas/components/imageLoader';
 import {
   DEFAULT_PALETTE,
   decompose,
   fontStyle,
+  imageFit,
   renderScene,
   sceneIdOf,
 } from '../../../src/canvas/components/renderScene';
@@ -273,5 +275,264 @@ describe('slot (reservado do container)', () => {
     const result = renderScene(scene(slot), { showSlots: false });
     expect(result.byId.get('s')?.getChildren()).toHaveLength(0);
     expect(result.warnings).toEqual([]);
+  });
+});
+
+describe('imagem remota e embutida', () => {
+  const rectWith = (fill: object): SceneNode => ({
+    ...baseNode({ id: 'img', name: 'img', width: 40, height: 20 }),
+    type: 'rect',
+    cornerRadius: 0,
+    fills: [fill as never],
+  });
+
+  /** Espiona o construtor de `Image`: devolve as URLs atribuídas a `src`. */
+  function spyImage(): { sources: string[]; restore: () => void } {
+    const original = globalThis.Image;
+    const sources: string[] = [];
+    class SpyImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      naturalWidth = 1;
+      naturalHeight = 1;
+      set src(value: string) {
+        sources.push(value);
+      }
+    }
+    globalThis.Image = SpyImage as unknown as typeof Image;
+    return {
+      sources,
+      restore: () => {
+        globalThis.Image = original;
+      },
+    };
+  }
+
+  it('o paint com url desenha o reservado (forma cinza e X), sem Image e sem aviso', () => {
+    const spy = spyImage();
+    try {
+      const { byId, warnings } = renderScene(
+        scene(
+          rectWith({ type: 'image', fit: 'cover', url: 'https://cdn.exemplo.com/a.png' }),
+        ),
+      );
+      const [fill, cross] = byId.get('img')?.getChildren() ?? [];
+      expect((fill as Konva.Rect).fill()).toBe(DEFAULT_PALETTE.placeholderFill);
+      expect(cross).toBeInstanceOf(Konva.Line);
+      expect(spy.sources).toEqual([]);
+      expect(warnings).toEqual([]);
+    } finally {
+      spy.restore();
+    }
+  });
+
+  it('src de outro esquema vira reservado e nunca cria Image', () => {
+    const spy = spyImage();
+    try {
+      for (const src of [
+        'https://cdn.exemplo.com/a.png',
+        'http://x.com/a.png',
+        'blob:x',
+      ]) {
+        const { byId } = renderScene(scene(rectWith({ type: 'image', src })));
+        const children = byId.get('img')?.getChildren() ?? [];
+        expect(children).toHaveLength(2);
+        expect(children[1]).toBeInstanceOf(Konva.Line);
+      }
+      expect(spy.sources).toEqual([]);
+    } finally {
+      spy.restore();
+    }
+  });
+
+  it('src data: continua carregando a imagem embutida', () => {
+    const spy = spyImage();
+    try {
+      const src = 'data:image/png;base64,AAAA';
+      const { byId } = renderScene(scene(rectWith({ type: 'image', src })));
+      const children = byId.get('img')?.getChildren() ?? [];
+      expect(children).toHaveLength(1);
+      expect(children[0]).toBeInstanceOf(Konva.Image);
+      expect(spy.sources).toEqual([src]);
+    } finally {
+      spy.restore();
+    }
+  });
+});
+
+describe('imagem remota resolvida pela função das opções', () => {
+  const URL = 'https://cdn.exemplo.com/a.png';
+  const fake = (width: number, height: number) =>
+    ({ width, height }) as unknown as CanvasImageSource;
+  const loaded = (width = 200, height = 100): RemoteImageView => ({
+    state: 'loaded',
+    image: fake(width, height),
+    width,
+    height,
+  });
+  const rectWith = (fill: object, cornerRadius = 0): SceneNode => ({
+    ...baseNode({ id: 'img', name: 'img', width: 40, height: 40 }),
+    type: 'rect',
+    cornerRadius,
+    fills: [fill as never],
+  });
+  const paint = (extra: object = {}) => ({ type: 'image', url: URL, ...extra });
+  const imageOf = (result: ReturnType<typeof renderScene>) =>
+    result.byId.get('img')?.getChildren()[0] as Konva.Image;
+  const isPlaceholder = (result: ReturnType<typeof renderScene>) => {
+    const children = result.byId.get('img')?.getChildren() ?? [];
+    return children.length === 2 && children[1] instanceof Konva.Line;
+  };
+
+  it('loaded desenha um KonvaImage e registra a URL usada', () => {
+    const view = loaded();
+    const result = renderScene(scene(rectWith(paint())), { remoteImage: () => view });
+    expect(imageOf(result)).toBeInstanceOf(Konva.Image);
+    expect(imageOf(result).image()).toBe(view.image);
+    expect(result.imageUrls).toEqual([URL]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('pede a imagem à função uma vez por paint, com a URL do campo', () => {
+    const calls: string[] = [];
+    renderScene(scene(rectWith(paint())), {
+      remoteImage: (url) => {
+        calls.push(url);
+        return 'loading';
+      },
+    });
+    expect(calls).toEqual([URL]);
+  });
+
+  it('cada estado sem pixels desenha o reservado, sem aviso', () => {
+    const states = [
+      'loading',
+      'failed',
+      'too-large',
+      'blocked-consent',
+      'invalid',
+    ] as const;
+    for (const state of states) {
+      const result = renderScene(scene(rectWith(paint())), {
+        remoteImage: () => state,
+      });
+      expect(isPlaceholder(result), state).toBe(true);
+      expect(result.warnings).toEqual([]);
+      expect(result.imageUrls).toEqual([URL]);
+    }
+  });
+
+  it('loaded sem a imagem ou com tamanho zero cai no reservado; a função que lança também', () => {
+    const noImage = renderScene(scene(rectWith(paint())), {
+      remoteImage: () => ({ state: 'loaded' }),
+    });
+    expect(isPlaceholder(noImage)).toBe(true);
+    const zero = renderScene(scene(rectWith(paint())), {
+      remoteImage: () => loaded(0, 0),
+    });
+    expect(isPlaceholder(zero)).toBe(true);
+    const throws = renderScene(scene(rectWith(paint())), {
+      remoteImage: () => {
+        throw new Error('x');
+      },
+    });
+    expect(isPlaceholder(throws)).toBe(true);
+  });
+
+  it('sem a função, reservado; a URL ainda é registrada para a camada saber', () => {
+    const result = renderScene(scene(rectWith(paint())));
+    expect(isPlaceholder(result)).toBe(true);
+    expect(result.imageUrls).toEqual([URL]);
+  });
+
+  it('opaque aparece no canvas principal e vira reservado com pixelSafe', () => {
+    const opaque: RemoteImageView = { ...loaded(), state: 'opaque' };
+    const main = renderScene(scene(rectWith(paint())), {
+      remoteImage: () => opaque,
+      pixelSafe: false,
+    });
+    expect(imageOf(main)).toBeInstanceOf(Konva.Image);
+    const safe = renderScene(scene(rectWith(paint())), {
+      remoteImage: () => opaque,
+      pixelSafe: true,
+    });
+    expect(isPlaceholder(safe)).toBe(true);
+    const ofShapes = (r: ReturnType<typeof renderScene>) => r.root.find('Image').length;
+    expect(ofShapes(safe)).toBe(0);
+    // pixelSafe não esconde a imagem com CORS.
+    const cors = renderScene(scene(rectWith(paint())), {
+      remoteImage: () => loaded(),
+      pixelSafe: true,
+    });
+    expect(imageOf(cors)).toBeInstanceOf(Konva.Image);
+  });
+
+  it('fit cover recorta o centro da fonte para cobrir a caixa', () => {
+    // Fonte 200×100 numa caixa 40×40: escala 0,4, recorte de 100×100 centrado em x=50.
+    const result = renderScene(scene(rectWith(paint({ fit: 'cover' }))), {
+      remoteImage: () => loaded(200, 100),
+    });
+    const image = imageOf(result);
+    expect(image.width()).toBe(40);
+    expect(image.height()).toBe(40);
+    expect(image.crop()).toEqual({ x: 50, y: 0, width: 100, height: 100 });
+  });
+
+  it('o fit é cover quando não vem', () => {
+    const result = renderScene(scene(rectWith(paint())), {
+      remoteImage: () => loaded(100, 200),
+    });
+    expect(imageOf(result).crop()).toEqual({ x: 0, y: 50, width: 100, height: 100 });
+  });
+
+  it('fit contain encaixa a fonte inteira, centralizada', () => {
+    const result = renderScene(scene(rectWith(paint({ fit: 'contain' }))), {
+      remoteImage: () => loaded(200, 100),
+    });
+    const image = imageOf(result);
+    expect([image.x(), image.y(), image.width(), image.height()]).toEqual([
+      0, 10, 40, 20,
+    ]);
+    expect(image.cropWidth()).toBeFalsy();
+  });
+
+  it('fit fill estica a imagem pela caixa inteira', () => {
+    const result = renderScene(scene(rectWith(paint({ fit: 'fill' }))), {
+      remoteImage: () => loaded(200, 100),
+    });
+    const image = imageOf(result);
+    expect([image.x(), image.y(), image.width(), image.height()]).toEqual([0, 0, 40, 40]);
+  });
+
+  it('respeita cornerRadius e a opacidade do paint', () => {
+    const result = renderScene(scene(rectWith(paint({ opacity: 0.5 }), 6)), {
+      remoteImage: () => loaded(),
+    });
+    expect(imageOf(result).cornerRadius()).toBe(6);
+    expect(imageOf(result).opacity()).toBe(0.5);
+  });
+
+  it('nunca cria Image para a URL remota', () => {
+    const original = globalThis.Image;
+    let created = 0;
+    globalThis.Image = class {
+      constructor() {
+        created += 1;
+      }
+    } as unknown as typeof Image;
+    try {
+      renderScene(scene(rectWith(paint())), { remoteImage: () => loaded() });
+      renderScene(scene(rectWith(paint())), { remoteImage: () => 'loading' });
+    } finally {
+      globalThis.Image = original;
+    }
+    expect(created).toBe(0);
+  });
+});
+
+describe('imageFit', () => {
+  it('cover com fonte mais alta recorta em cima e embaixo', () => {
+    const fit = imageFit('cover', { width: 100, height: 50 }, { width: 50, height: 100 });
+    expect(fit.crop).toEqual({ x: 0, y: 37.5, width: 50, height: 25 });
   });
 });

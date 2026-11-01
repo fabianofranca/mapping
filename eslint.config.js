@@ -84,8 +84,9 @@ const konvaFreeDirs = ['ui', 'app', 'store', 'storage', 'i18n', 'theme', 'utils'
 // (abrir e recarregar) e, no controller, as conferências de existência e a criação da pasta.
 // Os seletores ficam em constantes nomeadas porque `no-restricted-syntax` de um bloco
 // posterior SUBSTITUI o anterior nos arquivos em comum: outro conjunto para `src/ui/**` ou
-// `src/app/**` (ex.: o do foco, fase 8.3) precisa ser juntado ao mesmo bloco
-// (`[...sessionStorageSyntaxRules, ...outros]`). `tests/tooling/sessionStorageLint.test.ts`
+// `src/app/**` (ex.: o do foco, fase 8.3, ou `imageCreationSyntaxRules`, a decisão 14 das
+// imagens remotas, que vale em todo `src/**` menos nas exceções) precisa ser juntado ao mesmo
+// bloco (`[...sessionStorageSyntaxRules, ...imageCreationSyntaxRules, ...outros]`). `tests/tooling/sessionStorageLint.test.ts`
 // prova que a regra pega o padrão antigo em `src/app/` e `src/ui/`.
 const mappingCall = (method) =>
   `CallExpression[callee.type='MemberExpression'][callee.property.name='${method}']`;
@@ -142,6 +143,45 @@ const storageGlobalProperties = ['window', 'globalThis', 'self'].flatMap((object
   })),
 );
 const storageGlobalExceptions = ['src/utils/safeStorage.ts', 'src/storage/local.ts'];
+
+// Decisão 14 da etapa "Imagens remotas" (PLAN.md): um só criador de imagem. Nenhum código monta
+// URL de imagem por fora da política de URL e do consentimento; só o carregador
+// (`src/canvas/components/imageLoader.ts`) e `src/storage/**` (imagens do projeto, por `blob:`)
+// podem criar `Image`, elemento `img` ou atribuir `src`. Vale em `src/**` e `lab/**`.
+const imageCreationMessage =
+  'Nenhum código monta URL de imagem por fora da política de URL e do consentimento: use o carregador (src/canvas/components/imageLoader.ts); imagens do projeto ficam em src/storage/ (PLAN.md, decisão 14).';
+const imageCreationSyntaxRules = [
+  { selector: "NewExpression[callee.name='Image']", message: imageCreationMessage },
+  {
+    selector:
+      'CallExpression[callee.property.name=/^createElement(NS)?$/] > Literal.arguments[value=/^(img|image)$/i]',
+    message: imageCreationMessage,
+  },
+  {
+    selector:
+      "AssignmentExpression[left.type='MemberExpression'][left.property.name=/^(src|srcset)$/]",
+    message: imageCreationMessage,
+  },
+  {
+    selector:
+      "AssignmentExpression[left.type='MemberExpression'][left.computed=true][left.property.value=/^(src|srcset)$/]",
+    message: imageCreationMessage,
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='setAttribute'] > Literal.arguments:first-child[value=/^(src|srcset)$/i]",
+    message: imageCreationMessage,
+  },
+  {
+    selector: "CallExpression[callee.property.name='fromURL']",
+    message: imageCreationMessage,
+  },
+];
+// Arquivos que podem criar imagem (cada um recebe só as regras da sessão, não estas).
+const imageCreationExceptions = [
+  'src/canvas/components/imageLoader.ts',
+  'src/storage/**',
+];
 
 // Restrições de import do mcp/ (ver o bloco "Servidor MCP" abaixo).
 const mcpImportPatterns = [
@@ -248,23 +288,54 @@ export default tseslint.config(
       ],
     },
   },
-  // Só a sessão lê e grava o mapping.json (fase 8.1; constantes definidas acima).
+  // Só a sessão lê e grava o mapping.json (fase 8.1) e só o carregador cria imagem (decisão 14
+  // das imagens remotas); constantes definidas acima. Os arquivos permitidos a criar imagem
+  // (`imageCreationExceptions`) recebem só as regras da sessão.
   {
     files: ['src/**/*.{ts,tsx}'],
     ignores: [
       'src/store/session.ts',
       'src/storage/loadProject.ts',
       'src/app/controller.ts',
+      ...imageCreationExceptions,
     ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...sessionStorageSyntaxRules,
+        ...imageCreationSyntaxRules,
+      ],
+    },
+  },
+  {
+    files: ['src/canvas/components/imageLoader.ts', 'src/storage/**/*.{ts,tsx}'],
+    ignores: ['src/storage/loadProject.ts'],
     rules: { 'no-restricted-syntax': ['error', ...sessionStorageSyntaxRules] },
   },
   {
     files: ['src/store/session.ts'],
-    rules: { 'no-restricted-syntax': ['error', ...sessionFileSyntaxRules] },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...sessionFileSyntaxRules,
+        ...imageCreationSyntaxRules,
+      ],
+    },
   },
   {
     files: ['src/app/controller.ts'],
-    rules: { 'no-restricted-syntax': ['error', ...controllerFileSyntaxRules] },
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...controllerFileSyntaxRules,
+        ...imageCreationSyntaxRules,
+      ],
+    },
+  },
+  // O laboratório também não cria imagem por fora (sem as regras da sessão, que são do app).
+  {
+    files: ['lab/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-syntax': ['error', ...imageCreationSyntaxRules] },
   },
   // Armazenamento do navegador (fase 8.4; constantes definidas acima).
   {
@@ -359,7 +430,8 @@ export default tseslint.config(
   // classe de outro componente (`docs/ARCHITECTURE.md`, "Foco e teclado"). No flat config o
   // último bloco vence por regra, então estes blocos repetem os seletores da sessão (8.1)
   // para os mesmos arquivos: `sessionStorageSyntaxRules` em src/ui e src/app e
-  // `controllerFileSyntaxRules` no controller (exceção da 8.1). Outra fase que use
+  // `controllerFileSyntaxRules` no controller (exceção da 8.1), mais `imageCreationSyntaxRules`
+  // (decisão 14 das imagens remotas) em todos eles. Outra fase que use
   // `no-restricted-syntax` nestes arquivos junta os seletores dela aqui.
   {
     files: ['src/{ui,app}/**/*.{ts,tsx}'],
@@ -368,6 +440,7 @@ export default tseslint.config(
       'no-restricted-syntax': [
         'error',
         ...sessionStorageSyntaxRules,
+        ...imageCreationSyntaxRules,
         ...focusSyntaxRules,
       ],
     },
@@ -378,6 +451,7 @@ export default tseslint.config(
       'no-restricted-syntax': [
         'error',
         ...sessionStorageSyntaxRules,
+        ...imageCreationSyntaxRules,
         ...classSelectorRules,
       ],
     },
@@ -388,6 +462,7 @@ export default tseslint.config(
       'no-restricted-syntax': [
         'error',
         ...controllerFileSyntaxRules,
+        ...imageCreationSyntaxRules,
         ...focusSyntaxRules,
       ],
     },

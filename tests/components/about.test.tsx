@@ -28,7 +28,7 @@ describe('Configurações › Sobre', () => {
 
     await user.click(within(about).getByRole('button', { name: t('about.copy') }));
     expect(writeText).toHaveBeenCalledWith(
-      `build: ${BUILD_ID}\nchannel: main\nschema: ${SCHEMA_VERSION}`,
+      `build: ${BUILD_ID}\nchannel: main\nschema: ${SCHEMA_VERSION}\nremoteImages: 0 allowed origins`,
     );
     expect(within(about).getByText(t('diagnostics.copied'))).toBeTruthy();
   });

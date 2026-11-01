@@ -58,4 +58,79 @@ describe('component.schema.json', () => {
   it('recusa id fora do padrão', () => {
     expect(checkSchema(schema, { ...clone(), id: 'Ruim' }).length).toBeGreaterThan(0);
   });
+
+  describe('nó image (formatVersion 3)', () => {
+    const image = (extra: Record<string, unknown> = {}): Record<string, unknown> => ({
+      type: 'image',
+      src: { $field: 'foto' },
+      fit: 'cover',
+      width: 40,
+      height: 40,
+      cornerRadius: 20,
+      ...extra,
+    });
+    const v3 = (children: Record<string, unknown>[]): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 3,
+      id: 'avatar',
+      name: 'Avatar',
+      size: { width: 200, height: 56 },
+      template: { type: 'frame', layout: { type: 'row', gap: 8 }, children },
+    });
+    const withImage = (node: Record<string, unknown>): Record<string, unknown> =>
+      v3([node]);
+
+    it('aceita image com $field e com literal https, e o parseComponent também', () => {
+      for (const node of [image(), image({ src: 'https://exemplo.invalid/a.png' })]) {
+        const c = withImage(node);
+        expect(checkSchema(schema, c)).toEqual([]);
+        expect(parseComponent(c).ok).toBe(true);
+      }
+    });
+
+    it('aceita image dentro de repeat', () => {
+      const c = v3([
+        {
+          type: 'repeat',
+          field: 'pessoas',
+          template: { type: 'frame', children: [image({ src: { $field: 'foto' } })] },
+        },
+      ]);
+      expect(checkSchema(schema, c)).toEqual([]);
+      expect(parseComponent(c).ok).toBe(true);
+    });
+
+    it('recusa image sem src', () => {
+      const node = image();
+      delete node.src;
+      expect(checkSchema(schema, withImage(node)).length).toBeGreaterThan(0);
+    });
+
+    it('recusa src com $concat, com default e literal que não é https', () => {
+      for (const src of [
+        { $concat: ['https://', { $field: 'host' }] },
+        { $field: 'foto', default: 'https://exemplo.invalid/a.png' },
+        'http://exemplo.invalid/a.png',
+        'a.png',
+      ])
+        expect(
+          checkSchema(schema, withImage(image({ src }))).length,
+          JSON.stringify(src),
+        ).toBeGreaterThan(0);
+    });
+
+    it('recusa fit inválido e hug em width ou height', () => {
+      expect(
+        checkSchema(schema, withImage(image({ fit: 'stretch' }))).length,
+      ).toBeGreaterThan(0);
+      for (const key of ['width', 'height'])
+        expect(
+          checkSchema(schema, withImage(image({ [key]: 'hug' }))).length,
+          key,
+        ).toBeGreaterThan(0);
+      expect(
+        checkSchema(schema, withImage(image({ width: 'fill', height: '50%' }))),
+      ).toEqual([]);
+    });
+  });
 });

@@ -21,6 +21,7 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - Testes: o build falha se a CSP faltar ou se os hashes não baterem com os blocos embutidos; um teste Playwright confirma que uma requisição para um host externo é bloqueada.
 - **Depende de:** nada. Pode rodar em paralelo com as fases do redesign.
 - **Resultado:** `pwa/csp.ts` + plugin `contentSecurityPolicy` (`vite.config.ts`); o build falha sem CSP ou com hash divergente; testes em `tests/app/cspBuild.test.ts`, `tests/e2e/csp.spec.ts` e `tests/e2e/cspServiceWorker.spec.ts`. Documentação em [`ARCHITECTURE.md`](ARCHITECTURE.md#content-security-policy-etapa-24) e no README. O zod passou a rodar em `jitless` (sem `eval`).
+- **Depois (etapa Imagens remotas, épico `epic/imagens-remotas`, RI2):** o `img-src` da app passou a liberar `https:` e `http:` e a CSP ganhou Trusted Types (`require-trusted-types-for 'script'; trusted-types default`) e o `<meta name="referrer" content="no-referrer">`; `connect-src 'none'` continua. O guia e o lab usam o perfil `static` (a política desta etapa, sem imagem remota). Ver [`ARCHITECTURE.md`](ARCHITECTURE.md#content-security-policy-etapa-24).
 
 ## Etapa 2.5 — Trava de marcações e imagens (concluída)
 
@@ -211,6 +212,18 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Fora (decidido):** grupos que se cruzam; seleção por laço; container dentro de container; o visualizador embutível (`dist-viewer/`); layout de celular. Ficaram para depois: `rect` em fração do container, `members` em `get_container`, restrições de origem e destino de seta por tipo e a rodada dirigida do Cowork (a critério do dono).
 - **Depende de:** etapa Container (concluída).
 - **Próxima etapa:** nenhuma detalhada; a ordem do que vier é do dono, entre as "Evoluções" abaixo. Nada entra antes de o `PLAN.md` detalhar a etapa.
+
+## Etapa — Imagens remotas (concluída, épico `epic/imagens-remotas`)
+
+- **Concluída em 2026-10-31** (fases RI0 a RI4, PRs #252 a #255); histórico em [`history/PLAN-etapa-imagens-remotas.md`](history/PLAN-etapa-imagens-remotas.md). Componente `formatVersion` 3 e MCP 0.11.0; sem schema (v13), especialização nem formato de proposta novos (v3).
+- **Objetivo:** um componente de uma especialização pode mostrar uma imagem remota (URL `https:`) no canvas, de qualquer origem e para qualquer especialização, com o máximo de segurança possível.
+- **Entrou:**
+  - **RI1, formato e política:** nó `image` no componente, política pura de URL, validador, reservado no MCP (que nunca baixa a imagem) e a biblioteca de exemplo `pessoas`.
+  - **RI2, CSP:** `https:` e `http:` no `img-src`, Trusted Types, `no-referrer` e um só criador de imagem remota (lint).
+  - **RI3, carregador e consentimento:** carregador com limites, consentimento por origem (faixa e Configurações › Privacidade), interruptores de qualquer origem, `http`, rede local e servidor sem CORS, Diagnóstico e galeria do Catálogo.
+  - **RI4, visualizador e roteiro:** visualizador embutível 0.3.0 com `remoteImages` e `allowOrigin`; roteiro R15, imagem de teste e servidor local; duas rodadas dirigidas do Cowork.
+- **Fora (decidido):** imagem local no pacote, imagem com cookie ou cabeçalho de autenticação, o MCP baixar a imagem, imagem como preenchimento de `ellipse` e `path`. Ficaram para depois: nova tentativa quando o aviso de rede local do Chrome estoura o tempo limite, conferência do Trusted Types no Edge e lista de origens fixada no build.
+- **Depende de:** etapa Biblioteca (concluída).
 
 ## Etapa — Proposto com componentes (concluída, épico `epic/proposto-componentes`)
 

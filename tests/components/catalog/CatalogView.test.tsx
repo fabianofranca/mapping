@@ -1,4 +1,6 @@
+import { signal } from '@preact/signals';
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -286,6 +288,26 @@ describe('galeria', () => {
     await user.click(entryButton('Button'));
     // O playground rasteriza de novo; a galeria não: no máximo 2 chamadas a mais (uma por página).
     expect(galleryCalls() - after).toBeLessThanOrEqual(2);
+  });
+
+  it('uma imagem remota que termina de carregar (época das imagens) rasteriza a galeria de novo', () => {
+    const imagesEpoch = signal(0);
+    const engine = createCatalogRenderer(approximateMeasurer, rasterize, imagesEpoch);
+    view({ initialTypeId: 'm3-button', renderer: engine });
+    const gallery = () =>
+      screen.getByRole('region', { name: t('catalog.gallery.title') });
+    const srcs = () =>
+      within(gallery())
+        .getAllByRole('img')
+        .map((i) => i.getAttribute('src'));
+    const before = srcs();
+    const calls = rasterize.mock.calls.length;
+    act(() => {
+      imagesEpoch.value += 1;
+    });
+    const after = srcs();
+    expect(rasterize.mock.calls.length).toBeGreaterThan(calls);
+    expect(after).not.toEqual(before);
   });
 
   it('exemplo que não desenha mostra o motivo', () => {

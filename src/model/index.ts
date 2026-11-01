@@ -56,6 +56,7 @@ export * from './typedDisplay';
 export * from './codeLocations';
 export * from './codeBlueprint';
 export * from './sources';
+export * from './remoteImages';
 export * from './proposal';
 export * from './proposalChanges';
 export * from './proposalReview';

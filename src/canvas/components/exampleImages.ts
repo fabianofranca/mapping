@@ -1,12 +1,21 @@
 /**
  * Imagens estáticas da galeria do Catálogo: a cena de um exemplo desenhada pelo motor numa Stage
  * fora da tela e entregue como PNG `data:`. Gera-se uma vez e guarda-se em cache pela chave
- * (especialização@versão, tipo, exemplo, tamanho, época das fontes). Konva fica aqui, não na UI.
+ * (especialização@versão, tipo, exemplo, tamanho, época das fontes e das imagens). Konva fica aqui,
+ * não na UI.
+ *
+ * Auditoria das leituras de pixel (RI3, decisão 17 do PLAN.md): `stage.toDataURL` abaixo é a única
+ * leitura de pixels sobre uma camada que pode ter componente com imagem. Ela usa sempre
+ * `pixelSafe: true` (a imagem `opaque`, carregada sem CORS, nunca entra: vale o reservado) e as
+ * imagens com CORS (`crossOrigin`) não contaminam o canvas. O minimapa (`src/ui/Minimap.tsx` e
+ * `src/canvas/minimap.ts`) é DOM e não lê pixel; `src/storage/imageCrop.ts`, `imageImport.ts` e
+ * `src/ui/review/ImageCompare.tsx` só leem as imagens do projeto (`blob:`). Um teste
+ * (`tests/canvas/pixelReads.test.ts`) falha se uma nova leitura aparecer fora dessa lista.
  */
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import type { FrameNode } from '../../model/components/scene';
-import { type RenderPalette, renderScene } from './renderScene';
+import { type RemoteImageResult, type RenderPalette, renderScene } from './renderScene';
 
 export interface ExampleImageOptions {
   /** Padrão 2 (nítido em telas comuns). */
@@ -14,6 +23,11 @@ export interface ExampleImageOptions {
   readonly palette?: Partial<RenderPalette>;
   /** Cor de fundo atrás do desenho (CSS); ausente = transparente. */
   readonly background?: string;
+  /**
+   * Resolve a URL do nó `image` (as duas portas da app e o carregador, de `remoteImages.ts`).
+   * Sem ela, toda imagem remota é o reservado. O resultado `opaque` nunca é desenhado aqui.
+   */
+  readonly remoteImage?: (url: string) => RemoteImageResult;
 }
 
 /** Rasteriza a cena; injetável para os testes (sem canvas real no jsdom). */
@@ -36,7 +50,14 @@ export const renderSceneToDataUrl: SceneRasterizer = (root, options = {}) => {
     }
     const rendered = renderScene(
       { root, warnings: [] },
-      options.palette === undefined ? {} : { palette: options.palette },
+      {
+        // O `toDataURL` abaixo lê pixels: imagem `opaque` (sem CORS) fica de fora.
+        pixelSafe: true,
+        ...(options.palette === undefined ? {} : { palette: options.palette }),
+        ...(options.remoteImage === undefined
+          ? {}
+          : { remoteImage: options.remoteImage }),
+      },
     );
     layer.add(rendered.root);
     layer.draw();
@@ -59,10 +80,12 @@ export interface ExampleImageKey {
   readonly height: number;
   /** Muda quando as fontes terminam de carregar (o texto mede diferente). */
   readonly fontsEpoch: number;
+  /** Muda quando uma imagem remota termina de carregar ou o consentimento muda (decisão 7). */
+  readonly imagesEpoch: number;
 }
 
 export function exampleImageKey(key: ExampleImageKey): string {
-  return `${key.specId}@${key.version}|${key.typeId}|${key.example}|${key.width}×${key.height}|${key.fontsEpoch}`;
+  return `${key.specId}@${key.version}|${key.typeId}|${key.example}|${key.width}×${key.height}|${key.fontsEpoch}|${key.imagesEpoch}`;
 }
 
 export interface ExampleImageCache {

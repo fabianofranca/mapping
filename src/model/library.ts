@@ -188,6 +188,41 @@ function repeatNodes(
   return out;
 }
 
+/**
+ * Os nós `image` com `src: { "$field": … }` do JSON do template, com o caminho do `src` e o
+ * `repeat` que os envolve (`undefined` fora de `repeat`). O `src` literal de forma inválida
+ * é erro do nível 1 (o parser).
+ */
+function imageFieldNodes(
+  node: unknown,
+  path: string,
+  repeat: Record<string, unknown> | undefined,
+  out: {
+    srcPath: string;
+    key: string;
+    repeat: Record<string, unknown> | undefined;
+  }[] = [],
+): { srcPath: string; key: string; repeat: Record<string, unknown> | undefined }[] {
+  if (Array.isArray(node)) {
+    node.forEach((item, i) => imageFieldNodes(item, `${path}[${i}]`, repeat, out));
+    return out;
+  }
+  if (!isRecord(node)) return out;
+  if (node.type === 'image') {
+    const src = node.src;
+    if (isRecord(src) && typeof src.$field === 'string') {
+      out.push({ srcPath: `${path}.src.$field`, key: src.$field, repeat });
+    }
+    return out;
+  }
+  for (const [key, value] of Object.entries(node)) {
+    // `repeat`: o `template` lê colunas da linha; os nós de dentro têm o `repeat` como contexto.
+    const inner = node.type === 'repeat' && key === 'template' ? node : repeat;
+    imageFieldNodes(value, `${path}.${key}`, inner, out);
+  }
+  return out;
+}
+
 class Collector {
   readonly issues: LibraryIssue[] = [];
   error(file: string, path: string, message: string): void {
@@ -426,6 +461,7 @@ function typeCoherence(
     );
   }
   const innerUsed = repeatChecks(type, path, rawTemplate, out);
+  imageChecks(type, path, rawTemplate, out);
   for (const [key, value] of Object.entries(component.preview ?? {})) {
     const field = type.fields.find((f) => f.key === key);
     if (field === undefined) {
@@ -529,6 +565,48 @@ function repeatChecks(
     }
   }
   return innerUsed;
+}
+
+/**
+ * O `src` de um nó `image` ligado a um campo (`{ "$field": k }`) lê um texto: fora de `repeat`,
+ * `k` é campo `string` do tipo; dentro, é coluna `string` da `table` do `repeat` (que sombreia o
+ * campo do tipo) ou, se não for coluna, campo `string` do tipo. Chave inexistente já é apontada
+ * pelas outras conferências; nenhuma origem é declarada.
+ */
+function imageChecks(
+  type: SpecAnnotationType,
+  path: string,
+  rawTemplate: unknown,
+  out: Collector,
+): void {
+  const fields = new Map(type.fields.map((f) => [f.key, f]));
+  for (const { srcPath, key, repeat } of imageFieldNodes(
+    rawTemplate,
+    'template',
+    undefined,
+  )) {
+    const table = repeat === undefined ? undefined : fields.get(String(repeat.field));
+    const column =
+      table?.type === 'table' ? table.columns.find((c) => c.key === key) : undefined;
+    if (column !== undefined) {
+      if (column.type !== 'string') {
+        out.error(
+          path,
+          srcPath,
+          `o src da imagem lê a coluna "${key}" da table "${table?.key ?? ''}" do tipo "${type.id}", que é ${column.type}, não string`,
+        );
+      }
+      continue;
+    }
+    const own = fields.get(key);
+    if (own !== undefined && own.type !== 'string') {
+      out.error(
+        path,
+        srcPath,
+        `o src da imagem lê "${key}", que é um campo ${own.type} do tipo "${type.id}", não string`,
+      );
+    }
+  }
 }
 
 /** Passos da migração que sai da versão anterior e citam o que não existia nela (aviso). */
