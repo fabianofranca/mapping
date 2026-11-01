@@ -9,7 +9,7 @@
     "height": 76
   },
   "minSize": {
-    "width": 120,
+    "width": 280,
     "height": 56
   },
   "sizing": {
@@ -20,7 +20,7 @@
     "label": "Senha",
     "hasText": "true",
     "placeholder": "",
-    "supportingText": "Mínimo de 8 caracteres",
+    "supportingText": "",
     "style": "filled",
     "enabled": "true",
     "isError": "false",

@@ -891,7 +891,7 @@ O relatório traz `ok` (sem nenhum erro), `issues` (todos, na ordem dos níveis)
 
 As três portas — **o aplicativo, o servidor MCP e a skill `spec-author`** — chamam a **mesma função** e mostram o mesmo relatório. Isso é da fase B2 da etapa Biblioteca; hoje a função existe e é coberta por testes, mas nenhuma porta a chama ainda.
 
-O pacote Material 3 do repositório (`examples/libraries/material3/`) passa pelo validador com **zero erros** e **42 avisos**: duas fontes ausentes (o `.ttf` da Roboto não é versionado) e 40 de "conteúdo maior que a caixa" na prova de desenho, quase todos no tamanho mínimo, onde o conteúdo real não cabe mesmo (no tamanho inicial só o chip "Selecionado" avisa). O teste `tests/model/libraryExamples.test.ts` fixa esse resultado.
+O pacote Material 3 do repositório (`examples/libraries/material3/`) passa pelo validador com **zero erros** e **3 avisos**: duas fontes ausentes (o `.ttf` da Roboto não é versionado) e um "conteúdo maior que a caixa" na prova de desenho, do chip "Selecionado" no tamanho inicial. A prova de desenho só desenha o tamanho inicial (`size`): o `minSize` não é desenhado, porque o aviso nele só serviria a quem escreve o componente. O teste `tests/model/libraryExamples.test.ts` fixa esse resultado.
 
 ## Regras de validação
 

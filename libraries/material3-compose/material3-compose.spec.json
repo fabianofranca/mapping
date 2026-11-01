@@ -46,12 +46,12 @@
   "fonts": [
     {
       "family": "Roboto",
-      "file": "fonts/Roboto-Regular.ttf",
+      "file": "fonts/Roboto-Regular.woff2",
       "weight": 400
     },
     {
       "family": "Roboto",
-      "file": "fonts/Roboto-Medium.ttf",
+      "file": "fonts/Roboto-Medium.woff2",
       "weight": 500
     }
   ],

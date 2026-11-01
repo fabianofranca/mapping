@@ -477,14 +477,48 @@ function typeCoherence(
     }
   }
   const drawn = new Set([...used2, ...innerUsed]);
+  const coded = fieldsUsedByCode(type);
   type.fields.forEach((field, index) => {
-    if (drawn.has(field.key)) return;
+    // Um campo que o desenho não usa mas o `code` usa (modificadores, descrição de acessibilidade)
+    // não é um campo esquecido: ele existe para o código.
+    if (drawn.has(field.key) || coded.has(field.key)) return;
     out.warning(
       pkg.specPath,
       `${base}.fields[${index}]`,
       `o campo "${field.key}" do tipo "${type.id}" não é usado pelo desenho do componente ${path}`,
     );
   });
+}
+
+/**
+ * Campos do tipo que o `code` (de qualquer plataforma, com os casos de `variants`) usa: chave de
+ * `params` ou de `values`, o `field` de `variants` ou uma palavra inteira das `notes`. As `notes`
+ * são o lugar onde o `code` explica como um campo vira modificador ou argumento.
+ */
+function fieldsUsedByCode(type: SpecAnnotationType): Set<string> {
+  const used = new Set<string>();
+  const notes: string[] = [];
+  const take = (entry: {
+    params?: Record<string, string>;
+    values?: Record<string, unknown>;
+    notes?: string;
+  }): void => {
+    for (const key of Object.keys(entry.params ?? {})) used.add(key);
+    for (const key of Object.keys(entry.values ?? {})) used.add(key);
+    if (entry.notes !== undefined) notes.push(entry.notes);
+  };
+  for (const entry of Object.values(type.code ?? {})) {
+    take(entry);
+    if (entry.variants === undefined) continue;
+    used.add(entry.variants.field);
+    for (const kase of Object.values(entry.variants.cases)) take(kase);
+  }
+  const text = notes.join('\n');
+  for (const field of type.fields) {
+    const escaped = field.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp(`(?<![\\w$])${escaped}(?![\\w$])`).test(text)) used.add(field.key);
+  }
+  return used;
 }
 
 /** O `preview` de um campo `table` é uma lista de linhas, e as colunas das linhas existem. */

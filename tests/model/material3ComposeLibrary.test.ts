@@ -7,6 +7,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
+import { isFontPath } from '../../src/model/components/library';
 import { parseSpecText } from '../../src/model/spec';
 import type { Spec, SpecAnnotationType, SpecField } from '../../src/model/spec';
 import { resolveCode } from '../../src/model/codeVariants';
@@ -213,64 +214,6 @@ const VARIANT_SYMBOLS: Record<
   },
 };
 
-/** Avisos que a biblioteca aceita (arquivo, caminho, mensagem), em ordem: ver o teste dos avisos. */
-const FIXED_WARNINGS: [string, string, string][] = [
-  [
-    SPEC_FILE,
-    'fonts[0].file',
-    'arquivo da fonte "Roboto" não encontrado: fonts/Roboto-Regular.ttf; o desenho usa a fonte do sistema',
-  ],
-  [
-    SPEC_FILE,
-    'fonts[1].file',
-    'arquivo da fonte "Roboto" não encontrado: fonts/Roboto-Medium.ttf; o desenho usa a fonte do sistema',
-  ],
-  ...(
-    [
-      ['layers[1].annotationTypes[1].fields[1]', 'contentDescription', 'icon'],
-      ['layers[2].annotationTypes[1].fields[4]', 'width', 'button'],
-      ['layers[2].annotationTypes[1].fields[5]', 'height', 'button'],
-      ['layers[2].annotationTypes[1].fields[6]', 'weight', 'button'],
-      ['layers[2].annotationTypes[2].fields[1]', 'contentDescription', 'fab'],
-      ['layers[2].annotationTypes[4].fields[11]', 'width', 'text-field'],
-      ['layers[2].annotationTypes[4].fields[12]', 'height', 'text-field'],
-      ['layers[2].annotationTypes[4].fields[13]', 'weight', 'text-field'],
-      ['layers[2].annotationTypes[8].fields[5]', 'width', 'card'],
-      ['layers[2].annotationTypes[8].fields[6]', 'height', 'card'],
-      ['layers[2].annotationTypes[8].fields[7]', 'weight', 'card'],
-      ['layers[2].annotationTypes[11].fields[3]', 'sheetPeekHeight', 'bottom-sheet'],
-      ['layers[2].annotationTypes[12].fields[1]', 'contentDescription', 'icon-button'],
-      [
-        'layers[2].annotationTypes[13].fields[1]',
-        'contentDescription',
-        'icon-toggle-button',
-      ],
-      ['layers[2].annotationTypes[16].fields[6]', 'width', 'slider'],
-      ['layers[2].annotationTypes[16].fields[7]', 'weight', 'slider'],
-      ['layers[2].annotationTypes[17].fields[6]', 'width', 'search-bar'],
-      ['layers[2].annotationTypes[17].fields[7]', 'height', 'search-bar'],
-      ['layers[2].annotationTypes[17].fields[8]', 'weight', 'search-bar'],
-      ['layers[2].annotationTypes[24].fields[9]', 'width', 'secure-text-field'],
-      ['layers[2].annotationTypes[24].fields[10]', 'height', 'secure-text-field'],
-      ['layers[2].annotationTypes[24].fields[11]', 'weight', 'secure-text-field'],
-      ['layers[2].annotationTypes[26].fields[0]', 'style', 'alert-dialog'],
-      ['layers[2].annotationTypes[26].fields[6]', 'contentDescription', 'alert-dialog'],
-      ['layers[2].annotationTypes[33].fields[2]', 'preferredItemWidth', 'carousel'],
-      ['layers[2].annotationTypes[33].fields[3]', 'itemWidth', 'carousel'],
-      ['layers[2].annotationTypes[33].fields[5]', 'width', 'carousel'],
-      ['layers[2].annotationTypes[33].fields[6]', 'height', 'carousel'],
-      ['layers[2].annotationTypes[33].fields[7]', 'weight', 'carousel'],
-      ['layers[2].annotationTypes[35].fields[6]', 'width', 'swipe-to-dismiss'],
-      ['layers[2].annotationTypes[35].fields[7]', 'height', 'swipe-to-dismiss'],
-      ['layers[2].annotationTypes[35].fields[8]', 'weight', 'swipe-to-dismiss'],
-    ] as const
-  ).map(([path, key, type]): [string, string, string] => [
-    SPEC_FILE,
-    path,
-    `o campo "${key}" do tipo "${type}" não é usado pelo desenho do componente components/${type}.json`,
-  ]),
-];
-
 function listDisk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
     e.isDirectory()
@@ -279,9 +222,13 @@ function listDisk(dir: string): string[] {
   );
 }
 
-const files = listDisk(ROOT)
+const files: { path: string; text?: string; binary?: true }[] = listDisk(ROOT)
   .sort()
-  .map((path) => ({ path, text: readFileSync(join(ROOT, path), 'utf8') }));
+  .map((path) =>
+    isFontPath(path)
+      ? { path, binary: true as const }
+      : { path, text: readFileSync(join(ROOT, path), 'utf8') },
+  );
 const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
 
 function loadSpec(): Spec {
@@ -296,7 +243,6 @@ const typeOf = (id: string): SpecAnnotationType => {
   if (t === undefined) throw new Error(`tipo ${id} ausente`);
   return t;
 };
-const key3 = (w: readonly [string, string, string]): string => w.join('\u0000');
 
 describe('biblioteca Material 3 (Compose)', () => {
   it('tem a especialização, as fontes, um componente e um documento por tipo', () => {
@@ -304,6 +250,9 @@ describe('biblioteca Material 3 (Compose)', () => {
       [
         SPEC_FILE,
         'fonts/LEIA-ME.txt',
+        'fonts/LICENSE-Roboto.txt',
+        'fonts/Roboto-Medium.woff2',
+        'fonts/Roboto-Regular.woff2',
         ...ALL_TYPES.map((id) => `components/${id}.json`),
         ...ALL_TYPES.map((id) => `docs/${id}.md`),
       ].sort(),
@@ -328,26 +277,8 @@ describe('biblioteca Material 3 (Compose)', () => {
       components: 50,
       docs: 50,
     });
-    const all = report.warnings.map((w): [string, string, string] => [
-      w.file,
-      w.path,
-      w.message,
-    ]);
-    const fixedKeys = new Set(FIXED_WARNINGS.map(key3));
-    // As duas fontes ausentes e os campos de modificador que o desenho não usa.
-    expect(
-      all
-        .filter((w) => fixedKeys.has(key3(w)))
-        .map(key3)
-        .sort(),
-    ).toEqual(FIXED_WARNINGS.map(key3).sort());
-    // O resto é só tamanho mínimo aproximado; nenhum aviso no tamanho inicial.
-    const rest = all.filter((w) => !fixedKeys.has(key3(w)));
-    for (const [, , message] of rest) {
-      expect(message).toContain('tamanho mínimo');
-      expect(message.endsWith('(aproximado)')).toBe(true);
-    }
-    expect(all.some(([, , m]) => m.includes('tamanho inicial'))).toBe(false);
+    // Nenhum aviso: as fontes vêm no pacote e o `code` cobre os campos que o desenho não usa.
+    expect(report.warnings.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
   });
 
   it('é a formatVersion 9 com a plataforma compose no androidx fixado no commit', () => {

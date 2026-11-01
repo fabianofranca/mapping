@@ -29,6 +29,22 @@ Especialização `formatVersion` 9 (`id` `material3-compose`) que mapeia os comp
 
 Cada tipo tem componente, documento em `material3-compose/docs/` e de um a três exemplos. O catálogo do Material 3 estável no Compose fixado está completo (o side sheet não tem composable público).
 
+**Tamanho mínimo (`minSize`).** Só tem `minSize` o componente cujo composable define um mínimo oficial **nos dois eixos**, com o valor do código do androidx no commit fixado (`compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`); sem fonte oficial, o campo não existe e vale só o mínimo geral da app (8 px).
+
+| Tipo                                | `minSize`              | Fonte oficial                                                                                                     |
+| ----------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `button`                            | 58 × 40                | `Button.kt:527,533` (`ButtonDefaults.MinWidth`, `MinHeight`), aplicado em `Button.kt:144`                         |
+| `segmented-button`                  | 58 × 40 (por segmento) | `SegmentedButton.kt:155-157` (os mesmos `ButtonDefaults`)                                                         |
+| `text-field`, `secure-text-field`   | 280 × 56               | `TextFieldDefaults.kt:75,81` (`MinHeight`, `MinWidth`), aplicado em `TextField.kt:305` e `SecureTextField.kt:173` |
+| `search-bar`                        | 360 × 56               | `SearchBar.kt:2712` (`SearchBarMinWidth`) e `:1036` (`InputFieldHeight`)                                          |
+| `tooltip`                           | 40 × 24                | `Tooltip.kt:1642-1643` (`TooltipMinWidth`, `TooltipMinHeight`)                                                    |
+| `badge`                             | 6 × 6                  | `Badge.kt:169` com `BadgeTokens.Size` (6 dp, sem conteúdo; com conteúdo o mínimo é 16 × 16)                       |
+| `fab`                               | 40 × 40                | `FloatingActionButton.kt:212` (FAB pequeno; o regular é 56 × 56 e o grande 96 × 96, o piso é o da menor variante) |
+| `extended-fab`                      | 56 × 56                | `FloatingActionButton.kt:407-412` (recolhido: 56; com rótulo a largura mínima é 80)                               |
+| `icon-button`, `icon-toggle-button` | 40 × 40                | `IconButton.kt:178` (`smallContainerSize`, `SmallIconButtonTokens.ContainerHeight` e `IconSize`)                  |
+
+Sem `minSize`, por não haver mínimo oficial nos dois eixos: os contêineres e o layout (`scaffold`, `surface`, `box`, `row`, `column`, `lazy-*`, `flow-row`, `spacer`, `horizontal-pager`), `text`, `icon`, `image`, `card`, `carousel`, `pull-to-refresh`, `swipe-to-dismiss`, `bottom-sheet`, `date-picker`, `time-picker` e `progress-indicator` (tamanho fixo por forma). Com mínimo oficial em **um eixo só** (a largura de `alert-dialog` 280 e `navigation-drawer` 240, a altura de `top-app-bar` 64, `navigation-bar` 80, `short-navigation-bar` 64, `list-item` 56 a 88, `snackbar` 48 e `chip` 32, entre outros): o formato exige os dois eixos, então ficam sem `minSize`. `checkbox`, `radio-button`, `switch` e `slider` também ficam sem: o mínimo oficial é do controle, e o desenho da biblioteca inclui o rótulo ou um polegar maior.
+
 **Padrões.**
 
 - **Espaços (lambdas) no `notes`.** `onClick`, `icon = { … }`, `title = { … }` e `content` não são campos: o `params` passa só valores simples (booleanos, cores, números, enums) e o `notes` diz como montar cada espaço com os campos (`label = { Text(label) }`).
@@ -41,4 +57,4 @@ Cada tipo tem componente, documento em `material3-compose/docs/` e de um a três
 
 **Fora desta versão.** A API expressiva (`ButtonGroup`, `ToggleButton`, `FloatingActionButtonMenu` e parentes), que não existe como composable público no commit fixado; o side sheet; e o Scrim, que o `ModalBottomSheet` já desenha.
 
-As fontes (`fonts/`) não são versionadas: veja `material3-compose/fonts/LEIA-ME.txt` (a ausência delas gera dois avisos aceitos). O teste `tests/model/material3ComposeLibrary.test.ts` valida o pacote.
+As fontes (`fonts/`) vêm no pacote: a Roboto 400 e 500 em `.woff2` (subconjunto latino, Fontsource 5.3.0, licença OFL em `fonts/LICENSE-Roboto.txt`; veja `material3-compose/fonts/LEIA-ME.txt`), então a biblioteca valida **sem nenhum aviso**. O teste `tests/model/material3ComposeLibrary.test.ts` valida o pacote.

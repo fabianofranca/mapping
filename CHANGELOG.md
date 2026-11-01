@@ -24,6 +24,7 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 ### Corrigido
 
+- A validação da biblioteca não avisa mais "campo não usado pelo desenho" quando o `code` do tipo usa o campo (`params`, `values`, `variants` ou as `notes`): a Material 3 (Compose) passou de 82 para 50 avisos. O tamanho mínimo (`minSize`) dos componentes da biblioteca ficou só onde o código do androidx define um mínimo nos dois eixos (valores corrigidos: Button 58 × 40, campos de texto 280 × 56, Search bar 360 × 56); nos demais o campo foi removido, e a prova de desenho da validação passou a desenhar só o tamanho inicial (o tamanho mínimo não é mais desenhado): a Material 3 (Compose) passou a trazer a fonte Roboto (`.woff2` do Fontsource, licença OFL) e validar sem nenhum aviso, e a biblioteca de exemplo `examples/libraries/material3/` foi de 42 para 3.
 - O zip exportado passa a levar, sem alteração, a cópia em `specs/` de uma especialização que a app não consegue ler (versão de formato maior, arquivo inválido ou `id` diferente); antes ela ficava de fora e o zip citava uma cópia ausente.
 
 ## Imagens remotas — 2026-11-01 (épico `epic/imagens-remotas`, MCP 0.11.0, schema v13)

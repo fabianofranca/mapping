@@ -6,14 +6,15 @@ import type { LibraryIssue } from './library';
 import type { Spec, SpecAnnotationType } from './spec';
 
 // Nível 3 do validador da biblioteca: a prova de desenho. Instancia cada componente com os
-// valores do `preview` e de cada exemplo de valores, no tamanho inicial e no mínimo, e passa
+// valores do `preview` e de cada exemplo de valores, no tamanho inicial, e passa
 // cada exemplo de sistema externo pela declaração (`origins`). Puro: recebe tudo já lido
 // (`library.ts` monta o contexto) e nunca lê disco nem rede.
 //
 // Ordem das issues (fixa, os testes dependem dela): tipos na ordem da especialização (camadas e
 // tipos em ordem); em cada tipo com componente válido, primeiro o `preview` (ou os valores
-// padrão, quando o componente não tem `preview`), depois cada exemplo de valores, em cada caso
-// primeiro o `size` e depois o `minSize`; depois os exemplos de sistema externo do tipo; por
+// padrão, quando o componente não tem `preview`), depois cada exemplo de valores, sempre no
+// `size` (o `minSize` não é desenhado: o aviso de conteúdo maior que a caixa nele só serve a quem
+// escreve o componente, não a quem vê o preview); depois os exemplos de sistema externo do tipo; por
 // fim as telas de exemplo de cada origem, na ordem de `origins`.
 //
 // A medida do texto é a aproximada (`approximateMeasurer`): quem desenha de verdade usa a do
@@ -104,9 +105,6 @@ function typeDrawing(
   const sizes: { label: string; box: Box }[] = [
     { label: 'tamanho inicial', box: { x: 0, y: 0, ...component.size } },
   ];
-  if (component.minSize !== undefined) {
-    sizes.push({ label: 'tamanho mínimo', box: { x: 0, y: 0, ...component.minSize } });
-  }
   for (const drawCase of drawCases(type, component, componentPath, specPath, basePath)) {
     for (const size of sizes) {
       const where = `tipo "${type.id}", ${drawCase.label}, ${size.label} ${size.box.width}×${size.box.height}`;

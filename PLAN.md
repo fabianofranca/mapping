@@ -1,6 +1,6 @@
 # Mapping — Plano de desenvolvimento
 
-> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje as etapas em andamento são a **Biblioteca Material 3**, épico `epic/material3`, que aguarda a rodada do Cowork e o fechamento, e a **Marcação pai**, épico `epic/marcacao-pai`, que aguarda o fechamento; a **Imagens remotas** foi a última concluída). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje as etapas em andamento são a **Biblioteca Material 3**, épico `epic/material3`, que já passou pela rodada do Cowork e aguarda o fechamento, e a **Marcação pai**, épico `epic/marcacao-pai`, que aguarda o fechamento; a **Imagens remotas** foi a última concluída; a **Exemplos enxutos**, épico `epic/exemplos-enxutos`, está planejada e só começa depois que o `epic/material3` entrar na `main`). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 
 ## Produto
 
@@ -61,6 +61,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/history/relato-2026-10-26-selecao-pelo-nome.md`](docs/history/relato-2026-10-26-selecao-pelo-nome.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/selecao-pelo-nome` (build `678f941`, R0 e R1.1 a R1.6a): 13 ✅, nenhum achado |
 | [`docs/history/relato-2026-10-28-marcacao-pai.md`](docs/history/relato-2026-10-28-marcacao-pai.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/marcacao-pai` (build `5d7ac40`): 19 ✅, 1 achado baixo (texto cortado sem dica), corrigido no MP1b |
 | [`docs/history/relato-2026-10-29-sugestoes-campo.md`](docs/history/relato-2026-10-29-sugestoes-campo.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/sugestoes-campo` (build `f034a3a`): 24 ✅, 2 achados baixos, tratados no PR #250 |
+| [`docs/history/relato-2026-11-01-material3.md`](docs/history/relato-2026-11-01-material3.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/material3` (build `11d9b65`, MCP 0.12.0-rc.1): 35 ✅, 1 ❌ baixo (R10.7: o guia estava velho; o componente sem container vai para o canvas desde a etapa Marcações espaciais), textos do guia corrigidos |
 | [`docs/history/revisao-tecnica-2026-10-12.md`](docs/history/revisao-tecnica-2026-10-12.md) | Revisão técnica dirigida (síntese e seis relatórios, 71 achados); origem da etapa 8 |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ordem das próximas etapas (etapas Container, Marcações espaciais, notas e setas, Proposto com componentes e Sugestões no campo de texto concluídas), marco de uso real e evoluções |
 | [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) | Redesign da interface (etapa 2.3, concluída; referência): componentes, tokens, mudanças B#, propostas P# e decisões |
@@ -202,11 +203,76 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 - [x] Roteiro na seção 8 do `docs/TESTING.md` (R17), feito pelo agente sozinho: aplicar `libraries/material3-compose/`, mapear uma tela com Scaffold, Top app bar, LazyColumn com List items, um Button outlined e um FAB, e conferir pelo MCP que `get_code_hints` devolve a árvore com os composables certos (teste de `tests/tooling/testingGuide.test.ts`)
 - [x] Zip da biblioteca para aplicar pela app (`examples/material3-compose.zip`, ao lado dos outros zips de teste; a pasta `libraries/` fica só com as fontes), conferido por teste
 - [ ] PR da MD5 aberto com o rótulo `mcp-rc` (última fase do épico)
-- [ ] Rodada dirigida do Cowork, quando o dono puder, e o relato entre os documentos da etapa
+- [x] Rodada dirigida do Cowork e o relato entre os documentos da etapa (`docs/history/relato-2026-11-01-material3.md`: build `11d9b65`, 35 ✅ e 1 ❌ baixo)
 - [ ] Fechamento: histórico em `docs/history/PLAN-etapa-material3.md`, `CHANGELOG.md`, `CLAUDE.md` e `docs/ROADMAP.md` (quando o dono decidir mesclar o épico, depois do `epic/imagens-remotas`)
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
 
+**Avisos do pacote.** O validador deixou de avisar "campo não usado pelo desenho" quando o `code` do tipo usa o campo (`params`, `values`, `variants` ou palavra das `notes`): a biblioteca passou de 82 para 50 avisos. Depois, o `minSize` dos componentes foi conferido contra o código do androidx no commit fixado: ficou só onde há mínimo oficial nos dois eixos (15 tipos mantidos, 4 deles depois removidos por serem mínimo do controle e não do desenho com rótulo; 35 removidos) e, como o aviso de conteúdo maior que a caixa no tamanho mínimo só serve a quem escreve o componente, a prova de desenho passou a desenhar só o tamanho inicial: a biblioteca ficou com 2 avisos (a fonte Roboto, depois resolvida com os `.woff2` no pacote: 0 avisos) e a de exemplo `examples/libraries/material3/` foi de 42 para 3. A tabela de fontes está em `libraries/README.md`.
+
+**Rodada do Cowork da etapa (2026-11-01).** R0, R16, R17, R3.6 e R10 no build `11d9b65`: 35 ✅ e 1 ❌ baixo (R10.7). O ❌ foi texto velho do guia, não defeito: desde a etapa Marcações espaciais, o "Adicionar" do Catálogo sem seleção e sem container sob o centro da vista põe o componente no canvas (`componentTarget`, regra 4), e o botão só fica desabilitado em projeto somente leitura. Guia corrigido (R10.7; R16.3 com `background`; R16.9 com a dica `.tooltip`; R16.10 pela **Abrir biblioteca** com uma pasta de pacote; R17.1 com os 82 avisos; R17.9 com "Variantes (Estilo)"). Fica para decidir: o botão do diálogo do Catálogo diz "Adicionar à tela" mesmo quando o destino é o canvas (o rótulo da Paleta já muda).
+
 **Registro da MD5.** Zip em `examples/material3-compose.zip` (conteúdo da pasta na raiz, gerado por `scripts/material3ComposeZip.mjs`, sem fonte própria além de `libraries/material3-compose/`; `tests/examples/material3ComposeZip.test.ts` prova que o zip tem exatamente o conteúdo da pasta e que é um pacote válido). Roteiro R17 (9 passos, quadro "Comece aqui" na linha 19) e `tests/mcp/material3Compose.test.ts`, que mapeia a mesma tela com o MCP real e confere a árvore de `get_code_hints` e o `find_by_code` pela variante. No `get_code_hints`, só as anotações de tipos com `variants` trazem `code` na `tree`; as demais têm o composable em `types`.
+
+## Etapa — Exemplos enxutos (planejada, épico `epic/exemplos-enxutos`)
+
+- **Objetivo:** o dono decidiu (2026-11-01) que `examples/libraries/` guarde só o que as bibliotecas prontas de `libraries/` (`notas`, `kotlin` e `material3-compose`) **não cobrem**. Hoje há três pacotes de exemplo: `material3` (15 tipos), `analytics` (2) e `pessoas` (1). O `material3` e o `pessoas` repetem o que a `material3-compose` já mostra (containers, fontes, slot, `$switch`, nó `image`); o `analytics` mostra `appliesTo` (tipo só de seta ou só de marcação), que nenhuma biblioteca de `libraries/` mostra; o `material3` mostra `origins` e `sources` (ligar o tipo a um sistema externo, com telas de exemplo), que também ficam descobertos.
+- **Depende de:** o épico `epic/material3` ter entrado na `main` (a `material3-compose` e as mudanças do validador só existem lá). O branch do épico nasce da `main` atualizada.
+- **Versões:** sem schema, formato de especialização, de proposta ou de componente novos, e sem MCP novo (a versão do servidor não muda). É uma limpeza de exemplos, fixtures e roteiros.
+- **Coordenador e esforço** (regra da seção "Uso de modelos" do [`CLAUDE.md`](CLAUDE.md)):
+
+| Fase | Coordenador | Esforço do coordenador | Subagentes                                                                    |
+| ---- | ----------- | ---------------------- | ----------------------------------------------------------------------------- |
+| EX1  | Opus        | high                   | Sonnet medium (migração dos testes, por grupo de arquivos); Haiku low         |
+| EX2  | Sonnet      | medium                 | Sonnet medium (pacote, documentos, roteiros); Haiku low                       |
+| EX3  | Sonnet      | medium                 | Sonnet medium; Haiku low                                                      |
+
+### Decisões
+
+1. **Ficam em `examples/libraries/`:** `analytics` (cobre `appliesTo`) e uma biblioteca **SDUI enxuta**, de 2 a 3 tipos, que cobre `origins` e `sources` com uma tela de exemplo do sistema externo. Saem a `material3` de 15 tipos e a `pessoas`.
+2. **A SDUI enxuta nasce da `material3` antiga, cortada:** só os tipos e componentes necessários para mostrar a origem (por exemplo Button e Text), com `sources`, `origins` e um exemplo de tela. `examples/specs/sdui.json` (especialização isolada, `formatVersion` 5) continua como exemplo de arquivo único. O `id` e o nome do pacote novo saem na EX2, sem colidir com o `id` `sdui` desse arquivo.
+3. **Os testes deixam de depender de uma biblioteca de exemplo.** A base fixa dos testes (hoje a `material3` de 15 tipos: ids `m3-button`, `m3-chip`, `m3-row`…) vira uma **biblioteca mínima só de teste**, em `tests/fixtures/`, com os tipos que os testes usam (contêineres com slot, botão, chip, campos, barra de navegação, cartão). Não vira a `material3-compose`, que cresce a cada versão do androidx. O gerador (`scripts/buildLibraryExamples.mjs`, `scripts/libraryExamples.ts`) e a dependência do laboratório (`lab/`) saem junto com a pasta antiga.
+4. **Roteiros:** o R15 (imagens remotas) passa a usar um tipo com imagem da `material3-compose` (`image`, `card` ou `list-item`); o R12.19 continua com a `analytics`; o R3.10, o R3.12, o R9, o R10 e o R12.12 passam a usar a `material3-compose` (pasta ou `material3-compose.zip`). Todo passo continua feito pelo agente sozinho.
+5. **Projeto de exemplo e guia:** `examples/exemplo-completo/` (e o zip) e o guia interativo (`public/guia/`) trocam o `specs/material3/` pela SDUI enxuta ou ficam só com as notas; a escolha sai na EX3, junto da conferência do tamanho do zip.
+6. **Sem perda de cobertura:** cada recurso que a `material3` antiga ensinava continua com um exemplo (`origins` e `sources` na SDUI enxuta; `appliesTo` na `analytics`; o resto na `material3-compose`), e um teste da etapa confere isso.
+
+### Fora (de propósito)
+
+- Alterar a `material3-compose`, as notas ou a Kotlin.
+- Aceitar `minSize` de um eixo só ou qualquer outra mudança de formato.
+- Dar a Roboto às bibliotecas de exemplo restantes (a `analytics` e a SDUI enxuta não usam fontes).
+
+### Fases
+
+#### EX1 — Fixture mínima de teste e migração dos testes
+
+**Coordenador:** Opus. **Esforço:** high; subagentes Sonnet medium (um grupo de testes cada) e Haiku low. Decisão 3.
+
+**Toca em:** `tests/fixtures/` (novo), `tests/storage/packageFixture.ts`, `tests/components/libraryHarness.ts`, `tests/model/` (`catalog`, `componentArrange`, `componentCatalog`, `libraryPackage`, `libraryExamples`), `tests/store/` (`componentLibrary`, `libraryPreview`, `proposalPackage`, `sessionComponents`, `sessionPackage`, `sessionPackageDisk`), `tests/mcp/` (`library`, `libraryUpdate`, `containerComponents`), `tests/canvas/renderPerformance.test.ts`, `tests/components/catalog/CatalogView.test.tsx`, `tests/app/` (`controller`, `library`), `tests/e2e/` (`catalog`, `container`, `proposedComponentsFixture`).
+
+- [ ] Biblioteca mínima de teste em `tests/fixtures/` (os tipos que os testes usam, com componente, documento e exemplos) e um carregador único, no lugar de `examples/libraries/material3/`
+- [ ] Todos os testes que citavam `examples/libraries/material3/` apontam para a fixture (ids novos; contagens de avisos e de tipos ajustadas), sem mudar o que cada teste prova
+- [ ] O orçamento de desempenho do canvas continua medindo a mesma carga (mesma quantidade de componentes)
+- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+
+#### EX2 — Biblioteca SDUI enxuta e o roteiro de `origins`
+
+**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Decisões 1, 2 e 6.
+
+- [ ] `examples/libraries/<id>/` com a SDUI enxuta (2 a 3 tipos, `sources`, `origins`, uma tela de exemplo do sistema externo, componentes e documentos), validada por teste próprio no molde de `tests/model/libraryExamples.test.ts`
+- [ ] `docs/SPEC-FORMAT.md` e `libraries/README.md` apontam para ela como o exemplo de `origins` e `sources`
+- [ ] Teste de cobertura (decisão 6): cada recurso (`origins`, `sources`, `appliesTo`) tem um exemplo em `examples/libraries/` ou `libraries/`
+- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+
+#### EX3 — Remoção, roteiros e fechamento
+
+**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Decisões 3 a 5.
+
+- [ ] Remover `examples/libraries/material3/`, `examples/libraries/pessoas/`, `scripts/buildLibraryExamples.mjs`, `scripts/libraryExamples.ts` e o script do `package.json`, e tirar a menção em `lab/README.md`
+- [ ] Projeto de exemplo (`examples/exemplo-completo/` e o zip) e guia interativo regenerados sem o `specs/material3/` antigo (`npm run build:example` e `npm run build:guia`)
+- [ ] Roteiros R3.10, R3.12, R9, R10, R12.12 e R15 reescritos (decisão 4), `docs/TESTING.md`, `docs/TESTING-COWORK.md`, `docs/GUIDE.md`, `docs/COMPONENT-FORMAT.md`, `docs/SPEC-FORMAT.md`, a skill `spec-author` e `src/i18n/specHelp.ts` sem citar os pacotes removidos (teste do guia)
+- [ ] Rodada dirigida do Cowork (R3, R9, R10, R12 e R15) e o relato entre os documentos da etapa
+- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-exemplos-enxutos.md`, `CHANGELOG.md`, `CLAUDE.md` e `docs/ROADMAP.md`
+- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
 
 ## Etapa — Imagens remotas (concluída, épico `epic/imagens-remotas`)
 

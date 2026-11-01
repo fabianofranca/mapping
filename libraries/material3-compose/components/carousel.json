@@ -8,10 +8,6 @@
     "width": 360,
     "height": 205
   },
-  "minSize": {
-    "width": 120,
-    "height": 80
-  },
   "sizing": {
     "width": "fill",
     "height": 205

@@ -5,7 +5,6 @@
   "name": "Date picker",
   "description": "Calendário de mês de 360 de largura: cabeçalho com título e a data escolhida, mês exibido com setas e a grade de dias com o dia marcado (single) ou o intervalo (range). A grade é sempre um mês de 31 dias que começa numa quarta-feira.",
   "size": { "width": 360, "height": 469 },
-  "minSize": { "width": 360, "height": 469 },
   "sizing": { "width": 360, "height": "hug" },
   "preview": {
     "title": "",

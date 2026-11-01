@@ -598,7 +598,18 @@ describe('validação', () => {
   });
 
   it('lista longa de avisos começa recolhida e expande', async () => {
-    const { user } = view();
+    // O pacote do repositório tem poucos avisos: aqui a lista é longa de propósito.
+    const warnings = Array.from({ length: 8 }, (_, i) => ({
+      file: 'material3.spec.json',
+      path: `layers[0].annotationTypes[${i}]`,
+      message: `aviso de teste ${i}`,
+      severity: 'warning' as const,
+    }));
+    const long: Catalog = {
+      ...base,
+      report: { ...base.report, issues: warnings, errors: [], warnings },
+    };
+    const { user } = view({}, long);
     const summary = screen.getByRole('region', { name: t('catalog.view.validation') });
     expect(within(summary).queryByRole('group')).toBeNull();
     await user.click(

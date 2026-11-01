@@ -5,7 +5,6 @@
   "name": "Time picker",
   "description": "Seletor de hora em um diálogo de 328: no modo picker, os campos de hora e minuto e o relógio de 256 com o seletor; no modo input, só os campos com os rótulos. Sem 24 horas, mostra o AM/PM.",
   "size": { "width": 328, "height": 456 },
-  "minSize": { "width": 328, "height": 143 },
   "sizing": { "width": 328, "height": "hug" },
   "preview": {
     "title": "Selecionar horário",
