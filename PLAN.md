@@ -156,10 +156,10 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Toca em:** os testes que leem os pacotes que saem: `tests/storage/packageFixture.ts`, `tests/components/libraryHarness.ts` (e quem o usa), `tests/components/SpecsDialog.test.tsx`, `tests/model/` (`catalog`, `componentArrange`, `componentCatalog`, `libraryPackage`, `libraryExamples`, `spec`, `specV4`), `tests/store/` (`componentLibrary`, `libraryPreview`, `sessionComponents`, `sessionPackage`), `tests/mcp/` (`library`, `libraryUpdate`, `containerComponents`), `tests/canvas/renderPerformance.test.ts`, `tests/app/` (`controller`, `library`), `tests/examples/pessoasLibrary.test.ts`, `tests/lab/viewer/remoteImages.test.ts`, `tests/e2e/` (`catalog`, `container`, `remoteImages`). Conferir com `grep -rn "examples/libraries/\(material3\|pessoas\)\|specs/biblioteca.json" tests scripts`.
 
-- [ ] `git mv` dos três para `tests/fixtures/` (decisão 4) e os testes apontando para lá, com os mesmos ids e contagens; `LEAVING` vazia no teste de cobertura; as seções dos três saem do guia dos exemplos e a tabela "Onde ver cada recurso" não os cita mais
-- [ ] Remover `scripts/buildLibraryExamples.mjs`, `scripts/libraryExamples.ts`, o script `build:examples` do `package.json` e do `CLAUDE.md`, e a menção em `lab/README.md`
-- [ ] Roteiros da decisão 6 reescritos (R3.10, R3.12, R3.14 a R3.17, R9, R10, R12.12, R15) e o preparo da seção 2; `docs/TESTING.md`, `docs/TESTING-COWORK.md`, `docs/GUIDE.md`, `docs/COMPONENT-FORMAT.md`, `docs/SPEC-FORMAT.md`, `libraries/README.md` e a skill `spec-author` sem citar os pacotes removidos (`grep -rn "examples/libraries/\(material3\|pessoas\)\|specs/biblioteca.json"` fora de `docs/history/` volta vazio)
-- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
+- [x] `git mv` dos três para `tests/fixtures/` (decisão 4) e os testes apontando para lá, com os mesmos ids e contagens; `LEAVING` vazia no teste de cobertura; as seções dos três saem do guia dos exemplos e a tabela "Onde ver cada recurso" não os cita mais
+- [x] Remover `scripts/buildLibraryExamples.mjs`, `scripts/libraryExamples.ts`, o script `build:examples` do `package.json` e do `CLAUDE.md`, e a menção em `lab/README.md`
+- [x] Roteiros da decisão 6 reescritos (R3.10, R3.12, R3.14 a R3.17, R9, R10, R12.12, R15) e o preparo da seção 2; `docs/TESTING.md`, `docs/TESTING-COWORK.md`, `docs/GUIDE.md`, `docs/COMPONENT-FORMAT.md`, `docs/SPEC-FORMAT.md`, `libraries/README.md` e a skill `spec-author` sem citar os pacotes removidos (`grep -rn "examples/libraries/\(material3\|pessoas\)\|specs/biblioteca.json"` fora de `docs/history/` volta vazio)
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
 
 #### EX4 — Rodada do Cowork e fechamento
 
