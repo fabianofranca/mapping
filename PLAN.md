@@ -122,7 +122,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 - [x] Etapa replanejada neste `PLAN.md` (a primeira versão deixava sem dono os testes da `pessoas`, o `proposta-componentes.zip`, o R3.14 a R3.17 e os recursos da origem que o `biblioteca.json` não mostra)
 - [x] `tests/examples/featureCoverage.test.ts` com `LEAVING`, `PENDING_AFTER_REMOVAL` e `MISSING_TODAY` (172 recursos de especialização, derivados do `specSchema`, e 131 de componente; a origem, que o schema não declara, e o componente, lido à mão, em listas conferidas contra o código)
 - [x] Guia dos exemplos (`examples/README.md`, decisão 7) do estado de hoje, com o que sai marcado, e `tests/examples/examplesReadme.test.ts`
-- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
 #### EX1 — Biblioteca `sdui-backend` e a origem no roteiro
 
