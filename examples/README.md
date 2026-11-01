@@ -70,7 +70,7 @@ Os nomes dos botões vêm da app em português. Na tela inicial: **Abrir pasta**
 
 **Roteiros.** R17.
 
-## Biblioteca que fica (`examples/libraries/`)
+## Bibliotecas que ficam (`examples/libraries/`)
 
 ### `examples/libraries/analytics/`
 
@@ -85,6 +85,23 @@ Os nomes dos botões vêm da app em português. Na tela inicial: **Abrir pasta**
 - Um documento por tipo e um exemplo nomeado em cada.
 
 **Roteiros.** R12.19 e R12.20.
+
+### `examples/libraries/sdui-backend/`
+
+**O que é.** O exemplo da **origem executável**: um sistema externo fictício (um backend de SDUI) descreve telas em JSON e a declaração `origins` as traduz em componentes. Seis tipos: **Column** (com slot), **Button**, **FAB** (flutuante), **Bottom sheet** (modal), **Scrim** e **Endpoint** (anotação só de marcação, sem componente). Versão 2, sem fontes.
+
+**Como abrir.** **Especializações** › **Aplicar pasta…** e escolher a pasta. Ou **Abrir biblioteca** para só ver o Catálogo (sem erro nem aviso).
+
+**O que dá para ver.**
+
+- A origem (`origins`): `booleans`, `background.values`, raízes da tela com `anchor`, `margin` e `scrim` (o tipo `sdui-scrim`) e a tela de exemplo `examples/settings.sdui.json`.
+- As correspondências com o sistema externo (`sources`): `slot` e `ignore` no tipo, `id` de um sistema não executável (`figma`), `path` e `values` nos campos e na coluna de uma tabela, e o exemplo de um nó do sistema externo (`examples/button.sdui.json`, na Galeria do Button).
+- O contrato de versão (`migrations`): uma migração da versão 1 para a 2 com os seis passos (`rename-type`, `rename-field`, `map-values`, `fill-field`, `remove-field`, `remove-type` em `convert` e em `delete`).
+- O tipo **Endpoint**: `appliesTo: marking`, `linkedRef` (o texto do tipo da resposta grava o vínculo junto), e uma tabela com colunas `number`, `date`, `enum` com origem e `ref` que aceita `free`.
+- Um container com `background` (`containers[].background`).
+- Recursos do componente: `font.decoration` (sublinhado e tachado no Button), `verticalAlign` `top` e `bottom` e `layout.align` `end` (Bottom sheet), `fillRule` `nonzero` e `evenodd` (FAB) e uma imagem com `src` literal (Bottom sheet).
+
+**Roteiros.** R10.10 e R10.11.
 
 ## Bibliotecas de exemplo que saem (`examples/libraries/`)
 
@@ -246,7 +263,7 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 
 ## Onde ver cada recurso
 
-Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executável e de migração dependem hoje dos exemplos que saem (`material3` e `biblioteca.json`); a biblioteca `sdui-backend` os assume na etapa Exemplos enxutos. O que ainda não tem exemplo nenhum aparece na lista do teste `tests/examples/featureCoverage.test.ts`, e a etapa os cobre.
+Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executável, de `sources` e de migração estão na `sdui-backend`; os que dependem de arquivo de fonte e de itálico (`fonts[].style`) não têm exemplo, por decisão do dono (a fonte é fixa no cliente mobile, fora do SDUI; ficam em `EXCEPTIONS` do teste `tests/examples/featureCoverage.test.ts`, que diz qual exemplo cobre cada chave e cada valor).
 
 ### Especialização
 
@@ -254,7 +271,7 @@ Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executáv
 | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | `string`                                                     | Nota: `texto` (`notas`); Class: `name` (`kotlin`)                                                                                 |
 | `number`                                                     | `surface.tonalElevation` (`material3-compose`); `endpoint.timeoutMs` (`modelo-de-dados.json`)                                     |
-| `date`                                                       | `classe.revisadoEm` (`modelo-de-dados.json`)                                                                                      |
+| `date`                                                       | `classe.revisadoEm` (`modelo-de-dados.json`); coluna `since` de `endpoint.params` (`sdui-backend`)                                |
 | `enum` e booleano como `enum`                                | `button.enabled` e `button.style` (`material3-compose`); visibilidade das classes (`kotlin`)                                      |
 | `table`                                                      | Tabela: `linhas` (`notas`); Propriedades e Funções (`kotlin`); `onClick.parametros` (`sdui.json`)                                 |
 | `ref` e `accepts`                                            | `outer` e **Tipo mapeado** (`kotlin`); `input.dado` com `free` (`sdui.json`)                                                      |
@@ -266,13 +283,13 @@ Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executáv
 | `platforms` e `repo` (`url`, `urlTemplate`, `ref`)           | `compose` fixado num commit (`material3-compose`); `android`, `ios` e `bff` (`sdui.json`)                                         |
 | `code`: `symbol`, `path`, `params`, `values`, `notes`        | Todos os tipos (`material3-compose`); `button` e `input` em três plataformas (`sdui.json`)                                        |
 | `variants` no `code`                                         | `button.style` e outros 25 tipos (`material3-compose`); a tabela de variantes no Catálogo                                         |
-| `containers` (tamanhos prontos)                              | Celular, Celular grande, Tablet e Desktop (`material3-compose`)                                                                   |
+| `containers` (tamanhos prontos)                              | Celular, Celular grande, Tablet e Desktop (`material3-compose`); `background` no Celular (`sdui-backend`)                         |
 | `fonts`                                                      | Roboto 400 e 500 em `.woff2` (`material3-compose`)                                                                                |
 | Tipo flutuante (`floating`)                                  | Nota e Tabela (`notas`); Evento (`analytics`)                                                                                     |
-| `appliesTo`                                                  | Transição, só em seta (`analytics`)                                                                                               |
+| `appliesTo`                                                  | Transição, só em seta (`analytics`); Endpoint, só em marcação (`sdui-backend`)                                                    |
 | `component`, `doc` e `examples` (pacote de biblioteca)       | Todas as pastas de `libraries/` e a `analytics`                                                                                   |
-| `origins`, `sources` e exemplo de tela de um sistema externo | `material3` e `biblioteca.json` (saem); passam à `sdui-backend`                                                                   |
-| `migrations`                                                 | `biblioteca.json` (sai); passa à `sdui-backend`                                                                                   |
+| `origins`, `sources` e exemplo de tela de um sistema externo | `sdui-backend` (e `material3` e `biblioteca.json`, que saem)                                                                      |
+| `migrations`                                                 | `sdui-backend` (e `biblioteca.json`, que sai)                                                                                     |
 | `formatVersion` 1                                            | `modelo-de-dados.json`                                                                                                            |
 | `formatVersion` 4 e 5                                        | `biblioteca.json` (4); `sdui.json` (5)                                                                                            |
 | `formatVersion` 6 a 9                                        | `material3` (6); `notas`, `analytics` e `pessoas` (7); `kotlin` (8); `material3-compose` (9)                                      |
@@ -295,7 +312,7 @@ Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executáv
 | Tamanho do nó: px, `fill`, `hug` e `%`         | px, `fill` e `hug` em todas; `%` no Slider e no Short navigation bar (`material3-compose`)                                                    |
 | `size`, `minSize` e `sizing`                   | Todos os componentes; `minSize` oficial só no Button, FAB, Text field e outros (`material3-compose`)                                          |
 | Âncoras (`anchors`)                            | `left`, `right`, `top`, `bottom`, `centerX` e `centerY` (`material3-compose`: FAB, Pull to refresh)                                           |
-| Âncoras da tela e película                     | `m3-scrim` e as raízes com `anchor` e `margin` (`material3`, sai; passa à `sdui-backend`)                                                     |
+| Âncoras da tela e película                     | `sdui-scrim` e as raízes com `anchor` e `margin` (`sdui-backend`; também `material3`, que sai)                                                |
 | Expressões `$field`, `$if`, `$switch`          | `kotlin` e `material3-compose`; `$field` com `default` em ambos                                                                               |
 | `$concat`                                      | Cabeçalho das classes (`kotlin`); Box, Column e Image (`material3-compose`)                                                                   |
 | Condições `$has`, `$eq`, `$not`, `$and`, `$or` | `$has` em `notas`; todas em `material3-compose`                                                                                               |
