@@ -103,6 +103,8 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 5. **O que a pessoa vê usa a `material3-compose`.** O projeto de exemplo (`examples/exemplo-completo/specs/material3-compose/`, cópia conferida por teste como hoje, e o zip), o guia interativo e o `proposta-componentes.zip` (R13) trocam o `material3` antigo pela `material3-compose`; as anotações e as instâncias passam aos tipos e campos dela. O zip do projeto de exemplo cresce (a `material3-compose` tem 50 tipos e a Roboto); a EX2 confere e registra o tamanho.
 6. **Roteiros:** o R3.10, o R3.12, o R3.14 a R3.17 (as cópias `mat-v3`, `mat-v4` e `mat-v5` com migrações), o R9, o R10, o R12.12 e o R13 passam à `material3-compose` (pasta ou `material3-compose.zip`); o R15 usa o tipo `image` dela (campo `url`); o R10 ganha os passos da origem (seção de origens do componente e a galeria com a tela de exemplo) na `sdui-backend`; o R12.19 continua com a `analytics`. Todo passo continua feito pelo agente sozinho (seção 8 do `docs/TESTING.md`).
 
+7. **Guia dos exemplos:** `examples/README.md` diz, para cada biblioteca de `libraries/` e cada exemplo de `examples/`, o que é, como abrir, o que dá para ver e que roteiros o usam, e termina com a tabela "Onde ver cada recurso". `tests/examples/examplesReadme.test.ts` exige uma seção por exemplo no disco e nenhuma seção de exemplo que não existe; cada fase que cria, troca ou remove um exemplo atualiza o guia no mesmo PR.
+
 ### Fora (de propósito)
 
 - Alterar a `material3-compose`, as notas ou a Kotlin.
@@ -115,10 +117,11 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 #### EX0 — Replanejamento e teste de cobertura
 
-**Coordenador:** Opus. **Esforço:** high; subagente Sonnet medium. Decisões 1 e 2.
+**Coordenador:** Opus. **Esforço:** high; subagentes Sonnet medium. Decisões 1, 2 e 7.
 
 - [x] Etapa replanejada neste `PLAN.md` (a primeira versão deixava sem dono os testes da `pessoas`, o `proposta-componentes.zip`, o R3.14 a R3.17 e os recursos da origem que o `biblioteca.json` não mostra)
 - [ ] `tests/examples/featureCoverage.test.ts` com `LEAVING`, `PENDING_AFTER_REMOVAL` e `MISSING_TODAY`
+- [ ] Guia dos exemplos (`examples/README.md`, decisão 7) do estado de hoje, com o que sai marcado, e `tests/examples/examplesReadme.test.ts`
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
 #### EX1 — Biblioteca `sdui-backend` e a origem no roteiro
@@ -128,7 +131,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 - [ ] `examples/libraries/sdui-backend/` (decisão 3) validada por teste no molde de `tests/model/libraryExamples.test.ts`, sem erro nem aviso no Diagnóstico
 - [ ] Exemplos para o que estiver em `MISSING_TODAY`, de preferência na `sdui-backend` ou na `analytics`; a lista fica vazia
 - [ ] `PENDING_AFTER_REMOVAL` vazia (a `sdui-backend` cobre o que só a `material3` antiga e o `biblioteca.json` mostravam)
-- [ ] R10 com os passos da origem na `sdui-backend` (a seção de origens e a galeria com a tela de exemplo); `docs/SPEC-FORMAT.md` e `libraries/README.md` apontam para ela como o exemplo de `origins`, `sources` e `migrations`
+- [ ] R10 com os passos da origem na `sdui-backend` (a seção de origens e a galeria com a tela de exemplo); `docs/SPEC-FORMAT.md` e `libraries/README.md` apontam para ela como o exemplo de `origins`, `sources` e `migrations`; seção dela no guia dos exemplos e a tabela "Onde ver cada recurso" atualizada
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
 #### EX2 — Exemplos distribuídos na `material3-compose`
@@ -141,6 +144,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 - [ ] Guia interativo regenerado, com os textos falando dos tipos da `material3-compose`
 - [ ] `proposta-componentes.zip` com a `material3-compose` (inclusive o tipo que só existe no pacote da proposta) e o R13 reescrito
 - [ ] Ajuda da especialização (`specHelp.ts`) sem ids do pacote antigo, em pt-BR e en-US
+- [ ] Guia dos exemplos: seções do projeto de exemplo e do `proposta-componentes.zip` atualizadas
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
 #### EX3 — Fixtures de teste, remoção e roteiros
@@ -149,7 +153,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Toca em:** os testes que leem os pacotes que saem: `tests/storage/packageFixture.ts`, `tests/components/libraryHarness.ts` (e quem o usa), `tests/components/SpecsDialog.test.tsx`, `tests/model/` (`catalog`, `componentArrange`, `componentCatalog`, `libraryPackage`, `libraryExamples`, `spec`, `specV4`), `tests/store/` (`componentLibrary`, `libraryPreview`, `sessionComponents`, `sessionPackage`), `tests/mcp/` (`library`, `libraryUpdate`, `containerComponents`), `tests/canvas/renderPerformance.test.ts`, `tests/app/` (`controller`, `library`), `tests/examples/pessoasLibrary.test.ts`, `tests/lab/viewer/remoteImages.test.ts`, `tests/e2e/` (`catalog`, `container`, `remoteImages`). Conferir com `grep -rn "examples/libraries/\(material3\|pessoas\)\|specs/biblioteca.json" tests scripts`.
 
-- [ ] `git mv` dos três para `tests/fixtures/` (decisão 4) e os testes apontando para lá, com os mesmos ids e contagens; `LEAVING` vazia no teste de cobertura
+- [ ] `git mv` dos três para `tests/fixtures/` (decisão 4) e os testes apontando para lá, com os mesmos ids e contagens; `LEAVING` vazia no teste de cobertura; as seções dos três saem do guia dos exemplos e a tabela "Onde ver cada recurso" não os cita mais
 - [ ] Remover `scripts/buildLibraryExamples.mjs`, `scripts/libraryExamples.ts`, o script `build:examples` do `package.json` e do `CLAUDE.md`, e a menção em `lab/README.md`
 - [ ] Roteiros da decisão 6 reescritos (R3.10, R3.12, R3.14 a R3.17, R9, R10, R12.12, R15) e o preparo da seção 2; `docs/TESTING.md`, `docs/TESTING-COWORK.md`, `docs/GUIDE.md`, `docs/COMPONENT-FORMAT.md`, `docs/SPEC-FORMAT.md`, `libraries/README.md` e a skill `spec-author` sem citar os pacotes removidos (`grep -rn "examples/libraries/\(material3\|pessoas\)\|specs/biblioteca.json"` fora de `docs/history/` volta vazio)
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
