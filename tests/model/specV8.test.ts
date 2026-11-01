@@ -55,9 +55,9 @@ function parsed(input: unknown): Spec {
 const str = (extra: Json = {}): Json => ({ key: 'tipo', type: 'string', ...extra });
 
 describe('formatVersion 8: suggestions', () => {
-  it('a versão atual é a 8 e as anteriores continuam aceitas', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(8);
-    expect(SPEC_FORMAT_VERSIONS).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  it('a versão atual é a 9 e as anteriores continuam aceitas', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(9);
+    expect(SPEC_FORMAT_VERSIONS).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     for (const v of SPEC_FORMAT_VERSIONS) expect(parseSpec(spec(v, str())).ok).toBe(true);
   });
 

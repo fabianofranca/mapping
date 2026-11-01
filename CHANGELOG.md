@@ -4,6 +4,30 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão em `docs/history/`.
 
+## Biblioteca Material 3 — 2026-11-01 (épico `epic/material3`, PR #260, MCP 0.12.0, schema v13)
+
+### Adicionado
+
+- Especialização `formatVersion` 9 com `variants` no `code` de uma plataforma: um campo `enum` do tipo escolhe a variante do código, que troca o `symbol` (em Compose, `Button`, `OutlinedButton`, `TextButton`), o `path` e as `notes` e soma `params` e `values` aos da base. Um nível só; as versões 1 a 8 continuam aceitas sem mudança, e `variants` numa versão anterior é o erro `só é permitido com formatVersion 9`, no caminho exato.
+- Tabela de variantes no Catálogo: abaixo do código da plataforma, "Variantes (campo)" lista cada valor e o símbolo dele.
+- Roteiro de teste R16 (Variantes no código), feito pelo agente sozinho.
+- A biblioteca **Material 3 (Compose)** traz a fonte Roboto (400 e 500, `.woff2` do Fontsource, licença OFL em `fonts/LICENSE-Roboto.txt`) e valida sem nenhum aviso.
+- `examples/material3-compose.zip`: o pacote `libraries/material3-compose/` compactado (o conteúdo na raiz), para aplicar em Especializações › **Aplicar zip…**; gerado por `npm run build:material3-zip` e conferido por teste.
+- Roteiro de teste R17 (Biblioteca Material 3 (Compose)), feito pelo agente sozinho: confere o zip e o pacote, aplica o zip na app, mapeia uma tela (Scaffold, Top app bar, LazyColumn com List items, Button outlined e FAB) por proposta e confere que `get_code_hints` devolve a árvore com os composables certos (`Scaffold`, `TopAppBar`, `LazyColumn`, `ListItem`, `OutlinedButton`, `FloatingActionButton`).
+- Biblioteca **Material 3 (Compose)** pronta para uso em `libraries/material3-compose/` (especialização `formatVersion` 9, não embutida: aplique pela pasta ou por um zip dela): 50 tipos em três camadas (Layout: Scaffold, Surface, Box, Row, Column, LazyColumn, LazyRow, LazyVerticalGrid, FlowRow, Spacer, HorizontalPager; Conteúdo: Text, Icon, Image; Componentes: Top app bar, Button, FAB, Extended FAB, Text field, Switch, Checkbox, Chip, Card, List item, Navigation bar, Bottom sheet, Icon button, Icon toggle button, Segmented button, Radio button, Slider, Search bar, Date picker, Time picker, Badge, Snackbar, Tooltip, Progress indicator, Secure text field, Divider, Alert dialog, Dropdown menu, Navigation rail, Short navigation bar, Navigation drawer, Tabs, Bottom app bar, Carousel, Pull to refresh, Swipe to dismiss), cada um com o composable do `compose.material3` 1.4.0 no `code` (o arquivo no androidx, os parâmetros e as variantes que trocam o composable), componente, documento e exemplos.
+
+### Alterado
+
+- MCP: `get_annotation` e `get_marking` devolvem o `code` já resolvido para a variante de cada anotação (sem `variants` na saída); `get_code_hints` mantém o `code` cru da base em `types` e traz o `code` resolvido da variante nas anotações da `tree` de tipos com `variants`; `get_specialization` e `get_component` continuam devolvendo o JSON cru.
+- MCP: `find_by_code` compara com o código resolvido de cada anotação (buscar o símbolo da base só traz as anotações da base, o de uma variante só as dela; buscar por `path` traz todas). Nas especializações 1 a 8 nada muda.
+- A "Definição" dos Detalhes mostra o arquivo e o símbolo da variante da anotação.
+- `validate_specialization`, `validate_library` e `apply_specialization` aceitam a `formatVersion` 9, com os mesmos erros da app.
+
+### Corrigido
+
+- A validação da biblioteca não avisa mais "campo não usado pelo desenho" quando o `code` do tipo usa o campo (`params`, `values`, `variants` ou as `notes`): a Material 3 (Compose) passou de 82 para 50 avisos. O tamanho mínimo (`minSize`) dos componentes da biblioteca ficou só onde o código do androidx define um mínimo nos dois eixos (valores corrigidos: Button 58 × 40, campos de texto 280 × 56, Search bar 360 × 56); nos demais o campo foi removido, e a prova de desenho da validação passou a desenhar só o tamanho inicial (o tamanho mínimo não é mais desenhado): a Material 3 (Compose) passou a trazer a fonte Roboto (`.woff2` do Fontsource, licença OFL) e validar sem nenhum aviso, e a biblioteca de exemplo `examples/libraries/material3/` foi de 42 para 3.
+- O zip exportado passa a levar, sem alteração, a cópia em `specs/` de uma especialização que a app não consegue ler (versão de formato maior, arquivo inválido ou `id` diferente); antes ela ficava de fora e o zip citava uma cópia ausente.
+
 ## Imagens remotas — 2026-11-01 (épico `epic/imagens-remotas`, MCP 0.11.0, schema v13)
 
 ### Adicionado

@@ -85,6 +85,10 @@ O `code` de um tipo diz como se cria uma instância dele em cada plataforma: `sy
   - `symbol` (obrigatório): **o que se chama para criar uma instância do tipo**, com o nome completo e conferido no código: um composable, uma view, uma classe, a função do BFF que gera o JSON do componente. Não é o nome do nó de saída (`"button"`, `"onClick"`), é a função ou o construtor que o produz.
   - `path` (opcional): o arquivo que define o `symbol`, para o agente ler a assinatura. **Relativo à raiz do `repo`**, `/` como separador, sem `.`, `..` nem linha. Preencha quando o arquivo for conhecido porque você o viu, nunca invente.
   - `params` (chave do campo → nome do parâmetro; só o que é passado), `values` (só campos `enum`; valor do mapping → texto no código), `notes` (orientação curta para quem escreve a chamada: o que passar além dos campos, ordem, cuidados).
+- **`variants`** (`formatVersion` 9, dentro da entrada de `code`): use quando **a variante troca o que se chama**, não um parâmetro. Em Compose, `Button`, `OutlinedButton`, `TextButton` e `FilledTonalButton` são quatro composables; o tipo `Button` tem um campo `enum` `style` (`filled`, `outlined`, `text`, `tonal`) e o `code.compose` declara `variants: { field: "style", cases: { outlined: { symbol: "…OutlinedButton" }, … } }`. Quando a variante só muda um argumento (`enabled`, `size`), continue com `params` e `values`, sem `variants`.
+  - `field` é a `key` de um campo `enum` do **próprio tipo** (nível de cima; coluna de `table` não vale) e cada chave de `cases` é uma das `options` dele. O caso declara **só o que muda**: `symbol`, `path` e `notes` substituem os da base; `params` e `values` se somam aos da base. Caso vazio é erro. O valor sem caso (o `filled`, por exemplo) usa a base, e uma anotação sem valor usa o `default` do campo.
+  - **Um nível só.** Duas dimensões (estilo e tamanho) viram um `enum` que as junta (`filled-large`) ou dois tipos (o FAB e o Extended FAB do Compose são tipos separados). O caso não tem `variants`.
+  - Confira cada `symbol` e `path` de caso no código, como o da base. O `find_by_code` e o `get_code_hints` entregam o código já resolvido para a variante da anotação.
 - **Nunca crie um campo `codeRef`** (nem outro campo para guardar onde a instância foi escrita na solução): esse tipo saiu do formato. A especialização guarda só o que ajuda a **instanciar** (`symbol`, `path`, `params`, `values`, `notes`, `repo`), nada sobre a solução. Ao revisar ou atualizar uma especialização que tem um campo `"type": "codeRef"`, **remova o campo** (e as chaves de `params` que o citam), suba a `version` e registre a remoção na entrega; o validador o aceita só por compatibilidade, com o aviso `ignored-field`.
 - Nome de plataforma, linguagem ou framework só aparece dentro de `platforms` e `code`. O resto da especialização descreve o domínio, não a tecnologia.
 
@@ -144,7 +148,7 @@ Use `image` quando o desenho mostra uma foto cuja URL vem do dado (avatar, foto,
 
 ### 11. Versão
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`; 8 com `suggestions` ou `linkedRef` em algum campo ou coluna `string`. A versão atual do formato é a 8. O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`; 8 com `suggestions` ou `linkedRef` em algum campo ou coluna `string`; 9 com `variants` no `code` de algum tipo. A versão atual do formato é a 9. **Só suba para a 9 se algum tipo usa `variants`**: o resto da biblioteca fica na versão que o conteúdo pede (a Kotlin e a de notas ficam na 8). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
@@ -251,7 +255,7 @@ O prompt só precisa especificar. Modelo:
 
 > /spec-author
 >
-> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7|8>.
+> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9>.
 >
 > **Origem:** <repositório, pasta ou design system>, lendo <o que ler: pasta dos componentes, catálogo exportado, documento>. Ignore <o que ignorar>.
 >

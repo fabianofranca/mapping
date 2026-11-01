@@ -6,7 +6,7 @@ import { isPackagePath, packagePathProblem } from './packagePaths';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 8), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
+// Formato da especialização (`formatVersion` 1 a 9), seção 13.2 do docs/history/PLAN-etapas-1-2.md,
 // etapas 3b e 4 e etapa Biblioteca do plano. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
@@ -19,7 +19,9 @@ export { isPackagePath };
 // `appliesTo` no tipo (onde a anotação se aplica: marcação, seta ou ambas) e `ref` como tipo
 // de coluna de `table` (a lista de referências como dado, ME4); a versão 8 é a 7 mais
 // `suggestions` e `linkedRef` em campo e coluna `string` (vocabulário sugerido ao digitar, sem
-// restringir o valor; `linkedRef` liga o texto a um campo/coluna `ref` do mesmo tipo/tabela).
+// restringir o valor; `linkedRef` liga o texto a um campo/coluna `ref` do mesmo tipo/tabela); a
+// versão 9 é a 8 mais `variants` na entrada de `code` (um campo `enum` do tipo escolhe, por
+// valor, o composable/classe/arquivo: `resolveCode` em `codeVariants.ts` aplica o caso).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -32,9 +34,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 8;
+export const SPEC_FORMAT_VERSION = 9;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -74,6 +76,26 @@ export interface SpecPlatform {
   repo?: SpecRepo;
 }
 
+/**
+ * O que um valor da variante muda no `code` (só `formatVersion` 9): `symbol`, `path` e `notes`
+ * substituem os da base; `params` e `values` se somam aos da base, chave por chave.
+ */
+export interface SpecCodeCase {
+  symbol?: string;
+  path?: string;
+  params?: Record<string, string>;
+  values?: Record<string, Record<string, string>>;
+  notes?: string;
+}
+
+/** Um campo `enum` do tipo escolhe, por valor, o caso aplicado sobre a base do `code`. */
+export interface SpecCodeVariants {
+  /** Chave de um campo `enum` do tipo (nível de cima, nunca coluna de `table`). */
+  field: string;
+  /** Valor do campo (uma das `options`) → o que muda. */
+  cases: Record<string, SpecCodeCase>;
+}
+
 /** Com que código se cria uma instância do tipo de anotação em uma plataforma. */
 export interface SpecCode {
   /** O que se chama para criar a instância: composable, view, classe ou a função que gera o nó. */
@@ -88,6 +110,8 @@ export interface SpecCode {
   /** Chave de um campo `enum` → (valor no mapping → valor no código). */
   values?: Record<string, Record<string, string>>;
   notes?: string;
+  /** Variantes por valor de um campo `enum` (só `formatVersion` 9); ver `resolveCode`. */
+  variants?: SpecCodeVariants;
 }
 
 /** `code` de um tipo de anotação, por id de plataforma. */
@@ -628,6 +652,41 @@ function checkFields(
   });
 }
 
+const codePathShape = z
+  .string({ error: () => 'deve ser texto' })
+  .min(1, 'não pode ser vazio')
+  .refine(isValidCodePath, {
+    error:
+      'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: app/src/Main.kt)',
+  });
+
+const codeCaseShape = z
+  .object({
+    symbol: z
+      .string({ error: () => 'deve ser texto' })
+      .min(1, 'não pode ser vazio')
+      .optional(),
+    path: codePathShape.optional(),
+    params: z.record(z.string(), nonEmpty).optional(),
+    values: z.record(z.string(), z.record(z.string(), nonEmpty)).optional(),
+    notes: z.string().optional(),
+  })
+  .strict();
+
+const codeVariantsShape = z
+  .object({
+    field: z
+      .string({
+        error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+      })
+      .min(1, 'não pode ser vazio'),
+    cases: z.record(z.string(), codeCaseShape, {
+      error: (issue) =>
+        issue.input === undefined ? 'obrigatório' : 'deve ser um objeto',
+    }),
+  })
+  .strict();
+
 const codeEntryShape = z
   .object({
     symbol: z
@@ -635,21 +694,77 @@ const codeEntryShape = z
         error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
       })
       .min(1, 'não pode ser vazio'),
-    path: z
-      .string({ error: () => 'deve ser texto' })
-      .min(1, 'não pode ser vazio')
-      .refine(isValidCodePath, {
-        error:
-          'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: app/src/Main.kt)',
-      })
-      .optional(),
+    path: codePathShape.optional(),
     params: z.record(z.string(), nonEmpty).optional(),
     values: z.record(z.string(), z.record(z.string(), nonEmpty)).optional(),
     notes: z.string().optional(),
+    variants: codeVariantsShape.optional(),
   })
   .strict();
 
-/** `params` e `values` de cada plataforma do `code` só citam campos (e opções) do tipo. */
+type RawFieldMap = ReadonlyMap<string, RawField>;
+
+/** `params` e `values` de um trecho do `code` (a base ou um caso) só citam campos e opções do tipo. */
+function checkCodeMaps(
+  entry: Pick<z.infer<typeof codeCaseShape>, 'params' | 'values'>,
+  fields: RawFieldMap,
+  base: (string | number)[],
+  add: (path: (string | number)[], message: string) => void,
+): void {
+  for (const k of Object.keys(entry.params ?? {})) {
+    if (!fields.has(k)) add([...base, 'params', k], `"${k}" não é um campo do tipo`);
+  }
+  for (const [k, translation] of Object.entries(entry.values ?? {})) {
+    const field = fields.get(k);
+    if (!field) {
+      add([...base, 'values', k], `"${k}" não é um campo do tipo`);
+      continue;
+    }
+    if (field.type !== 'enum') {
+      add([...base, 'values', k], `"${k}" deve ser um campo enum do tipo`);
+      continue;
+    }
+    for (const option of Object.keys(translation)) {
+      if (!(field.options ?? []).includes(option)) {
+        add([...base, 'values', k, option], `"${option}" não está nas options de "${k}"`);
+      }
+    }
+  }
+}
+
+/** `variants`: o campo é um `enum` do tipo, os casos usam as `options` e cada caso muda algo. */
+function checkCodeVariants(
+  variants: z.infer<typeof codeVariantsShape>,
+  fields: RawFieldMap,
+  base: (string | number)[],
+  add: (path: (string | number)[], message: string) => void,
+): void {
+  const vp = [...base, 'variants'];
+  const field = fields.get(variants.field);
+  let options: readonly string[] | undefined;
+  if (!field) {
+    add([...vp, 'field'], `"${variants.field}" não é um campo do tipo`);
+  } else if (field.type !== 'enum') {
+    add([...vp, 'field'], `"${variants.field}" deve ser um campo enum do tipo`);
+  } else {
+    options = field.options ?? [];
+  }
+  const entries = Object.entries(variants.cases);
+  if (entries.length === 0) add([...vp, 'cases'], 'declare ao menos um caso');
+  for (const [value, kase] of entries) {
+    const cp = [...vp, 'cases', value];
+    if (options !== undefined && !options.includes(value)) {
+      add(cp, `"${value}" não está nas options de "${variants.field}"`);
+    }
+    if (Object.keys(kase).length === 0) {
+      add(cp, 'caso vazio: declare symbol, path, params, values ou notes');
+      continue;
+    }
+    checkCodeMaps(kase, fields, cp, add);
+  }
+}
+
+/** `params`, `values` e `variants` de cada plataforma do `code` só citam campos (e opções) do tipo. */
 function checkCode(
   type: { fields: RawField[]; code?: Record<string, z.infer<typeof codeEntryShape>> },
   ctx: z.RefinementCtx,
@@ -659,30 +774,10 @@ function checkCode(
     ctx.addIssue({ code: 'custom', path, message });
 
   for (const [platform, entry] of Object.entries(type.code ?? {})) {
-    for (const k of Object.keys(entry.params ?? {})) {
-      if (!fields.has(k)) {
-        add(['code', platform, 'params', k], `"${k}" não é um campo do tipo`);
-      }
-    }
-    for (const [k, translation] of Object.entries(entry.values ?? {})) {
-      const field = fields.get(k);
-      if (!field) {
-        add(['code', platform, 'values', k], `"${k}" não é um campo do tipo`);
-        continue;
-      }
-      if (field.type !== 'enum') {
-        add(['code', platform, 'values', k], `"${k}" deve ser um campo enum do tipo`);
-        continue;
-      }
-      for (const option of Object.keys(translation)) {
-        if (!(field.options ?? []).includes(option)) {
-          add(
-            ['code', platform, 'values', k, option],
-            `"${option}" não está nas options de "${k}"`,
-          );
-        }
-      }
-    }
+    const base = ['code', platform];
+    checkCodeMaps(entry, fields, base, add);
+    if (entry.variants !== undefined)
+      checkCodeVariants(entry.variants, fields, base, add);
   }
 }
 
@@ -1455,6 +1550,7 @@ export const specSchema = z
         z.literal(6),
         z.literal(7),
         z.literal(8),
+        z.literal(9),
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
@@ -1550,6 +1646,21 @@ export const specSchema = z
               }
             });
           });
+        });
+      });
+    }
+    // v9: `variants` na entrada de `code`. Antes dela, é erro no caminho exato.
+    if (spec.formatVersion < 9) {
+      spec.layers.forEach((layer, li) => {
+        layer.annotationTypes.forEach((type, ti) => {
+          for (const [platform, entry] of Object.entries(type.code ?? {})) {
+            if (entry.variants === undefined) continue;
+            ctx.addIssue({
+              code: 'custom',
+              path: ['layers', li, 'annotationTypes', ti, 'code', platform, 'variants'],
+              message: 'só é permitido com formatVersion 9',
+            });
+          }
         });
       });
     }
@@ -1716,6 +1827,23 @@ function withoutKeys(
   return kept.length > 0 ? Object.fromEntries(kept) : undefined;
 }
 
+/** `variants` sem os `params` dos campos removidos em cada caso (um caso só de `params` esvazia). */
+function withoutRemovedInCases(
+  variants: SpecCodeVariants,
+  removed: ReadonlySet<string>,
+): SpecCodeVariants {
+  return {
+    ...variants,
+    cases: Object.fromEntries(
+      Object.entries(variants.cases).map(([value, kase]) => {
+        const { params, ...others } = kase;
+        const kept = withoutKeys(params, removed);
+        return [value, kept === undefined ? others : { ...others, params: kept }];
+      }),
+    ),
+  };
+}
+
 /**
  * Tira dos tipos os campos do tipo removido (`REMOVED_FIELD_TYPE`) e os `params` do `code`
  * que os citam; devolve o que foi ignorado, com o caminho no arquivo original.
@@ -1748,11 +1876,17 @@ function dropRemovedFields(parsed: ParsedSpec): {
           : {
               code: Object.fromEntries(
                 Object.entries(code).map(([platform, entry]) => {
-                  const { params, ...others } = entry;
+                  const { params, variants, ...others } = entry;
                   const kept = withoutKeys(params, removed);
                   return [
                     platform,
-                    kept === undefined ? others : { ...others, params: kept },
+                    {
+                      ...others,
+                      ...(kept === undefined ? {} : { params: kept }),
+                      ...(variants === undefined
+                        ? {}
+                        : { variants: withoutRemovedInCases(variants, removed) }),
+                    },
                   ];
                 }),
               ),

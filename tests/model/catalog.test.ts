@@ -15,6 +15,7 @@ import {
 import { approximateMeasurer } from '../../src/model/components/instantiate';
 import { isFontPath } from '../../src/model/components/library';
 import type { LibraryFile } from '../../src/model/library';
+import { BUTTON_PATH, TEXT_BUTTON_PATH, variantsSpecJson } from './variantsFixtures';
 
 const ROOT = join(__dirname, '../../examples/libraries/material3');
 
@@ -245,5 +246,66 @@ describe('pacote quebrado de propósito', () => {
     expect(broken.report.ok).toBe(false);
     expect(buildCatalog([]).report.ok).toBe(false);
     expect(buildCatalog([{ path: 'a.spec.json', text: '{' }]).spec).toBeNull();
+  });
+});
+
+describe('catálogo com variants no code (formatVersion 9)', () => {
+  const build = (formatVersion = 9) =>
+    buildCatalog([
+      {
+        path: 'm3.json',
+        text: JSON.stringify(variantsSpecJson(formatVersion)),
+      },
+    ]);
+  const codeOf = (typeId: string, formatVersion = 9) => {
+    const entry = build(formatVersion)
+      .layers.flatMap((l) => l.entries)
+      .find((e) => e.type.id === typeId);
+    return entry?.code[0];
+  };
+
+  it('a base fica como está e variants traz o campo e os casos na ordem das options', () => {
+    const code = codeOf('button');
+    expect(code).toMatchObject({
+      platform: { id: 'compose', name: 'Compose', language: 'kotlin' },
+      symbol: 'androidx.compose.material3.Button',
+      path: BUTTON_PATH,
+    });
+    expect(code?.variants).toEqual({
+      field: 'style',
+      fieldLabel: 'style',
+      cases: [
+        {
+          value: 'outlined',
+          symbol: 'androidx.compose.material3.OutlinedButton',
+          path: BUTTON_PATH,
+        },
+        {
+          value: 'text',
+          symbol: 'androidx.compose.material3.TextButton',
+          path: TEXT_BUTTON_PATH,
+        },
+        {
+          value: 'tonal',
+          symbol: 'androidx.compose.material3.FilledTonalButton',
+          path: BUTTON_PATH,
+        },
+      ],
+    });
+  });
+
+  it('tipo sem variants não tem a chave', () => {
+    expect(codeOf('card')).toBeDefined();
+    expect('variants' in codeOf('card')!).toBe(false);
+  });
+
+  it('numa especialização 8 sem variants, o catálogo é o de sempre', () => {
+    const json = variantsSpecJson(8) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    delete json.layers[0].annotationTypes[0].code.compose.variants;
+    const code = buildCatalog([{ path: 'm3.json', text: JSON.stringify(json) }])
+      .layers.flatMap((l) => l.entries)
+      .find((e) => e.type.id === 'button')?.code[0];
+    expect(code?.symbol).toBe('androidx.compose.material3.Button');
+    expect(code && 'variants' in code).toBe(false);
   });
 });

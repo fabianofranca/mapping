@@ -1,0 +1,2406 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "progress-indicator",
+  "name": "Progress indicator",
+  "description": "Indicador de progresso circular (48, traço de 4) ou linear (barra de 4), em primary sobre o trilho. Sem valor de progresso é indeterminado e o desenho mostra um arco ou uma barra parcial.",
+  "size": {
+    "width": 240,
+    "height": 48
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 48
+  },
+  "preview": {
+    "shape": "circular",
+    "progress": 0.6
+  },
+  "template": {
+    "type": "frame",
+    "name": "progress indicator",
+    "layout": {
+      "type": "row",
+      "align": "center",
+      "justify": "center"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "circular",
+        "width": 48,
+        "height": 48,
+        "layout": {
+          "type": "none"
+        },
+        "visible": {
+          "$not": {
+            "$eq": ["shape", "linear"]
+          }
+        },
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "trilho",
+            "anchors": {
+              "left": 2,
+              "top": 2
+            },
+            "width": 44,
+            "height": 44,
+            "fill": "none",
+            "stroke": {
+              "color": "#E7E0EC",
+              "width": 4,
+              "align": "center"
+            }
+          },
+          {
+            "type": "path",
+            "name": "progresso",
+            "anchors": {
+              "left": 0,
+              "top": 0
+            },
+            "width": 48,
+            "height": 48,
+            "viewBox": [48, 48],
+            "d": {
+              "$switch": "progress",
+              "cases": {
+                "0": "M24 2A22 22 0 0 1 24.07 2.00",
+                "0.01": "M24 2A22 22 0 0 1 25.38 2.04",
+                "0.02": "M24 2A22 22 0 0 1 26.76 2.17",
+                "0.03": "M24 2A22 22 0 0 1 28.12 2.39",
+                "0.04": "M24 2A22 22 0 0 1 29.47 2.69",
+                "0.05": "M24 2A22 22 0 0 1 30.80 3.08",
+                "0.06": "M24 2A22 22 0 0 1 32.10 3.54",
+                "0.07": "M24 2A22 22 0 0 1 33.37 4.09",
+                "0.08": "M24 2A22 22 0 0 1 34.60 4.72",
+                "0.09": "M24 2A22 22 0 0 1 35.79 5.42",
+                "0.1": "M24 2A22 22 0 0 1 36.93 6.20",
+                "0.11": "M24 2A22 22 0 0 1 38.02 7.05",
+                "0.12": "M24 2A22 22 0 0 1 39.06 7.96",
+                "0.13": "M24 2A22 22 0 0 1 40.04 8.94",
+                "0.14": "M24 2A22 22 0 0 1 40.95 9.98",
+                "0.15": "M24 2A22 22 0 0 1 41.80 11.07",
+                "0.16": "M24 2A22 22 0 0 1 42.58 12.21",
+                "0.17": "M24 2A22 22 0 0 1 43.28 13.40",
+                "0.18": "M24 2A22 22 0 0 1 43.91 14.63",
+                "0.19": "M24 2A22 22 0 0 1 44.46 15.90",
+                "0.2": "M24 2A22 22 0 0 1 44.92 17.20",
+                "0.21": "M24 2A22 22 0 0 1 45.31 18.53",
+                "0.22": "M24 2A22 22 0 0 1 45.61 19.88",
+                "0.23": "M24 2A22 22 0 0 1 45.83 21.24",
+                "0.24": "M24 2A22 22 0 0 1 45.96 22.62",
+                "0.25": "M24 2A22 22 0 0 1 46.00 24.00",
+                "0.26": "M24 2A22 22 0 0 1 45.96 25.38",
+                "0.27": "M24 2A22 22 0 0 1 45.83 26.76",
+                "0.28": "M24 2A22 22 0 0 1 45.61 28.12",
+                "0.29": "M24 2A22 22 0 0 1 45.31 29.47",
+                "0.3": "M24 2A22 22 0 0 1 44.92 30.80",
+                "0.31": "M24 2A22 22 0 0 1 44.46 32.10",
+                "0.32": "M24 2A22 22 0 0 1 43.91 33.37",
+                "0.33": "M24 2A22 22 0 0 1 43.28 34.60",
+                "0.34": "M24 2A22 22 0 0 1 42.58 35.79",
+                "0.35": "M24 2A22 22 0 0 1 41.80 36.93",
+                "0.36": "M24 2A22 22 0 0 1 40.95 38.02",
+                "0.37": "M24 2A22 22 0 0 1 40.04 39.06",
+                "0.38": "M24 2A22 22 0 0 1 39.06 40.04",
+                "0.39": "M24 2A22 22 0 0 1 38.02 40.95",
+                "0.4": "M24 2A22 22 0 0 1 36.93 41.80",
+                "0.41": "M24 2A22 22 0 0 1 35.79 42.58",
+                "0.42": "M24 2A22 22 0 0 1 34.60 43.28",
+                "0.43": "M24 2A22 22 0 0 1 33.37 43.91",
+                "0.44": "M24 2A22 22 0 0 1 32.10 44.46",
+                "0.45": "M24 2A22 22 0 0 1 30.80 44.92",
+                "0.46": "M24 2A22 22 0 0 1 29.47 45.31",
+                "0.47": "M24 2A22 22 0 0 1 28.12 45.61",
+                "0.48": "M24 2A22 22 0 0 1 26.76 45.83",
+                "0.49": "M24 2A22 22 0 0 1 25.38 45.96",
+                "0.5": "M24 2A22 22 0 0 1 24.00 46.00",
+                "0.51": "M24 2A22 22 0 1 1 22.62 45.96",
+                "0.52": "M24 2A22 22 0 1 1 21.24 45.83",
+                "0.53": "M24 2A22 22 0 1 1 19.88 45.61",
+                "0.54": "M24 2A22 22 0 1 1 18.53 45.31",
+                "0.55": "M24 2A22 22 0 1 1 17.20 44.92",
+                "0.56": "M24 2A22 22 0 1 1 15.90 44.46",
+                "0.57": "M24 2A22 22 0 1 1 14.63 43.91",
+                "0.58": "M24 2A22 22 0 1 1 13.40 43.28",
+                "0.59": "M24 2A22 22 0 1 1 12.21 42.58",
+                "0.6": "M24 2A22 22 0 1 1 11.07 41.80",
+                "0.61": "M24 2A22 22 0 1 1 9.98 40.95",
+                "0.62": "M24 2A22 22 0 1 1 8.94 40.04",
+                "0.63": "M24 2A22 22 0 1 1 7.96 39.06",
+                "0.64": "M24 2A22 22 0 1 1 7.05 38.02",
+                "0.65": "M24 2A22 22 0 1 1 6.20 36.93",
+                "0.66": "M24 2A22 22 0 1 1 5.42 35.79",
+                "0.67": "M24 2A22 22 0 1 1 4.72 34.60",
+                "0.68": "M24 2A22 22 0 1 1 4.09 33.37",
+                "0.69": "M24 2A22 22 0 1 1 3.54 32.10",
+                "0.7": "M24 2A22 22 0 1 1 3.08 30.80",
+                "0.71": "M24 2A22 22 0 1 1 2.69 29.47",
+                "0.72": "M24 2A22 22 0 1 1 2.39 28.12",
+                "0.73": "M24 2A22 22 0 1 1 2.17 26.76",
+                "0.74": "M24 2A22 22 0 1 1 2.04 25.38",
+                "0.75": "M24 2A22 22 0 1 1 2.00 24.00",
+                "0.76": "M24 2A22 22 0 1 1 2.04 22.62",
+                "0.77": "M24 2A22 22 0 1 1 2.17 21.24",
+                "0.78": "M24 2A22 22 0 1 1 2.39 19.88",
+                "0.79": "M24 2A22 22 0 1 1 2.69 18.53",
+                "0.8": "M24 2A22 22 0 1 1 3.08 17.20",
+                "0.81": "M24 2A22 22 0 1 1 3.54 15.90",
+                "0.82": "M24 2A22 22 0 1 1 4.09 14.63",
+                "0.83": "M24 2A22 22 0 1 1 4.72 13.40",
+                "0.84": "M24 2A22 22 0 1 1 5.42 12.21",
+                "0.85": "M24 2A22 22 0 1 1 6.20 11.07",
+                "0.86": "M24 2A22 22 0 1 1 7.05 9.98",
+                "0.87": "M24 2A22 22 0 1 1 7.96 8.94",
+                "0.88": "M24 2A22 22 0 1 1 8.94 7.96",
+                "0.89": "M24 2A22 22 0 1 1 9.98 7.05",
+                "0.9": "M24 2A22 22 0 1 1 11.07 6.20",
+                "0.91": "M24 2A22 22 0 1 1 12.21 5.42",
+                "0.92": "M24 2A22 22 0 1 1 13.40 4.72",
+                "0.93": "M24 2A22 22 0 1 1 14.63 4.09",
+                "0.94": "M24 2A22 22 0 1 1 15.90 3.54",
+                "0.95": "M24 2A22 22 0 1 1 17.20 3.08",
+                "0.96": "M24 2A22 22 0 1 1 18.53 2.69",
+                "0.97": "M24 2A22 22 0 1 1 19.88 2.39",
+                "0.98": "M24 2A22 22 0 1 1 21.24 2.17",
+                "0.99": "M24 2A22 22 0 1 1 22.62 2.04",
+                "1": "M24 2A22 22 0 1 1 24 46A22 22 0 1 1 24 2"
+              },
+              "default": "M24 2A22 22 0 0 1 44.92 30.80"
+            },
+            "fill": "none",
+            "stroke": {
+              "color": "#6750A4",
+              "width": 4,
+              "align": "center"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "linear",
+        "width": "fill",
+        "height": 4,
+        "cornerRadius": 2,
+        "fill": {
+          "$switch": "progress",
+          "cases": {
+            "0.01": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.01,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.01,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.02": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.02,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.02,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.03": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.03,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.03,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.04": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.04,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.04,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.05": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.05,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.05,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.06": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.06,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.06,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.07": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.07,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.07,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.08": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.08,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.08,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.09": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.09,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.09,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.1": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.1,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.1,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.11": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.11,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.11,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.12": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.12,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.12,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.13": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.13,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.13,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.14": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.14,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.14,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.15": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.15,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.15,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.16": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.16,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.16,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.17": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.17,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.17,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.18": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.18,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.18,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.19": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.19,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.19,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.2": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.2,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.2,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.21": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.21,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.21,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.22": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.22,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.22,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.23": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.23,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.23,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.24": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.24,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.24,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.25": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.25,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.25,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.26": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.26,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.26,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.27": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.27,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.27,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.28": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.28,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.28,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.29": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.29,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.29,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.3": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.3,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.3,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.31": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.31,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.31,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.32": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.32,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.32,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.33": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.33,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.33,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.34": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.34,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.34,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.35": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.35,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.35,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.36": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.36,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.36,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.37": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.37,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.37,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.38": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.38,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.38,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.39": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.39,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.39,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.4": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.4,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.4,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.41": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.41,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.41,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.42": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.42,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.42,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.43": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.43,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.43,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.44": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.44,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.44,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.45": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.45,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.45,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.46": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.46,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.46,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.47": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.47,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.47,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.48": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.48,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.48,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.49": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.49,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.49,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.5": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.5,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.5,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.51": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.51,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.51,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.52": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.52,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.52,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.53": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.53,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.53,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.54": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.54,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.54,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.55": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.55,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.55,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.56": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.56,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.56,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.57": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.57,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.57,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.58": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.58,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.58,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.59": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.59,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.59,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.6": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.6,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.6,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.61": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.61,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.61,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.62": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.62,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.62,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.63": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.63,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.63,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.64": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.64,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.64,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.65": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.65,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.65,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.66": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.66,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.66,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.67": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.67,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.67,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.68": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.68,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.68,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.69": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.69,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.69,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.7": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.7,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.7,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.71": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.71,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.71,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.72": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.72,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.72,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.73": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.73,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.73,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.74": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.74,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.74,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.75": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.75,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.75,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.76": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.76,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.76,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.77": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.77,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.77,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.78": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.78,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.78,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.79": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.79,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.79,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.8": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.8,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.8,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.81": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.81,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.81,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.82": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.82,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.82,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.83": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.83,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.83,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.84": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.84,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.84,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.85": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.85,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.85,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.86": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.86,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.86,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.87": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.87,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.87,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.88": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.88,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.88,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.89": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.89,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.89,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.9": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.9,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.9,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.91": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.91,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.91,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.92": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.92,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.92,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.93": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.93,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.93,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.94": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.94,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.94,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.95": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.95,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.95,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.96": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.96,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.96,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.97": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.97,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.97,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.98": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.98,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.98,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0.99": {
+              "type": "linear",
+              "angle": 0,
+              "stops": [
+                {
+                  "offset": 0,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.99,
+                  "color": "#6750A4"
+                },
+                {
+                  "offset": 0.99,
+                  "color": "#E7E0EC"
+                },
+                {
+                  "offset": 1,
+                  "color": "#E7E0EC"
+                }
+              ]
+            },
+            "0": "#E7E0EC",
+            "1": "#6750A4"
+          },
+          "default": {
+            "type": "linear",
+            "angle": 0,
+            "stops": [
+              {
+                "offset": 0,
+                "color": "#6750A4"
+              },
+              {
+                "offset": 0.4,
+                "color": "#6750A4"
+              },
+              {
+                "offset": 0.4,
+                "color": "#E7E0EC"
+              },
+              {
+                "offset": 1,
+                "color": "#E7E0EC"
+              }
+            ]
+          }
+        },
+        "layout": {
+          "type": "none"
+        },
+        "visible": {
+          "$eq": ["shape", "linear"]
+        }
+      }
+    ]
+  }
+}

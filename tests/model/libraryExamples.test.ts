@@ -104,8 +104,8 @@ describe('pacote material3 é válido', () => {
 // O pacote do repositório é o fixture das três portas (B2), do canvas (B3) e do Catálogo (B5):
 // ele precisa passar pelos três níveis do validador sem nenhum erro. Os avisos que sobram são
 // fixados aqui, para o número não andar sozinho: duas fontes ausentes (o `.ttf` da Roboto não é
-// versionado) e o resto da prova de desenho, que avisa conteúdo maior que a caixa — quase sempre
-// no tamanho mínimo, onde o conteúdo real não cabe mesmo. A medida do Node é **aproximada** (no
+// versionado) e o resto da prova de desenho, que avisa conteúdo maior que a caixa no tamanho
+// inicial (o tamanho mínimo não é desenhado). A medida do Node é **aproximada** (no
 // navegador é a do Konva, a real), e a decisão da etapa é avisar, sem recortar nem recusar.
 describe('o pacote do repositório passa pelo validador da biblioteca', () => {
   const report = validateLibrary({
@@ -136,14 +136,11 @@ describe('o pacote do repositório passa pelo validador da biblioteca', () => {
     expect(
       approximate.every((w) => w.message.includes('conteúdo maior que a caixa')),
     ).toBe(true);
-    // No tamanho mínimo quase todo componente avisa; no inicial, só o chip "Selecionado".
-    const atInitialSize = approximate.filter((w) =>
-      w.message.includes('tamanho inicial'),
-    );
-    expect(atInitialSize.map((w) => w.path)).toEqual([
+    // Só o chip "Selecionado" avisa, no tamanho inicial; o mínimo não é desenhado.
+    expect(approximate.map((w) => w.path)).toEqual([
       'layers[0].annotationTypes[6].examples[1]',
     ]);
-    expect(approximate).toHaveLength(40);
+    expect(approximate.every((w) => w.message.includes('tamanho inicial'))).toBe(true);
     const others = report.warnings.filter(
       (w) => !w.path.startsWith('fonts[') && !w.message.endsWith('(aproximado)'),
     );

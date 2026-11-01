@@ -3,6 +3,7 @@ import { t } from '../i18n';
 import {
   codeLink,
   type CodeDefinition,
+  type JsonValue,
   type Project,
   type SpecAnnotationType,
   typeCodeDefinitions,
@@ -101,13 +102,16 @@ export function CodeDefinitions({
   project,
   specId,
   type,
+  values,
 }: {
   readonly project: Project;
   /** Especialização dona do tipo: o `repo` dela dá o link. */
   readonly specId: string;
   readonly type: SpecAnnotationType;
+  /** Valores da anotação: escolhem o caso de `variants` (o `path` do caso). */
+  readonly values?: Readonly<Record<string, JsonValue>> | null;
 }) {
-  const definitions = typeCodeDefinitions(project, specId, type);
+  const definitions = typeCodeDefinitions(project, specId, type, values);
   if (definitions.length === 0) return null;
   return (
     <Property label={t('code.definition')} hint={t('code.definitionHint')}>

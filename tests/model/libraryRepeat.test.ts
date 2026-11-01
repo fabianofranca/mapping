@@ -217,18 +217,16 @@ describe('validateLibrary com repeat', () => {
     ]);
   });
 
-  it('a prova de desenho usa as linhas do preview: a tabela que não cabe no tamanho mínimo avisa', () => {
+  it('a prova de desenho usa as linhas do preview: a tabela que não cabe no tamanho inicial avisa', () => {
     const many = Array.from({ length: 12 }, (_, i) => ({ chave: `k${i}`, valor: 'v' }));
     const report = validate(component({}, { preview: { titulo: 'T', linhas: many } }));
     expect(report.errors).toEqual([]);
     const overflow = report.warnings.filter((w) => w.message.includes('conteúdo maior'));
     expect(overflow.map((w) => [w.file, w.path])).toEqual([
       ['components/tab.json', 'preview'],
-      ['components/tab.json', 'preview'],
     ]);
-    // Pelo menos o tamanho inicial e o mínimo.
+    // O tamanho mínimo não é desenhado: só o tamanho inicial.
     expect(overflow[0]?.message).toContain('tamanho inicial 200×100');
-    expect(overflow[1]?.message).toContain('tamanho mínimo 120×60');
   });
 
   it('sem preview, a prova usa a tabela vazia e passa', () => {

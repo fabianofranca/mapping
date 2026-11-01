@@ -9,6 +9,7 @@ import { HelpDialog } from '../../src/ui/HelpDialog';
 import { SettingsDialog } from '../../src/ui/SettingsDialog';
 import { SpecsDialog } from '../../src/ui/SpecsDialog';
 import { ANDROID_REPO, codeProject, withSpecRepo } from '../model/specFixtures';
+import { variantsProject } from '../model/variantsFixtures';
 import { annotationOf, createHarness, renderLive } from './harness';
 
 // Etapas 3b.3, 9 e Código de instanciação: a linha "Definição" (o `path` do `code` do tipo, com
@@ -260,5 +261,57 @@ describe('Especializações e Ajuda', () => {
       expect(section?.querySelectorAll('li').length, l).toBe(4);
       expect(section?.textContent, l).not.toMatch(/codeRef/);
     }
+  });
+});
+
+describe('Detalhes: a Definição pelo caso de variants (formatVersion 9)', () => {
+  function definitionOf(annotationId: string) {
+    const harness = createHarness(variantsProject());
+    renderLive(harness, (p) => (
+      <AnnotationEditor
+        project={p}
+        annotation={annotationOf(p, annotationId)}
+        visibleLayerIds={new Set(p.layers.map((l) => l.id))}
+        onGoToAnnotation={() => undefined}
+        onShowLayer={() => undefined}
+        readOnly={false}
+      />
+    ));
+    return document.querySelector('[data-definition="compose"]') as HTMLElement;
+  }
+
+  it('o botão text mostra o arquivo do caso, com o link pelo repo', () => {
+    const line = definitionOf('BT');
+    expect(line.querySelector('.code-definition-name')?.textContent).toBe(
+      'Compose · TextButton.kt',
+    );
+    expect(
+      within(line)
+        .getByRole('link', { name: /^Abrir no repositório/ })
+        .getAttribute('href'),
+    ).toBe(
+      'https://github.com/androidx/androidx/blob/main/compose/material3/TextButton.kt',
+    );
+    expect(
+      screen.getByText(
+        'compose/material3/TextButton.kt · androidx.compose.material3.TextButton',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('o outlined mostra o símbolo do caso sobre o arquivo da base; o filled, a base', () => {
+    expect(definitionOf('BO').querySelector('.code-definition-name')?.textContent).toBe(
+      'Compose · Button.kt',
+    );
+    expect(
+      screen.getByText(
+        'compose/material3/Button.kt · androidx.compose.material3.OutlinedButton',
+      ),
+    ).toBeTruthy();
+    cleanup();
+    definitionOf('BF');
+    expect(
+      screen.getByText('compose/material3/Button.kt · androidx.compose.material3.Button'),
+    ).toBeTruthy();
   });
 });

@@ -1,6 +1,7 @@
 import { fail } from './errors';
 import { memoByProject, projectIndex } from './projectIndex';
-import type { SpecCode, SpecRepo } from './spec';
+import { resolveCode } from './codeVariants';
+import type { SpecCode, SpecField, SpecRepo } from './spec';
 import type { PlatformRepo, PlatformRepos, Project } from './types';
 
 // Código de instanciação das especializações (etapa 3b; schema v11): o `code` de um tipo diz
@@ -286,6 +287,8 @@ export interface TypeCodeEntry {
   readonly typeId: string;
   readonly platform: string;
   readonly code: SpecCode;
+  /** Campos do tipo (`resolveCode` precisa do `default` do campo da variante). */
+  readonly fields: readonly SpecField[];
 }
 
 /**
@@ -302,6 +305,7 @@ export const projectTypeCode: (p: Project) => readonly TypeCodeEntry[] = memoByP
             typeId: type.id,
             platform,
             code,
+            fields: type.fields,
           })),
         ),
       ),
@@ -339,6 +343,40 @@ export interface CodeTypeMatch {
   readonly annotations: readonly CodeAnnotationLocation[];
 }
 
+/** `true` se o `code` (já resolvido) casa com a busca; com os dois, ambos na mesma entrada. */
+function codeMatches(
+  code: SpecCode,
+  path: string | null,
+  symbol: string | null,
+): boolean {
+  if (symbol !== null && code.symbol.trim() !== symbol) return false;
+  if (path !== null) {
+    const own = code.path === undefined ? null : normalizeCodePath(code.path);
+    if (own === null || !codePathMatches(own, path)) return false;
+  }
+  return true;
+}
+
+/**
+ * A entrada casa se a base (o `code` sem `variants`) ou algum caso resolvido casa com a busca.
+ */
+function entryMatches(
+  entry: TypeCodeEntry,
+  path: string | null,
+  symbol: string | null,
+): boolean {
+  const { variants } = entry.code;
+  if (variants === undefined) return codeMatches(entry.code, path, symbol);
+  if (codeMatches(resolveCode(entry.code, null, []), path, symbol)) return true;
+  return Object.keys(variants.cases).some((value) =>
+    codeMatches(
+      resolveCode(entry.code, { [variants.field]: value }, entry.fields),
+      path,
+      symbol,
+    ),
+  );
+}
+
 /**
  * Tipos das especializações aplicadas cujo `code` (em alguma plataforma) casa com a busca,
  * com as anotações desses tipos. `path` casa com `code.<plataforma>.path` por igualdade ou
@@ -346,6 +384,11 @@ export interface CodeTypeMatch {
  * `Screen.kt` não); `symbol`, com `code.<plataforma>.symbol` por igualdade. Com os dois, a
  * mesma entrada do `code` precisa casar com ambos; sem nenhum, a lista é vazia. Diferencia
  * maiúsculas de minúsculas.
+ *
+ * Com `variants` (formatVersion 9), o tipo casa se a base ou algum caso casa, e as
+ * `annotations` são só as que têm o código resolvido (pelos valores delas) casando numa
+ * plataforma que casou; o `code` do resultado continua o cru. Sem `variants`, todas as
+ * anotações do tipo.
  */
 export function findByCode(p: Project, query: CodeQuery): CodeTypeMatch[] {
   const rawPath = query.path ? normalizeCodePath(query.path) : null;
@@ -358,12 +401,7 @@ export function findByCode(p: Project, query: CodeQuery): CodeTypeMatch[] {
     { specId: string; typeId: string; code: TypeCodeEntry[] }
   >();
   for (const entry of projectTypeCode(p)) {
-    if (symbol !== null && entry.code.symbol.trim() !== symbol) continue;
-    if (path !== null) {
-      const own =
-        entry.code.path === undefined ? null : normalizeCodePath(entry.code.path);
-      if (own === null || !codePathMatches(own, path)) continue;
-    }
+    if (!entryMatches(entry, path, symbol)) continue;
     const key = typeKey(entry.specId, entry.typeId);
     const known = matches.get(key);
     if (known) known.code.push(entry);
@@ -376,7 +414,14 @@ export function findByCode(p: Project, query: CodeQuery): CodeTypeMatch[] {
     if (!a.type) continue;
     const key = typeKey(a.type.specId, a.type.typeId);
     const marking = markings.get(a.markingId);
-    if (!matches.has(key) || !marking) continue;
+    const match = matches.get(key);
+    if (!match || !marking) continue;
+    const applies = match.code.some(
+      (e) =>
+        e.code.variants === undefined ||
+        codeMatches(resolveCode(e.code, a.values, e.fields), path, symbol),
+    );
+    if (!applies) continue;
     const list = annotations.get(key) ?? [];
     list.push({
       containerId: marking.containerId,

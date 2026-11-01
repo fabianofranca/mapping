@@ -1,0 +1,202 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "flow-row",
+  "name": "FlowRow",
+  "description": "Linha que quebra para a linha de baixo quando falta espaço: as filhas se enfileiram, com spacing e padding.",
+  "size": {
+    "width": 360,
+    "height": 96
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "horizontalArrangement": "Start",
+    "verticalArrangement": "Top",
+    "itemVerticalAlignment": "Top",
+    "maxItemsInEachRow": null,
+    "maxLines": null,
+    "spacing": 8,
+    "verticalSpacing": 8,
+    "padding": 0,
+    "width": "wrap",
+    "height": "wrap",
+    "weight": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "flow-row",
+    "clip": false,
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "slot",
+        "name": "content",
+        "label": {
+          "$concat": [
+            "FlowRow · ",
+            {
+              "$field": "width",
+              "default": "wrap"
+            },
+            " × ",
+            {
+              "$field": "height",
+              "default": "wrap"
+            },
+            {
+              "$if": {
+                "$has": "weight"
+              },
+              "then": {
+                "$concat": [
+                  " · weight ",
+                  {
+                    "$field": "weight"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$has": "maxItemsInEachRow"
+              },
+              "then": {
+                "$concat": [
+                  " · max ",
+                  {
+                    "$field": "maxItemsInEachRow"
+                  },
+                  "/linha"
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$has": "maxLines"
+              },
+              "then": {
+                "$concat": [
+                  " · ",
+                  {
+                    "$field": "maxLines"
+                  },
+                  " linhas"
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$has": "verticalSpacing"
+              },
+              "then": {
+                "$concat": [
+                  " · v ",
+                  {
+                    "$field": "verticalSpacing"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$and": [
+                  {
+                    "$has": "verticalArrangement"
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["verticalArrangement", "Top"]
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$concat": [
+                  " · ",
+                  {
+                    "$field": "verticalArrangement"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$and": [
+                  {
+                    "$has": "horizontalArrangement"
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["horizontalArrangement", "Start"]
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$concat": [
+                  " · ",
+                  {
+                    "$field": "horizontalArrangement"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$and": [
+                  {
+                    "$has": "itemVerticalAlignment"
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["itemVerticalAlignment", "Top"]
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$concat": [
+                  " · ",
+                  {
+                    "$field": "itemVerticalAlignment"
+                  }
+                ]
+              },
+              "else": ""
+            }
+          ]
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "row",
+          "gap": {
+            "$field": "spacing",
+            "default": 0
+          },
+          "padding": {
+            "$field": "padding",
+            "default": 0
+          },
+          "align": "start",
+          "justify": "start"
+        }
+      }
+    ]
+  }
+}

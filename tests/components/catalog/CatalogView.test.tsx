@@ -261,6 +261,69 @@ describe('código', () => {
     const section = screen.getByRole('region', { name: t('catalog.page.code') });
     expect(within(section).getByText('app/ui/MyButton.kt').closest('a')).toBeNull();
   });
+
+  const withVariants = [
+    {
+      ...code[0]!,
+      variants: {
+        field: 'variant',
+        fieldLabel: 'Variante',
+        cases: [
+          { value: 'outlined', symbol: 'MyOutlinedButton', path: 'app/ui/MyOutlined.kt' },
+          { value: 'text', symbol: 'MyTextButton' },
+        ],
+      },
+    },
+  ];
+
+  it('com variants, a base fica e a tabela valor → símbolo aparece embaixo', () => {
+    view(
+      { initialTypeId: 'm3-button' },
+      patched(base, 'm3-button', { code: withVariants }),
+    );
+    const section = screen.getByRole('region', { name: t('catalog.page.code') });
+    expect(within(section).getByText('MyButton')).toBeTruthy();
+    const table = within(section).getByRole('table', {
+      name: t('catalog.page.codeVariants', { field: 'Variante' }),
+    });
+    expect(
+      within(table)
+        .getAllByRole('row')
+        .map((row) => row.textContent),
+    ).toEqual([
+      `${t('catalog.page.variantValue')}${t('catalog.page.variantSymbol')}`,
+      'outlinedMyOutlinedButton app/ui/MyOutlined.kt',
+      'textMyTextButton',
+    ]);
+    // Sem projeto, o path do caso é só texto.
+    expect(within(table).getByText('app/ui/MyOutlined.kt').closest('a')).toBeNull();
+  });
+
+  it('o path do caso vira link pelo repo da especialização', () => {
+    const project = projectWithRepo({
+      url: 'https://git.example/repo',
+      urlTemplate: 'https://git.example/repo/{path}',
+    });
+    view(
+      { initialTypeId: 'm3-button', project },
+      patched(base, 'm3-button', { code: withVariants }),
+    );
+    const section = screen.getByRole('region', { name: t('catalog.page.code') });
+    const link = within(section).getByText('app/ui/MyOutlined.kt').closest('a');
+    expect(link?.getAttribute('href')).toBe(
+      'https://git.example/repo/app/ui/MyOutlined.kt',
+    );
+  });
+
+  it('em inglês os textos novos existem', () => {
+    locale.value = 'en-US';
+    view(
+      { initialTypeId: 'm3-button' },
+      patched(base, 'm3-button', { code: withVariants }),
+    );
+    expect(screen.getByRole('table', { name: 'Variants (Variante)' })).toBeTruthy();
+    expect(screen.getByText('Symbol')).toBeTruthy();
+  });
 });
 
 describe('galeria', () => {
@@ -535,7 +598,18 @@ describe('validação', () => {
   });
 
   it('lista longa de avisos começa recolhida e expande', async () => {
-    const { user } = view();
+    // O pacote do repositório tem poucos avisos: aqui a lista é longa de propósito.
+    const warnings = Array.from({ length: 8 }, (_, i) => ({
+      file: 'material3.spec.json',
+      path: `layers[0].annotationTypes[${i}]`,
+      message: `aviso de teste ${i}`,
+      severity: 'warning' as const,
+    }));
+    const long: Catalog = {
+      ...base,
+      report: { ...base.report, issues: warnings, errors: [], warnings },
+    };
+    const { user } = view({}, long);
     const summary = screen.getByRole('region', { name: t('catalog.view.validation') });
     expect(within(summary).queryByRole('group')).toBeNull();
     await user.click(

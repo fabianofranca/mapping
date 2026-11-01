@@ -1,0 +1,332 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 3,
+  "id": "carousel",
+  "name": "Carousel",
+  "description": "Carrossel horizontal de itens com imagem e rótulo opcional, um item por linha de Itens: multi-browse (item grande e vizinhos que espiam), uncontained (itens de largura fixa) e centered-hero (um item grande centrado). Itens de largura uniforme; no Compose o tamanho varia com a rolagem.",
+  "size": {
+    "width": 360,
+    "height": 205
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 205
+  },
+  "preview": {
+    "items": [
+      {
+        "image": "https://example.com/praia.jpg",
+        "label": "Praia"
+      },
+      {
+        "image": "https://example.com/serra.jpg",
+        "label": "Serra"
+      },
+      {
+        "image": "https://example.com/cidade.jpg",
+        "label": "Cidade"
+      }
+    ],
+    "style": "multi-browse",
+    "preferredItemWidth": 186,
+    "itemWidth": 186,
+    "itemSpacing": 8,
+    "width": "fill",
+    "height": "fixed",
+    "weight": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "carousel",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "repeat",
+        "name": "itens multi-browse",
+        "field": "items",
+        "direction": "row",
+        "gap": {
+          "$field": "itemSpacing",
+          "default": 8
+        },
+        "width": 4000,
+        "anchors": {
+          "left": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "visible": {
+          "$not": {
+            "$or": [
+              {
+                "$eq": ["style", "uncontained"]
+              },
+              {
+                "$eq": ["style", "centered-hero"]
+              }
+            ]
+          }
+        },
+        "template": {
+          "type": "frame",
+          "name": "item",
+          "width": 186,
+          "height": "fill",
+          "cornerRadius": 28,
+          "clip": true,
+          "layout": {
+            "type": "none"
+          },
+          "children": [
+            {
+              "type": "image",
+              "name": "imagem",
+              "src": {
+                "$field": "image"
+              },
+              "fit": "cover",
+              "width": "fill",
+              "height": "fill",
+              "fill": "#E6E0E9"
+            },
+            {
+              "type": "rect",
+              "name": "degradê",
+              "height": 72,
+              "anchors": {
+                "left": 0,
+                "right": 0,
+                "bottom": 0
+              },
+              "fill": {
+                "type": "linear",
+                "angle": 90,
+                "stops": [
+                  {
+                    "offset": 0,
+                    "color": "rgba(0, 0, 0, 0)"
+                  },
+                  {
+                    "offset": 1,
+                    "color": "rgba(0, 0, 0, 0.6)"
+                  }
+                ]
+              },
+              "visible": {
+                "$has": "label"
+              }
+            },
+            {
+              "type": "text",
+              "name": "rótulo",
+              "text": {
+                "$field": "label"
+              },
+              "color": "#FFFFFF",
+              "anchors": {
+                "left": 16,
+                "right": 16,
+                "bottom": 14
+              },
+              "font": {
+                "family": "Roboto",
+                "size": 14,
+                "weight": 500,
+                "lineHeight": 20
+              },
+              "visible": {
+                "$has": "label"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "repeat",
+        "name": "itens uncontained",
+        "field": "items",
+        "direction": "row",
+        "gap": {
+          "$field": "itemSpacing",
+          "default": 8
+        },
+        "width": 4000,
+        "anchors": {
+          "left": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "visible": {
+          "$eq": ["style", "uncontained"]
+        },
+        "template": {
+          "type": "frame",
+          "name": "item",
+          "width": 140,
+          "height": "fill",
+          "cornerRadius": 28,
+          "clip": true,
+          "layout": {
+            "type": "none"
+          },
+          "children": [
+            {
+              "type": "image",
+              "name": "imagem",
+              "src": {
+                "$field": "image"
+              },
+              "fit": "cover",
+              "width": "fill",
+              "height": "fill",
+              "fill": "#E6E0E9"
+            },
+            {
+              "type": "rect",
+              "name": "degradê",
+              "height": 72,
+              "anchors": {
+                "left": 0,
+                "right": 0,
+                "bottom": 0
+              },
+              "fill": {
+                "type": "linear",
+                "angle": 90,
+                "stops": [
+                  {
+                    "offset": 0,
+                    "color": "rgba(0, 0, 0, 0)"
+                  },
+                  {
+                    "offset": 1,
+                    "color": "rgba(0, 0, 0, 0.6)"
+                  }
+                ]
+              },
+              "visible": {
+                "$has": "label"
+              }
+            },
+            {
+              "type": "text",
+              "name": "rótulo",
+              "text": {
+                "$field": "label"
+              },
+              "color": "#FFFFFF",
+              "anchors": {
+                "left": 16,
+                "right": 16,
+                "bottom": 14
+              },
+              "font": {
+                "family": "Roboto",
+                "size": 14,
+                "weight": 500,
+                "lineHeight": 20
+              },
+              "visible": {
+                "$has": "label"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "repeat",
+        "name": "itens centered-hero",
+        "field": "items",
+        "direction": "row",
+        "gap": {
+          "$field": "itemSpacing",
+          "default": 8
+        },
+        "width": 4000,
+        "anchors": {
+          "left": 48,
+          "top": 0,
+          "bottom": 0
+        },
+        "visible": {
+          "$eq": ["style", "centered-hero"]
+        },
+        "template": {
+          "type": "frame",
+          "name": "item",
+          "width": 264,
+          "height": "fill",
+          "cornerRadius": 28,
+          "clip": true,
+          "layout": {
+            "type": "none"
+          },
+          "children": [
+            {
+              "type": "image",
+              "name": "imagem",
+              "src": {
+                "$field": "image"
+              },
+              "fit": "cover",
+              "width": "fill",
+              "height": "fill",
+              "fill": "#E6E0E9"
+            },
+            {
+              "type": "rect",
+              "name": "degradê",
+              "height": 72,
+              "anchors": {
+                "left": 0,
+                "right": 0,
+                "bottom": 0
+              },
+              "fill": {
+                "type": "linear",
+                "angle": 90,
+                "stops": [
+                  {
+                    "offset": 0,
+                    "color": "rgba(0, 0, 0, 0)"
+                  },
+                  {
+                    "offset": 1,
+                    "color": "rgba(0, 0, 0, 0.6)"
+                  }
+                ]
+              },
+              "visible": {
+                "$has": "label"
+              }
+            },
+            {
+              "type": "text",
+              "name": "rótulo",
+              "text": {
+                "$field": "label"
+              },
+              "color": "#FFFFFF",
+              "anchors": {
+                "left": 16,
+                "right": 16,
+                "bottom": 14
+              },
+              "font": {
+                "family": "Roboto",
+                "size": 14,
+                "weight": 500,
+                "lineHeight": 20
+              },
+              "visible": {
+                "$has": "label"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
