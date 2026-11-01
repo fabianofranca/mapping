@@ -69,6 +69,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/redesign/HANDOFF-PROPOSALS.md`](docs/redesign/HANDOFF-PROPOSALS.md) | Design das propostas de alteração (fase 4.0): telas, componentes e tokens novos, comportamento, atalhos e pontos em aberto |
 | [`docs/redesign/BRIEF-REVIEW-DETAILS.md`](docs/redesign/BRIEF-REVIEW-DETAILS.md) | Briefing para o Claude Design dos Detalhes na revisão (fase 9.1, concluída; referência): problema, estado atual, requisitos, restrições e os estados E1 a E17 |
 | [`docs/redesign/HANDOFF-REVIEW-DETAILS.md`](docs/redesign/HANDOFF-REVIEW-DETAILS.md) | Design dos Detalhes na revisão (etapa 9, aprovado; referência): marcador e popover por campo, cabeçalho do item, “Outras mudanças”, comportamento, textos e decisões |
+| [`docs/sdui/BRIEF-SDUI-KMP.md`](docs/sdui/BRIEF-SDUI-KMP.md) | Briefing de um SDUI de produção com Material 3 em Kotlin Multiplatform (contrato, renderer em Compose Multiplatform, BFF; componentes, gatilhos e ações), para outro repositório, e onde o Mapping entra (biblioteca `sdui-material3`) |
 
 ---
 
@@ -104,6 +105,8 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 6. **Roteiros:** o R3.10, o R3.12, o R3.14 a R3.17 (as cópias `mat-v3`, `mat-v4` e `mat-v5` com migrações), o R9, o R10, o R12.12 e o R13 passam à `material3-compose` (pasta ou `material3-compose.zip`); o R15 usa o tipo `image` dela (campo `url`); o R10 ganha os passos da origem (seção de origens do componente e a galeria com a tela de exemplo) na `sdui-backend`; o R12.19 continua com a `analytics`. Todo passo continua feito pelo agente sozinho (seção 8 do `docs/TESTING.md`).
 
 7. **Guia dos exemplos:** `examples/README.md` diz, para cada biblioteca de `libraries/` e cada exemplo de `examples/`, o que é, como abrir, o que dá para ver e que roteiros o usam, e termina com a tabela "Onde ver cada recurso". `tests/examples/examplesReadme.test.ts` exige uma seção por exemplo no disco e nenhuma seção de exemplo que não existe; cada fase que cria, troca ou remove um exemplo atualiza o guia no mesmo PR.
+
+8. **SDUI de produção fica fora desta etapa.** O dono decidiu (2026-11-01) fazer um SDUI de produção com Material 3 em Kotlin Multiplatform (contrato único, renderer em Compose Multiplatform para Android e iOS, BFF em Kotlin) num **repositório separado**; o que foi decidido está em [`docs/sdui/BRIEF-SDUI-KMP.md`](docs/sdui/BRIEF-SDUI-KMP.md). A biblioteca do Mapping que o descreve (`sdui-material3`, em `libraries/`) nasce depois que o contrato existir lá, porque o `code` e as `sources` precisam apontar para símbolos e chaves reais; quando nascer, ela pode substituir a `sdui-backend` como exemplo de origem. Até lá, a EX1 segue com a `sdui-backend` enxuta.
 
 ### Fora (de propósito)
 
