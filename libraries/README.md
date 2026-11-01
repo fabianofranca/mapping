@@ -1,5 +1,7 @@
 # Bibliotecas
 
+O que cada biblioteca e cada exemplo mostra, e como abri-los, está em [`examples/README.md`](../examples/README.md).
+
 Pacotes de biblioteca prontos para uso (formato em [`docs/SPEC-FORMAT.md`](../docs/SPEC-FORMAT.md), "Biblioteca: o pacote"). Cada pasta é um pacote: a especialização na raiz, `components/` e `docs/`.
 
 | Pasta     | O que é                                                                                                  | Como chega ao projeto                                                                                    |
