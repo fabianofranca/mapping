@@ -94,11 +94,13 @@ test.describe('projeto de exemplo', () => {
     page,
   }) => {
     await page.goto('/');
-    await page.locator('input[type=file][accept=".zip,application/zip"]').setInputFiles({
-      name: 'exemplo-completo.zip',
-      mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
-    });
+    await page
+      .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
+      .setInputFiles({
+        name: 'exemplo-completo.zip',
+        mimeType: 'application/zip',
+        buffer: readFileSync('examples/exemplo-completo.zip'),
+      });
     await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
 
     // A proposta de exemplo chega na janela Propostas (Ctrl+Shift+7) e abre para revisão.
