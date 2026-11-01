@@ -5,7 +5,7 @@ O formato do arquivo que desenha um tipo de anotação: um **componente**. É pa
 Arquivos de apoio:
 
 - `docs/component.schema.json`: JSON Schema (draft 2020-12) da estrutura. É documentação: a fonte da verdade é o código (`src/model/components/parseComponent.ts`), e um teste confere o schema contra os componentes do Material 3 e contra o parser.
-- `examples/libraries/material3/components/*.json`: quinze componentes reais (os exemplos deste documento saem deles, encurtados).
+- `libraries/material3-compose/components/*.json`: componentes reais (50 tipos do Material 3); os exemplos deste documento saem de componentes assim, encurtados. A origem executável está em `examples/libraries/sdui-backend/`.
 - O motor que lê o formato: `src/model/components/` (`componentFormat.ts`, `parseComponent.ts`, `expressions.ts`, `instantiate.ts`, `layout.ts`, `arrange.ts`, `origin.ts`). Puro, sem DOM: roda no navegador e no Node.
 
 ## O que é um componente

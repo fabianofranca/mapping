@@ -280,7 +280,7 @@ describe('SpecsDialog', () => {
 });
 
 // Pacote de biblioteca (v4): pasta ou zip, os três níveis e o contrato de versão (B2).
-const PACKAGE_DIR = join(process.cwd(), 'examples', 'libraries', 'material3');
+const PACKAGE_DIR = join(process.cwd(), 'tests', 'fixtures', 'material3');
 
 /** Caminho relativo ao pacote → texto (`.json`, `.md`) ou bytes, do Material 3 do repositório. */
 function material3(): Map<string, string> {

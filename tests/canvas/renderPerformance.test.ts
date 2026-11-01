@@ -184,7 +184,7 @@ describe('renderização do canvas com o projeto grande', () => {
 // ~15 ms do coletor de lixo no começo. O orçamento da instância é ~1 ms (folga de 4x sobre a
 // média); o da tela é o do quadro, com a mediana de várias repetições.
 const INSTANCE_BUDGET_MS = 1;
-const MATERIAL3_DIR = join(__dirname, '../../examples/libraries/material3');
+const MATERIAL3_DIR = join(__dirname, '../../tests/fixtures/material3');
 
 function loadMaterial3(): Library {
   const components = join(MATERIAL3_DIR, 'components');

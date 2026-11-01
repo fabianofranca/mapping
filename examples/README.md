@@ -103,41 +103,6 @@ Os nomes dos botões vêm da app em português. Na tela inicial: **Abrir pasta**
 
 **Roteiros.** R10.10 e R10.11.
 
-## Bibliotecas de exemplo que saem (`examples/libraries/`)
-
-### `examples/libraries/material3/`
-
-**O que é.** Um pacote antigo e completo do Material 3 com quinze tipos (`m3-button`, `m3-card`, `m3-chip`…), gerado do laboratório. Os testes e o projeto de exemplo ainda o usam.
-
-**Sai nesta etapa (EX3): vai para `tests/fixtures/`; o que só ele mostrava passa à `sdui-backend` (EX1) ou à `material3-compose`.**
-
-**Como abrir.** **Especializações** › **Aplicar pasta…** ou **Aplicar zip…** (zip da pasta). Sem projeto: **Abrir biblioteca**.
-
-**O que dá para ver.**
-
-- A origem executável completa (`origins`): um sistema externo que descreve telas em JSON, com `booleans`, `background.values`, raízes da tela com `anchor`, `margin` e `scrim` (a película `m3-scrim`) e a tela de exemplo `examples/settings.sdui.json`.
-- A correspondência entre os tipos e os elementos do sistema externo (`sources` com `slot`, `values` e `ignore`).
-- Os quatro tamanhos prontos de container.
-- Um componente com largura calculada por expressão (`m3-text-field`), `minSize` e `sizing` em todos os quinze.
-- Fontes declaradas sem os arquivos (só o `LEIA-ME.txt`): os textos saem na fonte do sistema e a validação avisa.
-
-**Roteiros.** R3.10 a R3.17, R9, R10 e R12.12 (passam à `material3-compose` na EX3).
-
-### `examples/libraries/pessoas/`
-
-**O que é.** Um tipo só, o **Avatar**: a foto redonda de uma pessoa com o nome ao lado.
-
-**Sai nesta etapa (EX3): vai para `tests/fixtures/`; o que só ele mostrava passa à `sdui-backend` (EX1) ou à `material3-compose`.** O tipo `image` da `material3-compose` tem o campo `url` e mostra o mesmo recurso.
-
-**Como abrir.** **Especializações** › **Aplicar pasta…** e escolher a pasta.
-
-**O que dá para ver.**
-
-- A imagem remota: o nó `image` com o `src` ligado ao campo `foto`. Antes do consentimento da origem, com URL recusada ou com falha, aparece o reservado (a caixa cinza com um X). Nada além da URL é gravado.
-- A faixa de consentimento por origem e os interruptores de **Configurações** › **Privacidade**.
-
-**Roteiros.** R15.
-
 ## Especializações de arquivo único (`examples/specs/`)
 
 Para aplicar um arquivo solto: **Especializações** › **Aplicar especialização…**. Os dois principais também saem da própria app, em **Ajuda** (F1) › **Downloads**. Pelo MCP: `validate_specialization` e `apply_specialization`.
@@ -167,18 +132,6 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 - Uma especialização sem plataformas, sem `code` e sem biblioteca: é a `formatVersion` 1.
 
 **Roteiros.** R1.3 e R8.
-
-### `examples/specs/biblioteca.json`
-
-**O que é.** Um arquivo pequeno de `formatVersion` 4 que reúne `component`, `doc`, `examples`, `fonts`, `origins`, `sources` e `migrations`. É só o arquivo da especialização: os arquivos que ele cita não vêm junto.
-
-**Sai nesta etapa (EX3): vai para `tests/fixtures/`; o que só ele mostrava passa à `sdui-backend` (EX1) ou à `material3-compose`.**
-
-**O que dá para ver.**
-
-- As migrações (`migrations`): a versão 2 com um passo `rename-field` (`texto` vira `label`) que a atualização de uma biblioteca aplica aos dados.
-- A origem e as correspondências, em ponto pequeno: `sources` com `ignore` e uma propriedade de origem com `values` (`filled` vira `primary`).
-- Uma fonte declarada (`fonts`).
 
 ## Projetos e zips prontos (`examples/`)
 
@@ -288,11 +241,11 @@ Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executáv
 | Tipo flutuante (`floating`)                                  | Nota e Tabela (`notas`); Evento (`analytics`)                                                                                     |
 | `appliesTo`                                                  | Transição, só em seta (`analytics`); Endpoint, só em marcação (`sdui-backend`)                                                    |
 | `component`, `doc` e `examples` (pacote de biblioteca)       | Todas as pastas de `libraries/` e a `analytics`                                                                                   |
-| `origins`, `sources` e exemplo de tela de um sistema externo | `sdui-backend` (e `material3` e `biblioteca.json`, que saem)                                                                      |
-| `migrations`                                                 | `sdui-backend` (e `biblioteca.json`, que sai)                                                                                     |
+| `origins`, `sources` e exemplo de tela de um sistema externo | `sdui-backend`                                                                                                                    |
+| `migrations`                                                 | `sdui-backend`                                                                                                                    |
 | `formatVersion` 1                                            | `modelo-de-dados.json`                                                                                                            |
-| `formatVersion` 4 e 5                                        | `biblioteca.json` (4); `sdui.json` (5)                                                                                            |
-| `formatVersion` 6 a 9                                        | `material3` (6); `notas`, `analytics` e `pessoas` (7); `kotlin` (8); `material3-compose` (9)                                      |
+| `formatVersion` 4 e 5                                        | `sdui-backend` (4); `sdui.json` (5)                                                                                               |
+| `formatVersion` 6 a 9                                        | `notas` e `analytics` (7); `kotlin` (8); `material3-compose` (9)                                                                  |
 | `formatVersion` 2 e 3                                        | Sem exemplo próprio: a app aceita, e uma especialização 1 é uma 2 sem plataformas                                                 |
 
 ### Componente
@@ -303,7 +256,7 @@ Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executáv
 | `rect`                                         | Divider e Checkbox (`material3-compose`); o cartão das classes (`kotlin`)                                                                     |
 | `ellipse`                                      | Switch, Radio button, Slider e Progress indicator (`material3-compose`)                                                                       |
 | `path`                                         | Ícones do Button, do Checkbox, do Chip e de outros (`material3-compose`)                                                                      |
-| `image`                                        | Image, Card, List item e Carousel (`material3-compose`); Avatar (`pessoas`, sai)                                                              |
+| `image`                                        | Image, Card, List item e Carousel (`material3-compose`)                                                                                       |
 | `slot`                                         | Box, Column, Row, Scaffold e outros (`material3-compose`)                                                                                     |
 | `repeat`                                       | Tabela (`notas`); Propriedades (`kotlin`); Evento (`analytics`); Navigation bar, Tabs e Carousel (`material3-compose`)                        |
 | Layout `row`, `column` e `none`                | `row` e `column` em todas as bibliotecas; `none` no Box (`material3-compose`)                                                                 |
@@ -312,7 +265,7 @@ Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executáv
 | Tamanho do nó: px, `fill`, `hug` e `%`         | px, `fill` e `hug` em todas; `%` no Slider e no Short navigation bar (`material3-compose`)                                                    |
 | `size`, `minSize` e `sizing`                   | Todos os componentes; `minSize` oficial só no Button, FAB, Text field e outros (`material3-compose`)                                          |
 | Âncoras (`anchors`)                            | `left`, `right`, `top`, `bottom`, `centerX` e `centerY` (`material3-compose`: FAB, Pull to refresh)                                           |
-| Âncoras da tela e película                     | `sdui-scrim` e as raízes com `anchor` e `margin` (`sdui-backend`; também `material3`, que sai)                                                |
+| Âncoras da tela e película                     | `sdui-scrim` e as raízes com `anchor` e `margin` (`sdui-backend`)                                                                             |
 | Expressões `$field`, `$if`, `$switch`          | `kotlin` e `material3-compose`; `$field` com `default` em ambos                                                                               |
 | `$concat`                                      | Cabeçalho das classes (`kotlin`); Box, Column e Image (`material3-compose`)                                                                   |
 | Condições `$has`, `$eq`, `$not`, `$and`, `$or` | `$has` em `notas`; todas em `material3-compose`                                                                                               |
