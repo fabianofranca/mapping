@@ -198,12 +198,14 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low.
 
-- [ ] Roteiro na seção 8 do `docs/TESTING.md`, feito pelo agente sozinho: aplicar `libraries/material3-compose/`, mapear uma tela com Scaffold, Top app bar, LazyColumn com List items, um Button outlined e um FAB, e conferir pelo MCP que `get_code_hints` devolve a árvore com os composables certos (teste de `tests/tooling/testingGuide.test.ts`)
-- [ ] Zip da biblioteca para aplicar pela app (`examples/` ou o próprio `libraries/`, decisão registrada no PR), conferido por teste
+- [x] Roteiro na seção 8 do `docs/TESTING.md` (R17), feito pelo agente sozinho: aplicar `libraries/material3-compose/`, mapear uma tela com Scaffold, Top app bar, LazyColumn com List items, um Button outlined e um FAB, e conferir pelo MCP que `get_code_hints` devolve a árvore com os composables certos (teste de `tests/tooling/testingGuide.test.ts`)
+- [x] Zip da biblioteca para aplicar pela app (`examples/material3-compose.zip`, ao lado dos outros zips de teste; a pasta `libraries/` fica só com as fontes), conferido por teste
 - [ ] PR da MD5 aberto com o rótulo `mcp-rc` (última fase do épico)
 - [ ] Rodada dirigida do Cowork, quando o dono puder, e o relato entre os documentos da etapa
 - [ ] Fechamento: histórico em `docs/history/PLAN-etapa-material3.md`, `CHANGELOG.md`, `CLAUDE.md` e `docs/ROADMAP.md` (quando o dono decidir mesclar o épico, depois do `epic/imagens-remotas`)
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
+
+**Registro da MD5.** Zip em `examples/material3-compose.zip` (conteúdo da pasta na raiz, gerado por `scripts/material3ComposeZip.mjs`, sem fonte própria além de `libraries/material3-compose/`; `tests/examples/material3ComposeZip.test.ts` prova que o zip tem exatamente o conteúdo da pasta e que é um pacote válido). Roteiro R17 (9 passos, quadro "Comece aqui" na linha 19) e `tests/mcp/material3Compose.test.ts`, que mapeia a mesma tela com o MCP real e confere a árvore de `get_code_hints` e o `find_by_code` pela variante. No `get_code_hints`, só as anotações de tipos com `variants` trazem `code` na `tree`; as demais têm o composable em `types`.
 
 ## Etapa — Imagens remotas (em andamento, épico `epic/imagens-remotas`)
 

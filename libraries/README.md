@@ -7,7 +7,7 @@ Pacotes de biblioteca prontos para uso (formato em [`docs/SPEC-FORMAT.md`](../do
 | `notas/`  | Notas e tabelas flutuantes no canvas (post-its).                                                         | **Embutida** no build (`index.ts`) e aplicada por padrão em projeto novo.                                |
 | `kotlin/` | Declarações Kotlin: os onze tipos de classe, objeto e interface, com propriedades, funções e supertipos. | **Não embutida.** Baixe a pasta (ou um zip dela) e aplique em **Especializações › Aplicar pasta…/zip…**. |
 
-| `material3-compose/` | Material Design 3 (tema claro) para Jetpack Compose, com o composable de cada tipo no `code` (`variants`). | **Não embutida.** Aplicada pela pasta ou por um zip, como a `kotlin/`. |
+| `material3-compose/` | Material Design 3 (tema claro) para Jetpack Compose, com o composable de cada tipo no `code` (`variants`). | **Não embutida.** Aplicada pela pasta ou pelo zip pronto `examples/material3-compose.zip` (`npm run build:material3-zip` o regera), como a `kotlin/`. |
 
 Uma pasta com `index.ts` é embutida; sem ele, a biblioteca é aplicada pela pessoa. Toda pasta daqui tem um teste que a valida (`validateLibrary`, sem erros): `tests/model/notesLibrary.test.ts`, `tests/model/kotlinLibrary.test.ts` e `tests/model/material3ComposeLibrary.test.ts`.
 

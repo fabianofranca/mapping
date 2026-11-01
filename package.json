@@ -25,6 +25,7 @@
     "build:example": "node scripts/exampleProject.mjs",
     "build:proposal-components": "node scripts/proposalComponents.mjs",
     "build:suggestions-kotlin": "node scripts/suggestionsKotlin.mjs",
+    "build:material3-zip": "node scripts/material3ComposeZip.mjs",
     "build:guia": "node scripts/buildGuia.mjs",
     "build:viewer": "node lab/viewer/build.mjs"
   },

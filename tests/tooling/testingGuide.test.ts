@@ -418,23 +418,18 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
     it('o prompt do Cowork tem a rodada dirigida das imagens remotas, com o R15', () => {
       expect(prompt).toContain('## 12. Rodada dirigida da etapa Imagens remotas');
       expect(prompt).toContain('R15.12');
-      expect(prompt).toContain('R0 a R16');
+      expect(prompt).toContain('R0 a R17');
     });
   });
   // Etapa Biblioteca Material 3 (MD1): o R16 roda sozinho, pelo cliente MCP por stdio e pela extensão.
   describe('R16 — Variantes no código', () => {
     const guide = read('docs/TESTING.md');
-    const r16 = guide.slice(
-      guide.indexOf('### R16 '),
-      guide.indexOf('### Roteiros sob demanda (manuais)'),
-    );
+    const r16 = guide.slice(guide.indexOf('### R16 '), guide.indexOf('### R17 '));
 
-    it('está no quadro "Comece aqui", depois do R15 e antes dos roteiros sob demanda', () => {
+    it('está no quadro "Comece aqui", depois do R15 e antes do R17', () => {
       expect(guide).toMatch(/^\| 18 +\| R16 — Variantes no código/m);
       expect(guide.indexOf('### R16 ')).toBeGreaterThan(guide.indexOf('### R15 '));
-      expect(guide.indexOf('### R16 ')).toBeLessThan(
-        guide.indexOf('### Roteiros sob demanda (manuais)'),
-      );
+      expect(guide.indexOf('### R16 ')).toBeLessThan(guide.indexOf('### R17 '));
       expect(guide).toMatch(/^- R16 usa a pasta própria `variantes`/m);
     });
 
@@ -469,8 +464,80 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('o prompt do Cowork lista os roteiros até o R16', () => {
-      expect(prompt).toContain('R0 a R16');
+    it('o prompt do Cowork lista os roteiros até o R17', () => {
+      expect(prompt).toContain('R0 a R17');
+    });
+  });
+
+  // Etapa Biblioteca Material 3 (MD5): o R17 roda sozinho, pelo cliente MCP por stdio, a shell e a extensão.
+  describe('R17 — Biblioteca Material 3 (Compose)', () => {
+    const guide = read('docs/TESTING.md');
+    const r17 = guide.slice(
+      guide.indexOf('### R17 '),
+      guide.indexOf('### Roteiros sob demanda (manuais)'),
+    );
+
+    it('está no quadro "Comece aqui", depois do R16 e antes dos roteiros sob demanda', () => {
+      expect(guide).toMatch(/^\| 19 +\| R17 — Biblioteca Material 3 \(Compose\)/m);
+      expect(guide.indexOf('### R17 ')).toBeGreaterThan(guide.indexOf('### R16 '));
+      expect(guide.indexOf('### R17 ')).toBeLessThan(
+        guide.indexOf('### Roteiros sob demanda (manuais)'),
+      );
+      expect(guide).toMatch(/^- R17 usa a pasta própria `tela-m3`/m);
+      expect(guide).toContain('`material3-compose.zip` (R17)');
+    });
+
+    it('tem os passos R17.1 a R17.9, em ordem, e nenhum depende do dono', () => {
+      const codes = [...stepActions(r17).keys()];
+      expect(codes).toEqual(Array.from({ length: 9 }, (_, i) => `R17.${i + 1}`));
+      expect(/sem substituto/i.test(r17)).toBe(false);
+      expect(r17).not.toContain('[pessoa]');
+    });
+
+    it('o lote do roteiro é JSON válido, só com tipos que a biblioteca tem', async () => {
+      const block = /```json\n([\s\S]*?)\n```/.exec(r17)?.[1];
+      expect(block).toBeDefined();
+      const ops = JSON.parse(block ?? '[]') as { op: string; type?: string }[];
+      expect(ops.filter((o) => o.op === 'add_container')).toHaveLength(1);
+      expect(ops.filter((o) => o.op === 'create_marking')).toHaveLength(7);
+      expect(ops.some((o) => o.op === 'apply_specialization')).toBe(false);
+      const spec = JSON.parse(
+        read('libraries/material3-compose/material3-compose.spec.json'),
+      ) as { layers: { annotationTypes: { id: string }[] }[] };
+      const types = new Set(
+        spec.layers.flatMap((l) =>
+          l.annotationTypes.map((t) => `material3-compose/${t.id}`),
+        ),
+      );
+      const used = ops
+        .filter((o) => o.op === 'create_annotation')
+        .map((o) => o.type ?? '');
+      expect(used).toHaveLength(7);
+      for (const type of used) expect(types.has(type), type).toBe(true);
+    });
+
+    it('usa o cliente stdio e as tools que o roteiro confere', () => {
+      for (const tool of [
+        'validate_library',
+        'create_project',
+        'propose_changes',
+        'list_markings',
+        'get_code_hints',
+        'get_annotation',
+        'find_by_code',
+      ]) {
+        expect(r17, tool).toContain(tool);
+      }
+      for (const composable of ['Scaffold', 'TopAppBar', 'LazyColumn', 'ListItem']) {
+        expect(r17, composable).toContain(composable);
+      }
+      expect(r17).toContain('OutlinedButton');
+      expect(r17).toContain('FloatingActionButton');
+      expect(r17).toContain('Aplicar zip…');
+    });
+
+    it('o prompt do Cowork lista os roteiros até o R17', () => {
+      expect(prompt).toContain('R0 a R17');
     });
   });
 });
