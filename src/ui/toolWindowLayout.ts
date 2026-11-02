@@ -130,6 +130,14 @@ export function toggleToolWindowFocus(id: ToolWindowId): void {
  * "Foco e teclado").
  */
 export function showAndFocusToolWindow(id: ToolWindowId): void {
+  // Trocar de aba na janela inferior já aberta: o foco vai à aba ativa (decisão 3), não à
+  // seção, de onde quer que ele venha (aba, conteúdo ou canvas).
+  const switchesBottomTab =
+    WINDOW_SIDE[id] === 'bottom' &&
+    TOOL_WINDOWS.some(
+      (other) =>
+        other !== id && WINDOW_SIDE[other] === 'bottom' && isToolWindowOpen(other),
+    );
   openToolWindow(id);
-  queueMicrotask(() => focusToolWindow(id));
+  queueMicrotask(() => (switchesBottomTab ? focusActiveTab(id) : focusToolWindow(id)));
 }

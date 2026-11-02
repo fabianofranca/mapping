@@ -171,4 +171,23 @@ describe('devolver o foco ao fechar', () => {
     expect(active()?.getAttribute('role')).toBe('tab');
     expect(active()?.getAttribute('aria-selected')).toBe('true');
   });
+
+  it('trocar de aba pelo atalho, com o foco no canvas ou no conteúdo, foca a aba ativa', async () => {
+    showToolWindow('list');
+    const { rerender } = render(<Shell />);
+    await settle();
+    for (const from of ['canvas', 'content'] as const) {
+      hideToolWindow('incomplete');
+      showToolWindow('list');
+      rerender(<Shell />);
+      await settle();
+      if (from === 'canvas') screen.getByLabelText('canvas').focus();
+      else control('list').focus();
+      showAndFocusToolWindow('incomplete');
+      rerender(<Shell />);
+      await settle();
+      expect(active()?.getAttribute('role')).toBe('tab');
+      expect(active()?.getAttribute('aria-selected')).toBe('true');
+    }
+  });
 });
