@@ -4,7 +4,6 @@ import {
   openWindowOf,
   openWindowsOf,
   setPaneWidth,
-  showToolWindow,
   sideWidth,
   type ToolWindowId,
 } from '../store/toolWindows';
@@ -22,7 +21,7 @@ import { LayersWindow } from '../ui/LayersWindow';
 import { ToolStrip } from '../ui/ToolStrip';
 import { ToolWindow } from '../ui/ToolWindow';
 import { TreeWindow } from '../ui/TreeWindow';
-import { PANES_CLASS } from '../ui/toolWindowLayout';
+import { PANES_CLASS, openToolWindow } from '../ui/toolWindowLayout';
 import { ZoomField } from '../ui/ZoomField';
 import { HELP_PROPOSALS } from '../ui/HelpDialog';
 import { ProposalsHeaderActions, ProposalsWindow } from '../ui/review/ProposalsWindow';
@@ -77,7 +76,7 @@ function Window({
     case 'incomplete': {
       // Ir até a anotação precisa do painel de Detalhes à vista.
       const goTo: EditorPanelProps['onGoToAnnotation'] = (annotation) => {
-        showToolWindow('details');
+        openToolWindow('details');
         panel.onGoToAnnotation(annotation);
       };
       return (

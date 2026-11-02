@@ -19,7 +19,7 @@ import type { LibraryReport } from '../model/library';
 import type { SpecPackageFiles } from '../store/project';
 import { Button, Choice } from './controls';
 import { Dialog } from './Dialog';
-import { showToolWindow } from '../store/toolWindows';
+import { openToolWindow } from './toolWindowLayout';
 import { useEditor } from './EditorContext';
 import { LibraryIssueList } from './LibraryIssueList';
 import { UpdateImpact } from './UpdateImpact';
@@ -283,7 +283,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
     spec: Spec,
     pending: number,
   ): Feedback => {
-    if (result.ok && pending > 0) showToolWindow('incomplete');
+    if (result.ok && pending > 0) openToolWindow('incomplete');
     if (!result.ok) return failureFeedback(result.error);
     return {
       tone: 'success',
