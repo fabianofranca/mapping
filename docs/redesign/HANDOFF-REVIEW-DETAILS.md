@@ -10,6 +10,8 @@ Documento de passagem do desenho da fase 9.1 (etapa 9, ponto 4 do [`PLAN.md`](..
 
 Os artifacts são privados: só abrem para quem tiver acesso compartilhado pelo dono. As pranchetas foram escritas, mas **não foram renderizadas nem conferidas visualmente** pelo autor; a revisão visual é do dono, que aprovou o desenho e os quatro pontos da seção 10 em 2026-10-15.
 
+O registro vivo do design system — mapa componente → origem no código, gatilhos, pendências e histórico de sincronização — é [`docs/DESIGN-SYSTEM.md`](../DESIGN-SYSTEM.md).
+
 **Regras que continuam valendo** (CLAUDE.md): um único `dist/index.html` que funciona em `file://`; CSP sem `style=""` nem handlers inline; `src/model/` sem APIs de navegador; toda mutação por action do store; estado do projeto separado do estado da UI; nenhuma string fixa (pt-BR e en-US, com +30% em inglês); nenhum valor de design fora dos tokens; só desktop (900 px a 1920 px).
 
 > As pranchetas usam classes de maquete (`rd-*`) e `style=""` **só como maquete**. Na implementação, tudo vira classe com `var(--…)` em `src/theme/`, com os nomes da app (`details-*`, `review-*`).

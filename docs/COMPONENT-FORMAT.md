@@ -154,7 +154,7 @@ Mostra uma imagem de uma URL `https://` (avatar, foto, logo cuja URL vem do dado
 - **O campo ligado** ao `src` precisa ser `string` (no `repeat`, uma coluna `string` da `table`); o validador da biblioteca confere. Nenhuma declaração de origem: a URL é o valor de um campo como qualquer outro.
 - **Tamanho.** `width`/`height` `"hug"` é **erro**: a arrumação nunca depende da imagem baixada, para o desenho ser o mesmo na app, no MCP e antes de carregar. O padrão dos dois eixos é `fill`, como nos outros nós que não são texto. Use px, `fill` ou `%`.
 - **Reservado.** Enquanto a imagem não carrega, sem consentimento da origem, com URL recusada ou com falha, o nó desenha o reservado (a caixa cinza com um X). O servidor MCP **nunca baixa** a imagem e desenha sempre o reservado.
-- **Consentimento.** A imagem só é pedida à rede depois de a pessoa permitir aquela origem na app (a partir da próxima versão da app); nada é gravado no projeto além da URL.
+- **Consentimento.** A imagem só é pedida à rede depois de a pessoa permitir aquela origem na app (Configurações › Privacidade); nada é gravado no projeto além da URL.
 - Vale dentro do `template` de um `repeat` (o `src` liga a uma coluna `string`).
 
 ### `path`

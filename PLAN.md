@@ -1,6 +1,6 @@
 # Mapping — Plano de desenvolvimento
 
-> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje nenhuma etapa está em andamento; a **Testes na nuvem** foi a última concluída, depois da **Exemplos enxutos**; a **Marcação pai** foi mesclada na `main` pelo PR #240, com o fechamento do histórico pendente). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje nenhuma etapa está em andamento; a **Sincronia do design system** foi a última concluída, depois da **Testes na nuvem** e da **Exemplos enxutos**; a **Marcação pai** foi mesclada na `main` pelo PR #240, com o fechamento do histórico pendente). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 
 ## Produto
 
@@ -23,6 +23,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/component.schema.json`](docs/component.schema.json) | JSON Schema do arquivo de componente (documentação; o código é a fonte da verdade) |
 | [`docs/MCP.md`](docs/MCP.md)                             | Servidor MCP: instalação, `.mcp.json`, raízes, tools, referências, problemas   |
 | [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md)             | Guia do agente: como usar as tools do servidor MCP (também servido como recurso) |
+| [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md)         | Design system (artefato do Claude Design): mapa componente → origem no código, gatilhos, pendências e histórico de sincronização |
 | [`docs/TESTING.md`](docs/TESTING.md) | Guia do testador: onde pegar a app, requisitos, mapa da interface, MCP, roteiros de teste manual, teste manual avançado (seção 9), templates do relato e do registro de uso real e os apêndices do agente e de disco |
 | [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md) | Prompt vivo do testador do Cowork (rodada completa ou dirigida; o agente lê o guia com o apêndice A) |
 | [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md) | Prompt vivo do testador da nuvem (sessão do Claude Code no ambiente "Mapping - testes", sem o dono; build local, receitas do apêndice A) |
@@ -64,6 +65,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/history/relato-2026-10-28-marcacao-pai.md`](docs/history/relato-2026-10-28-marcacao-pai.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/marcacao-pai` (build `5d7ac40`): 19 ✅, 1 achado baixo (texto cortado sem dica), corrigido no MP1b |
 | [`docs/history/relato-2026-10-29-sugestoes-campo.md`](docs/history/relato-2026-10-29-sugestoes-campo.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/sugestoes-campo` (build `f034a3a`): 24 ✅, 2 achados baixos, tratados no PR #250 |
 | [`docs/history/PLAN-etapa-exemplos-enxutos.md`](docs/history/PLAN-etapa-exemplos-enxutos.md) | Histórico da etapa Exemplos enxutos (EX0 a EX4): objetivo, decisões, fases, decisões consolidadas dos PRs, rodadas do Cowork e o que ficou para depois |
+| [`docs/history/PLAN-etapa-sincronia-ds.md`](docs/history/PLAN-etapa-sincronia-ds.md) | Histórico da etapa Sincronia do design system (DS1 e DS2): objetivo, as 8 decisões, fases, decisões consolidadas dos PRs, os erros que a própria etapa corrigiu no registro e o que ficou para depois |
 | [`docs/history/relato-2026-11-01-material3.md`](docs/history/relato-2026-11-01-material3.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/material3` (build `11d9b65`, MCP 0.12.0-rc.1): 35 ✅, 1 ❌ baixo (R10.7: o guia estava velho; o componente sem container vai para o canvas desde a etapa Marcações espaciais), textos do guia corrigidos |
 | [`docs/history/relato-2026-11-01-exemplos-enxutos.md`](docs/history/relato-2026-11-01-exemplos-enxutos.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/exemplos-enxutos` (build `36f7215`): 68 ✅, 4 🟡, 4 ⏭️; A1 corrigido, A2 reaberto e corrigido depois do reteste, textos dos roteiros ajustados |
 | [`docs/history/relato-2026-11-02-exemplos-enxutos-reteste.md`](docs/history/relato-2026-11-02-exemplos-enxutos-reteste.md) | Reteste curto do Cowork sobre o épico `epic/exemplos-enxutos` (build `2eb2da0`): 30 ✅, 1 achado médio (`\n` no fim do `url` num campo de várias linhas, corrigido) e 5 de texto de roteiro |
@@ -84,6 +86,10 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 ## Etapa — Biblioteca Material 3 (concluída, épico `epic/material3`)
 
 > Fases MD1 a MD5 entregues no épico (especialização `formatVersion` 9 com `variants` no `code`, MCP 0.12.0; sem schema, formato de proposta nem de componente novos). O objetivo, as 14 decisões, as fases, as decisões consolidadas dos PRs, a rodada do Cowork e o que ficou para depois estão em [`docs/history/PLAN-etapa-material3.md`](docs/history/PLAN-etapa-material3.md).
+
+## Etapa — Sincronia do design system (concluída, épico `epic/sincronia-ds`)
+
+> Fases DS1 e DS2 entregues no épico (sem schema, formato de especialização, de proposta nem de componente novos, e sem MCP novo: schema v13, MCP 0.12.0). O design system — o artefato **Mapping** do Claude Design, curado à mão — passou a ter um registro vivo no repositório, [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md), com o mapa de cada componente, seção, token e ícone para a origem no código, os gatilhos e as pendências; toda descrição de PR declara o **Impacto no DS**, o fechamento de cada épico aplica as pendências no artefato, e o job `epic` do `ci.yml` exige o arquivo no PR do épico. O artefato foi posto em dia com as cinco entregas desde 2026-10-24. O objetivo, as 8 decisões, as fases, as decisões consolidadas dos PRs e o que ficou para depois estão em [`docs/history/PLAN-etapa-sincronia-ds.md`](docs/history/PLAN-etapa-sincronia-ds.md).
 
 ## Etapa — Exemplos enxutos (concluída, épico `epic/exemplos-enxutos`)
 
