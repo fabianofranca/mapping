@@ -562,6 +562,15 @@ describe('docs/TESTING-NUVEM.md (prompt do testador da nuvem)', () => {
     expect(cloud).toMatch(/RP[^\n]*RF[^\n]*RA[^\n]*nunca rodam na nuvem/);
   });
 
+  it('manda o testador avisar o coordenador do PR do relato e deixa o merge com ele', () => {
+    expect(cloud).toContain('Coordenador: `session_');
+    expect(cloud).toContain('Avise o coordenador');
+    expect(cloud).toContain('quem mescla é o coordenador');
+    expect(read('CLAUDE.md')).toContain(
+      'o agente da fase mescla o PR do relato no épico',
+    );
+  });
+
   it('tem o "Nunca": Enter, filechooser, uma aba e o preview', () => {
     const never = cloud.slice(cloud.indexOf('## Nunca'));
     expect(never).toContain('**Enter**');

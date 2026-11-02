@@ -9,6 +9,8 @@ O dono (ou o agente da última fase de um épico) manda uma mensagem pronta, com
 - **Dirigido pelas fases de um plano:** "… no modo dirigido: as fases 7.1 e 7.2 de `docs/history/PLAN-etapa-7.md`. Branch `epic/x`, commit `abc1234`."
 - **Completo:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo. Branch `epic/x`, commit `abc1234`." (R0 a R17, sem o RP; a seção 5 do prompt do Cowork diz a ordem)
 
+- **Aviso ao coordenador:** a mensagem pode terminar com "Coordenador: `session_…`" (a sessão do agente da fase). Quando o PR do relato estiver aberto, mande a essa sessão, com `send_message`, uma linha com o número do PR, o total de ✅/❌ e o caminho do relato. Sem essa linha, o coordenador não fica sabendo do PR.
+
 A rodada é **sempre sem interação**: o dono não está, então não pergunte nada. O que faltar e impedir a rodada vai para o relato. Os roteiros sob demanda (**RP**, **RF**, **RA**) nunca rodam na nuvem e nem aparecem no relato.
 
 ## Primeiros 10 minutos
@@ -66,7 +68,8 @@ Siga o apêndice A do guia, subseção "Diálogos nativos na nuvem (Xvfb)": a ta
 1. Grave o `relato.md` na pasta de trabalho **a cada roteiro concluído** (template da seção 10 do guia; seção 7 do prompt do Cowork). No cabeçalho, em **Ferramenta**: "Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)", e o MCP por stdio. Capturas e `mapping.json` dos ❌ ficam em `anexos/` da pasta de trabalho.
 2. No fim, volte ao clone e crie o branch `teste/<alvo>-<AAAA-MM-DD>` **a partir do branch em teste**. Copie o relato para `docs/history/relato-<AAAA-MM-DD>-<alvo>.md` e **só as capturas dos ❌** para `docs/history/anexos/relato-<AAAA-MM-DD>-<alvo>/` (ajuste os links do relato).
 3. Commit, push e PR **com base no branch em teste** (o épico). Descrição: **Resumo** (total de passos, ✅, ❌, achados por severidade, se algum impede o uso com pessoas), **Como testar** (n/a: é um relato) e **Decisões** (o que decidiu sozinho, o que o ambiente impediu).
-4. Mande o `relato.md` com a ferramenta de envio de arquivos da sessão, se houver, e cole o **Resumo** na conversa.
+4. **Avise o coordenador** (se a mensagem trouxe o id dele): `send_message` com "PR #N aberto: X ✅, Y ❌, relato em `docs/history/…`". Não mescle o PR; quem mescla é o coordenador.
+5. Mande o `relato.md` com a ferramenta de envio de arquivos da sessão, se houver, e cole o **Resumo** na conversa.
 
 ## Nunca
 
