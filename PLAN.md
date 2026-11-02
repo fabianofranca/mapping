@@ -1,6 +1,6 @@
 # Mapping — Plano de desenvolvimento
 
-> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje nenhuma etapa nova está em andamento; a **Exemplos enxutos** foi a última concluída; a **Marcação pai** foi mesclada na `main` pelo PR #240, com o fechamento do histórico pendente). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje nenhuma etapa está em andamento; a **Testes na nuvem** foi a última concluída, depois da **Exemplos enxutos**; a **Marcação pai** foi mesclada na `main` pelo PR #240, com o fechamento do histórico pendente). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 
 ## Produto
 
@@ -25,6 +25,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md)             | Guia do agente: como usar as tools do servidor MCP (também servido como recurso) |
 | [`docs/TESTING.md`](docs/TESTING.md) | Guia do testador: onde pegar a app, requisitos, mapa da interface, MCP, roteiros de teste manual, teste manual avançado (seção 9), templates do relato e do registro de uso real e os apêndices do agente e de disco |
 | [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md) | Prompt vivo do testador do Cowork (rodada completa ou dirigida; o agente lê o guia com o apêndice A) |
+| [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md) | Prompt vivo do testador da nuvem (sessão do Claude Code no ambiente "Mapping - testes", sem o dono; build local, receitas do apêndice A) |
 | [`docs/history/PLAN-etapas-1-2.md`](docs/history/PLAN-etapas-1-2.md) | Histórico: seções 1 a 13 do plano antigo (inclui o roteiro de teste manual 13.9, hoje R1 do `docs/TESTING.md`) |
 | [`docs/history/PLAN-etapa-2-1.md`](docs/history/PLAN-etapa-2-1.md)   | Histórico: etapa 2.1, revisão técnica (achados, decisões e fases 18 a 25)       |
 | [`docs/history/PLAN-etapa-2-2.md`](docs/history/PLAN-etapa-2-2.md) | Histórico: etapa 2.2, segunda revisão técnica (fases 26 e 27 concluídas; 28 dispensada) |
@@ -75,6 +76,10 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/sdui/BRIEF-SDUI-KMP.md`](docs/sdui/BRIEF-SDUI-KMP.md) | Briefing de um SDUI de produção com Material 3 em Kotlin Multiplatform (contrato, renderer em Compose Multiplatform, BFF; componentes, gatilhos e ações), para outro repositório, e onde o Mapping entra (biblioteca `sdui-material3`) |
 
 ---
+
+## Etapa — Testes na nuvem (concluída, épico `epic/testes-nuvem`)
+
+> Fases TN1 e TN2 entregues no épico (sem schema, formato nem MCP novos; MCP 0.12.0). As rodadas dirigidas do testador rodam também numa sessão do Claude Code na nuvem (ambiente "Mapping - testes"), com o prompt em `docs/TESTING-NUVEM.md`, as receitas dos diálogos nativos no apêndice A do `docs/TESTING.md` e a regra do fluxo no `CLAUDE.md`. O objetivo, as 9 decisões, as fases, as decisões consolidadas dos PRs, a rodada (R0 e R2, 12 de 12 ✅) e o que ficou para depois estão em [`docs/history/PLAN-etapa-testes-nuvem.md`](docs/history/PLAN-etapa-testes-nuvem.md).
 
 ## Etapa — Biblioteca Material 3 (concluída, épico `epic/material3`)
 

@@ -223,7 +223,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - Campos de texto gravam com **Enter** (o cursor continua no campo) ou ao sair do campo; espere **Salvo** antes de ler o disco (seção 4).
 - Como criar marcações e anotações, como adicionar imagem e a notação "**Marcação** › **Tipo** · campo = valor" estão na seção 5; "desenhe" é sempre no modo **Desenhar**.
 - _Itálico no fim do Esperado_ marca uma **regressão conhecida**: algo que já quebrou numa rodada anterior e é conferido de novo, não o objetivo do passo.
-- **[pessoa]** marca os passos que um agente com controle do computador não faz sozinho (apêndice A). Quem testa à mão pode ignorar a marca. O "ou `ferramenta`" ao lado nomeia o que a substitui para o agente: o dialog-pilot nos diálogos nativos (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`, `click_button`) e o cliente MCP por stdio nos pedidos ao Claude Code. Nos roteiros principais, nenhum passo fica sem substituto (um teste confere); o arrastar do gerenciador de arquivos e a confirmação de instalar o app só aparecem nos roteiros sob demanda.
+- **[pessoa]** marca os passos que um agente com controle do computador não faz sozinho (apêndice A); quem testa à mão pode ignorar a marca. O "ou `ferramenta`" nomeia o que a substitui para o agente: o dialog-pilot nos diálogos nativos (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`, `click_button`; na nuvem, a receita equivalente do apêndice A, "Diálogos nativos na nuvem (Xvfb)") e o cliente MCP por stdio nos pedidos ao Claude Code. Nos roteiros principais nenhum passo fica sem substituto (um teste confere).
 - **Regra para quem altera os roteiros (agentes e pessoas).** Os roteiros principais (R0 a R17) são feitos para um agente com controle do computador executar **sozinho**: todo passo novo ou alterado precisa ter um jeito de o agente fazê-lo (extensão do navegador, dialog-pilot, shell ou cliente MCP por stdio) e dizê-lo na Ação.
 - **Teste que precisa do dono.** Se um teste precisa de interação do dono e **não é muito relevante**, ele vai para os **roteiros sob demanda (manuais)** (fim desta seção).
 - **Teste que precisa do dono e é muito relevante.** Se precisa de interação do dono e **é muito relevante** (risco de perda de dados, integridade do `mapping.json`, segurança), o agente **não decide sozinho**: avisa o dono, na conversa e na descrição do PR, para decidirem juntos; enquanto não decidirem, o passo fica onde está, marcado como **pendente de decisão**.
@@ -1108,7 +1108,7 @@ Para o uso em trabalho de verdade, depois dos testes. Cada item leva o build id 
 
 ## Apêndice A — Para o agente testador
 
-Para um agente com controle do computador (Cowork) que executa os roteiros. O prompt da sessão é o [`docs/TESTING-COWORK.md`](TESTING-COWORK.md); os passos e os resultados esperados são os deste guia. Cada item cita o passo e, quando veio de um relato, o relato (`docs/history/relato-*.md`).
+Para um agente com controle do computador (Cowork) que executa os roteiros. O prompt da sessão é o [`docs/TESTING-COWORK.md`](TESTING-COWORK.md); numa sessão do Claude Code na nuvem, o prompt é o [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md); os passos e os resultados esperados são os deste guia. Cada item cita o passo e, quando veio de um relato, o relato (`docs/history/relato-*.md`).
 
 **Passos [pessoa].**
 
@@ -1146,6 +1146,127 @@ Para um agente com controle do computador (Cowork) que executa os roteiros. O pr
 - **Por que é feito assim** (para não repetir tentativas que falharam): teclas livres (`send_keys`) só funcionam no modo manual, o automático as barra, e dependem de foco (o Alt comeu o primeiro caractere do caminho); a UI Automation não enxerga os diálogos de arquivo do Chrome (processo sandboxed), e uma busca frouxa por "Nome" caiu num cabeçalho de coluna e abriu um "Renomear".
 - **O que funciona no dialog-pilot:** mensagens Win32 por id do controle (`WM_SETTEXT`, releitura com `WM_GETTEXT`, `BM_CLICK`). O pedido de permissão, que fica na janela principal do Chrome, usa UI Automation. Não proponha `send_keys` nem a barra de endereço.
 - **Continua com o dono:** instalar, atualizar e registrar o dialog-pilot, reiniciar o Claude Desktop e ligar o modo automático; deixar a janela na frente sem usá-la; os roteiros sob demanda (o app instalado, RP, que roda à parte); e o que o dialog-pilot não cobre: confirmar a instalação do app e arrastar do gerenciador de arquivos. No relato, registre a versão do dialog-pilot (cabeçalho **Ferramenta**).
+
+**Diálogos nativos na nuvem (Xvfb).** Numa sessão do Claude Code na nuvem (ambiente "Mapping - testes", prompt [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md)) não há dialog-pilot nem extensão: o Chrome for Testing roda numa tela virtual (Xvfb) e você opera os diálogos nativos com `xdotool` (teclado), AT-SPI (o pedido de permissão) e Playwright por CDP (a página). As receitas abaixo foram executadas de verdade em 2026-11-02 (Chrome 153, openbox) e valem para qualquer roteiro; `S` é a pasta `apoio/` da pasta de trabalho, fora do clone.
+
+| Ferramenta do dialog-pilot | Na nuvem                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------ |
+| `select_folder`            | clique na app (`noWaitAfter`) + receita 5 (seletor, `alt+o`) + receita 6 (permissão pelo AT-SPI) |
+| `open_file`                | receita 5 (seletor, `alt+o`)                                                                     |
+| `save_file`                | receita 7 ("Salvar como", `alt+s`)                                                               |
+| `accept_permission_prompt` | receita 6 (permissão pelo AT-SPI)                                                                |
+| `cancel_dialog`            | receita 8 (`alt+c`)                                                                              |
+| `click_button`             | não há: use o AT-SPI pelo nome do botão, só se ele aparecer no AT-SPI                            |
+
+- **Receita 1 (nuvem), build local e servidor.** O build id local é `<commit> · <data do build>` (a data é a do dia do build, não a do commit): confira o commit. Aparece em Configurações › Sobre e no rodapé da janela do projeto.
+
+```bash
+npm ci && npm run build            # dist/index.html
+(cd dist && nohup python3 -m http.server 8080 --bind 127.0.0.1 >"$S/http.log" 2>&1 &)
+npm run build:mcp && node dist-mcp/mapping-mcp.js --version
+```
+
+- **Receita 2 (nuvem), subir a tela, o D-Bus, o AT-SPI e o Chrome**, nesta ordem (o Chrome tem de subir já com o D-Bus). Conferência: `curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]'` lista exatamente uma linha, `http://localhost:8080/`. Erros de `system_bus_socket` no `chrome.log` são normais; a barra "Chrome for Testing é destinado apenas a testes automatizados" não atrapalha. Em cada chamada nova de shell, `source "$S/env"`.
+
+```bash
+export DISPLAY=:99
+Xvfb :99 -screen 0 1600x1000x24 >/dev/null 2>&1 &
+sleep 1; openbox >/dev/null 2>&1 &
+export DBUS_SESSION_BUS_ADDRESS=$(dbus-daemon --session --fork --print-address=1)
+/usr/libexec/at-spi-bus-launcher --launch-immediately >/dev/null 2>&1 &
+echo "export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" > "$S/env"
+GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sandbox \
+  --user-data-dir="$S/profile" --remote-debugging-port=9222 --force-renderer-accessibility \
+  --no-first-run --no-default-browser-check --hide-crash-restore-bubble \
+  --window-position=0,0 --window-size=1600,1000 http://localhost:8080/ >"$S/chrome.log" 2>&1 &
+```
+
+- **Receita 3 (nuvem), reiniciar o Chrome sem duplicar abas.** Nunca `pkill -f chrome`: o padrão casa com a linha de comando da própria shell e a mata, e o SIGTERM conta como "Crashed" e restaura abas. Feche limpo pelo CDP (`const s = await browser.newBrowserCDPSession(); await s.send('Browser.close')`), espere `pgrep -x chrome` ficar vazio, apague `"$S/profile/Default/Sessions"` (sem isso o Chrome voltou com 3 abas) e suba de novo com o comando da receita 2. Reiniciar perde as permissões de pasta daquela visita (o pedido volta ao reabrir) e o histórico de desfazer.
+- **Receita 4 (nuvem), a página pelo Playwright por CDP.** Clique por papel e nome, com `noWaitAfter` em todo clique que abre um diálogo nativo (senão o Playwright espera e dá timeout). Encerre o script com `process.exit(0)`, não com `browser.close()`.
+- **Receita 4 (nuvem), continuação.** Navegue a mesma aba com `page.goto`: é uma aba só. Nunca registre `page.on('filechooser')` nem `waitForEvent('filechooser')`: o Playwright intercepta o seletor e ele não abre de verdade (é imitar). Para capturar, use `import -window root x.png` (ImageMagick): sai a tela inteira, com os diálogos nativos; `convert x.png -resize 50% y.png` para olhar menor.
+
+```js
+const { createRequire } = require('module');
+const { chromium } = createRequire('<clone>/package.json')('playwright');
+const browser = await chromium.connectOverCDP('http://localhost:9222');
+const page = browser
+  .contexts()
+  .flatMap((c) => c.pages())
+  .find((p) => p.url().startsWith('http'));
+await page.getByRole('button', { name: 'Abrir pasta' }).click({ noWaitAfter: true });
+```
+
+- **Receita 5 (nuvem), seletor GTK de pasta ou de arquivo** (validado em Abrir pasta e Adicionar imagens). O seletor não aparece no AT-SPI: ache a janela pelo título, que vem do Chrome em pt-BR (Abrir pasta: "Selecione onde este site pode salvar mudanças"; Adicionar imagens: "Abrir arquivos"; a janela do Chrome é "Mapping: Google Chrome for Testing").
+- **Receita 5 (nuvem), continuação.** Para listar os títulos, `for w in $(xdotool search --onlyvisible --name '.'); do echo "$w $(xdotool getwindowname $w)"; done`. Os botões do GTK ficam em inglês. Confira que o seletor sumiu da lista e a app reagiu (ex.: "Criar projeto nesta pasta?").
+- **Nunca Enter no seletor:** ele vaza para o pedido de permissão, cujo foco está em "Não permitir", e a app recebe `AbortError`. O `alt+o` aciona o **Open** pelo atalho e não vaza.
+
+```bash
+W=$(xdotool search --onlyvisible --name 'Abrir arquivos')
+xdotool windowactivate --sync $W
+xdotool key --clearmodifiers ctrl+l
+xdotool type --delay 20 "/caminho/absoluto/arquivo-ou-pasta"   # pasta com "/" no fim
+xdotool key --clearmodifiers alt+o
+```
+
+- **Receita 5 (nuvem), pasta que tem conteúdo** (visto no R0.7, ao localizar a pasta de um projeto que já tem `images/` e `specs/`): a lista de autocompletar do GTK abre depois de digitar o caminho (uma janela "chromium" de uns 48 px na lista do `xdotool`) e o `alt+o` não faz nada. Aqui o `Escape` **apaga o campo do caminho**, e `Escape` + `alt+o` pode abrir o diretório pai (recusado como "contém arquivos do sistema"; **Escolher uma pasta diferente** reabre o seletor).
+- **Receita 5 (nuvem), pasta que tem conteúdo, contorno.** Digitar o caminho, **clicar no botão Open** do GTK por coordenada (`xdotool mousemove X Y click 1`; o primeiro clique só fecha a lista e mantém o caminho) e então `alt+o`. Confira o caminho no campo antes do `alt+o`.
+- **Receita 5 (nuvem), foco:** o `ctrl+l` e o `xdotool type` vão para onde estiver o foco. Com o seletor fora de foco, vão para a barra de endereço do Chrome: ative a janela com `xdotool windowactivate --sync $W` e confirme que `$W` não está vazio antes de digitar. O título do seletor de **Abrir zip** é "Abrir arquivo" (singular), diferente do de **Adicionar imagens** ("Abrir arquivos").
+- **Receita 6 (nuvem), pedido de permissão pelo AT-SPI.** O Chrome mostra "Permitir que este site edite arquivos?" com "Não permitir" (com o foco) e "Permitir". Use `/usr/bin/python3.12` (o `python3` do PATH quebra o `gi`). Saída esperada: `clicou Permitir press`; o `DeprecationWarning` é inofensivo.
+- **Receita 6 (nuvem), continuação.** "nenhum botão de permitir" com a app já aberta quer dizer que o navegador já tinha a permissão (reabrir pelos **Projetos recentes** na mesma execução do Chrome não pede de novo): é tão sucesso quanto clicar. Para reabrir pelos recentes, clique em **Abrir** na linha (`getByRole('button', { name: 'Abrir', exact: true })`) e rode o script.
+
+```python
+import sys, gi
+gi.require_version('Atspi', '2.0')
+from gi.repository import Atspi
+NAMES = ['Permitir em todas as visitas', 'Permitir', 'Allow on every visit', 'Allow']
+found = []
+def walk(n, d=0):
+    if n is None or d > 60: return
+    try:
+        if n.get_role_name() == 'push button': found.append(n)
+        for i in range(n.get_child_count()): walk(n.get_child_at_index(i), d + 1)
+    except Exception: pass
+desk = Atspi.get_desktop(0)
+for i in range(desk.get_child_count()):
+    app = desk.get_child_at_index(i)
+    if app and 'hrom' in (app.get_name() or ''): walk(app)
+by = {b.get_name(): b for b in found}
+for want in NAMES:
+    b = by.get(want)
+    if b:
+        ai = b.get_action_iface()
+        names = [ai.get_action_name(k) for k in range(ai.get_n_actions())]
+        k = next((k for k, x in enumerate(names) if x in ('press', 'click', 'doDefault', 'activate')), None)
+        if k is None: print('sem ação', names); sys.exit(2)
+        ai.do_action(k); print('clicou', want, names[k]); sys.exit(0)
+print('nenhum botão de permitir'); sys.exit(1)
+```
+
+- **Receita 7 (nuvem), "Salvar como"** (Exportar › Baixar). O título é "Aviso: este site pode conferir as edições que você faz"; o campo do nome vem com o foco e a pasta sugerida é a última usada. O caminho completo decide a pasta e o nome. Limpe o campo com `Home`, `shift+End`, `BackSpace` (o `ctrl+a` não seleciona tudo e saiu `nome.zip.zip`) e salve com `alt+s`. Conferência: `unzip -l` no zip; o diálogo "Exportar projeto" da app fechou sozinho neste teste.
+- **Antes de salvar,** confira pela shell que o destino **não existe** (`test -e`): salvar por cima de um arquivo existente sobrescreve **sem pedir confirmação**.
+- **Lista de autocompletar:** ela aparece quando o nome digitado casa com um arquivo da pasta (uma janela "chromium" de uns 48 px de altura na lista do `xdotool`) e, aberta, o `alt+s` não salva. Feche com **um** `Escape` antes do `alt+s`: ele fecha só a lista. Sem a lista, **não** aperte `Escape` (cancelaria o diálogo).
+
+```bash
+W=$(xdotool search --onlyvisible --name 'Aviso: este site')
+xdotool windowactivate --sync $W
+xdotool key --clearmodifiers Home shift+End BackSpace
+xdotool type --delay 20 "/caminho/absoluto/nome-novo.zip"
+xdotool key --clearmodifiers alt+s
+```
+
+- **`alt+s` que não salva:** na primeira exportação de uma rodada, o `alt+s` logo depois de digitar o caminho pode não salvar. Espere uns 2 s depois de digitar, confira com `xdotool search --onlyvisible --name 'Aviso: este site'` se o diálogo continua aberto e só então repita o `alt+s` **uma vez** (nunca Enter).
+
+- **Receita 8 (nuvem), cancelar um diálogo nativo.** `xdotool windowactivate --sync $W; xdotool key --clearmodifiers alt+c` (**Cancel**). O diálogo "Exportar projeto" da app continua aberto depois de cancelar o "Salvar como" (R2.3): feche-o com **Cancelar** da app.
+- **Receita 9 (nuvem), MCP por stdio.** O cliente `scripts/testing/mcp-stdio-client.mjs` roda o `dist-mcp/mapping-mcp.js` compilado do commit (receita 1), com a raiz na pasta de trabalho. Para um workspace igual ao da seção 6, monte o `.mcp.json` com o caminho desse arquivo. O download de uma Release (`curl -sSL -o mapping-mcp.js https://github.com/fabianofranca/mapping/releases/download/<tag>/mapping-mcp.js`) funciona na rede do ambiente: use só quando a mensagem pedir a rc.
+
+```bash
+WS=<pasta de trabalho> MAPPING_MCP_ARGS='["<clone>/dist-mcp/mapping-mcp.js","--root","<pasta de trabalho>"]' \
+  node scripts/testing/mcp-stdio-client.mjs calls.json
+```
+
+- **Receita 10 (nuvem), R15 sem o preview.** Copie `scripts/servidor-imagens.mjs` e `public/imagens-teste/foto.png` para a mesma pasta e rode `nohup node servidor-imagens.mjs &` lá (o R15.1 não tem duplo clique na nuvem: é o mesmo computador do Chrome).
+- **Receita 10 (nuvem), continuação.** O log é o `servidor.log` da pasta; para parar, `curl -s http://127.0.0.1:8765/parar`. `PAGES` é `https://fabianofranca.github.io/mapping/` (a foto vem com `access-control-allow-origin: *`). Com a app em `http://localhost:8080`, a imagem de `http://127.0.0.1:8765/foto.png` carregou sem aviso de rede local: aceite o aviso só se ele aparecer (receita 6, com o nome do botão que aparecer).
+- **Pasta de trabalho sem acento:** o `xdotool type` com acentos não foi testado; use caminhos sem acento. Com `LANGUAGE=pt_BR:pt` a app abre em pt-BR (o seletor GTK continua em inglês).
 
 **O que o guia supõe de você.** Você controla o Chrome por uma extensão **e** tem um **shell no computador** da pessoa. Com o shell, você faz as operações de arquivo fora do navegador (criar, copiar, mover, renomear e descompactar, ler e regravar o `mapping.json`, mudar permissões no R6.8b, rodar o MCP) e todas as conferências de **Disco**; por isso esses passos não são [pessoa]. **Sem shell**, cada uma vira [pessoa]: a pessoa faz e conta o que viu.
 
