@@ -38,6 +38,7 @@ npm run build:guia   # regera public/guia/index.html (o npm run build já faz)
 npm run build:example # regera examples/exemplo-completo.zip a partir da pasta
 npm run build:proposal-components # regera examples/proposta-componentes.zip (proposta com componentes novos, roteiro R13)
 npm run build:suggestions-kotlin # regera examples/sugestoes-kotlin.zip (biblioteca Kotlin com duas data classes, roteiro R14)
+npm run build:material3-complex # regera examples/material3-complexos.zip (tela de reserva só com componentes complexos do Material 3, todas as propriedades preenchidas)
 ```
 
 ## Guia interativo e projeto de exemplo
