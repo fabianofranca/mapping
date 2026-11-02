@@ -4,6 +4,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `etapa` e, antes delas, no histórico do git.
 
+## Foco nos chamadores das janelas — 2026-11-02 (épico `epic/foco-chamadores`, PR #336, MCP 0.12.0, schema v13)
+
+### Corrigido
+
+- Fechar os Detalhes, as Propostas ou as Incompletas abertas pela revisão, por "mostrar o problema", pelo "ir para a anotação" de Incompletas ou pela atualização de especialização devolve o foco do teclado a quem as abriu, ou ao botão da faixa. Abrir a revisão a partir da Lista não perde mais o foco.
+
 ## Exemplo gerado das fontes — 2026-11-02 (épico `epic/exemplo-gerado`, PR #334, MCP 0.12.0, schema v13)
 
 ### Alterado
