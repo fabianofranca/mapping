@@ -1,5 +1,6 @@
-import type { ModelError, ModelErrorCode } from '../src/model';
+import type { ModelError, ModelErrorCode, ModelErrorData } from '../src/model';
 import { ToolError } from './errors';
+import type { Refs } from './items';
 
 /**
  * O que cada erro de regra do `src/model/` quer dizer, para o agente corrigir a operação.
@@ -70,14 +71,57 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
 export const MODEL_ERROR_HINTS: Readonly<Partial<Record<ModelErrorCode, string>>> = {
   'type-not-applicable':
     'escolha um tipo cujo `appliesTo` inclua este item (marcação ou seta) ou use uma anotação livre numa camada sem especialização',
+  'rect-too-small':
+    'aumente `width` e `height` do `rect` até pelo menos o mínimo (cada lado, em pixels do container; no canvas, em unidades do canvas)',
+  'image-overlap':
+    'mude `x`, `y` ou `scale` do container (ou o tamanho dele) para não cobrir o outro, ou mova o outro container antes',
 };
 
-/** Erro de regra do modelo numa tool de leitura → `ToolError` com a explicação e o detalhe. */
-export function modelToolError(error: ModelError): ToolError {
-  const [, detail] = error.message.split(': ');
+function isSize(value: unknown): value is { width: number; height: number } {
+  if (typeof value !== 'object' || value === null) return false;
+  const { width, height } = value as Record<string, unknown>;
+  return typeof width === 'number' && typeof height === 'number';
+}
+
+/** `recebido 5×3 px; mínimo 8×8 px` a partir do `data` de um `rect-too-small`; `null` se faltar. */
+export function rectTooSmallDetail(data: ModelErrorData | undefined): string | null {
+  if (!data || !isSize(data.received) || !isSize(data.min)) return null;
+  const { received, min } = data;
+  const origin = data.source === 'component' ? ' (do componente)' : '';
+  return `recebido ${received.width}×${received.height} px; mínimo ${min.width}×${min.height} px${origin}`;
+}
+
+/** Texto depois do primeiro `: ` da mensagem (`code: texto`); o texto pode ter `: ` dentro. */
+function messageDetail(error: ModelError): string | undefined {
+  const at = error.message.indexOf(': ');
+  return at < 0 ? undefined : error.message.slice(at + 2);
+}
+
+/**
+ * Detalhe e dica de um erro do modelo. O `data` vira texto aqui (o modelo só guarda fatos); o id
+ * do outro container vira referência quando há `refs`. Sem `data`, o detalhe é o texto da mensagem.
+ */
+export function describeModelError(
+  error: ModelError,
+  refs?: Refs,
+): { detail?: string; hint?: string } {
   const hint = MODEL_ERROR_HINTS[error.code];
+  let detail: string | undefined;
+  if (error.code === 'rect-too-small') {
+    detail = rectTooSmallDetail(error.data) ?? undefined;
+  } else if (error.code === 'image-overlap') {
+    const id = error.data?.containerId;
+    if (typeof id === 'string') {
+      detail = `sobrepõe o container ${refs ? refs.ref('i', id) : id}`;
+    }
+  }
+  detail ??= messageDetail(error);
+  return { ...(detail ? { detail } : {}), ...(hint ? { hint } : {}) };
+}
+
+/** Erro de regra do modelo numa tool de leitura → `ToolError` com a explicação e o detalhe. */
+export function modelToolError(error: ModelError, refs?: Refs): ToolError {
   return new ToolError(error.code, MODEL_ERROR_MESSAGES[error.code], {
-    ...(detail ? { detail } : {}),
-    ...(hint ? { hint } : {}),
+    ...describeModelError(error, refs),
   });
 }

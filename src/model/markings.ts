@@ -3,6 +3,7 @@ import {
   IDENTITY_PLACEMENT,
   MIN_MARKING_SIZE,
   bottom,
+  checkRectSize,
   clamp,
   containsRect,
   fromCanvasRect,
@@ -43,10 +44,7 @@ export interface RectOptions extends SettleOptions {
 
 function checkRectShape(rect: Rect, options?: RectOptions): void {
   if (!isIntegerRect(rect)) fail('rect-not-integer');
-  if (rect.width < MIN_MARKING_SIZE || rect.height < MIN_MARKING_SIZE)
-    fail('rect-too-small');
-  const min = options?.minSize;
-  if (min && (rect.width < min.width || rect.height < min.height)) fail('rect-too-small');
+  checkRectSize(rect, options?.minSize);
 }
 
 /**

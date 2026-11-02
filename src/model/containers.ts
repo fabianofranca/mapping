@@ -125,19 +125,37 @@ export function placementNear(
   return { ...(best ?? placementAtRight(p, scale)), scale };
 }
 
+/**
+ * O primeiro container com que a imagem, em `placement`, passaria a se sobrepor; `null` se
+ * nenhum. É o "outro" do `image-overlap`.
+ */
+export function overlappingContainer(
+  p: Project,
+  containerId: string,
+  placement: Placement,
+): ProjectContainer | null {
+  const image = findById(p.containers, containerId);
+  const rect = imageCanvasRect(image, placement);
+  return (
+    p.containers.find(
+      (other) =>
+        other.id !== containerId &&
+        rectsOverlap(rect, imageCanvasRect(other, other.placement)),
+    ) ?? null
+  );
+}
+
 /** `true` se a imagem pode ocupar `placement` sem sobrepor outra imagem. */
 export function canPlaceContainer(
   p: Project,
   containerId: string,
   placement: Placement,
 ): boolean {
-  const image = findById(p.containers, containerId);
-  const rect = imageCanvasRect(image, placement);
-  return p.containers.every(
-    (other) =>
-      other.id === containerId ||
-      !rectsOverlap(rect, imageCanvasRect(other, other.placement)),
-  );
+  return overlappingContainer(p, containerId, placement) === null;
+}
+
+function failOverlap(other: ProjectContainer): never {
+  fail('image-overlap', undefined, { containerId: other.id });
 }
 
 /** Arquivos das imagens (o container sem arquivo não tem), na ordem das imagens. */
@@ -290,22 +308,19 @@ export function setBackgroundContainer(
         fail('rect-out-of-image', m.id);
       }
     }
-    if (
-      !canPlaceContainer(
-        {
-          ...p,
-          containers: updateById(p.containers, containerId, (i) => ({
-            ...i,
-            width,
-            height,
-          })),
-        },
-        containerId,
-        image.placement,
-      )
-    ) {
-      fail('image-overlap');
-    }
+    const overlap = overlappingContainer(
+      {
+        ...p,
+        containers: updateById(p.containers, containerId, (i) => ({
+          ...i,
+          width,
+          height,
+        })),
+      },
+      containerId,
+      image.placement,
+    );
+    if (overlap) failOverlap(overlap);
   }
   if (!resized && background === image.background) return p;
   return settleIf(
@@ -381,7 +396,8 @@ export function setContainerPlacement(
 ): Project {
   checkPlacement(placement);
   requireUnlocked(canEditImagePlacement(p, containerId));
-  if (!canPlaceContainer(p, containerId, placement)) fail('image-overlap');
+  const overlap = overlappingContainer(p, containerId, placement);
+  if (overlap) failOverlap(overlap);
   const copy: Placement = { x: placement.x, y: placement.y, scale: placement.scale };
   return settleIf(
     {

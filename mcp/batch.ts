@@ -108,7 +108,12 @@ import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { prepareImage } from './imagePrepare';
 import { KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
 import { containersNamed } from './markingList';
-import { MODEL_ERROR_HINTS, MODEL_ERROR_MESSAGES } from './modelErrors';
+import {
+  MODEL_ERROR_MESSAGES,
+  describeModelError,
+  rectTooSmallDetail,
+  MODEL_ERROR_HINTS,
+} from './modelErrors';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
 
@@ -445,14 +450,12 @@ class Batch {
 
   private describeError(index: number, op: string, error: unknown): OperationError {
     if (error instanceof ModelError) {
-      const [, detail] = error.message.split(': ');
       return {
         index,
         op,
         code: error.code,
         message: MODEL_ERROR_MESSAGES[error.code],
-        ...(detail ? { detail } : {}),
-        ...(MODEL_ERROR_HINTS[error.code] ? { hint: MODEL_ERROR_HINTS[error.code] } : {}),
+        ...describeModelError(error, this.refs()),
       };
     }
     if (error instanceof ToolError) {
@@ -1226,10 +1229,15 @@ class Batch {
       return run();
     } catch (error) {
       if (error instanceof ModelError && error.code === 'rect-too-small' && minSize) {
+        const detail = rectTooSmallDetail(error.data);
         throw new ToolError(
           error.code,
           `retângulo menor que o tamanho mínimo do componente de ${what}: ${minSize.width}×${minSize.height} px`,
-          { minSize: { width: minSize.width, height: minSize.height } },
+          {
+            minSize: { width: minSize.width, height: minSize.height },
+            ...(detail ? { detail } : {}),
+            hint: MODEL_ERROR_HINTS['rect-too-small'],
+          },
         );
       }
       throw error;
