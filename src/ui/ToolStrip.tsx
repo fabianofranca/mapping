@@ -1,12 +1,9 @@
 import { t } from '../i18n';
 import { diagnosticsUnseen } from '../store/diagnostics';
-import {
-  isToolWindowOpen,
-  toggleToolWindow,
-  type ToolWindowId,
-} from '../store/toolWindows';
+import { isToolWindowOpen, type ToolWindowId } from '../store/toolWindows';
 import { IconButton } from './controls';
 import { useEditor } from './EditorContext';
+import { toggleToolWindowFocus } from './toolWindowLayout';
 import { toolWindowMeta, toolWindowShortcut, windowsOfSide } from './toolWindowMeta';
 
 // Faixas de 40px nas laterais: um botão por janela de ferramenta, com o atalho na
@@ -37,7 +34,8 @@ function StripButton({ id }: { readonly id: ToolWindowId }) {
       tooltip={name}
       shortcut={toolWindowShortcut(id)}
       pressed={open}
-      onClick={() => toggleToolWindow(id)}
+      onClick={() => toggleToolWindowFocus(id)}
+      data-strip-window={id}
     />
   );
 }
