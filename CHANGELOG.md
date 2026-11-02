@@ -4,7 +4,7 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão em `docs/history/`.
 
-## [Não lançado] — Testes na nuvem (épico `epic/testes-nuvem`, MCP sem mudança, schema v13)
+## Testes na nuvem — 2026-11-02 (épico `epic/testes-nuvem`, PR #279, MCP sem mudança, schema v13)
 
 ### Adicionado
 
@@ -12,7 +12,7 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 ### Alterado
 
-- O fluxo de épico dispara a rodada dirigida sozinho depois do merge da última fase.
+- O fluxo de épico dispara a rodada dirigida sozinho depois do merge da última fase: o agente da fase cria a sessão do testador, o testador avisa quando abre o PR do relato e, sem ❌ e com o CI verde, o agente da fase mescla o relato no épico.
 
 ## Biblioteca Material 3 — 2026-11-01 (épico `epic/material3`, PR #260, MCP 0.12.0, schema v13)
 

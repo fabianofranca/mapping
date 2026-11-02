@@ -1,6 +1,6 @@
 # Roadmap
 
-Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar. Hoje não há etapa em andamento; a etapa detalhada é a Exemplos enxutos (`epic/exemplos-enxutos`, fases EX1 a EX3 no `PLAN.md`), que só começa depois que o `epic/material3` entrar na `main`.
+Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar. Hoje não há etapa em andamento (a Testes na nuvem foi a última concluída); a etapa detalhada é a Exemplos enxutos (`epic/exemplos-enxutos`, fases EX1 a EX3 no `PLAN.md`), que só começa depois que o `epic/material3` entrar na `main`.
 
 ## Princípio
 
@@ -256,6 +256,12 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - **SG2, `linkedRef`:** a lista ganha, antes das fixas, as declarações mapeadas que um `ref` irmão aceita (com o nome do tipo do alvo); escolher uma e confirmar grava o texto e o `ref` juntos, numa entrada do desfazer; roteiro R14 e `examples/sugestoes-kotlin.zip`; rodada dirigida do Cowork (24 de 26 passos ✅, os 2 achados baixos tratados).
 - **Fora (decidido):** sugestões tiradas dos valores já usados no projeto; sugestões em `number`; campo de vários valores; coluna `ref` nova em Funções › Retorno; aceitar a sugestão com Tab.
 - **Depende de:** etapa Biblioteca (concluída).
+
+## Etapa — Testes na nuvem (concluída, épico `epic/testes-nuvem`)
+
+- **Concluída em 2026-11-02** (fases TN1 e TN2, PRs #280, #281, #283 e #284; o épico é o PR #279); histórico em [`history/PLAN-etapa-testes-nuvem.md`](history/PLAN-etapa-testes-nuvem.md). Sem schema (v13), formato de especialização, de proposta ou de componente novos e sem MCP novo (0.12.0).
+- **O que entrou:** o testador das rodadas dirigidas também roda numa sessão do Claude Code na nuvem (ambiente "Mapping - testes"), sem o dono no computador: prompt em `docs/TESTING-NUVEM.md`, receitas dos diálogos nativos (seletor GTK, permissão pelo AT-SPI, "Salvar como") no apêndice A do `docs/TESTING.md`, build local do commit e MCP compilado do mesmo commit. O fluxo de épico dispara a rodada sozinho depois do merge da última fase, e o agente da fase mescla o relato no épico.
+- **Primeira rodada:** R0 e R2, 12 passos, 12 ✅, nenhum achado.
 
 ## Evoluções
 
