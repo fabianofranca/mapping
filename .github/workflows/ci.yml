@@ -76,6 +76,32 @@ jobs:
             echo "::error::A entrega de $HEAD para a main precisa atualizar o CHANGELOG.md (nova seção no topo)."
             exit 1
           fi
+      # O fechamento de todo épico aplica as pendências no design system e registra a
+      # sincronização em docs/DESIGN-SYSTEM.md (CLAUDE.md, "Fluxo de trabalho"). O artefato
+      # do DS vive fora do repositório e o CI não o alcança; o registro aqui, sim. Um épico
+      # sem impacto no DS também toca o arquivo, para dizer que não houve.
+      - name: Design system registrado
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "$BASE" != "main" ]; then
+            echo "PR para $BASE: o registro do design system só é exigido nos PRs para a main."
+            exit 0
+          fi
+          case "$HEAD" in
+            epic/*) ;;
+            *) echo "PR de $HEAD: o registro do design system só é exigido nos épicos."; exit 0 ;;
+          esac
+          if gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep -qx 'docs/DESIGN-SYSTEM.md'; then
+            echo "docs/DESIGN-SYSTEM.md atualizado neste PR."
+          else
+            echo "::error::A entrega de $HEAD para a main precisa atualizar o docs/DESIGN-SYSTEM.md (pendências aplicadas e histórico de sincronização, ou o registro de que não houve impacto)."
+            exit 1
+          fi
 
   check:
     runs-on: ubuntu-latest
