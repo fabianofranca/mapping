@@ -512,9 +512,9 @@ A v4 deixa uma origem ser **executável**: a especialização declara em `origin
 
 ```json
 {
-  "id": "m3-card",
+  "id": "card",
   "name": "Card",
-  "component": "components/m3-card.json",
+  "component": "components/card.json",
   "sources": [
     {
       "system": "sdui",
@@ -625,11 +625,11 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 ```json
 {
-  "id": "m3-button",
+  "id": "button",
   "name": "Button",
   "labelField": "label",
-  "component": "components/m3-button.json",
-  "doc": "docs/m3-button.md",
+  "component": "components/button.json",
+  "doc": "docs/button.md",
   "fields": [
     { "key": "label", "type": "string", "required": true },
     {
