@@ -14,7 +14,7 @@ export type StoreErrorCode =
   ModelErrorCode | 'no-project' | 'read-only' | 'gesture-active' | 'reviewing';
 
 /**
- * Efeito fora do projeto ligado a uma entrada do histórico (etapa 4): aplicar as aceitas
+ * Efeito fora do projeto ligado a uma entrada do histórico: aplicar as aceitas
  * de uma proposta também marca a proposta como aplicada, e desfazer/refazer essa entrada
  * precisa desfazer/refazer isso junto. `tag` identifica o dono (o id da proposta). Uma
  * entrada com `link` nasce da revisão, então passa pelo bloqueio de somente leitura dela.

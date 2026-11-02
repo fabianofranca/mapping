@@ -62,7 +62,7 @@ import { markingDisplay, showComponentsOnPhotos } from './settings';
 import { textMeasurer } from './textMeasure';
 import { resolveActiveLayerId, visibleLayers, type EditorUi } from './ui';
 
-// Estado derivado do editor (docs/history/PLAN-etapa-2-1.md 14.3): calculado uma vez a partir do projeto
+// Estado derivado do editor (docs/ARCHITECTURE.md, "Desempenho"): calculado uma vez a partir do projeto
 // e da UI e lido por canvas, painel e lista. Nada aqui depende do viewport, então
 // pan e zoom não recalculam nada disto.
 

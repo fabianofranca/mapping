@@ -89,7 +89,7 @@ export function validateEntries<T extends Pick<Entry, 'key'>>(
 
 /**
  * Checa os invariantes que o schema zod não expressa. Lista vazia = projeto válido.
- * Ver "Regras do modelo" no docs/history/PLAN-etapas-1-2.md. A seta (v13) tem as suas:
+ * Ver docs/FORMAT.md, "Regras de validade". A seta (v13) tem as suas:
  * `arrow-endpoint-missing` (ponta que não é uma marcação existente) e `arrow-self`. As regras das especializações (camada × tipo,
  * `allowedChildren`, referências) não bloqueiam a abertura: viram pendências
  * (`getAnnotationIssues`). Só a unicidade dos ids de tupla e de linha fica aqui.

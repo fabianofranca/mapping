@@ -34,7 +34,7 @@ export function toolWindowMeta(id: ToolWindowId): ToolWindowMeta {
   return META[id];
 }
 
-/** Atalho oficial da janela (decisão 1 da seção 5: Ctrl+Shift+N, Ctrl também no macOS). */
+/** Atalho oficial da janela (Ctrl+Shift+N, Ctrl também no macOS). */
 export function toolWindowShortcut(id: ToolWindowId): string {
   return `Ctrl+Shift+${WINDOW_NUMBER[id]}`;
 }

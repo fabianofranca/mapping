@@ -1,7 +1,8 @@
 dist
+dist-viewer
+dist-viewer-demo
 node_modules
 package-lock.json
-docs/history
 CLAUDE.md
 coverage
 playwright-report

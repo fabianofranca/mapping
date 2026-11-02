@@ -1,4 +1,4 @@
-// Decisões da otimização de imagens na importação (docs/history/PLAN-etapas-1-2.md 12.6). Funções puras:
+// Decisões da otimização de imagens na importação (docs/ARCHITECTURE.md, "Entrada e otimização de imagens"). Funções puras:
 // a recodificação em si (canvas, toBlob) fica em `src/storage/imageImport.ts`.
 
 /** Lado maior máximo de uma imagem importada, em pixels. */

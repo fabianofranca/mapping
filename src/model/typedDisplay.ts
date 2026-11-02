@@ -16,7 +16,7 @@ import { checkSimpleValue, isEmptyValue } from './typed';
 import type { Annotation, AnnotationTypeRef, JsonValue, Project } from './types';
 
 // Como uma anotação tipada aparece no painel, na lista e no zoom semântico
-// (docs/history/PLAN-etapas-1-2.md 13.5, "Exibição"). Funções puras: a interface passa os textos traduzidos.
+// (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"). Funções puras: a interface passa os textos traduzidos.
 
 export interface DisplayTexts extends LabelTexts {
   /** Obrigatório vazio, ex.: `id: —`. */

@@ -1,6 +1,6 @@
 import { readSetting, writeSetting } from '../utils/safeStorage';
 
-// Consentimento de imagens remotas (docs/history/PLAN-etapa-imagens-remotas.md, decisões 3, 5 e 15 a 17).
+// Consentimento de imagens remotas (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador").
 // Vale por navegador: fica só no `localStorage`, com a origem normalizada (esquema incluído) como
 // chave. Nunca vai para o projeto, a especialização, o zip nem o pacote da proposta; por isso um
 // `id` de especialização reaproveitado não herda permissão.
