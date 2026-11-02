@@ -29,7 +29,7 @@ import { solidPng } from './png';
 // de componente estão desenhadas de fato; o reservado não conta), `data-components` e as
 // requisições são contadas por rota.
 
-const LIBRARY_DIR = 'examples/libraries/pessoas';
+const LIBRARY_DIR = 'tests/fixtures/pessoas';
 const NOW = '2026-10-31T12:00:00.000Z';
 
 const ORIGIN = 'https://imagens.mapping.test';

@@ -53,11 +53,7 @@ const EXCEPTIONS: Record<string, string> = {
  * Raízes que serão removidas na limpeza de exemplos (pastas ou arquivos, a partir da raiz do
  * repositório).
  */
-const LEAVING: string[] = [
-  'examples/libraries/material3',
-  'examples/libraries/pessoas',
-  'examples/specs/biblioteca.json',
-];
+const LEAVING: string[] = [];
 
 /**
  * O que só as raízes de LEAVING cobrem hoje: precisa ganhar exemplo noutro lugar antes da

@@ -430,7 +430,7 @@ describe('arrangeMarking: trava, idempotência e histórico', () => {
 // --- Material 3 real ---------------------------------------------------------------------------------
 
 describe('arrangeMarking: Material 3', () => {
-  const root = join(process.cwd(), 'examples/libraries/material3');
+  const root = join(process.cwd(), 'tests/fixtures/material3');
   const specText = readFileSync(join(root, 'material3.spec.json'), 'utf8');
   const parsed = parseSpecText(specText);
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));

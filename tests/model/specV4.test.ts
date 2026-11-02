@@ -18,7 +18,7 @@ import {
 // têm o arquivo próprio (specMigrations.test.ts). v1 a v3 seguem como estavam.
 
 const read = (path: string): string => readFileSync(path, 'utf8');
-const biblioteca = read('examples/specs/biblioteca.json');
+const biblioteca = read('tests/fixtures/specs/biblioteca.json');
 const jsonSchema = JSON.parse(read('docs/spec.schema.json')) as Record<string, unknown>;
 const jsonValidator = z.fromJSONSchema(jsonSchema as never);
 

@@ -6,7 +6,7 @@ import { createProject, projectAction } from './helpers';
 
 // Etapa Biblioteca, B5: Catálogo aberto pela tela inicial (sem projeto) e de dentro do projeto.
 
-const PACKAGE_DIR = 'examples/libraries/material3';
+const PACKAGE_DIR = 'tests/fixtures/material3';
 
 /** Zip do pacote do Material 3, gerado na hora a partir da pasta do repositório. */
 async function packageZip(extraDoc?: {

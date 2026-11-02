@@ -1,9 +1,8 @@
-// Pacote de biblioteca de exemplo do produto (`examples/libraries/material3/`): o repositório
-// guarda o que o gerador produz (`npm run build:examples`) e este teste prova que está em dia.
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+// Pacote de biblioteca congelado dos testes (`tests/fixtures/material3/`): o Material 3 de 15 tipos
+// que prova o motor de bibliotecas (não é um exemplo distribuído; ver `examples/README.md`).
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { libraryExampleFiles } from '../../scripts/libraryExamples';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
 import { isFontPath, loadLibrary } from '../../src/model/components/library';
 import { validateLibrary } from '../../src/model/library';
@@ -11,12 +10,7 @@ import { parseComponent } from '../../src/model/components/parseComponent';
 import { screenFromSource } from '../../src/model/components/origin';
 import { parseSpec } from '../../src/model/spec';
 
-const ROOT = join(__dirname, '../../examples/libraries/material3');
-const HINT = 'Rode `npm run build:examples` para regerar examples/libraries/material3/.';
-
-const files = libraryExampleFiles();
-const byPath = new Map(files.map((f) => [f.path, f.text]));
-const json = (path: string): unknown => JSON.parse(byPath.get(path) ?? 'null');
+const ROOT = join(__dirname, '../../tests/fixtures/material3');
 
 function listDisk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
@@ -26,23 +20,11 @@ function listDisk(dir: string): string[] {
   );
 }
 
-describe('pacote material3 em dia com o gerador', () => {
-  it('cada arquivo gerado existe no repositório com o mesmo conteúdo', () => {
-    for (const f of files) {
-      const full = join(ROOT, f.path);
-      expect(existsSync(full), `${f.path} não existe. ${HINT}`).toBe(true);
-      expect(
-        readFileSync(full, 'utf8') === f.text,
-        `${f.path} desatualizado. ${HINT}`,
-      ).toBe(true);
-    }
-  });
-
-  it('não há arquivo que o gerador não produz (fora de fonts/)', () => {
-    const extra = listDisk(ROOT).filter((p) => !byPath.has(p) && !p.startsWith('fonts/'));
-    expect(extra, `arquivos sobrando: ${extra.join(', ')}. ${HINT}`).toEqual([]);
-  });
-});
+const files = listDisk(ROOT)
+  .sort()
+  .map((path) => ({ path, text: readFileSync(join(ROOT, path), 'utf8') }));
+const byPath = new Map(files.map((f) => [f.path, f.text]));
+const json = (path: string): unknown => JSON.parse(byPath.get(path) ?? 'null');
 
 describe('pacote material3 é válido', () => {
   const specText = byPath.get('material3.spec.json') ?? '';
