@@ -2,7 +2,7 @@
 
 Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o servidor MCP. Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), adaptado: uma seção por épico ou etapa mesclada na `main`, da mais recente para a mais antiga.
 
-**Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão em `docs/history/`.
+**Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `etapa` e, antes delas, no histórico do git.
 
 ## Planejamento nas issues — [Não lançado] (épico `epic/fluxo-issues`, PR a definir, MCP 0.12.0, schema v13)
 
@@ -11,6 +11,9 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 - O roadmap e o plano das etapas passam a viver em issues do GitHub: os itens futuros têm o rótulo `roadmap`, a etapa em andamento tem o rótulo `etapa`, com uma sub-issue (rótulo `fase`) por fase; a issue fechada é o histórico.
 - `PLAN.md` e `docs/ROADMAP.md` saíram do repositório. O histórico da etapa Marcação pai foi arquivado em `docs/history/PLAN-etapa-marcacao-pai.md`, o último no formato antigo.
 - O índice da documentação de referência está no `README.md` e o do histórico, em `docs/history/README.md`.
+- Limpeza do repositório: saíram `docs/history/` (planos das etapas, prompts antigos, auditoria e relatos de teste), `docs/redesign/` e `docs/sdui/`; o git guarda essa história. As regras que o código ainda citava foram para o `docs/ARCHITECTURE.md` ou para o próprio comentário.
+- O visualizador embutível mudou de `lab/viewer/` para `viewer/`, com a demonstração em React em `viewer/demo/` (`npm run dev:viewer`) e as bibliotecas de exemplo em `viewer/samples/`. O pacote `mapping-viewer`, o `npm run build:viewer` e o `dist-viewer/` não mudam.
+- O laboratório de componentes saiu, com o `dist/lab/` publicado ao lado da app e os scripts `dev:lab`, `dev:lab:react` e `build:lab`.
 - Nada muda na app nem no servidor MCP.
 
 ## Sincronia do design system — 2026-11-02 (épico `epic/sincronia-ds`, PR #287, MCP sem mudança, schema v13)
