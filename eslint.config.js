@@ -76,6 +76,16 @@ const focusSyntaxRules = [
 const focusGlobalQueryExceptions = ['src/ui/focus.ts', 'src/ui/toolWindowLayout.ts'];
 
 // Diretórios da app que não falam com o Konva (src/model/ tem regra própria, mais estrita).
+const konvaImportPattern = {
+  group: ['konva', 'konva/*'],
+  message: 'Konva fica só em src/canvas/ (veja CLAUDE.md).',
+};
+const rawToolWindowPattern = {
+  group: ['**/store/toolWindows'],
+  importNames: ['showToolWindow', 'hideToolWindow', 'toggleToolWindow'],
+  message:
+    'Abra e feche janelas por openToolWindow/closeToolWindow/toggleToolWindowFocus (src/ui/toolWindowLayout.ts): eles guardam e devolvem o foco.',
+};
 const konvaFreeDirs = ['ui', 'app', 'store', 'storage', 'i18n', 'theme', 'utils'];
 
 // Só a sessão (src/store/session.ts) lê e grava o mapping.json de um projeto aberto: a
@@ -276,16 +286,19 @@ export default tseslint.config(
   {
     files: [`src/{${konvaFreeDirs.join(',')}}/**/*.{ts,tsx}`],
     rules: {
+      'no-restricted-imports': ['error', { patterns: [konvaImportPattern] }],
+    },
+  },
+  // Etapa #323 (FC1): quem abre, fecha ou alterna janela de ferramenta na UI passa por
+  // `src/ui/toolWindowLayout.ts` (guarda e devolve o foco). Os comandos crus do store só
+  // entram lá. Este bloco substitui o anterior em src/ui e src/app, então repete o Konva.
+  {
+    files: ['src/{ui,app}/**/*.{ts,tsx}'],
+    ignores: ['src/ui/toolWindowLayout.ts'],
+    rules: {
       'no-restricted-imports': [
         'error',
-        {
-          patterns: [
-            {
-              group: ['konva', 'konva/*'],
-              message: 'Konva fica só em src/canvas/ (veja CLAUDE.md).',
-            },
-          ],
-        },
+        { patterns: [konvaImportPattern, rawToolWindowPattern] },
       ],
     },
   },

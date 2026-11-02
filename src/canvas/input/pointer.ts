@@ -3,6 +3,7 @@
 // prévia dos gestos vai para o `InteractionState`, que as sobreposições desenham.
 import {
   IDENTITY_PLACEMENT,
+  MIN_MARKING_SIZE,
   canEditArrow,
   fromCanvasPoint,
   imagePixelRect,
@@ -16,6 +17,7 @@ import {
   type Project,
   type Rect,
 } from '../../model';
+import { t } from '../../i18n';
 import type { EditorDerived } from '../../store/derived';
 import type { ProjectStore } from '../../store/history';
 import type { ProjectActions } from '../../store/project';
@@ -25,6 +27,7 @@ import {
   isItemSelected,
   peekSelectedItems,
   selectItems,
+  showToast,
   toggleSelectedItem,
   type EditorUi,
   type Selection,
@@ -664,7 +667,12 @@ export class PointerInput {
     const { draft } = this.o.state;
     const drawn = draft.peek();
     this.clearTransient();
-    if (cancelled || !drawn || !isDrawableRect(drawn.rect)) return;
+    if (cancelled || !drawn) return;
+    if (!isDrawableRect(drawn.rect)) {
+      // Arrasto real (passou do limiar) solto abaixo do mínimo: avisa em vez de descartar calado.
+      showToast(this.o.ui, t('marking.error.rect-too-small', { min: MIN_MARKING_SIZE }));
+      return;
+    }
     const tolerance = spaceTolerance(
       this.o.viewport.scale,
       g.image?.placement.scale ?? 1,

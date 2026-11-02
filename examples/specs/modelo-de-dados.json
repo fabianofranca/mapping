@@ -16,17 +16,36 @@
           "name": "Classe",
           "labelField": "nome",
           "fields": [
-            { "key": "nome", "type": "string", "required": true },
-            { "key": "descricao", "label": "descrição", "type": "string" },
-            { "key": "versao", "label": "versão", "type": "number", "default": 1 },
-            { "key": "revisadoEm", "label": "revisado em", "type": "date" },
+            {
+              "key": "nome",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "descricao",
+              "label": "descrição",
+              "type": "string"
+            },
+            {
+              "key": "versao",
+              "label": "versão",
+              "type": "number",
+              "default": 1
+            },
+            {
+              "key": "revisadoEm",
+              "label": "revisado em",
+              "type": "date"
+            },
             {
               "key": "atributos",
               "type": "table",
-              "tags": ["data-field"],
-              "rowLabel": "nome",
               "columns": [
-                { "key": "nome", "type": "string", "required": true },
+                {
+                  "key": "nome",
+                  "type": "string",
+                  "required": true
+                },
                 {
                   "key": "tipo",
                   "type": "enum",
@@ -49,8 +68,13 @@
                   "options": ["sim", "não"],
                   "default": "sim"
                 },
-                { "key": "exemplo", "type": "string" }
-              ]
+                {
+                  "key": "exemplo",
+                  "type": "string"
+                }
+              ],
+              "tags": ["data-field"],
+              "rowLabel": "nome"
             }
           ]
         }
@@ -69,10 +93,14 @@
               "key": "metodo",
               "label": "método",
               "type": "enum",
-              "options": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+              "required": true,
+              "options": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+            },
+            {
+              "key": "path",
+              "type": "string",
               "required": true
             },
-            { "key": "path", "type": "string", "required": true },
             {
               "key": "request",
               "type": "string",

@@ -6,7 +6,7 @@ import { useEditor } from '../EditorContext';
 import type { ReviewNames } from './changeText';
 import type { DecisionValue } from './DecisionControl';
 import { useReviewCommands } from './useReviewCommands';
-import { showToolWindow } from '../../store/toolWindows';
+import { openToolWindow } from '../toolWindowLayout';
 
 // Ganchos comuns aos componentes da revisão: os nomes (projeto atual + "como ficaria"),
 // decidir com o aviso de erro, e navegar (selecionar e mostrar no canvas).
@@ -69,8 +69,8 @@ export function useShowProblem(): () => void {
     const first = review.derived.proposal.peek()?.changes.find((c) => invalid.has(c.id));
     if (!first) return;
     review.select({ level: 'change', id: first.id });
-    showToolWindow('proposals');
-    showToolWindow('details');
+    openToolWindow('proposals');
+    openToolWindow('details');
     canvas.current?.centerSelection();
   };
 }

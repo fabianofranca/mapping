@@ -4,7 +4,7 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `etapa` e, antes delas, no histórico do git.
 
-## Acabamento a 900 px — 2026-11-02 (épico `epic/acabamento-900`, PR #337, MCP 0.12.0, schema v13)
+## Acabamento a 900 px — 2026-11-02 (épico `epic/acabamento-900`, PR #337, MCP 0.13.0, schema v13)
 
 ### Corrigido
 
@@ -12,6 +12,29 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 - Tela inicial a 900 px: o selo (Neste dispositivo / Na pasta) e os botões de cada projeto ficam numa linha só, a borda entre as linhas da tabela é contínua e a tabela não rola na horizontal.
 - Guia interativo: a tabela de atalhos passa a trazer `Ctrl+Shift+4` (Lista).
 - Tela inicial: fechar o aviso **Pasta indisponível** com Esc ou **Cancelar**, sem remover, devolve o foco ao **Abrir** da linha que abriu o aviso, e não ao da primeira linha. Remover da lista pelo aviso continua levando o foco à linha que ficou no lugar.
+
+## Avisos que faltam — 2026-11-02 (épico `epic/avisos-faltantes`, PR #333, MCP 0.13.0, schema v13)
+
+### Adicionado
+
+- Soltar um arrasto de retângulo menor que o mínimo de 8 px, com a ferramenta de marcação, agora mostra o aviso "Cada lado precisa ter pelo menos 8 px." em vez de não fazer nada. Clique simples, Esc e arrasto válido seguem sem aviso.
+
+### Alterado
+
+- MCP 0.13.0: `rect-too-small` no `plan_changes` e no `propose_changes` agora diz o tamanho recebido e o mínimo que valeu (8 px ou o `minSize` do componente, o maior) no `detail`, com uma `hint` para aumentar `width` e `height`; `image-overlap` diz a referência do outro container com que há sobreposição, com uma `hint` para mudar `x`/`y`/`scale` ou o tamanho, ou mover o outro container antes.
+- MCP: o `detail` dos erros do modelo não é mais cortado quando tem `: ` dentro. Ao mover vários containers juntos, o `image-overlap` cita o container que não se move (antes citava o movido).
+
+## Foco nos chamadores das janelas — 2026-11-02 (épico `epic/foco-chamadores`, PR #336, MCP 0.12.0, schema v13)
+
+### Corrigido
+
+- Fechar os Detalhes, as Propostas ou as Incompletas abertas pela revisão, por "mostrar o problema", pelo "ir para a anotação" de Incompletas ou pela atualização de especialização devolve o foco do teclado a quem as abriu, ou ao botão da faixa. Abrir a revisão a partir da Lista não perde mais o foco.
+
+## Exemplo gerado das fontes — 2026-11-02 (épico `epic/exemplo-gerado`, PR #334, MCP 0.12.0, schema v13)
+
+### Alterado
+
+- O `examples/exemplo-completo.zip` é o mesmo (byte a byte), mas agora sai da pasta do exemplo mais um manifesto que aponta as fontes das quatro especializações; `examples/exemplo-completo/specs/` deixou de ser versionado. Abrir a pasta `examples/exemplo-completo/` direto, com **Abrir pasta**, pede `npm run build:example` antes (ele materializa `specs/`).
 
 ## Foco nas janelas — 2026-11-02 (épico `epic/foco-janelas`, PR #315, MCP 0.12.0, schema v13)
 

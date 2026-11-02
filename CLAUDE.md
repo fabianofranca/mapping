@@ -28,7 +28,7 @@ npm run test:e2e  # Playwright contra dist/index.html; roda no CI (localmente: n
 npm run build:mcp # gera dist-mcp/mapping-mcp.js (servidor MCP, etapa 3a)
 npm run dev:viewer # demonstração do visualizador embutível num hospedeiro React (viewer/demo)
 npm run build:viewer # gera dist-viewer/ (mapping-viewer.js, mapping-viewer-react.js e types/)
-npm run build:example # gera examples/exemplo-completo.zip da pasta do exemplo (conferido por teste)
+npm run build:example # gera examples/exemplo-completo.zip e materializa examples/exemplo-completo/specs/ das fontes (zip conferido por teste)
 npm run build:guia # gera public/guia/index.html (o guia interativo; o `npm run build` já roda; conferido por teste)
 npm run lint      # eslint + prettier --check
 npm run typecheck # tsc --noEmit (app e mcp/)
