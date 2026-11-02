@@ -123,7 +123,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. **Testador:** Sonnet, medium. Decisões 6 e 7.
 
-- [ ] Rodada dirigida da nuvem: R0 inteiro e um roteiro com seletor de pasta, permissão, "Salvar como" e seletor de arquivo (lista fechada no PR da TN2, com a mensagem pronta em "Como testar")
+- [x] Rodada dirigida da nuvem, lista fechada: **R0 inteiro** (seletor de pasta, permissão da pasta, seletor de arquivo) **e R2** ("Salvar como" salvo e cancelado, "Abrir zip" pelo seletor de arquivo). Mensagem pronta em "Como testar" do PR da TN2
 - [ ] Depois do merge da TN2 no épico, a sessão do testador criada no ambiente "Mapping - testes" pelo agente da fase; relato em `docs/history/relato-*.md` por PR para o épico
 - [ ] Fechamento: histórico em `docs/history/PLAN-etapa-testes-nuvem.md`, `CHANGELOG.md` (data do merge), `CLAUDE.md` e `docs/ROADMAP.md`
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
