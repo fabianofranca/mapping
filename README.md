@@ -2,6 +2,8 @@
 
 Aplicação web para marcar **áreas retangulares** em imagens, organizá-las em **camadas** e anotá-las com pares chave-valor (livres) ou com **anotações tipadas** definidas por uma _especialização_ (ex: SDUI, modelo de dados). Tudo é salvo num `mapping.json` ao lado das imagens, num formato pensado para ser lido por um agente de IA: as coordenadas são pixels da imagem original, então o agente recorta exatamente a área marcada.
 
+O núcleo é **genérico** (imagens, marcações, camadas, anotações, componentes e telas): todo conceito de domínio (SDUI, plataformas, Figma, contratos) entra por _especializações_, para a mesma ferramenta servir a N aplicações.
+
 - **Só desktop**: feita para estação de trabalho (mouse, teclado, painéis lado a lado), com largura mínima de 900 px; numa janela mais estreita a app mostra "Abra numa janela maior" e volta ao normal ao alargar. Toque simples (num monitor de toque) funciona; não há layout de celular.
 - **Um único arquivo**: o build gera `dist/index.html` autocontido; funciona aberto por `file://` (Chrome/Edge desktop) e hospedado no GitHub Pages, sem requisições de rede (ver [Privacidade](#privacidade-e-seus-dados)).
 - **Dois modos de armazenamento**: _pasta_ no disco (File System Access API, Chrome/Edge desktop) ou _projeto local_ no navegador (IndexedDB). Qualquer projeto pode ser exportado em `.zip`.
@@ -114,7 +116,12 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 - [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md): formato do arquivo de especialização (e [`docs/spec.schema.json`](docs/spec.schema.json)); exemplos em [`examples/specs/`](examples/specs/).
 - [`.claude/skills/spec-author/SKILL.md`](.claude/skills/spec-author/SKILL.md): skill do Claude Code que escreve e valida uma especialização a partir de um código ou design system (copie a pasta para o repositório mapeado ou para `~/.claude/skills/`).
 - [`examples/workspace/`](examples/workspace/): esqueleto de uma pasta que centraliza projetos Mapping, pronta para qualquer agente MCP (servidor, raízes, skill e `AGENTS.md` por caminho relativo; `setup.sh` baixa a release).
-- [`PLAN.md`](PLAN.md): resumo do produto e fases pendentes; o histórico está em [`docs/history/`](docs/history/).
+- [`docs/COMPONENT-FORMAT.md`](docs/COMPONENT-FORMAT.md): formato do arquivo de componente (`mapping-component`): nós, dimensionamento, expressões e avisos do motor; [`docs/component.schema.json`](docs/component.schema.json) é o JSON Schema (documentação; o código é a fonte da verdade).
+- [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md): design system (artefato do Claude Design): mapa componente → origem no código, gatilhos, pendências e histórico de sincronização.
+- [`docs/redesign/`](docs/redesign/): [`HANDOFF.md`](docs/redesign/HANDOFF.md) (redesign da interface, referência), [`HANDOFF-PROPOSALS.md`](docs/redesign/HANDOFF-PROPOSALS.md) (design das propostas de alteração), [`BRIEF-REVIEW-DETAILS.md`](docs/redesign/BRIEF-REVIEW-DETAILS.md) e [`HANDOFF-REVIEW-DETAILS.md`](docs/redesign/HANDOFF-REVIEW-DETAILS.md) (Detalhes na revisão).
+- [`docs/sdui/BRIEF-SDUI-KMP.md`](docs/sdui/BRIEF-SDUI-KMP.md): briefing de um SDUI de produção com Material 3 em Kotlin Multiplatform (para outro repositório) e onde o Mapping entra.
+- [`docs/history/README.md`](docs/history/README.md): índice do histórico (planos das etapas concluídas, relatos de teste e prompts antigos).
+- **Planejamento nas issues do GitHub** ([github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues)): os itens futuros são issues com o rótulo `roadmap`; a etapa em andamento é uma issue com o rótulo `etapa`, com uma sub-issue (rótulo `fase`) por fase; as concluídas ficam nas issues fechadas e, as mais antigas, em [`docs/history/`](docs/history/).
 - [`CLAUDE.md`](CLAUDE.md): regras de trabalho para o Claude Code.
 
 ## Stack

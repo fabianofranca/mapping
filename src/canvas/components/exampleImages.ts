@@ -4,7 +4,7 @@
  * (especialização@versão, tipo, exemplo, tamanho, época das fontes e das imagens). Konva fica aqui,
  * não na UI.
  *
- * Auditoria das leituras de pixel (RI3, decisão 17 do PLAN.md): `stage.toDataURL` abaixo é a única
+ * Auditoria das leituras de pixel (RI3, decisão 17 de docs/history/PLAN-etapa-imagens-remotas.md): `stage.toDataURL` abaixo é a única
  * leitura de pixels sobre uma camada que pode ter componente com imagem. Ela usa sempre
  * `pixelSafe: true` (a imagem `opaque`, carregada sem CORS, nunca entra: vale o reservado) e as
  * imagens com CORS (`crossOrigin`) não contaminam o canvas. O minimapa (`src/ui/Minimap.tsx` e

@@ -2,7 +2,7 @@
 
 export type BuildChannel = 'main' | 'preview';
 
-/** Nome da app instalada a partir do preview (PLAN.md 14.3). */
+/** Nome da app instalada a partir do preview (docs/history/PLAN-etapa-2-1.md, "Preview isolado"). */
 export const PREVIEW_APP_NAME = 'Mapping (preview)';
 
 /** Carimba o sw.js com o id do build e o canal. */

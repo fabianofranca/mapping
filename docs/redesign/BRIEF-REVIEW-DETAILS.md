@@ -1,6 +1,6 @@
 # Detalhes na revisão — briefing para o Claude Design
 
-Pedido de desenho da fase 9.1 (etapa 9, ponto 4 do [`PLAN.md`](../../PLAN.md)). O dono cola este documento no Claude Design; o resultado volta como `docs/redesign/HANDOFF-REVIEW-DETAILS.md`, no formato do [`HANDOFF-PROPOSALS.md`](HANDOFF-PROPOSALS.md), antes do código (fases 9.5 e 9.6).
+Pedido de desenho da fase 9.1 (etapa 9, ponto 4 de [`docs/history/PLAN-etapa-9.md`](../history/PLAN-etapa-9.md)). O dono cola este documento no Claude Design; o resultado volta como `docs/redesign/HANDOFF-REVIEW-DETAILS.md`, no formato do [`HANDOFF-PROPOSALS.md`](HANDOFF-PROPOSALS.md), antes do código (fases 9.5 e 9.6).
 
 | Fonte                                          | Endereço                                          | Para quê                                                                                   |
 | ---------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------ |

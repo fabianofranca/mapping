@@ -1,6 +1,6 @@
 # Redesign da interface — passagem para implementação
 
-Documento de passagem do redesenho feito com o Claude Design. É a referência para as fases de implementação; o `PLAN.md` aponta para cá.
+Documento de passagem do redesenho feito com o Claude Design. É a referência para as fases de implementação; o plano da etapa 2.3 (`docs/history/PLAN-etapa-2-3.md`) aponta para cá.
 
 > **Só desktop (fase 5.8, 2026-10-11).** A app passou a ser só desktop, com largura mínima de 900 px. As partes de celular deste documento (layout de 380 px, toque, densidade de 44 px, gaveta, telas cheias, menu Painéis) ficam como **registro histórico** do desenho e não descrevem mais a app; ver `docs/ARCHITECTURE.md`.
 
@@ -242,7 +242,7 @@ Não mudam o que o usuário faz, só a aparência:
 
 ## 4. Ordem sugerida de implementação
 
-Cada fase é um PR, com o roteiro da 13.9 e os testes verdes. As fases R1 a R10 estão no `PLAN.md`, na etapa 2.3 (as fases 26–28 da etapa 2.2 vieram antes).
+Cada fase é um PR, com o roteiro da 13.9 e os testes verdes. As fases R1 a R10 estão em `docs/history/PLAN-etapa-2-3.md` (as fases 26–28 da etapa 2.2 vieram antes).
 
 | Fase                               | Escopo                                                                                                                                                                                                                                             | Comportamento muda?    | Aceite                                                                                                                                                                  |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
