@@ -63,6 +63,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/history/relato-2026-10-28-marcacao-pai.md`](docs/history/relato-2026-10-28-marcacao-pai.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/marcacao-pai` (build `5d7ac40`): 19 ✅, 1 achado baixo (texto cortado sem dica), corrigido no MP1b |
 | [`docs/history/relato-2026-10-29-sugestoes-campo.md`](docs/history/relato-2026-10-29-sugestoes-campo.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/sugestoes-campo` (build `f034a3a`): 24 ✅, 2 achados baixos, tratados no PR #250 |
 | [`docs/history/relato-2026-11-01-material3.md`](docs/history/relato-2026-11-01-material3.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/material3` (build `11d9b65`, MCP 0.12.0-rc.1): 35 ✅, 1 ❌ baixo (R10.7: o guia estava velho; o componente sem container vai para o canvas desde a etapa Marcações espaciais), textos do guia corrigidos |
+| [`docs/history/relato-2026-11-01-exemplos-enxutos.md`](docs/history/relato-2026-11-01-exemplos-enxutos.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/exemplos-enxutos` (build `36f7215`): 68 ✅, 4 🟡, 4 ⏭️; A1 corrigido, A2 sem mudança no produto, textos dos roteiros ajustados |
 | [`docs/history/revisao-tecnica-2026-10-12.md`](docs/history/revisao-tecnica-2026-10-12.md) | Revisão técnica dirigida (síntese e seis relatórios, 71 achados); origem da etapa 8 |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ordem das próximas etapas (etapas Container, Marcações espaciais, notas e setas, Proposto com componentes e Sugestões no campo de texto concluídas), marco de uso real e evoluções |
 | [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) | Redesign da interface (etapa 2.3, concluída; referência): componentes, tokens, mudanças B#, propostas P# e decisões |
@@ -148,7 +149,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 - [x] `proposta-componentes.zip` com a `material3-compose` (inclusive o tipo que só existe no pacote da proposta) e o R13 reescrito
 - [x] Ajuda da especialização (`specHelp.ts`) sem ids do pacote antigo, em pt-BR e en-US
 - [x] Guia dos exemplos: seções do projeto de exemplo e do `proposta-componentes.zip` atualizadas
-- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
 #### EX3 — Fixtures de teste, remoção e roteiros
 
@@ -165,7 +166,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low.
 
-- [ ] Rodada dirigida do Cowork (R3, R9, R10, R12, R13 e R15) e o relato entre os documentos da etapa; achados corrigidos ou levados ao dono
+- [x] Rodada dirigida do Cowork (R3, R9, R10, R12, R13 e R15) e o relato entre os documentos da etapa ([`relato-2026-11-01-exemplos-enxutos.md`](docs/history/relato-2026-11-01-exemplos-enxutos.md): 68 ✅, 4 🟡, 4 ⏭️, 2 achados de produto); achados corrigidos: A1 (Diagnóstico de imagem remota troca a razão no lugar) e os textos dos roteiros; A2 (`\n` no `url`) é Shift+Enter por desenho, o R15 passou a conferir no disco
 - [ ] Fechamento: histórico em `docs/history/PLAN-etapa-exemplos-enxutos.md`, `CHANGELOG.md`, `CLAUDE.md` e `docs/ROADMAP.md`
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
 
