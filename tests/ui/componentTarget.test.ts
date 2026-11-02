@@ -5,7 +5,7 @@ import { addLabel, slotTargetName } from '../../src/ui/componentTarget';
 import { marking, sampleProject } from '../model/fixtures';
 import { withNoteInstance } from '../model/notesFixtures';
 
-// Rótulo do Adicionar com destino num componente com slot (rodada do Cowork da ME2, R12.12):
+// Rótulo do Adicionar com destino num componente com slot (rodada de teste da ME2, R12.12):
 // reaproveita o rótulo da marcação (nome; sem nome, o do tipo que ela desenha).
 function project(): Project {
   return withNoteInstance(sampleProject());
