@@ -105,6 +105,7 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 
 - [`docs/TESTING.md`](docs/TESTING.md): guia do testador (onde pegar a app, requisitos, mapa da interface, instalação do MCP, roteiros de teste manual, teste manual avançado e os templates do relato e do registro de uso real; apêndices para o agente testador e para operações de disco).
 - [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md): prompt do testador do Cowork (agente com controle do computador).
+- [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md): prompt do testador da nuvem (sessão do Claude Code no ambiente "Mapping - testes", sem o dono).
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
 - [`docs/GUIDE.md`](docs/GUIDE.md): guia interativo e projeto de exemplo (como são gerados, o que abrir o exemplo grava, como mudá-los).
 - [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v13).

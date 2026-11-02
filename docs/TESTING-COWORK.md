@@ -1,5 +1,7 @@
 # Prompt do testador — Cowork no computador do dono
 
+Na nuvem (Claude Code, ambiente "Mapping - testes"), o prompt é o [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md).
+
 Se a mensagem do dono for só um link de PR do Mapping ("Teste <link>"), trate como rodada dirigida pelos roteiros que o PR toca: leia este arquivo inteiro antes de qualquer outra coisa, monte a lista e siga o modo comum. Diga logo no começo se o preview é necessário (para código de app, é).
 
 **Navegador.** Use sempre o Chrome pela extensão Claude in Chrome (`mcp__claude-in-chrome__*`), mesmo que a sessão diga que o navegador preferido é o do app. O painel do app Claude não é o processo `chrome` que o `dialog-pilot` enxerga e falha quando está oculto.

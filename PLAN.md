@@ -25,6 +25,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md)             | Guia do agente: como usar as tools do servidor MCP (também servido como recurso) |
 | [`docs/TESTING.md`](docs/TESTING.md) | Guia do testador: onde pegar a app, requisitos, mapa da interface, MCP, roteiros de teste manual, teste manual avançado (seção 9), templates do relato e do registro de uso real e os apêndices do agente e de disco |
 | [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md) | Prompt vivo do testador do Cowork (rodada completa ou dirigida; o agente lê o guia com o apêndice A) |
+| [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md) | Prompt vivo do testador da nuvem (sessão do Claude Code no ambiente "Mapping - testes", sem o dono; build local, receitas do apêndice A) |
 | [`docs/history/PLAN-etapas-1-2.md`](docs/history/PLAN-etapas-1-2.md) | Histórico: seções 1 a 13 do plano antigo (inclui o roteiro de teste manual 13.9, hoje R1 do `docs/TESTING.md`) |
 | [`docs/history/PLAN-etapa-2-1.md`](docs/history/PLAN-etapa-2-1.md)   | Histórico: etapa 2.1, revisão técnica (achados, decisões e fases 18 a 25)       |
 | [`docs/history/PLAN-etapa-2-2.md`](docs/history/PLAN-etapa-2-2.md) | Histórico: etapa 2.2, segunda revisão técnica (fases 26 e 27 concluídas; 28 dispensada) |
@@ -89,7 +90,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 1. **Sem dialog-pilot nem servidor MCP novo na nuvem:** o agente opera os diálogos nativos (seletor GTK de pasta e de arquivo, "Salvar como", pedido de permissão do Chrome) pelas receitas em texto do apêndice A do `docs/TESTING.md`, com `xdotool`, AT-SPI e Playwright por CDP. Script auxiliar pequeno (`scripts/testing/`) só se a validação mostrar que a receita em texto falha, justificado no PR.
 2. **Prompt próprio, `docs/TESTING-NUVEM.md`:** o `docs/TESTING-COWORK.md` é quase todo Windows, extensão, dialog-pilot, pastas do dispositivo e dono por perto; na nuvem as ferramentas são outras e o dono nunca está. O prompt novo é curto e remete às seções do prompt do Cowork que valem igual (o que executar, conferir e registrar, relato), com as diferenças. O Cowork continua valendo (Windows/Edge, roteiros sob demanda); a nuvem é mais um meio aceito para os passos [pessoa].
 3. **Os roteiros não mudam:** o apêndice A ganha a subseção "Diálogos nativos na nuvem (Xvfb)", com as receitas e uma tabela que liga cada ferramenta do dialog-pilot (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`) à receita da nuvem; a convenção [pessoa] da seção 8 cita a receita equivalente.
-4. **Build local por padrão:** o testador compila a app do commit da rodada (`npm ci && npm run build`) e a serve em `http://localhost` (contexto seguro: seletor, permissão e "Salvar como" iguais aos do Pages). Não há disputa pelo preview, e rodadas de épicos diferentes podem correr juntas. **Exceção:** os passos que dependem de `https:` ou de origem pública (hoje o R15.8 a R15.11, o aviso de rede local) rodam no preview, com o build id conferido e, se preciso, o Deploy disparado pelo testador; só eles exigem uma rodada por vez.
+4. **Sempre build local:** o testador compila a app do commit da rodada (`npm ci && npm run build`) e a serve em `http://localhost:8080` (contexto seguro: seletor, permissão e "Salvar como" iguais aos do Pages). Não há disputa pelo preview, e rodadas de épicos diferentes podem correr juntas. A validação da TN1 tirou a exceção prevista: o R15 só usa o Pages como **servidor da foto de teste** (`PAGES` = `https://fabianofranca.github.io/mapping/`, a versão principal, que tem a foto com CORS), e a política de URL e os interruptores são da app, iguais em qualquer origem; o aviso de rede local do Chrome não apareceu nem no preview neste Chromium. O que depende de `https:` (service worker, faixa "Nova versão disponível", app instalado) está só nos roteiros sob demanda, que a nuvem não roda. O build id local é `<commit> · <data do build>`: confere-se o commit.
 5. **MCP do mesmo commit:** o testador compila o servidor (`npm run build:mcp`) e confere `--version`. A release candidate (`mcp-rc`) continua no fluxo dos épicos que mudam o MCP (Cowork, dono, estável); a rodada da nuvem só a usa quando a mensagem pedir, para conferir o artefato distribuído (Release, `.sha256`, `setup.sh`), se a rede do ambiente alcançar o download (validado na TN1).
 6. **Fluxo do épico (regra no `CLAUDE.md`):** a última fase lista no `PLAN.md` os roteiros da rodada dirigida e põe na seção "Como testar" do PR dela a **mensagem pronta** para o testador (ex.: "Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: R3, R9 e R12. Branch `epic/x`, commit `abc1234`."). O agente da fase acompanha o PR (`subscribe_pr_activity`); depois do merge no épico, acha o ambiente "Mapping - testes" pelo nome (`list_environments`) e cria a sessão do testador (`create_session`) com essa mensagem. Se não sair (sessão arquivada ou sem acompanhar o PR), o dono abre um chat no ambiente e cola a mensagem.
 7. **Relato:** a pasta de trabalho fica fora do clone (`~/mapping-testes/<AAAA-MM-DD>-<alvo>/`); ao fim, o testador copia o relato para `docs/history/relato-<AAAA-MM-DD>-<alvo>.md` e abre um PR curto para o épico. Capturas entram no repositório só para os ❌, em `docs/history/anexos/<relato>/`.
@@ -100,7 +101,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 - Dialog-pilot ou servidor MCP de diálogos para Linux.
 - Mudar o texto dos roteiros (só a convenção [pessoa] e o apêndice A).
-- Servir o build local por `https` com certificado próprio (exige flag do Chrome que muda o comportamento de segurança testado).
+- Servir o build local por `https` com certificado próprio (exige flag do Chrome que muda o comportamento de segurança testado) e usar o preview nas rodadas da nuvem.
 - Rodar na nuvem os roteiros sob demanda (RP, RF, RA).
 
 ### Fases
@@ -111,11 +112,11 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Toca em:** `docs/TESTING-NUVEM.md` (novo), `docs/TESTING.md` (seção 8, apêndice A), `docs/TESTING-COWORK.md`, `README.md`, `CLAUDE.md`, `PLAN.md`, `tests/tooling/testingGuide.test.ts`.
 
-- [ ] Receitas validadas neste ambiente antes de escritas: subir a tela virtual e o Chrome, Playwright por CDP, build local servido em `localhost` e o build id, seletor de pasta e de arquivo (achar Open/Save sem geometria fixa), "Salvar como" (limpar o nome sem sair `.zip.zip`), permissão pelo AT-SPI, cancelar, MCP por stdio e o download de um asset de Release
-- [ ] `docs/TESTING-NUVEM.md`: primeiros 10 minutos com uma conferência por item, modos e mensagens prontas, ambiente, build local e a exceção do preview, relato e PR, e o "Nunca" (Enter no seletor, listener de `filechooser`, mais de uma aba)
-- [ ] Apêndice A (subseção da nuvem e tabela de equivalência) e convenção [pessoa] da seção 8 do `docs/TESTING.md`; ponteiros no `docs/TESTING-COWORK.md` e no `README.md`
-- [ ] Regra do fluxo no `CLAUDE.md` (fluxo de trabalho e roteiros de teste) e a coluna Testador
-- [ ] Testes em `tests/tooling/testingGuide.test.ts`: o prompt existe com o "Nunca", o apêndice A tem as receitas e a tabela, `README.md` e `CLAUDE.md` apontam para ele
+- [x] Receitas validadas neste ambiente antes de escritas: subir a tela virtual e o Chrome, Playwright por CDP, build local servido em `localhost` e o build id, seletor de pasta e de arquivo (Open/Save pelo atalho Alt, sem geometria), "Salvar como" (limpar o nome sem sair `.zip.zip`), permissão pelo AT-SPI (ao criar e ao reabrir pelos recentes), cancelar, reiniciar o Chrome com uma aba só, MCP por stdio, download de um asset de Release e o R15 sem o preview
+- [x] `docs/TESTING-NUVEM.md`: primeiros 10 minutos com uma conferência por item, modos e mensagens prontas, ambiente, build local e a exceção do preview, relato e PR, e o "Nunca" (Enter no seletor, listener de `filechooser`, mais de uma aba)
+- [x] Apêndice A (subseção da nuvem e tabela de equivalência) e convenção [pessoa] da seção 8 do `docs/TESTING.md`; ponteiros no `docs/TESTING-COWORK.md` e no `README.md`
+- [x] Regra do fluxo no `CLAUDE.md` (fluxo de trabalho e roteiros de teste) e a coluna Testador
+- [x] Testes em `tests/tooling/testingGuide.test.ts`: o prompt existe com o "Nunca", o apêndice A tem as receitas e a tabela, `README.md` e `CLAUDE.md` apontam para ele
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
 #### TN2 — O fluxo de verdade (última fase)
