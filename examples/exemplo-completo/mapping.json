@@ -20,9 +20,9 @@
       "file": "specs/modelo-dados.json"
     },
     {
-      "id": "material3",
+      "id": "material3-compose",
       "version": 1,
-      "file": "specs/material3/material3.spec.json"
+      "file": "specs/material3-compose/material3-compose.spec.json"
     },
     {
       "id": "notas",
@@ -90,12 +90,21 @@
       }
     },
     {
+      "id": "54b32ef1-173a-47a5-b334-c43bd0a4078b",
+      "name": "Layout M3",
+      "color": "#7D5260",
+      "spec": {
+        "specId": "material3-compose",
+        "layerId": "layout"
+      }
+    },
+    {
       "id": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": "Componentes M3",
       "color": "#6750A4",
       "spec": {
-        "specId": "material3",
-        "layerId": "componentes"
+        "specId": "material3-compose",
+        "layerId": "components"
       }
     },
     {
@@ -1130,32 +1139,33 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-top-app-bar"
+        "specId": "material3-compose",
+        "typeId": "top-app-bar"
       },
       "values": {
         "title": "Configurações",
-        "navigation": "back",
-        "action": "more",
-        "align": "start"
+        "style": "small",
+        "navigationIcon": "ArrowBack",
+        "actionIcon1": "MoreVert"
       },
       "entries": []
     },
     {
       "id": "78edd17c-129c-48cc-a15a-94dddc48bd2e",
       "markingId": "21af251a-72ae-44d7-a7de-50948b3b4ce2",
-      "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
+      "layerId": "54b32ef1-173a-47a5-b334-c43bd0a4078b",
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-row"
+        "specId": "material3-compose",
+        "typeId": "row"
       },
       "values": {
+        "horizontalArrangement": "Start",
+        "verticalAlignment": "CenterVertically",
         "spacing": 8,
-        "padding": 0,
         "background": "none",
-        "shape": "none"
+        "padding": 0
       },
       "entries": []
     },
@@ -1166,13 +1176,14 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-chip"
+        "specId": "material3-compose",
+        "typeId": "chip"
       },
       "values": {
         "label": "Wi-Fi",
-        "selected": "sim",
-        "icon": null
+        "style": "filter",
+        "selected": "true",
+        "enabled": "true"
       },
       "entries": []
     },
@@ -1183,13 +1194,14 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-chip"
+        "specId": "material3-compose",
+        "typeId": "chip"
       },
       "values": {
         "label": "Bluetooth",
-        "selected": "não",
-        "icon": null
+        "style": "filter",
+        "selected": "false",
+        "enabled": "true"
       },
       "entries": []
     },
@@ -1200,13 +1212,14 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-chip"
+        "specId": "material3-compose",
+        "typeId": "chip"
       },
       "values": {
         "label": "Dados móveis",
-        "selected": "não",
-        "icon": null
+        "style": "filter",
+        "selected": "false",
+        "enabled": "true"
       },
       "entries": []
     },
@@ -1217,34 +1230,35 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-text-field"
+        "specId": "material3-compose",
+        "typeId": "text-field"
       },
       "values": {
         "label": "Nome de exibição",
         "value": "Marina",
-        "placeholder": null,
-        "supporting": "Aparece para os outros usuários",
-        "state": "enabled",
-        "trailing": null
+        "supportingText": "Aparece para os outros usuários",
+        "style": "outlined",
+        "enabled": "true",
+        "isError": "false"
       },
       "entries": []
     },
     {
       "id": "cbde119c-e099-42ab-bfbb-f4e1fdd97f20",
       "markingId": "73c3965f-88f1-48fa-8c20-c59126f6e7aa",
-      "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
+      "layerId": "54b32ef1-173a-47a5-b334-c43bd0a4078b",
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-column"
+        "specId": "material3-compose",
+        "typeId": "column"
       },
       "values": {
+        "verticalArrangement": "Top",
+        "horizontalAlignment": "Start",
         "spacing": 8,
-        "padding": 0,
         "background": "none",
-        "shape": "none"
+        "padding": 0
       },
       "entries": []
     },
@@ -1255,13 +1269,13 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-switch"
+        "specId": "material3-compose",
+        "typeId": "switch"
       },
       "values": {
         "label": "Notificações",
-        "selected": "sim",
-        "icon": "não"
+        "checked": "true",
+        "enabled": "true"
       },
       "entries": []
     },
@@ -1272,13 +1286,13 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-switch"
+        "specId": "material3-compose",
+        "typeId": "switch"
       },
       "values": {
         "label": "Modo escuro",
-        "selected": "não",
-        "icon": "não"
+        "checked": "false",
+        "enabled": "true"
       },
       "entries": []
     },
@@ -1289,13 +1303,13 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-checkbox"
+        "specId": "material3-compose",
+        "typeId": "checkbox"
       },
       "values": {
         "label": "Receber novidades por e-mail",
-        "checked": "não",
-        "error": "não"
+        "state": "unchecked",
+        "enabled": "true"
       },
       "entries": []
     },
@@ -1306,14 +1320,14 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-card"
+        "specId": "material3-compose",
+        "typeId": "card"
       },
       "values": {
-        "headline": "Plano Pro",
-        "subhead": "Renova em 12/11",
-        "body": "Você tem acesso a todas as telas e à exportação.",
-        "variant": "outlined"
+        "title": "Plano Pro",
+        "subtitle": "Renova em 12/11",
+        "supportingText": "Você tem acesso a todas as telas e à exportação.",
+        "style": "outlined"
       },
       "entries": []
     },
@@ -1324,14 +1338,13 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-button"
+        "specId": "material3-compose",
+        "typeId": "button"
       },
       "values": {
         "label": "Gerenciar",
-        "variant": "tonal",
-        "icon": null,
-        "disabled": "não"
+        "style": "tonal",
+        "enabled": "true"
       },
       "entries": []
     },
@@ -1342,14 +1355,13 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-button"
+        "specId": "material3-compose",
+        "typeId": "button"
       },
       "values": {
         "label": "Salvar",
-        "variant": "filled",
-        "icon": null,
-        "disabled": "não"
+        "style": "filled",
+        "enabled": "true"
       },
       "entries": []
     },
@@ -1360,17 +1372,31 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-navigation-bar"
+        "specId": "material3-compose",
+        "typeId": "navigation-bar"
       },
       "values": {
-        "label1": "Início",
-        "icon1": "home",
-        "label2": "Buscar",
-        "icon2": "search",
-        "label3": "Perfil",
-        "icon3": "person",
-        "active": "3"
+        "items": [
+          {
+            "_id": "7ed1f7b9-1bad-4991-9323-e28414d9caa8",
+            "label": "Início",
+            "icon": "Home",
+            "selected": "false"
+          },
+          {
+            "_id": "d3ec78de-a84f-4dcb-9e99-4a3d32ee322e",
+            "label": "Buscar",
+            "icon": "Search",
+            "selected": "false"
+          },
+          {
+            "_id": "9c741738-2965-4504-a39b-bb5131a2f099",
+            "label": "Perfil",
+            "icon": "Person",
+            "selected": "true"
+          }
+        ],
+        "alwaysShowLabel": "true"
       },
       "entries": []
     },
@@ -1381,14 +1407,14 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-top-app-bar"
+        "specId": "material3-compose",
+        "typeId": "top-app-bar"
       },
       "values": {
         "title": "Pedido #1024",
-        "navigation": "back",
-        "action": "more",
-        "align": "start"
+        "style": "small",
+        "navigationIcon": "ArrowBack",
+        "actionIcon1": "MoreVert"
       },
       "entries": []
     },
@@ -1399,14 +1425,14 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-card"
+        "specId": "material3-compose",
+        "typeId": "card"
       },
       "values": {
-        "headline": "Pedido #1024",
-        "subhead": "Entregue em 12/10",
-        "body": "2 itens · R$ 189,90",
-        "variant": "filled"
+        "title": "Pedido #1024",
+        "subtitle": "Entregue em 12/10",
+        "supportingText": "2 itens · R$ 189,90",
+        "style": "filled"
       },
       "entries": []
     },
@@ -1417,15 +1443,14 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-list-item"
+        "specId": "material3-compose",
+        "typeId": "list-item"
       },
       "values": {
-        "headline": "Camiseta azul",
-        "supporting": "Tamanho M · 1 un",
-        "leading": null,
-        "initials": "C",
-        "trailing": "chevron"
+        "headlineContent": "Camiseta azul",
+        "supportingContent": "Tamanho M · 1 un",
+        "leadingIcon": "ShoppingCart",
+        "trailingIcon": "KeyboardArrowRight"
       },
       "entries": []
     },
@@ -1436,15 +1461,14 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-list-item"
+        "specId": "material3-compose",
+        "typeId": "list-item"
       },
       "values": {
-        "headline": "Boné preto",
-        "supporting": "Único · 1 un",
-        "leading": null,
-        "initials": "B",
-        "trailing": "chevron"
+        "headlineContent": "Boné preto",
+        "supportingContent": "Único · 1 un",
+        "leadingIcon": "ShoppingCart",
+        "trailingIcon": "KeyboardArrowRight"
       },
       "entries": []
     },
@@ -1455,14 +1479,13 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-button"
+        "specId": "material3-compose",
+        "typeId": "button"
       },
       "values": {
         "label": "Pedir novamente",
-        "variant": "tonal",
-        "icon": null,
-        "disabled": "não"
+        "style": "tonal",
+        "enabled": "true"
       },
       "entries": []
     },
@@ -1473,13 +1496,14 @@
       "name": null,
       "parentAnnotationId": null,
       "type": {
-        "specId": "material3",
-        "typeId": "m3-fab"
+        "specId": "material3-compose",
+        "typeId": "fab"
       },
       "values": {
-        "icon": "add",
-        "label": null,
-        "color": "primary"
+        "icon": "Add",
+        "contentDescription": "Ajuda",
+        "size": "regular",
+        "containerColor": "primaryContainer"
       },
       "entries": []
     },

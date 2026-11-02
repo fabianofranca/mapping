@@ -1,0 +1,123 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "horizontal-pager",
+  "name": "HorizontalPager",
+  "description": "Páginas lado a lado com rolagem horizontal: cada filha é uma página, com pageSpacing e contentPadding.",
+  "size": {
+    "width": 360,
+    "height": 240
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "contentPadding": 0,
+    "pageSpacing": 8,
+    "verticalAlignment": "CenterVertically",
+    "userScrollEnabled": "true",
+    "reverseLayout": "false",
+    "width": "wrap",
+    "height": "wrap",
+    "weight": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "horizontal-pager",
+    "clip": false,
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "slot",
+        "name": "content",
+        "label": {
+          "$concat": [
+            "HorizontalPager · ",
+            {
+              "$field": "width",
+              "default": "wrap"
+            },
+            " × ",
+            {
+              "$field": "height",
+              "default": "wrap"
+            },
+            {
+              "$if": {
+                "$has": "weight"
+              },
+              "then": {
+                "$concat": [
+                  " · weight ",
+                  {
+                    "$field": "weight"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$eq": ["userScrollEnabled", "false"]
+              },
+              "then": " · sem rolagem",
+              "else": ""
+            },
+            {
+              "$if": {
+                "$eq": ["reverseLayout", "true"]
+              },
+              "then": " · reverse",
+              "else": ""
+            },
+            {
+              "$if": {
+                "$and": [
+                  {
+                    "$has": "verticalAlignment"
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["verticalAlignment", "CenterVertically"]
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$concat": [
+                  " · ",
+                  {
+                    "$field": "verticalAlignment"
+                  }
+                ]
+              },
+              "else": ""
+            }
+          ]
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "row",
+          "gap": {
+            "$field": "pageSpacing",
+            "default": 0
+          },
+          "padding": {
+            "$field": "contentPadding",
+            "default": 0
+          },
+          "align": "center",
+          "justify": "start"
+        }
+      }
+    ]
+  }
+}

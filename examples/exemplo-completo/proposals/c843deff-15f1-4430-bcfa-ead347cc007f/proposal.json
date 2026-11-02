@@ -40,7 +40,8 @@
         "type": "Top app bar",
         "values": {
           "title": "Perfil",
-          "navigation": "back"
+          "style": "small",
+          "navigationIcon": "ArrowBack"
         }
       }
     },
@@ -58,10 +59,9 @@
       "annotation": {
         "type": "List item",
         "values": {
-          "headline": "Marina",
-          "supporting": "marina@exemplo.com",
-          "initials": "F",
-          "trailing": "chevron"
+          "headlineContent": "Marina",
+          "supportingContent": "marina@exemplo.com",
+          "trailingIcon": "KeyboardArrowRight"
         }
       }
     },
@@ -79,10 +79,10 @@
       "annotation": {
         "type": "List item",
         "values": {
-          "headline": "Endereços",
-          "supporting": "2 salvos",
-          "leading": "home",
-          "trailing": "chevron"
+          "headlineContent": "Endereços",
+          "supportingContent": "2 salvos",
+          "leadingIcon": "Home",
+          "trailingIcon": "KeyboardArrowRight"
         }
       }
     },
@@ -98,10 +98,10 @@
       },
       "name": "Sair",
       "annotation": {
-        "type": "material3/m3-button",
+        "type": "material3-compose/button",
         "values": {
           "label": "Sair",
-          "variant": "outlined"
+          "style": "outlined"
         }
       }
     }
@@ -260,14 +260,14 @@
         "name": null,
         "parentAnnotationId": null,
         "type": {
-          "specId": "material3",
-          "typeId": "m3-top-app-bar"
+          "specId": "material3-compose",
+          "typeId": "top-app-bar"
         },
         "values": {
           "title": "Perfil",
-          "navigation": "back",
-          "action": "more",
-          "align": "start"
+          "style": "small",
+          "navigationIcon": "ArrowBack",
+          "actionIcon1": "MoreVert"
         },
         "entries": []
       }
@@ -288,15 +288,14 @@
         "name": null,
         "parentAnnotationId": null,
         "type": {
-          "specId": "material3",
-          "typeId": "m3-list-item"
+          "specId": "material3-compose",
+          "typeId": "list-item"
         },
         "values": {
-          "headline": "Marina",
-          "supporting": "marina@exemplo.com",
-          "leading": "person",
-          "initials": "F",
-          "trailing": "chevron"
+          "headlineContent": "Marina",
+          "supportingContent": "marina@exemplo.com",
+          "leadingIcon": "Person",
+          "trailingIcon": "KeyboardArrowRight"
         },
         "entries": []
       }
@@ -317,15 +316,14 @@
         "name": null,
         "parentAnnotationId": null,
         "type": {
-          "specId": "material3",
-          "typeId": "m3-list-item"
+          "specId": "material3-compose",
+          "typeId": "list-item"
         },
         "values": {
-          "headline": "Endereços",
-          "supporting": "2 salvos",
-          "leading": "home",
-          "initials": null,
-          "trailing": "chevron"
+          "headlineContent": "Endereços",
+          "supportingContent": "2 salvos",
+          "leadingIcon": "Home",
+          "trailingIcon": "KeyboardArrowRight"
         },
         "entries": []
       }
@@ -346,14 +344,13 @@
         "name": null,
         "parentAnnotationId": null,
         "type": {
-          "specId": "material3",
-          "typeId": "m3-button"
+          "specId": "material3-compose",
+          "typeId": "button"
         },
         "values": {
           "label": "Sair",
-          "variant": "outlined",
-          "icon": null,
-          "disabled": "não"
+          "style": "outlined",
+          "enabled": "true"
         },
         "entries": []
       }

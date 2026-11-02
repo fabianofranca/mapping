@@ -1,0 +1,92 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "sdui-button",
+  "name": "Button",
+  "description": "Botão com quatro variantes. O modo troca a decoração do rótulo: sublinhado no link e tachado no botão descontinuado.",
+  "size": {
+    "width": 120,
+    "height": 40
+  },
+  "minSize": {
+    "width": 64,
+    "height": 40
+  },
+  "sizing": {
+    "width": "hug",
+    "height": 40
+  },
+  "preview": {
+    "label": "Label",
+    "variant": "filled",
+    "mode": "normal",
+    "disabled": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "botão",
+    "opacity": {
+      "$switch": "disabled",
+      "cases": {
+        "sim": 0.38
+      },
+      "default": 1
+    },
+    "layout": {
+      "type": "row",
+      "padding": [0, 24],
+      "align": "center",
+      "justify": "center"
+    },
+    "cornerRadius": 20,
+    "fill": {
+      "$switch": "variant",
+      "cases": {
+        "filled": "#6750A4",
+        "tonal": "#E8DEF8"
+      },
+      "default": "none"
+    },
+    "stroke": {
+      "color": {
+        "$switch": "variant",
+        "cases": {
+          "outlined": "#79747E"
+        },
+        "default": "none"
+      },
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "rótulo",
+        "text": {
+          "$field": "label"
+        },
+        "font": {
+          "size": 14,
+          "weight": 500,
+          "lineHeight": 20,
+          "decoration": {
+            "$switch": "mode",
+            "cases": {
+              "link": "underline",
+              "deprecated": "line-through"
+            },
+            "default": "none"
+          }
+        },
+        "color": {
+          "$switch": "variant",
+          "cases": {
+            "filled": "#FFFFFF",
+            "tonal": "#1D192B"
+          },
+          "default": "#6750A4"
+        },
+        "width": "hug"
+      }
+    ]
+  }
+}

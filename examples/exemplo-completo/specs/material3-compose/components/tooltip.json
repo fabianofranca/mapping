@@ -1,0 +1,174 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "tooltip",
+  "name": "Tooltip",
+  "description": "Tooltip plain (pílula escura de 24, só texto) ou rich (cartão claro com título, texto e ação opcionais), como aparece ao lado do elemento âncora.",
+  "size": {
+    "width": 240,
+    "height": 24
+  },
+  "minSize": {
+    "width": 40,
+    "height": 24
+  },
+  "sizing": {
+    "width": "hug",
+    "height": "hug"
+  },
+  "preview": {
+    "style": "plain",
+    "text": "Adicionar aos favoritos",
+    "title": "",
+    "action": ""
+  },
+  "template": {
+    "type": "frame",
+    "name": "tooltip",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "plain",
+        "anchors": {
+          "left": 0,
+          "top": 0
+        },
+        "width": "hug",
+        "height": 24,
+        "cornerRadius": 4,
+        "fill": "#322F35",
+        "visible": {
+          "$not": {
+            "$eq": ["style", "rich"]
+          }
+        },
+        "layout": {
+          "type": "row",
+          "align": "center",
+          "padding": [0, 8]
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "texto",
+            "text": {
+              "$field": "text",
+              "default": "Tooltip"
+            },
+            "font": {
+              "family": "Roboto",
+              "size": 12,
+              "weight": 400,
+              "lineHeight": 16,
+              "letterSpacing": 0.4
+            },
+            "color": "#F5EFF7"
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "rich",
+        "anchors": {
+          "left": 0,
+          "top": 0
+        },
+        "width": "fill",
+        "height": "hug",
+        "cornerRadius": 12,
+        "fill": "#F3EDF7",
+        "shadow": {
+          "color": "rgba(0, 0, 0, 0.3)",
+          "y": 1,
+          "blur": 3
+        },
+        "visible": {
+          "$eq": ["style", "rich"]
+        },
+        "layout": {
+          "type": "column",
+          "gap": 4,
+          "padding": {
+            "$if": {
+              "$has": "action"
+            },
+            "then": [12, 16, 8, 16],
+            "else": [12, 16]
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "title"
+            },
+            "font": {
+              "family": "Roboto",
+              "size": 14,
+              "weight": 500,
+              "lineHeight": 20,
+              "letterSpacing": 0.1
+            },
+            "color": "#49454F",
+            "width": "fill",
+            "visible": {
+              "$has": "title"
+            }
+          },
+          {
+            "type": "text",
+            "name": "texto",
+            "text": {
+              "$field": "text",
+              "default": "Tooltip"
+            },
+            "font": {
+              "family": "Roboto",
+              "size": 14,
+              "weight": 400,
+              "lineHeight": 20,
+              "letterSpacing": 0.25
+            },
+            "color": "#49454F",
+            "width": "fill"
+          },
+          {
+            "type": "frame",
+            "name": "ação",
+            "width": "hug",
+            "height": 36,
+            "layout": {
+              "type": "row",
+              "align": "center",
+              "padding": [0, 8, 0, 0]
+            },
+            "visible": {
+              "$has": "action"
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "rótulo da ação",
+                "text": {
+                  "$field": "action"
+                },
+                "font": {
+                  "family": "Roboto",
+                  "size": 14,
+                  "weight": 500,
+                  "lineHeight": 20,
+                  "letterSpacing": 0.1
+                },
+                "color": "#6750A4"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

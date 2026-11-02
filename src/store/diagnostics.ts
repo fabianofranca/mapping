@@ -42,23 +42,35 @@ function shortenUrl(url: string): string {
 }
 
 const issues = signal<readonly RemoteImageIssue[]>([]);
-const reportedUrls = new Set<string>();
+/** Posição de cada URL em `issues`, para trocar a razão no lugar quando ela muda. */
+const issueIndex = new Map<string, number>();
 
 /** Falhas e bloqueios de imagem remota desta sessão, na ordem em que apareceram. */
 export const remoteImageIssues: ReadonlySignal<readonly RemoteImageIssue[]> = issues;
 
-/** Registra uma falha ou bloqueio de imagem remota; só a primeira vez por URL conta. */
+/**
+ * Registra uma falha ou bloqueio de imagem remota. Cada URL aparece uma vez, na ordem da
+ * primeira vez; se a razão muda (ex.: "endereço não aceito" vira "não carregou" depois que a
+ * pessoa liga um interruptor da Privacidade), a linha ganha a razão nova no mesmo lugar.
+ */
 export function reportRemoteImageIssue(
   url: string,
   reason: RemoteImageIssueReason,
 ): void {
-  if (reportedUrls.has(url)) return;
-  reportedUrls.add(url);
-  issues.value = [...issues.peek(), { url: shortenUrl(url), reason }];
+  const at = issueIndex.get(url);
+  const current = issues.peek();
+  if (at === undefined) {
+    issueIndex.set(url, current.length);
+    issues.value = [...current, { url: shortenUrl(url), reason }];
+    return;
+  }
+  const known = current[at];
+  if (known === undefined || known.reason === reason) return;
+  issues.value = current.map((item, i) => (i === at ? { ...item, reason } : item));
 }
 
 /** Só para testes. */
 export function clearRemoteImageIssues(): void {
-  reportedUrls.clear();
+  issueIndex.clear();
   issues.value = [];
 }

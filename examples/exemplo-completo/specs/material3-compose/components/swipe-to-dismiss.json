@@ -1,0 +1,393 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "swipe-to-dismiss",
+  "name": "Swipe to dismiss",
+  "description": "Item que se dispensa deslizando: o fundo revelado (primaryContainer ao arrastar para o fim, errorContainer ao arrastar para o início) leva o ícone no lado de onde o item saiu; em repouso só o item aparece.",
+  "size": {
+    "width": 360,
+    "height": 72
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 72
+  },
+  "preview": {
+    "title": "Reunião de equipe",
+    "supportingText": "Hoje, 14:00",
+    "direction": "EndToStart",
+    "enableDismissFromStartToEnd": "true",
+    "enableDismissFromEndToStart": "true",
+    "icon": "Delete",
+    "width": "fill",
+    "height": "wrap",
+    "weight": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "swipe to dismiss",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$if": {
+        "$and": [
+          {
+            "$eq": ["direction", "StartToEnd"]
+          },
+          {
+            "$not": {
+              "$eq": ["enableDismissFromStartToEnd", "false"]
+            }
+          }
+        ]
+      },
+      "then": "#EADDFF",
+      "else": {
+        "$if": {
+          "$and": [
+            {
+              "$eq": ["direction", "EndToStart"]
+            },
+            {
+              "$not": {
+                "$eq": ["enableDismissFromEndToStart", "false"]
+              }
+            }
+          ]
+        },
+        "then": "#F9DEDC",
+        "else": "#FEF7FF"
+      }
+    },
+    "children": [
+      {
+        "type": "path",
+        "name": "ícone início",
+        "width": 24,
+        "height": 24,
+        "viewBox": [24, 24],
+        "d": {
+          "$switch": "icon",
+          "cases": {
+            "Delete": "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
+            "Done": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
+            "Check": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
+            "Favorite": "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
+            "Edit": "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+            "Star": "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
+            "Share": "M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z",
+            "Add": "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
+            "Close": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+          },
+          "default": "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+        },
+        "fill": "#21005D",
+        "anchors": {
+          "left": 24,
+          "centerY": true
+        },
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["direction", "StartToEnd"]
+            },
+            {
+              "$not": {
+                "$eq": ["enableDismissFromStartToEnd", "false"]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "path",
+        "name": "ícone fim",
+        "width": 24,
+        "height": 24,
+        "viewBox": [24, 24],
+        "d": {
+          "$switch": "icon",
+          "cases": {
+            "Delete": "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
+            "Done": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
+            "Check": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
+            "Favorite": "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
+            "Edit": "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+            "Star": "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
+            "Share": "M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z",
+            "Add": "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
+            "Close": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+          },
+          "default": "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+        },
+        "fill": "#410E0B",
+        "anchors": {
+          "right": 24,
+          "centerY": true
+        },
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["direction", "EndToStart"]
+            },
+            {
+              "$not": {
+                "$eq": ["enableDismissFromEndToStart", "false"]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "frame",
+        "name": "item em repouso",
+        "fill": "#FEF7FF",
+        "visible": {
+          "$not": {
+            "$or": [
+              {
+                "$and": [
+                  {
+                    "$eq": ["direction", "StartToEnd"]
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["enableDismissFromStartToEnd", "false"]
+                    }
+                  }
+                ]
+              },
+              {
+                "$and": [
+                  {
+                    "$eq": ["direction", "EndToStart"]
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["enableDismissFromEndToStart", "false"]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "row",
+          "gap": 16,
+          "padding": [8, 16],
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "textos",
+            "width": "fill",
+            "height": "hug",
+            "layout": {
+              "type": "column",
+              "gap": 0
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "título",
+                "text": {
+                  "$field": "title",
+                  "default": "Title"
+                },
+                "width": "fill",
+                "color": "#1D1B20",
+                "font": {
+                  "family": "Roboto",
+                  "size": 16,
+                  "weight": 400,
+                  "lineHeight": 24
+                }
+              },
+              {
+                "type": "text",
+                "name": "apoio",
+                "text": {
+                  "$field": "supportingText"
+                },
+                "width": "fill",
+                "color": "#49454F",
+                "visible": {
+                  "$has": "supportingText"
+                },
+                "font": {
+                  "family": "Roboto",
+                  "size": 14,
+                  "weight": 400,
+                  "lineHeight": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "item deslizado para o fim",
+        "fill": "#FEF7FF",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["direction", "StartToEnd"]
+            },
+            {
+              "$not": {
+                "$eq": ["enableDismissFromStartToEnd", "false"]
+              }
+            }
+          ]
+        },
+        "anchors": {
+          "left": 80,
+          "right": -80,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "row",
+          "gap": 16,
+          "padding": [8, 16],
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "textos",
+            "width": "fill",
+            "height": "hug",
+            "layout": {
+              "type": "column",
+              "gap": 0
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "título",
+                "text": {
+                  "$field": "title",
+                  "default": "Title"
+                },
+                "width": "fill",
+                "color": "#1D1B20",
+                "font": {
+                  "family": "Roboto",
+                  "size": 16,
+                  "weight": 400,
+                  "lineHeight": 24
+                }
+              },
+              {
+                "type": "text",
+                "name": "apoio",
+                "text": {
+                  "$field": "supportingText"
+                },
+                "width": "fill",
+                "color": "#49454F",
+                "visible": {
+                  "$has": "supportingText"
+                },
+                "font": {
+                  "family": "Roboto",
+                  "size": 14,
+                  "weight": 400,
+                  "lineHeight": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "item deslizado para o início",
+        "fill": "#FEF7FF",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["direction", "EndToStart"]
+            },
+            {
+              "$not": {
+                "$eq": ["enableDismissFromEndToStart", "false"]
+              }
+            }
+          ]
+        },
+        "anchors": {
+          "left": -80,
+          "right": 80,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "row",
+          "gap": 16,
+          "padding": [8, 16],
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "textos",
+            "width": "fill",
+            "height": "hug",
+            "layout": {
+              "type": "column",
+              "gap": 0
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "título",
+                "text": {
+                  "$field": "title",
+                  "default": "Title"
+                },
+                "width": "fill",
+                "color": "#1D1B20",
+                "font": {
+                  "family": "Roboto",
+                  "size": 16,
+                  "weight": 400,
+                  "lineHeight": 24
+                }
+              },
+              {
+                "type": "text",
+                "name": "apoio",
+                "text": {
+                  "$field": "supportingText"
+                },
+                "width": "fill",
+                "color": "#49454F",
+                "visible": {
+                  "$has": "supportingText"
+                },
+                "font": {
+                  "family": "Roboto",
+                  "size": 14,
+                  "weight": 400,
+                  "lineHeight": 20
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

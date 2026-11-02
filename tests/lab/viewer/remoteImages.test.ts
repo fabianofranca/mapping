@@ -13,7 +13,7 @@ import { type Viewer, type ViewerOptions, createViewer } from '../../../lab/view
 
 beforeAll(() => installFakeCanvas());
 
-const ROOT = join(__dirname, '../../../examples/libraries/pessoas');
+const ROOT = join(__dirname, '../../../tests/fixtures/pessoas');
 
 function listDisk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>

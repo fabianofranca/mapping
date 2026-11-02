@@ -1,5 +1,7 @@
 # Bibliotecas
 
+O que cada biblioteca e cada exemplo mostra, e como abri-los, está em [`examples/README.md`](../examples/README.md).
+
 Pacotes de biblioteca prontos para uso (formato em [`docs/SPEC-FORMAT.md`](../docs/SPEC-FORMAT.md), "Biblioteca: o pacote"). Cada pasta é um pacote: a especialização na raiz, `components/` e `docs/`.
 
 | Pasta     | O que é                                                                                                  | Como chega ao projeto                                                                                    |
@@ -58,3 +60,7 @@ Sem `minSize`, por não haver mínimo oficial nos dois eixos: os contêineres e 
 **Fora desta versão.** A API expressiva (`ButtonGroup`, `ToggleButton`, `FloatingActionButtonMenu` e parentes), que não existe como composable público no commit fixado; o side sheet; e o Scrim, que o `ModalBottomSheet` já desenha.
 
 As fontes (`fonts/`) vêm no pacote: a Roboto 400 e 500 em `.woff2` (subconjunto latino, Fontsource 5.3.0, licença OFL em `fonts/LICENSE-Roboto.txt`; veja `material3-compose/fonts/LEIA-ME.txt`), então a biblioteca valida **sem nenhum aviso**. O teste `tests/model/material3ComposeLibrary.test.ts` valida o pacote.
+
+## Exemplo de origem executável
+
+O exemplo de `origins`, `sources` e `migrations` não é uma biblioteca pronta para uso: é `examples/libraries/sdui-backend/` (um sistema externo fictício que descreve telas em JSON, com seis tipos). Uma biblioteca real não descreve o backend de ninguém, por isso a `material3-compose` não ganha origem.

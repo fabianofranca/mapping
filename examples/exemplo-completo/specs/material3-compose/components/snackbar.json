@@ -1,0 +1,243 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "snackbar",
+  "name": "Snackbar",
+  "description": "Aviso rápido e temporário: mensagem, ação opcional (texto em inversePrimary) e botão de fechar. Com a ação em nova linha a altura passa de 48 para 68.",
+  "size": {
+    "width": 344,
+    "height": 48
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "message": "Mensagem arquivada",
+    "actionLabel": "Desfazer",
+    "dismissAction": "false",
+    "actionOnNewLine": "false"
+  },
+  "template": {
+    "type": "frame",
+    "name": "snackbar",
+    "cornerRadius": 4,
+    "fill": "#322F35",
+    "shadow": {
+      "color": "rgba(0, 0, 0, 0.3)",
+      "y": 3,
+      "blur": 6
+    },
+    "layout": {
+      "type": "column"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "linha",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$not": {
+            "$eq": ["actionOnNewLine", "true"]
+          }
+        },
+        "layout": {
+          "type": "row",
+          "align": "center",
+          "padding": {
+            "$if": {
+              "$or": [
+                {
+                  "$has": "actionLabel"
+                },
+                {
+                  "$eq": ["dismissAction", "true"]
+                }
+              ]
+            },
+            "then": [0, 4, 0, 16],
+            "else": [0, 16]
+          }
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "mensagem",
+            "text": {
+              "$field": "message",
+              "default": "Mensagem"
+            },
+            "font": {
+              "family": "Roboto",
+              "size": 14,
+              "weight": 400,
+              "lineHeight": 20,
+              "letterSpacing": 0.25
+            },
+            "color": "#F5EFF7",
+            "width": "fill"
+          },
+          {
+            "type": "frame",
+            "name": "ação",
+            "width": "hug",
+            "height": 40,
+            "layout": {
+              "type": "row",
+              "padding": [0, 12],
+              "align": "center"
+            },
+            "visible": {
+              "$has": "actionLabel"
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "rótulo da ação",
+                "text": {
+                  "$field": "actionLabel"
+                },
+                "font": {
+                  "family": "Roboto",
+                  "size": 14,
+                  "weight": 500,
+                  "lineHeight": 20,
+                  "letterSpacing": 0.1
+                },
+                "color": "#D0BCFF"
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "fechar",
+            "width": 40,
+            "height": 40,
+            "layout": {
+              "type": "row",
+              "align": "center",
+              "justify": "center"
+            },
+            "visible": {
+              "$eq": ["dismissAction", "true"]
+            },
+            "children": [
+              {
+                "type": "path",
+                "name": "ícone fechar",
+                "width": 24,
+                "height": 24,
+                "viewBox": [24, 24],
+                "d": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
+                "fill": "#F5EFF7"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "duas linhas",
+        "width": "fill",
+        "height": "hug",
+        "visible": {
+          "$eq": ["actionOnNewLine", "true"]
+        },
+        "layout": {
+          "type": "column",
+          "gap": 2,
+          "padding": [14, 4, 4, 16]
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "mensagem",
+            "text": {
+              "$field": "message",
+              "default": "Mensagem"
+            },
+            "font": {
+              "family": "Roboto",
+              "size": 14,
+              "weight": 400,
+              "lineHeight": 20,
+              "letterSpacing": 0.25
+            },
+            "color": "#F5EFF7",
+            "width": "fill"
+          },
+          {
+            "type": "frame",
+            "name": "ações",
+            "width": "fill",
+            "height": "hug",
+            "layout": {
+              "type": "row",
+              "align": "center",
+              "justify": "end"
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "ação",
+                "width": "hug",
+                "height": 40,
+                "layout": {
+                  "type": "row",
+                  "padding": [0, 12],
+                  "align": "center"
+                },
+                "visible": {
+                  "$has": "actionLabel"
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "name": "rótulo da ação",
+                    "text": {
+                      "$field": "actionLabel"
+                    },
+                    "font": {
+                      "family": "Roboto",
+                      "size": 14,
+                      "weight": 500,
+                      "lineHeight": 20,
+                      "letterSpacing": 0.1
+                    },
+                    "color": "#D0BCFF"
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "fechar",
+                "width": 40,
+                "height": 40,
+                "layout": {
+                  "type": "row",
+                  "align": "center",
+                  "justify": "center"
+                },
+                "visible": {
+                  "$eq": ["dismissAction", "true"]
+                },
+                "children": [
+                  {
+                    "type": "path",
+                    "name": "ícone fechar",
+                    "width": 24,
+                    "height": 24,
+                    "viewBox": [24, 24],
+                    "d": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
+                    "fill": "#F5EFF7"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

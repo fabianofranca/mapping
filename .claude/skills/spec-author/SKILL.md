@@ -19,7 +19,7 @@ Para quem vai disparar o agente: **Opus 5.5 com esforço alto** é o padrão (o 
 2. `docs/spec.schema.json`: a estrutura. Ele valida só a forma; as regras entre elementos (ids únicos, `allowedChildren` em outra camada, `default` compatível, destinos de `values` em `options`) vivem no validador da app, e é ele que decide.
 3. `examples/specs/sdui.json` (`formatVersion` 2, com plataformas e `code`) e `examples/specs/modelo-de-dados.json` (`formatVersion` 1, com `table`, `tags` e `rowLabel`): copie o estilo, não o conteúdo.
 4. Em `docs/AGENT-GUIDE.md`, a seção "Criando especializações: gerar, validar, corrigir" e, se a especialização tiver `sources`, "Especializações com `sources`". Para uma biblioteca (`formatVersion` 4), leia também "Escrevendo uma biblioteca", a seção "Biblioteca: o pacote" e o "Contrato de versão" do `docs/SPEC-FORMAT.md` e **inteiro** o `docs/COMPONENT-FORMAT.md` (template, tamanhos, expressões).
-5. Para uma biblioteca, `examples/libraries/material3/` (a especialização, `components/`, `docs/`, `examples/` e `fonts/LEIA-ME.txt`): copie o estilo, não o conteúdo.
+5. Para uma biblioteca, `libraries/material3-compose/` (a especialização, `components/`, `docs/`, `examples/` e `fonts/`): copie o estilo, não o conteúdo.
 
 Quando o agente roda fora do repositório do Mapping (o caso normal: ele roda no repositório do código que está sendo mapeado), esses documentos chegam pelo servidor MCP como recursos `mapping-docs://SPEC-FORMAT.md`, `mapping-docs://COMPONENT-FORMAT.md` e `mapping-docs://AGENT-GUIDE.md`; os exemplos e o schema ficam só no repositório do Mapping. Se nem o MCP nem o repositório estiverem ao alcance, pare e diga o que falta: escrever uma especialização sem o formato na mão produz um arquivo que não importa.
 

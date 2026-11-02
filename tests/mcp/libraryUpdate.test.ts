@@ -38,9 +38,9 @@ import { connect, type Connection } from './workspace';
 
 // Atualização da biblioteca pelo servidor (B4): `plan_library_update` (prévia) e as operações
 // `apply_specialization`/`update_specialization` de `propose_changes` com a PASTA do pacote v4.
-// O pacote de prova é o Material 3 de `examples/libraries/material3/` como v1.
+// O pacote de prova é o Material 3 de `tests/fixtures/material3/` como v1.
 
-const MATERIAL3 = 'examples/libraries/material3';
+const MATERIAL3 = 'tests/fixtures/material3';
 
 interface Plan {
   specId: string;
