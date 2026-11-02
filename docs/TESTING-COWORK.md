@@ -8,7 +8,7 @@ Se a mensagem do dono for só um link de PR do Mapping ("Teste <link>"), trate c
 
 1. Leia `docs/TESTING-COWORK.md` inteiro e o apêndice A do `docs/TESTING.md`. **Confira:** você sabe o modo da rodada e o build id esperado.
 2. `get_device_info`. **Confira:** `mapping-testes` está em `connectedFolders`; se não, peça o acesso com o motivo do item 0 da seção 2 ("Disco primeiro").
-3. Monte a pasta da rodada e traga o branch pela VM (item 0 da seção 2). **Confira:** `find material3 -type f | wc -l` dá 33 (os arquivos de `examples/libraries/material3/`) e o `git log -1` mostra o commit do build id.
+3. Monte a pasta da rodada e traga o branch pela VM (item 0 da seção 2). **Confira:** `find material3-compose -type f | wc -l` dá 105 (os arquivos de `libraries/material3-compose/`) e o `git log -1` mostra o commit do build id.
 4. `list_windows` do `dialog-pilot`. **Confira:** aparece uma janela `chrome` (sem ela, pare e avise o dono).
 5. `tabs_context_mcp` com `createIfEmpty: true`; transforme a aba em aba de apoio (`example.com` e o título "NÃO FECHAR"). **Confira:** o grupo tem uma aba só.
 6. Injete o link fixo no canto e rode o `elementFromPoint` (apêndice A do guia, "Aba em foco sem o dono"). **Confira:** devolve o próprio `<a>`.
@@ -29,7 +29,8 @@ Se a mensagem do dono for só um link de PR do Mapping ("Teste <link>"), trate c
 > - **Rodada dirigida pelas fases de um plano:** "… no modo dirigido: as fases 7.1 e 7.2 de `docs/history/PLAN-etapa-7.md`."
 > - **Rodada dirigida da etapa 9:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da etapa 9 (seção 9 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
 > - **Rodada dirigida da etapa Código de instanciação:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da instanciação (seção 10 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Configurações."
-> - **Rodada dirigida da etapa Proposto com componentes (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida do Proposto com componentes (seção 11 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
+> - **Rodada dirigida da etapa Proposto com componentes:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida do Proposto com componentes (seção 11 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
+> - **Rodada dirigida da etapa Exemplos enxutos (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida dos Exemplos enxutos (seção 13 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Catálogo, Especializações, Privacidade."
 > - **Sessão sob demanda (roteiro manual):** "Leia `docs/TESTING-COWORK.md` e execute a **sessão sob demanda: RP**. Build id esperado: `abc1234 · AAAA-MM-DD`." (seção 5; só quando o dono pedir, citando o roteiro)
 
 - **Rodada sem interação (o dono só deixa a janela do Chrome na frente):** "Leia `docs/TESTING-COWORK.md` e execute **sem interação**: rodada completa. Build id esperado: `abc1234 · AAAA-MM-DD`." (vale também no modo dirigido, com o alvo)
@@ -56,7 +57,7 @@ Você é o **testador da app Mapping** no computador do dono. Executa os roteiro
 
 ## 2. Antes de começar
 
-0. **Disco primeiro.** Chame `get_device_info`. Se `connectedFolders` não tiver `mapping-testes`, chame `device_request_folder_access` com `["~/mapping-testes"]` e o motivo "criar a pasta da rodada com o pacote e as cópias que os roteiros pedem". Guarde o caminho concedido: ele já vem no formato do Windows (`C:\Users\<usuário>\mapping-testes`) e é a base de todo `select_folder` e `open_file`. Na shell (`device_bash`, em `$HOME/mnt/mapping-testes`), crie `<AAAA-MM-DD>-<alvo>/` e traga o repositório do branch em teste: `git init repo && cd repo && git fetch --depth 1 https://github.com/fabianofranca/mapping pull/<n>/head && git checkout FETCH_HEAD` (a VM tem rede para o GitHub). Copie para a pasta da rodada só o que os roteiros pedem (`examples/libraries/material3`, `examples/specs/*.json`, `examples/proposta-exemplo.zip`, `examples/proposta-componentes.zip`). Nunca peça ao dono o caminho de um arquivo do repositório.
+0. **Disco primeiro.** Chame `get_device_info`. Se `connectedFolders` não tiver `mapping-testes`, chame `device_request_folder_access` com `["~/mapping-testes"]` e o motivo "criar a pasta da rodada com o pacote e as cópias que os roteiros pedem". Guarde o caminho concedido: ele já vem no formato do Windows (`C:\Users\<usuário>\mapping-testes`) e é a base de todo `select_folder` e `open_file`. Na shell (`device_bash`, em `$HOME/mnt/mapping-testes`), crie `<AAAA-MM-DD>-<alvo>/` e traga o repositório do branch em teste: `git init repo && cd repo && git fetch --depth 1 https://github.com/fabianofranca/mapping pull/<n>/head && git checkout FETCH_HEAD` (a VM tem rede para o GitHub). Copie para a pasta da rodada só o que os roteiros pedem (`libraries/material3-compose`, `examples/material3-compose.zip`, `examples/libraries/sdui-backend`, `examples/libraries/analytics`, `examples/specs/*.json`, `examples/proposta-exemplo.zip`, `examples/proposta-componentes.zip`). Nunca peça ao dono o caminho de um arquivo do repositório.
 1. Leia `docs/TESTING.md` inteiro, **com o apêndice A** (como agir sendo um agente) e o apêndice B (operações de disco). É a fonte da verdade dos passos, dos resultados esperados, dos nomes da interface e do template do relato. Este prompt não repete o guia.
 2. Veja na mensagem do dono o **modo** (completo, que é o padrão, ou dirigido, com o alvo), se é **sem interação** e a lista da passada visual, se houver. Se tiver dúvida, pergunte.
 3. **Confira sozinho o que dá para conferir**, antes de perguntar qualquer coisa:
@@ -239,14 +240,14 @@ As fases RI1 a RI4 do épico `epic/imagens-remotas` (etapa descrita no [`PLAN.md
 
 - O **build id** esperado é o do último commit do `epic/imagens-remotas`. Confira em **Configurações** › **Sobre**; se o preview mostrar outro build, siga o item 9 da seção 2 (dispare o Deploy do branch).
 - **Sem MCP:** nenhum passo desta rodada usa o MCP nem o Claude Code.
-- A imagem de teste é a do **preview** (`https://fabianofranca.github.io/mapping/preview/imagens-teste/foto.png`); o R15 explica o `PAGES`. A pasta `examples/libraries/pessoas/` e o `public/imagens-teste/foto.png` vêm do clone do repositório (seção 2 do guia), e o computador do Chrome precisa de **Node 20 ou mais novo** para o servidor local do R15.1 (`scripts/servidor-imagens.mjs`). **A shell (`device_bash`) pode ser uma VM, e o `127.0.0.1` dela não é o do Chrome:** o servidor sobe no computador do Chrome, pelo duplo clique no `iniciar-servidor.cmd` (Explorer, controle do computador), e a shell só lê o `servidor.log` pela pasta de trabalho compartilhada. Se o Chrome não abrir `http://127.0.0.1:8765/foto.png` depois disso, marque o R15.8 a R15.11 "não executado (servidor local inalcançável)" e avise o dono: são passos de segurança.
+- A imagem de teste é a do **preview** (`https://fabianofranca.github.io/mapping/preview/imagens-teste/foto.png`); o R15 explica o `PAGES`. A pasta `libraries/material3-compose/` (tipo `image`) e o `public/imagens-teste/foto.png` vêm do clone do repositório (seção 2 do guia), e o computador do Chrome precisa de **Node 20 ou mais novo** para o servidor local do R15.1 (`scripts/servidor-imagens.mjs`). **A shell (`device_bash`) pode ser uma VM, e o `127.0.0.1` dela não é o do Chrome:** o servidor sobe no computador do Chrome, pelo duplo clique no `iniciar-servidor.cmd` (Explorer, controle do computador), e a shell só lê o `servidor.log` pela pasta de trabalho compartilhada. Se o Chrome não abrir `http://127.0.0.1:8765/foto.png` depois disso, marque o R15.8 a R15.11 "não executado (servidor local inalcançável)" e avise o dono: são passos de segurança.
 - Registre em "Estado prévio do navegador" as origens que a **Privacidade** já lista e os interruptores ligados: o R15 parte de "nenhuma origem, quatro interruptores desligados" e o R15.12 devolve a esse estado. **Não limpe** os dados do site; revogue e desligue só o que o roteiro mexeu.
 
 **Lista dirigida** (depois do **R0 inteiro**):
 
 | Passos         | Fase      | O que confere                                                                                                                     |
 | -------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| R15.1 a R15.2  | RI1       | O Avatar da biblioteca `pessoas` desenha o reservado sem foto; o servidor local sem CORS sobe no computador do Chrome             |
+| R15.1 a R15.2  | RI1       | O Image da biblioteca `material3-compose` desenha o reservado sem foto; o servidor local sem CORS sobe no computador do Chrome    |
 | R15.3 a R15.6  | RI3       | Faixa de consentimento por origem, **Permitir estas**, persistência no navegador, nada gravado no projeto nem no zip, **Revogar** |
 | R15.7          | RI3       | Política de URL: `http:`, rede local e texto que não é endereço não geram pedido (o servidor local não registra nada)             |
 | R15.8 a R15.11 | RI3       | Interruptores `http`, rede local, servidor sem CORS e qualquer origem; a rede local sempre pede consentimento próprio             |
@@ -257,3 +258,41 @@ As fases RI1 a RI4 do épico `epic/imagens-remotas` (etapa descrita no [`PLAN.md
 Na **passada visual**, olhe a faixa de consentimento (texto cortado, botões visíveis), o círculo da foto (quatro quadrantes, bordas limpas, nada esticado) e a janela **Privacidade** (avisos legíveis, interruptores alinhados) nos temas claro e escuro.
 
 **Relato:** o mesmo template, em `docs/history/relato-<data>-imagens-remotas.md`; use o código da fase (RI1 a RI3) na coluna **Achado de origem** e liste em "O que atrapalhou" o que o R15 deixou ambíguo (por exemplo, um pedido de acesso à rede local do Chrome ou o proxy da shell barrando o `curl`). Se algo da lista não puder ser executado, marque "não executado (motivo)".
+
+## 13. Rodada dirigida da etapa Exemplos enxutos
+
+A etapa Exemplos enxutos (épico `epic/exemplos-enxutos`, fases EX0 a EX3 no [`PLAN.md`](../PLAN.md); o histórico vai para `docs/history/PLAN-etapa-exemplos-enxutos.md` quando a etapa fechar) reorganizou o que a pessoa vê como exemplo: a biblioteca pronta `libraries/material3-compose/` (50 tipos, também no zip `examples/material3-compose.zip`) é a base dos roteiros, o projeto de exemplo e o guia; `examples/libraries/sdui-backend/` mostra a origem executável (`origins`, `sources`, `migrations` e a tela de exemplo de um sistema externo) e `examples/libraries/analytics/` o tipo que só aponta; e o `examples/README.md` diz o que cada exemplo mostra. Os roteiros R3, R9, R10, R12, R13 e R15 foram reescritos para esse conjunto sem rodar a app, então a rodada confere **o produto e o texto dos roteiros**. Vale como o modo dirigido "pelas fases de um plano", sobre o **preview do PR do épico** (`epic/exemplos-enxutos`).
+
+**Antes de começar**
+
+- O **build id** esperado é o do último commit do `epic/exemplos-enxutos`. Confira em **Configurações** › **Sobre**; se o preview mostrar outro build, siga o item 9 da seção 2 (dispare o Deploy do branch).
+- **Pasta da rodada:** `libraries/material3-compose`, `examples/material3-compose.zip`, `examples/libraries/sdui-backend` e `examples/libraries/analytics`, trazidos do clone (item 0 da seção 2). **Confira:** `find material3-compose -type f | wc -l` dá 105.
+- **Sem MCP** nos roteiros principais, exceto o R10.11 (a `sdui-backend` pelo agente) e o R9.13 a R9.15 e R9.18 a R9.20, que usam o cliente stdio da seção 6; o R15 precisa de **Node 20 ou mais novo** no computador do Chrome (servidor local do R15.1).
+- Registre em "Estado prévio do navegador" as origens que a **Privacidade** já lista, como no R15.
+
+**Lista dirigida** (depois do **R0 inteiro**; o R1 inteiro entra antes do R3):
+
+| Passos          | Fase      | O que confere                                                                                                                                     |
+| --------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R3.10 a R3.13   | EX3       | Aplicar a `material3-compose` por pasta e por zip: 50 tipos, 0 erros e 0 avisos, 3 camadas; arquivo faltando dá a mensagem do roteiro             |
+| R3.14 a R3.17   | EX3       | Atualização com as cópias v2 a v5: campo novo, `rename-field`, `remove-field` e tipo removido sem migração; os textos da janela são os do roteiro |
+| R9.1 a R9.12    | EX3       | Container com componentes: Row com dois Buttons e Espaçamento 8, mínimos do Button (58 × 40) e do Text field (280 × 56), Roboto sem "ausente"     |
+| R10.1 a R10.9   | EX3       | Catálogo da `material3-compose`: 50 componentes, busca `chip`, página do Button com a tabela de variantes, playground de 58 × 40 a 272 × 80       |
+| R10.10 a R10.11 | EX1       | A `sdui-backend`: seção de origens do componente, galeria com a tela de exemplo e a leitura pelo agente                                           |
+| R12.12          | EX3       | Aplicar a pasta e adicionar um Box dentro do container (o Box tem slot)                                                                           |
+| R13.1 a R13.12  | EX2       | O `proposta-componentes.zip` com a `material3-compose`, inclusive o tipo que só existe no pacote da proposta                                      |
+| R15.1 a R15.12  | EX3       | O tipo `image` (campo `url`, Escala `Crop`) desenha o reservado, pede consentimento e volta à Privacidade inicial                                 |
+| R8.1b e R8.2    | regressão | Tema escuro e inglês: as janelas tocadas legíveis nos dois temas e sem texto em português no inglês                                               |
+
+**Pontos que o texto dos roteiros deduziu do código e que a rodada precisa confirmar de forma explícita** (diga "confere" ou o que apareceu de fato):
+
+1. **R9.6:** a altura do Row depois do **Arrumar** com os dois Buttons.
+2. **R9.4, R9.7 e R15:** os textos da prévia ("Início", "Salvar") e o reservado da imagem.
+3. **R15.4:** a imagem cortada em cima e embaixo na caixa 160 × 120 com `Crop`.
+4. **R12.12:** o Box (200 × 120) como alvo "Adicionar dentro de Box" no container 200 × 150.
+5. **R3.14:** se a janela de atualização lista o aviso do campo `note`.
+6. **R10.1:** qual biblioteca aparece aberta primeiro; **R10.3:** a tabela de variantes por Estilo.
+
+Na **passada visual**, olhe o **Catálogo** (a página do Button, a galeria), **Especializações** (a lista das 3 camadas) e a janela **Privacidade** nos temas claro e escuro.
+
+**Relato:** o mesmo template, em `docs/history/relato-<data>-exemplos-enxutos.md`; use o código da fase (EX1 a EX3) na coluna **Achado de origem**. Passo cujo **texto do roteiro** está errado e o produto está certo é achado do roteiro: escreva o texto que deveria estar lá. Se algo da lista não puder ser executado, marque "não executado (motivo)".

@@ -125,8 +125,6 @@ const testEnv = { PERF_BUDGETS: perfBudgets };
 
 const base = {
   base: './',
-  // O zip do projeto de exemplo entra no bundle como data URI (`?inline`, src/app/exampleProject.ts).
-  assetsInclude: ['**/*.zip'],
   define: { __BUILD_ID__: JSON.stringify(buildId) },
   plugins: [
     tokensCss(),

@@ -49,7 +49,7 @@ describe('componentPaths', () => {
 
 function loadMaterial3(): Spec {
   const text = readFileSync(
-    join(process.cwd(), 'examples/libraries/material3/material3.spec.json'),
+    join(process.cwd(), 'tests/fixtures/material3/material3.spec.json'),
     'utf8',
   );
   const parsed = parseSpecText(text);
@@ -103,7 +103,7 @@ describe('loadSpecComponents', () => {
   });
 
   it('o Material 3 inteiro carrega do disco, sem problemas', () => {
-    const root = join(process.cwd(), 'examples/libraries/material3');
+    const root = join(process.cwd(), 'tests/fixtures/material3');
     const loaded = loadSpecComponents(
       loadMaterial3(),
       'specs/material3/material3.spec.json',

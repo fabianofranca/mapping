@@ -1,0 +1,522 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 9,
+  "id": "sdui-backend",
+  "name": "SDUI do backend",
+  "version": 2,
+  "description": "Exemplo da origem executável: um sistema externo fictício (um backend de SDUI) descreve telas em JSON e a declaração de origens as traduz em componentes. Mostra sources, slot, âncoras, scrim, exemplos do sistema externo e o contrato de versão.",
+  "containers": [
+    {
+      "id": "phone",
+      "name": "Celular",
+      "width": 412,
+      "height": 917,
+      "background": "#FEF7FF"
+    }
+  ],
+  "origins": [
+    {
+      "system": "sdui",
+      "name": "SDUI do backend",
+      "node": {
+        "type": "type",
+        "props": "props",
+        "children": "children"
+      },
+      "screen": {
+        "id": {
+          "path": "screen.id"
+        },
+        "name": {
+          "path": "screen.title",
+          "default": "Tela"
+        },
+        "width": {
+          "path": "screen.device.width"
+        },
+        "height": {
+          "path": "screen.device.height"
+        },
+        "background": {
+          "path": "screen.background",
+          "values": {
+            "surface": "#FEF7FF"
+          },
+          "default": "#FFFFFF"
+        },
+        "roots": [
+          {
+            "path": "content"
+          },
+          {
+            "path": "floating[*]",
+            "anchor": {
+              "path": "anchor"
+            },
+            "margin": {
+              "path": "margin"
+            }
+          },
+          {
+            "path": "modal",
+            "anchor": "bottom",
+            "scrim": "sdui-scrim"
+          }
+        ]
+      },
+      "booleans": {
+        "true": "sim",
+        "false": "não"
+      },
+      "examples": [
+        {
+          "name": "Configurações",
+          "file": "examples/settings.sdui.json"
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [
+        {
+          "op": "rename-type",
+          "from": "sdui-action",
+          "to": "sdui-endpoint"
+        },
+        {
+          "op": "rename-field",
+          "type": "sdui-button",
+          "from": "text",
+          "to": "label"
+        },
+        {
+          "op": "map-values",
+          "type": "sdui-button",
+          "field": "variant",
+          "values": {
+            "primary": "filled"
+          }
+        },
+        {
+          "op": "fill-field",
+          "type": "sdui-fab",
+          "field": "color",
+          "default": "primary"
+        },
+        {
+          "op": "remove-field",
+          "type": "sdui-sheet",
+          "field": "legacy"
+        },
+        {
+          "op": "remove-type",
+          "type": "sdui-badge",
+          "mode": "convert"
+        },
+        {
+          "op": "remove-type",
+          "type": "sdui-toast",
+          "mode": "delete"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "sdui-column",
+          "name": "Column",
+          "component": "components/sdui-column.json",
+          "doc": "docs/sdui-column.md",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Column",
+              "slot": "content"
+            }
+          ],
+          "fields": [
+            {
+              "key": "spacing",
+              "label": "Spacing",
+              "type": "number",
+              "default": 8,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "spacing"
+                }
+              ]
+            },
+            {
+              "key": "padding",
+              "label": "Padding",
+              "type": "number",
+              "default": 0,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "padding"
+                }
+              ]
+            }
+          ],
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "spacing": 8,
+                "padding": 0
+              }
+            },
+            {
+              "name": "Espaçada",
+              "values": {
+                "spacing": 16,
+                "padding": 16
+              }
+            }
+          ]
+        },
+        {
+          "id": "sdui-button",
+          "name": "Button",
+          "labelField": "label",
+          "component": "components/sdui-button.json",
+          "doc": "docs/sdui-button.md",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "Button",
+              "ignore": ["contentDescription"]
+            },
+            {
+              "system": "figma",
+              "id": "3f2a9c",
+              "name": "DS/Button"
+            }
+          ],
+          "fields": [
+            {
+              "key": "label",
+              "label": "Label",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "text"
+                }
+              ]
+            },
+            {
+              "key": "variant",
+              "label": "Variant",
+              "type": "enum",
+              "options": ["filled", "tonal", "outlined", "text"],
+              "default": "filled",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "style"
+                },
+                {
+                  "system": "figma",
+                  "name": "Style",
+                  "values": {
+                    "Primary": "filled",
+                    "Secondary": "tonal",
+                    "Ghost": "text"
+                  }
+                }
+              ]
+            },
+            {
+              "key": "mode",
+              "label": "Mode",
+              "type": "enum",
+              "options": ["normal", "link", "deprecated"],
+              "default": "normal",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "mode"
+                }
+              ]
+            },
+            {
+              "key": "disabled",
+              "label": "Disabled",
+              "type": "enum",
+              "options": ["sim", "não"],
+              "default": "não",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "disabled"
+                }
+              ]
+            }
+          ],
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {
+                "label": "Label",
+                "variant": "filled",
+                "mode": "normal",
+                "disabled": "não"
+              }
+            },
+            {
+              "name": "Link",
+              "values": {
+                "label": "Label",
+                "variant": "text",
+                "mode": "link",
+                "disabled": "não"
+              }
+            },
+            {
+              "name": "Do sistema externo",
+              "system": "sdui",
+              "file": "examples/button.sdui.json"
+            }
+          ]
+        },
+        {
+          "id": "sdui-fab",
+          "name": "FAB",
+          "component": "components/sdui-fab.json",
+          "doc": "docs/sdui-fab.md",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "FAB"
+            }
+          ],
+          "fields": [
+            {
+              "key": "icon",
+              "label": "Icon",
+              "type": "enum",
+              "options": ["add", "ring"],
+              "default": "add",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "icon"
+                }
+              ]
+            },
+            {
+              "key": "color",
+              "label": "Color",
+              "type": "enum",
+              "options": ["primary", "secondary"],
+              "required": true,
+              "default": "primary",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "color"
+                }
+              ]
+            }
+          ],
+          "examples": [
+            {
+              "name": "Mais",
+              "values": {
+                "icon": "add",
+                "color": "primary"
+              }
+            },
+            {
+              "name": "Anel",
+              "values": {
+                "icon": "ring",
+                "color": "secondary"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sdui-sheet",
+          "name": "Bottom sheet",
+          "labelField": "title",
+          "component": "components/sdui-sheet.json",
+          "doc": "docs/sdui-sheet.md",
+          "sources": [
+            {
+              "system": "sdui",
+              "name": "BottomSheet"
+            }
+          ],
+          "fields": [
+            {
+              "key": "title",
+              "label": "Title",
+              "type": "string",
+              "required": true,
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "title"
+                }
+              ]
+            },
+            {
+              "key": "subtitle",
+              "label": "Subtitle",
+              "type": "string",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "subtitle"
+                }
+              ]
+            },
+            {
+              "key": "footer",
+              "label": "Footer",
+              "type": "string",
+              "sources": [
+                {
+                  "system": "sdui",
+                  "path": "footer"
+                }
+              ]
+            }
+          ],
+          "examples": [
+            {
+              "name": "Ordenar",
+              "values": {
+                "title": "Sort by",
+                "subtitle": "Escolha a ordem da lista",
+                "footer": "Cancelar"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sdui-scrim",
+          "name": "Scrim",
+          "component": "components/sdui-scrim.json",
+          "doc": "docs/sdui-scrim.md",
+          "fields": [],
+          "examples": [
+            {
+              "name": "Padrão",
+              "values": {}
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "name": "API",
+      "color": "#006A6A",
+      "annotationTypes": [
+        {
+          "id": "sdui-endpoint",
+          "name": "Endpoint",
+          "description": "O endpoint que entrega uma tela ou um bloco. Só se aplica a marcações (não a setas): ele descreve o que a área mostra.",
+          "labelField": "url",
+          "appliesTo": ["marking"],
+          "doc": "docs/sdui-endpoint.md",
+          "fields": [
+            {
+              "key": "url",
+              "label": "URL",
+              "type": "string",
+              "required": true,
+              "description": "O caminho do endpoint (/v1/screens/settings)."
+            },
+            {
+              "key": "typeName",
+              "label": "Tipo da resposta",
+              "type": "string",
+              "linkedRef": "typeRef",
+              "description": "O nome do tipo da resposta; escolher uma declaração mapeada grava o texto e o vínculo juntos."
+            },
+            {
+              "key": "typeRef",
+              "label": "Declaração",
+              "type": "ref",
+              "accepts": {
+                "free": true
+              }
+            },
+            {
+              "key": "params",
+              "label": "Parâmetros",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "name",
+                  "label": "Nome",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "key": "kind",
+                  "label": "Onde",
+                  "type": "enum",
+                  "options": ["query", "header", "body"],
+                  "default": "query",
+                  "sources": [
+                    {
+                      "system": "sdui",
+                      "name": "kind",
+                      "path": "params.kind",
+                      "values": {
+                        "q": "query",
+                        "h": "header"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "key": "timeoutMs",
+                  "label": "Timeout (ms)",
+                  "type": "number"
+                },
+                {
+                  "key": "since",
+                  "label": "Desde",
+                  "type": "date"
+                },
+                {
+                  "key": "target",
+                  "label": "Alvo",
+                  "type": "ref",
+                  "accepts": {
+                    "free": true
+                  }
+                }
+              ]
+            }
+          ],
+          "examples": [
+            {
+              "name": "Tela de configurações",
+              "values": {
+                "url": "/v1/screens/settings"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

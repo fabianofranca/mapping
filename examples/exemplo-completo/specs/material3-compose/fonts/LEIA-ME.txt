@@ -1,0 +1,16 @@
+Fontes do pacote Material 3 (Compose)
+=====================================
+
+A especialização (material3-compose.spec.json) declara a Roboto em "fonts":
+
+  - fonts/Roboto-Regular.woff2 (peso 400)
+  - fonts/Roboto-Medium.woff2  (peso 500)
+
+Os arquivos vêm no pacote: são o subconjunto latino (inclui os acentos do português) da
+Roboto 5.3.0 do projeto Fontsource (@fontsource/roboto), licenciada sob a SIL Open Font
+License 1.1. O texto da licença está em LICENSE-Roboto.txt, ao lado.
+
+Para trocar por outra versão da Roboto (por exemplo o .ttf completo de
+https://fonts.google.com/specimen/Roboto), copie os arquivos para esta pasta e ajuste os
+nomes em "fonts" da especialização. Sem os arquivos, o desenho cai na fonte do sistema e o
+Diagnóstico mostra um aviso por fonte ausente; o pacote continua válido.

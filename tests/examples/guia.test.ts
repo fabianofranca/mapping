@@ -123,7 +123,7 @@ describe('guia interativo', () => {
     }
   });
 
-  it('traz os dados do exemplo: 4 telas, 31 marcações, 41 anotações e 9 camadas', () => {
+  it('traz os dados do exemplo: 4 telas, 31 marcações, 41 anotações e 10 camadas', () => {
     const script = blocks(html, 'script').find((s) => s.includes('const D ='));
     const json = /const D = (\{.*\});\n/.exec(script ?? '')?.[1];
     expect(json).toBeDefined();
@@ -137,7 +137,7 @@ describe('guia interativo', () => {
     expect(data.images).toHaveLength(4);
     expect(data.markings).toHaveLength(31);
     expect(data.annotations).toHaveLength(41);
-    expect(data.layers).toHaveLength(9); // a camada Notas fica na lista; a nota flutuante e a anotação dela não vão ao guia
+    expect(data.layers).toHaveLength(10); // a camada Notas fica na lista; a nota flutuante e a anotação dela não vão ao guia
     expect(Object.keys(data.files)).toEqual(['images/cadastro.png', 'images/login.png']);
   });
 });

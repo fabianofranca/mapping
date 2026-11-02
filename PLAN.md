@@ -1,6 +1,6 @@
 # Mapping — Plano de desenvolvimento
 
-> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje as etapas em andamento são a **Marcação pai**, épico `epic/marcacao-pai`, que aguarda o fechamento; a **Biblioteca Material 3** foi a última concluída; a **Exemplos enxutos**, épico `epic/exemplos-enxutos`, está planejada e só começa depois que o `epic/material3` entrar na `main`). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje a etapa em andamento é a **Exemplos enxutos**, épico `epic/exemplos-enxutos`; a **Biblioteca Material 3** foi a última concluída; a **Marcação pai** foi mesclada na `main` pelo PR #240, com o fechamento do histórico pendente). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 
 ## Produto
 
@@ -63,12 +63,14 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/history/relato-2026-10-28-marcacao-pai.md`](docs/history/relato-2026-10-28-marcacao-pai.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/marcacao-pai` (build `5d7ac40`): 19 ✅, 1 achado baixo (texto cortado sem dica), corrigido no MP1b |
 | [`docs/history/relato-2026-10-29-sugestoes-campo.md`](docs/history/relato-2026-10-29-sugestoes-campo.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/sugestoes-campo` (build `f034a3a`): 24 ✅, 2 achados baixos, tratados no PR #250 |
 | [`docs/history/relato-2026-11-01-material3.md`](docs/history/relato-2026-11-01-material3.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/material3` (build `11d9b65`, MCP 0.12.0-rc.1): 35 ✅, 1 ❌ baixo (R10.7: o guia estava velho; o componente sem container vai para o canvas desde a etapa Marcações espaciais), textos do guia corrigidos |
+| [`docs/history/relato-2026-11-01-exemplos-enxutos.md`](docs/history/relato-2026-11-01-exemplos-enxutos.md) | Relato da rodada dirigida do Cowork sobre o épico `epic/exemplos-enxutos` (build `36f7215`): 68 ✅, 4 🟡, 4 ⏭️; A1 corrigido, A2 sem mudança no produto, textos dos roteiros ajustados |
 | [`docs/history/revisao-tecnica-2026-10-12.md`](docs/history/revisao-tecnica-2026-10-12.md) | Revisão técnica dirigida (síntese e seis relatórios, 71 achados); origem da etapa 8 |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Ordem das próximas etapas (etapas Container, Marcações espaciais, notas e setas, Proposto com componentes e Sugestões no campo de texto concluídas), marco de uso real e evoluções |
 | [`docs/redesign/HANDOFF.md`](docs/redesign/HANDOFF.md) | Redesign da interface (etapa 2.3, concluída; referência): componentes, tokens, mudanças B#, propostas P# e decisões |
 | [`docs/redesign/HANDOFF-PROPOSALS.md`](docs/redesign/HANDOFF-PROPOSALS.md) | Design das propostas de alteração (fase 4.0): telas, componentes e tokens novos, comportamento, atalhos e pontos em aberto |
 | [`docs/redesign/BRIEF-REVIEW-DETAILS.md`](docs/redesign/BRIEF-REVIEW-DETAILS.md) | Briefing para o Claude Design dos Detalhes na revisão (fase 9.1, concluída; referência): problema, estado atual, requisitos, restrições e os estados E1 a E17 |
 | [`docs/redesign/HANDOFF-REVIEW-DETAILS.md`](docs/redesign/HANDOFF-REVIEW-DETAILS.md) | Design dos Detalhes na revisão (etapa 9, aprovado; referência): marcador e popover por campo, cabeçalho do item, “Outras mudanças”, comportamento, textos e decisões |
+| [`docs/sdui/BRIEF-SDUI-KMP.md`](docs/sdui/BRIEF-SDUI-KMP.md) | Briefing de um SDUI de produção com Material 3 em Kotlin Multiplatform (contrato, renderer em Compose Multiplatform, BFF; componentes, gatilhos e ações), para outro repositório, e onde o Mapping entra (biblioteca `sdui-material3`) |
 
 ---
 
@@ -76,64 +78,95 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 > Fases MD1 a MD5 entregues no épico (especialização `formatVersion` 9 com `variants` no `code`, MCP 0.12.0; sem schema, formato de proposta nem de componente novos). O objetivo, as 14 decisões, as fases, as decisões consolidadas dos PRs, a rodada do Cowork e o que ficou para depois estão em [`docs/history/PLAN-etapa-material3.md`](docs/history/PLAN-etapa-material3.md).
 
-## Etapa — Exemplos enxutos (planejada, épico `epic/exemplos-enxutos`)
+## Etapa — Exemplos enxutos (em andamento, épico `epic/exemplos-enxutos`)
 
-- **Objetivo:** o dono decidiu (2026-11-01) que `examples/libraries/` guarde só o que as bibliotecas prontas de `libraries/` (`notas`, `kotlin` e `material3-compose`) **não cobrem**. Hoje há três pacotes de exemplo: `material3` (15 tipos), `analytics` (2) e `pessoas` (1). O `material3` e o `pessoas` repetem o que a `material3-compose` já mostra (containers, fontes, slot, `$switch`, nó `image`); o `analytics` mostra `appliesTo` (tipo só de seta ou só de marcação), que nenhuma biblioteca de `libraries/` mostra; o `material3` mostra `origins` e `sources` (ligar o tipo a um sistema externo, com telas de exemplo), que também ficam descobertos.
-- **Depende de:** o épico `epic/material3` ter entrado na `main` (a `material3-compose` e as mudanças do validador só existem lá). O branch do épico nasce da `main` atualizada.
-- **Versões:** sem schema, formato de especialização, de proposta ou de componente novos, e sem MCP novo (a versão do servidor não muda). É uma limpeza de exemplos, fixtures e roteiros.
+- **Objetivo:** o dono decidiu (2026-11-01) que **todo recurso** dos formatos de especialização e de componente tenha um exemplo, usando **ao máximo as bibliotecas prontas** de `libraries/` (`notas`, `kotlin` e `material3-compose`). `examples/` guarda só o que elas não cobrem e não devem cobrir, os testes deixam de ler exemplos e passam a usar fixtures próprias, e um teste garante que nenhuma limpeza tire o último exemplo de um recurso. Replanejada na EX0 (2026-11-01) a partir da análise da primeira versão do plano.
+- **Estado de partida:** `examples/libraries/` tem três pacotes: `material3` (15 tipos, gerado do laboratório por `scripts/buildLibraryExamples.mjs`), `analytics` (1 tipo) e `pessoas` (1 tipo). Varredura das chaves (EX0): o `material3` antigo é o único com a origem executável completa (`origins` com `booleans`, `background.values`, raízes com `anchor`, `margin` e `scrim`; `sources` com `slot`, `values` e `ignore`) e a tela de exemplo do sistema externo (`examples/settings.sdui.json` dentro do pacote); o resto dele a `material3-compose` já mostra. A `analytics` é a única com `appliesTo`. A `pessoas` não tem nada que a `material3-compose` não tenha (o tipo `image` tem o campo `url`). `examples/specs/biblioteca.json` é só o arquivo de um pacote (os arquivos que ele cita não vêm junto) e é o único exemplo de `migrations`. Os testes leem `examples/libraries/material3/` (ids `m3-*`, usados em mais de 30 arquivos), `examples/libraries/pessoas/` e `examples/specs/biblioteca.json`, e o projeto de exemplo (`examples/exemplo-completo/`, 21 anotações `m3-*`), o guia e o `proposta-componentes.zip` (R13) levam uma cópia do `material3` antigo.
+- **Versões:** sem schema, formato de especialização, de proposta ou de componente novos, e sem MCP novo (a versão do servidor não muda). É uma reorganização de exemplos, fixtures, roteiros e documentação.
 - **Coordenador e esforço** (regra da seção "Uso de modelos" do [`CLAUDE.md`](CLAUDE.md)):
 
-| Fase | Coordenador | Esforço do coordenador | Subagentes                                                                    |
-| ---- | ----------- | ---------------------- | ----------------------------------------------------------------------------- |
-| EX1  | Opus        | high                   | Sonnet medium (migração dos testes, por grupo de arquivos); Haiku low         |
-| EX2  | Sonnet      | medium                 | Sonnet medium (pacote, documentos, roteiros); Haiku low                       |
-| EX3  | Sonnet      | medium                 | Sonnet medium; Haiku low                                                      |
+| Fase | Coordenador | Esforço do coordenador | Subagentes                                                           |
+| ---- | ----------- | ---------------------- | -------------------------------------------------------------------- |
+| EX0  | Opus        | high                   | Sonnet medium (teste de cobertura)                                   |
+| EX1  | Sonnet      | medium                 | Sonnet medium (pacote, componentes, documentos, roteiro); Haiku low  |
+| EX2  | Sonnet      | medium                 | Sonnet medium (projeto de exemplo, guia, zip do R13); Haiku low      |
+| EX3  | Sonnet      | medium                 | Sonnet medium (migração dos testes, roteiros, documentos); Haiku low |
+| EX4  | Sonnet      | medium                 | Sonnet medium; Haiku low                                             |
 
 ### Decisões
 
-1. **Ficam em `examples/libraries/`:** `analytics` (cobre `appliesTo`) e uma biblioteca **SDUI enxuta**, de 2 a 3 tipos, que cobre `origins` e `sources` com uma tela de exemplo do sistema externo. Saem a `material3` de 15 tipos e a `pessoas`.
-2. **A SDUI enxuta nasce da `material3` antiga, cortada:** só os tipos e componentes necessários para mostrar a origem (por exemplo Button e Text), com `sources`, `origins` e um exemplo de tela. `examples/specs/sdui.json` (especialização isolada, `formatVersion` 5) continua como exemplo de arquivo único. O `id` e o nome do pacote novo saem na EX2, sem colidir com o `id` `sdui` desse arquivo.
-3. **Os testes deixam de depender de uma biblioteca de exemplo.** A base fixa dos testes (hoje a `material3` de 15 tipos: ids `m3-button`, `m3-chip`, `m3-row`…) vira uma **biblioteca mínima só de teste**, em `tests/fixtures/`, com os tipos que os testes usam (contêineres com slot, botão, chip, campos, barra de navegação, cartão). Não vira a `material3-compose`, que cresce a cada versão do androidx. O gerador (`scripts/buildLibraryExamples.mjs`, `scripts/libraryExamples.ts`) e a dependência do laboratório (`lab/`) saem junto com a pasta antiga.
-4. **Roteiros:** o R15 (imagens remotas) passa a usar um tipo com imagem da `material3-compose` (`image`, `card` ou `list-item`); o R12.19 continua com a `analytics`; o R3.10, o R3.12, o R9, o R10 e o R12.12 passam a usar a `material3-compose` (pasta ou `material3-compose.zip`). Todo passo continua feito pelo agente sozinho.
-5. **Projeto de exemplo e guia:** `examples/exemplo-completo/` (e o zip) e o guia interativo (`public/guia/`) trocam o `specs/material3/` pela SDUI enxuta ou ficam só com as notas; a escolha sai na EX3, junto da conferência do tamanho do zip.
-6. **Sem perda de cobertura:** cada recurso que a `material3` antiga ensinava continua com um exemplo (`origins` e `sources` na SDUI enxuta; `appliesTo` na `analytics`; o resto na `material3-compose`), e um teste da etapa confere isso.
+1. **Três lugares, três papéis.**
+   - `libraries/`: as bibliotecas reais, a primeira fonte de exemplo de qualquer recurso. Não mudam nesta etapa.
+   - `examples/libraries/` e `examples/specs/`: só o que uma biblioteca real não deve ter. Ficam a `analytics` (`appliesTo`: tipo só de seta ou só de marcação), uma biblioteca **`sdui-backend`** nova (a origem executável: um sistema externo fictício que descreve telas) e as especializações de arquivo único `sdui.json` (`code` em várias plataformas, `allowedChildren`, `requiresOwner`) e `modelo-de-dados.json` (`formatVersion` 1, campo `date`). Saem a `material3` de 15 tipos, a `pessoas` e o `biblioteca.json`.
+   - `tests/fixtures/`: o que os testes leem. Os testes não leem `examples/` nem `libraries/`, exceto os que conferem um exemplo distribuído (o projeto de exemplo, os zips, a validação de cada biblioteca e o teste de cobertura).
+2. **Teste de cobertura (EX0), a guarda da etapa.** `tests/examples/featureCoverage.test.ts` deriva os recursos da especialização do `specSchema` (cada caminho de chave e cada valor de enum) e lista os do componente (tipos de nó, chaves, layout, dimensionamento, âncoras, operadores de expressão); cada um precisa aparecer em `libraries/`, `examples/libraries/` ou `examples/specs/`. As raízes que vão sair ficam em `LEAVING`, e o que só elas cobrem fica em `PENDING_AFTER_REMOVAL` (igualdade exata); um recurso sem exemplo nenhum fica em `MISSING_TODAY` e ganha exemplo na etapa. Ao fim da etapa, as três listas estão vazias, e um recurso novo no schema sem exemplo quebra o teste.
+3. **A `sdui-backend` nasce da `material3` antiga, cortada** ao mínimo que zera o `PENDING_AFTER_REMOVAL` do lado da origem: um contêiner com slot (`sources.slot`), um botão (`values` e `ignore`), uma flutuante com `anchor` e `margin`, uma folha modal com o tipo do `scrim`, a origem com `booleans` e `background.values`, a tela de exemplo do sistema externo e as `migrations` (versão 2 com uma migração da 1), de 4 a 6 tipos, cada um com componente e documento, sem fontes. `id` `sdui-backend` (não colide com o `sdui` do `sdui.json`), nome "SDUI do backend". A `material3-compose` não ganha origem: uma biblioteca real não descreve o backend de ninguém.
+4. **Os testes usam uma cópia congelada.** Os testes provam o motor, não o design system: `examples/libraries/material3/` vai para `tests/fixtures/material3/` e `examples/libraries/pessoas/` para `tests/fixtures/pessoas/` por `git mv`, com os mesmos ids (`m3-*`) e o mesmo conteúdo, sem mudar o que cada teste prova nem as contagens; o orçamento de desempenho continua medindo a mesma carga. `examples/specs/biblioteca.json` vai para `tests/fixtures/specs/`. A `material3-compose` não vira base de teste: ela muda a cada versão do androidx. O gerador (`scripts/buildLibraryExamples.mjs`, `scripts/libraryExamples.ts`, `npm run build:examples`) sai; o laboratório continua com os próprios exemplos (`lab/components/samplesMaterial3.ts`), que os testes do `lab/` e alguns do modelo importam como hoje (fora desta etapa).
+5. **O que a pessoa vê usa a `material3-compose`.** O projeto de exemplo (`examples/exemplo-completo/specs/material3-compose/`, cópia conferida por teste como hoje, e o zip), o guia interativo e o `proposta-componentes.zip` (R13) trocam o `material3` antigo pela `material3-compose`; as anotações e as instâncias passam aos tipos e campos dela. O zip do projeto de exemplo cresce (a `material3-compose` tem 50 tipos e a Roboto); a EX2 confere e registra o tamanho.
+6. **Roteiros:** o R3.10, o R3.12, o R3.14 a R3.17 (as cópias `mat-v3`, `mat-v4` e `mat-v5` com migrações), o R9, o R10, o R12.12 e o R13 passam à `material3-compose` (pasta ou `material3-compose.zip`); o R15 usa o tipo `image` dela (campo `url`); o R10 ganha os passos da origem (seção de origens do componente e a galeria com a tela de exemplo) na `sdui-backend`; o R12.19 continua com a `analytics`. Todo passo continua feito pelo agente sozinho (seção 8 do `docs/TESTING.md`).
+
+7. **Guia dos exemplos:** `examples/README.md` diz, para cada biblioteca de `libraries/` e cada exemplo de `examples/`, o que é, como abrir, o que dá para ver e que roteiros o usam, e termina com a tabela "Onde ver cada recurso". `tests/examples/examplesReadme.test.ts` exige uma seção por exemplo no disco e nenhuma seção de exemplo que não existe; cada fase que cria, troca ou remove um exemplo atualiza o guia no mesmo PR.
+
+8. **SDUI de produção fica fora desta etapa.** O dono decidiu (2026-11-01) fazer um SDUI de produção com Material 3 em Kotlin Multiplatform (contrato único, renderer em Compose Multiplatform para Android e iOS, BFF em Kotlin) num **repositório separado**; o que foi decidido está em [`docs/sdui/BRIEF-SDUI-KMP.md`](docs/sdui/BRIEF-SDUI-KMP.md). A biblioteca do Mapping que o descreve (`sdui-material3`, em `libraries/`) nasce depois que o contrato existir lá, porque o `code` e as `sources` precisam apontar para símbolos e chaves reais; quando nascer, ela pode substituir a `sdui-backend` como exemplo de origem. Até lá, a EX1 segue com a `sdui-backend` enxuta.
 
 ### Fora (de propósito)
 
 - Alterar a `material3-compose`, as notas ou a Kotlin.
 - Aceitar `minSize` de um eixo só ou qualquer outra mudança de formato.
-- Dar a Roboto às bibliotecas de exemplo restantes (a `analytics` e a SDUI enxuta não usam fontes).
+- Dar a Roboto às bibliotecas de exemplo restantes (a `analytics` e a `sdui-backend` não usam fontes).
+- Tirar dos testes do modelo e do canvas a importação dos exemplos do laboratório (`lab/components/samplesMaterial3.ts`).
+- Cobertura de exemplos dos formatos do projeto (`mapping.json`) e da proposta: o projeto de exemplo e os zips de proposta continuam como são.
 
 ### Fases
 
-#### EX1 — Fixture mínima de teste e migração dos testes
+#### EX0 — Replanejamento e teste de cobertura
 
-**Coordenador:** Opus. **Esforço:** high; subagentes Sonnet medium (um grupo de testes cada) e Haiku low. Decisão 3.
+**Coordenador:** Opus. **Esforço:** high; subagentes Sonnet medium. Decisões 1, 2 e 7.
 
-**Toca em:** `tests/fixtures/` (novo), `tests/storage/packageFixture.ts`, `tests/components/libraryHarness.ts`, `tests/model/` (`catalog`, `componentArrange`, `componentCatalog`, `libraryPackage`, `libraryExamples`), `tests/store/` (`componentLibrary`, `libraryPreview`, `proposalPackage`, `sessionComponents`, `sessionPackage`, `sessionPackageDisk`), `tests/mcp/` (`library`, `libraryUpdate`, `containerComponents`), `tests/canvas/renderPerformance.test.ts`, `tests/components/catalog/CatalogView.test.tsx`, `tests/app/` (`controller`, `library`), `tests/e2e/` (`catalog`, `container`, `proposedComponentsFixture`).
+- [x] Etapa replanejada neste `PLAN.md` (a primeira versão deixava sem dono os testes da `pessoas`, o `proposta-componentes.zip`, o R3.14 a R3.17 e os recursos da origem que o `biblioteca.json` não mostra)
+- [x] `tests/examples/featureCoverage.test.ts` com `LEAVING`, `PENDING_AFTER_REMOVAL` e `MISSING_TODAY` (172 recursos de especialização, derivados do `specSchema`, e 131 de componente; a origem, que o schema não declara, e o componente, lido à mão, em listas conferidas contra o código)
+- [x] Guia dos exemplos (`examples/README.md`, decisão 7) do estado de hoje, com o que sai marcado, e `tests/examples/examplesReadme.test.ts`
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
-- [ ] Biblioteca mínima de teste em `tests/fixtures/` (os tipos que os testes usam, com componente, documento e exemplos) e um carregador único, no lugar de `examples/libraries/material3/`
-- [ ] Todos os testes que citavam `examples/libraries/material3/` apontam para a fixture (ids novos; contagens de avisos e de tipos ajustadas), sem mudar o que cada teste prova
-- [ ] O orçamento de desempenho do canvas continua medindo a mesma carga (mesma quantidade de componentes)
-- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+#### EX1 — Biblioteca `sdui-backend` e a origem no roteiro
 
-#### EX2 — Biblioteca SDUI enxuta e o roteiro de `origins`
+**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Decisões 1 a 3 e 6.
 
-**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Decisões 1, 2 e 6.
+- [x] `examples/libraries/sdui-backend/` (decisão 3) validada por teste no molde de `tests/model/libraryExamples.test.ts`, sem erro nem aviso no Diagnóstico
+- [x] Exemplos para os 39 recursos de `MISSING_TODAY` (passos de migração, colunas `date`/`number` e com `sources`, `linkedRef` em campo, `appliesTo: marking`, `containers[].background`, `fonts[].style`, `font.decoration`, `verticalAlign`, `fillRule` e outros; a lista está no teste), de preferência na `sdui-backend` ou na `analytics`; a lista fica vazia. O que não couber sem ferir o "Fora" (ex.: `fonts[].style` pede arquivo de fonte) vai para `EXCEPTIONS` com a justificativa e é levado ao dono no PR. **Feito:** 36 recursos ganharam exemplo na `sdui-backend` (6 tipos, 5 componentes) e `fonts[].style` (3 recursos, `fonts[].style`, `=italic`, `=normal`) foi para `EXCEPTIONS`: o exemplo pede um arquivo de fonte e a `sdui-backend` não leva fontes (sem ele o validador avisa); decisão do dono (2026-11-01): a fonte é fixa no cliente mobile, fora do SDUI, então fica como exceção
+- [x] `PENDING_AFTER_REMOVAL` vazia (hoje 48 recursos: `origins` inteira, `sources` de tipo e de campo, `migrations`; a `sdui-backend` cobre o que só a `material3` antiga e o `biblioteca.json` mostravam)
+- [x] R10 com os passos da origem na `sdui-backend` (a seção de origens e a galeria com a tela de exemplo); `docs/SPEC-FORMAT.md` e `libraries/README.md` apontam para ela como o exemplo de `origins`, `sources` e `migrations`; seção `examples/libraries/sdui-backend/` no guia dos exemplos e a tabela "Onde ver cada recurso" atualizada
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
-- [ ] `examples/libraries/<id>/` com a SDUI enxuta (2 a 3 tipos, `sources`, `origins`, uma tela de exemplo do sistema externo, componentes e documentos), validada por teste próprio no molde de `tests/model/libraryExamples.test.ts`
-- [ ] `docs/SPEC-FORMAT.md` e `libraries/README.md` apontam para ela como o exemplo de `origins` e `sources`
-- [ ] Teste de cobertura (decisão 6): cada recurso (`origins`, `sources`, `appliesTo`) tem um exemplo em `examples/libraries/` ou `libraries/`
-- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+#### EX2 — Exemplos distribuídos na `material3-compose`
 
-#### EX3 — Remoção, roteiros e fechamento
+**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Decisão 5.
 
-**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low. Decisões 3 a 5.
+**Toca em:** `examples/exemplo-completo/` (troca `specs/material3/` por `specs/material3-compose/` e as 21 anotações `m3-*`), `tests/examples/exampleProject.test.ts`, `scripts/guia/template.html` e `public/guia/` (`npm run build:guia`), `examples/exemplo-completo.zip` (`npm run build:example`), `tests/e2e/proposedComponentsFixture.ts`, os e2e que o usam, `examples/proposta-componentes.zip` (`npm run build:proposal-components`), `tests/examples/proposalComponents.test.ts`, `src/i18n/specHelp.ts` (os exemplos da ajuda com ids `m3-*`), R13 do `docs/TESTING.md`.
 
-- [ ] Remover `examples/libraries/material3/`, `examples/libraries/pessoas/`, `scripts/buildLibraryExamples.mjs`, `scripts/libraryExamples.ts` e o script do `package.json`, e tirar a menção em `lab/README.md`
-- [ ] Projeto de exemplo (`examples/exemplo-completo/` e o zip) e guia interativo regenerados sem o `specs/material3/` antigo (`npm run build:example` e `npm run build:guia`)
-- [ ] Roteiros R3.10, R3.12, R9, R10, R12.12 e R15 reescritos (decisão 4), `docs/TESTING.md`, `docs/TESTING-COWORK.md`, `docs/GUIDE.md`, `docs/COMPONENT-FORMAT.md`, `docs/SPEC-FORMAT.md`, a skill `spec-author` e `src/i18n/specHelp.ts` sem citar os pacotes removidos (teste do guia)
-- [ ] Rodada dirigida do Cowork (R3, R9, R10, R12 e R15) e o relato entre os documentos da etapa
+- [x] Projeto de exemplo e zip com a `material3-compose` (a cópia conferida por teste) e o tamanho do zip registrado no PR (289.104 bytes, eram 64.988). Decisão do dono (2026-11-01): embutir o zip levaria o `dist/index.html` a 1.868.223 bytes, acima do orçamento de 1,5 MiB, então o botão **Abrir projeto de exemplo** e o zip embutido saíram (`src/app/exampleProject.ts`) e a app orienta a baixar `examples/exemplo-completo.zip` do repositório (Ajuda e guia); o orçamento fica em 1,5 MiB (1.482.050 bytes)
+- [x] Guia interativo regenerado, com os textos falando dos tipos da `material3-compose`
+- [x] `proposta-componentes.zip` com a `material3-compose` (inclusive o tipo que só existe no pacote da proposta) e o R13 reescrito
+- [x] Ajuda da especialização (`specHelp.ts`) sem ids do pacote antigo, em pt-BR e en-US
+- [x] Guia dos exemplos: seções do projeto de exemplo e do `proposta-componentes.zip` atualizadas
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+
+#### EX3 — Fixtures de teste, remoção e roteiros
+
+**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium (por grupo de testes), Haiku low (troca de caminhos). Decisões 4 e 6.
+
+**Toca em:** os testes que leem os pacotes que saem: `tests/storage/packageFixture.ts`, `tests/components/libraryHarness.ts` (e quem o usa), `tests/components/SpecsDialog.test.tsx`, `tests/model/` (`catalog`, `componentArrange`, `componentCatalog`, `libraryPackage`, `libraryExamples`, `spec`, `specV4`), `tests/store/` (`componentLibrary`, `libraryPreview`, `sessionComponents`, `sessionPackage`), `tests/mcp/` (`library`, `libraryUpdate`, `containerComponents`), `tests/canvas/renderPerformance.test.ts`, `tests/app/` (`controller`, `library`), `tests/examples/pessoasLibrary.test.ts`, `tests/lab/viewer/remoteImages.test.ts`, `tests/e2e/` (`catalog`, `container`, `remoteImages`). Conferir com `grep -rn "examples/libraries/\(material3\|pessoas\)\|specs/biblioteca.json" tests scripts`.
+
+- [x] `git mv` dos três para `tests/fixtures/` (decisão 4) e os testes apontando para lá, com os mesmos ids e contagens; `LEAVING` vazia no teste de cobertura; as seções dos três saem do guia dos exemplos e a tabela "Onde ver cada recurso" não os cita mais
+- [x] Remover `scripts/buildLibraryExamples.mjs`, `scripts/libraryExamples.ts`, o script `build:examples` do `package.json` e do `CLAUDE.md`, e a menção em `lab/README.md`
+- [x] Roteiros da decisão 6 reescritos (R3.10, R3.12, R3.14 a R3.17, R9, R10, R12.12, R15) e o preparo da seção 2; `docs/TESTING.md`, `docs/TESTING-COWORK.md`, `docs/GUIDE.md`, `docs/COMPONENT-FORMAT.md`, `docs/SPEC-FORMAT.md`, `libraries/README.md` e a skill `spec-author` sem citar os pacotes removidos (`grep -rn "examples/libraries/\(material3\|pessoas\)\|specs/biblioteca.json"` fora de `docs/history/` volta vazio)
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
+
+#### EX4 — Rodada do Cowork e fechamento
+
+**Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low.
+
+- [x] Rodada dirigida do Cowork (R3, R9, R10, R12, R13 e R15) e o relato entre os documentos da etapa ([`relato-2026-11-01-exemplos-enxutos.md`](docs/history/relato-2026-11-01-exemplos-enxutos.md): 68 ✅, 4 🟡, 4 ⏭️, 2 achados de produto); achados corrigidos: A1 (Diagnóstico de imagem remota troca a razão no lugar) e os textos dos roteiros; A2 (`\n` no `url`) é Shift+Enter por desenho, o R15 passou a conferir no disco
 - [ ] Fechamento: histórico em `docs/history/PLAN-etapa-exemplos-enxutos.md`, `CHANGELOG.md`, `CLAUDE.md` e `docs/ROADMAP.md`
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
 

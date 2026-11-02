@@ -16,7 +16,7 @@ import { readProjectZip } from '../../src/storage/zip';
 import { EXAMPLE_DIR, EXAMPLE_ZIP, exampleFiles } from '../../scripts/exampleProject.mjs';
 
 // `examples/exemplo-completo/` é o projeto de exemplo (a fonte); o zip e o guia (`public/guia/`)
-// saem dela. A app embute o zip no botão "Abrir projeto de exemplo" da tela inicial. Para gerar
+// saem dela. O zip é o que a pessoa baixa do repositório (a app não o embute). Para gerar
 // o zip de novo: `npm run build:example`.
 
 const HINT = 'Rode `npm run build:example` para regerar examples/exemplo-completo.zip.';
@@ -52,12 +52,12 @@ describe('zip do projeto de exemplo', () => {
     expect(parsed?.ok && parsed.migratedFrom).toBeNull();
   });
 
-  it('tem 4 imagens, 32 marcações, 42 anotações, 9 camadas e 4 especializações', async () => {
+  it('tem 4 imagens, 32 marcações, 42 anotações, 10 camadas e 4 especializações', async () => {
     const { project } = await readExample();
     expect(project.containers).toHaveLength(4);
     expect(project.markings).toHaveLength(32); // 31 nas telas + a nota flutuante da biblioteca de notas
     expect(project.annotations).toHaveLength(42);
-    expect(project.layers).toHaveLength(9); // + a camada Notas (a livre virou Dúvidas)
+    expect(project.layers).toHaveLength(10); // + Notas (a livre virou Dúvidas) e Layout M3
     expect(project.specializations).toHaveLength(4);
   });
 
@@ -96,7 +96,7 @@ describe('zip do projeto de exemplo', () => {
     }
   });
 
-  it('o pacote Material 3 valida sem erros', async () => {
+  it('o pacote material3-compose valida sem erros', async () => {
     const { files } = await readExample();
     const entries: { path: string; text?: string }[] = [...files.specs].map(
       ([path, text]) => ({ path, text }),
@@ -107,7 +107,9 @@ describe('zip do projeto de exemplo', () => {
         isTextPackageFile(path) ? { path, text: await blob.text() } : { path },
       );
     }
-    const report = validateLibrary({ files: toLibraryFiles('specs/material3', entries) });
+    const report = validateLibrary({
+      files: toLibraryFiles('specs/material3-compose', entries),
+    });
     expect(report.errors).toEqual([]);
     expect(report.ok).toBe(true);
   });
@@ -143,7 +145,7 @@ describe('proposta de exemplo', () => {
 describe('cópias do exemplo × fontes', () => {
   const SYNC_HINT =
     'o exemplo está desatualizado: copie a fonte para examples/exemplo-completo/specs/ ' +
-    '(pacote de examples/libraries/material3, specs de examples/specs) e rode ' +
+    '(pacote de libraries/material3-compose, specs de examples/specs) e rode ' +
     '`npm run build:example` e `npm run build:guia`.';
 
   function listFiles(root: string, dir = ''): string[] {
@@ -167,9 +169,9 @@ describe('cópias do exemplo × fontes', () => {
     }
   }
 
-  it('specs/material3/ tem os mesmos arquivos e o mesmo conteúdo de examples/libraries/material3/', () => {
-    const copy = join(EXAMPLE_DIR, 'specs/material3');
-    const source = 'examples/libraries/material3';
+  it('specs/material3-compose/ tem os mesmos arquivos e o mesmo conteúdo de libraries/material3-compose/', () => {
+    const copy = join(EXAMPLE_DIR, 'specs/material3-compose');
+    const source = 'libraries/material3-compose';
     expect(listFiles(copy), `lista de arquivos diferente. ${SYNC_HINT}`).toEqual(
       listFiles(source),
     );
@@ -201,7 +203,7 @@ describe('cópias do exemplo × fontes', () => {
     const sources: Record<string, string> = {
       sdui: 'examples/specs/sdui.json',
       'modelo-dados': 'examples/specs/modelo-de-dados.json',
-      material3: 'examples/libraries/material3/material3.spec.json',
+      'material3-compose': 'libraries/material3-compose/material3-compose.spec.json',
       notas: 'libraries/notas/notas.spec.json',
     };
     expect(mapping.specializations.map((s) => s.id).sort()).toEqual(

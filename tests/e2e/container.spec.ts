@@ -6,7 +6,7 @@ import { createProject, exportMapping, projectAction } from './helpers';
 
 // Etapa Biblioteca, B3: container e componentes desenhados no canvas do produto.
 
-const PACKAGE_DIR = 'examples/libraries/material3';
+const PACKAGE_DIR = 'tests/fixtures/material3';
 
 /** Zip do pacote do Material 3, gerado na hora a partir da pasta do repositório. */
 async function packageZip(): Promise<Buffer> {
