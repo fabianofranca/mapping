@@ -1,6 +1,6 @@
 // Laboratório Componentes: declaração de origem executável (`origins` + `sources`).
 import { describe, expect, it } from 'vitest';
-import settings from '../../../lab/components/sdui/settings.sdui.json';
+import settings from '../../../viewer/samples/settings.sdui.json';
 import {
   formatPath,
   parseFieldSources,
@@ -13,7 +13,7 @@ import {
 import type { LayoutNode } from '../../../src/model/components/layout';
 import { approximateMeasurer } from '../../../src/model/components/instantiate';
 import { loadLibrary, type TextFile } from '../../../src/model/components/library';
-import { M3_FILES } from '../../../lab/components/samplesMaterial3';
+import { M3_FILES } from '../../../viewer/samples/samplesMaterial3';
 
 describe('caminhos', () => {
   it('lê chaves, índices e aninhamento', () => {

@@ -8,16 +8,16 @@ import * as React from 'react';
 import { StrictMode, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { installFakeCanvas } from '../../canvas/harness';
-import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../lab/components/samples';
-import settings from '../../../lab/components/sdui/settings.sdui.json';
-import { M3_FILES, M3_SCREEN } from '../../../lab/components/samplesMaterial3';
+import { installFakeCanvas } from '../canvas/harness';
+import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../viewer/samples/samples';
+import settings from '../../viewer/samples/settings.sdui.json';
+import { M3_FILES, M3_SCREEN } from '../../viewer/samples/samplesMaterial3';
 import {
   MappingViewer,
   type MappingViewerProps,
   type SourceResult,
   loadLibrary,
-} from '../../../lab/viewer/react';
+} from '../../viewer/react';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

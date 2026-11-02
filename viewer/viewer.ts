@@ -29,19 +29,19 @@
  * CSP (`img-src`) é do site hospedeiro. Ver `remoteImages.ts` e o `PACKAGE-README.md`.
  */
 import Konva from 'konva';
-import type { Library } from '../../src/model/components/library';
-import type { TextMeasurer } from '../../src/model/components/instantiate';
-import type { Box, Screen } from '../../src/model/components/screen';
-import { type SourceResult, screenFromSource } from '../../src/model/components/origin';
-import { capPixelRatio } from '../shared/pinch';
+import type { Library } from '../src/model/components/library';
+import type { TextMeasurer } from '../src/model/components/instantiate';
+import type { Box, Screen } from '../src/model/components/screen';
+import { type SourceResult, screenFromSource } from '../src/model/components/origin';
+import { capPixelRatio } from './pinch';
 import { type AllowOrigin, createViewerRemoteImages } from './remoteImages';
-import { konvaMeasurer } from '../../src/canvas/components/konvaMeasurer';
+import { konvaMeasurer } from '../src/canvas/components/konvaMeasurer';
 import {
   type InstanceWarnings,
   ScreenRenderer,
-} from '../../src/canvas/components/screenRenderer';
+} from '../src/canvas/components/screenRenderer';
 
-export type { InstanceWarnings } from '../../src/canvas/components/screenRenderer';
+export type { InstanceWarnings } from '../src/canvas/components/screenRenderer';
 
 export interface ViewerInput {
   readonly library: Library | undefined;

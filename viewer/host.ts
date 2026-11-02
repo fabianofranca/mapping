@@ -1,15 +1,15 @@
 /**
  * Visualizador embutível: funções do HOSPEDEIRO (carga da biblioteca por URL e registro das
  * fontes). Ficam fora do núcleo (`createViewer` não faz rede nem registra fonte) e as páginas
- * do laboratório NÃO as usam: a CSP delas bloqueia requisição de rede (`connect-src 'none'`).
+ * da demo NÃO as usam: a CSP delas bloqueia requisição de rede (`connect-src 'none'`).
  * Existem para o site que instala o pacote, onde a pasta da biblioteca é servida por URL.
  */
-import { createFontRegistry } from '../../src/storage/fonts';
-import type { FontHost, FontRegistry, FontStatus } from '../../src/storage/fonts';
-import { loadLibrary, resolvePath } from '../../src/model/components/library';
-import type { Library, TextFile } from '../../src/model/components/library';
+import { createFontRegistry } from '../src/storage/fonts';
+import type { FontHost, FontRegistry, FontStatus } from '../src/storage/fonts';
+import { loadLibrary, resolvePath } from '../src/model/components/library';
+import type { Library, TextFile } from '../src/model/components/library';
 
-export type { FontHost, FontStatus } from '../../src/storage/fonts';
+export type { FontHost, FontStatus } from '../src/storage/fonts';
 
 export interface LoadFromUrlOptions {
   /** Padrão: o `fetch` global. Passe um quando o ambiente não tem (ou para autenticar). */

@@ -1,9 +1,9 @@
 // Visualizador embutível: carga da biblioteca por URL e registro de fontes (funções do hospedeiro).
 import { describe, expect, it, vi } from 'vitest';
-import { SAMPLE_FILES } from '../../../lab/components/samples';
-import { M3_FILES } from '../../../lab/components/samplesMaterial3';
-import { loadLibrary } from '../../../src/model/components/library';
-import { loadLibraryFromUrl, registerLibraryFonts } from '../../../lab/viewer/host';
+import { SAMPLE_FILES } from '../../viewer/samples/samples';
+import { M3_FILES } from '../../viewer/samples/samplesMaterial3';
+import { loadLibrary } from '../../src/model/components/library';
+import { loadLibraryFromUrl, registerLibraryFonts } from '../../viewer/host';
 
 const BASE = 'https://exemplo.test/ds/';
 const SPEC_URL = `${BASE}lab-components.spec.json`;

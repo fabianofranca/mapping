@@ -1,5 +1,5 @@
 /**
- * Design system público escrito no formato do laboratório: **Material Design 3** (baseline,
+ * Design system público escrito no formato de componente: **Material Design 3** (baseline,
  * tema claro), a partir das especificações em m3.material.io e dos tokens padrão do Compose e
  * do Flutter. Serve para ver se o formato genérico representa um design system de verdade.
  *

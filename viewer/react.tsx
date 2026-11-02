@@ -1,6 +1,6 @@
 /** @jsxImportSource react */
 /**
- * Invólucro React fino do visualizador embutível (fase L1): `<MappingViewer/>` é um `<div>`
+ * Invólucro React fino do visualizador embutível: `<MappingViewer/>` é um `<div>`
  * que hospeda um `createViewer`. Importa só de `react` (o `react-dom` é do hospedeiro).
  *
  * - O viewer é criado e destruído por `useEffect([])`: em `<StrictMode>` o React monta,

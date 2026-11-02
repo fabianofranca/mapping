@@ -1,12 +1,12 @@
 /** @jsxImportSource react */
 /**
- * Laboratório "Visualizador React": hospedeiro React de verdade (`react-dom/client`, sem
- * preact/compat) para o `<MappingViewer/>` embutível (fase L1). Experimento fora do produto:
+ * Demo do visualizador React: hospedeiro React de verdade (`react-dom/client`, sem
+ * preact/compat) para o `<MappingViewer/>` embutível. Fora do produto:
  * textos em pt-BR direto no código, sem i18n e sem store.
  *
  * O JSON à esquerda é a fonte de verdade da demonstração: cada edição válida vira a `screen` do
  * visualizador (atualização em tempo real); uma edição inválida mostra o erro e mantém a última
- * tela válida. No conjunto "Material 3 (SDUI)" (fase L2) o JSON é o de um backend SDUI: ele vira
+ * tela válida. No conjunto "Material 3 (SDUI)" o JSON é o de um backend SDUI: ele vira
  * o `source` do visualizador, a origem declarada na especialização o traduz e a tela calculada
  * volta por `onSource` (alimenta a árvore e as propriedades); os avisos da origem ficam no
  * painel de status, e um `error` do resultado volta ao último `source` que funcionou. O StrictMode é um toggle que recria o root.
@@ -27,9 +27,9 @@ import {
 import type { ChangeEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import './react.css';
-import { SAMPLE_FILES, SAMPLE_SCREEN } from '../components/samples';
-import { M3_FILES, M3_SCREEN } from '../components/samplesMaterial3';
-import settingsSdui from '../components/sdui/settings.sdui.json';
+import { SAMPLE_FILES, SAMPLE_SCREEN } from '../samples/samples';
+import { M3_FILES, M3_SCREEN } from '../samples/samplesMaterial3';
+import settingsSdui from '../samples/settings.sdui.json';
 import {
   type FieldValue,
   type Instance,
@@ -45,7 +45,7 @@ import {
   parseScreen,
   screenTree,
   serializeScreen,
-} from '../viewer/react';
+} from '../react';
 
 type Dataset = 'samples' | 'm3' | 'sdui';
 

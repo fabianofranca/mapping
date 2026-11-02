@@ -1,5 +1,5 @@
 /**
- * Exemplos embutidos do laboratório "Componentes": uma especialização com seis tipos, cada um
+ * Exemplos embutidos da demo do visualizador: uma especialização com seis tipos, cada um
  * apontando para o próprio arquivo de componente, e uma tela montada só com instâncias (sem
  * imagem). Os mesmos arquivos podem ser baixados como pasta (zip) para editar e reabrir.
  */

@@ -1,11 +1,11 @@
 // Laboratório Componentes: do JSON externo (SDUI) à tela arrumada, pela declaração de origem
 // do Material 3. Depende de `layoutScreen` (layout.ts).
 import { describe, expect, it } from 'vitest';
-import settings from '../../../lab/components/sdui/settings.sdui.json';
+import settings from '../../../viewer/samples/settings.sdui.json';
 import { approximateMeasurer } from '../../../src/model/components/instantiate';
 import { loadLibrary } from '../../../src/model/components/library';
 import { screenFromSource } from '../../../src/model/components/origin';
-import { M3_FILES } from '../../../lab/components/samplesMaterial3';
+import { M3_FILES } from '../../../viewer/samples/samplesMaterial3';
 import { childrenOf } from '../../../src/model/components/screen';
 
 describe('screenFromSource com o Material 3', () => {

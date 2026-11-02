@@ -1,10 +1,10 @@
 // Visualizador embutível: a árvore das instâncias (puro, sem DOM).
 import { describe, expect, it } from 'vitest';
-import { loadLibrary } from '../../../src/model/components/library';
-import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../lab/components/samples';
-import { M3_FILES, M3_SCREEN } from '../../../lab/components/samplesMaterial3';
-import { renderOrder, type Screen } from '../../../src/model/components/screen';
-import { flattenTree, screenTree } from '../../../lab/viewer/tree';
+import { loadLibrary } from '../../src/model/components/library';
+import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../viewer/samples/samples';
+import { M3_FILES, M3_SCREEN } from '../../viewer/samples/samplesMaterial3';
+import { renderOrder, type Screen } from '../../src/model/components/screen';
+import { flattenTree, screenTree } from '../../viewer/tree';
 
 const sampleLibrary = loadLibrary(SAMPLE_FILES);
 const m3Library = loadLibrary(M3_FILES);

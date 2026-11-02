@@ -5,15 +5,15 @@ import Konva from 'konva';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { installFakeCanvas } from '../../canvas/harness';
-import { approximateMeasurer } from '../../../src/model/components/instantiate';
-import { loadLibrary } from '../../../src/model/components/library';
-import type { Screen } from '../../../src/model/components/screen';
-import { type Viewer, type ViewerOptions, createViewer } from '../../../lab/viewer';
+import { installFakeCanvas } from '../canvas/harness';
+import { approximateMeasurer } from '../../src/model/components/instantiate';
+import { loadLibrary } from '../../src/model/components/library';
+import type { Screen } from '../../src/model/components/screen';
+import { type Viewer, type ViewerOptions, createViewer } from '../../viewer';
 
 beforeAll(() => installFakeCanvas());
 
-const ROOT = join(__dirname, '../../../tests/fixtures/pessoas');
+const ROOT = join(__dirname, '../../tests/fixtures/pessoas');
 
 function listDisk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>

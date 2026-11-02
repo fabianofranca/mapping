@@ -1,7 +1,7 @@
 // Biblioteca: as fontes do design system declaradas na especialização (os bytes vêm da pasta).
 import { describe, expect, it } from 'vitest';
 import { loadLibrary } from '../../../src/model/components/library';
-import { M3_FILES } from '../../../lab/components/samplesMaterial3';
+import { M3_FILES } from '../../../viewer/samples/samplesMaterial3';
 
 const bytes = new Uint8Array([0, 1, 0, 0]).buffer;
 

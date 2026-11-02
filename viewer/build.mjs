@@ -33,22 +33,22 @@ const packageJson = {
   files: ['*.js', '*.js.map', 'types', 'README.md'],
   exports: {
     '.': {
-      types: './types/lab/viewer/index.d.ts',
+      types: './types/viewer/index.d.ts',
       import: './mapping-viewer.js',
     },
     './react': {
-      types: './types/lab/viewer/react.d.ts',
+      types: './types/viewer/react.d.ts',
       import: './mapping-viewer-react.js',
     },
   },
-  types: './types/lab/viewer/index.d.ts',
+  types: './types/viewer/index.d.ts',
   peerDependencies: { react: '>=18' },
   peerDependenciesMeta: { react: { optional: true } },
 };
 
 execFileSync(
   process.execPath,
-  ['node_modules/typescript/bin/tsc', '-p', 'lab/viewer/tsconfig.json'],
+  ['node_modules/typescript/bin/tsc', '-p', 'viewer/tsconfig.json'],
   {
     stdio: 'inherit',
   },
@@ -56,8 +56,8 @@ execFileSync(
 
 await build({
   entryPoints: {
-    'mapping-viewer': 'lab/viewer/index.ts',
-    'mapping-viewer-react': 'lab/viewer/react.tsx',
+    'mapping-viewer': 'viewer/index.ts',
+    'mapping-viewer-react': 'viewer/react.tsx',
   },
   outdir: OUT,
   bundle: true,
@@ -74,7 +74,7 @@ await build({
 });
 
 await writeFile(`${OUT}/package.json`, `${JSON.stringify(packageJson, null, 2)}\n`);
-await copyFile('lab/viewer/PACKAGE-README.md', `${OUT}/README.md`);
+await copyFile('viewer/PACKAGE-README.md', `${OUT}/README.md`);
 
 /** Os caminhos (strings) de `exports`, em qualquer profundidade, mais o campo `types`. */
 function exportedFiles(value) {

@@ -2,18 +2,18 @@
 /**
  * Prova de que o projeto `viewer-react` do Vitest usa o React de verdade (e não
  * preact/compat): é nele que o invólucro `<MappingViewer/>` é testado. Também monta a página de
- * demonstração (`lab/react/main.tsx`) para o conjunto Material 3 (SDUI).
+ * demonstração (`viewer/demo/main.tsx`) para o conjunto Material 3 (SDUI).
  */
 import * as React from 'react';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { installFakeCanvas } from '../../canvas/harness';
-import { approximateMeasurer } from '../../../src/model/components/instantiate';
-import { loadLibrary } from '../../../src/model/components/library';
-import { screenFromSource } from '../../../src/model/components/origin';
-import { M3_FILES } from '../../../lab/components/samplesMaterial3';
-import settings from '../../../lab/components/sdui/settings.sdui.json';
+import { installFakeCanvas } from '../canvas/harness';
+import { approximateMeasurer } from '../../src/model/components/instantiate';
+import { loadLibrary } from '../../src/model/components/library';
+import { screenFromSource } from '../../src/model/components/origin';
+import { M3_FILES } from '../../viewer/samples/samplesMaterial3';
+import settings from '../../viewer/samples/settings.sdui.json';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -60,7 +60,7 @@ describe('página de demonstração: Material 3 (SDUI)', () => {
     lab.id = 'lab';
     document.body.append(lab);
     await act(async () => {
-      await import('../../../lab/react/main');
+      await import('../../viewer/demo/main');
     });
   });
 

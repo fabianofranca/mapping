@@ -2,18 +2,15 @@
 // avisa hover/clique; seleção e hover viram retângulos no overlay.
 import Konva from 'konva';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { installFakeCanvas } from '../../canvas/harness';
-import { approximateMeasurer } from '../../../src/model/components/instantiate';
-import { loadLibrary } from '../../../src/model/components/library';
-import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../lab/components/samples';
-import {
-  type SourceResult,
-  screenFromSource,
-} from '../../../src/model/components/origin';
-import settings from '../../../lab/components/sdui/settings.sdui.json';
-import { M3_FILES, M3_SCREEN } from '../../../lab/components/samplesMaterial3';
-import type { Screen } from '../../../src/model/components/screen';
-import { type Viewer, type ViewerOptions, createViewer } from '../../../lab/viewer';
+import { installFakeCanvas } from '../canvas/harness';
+import { approximateMeasurer } from '../../src/model/components/instantiate';
+import { loadLibrary } from '../../src/model/components/library';
+import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../viewer/samples/samples';
+import { type SourceResult, screenFromSource } from '../../src/model/components/origin';
+import settings from '../../viewer/samples/settings.sdui.json';
+import { M3_FILES, M3_SCREEN } from '../../viewer/samples/samplesMaterial3';
+import type { Screen } from '../../src/model/components/screen';
+import { type Viewer, type ViewerOptions, createViewer } from '../../viewer';
 
 beforeAll(() => installFakeCanvas());
 

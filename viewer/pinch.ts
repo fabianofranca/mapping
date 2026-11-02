@@ -1,6 +1,6 @@
 /**
  * Pinça com dois dedos no palco Konva (zoom em torno do centro dos dedos e pan), para dar uma
- * olhada no laboratório pelo celular. O Konva só traz arrastar com um dedo; durante a pinça
+ * olhada no visualizador pelo celular. O Konva só traz arrastar com um dedo; durante a pinça
  * o arrasto do palco é interrompido. `onStart`/`onEnd` delimitam o gesto (o palco congela o
  * conteúdo como bitmap nesse intervalo).
  */
@@ -92,7 +92,7 @@ export function thawGroup(group: Konva.Group): void {
   if (group.isCached()) group.clearCache();
 }
 
-/** Teto do pixel ratio do Konva: telas 3× redesenham 2,25× mais pixels que 2× por nada visível no laboratório. */
+/** Teto do pixel ratio do Konva: telas 3× redesenham 2,25× mais pixels que 2× por nada visível no visualizador. */
 export function capPixelRatio(konva: { pixelRatio: number }, max = 2): void {
   const device = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   konva.pixelRatio = Math.min(device, max);

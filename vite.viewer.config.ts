@@ -1,20 +1,13 @@
 /// <reference types="vitest/config" />
-// Build do laboratório (`lab/`): páginas autocontidas à parte da app, publicadas em
-// `dist/lab/<página>/index.html` depois do build da app (`npm run build`). Uma página por
-// build (`--mode components`, `--mode react`): o vite-plugin-singlefile embute tudo numa
-// entrada só. A página `react` usa React de verdade (sem o plugin `preact()`, que apelida
-// react para preact/compat): é a prova de que o visualizador embutível roda num hospedeiro React.
-// Experimentos fora do produto: sem service worker nem manifest; a CSP é a do perfil `static`
-// (nenhuma requisição de rede, nada embutido sem hash, sem Trusted Types). Os tokens da app (`tokensCss()`) entram
-// só na página `components`; a `react` tem variáveis próprias (`--demo-*`) em `react.css`.
+// Build da demo do visualizador embutível (`viewer/demo`): uma página autocontida à parte da
+// app, só para desenvolvimento (`npm run dev:viewer`); não entra no `npm run build` nem no
+// deploy. Usa React de verdade (sem o plugin `preact()`, que apelida react para preact/compat):
+// é a prova de que o visualizador roda num hospedeiro React. A CSP é a do perfil `static`
+// (nenhuma requisição de rede, nada embutido sem hash, sem Trusted Types). A página não usa
+// os tokens da app: tem variáveis próprias (`--demo-*`) em `viewer/demo/react.css`.
 import { defineConfig, type Plugin } from 'vite';
-import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { applyCsp } from './pwa/csp';
-import { tokensCss } from './pwa/tokensCss';
-
-export const LAB_PAGES = ['components', 'react'] as const;
-type LabPage = (typeof LAB_PAGES)[number];
 
 function contentSecurityPolicy(): Plugin {
   return {
@@ -32,30 +25,14 @@ function contentSecurityPolicy(): Plugin {
   };
 }
 
-export default defineConfig(({ mode }) => {
-  const page = (LAB_PAGES as readonly string[]).includes(mode)
-    ? (mode as LabPage)
-    : undefined;
-  if (!page) {
-    throw new Error(
-      `vite.lab.config.ts: use --mode com uma página do laboratório (${LAB_PAGES.join(', ')})`,
-    );
-  }
-  const isReact = page === 'react';
-  return {
-    root: `lab/${page}`,
-    base: './',
-    publicDir: false,
-    plugins: [
-      ...(isReact ? [] : [tokensCss()]),
-      ...(isReact ? [] : [preact()]),
-      viteSingleFile(),
-      contentSecurityPolicy(),
-    ],
-    esbuild: isReact ? { jsx: 'automatic', jsxImportSource: 'react' } : undefined,
-    build: {
-      outDir: `../../dist/lab/${page}`,
-      emptyOutDir: true,
-    },
-  };
+export default defineConfig({
+  root: 'viewer/demo',
+  base: './',
+  publicDir: false,
+  plugins: [viteSingleFile(), contentSecurityPolicy()],
+  esbuild: { jsx: 'automatic', jsxImportSource: 'react' },
+  build: {
+    outDir: '../../dist-viewer-demo',
+    emptyOutDir: true,
+  },
 });
