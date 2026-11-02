@@ -69,6 +69,10 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - TypeScript strict, sem `any` (use `unknown` + validação).
 - Componentes pequenos e funcionais; lógica fora dos componentes.
 - Não adicione dependências além da stack acima sem justificar no PR.
+- **Complexidade por função:** função nova ou alterada fica com complexidade ciclomática até 10 (`complexity` do ESLint, erro em `src/**` e `mcp/**`); o legado acima disso está em `eslint-suppressions.json`, onde a contagem por arquivo só pode cair.
+  - Quem reduz uma função suprimida abaixo do limite roda `npx eslint --prune-suppressions` no mesmo PR (sem isso o `lint` falha por supressão sem uso).
+  - Não se usa `eslint-disable` para `complexity`: a exceção fica no arquivo de supressões, visível no diff.
+  - Função já suprimida que a fase precisou tocar não exige redução (basta não criar outra acima do limite no mesmo arquivo); a dívida grande vira issue `roadmap`, não refatoração no meio da fase.
 
 ## Fluxo de trabalho
 
@@ -113,7 +117,7 @@ O dono quer gastar pouco da cota do modelo mais caro. O que segura a qualidade �
 
 - **Sessão nova por assunto.** Cada turno relê a sessão inteira; quando um tema fecha (PR aberto e descrito), o próximo começa em outra sessão. No fluxo automatizado, cada chat (roadmap, detalhamento, implementação) e cada sessão de fase é um assunto. O PR, a issue da etapa (com a sub-issue da fase) e os `README` são o contexto de entrada.
 - **O modelo principal (Fable/Opus) faz só o que exige julgamento:** entender o pedido, decidir formato e arquitetura, escrever o briefing dos subagentes, revisar o que volta, integrar e conversar com o dono.
-- **Subagentes Sonnet produzem o resto, sempre com um briefing que diga o objetivo, os arquivos a ler, o que fica fora, e os comandos de validação (`npx vitest run <arquivos>`, `npx eslint`, `npx prettier --check`, `npx tsc --noEmit`) que precisam passar antes de devolver:** código a partir de especificação, componentes e exemplos, testes unitários e ponta a ponta, correção de teste frágil, documentação e descrição de PR, scripts de captura e medição, triagem de log do CI, refatorações mecânicas.
+- **Subagentes Sonnet produzem o resto, sempre com um briefing que diga o objetivo, os arquivos a ler, o que fica fora, e os comandos de validação (`npx vitest run <arquivos>`, `npx eslint`, `npx prettier --check`, `npx tsc --noEmit`) que precisam passar antes de devolver. O briefing também exige **teste primeiro**: para mudança de comportamento ou correção, o subagente escreve o teste que reproduz o comportamento, roda, vê falhar pelo motivo esperado e só então muda o código; o retorno traz o nome do teste e a mensagem da falha vista antes da correção. Se um teste honesto for impraticável, não escreve um ruim: diz isso no retorno e o coordenador decide. Refatoração sem mudança de comportamento, documentação e trabalho mecânico não exigem teste novo, mas exigem os testes existentes passando antes e depois:** código a partir de especificação, componentes e exemplos, testes unitários e ponta a ponta, correção de teste frágil, documentação e descrição de PR, scripts de captura e medição, triagem de log do CI, refatorações mecânicas.
 - **Haiku para o mecânico:** renomear, formatar, varrer logs, atualizar contagens em testes.
 - **Vale também para mudanças pequenas e para texto de PR.** Uma linha de documentação, um job de CI ou a descrição de um PR são produzidos por subagente a partir do briefing; o modelo principal decide o conteúdo e revisa. Tamanho não é exceção.
 - **Menos idas e vindas do modelo principal:** validar em lote (`npm run lint && npm run typecheck && npm test && npm run build` uma vez, no fim), uma captura de tela por entrega, respostas curtas que se sustentam sozinhas.

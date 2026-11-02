@@ -1,0 +1,737 @@
+{
+  "mcp/args.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "mcp/batch.ts": {
+    "complexity": {
+      "count": 11
+    }
+  },
+  "mcp/codeViews.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "mcp/componentTools.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "mcp/findByCode.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "mcp/image/formats.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "mcp/image/raster.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "mcp/image/sceneRaster.ts": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "mcp/imageTools.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "mcp/items.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "mcp/library.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "mcp/libraryUpdate.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "mcp/markingList.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "mcp/proposalRefs.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "mcp/proposalViews.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "mcp/proposals.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "mcp/sourceTools.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "mcp/views.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/app/CanvasNotices.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/app/EditorDialogs.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/app/EditorPanel.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/app/Home.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/app/controller.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/app/itemClipboard.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/app/recents.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/app/reopenTrace.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/app/shortcuts.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/app/useEditorShortcuts.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/app/useImageIntake.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/app/useReviewSync.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/canvas/CanvasController.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/canvas/arrowGeometry.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/canvas/components/componentLayer.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/canvas/components/imageLoader.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/canvas/components/renderScene.ts": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "src/canvas/containment.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/canvas/gestureMachine.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/canvas/input/gestures.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/canvas/input/intents.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/canvas/input/pointer.ts": {
+    "complexity": {
+      "count": 8
+    }
+  },
+  "src/canvas/markingGeometry.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/canvas/renderers/images.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/canvas/renderers/markings.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/canvas/renderers/overlay.ts": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "src/canvas/renderers/review.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/canvas/renderers/semanticCard.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/canvas/reviewMarks.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/model/arrows.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/catalog.ts": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "src/model/codeBlueprint.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/model/codeLocations.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/componentArrange.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/model/componentCatalog.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/componentDrawings.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/componentMarkings.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/model/componentValues.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/model/components/expressions.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/model/components/instantiate.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/model/components/library.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/components/origin.ts": {
+    "complexity": {
+      "count": 11
+    }
+  },
+  "src/model/components/parseComponent.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/model/components/repeat.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/model/components/screen.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/containers.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/model/display.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/exif.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/hierarchySettle.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/invariants.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/issues.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/library.ts": {
+    "complexity": {
+      "count": 8
+    }
+  },
+  "src/model/libraryDrawing.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/libraryMigrations.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/libraryPackage.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/listing.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/model/markdown.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/model/markings.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/model/migrations.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/multiSelection.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/model/projectIndex.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/proposal.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/model/proposalApply.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/model/proposalChanges.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/model/proposalCompare.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/model/proposalReview.ts": {
+    "complexity": {
+      "count": 6
+    }
+  },
+  "src/model/proposalValues.ts": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "src/model/proposalView.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/model/refs.ts": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/model/remoteImages.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/repair.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/serialization.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/sources.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/model/spec.ts": {
+    "complexity": {
+      "count": 8
+    }
+  },
+  "src/model/specVersions.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/model/typed.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/model/typedDisplay.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/storage/zip.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/store/derived.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/store/libraryPreview.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/store/proposalActions.ts": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/store/proposals.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/store/proposedCatalog.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/store/review.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/store/session.ts": {
+    "complexity": {
+      "count": 7
+    }
+  },
+  "src/store/ui.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/AnnotationEditor.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/AnnotationsPanel.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/ui/ArrowPanel.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/CanvasContextMenu.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/CommitInput.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/ui/ContainerDialog.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/DetailsSection.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/FieldEditors.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/InstallHint.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/KeyValueGrid.tsx": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/ui/LibraryPalette.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/ListView.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/MarkingPanel.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/MarkingTree.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/ui/MultiSelectionPanel.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/Notice.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/RefCell.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/RefPicker.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/SelectionPanel.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/SpecsDialog.tsx": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "src/ui/TableField.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/ui/TypedFields.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/ui/UpdateImpact.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/catalog/CatalogPage.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/catalog/CatalogView.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/catalog/Playground.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/componentTarget.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/focus.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/review/ChangeMark.tsx": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/ui/review/ChangePopover.tsx": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "src/ui/review/DecisionControl.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/review/ProposalRow.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/review/ReviewBar.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/review/ReviewCanvasControls.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/ui/review/ReviewDetails.tsx": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/review/ReviewHeader.tsx": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/ui/review/ReviewLevels.tsx": {
+    "complexity": {
+      "count": 5
+    }
+  },
+  "src/ui/review/ReviewPanel.tsx": {
+    "complexity": {
+      "count": 2
+    }
+  },
+  "src/ui/review/changeText.ts": {
+    "complexity": {
+      "count": 10
+    }
+  },
+  "src/ui/review/reviewExtension.tsx": {
+    "complexity": {
+      "count": 4
+    }
+  },
+  "src/ui/rowDrag.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/toolWindowLayout.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "src/ui/typedText.ts": {
+    "complexity": {
+      "count": 1
+    }
+  }
+}

@@ -426,6 +426,14 @@ export default tseslint.config(
       ],
     },
   },
+  // Etapa teste-primeiro (TP2): complexidade ciclomática por função, até 10. O legado acima
+  // disso está em `eslint-suppressions.json` (a contagem por arquivo só cai; reduzir uma função
+  // pede `npx eslint --prune-suppressions` no mesmo PR). Fora: viewer/, scripts/, pwa/ e tests/.
+  // `tests/tooling/complexityLint.test.ts` prova a regra.
+  {
+    files: ['src/**/*.{ts,tsx}', 'mcp/**/*.ts'],
+    rules: { complexity: ['error', 10] },
+  },
   prettier,
   // Etapa 8 (8.3), foco e teclado: nenhum componente acha outro pelo DOM global nem pela
   // classe de outro componente (`docs/ARCHITECTURE.md`, "Foco e teclado"). No flat config o

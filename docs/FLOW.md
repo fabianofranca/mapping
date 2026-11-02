@@ -34,10 +34,11 @@ Você é o agente da fase <código> — <título> da etapa #<etapa> do repositó
 1. Leia o `CLAUDE.md`, a issue #<etapa> com os comentários e a sub-issue #<fase>, que é o seu plano. Siga-a; não reabra decisões já tomadas.
 2. Branch `<branch curto>`, saído do `epic/<nome>` atualizado. PR com base `epic/<nome>`, título "<código> — <título>", corpo começando com "Parte de #<fase>" e as seções de sempre (Resumo, Como testar, Decisões tomadas, Impacto no DS).
 3. Subagentes e esforço: <da sub-issue, ex.: Sonnet medium; mecânicos Haiku low>.
-4. Antes do PR: `npm run lint && npm run typecheck && npm test && npm run build`.
-5. Acompanhe o PR (`subscribe_pr_activity`) e corrija o CI. Com o CI verde, mescle o PR no épico, marque os checkboxes e feche a sub-issue (`completed`).
-6. Avise o coordenador por `send_message`: o link do PR mesclado, um resumo de 5 a 10 linhas e as decisões tomadas fora da sub-issue.
-7. Decisão de produto que a sub-issue não cobre: não invente. Mande a pergunta e as opções ao coordenador por `send_message` e espere a resposta.
+4. Todo briefing de mudança de comportamento ou correção segue a regra "teste primeiro" do `CLAUDE.md` ("Uso de modelos"): teste visto falhando antes do código, e o subagente devolve o nome dele e a falha.
+5. Antes do PR: `npm run lint && npm run typecheck && npm test && npm run build`.
+6. Acompanhe o PR (`subscribe_pr_activity`) e corrija o CI. Com o CI verde, mescle o PR no épico, marque os checkboxes e feche a sub-issue (`completed`).
+7. Avise o coordenador por `send_message`: o link do PR mesclado, um resumo de 5 a 10 linhas e as decisões tomadas fora da sub-issue.
+8. Decisão de produto que a sub-issue não cobre: não invente. Mande a pergunta e as opções ao coordenador por `send_message` e espere a resposta.
 <Só na última fase: ponha o rótulo `mcp-rc` no PR.>
 
 Coordenador: `<id da sessão do orquestrador>`
