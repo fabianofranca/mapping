@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -13,7 +13,12 @@ import {
 } from '../../src/model';
 import { validateLibrary } from '../../src/model/library';
 import { readProjectZip } from '../../src/storage/zip';
-import { EXAMPLE_DIR, EXAMPLE_ZIP, exampleFiles } from '../../scripts/exampleProject.mjs';
+import {
+  EXAMPLE_DIR,
+  EXAMPLE_SPECS,
+  EXAMPLE_ZIP,
+  exampleFiles,
+} from '../../scripts/exampleProject.mjs';
 
 // `examples/exemplo-completo/` é o projeto de exemplo (a fonte); o zip e o guia (`public/guia/`)
 // saem dela. O zip é o que a pessoa baixa do repositório (a app não o embute). Para gerar
@@ -30,14 +35,16 @@ async function readExample() {
 }
 
 describe('zip do projeto de exemplo', () => {
-  it('tem o conteúdo da pasta examples/exemplo-completo/', async () => {
+  it('tem o conteúdo da pasta (fora de specs/) mais o manifesto', async () => {
     const zip = await JSZip.loadAsync(readFileSync(EXAMPLE_ZIP));
-    const expected = await exampleFiles(EXAMPLE_DIR);
+    const expected = await exampleFiles();
     const names = Object.keys(zip.files).filter((name) => !zip.files[name]?.dir);
     expect(names.sort(), HINT).toEqual([...expected.keys()].sort());
     for (const [path, content] of expected) {
       const bytes = Buffer.from((await zip.file(path)?.async('uint8array')) ?? []);
-      expect(bytes.equals(content), `${path} difere da pasta. ${HINT}`).toBe(true);
+      expect(bytes.equals(content), `${path} difere da vista do exemplo. ${HINT}`).toBe(
+        true,
+      );
     }
   });
 
@@ -142,81 +149,62 @@ describe('proposta de exemplo', () => {
   });
 });
 
-describe('cópias do exemplo × fontes', () => {
-  const SYNC_HINT =
-    'o exemplo está desatualizado: copie a fonte para examples/exemplo-completo/specs/ ' +
-    '(pacote de libraries/material3-compose, specs de examples/specs) e rode ' +
-    '`npm run build:example` e `npm run build:guia`.';
-
-  function listFiles(root: string, dir = ''): string[] {
-    const out: string[] = [];
-    for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
-      const rel = dir === '' ? entry.name : `${dir}/${entry.name}`;
-      if (entry.isDirectory()) out.push(...listFiles(root, rel));
-      else out.push(rel);
+describe('especializações do exemplo geradas das fontes', () => {
+  it('os file de specializations[] do mapping.json caem em destinos do manifesto', () => {
+    const mapping = JSON.parse(
+      readFileSync(join(EXAMPLE_DIR, 'mapping.json'), 'utf8'),
+    ) as { specializations: { file: string }[] };
+    const targets = EXAMPLE_SPECS.map((entry) => `specs/${entry.target}`);
+    expect(mapping.specializations).toHaveLength(EXAMPLE_SPECS.length);
+    for (const { file } of mapping.specializations) {
+      const inside = targets.some(
+        (target) => file === target || file.startsWith(`${target}/`),
+      );
+      expect(inside, `${file} não cai em nenhum destino do manifesto`).toBe(true);
     }
-    return out.sort();
-  }
-
-  function sameFile(copy: string, source: string, label: string) {
-    if (copy.endsWith('.json')) {
-      const a: unknown = JSON.parse(readFileSync(copy, 'utf8'));
-      const b: unknown = JSON.parse(readFileSync(source, 'utf8'));
-      expect(a, `${label} difere da fonte. ${SYNC_HINT}`).toEqual(b);
-    } else {
-      const same = readFileSync(copy).equals(readFileSync(source));
-      expect(same, `${label} difere da fonte. ${SYNC_HINT}`).toBe(true);
-    }
-  }
-
-  it('specs/material3-compose/ tem os mesmos arquivos e o mesmo conteúdo de libraries/material3-compose/', () => {
-    const copy = join(EXAMPLE_DIR, 'specs/material3-compose');
-    const source = 'libraries/material3-compose';
-    expect(listFiles(copy), `lista de arquivos diferente. ${SYNC_HINT}`).toEqual(
-      listFiles(source),
-    );
-    for (const rel of listFiles(source))
-      sameFile(join(copy, rel), join(source, rel), rel);
-  });
-
-  it('specs/notas/ tem os mesmos arquivos e o mesmo conteúdo de libraries/notas/ (sem o index.ts)', () => {
-    const copy = join(EXAMPLE_DIR, 'specs/notas');
-    const source = 'libraries/notas';
-    const wanted = listFiles(source).filter((rel) => rel !== 'index.ts');
-    expect(listFiles(copy), `lista de arquivos diferente. ${SYNC_HINT}`).toEqual(wanted);
-    for (const rel of wanted) sameFile(join(copy, rel), join(source, rel), rel);
-  });
-
-  it.each([
-    ['sdui.json', 'examples/specs/sdui.json'],
-    ['modelo-dados.json', 'examples/specs/modelo-de-dados.json'],
-  ])('specs/%s tem o conteúdo de %s', (name, source) => {
-    sameFile(join(EXAMPLE_DIR, 'specs', name), source, name);
   });
 
   it('a version de cada especialização do mapping.json é a da fonte', () => {
     const mapping = JSON.parse(
       readFileSync(join(EXAMPLE_DIR, 'mapping.json'), 'utf8'),
-    ) as {
-      specializations: { id: string; version: number; file: string }[];
-    };
-    const sources: Record<string, string> = {
-      sdui: 'examples/specs/sdui.json',
-      'modelo-dados': 'examples/specs/modelo-de-dados.json',
-      'material3-compose': 'libraries/material3-compose/material3-compose.spec.json',
-      notas: 'libraries/notas/notas.spec.json',
-    };
-    expect(mapping.specializations.map((s) => s.id).sort()).toEqual(
-      Object.keys(sources).sort(),
-    );
+    ) as { specializations: { id: string; version: number; file: string }[] };
+    expect(mapping.specializations.map((s) => s.id).sort()).toEqual([
+      'material3-compose',
+      'modelo-dados',
+      'notas',
+      'sdui',
+    ]);
     for (const s of mapping.specializations) {
-      const src = JSON.parse(readFileSync(sources[s.id] as string, 'utf8')) as {
-        id: string;
-        version: number;
-      };
-      expect(s.version, `versão de ${s.id} difere da fonte. ${SYNC_HINT}`).toBe(
-        src.version,
+      const entry = EXAMPLE_SPECS.find(
+        (e) => s.file === `specs/${e.target}` || s.file.startsWith(`specs/${e.target}/`),
       );
+      const rel = s.file.slice(`specs/${entry?.target}`.length).replace(/^\//, '');
+      const source =
+        rel === '' ? (entry?.source as string) : join(entry?.source as string, rel);
+      const src = JSON.parse(readFileSync(source, 'utf8')) as { version: number };
+      expect(s.version, `versão de ${s.id} difere da fonte. ${HINT}`).toBe(src.version);
     }
+  });
+
+  it('exampleFiles() ignora o specs/ do disco e traz o das fontes', async () => {
+    const view = await exampleFiles();
+    const paths = [...view.keys()];
+    expect(paths).toContain('mapping.json');
+    expect(paths).toContain('specs/sdui.json');
+    expect(paths).toContain('specs/modelo-dados.json');
+    expect(paths).toContain('specs/material3-compose/material3-compose.spec.json');
+    expect(paths).toContain('specs/notas/notas.spec.json');
+    expect(paths).not.toContain('specs/notas/index.ts');
+    const sdui: unknown = JSON.parse(readFileSync('examples/specs/sdui.json', 'utf8'));
+    expect(JSON.parse(view.get('specs/sdui.json')?.toString('utf8') ?? 'null')).toEqual(
+      sdui,
+    );
+  });
+
+  it('o .gitignore lista examples/exemplo-completo/specs/', () => {
+    const lines = readFileSync('.gitignore', 'utf8')
+      .split('\n')
+      .map((l) => l.trim());
+    expect(lines).toContain('examples/exemplo-completo/specs/');
   });
 });

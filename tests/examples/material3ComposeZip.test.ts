@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { isTextPackageFile, toLibraryFiles, type PackageEntry } from '../../src/model';
 import { validateLibrary } from '../../src/model/library';
-import { exampleFiles } from '../../scripts/exampleProject.mjs';
+import { folderFiles } from '../../scripts/exampleProject.mjs';
 import {
   MATERIAL3_COMPOSE_DIR,
   MATERIAL3_COMPOSE_ZIP,
@@ -24,7 +24,7 @@ async function zipEntries() {
 
 describe('zip da biblioteca Material 3 (Compose)', () => {
   it('examples/material3-compose.zip tem exatamente o conteúdo da pasta', async () => {
-    const expected = await exampleFiles(MATERIAL3_COMPOSE_DIR);
+    const expected = await folderFiles(MATERIAL3_COMPOSE_DIR);
     const entries = await zipEntries();
     expect(entries.map(([name]) => name).sort(), HINT).toEqual(
       [...expected.keys()].sort(),

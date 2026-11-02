@@ -10,6 +10,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 - Fechar os Detalhes, as Propostas ou as Incompletas abertas pela revisão, por "mostrar o problema", pelo "ir para a anotação" de Incompletas ou pela atualização de especialização devolve o foco do teclado a quem as abriu, ou ao botão da faixa. Abrir a revisão a partir da Lista não perde mais o foco.
 
+## Exemplo gerado das fontes — 2026-11-02 (épico `epic/exemplo-gerado`, PR #334, MCP 0.12.0, schema v13)
+
+### Alterado
+
+- O `examples/exemplo-completo.zip` é o mesmo (byte a byte), mas agora sai da pasta do exemplo mais um manifesto que aponta as fontes das quatro especializações; `examples/exemplo-completo/specs/` deixou de ser versionado. Abrir a pasta `examples/exemplo-completo/` direto, com **Abrir pasta**, pede `npm run build:example` antes (ele materializa `specs/`).
+
 ## Foco nas janelas — 2026-11-02 (épico `epic/foco-janelas`, PR #315, MCP 0.12.0, schema v13)
 
 ### Corrigido
