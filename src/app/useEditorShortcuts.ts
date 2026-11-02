@@ -5,12 +5,9 @@ import {
   RESIZE_STEP,
   TOOL_WINDOWS,
   WINDOW_SIDE,
-  hideToolWindow,
   layersWindowHeight,
   resizeLayersWindow,
   resizeToolWindow,
-  showToolWindow,
-  toggleToolWindow,
   toolWindowSizes,
   type ToolWindowId,
   type ToolWindowSide,
@@ -25,7 +22,12 @@ import {
   type Selection,
 } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
-import { showAndFocusToolWindow, spaceFor } from '../ui/toolWindowLayout';
+import {
+  closeToolWindow,
+  openToolWindow,
+  showAndFocusToolWindow,
+  spaceFor,
+} from '../ui/toolWindowLayout';
 import { isStandalone } from '../utils/platform';
 import type { EditorDialogs } from './useEditorDialogs';
 import type { ProjectCommands } from './useProjectCommands';
@@ -252,13 +254,13 @@ export function useEditorShortcuts(
           return setCleanView(ui, !ui.cleanView.peek());
         case 'hide-window': {
           const focused = focusedWindow();
-          if (focused) hideToolWindow(focused.id);
+          if (focused) closeToolWindow(focused.id);
           return;
         }
         case 'toggle-window': {
           const { window } = shortcut;
           // Fechada ou sem foco dentro: abre e foca; já em foco: esconde.
-          if (focusedWindow()?.id === window) toggleToolWindow(window);
+          if (focusedWindow()?.id === window) closeToolWindow(window);
           else showAndFocusToolWindow(window);
           return;
         }
@@ -293,7 +295,7 @@ export function useEditorShortcuts(
           if (button()) return button()?.click();
           if (resolveSelection(shown.peek(), ui.selection.peek())?.kind !== 'marking')
             return;
-          showToolWindow('details');
+          openToolWindow('details');
           requestAnimationFrame(() => button()?.click());
           return;
         }
