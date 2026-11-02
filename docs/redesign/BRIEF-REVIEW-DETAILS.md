@@ -8,6 +8,8 @@ Pedido de desenho da fase 9.1 (etapa 9, ponto 4 do [`PLAN.md`](../../PLAN.md)). 
 | Canvas "Propostas de alteração"                | https://claude.ai/artifact/7gTGB3ACoBQGgN1VqbSgqs | O desenho atual da revisão (etapa 4): prancheta `R-Escuro`/`R-Claro`, Detalhes com cartões |
 | [`HANDOFF-PROPOSALS.md`](HANDOFF-PROPOSALS.md) | neste repositório                                 | Linguagem visual da revisão (seção 4), atalhos (seção 6) e o que já foi decidido           |
 
+O registro vivo do design system — mapa componente → origem no código, gatilhos, pendências e histórico de sincronização — é [`docs/DESIGN-SYSTEM.md`](../DESIGN-SYSTEM.md).
+
 ---
 
 ## 1. O problema

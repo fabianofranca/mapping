@@ -12,6 +12,8 @@ Documento de passagem do redesenho feito com o Claude Design. É a referência p
 
 Os artifacts são privados: só abrem para quem tiver acesso compartilhado pelo dono.
 
+O registro vivo do design system — mapa componente → origem no código, gatilhos, pendências e histórico de sincronização — é [`docs/DESIGN-SYSTEM.md`](../DESIGN-SYSTEM.md). As contagens citadas na tabela acima são o estado do DS na época desta etapa.
+
 **Regras que continuam valendo** (CLAUDE.md): um único `dist/index.html` que funciona em `file://`; nenhuma fonte, imagem ou requisição externa; `src/model/` sem APIs de navegador; toda mutação por action do store; estado do projeto separado do estado da UI; nenhuma string fixa (pt-BR e en-US); nenhuma cor fixa; Konva só em `src/canvas/`; um gesto = uma entrada de desfazer; desktop primeiro e utilizável em 380px com toque.
 
 ---

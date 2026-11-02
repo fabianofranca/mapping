@@ -23,6 +23,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 | [`docs/component.schema.json`](docs/component.schema.json) | JSON Schema do arquivo de componente (documentação; o código é a fonte da verdade) |
 | [`docs/MCP.md`](docs/MCP.md)                             | Servidor MCP: instalação, `.mcp.json`, raízes, tools, referências, problemas   |
 | [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md)             | Guia do agente: como usar as tools do servidor MCP (também servido como recurso) |
+| [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md)         | Design system (artefato do Claude Design): mapa componente → origem no código, gatilhos, pendências e histórico de sincronização |
 | [`docs/TESTING.md`](docs/TESTING.md) | Guia do testador: onde pegar a app, requisitos, mapa da interface, MCP, roteiros de teste manual, teste manual avançado (seção 9), templates do relato e do registro de uso real e os apêndices do agente e de disco |
 | [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md) | Prompt vivo do testador do Cowork (rodada completa ou dirigida; o agente lê o guia com o apêndice A) |
 | [`docs/history/PLAN-etapas-1-2.md`](docs/history/PLAN-etapas-1-2.md) | Histórico: seções 1 a 13 do plano antigo (inclui o roteiro de teste manual 13.9, hoje R1 do `docs/TESTING.md`) |
@@ -78,7 +79,7 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 ## Etapa — Sincronia do design system (planejada, épico `epic/sincronia-ds`)
 
-- **Objetivo:** o dono pediu (2026-11-02) um processo em que os planos verifiquem, fase a fase, se o design system precisa de atualização. O DS do projeto é o artefato **Mapping** do Claude Design (<https://claude.ai/artifact/HEoYNh91CqK1YDDpjXBxi9>), curado à mão: 49 componentes com guia e preview, 6 seções (Canvas, Layouts, Atalhos, Contraste, Conceitos, Revisão), os tokens e 82 ícones. Hoje ele não tem dono no repositório — a URL só aparece em três documentos históricos do `docs/redesign/` — e sua última alteração é de 2026-10-24, quatro etapas atrás. A etapa dá ao DS um registro vivo no repositório, uma verificação por fase, uma atualização por épico, e o põe em dia.
+- **Objetivo:** o dono pediu (2026-11-02) um processo em que os planos verifiquem, fase a fase, se o design system precisa de atualização. O DS do projeto é o artefato **Mapping** do Claude Design (<https://claude.ai/artifact/HEoYNh91CqK1YDDpjXBxi9>), curado à mão: 63 componentes com guia e preview (mais a capa), 6 seções (Canvas, Layouts, Atalhos, Contraste, Conceitos, Revisão), os tokens e 85 ícones. Hoje ele não tem dono no repositório — a URL só aparece em três documentos históricos do `docs/redesign/` — e sua última alteração é de 2026-10-24, quatro etapas atrás. A etapa dá ao DS um registro vivo no repositório, uma verificação por fase, uma atualização por épico, e o põe em dia.
 - **Depende de:** nada. O branch do épico nasce da `main` atualizada, que já tem as etapas Proposto com componentes, Sugestões no campo, Imagens remotas e Biblioteca Material 3 (PR #260), além do `wrapItems` da Marcação pai.
 - **Versões:** sem schema, formato de especialização, de proposta ou de componente novos, e **sem MCP novo** (a versão do servidor não muda). É processo, documentação e a atualização do artefato do DS, que vive fora do repositório.
 - **Coordenador e esforço** (regra da seção "Uso de modelos" do [`CLAUDE.md`](CLAUDE.md)):
@@ -115,16 +116,16 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 **Toca em:** `docs/DESIGN-SYSTEM.md` (novo), `CLAUDE.md`, `.github/workflows/ci.yml`, `PLAN.md`, `CHANGELOG.md`, `docs/redesign/HANDOFF.md`, `docs/redesign/HANDOFF-PROPOSALS.md`, `docs/redesign/BRIEF-REVIEW-DETAILS.md`, `docs/redesign/HANDOFF-REVIEW-DETAILS.md`.
 
-- [ ] `docs/DESIGN-SYSTEM.md` com a URL e o nome do artefato, a natureza dele (decisão 1), os gatilhos (decisão 6), a regra da fonte da verdade (decisão 7), a seção de pendências e o histórico de sincronização
-- [ ] Mapa no mesmo documento: cada um dos 49 componentes, das 6 seções, dos tokens e dos 82 ícones do DS aponta para a origem na `main`; o que o DS não acompanha fica numa lista à parte, com o motivo
-- [ ] Mapa conferido nos dois sentidos: todo componente do DS aponta para arquivo que existe, e todo arquivo de `src/ui/` com forma visível aparece no mapa ou na lista do que o DS não acompanha
-- [ ] Registrar que o índice do artefato se chama **Mapping** e que os documentos do `docs/redesign/` o chamam de "Mapeador de Imagens 2.0" (sem renomear nada nesta fase)
-- [ ] `CLAUDE.md`: item **Impacto no DS** na descrição do PR (decisão 3), o checkbox do DS no Fechamento de todo épico (decisão 4) e a linha do `docs/DESIGN-SYSTEM.md` na tabela de documentação; a mesma linha na tabela do `PLAN.md`
-- [ ] Passo "Design system registrado" no job `epic` do `ci.yml` (decisão 5), no molde do passo "Changelog atualizado"
-- [ ] Os quatro documentos do `docs/redesign/` apontam para o `docs/DESIGN-SYSTEM.md` como o registro vivo (decisão 2)
-- [ ] Pendências preenchidas com as cinco entregas da decisão 8, cada uma com os componentes e seções candidatos
-- [ ] `CHANGELOG.md`: a seção `[Não lançado]` do épico conferida contra o que a fase entregou
-- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+- [x] `docs/DESIGN-SYSTEM.md` com a URL e o nome do artefato, a natureza dele (decisão 1), os gatilhos (decisão 6), a regra da fonte da verdade (decisão 7), a seção de pendências e o histórico de sincronização
+- [x] Mapa no mesmo documento: cada um dos 63 componentes, das 6 seções, dos tokens e dos 85 ícones do DS aponta para a origem na `main`; o que o DS não acompanha fica numa lista à parte, com o motivo
+- [x] Mapa conferido nos dois sentidos: todo componente do DS aponta para arquivo que existe, e todo arquivo de `src/ui/` com forma visível aparece no mapa ou na lista do que o DS não acompanha
+- [x] Registrar que o índice do artefato se chama **Mapping** e que os documentos do `docs/redesign/` o chamam de "Mapeador de Imagens 2.0" (sem renomear nada nesta fase)
+- [x] `CLAUDE.md`: item **Impacto no DS** na descrição do PR (decisão 3), o checkbox do DS no Fechamento de todo épico (decisão 4) e a linha do `docs/DESIGN-SYSTEM.md` na tabela de documentação; a mesma linha na tabela do `PLAN.md`
+- [x] Passo "Design system registrado" no job `epic` do `ci.yml` (decisão 5), no molde do passo "Changelog atualizado"
+- [x] Os quatro documentos do `docs/redesign/` apontam para o `docs/DESIGN-SYSTEM.md` como o registro vivo (decisão 2)
+- [x] Pendências preenchidas com as cinco entregas da decisão 8, cada uma com os componentes e seções candidatos
+- [x] `CHANGELOG.md`: a seção `[Não lançado]` do épico conferida contra o que a fase entregou
+- [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
 
 #### DS2 — Pôr o DS em dia
 
@@ -201,7 +202,7 @@ A fase grava no artefato do DS, fora do repositório: o índice (`project/design
 - [ ] Projeto de exemplo (`examples/exemplo-completo/` e o zip) e guia interativo regenerados sem o `specs/material3/` antigo (`npm run build:example` e `npm run build:guia`)
 - [ ] Roteiros R3.10, R3.12, R9, R10, R12.12 e R15 reescritos (decisão 4), `docs/TESTING.md`, `docs/TESTING-COWORK.md`, `docs/GUIDE.md`, `docs/COMPONENT-FORMAT.md`, `docs/SPEC-FORMAT.md`, a skill `spec-author` e `src/i18n/specHelp.ts` sem citar os pacotes removidos (teste do guia)
 - [ ] Rodada dirigida do Cowork (R3, R9, R10, R12 e R15) e o relato entre os documentos da etapa
-- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-exemplos-enxutos.md`, `CHANGELOG.md`, `CLAUDE.md` e `docs/ROADMAP.md`
+- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-exemplos-enxutos.md`, `CHANGELOG.md`, `CLAUDE.md`, `docs/ROADMAP.md` e as pendências do DS aplicadas no artefato (`docs/DESIGN-SYSTEM.md`)
 - [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
 
 ## Etapa — Imagens remotas (concluída, épico `epic/imagens-remotas`)

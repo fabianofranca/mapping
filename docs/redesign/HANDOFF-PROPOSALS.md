@@ -11,6 +11,8 @@ Documento de passagem do desenho da etapa 4 (propostas de alteração com revis�
 
 Os artifacts são privados: só abrem para quem tiver acesso compartilhado pelo dono. As pranchetas foram escritas, mas **não foram renderizadas nem conferidas visualmente** pelo autor; a revisão visual é do dono.
 
+O registro vivo do design system — mapa componente → origem no código, gatilhos, pendências e histórico de sincronização — é [`docs/DESIGN-SYSTEM.md`](../DESIGN-SYSTEM.md). As contagens citadas na tabela acima são o que esta etapa acrescentou ao DS, não o estado dele hoje.
+
 **Regras que continuam valendo** (CLAUDE.md): um único `dist/index.html` que funciona em `file://`; sem requisições de rede; CSP sem `style=""` nem handlers inline; `src/model/` sem APIs de navegador; toda mutação por action do store; estado do projeto separado do estado da UI; nenhuma string fixa (pt-BR e en-US, com +30% em inglês); nenhum valor de design fora dos tokens; Konva só em `src/canvas/`; desktop primeiro e utilizável em 380px com toque (alvos de 44px).
 
 > As pranchetas usam `style=""` e medidas soltas **só como maquete**. Na implementação, tudo vira classe com `var(--…)`, como nas demais janelas.
