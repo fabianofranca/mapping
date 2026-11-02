@@ -93,7 +93,7 @@ O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service wo
 
 ## Como relatar um problema
 
-Para testar a app de ponta a ponta (onde pegar, requisitos, roteiros com o resultado esperado de cada passo e o template do relato), siga o guia do testador: [`docs/TESTING.md`](docs/TESTING.md). Para um agente com controle do computador (Cowork) testar no seu computador, o prompt inicial está em [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md) (rodada completa ou dirigida por achados de um relato, por uma lista de passos ou pelas fases de um plano); o guia tem um apêndice só para o agente.
+Para testar a app de ponta a ponta (onde pegar, requisitos, roteiros com o resultado esperado de cada passo e o template do relato), siga o guia do testador: [`docs/TESTING.md`](docs/TESTING.md). O agente testador é uma sessão do Claude Code na nuvem, sem você no computador; o prompt inicial dele está em [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md) (rodada completa ou dirigida por achados de um relato, por uma lista de passos ou pelas fases de uma etapa), e o guia tem um apêndice só para o agente.
 
 A app não envia nada para a rede (nem telemetria), então o relato depende de você copiar os dados:
 
@@ -106,7 +106,6 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 ## Documentação
 
 - [`docs/TESTING.md`](docs/TESTING.md): guia do testador (onde pegar a app, requisitos, mapa da interface, instalação do MCP, roteiros de teste manual, teste manual avançado e os templates do relato e do registro de uso real; apêndices para o agente testador e para operações de disco).
-- [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md): prompt do testador do Cowork (agente com controle do computador).
 - [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md): prompt do testador da nuvem (sessão do Claude Code no ambiente "Mapping - testes", sem o dono).
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
 - [`docs/GUIDE.md`](docs/GUIDE.md): guia interativo e projeto de exemplo (como são gerados, o que abrir o exemplo grava, como mudá-los).
