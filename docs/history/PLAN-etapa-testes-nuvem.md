@@ -73,7 +73,7 @@ Dirigida (R0 e R2), commit `87aa4cb` do `epic/testes-nuvem`, build local `87aa4c
 
 ## O que ficou para depois
 
-Sugestões do testador para as receitas do apêndice A do `docs/TESTING.md` (sem decisão do dono para virar PR; ficam aqui):
+Sugestões do testador para as receitas do apêndice A do `docs/TESTING.md`. **Atendidas depois do fechamento, num PR para o épico** (receita 5: pasta com conteúdo e foco; receita 7: `alt+s` que não salva); o que segue aberto é o menu "Ações do projeto" e o guia sobre "Alterações não exportadas" ao abrir um zip:
 
 - **Receita 5, seletor GTK com pasta que tem conteúdo (R0.7):** a lista de autocompletar bloqueia o `alt+o`, e o `Escape` pode apagar o campo do caminho. Contorno que funcionou: digitar o caminho, clicar no botão **Open** por coordenada (o primeiro clique só fecha a lista) e então `alt+o`.
 - **`alt+s` do "Salvar como":** na primeira exportação, o `alt+s` logo depois de digitar o caminho não salvou; o segundo salvou.

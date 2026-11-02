@@ -1202,6 +1202,9 @@ xdotool type --delay 20 "/caminho/absoluto/arquivo-ou-pasta"   # pasta com "/" n
 xdotool key --clearmodifiers alt+o
 ```
 
+- **Receita 5 (nuvem), pasta que tem conteúdo** (visto no R0.7, ao localizar a pasta de um projeto que já tem `images/` e `specs/`): a lista de autocompletar do GTK abre depois de digitar o caminho (uma janela "chromium" de uns 48 px na lista do `xdotool`) e o `alt+o` não faz nada. Aqui o `Escape` **apaga o campo do caminho**, e `Escape` + `alt+o` pode abrir o diretório pai (recusado como "contém arquivos do sistema"; **Escolher uma pasta diferente** reabre o seletor).
+- **Receita 5 (nuvem), pasta que tem conteúdo, contorno.** Digitar o caminho, **clicar no botão Open** do GTK por coordenada (`xdotool mousemove X Y click 1`; o primeiro clique só fecha a lista e mantém o caminho) e então `alt+o`. Confira o caminho no campo antes do `alt+o`.
+- **Receita 5 (nuvem), foco:** o `ctrl+l` e o `xdotool type` vão para onde estiver o foco. Com o seletor fora de foco, vão para a barra de endereço do Chrome: ative a janela com `xdotool windowactivate --sync $W` e confirme que `$W` não está vazio antes de digitar. O título do seletor de **Abrir zip** é "Abrir arquivo" (singular), diferente do de **Adicionar imagens** ("Abrir arquivos").
 - **Receita 6 (nuvem), pedido de permissão pelo AT-SPI.** O Chrome mostra "Permitir que este site edite arquivos?" com "Não permitir" (com o foco) e "Permitir". Use `/usr/bin/python3.12` (o `python3` do PATH quebra o `gi`). Saída esperada: `clicou Permitir press`; o `DeprecationWarning` é inofensivo.
 - **Receita 6 (nuvem), continuação.** "nenhum botão de permitir" com a app já aberta quer dizer que o navegador já tinha a permissão (reabrir pelos **Projetos recentes** na mesma execução do Chrome não pede de novo): é tão sucesso quanto clicar. Para reabrir pelos recentes, clique em **Abrir** na linha (`getByRole('button', { name: 'Abrir', exact: true })`) e rode o script.
 
@@ -1244,6 +1247,8 @@ xdotool key --clearmodifiers Home shift+End BackSpace
 xdotool type --delay 20 "/caminho/absoluto/nome-novo.zip"
 xdotool key --clearmodifiers alt+s
 ```
+
+- **`alt+s` que não salva:** na primeira exportação de uma rodada, o `alt+s` logo depois de digitar o caminho pode não salvar. Espere uns 2 s depois de digitar, confira com `xdotool search --onlyvisible --name 'Aviso: este site'` se o diálogo continua aberto e só então repita o `alt+s` **uma vez** (nunca Enter).
 
 - **Receita 8 (nuvem), cancelar um diálogo nativo.** `xdotool windowactivate --sync $W; xdotool key --clearmodifiers alt+c` (**Cancel**). O diálogo "Exportar projeto" da app continua aberto depois de cancelar o "Salvar como" (R2.3): feche-o com **Cancelar** da app.
 - **Receita 9 (nuvem), MCP por stdio.** O cliente `scripts/testing/mcp-stdio-client.mjs` roda o `dist-mcp/mapping-mcp.js` compilado do commit (receita 1), com a raiz na pasta de trabalho. Para um workspace igual ao da seção 6, monte o `.mcp.json` com o caminho desse arquivo. O download de uma Release (`curl -sSL -o mapping-mcp.js https://github.com/fabianofranca/mapping/releases/download/<tag>/mapping-mcp.js`) funciona na rede do ambiente: use só quando a mensagem pedir a rc.
