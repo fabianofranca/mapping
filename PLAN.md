@@ -1,6 +1,6 @@
 # Mapping — Plano de desenvolvimento
 
-> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje as etapas em andamento são a **Marcação pai**, épico `epic/marcacao-pai`, que aguarda o fechamento; a **Biblioteca Material 3** foi a última concluída; a **Exemplos enxutos**, épico `epic/exemplos-enxutos`, está planejada e só começa depois que o `epic/material3` entrar na `main`). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
+> Este documento guarda o resumo do produto e **só as fases pendentes** (hoje a etapa em andamento é a **Marcação pai**, épico `epic/marcacao-pai`, que aguarda o fechamento; a **Biblioteca Material 3** foi a última concluída e já está na `main`, pelo PR #260; estão planejadas a **Sincronia do design system**, épico `epic/sincronia-ds`, e a **Exemplos enxutos**, épico `epic/exemplos-enxutos`, esta última já liberada pela entrada do `epic/material3` na `main`). Ao concluir uma tarefa, marque o checkbox correspondente no mesmo PR.
 
 ## Produto
 
@@ -75,6 +75,73 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 ## Etapa — Biblioteca Material 3 (concluída, épico `epic/material3`)
 
 > Fases MD1 a MD5 entregues no épico (especialização `formatVersion` 9 com `variants` no `code`, MCP 0.12.0; sem schema, formato de proposta nem de componente novos). O objetivo, as 14 decisões, as fases, as decisões consolidadas dos PRs, a rodada do Cowork e o que ficou para depois estão em [`docs/history/PLAN-etapa-material3.md`](docs/history/PLAN-etapa-material3.md).
+
+## Etapa — Sincronia do design system (planejada, épico `epic/sincronia-ds`)
+
+- **Objetivo:** o dono pediu (2026-11-02) um processo em que os planos verifiquem, fase a fase, se o design system precisa de atualização. O DS do projeto é o artefato **Mapping** do Claude Design (<https://claude.ai/artifact/HEoYNh91CqK1YDDpjXBxi9>), curado à mão: 49 componentes com guia e preview, 6 seções (Canvas, Layouts, Atalhos, Contraste, Conceitos, Revisão), os tokens e 82 ícones. Hoje ele não tem dono no repositório — a URL só aparece em três documentos históricos do `docs/redesign/` — e sua última alteração é de 2026-10-24, quatro etapas atrás. A etapa dá ao DS um registro vivo no repositório, uma verificação por fase, uma atualização por épico, e o põe em dia.
+- **Depende de:** nada. O branch do épico nasce da `main` atualizada, que já tem as etapas Proposto com componentes, Sugestões no campo, Imagens remotas e Biblioteca Material 3 (PR #260), além do `wrapItems` da Marcação pai.
+- **Versões:** sem schema, formato de especialização, de proposta ou de componente novos, e **sem MCP novo** (a versão do servidor não muda). É processo, documentação e a atualização do artefato do DS, que vive fora do repositório.
+- **Coordenador e esforço** (regra da seção "Uso de modelos" do [`CLAUDE.md`](CLAUDE.md)):
+
+| Fase | Coordenador | Esforço do coordenador | Subagentes                                                               |
+| ---- | ----------- | ---------------------- | ------------------------------------------------------------------------ |
+| DS1  | Opus        | medium                 | Sonnet medium (mapa, um subsistema por subagente); Haiku low (mecânicos) |
+| DS2  | Opus        | high                   | Sonnet medium (um grupo de componentes do DS por subagente)              |
+
+### Decisões
+
+1. **O DS é curado à mão, não é gerado do código.** A skill `/design-sync` do Claude Code **não se aplica**: ela espera o `dist/` de uma biblioteca de componentes publicada e transformaria o DS curado num espelho do build. Fica registrado para nenhuma sessão futura tentar.
+2. **Dono no repositório:** `docs/DESIGN-SYSTEM.md`, documento vivo, com a URL e o nome do artefato, a natureza dele (decisão 1), o **mapa** (componente, seção, token e ícone do DS → origem no código), os **gatilhos** (decisão 6), as **pendências** abertas e o **histórico de sincronização**. Os quatro documentos do `docs/redesign/` continuam como referência histórica e passam a apontar para ele.
+3. **Verificação por fase:** a descrição de todo PR ganha um quarto item, **Impacto no DS**: "nenhum", ou o que muda (componentes, seções, tokens, ícones). O que não for "nenhum" vira bullet na seção de pendências do `docs/DESIGN-SYSTEM.md`, no mesmo PR. A fase decide isso cruzando o "Toca em:" dela com os gatilhos; é leitura, não exige abrir o artefato.
+4. **Atualização por épico, no fechamento:** a fase de Fechamento que toda etapa já tem ganha o checkbox do DS, ao lado do `CHANGELOG.md`: aplicar as pendências no artefato, esvaziar a lista e registrar a sincronização (data, épico, o que mudou). **Não há gravação no artefato no meio do épico** — o DS é editado ao vivo por pessoas e o índice precisa ser lido imediatamente antes de cada gravação, então uma gravação por épico evita conflito e idas e vindas.
+5. **Trava no CI:** o job `epic` do `ci.yml` ganha o passo "Design system registrado", irmão do "Changelog atualizado": o PR de `epic/*` para a `main` precisa tocar o `docs/DESIGN-SYSTEM.md`. O artefato o CI não alcança; o registro no repositório, sim.
+6. **Gatilhos** (o que obriga a verificação): `src/ui/**`, `src/theme/tokens.ts`, `src/ui/icons.tsx`, `src/canvas/**`, e `src/i18n/**` só quando muda um rótulo que aparece num preview ou num guia do DS. Mudança só em `src/model/`, `src/storage/`, `mcp/`, testes, exemplos, `libraries/`, `lab/` ou documentação **não** mexe no DS.
+7. **O código é a fonte da verdade; o DS descreve.** Nenhuma divergência entre os dois se resolve mudando a app para casar com o DS: o DS é que se corrige. Divergência que pareça defeito da app vira achado registrado na pendência, para o dono decidir.
+8. **Recuperação (DS2):** entram numa única sincronização as quatro etapas depois de 2026-10-24 — Proposto com componentes, Sugestões no campo de texto, Imagens remotas e Biblioteca Material 3 — e o **Envolver** da Marcação pai, com uma entrada de histórico por etapa.
+
+### Fora (de propósito)
+
+- Usar a `/design-sync` ou gerar qualquer parte do DS a partir do código (decisão 1).
+- Reescrever o conteúdo autoral das seções do DS além do que as entregas exigem: as seções e os guias têm autores, e a etapa ajusta só o que mudou.
+- Criar componente no DS para o que não existe na app, ou apagar o que a app ainda tem.
+- Mexer no `index.html`, nos tokens ou nos controles da app para casar com o DS (decisão 7).
+- Script que compare o DS com o código automaticamente; o mapa é lido por pessoas e agentes. Fica para depois, se a verificação por fase se mostrar cara.
+
+### Fases
+
+#### DS1 — Dono no repositório, verificação por fase e trava no CI
+
+**Coordenador:** Opus. **Esforço:** medium; subagentes Sonnet medium (mapa, um subsistema por subagente) e Haiku low. Decisões 1 a 7.
+
+**Toca em:** `docs/DESIGN-SYSTEM.md` (novo), `CLAUDE.md`, `.github/workflows/ci.yml`, `PLAN.md`, `CHANGELOG.md`, `docs/redesign/HANDOFF.md`, `docs/redesign/HANDOFF-PROPOSALS.md`, `docs/redesign/BRIEF-REVIEW-DETAILS.md`, `docs/redesign/HANDOFF-REVIEW-DETAILS.md`.
+
+- [ ] `docs/DESIGN-SYSTEM.md` com a URL e o nome do artefato, a natureza dele (decisão 1), os gatilhos (decisão 6), a regra da fonte da verdade (decisão 7), a seção de pendências e o histórico de sincronização
+- [ ] Mapa no mesmo documento: cada um dos 49 componentes, das 6 seções, dos tokens e dos 82 ícones do DS aponta para a origem na `main`; o que o DS não acompanha fica numa lista à parte, com o motivo
+- [ ] Mapa conferido nos dois sentidos: todo componente do DS aponta para arquivo que existe, e todo arquivo de `src/ui/` com forma visível aparece no mapa ou na lista do que o DS não acompanha
+- [ ] Registrar que o índice do artefato se chama **Mapping** e que os documentos do `docs/redesign/` o chamam de "Mapeador de Imagens 2.0" (sem renomear nada nesta fase)
+- [ ] `CLAUDE.md`: item **Impacto no DS** na descrição do PR (decisão 3), o checkbox do DS no Fechamento de todo épico (decisão 4) e a linha do `docs/DESIGN-SYSTEM.md` na tabela de documentação; a mesma linha na tabela do `PLAN.md`
+- [ ] Passo "Design system registrado" no job `epic` do `ci.yml` (decisão 5), no molde do passo "Changelog atualizado"
+- [ ] Os quatro documentos do `docs/redesign/` apontam para o `docs/DESIGN-SYSTEM.md` como o registro vivo (decisão 2)
+- [ ] Pendências preenchidas com as cinco entregas da decisão 8, cada uma com os componentes e seções candidatos
+- [ ] `CHANGELOG.md`: a seção `[Não lançado]` do épico conferida contra o que a fase entregou
+- [ ] Validação: `npm run lint && npm run typecheck && npm test && npm run build`
+
+#### DS2 — Pôr o DS em dia
+
+**Coordenador:** Opus. **Esforço:** high; subagentes Sonnet medium (um grupo de componentes do DS por subagente). Decisões 4, 7 e 8.
+
+A fase grava no artefato do DS, fora do repositório: o índice (`project/design-system.json`) é lido imediatamente antes e gravado **por último**, numa chamada só, com `lastChange`. Nenhum arquivo do DS é apagado.
+
+- [ ] Triagem: comparar o DS com a `main` pelo mapa da DS1 e fechar, por pendência, o que muda em cada componente, seção, token e ícone
+- [ ] Proposto com componentes: a visão Proposto desenha os componentes criados com a marca de criada e a criação rejeitada vira fantasma pontilhado (candidatos: seção Revisão, `ChangeMark`, `ComponentDrawing`, `ProposalRow`, `ReviewRow`)
+- [ ] Sugestões no campo de texto: `suggestions` e `linkedRef` (candidatos: `TextField`, `KeyValueGrid`, `PropertyGrid`, `RefCell`, `ReferenceField`)
+- [ ] Imagens remotas: nó `image` no componente, faixa de consentimento por origem e aba Privacidade (candidatos: `SettingsDialog`, `Banner`, `ComponentDrawing`)
+- [ ] Biblioteca Material 3: `variants` no `code`, com a definição da anotação e a tabela de variantes no Catálogo (candidatos: `CodeDefinitions`, `CatalogPage`)
+- [ ] Marcação pai: botão **Envolver** no resumo da seleção múltipla e a dica nos nomes cortados (candidatos: `MultiSelectionPanel`, `TreeRow`, `LayerGroup`)
+- [ ] Tokens e ícones conferidos contra `src/theme/tokens.ts` e `src/ui/icons.tsx`; o que faltar entra, o que divergir segue a decisão 7
+- [ ] Contraste conferido nos temas claro e escuro em tudo o que a fase tocar, e a seção Contraste atualizada se alguma regra mudou
+- [ ] `docs/DESIGN-SYSTEM.md`: pendências esvaziadas e uma entrada de histórico de sincronização por etapa (decisão 8)
+- [ ] Fechamento: histórico em `docs/history/PLAN-etapa-sincronia-ds.md`, `CHANGELOG.md`, `CLAUDE.md` e `docs/ROADMAP.md`
 
 ## Etapa — Exemplos enxutos (planejada, épico `epic/exemplos-enxutos`)
 
