@@ -29,7 +29,8 @@ Se a mensagem do dono for só um link de PR do Mapping ("Teste <link>"), trate c
 > - **Rodada dirigida pelas fases de um plano:** "… no modo dirigido: as fases 7.1 e 7.2 de `docs/history/PLAN-etapa-7.md`."
 > - **Rodada dirigida da etapa 9:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da etapa 9 (seção 9 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
 > - **Rodada dirigida da etapa Código de instanciação:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida da instanciação (seção 10 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Configurações."
-> - **Rodada dirigida da etapa Proposto com componentes (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida do Proposto com componentes (seção 11 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
+> - **Rodada dirigida da etapa Proposto com componentes:** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida do Proposto com componentes (seção 11 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Detalhes, Propostas."
+> - **Rodada dirigida da etapa Exemplos enxutos (a próxima):** "Leia `docs/TESTING-COWORK.md` e execute no modo dirigido: a rodada dirigida dos Exemplos enxutos (seção 13 deste prompt). Build id esperado: `abc1234 · AAAA-MM-DD`. Passada visual: Catálogo, Especializações, Privacidade."
 > - **Sessão sob demanda (roteiro manual):** "Leia `docs/TESTING-COWORK.md` e execute a **sessão sob demanda: RP**. Build id esperado: `abc1234 · AAAA-MM-DD`." (seção 5; só quando o dono pedir, citando o roteiro)
 
 - **Rodada sem interação (o dono só deixa a janela do Chrome na frente):** "Leia `docs/TESTING-COWORK.md` e execute **sem interação**: rodada completa. Build id esperado: `abc1234 · AAAA-MM-DD`." (vale também no modo dirigido, com o alvo)
@@ -257,3 +258,41 @@ As fases RI1 a RI4 do épico `epic/imagens-remotas` (etapa descrita no [`PLAN.md
 Na **passada visual**, olhe a faixa de consentimento (texto cortado, botões visíveis), o círculo da foto (quatro quadrantes, bordas limpas, nada esticado) e a janela **Privacidade** (avisos legíveis, interruptores alinhados) nos temas claro e escuro.
 
 **Relato:** o mesmo template, em `docs/history/relato-<data>-imagens-remotas.md`; use o código da fase (RI1 a RI3) na coluna **Achado de origem** e liste em "O que atrapalhou" o que o R15 deixou ambíguo (por exemplo, um pedido de acesso à rede local do Chrome ou o proxy da shell barrando o `curl`). Se algo da lista não puder ser executado, marque "não executado (motivo)".
+
+## 13. Rodada dirigida da etapa Exemplos enxutos
+
+A etapa Exemplos enxutos (épico `epic/exemplos-enxutos`, fases EX0 a EX3 no [`PLAN.md`](../PLAN.md); o histórico vai para `docs/history/PLAN-etapa-exemplos-enxutos.md` quando a etapa fechar) reorganizou o que a pessoa vê como exemplo: a biblioteca pronta `libraries/material3-compose/` (50 tipos, também no zip `examples/material3-compose.zip`) é a base dos roteiros, o projeto de exemplo e o guia; `examples/libraries/sdui-backend/` mostra a origem executável (`origins`, `sources`, `migrations` e a tela de exemplo de um sistema externo) e `examples/libraries/analytics/` o tipo que só aponta; e o `examples/README.md` diz o que cada exemplo mostra. Os roteiros R3, R9, R10, R12, R13 e R15 foram reescritos para esse conjunto sem rodar a app, então a rodada confere **o produto e o texto dos roteiros**. Vale como o modo dirigido "pelas fases de um plano", sobre o **preview do PR do épico** (`epic/exemplos-enxutos`).
+
+**Antes de começar**
+
+- O **build id** esperado é o do último commit do `epic/exemplos-enxutos`. Confira em **Configurações** › **Sobre**; se o preview mostrar outro build, siga o item 9 da seção 2 (dispare o Deploy do branch).
+- **Pasta da rodada:** `libraries/material3-compose`, `examples/material3-compose.zip`, `examples/libraries/sdui-backend` e `examples/libraries/analytics`, trazidos do clone (item 0 da seção 2). **Confira:** `find material3-compose -type f | wc -l` dá 105.
+- **Sem MCP** nos roteiros principais, exceto o R10.11 (a `sdui-backend` pelo agente) e o R9.13 a R9.15 e R9.18 a R9.20, que usam o cliente stdio da seção 6; o R15 precisa de **Node 20 ou mais novo** no computador do Chrome (servidor local do R15.1).
+- Registre em "Estado prévio do navegador" as origens que a **Privacidade** já lista, como no R15.
+
+**Lista dirigida** (depois do **R0 inteiro**; o R1 inteiro entra antes do R3):
+
+| Passos          | Fase      | O que confere                                                                                                                                     |
+| --------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R3.10 a R3.13   | EX3       | Aplicar a `material3-compose` por pasta e por zip: 50 tipos, 0 erros e 0 avisos, 3 camadas; arquivo faltando dá a mensagem do roteiro             |
+| R3.14 a R3.17   | EX3       | Atualização com as cópias v2 a v5: campo novo, `rename-field`, `remove-field` e tipo removido sem migração; os textos da janela são os do roteiro |
+| R9.1 a R9.12    | EX3       | Container com componentes: Row com dois Buttons e Espaçamento 8, mínimos do Button (58 × 40) e do Text field (280 × 56), Roboto sem "ausente"     |
+| R10.1 a R10.9   | EX3       | Catálogo da `material3-compose`: 50 componentes, busca `chip`, página do Button com a tabela de variantes, playground de 58 × 40 a 272 × 80       |
+| R10.10 a R10.11 | EX1       | A `sdui-backend`: seção de origens do componente, galeria com a tela de exemplo e a leitura pelo agente                                           |
+| R12.12          | EX3       | Aplicar a pasta e adicionar um Box dentro do container (o Box tem slot)                                                                           |
+| R13.1 a R13.12  | EX2       | O `proposta-componentes.zip` com a `material3-compose`, inclusive o tipo que só existe no pacote da proposta                                      |
+| R15.1 a R15.12  | EX3       | O tipo `image` (campo `url`, Escala `Crop`) desenha o reservado, pede consentimento e volta à Privacidade inicial                                 |
+| R8.1b e R8.2    | regressão | Tema escuro e inglês: as janelas tocadas legíveis nos dois temas e sem texto em português no inglês                                               |
+
+**Pontos que o texto dos roteiros deduziu do código e que a rodada precisa confirmar de forma explícita** (diga "confere" ou o que apareceu de fato):
+
+1. **R9.6:** a altura do Row depois do **Arrumar** com os dois Buttons.
+2. **R9.4, R9.7 e R15:** os textos da prévia ("Início", "Salvar") e o reservado da imagem.
+3. **R15.4:** a imagem cortada em cima e embaixo na caixa 160 × 120 com `Crop`.
+4. **R12.12:** o Box (200 × 120) como alvo "Adicionar dentro de Box" no container 200 × 150.
+5. **R3.14:** se a janela de atualização lista o aviso do campo `note`.
+6. **R10.1:** qual biblioteca aparece aberta primeiro; **R10.3:** a tabela de variantes por Estilo.
+
+Na **passada visual**, olhe o **Catálogo** (a página do Button, a galeria), **Especializações** (a lista das 3 camadas) e a janela **Privacidade** nos temas claro e escuro.
+
+**Relato:** o mesmo template, em `docs/history/relato-<data>-exemplos-enxutos.md`; use o código da fase (EX1 a EX3) na coluna **Achado de origem**. Passo cujo **texto do roteiro** está errado e o produto está certo é achado do roteiro: escreva o texto que deveria estar lá. Se algo da lista não puder ser executado, marque "não executado (motivo)".

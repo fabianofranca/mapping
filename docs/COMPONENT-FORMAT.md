@@ -12,7 +12,7 @@ Arquivos de apoio:
 
 Um componente é o **desenho genérico** de um tipo de anotação: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto, caminho, slot, na `formatVersion` 2, `repeat` e, na 3, `image`) cujos atributos podem ser **ligados aos campos** do tipo por expressões. Trocar o valor de um campo redesenha o componente.
 
-- **Um arquivo por componente.** O tipo da especialização só o referencia, com a chave `component` (`"component": "components/m3-button.json"`).
+- **Um arquivo por componente.** O tipo da especialização só o referencia, com a chave `component` (`"component": "components/button.json"`).
 - O caminho é **relativo ao arquivo da especialização**, com `/`, sem `..`, sem `/` no começo e sem unidade de disco, e termina em `.json`.
 - O `id` do componente **não** precisa ser igual ao `id` do tipo que o referencia. Um mesmo arquivo citado por dois tipos gera um aviso do validador da biblioteca.
 - O componente **não declara campos**: eles vêm do tipo. O arquivo só diz como os valores aparecem no desenho (`preview` traz valores de exemplo).
@@ -24,7 +24,7 @@ Um componente é o **desenho genérico** de um tipo de anotação: uma árvore d
 {
   "format": "mapping-component",
   "formatVersion": 1,
-  "id": "m3-button",
+  "id": "button",
   "name": "Button",
   "description": "Botão com rótulo; hug na largura, 40 de altura.",
   "size": { "width": 120, "height": 40 },
@@ -314,7 +314,7 @@ Uma raiz da tela pode ficar **fora do fluxo**, ancorada na tela (a barra de baix
 
 - `margin` (px, padrão 0) é a distância das bordas tocadas pela âncora.
 - Na raiz ancorada, `fill` ocupa a tela **menos a margem nos dois lados**; `hug` usa o conteúdo; px é px.
-- Uma raiz pode ter uma **película** (`scrim`): o tipo de um componente (`m3-scrim`) desenhado por baixo da raiz, cobrindo a tela inteira. A instância dele entra logo antes da raiz, com o id `<id da raiz>#scrim`, com os valores padrão dos campos.
+- Uma raiz pode ter uma **película** (`scrim`): o tipo de um componente (`sdui-scrim`) desenhado por baixo da raiz, cobrindo a tela inteira. A instância dele entra logo antes da raiz, com o id `<id da raiz>#scrim`, com os valores padrão dos campos.
 - Quem declara as raízes, as âncoras e a película é a **origem** da especialização (`origins`, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md)).
 
 ### Caso de prova: o texto de apoio `hug` dentro de coluna `hug`
