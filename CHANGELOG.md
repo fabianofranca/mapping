@@ -4,6 +4,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `etapa` e, antes delas, no histórico do git.
 
+## Foco nas janelas — [Não lançado] (épico `epic/foco-janelas`, PR a definir, MCP 0.12.0, schema v13)
+
+### Corrigido
+
+- Fechar uma janela de ferramenta (Árvore, Camadas, Detalhes, Catálogo e as da janela inferior), pelo X, pelo atalho ou pela faixa, não deixa mais o foco do teclado perdido: ele volta a quem abriu a janela, ou ao botão dela na faixa, ou ao canvas. Trocar de aba da janela inferior também mantém o foco na aba.
+
 ## Planejamento nas issues — [Não lançado] (épico `epic/fluxo-issues`, PR a definir, MCP 0.12.0, schema v13)
 
 ### Alterado

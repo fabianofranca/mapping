@@ -2,7 +2,6 @@ import type { ComponentChildren } from 'preact';
 import { t } from '../i18n';
 import {
   WINDOW_SIDE,
-  hideToolWindow,
   layersWindowHeight,
   resetLayersWindowHeight,
   resetToolWindowSize,
@@ -15,7 +14,7 @@ import {
 } from '../store/toolWindows';
 import { BottomTabs } from './BottomTabs';
 import { IconButton } from './controls';
-import { spaceFor } from './toolWindowLayout';
+import { closeToolWindow, spaceFor } from './toolWindowLayout';
 import { toolWindowMeta } from './toolWindowMeta';
 
 // Janela de ferramenta encaixada (B1 e B2): cabeçalho de 32px com título (ou, na
@@ -67,7 +66,7 @@ export function ToolWindow({ id, actions, stacked = false, children }: ToolWindo
         <IconButton
           icon="close"
           label={t('window.closeWindow', { name: title })}
-          onClick={() => hideToolWindow(id)}
+          onClick={() => closeToolWindow(id)}
         />
       </header>
       <div

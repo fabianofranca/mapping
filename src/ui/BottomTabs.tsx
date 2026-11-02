@@ -1,8 +1,9 @@
 import { t } from '../i18n';
 import { diagnosticsUnseen } from '../store/diagnostics';
-import { showToolWindow, type ToolWindowId } from '../store/toolWindows';
+import type { ToolWindowId } from '../store/toolWindows';
 import { Tabs, type TabItem } from './controls';
 import { useEditor } from './EditorContext';
+import { openToolWindow } from './toolWindowLayout';
 import { toolWindowMeta, windowBadge, windowsOfSide } from './toolWindowMeta';
 
 /**
@@ -31,7 +32,7 @@ export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
     <Tabs
       label={t('window.bottomTabs')}
       value={active}
-      onChange={showToolWindow}
+      onChange={openToolWindow}
       tabs={tabs}
     />
   );

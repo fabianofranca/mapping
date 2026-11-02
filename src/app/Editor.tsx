@@ -125,6 +125,8 @@ export function EditorScreen() {
             <main
               class="canvas-area"
               aria-label={t('editor.canvasLabel')}
+              data-canvas-area
+              tabIndex={-1}
               onDragOver={(e) => {
                 intake.dropHandlers.onDragOver(e);
                 componentDrop.onDragOver(e);
