@@ -133,15 +133,15 @@ Estado: **etapas 1 a 2.5, 3a (servidor MCP, base), 3b (referências de código),
 
 A fase grava no artefato do DS, fora do repositório: o índice (`project/design-system.json`) é lido imediatamente antes e gravado **por último**, numa chamada só, com `lastChange`. Nenhum arquivo do DS é apagado.
 
-- [ ] Triagem: comparar o DS com a `main` pelo mapa da DS1 e fechar, por pendência, o que muda em cada componente, seção, token e ícone
-- [ ] Proposto com componentes: a visão Proposto desenha os componentes criados com a marca de criada e a criação rejeitada vira fantasma pontilhado (candidatos: seção Revisão, `ChangeMark`, `ComponentDrawing`, `ProposalRow`, `ReviewRow`)
-- [ ] Sugestões no campo de texto: `suggestions` e `linkedRef` (candidatos: `TextField`, `KeyValueGrid`, `PropertyGrid`, `RefCell`, `ReferenceField`)
-- [ ] Imagens remotas: nó `image` no componente, faixa de consentimento por origem e aba Privacidade (candidatos: `SettingsDialog`, `Banner`, `ComponentDrawing`)
-- [ ] Biblioteca Material 3: `variants` no `code`, com a definição da anotação e a tabela de variantes no Catálogo (candidatos: `CodeDefinitions`, `CatalogPage`)
-- [ ] Marcação pai: botão **Envolver** no resumo da seleção múltipla e a dica nos nomes cortados (candidatos: `MultiSelectionPanel`, `TreeRow`, `LayerGroup`)
-- [ ] Tokens e ícones conferidos contra `src/theme/tokens.ts` e `src/ui/icons.tsx`; o que faltar entra, o que divergir segue a decisão 7
-- [ ] Contraste conferido nos temas claro e escuro em tudo o que a fase tocar, e a seção Contraste atualizada se alguma regra mudou
-- [ ] `docs/DESIGN-SYSTEM.md`: pendências esvaziadas e uma entrada de histórico de sincronização por etapa (decisão 8)
+- [x] Triagem: comparar o DS com a `main` pelo mapa da DS1 e fechar, por pendência, o que muda em cada componente, seção, token e ícone
+- [x] Proposto com componentes: a visão Proposto desenha os componentes criados com a marca de criada e a criação rejeitada vira fantasma pontilhado (guias de `ComponentDrawing`, `ChangeMark`, `ChangePopover`, `ReviewBar`, `ReviewHeader` e `OtherChanges`, mais as seções `Revisao.md` e `Canvas.md`)
+- [x] Sugestões no campo de texto: `suggestions` e `linkedRef` (`TextField` com preview, `PropertyGrid`, `DataGrid`, `ReferenceField`; o `KeyValueGrid` ganhou o esclarecimento de que a anotação livre não tem lista)
+- [x] Imagens remotas: nó `image` no componente e aba Privacidade (`ComponentDrawing` com preview, `Canvas.md`, `SettingsDialog` com preview)
+- [x] Biblioteca Material 3: `variants` no `code`, com a definição da anotação e a tabela de variantes no Catálogo (`CodeDefinitions` e `CatalogPage`, com preview)
+- [x] Marcação pai: botão **Envolver** no resumo da seleção múltipla e a dica nos nomes cortados (`MultiSelectionPanel` com preview, `LayerGroup` e `Breadcrumbs`; o `TreeRow` já estava correto)
+- [x] Tokens e ícones conferidos contra `src/theme/tokens.ts` e `src/ui/icons.tsx`: os ícones já estavam 1:1; entraram no `tokens.json` o `size-grid-col-min` e seis papéis de controle, e os cinco alias `t-text*` ficaram fora por limite do formato (registrado)
+- [x] Contraste: o texto novo usa só tokens existentes e nenhuma regra de contraste mudou, então a seção `Contraste.md` ficou como estava; a conferência visual dos previews nos dois temas não foi feita e está registrada nas pendências do `docs/DESIGN-SYSTEM.md`
+- [x] `docs/DESIGN-SYSTEM.md`: pendências esvaziadas e uma entrada de histórico de sincronização por etapa (decisão 8)
 - [ ] Fechamento: histórico em `docs/history/PLAN-etapa-sincronia-ds.md`, `CHANGELOG.md`, `CLAUDE.md` e `docs/ROADMAP.md`
 
 ## Etapa — Exemplos enxutos (planejada, épico `epic/exemplos-enxutos`)

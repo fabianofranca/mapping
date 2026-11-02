@@ -139,36 +139,38 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 
 ### Seções
 
-| Seção          | Origem                                                                                                                                               | Estado                                                                                |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `README.md`    | o livro da marca; sem origem única no código                                                                                                         | Autoral.                                                                              |
-| `Atalhos.md`   | `src/app/shortcuts.ts`, `src/app/useEditorShortcuts.ts`, `src/ui/shortcutList.ts`, `src/ui/review/DecisionControl.tsx`, `src/store/toolWindows.ts`   | Em dia.                                                                               |
-| `Canvas.md`    | `src/canvas/theme.ts`, `src/canvas/renderers/`, `src/canvas/reviewMarks.ts`, `src/canvas/viewport.ts`, `src/canvas/input/`, `src/canvas/components/` | Falta a nota do fantasma da criação rejeitada nas duas visões e do componente criado. |
-| `Conceitos.md` | `docs/FORMAT.md` (schema v13), `src/model/` (`hierarchySettle.ts`, `arrows.ts`, `locks.ts`, `componentDrawings.ts`), `docs/PROPOSAL-FORMAT.md`       | Em dia.                                                                               |
-| `Contraste.md` | `src/theme/tokens.ts`, `tests/theme/` (`contrast`, `tokens`, `tokenLiterals`, `canvasLiterals`)                                                      | Valores em dia; as razões não foram recalculadas.                                     |
-| `Layouts.md`   | `src/app/Editor*.tsx`, `src/app/Home.tsx`, `src/app/NarrowWindow.tsx`, `src/ui/toolWindowLayout.ts`, `src/ui/ToolWindow.tsx`, `src/theme/`           | Em dia nas medidas.                                                                   |
-| `Revisao.md`   | `src/ui/review/`, `src/canvas/reviewMarks.ts`, `src/canvas/renderers/review.ts`, `src/store/proposedCatalog.ts`, `src/store/review.ts`               | **Desatualizada** (ver Pendências).                                                   |
+| Seção          | Origem                                                                                                                                               | Estado                                                                             |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `README.md`    | o livro da marca; sem origem única no código                                                                                                         | Autoral.                                                                           |
+| `Atalhos.md`   | `src/app/shortcuts.ts`, `src/app/useEditorShortcuts.ts`, `src/ui/shortcutList.ts`, `src/ui/review/DecisionControl.tsx`, `src/store/toolWindows.ts`   | Em dia.                                                                            |
+| `Canvas.md`    | `src/canvas/theme.ts`, `src/canvas/renderers/`, `src/canvas/reviewMarks.ts`, `src/canvas/viewport.ts`, `src/canvas/input/`, `src/canvas/components/` | Em dia desde 2026-11-02 (fantasma nas duas visões, componente criado, nó `image`). |
+| `Conceitos.md` | `docs/FORMAT.md` (schema v13), `src/model/` (`hierarchySettle.ts`, `arrows.ts`, `locks.ts`, `componentDrawings.ts`), `docs/PROPOSAL-FORMAT.md`       | Em dia.                                                                            |
+| `Contraste.md` | `src/theme/tokens.ts`, `tests/theme/` (`contrast`, `tokens`, `tokenLiterals`, `canvasLiterals`)                                                      | Valores em dia; as razões não foram recalculadas.                                  |
+| `Layouts.md`   | `src/app/Editor*.tsx`, `src/app/Home.tsx`, `src/app/NarrowWindow.tsx`, `src/ui/toolWindowLayout.ts`, `src/ui/ToolWindow.tsx`, `src/theme/`           | Em dia nas medidas.                                                                |
+| `Revisao.md`   | `src/ui/review/`, `src/canvas/reviewMarks.ts`, `src/canvas/renderers/review.ts`, `src/store/proposedCatalog.ts`, `src/store/review.ts`               | Em dia desde 2026-11-02.                                                           |
 
 ### Tokens
 
 Fonte única: `src/theme/tokens.ts` (tema claro e escuro). O canvas lê os tokens por `src/canvas/theme.ts`. O DS guarda a mesma lista em `project/tokens.json`.
 
-Conferido em 2026-11-02 por nome e por valor, nos dois temas: **145 tokens no DS, 146 no código, 145 batem**. Nenhum token do DS falta no código, e nenhum valor divergiu. Sete tokens de cor só diferem na notação do alias (`{x}` no DS, `var(--x)` no código) e resolvem para o mesmo valor.
+Conferido em 2026-11-02 por nome e por valor, nos dois temas: nenhum token do DS falta no código, e **nenhum valor divergiu**. Sete tokens de cor só diferem na notação do alias (`{x}` no DS, `var(--x)` no código) e resolvem para o mesmo valor.
+
+Na mesma data entraram no DS os sete que faltavam: `size-grid-col-min` (`96px`) e os papéis `control-height`, `control-height-sm`, `control-icon`, `control-check`, `row-height` (família `size`) e `control-radius` (família `radius`). Os papéis importam porque o `CLAUDE.md` manda o CSS usar só os `--control-*`, não os tokens crus; como o formato só aceita alias em cor, cada papel entrou com o valor literal e o `usage` diz qual token ele representa.
 
 | Família                            | No DS | No código      |
 | ---------------------------------- | ----- | -------------- |
 | `color` (inclui `cv-*`, `layer-*`) | 57    | 57             |
 | `type` (estilos `t-*`)             | 12    | 12 (+ 5 alias) |
 | `spacing`                          | 8     | 8              |
-| `radius`                           | 6     | 6              |
+| `radius`                           | 7     | 7              |
 | `shadow`                           | 1     | 1              |
-| `size`                             | 37    | 38             |
+| `size`                             | 43    | 43             |
 | `opacity`                          | 8     | 8              |
 | `duration`                         | 6     | 6              |
 | `zIndex`                           | 8     | 8              |
 | `breakpoint`                       | 2     | 2              |
 
-Falta no DS: `size-grid-col-min` (`96px`) e os 11 papéis `control-height`, `control-height-sm`, `control-radius`, `control-icon`, `control-check`, `row-height`, `t-text`, `t-text-small`, `t-text-heading`, `t-text-title` e `t-text-input`. Os papéis importam porque o `CLAUDE.md` manda o CSS usar só os `--control-*`, não os tokens crus.
+Falta no DS só os cinco alias de texto `t-text`, `t-text-small`, `t-text-heading`, `t-text-title` e `t-text-input`, por limite do formato (ver Pendências).
 
 ### Ícones
 
@@ -193,54 +195,52 @@ Composições e lógica sem forma própria (não precisam de componente): `src/u
 
 O que o código já tem e o DS ainda não descreve. O fechamento do épico aplica isto no artefato e esvazia a lista.
 
-### Proposto com componentes (etapa concluída em 2026-10-24)
+### Previews não mostram o estado novo
 
-A visão Proposto da revisão desenha os componentes que a proposta cria, com a marca de criada, e a criação rejeitada virou fantasma pontilhado nas **duas** visões (`src/store/proposedCatalog.ts`, `src/canvas/reviewMarks.ts`).
+A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, mas só acrescentou o estado novo ao preview de seis deles (decisão de escopo do dono). Continuam mostrando o estado antigo os previews de:
 
-- Seção `Revisao.md`: a subseção "Componentes novos na visão Proposto" ainda diz "Aprovado em 24/10/2026, ainda não implementado", e a lista "Para implementar" e a menção a `review.legend.rejected` "(só em Atual)" já se cumpriram — a string não existe mais em `src/`.
-- Seção `Canvas.md`: falta a nota do fantasma nas duas visões e do componente criado desenhado no Proposto.
-- `ComponentDrawing`: o guia repete o "ainda não está implementado".
-- `ChangeMark`, `ChangePopover`, `ReviewBar`, `ReviewHeader`, `OtherChanges`: nenhum diz que a visão Proposto desenha os componentes criados.
+- `ChangeMark`, `ChangePopover`, `ReviewBar`, `ReviewHeader`, `OtherChanges`: a visão Proposto desenha os componentes criados e a criação rejeitada vira fantasma nas duas visões. Em boa parte deles a mudança é comportamento do canvas, que o preview não desenha — confira caso a caso se vale mexer.
+- `PropertyGrid`, `KeyValueGrid`, `DataGrid`, `ReferenceField`: o vocabulário sugerido do campo `string` (o preview do `TextField` já o mostra).
+- `LayerGroup`, `Breadcrumbs`: a dica (`title`) no nome cortado.
 
-### Sugestões no campo de texto (etapa concluída em 2026-10-29)
+### Classes que faltam no `bundle.css`
 
-Um campo ou coluna `string` da especialização oferece vocabulário sugerido ao digitar (`suggestions`, que não restringe o valor) e, com `linkedRef`, as declarações que um `ref` irmão aceita, gravando texto e `ref` juntos numa entrada do desfazer (`src/ui/suggestions.ts`, `src/ui/CommitInput.tsx`, `src/ui/linkedRef.ts`, `src/ui/FieldEditors.tsx`).
+Os previews de `TextField`, `SettingsDialog` e `CatalogPage` declaram no próprio `<style>` classes que a app tem e o `bundle.css` do DS não: `.suggestions`, `.suggestion`, `.suggestion-label`, `.suggestion-detail` (na app, em `src/theme/editor.css`), `.privacy-*` (em `src/theme/layout.css`) e `.catalog-variants-caption`. Funciona, mas o certo é o bundle ganhar essas classes quando for regerado, e os previews pararem de declará-las.
 
-- `TextField`, `PropertyGrid`, `KeyValueGrid`, `DataGrid`, `ReferenceField`: nenhum guia cita o vocabulário sugerido.
+### Alias de texto fora do `tokens.json`
 
-### Imagens remotas (etapa concluída em 2026-10-31)
+Os cinco papéis de texto do código não entraram no DS: a família `type` do formato só aceita `fonts`, `families` e `groups.styles`, com valores reais de fonte, e não tem onde guardar um alias de estilo. Registrá-los como estilos duplicados poluiria a Typography. A correspondência, de `src/theme/tokens.ts`:
 
-Um componente mostra imagem de uma URL `https:` no canvas (nó `image`, `src` ligado a campo `string`), com política de URL, consentimento por origem e interruptores de Privacidade.
-
-- `ComponentDrawing`: o guia descreve só o reservado de imagem e o `slot`, sem o nó `image`, o consentimento e o reservado enquanto a origem não é liberada (`src/canvas/components/renderScene.ts`, `imageLoader.ts`, `remoteImages.ts`).
-- `SettingsDialog`: o guia não tem a seção Privacidade (origens permitidas com Revogar e os quatro interruptores de risco, desligados por padrão: qualquer origem, `http`, rede local, servidor sem CORS; `src/ui/PrivacySettings.tsx`, `src/store/imagePermissions.ts`).
-
-### Biblioteca Material 3 (etapa concluída em 2026-11-01)
-
-O `code` de uma plataforma ganhou `variants`: um campo `enum` do tipo escolhe a variante, que troca o símbolo, o arquivo e as notas (`src/model/codeVariants.ts`, `resolveCode`).
-
-- `CodeDefinitions`: o guia não lista a prop `values` nem diz que a linha mostra o arquivo e o símbolo da variante escolhida.
-- `CatalogPage`: o guia não cita a tabela de variantes (`VariantsTable`, abaixo do `code` da plataforma, com legenda).
-
-### Marcação pai (épico aberto, `epic/marcacao-pai`)
-
-- `MultiSelectionPanel`: falta o botão **Envolver**, que cria uma marcação pai em volta da seleção, com a dica quando desabilitado (`src/model/multiSelection.ts`, `src/ui/MultiSelectionPanel.tsx`).
-- `TreeRow`, `LayerGroup`: falta a dica (`title`) nos nomes cortados com reticências.
-
-### Tokens
-
-- Os 11 papéis `control-*`, `row-height` e `t-text*`, mais `size-grid-col-min`, não estão em `tokens.json`.
+| Papel            | Aponta para |
+| ---------------- | ----------- |
+| `t-text`         | `t-body`    |
+| `t-text-small`   | `t-small`   |
+| `t-text-heading` | `t-heading` |
+| `t-text-title`   | `t-title`   |
+| `t-text-input`   | `t-body`    |
 
 ### A conferir
 
+- **`}` sobrando no `<style>` de preview.** Achado e corrigido em `MultiSelectionPanel` e `CodeDefinitions`, nos dois no fim do bloco de regras de hover, que parece copiado entre previews. Os outros previews não foram varridos: vale um passe conferindo o balanceamento de chaves em todos.
+- **Altura dos cartões.** Os `height=` dos seis previews alterados em 2026-11-02 foram estimados, não vistos num navegador: `TextField` 710 → 1010, `SettingsDialog` 2800 → 6000, `CodeDefinitions` 230 → 640, `CatalogPage` 1800 → 2300, `MultiSelectionPanel` 662 → 860, `ComponentDrawing` 620 (sem mudança). Confira se algum cartão corta.
+- **Contraste.** Os previews alterados não foram vistos num navegador nos dois temas; o texto novo usa os tokens existentes, mas a conferência visual não foi feita.
 - `ReviewHeader`: o guia descreve "Aceitar remoção" e "+ N anotações criadas"; o comportamento não foi confirmado linha a linha contra `ReviewHeader.tsx`.
 - `Contraste.md`: as razões de contraste não foram recalculadas, só os valores dos tokens.
 - `Notice`: o guia diz que `.notice-error` e `.notice-success` não têm uso na app; não conferido no CSS.
+- `Revogar` uma origem: o guia do `SettingsDialog` diz que o próximo uso volta a pedir consentimento. `revokeOrigin` só tira a origem da lista, e o resto é inferência — confirme contra `src/store/imagePermissions.ts`.
 
 ## Histórico de sincronização
 
-Uma entrada por épico que gravou no DS: data do merge, épico, e o que mudou.
+Uma entrada por épico que gravou no DS: data, épico, e o que mudou.
 
-| Data | Épico | O que mudou no DS                                                                                                                                   |
-| ---- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| —    | —     | Nenhuma sincronização registrada desde a criação deste arquivo. A última alteração do artefato antes dele é de 2026-10-24 (`lastChange` do índice). |
+| Data       | Épico               | O que mudou no DS                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-02 | `epic/sincronia-ds` | Primeira sincronização pelo processo. Versões 14 (conteúdo) e 15 (índice) do artefato. **Proposto com componentes:** `Revisao.md` e `Canvas.md` passaram ao presente (saíram "ainda não implementado" e a lista "Para implementar"), e `ComponentDrawing`, `ChangeMark`, `ChangePopover`, `ReviewBar`, `ReviewHeader` e `OtherChanges` ganharam a marca de criada e o fantasma nas duas visões. **Sugestões no campo:** `TextField` ganhou as seções "Sugestões" e "Estados da lista" e o preview ganhou três cartões; `PropertyGrid`, `DataGrid` e `ReferenceField` ganharam o vocabulário sugerido e o `linkedRef`. **Imagens remotas:** `ComponentDrawing` e `Canvas.md` ganharam o nó `image`; `SettingsDialog` ganhou a seção Privacidade, com as quatro chaves e a lista de origens. **Material 3:** `CodeDefinitions` ganhou a prop `values` e a resolução da variante; `CatalogPage` ganhou a tabela de variantes. **Marcação pai:** `MultiSelectionPanel` ganhou o botão Envolver; `LayerGroup` e `Breadcrumbs` ganharam a dica no nome cortado. **Tokens:** entraram `size-grid-col-min` e os papéis `control-height`, `control-height-sm`, `control-radius`, `control-icon`, `control-check` e `row-height`. |
+
+### Correções do próprio registro
+
+A sincronia de 2026-11-02 achou três erros na lista de pendências que a DS1 montou, todos já corrigidos acima:
+
+- A dica (`title`) no nome cortado foi atribuída ao `TreeRow`, que já estava correto (lá só a linha da seta tem `title`). O componente certo é o `Breadcrumbs`, o caminho acima do canvas.
+- O `KeyValueGrid` foi listado como afetado pelo vocabulário sugerido. As células de chave e valor da anotação livre **não** têm lista: o vocabulário é dos campos e colunas `string` da especialização. O guia ganhou esse esclarecimento.
+- A pendência dizia que a string `review.legend.rejected` não existia mais em `src/`. A chave existe (`src/i18n/review.ts`); o que saiu do texto dela foi o "(só em Atual)".
