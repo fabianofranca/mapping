@@ -437,6 +437,49 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
     });
 
+    // Etapa AC2: fechar o aviso sem remover devolve o foco ao Abrir da linha de origem,
+    // não ao da primeira linha.
+    describe.each([
+      [
+        'Esc',
+        async () => {
+          // O jsdom não traduz a tecla em `cancel`: dispara o evento que o navegador envia.
+          document
+            .querySelector('dialog')
+            ?.dispatchEvent(new Event('cancel', { cancelable: true }));
+        },
+      ],
+      [
+        'Cancelar',
+        async (u: ReturnType<typeof userEvent.setup>) =>
+          u.click(
+            within(document.querySelector('dialog') as HTMLElement).getByRole('button', {
+              name: t('common.cancel'),
+              hidden: true,
+            }),
+          ),
+      ],
+    ])('fechar "Pasta indisponível" com %s', (_name, close) => {
+      it('devolve o foco ao Abrir da linha que não é a primeira', async () => {
+        recentProjects.value = [...recentProjects.value.slice(1), folder];
+        // No navegador, o Abrir fica desabilitado enquanto a pasta abre e perde o foco
+        // (o jsdom não faz isso): quando o aviso abre, quem abriu já é o `body`.
+        controller.openRecentFolder.mockImplementation(async () => {
+          (document.activeElement as HTMLElement | null)?.blur();
+          return ok({ kind: 'unavailable', reason: 'missing' });
+        });
+        render(<Home />);
+        const user = userEvent.setup();
+        const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
+        expect(rows[rows.length - 1]?.textContent).toContain('Principal');
+        await user.click(openOf(/Principal/));
+        await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
+        await close(user);
+        await waitFor(() => expect(document.querySelector('dialog')).toBeNull());
+        await waitFor(() => expect(document.activeElement).toBe(openOf(/Principal/)));
+      });
+    });
+
     // Etapa 8 (8.3), achado F2: com a exclusão ainda em curso, o retorno do diálogo punha o
     // foco num contêiner (a busca) e depois o `refocusRow` da Home o levava à linha: dois
     // donos. Agora o diálogo fecha depois da ação e o foco vai direto à linha que ficou.

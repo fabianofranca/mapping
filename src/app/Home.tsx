@@ -143,6 +143,9 @@ export function Home() {
       await run(() => openLocalProject(project.id));
       return;
     }
+    // A linha de origem, para o aviso devolver o foco a ela ao fechar sem remover: o Abrir
+    // fica desabilitado enquanto a pasta abre e perde o foco, então o diálogo não o guarda.
+    removedAt.current = recentRowIndex(listSection.current, `folder:${project.id}`);
     // Direto no clique: o navegador só mostra o pedido de permissão dentro do gesto.
     const result = await run(() =>
       reopen.track((trace) => openRecentFolder(project.id, trace)),
