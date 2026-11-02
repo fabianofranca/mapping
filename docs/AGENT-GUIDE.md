@@ -248,7 +248,7 @@ Regras:
 
 - **O servidor nunca arruma.** Os retângulos dos filhos são os que você informou. Quem recalcula as posições pelo `layout` do slot é a pessoa, com **Arrumar** na app. Posicione as filhas do jeito mais próximo do que o `layout` produziria e diga na descrição da proposta que a pessoa pode usar Arrumar.
 - **Componentes de primeiro nível sem `rect` nascem todos no centro do container, sobrepostos.** Para preencher o container, crie um componente com slot `Column` cobrindo-o e ponha os componentes dentro dele, sem `rect` (entram um depois do outro, no eixo do layout), ou passe o `rect` de cada um.
-- **Respeite o `minSize`.** Um `rect` menor que o `minSize` do componente falha com `rect-too-small` (a mensagem traz o mínimo); vale também no `update_marking` com `rect`.
+- **Respeite o `minSize`.** Um `rect` menor que o `minSize` do componente falha com `rect-too-small`; o `detail` diz o tamanho recebido e o mínimo que valeu (`recebido 20×20 px; mínimo 48×40 px (do componente)`), o `minSize` vem no erro e a `hint` manda aumentar `width`/`height`. Vale também no `update_marking` com `rect` e na troca de `container`. Sem componente, o mínimo é o de qualquer marcação (8×8 px) e o `detail` também traz o recebido.
 - **Não grave nada de desenho.** Cores, formas e textos do componente vêm do pacote da biblioteca e dos `values`; o projeto guarda só a marcação, o `rect` e a anotação tipada.
 - **Tipo sem componente** (ou biblioteca não aplicada na app) é uma marcação comum: `rect` é obrigatório e nada é desenhado.
 - Uma biblioteca aplicada por proposta (`apply_specialization` com a **pasta** do pacote) traz os componentes como a aplicada pela app; uma especialização v1 a v3 aplicada por arquivo não tem componentes.
@@ -521,7 +521,7 @@ O campo `codeRef` (onde a instância foi implementada) saiu do formato: as respo
 
 ## Erros
 
-As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}`. Num lote (`plan_changes`, `propose_changes`), o erro de cada operação vem em `errors`, com o mesmo `code`, sem parar as outras. A lista abaixo é **completa** para os códigos próprios do servidor (o registro fica em `mcp/errors.ts`, e um teste confere que todo código dele está aqui). Os demais são **regras do modelo** (`locked`, `rect-out-of-image`, `owner-required`, `duplicate-key`…): a `message` explica o que corrigir.
+As falhas voltam como `isError` com um JSON `{"error": {"code", "message", …}}`. Num lote (`plan_changes`, `propose_changes`), o erro de cada operação vem em `errors`, com o mesmo `code`, sem parar as outras. A lista abaixo é **completa** para os códigos próprios do servidor (o registro fica em `mcp/errors.ts`, e um teste confere que todo código dele está aqui). Os demais são **regras do modelo** (`locked`, `rect-out-of-image`, `owner-required`, `duplicate-key`…): a `message` explica o que corrigir. Alguns trazem também `detail` (o fato concreto) e `hint` (o próximo passo): `rect-too-small` diz o tamanho recebido e o mínimo que valeu (`recebido 5×3 px; mínimo 8×8 px`; com componente, o `minSize` dele) e manda aumentar `width`/`height`; `image-overlap` diz a referência do **outro** container com que há sobreposição (`sobrepõe o container mapping://…`) e manda mudar `x`/`y`/`scale` ou o tamanho do container, ou mover o outro antes. O `detail` vem inteiro, mesmo com `: ` dentro.
 
 **Projetos, raízes e caminhos**
 

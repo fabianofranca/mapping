@@ -1,7 +1,33 @@
+import { fail, type RectTooSmallData } from './errors';
 import type { ArrowPoint, Placement, ProjectContainer, Rect } from './types';
 
 /** Tamanho mínimo de cada lado de uma marcação, em pixels da imagem. */
 export const MIN_MARKING_SIZE = 8;
+
+/**
+ * Falha com `rect-too-small` se algum lado do retângulo ficar abaixo do mínimo: o de qualquer
+ * marcação (`MIN_MARKING_SIZE`) ou, quando maior, o `minSize` do componente. O `data` do erro diz
+ * o tamanho recebido, o mínimo que valeu (o maior de cada lado) e de onde ele veio.
+ */
+export function checkRectSize(
+  rect: Pick<Rect, 'width' | 'height'>,
+  componentMin?: { readonly width: number; readonly height: number },
+): void {
+  const min = {
+    width: Math.max(MIN_MARKING_SIZE, componentMin?.width ?? 0),
+    height: Math.max(MIN_MARKING_SIZE, componentMin?.height ?? 0),
+  };
+  if (rect.width >= min.width && rect.height >= min.height) return;
+  const data: RectTooSmallData = {
+    received: { width: rect.width, height: rect.height },
+    min,
+    source:
+      min.width > MIN_MARKING_SIZE || min.height > MIN_MARKING_SIZE
+        ? 'component'
+        : 'marking',
+  };
+  fail('rect-too-small', undefined, data);
+}
 
 /** Tolerância para comparar coordenadas do canvas (ponto flutuante). */
 const EPSILON = 1e-6;

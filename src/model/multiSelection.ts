@@ -4,6 +4,7 @@ import {
   MIN_MARKING_SIZE,
   area,
   boundingBox,
+  checkRectSize,
   containsRect,
   imageCanvasRect,
   imagePixelRect,
@@ -201,12 +202,13 @@ export function moveItems(
   if (placements.size > 0) {
     const fixed = p.containers
       .filter((c) => !placements.has(c.id))
-      .map((c) => imageCanvasRect(c, c.placement));
+      .map((c) => ({ id: c.id, rect: imageCanvasRect(c, c.placement) }));
     for (const [id, placement] of placements) {
       const container = index.containers.get(id);
       if (!container) continue;
       const moved = imageCanvasRect(container, placement);
-      if (fixed.some((other) => rectsOverlap(moved, other))) fail('image-overlap', id);
+      const other = fixed.find((f) => rectsOverlap(moved, f.rect));
+      if (other) fail('image-overlap', undefined, { containerId: other.id });
     }
   }
 
@@ -646,9 +648,7 @@ export function wrapItems(
   if (!target) fail('invalid-parent');
   const { rect, containerId, enclosingIndex } = target;
   if (!isIntegerRect(rect)) fail('rect-not-integer');
-  if (rect.width < MIN_MARKING_SIZE || rect.height < MIN_MARKING_SIZE) {
-    fail('rect-too-small');
-  }
+  checkRectSize(rect);
 
   const { markings } = wrappable(p, args.items);
   const chosen = new Set(markings.map((m) => m.id));

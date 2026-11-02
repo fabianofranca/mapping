@@ -59,16 +59,41 @@ export type ModelErrorCode =
   // Componentes (etapa Biblioteca)
   | 'not-arrangeable';
 
+/**
+ * Fatos estruturados que alguns erros carregam (objeto simples e serializável). O modelo guarda
+ * fatos (tamanho recebido, mínimo, id de outro container); quem apresenta o erro (UI, MCP) escolhe
+ * o texto e troca ids por referências.
+ */
+export type ModelErrorData = Readonly<Record<string, unknown>>;
+
+/** `data` de `rect-too-small`: o tamanho recebido, o mínimo que valeu e de onde ele veio. */
+export type RectTooSmallData = {
+  readonly received: { readonly width: number; readonly height: number };
+  readonly min: { readonly width: number; readonly height: number };
+  /** `marking`: o mínimo de qualquer marcação; `component`: o `minSize` do componente. */
+  readonly source: 'marking' | 'component';
+};
+
+/** `data` de `image-overlap`: o container com que há sobreposição (o outro, não o que se move). */
+export type ImageOverlapData = {
+  readonly containerId: string;
+};
+
 export class ModelError extends Error {
   constructor(
     readonly code: ModelErrorCode,
     message?: string,
+    readonly data?: ModelErrorData,
   ) {
     super(message ? `${code}: ${message}` : code);
     this.name = 'ModelError';
   }
 }
 
-export function fail(code: ModelErrorCode, message?: string): never {
-  throw new ModelError(code, message);
+export function fail(
+  code: ModelErrorCode,
+  message?: string,
+  data?: ModelErrorData,
+): never {
+  throw new ModelError(code, message, data);
 }
