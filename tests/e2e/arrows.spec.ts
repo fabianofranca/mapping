@@ -230,7 +230,7 @@ test('arrastar o meio do traço cria um ponto de passagem', async ({ page }) => 
   await expect.poll(async () => (await arrowsOf(page))[0]?.points.length).toBe(1);
 });
 
-test('Ligar a… nos Detalhes cria a seta curva sem arrastar (o caminho do agente do Cowork)', async ({
+test('Ligar a… nos Detalhes cria a seta curva sem arrastar (o caminho do agente testador)', async ({
   page,
 }) => {
   await createProject(page, 'Setas');
