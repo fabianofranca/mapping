@@ -163,6 +163,6 @@ Nenhuma observada.
 ## Tratamento dos achados (EX4)
 
 - **A1:** corrigido. `reportRemoteImageIssue` (`src/store/diagnostics.ts`) guardava só a primeira razão por URL; agora a linha troca a razão no lugar (ex.: "endereço não aceito" vira "não carregou"), sem duplicar. Testes em `tests/components/DiagnosticsView.test.tsx`.
-- **A2:** sem mudança no produto. Shift+Enter abre o campo de várias linhas por desenho e grava a quebra; a extensão do navegador provavelmente mandou o Enter com `\n` no texto. O roteiro R15 passou a mandar confirmar com a tecla Enter e conferir no disco que o `url` não termina em `\n`. Se aparecer com a tecla Enter de verdade, vira achado de produto.
+- **A2:** (na hora; o reteste de 2026-11-02 mostrou que era bug de produto e o corrigiu, ver `relato-2026-11-02-exemplos-enxutos-reteste.md`) sem mudança no produto. Shift+Enter abre o campo de várias linhas por desenho e grava a quebra; a extensão do navegador provavelmente mandou o Enter com `\n` no texto. O roteiro R15 passou a mandar confirmar com a tecla Enter e conferir no disco que o `url` não termina em `\n`. Se aparecer com a tecla Enter de verdade, vira achado de produto.
 - **Textos dos roteiros:** todos os itens da lista "Roteiro" acima foram corrigidos no `docs/TESTING.md`.
 - **Pendentes sem dono:** R1.7–R1.24 e R9.13–R9.20 ficam fora da lista desta etapa; R8.1b depende de dado do dono e segue como "não executado (precisa do dono)".

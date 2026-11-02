@@ -94,7 +94,7 @@
 
 **Coordenador:** Sonnet. **Esforço:** medium; subagentes Sonnet medium, Haiku low.
 
-- [x] Rodada dirigida do Cowork (R3, R9, R10, R12, R13 e R15) e o relato entre os documentos da etapa ([`relato-2026-11-01-exemplos-enxutos.md`](relato-2026-11-01-exemplos-enxutos.md): 68 ✅, 4 🟡, 4 ⏭️, 2 achados de produto); achados corrigidos: A1 (Diagnóstico de imagem remota troca a razão no lugar) e os textos dos roteiros; A2 (`\n` no `url`) é Shift+Enter por desenho, o R15 passou a conferir no disco
+- [x] Rodada dirigida do Cowork (R3, R9, R10, R12, R13 e R15) e o relato entre os documentos da etapa ([`relato-2026-11-01-exemplos-enxutos.md`](relato-2026-11-01-exemplos-enxutos.md): 68 ✅, 4 🟡, 4 ⏭️, 2 achados de produto); achados corrigidos: A1 (Diagnóstico de imagem remota troca a razão no lugar) e os textos dos roteiros; A2 (`\n` no `url`), lido na hora como Shift+Enter por desenho, era bug de produto (campo de texto longo que vira de várias linhas): o reteste mostrou a causa e a quebra do fim deixou de ser gravada
 - [x] Fechamento: histórico em `docs/history/PLAN-etapa-exemplos-enxutos.md`, `CHANGELOG.md`, `CLAUDE.md` e `docs/ROADMAP.md`
 - [x] Validação: `npm run lint && npm run typecheck && npm test && npm run build && npm run build:mcp`
 
