@@ -1,9 +1,9 @@
 import { t } from '../../i18n';
-import { showToolWindow } from '../../store/toolWindows';
 import { showToast } from '../../store/ui';
 import type { ProposalActionError } from '../../store/proposalActions';
 import { useEditor } from '../EditorContext';
 import { proposalErrorMessage } from '../labels';
+import { openToolWindow } from '../toolWindowLayout';
 
 /** Quanto tempo um aviso de erro da revisão fica à vista. */
 export const REVIEW_ERROR_MS = 6000;
@@ -31,8 +31,8 @@ export function useReviewCommands(): ReviewCommands {
           report(result.error === 'unknown-proposal' ? 'unknown-proposal' : 'no-project');
         return false;
       }
-      showToolWindow('details');
-      showToolWindow('proposals');
+      openToolWindow('details');
+      openToolWindow('proposals');
       // Volta ao último item visto: mostra-o no canvas depois do desenho seguinte.
       const center = () => canvas.current?.centerSelection();
       if (typeof requestAnimationFrame === 'function') requestAnimationFrame(center);
