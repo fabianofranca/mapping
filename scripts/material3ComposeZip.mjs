@@ -6,14 +6,14 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { exampleZip } from './exampleProject.mjs';
+import { folderZip } from './exampleProject.mjs';
 
 export const MATERIAL3_COMPOSE_DIR = 'libraries/material3-compose';
 export const MATERIAL3_COMPOSE_ZIP = 'examples/material3-compose.zip';
 
 /** Os bytes do zip da biblioteca (mesma data fixa nas entradas: mesmo conteúdo, mesmos bytes). */
 export function material3ComposeZip(root = MATERIAL3_COMPOSE_DIR) {
-  return exampleZip(root);
+  return folderZip(root);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

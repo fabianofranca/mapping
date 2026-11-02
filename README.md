@@ -36,17 +36,17 @@ npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a 
 npm run dev:viewer # demonstração do visualizador embutível num hospedeiro React (viewer/README.md)
 npm run build:viewer # gera dist-viewer/ (visualizador embutível: núcleo, invólucro React e tipos)
 npm run build:guia   # regera public/guia/index.html (o npm run build já faz)
-npm run build:example # regera examples/exemplo-completo.zip a partir da pasta
+npm run build:example # regera examples/exemplo-completo.zip e materializa examples/exemplo-completo/specs/
 npm run build:proposal-components # regera examples/proposta-componentes.zip (proposta com componentes novos, roteiro R13)
 npm run build:suggestions-kotlin # regera examples/sugestoes-kotlin.zip (biblioteca Kotlin com duas data classes, roteiro R14)
 ```
 
 ## Guia interativo e projeto de exemplo
 
-Baixe o `examples/exemplo-completo.zip` do repositório e abra-o pelo **Abrir zip**, na tela inicial: é uma cópia do projeto `examples/exemplo-completo/` (4 telas, 31 marcações, 41 anotações, 8 camadas, 3 especializações e uma proposta de alteração para revisar), O **Guia interativo** (na lateral, e na **Ajuda**) abre numa aba nova o passeio de 12 passos sobre esse mesmo projeto, para seguir lado a lado com a app. O guia é uma página estática (`public/guia/index.html`, publicada em `guia/` ao lado do `index.html`), gerada do projeto de exemplo, no tema da app, e fica no cache do service worker.
+Baixe o `examples/exemplo-completo.zip` do repositório e abra-o pelo **Abrir zip**, na tela inicial: é uma cópia do projeto `examples/exemplo-completo/` (para abrir a pasta com **Abrir pasta**, rode `npm run build:example` antes: o `specs/` dela é gerado das fontes e não vai no git; 4 telas, 31 marcações, 41 anotações, 8 camadas, 3 especializações e uma proposta de alteração para revisar), O **Guia interativo** (na lateral, e na **Ajuda**) abre numa aba nova o passeio de 12 passos sobre esse mesmo projeto, para seguir lado a lado com a app. O guia é uma página estática (`public/guia/index.html`, publicada em `guia/` ao lado do `index.html`), gerada do projeto de exemplo, no tema da app, e fica no cache do service worker.
 
 ```bash
-npm run build:example   # examples/exemplo-completo.zip, da pasta examples/exemplo-completo/
+npm run build:example   # examples/exemplo-completo.zip e specs/ da pasta examples/exemplo-completo/ (materializado das fontes)
 npm run build:guia      # public/guia/index.html, do template e do exemplo
 ```
 
