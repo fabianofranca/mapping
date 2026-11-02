@@ -637,6 +637,49 @@ describe('docs/TESTING-NUVEM.md (prompt do testador da nuvem)', () => {
     for (const path of ['README.md', 'CLAUDE.md', 'docs/TESTING.md']) {
       expect(read(path), path).toContain('TESTING-NUVEM.md');
     }
-    expect(read('CLAUDE.md')).toContain('Rodada dirigida na nuvem');
+    expect(read('CLAUDE.md')).toContain('Fluxo automatizado');
+    expect(read('CLAUDE.md')).toContain('docs/FLOW.md');
+  });
+});
+
+describe('docs/FLOW.md (mensagens do fluxo automatizado)', () => {
+  const flow = read('docs/FLOW.md');
+
+  it('o arquivo existe', () => {
+    expect(existsSync('docs/FLOW.md')).toBe(true);
+  });
+
+  it('tem as três mensagens do dono e o "pode mesclar"', () => {
+    expect(flow).toContain('Crie uma issue roadmap:');
+    expect(flow).toContain('Detalhe a issue #<roadmap> como etapa');
+    expect(flow).toContain('Implemente a etapa #<etapa> no fluxo automatizado');
+    expect(flow).toContain('pode mesclar');
+  });
+
+  it('a mensagem da fase aponta o coordenador e o acompanhamento do PR', () => {
+    expect(flow).toContain('Coordenador: `<id da sessão do orquestrador>`');
+    expect(flow).toContain('subscribe_pr_activity');
+    expect(flow).toContain('send_message');
+    expect(flow).toContain('Parte de #');
+  });
+
+  it('a mensagem do testador segue o formato do TESTING-NUVEM e a notificação cita PushNotification', () => {
+    expect(flow).toMatch(
+      /Leia `docs\/TESTING-NUVEM\.md` e execute no modo dirigido: [^\n]+\. Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+\. Coordenador: `/,
+    );
+    expect(flow).toContain('PushNotification');
+  });
+
+  it('o CLAUDE.md descreve o fluxo e não tem mais a seção antiga', () => {
+    const claude = read('CLAUDE.md');
+    for (const term of [
+      'Orquestrador',
+      'PushNotification',
+      'pode mesclar',
+      'send_later',
+    ]) {
+      expect(claude, term).toContain(term);
+    }
+    expect(claude).not.toContain('Rodada dirigida na nuvem');
   });
 });

@@ -16,6 +16,8 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 - O laboratório de componentes saiu, com o `dist/lab/` publicado ao lado da app e os scripts `dev:lab`, `dev:lab:react` e `build:lab`.
 - O testador da nuvem (sessão do Claude Code no ambiente "Mapping - testes") é o único agente testador: o prompt do Cowork (`docs/TESTING-COWORK.md`) saiu, o `docs/TESTING-NUVEM.md` passou a valer sozinho, junto com o `docs/TESTING.md`, e a cobertura de Windows/Edge por agente deixou de existir. Os roteiros sob demanda continuam manuais, feitos pelo dono.
 - O relato de uma rodada de teste passa a ser um comentário na sub-issue da fase testada (em partes, se passar de 65 mil caracteres), com aviso ao coordenador; não há mais PR de relato.
+- Fluxo automatizado com três chats (roadmap, detalhamento e implementação): o chat de implementação orquestra uma sessão por fase, e cada uma mescla o próprio PR no épico com o CI verde; depois chama o testador, corrige uma vez se houver ❌ e só chama o dono para confirmar o merge do épico na `main`. As mensagens prontas estão em `docs/FLOW.md`.
+- A tabela de modelos da etapa ganha a linha Orquestrador (padrão Sonnet).
 - Nada muda na app nem no servidor MCP.
 
 ## Sincronia do design system — 2026-11-02 (épico `epic/sincronia-ds`, PR #287, MCP sem mudança, schema v13)
