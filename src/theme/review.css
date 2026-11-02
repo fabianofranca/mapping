@@ -792,6 +792,11 @@
   border-top: 1px solid var(--color-border);
 }
 
+/* Janela estreita: só os três atalhos principais, numa linha (sem quebra). */
+.review-footer-compact {
+  flex-wrap: nowrap;
+}
+
 .review-footer span {
   display: inline-flex;
   white-space: nowrap;

@@ -2,6 +2,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import {
   addImage,
   canvasPoint,
+  createProject,
   drawMarking,
   selectedRect,
   type MappingJson,
@@ -472,6 +473,48 @@ test.describe('recentes de pasta', () => {
     await page.reload();
     await expect(page.getByRole('heading', { name: 'Começar' })).toBeVisible();
     await expect(page.getByRole('row').filter({ hasText: 'Privada' })).toHaveCount(0);
+  });
+
+  test('a 900 px a tabela não quebra selo e botões, não rola e a borda é contínua', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 900, height: 698 });
+    await stubFolderPicker(page);
+    await createProject(page, 'Local');
+    await closeProject(page);
+    await seedRecentFolder(page, 'Guardada', 'pasta-guardada');
+    await page.reload();
+    const rows = page.locator('tr[data-recent]');
+    await expect(rows).toHaveCount(2);
+    const table = page.locator('.project-table');
+    expect(await table.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      ),
+    ).toBe(true);
+    const smHeight = (await page.locator('.button-sm').first().boundingBox())!.height;
+    for (const row of await rows.all()) {
+      for (const el of await row.locator('.badge, .button').all()) {
+        const box = (await el.boundingBox())!;
+        expect(box.height).toBeLessThanOrEqual(smHeight + 1);
+        expect(await el.evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
+      }
+    }
+    // Fora da última linha, todas as células, a das ações inclusive, têm a borda inferior.
+    const widths = await rows
+      .first()
+      .locator('th, td')
+      .evaluateAll((cells) => cells.map((c) => getComputedStyle(c).borderBottomWidth));
+    expect(widths.every((w) => parseFloat(w) > 0)).toBe(true);
+    // E a base de cada célula coincide com a da linha: a borda é uma linha contínua.
+    for (const row of await rows.all()) {
+      const bottoms = await row
+        .locator('th, td')
+        .evaluateAll((cells) => cells.map((c) => c.getBoundingClientRect().bottom));
+      expect(Math.max(...bottoms) - Math.min(...bottoms)).toBeLessThanOrEqual(0.5);
+    }
   });
 
   test('a lista traz a pasta guardada; sem acesso, o aviso tem Localizar pasta… e Remover da lista', async ({
