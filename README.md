@@ -23,7 +23,7 @@ Seus projetos e imagens **ficam no seu dispositivo** (na pasta que você escolhe
 - o único contato com a rede é o do **navegador** ao baixar a app (e o service worker ao procurar versão nova) a partir de onde ela está hospedada; seus dados nunca participam disso;
 - o que sai da app é o que **você** manda: o `.zip` exportado, baixado ou compartilhado pela folha de compartilhamento do sistema.
 
-A política é gerada no build, e o build falha se ela faltar ou não bater com o conteúdo do arquivo; testes Playwright confirmam o bloqueio. Detalhes e motivos em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#content-security-policy-etapa-24).
+A política é gerada no build, e o build falha se ela faltar ou não bater com o conteúdo do arquivo; testes Playwright confirmam o bloqueio. Detalhes e motivos em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#content-security-policy).
 
 ## Como rodar
 
@@ -32,9 +32,8 @@ Requer Node 22 (fixado em `.nvmrc` e em `engines` no `package.json`; com nvm, `n
 ```bash
 npm ci
 npm run dev        # servidor de desenvolvimento (Vite)
-npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a CSP, e o laboratório em dist/lab/
-npm run dev:lab    # laboratório de componentes (lab/README.md), à parte da app
-npm run dev:lab:react # demonstração do visualizador embutível em React (lab/README.md)
+npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a CSP
+npm run dev:viewer # demonstração do visualizador embutível num hospedeiro React (viewer/README.md)
 npm run build:viewer # gera dist-viewer/ (visualizador embutível: núcleo, invólucro React e tipos)
 npm run build:guia   # regera public/guia/index.html (o npm run build já faz)
 npm run build:example # regera examples/exemplo-completo.zip a partir da pasta
@@ -117,10 +116,8 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 - [`examples/workspace/`](examples/workspace/): esqueleto de uma pasta que centraliza projetos Mapping, pronta para qualquer agente MCP (servidor, raízes, skill e `AGENTS.md` por caminho relativo; `setup.sh` baixa a release).
 - [`docs/COMPONENT-FORMAT.md`](docs/COMPONENT-FORMAT.md): formato do arquivo de componente (`mapping-component`): nós, dimensionamento, expressões e avisos do motor; [`docs/component.schema.json`](docs/component.schema.json) é o JSON Schema (documentação; o código é a fonte da verdade).
 - [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md): design system (artefato do Claude Design): mapa componente → origem no código, gatilhos, pendências e histórico de sincronização.
-- [`docs/redesign/`](docs/redesign/): [`HANDOFF.md`](docs/redesign/HANDOFF.md) (redesign da interface, referência), [`HANDOFF-PROPOSALS.md`](docs/redesign/HANDOFF-PROPOSALS.md) (design das propostas de alteração), [`BRIEF-REVIEW-DETAILS.md`](docs/redesign/BRIEF-REVIEW-DETAILS.md) e [`HANDOFF-REVIEW-DETAILS.md`](docs/redesign/HANDOFF-REVIEW-DETAILS.md) (Detalhes na revisão).
-- [`docs/sdui/BRIEF-SDUI-KMP.md`](docs/sdui/BRIEF-SDUI-KMP.md): briefing de um SDUI de produção com Material 3 em Kotlin Multiplatform (para outro repositório) e onde o Mapping entra.
-- [`docs/history/README.md`](docs/history/README.md): índice do histórico (planos das etapas concluídas, relatos de teste e prompts antigos).
-- **Planejamento nas issues do GitHub** ([github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues)): os itens futuros são issues com o rótulo `roadmap`; a etapa em andamento é uma issue com o rótulo `etapa`, com uma sub-issue (rótulo `fase`) por fase; as concluídas ficam nas issues fechadas e, as mais antigas, em [`docs/history/`](docs/history/).
+- [`viewer/README.md`](viewer/README.md): visualizador embutível (pacote `mapping-viewer`): estrutura, comandos e a demonstração em React.
+- **Planejamento nas issues do GitHub** ([github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues)): os itens futuros são issues com o rótulo `roadmap`; a etapa em andamento é uma issue com o rótulo `etapa`, com uma sub-issue (rótulo `fase`) por fase; as concluídas ficam nas issues fechadas. O que veio antes delas está no histórico do git.
 - [`CLAUDE.md`](CLAUDE.md): regras de trabalho para o Claude Code.
 
 ## Stack

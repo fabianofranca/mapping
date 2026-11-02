@@ -4,8 +4,7 @@ import type { Size, Viewport } from './viewport';
 
 // Estado de visualização que a interface lê (barra de status, minimapa e campo de
 // zoom): o `CanvasController` escreve aqui, e os componentes só leem. Fica fora do
-// projeto e do desfazer, e o cursor é atualizado no máximo uma vez por quadro
-// (docs/redesign/HANDOFF.md, seção 6).
+// projeto e do desfazer, e o cursor é atualizado no máximo uma vez por quadro.
 
 /** Posição do ponteiro em pixels da imagem sob ele. */
 export interface CanvasCursor {

@@ -23,7 +23,7 @@ import {
  * e de componente (lista explícita) tem pelo menos um exemplo nas bibliotecas e exemplos
  * distribuídos. Só contam estas raízes (descobertas pelas pastas, para um pacote novo contar
  * sozinho): `libraries/*`, `examples/libraries/*` e `examples/specs/*.json`. Não entram
- * `tests/fixtures/`, `lab/`, `examples/exemplo-completo/` (cópias) nem zips.
+ * `tests/fixtures/`, `viewer/`, `examples/exemplo-completo/` (cópias) nem zips.
  */
 
 const ROOT = join(__dirname, '..', '..');

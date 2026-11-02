@@ -18,12 +18,12 @@
   "include": [
     "src",
     "libraries",
-    "lab",
+    "viewer",
     "tests",
     "pwa",
     "mcp/image/wasm.d.ts",
     "vite.config.ts",
-    "vite.lab.config.ts",
+    "vite.viewer.config.ts",
     "eslint.config.js"
   ]
 }

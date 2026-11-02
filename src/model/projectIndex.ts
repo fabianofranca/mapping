@@ -11,7 +11,7 @@ import type {
   ProjectSpecialization,
 } from './types';
 
-// Índice do projeto (docs/history/PLAN-etapa-2-1.md 14.3): mapas por id e agrupamentos montados uma vez
+// Índice do projeto (docs/ARCHITECTURE.md, "Desempenho"): mapas por id e agrupamentos montados uma vez
 // por versão do projeto. Como o projeto é imutável, a versão é o próprio objeto:
 // o `WeakMap` devolve o mesmo índice enquanto ele existir e o libera junto com
 // ele. Funciona igual no navegador e no Node.

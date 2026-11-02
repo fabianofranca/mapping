@@ -1,7 +1,7 @@
 // @vitest-environment node
-// Decisão 14 da etapa "Imagens remotas": um só criador de imagem. A regra ESLint
+// Um só criador de imagem (docs/ARCHITECTURE.md, "Imagens remotas"). A regra ESLint
 // (`imageCreationSyntaxRules` em eslint.config.js) proíbe criar imagem a partir de URL em
-// `src/**` e `lab/**`, salvo no carregador (`src/canvas/components/imageLoader.ts`) e em
+// `src/**` e `viewer/**`, salvo no carregador (`src/canvas/components/imageLoader.ts`) e em
 // `src/storage/**`. Como `no-restricted-syntax` de um bloco posterior substitui o anterior, este
 // teste também prova que as regras antigas continuam valendo onde a nova foi juntada.
 import { ESLint } from 'eslint';
@@ -17,7 +17,7 @@ async function restricted(code: string, filePath: string): Promise<string[]> {
     .map((m) => m.message);
 }
 
-const IMAGE_MARK = 'decisão 14';
+const IMAGE_MARK = 'URL de imagem por fora';
 const imageErrors = async (code: string, filePath: string) =>
   (await restricted(code, filePath)).filter((m) => m.includes(IMAGE_MARK));
 
@@ -45,7 +45,7 @@ const restrictedFiles = [
   'src/store/session.ts',
   'src/ui/focus.ts',
   'src/ui/toolWindowLayout.ts',
-  'lab/viewer/main.ts',
+  'viewer/main.ts',
 ];
 const allowedFiles = ['src/canvas/components/imageLoader.ts', 'src/storage/images.ts'];
 

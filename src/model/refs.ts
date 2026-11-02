@@ -4,7 +4,7 @@ import type { SpecField, SpecRefAccepts, SpecRefColumn } from './spec';
 import { fieldOf, sharesTag, typeOfAnnotation } from './specLookup';
 import type { Annotation, Entry, JsonValue, Project, RefValue, TableRow } from './types';
 
-// Referências fortes (`ref`) entre anotações. Ver docs/history/PLAN-etapas-1-2.md 13.3.
+// Referências fortes (`ref`) entre anotações. Ver docs/FORMAT.md, "Referências (`ref`)".
 
 /** Textos usados nos rótulos; a interface passa os traduzidos. */
 export interface LabelTexts {

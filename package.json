@@ -8,10 +8,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:lab": "vite --config vite.lab.config.ts --mode components",
-    "dev:lab:react": "vite --config vite.lab.config.ts --mode react",
-    "build": "npm run build:guia && tsc --noEmit && vite build && npm run build:lab",
-    "build:lab": "vite build --config vite.lab.config.ts --mode components && vite build --config vite.lab.config.ts --mode react",
+    "dev:viewer": "vite --config vite.viewer.config.ts",
+    "build": "npm run build:guia && tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -26,7 +24,7 @@
     "build:suggestions-kotlin": "node scripts/suggestionsKotlin.mjs",
     "build:material3-zip": "node scripts/material3ComposeZip.mjs",
     "build:guia": "node scripts/buildGuia.mjs",
-    "build:viewer": "node lab/viewer/build.mjs"
+    "build:viewer": "node viewer/build.mjs"
   },
   "dependencies": {
     "@preact/signals": "^2.11.3",

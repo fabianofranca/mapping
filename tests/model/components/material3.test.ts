@@ -14,10 +14,10 @@ import {
   M3_FILES,
   M3_SCREEN,
   M3_SPEC,
-} from '../../../lab/components/samplesMaterial3';
+} from '../../../viewer/samples/samplesMaterial3';
 import { walk } from '../../../src/model/components/scene';
 import { parseSpec } from '../../../src/model';
-import { SAMPLE_SPEC } from '../../../lab/components/samples';
+import { SAMPLE_SPEC } from '../../../viewer/samples/samples';
 
 describe('Material 3 no formato de componente', () => {
   it('a biblioteca carrega os quinze tipos, todos com componente válido e sem problemas', () => {

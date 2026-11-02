@@ -1,4 +1,4 @@
-// A ponte entre o desenho e as imagens remotas (RI3, decisões 5, 6 e 7 de docs/history/PLAN-etapa-imagens-remotas.md): resolve cada
+// A ponte entre o desenho e as imagens remotas (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador"): resolve cada
 // URL pelas duas portas da app (política de URL e consentimento) e, liberada, pelo carregador.
 // Usada pelo canvas principal e pela galeria do Catálogo; o `renderScene` só recebe o resultado.
 import { computed, type ReadonlySignal } from '@preact/signals';

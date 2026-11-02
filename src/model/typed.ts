@@ -42,7 +42,7 @@ import type {
 
 // Anotações tipadas: criação com defaults, edição de valores, linhas de tabela,
 // vínculos com `allowedChildren`/`requiresOwner` e conversão em anotação livre. Ver
-// docs/history/PLAN-etapas-1-2.md 13.2 a 13.5.
+// docs/SPEC-FORMAT.md e docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas".
 
 /** Campo vazio: `null`, ausente ou texto vazio. */
 export function isEmptyValue(value: JsonValue | undefined): boolean {
@@ -400,7 +400,7 @@ function valueText(value: JsonValue): string {
 }
 
 /**
- * Pares equivalentes aos valores da anotação tipada (docs/history/PLAN-etapas-1-2.md 13.4): na ordem dos
+ * Pares equivalentes aos valores da anotação tipada (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"): na ordem dos
  * campos; `number` e `date` como texto; vazios omitidos; `table` achatada como
  * `parametros[1].nome`; `ref` como `→ User.name`. Chaves fora do tipo vêm no fim.
  */

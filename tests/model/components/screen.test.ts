@@ -11,7 +11,7 @@ import {
   setValue,
   updateBox,
 } from '../../../src/model/components/screen';
-import { SAMPLE_SCREEN } from '../../../lab/components/samples';
+import { SAMPLE_SCREEN } from '../../../viewer/samples/samples';
 
 describe('screen', () => {
   it('adiciona, move, edita, traz para frente e remove sem mutar o objeto anterior', () => {

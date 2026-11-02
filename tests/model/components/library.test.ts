@@ -12,7 +12,7 @@ import {
   SAMPLE_COMPONENTS,
   SAMPLE_FILES,
   SAMPLE_SPEC,
-} from '../../../lab/components/samples';
+} from '../../../viewer/samples/samples';
 
 describe('library', () => {
   it('resolve caminhos relativos ao arquivo da especialização', () => {
