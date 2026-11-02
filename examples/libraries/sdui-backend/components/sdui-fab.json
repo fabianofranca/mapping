@@ -1,0 +1,73 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "sdui-fab",
+  "name": "FAB",
+  "description": "Botão de ação flutuante de 56 px, com o ícone de mais ou de anel. O anel usa a regra de preenchimento par-ímpar.",
+  "size": {
+    "width": 56,
+    "height": 56
+  },
+  "minSize": {
+    "width": 40,
+    "height": 40
+  },
+  "sizing": {
+    "width": 56,
+    "height": 56
+  },
+  "preview": {
+    "icon": "add",
+    "color": "primary"
+  },
+  "template": {
+    "type": "frame",
+    "name": "fab",
+    "layout": {
+      "type": "row",
+      "align": "center",
+      "justify": "center"
+    },
+    "cornerRadius": 16,
+    "fill": {
+      "$switch": "color",
+      "cases": {
+        "secondary": "#E8DEF8"
+      },
+      "default": "#EADDFF"
+    },
+    "shadow": {
+      "color": "rgba(0, 0, 0, 0.3)",
+      "y": 2,
+      "blur": 6
+    },
+    "children": [
+      {
+        "type": "path",
+        "name": "mais",
+        "width": 24,
+        "height": 24,
+        "viewBox": [24, 24],
+        "d": "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
+        "fillRule": "nonzero",
+        "visible": {
+          "$eq": ["icon", "add"]
+        },
+        "fill": "#21005D"
+      },
+      {
+        "type": "path",
+        "name": "anel",
+        "width": 24,
+        "height": 24,
+        "viewBox": [24, 24],
+        "d": "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 5a4 4 0 1 1 0 8 4 4 0 0 1 0-8z",
+        "fillRule": "evenodd",
+        "visible": {
+          "$eq": ["icon", "ring"]
+        },
+        "fill": "#21005D"
+      }
+    ]
+  }
+}

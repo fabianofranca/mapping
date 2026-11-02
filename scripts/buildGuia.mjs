@@ -1,6 +1,6 @@
 // Gera public/guia/index.html (o guia interativo) a partir de scripts/guia/template.html e de
 // examples/exemplo-completo/mapping.json. Empacota scripts/guia.ts com o esbuild (como
-// buildLibraryExamples.mjs), executa e grava. O Vite copia public/ para dist/guia/.
+// o esbuild de mcp/build.mjs), executa e grava. O Vite copia public/ para dist/guia/.
 // O teste tests/examples/guia.test.ts prova que o repositório está em dia.
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';

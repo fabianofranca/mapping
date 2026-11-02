@@ -449,6 +449,25 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(screen.getByLabelText('texto').tagName).toBe('INPUT');
   });
 
+  it('a quebra de linha no fim não é gravada (Enter de sobra num texto longo, como uma URL)', async () => {
+    const { harness, user } = setup('AB', 'texto', withText(LONG));
+    const area = screen.getByLabelText('texto');
+    await user.click(area);
+    await user.keyboard('{Control>}{End}{/Control}{Enter}');
+    expect((area as HTMLTextAreaElement).value).toBe(`${LONG}\n`);
+    await user.tab();
+    expect(valueOf(harness, 'AB', 'texto')).toBe(LONG);
+  });
+
+  it('só quebras de linha gravam null; as do meio ficam', async () => {
+    const { harness, user } = setup('AB', 'texto', withText('a\nb'));
+    const area = screen.getByLabelText('texto');
+    await user.clear(area);
+    await user.type(area, '{Enter}{Enter}');
+    await user.tab();
+    expect(valueOf(harness, 'AB', 'texto')).toBeNull();
+  });
+
   it('sair do editor de várias linhas grava; vazio grava null', async () => {
     const { harness, user } = setup('AB', 'texto', withText('a\nb'));
     const area = screen.getByLabelText('texto');

@@ -14,7 +14,7 @@ const sdui = read('examples/specs/sdui.json');
 // A SDUI de antes do `repo` (formatVersion 2): base dos casos de plataformas e de code.
 const sduiV2 = read('tests/fixtures/sdui-v2.json');
 const modelo = read('examples/specs/modelo-de-dados.json');
-const biblioteca = read('examples/specs/biblioteca.json');
+const biblioteca = read('tests/fixtures/specs/biblioteca.json');
 const jsonSchema = JSON.parse(read('docs/spec.schema.json')) as Record<string, unknown>;
 const jsonValidator = z.fromJSONSchema(jsonSchema as never);
 

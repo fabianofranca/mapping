@@ -545,3 +545,93 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
     });
   });
 });
+
+// Etapa Testes na nuvem (TN1): o prompt do testador da nuvem e as receitas do apêndice A.
+describe('docs/TESTING-NUVEM.md (prompt do testador da nuvem)', () => {
+  const cloud = read('docs/TESTING-NUVEM.md');
+  const { appendixA } = splitAppendixA(read('docs/TESTING.md'));
+  const cloudRecipes = appendixA.slice(appendixA.indexOf('**Diálogos nativos na nuvem'));
+
+  it('existe e tem a mensagem de início com branch e commit, nos modos dirigido e completo', () => {
+    expect(cloud).not.toBe('');
+    expect(cloud).toMatch(
+      /Leia `docs\/TESTING-NUVEM\.md` e execute no modo dirigido: R0 e R2\. Branch `[^`]+`, commit `[^`]+`/,
+    );
+    expect(cloud).toMatch(/modo completo\. Branch `[^`]+`, commit `[^`]+`/);
+    expect(cloud).toContain('sempre sem interação');
+    expect(cloud).toMatch(/RP[^\n]*RF[^\n]*RA[^\n]*nunca rodam na nuvem/);
+  });
+
+  it('manda o testador avisar o coordenador do PR do relato e deixa o merge com ele', () => {
+    expect(cloud).toContain('Coordenador: `session_');
+    expect(cloud).toContain('Avise o coordenador');
+    expect(cloud).toContain('quem mescla é o coordenador');
+    expect(read('CLAUDE.md')).toContain(
+      'o agente da fase mescla o PR do relato no épico',
+    );
+  });
+
+  it('tem o "Nunca": Enter, filechooser, uma aba e o preview', () => {
+    const never = cloud.slice(cloud.indexOf('## Nunca'));
+    expect(never).toContain('**Enter**');
+    expect(never).toContain('`filechooser`');
+    expect(never).toContain('setInputFiles');
+    expect(never).toMatch(/Mais de uma aba/);
+    expect(never).toMatch(/\*\*preview\*\*/);
+    expect(never).toContain('pkill -f chrome');
+  });
+
+  it('manda compilar a app e o MCP do commit e servir em localhost:8080', () => {
+    expect(cloud).toContain('npm ci && npm run build');
+    expect(cloud).toContain('http://localhost:8080');
+    expect(cloud).toContain('npm run build:mcp');
+    expect(cloud).toContain('--version');
+    expect(cloud).toContain('git log -1');
+    expect(cloud).toContain('~/mapping-testes/<AAAA-MM-DD>-<alvo>/');
+  });
+
+  it('cita o ambiente "Mapping - testes", o script de configuração e o relato com PR', () => {
+    expect(cloud).toContain('Mapping - testes');
+    expect(cloud).toContain(
+      'apt-get update -q && apt-get install -y -q xdotool at-spi2-core python3-pyatspi openbox imagemagick',
+    );
+    expect(cloud).toContain('LANGUAGE=pt_BR:pt');
+    expect(cloud).toContain('docs/history/relato-<AAAA-MM-DD>-<alvo>.md');
+    expect(cloud).toContain('teste/<alvo>-<AAAA-MM-DD>');
+    expect(cloud).toContain(
+      'Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)',
+    );
+  });
+
+  it('o apêndice A tem as receitas da nuvem e a tabela das cinco ferramentas do dialog-pilot', () => {
+    expect(appendixA).toContain('**Diálogos nativos na nuvem (Xvfb).**');
+    expect(appendixA).toContain('docs/TESTING-NUVEM.md');
+    for (const tool of [
+      'select_folder',
+      'open_file',
+      'save_file',
+      'accept_permission_prompt',
+      'cancel_dialog',
+    ]) {
+      expect(cloudRecipes, tool).toMatch(new RegExp(`^\\| \`${tool}\``, 'm'));
+    }
+    expect(cloudRecipes).toContain('alt+o');
+    expect(cloudRecipes).toContain('alt+s');
+    expect(cloudRecipes).toContain('alt+c');
+    expect(cloudRecipes).toContain('/usr/bin/python3.12');
+    expect(cloudRecipes).toContain('Atspi');
+  });
+
+  it('a convenção [pessoa] da seção 8 cita a receita da nuvem', () => {
+    expect(read('docs/TESTING.md')).toMatch(
+      /^- \*\*\[pessoa\]\*\*[^\n]*Diálogos nativos na nuvem \(Xvfb\)/m,
+    );
+  });
+
+  it('README.md, CLAUDE.md e docs/TESTING-COWORK.md apontam para ele', () => {
+    for (const path of ['README.md', 'CLAUDE.md', 'docs/TESTING-COWORK.md']) {
+      expect(read(path), path).toContain('TESTING-NUVEM.md');
+    }
+    expect(read('CLAUDE.md')).toContain('Rodada dirigida na nuvem');
+  });
+});

@@ -1,4 +1,4 @@
-// Catálogo da biblioteca: o pacote Material 3 lido de examples/libraries/material3/.
+// Catálogo da biblioteca: o pacote Material 3 lido de tests/fixtures/material3/.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -17,7 +17,7 @@ import { isFontPath } from '../../src/model/components/library';
 import type { LibraryFile } from '../../src/model/library';
 import { BUTTON_PATH, TEXT_BUTTON_PATH, variantsSpecJson } from './variantsFixtures';
 
-const ROOT = join(__dirname, '../../examples/libraries/material3');
+const ROOT = join(__dirname, '../../tests/fixtures/material3');
 
 function listDisk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>

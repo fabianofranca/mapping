@@ -131,7 +131,10 @@ export function StringEditor(props: SimpleEditorProps) {
         invalid={invalid || error !== null}
         required={field.required === true}
         autoFocus={draft !== null}
-        onCommit={(next) => {
+        onCommit={(typed) => {
+          // A quebra de linha no fim (um Enter de sobra) não é parte do texto: tira, para que
+          // um valor como a URL de uma imagem não vá ao disco com `\n`.
+          const next = typed.replace(/[\r\n]+$/, '');
           const result = onSet(next === '' ? null : next);
           setError(result.ok ? null : t('typed.invalidValue'));
           if (result.ok) setDraft(null);

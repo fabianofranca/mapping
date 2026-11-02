@@ -1,6 +1,6 @@
 # Roadmap
 
-Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar. Hoje não há etapa em andamento; a etapa detalhada é a Exemplos enxutos (`epic/exemplos-enxutos`, fases EX1 a EX3 no `PLAN.md`), que só começa depois que o `epic/material3` entrar na `main`.
+Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar. Hoje não há etapa em andamento nem detalhada; a última concluída foi a Testes na nuvem, depois da Exemplos enxutos (`epic/exemplos-enxutos`).
 
 ## Princípio
 
@@ -213,6 +213,14 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Depende de:** etapa Container (concluída).
 - **Próxima etapa:** nenhuma detalhada; a ordem do que vier é do dono, entre as "Evoluções" abaixo. Nada entra antes de o `PLAN.md` detalhar a etapa.
 
+## Etapa — Exemplos enxutos (concluída, épico `epic/exemplos-enxutos`)
+
+- **Concluída em 2026-11-02** (fases EX0 a EX4, PRs #272, #274 a #278 e #289; o épico é o PR #273); histórico em [`history/PLAN-etapa-exemplos-enxutos.md`](history/PLAN-etapa-exemplos-enxutos.md). Sem schema (v13), formato de especialização (9), de proposta (3) nem de componente (3) novos, e sem MCP novo (0.12.0).
+- **Objetivo:** todo recurso dos formatos de especialização e de componente tem um exemplo, usando ao máximo as bibliotecas prontas de `libraries/`.
+- **Entrou:** `tests/examples/featureCoverage.test.ts` (exceção só para `fonts[].style`); a biblioteca `sdui-backend` (origem executável) ao lado da `analytics`; `tests/fixtures/` para os testes; projeto de exemplo, guia, zips e roteiros na `material3-compose`; `examples/README.md`; duas correções de produto (razão do Diagnóstico de imagem remota trocada no lugar e `\n` do fim do `url`).
+- **Fora (decidido):** alterar a `material3-compose`, as notas ou a Kotlin; `minSize` de um eixo só. Ficaram para depois: o SDUI de produção em KMP (outro repositório; a biblioteca `sdui-material3` pode substituir a `sdui-backend`), o orçamento de 1,5 MiB do `dist/index.html` e pequenos detalhes do painel Detalhes do Row.
+- **Depende de:** etapa Biblioteca Material 3 (concluída).
+
 ## Etapa — Biblioteca Material 3 (concluída, épico `epic/material3`)
 
 - **Concluída em 2026-11-01** (fases MD1 a MD5, PRs #261, #262, #263, #265, #269 e #270; o épico é o PR #260); histórico em [`history/PLAN-etapa-material3.md`](history/PLAN-etapa-material3.md). Especialização `formatVersion` 9 e MCP 0.12.0; sem schema (v13), formato de proposta (3) nem de componente (3) novos.
@@ -256,6 +264,12 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
   - **SG2, `linkedRef`:** a lista ganha, antes das fixas, as declarações mapeadas que um `ref` irmão aceita (com o nome do tipo do alvo); escolher uma e confirmar grava o texto e o `ref` juntos, numa entrada do desfazer; roteiro R14 e `examples/sugestoes-kotlin.zip`; rodada dirigida do Cowork (24 de 26 passos ✅, os 2 achados baixos tratados).
 - **Fora (decidido):** sugestões tiradas dos valores já usados no projeto; sugestões em `number`; campo de vários valores; coluna `ref` nova em Funções › Retorno; aceitar a sugestão com Tab.
 - **Depende de:** etapa Biblioteca (concluída).
+
+## Etapa — Testes na nuvem (concluída, épico `epic/testes-nuvem`)
+
+- **Concluída em 2026-11-02** (fases TN1 e TN2, PRs #280, #281, #283 e #284; o épico é o PR #279); histórico em [`history/PLAN-etapa-testes-nuvem.md`](history/PLAN-etapa-testes-nuvem.md). Sem schema (v13), formato de especialização, de proposta ou de componente novos e sem MCP novo (0.12.0).
+- **O que entrou:** o testador das rodadas dirigidas também roda numa sessão do Claude Code na nuvem (ambiente "Mapping - testes"), sem o dono no computador: prompt em `docs/TESTING-NUVEM.md`, receitas dos diálogos nativos (seletor GTK, permissão pelo AT-SPI, "Salvar como") no apêndice A do `docs/TESTING.md`, build local do commit e MCP compilado do mesmo commit. O fluxo de épico dispara a rodada sozinho depois do merge da última fase, e o agente da fase mescla o relato no épico.
+- **Primeira rodada:** R0 e R2, 12 passos, 12 ✅, nenhum achado.
 
 ## Evoluções
 

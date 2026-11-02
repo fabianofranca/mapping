@@ -4,7 +4,7 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão em `docs/history/`.
 
-## [Não lançado] — Sincronia do design system (épico `epic/sincronia-ds`, sem MCP novo, schema v13)
+## Sincronia do design system — 2026-11-02 (épico `epic/sincronia-ds`, PR #287, MCP sem mudança, schema v13)
 
 ### Adicionado
 
@@ -14,6 +14,36 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 - Fluxo de trabalho: toda descrição de PR passa a declarar o **Impacto no DS**, e o fechamento de cada épico aplica as pendências acumuladas no design system. O job `epic` do CI exige que o PR do épico toque o `docs/DESIGN-SYSTEM.md`, como já exigia o `CHANGELOG.md`.
 - O design system foi posto em dia com as entregas desde 2026-10-24: Proposto com componentes, Sugestões no campo de texto, Imagens remotas, Biblioteca Material 3 e o **Envolver** da Marcação pai.
+
+## Testes na nuvem — 2026-11-02 (épico `epic/testes-nuvem`, PR #279, MCP sem mudança, schema v13)
+
+### Adicionado
+
+- As rodadas dirigidas do testador podem rodar numa sessão do Claude Code na nuvem (ambiente "Mapping - testes"), sem o dono no computador: prompt em `docs/TESTING-NUVEM.md` e receitas dos diálogos nativos no apêndice A do `docs/TESTING.md`.
+
+### Alterado
+
+- O fluxo de épico dispara a rodada dirigida sozinho depois do merge da última fase: o agente da fase cria a sessão do testador, o testador avisa quando abre o PR do relato e, sem ❌ e com o CI verde, o agente da fase mescla o relato no épico.
+
+## Exemplos enxutos — [Não lançado] (épico `epic/exemplos-enxutos`, PR #273, MCP 0.12.0, schema v13)
+
+### Adicionado
+
+- Todo recurso dos formatos de especialização e de componente tem um exemplo, de preferência nas bibliotecas prontas de `libraries/`; um teste (`tests/examples/featureCoverage.test.ts`) quebra se um recurso novo do schema ficar sem exemplo. A única exceção é `fonts[].style` (`italic` e `normal`): a fonte é fixa no cliente mobile, fora do SDUI.
+- Biblioteca de exemplo **SDUI do backend** (`examples/libraries/sdui-backend/`, 6 tipos e 5 componentes): um sistema externo fictício que descreve telas, com a origem executável (`origins`, `sources`, a tela de exemplo na galeria) e `migrations`. O roteiro R10 ganhou os passos da origem.
+- `examples/README.md`: guia dos exemplos, com uma seção para cada biblioteca de `libraries/` e cada exemplo de `examples/`, os roteiros que os usam e a tabela "Onde ver cada recurso"; um teste exige uma seção por exemplo no disco.
+
+### Alterado
+
+- O projeto de exemplo (`examples/exemplo-completo.zip`), o guia interativo, o `proposta-componentes.zip` e os roteiros (R3, R9, R10, R12, R13 e R15) usam a biblioteca **Material 3 (Compose)** no lugar do pacote antigo de 15 tipos. O zip do projeto de exemplo cresceu (289.104 bytes, eram 64.988).
+- O botão **Abrir projeto de exemplo** e o zip embutido saíram da app, porque embutir o zip levaria o `dist/index.html` a 1.868.223 bytes, acima do orçamento de 1,5 MiB: a Ajuda e o guia orientam a baixar `examples/exemplo-completo.zip` do repositório e abri-lo como zip.
+- `examples/libraries/` ficou só com a `analytics` e a `sdui-backend`; saíram a `material3` de 15 tipos, a `pessoas` e `examples/specs/biblioteca.json`, e o gerador (`npm run build:examples`). Os testes passaram a ler cópias congeladas em `tests/fixtures/`.
+- Roteiro R8.1b passou a abrir a própria cópia da Loja pelo `proposta-exemplo.zip`, sem depender do R4; textos dos roteiros R9, R10, R13 e R15 corrigidos pelas duas rodadas do Cowork.
+
+### Corrigido
+
+- Diagnóstico › Imagens remotas: quando a mesma URL muda de situação (de "endereço não aceito" a "origem sem permissão" e a "não carregou"), a linha troca a razão no lugar, em vez de ficar com a razão antiga.
+- O editor de texto de várias linhas tira a quebra de linha do fim ao gravar: a `url` de uma imagem remota deixa de ir ao `mapping.json` com `\n` quando se confirma com Enter.
 
 ## Biblioteca Material 3 — 2026-11-01 (épico `epic/material3`, PR #260, MCP 0.12.0, schema v13)
 
