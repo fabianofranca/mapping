@@ -297,7 +297,7 @@ const SHAPES = {
   },
   moon: { d: ['M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z'] },
 
-  // Revisão de propostas (etapa 4, docs/redesign/HANDOFF-PROPOSALS.md 3.2). Os estados de
+  // Revisão de propostas (design system, docs/DESIGN-SYSTEM.md). Os estados de
   // decisão não são ícones: são o `DecisionMark`.
   proposal: {
     d: [

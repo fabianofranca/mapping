@@ -1,5 +1,5 @@
 import type { SceneNode } from './components/scene';
-// Política pura da URL de imagem remota (PLAN.md, etapa Imagens remotas, decisões 3, 15 e 16).
+// Política pura da URL de imagem remota (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador").
 // É a primeira das duas portas: decide se a URL é aceitável; a segunda é o consentimento
 // por origem, guardado em `src/storage/` (RI3). Só usa `URL`, disponível no navegador e no Node.
 

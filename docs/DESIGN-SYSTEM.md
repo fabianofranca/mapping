@@ -11,12 +11,12 @@ Este arquivo é o registro dele no repositório. Ele diz o que o DS é, **quando
 - **É curado à mão.** Cada componente tem um guia (`README.md`) e um preview em HTML escritos por pessoas, com os estados desenhados um por um. O conteúdo tem autores: ao atualizar, mexa só no que a entrega mudou.
 - **Não é gerado do código.** A skill `/design-sync` do Claude Code **não se aplica** a este DS: ela espera o `dist/` de uma biblioteca de componentes publicada e transformaria o DS curado num espelho do build. Não a use aqui.
 - **O código é a fonte da verdade; o DS descreve.** Onde os dois divergirem, corrija o DS. Divergência que pareça defeito da app não se resolve aqui: registre em "Pendências" e leve ao dono.
-- **Nome.** O índice do artefato se chama **Mapping**. Os documentos de `docs/redesign/` o chamam de "Mapeador de Imagens 2.0", nome da etapa 2.3; é o mesmo artefato.
+- **Nome.** O índice do artefato se chama **Mapping**. Se aparecer o nome antigo "Mapeador de Imagens 2.0", é o mesmo artefato.
 - **Tamanho hoje:** 63 componentes com guia e preview (mais a capa `Cover`), 6 seções, 145 tokens e 85 ícones.
 
 ## Quando verificar
 
-Se o "Toca em:" da fase cruzar qualquer caminho abaixo, a fase precisa olhar o DS. É leitura do mapa: não exige abrir o artefato.
+Se o "Toca em:" da fase (na sub-issue da fase, no GitHub) cruzar qualquer caminho abaixo, a fase precisa olhar o DS. É leitura do mapa: não exige abrir o artefato.
 
 | Mudou no código                                                                                | Olhe no DS                                                                                      |
 | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
@@ -33,11 +33,11 @@ Se o "Toca em:" da fase cruzar qualquer caminho abaixo, a fase precisa olhar o D
 
 A lista é um filtro rápido, não um limite: uma mudança em `src/model/` ou `src/store/` que altere **o que a pessoa vê na tela** também conta — foi o caso de `src/store/proposedCatalog.ts` (visão Proposto) e de `src/store/imagePermissions.ts` (Privacidade).
 
-**Nunca dispara:** testes, `examples/`, `libraries/`, `lab/`, `mcp/`, `scripts/` e documentação.
+**Nunca dispara:** testes, `examples/`, `libraries/`, `viewer/demo/`, `mcp/`, `scripts/` e documentação.
 
 ## Como verificar, fase a fase
 
-1. Cruze o "Toca em:" da fase com a tabela acima e com o mapa.
+1. Cruze o "Toca em:" da fase (na sub-issue da fase, rótulo `fase`) com a tabela acima e com o mapa.
 2. Declare o resultado no item **Impacto no DS** da descrição do PR: `nenhum`, ou o que a mudança afeta.
 3. Se não for `nenhum`, acrescente a pendência na seção "Pendências" deste arquivo, no mesmo PR, com o que mudou e os arquivos que provam.
 
@@ -243,6 +243,7 @@ A linha abaixo é de outro épico, aplicada aqui porque ele entrou na `main` ant
 | Data       | Épico                   | O que mudou no DS                                                                                                                                                                                                                                                                                                                                       |
 | ---------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-11-02 | `epic/exemplos-enxutos` | Aplicado no fechamento do `epic/sincronia-ds`. O guia e o preview do `Home` perderam o botão "Abrir projeto de exemplo", removido da tela inicial (`src/app/Home.tsx`, `src/app/exampleProject.ts` e as chaves `home.openExample*`); o caminho atual é baixar `examples/exemplo-completo.zip` do repositório e usar o Abrir zip. Versão 16 do artefato. |
+| 2026-11-02 | `epic/fluxo-issues`     | Sem impacto no DS: o épico só muda documentação e fluxo de trabalho (o planejamento passa a viver em issues do GitHub). Nada foi gravado no artefato.                                                                                                                                                                                                   |
 
 ### Correções do próprio registro
 

@@ -29,7 +29,7 @@ const PRECACHE = [
 
 const url = (path) => new URL(path, self.registration.scope).href;
 // A página da app é só a raiz do escopo (e o próprio index.html): outras páginas do site
-// (ex.: `lab/…`, experimentos publicados ao lado) vão à rede, sem cair no index.html.
+// (ex.: `outra/`, páginas publicadas ao lado) vão à rede, sem cair no index.html.
 const isAppPage = (pathname) => {
   const scope = new URL(self.registration.scope).pathname;
   return pathname === scope || pathname === `${scope}index.html`;

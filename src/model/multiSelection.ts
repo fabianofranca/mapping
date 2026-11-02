@@ -31,8 +31,7 @@ import { projectIndex } from './projectIndex';
 import { countBrokenRefs } from './refs';
 import type { Arrow, Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
-// Seleção múltipla (etapa Marcações espaciais, ME2; regras no PLAN.md, "Regras do arrasto
-// conjunto"). Operações puras sobre uma lista de itens: mover junto, selecionar com o
+// Seleção múltipla (regras em docs/ARCHITECTURE.md, "Espaços, pertencimento e gestos"). Operações puras sobre uma lista de itens: mover junto, selecionar com o
 // conteúdo, excluir e trancar. A interface guarda a seleção como `{ kind, id }`; o modelo só
 // conhece esta forma mínima, sem depender do estado da UI.
 
@@ -520,7 +519,7 @@ export function canWrapItems(p: Project, items: readonly ItemRef[]): boolean {
 }
 
 /**
- * Espaço e retângulo da marcação pai que envolve a seleção (PLAN.md, "Etapa — Marcação pai"):
+ * Espaço e retângulo da marcação pai que envolve a seleção (docs/ARCHITECTURE.md, "Marcação pai (Envolver)"):
  * o retângulo do conjunto mais `WRAP_MARGIN` de cada lado, cortado ao container (espaço de
  * container) e ao pai atual do conjunto, para a nova nunca tirá-lo de dentro dele. `null` se
  * nada entra.
@@ -624,7 +623,7 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
 }
 
 /**
- * Cria uma marcação pai que envolve a seleção (PLAN.md, "Etapa — Marcação pai"). Entram as
+ * Cria uma marcação pai que envolve a seleção (docs/ARCHITECTURE.md, "Marcação pai (Envolver)"). Entram as
  * marcações não flutuantes e os containers; setas e notas são ignoradas, e sem nada que entre
  * falha com `invalid-parent`. O espaço e o retângulo saem de `wrapRect`. A nova entra no array
  * antes da primeira marcação selecionada (ou no fim, se só há containers) para ganhar o

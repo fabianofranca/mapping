@@ -4,7 +4,7 @@
 # Só age em sessão remota (CLAUDE_CODE_REMOTE); localmente não faz nada. É
 # idempotente: `npm install` com o package-lock é um no-op rápido quando já está
 # tudo instalado. Roda síncrono: a sessão só começa com as dependências prontas,
-# o que a cascata noturna (PLAN.md, "Execução em cascata") exige.
+# o que uma sessão sem o dono (por exemplo, o desenvolvimento noturno) exige.
 set -euo pipefail
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then

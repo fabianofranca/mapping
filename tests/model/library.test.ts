@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { M3_FILES } from '../../lab/components/samplesMaterial3';
+import { M3_FILES } from '../../viewer/samples/samplesMaterial3';
 import {
   type LibraryFile,
   type LibraryInput,
@@ -944,7 +944,7 @@ describe('validateLibrary: nível por nível', () => {
 
 describe('validateLibrary: Material 3', () => {
   const SDUI_SCREEN = readFileSync(
-    join(__dirname, '../../lab/components/sdui/settings.sdui.json'),
+    join(__dirname, '../../viewer/samples/settings.sdui.json'),
     'utf8',
   );
 

@@ -2,6 +2,8 @@
 
 Aplicação web para marcar **áreas retangulares** em imagens, organizá-las em **camadas** e anotá-las com pares chave-valor (livres) ou com **anotações tipadas** definidas por uma _especialização_ (ex: SDUI, modelo de dados). Tudo é salvo num `mapping.json` ao lado das imagens, num formato pensado para ser lido por um agente de IA: as coordenadas são pixels da imagem original, então o agente recorta exatamente a área marcada.
 
+O núcleo é **genérico** (imagens, marcações, camadas, anotações, componentes e telas): todo conceito de domínio (SDUI, plataformas, Figma, contratos) entra por _especializações_, para a mesma ferramenta servir a N aplicações.
+
 - **Só desktop**: feita para estação de trabalho (mouse, teclado, painéis lado a lado), com largura mínima de 900 px; numa janela mais estreita a app mostra "Abra numa janela maior" e volta ao normal ao alargar. Toque simples (num monitor de toque) funciona; não há layout de celular.
 - **Um único arquivo**: o build gera `dist/index.html` autocontido; funciona aberto por `file://` (Chrome/Edge desktop) e hospedado no GitHub Pages, sem requisições de rede (ver [Privacidade](#privacidade-e-seus-dados)).
 - **Dois modos de armazenamento**: _pasta_ no disco (File System Access API, Chrome/Edge desktop) ou _projeto local_ no navegador (IndexedDB). Qualquer projeto pode ser exportado em `.zip`.
@@ -21,7 +23,7 @@ Seus projetos e imagens **ficam no seu dispositivo** (na pasta que você escolhe
 - o único contato com a rede é o do **navegador** ao baixar a app (e o service worker ao procurar versão nova) a partir de onde ela está hospedada; seus dados nunca participam disso;
 - o que sai da app é o que **você** manda: o `.zip` exportado, baixado ou compartilhado pela folha de compartilhamento do sistema.
 
-A política é gerada no build, e o build falha se ela faltar ou não bater com o conteúdo do arquivo; testes Playwright confirmam o bloqueio. Detalhes e motivos em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#content-security-policy-etapa-24).
+A política é gerada no build, e o build falha se ela faltar ou não bater com o conteúdo do arquivo; testes Playwright confirmam o bloqueio. Detalhes e motivos em [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#content-security-policy).
 
 ## Como rodar
 
@@ -30,9 +32,8 @@ Requer Node 22 (fixado em `.nvmrc` e em `engines` no `package.json`; com nvm, `n
 ```bash
 npm ci
 npm run dev        # servidor de desenvolvimento (Vite)
-npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a CSP, e o laboratório em dist/lab/
-npm run dev:lab    # laboratório de componentes (lab/README.md), à parte da app
-npm run dev:lab:react # demonstração do visualizador embutível em React (lab/README.md)
+npm run build      # gera dist/index.html (e sw.js, manifest.webmanifest) com a CSP
+npm run dev:viewer # demonstração do visualizador embutível num hospedeiro React (viewer/README.md)
 npm run build:viewer # gera dist-viewer/ (visualizador embutível: núcleo, invólucro React e tipos)
 npm run build:guia   # regera public/guia/index.html (o npm run build já faz)
 npm run build:example # regera examples/exemplo-completo.zip a partir da pasta
@@ -91,7 +92,7 @@ O preview tem **armazenamento separado** (IndexedDB, `localStorage` e service wo
 
 ## Como relatar um problema
 
-Para testar a app de ponta a ponta (onde pegar, requisitos, roteiros com o resultado esperado de cada passo e o template do relato), siga o guia do testador: [`docs/TESTING.md`](docs/TESTING.md). Para um agente com controle do computador (Cowork) testar no seu computador, o prompt inicial está em [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md) (rodada completa ou dirigida por achados de um relato, por uma lista de passos ou pelas fases de um plano); o guia tem um apêndice só para o agente.
+Para testar a app de ponta a ponta (onde pegar, requisitos, roteiros com o resultado esperado de cada passo e o template do relato), siga o guia do testador: [`docs/TESTING.md`](docs/TESTING.md). O agente testador é uma sessão do Claude Code na nuvem, sem você no computador; o prompt inicial dele está em [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md) (rodada completa ou dirigida por achados de um relato, por uma lista de passos ou pelas fases de uma etapa), e o guia tem um apêndice só para o agente.
 
 A app não envia nada para a rede (nem telemetria), então o relato depende de você copiar os dados:
 
@@ -104,7 +105,6 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 ## Documentação
 
 - [`docs/TESTING.md`](docs/TESTING.md): guia do testador (onde pegar a app, requisitos, mapa da interface, instalação do MCP, roteiros de teste manual, teste manual avançado e os templates do relato e do registro de uso real; apêndices para o agente testador e para operações de disco).
-- [`docs/TESTING-COWORK.md`](docs/TESTING-COWORK.md): prompt do testador do Cowork (agente com controle do computador).
 - [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md): prompt do testador da nuvem (sessão do Claude Code no ambiente "Mapping - testes", sem o dono).
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): camadas, fluxo de dados, regras e onde fica cada coisa.
 - [`docs/GUIDE.md`](docs/GUIDE.md): guia interativo e projeto de exemplo (como são gerados, o que abrir o exemplo grava, como mudá-los).
@@ -114,7 +114,10 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 - [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md): formato do arquivo de especialização (e [`docs/spec.schema.json`](docs/spec.schema.json)); exemplos em [`examples/specs/`](examples/specs/).
 - [`.claude/skills/spec-author/SKILL.md`](.claude/skills/spec-author/SKILL.md): skill do Claude Code que escreve e valida uma especialização a partir de um código ou design system (copie a pasta para o repositório mapeado ou para `~/.claude/skills/`).
 - [`examples/workspace/`](examples/workspace/): esqueleto de uma pasta que centraliza projetos Mapping, pronta para qualquer agente MCP (servidor, raízes, skill e `AGENTS.md` por caminho relativo; `setup.sh` baixa a release).
-- [`PLAN.md`](PLAN.md): resumo do produto e fases pendentes; o histórico está em [`docs/history/`](docs/history/).
+- [`docs/COMPONENT-FORMAT.md`](docs/COMPONENT-FORMAT.md): formato do arquivo de componente (`mapping-component`): nós, dimensionamento, expressões e avisos do motor; [`docs/component.schema.json`](docs/component.schema.json) é o JSON Schema (documentação; o código é a fonte da verdade).
+- [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md): design system (artefato do Claude Design): mapa componente → origem no código, gatilhos, pendências e histórico de sincronização.
+- [`viewer/README.md`](viewer/README.md): visualizador embutível (pacote `mapping-viewer`): estrutura, comandos e a demonstração em React.
+- **Planejamento nas issues do GitHub** ([github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues)): os itens futuros são issues com o rótulo `roadmap`; a etapa em andamento é uma issue com o rótulo `etapa`, com uma sub-issue (rótulo `fase`) por fase; as concluídas ficam nas issues fechadas. O que veio antes delas está no histórico do git.
 - [`CLAUDE.md`](CLAUDE.md): regras de trabalho para o Claude Code.
 
 ## Stack

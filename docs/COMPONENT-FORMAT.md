@@ -394,7 +394,7 @@ Os avisos não se repetem. A mesma regra vale na prova de desenho do validador d
 
 `hug`, quebra de linha e a altura de um texto dependem da **medida do texto**, que o motor recebe de fora (uma função `TextMeasurer`). Há duas:
 
-- **Real**, no navegador: o Konva mede o texto com a fonte carregada. No laboratório é o `konvaMeasurer`; a app desenha com ela a partir da fase B3.
+- **Real**, no navegador: o Konva mede o texto com a fonte carregada. É o `konvaMeasurer`, usado pela app e pelo visualizador.
 - **Aproximada**, no Node (e nos testes): `approximateMeasurer`, sem canvas. Largura ≈ 0,55 × o tamanho da fonte por caractere (0,6 se o peso é 600 ou mais) mais o espaçamento entre letras; altura = número de linhas × altura de linha; com largura máxima, quebra por palavras.
 
 Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validador da biblioteca, no servidor MCP ou na skill) deve entender que o texto foi medido pela aproximação: um aviso de "conteúdo maior que a caixa" pode sumir, ou aparecer só em outro tamanho, quando o navegador medir com a fonte de verdade. O aviso é um sinal para olhar, não uma sentença. E o contrário também vale: sem o aviso, o navegador pode medir um pouco mais largo.

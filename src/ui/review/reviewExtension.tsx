@@ -203,7 +203,7 @@ function fieldValue(
   }
 }
 
-/** Uma anotação que sai, no lugar onde estava (visão Proposto, decisão 3 da seção 10). */
+/** Uma anotação que sai, no lugar onde estava (visão Proposto). */
 function RemovedAnnotationCard({
   project,
   annotation,

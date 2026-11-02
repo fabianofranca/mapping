@@ -12,7 +12,7 @@ import {
   layoutScreen,
 } from '../../../src/model/components/layout';
 import { type Library, loadLibrary } from '../../../src/model/components/library';
-import { M3_CARD, M3_COLUMN, M3_BUTTON } from '../../../lab/components/samplesMaterial3';
+import { M3_CARD, M3_COLUMN, M3_BUTTON } from '../../../viewer/samples/samplesMaterial3';
 
 // --- biblioteca montada em memória ----------------------------------------------------------
 

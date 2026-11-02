@@ -1,5 +1,5 @@
-// Único lugar que cria imagem a partir de uma URL fora de `src/storage/` (PLAN.md, etapa
-// "Imagens remotas", decisão 14; regra `imageCreationSyntaxRules` em eslint.config.js): nenhum
+// Único lugar que cria imagem a partir de uma URL fora de `src/storage/` (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador";
+// regra `imageCreationSyntaxRules` em eslint.config.js): nenhum
 // código monta URL de imagem por fora da política de URL e do consentimento. A RI3 acrescentou
 // aqui as imagens remotas (`crossOrigin`, `referrerPolicy`, limites, cache).
 
@@ -29,7 +29,7 @@ export function loadEmbeddedImage(
 }
 
 // ---------------------------------------------------------------------------------------------
-// Imagens remotas (RI3, decisões 6 e 17 do PLAN.md). A classe não conhece o consentimento nem a
+// Imagens remotas (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador"). A classe não conhece o consentimento nem a
 // política de URL: quem a chama (`remoteImages.ts`) só pede uma URL que já passou pelas duas
 // portas da app. Aqui ficam os limites (concorrência, tempo, tamanho), o bitmap reduzido, o
 // cache em memória e a única nova tentativa sem CORS.

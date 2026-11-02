@@ -56,7 +56,7 @@ interface AnnotationsPanelProps {
   readonly onFocusDone: () => void;
 }
 
-/** Passos da criação numa camada de especialização (docs/history/PLAN-etapas-1-2.md 13.5, "Criar"). */
+/** Passos da criação numa camada de especialização (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"). */
 type CreateStep =
   | { readonly kind: 'type'; readonly layer: Layer }
   | {

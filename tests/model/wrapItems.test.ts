@@ -13,7 +13,7 @@ import {
 import { expectValid } from './fixtures';
 import { mk, multiProject, rect } from './multiSelectionFixtures';
 
-// Envolver a seleção numa marcação pai (PLAN.md, "Etapa — Marcação pai", MP1).
+// Envolver a seleção numa marcação pai (docs/ARCHITECTURE.md, "Marcação pai (Envolver)").
 // Fixture: ver tests/model/multiSelectionFixtures.ts.
 
 const img = (id: string): ItemRef => ({ kind: 'image', id });

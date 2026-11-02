@@ -33,7 +33,7 @@ export type ModelErrorCode =
   | 'duplicate-id'
   // Trava (etapa 2.5)
   | 'locked'
-  // Especializações (docs/history/PLAN-etapas-1-2.md 13)
+  // Especializações (docs/SPEC-FORMAT.md)
   | 'spec-layer'
   | 'typed-layer'
   | 'typed-annotation'

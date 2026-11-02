@@ -94,7 +94,7 @@ describe('atalhos do editor', () => {
     expect(shortcutFor(key('z', { ctrl: true, alt: true }))).toBeNull();
   });
 
-  // B12 e decisão 1 da seção 5 do HANDOFF: Ctrl+Shift+número é o oficial.
+  // Ctrl+Shift+número é o atalho oficial.
   it('janelas de ferramenta: Ctrl+Shift+número e Alt+número', () => {
     expect(shortcutFor(key('1', { ctrl: true, shift: true }))).toEqual({
       kind: 'toggle-window',

@@ -1,7 +1,7 @@
 // Interação do pertencimento por geometria (etapa Marcações espaciais, ME1): o encaixe de uma
 // marcação movida num container e a absorção de quem fica quase dentro de uma marcação
 // desenhada ou redimensionada. O modelo só conhece "dentro = totalmente contido"; a tolerância
-// vive aqui, na interação, com um limiar único e sem opção para a pessoa (PLAN.md, "Absorção").
+// vive aqui, na interação, com um limiar único e sem opção para a pessoa (docs/ARCHITECTURE.md, "Espaços, pertencimento e gestos").
 // Funções puras, sem DOM nem Konva, testadas em `tests/canvas/containment.test.ts`.
 import {
   bottom,

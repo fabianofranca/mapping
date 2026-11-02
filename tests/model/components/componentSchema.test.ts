@@ -1,8 +1,8 @@
 // docs/component.schema.json contra os componentes reais e contra o parser.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { SAMPLE_COMPONENTS } from '../../../lab/components/samples';
-import { M3_COMPONENTS } from '../../../lab/components/samplesMaterial3';
+import { SAMPLE_COMPONENTS } from '../../../viewer/samples/samples';
+import { M3_COMPONENTS } from '../../../viewer/samples/samplesMaterial3';
 import { parseComponent } from '../../../src/model/components/parseComponent';
 import { checkSchema } from '../../support/jsonSchema';
 

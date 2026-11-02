@@ -1,5 +1,5 @@
 /**
- * Tokens de design: fonte única do tema (docs/redesign/HANDOFF.md, seção 2).
+ * Tokens de design: fonte única do tema (design system: docs/DESIGN-SYSTEM.md).
  *
  * `renderTokensCss()` gera o CSS que o plugin do Vite entrega como `virtual:tokens.css`
  * (vite.config.ts). O bloco escuro existe uma vez só aqui e é emitido nos dois seletores

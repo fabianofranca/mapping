@@ -2,13 +2,13 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// Auditoria das leituras de pixel (imagens remotas, decisão 17 do PLAN.md): uma imagem `opaque`
+// Auditoria das leituras de pixel (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador"): uma imagem `opaque`
 // (carregada sem CORS) contamina o canvas, então tudo que lê pixels de volta (`toDataURL`,
 // `toBlob`, `getImageData`, `toCanvas`, `toImage` do Konva) só pode rodar sobre cenas que nunca
 // recebem imagem remota `opaque`. Este teste varre o código e falha se uma leitura nova aparecer
 // fora da lista abaixo: quem a acrescentar precisa dizer por que ela é segura.
 
-const ROOTS = ['src', 'lab', 'mcp'];
+const ROOTS = ['src', 'viewer', 'mcp'];
 
 /** Leituras de pixel do Konva e do canvas 2D. */
 const PIXEL_READ =
@@ -24,12 +24,8 @@ const AUDITED: Readonly<Record<string, string>> = {
     '`toBlob` da otimização de uma imagem importada (arquivo do usuário), sem camada de componente',
   'src/canvas/viewportController.ts':
     '`toCanvas` do viewport (converte ponto de tela em ponto do canvas), não é o do Konva; não lê pixel',
-  'lab/components/editor.ts':
-    'laboratório: `stage.toDataURL` de uma tela do lab, que desenha pelo `renderScene` sem `remoteImage` (imagem remota é sempre o reservado)',
-  'lab/components/main.tsx':
-    'laboratório: chama o `editor.toDataURL` acima (mesmo motivo)',
-  'lab/viewer/viewer.ts':
-    'visualizador embutível: `ScreenRenderer` sempre com `pixelSafe: true`, e a opção `remoteImages` (desligada por padrão) nunca liga a nova tentativa sem CORS, então nenhuma imagem `opaque` existe; provado em tests/lab/viewer/remoteImages.test.ts',
+  'viewer/viewer.ts':
+    'visualizador embutível: `ScreenRenderer` sempre com `pixelSafe: true`, e a opção `remoteImages` (desligada por padrão) nunca liga a nova tentativa sem CORS, então nenhuma imagem `opaque` existe; provado em tests/viewer/remoteImages.test.ts',
 };
 
 function sources(dir: string): string[] {
