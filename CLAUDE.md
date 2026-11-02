@@ -69,6 +69,10 @@ Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm te
 - TypeScript strict, sem `any` (use `unknown` + validação).
 - Componentes pequenos e funcionais; lógica fora dos componentes.
 - Não adicione dependências além da stack acima sem justificar no PR.
+- **Complexidade por função:** função nova ou alterada fica com complexidade ciclomática até 10 (`complexity` do ESLint, erro em `src/**` e `mcp/**`); o legado acima disso está em `eslint-suppressions.json`, onde a contagem por arquivo só pode cair.
+  - Quem reduz uma função suprimida abaixo do limite roda `npx eslint --prune-suppressions` no mesmo PR (sem isso o `lint` falha por supressão sem uso).
+  - Não se usa `eslint-disable` para `complexity`: a exceção fica no arquivo de supressões, visível no diff.
+  - Função já suprimida que a fase precisou tocar não exige redução (basta não criar outra acima do limite no mesmo arquivo); a dívida grande vira issue `roadmap`, não refatoração no meio da fase.
 
 ## Fluxo de trabalho
 
