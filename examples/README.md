@@ -139,7 +139,7 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 
 **O que é.** O projeto de exemplo da app, com quatro telas, e a fonte do guia interativo. A pasta e o zip têm o mesmo conteúdo; o zip é o que a app embute.
 
-**Como abrir.** Baixe o `examples/exemplo-completo.zip` do repositório e use **Abrir zip** na tela inicial (grava só uma cópia **Neste dispositivo**, nada em pasta), ou **Abrir pasta** na pasta. A app não embute o exemplo. O guia: link **Guia interativo** na tela inicial e na **Ajuda**.
+**Como abrir.** Baixe o `examples/exemplo-completo.zip` do repositório e use **Abrir zip** na tela inicial (grava só uma cópia **Neste dispositivo**, nada em pasta), ou **Abrir pasta** na pasta (num clone novo, rode `npm run build:example` antes: ele materializa `specs/`, que não é versionado). A app não embute o exemplo. O guia: link **Guia interativo** na tela inicial e na **Ajuda**.
 
 **O que dá para ver.**
 
