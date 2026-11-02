@@ -1,6 +1,6 @@
 # Propostas de alteração — passagem para implementação
 
-Documento de passagem do desenho da etapa 4 (propostas de alteração com revisão), feito com o Claude Design. É a referência das fases 4.3 (estado) e 4.4 (interface); o `PLAN.md` aponta para cá. Complementa o [`HANDOFF.md`](HANDOFF.md) do redesenho: tudo o que não é citado aqui segue o design system 2.0 como está.
+Documento de passagem do desenho da etapa 4 (propostas de alteração com revisão), feito com o Claude Design. É a referência das fases 4.3 (estado) e 4.4 (interface); o plano da etapa 4 (`docs/history/PLAN-etapa-4.md`) aponta para cá. Complementa o [`HANDOFF.md`](HANDOFF.md) do redesenho: tudo o que não é citado aqui segue o design system 2.0 como está.
 
 > **Só desktop (fase 5.8, 2026-10-11).** A app passou a ser só desktop, com largura mínima de 900 px. As partes de celular deste documento (layout de 380 px, toque, densidade de 44 px, gaveta, telas cheias, menu Painéis) ficam como **registro histórico** do desenho e não descrevem mais a app; ver `docs/ARCHITECTURE.md`.
 
@@ -230,7 +230,7 @@ Agem sobre o nível selecionado (proposta, imagem, item ou mudança). **`R` pass
 3. **“Desfazer” dos lotes é do nível da tela**, não o desfazer do projeto: guarda o mapa de decisões anterior e regrava a proposta numa única escrita. Alternativa: sem desfazer, só confirmação (descartada porque decidir deve ser barato).
 4. **Comparação “igual / diferente / não consta na nova”** (proposta substituída) exige comparar as mudanças da proposta antiga com as da nova (por entidade, campo e valor `to`). Sugestão: função pura em `src/model/` na 4.1, usada pela 4.3. O desenho assume esse resultado pronto.
 5. **Rejeitadas não aparecem na visão Proposto**, só na Atual (fantasma e ✕).
-6. **Aceitar o que ainda vale numa proposta substituída:** as aceitas continuam aplicáveis e as pendentes não; o botão Aplicar conta só as aceitas. Já está no `PLAN.md` (decisão 6); o desenho só o torna visível.
+6. **Aceitar o que ainda vale numa proposta substituída:** as aceitas continuam aplicáveis e as pendentes não; o botão Aplicar conta só as aceitas. Já está em `docs/history/PLAN-etapa-4.md` (decisão 6); o desenho só o torna visível.
 7. **Linha tracejada de “criada” × “a revisar”** (seção 4): distinguidas pelo selo + e pelo ⚠. Se na prática ficar confuso, trocar a criada por linha cheia mais selo.
 8. **Colunas e alturas fixas** (seção 3.3): decidir token ou derivação ao implementar.
 9. **Estado “Retirada”** (`withdrawn`) aparece só na lista, com `Flag` neutra e ação Ver. Não há tela de revisão para ela.

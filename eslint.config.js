@@ -28,7 +28,7 @@ const modelRelativeGroup = (group) => ({
   group: [group],
   message: 'src/model/ só pode importar arquivos do próprio model.',
 });
-// mcp/ roda só no Node e não faz rede: ele lê e grava arquivos locais (veja PLAN.md, etapa 3a).
+// mcp/ roda só no Node e não faz rede: ele lê e grava arquivos locais (veja docs/history/PLAN-etapa-3a.md).
 const networkGlobals = ['fetch', 'XMLHttpRequest', 'WebSocket', 'EventSource'].map(
   (name) => ({ name, message: 'mcp/ não faz requisições de rede.' }),
 );
@@ -144,12 +144,12 @@ const storageGlobalProperties = ['window', 'globalThis', 'self'].flatMap((object
 );
 const storageGlobalExceptions = ['src/utils/safeStorage.ts', 'src/storage/local.ts'];
 
-// Decisão 14 da etapa "Imagens remotas" (PLAN.md): um só criador de imagem. Nenhum código monta
+// Decisão 14 da etapa "Imagens remotas" (docs/history/PLAN-etapa-imagens-remotas.md, decisão 14): um só criador de imagem. Nenhum código monta
 // URL de imagem por fora da política de URL e do consentimento; só o carregador
 // (`src/canvas/components/imageLoader.ts`) e `src/storage/**` (imagens do projeto, por `blob:`)
 // podem criar `Image`, elemento `img` ou atribuir `src`. Vale em `src/**` e `lab/**`.
 const imageCreationMessage =
-  'Nenhum código monta URL de imagem por fora da política de URL e do consentimento: use o carregador (src/canvas/components/imageLoader.ts); imagens do projeto ficam em src/storage/ (PLAN.md, decisão 14).';
+  'Nenhum código monta URL de imagem por fora da política de URL e do consentimento: use o carregador (src/canvas/components/imageLoader.ts); imagens do projeto ficam em src/storage/ (docs/history/PLAN-etapa-imagens-remotas.md, decisão 14).';
 const imageCreationSyntaxRules = [
   { selector: "NewExpression[callee.name='Image']", message: imageCreationMessage },
   {
@@ -187,7 +187,7 @@ const imageCreationExceptions = [
 const mcpImportPatterns = [
   {
     group: mcpOnlyFromModel.flatMap((dir) => [`**/src/${dir}`, `**/src/${dir}/**`]),
-    message: 'mcp/ só pode importar src/model/ (veja PLAN.md, etapa 3a).',
+    message: 'mcp/ só pode importar src/model/ (veja docs/history/PLAN-etapa-3a.md).',
   },
   {
     group: ['konva', 'konva/*', 'idb', 'jszip', 'preact', 'preact/*', '@preact/*'],

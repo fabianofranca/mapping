@@ -1,5 +1,5 @@
 /**
- * Imagens remotas do visualizador embutível (RI4, decisão 9 do PLAN.md). Desligadas por padrão:
+ * Imagens remotas do visualizador embutível (RI4, decisão 9 de docs/history/PLAN-etapa-imagens-remotas.md). Desligadas por padrão:
  * sem a opção `remoteImages`, nenhum `Image` é criado e nada vai à rede.
  *
  * Ligadas, valem as duas portas, na versão do hospedeiro: a URL passa na política pura do

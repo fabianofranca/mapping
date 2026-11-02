@@ -1,6 +1,6 @@
 # Laboratório
 
-Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (`dist/lab/…`) para validar uma possibilidade antes de ela virar etapa do [`PLAN.md`](../PLAN.md). Nada daqui entra no `index.html` da app, nem nas regras do núcleo (i18n, store, tokens de design obrigatórios). As regras que continuam valendo: TypeScript strict, sem `any`, sem dependências novas além do React 19, que é só de desenvolvimento e só da página `react` (ver `viewer/`), sem requisição de rede (a página leva a CSP de perfil `static`, a da app antes da etapa Imagens remotas: sem imagem remota nem Trusted Types) e testes no Vitest.
+Experimentos **fora do produto**: páginas à parte, publicadas ao lado da app (`dist/lab/…`) para validar uma possibilidade antes de ela virar etapa do projeto (issues com o rótulo `etapa` no GitHub). Nada daqui entra no `index.html` da app, nem nas regras do núcleo (i18n, store, tokens de design obrigatórios). As regras que continuam valendo: TypeScript strict, sem `any`, sem dependências novas além do React 19, que é só de desenvolvimento e só da página `react` (ver `viewer/`), sem requisição de rede (a página leva a CSP de perfil `static`, a da app antes da etapa Imagens remotas: sem imagem remota nem Trusted Types) e testes no Vitest.
 
 O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranca/mapping/pull/160)): toda mudança entra por um PR com base nesse branch, nunca na `main`, conforme o [`CLAUDE.md`](../CLAUDE.md) ("Fluxo de trabalho").
 
@@ -28,7 +28,7 @@ O laboratório é o épico `epic/lab` (PR [#160](https://github.com/fabianofranc
 
 **O que observar no teste:** se escrever um componente à mão é razoável (o formato é a parte que iria para o produto); se o layout `row`/`column` + âncoras cobre os componentes reais de um design system ou falta algo (empilhamento automático entre instâncias ficou de fora de propósito); a fidelidade do texto (fonte do sistema).
 
-**Caminho para o produto (conclusão da análise de 2026-10-16):** deu certo. O **motor** (formato, parser, expressões, instanciação, cena, renderizador Konva e arrumação) vai para o produto como a etapa **Biblioteca** do [`docs/ROADMAP.md`](../docs/ROADMAP.md). O **editor do laboratório** (`editor.ts` e a página) não vai: o canvas da app já faz esse papel (entrada geométrica, seleção na UI, alças no overlay, undo no histórico). No produto não existe entidade "instância": uma instância é **uma marcação com uma anotação tipada**, e o desenho é derivado (retângulo da marcação, tipo e valores da anotação, molde da especialização) e não é gravado. Uma tela sem imagem é uma **imagem sem arquivo** (tela em branco com tamanho e cor de fundo); o quadro com telas reorganizáveis já existe na app (`placement` das imagens). O desenho é opcional por tipo, então projetos só com fotos não executam nada novo.
+**Caminho para o produto (conclusão da análise de 2026-10-16):** deu certo. O **motor** (formato, parser, expressões, instanciação, cena, renderizador Konva e arrumação) vai para o produto como a etapa **Biblioteca** ([`docs/history/PLAN-etapa-biblioteca.md`](../docs/history/PLAN-etapa-biblioteca.md)). O **editor do laboratório** (`editor.ts` e a página) não vai: o canvas da app já faz esse papel (entrada geométrica, seleção na UI, alças no overlay, undo no histórico). No produto não existe entidade "instância": uma instância é **uma marcação com uma anotação tipada**, e o desenho é derivado (retângulo da marcação, tipo e valores da anotação, molde da especialização) e não é gravado. Uma tela sem imagem é uma **imagem sem arquivo** (tela em branco com tamanho e cor de fundo); o quadro com telas reorganizáveis já existe na app (`placement` das imagens). O desenho é opcional por tipo, então projetos só com fotos não executam nada novo.
 
 **Desenho pelo núcleo (fase L1):** o editor deixou de desenhar por conta própria e passou a desenhar pelo `ScreenRenderer` do núcleo do visualizador (`lab/viewer/`, ver a seção `viewer/` abaixo): um por tela do quadro, com `onInstanceCreated` ligando o arrasto de cada instância. O editor ficou só com o que é edição: quadro, pan, zoom, pinça, `Transformer`, arrasto para container e rótulos. O medidor de texto do Konva (`konvaMeasurer`) mudou para `lab/viewer/measure.ts` (hoje `src/canvas/components/konvaMeasurer.ts`). A página e o comportamento não mudaram.
 
@@ -98,7 +98,7 @@ React 19 é dependência de desenvolvimento **só do laboratório**: a app conti
 - `fill` no eixo principal dentro de pai `hug` cai em `hug`, com aviso (dentro de templates continua virando 0). No eixo cruzado de uma row `hug`, os `fill` recebem a maior altura dos outros filhos.
 - `stretch` só afeta filhos `hug`; filho `hug` em column é limitado à largura do conteúdo.
 - Slot invisível ignora os filhos, com aviso. Slot vazio conta só o padding (o cartão sem ações fica com o gap de 8 a mais embaixo: ponto conhecido).
-- Conteúdo maior que a tela: o laboratório **avisa** (`tela: conteúdo maior que a altura da tela`) e não recorta nem recusa; o produto segue a mesma regra, avisar sem recortar nem recusar, por decisão do plano da etapa Biblioteca ([`PLAN.md`](../PLAN.md)).
+- Conteúdo maior que a tela: o laboratório **avisa** (`tela: conteúdo maior que a altura da tela`) e não recorta nem recusa; o produto segue a mesma regra, avisar sem recortar nem recusar, por decisão do plano da etapa Biblioteca ([`docs/history/PLAN-etapa-biblioteca.md`](../docs/history/PLAN-etapa-biblioteca.md)).
 - Caso de prova (`tests/model/components/layout.test.ts`): com um texto de apoio mais longo, o cartão, a coluna que o contém e o irmão seguinte crescem os mesmos 80 px. As regras de dimensionamento, com este caso, estão documentadas no produto em [`docs/COMPONENT-FORMAT.md`](../docs/COMPONENT-FORMAT.md).
 
 O editor (`src/model/components/arrange.ts`) **não mudou**: lá o retângulo continua sendo a fonte de verdade e o layout do slot só posiciona; a arrumação por tamanhos vale para telas sem geometria. No produto, a ação "Arrumar" pode usar o `layoutScreen`.
@@ -178,7 +178,7 @@ Detalhes e checkboxes das fases em [`docs/history/PLAN-etapa-lab.md`](../docs/hi
 - Declaração de origem: chave `path` própria para o caminho do campo e `slot`/`ignore` aceitos nas `sources` de sistemas executáveis (feito na B1, em `src/model/spec.ts`).
 - Em aberto: campos de tabela no lugar de listas numeradas, props no próprio nó e vários slots por componente.
 
-**Fechamento:** o épico `epic/lab` foi mesclado na `main` em 2026-10-17 (PR #160); a etapa seguinte, a **Biblioteca**, está detalhada no [`PLAN.md`](../PLAN.md) (B1 a B5, em épico próprio).
+**Fechamento:** o épico `epic/lab` foi mesclado na `main` em 2026-10-17 (PR #160); a etapa seguinte, a **Biblioteca**, está em [`docs/history/PLAN-etapa-biblioteca.md`](../docs/history/PLAN-etapa-biblioteca.md) (B1 a B5, em épico próprio).
 
 ## O que foi para o produto e o que fica no laboratório (Fechamento da Biblioteca)
 

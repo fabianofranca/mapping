@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// Auditoria das leituras de pixel (imagens remotas, decisão 17 do PLAN.md): uma imagem `opaque`
+// Auditoria das leituras de pixel (imagens remotas, decisão 17 de docs/history/PLAN-etapa-imagens-remotas.md): uma imagem `opaque`
 // (carregada sem CORS) contamina o canvas, então tudo que lê pixels de volta (`toDataURL`,
 // `toBlob`, `getImageData`, `toCanvas`, `toImage` do Konva) só pode rodar sobre cenas que nunca
 // recebem imagem remota `opaque`. Este teste varre o código e falha se uma leitura nova aparecer

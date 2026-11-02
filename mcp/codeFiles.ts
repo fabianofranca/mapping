@@ -4,7 +4,7 @@ import { isWithin } from './paths';
 
 // Conferência de arquivos de código (etapa 3b.4): o servidor só diz SE o arquivo existe.
 //
-// Regra (PLAN.md, decisão 7): o servidor NUNCA lê nem grava arquivo de código. Este é o único
+// Regra (docs/history/PLAN-etapa-3b.md, decisão 7): o servidor NUNCA lê nem grava arquivo de código. Este é o único
 // módulo do `mcp/` que toca o disco por caminho de código, e ele importa apenas `realpath` e
 // `stat` (metadados). Um teste estático (tests/mcp/noCodeRead.test.ts) garante isso.
 //
