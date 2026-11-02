@@ -8,8 +8,8 @@ import { createHash } from 'node:crypto';
 
 /**
  * Perfil da política. `app` é o `index.html` da app: aceita imagem remota (`https:`/`http:`;
- * o interruptor de `http:` é da app, não da CSP) e exige Trusted Types. `static` é o guia e as
- * páginas do laboratório: o guia monta o painel com `innerHTML` não vazio e o laboratório não
+ * o interruptor de `http:` é da app, não da CSP) e exige Trusted Types. `static` é o guia e a
+ * demo do visualizador: o guia monta o painel com `innerHTML` não vazio e a demo não
  * carrega a política `default`; nenhum dos dois mostra imagem remota, então a imagem para fora
  * continua barrada pela CSP neles.
  */

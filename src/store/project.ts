@@ -478,7 +478,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     moveEntry: (annotationId: string, entryId: string, to: number) =>
       store.apply((p) => model.moveEntry(p, annotationId, entryId, to)),
 
-    // Especializações (docs/history/PLAN-etapas-1-2.md 13.4): cada operação é uma entrada no histórico.
+    // Especializações (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"): cada operação é uma entrada no histórico.
     // `packageFiles`: o pacote da biblioteca. O store só usa o NOME do arquivo da
     // especialização dentro dele; os bytes são da sessão (grava em `specs/<id>/`), nunca do store.
     applySpecialization: (spec: Spec, packageFiles?: SpecPackageFiles) =>

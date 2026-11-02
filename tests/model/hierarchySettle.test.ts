@@ -13,7 +13,7 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-// Regras de contenção da etapa Marcações espaciais (docs/history/PLAN-etapa-marcacoes-espaciais.md, "Regras de contenção"): o teste
+// Regras de contenção (docs/ARCHITECTURE.md, "Espaços, pertencimento e gestos"): o teste
 // que vem antes de qualquer canvas. Os projetos são montados à mão, sem as operações (que já
 // assentam), para o assentar ser exercitado sozinho.
 

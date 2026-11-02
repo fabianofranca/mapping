@@ -2,7 +2,7 @@ import { signal, type ReadonlySignal } from '@preact/signals';
 import { tokenValue } from '../theme/tokens';
 import { readSetting, writeSetting } from '../utils/safeStorage';
 
-// Janelas de ferramenta do desktop (docs/redesign/HANDOFF.md, B1 e B2): quais estão
+// Janelas de ferramenta do desktop (design system: docs/DESIGN-SYSTEM.md): quais estão
 // abertas, qual é a aba da janela inferior e o tamanho de cada lado. É estado de UI,
 // por dispositivo: fica no `localStorage` (com try/catch, em `safeStorage`), nunca no
 // `mapping.json` nem no histórico de desfazer.

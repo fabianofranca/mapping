@@ -200,11 +200,11 @@ describe('sw.js', () => {
     expect(responses).toHaveLength(1);
   });
 
-  it('navegação para outra página do site (ex.: lab/) vai à rede, não ao index.html', async () => {
+  it('navegação para outra página do site (ex.: outra/) vai à rede, não ao index.html', async () => {
     for (const channel of ['main', 'preview'] as const) {
       const worker = loadWorker([], channel);
       await worker.dispatch('install');
-      for (const path of ['lab/components/', 'lab/components/index.html', 'outra.html']) {
+      for (const path of ['outra/', 'outra/index.html', 'outra.html']) {
         const responses = await worker.dispatch('fetch', {
           request: {
             method: 'GET',

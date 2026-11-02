@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../harness';
 import { approximateMeasurer } from '../../../src/model/components/instantiate';
 import { loadLibrary } from '../../../src/model/components/library';
-import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../lab/components/samples';
+import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../../viewer/samples/samples';
 import {
   type Instance,
   type Screen,

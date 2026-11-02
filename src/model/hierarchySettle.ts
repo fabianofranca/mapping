@@ -12,8 +12,8 @@ import {
 import { projectIndex } from './projectIndex';
 import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
-// Pertencimento por geometria (etapa Marcações espaciais, ME1; regras em docs/history/PLAN-etapa-marcacoes-espaciais.md, "Regras de
-// contenção"). Quem contém quem é decidido pela ferramenta e gravado no JSON: o agente lê
+// Pertencimento por geometria (regras em docs/ARCHITECTURE.md, "Espaços, pertencimento e gestos"
+// e em docs/FORMAT.md, "Campos da v13 (pertencimento)"). Quem contém quem é decidido pela ferramenta e gravado no JSON: o agente lê
 // `parentId` (da marcação e do container) e nunca calcula interseções. "Dentro" é sempre
 // totalmente contido; a tolerância fica na interação (`src/canvas/`), nunca aqui.
 

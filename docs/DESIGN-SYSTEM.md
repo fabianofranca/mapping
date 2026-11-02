@@ -11,7 +11,7 @@ Este arquivo é o registro dele no repositório. Ele diz o que o DS é, **quando
 - **É curado à mão.** Cada componente tem um guia (`README.md`) e um preview em HTML escritos por pessoas, com os estados desenhados um por um. O conteúdo tem autores: ao atualizar, mexa só no que a entrega mudou.
 - **Não é gerado do código.** A skill `/design-sync` do Claude Code **não se aplica** a este DS: ela espera o `dist/` de uma biblioteca de componentes publicada e transformaria o DS curado num espelho do build. Não a use aqui.
 - **O código é a fonte da verdade; o DS descreve.** Onde os dois divergirem, corrija o DS. Divergência que pareça defeito da app não se resolve aqui: registre em "Pendências" e leve ao dono.
-- **Nome.** O índice do artefato se chama **Mapping**. Os documentos de `docs/redesign/` o chamam de "Mapeador de Imagens 2.0", nome da etapa 2.3; é o mesmo artefato.
+- **Nome.** O índice do artefato se chama **Mapping**. Se aparecer o nome antigo "Mapeador de Imagens 2.0", é o mesmo artefato.
 - **Tamanho hoje:** 63 componentes com guia e preview (mais a capa `Cover`), 6 seções, 145 tokens e 85 ícones.
 
 ## Quando verificar
@@ -33,7 +33,7 @@ Se o "Toca em:" da fase (na sub-issue da fase, no GitHub) cruzar qualquer caminh
 
 A lista é um filtro rápido, não um limite: uma mudança em `src/model/` ou `src/store/` que altere **o que a pessoa vê na tela** também conta — foi o caso de `src/store/proposedCatalog.ts` (visão Proposto) e de `src/store/imagePermissions.ts` (Privacidade).
 
-**Nunca dispara:** testes, `examples/`, `libraries/`, `lab/`, `mcp/`, `scripts/` e documentação.
+**Nunca dispara:** testes, `examples/`, `libraries/`, `viewer/demo/`, `mcp/`, `scripts/` e documentação.
 
 ## Como verificar, fase a fase
 
