@@ -4,6 +4,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `etapa` e, antes delas, no histórico do git.
 
+## Avisos que faltam — [Não lançado] (épico `epic/avisos-faltantes`, PR a definir, MCP 0.13.0, schema v13)
+
+### Adicionado
+
+- Soltar um arrasto de retângulo menor que o mínimo de 8 px, com a ferramenta de marcação, agora mostra o aviso "Cada lado precisa ter pelo menos 8 px." em vez de não fazer nada. Clique simples, Esc e arrasto válido seguem sem aviso.
+
 ## Foco nas janelas — 2026-11-02 (épico `epic/foco-janelas`, PR #315, MCP 0.12.0, schema v13)
 
 ### Corrigido
