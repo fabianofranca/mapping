@@ -56,7 +56,7 @@ Como é gerado, o que abrir o exemplo grava e como mudar o exemplo: [`docs/GUIDE
 
 ```bash
 npm run build:mcp    # gera dist-mcp/mapping-mcp.js (servidor MCP em arquivo único)
-npm run lint         # eslint + prettier --check
+npm run lint         # eslint + prettier --check (inclui complexidade por função até 10; legado em eslint-suppressions.json)
 npm run typecheck    # tsc --noEmit (app e servidor MCP)
 npm test             # Vitest: modelo (Node), store, storage, canvas e componentes
 npm run test:coverage # com relatório de cobertura em coverage/ (pula os orçamentos de desempenho)
