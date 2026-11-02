@@ -4,6 +4,16 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão em `docs/history/`.
 
+## [Não lançado] — Testes na nuvem (épico `epic/testes-nuvem`, MCP sem mudança, schema v13)
+
+### Adicionado
+
+- As rodadas dirigidas do testador podem rodar numa sessão do Claude Code na nuvem (ambiente "Mapping - testes"), sem o dono no computador: prompt em `docs/TESTING-NUVEM.md` e receitas dos diálogos nativos no apêndice A do `docs/TESTING.md`.
+
+### Alterado
+
+- O fluxo de épico dispara a rodada dirigida sozinho depois do merge da última fase.
+
 ## Biblioteca Material 3 — 2026-11-01 (épico `epic/material3`, PR #260, MCP 0.12.0, schema v13)
 
 ### Adicionado
