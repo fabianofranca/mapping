@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
+import { BREAKPOINTS } from '../../theme/breakpoints';
 import {
   CANVAS_FILTER,
   CHANGE_TYPES,
@@ -14,6 +15,7 @@ import {
 import { useEditor } from '../EditorContext';
 import { Icon } from '../icons';
 import { Notice } from '../Notice';
+import { useMediaQuery } from '../useMediaQuery';
 import { Button, Chip, Choice, IconButton, Segmented, Select } from '../controls';
 import { ChangeKind, changeKindLabel } from './ChangeKind';
 import { changeSummary, changeTitle, targetName, type ReviewNames } from './changeText';
@@ -198,9 +200,14 @@ export function ReviewFilters({ names }: { readonly names: ReviewNames }) {
   );
 }
 
-/** Rodapé com os atalhos principais (desktop). */
+/**
+ * Rodapé com os atalhos principais (desktop). Em janela estreita (mesmo limiar da
+ * `ReviewBar`) mostra só os três primeiros, numa linha; os demais seguem valendo pelo
+ * teclado e na Ajuda › Atalhos.
+ */
 function ShortcutFooter() {
-  const items: readonly [string, string][] = [
+  const compact = useMediaQuery(`(max-width: ${BREAKPOINTS.compact}px)`);
+  const all: readonly [string, string][] = [
     [REVIEW_KEYS.accept, t('review.accept')],
     [REVIEW_KEYS.reject, t('review.reject')],
     [REVIEW_KEYS.nextPending, t('review.nextPending')],
@@ -208,8 +215,12 @@ function ShortcutFooter() {
     [REVIEW_KEYS.toggleView, t('review.view.toggle')],
     [REVIEW_KEYS.apply, t('review.applyShort')],
   ];
+  const items = compact ? all.slice(0, 3) : all;
   return (
-    <div class="review-footer" aria-label={t('review.shortcuts')}>
+    <div
+      class={compact ? 'review-footer review-footer-compact' : 'review-footer'}
+      aria-label={t('review.shortcuts')}
+    >
       {items.map(([key, label]) => (
         <span key={key}>
           <kbd class="kbd">{key}</kbd>

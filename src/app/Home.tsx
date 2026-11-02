@@ -143,6 +143,9 @@ export function Home() {
       await run(() => openLocalProject(project.id));
       return;
     }
+    // A linha de origem, para o aviso devolver o foco a ela ao fechar sem remover: o Abrir
+    // fica desabilitado enquanto a pasta abre e perde o foco, então o diálogo não o guarda.
+    removedAt.current = recentRowIndex(listSection.current, `folder:${project.id}`);
     // Direto no clique: o navegador só mostra o pedido de permissão dentro do gesto.
     const result = await run(() =>
       reopen.track((trace) => openRecentFolder(project.id, trace)),
@@ -706,29 +709,31 @@ function ProjectTable({ projects, busy, onOpen, onDelete, onForget }: ProjectLis
               </span>
             </td>
             <td>{formatDate(project.usedAt)}</td>
-            <td class="project-actions">
-              <Button
-                size="sm"
-                data-recent-open=""
-                disabled={busy}
-                onClick={() => onOpen(project)}
-              >
-                {t('common.open')}
-              </Button>
-              {project.kind === 'local' ? (
+            <td>
+              <div class="project-actions">
                 <Button
                   size="sm"
-                  variant="danger"
+                  data-recent-open=""
                   disabled={busy}
-                  onClick={() => onDelete(project)}
+                  onClick={() => onOpen(project)}
                 >
-                  {t('common.delete')}
+                  {t('common.open')}
                 </Button>
-              ) : (
-                <Button size="sm" disabled={busy} onClick={() => onForget(project)}>
-                  {t('home.forgetFolder')}
-                </Button>
-              )}
+                {project.kind === 'local' ? (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    disabled={busy}
+                    onClick={() => onDelete(project)}
+                  >
+                    {t('common.delete')}
+                  </Button>
+                ) : (
+                  <Button size="sm" disabled={busy} onClick={() => onForget(project)}>
+                    {t('home.forgetFolder')}
+                  </Button>
+                )}
+              </div>
             </td>
           </tr>
         ))}
