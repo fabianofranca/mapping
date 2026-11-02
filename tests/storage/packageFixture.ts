@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { parseSpecText, type Spec } from '../../src/model';
 
-const ROOT = join(__dirname, '../../examples/libraries/material3');
+const ROOT = join(__dirname, '../../tests/fixtures/material3');
 
 function list(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>

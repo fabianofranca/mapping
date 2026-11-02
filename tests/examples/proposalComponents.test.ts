@@ -1,7 +1,12 @@
 import JSZip from 'jszip';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { deserialize, parseProposalText, type Proposal } from '../../src/model';
+import {
+  deserialize,
+  isTextPackageFile,
+  parseProposalText,
+  type Proposal,
+} from '../../src/model';
 import { validateLibrary, type LibraryFile } from '../../src/model/library';
 import { readProjectZip } from '../../src/storage/zip';
 import { createEditorDerived } from '../../src/store/derived';
@@ -48,19 +53,27 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     const names = Object.keys(zip.files).filter((n) => !zip.files[n]?.dir);
     expect(names.sort(), HINT).toEqual([...expected.keys()].sort());
     for (const [path, content] of expected) {
-      expect(await zip.file(path)?.async('string'), `${path}. ${HINT}`).toBe(content);
+      if (typeof content === 'string') {
+        expect(await zip.file(path)?.async('string'), `${path}. ${HINT}`).toBe(content);
+      } else {
+        const bytes = await zip.file(path)?.async('nodebuffer');
+        expect(bytes?.equals(content), `${path}. ${HINT}`).toBe(true);
+      }
     }
   });
 
-  it('o pacote specs/material3/ do zip é uma biblioteca válida (sem erro no Diagnóstico)', async () => {
+  it('o pacote specs/material3-compose/ do zip é uma biblioteca válida (sem erro no Diagnóstico)', async () => {
     const zip = await JSZip.loadAsync(readFileSync(EXAMPLE));
-    const prefix = 'specs/material3/';
+    const prefix = 'specs/material3-compose/';
     const files: LibraryFile[] = [];
     for (const [name, entry] of Object.entries(zip.files)) {
       if (entry.dir || !name.startsWith(prefix)) continue;
-      files.push({ path: name.slice(prefix.length), text: await entry.async('string') });
+      const path = name.slice(prefix.length);
+      files.push(
+        isTextPackageFile(path) ? { path, text: await entry.async('string') } : { path },
+      );
     }
-    const report = validateLibrary({ files, specPath: 'material3.spec.json' });
+    const report = validateLibrary({ files, specPath: 'material3-compose.spec.json' });
     expect(report.errors.map((i) => `${i.file} ${i.path} ${i.message}`)).toEqual([]);
     expect(report.ok).toBe(true);
   });
@@ -84,7 +97,12 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     const { project, proposal } = await readExample();
     const files: Record<string, string> = {};
     for (const [path, text] of showcase().files) {
-      if (path !== 'mapping.json' && !path.endsWith('/proposal.json')) files[path] = text;
+      if (
+        typeof text === 'string' &&
+        path !== 'mapping.json' &&
+        !path.endsWith('/proposal.json')
+      )
+        files[path] = text;
     }
     const h = await openHarness({
       project,

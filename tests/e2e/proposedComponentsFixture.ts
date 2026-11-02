@@ -26,10 +26,10 @@ import {
 } from '../../src/model';
 
 // Etapa Proposto com componentes: projetos e propostas montados pelo modelo, com os pacotes do
-// Material 3 de `examples/libraries/material3`. Usado pelo e2e (`proposedComponents.spec.ts`)
+// biblioteca `material3-compose` (`libraries/material3-compose`). Usado pelo e2e (`proposedComponents.spec.ts`)
 // e pelo zip `examples/proposta-componentes.zip` (roteiro R13 do `docs/TESTING.md`).
 
-export const PACKAGE_DIR = 'examples/libraries/material3';
+export const PACKAGE_DIR = 'libraries/material3-compose';
 export const NOW = '2026-10-24T12:00:00.000Z';
 
 /** Arquivos de componente do Material 3 (caminho relativo ao pacote → texto). */
@@ -42,9 +42,14 @@ export function componentTexts(): Map<string, string> {
   );
 }
 
-/** Todos os arquivos de texto do pacote do Material 3 (caminho relativo → texto), ordenados. */
-export function packageTexts(): Map<string, string> {
-  const out = new Map<string, string>();
+const TEXT_EXTENSIONS = /\.(json|md|txt)$/;
+
+/**
+ * Todos os arquivos do pacote (caminho relativo → conteúdo), ordenados: texto como string e as
+ * fontes (`.woff2`) como bytes.
+ */
+export function packageTexts(): Map<string, string | Buffer> {
+  const out = new Map<string, string | Buffer>();
   const walk = (dir: string): void => {
     for (const name of readdirSync(dir).sort()) {
       const full = join(dir, name);
@@ -52,7 +57,7 @@ export function packageTexts(): Map<string, string> {
       else
         out.set(
           relative(PACKAGE_DIR, full).split('\\').join('/'),
-          readFileSync(full, 'utf8'),
+          TEXT_EXTENSIONS.test(name) ? readFileSync(full, 'utf8') : readFileSync(full),
         );
     }
   };
@@ -63,7 +68,7 @@ export function packageTexts(): Map<string, string> {
 /** A especialização do Material 3 com outro `id` (para simular um pacote que a proposta traz). */
 export function loadSpec(id: string): Spec {
   const raw = JSON.parse(
-    readFileSync(join(PACKAGE_DIR, 'material3.spec.json'), 'utf8'),
+    readFileSync(join(PACKAGE_DIR, 'material3-compose.spec.json'), 'utf8'),
   ) as Record<string, unknown>;
   const parsed = parseSpec({ ...raw, id, name: id });
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
@@ -80,18 +85,18 @@ export function catalogOf(spec: Spec, texts: Map<string, string>): ComponentCata
 }
 
 /** Os arquivos do projeto base: `mapping.json`, `specs/` e o pacote do Material 3. */
-function baseFiles(base: Project): Map<string, string> {
-  const files = new Map<string, string>([['mapping.json', serialize(base)]]);
+function baseFiles(base: Project): Map<string, string | Buffer> {
+  const files = new Map<string, string | Buffer>([['mapping.json', serialize(base)]]);
   for (const [path, text] of specFiles(base)) files.set(path, text);
   // O pacote inteiro (componentes, docs, exemplos, fontes): o Diagnóstico da app o confere.
   for (const [path, text] of packageTexts()) {
-    const target = `specs/material3/${path}`;
+    const target = `specs/material3-compose/${path}`;
     if (!files.has(target)) files.set(target, text);
   }
   return files;
 }
 
-async function zipOf(files: Map<string, string>, date?: Date): Promise<Buffer> {
+async function zipOf(files: Map<string, string | Buffer>, date?: Date): Promise<Buffer> {
   const zip = new JSZip();
   for (const path of [...files.keys()].sort()) {
     zip.file(path, files.get(path) ?? '', {
@@ -99,11 +104,16 @@ async function zipOf(files: Map<string, string>, date?: Date): Promise<Buffer> {
       ...(date && { date }),
     });
   }
-  return zip.generateAsync({ type: 'nodebuffer', platform: 'UNIX' });
+  return zip.generateAsync({
+    type: 'nodebuffer',
+    platform: 'UNIX',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 9 },
+  });
 }
 
 // ---------------------------------------------------------------------------------------
-// Fixture simples do e2e: um tipo já aplicado (`material3`) e um do pacote da proposta.
+// Fixture simples do e2e: um tipo já aplicado (`material3-compose`) e um do pacote da proposta.
 
 export const PROPOSAL_ID = 'telas-novas';
 
@@ -114,9 +124,9 @@ function baseProject(counter: { n: number }): Project {
     now: NOW,
     firstLayer: { id: 'L1', name: 'Componentes', color: '#1e88e5' },
   });
-  base = applySpecialization(base, loadSpec('material3'), {
+  base = applySpecialization(base, loadSpec('material3-compose'), {
     newId: () => `LS${++counter.n}`,
-    packageSpecName: 'material3.spec.json',
+    packageSpecName: 'material3-compose.spec.json',
   });
   return addBackgroundContainer(base, {
     id: 'B1',
@@ -129,12 +139,12 @@ function baseProject(counter: { n: number }): Project {
 }
 
 /**
- * O projeto "Telas" e a proposta que cria nela um Button de tipo já aplicado (`material3`) e
+ * O projeto "Telas" e a proposta que cria nela um Button de tipo já aplicado (`material3-compose`) e
  * um de um pacote que a proposta traz (`m3novo`).
  */
 export async function fixtureZip(): Promise<Buffer> {
   const texts = componentTexts();
-  const applied = loadSpec('material3');
+  const applied = loadSpec('material3-compose');
   const extra = loadSpec('m3novo');
   const counter = { n: 0 };
   const base = baseProject(counter);
@@ -147,7 +157,7 @@ export async function fixtureZip(): Promise<Buffer> {
     ...catalogOf(extra, texts),
   ]);
   for (const [markingId, specId, y] of [
-    ['N1', 'material3', 100],
+    ['N1', 'material3-compose', 100],
     ['N2', 'm3novo', 300],
   ] as const) {
     after = addComponentMarking(
@@ -159,7 +169,7 @@ export async function fixtureZip(): Promise<Buffer> {
         containerId: 'B1',
         parentId: null,
         specId,
-        typeId: 'm3-button',
+        typeId: 'button',
         center: { x: 180, y },
         values: { label: 'Pagar' },
       },
@@ -176,7 +186,7 @@ export async function fixtureZip(): Promise<Buffer> {
   const pkg = `proposals/${PROPOSAL_ID}/specs/m3novo`;
   files.set(`${pkg}/m3novo.spec.json`, serializeSpec(extra));
   for (const [path, text] of packageTexts()) {
-    if (path !== 'material3.spec.json') files.set(`${pkg}/${path}`, text);
+    if (path !== 'material3-compose.spec.json') files.set(`${pkg}/${path}`, text);
   }
   return zipOf(files);
 }
@@ -207,7 +217,7 @@ export interface Showcase {
   readonly createIds: Readonly<
     Record<Exclude<keyof typeof SHOWCASE_NAMES, 'existing'>, string>
   >;
-  readonly files: Map<string, string>;
+  readonly files: Map<string, string | Buffer>;
 }
 
 /**
@@ -219,7 +229,7 @@ export interface Showcase {
  */
 export function showcase(): Showcase {
   const texts = componentTexts();
-  const applied = loadSpec('material3');
+  const applied = loadSpec('material3-compose');
   const extra = loadSpec('m3novo');
   const counter = { n: 0 };
   const catalog: ComponentCatalog = new Map([
@@ -243,7 +253,7 @@ export function showcase(): Showcase {
         containerId: 'B1',
         parentId: null,
         specId,
-        typeId: 'm3-button',
+        typeId: 'button',
         center: { x, y },
         values,
       },
@@ -251,7 +261,7 @@ export function showcase(): Showcase {
     );
 
   const base = renameMarking(
-    button(baseProject(counter), 'N0', 'material3', 60, { label: 'Antigo' }),
+    button(baseProject(counter), 'N0', 'material3-compose', 60, { label: 'Antigo' }),
     'N0',
     SHOWCASE_NAMES.existing,
   );
@@ -262,11 +272,11 @@ export function showcase(): Showcase {
   });
   after = setFieldValue(after, 'A_N0', 'label', 'Novo valor');
   const creations: readonly [string, string, string, number, Record<string, string>][] = [
-    ['N1', SHOWCASE_NAMES.pending, 'material3', 140, { label: 'Pendente' }],
-    ['N2', SHOWCASE_NAMES.accepted, 'material3', 220, { label: 'Aceito' }],
-    ['N3', SHOWCASE_NAMES.rejected, 'material3', 300, { label: 'Rejeitado' }],
-    ['N4', SHOWCASE_NAMES.invalid, 'material3', 380, { label: 'Inválido' }],
-    ['N5', SHOWCASE_NAMES.noLabel, 'material3', 460, {}],
+    ['N1', SHOWCASE_NAMES.pending, 'material3-compose', 140, { label: 'Pendente' }],
+    ['N2', SHOWCASE_NAMES.accepted, 'material3-compose', 220, { label: 'Aceito' }],
+    ['N3', SHOWCASE_NAMES.rejected, 'material3-compose', 300, { label: 'Rejeitado' }],
+    ['N4', SHOWCASE_NAMES.invalid, 'material3-compose', 380, { label: 'Inválido' }],
+    ['N5', SHOWCASE_NAMES.noLabel, 'material3-compose', 460, {}],
     ['N6', SHOWCASE_NAMES.package, 'm3novo', 540, { label: 'Do pacote' }],
   ];
   for (const [id, name, specId, y, values] of creations) {
@@ -320,7 +330,7 @@ export function showcase(): Showcase {
   const pkg = `proposals/${SHOWCASE_PROPOSAL_ID}/specs/m3novo`;
   files.set(`${pkg}/m3novo.spec.json`, serializeSpec(extra));
   for (const [path, text] of packageTexts()) {
-    if (path !== 'material3.spec.json') files.set(`${pkg}/${path}`, text);
+    if (path !== 'material3-compose.spec.json') files.set(`${pkg}/${path}`, text);
   }
 
   return {

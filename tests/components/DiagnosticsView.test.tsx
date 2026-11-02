@@ -237,9 +237,33 @@ describe('Diagnóstico: imagens remotas', () => {
     const section = screen.getByRole('region', { name: t('diagnostics.remoteImages') });
     expect(section.textContent).toContain('https://cdn.a.com/img/x.png');
     expect(section.textContent).not.toContain('segredo');
-    expect(section.textContent).toContain(t('diagnostics.imageReason.blocked-consent'));
-    expect(section.textContent).not.toContain(t('diagnostics.imageReason.failed'));
+    // A mesma URL aparece uma vez, com a razão mais recente (R15.9: "endereço não aceito"
+    // vira "não carregou" quando a pessoa liga o interruptor e o pedido sai).
+    expect(section.textContent).not.toContain(
+      t('diagnostics.imageReason.blocked-consent'),
+    );
+    expect(section.textContent).toContain(t('diagnostics.imageReason.failed'));
     expect(section.textContent).toContain(t('diagnostics.imageReason.timeout'));
+    expect(section.querySelectorAll('li')).toHaveLength(2);
+    clearRemoteImageIssues();
+  });
+
+  it('troca a razão no lugar quando a mesma URL passa de "não aceito" a "não carregou"', () => {
+    clearRemoteImageIssues();
+    render(<Diagnostics />);
+    act(() => {
+      reportRemoteImageIssue('http://127.0.0.1:8765/foto.png', 'invalid');
+      reportRemoteImageIssue('https://b.com/y.png', 'timeout');
+      reportRemoteImageIssue('http://127.0.0.1:8765/foto.png', 'failed');
+      reportRemoteImageIssue('http://127.0.0.1:8765/foto.png', 'failed');
+    });
+    const section = screen.getByRole('region', { name: t('diagnostics.remoteImages') });
+    const rows = [...section.querySelectorAll('li')].map((li) => li.textContent ?? '');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toContain('http://127.0.0.1:8765/foto.png');
+    expect(rows[0]).toContain(t('diagnostics.imageReason.failed'));
+    expect(rows[0]).not.toContain(t('diagnostics.imageReason.invalid'));
+    expect(rows[1]).toContain('https://b.com/y.png');
     clearRemoteImageIssues();
   });
 });

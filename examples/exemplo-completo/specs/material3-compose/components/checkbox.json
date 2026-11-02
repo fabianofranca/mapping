@@ -1,0 +1,147 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "checkbox",
+  "name": "Checkbox",
+  "description": "Checkbox de 18 com rótulo: marcado (check), desmarcado (contorno) ou indeterminado (traço).",
+  "size": {
+    "width": 200,
+    "height": 40
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 40
+  },
+  "preview": {
+    "label": "Lembrar de mim",
+    "state": "checked",
+    "enabled": "true"
+  },
+  "template": {
+    "type": "frame",
+    "name": "checkbox",
+    "layout": {
+      "type": "row",
+      "gap": 12,
+      "align": "center"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "caixa",
+        "width": 18,
+        "height": 18,
+        "cornerRadius": 2,
+        "fill": {
+          "$if": {
+            "$or": [
+              {
+                "$eq": ["state", "checked"]
+              },
+              {
+                "$eq": ["state", "indeterminate"]
+              }
+            ]
+          },
+          "then": {
+            "$if": {
+              "$eq": ["enabled", "false"]
+            },
+            "then": "rgba(29, 27, 32, 0.38)",
+            "else": "#6750A4"
+          },
+          "else": "rgba(0, 0, 0, 0)"
+        },
+        "stroke": {
+          "color": {
+            "$if": {
+              "$or": [
+                {
+                  "$eq": ["state", "checked"]
+                },
+                {
+                  "$eq": ["state", "indeterminate"]
+                }
+              ]
+            },
+            "then": "rgba(0, 0, 0, 0)",
+            "else": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#49454F"
+            }
+          },
+          "width": 2,
+          "align": "inside"
+        },
+        "layout": {
+          "type": "row",
+          "align": "center",
+          "justify": "center"
+        },
+        "children": [
+          {
+            "type": "path",
+            "name": "check",
+            "visible": {
+              "$eq": ["state", "checked"]
+            },
+            "width": 14,
+            "height": 14,
+            "viewBox": [24, 24],
+            "d": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "#FEF7FF",
+              "else": "#FFFFFF"
+            }
+          },
+          {
+            "type": "rect",
+            "name": "traço",
+            "visible": {
+              "$eq": ["state", "indeterminate"]
+            },
+            "width": 10,
+            "height": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "#FEF7FF",
+              "else": "#FFFFFF"
+            }
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "name": "rótulo",
+        "text": {
+          "$field": "label"
+        },
+        "font": {
+          "family": "Roboto",
+          "size": 16,
+          "weight": 400,
+          "lineHeight": 24
+        },
+        "color": {
+          "$if": {
+            "$eq": ["enabled", "false"]
+          },
+          "then": "rgba(29, 27, 32, 0.38)",
+          "else": "#1D1B20"
+        },
+        "width": "fill",
+        "visible": {
+          "$has": "label"
+        }
+      }
+    ]
+  }
+}

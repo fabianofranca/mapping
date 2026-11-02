@@ -1,6 +1,6 @@
 # Roadmap
 
-Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar. Hoje não há etapa em andamento; a etapa detalhada é a Exemplos enxutos (`epic/exemplos-enxutos`, fases EX1 a EX3 no `PLAN.md`), que só começa depois que o `epic/material3` entrar na `main`.
+Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar. Hoje não há etapa em andamento nem detalhada; a última concluída foi a Exemplos enxutos (`epic/exemplos-enxutos`).
 
 ## Princípio
 
@@ -212,6 +212,14 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Fora (decidido):** grupos que se cruzam; seleção por laço; container dentro de container; o visualizador embutível (`dist-viewer/`); layout de celular. Ficaram para depois: `rect` em fração do container, `members` em `get_container`, restrições de origem e destino de seta por tipo e a rodada dirigida do Cowork (a critério do dono).
 - **Depende de:** etapa Container (concluída).
 - **Próxima etapa:** nenhuma detalhada; a ordem do que vier é do dono, entre as "Evoluções" abaixo. Nada entra antes de o `PLAN.md` detalhar a etapa.
+
+## Etapa — Exemplos enxutos (concluída, épico `epic/exemplos-enxutos`)
+
+- **Concluída em 2026-11-02** (fases EX0 a EX4, PRs #272, #274 a #278 e #289; o épico é o PR #273); histórico em [`history/PLAN-etapa-exemplos-enxutos.md`](history/PLAN-etapa-exemplos-enxutos.md). Sem schema (v13), formato de especialização (9), de proposta (3) nem de componente (3) novos, e sem MCP novo (0.12.0).
+- **Objetivo:** todo recurso dos formatos de especialização e de componente tem um exemplo, usando ao máximo as bibliotecas prontas de `libraries/`.
+- **Entrou:** `tests/examples/featureCoverage.test.ts` (exceção só para `fonts[].style`); a biblioteca `sdui-backend` (origem executável) ao lado da `analytics`; `tests/fixtures/` para os testes; projeto de exemplo, guia, zips e roteiros na `material3-compose`; `examples/README.md`; duas correções de produto (razão do Diagnóstico de imagem remota trocada no lugar e `\n` do fim do `url`).
+- **Fora (decidido):** alterar a `material3-compose`, as notas ou a Kotlin; `minSize` de um eixo só. Ficaram para depois: o SDUI de produção em KMP (outro repositório; a biblioteca `sdui-material3` pode substituir a `sdui-backend`), o orçamento de 1,5 MiB do `dist/index.html` e pequenos detalhes do painel Detalhes do Row.
+- **Depende de:** etapa Biblioteca Material 3 (concluída).
 
 ## Etapa — Biblioteca Material 3 (concluída, épico `epic/material3`)
 

@@ -1,0 +1,2112 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "slider",
+  "name": "Slider",
+  "description": "Slider de 44: trilho de 16 em secondary container, trecho ativo em primary e alça de 4 × 44. No intervalo há duas alças; os valores vão de 0 a 1 em décimos e as marcas de steps aparecem de 1 a 5 e em 9.",
+  "size": {
+    "width": 328,
+    "height": 44
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 44
+  },
+  "preview": {
+    "type": "single",
+    "value": "0.5",
+    "valueStart": "0.2",
+    "valueEnd": "0.8",
+    "steps": null,
+    "enabled": "true"
+  },
+  "template": {
+    "type": "frame",
+    "name": "slider",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "valor 0",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "0"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "0"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "trilho inativo",
+            "width": "fill",
+            "height": 16,
+            "cornerRadius": [2, 8, 8, 2],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "valor 0.1",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "0.1"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "0.1"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "trilho ativo",
+            "width": "9.5%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "trilho inativo",
+            "width": "fill",
+            "height": 16,
+            "cornerRadius": [2, 8, 8, 2],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "valor 0.2",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "0.2"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "0.2"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "trilho ativo",
+            "width": "19.0%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "trilho inativo",
+            "width": "fill",
+            "height": 16,
+            "cornerRadius": [2, 8, 8, 2],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "valor 0.3",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "0.3"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "0.3"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "trilho ativo",
+            "width": "28.5%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "trilho inativo",
+            "width": "fill",
+            "height": 16,
+            "cornerRadius": [2, 8, 8, 2],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "valor 0.4",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "0.4"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "0.4"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "trilho ativo",
+            "width": "38.0%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "trilho inativo",
+            "width": "fill",
+            "height": 16,
+            "cornerRadius": [2, 8, 8, 2],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "valor 0.5",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "0.5"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "0.5"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "trilho ativo",
+            "width": "47.6%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "trilho inativo",
+            "width": "fill",
+            "height": 16,
+            "cornerRadius": [2, 8, 8, 2],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "valor 0.6",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "0.6"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "0.6"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "trilho ativo",
+            "width": "57.1%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "trilho inativo",
+            "width": "fill",
+            "height": 16,
+            "cornerRadius": [2, 8, 8, 2],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "valor 0.7",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "0.7"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "0.7"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "trilho ativo",
+            "width": "66.6%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "trilho inativo",
+            "width": "fill",
+            "height": 16,
+            "cornerRadius": [2, 8, 8, 2],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "valor 0.8",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "0.8"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "0.8"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "trilho ativo",
+            "width": "76.1%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "trilho inativo",
+            "width": "fill",
+            "height": 16,
+            "cornerRadius": [2, 8, 8, 2],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "valor 0.9",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "0.9"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "0.9"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "trilho ativo",
+            "width": "85.6%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "trilho inativo",
+            "width": "fill",
+            "height": 16,
+            "cornerRadius": [2, 8, 8, 2],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "valor 1",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "single"]
+                },
+                {
+                  "$eq": ["value", "1"]
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$eq": ["type", "range"]
+                },
+                {
+                  "$eq": ["valueEnd", "1"]
+                }
+              ]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "trilho ativo",
+            "width": "96.8%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 0",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "0"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 0.1",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "0.1"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "cobertura",
+            "width": "9.5%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 0.2",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "0.2"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "cobertura",
+            "width": "19.0%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 0.3",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "0.3"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "cobertura",
+            "width": "28.5%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 0.4",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "0.4"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "cobertura",
+            "width": "38.0%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 0.5",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "0.5"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "cobertura",
+            "width": "47.6%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 0.6",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "0.6"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "cobertura",
+            "width": "57.1%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 0.7",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "0.7"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "cobertura",
+            "width": "66.6%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 0.8",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "0.8"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "cobertura",
+            "width": "76.1%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 0.9",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "0.9"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "cobertura",
+            "width": "85.6%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "início 1",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["type", "range"]
+            },
+            {
+              "$eq": ["valueStart", "1"]
+            }
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "cobertura",
+            "width": "96.8%",
+            "height": 16,
+            "cornerRadius": [8, 2, 2, 8],
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.12)",
+              "else": "#E8DEF8"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "espaço",
+            "width": 6,
+            "height": 16
+          },
+          {
+            "type": "rect",
+            "name": "alça inicial",
+            "width": 4,
+            "height": 44,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": "rgba(29, 27, 32, 0.38)",
+              "else": "#6750A4"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "marcas 1",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$eq": ["steps", "1"]
+        },
+        "layout": {
+          "type": "row",
+          "padding": [0, 10],
+          "align": "center",
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "marcas 2",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$eq": ["steps", "2"]
+        },
+        "layout": {
+          "type": "row",
+          "padding": [0, 10],
+          "align": "center",
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "marcas 3",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$eq": ["steps", "3"]
+        },
+        "layout": {
+          "type": "row",
+          "padding": [0, 10],
+          "align": "center",
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "marcas 4",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$eq": ["steps", "4"]
+        },
+        "layout": {
+          "type": "row",
+          "padding": [0, 10],
+          "align": "center",
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "marcas 5",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$eq": ["steps", "5"]
+        },
+        "layout": {
+          "type": "row",
+          "padding": [0, 10],
+          "align": "center",
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "marcas 9",
+        "width": "fill",
+        "height": "fill",
+        "visible": {
+          "$eq": ["steps", "9"]
+        },
+        "layout": {
+          "type": "row",
+          "padding": [0, 10],
+          "align": "center",
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          },
+          {
+            "type": "ellipse",
+            "name": "marca",
+            "width": 4,
+            "height": 4,
+            "fill": "#6750A4",
+            "stroke": {
+              "color": "#E8DEF8",
+              "width": 1,
+              "align": "outside"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

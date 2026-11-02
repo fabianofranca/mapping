@@ -32,7 +32,7 @@ import { NOW } from '../model/fixtures';
 // as operações novas (add_container, create_marking com annotation, move_marking) e o
 // `minSize` valem no lote, e get_marking_image recorta o desenho simplificado.
 
-const LIBRARY = resolve('examples/libraries/material3');
+const LIBRARY = resolve('tests/fixtures/material3');
 const PHOTO = 'bbbbbbbb-0000-4000-8000-000000000001';
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
 

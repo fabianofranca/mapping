@@ -1,0 +1,140 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "lazy-column",
+  "name": "LazyColumn",
+  "description": "Lista vertical que compõe só os itens visíveis: as filhas se empilham, com spacing e contentPadding.",
+  "size": {
+    "width": 360,
+    "height": 400
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "fill"
+  },
+  "preview": {
+    "verticalArrangement": "Top",
+    "horizontalAlignment": "Start",
+    "spacing": 8,
+    "contentPadding": 16,
+    "reverseLayout": "false",
+    "width": "fill",
+    "height": "fill",
+    "weight": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "lazy-column",
+    "clip": false,
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "slot",
+        "name": "content",
+        "label": {
+          "$concat": [
+            "LazyColumn",
+            " · ",
+            {
+              "$field": "width",
+              "default": "fill"
+            },
+            " × ",
+            {
+              "$field": "height",
+              "default": "fill"
+            },
+            {
+              "$if": {
+                "$has": "weight"
+              },
+              "then": {
+                "$concat": [
+                  " · weight ",
+                  {
+                    "$field": "weight"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$eq": ["reverseLayout", "true"]
+              },
+              "then": " · reverse",
+              "else": ""
+            },
+            {
+              "$if": {
+                "$and": [
+                  {
+                    "$has": "verticalArrangement"
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["verticalArrangement", "Top"]
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$concat": [
+                  " · ",
+                  {
+                    "$field": "verticalArrangement"
+                  }
+                ]
+              },
+              "else": ""
+            },
+            {
+              "$if": {
+                "$and": [
+                  {
+                    "$has": "horizontalAlignment"
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["horizontalAlignment", "Start"]
+                    }
+                  }
+                ]
+              },
+              "then": {
+                "$concat": [
+                  " · ",
+                  {
+                    "$field": "horizontalAlignment"
+                  }
+                ]
+              },
+              "else": ""
+            }
+          ]
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "column",
+          "gap": {
+            "$field": "spacing",
+            "default": 0
+          },
+          "padding": {
+            "$field": "contentPadding",
+            "default": 0
+          },
+          "align": "start",
+          "justify": "start"
+        }
+      }
+    ]
+  }
+}

@@ -21,7 +21,6 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit && tsc --noEmit -p mcp/tsconfig.json",
     "build:mcp": "tsc --noEmit -p mcp/tsconfig.json && node mcp/build.mjs",
-    "build:examples": "node scripts/buildLibraryExamples.mjs",
     "build:example": "node scripts/exampleProject.mjs",
     "build:proposal-components": "node scripts/proposalComponents.mjs",
     "build:suggestions-kotlin": "node scripts/suggestionsKotlin.mjs",

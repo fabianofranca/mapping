@@ -24,8 +24,8 @@ Arquivos de apoio:
 - `docs/spec.schema.json`: JSON Schema (draft 2020-12). Valida só a **estrutura**; as regras entre elementos (ids únicos, `allowedChildren`, `requiresOwner`, `labelField`, `rowLabel`, `default` compatível, plataformas declaradas, chaves de `params` e `values`, `sources` só a partir da versão 3, `values` das origens só em `enum` e com destinos nas `options`, `path`/`slot`/`ignore` só em sistema declarado em `origins`, `examples` em um modo só, os passos de `migrations` coerentes com os tipos e campos) só são verificadas pelo validador da app (`src/model/spec.ts`, que é a fonte da verdade).
 - `docs/component.schema.json`: JSON Schema do arquivo de componente (`docs/COMPONENT-FORMAT.md`).
 - `examples/specs/sdui.json` (`formatVersion` 5) e `examples/specs/modelo-de-dados.json` (`formatVersion` 1): exemplos completos.
-- `examples/specs/biblioteca.json` (`formatVersion` 4): exemplo pequeno com `component`, `doc`, `examples`, `fonts`, `origins`, `path`/`ignore` nas `sources` e `migrations`. É só o arquivo da especialização: os arquivos que ele cita (`components/`, `docs/`, `examples/`, `fonts/`) não vêm junto.
-- `examples/libraries/material3/`: um pacote de biblioteca **completo** (especialização v6, quinze componentes, documentos, exemplos, os quatro tamanhos de container e uma tela de exemplo de um sistema externo), gerado por `npm run build:examples` (ver "Biblioteca: o pacote").
+- `examples/libraries/sdui-backend/`: o exemplo de **origem executável** (v9, 6 tipos): `origins` com `booleans`, `background.values` e raízes com `anchor`, `margin` e `scrim`; `sources` de tipo (`slot`, `ignore`, `id`) e de campo e coluna (`path`, `values`); exemplos do sistema externo (`examples[].system` e `file`) e a tela de exemplo; e `migrations` com os seis passos. É o exemplo de `origins`, `sources` e `migrations`.
+- `examples/libraries/sdui-backend/`: um pacote de biblioteca pequeno com a origem executável (`origins`, `sources` e `migrations`, com a tela de exemplo de um sistema externo fictício; ver "Biblioteca: o pacote"). O que cada exemplo mostra está em `examples/README.md`.
 - `libraries/material3-compose/`: biblioteca **pronta para uso** (v9, não embutida: aplicada pela pasta ou pelo zip) do Material 3 para Jetpack Compose, com o composable de cada tipo no `code` e `variants` onde a variante troca o símbolo; fixada no `compose.material3` 1.4.0.
 - `libraries/kotlin/`: biblioteca **pronta para uso** (v7, não embutida: a pessoa a aplica pela pasta ou pelo zip) das declarações Kotlin, com onze tipos de classe, objeto e interface, cada um com componente e documento; as propriedades são alvos de referência com a etiqueta `data-field`. As pastas de `libraries/` estão em [`libraries/README.md`](../libraries/README.md).
 
@@ -512,9 +512,9 @@ A v4 deixa uma origem ser **executável**: a especialização declara em `origin
 
 ```json
 {
-  "id": "m3-card",
+  "id": "card",
   "name": "Card",
-  "component": "components/m3-card.json",
+  "component": "components/card.json",
   "sources": [
     {
       "system": "sdui",
@@ -576,7 +576,7 @@ A declaração é a chave `origins` da raiz: uma lista, uma entrada por sistema 
             "anchor": { "path": "anchor" },
             "margin": { "path": "margin" }
           },
-          { "path": "modal", "anchor": "bottom", "scrim": "m3-scrim" }
+          { "path": "modal", "anchor": "bottom", "scrim": "sdui-scrim" }
         ]
       },
       "booleans": { "true": "sim", "false": "não" },
@@ -593,13 +593,12 @@ Como o desenho é calculado (tamanhos `fill`/`hug`, âncoras da tela, avisos do 
 Com a v4, uma especialização é uma **biblioteca**: um **pacote**, que é a **pasta da especialização**, com tudo o que ela cita. O arquivo da especialização fica na raiz da pasta.
 
 ```
-material3/
-  material3.spec.json          a especialização (formatVersion 6)
-  components/m3-button.json    um arquivo por componente (mapping-component)
-  docs/m3-button.md            o documento markdown do tipo
+sdui-backend/
+  sdui-backend.spec.json       a especialização (formatVersion 9)
+  components/sdui-button.json  um arquivo por componente (mapping-component)
+  docs/sdui-button.md          o documento markdown do tipo
   examples/settings.sdui.json  uma tela de exemplo de um sistema externo
-  fonts/Roboto-Regular.ttf     as fontes do desenho
-  fonts/LEIA-ME.txt
+  fonts/Roboto-Regular.woff2   as fontes do desenho (opcional)
 ```
 
 Os nomes das pastas (`components/`, `docs/`, `examples/`, `fonts/`) são convenção; o que vale é o caminho citado. **Todo caminho citado** pela especialização é relativo ao arquivo dela, com `/`, **sem `..`**, sem `/` no começo e sem letra de unidade (a mesma regra do `path` do `code`), e termina na extensão esperada:
@@ -626,11 +625,11 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 ```json
 {
-  "id": "m3-button",
+  "id": "button",
   "name": "Button",
   "labelField": "label",
-  "component": "components/m3-button.json",
-  "doc": "docs/m3-button.md",
+  "component": "components/button.json",
+  "doc": "docs/button.md",
   "fields": [
     { "key": "label", "type": "string", "required": true },
     {
@@ -657,7 +656,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Pacote embutido.** `libraries/notas/` (especialização v7: a camada Notas, o tipo flutuante `nota` e o componente post-it) é um pacote comum que a app traz dentro do build e **aplica por padrão** em projeto novo e em projeto aberto de um schema anterior ao 13 (ver "Tipo flutuante"). Para o resto do ciclo ele é uma biblioteca como as outras: a cópia vai para `specs/notas/` e a pessoa pode removê-la.
 
-**Pacote de exemplo.** `examples/libraries/material3/` é o Material Design 3 (baseline, tema claro) inteiro no formato: a especialização v6 (a biblioteca v4 mais os `containers`) com quinze tipos, cada um com `component`, `doc` e de um a três exemplos, os quinze componentes, a tela de configurações `examples/settings.sdui.json` (uma tela de SDUI sem retângulos, traduzida pela `origins`) e `fonts/LEIA-ME.txt`, que diz quais arquivos da Roboto baixar (os `.ttf` não são versionados). É **gerado** por `npm run build:examples` (`scripts/buildLibraryExamples.mjs`, a partir do Material 3 do laboratório) e um teste (`tests/model/libraryExamples.test.ts`) confere que o repositório está em dia com o gerador: não edite os arquivos à mão, regere. Ele fica como base fixa dos testes; a biblioteca do Material 3 pronta para uso é `libraries/material3-compose/`.
+**Pacote de exemplo.** `libraries/material3-compose/` é o Material Design 3 (baseline, tema claro) para o Jetpack Compose, pronto para uso: a especialização v9 com cinquenta tipos, cada um com `component`, `doc` e de um a três exemplos, os componentes, os tamanhos de container e a Roboto em `fonts/`. A origem executável (`origins`, `sources`, `migrations` e a tela de exemplo `examples/settings.sdui.json`, uma tela de SDUI sem retângulos, traduzida pela `origins`) está em `examples/libraries/sdui-backend/`. Os testes usam uma cópia congelada de um pacote antigo de quinze tipos, em `tests/fixtures/material3/` (não é um exemplo distribuído).
 
 ## Contrato de versão
 
@@ -876,9 +875,9 @@ Com `delete`, a anotação de `selo` é **apagada, e as vinculadas a ela também
 
 ```json
 {
-  "file": "material3.spec.json",
+  "file": "sdui-backend.spec.json",
   "path": "layers[0].annotationTypes[2].component",
-  "message": "arquivo não encontrado: components/m3-fab.json",
+  "message": "arquivo não encontrado: components/sdui-fab.json",
   "severity": "error"
 }
 ```
@@ -891,7 +890,7 @@ O relatório traz `ok` (sem nenhum erro), `issues` (todos, na ordem dos níveis)
 
 As três portas — **o aplicativo, o servidor MCP e a skill `spec-author`** — chamam a **mesma função** e mostram o mesmo relatório. Isso é da fase B2 da etapa Biblioteca; hoje a função existe e é coberta por testes, mas nenhuma porta a chama ainda.
 
-O pacote Material 3 do repositório (`examples/libraries/material3/`) passa pelo validador com **zero erros** e **3 avisos**: duas fontes ausentes (o `.ttf` da Roboto não é versionado) e um "conteúdo maior que a caixa" na prova de desenho, do chip "Selecionado" no tamanho inicial. A prova de desenho só desenha o tamanho inicial (`size`): o `minSize` não é desenhado, porque o aviso nele só serviria a quem escreve o componente. O teste `tests/model/libraryExamples.test.ts` fixa esse resultado.
+Os pacotes `libraries/material3-compose/` e `examples/libraries/sdui-backend/` passam pelo validador com **zero erros e zero avisos** (`tests/model/material3ComposeLibrary.test.ts` e `tests/examples/sduiBackendLibrary.test.ts` fixam o resultado). A prova de desenho só desenha o tamanho inicial (`size`): o `minSize` não é desenhado, porque o aviso nele só serviria a quem escreve o componente.
 
 ## Regras de validação
 

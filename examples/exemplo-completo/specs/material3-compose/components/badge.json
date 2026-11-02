@@ -1,0 +1,73 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "badge",
+  "name": "Badge",
+  "description": "Indicador de notificação: pontinho de 6 (small) ou contador de 16 com o texto em onError (large), na cor error. Ancorado ao canto de um ícone pelo BadgedBox.",
+  "size": { "width": 32, "height": 16 },
+  "minSize": { "width": 6, "height": 6 },
+  "sizing": { "width": "hug", "height": "hug" },
+  "preview": { "count": "3", "style": "large" },
+  "template": {
+    "type": "frame",
+    "name": "badge",
+    "layout": { "type": "row", "align": "center", "justify": "center" },
+    "children": [
+      {
+        "type": "frame",
+        "name": "pontinho",
+        "width": 6,
+        "height": 6,
+        "cornerRadius": 3,
+        "fill": "#B3261E",
+        "visible": { "$not": { "$eq": ["style", "large"] } },
+        "children": []
+      },
+      {
+        "type": "frame",
+        "name": "contador",
+        "layout": {
+          "type": "row",
+          "padding": {
+            "$switch": "count",
+            "cases": {
+              "0": [0, 5],
+              "1": [0, 5],
+              "2": [0, 5],
+              "3": [0, 5],
+              "4": [0, 5],
+              "5": [0, 5],
+              "6": [0, 5],
+              "7": [0, 5],
+              "8": [0, 5],
+              "9": [0, 5]
+            },
+            "default": [0, 4]
+          },
+          "align": "center",
+          "justify": "center"
+        },
+        "width": "hug",
+        "height": 16,
+        "cornerRadius": 8,
+        "fill": "#B3261E",
+        "visible": { "$eq": ["style", "large"] },
+        "children": [
+          {
+            "type": "text",
+            "name": "número",
+            "text": { "$field": "count" },
+            "font": {
+              "family": "Roboto",
+              "size": 11,
+              "weight": 500,
+              "lineHeight": 16,
+              "letterSpacing": 0.5
+            },
+            "color": "#FFFFFF"
+          }
+        ]
+      }
+    ]
+  }
+}

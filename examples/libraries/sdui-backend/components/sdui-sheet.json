@@ -1,0 +1,123 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 3,
+  "id": "sdui-sheet",
+  "name": "Bottom sheet",
+  "description": "Folha modal: logo, título, legenda e rodapé. A legenda fica no topo da caixa, o rodapé no fundo, e a linha do rodapé alinha no fim.",
+  "size": {
+    "width": 412,
+    "height": 220
+  },
+  "minSize": {
+    "width": 240,
+    "height": 200
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 220
+  },
+  "preview": {
+    "title": "Sort by",
+    "subtitle": "Escolha a ordem da lista",
+    "footer": "Cancelar"
+  },
+  "template": {
+    "type": "frame",
+    "name": "folha",
+    "layout": {
+      "type": "column",
+      "padding": [0, 0, 16, 0]
+    },
+    "cornerRadius": [28, 28, 0, 0],
+    "fill": "#F7F2FA",
+    "shadow": {
+      "color": "rgba(0, 0, 0, 0.3)",
+      "y": -1,
+      "blur": 3
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "width": "fill",
+        "height": 64,
+        "layout": {
+          "type": "row",
+          "gap": 12,
+          "padding": [0, 24],
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "image",
+            "name": "logo",
+            "src": "https://example.com/logo.png",
+            "fit": "contain",
+            "width": 24,
+            "height": 24,
+            "fill": "#E7E0EC"
+          },
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "title"
+            },
+            "font": {
+              "size": 22,
+              "weight": 400,
+              "lineHeight": 28
+            },
+            "color": "#1D1B20",
+            "width": "fill"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "name": "legenda",
+        "text": {
+          "$field": "subtitle"
+        },
+        "width": "fill",
+        "height": 48,
+        "font": {
+          "size": 14,
+          "lineHeight": 20,
+          "verticalAlign": "top"
+        },
+        "color": "#49454F"
+      },
+      {
+        "type": "frame",
+        "name": "rodapé",
+        "width": "fill",
+        "height": 56,
+        "layout": {
+          "type": "row",
+          "padding": [0, 24],
+          "align": "end",
+          "justify": "end"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "ação",
+            "text": {
+              "$field": "footer"
+            },
+            "width": "hug",
+            "height": 40,
+            "font": {
+              "size": 14,
+              "weight": 500,
+              "lineHeight": 20,
+              "verticalAlign": "bottom"
+            },
+            "color": "#6750A4"
+          }
+        ]
+      }
+    ]
+  }
+}

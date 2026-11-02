@@ -23,10 +23,10 @@ import { errorOf, ok } from './proposalSupport';
 import { connect, type Connection } from './workspace';
 
 // validate_library, list_components, get_component e get_specialization servindo a v4 (fase
-// B2). O pacote de prova é o Material 3 de `examples/libraries/material3/`.
+// B2). O pacote de prova é o Material 3 de `tests/fixtures/material3/`.
 
-const MATERIAL3 = 'examples/libraries/material3';
-const PESSOAS = 'examples/libraries/pessoas';
+const MATERIAL3 = 'tests/fixtures/material3';
+const PESSOAS = 'tests/fixtures/pessoas';
 
 interface Issue {
   file: string;

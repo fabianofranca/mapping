@@ -1,0 +1,67 @@
+{
+  "version": "1.0",
+  "screen": {
+    "id": "settings",
+    "title": "Settings",
+    "background": "surface",
+    "device": {
+      "width": 412,
+      "height": 917
+    }
+  },
+  "content": {
+    "type": "Column",
+    "props": {
+      "spacing": 16,
+      "padding": 16
+    },
+    "children": [
+      {
+        "type": "Button",
+        "props": {
+          "text": "Reset options",
+          "style": "outlined",
+          "disabled": false,
+          "contentDescription": "Reset"
+        }
+      },
+      {
+        "type": "Button",
+        "props": {
+          "text": "Save",
+          "style": "filled",
+          "mode": "normal",
+          "disabled": true
+        }
+      },
+      {
+        "type": "Button",
+        "props": {
+          "text": "Learn more",
+          "style": "text",
+          "mode": "link",
+          "disabled": false
+        }
+      }
+    ]
+  },
+  "floating": [
+    {
+      "type": "FAB",
+      "anchor": "bottom-end",
+      "margin": 16,
+      "props": {
+        "icon": "add",
+        "color": "primary"
+      }
+    }
+  ],
+  "modal": {
+    "type": "BottomSheet",
+    "props": {
+      "title": "Sort by",
+      "subtitle": "Escolha a ordem da lista",
+      "footer": "Cancelar"
+    }
+  }
+}

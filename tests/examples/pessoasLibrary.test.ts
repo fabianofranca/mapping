@@ -1,4 +1,4 @@
-// Biblioteca de exemplo de pessoas (`examples/libraries/pessoas/`, RI1): o pacote valida sem
+// Biblioteca de exemplo de pessoas (`tests/fixtures/pessoas/`, RI1): o pacote valida sem
 // erro e o Avatar desenha a imagem remota (reservado sem URL, com a URL quando a foto existe).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -8,7 +8,7 @@ import { buildCatalog, drawEntry, findEntry } from '../../src/model/catalog';
 import { approximateMeasurer } from '../../src/model/components/instantiate';
 import type { SceneNode } from '../../src/model/components/scene';
 
-const ROOT = join(__dirname, '../../examples/libraries/pessoas');
+const ROOT = join(__dirname, '../../tests/fixtures/pessoas');
 const SPEC_FILE = 'pessoas.spec.json';
 
 function listDisk(dir: string): string[] {
