@@ -218,10 +218,16 @@ a.home-nav-item {
   overflow-wrap: anywhere;
 }
 
+/* O flex fica num div dentro do <td>: o display da célula tiraria a borda da linha. */
 .project-actions {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
+}
+
+.project-actions .button,
+.project-table .badge {
+  white-space: nowrap;
 }
 
 .app-editor,

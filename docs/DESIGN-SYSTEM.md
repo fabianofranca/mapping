@@ -195,6 +195,11 @@ Composições e lógica sem forma própria (não precisam de componente): `src/u
 
 O que o código já tem e o DS ainda não descreve. O fechamento do épico aplica isto no artefato e esvazia a lista.
 
+### Acabamento a 900 px (`epic/acabamento-900`)
+
+- **`Revisao.md`** (`src/ui/review/ReviewLevels.tsx`, `src/theme/review.css`): o rodapé de atalhos da janela Propostas mostra só Aceitar, Rejeitar e Próxima pendente, numa linha, até 1199 px (`BREAKPOINTS.compact`, o mesmo da `ReviewBar`); acima disso, os seis. Se a seção descreve o rodapé, registrar as duas versões.
+- **`Home`** (`src/app/Home.tsx`, `src/theme/layout.css`): as ações da linha de projeto ficam num `div.project-actions` dentro do `<td>` (o `display: flex` saiu da célula, que mantém a borda), e o selo e os botões têm `white-space: nowrap`. Atualizar o guia e o preview do `Home` (linhas sem quebra a 900 px, borda contínua).
+
 ### Previews não mostram o estado novo
 
 A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, mas só acrescentou o estado novo ao preview de seis deles (decisão de escopo do dono). Continuam mostrando o estado antigo os previews de:

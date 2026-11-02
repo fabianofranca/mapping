@@ -706,29 +706,31 @@ function ProjectTable({ projects, busy, onOpen, onDelete, onForget }: ProjectLis
               </span>
             </td>
             <td>{formatDate(project.usedAt)}</td>
-            <td class="project-actions">
-              <Button
-                size="sm"
-                data-recent-open=""
-                disabled={busy}
-                onClick={() => onOpen(project)}
-              >
-                {t('common.open')}
-              </Button>
-              {project.kind === 'local' ? (
+            <td>
+              <div class="project-actions">
                 <Button
                   size="sm"
-                  variant="danger"
+                  data-recent-open=""
                   disabled={busy}
-                  onClick={() => onDelete(project)}
+                  onClick={() => onOpen(project)}
                 >
-                  {t('common.delete')}
+                  {t('common.open')}
                 </Button>
-              ) : (
-                <Button size="sm" disabled={busy} onClick={() => onForget(project)}>
-                  {t('home.forgetFolder')}
-                </Button>
-              )}
+                {project.kind === 'local' ? (
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    disabled={busy}
+                    onClick={() => onDelete(project)}
+                  >
+                    {t('common.delete')}
+                  </Button>
+                ) : (
+                  <Button size="sm" disabled={busy} onClick={() => onForget(project)}>
+                    {t('home.forgetFolder')}
+                  </Button>
+                )}
+              </div>
             </td>
           </tr>
         ))}
