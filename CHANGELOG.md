@@ -4,6 +4,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `etapa` e, antes delas, no histórico do git.
 
+## Exemplo gerado das fontes — [Não lançado] (épico `epic/exemplo-gerado`, PR a definir, MCP 0.12.0, schema v13)
+
+### Alterado
+
+- O `examples/exemplo-completo.zip` é o mesmo (byte a byte), mas agora sai da pasta do exemplo mais um manifesto que aponta as fontes das quatro especializações; `examples/exemplo-completo/specs/` deixou de ser versionado. Abrir a pasta `examples/exemplo-completo/` direto, com **Abrir pasta**, pede `npm run build:example` antes (ele materializa `specs/`).
+
 ## Foco nas janelas — 2026-11-02 (épico `epic/foco-janelas`, PR #315, MCP 0.12.0, schema v13)
 
 ### Corrigido
