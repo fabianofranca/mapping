@@ -1,6 +1,6 @@
 // @vitest-environment node
 // Fase 8.6: o guia do testador (`docs/TESTING.md`) fala com quem testa à mão; o que é só
-// do agente testador fica no apêndice A, e o prompt vivo do Cowork é `docs/TESTING-COWORK.md`.
+// do agente testador fica no apêndice A, e o prompt vivo do testador é `docs/TESTING-NUVEM.md`.
 // Estes testes leem os documentos e falham se o padrão antigo voltar (achados G1 a G16 da
 // revisão técnica de 2026-10-12, seção 6).
 import { existsSync, readFileSync } from 'node:fs';
@@ -39,10 +39,13 @@ function splitAppendixA(md: string): { body: string; appendixA: string } {
 }
 
 /** Padrões que só cabem no apêndice A: rótulos do agente testador e termos de DOM/automação. */
+/** O nome do agente antigo, montado em partes para o próprio teste não o citar. */
+const OLD_AGENT = new RegExp(`\\b${'Cow'}${'ork'}\\b`);
+
 const AGENT_ONLY: readonly RegExp[] = [
   /\bAgente\b/,
   /agente testador/i,
-  /\bCowork\b/,
+  OLD_AGENT,
   /aria-label/,
   /`title`/,
   /keydown/,
@@ -151,14 +154,14 @@ describe('regras do guia: as funções pegam o padrão antigo e deixam passar a 
       '- **Dicas (tooltips):** Agente: confira o atributo `title` do elemento (ou o `aria-label`).',
       '- **Agente: espere o campo aparecer antes de digitar.** Dispare o mesmo `keydown` por script.',
       '| R1.20 | … Agente sem `Ctrl+=`: veja as convenções. | … |',
-      'Agente do Cowork: o prompt inicial da sua sessão está em …',
+      'Agente testador: o prompt inicial da sua sessão está em …',
     ].join('\n');
     expect(agentLeaks(splitAppendixA(old).body)).toHaveLength(4);
   });
 
   it('deixa passar "Claude Code:", o ponteiro do prompt e o HTML do print em bloco de código', () => {
     const fine = [
-      'Quem testa por um agente com controle do computador começa por `docs/TESTING-COWORK.md` e pelo apêndice A.',
+      'Quem testa por um agente com controle do computador começa por `docs/TESTING-NUVEM.md` e pelo apêndice A.',
       '| R5.7 | Peça ao Claude Code: "Reexporte…" | **Claude Code:** diz que nada mudou. |',
       '- Uma proposta de agente aparece em **Propostas**; "Nova nota para o agente".',
       '```html',
@@ -308,53 +311,66 @@ describe('docs/TESTING.md (guia de quem testa à mão)', () => {
   });
 });
 
-describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
-  const prompt = read('docs/TESTING-COWORK.md');
+describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
+  const prompt = read('docs/TESTING-NUVEM.md');
+  const guide = read('docs/TESTING.md');
 
-  it('existe e manda perguntar e dizer que está esperando em cada [pessoa] (G11)', () => {
-    expect(prompt).not.toBe('');
-    expect(prompt).toContain('Estou esperando');
-    expect(prompt).toContain('30 s');
-  });
-
-  it('modo dirigido com os três alvos e passada visual com lista padrão (G12, G13)', () => {
+  it('modo dirigido com os três alvos, a mensagem com sub-issue e a passada visual padrão (G12, G13)', () => {
     expect(prompt).toMatch(/achados de um relato/);
-    expect(prompt).toMatch(/lista de passos/);
-    expect(prompt).toMatch(/PLAN-etapa-/);
+    expect(prompt).toMatch(/lista de roteiros/);
+    expect(prompt).toMatch(/fases de uma etapa/);
+    expect(prompt).toContain('Relato na sub-issue #');
     expect(prompt).toContain('Sair da revisão?');
-    expect(prompt).not.toMatch(/etapa 6/i);
     expect(prompt).not.toMatch(/mcp-v0\.\d/);
   });
 
-  it('pede o build id esperado na pergunta única e na mensagem da rodada completa (M6)', () => {
-    expect(prompt).toMatch(/^\s*- \(g\)[^\n]*build id esperado/m);
-    expect(prompt).toMatch(/\*\*Rodada completa:\*\*[^\n]*Build id esperado/);
-  });
-
-  it('rodada sem interação: dialog-pilot, cliente por stdio e passos que só o dono faz', () => {
-    const guide = read('docs/TESTING.md');
+  it('é sem interação, usa o cliente por stdio e marca o que só o dono faz', () => {
     expect(existsSync('scripts/testing/mcp-stdio-client.mjs')).toBe(true);
     for (const text of [prompt, guide]) {
-      expect(text).toContain('dialog-pilot');
       expect(text).toContain('scripts/testing/mcp-stdio-client.mjs');
     }
-    expect(prompt).toContain('sem interação');
     expect(prompt).toContain('não executado (precisa do dono)');
-    expect(guide).toContain('Diálogos nativos com o dialog-pilot');
-    expect(guide).toMatch(/^- Ferramenta:[^\n]*dialog-pilot[^\n]*stdio/m);
-  });
-
-  it('tem a sessão sob demanda e o resultado da validação da automação do R0.5 e do R6.2', () => {
-    expect(prompt).toContain('Sessão sob demanda');
-    expect(prompt).toContain('Validação da automação (resultado da rodada');
+    expect(prompt).toContain('pendente de decisão');
     expect(read('CLAUDE.md')).toContain('pendente de decisão');
   });
 
-  it('README.md e CLAUDE.md apontam para ele, não para o prompt em history/ (G16)', () => {
+  it('o relato é um comentário na sub-issue, em partes acima de 65 mil caracteres, sem branch nem PR', () => {
+    expect(prompt).toContain('add_issue_comment');
+    expect(prompt).toContain('comentário na sub-issue');
+    expect(prompt).toContain('65 mil');
+    expect(prompt).toContain('Parte i de n');
+    expect(prompt).toContain('send_message');
+    expect(prompt).toContain('não edita nada no repositório');
+    expect(prompt).not.toContain('docs/history');
+    expect(prompt).not.toContain('teste/<alvo>');
+  });
+
+  it('o guia não cita o prompt antigo, o dialog-pilot nem relatos em docs/history', () => {
+    for (const text of [prompt, guide]) {
+      expect(text).not.toMatch(/dialog-pilot/);
+      expect(text).not.toContain('docs/history');
+      expect(text).not.toMatch(/relato-20\d\d/);
+      expect(text).not.toMatch(/extensão do navegador/);
+    }
+    expect(existsSync(`docs/TESTING-${'COW'}${'ORK'}.md`)).toBe(false);
+  });
+
+  it('nenhum doc vivo de teste, README ou CLAUDE.md fala do agente antigo', () => {
+    for (const path of [
+      'docs/TESTING.md',
+      'docs/TESTING-NUVEM.md',
+      'README.md',
+      'CLAUDE.md',
+    ]) {
+      expect(read(path), path).not.toMatch(OLD_AGENT);
+    }
+  });
+
+  it('README.md e CLAUDE.md apontam para o guia e para o prompt da nuvem (G16)', () => {
     for (const path of ['README.md', 'CLAUDE.md']) {
       const text = read(path);
-      expect(text, path).toContain('docs/TESTING-COWORK.md');
-      expect(text, path).not.toContain('etapa-6-testes-cowork.md');
+      expect(text, path).toContain('docs/TESTING.md');
+      expect(text, path).toContain('docs/TESTING-NUVEM.md');
     }
   });
   // Etapa Imagens remotas (RI4): o R15 roda sozinho, com um servidor local que a shell sobe.
@@ -418,14 +434,8 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
         expect(r15, text).toContain(text);
       }
     });
-
-    it('o prompt do Cowork tem a rodada dirigida das imagens remotas, com o R15', () => {
-      expect(prompt).toContain('## 12. Rodada dirigida da etapa Imagens remotas');
-      expect(prompt).toContain('R15.12');
-      expect(prompt).toContain('R0 a R17');
-    });
   });
-  // Etapa Biblioteca Material 3 (MD1): o R16 roda sozinho, pelo cliente MCP por stdio e pela extensão.
+  // Etapa Biblioteca Material 3 (MD1): o R16 roda sozinho, pelo cliente MCP por stdio e pelo Playwright.
   describe('R16 — Variantes no código', () => {
     const guide = read('docs/TESTING.md');
     const r16 = guide.slice(guide.indexOf('### R16 '), guide.indexOf('### R17 '));
@@ -468,12 +478,12 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('o prompt do Cowork lista os roteiros até o R17', () => {
+    it('o prompt da nuvem lista os roteiros até o R17', () => {
       expect(prompt).toContain('R0 a R17');
     });
   });
 
-  // Etapa Biblioteca Material 3 (MD5): o R17 roda sozinho, pelo cliente MCP por stdio, a shell e a extensão.
+  // Etapa Biblioteca Material 3 (MD5): o R17 roda sozinho, pelo cliente MCP por stdio, a shell e o Playwright.
   describe('R17 — Biblioteca Material 3 (Compose)', () => {
     const guide = read('docs/TESTING.md');
     const r17 = guide.slice(
@@ -540,7 +550,7 @@ describe('docs/TESTING-COWORK.md (prompt vivo do testador do Cowork)', () => {
       expect(r17).toContain('Aplicar zip…');
     });
 
-    it('o prompt do Cowork lista os roteiros até o R17', () => {
+    it('o prompt da nuvem lista os roteiros até o R17', () => {
       expect(prompt).toContain('R0 a R17');
     });
   });
@@ -562,13 +572,10 @@ describe('docs/TESTING-NUVEM.md (prompt do testador da nuvem)', () => {
     expect(cloud).toMatch(/RP[^\n]*RF[^\n]*RA[^\n]*nunca rodam na nuvem/);
   });
 
-  it('manda o testador avisar o coordenador do PR do relato e deixa o merge com ele', () => {
+  it('manda o testador avisar o coordenador do relato, sem PR', () => {
     expect(cloud).toContain('Coordenador: `session_');
     expect(cloud).toContain('Avise o coordenador');
-    expect(cloud).toContain('quem mescla é o coordenador');
-    expect(read('CLAUDE.md')).toContain(
-      'o agente da fase mescla o PR do relato no épico',
-    );
+    expect(cloud).not.toContain('quem mescla é o coordenador');
   });
 
   it('tem o "Nunca": Enter, filechooser, uma aba e o preview', () => {
@@ -590,20 +597,18 @@ describe('docs/TESTING-NUVEM.md (prompt do testador da nuvem)', () => {
     expect(cloud).toContain('~/mapping-testes/<AAAA-MM-DD>-<alvo>/');
   });
 
-  it('cita o ambiente "Mapping - testes", o script de configuração e o relato com PR', () => {
+  it('cita o ambiente "Mapping - testes", o script de configuração e o relato como comentário', () => {
     expect(cloud).toContain('Mapping - testes');
     expect(cloud).toContain(
       'apt-get update -q && apt-get install -y -q xdotool at-spi2-core python3-pyatspi openbox imagemagick',
     );
     expect(cloud).toContain('LANGUAGE=pt_BR:pt');
-    expect(cloud).toContain('docs/history/relato-<AAAA-MM-DD>-<alvo>.md');
-    expect(cloud).toContain('teste/<alvo>-<AAAA-MM-DD>');
     expect(cloud).toContain(
       'Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)',
     );
   });
 
-  it('o apêndice A tem as receitas da nuvem e a tabela das cinco ferramentas do dialog-pilot', () => {
+  it('o apêndice A tem as receitas da nuvem e a tabela das cinco ações dos roteiros', () => {
     expect(appendixA).toContain('**Diálogos nativos na nuvem (Xvfb).**');
     expect(appendixA).toContain('docs/TESTING-NUVEM.md');
     for (const tool of [
@@ -628,8 +633,8 @@ describe('docs/TESTING-NUVEM.md (prompt do testador da nuvem)', () => {
     );
   });
 
-  it('README.md, CLAUDE.md e docs/TESTING-COWORK.md apontam para ele', () => {
-    for (const path of ['README.md', 'CLAUDE.md', 'docs/TESTING-COWORK.md']) {
+  it('README.md, CLAUDE.md e docs/TESTING.md apontam para ele', () => {
+    for (const path of ['README.md', 'CLAUDE.md', 'docs/TESTING.md']) {
       expect(read(path), path).toContain('TESTING-NUVEM.md');
     }
     expect(read('CLAUDE.md')).toContain('Rodada dirigida na nuvem');
