@@ -2,7 +2,7 @@
 
 Prompt vivo da sessão do **Claude Code na nuvem**, no ambiente **"Mapping - testes"**, que executa os roteiros de [`docs/TESTING.md`](TESTING.md) num Chrome de verdade (tela virtual Xvfb), **sem o dono no computador**. É o único agente testador do projeto. Vale para todas as rodadas até ser trocado aqui. Este arquivo e o `docs/TESTING.md` (com o apêndice A) bastam para uma rodada: leia os dois inteiros antes de começar.
 
-O dono (ou o agente da última fase de um épico) manda uma mensagem pronta, com o **branch** e o **commit** a testar, a **sub-issue** onde o relato vai e o coordenador:
+A sessão é criada pelo **orquestrador** do fluxo automatizado (`CLAUDE.md`, "Fluxo automatizado"; mensagens em [`docs/FLOW.md`](FLOW.md)) e, fora dele, pelo agente da última fase de um épico ou pelo dono, com uma mensagem pronta, com o **branch** e o **commit** a testar, a **sub-issue** onde o relato vai e o coordenador:
 
 - **Dirigido por lista de roteiros ou de passos:** "Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: R0 e R2. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (vale também "R0, R4.1 a R4.5 e R6.8a a R6.11")
 - **Dirigido pelos achados de um relato anterior:** "… no modo dirigido: os achados 2 a 5 do relato em <link do comentário>. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o relato é um comentário de issue; vale número de achado ou código, como "A1 a A3")
@@ -13,7 +13,7 @@ O dono (ou o agente da última fase de um épico) manda uma mensagem pronta, com
 Em qualquer modo, a mensagem pode trazer a lista da **passada visual** ("passada visual: Detalhes, Propostas"); sem lista, vale a padrão (em "O que executar").
 
 - **Sub-issue do relato:** o relato vai como comentário na sub-issue citada na mensagem (ver "Relato"). Sem ela, vale a issue da etapa citada; sem nenhuma das duas, o relato só é entregue na conversa, e você explica o porquê.
-- **Aviso ao coordenador:** a mensagem termina com "Coordenador: `session_…`" (a sessão do agente da fase). Quando o relato estiver postado, avise essa sessão com `send_message` (ver "Relato"). Sem essa linha, ninguém fica sabendo do relato.
+- **Aviso ao coordenador:** a mensagem termina com "Coordenador: `session_…`" (a sessão do orquestrador; fora do fluxo automatizado, a do agente da última fase). Quando o relato estiver postado, avise essa sessão com `send_message` (ver "Relato"). Sem essa linha, ninguém fica sabendo do relato.
 
 A rodada é **sempre sem interação**: o dono não está, então não pergunte nada. O que faltar e impedir a rodada vai para o relato; passo que só a pessoa faria fica "não executado (precisa do dono)" e segue. Os roteiros sob demanda (**RP**, **RF**, **RA**, **RB**) são manuais, feitos pelo dono, e nunca rodam na nuvem nem aparecem no relato.
 
