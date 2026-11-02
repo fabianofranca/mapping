@@ -14,6 +14,7 @@ import {
   setMarkingLocked,
   type Project,
 } from '../../../src/model';
+import { t } from '../../../src/i18n';
 import { setShowArrows } from '../../../src/store/settings';
 import {
   peekSelectedItems,
@@ -544,6 +545,68 @@ describe('PointerInput: marcações do canvas e pertencimento', () => {
     const far = draw(2);
     expect(far.rect).toEqual({ x: -20, y: -20, width: 1010, height: 825 });
     expect(far.parentId).toBeNull();
+  });
+
+  describe('aviso ao soltar um desenho abaixo do mínimo', () => {
+    const tooSmall = t('marking.error.rect-too-small', { min: 8 });
+    const markingCount = (s: ReturnType<typeof setup>) =>
+      Object.keys(
+        Object.fromEntries(projectIndex(s.store.project.peek() as Project).markings),
+      ).length;
+
+    it('arrasto real de 3×3 px da imagem avisa e não cria marcação', () => {
+      const s = setup();
+      s.viewport.viewport.value = { x: 0, y: 0, scale: 4 };
+      s.ui.mode.value = 'draw';
+      const before = markingCount(s);
+      s.drag([40, 40], [52, 52]); // 12 px de tela = 3 px da imagem
+      expect(s.ui.toast.value).toBe(tooSmall);
+      expect(markingCount(s)).toBe(before);
+      s.cleanup();
+    });
+
+    it('arrasto pequeno no fundo do canvas (sem container) também avisa', () => {
+      const s = setup();
+      s.viewport.viewport.value = { x: -5900, y: 0, scale: 4 }; // tela 100 = canvas 1500
+      s.ui.mode.value = 'draw';
+      const before = markingCount(s);
+      s.drag([100, 40], [112, 52]);
+      expect(s.ui.toast.value).toBe(tooSmall);
+      expect(markingCount(s)).toBe(before);
+      s.cleanup();
+    });
+
+    it('clique simples não avisa', () => {
+      const s = setup();
+      s.viewport.viewport.value = { x: 0, y: 0, scale: 4 };
+      s.ui.mode.value = 'draw';
+      s.click(40, 40);
+      expect(s.ui.toast.value).toBeNull();
+      s.cleanup();
+    });
+
+    it('arrasto cancelado não avisa', () => {
+      const s = setup();
+      s.viewport.viewport.value = { x: 0, y: 0, scale: 4 };
+      s.ui.mode.value = 'draw';
+      s.fire('pointerdown', 40, 40);
+      s.fire('pointermove', 46, 46);
+      s.fire('pointermove', 52, 52);
+      s.fire('pointercancel', 52, 52);
+      expect(s.ui.toast.value).toBeNull();
+      s.cleanup();
+    });
+
+    it('arrasto de 8×8 cria a marcação sem aviso', () => {
+      const s = setup();
+      s.viewport.viewport.value = { x: 0, y: 0, scale: 4 };
+      s.ui.mode.value = 'draw';
+      const before = markingCount(s);
+      s.drag([40, 40], [72, 72]); // 32 px de tela = 8 px da imagem
+      expect(s.ui.toast.value).toBeNull();
+      expect(markingCount(s)).toBe(before + 1);
+      s.cleanup();
+    });
   });
 
   it('modo Desenhar sobre uma imagem continua preso a ela; o pan é da barra de espaço e do botão do meio', () => {

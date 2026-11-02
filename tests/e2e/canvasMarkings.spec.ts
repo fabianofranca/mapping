@@ -225,3 +225,32 @@ test('arrastar uma marcação de uma tela para a outra a torna marcação da out
   const undone = (await exportMapping(page)).mapping;
   expect(undone.markings[0]?.containerId).toBe(first);
 });
+
+test('soltar um arrasto abaixo do mínimo avisa e não cria nada; clicar sem arrastar não avisa', async ({
+  page,
+}) => {
+  await createProject(page, 'Aviso');
+  const host = page.locator('.canvas-host');
+  await addContainer(page, host, 'Tela');
+  await fitAll(page, host);
+  const rect = [...(await containerRects(page, host)).values()][0] as Rect;
+  const { mapping } = await exportMapping(page);
+  const image = mapping.containers[0];
+  if (!image) throw new Error('sem container');
+  // Px de tela por px da imagem. Um arrasto de 7 px de tela passa do limiar de 6 e fica abaixo
+  // dos 8 px da imagem quando o zoom é maior que 7/8; o enquadramento sozinho não garante isso.
+  const perPixel = rect.width / image.width;
+  expect(perPixel).toBeGreaterThan(0.75);
+  const small = (6 + 8 * perPixel) / 2; // entre o limiar de arrasto e o mínimo, em px de tela
+  expect(small / perPixel).toBeLessThan(8);
+  const start = { x: rect.x + rect.width / 3, y: rect.y + rect.height / 3 };
+  const warning = page.getByRole('status').filter({ hasText: 'Cada lado precisa ter' });
+
+  await setMode(page, 'Desenhar');
+  await page.mouse.click(start.x, start.y);
+  await expect(warning).toHaveCount(0);
+
+  await drag(page, start, { x: start.x + small, y: start.y + small });
+  await expect(warning).toContainText('pelo menos 8 px.');
+  expect((await exportMapping(page)).mapping.markings).toHaveLength(0);
+});
