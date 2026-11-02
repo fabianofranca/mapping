@@ -4,6 +4,13 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `etapa` e, antes delas, no histórico do git.
 
+## Teste primeiro e portão de complexidade — [Não lançado] (épico `epic/teste-primeiro`, PR a definir, MCP 0.12.0, schema v13)
+
+### Alterado
+
+- Quem desenvolve com agentes: o briefing dos subagentes e a mensagem da sessão da fase passam a exigir **teste primeiro** para mudança de comportamento ou correção (teste visto falhando antes do código; o retorno traz o nome do teste e a falha). Refatoração, documentação e trabalho mecânico só exigem os testes existentes passando antes e depois.
+- Nada muda na app nem no servidor MCP.
+
 ## Planejamento nas issues — [Não lançado] (épico `epic/fluxo-issues`, PR a definir, MCP 0.12.0, schema v13)
 
 ### Alterado

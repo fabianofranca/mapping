@@ -663,6 +663,11 @@ describe('docs/FLOW.md (mensagens do fluxo automatizado)', () => {
     expect(flow).toContain('Parte de #');
   });
 
+  it('a regra "teste primeiro" está no CLAUDE.md e a mensagem da fase aponta para ela', () => {
+    expect(read('CLAUDE.md')).toContain('**teste primeiro**');
+    expect(flow).toContain('"teste primeiro" do `CLAUDE.md`');
+  });
+
   it('a mensagem do testador segue o formato do TESTING-NUVEM e a notificação cita PushNotification', () => {
     expect(flow).toMatch(
       /Leia `docs\/TESTING-NUVEM\.md` e execute no modo dirigido: [^\n]+\. Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+\. Coordenador: `/,
