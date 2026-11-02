@@ -1,6 +1,6 @@
 # Roadmap
 
-Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar. Hoje não há etapa em andamento nem detalhada; a última concluída foi a Testes na nuvem, depois da Exemplos enxutos (`epic/exemplos-enxutos`).
+Ordem das etapas do Mapping. Este documento só dá a direção: o detalhamento das fases fica no [`PLAN.md`](../PLAN.md) quando a etapa começar. Hoje não há etapa em andamento nem detalhada; a última concluída foi a Sincronia do design system (`epic/sincronia-ds`), depois da Testes na nuvem e da Exemplos enxutos.
 
 ## Princípio
 
@@ -270,6 +270,13 @@ O núcleo da ferramenta é **genérico**: imagens, marcações, camadas, anotaç
 - **Concluída em 2026-11-02** (fases TN1 e TN2, PRs #280, #281, #283 e #284; o épico é o PR #279); histórico em [`history/PLAN-etapa-testes-nuvem.md`](history/PLAN-etapa-testes-nuvem.md). Sem schema (v13), formato de especialização, de proposta ou de componente novos e sem MCP novo (0.12.0).
 - **O que entrou:** o testador das rodadas dirigidas também roda numa sessão do Claude Code na nuvem (ambiente "Mapping - testes"), sem o dono no computador: prompt em `docs/TESTING-NUVEM.md`, receitas dos diálogos nativos (seletor GTK, permissão pelo AT-SPI, "Salvar como") no apêndice A do `docs/TESTING.md`, build local do commit e MCP compilado do mesmo commit. O fluxo de épico dispara a rodada sozinho depois do merge da última fase, e o agente da fase mescla o relato no épico.
 - **Primeira rodada:** R0 e R2, 12 passos, 12 ✅, nenhum achado.
+
+## Etapa — Sincronia do design system (concluída, épico `epic/sincronia-ds`)
+
+- **Concluída em 2026-11-02** (fases DS1 e DS2, PRs #290 e #292; o épico é o PR #287); histórico em [`history/PLAN-etapa-sincronia-ds.md`](history/PLAN-etapa-sincronia-ds.md). Sem schema (v13), formato de especialização, de proposta ou de componente novos e sem MCP novo (0.12.0).
+- **O que entrou:** o design system — o artefato **Mapping** do Claude Design, curado à mão e fora do repositório — ganhou um registro vivo em [`DESIGN-SYSTEM.md`](DESIGN-SYSTEM.md), com o mapa dos 63 componentes, das 6 seções, dos tokens e dos 85 ícones para a origem no código, os gatilhos que obrigam a verificar o DS, as pendências e o histórico de sincronização. Toda descrição de PR passou a declarar o **Impacto no DS**, o fechamento de cada épico aplica as pendências no artefato, e o job `epic` do `ci.yml` exige o arquivo no PR do épico, como já exigia o `CHANGELOG.md`.
+- **Pôr em dia:** o artefato recebeu as cinco entregas desde 2026-10-24 (Proposto com componentes, Sugestões no campo de texto, Imagens remotas, Biblioteca Material 3 e o **Envolver** da Marcação pai) e, no fechamento, a remoção do botão **Abrir projeto de exemplo** da tela inicial, que veio do `epic/exemplos-enxutos`.
+- **Decidido:** a skill `/design-sync` do Claude Code não se aplica a este DS — ela espera o `dist/` de uma biblioteca de componentes publicada e transformaria o DS curado num espelho do build. O código é a fonte da verdade; o DS descreve.
 
 ## Evoluções
 
