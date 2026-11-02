@@ -15,7 +15,7 @@ function contrast(a: string, b: string): number {
 }
 
 // [primeiro plano, fundo, mínimo WCAG]: 4.5 para texto, 3 para elementos gráficos.
-// Pares da seção Contraste do design system 2.0 (docs/redesign/HANDOFF.md).
+// Pares da seção Contraste do design system (docs/DESIGN-SYSTEM.md).
 const PAIRS: readonly [string, string, number][] = [
   ['text', 'bg', 4.5],
   ['text', 'surface', 4.5],

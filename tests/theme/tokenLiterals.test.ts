@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { BREAKPOINTS } from '../../src/theme/breakpoints';
 import { TOKENS, tokenValue } from '../../src/theme/tokens';
 
-// R1 (docs/redesign/HANDOFF.md, seção 2): nenhum valor de cor, espaço, raio, fonte,
+// Nenhum valor de cor, espaço, raio, fonte,
 // opacidade, duração ou z-index fixo no CSS dos componentes; tudo vem de `var(--…)`.
 // Larguras e alturas de componentes (e a largura de bordas) ainda podem ser literais.
 

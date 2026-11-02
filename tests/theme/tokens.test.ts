@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TOKENS, renderTokensCss, tokenValue } from '../../src/theme/tokens';
 
-// Uma amostra de cada família da seção 2 do HANDOFF (docs/redesign/HANDOFF.md).
+// Uma amostra de cada família de tokens do design system (docs/DESIGN-SYSTEM.md).
 const FAMILIES: Record<string, readonly string[]> = {
   cor: [
     'color-border-control',

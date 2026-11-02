@@ -1,5 +1,5 @@
 // Atalhos de teclado do editor (desktop). Ver docs/history/PLAN-etapas-1-2.md, 7.1, e a
-// seção Atalhos do DS 2.0 (docs/redesign/HANDOFF.md, B12 e decisão 1 da seção 5).
+// seção Atalhos do design system (docs/DESIGN-SYSTEM.md).
 import { toolWindowByNumber, type ToolWindowId } from '../store/toolWindows';
 
 export type Shortcut =

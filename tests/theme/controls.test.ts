@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 
-// R2 (docs/redesign/HANDOFF.md): foco visível em tudo e altura dos controles pelos papéis.
+// Foco visível em tudo e altura dos controles pelos papéis.
 
 const DIR = 'src/theme';
 const css = Object.fromEntries(
