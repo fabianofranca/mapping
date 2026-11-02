@@ -195,11 +195,6 @@ Composições e lógica sem forma própria (não precisam de componente): `src/u
 
 O que o código já tem e o DS ainda não descreve. O fechamento do épico aplica isto no artefato e esvazia a lista.
 
-### Acabamento a 900 px (`epic/acabamento-900`)
-
-- **`Revisao.md`** (`src/ui/review/ReviewLevels.tsx`, `src/theme/review.css`): o rodapé de atalhos da janela Propostas mostra só Aceitar, Rejeitar e Próxima pendente, numa linha, até 1199 px (`BREAKPOINTS.compact`, o mesmo da `ReviewBar`); acima disso, os seis. Se a seção descreve o rodapé, registrar as duas versões.
-- **`Home`** (`src/app/Home.tsx`, `src/theme/layout.css`): as ações da linha de projeto ficam num `div.project-actions` dentro do `<td>` (o `display: flex` saiu da célula, que mantém a borda), e o selo e os botões têm `white-space: nowrap`. Atualizar o guia e o preview do `Home` (linhas sem quebra a 900 px, borda contínua).
-
 ### Previews não mostram o estado novo
 
 A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, mas só acrescentou o estado novo ao preview de seis deles (decisão de escopo do dono). Continuam mostrando o estado antigo os previews de:
@@ -210,7 +205,7 @@ A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, ma
 
 ### Classes que faltam no `bundle.css`
 
-Os previews de `TextField`, `SettingsDialog` e `CatalogPage` declaram no próprio `<style>` classes que a app tem e o `bundle.css` do DS não: `.suggestions`, `.suggestion`, `.suggestion-label`, `.suggestion-detail` (na app, em `src/theme/editor.css`), `.privacy-*` (em `src/theme/layout.css`) e `.catalog-variants-caption`. Funciona, mas o certo é o bundle ganhar essas classes quando for regerado, e os previews pararem de declará-las.
+Os previews de `TextField`, `SettingsDialog`, `CatalogPage` e `Home` declaram no próprio `<style>` classes que a app tem e o `bundle.css` do DS não: `.suggestions`, `.suggestion`, `.suggestion-label`, `.suggestion-detail` (na app, em `src/theme/editor.css`), `.privacy-*` (em `src/theme/layout.css`), `.catalog-variants-caption` e o `white-space: nowrap` de `.project-actions .button` e `.project-table .badge` (em `src/theme/layout.css`, desde o `epic/acabamento-900`). Funciona, mas o certo é o bundle ganhar essas classes quando for regerado, e os previews pararem de declará-las.
 
 ### Alias de texto fora do `tokens.json`
 
@@ -245,12 +240,13 @@ Uma entrada por épico que gravou no DS: data, épico, e o que mudou.
 
 A linha abaixo é de outro épico, aplicada aqui porque ele entrou na `main` antes de a regra existir.
 
-| Data       | Épico                   | O que mudou no DS                                                                                                                                                                                                                                                                                                                                       |
-| ---------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-02 | `epic/exemplos-enxutos` | Aplicado no fechamento do `epic/sincronia-ds`. O guia e o preview do `Home` perderam o botão "Abrir projeto de exemplo", removido da tela inicial (`src/app/Home.tsx`, `src/app/exampleProject.ts` e as chaves `home.openExample*`); o caminho atual é baixar `examples/exemplo-completo.zip` do repositório e usar o Abrir zip. Versão 16 do artefato. |
-| 2026-11-02 | `epic/teste-primeiro`   | Nenhuma gravação: a etapa só mexeu em regras de trabalho, lint e CI, sem impacto no DS.                                                                                                                                                                                                                                                                 |
-| 2026-11-02 | `epic/fluxo-issues`     | Sem impacto no DS: o épico só muda documentação e fluxo de trabalho (o planejamento passa a viver em issues do GitHub). Nada foi gravado no artefato.                                                                                                                                                                                                   |
-| 2026-11-02 | `epic/foco-janelas`     | Sem impacto: a etapa só mudou o comportamento do foco ao fechar janelas de ferramenta, sem alterar tamanho, token, ícone nem anatomia. Nada foi gravado no artefato.                                                                                                                                                                                    |
+| Data       | Épico                   | O que mudou no DS                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-02 | `epic/acabamento-900`   | Versões 18 (conteúdo) e 19 (índice) do artefato. **`Revisao.md`:** passou a descrever o rodapé de atalhos da janela Propostas, com só Aceitar, Rejeitar e Próxima pendente, numa linha, até 1199 px, e os seis acima disso. **`Home`:** o guia e o preview mostram as ações da linha de projeto num `div.project-actions` dentro do `<td>`, com selo e botões em `white-space: nowrap`. |
+| 2026-11-02 | `epic/exemplos-enxutos` | Aplicado no fechamento do `epic/sincronia-ds`. O guia e o preview do `Home` perderam o botão "Abrir projeto de exemplo", removido da tela inicial (`src/app/Home.tsx`, `src/app/exampleProject.ts` e as chaves `home.openExample*`); o caminho atual é baixar `examples/exemplo-completo.zip` do repositório e usar o Abrir zip. Versão 16 do artefato.                                 |
+| 2026-11-02 | `epic/teste-primeiro`   | Nenhuma gravação: a etapa só mexeu em regras de trabalho, lint e CI, sem impacto no DS.                                                                                                                                                                                                                                                                                                 |
+| 2026-11-02 | `epic/fluxo-issues`     | Sem impacto no DS: o épico só muda documentação e fluxo de trabalho (o planejamento passa a viver em issues do GitHub). Nada foi gravado no artefato.                                                                                                                                                                                                                                   |
+| 2026-11-02 | `epic/foco-janelas`     | Sem impacto: a etapa só mudou o comportamento do foco ao fechar janelas de ferramenta, sem alterar tamanho, token, ícone nem anatomia. Nada foi gravado no artefato.                                                                                                                                                                                                                    |
 
 ### Correções do próprio registro
 
