@@ -175,6 +175,8 @@ export default defineConfig({
         test: {
           name: 'app',
           environment: 'jsdom',
+          // vmThreads: reaproveita o jsdom entre arquivos (CI3, #378): suíte ~175 s → ~97 s.
+          pool: 'vmThreads',
           env: testEnv,
           setupFiles: ['tests/setup.ts'],
           include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],

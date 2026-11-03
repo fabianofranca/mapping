@@ -259,9 +259,9 @@ describe('job check em paralelo e caches', () => {
     expect(block('static')).toContain('npm run lint:ci');
     expect(block('static')).toContain('npm run typecheck');
     expect(block('test')).toMatch(
-      /vitest run --coverage --shard=\$\{\{ matrix\.shard \}\}\/3 --reporter=blob/,
+      /vitest run --coverage --shard=\$\{\{ matrix\.shard \}\}\/2 --reporter=blob/,
     );
-    expect(block('test')).toMatch(/shard: \[1, 2, 3\]/);
+    expect(block('test')).toMatch(/shard: \[1, 2\]/);
     expect(block('coverage')).toContain('vitest run --merge-reports --coverage');
     expect(block('coverage')).toContain('path: .vitest/blob');
     expect(block('coverage')).toContain('GITHUB_STEP_SUMMARY');

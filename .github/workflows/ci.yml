@@ -138,14 +138,14 @@ jobs:
       - run: npm run lint:ci
       - run: npm run typecheck
 
-  # Testes unitários e de componentes com cobertura, em 3 shards; cada um sobe o blob
-  # (o job `coverage` junta e relata). O número de shards se ajusta depois de medido.
+  # Testes unitários e de componentes com cobertura, em 2 shards; cada um sobe o blob
+  # (o job `coverage` junta e relata). Com o `vmThreads` (CI3) a suíte cabe em 2 shards.
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -165,7 +165,7 @@ jobs:
           key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
       - if: steps.modules.outputs.cache-hit != 'true'
         run: npm ci
-      - run: npx vitest run --coverage --shard=${{ matrix.shard }}/3 --reporter=blob
+      - run: npx vitest run --coverage --shard=${{ matrix.shard }}/2 --reporter=blob
       - uses: actions/upload-artifact@v7
         if: always()
         with:
