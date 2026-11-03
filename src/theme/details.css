@@ -187,19 +187,26 @@
 
 .props-value > .segmented {
   align-self: flex-start;
-  /* Não passa da coluna do painel: os itens encolhem e cortam o texto com reticências. */
+  /* Coluna estreita: as opções quebram de linha, cada uma inteira e clicável (sem corte). */
+  flex-wrap: wrap;
+  gap: var(--space-1);
   min-width: 0;
   max-width: 100%;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
 }
 
-.props-value > .segmented .tooltip-anchor,
 .props-value > .segmented .segmented-item {
-  min-width: 0;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--control-radius);
+}
+
+.props-value > .segmented-invalid .segmented-item {
+  border-color: var(--color-danger);
 }
 
 .props-value > .segmented .segmented-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
