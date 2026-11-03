@@ -203,6 +203,8 @@ Sem token, ícone nem tamanho novo. Para aplicar no artefato:
 - Seção `Revisao.md` e os guias de `ReviewHeader`, `ChangePopover` e do par de decisão com texto: o nome acessível dos botões com texto é `<texto visível>: <alvo>` (`Aceitar imagem: Confirmação`, `Sobrescrever: Nome`); o estado fica só no `aria-pressed` e o efeito do conflito na descrição (`aria-describedby`). Os botões de ícone não mudaram.
 - Guia de `Library`/paleta e do `ZoomField`: o nome acessível do botão de adicionar do tipo é `<texto visível>: <tipo>` e o do zoom é `<percentual>%: zoom atual; …`.
 
+- Seção `Atalhos.md` (SA2): o texto do rótulo `shortcuts.toggleWindow` (`src/i18n/pt-BR.ts`, `src/i18n/en-US.ts`) mudou de "Abrir ou esconder a janela {window}" para "Abrir ou ir para a janela {window}; com o foco nela, esconder" ("Open or go to the {window} window; hide it when focused"). Só vale se a seção reproduz o texto da linha.
+
 ### Previews não mostram o estado novo
 
 A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, mas só acrescentou o estado novo ao preview de seis deles (decisão de escopo do dono). Continuam mostrando o estado antigo os previews de:
