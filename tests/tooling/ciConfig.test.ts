@@ -19,7 +19,7 @@ describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
     for (const step of [
       'npm run lint',
       'npm run typecheck',
-      'npm run test:coverage',
+      'vitest run --coverage',
       'npm run test:perf',
       'npm run build',
       'npm run build:mcp',
@@ -27,8 +27,9 @@ describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
     ]) {
       expect(ci).toContain(step);
     }
-    expect(ci).toMatch(/^ {2}check:/m);
-    expect(ci).toMatch(/^ {2}e2e:/m);
+    for (const name of ['static', 'test', 'coverage', 'build', 'check', 'e2e']) {
+      expect(ci).toMatch(new RegExp(`^ {2}${name}:`, 'm'));
+    }
   });
 
   it('o deploy chama o ci.yml para a main e para o preview e só publica depois deles', () => {
@@ -156,7 +157,7 @@ describe('mcp-release.yml anexa o mapping-mcp.js à Release', () => {
 
 describe('ci.yml exige o CHANGELOG.md nos PRs de épico para a main', () => {
   it('o job epic confere que o PR altera o CHANGELOG.md', () => {
-    const job = ci.slice(ci.indexOf('  epic:'), ci.indexOf('  check:'));
+    const job = ci.slice(ci.indexOf('  epic:'), ci.indexOf('  static:'));
     expect(job).toContain('Changelog atualizado');
     expect(job).toMatch(/pulls\/\$PR\/files/);
     expect(job).toMatch(/grep -qx 'CHANGELOG\.md'/);
@@ -241,5 +242,90 @@ describe('uma validação por commit', () => {
     );
     expect(build).toMatch(/ref: \$\{\{ env\.PREVIEW_REF \}\}/);
     expect(build).toContain('previewSha');
+  });
+});
+
+// Etapa #375, fase CI2: o `check` é o agregador de jobs em paralelo, com caches.
+describe('job check em paralelo e caches', () => {
+  const block = (name: string): string => {
+    const start = ci.indexOf(`\n  ${name}:\n`);
+    const rest = ci.slice(start + 1);
+    const end = rest.slice(1).search(/\n {2}(#|[a-z0-9-]+:)/);
+    return end < 0 ? rest : rest.slice(0, end + 1);
+  };
+  const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
+
+  it('static, test, coverage e build têm cada um as suas verificações', () => {
+    expect(block('static')).toContain('npm run lint:ci');
+    expect(block('static')).toContain('npm run typecheck');
+    expect(block('test')).toMatch(
+      /vitest run --coverage --shard=\$\{\{ matrix\.shard \}\}\/3 --reporter=blob/,
+    );
+    expect(block('test')).toMatch(/shard: \[1, 2, 3\]/);
+    expect(block('coverage')).toContain('vitest run --merge-reports --coverage');
+    expect(block('coverage')).toContain('path: .vitest/blob');
+    expect(block('coverage')).toContain('GITHUB_STEP_SUMMARY');
+    expect(block('coverage')).toMatch(/name: coverage\$\{\{ inputs\.label/);
+    for (const step of [
+      'npm run test:perf',
+      'npm run build\n',
+      'INDEX_HTML_MAX_BYTES',
+      'npm run build:mcp',
+      'npm run build:viewer --if-present',
+    ]) {
+      expect(block('build')).toContain(step);
+    }
+  });
+
+  it('o check agrega os quatro jobs, sempre, e falha se algum não for success', () => {
+    const check = block('check');
+    expect(check).toMatch(/needs: \[static, test, coverage, build\]/);
+    expect(check).toMatch(/if: always\(\)/);
+    expect(check).toContain('!= "success"');
+    expect(check).toContain('exit 1');
+  });
+
+  it('todo job novo mantém o ref e o Node 22 sem .nvmrc; artifacts levam shard e label', () => {
+    for (const name of ['static', 'test', 'coverage', 'build', 'e2e']) {
+      const job = block(name);
+      expect(job, name).toContain('ref: ${{ inputs.ref }}');
+      expect(job, name).toContain(
+        "node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}",
+      );
+    }
+    const blobs = block('test');
+    expect(blobs).toMatch(
+      /name: vitest-blob\$\{\{ inputs\.label && format\('-\{0\}', inputs\.label\) \|\| '' \}\}-\$\{\{ matrix\.shard \}\}/,
+    );
+    expect(block('coverage')).toMatch(/pattern: vitest-blob\$\{\{ inputs\.label/);
+  });
+
+  it('build e build:mcp não repetem o tsc (os tipos ficam no typecheck)', () => {
+    expect(pkg.scripts.build).not.toContain('tsc');
+    expect(pkg.scripts['build:mcp']).not.toContain('tsc');
+    expect(pkg.scripts.typecheck).toContain('tsc --noEmit -p mcp/tsconfig.json');
+    expect(pkg.scripts.lint).toBe('eslint . && prettier --check .');
+    expect(pkg.scripts['lint:ci']).toMatch(
+      /eslint \. --cache .*prettier --check \. --cache/,
+    );
+  });
+
+  it('caches: node_modules (npm ci só sem hit), lint e navegador do Playwright', () => {
+    for (const name of ['static', 'test', 'coverage', 'build', 'e2e']) {
+      expect(block(name), name).toContain('path: node_modules');
+      expect(block(name), name).toContain(
+        "if: steps.modules.outputs.cache-hit != 'true'",
+      );
+    }
+    expect(block('static')).toContain('path: .cache');
+    expect(block('e2e')).toContain('path: ~/.cache/ms-playwright');
+    expect(block('e2e')).toContain('playwright install-deps chromium');
+    expect(read('.gitignore')).toMatch(/^\.cache$/m);
+  });
+
+  it('o deploy continua olhando só o resultado do ci.yml chamado', () => {
+    expect(deploy).toMatch(/checks-main:/);
+    expect(deploy).toMatch(/checks-preview:/);
+    expect(deploy).not.toMatch(/needs\.(static|coverage)/);
   });
 });
