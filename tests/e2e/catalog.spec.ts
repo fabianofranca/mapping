@@ -171,9 +171,9 @@ test('dentro de um projeto: aplicar o pacote, abrir o Catálogo e adicionar um c
   await expect(page.locator('button[data-type-id="nota"]')).toBeVisible();
   await expect(page.locator('button[data-type-id="m3-button"]')).toHaveCount(0);
   await page.getByRole('tab', { name: 'Paleta' }).click();
-  await expect(page.getByRole('button', { name: 'Adicionar Nota' })).toHaveText(
-    'Adicionar no canvas',
-  );
+  await expect(
+    page.getByRole('button', { name: 'Adicionar no canvas: Nota' }),
+  ).toHaveText('Adicionar no canvas');
   await page.getByRole('tab', { name: 'Componentes' }).click();
 
   await projectAction(page, 'Especializações');

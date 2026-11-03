@@ -310,7 +310,7 @@ test('rejeitar a criação pelo Rejeitar do popover com Enter mantém o foco nel
   await expect(
     page
       .getByRole('dialog', { name: /^Anotação Input criada/ })
-      .getByRole('button', { name: 'Rejeitada: Anotação Input criada' }),
+      .getByRole('button', { name: 'Rejeitar: Anotação Input criada' }),
   ).toBeFocused();
   expect(await focusedLabel(page)).not.toBe('BODY');
   await page.keyboard.press('Enter');
