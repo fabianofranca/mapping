@@ -6,7 +6,7 @@ A sessão é criada pelo **orquestrador** do fluxo automatizado (`CLAUDE.md`, "F
 
 - **Dirigido por lista de roteiros ou de passos:** "Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: R0 e R2. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (vale também "R0, R4.1 a R4.5 e R6.8a a R6.11")
 - **Dirigido pelos achados de um relato anterior:** "… no modo dirigido: os achados 2 a 5 do relato em <link do comentário>. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o relato é um comentário de issue; vale número de achado ou código, como "A1 a A3")
-- **Dirigido pelas fases de uma etapa:** "… no modo dirigido: as fases X e Y da etapa #301. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o plano está na issue da etapa e nas sub-issues `fase`)
+- **Dirigido pelas fases de uma etapa:** "… no modo dirigido: as fases X e Y da etapa #301. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o plano está na issue da etapa e nas sub-issues `step`)
 - **Completo:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (R0 a R17, sem os roteiros sob demanda; a ordem está em "O que executar")
 - **Só um link de PR do Mapping** ("Teste <link>"): trate como dirigida pelos roteiros que o PR toca; leia o corpo e os arquivos do PR, monte a lista e siga o modo comum.
 
@@ -77,7 +77,7 @@ Siga o apêndice A do guia: a página pelo Playwright por CDP (receita 4), os di
 
 1. **achados de um relato anterior** (um comentário de issue, por número ou código): para cada achado, os passos citados em "Passos para reproduzir" e na coluna Observação da tabela de passos, mais os passos do guia que a correção afetava;
 2. **lista de roteiros ou de passos** do guia (ex.: "R0 e R2", "R0, R4.1 a R4.5, R6.8a a R6.11"): exatamente esses;
-3. **fases de uma etapa** (a issue da etapa e as sub-issues `fase` no GitHub, lidas pelo MCP do GitHub): os passos do guia citados no "Aceite" e nos itens de cada fase, mais os que testam o que ela mudou.
+3. **fases de uma etapa** (a issue da etapa e as sub-issues `step` no GitHub, lidas pelo MCP do GitHub): os passos do guia citados no "Aceite" e nos itens de cada fase, mais os que testam o que ela mudou.
 
 Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começo do relato (e na conversa). Siga a ordem do guia; se um passo depende de outro (ex.: R6.10 de R6.8a a R6.9; R4.9 de R4.1 a R4.8), execute também os anteriores necessários e marque-os com o mesmo achado de origem.
 
@@ -115,7 +115,7 @@ O `relato.md` leva o cabeçalho inteiro (inclusive o **Tempo por roteiro**, ver 
 1. **Poste o relato como comentário na sub-issue indicada na mensagem**, com a ferramenta `add_issue_comment` do MCP do GitHub, em `fabianofranca/mapping`. Sem a sub-issue, use a issue da etapa citada; sem nenhuma das duas, só entregue o relato na conversa e explique que não havia onde postar.
 2. **Em partes se passar de 65 mil caracteres** (o limite do GitHub é 65.536; confira com `wc -m relato.md`): corte entre seções ou roteiros, nunca no meio de uma tabela ou de um achado, e ponha "Parte i de n" na primeira linha de cada comentário. O cabeçalho e o Resumo vão na parte 1.
 3. **Termine cada comentário com o rodapé de atribuição** que a sessão exige para o que ela escreve no GitHub.
-4. **Anexos:** comentário de issue não aceita anexo pela API. As capturas ficam em `anexos/` e são enviadas com a ferramenta de envio de arquivos da sessão, se houver. No comentário, cada ❌ **descreve em texto o que a captura mostra** e cola o trecho relevante do `mapping.json` num bloco de código.
+4. **Anexos:** comentário de issue não aceita anexo pela API. As capturas dos ❌ vão no branch `evidencias`, em `<sub-issue>/achado-<n>-<nome>.png`, pelo procedimento do `CLAUDE.md` ("Bugs e evidência visual"), num commit só, **antes** de postar o comentário. Cada ❌ no comentário mostra a imagem com `![…](…?raw=true)`, **descreve em texto o que ela mostra** e cola o trecho relevante do `mapping.json` num bloco de código. Se o push falhar, volta ao que era: a descrição em texto e os arquivos de `anexos/` enviados com a ferramenta de envio de arquivos da sessão, se houver.
 5. **Avise o coordenador** (o id do fim da mensagem) com `send_message`: uma linha com o link do (primeiro) comentário, o total de ✅ e ❌, os achados por severidade e a duração total medida (ex.: "Relato em <link>: 212 ✅, 3 ❌; achados: alta 1, média 1, baixa 1; 19min32s" ou "; tempo não medido"). Sem o id, pule este item.
 6. **Cole o Resumo na conversa**, com o caminho completo do `relato.md`, e diga quais passos ficaram "não executado (precisa do dono)" e se algum achado impede o uso com pessoas.
 
@@ -129,8 +129,8 @@ Você não cria branch, não faz commit nem abre PR, e não edita nada no reposi
 - `pkill -f chrome` (mata a própria shell e faz o Chrome restaurar abas); feche pelo CDP.
 - Salvar por cima de um arquivo existente (o GTK sobrescreve sem perguntar): confira com `test -e` antes.
 - Usar o **preview** ou o Deploy.
-- Editar qualquer coisa no repositório, abrir PR, fazer commit ou push: o relato só vai como comentário de issue.
+- Editar qualquer coisa no repositório, abrir PR, fazer commit ou push: o relato só vai como comentário de issue (a não ser o commit e o push das capturas no branch `evidencias`).
 - Usar pastas fora de `~/mapping-testes/`, além do clone.
 - Apagar projetos ou dados do site no navegador, ou limpar os dados do site; abrir janela anônima.
 - Dar como testado o que não observou: passo que não puder ser executado fica "não executado (motivo)".
-- Mandar arquivos para fora do ambiente (a app não faz rede; você também não precisa), a não ser o relato e as capturas dos ❌ para a conversa e para a sub-issue.
+- Mandar arquivos para fora do ambiente (a app não faz rede; você também não precisa), a não ser o relato e as capturas dos ❌ para a conversa e para a sub-issue, e o push das capturas no branch `evidencias`.

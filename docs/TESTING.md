@@ -198,7 +198,7 @@ Limites de imagem: por `base64`, até 16 MB por imagem; maiores vão por `file` 
 1. Abra o **Diagnóstico**: a aba **Diagnóstico** da janela de baixo (`Ctrl+Shift+6`).
 2. Clique em **Copiar**. Funciona mesmo sem erros registrados. O texto começa com um cabeçalho, uma informação por linha, com as chaves em inglês: `build`, `channel`, `schema`, `storage` (`folder` ou `local`), `userAgent`, `window`, `language`, `theme`, as contagens numa linha só (ex.: `containers: 1, markings: 6, annotations: 11`), `pendingSave` e `errors`; depois vêm os erros, o mais recente primeiro. Não leva nomes de projeto, de imagens nem caminhos.
 3. Sem projeto aberto, use o diálogo **Configurações**, seção **Sobre** (no fim), botão **Copiar** (build, canal e schema).
-4. Junte: o texto copiado, os passos exatos, o esperado e o observado, uma captura de tela e, se for um problema de gravação, uma cópia do `mapping.json` daquele momento. Use o [template do relato](#10-templates) e abra uma issue em [github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues) ou entregue o relato a quem pediu o teste. O agente da nuvem entrega o relato como comentário na sub-issue indicada na mensagem da rodada.
+4. Junte: o texto copiado, os passos exatos, o esperado e o observado, uma captura de tela e, se for um problema de gravação, uma cópia do `mapping.json` daquele momento. Use o [template do relato](#10-templates) e abra uma issue em [github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues) ou entregue o relato a quem pediu o teste. O agente da nuvem entrega o relato como comentário na sub-issue indicada na mensagem da rodada. A issue aberta para um defeito leva o rótulo `bug`, e a captura segue "Bugs e evidência visual" do `CLAUDE.md`.
 
 **Severidade** de cada achado:
 
@@ -1069,7 +1069,7 @@ Um template só, para a rodada completa, a dirigida e o teste avançado. Quem te
 - Esperado:
 - Observado:
 - Reproduziu de novo? sim | não
-- Anexos: captura, Diagnóstico copiado, mapping.json do momento
+- Anexos: captura, Diagnóstico copiado, mapping.json do momento (no relato da nuvem, a captura aparece como imagem do branch `evidencias`)
 
 ## Regressões fora do alvo
 
