@@ -323,6 +323,20 @@ describe('job check em paralelo e caches', () => {
     expect(read('.gitignore')).toMatch(/^\.cache$/m);
   });
 
+  it('o e2e usa 3 workers no CI e o install-deps só roda se o Chromium não abrir', () => {
+    expect(read('playwright.config.ts')).toContain(
+      'workers: process.env.CI ? 3 : undefined',
+    );
+    const e2e = block('e2e');
+    expect(e2e).toContain('id: chromium');
+    expect(e2e).toMatch(/--headless/);
+    expect(e2e).toMatch(/ldd/);
+    expect(e2e).toMatch(
+      /- if: steps\.chromium\.outputs\.ok != 'true'\n\s+run: npx playwright install-deps chromium/,
+    );
+    expect(e2e).not.toMatch(/- run: npx playwright install-deps chromium/);
+  });
+
   it('o deploy continua olhando só o resultado do ci.yml chamado', () => {
     expect(deploy).toMatch(/checks-main:/);
     expect(deploy).toMatch(/checks-preview:/);
