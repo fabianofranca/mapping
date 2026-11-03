@@ -259,9 +259,12 @@ describe('job check em paralelo e caches', () => {
     expect(block('static')).toContain('npm run lint:ci');
     expect(block('static')).toContain('npm run typecheck');
     expect(block('test')).toMatch(
-      /vitest run --coverage --shard=\$\{\{ matrix\.shard \}\}\/2 --reporter=blob/,
+      /vitest run --coverage --shard=\$\{\{ matrix\.shard \}\}\/4 --reporter=blob/,
     );
-    expect(block('test')).toMatch(/shard: \[1, 2\]/);
+    expect(block('test')).toMatch(/shard: \[1, 2, 3, 4\]/);
+    // Só o job `coverage` gera o relatório (no merge); os shards levam os dados no blob.
+    expect(block('test')).toContain('COVERAGE_REPORT: off');
+    expect(block('coverage')).not.toContain('COVERAGE_REPORT');
     expect(block('coverage')).toContain('vitest run --merge-reports --coverage');
     expect(block('coverage')).toContain('path: .vitest/blob');
     expect(block('coverage')).toContain('GITHUB_STEP_SUMMARY');
