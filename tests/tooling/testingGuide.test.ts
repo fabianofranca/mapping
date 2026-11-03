@@ -650,8 +650,8 @@ describe('docs/FLOW.md (mensagens do fluxo automatizado)', () => {
   });
 
   it('tem as três mensagens do dono e o "pode mesclar"', () => {
-    expect(flow).toContain('Crie uma issue roadmap:');
-    expect(flow).toContain('Detalhe a issue #<roadmap> como etapa');
+    expect(flow).toContain('Crie uma issue roadmap (ou bug, se for defeito):');
+    expect(flow).toContain('Detalhe a issue #<roadmap ou bug> como etapa');
     expect(flow).toContain('Implemente a etapa #<etapa> no fluxo automatizado');
     expect(flow).toContain('pode mesclar');
   });
