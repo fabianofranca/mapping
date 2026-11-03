@@ -20,6 +20,10 @@ import {
 import { locale } from '../../src/store/settings';
 import { SpecsDialog } from '../../src/ui/SpecsDialog';
 import { isToolWindowOpen, hideToolWindow } from '../../src/store/toolWindows';
+import { EditorContext } from '../../src/ui/EditorContext';
+import { ToolStrip } from '../../src/ui/ToolStrip';
+import { ToolWindow } from '../../src/ui/ToolWindow';
+import { closeToolWindow } from '../../src/ui/toolWindowLayout';
 import { specializationUpdateImpact, type Spec } from '../../src/model';
 import { UpdateImpact } from '../../src/ui/UpdateImpact';
 import { MemoryDirectory } from '../storage/memoryFs';
@@ -694,6 +698,46 @@ describe('SpecsDialog: atualizar biblioteca v4', () => {
     await screen.findByText(/1 pendência\(s\) em Incompletas/);
     expect(harness.project().specializations[0]?.version).toBe(2);
     expect(isToolWindowOpen('incomplete')).toBe(true);
+  }, 60_000);
+
+  it('com pendências: Incompletas guarda a origem; sem o diálogo, fechar leva o foco à faixa', async () => {
+    const { harness, user, view } = setup(base());
+    const next = libNext([
+      { from: 1, to: 2, steps: [{ op: 'remove-type', type: 'badge', mode: 'convert' }] },
+    ]);
+    const spec: Spec = {
+      ...next,
+      layers: next.layers.map((l) => ({
+        ...l,
+        annotationTypes: l.annotationTypes.filter((t) => t.id !== 'badge'),
+      })),
+    };
+    await user.click(screen.getByRole('button', { name: 'Atualizar de zip…' }));
+    chooseZip(await zipOf(pkg(spec)));
+    const dialog = await dialogTitled('Pacote "Lib"', 30_000);
+    const confirm = within(dialog).getByRole('button', { name: 'Atualizar' });
+    confirm.focus();
+    fireEvent.click(confirm);
+    await screen.findByText(/1 pendência\(s\) em Incompletas/);
+    expect(isToolWindowOpen('incomplete')).toBe(true);
+    // O diálogo fecha e leva a origem guardada junto.
+    view.unmount();
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <ToolStrip side="left" />
+        <ToolWindow id="incomplete">
+          <button type="button">controle incomplete</button>
+        </ToolWindow>
+      </EditorContext.Provider>,
+    );
+    expect(confirm.isConnected).toBe(false);
+    screen.getByRole('button', { name: 'controle incomplete' }).focus();
+    closeToolWindow('incomplete');
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement).toBe(
+      document.querySelector('[data-strip-window="incomplete"]'),
+    );
   }, 60_000);
 
   it('recusada: o Atualizar fica desabilitado e a versão não muda', async () => {

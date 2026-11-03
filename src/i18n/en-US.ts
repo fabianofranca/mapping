@@ -528,7 +528,7 @@ export const enUS: Dictionary = {
   'shortcuts.group.edit': 'Editing and selection',
   'shortcuts.group.view': 'Zoom',
   'shortcuts.group.project': 'Project',
-  'shortcuts.toggleWindow': 'Open or hide the {window} window',
+  'shortcuts.toggleWindow': 'Open or go to the {window} window; hide it when focused',
   'shortcuts.hideWindow': 'Hide the focused window',
   'shortcuts.resizeWindow': 'Resize the focused window (16 px at a time)',
   'shortcuts.delete': 'Delete the selected item',

@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ZhqcUhJI8UyvcSN+OrZouHicQBSP07o5Jbz1ZjGbPWs=' 'sha256-cUF9Xb3tkAs2YWvd+E1KlW4L5zd0sQ3mijZ7wlTKrTQ='; style-src 'sha256-PwBvshfOAGPrv95lNnmvvD+2oxrHbQx6VWpFVFeHUTw='; img-src 'self' data: blob:; connect-src 'none'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ZhqcUhJI8UyvcSN+OrZouHicQBSP07o5Jbz1ZjGbPWs=' 'sha256-cUF9Xb3tkAs2YWvd+E1KlW4L5zd0sQ3mijZ7wlTKrTQ='; style-src 'sha256-ueQffo1UTnUmZztiY8poGW0TiDqItQJJB2dqM3qQv5g='; img-src 'self' data: blob:; connect-src 'none'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Guia do Mapping</title>
     <link rel="icon" type="image/svg+xml" href="../icons/icon.svg" />
@@ -582,6 +582,10 @@
         border-collapse: collapse;
         width: 100%;
       }
+      .shortcut-note {
+        margin: var(--space-2) 0 0;
+        color: var(--color-text-muted);
+      }
       td,
       th {
         text-align: left;
@@ -758,6 +762,10 @@
               </tr>
             </tbody>
           </table>
+          <p class="shortcut-note">
+            Com o foco fora da janela, o atalho leva o foco a ela e a abre, se estiver
+            fechada. Com o foco dentro dela, o atalho esconde a janela.
+          </p>
         </div>
         <div class="panel">
           <h2>Para agentes (MCP)</h2>
