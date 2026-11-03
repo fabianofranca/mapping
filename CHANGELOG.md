@@ -4,6 +4,14 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
+## CI mais enxuta — [Não lançado] (épico `epic/ci-enxuta`, MCP 0.13.0, schema v13)
+
+### Alterado
+
+- Cada commit de PR passa pelo CI uma vez só: o CI não roda mais por push no branch, só no PR.
+- O preview (`/preview/`) sai depois do CI verde do PR e publica exatamente o commit validado, sem rodar a validação de novo.
+- O disparo manual do Deploy continua igual: roda o CI no branch antes de publicar.
+
 ## Rótulos em inglês, bug e evidência visual — 2026-11-03 (épico `epic/bugs-evidencia`, PR #382, MCP 0.13.0, schema v13)
 
 ### Alterado

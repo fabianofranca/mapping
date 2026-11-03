@@ -1,13 +1,12 @@
 name: CI
 
-# Valida todo PR (e push em branches) antes do merge: os merges são feitos pelo
-# celular, sem rodar nada localmente. O deploy.yml chama este mesmo workflow
+# Valida todo PR antes do merge, uma vez por commit: os merges são feitos pelo
+# celular, sem rodar nada localmente. Não há gatilho `push` (etapa #375): ele repetia
+# a validação do PR; branch sem PR não tem CI. O deploy.yml chama este mesmo workflow
 # (`workflow_call`) para a `main` e para o preview antes de publicar: uma só lista
 # de validações, que não diverge entre o PR e a publicação.
 on:
   pull_request:
-  push:
-    branches-ignore: [main]
   workflow_call:
     inputs:
       ref:
@@ -25,14 +24,16 @@ permissions:
   contents: read
 
 concurrency:
-  # `inputs.ref` separa as duas chamadas do deploy (main e preview) no mesmo evento.
+  # Num PR, o ref (`refs/pull/<n>/merge`) cancela o commit superado. No deploy
+  # (`workflow_call`), o evento é o do Deploy (push na main ou workflow_dispatch) e
+  # `inputs.ref` separa as duas chamadas dele (main e preview).
   group: ci-${{ github.event_name }}-${{ github.ref }}-${{ inputs.ref }}
   cancel-in-progress: true
 
 jobs:
   # A `main` só recebe PR de um branch `epic/*` (CLAUDE.md, "Fluxo de trabalho"): o ruleset
   # "main protegida" exige este check, que falha para qualquer outra origem. Exceção: os PRs
-  # do Dependabot (`dependabot/*`), pequenos e aprovados pelo dono. Em push e no deploy
+  # do Dependabot (`dependabot/*`), pequenos e aprovados pelo dono. No deploy
   # (`workflow_call`) não há PR: o job é pulado, o que o GitHub conta como sucesso.
   epic:
     if: github.event_name == 'pull_request'
