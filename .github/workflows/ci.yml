@@ -318,8 +318,21 @@ jobs:
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - if: steps.browser.outputs.cache-hit != 'true'
         run: npx playwright install chromium
-      # As bibliotecas do sistema não ficam no cache do navegador: sempre.
-      - run: npx playwright install-deps chromium
+      # As bibliotecas do sistema não ficam no cache do navegador, mas a imagem do runner
+      # costuma tê-las: o `install-deps` (quase tudo `apt-get update`) só roda se o Chromium
+      # não abrir (biblioteca faltando no `ldd` ou falha ao iniciar).
+      - name: Chromium abre?
+        id: chromium
+        run: |
+          exe=$(node -p "require('@playwright/test').chromium.executablePath()")
+          if [ -x "$exe" ] && ! ldd "$exe" | grep -q 'not found' && "$exe" --headless --no-sandbox --version; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "O Chromium não abre; rodando o install-deps."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.chromium.outputs.ok != 'true'
+        run: npx playwright install-deps chromium
       - run: npm run build
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v7
