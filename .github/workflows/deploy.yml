@@ -5,15 +5,19 @@ name: Deploy
 # e o branch em `/preview/`, com `VITE_CHANNEL=preview` (armazenamento separado,
 # faixa de aviso e manifest próprio). A produção nunca é substituída por algo não validado.
 #
-# O `preview-on-pr.yml` dispara esse `workflow_dispatch` a cada PR aberto ou atualizado.
-# Existe **um preview só**: o último PR atualizado ganha o `/preview/`. O Pages publica um
+# O `preview-on-pr.yml` dispara esse `workflow_dispatch` quando o CI de um PR termina verde,
+# com o branch e o `sha` validado. Existe **um preview só**: o último PR com CI verde ganha
+# o `/preview/`. O Pages publica um
 # artefato só (produção e preview juntos), então toda execução republica a produção.
 #
 # Todo deploy grava `deploy.json` na raiz do site com o commit da `main` publicado: o que está
 # publicado já passou pelo ci.yml inteiro (lint, typecheck, testes, desempenho, build,
 # build:mcp, orçamento de tamanho e e2e) quando foi publicado.
 # - Sem preview (push na `main`): a `main` precisa passar nos checks, senão nada é publicado.
-# - Com preview: o branch precisa passar. Os checks da `main` só rodam se ela mudou desde o
+# - Com preview: o branch precisa passar. Com `sha` cujos check runs `check` e `e2e` (do CI
+#   do PR) estão em `success`, ele já passou: o `checks-preview` é pulado e esse SHA é
+#   publicado (etapa #375, uma validação por commit). Sem `sha` (disparo manual) ou sem os
+#   check runs verdes, o `checks-preview` roda o ci.yml no branch (ou no SHA) como sempre. Os checks da `main` só rodam se ela mudou desde o
 #   `deploy.json` publicado; se falharem (instabilidade, por exemplo), a produção é
 #   republicada do commit já publicado e o preview sai mesmo assim. Sem `deploy.json`
 #   acessível (primeiro deploy), a falha da `main` continua bloqueando.
@@ -24,6 +28,10 @@ on:
     inputs:
       branch:
         description: Branch a publicar em /preview/ (vazio = o escolhido em "Use workflow from")
+        required: false
+        default: ''
+      sha:
+        description: Commit do branch a publicar (vazio = a ponta do branch); com check e e2e verdes, não valida de novo
         required: false
         default: ''
 
@@ -41,6 +49,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       preview: ${{ steps.preview.outputs.ref }}
+      preview_sha: ${{ steps.preview.outputs.sha }}
+      validated: ${{ steps.validated.outputs.validated }}
       main_head: ${{ steps.main.outputs.main_head }}
       published: ${{ steps.main.outputs.published }}
       check_main: ${{ steps.main.outputs.check_main }}
@@ -49,11 +59,42 @@ jobs:
         id: preview
         env:
           PREVIEW_REF: ${{ github.event_name == 'workflow_dispatch' && (inputs.branch || github.ref_name) || '' }}
+          SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.sha || '' }}
         run: |
           ref="${PREVIEW_REF#refs/heads/}"
           if [ -n "$ref" ] && [ "$ref" != "main" ]; then
             echo "ref=$ref" >> "$GITHUB_OUTPUT"
+            if [ -n "$SHA" ]; then
+              if ! printf '%s' "$SHA" | grep -Eqx '[0-9a-f]{40}'; then
+                echo "::error::sha inválido: $SHA (esperado o SHA completo, 40 caracteres hexadecimais)."
+                exit 1
+              fi
+              echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+            fi
           fi
+
+      # O CI do PR já validou este commit? Os check runs `check` e `e2e` são os jobs do
+      # ci.yml no evento `pull_request` (os do `checks-preview` se chamam
+      # `checks-preview / check`). Os dois em `success`: não valida de novo. Consulta que
+      # falha conta como não validado: o checks-preview roda, como num disparo manual.
+      - name: Confere se o commit já foi validado
+        id: validated
+        if: steps.preview.outputs.sha != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.preview.outputs.sha }}
+        run: |
+          passed="$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs?per_page=100" --paginate \
+            --jq '.check_runs[] | select(.app.slug == "github-actions" and .conclusion == "success") | .name')" || passed=""
+          validated=true
+          for name in check e2e; do
+            if ! printf '%s\n' "$passed" | grep -qx "$name"; then
+              validated=false
+              echo "Check run \`$name\` sem success em \`$SHA\`." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          echo "validated=$validated" >> "$GITHUB_OUTPUT"
+          echo "- commit do preview \`$SHA\` já validado pelo CI do PR: $validated" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Decide o que validar na main
         id: main
@@ -91,30 +132,35 @@ jobs:
       ref: ${{ needs.plan.outputs.main_head }}
       label: main
 
+  # Pulado quando o CI do PR já validou o commit (`validated`).
   checks-preview:
     needs: plan
-    if: needs.plan.outputs.preview != ''
+    if: needs.plan.outputs.preview != '' && needs.plan.outputs.validated != 'true'
     permissions:
       contents: read
     uses: ./.github/workflows/ci.yml
     with:
-      ref: ${{ needs.plan.outputs.preview }}
+      ref: ${{ needs.plan.outputs.preview_sha || needs.plan.outputs.preview }}
       label: preview
 
   build:
     needs: [plan, checks-main, checks-preview]
     # Produção resolvida: checks-main em sucesso ou (há preview e há commit já publicado).
-    # O preview é opcional (pulado quando não há), mas, se houver, precisa passar.
+    # O preview é opcional (pulado quando não há), mas, se houver, precisa passar: no
+    # checks-preview ou, antes, no CI do PR (pulado por `validated`).
     if: >-
       !cancelled() &&
       needs.plan.result == 'success' &&
       (needs.checks-main.result == 'success' ||
        (needs.plan.outputs.preview != '' && needs.plan.outputs.published != '')) &&
       (needs.checks-preview.result == 'success' ||
-       (needs.checks-preview.result == 'skipped' && needs.plan.outputs.preview == ''))
+       (needs.checks-preview.result == 'skipped' && needs.plan.outputs.preview == '') ||
+       (needs.checks-preview.result == 'skipped' && needs.plan.outputs.validated == 'true'))
     runs-on: ubuntu-latest
     env:
       PREVIEW: ${{ needs.plan.outputs.preview }}
+      # O commit validado (o `sha` do disparo) ou, sem ele, a ponta do branch.
+      PREVIEW_REF: ${{ needs.plan.outputs.preview_sha || needs.plan.outputs.preview }}
       MAIN_REF: ${{ needs.checks-main.result == 'success' && needs.plan.outputs.main_head || needs.plan.outputs.published }}
     steps:
       - uses: actions/checkout@v7
@@ -139,7 +185,7 @@ jobs:
       - uses: actions/checkout@v7
         if: env.PREVIEW != ''
         with:
-          ref: ${{ env.PREVIEW }}
+          ref: ${{ env.PREVIEW_REF }}
           path: preview
 
       - name: Preview

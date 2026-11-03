@@ -13,7 +13,20 @@ import { Dialog } from '../../src/ui/Dialog';
 import { HELP_PROPOSALS, HELP_SHORTCUTS, HelpDialog } from '../../src/ui/HelpDialog';
 import { SettingsDialog } from '../../src/ui/SettingsDialog';
 
+// `window.location` não é redefinível no contexto do `vmThreads`: o protocolo `file:` entra
+// pelo próprio `guideUrl`, que lê `globalThis.location.protocol` só quando o chamador não passa um.
+const protocolOverride = vi.hoisted(() => ({ value: null as string | null }));
+vi.mock('../../src/utils/guideLink', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../src/utils/guideLink')>();
+  return {
+    ...original,
+    guideUrl: (protocol?: string) =>
+      original.guideUrl(protocol ?? protocolOverride.value ?? undefined),
+  };
+});
+
 afterEach(() => {
+  protocolOverride.value = null;
   cleanup();
   locale.value = 'pt-BR';
   theme.value = 'system';
@@ -308,7 +321,7 @@ describe('HelpDialog', () => {
   });
 
   it('em file:// a seção do guia mostra o aviso no lugar do link', () => {
-    vi.stubGlobal('location', { ...window.location, protocol: 'file:' });
+    protocolOverride.value = 'file:';
     try {
       render(<HelpDialog onClose={vi.fn()} />);
       const section = document.getElementById('help-guide') as HTMLElement;
@@ -318,7 +331,7 @@ describe('HelpDialog', () => {
       ).toBeNull();
       expect(within(section).getByText(t('help.guide.example'))).toBeTruthy();
     } finally {
-      vi.unstubAllGlobals();
+      protocolOverride.value = null;
     }
   });
 
