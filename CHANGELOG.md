@@ -6,6 +6,11 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 ## Semântica acessível — [Não lançado] (épico `epic/semantica-acessivel`, PR a definir, MCP 0.13.0, schema v13)
 
+### Alterado
+
+- Guia interativo: uma nota embaixo da tabela de atalhos explica o atalho de janela. Com o foco fora da janela, o atalho leva o foco a ela e a abre, se estiver fechada; com o foco dentro, ele esconde a janela.
+- Ajuda › Atalhos: a linha de cada janela diz as duas coisas ("Abrir ou ir para a janela Árvore; com o foco nela, esconder"). O comportamento do atalho não muda.
+
 ### Corrigido
 
 - Leitor de tela: os menus em popover (o do projeto, no nome do projeto, e o **Em lote** da revisão em janela estreita) agora são menus de verdade. Os itens são anunciados como itens de menu, o foco vai ao primeiro ao abrir, ↑/↓ andam entre eles em círculo e Esc fecha e devolve o foco ao botão, que anuncia que abre um menu.

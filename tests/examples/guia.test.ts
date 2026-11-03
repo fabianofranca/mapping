@@ -90,6 +90,17 @@ describe('guia interativo', () => {
     expect(themeAt('/preview/guia/', { 'mapping.theme': 'light' })).toBeNull();
   });
 
+  it('o guia explica o atalho de janela com o foco fora e dentro dela', () => {
+    const note = html.match(/<\/table>\s*<p class="shortcut-note">([^<]+)<\/p>/);
+    expect(note, 'falta a nota embaixo da tabela de atalhos').toBeTruthy();
+    const text = note?.[1] ?? '';
+    expect(text).toMatch(/foco fora/i);
+    expect(text).toMatch(/leva o foco/i);
+    expect(text).toMatch(/abre/i);
+    expect(text).toMatch(/foco dentro/i);
+    expect(text).toMatch(/esconde/i);
+  });
+
   it('os atalhos do guia são os da app', () => {
     const titles: Record<ToolWindowId, string> = {
       tree: ptBR['panel.tree'],

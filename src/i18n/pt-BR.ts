@@ -529,7 +529,8 @@ export const ptBR = {
   'shortcuts.group.edit': 'Edição e seleção',
   'shortcuts.group.view': 'Zoom',
   'shortcuts.group.project': 'Projeto',
-  'shortcuts.toggleWindow': 'Abrir ou esconder a janela {window}',
+  'shortcuts.toggleWindow':
+    'Abrir ou ir para a janela {window}; com o foco nela, esconder',
   'shortcuts.hideWindow': 'Esconder a janela em foco',
   'shortcuts.resizeWindow': 'Redimensionar a janela em foco (16 px por vez)',
   'shortcuts.delete': 'Excluir o item selecionado',
