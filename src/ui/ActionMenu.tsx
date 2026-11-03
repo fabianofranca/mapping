@@ -2,6 +2,7 @@ import type { Ref } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { IconButton } from './controls';
 import { assignRef, returnFocusToTrigger } from './focus';
+import { menuKeyDown, useFocusFirstItem } from './useMenuNavigation';
 
 // Menu ⋯ de uma linha (KeyValueGrid e DataGrid): subir, descer, remover. Popover
 // simples, sem diálogo: fecha com Esc, com clique fora e ao escolher um item, e em todo
@@ -23,7 +24,6 @@ interface ActionMenuProps {
   readonly triggerRef?: Ref<HTMLButtonElement>;
 }
 
-const ITEMS = '[role="menuitem"]:not(:disabled)';
 const GAP = 4;
 const EDGE = 8;
 
@@ -54,7 +54,7 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
     setOpen(false);
   };
 
-  // Em layout effect: o foco e o clique fora valem desde o commit que abre o menu.
+  // Em layout effect: o clique fora vale desde o commit que abre o menu.
   useLayoutEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
@@ -66,8 +66,6 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('scroll', onMove, true);
     globalThis.addEventListener('resize', onMove);
-    // Abre com o foco no primeiro item habilitado.
-    root.current?.querySelector<HTMLElement>(ITEMS)?.focus({ preventScroll: true });
     return () => {
       document.removeEventListener('pointerdown', onDown);
       document.removeEventListener('scroll', onMove, true);
@@ -75,20 +73,8 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
     };
   }, [open]);
 
-  const onKeyDown = (e: KeyboardEvent) => {
-    if (!open) return;
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      close();
-      return;
-    }
-    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-    e.preventDefault();
-    const enabled = [...(root.current?.querySelectorAll<HTMLElement>(ITEMS) ?? [])];
-    const at = enabled.indexOf(document.activeElement as HTMLElement);
-    const step = e.key === 'ArrowDown' ? 1 : -1;
-    enabled[(at + step + enabled.length) % enabled.length]?.focus();
-  };
+  useFocusFirstItem(root, open);
+  const onKeyDown = menuKeyDown(root, open, close);
 
   return (
     <span class="action-menu" ref={root} onKeyDown={onKeyDown}>

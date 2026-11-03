@@ -59,7 +59,7 @@ describe('janela Catálogo', () => {
     expect(palette.getAttribute('aria-selected')).toBe('true');
     expect(
       screen.getByRole<HTMLButtonElement>('button', {
-        name: t('library.addType', { name: 'Button' }),
+        name: new RegExp(`^${t('library.add')}.*: Button$`),
       }),
     ).toBeTruthy();
   });

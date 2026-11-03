@@ -42,12 +42,16 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
       <MenuPopover
         class="project-menu"
         label={projectName.value}
-        buttonLabel={t('editor.projectMenu')}
+        buttonLabel={t('editor.projectMenuName', { name: projectName.value })}
       >
-        <Button disabled={busy} onClick={() => void commands.exportProject()}>
+        <Button
+          role="menuitem"
+          disabled={busy}
+          onClick={() => void commands.exportProject()}
+        >
           {t('editor.export')}
         </Button>
-        <Button onClick={() => void commands.closeProject()}>
+        <Button role="menuitem" onClick={() => void commands.closeProject()}>
           {t('editor.closeProject')}
         </Button>
       </MenuPopover>

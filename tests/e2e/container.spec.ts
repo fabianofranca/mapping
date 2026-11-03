@@ -55,7 +55,7 @@ test('container com um componente da Biblioteca, sem desenho gravado', async ({
   // Janela Catálogo, aba Paleta (Ctrl+Shift+9) e Adicionar de um botão.
   await page.keyboard.press('Control+Shift+9');
   await page.getByRole('tab', { name: 'Paleta' }).click();
-  await page.getByRole('button', { name: 'Adicionar Button' }).click();
+  await page.getByRole('button', { name: /^Adicionar.*: Button$/ }).click();
   await expect(host).toHaveAttribute('data-components', /^[1-9]/);
 
   // O mapping.json guarda a marcação e a anotação, nada do desenho.
@@ -98,7 +98,7 @@ test('arrastar um tipo da Paleta até o canvas cria a instância onde cai', asyn
   await page.keyboard.press('Control+Shift+9');
   await page.getByRole('tab', { name: 'Paleta' }).click();
   const item = page.locator('li.library-type').filter({
-    has: page.getByRole('button', { name: 'Adicionar Button', exact: true }),
+    has: page.getByRole('button', { name: /^Adicionar.*: Button$/ }),
   });
   await expect(item).toHaveAttribute('draggable', 'true');
   // Enquadrar tudo: o único container (360 × 800, alto) fica no centro da vista, com vazio dos lados.
@@ -140,7 +140,10 @@ test('projeto novo traz a biblioteca de notas: Adicionar › Nota cria um post-i
   // para o canvas, e o rótulo do botão já diz isso.
   await page.keyboard.press('Control+Shift+9');
   await page.getByRole('tab', { name: 'Paleta' }).click();
-  const add = page.getByRole('button', { name: 'Adicionar Nota', exact: true });
+  const add = page.getByRole('button', {
+    name: 'Adicionar no canvas: Nota',
+    exact: true,
+  });
   await expect(add).toHaveText('Adicionar no canvas');
   await add.click();
   await expect(host).toHaveAttribute('data-components', '1');

@@ -235,7 +235,7 @@ export const ptBR = {
   'crumbs.canvas': 'Canvas',
 
   'zoom.value': '{percent}%',
-  'zoom.reset': 'Zoom em {percent}%; clique para voltar a 100%',
+  'zoom.reset': '{percent}%: zoom atual; clique para voltar a 100%',
   'zoom.in': 'Aproximar',
   'zoom.out': 'Afastar',
 
@@ -256,7 +256,7 @@ export const ptBR = {
   'status.channelLabel': 'Canal deste build: {channel}',
   'status.buildLabel': 'Identificação deste build: {id}',
 
-  'editor.projectMenu': 'Ações do projeto',
+  'editor.projectMenuName': '{name}: ações do projeto',
   'editor.appName': 'Mapping',
   'editor.fitAllShort': 'Enquadrar',
 
@@ -873,7 +873,7 @@ export const ptBR = {
   'library.container': 'Container',
   'library.typeSize': '{width} × {height}',
   'library.add': 'Adicionar',
-  'library.addType': 'Adicionar {name}',
+  'library.addType': '{label}: {name}',
   'library.addInside': 'Adicionar dentro de {name}',
   'library.addToScreen': 'Adicionar na tela {name}',
   'library.addToCanvas': 'Adicionar no canvas',

@@ -174,11 +174,11 @@ describe('DecisionControl', () => {
         onDecide={onDecide}
       />,
     );
-    const reject = screen.getByRole('button', { name: 'Rejeitada: Campo Cupom' });
+    const reject = screen.getByRole('button', { name: 'Rejeitar item: Campo Cupom' });
     expect(reject.textContent).toBe('Rejeitar item');
     expect(reject.getAttribute('aria-pressed')).toBe('true');
     expect(reject.getAttribute('title')).toBe('Rejeitar  R');
-    fireEvent.click(screen.getByRole('button', { name: 'Aceitar Campo Cupom' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Aceitar item: Campo Cupom' }));
     expect(onDecide).toHaveBeenCalledWith('accepted');
   });
 });

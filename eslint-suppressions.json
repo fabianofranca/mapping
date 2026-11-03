@@ -666,7 +666,7 @@
   },
   "src/ui/review/ChangePopover.tsx": {
     "complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "src/ui/review/DecisionControl.tsx": {

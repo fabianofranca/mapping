@@ -195,6 +195,14 @@ Composições e lógica sem forma própria (não precisam de componente): `src/u
 
 O que o código já tem e o DS ainda não descreve. O fechamento do épico aplica isto no artefato e esvazia a lista.
 
+### Semântica acessível dos menus e da revisão (`epic/semantica-acessivel`, SA1)
+
+Sem token, ícone nem tamanho novo. Para aplicar no artefato:
+
+- Componente `Menu` (`src/ui/MenuPopover.tsx`, `src/ui/useMenuNavigation.ts`): o guia passa a descrever o teclado igual ao do menu ⋯ (`ActionMenu`) — itens com `role="menuitem"`, foco no primeiro item habilitado ao abrir, ↑/↓ circulares entre os habilitados, Esc fecha e devolve o foco ao gatilho — e o `aria-haspopup="menu"` do gatilho. O nome acessível do gatilho começa pelo texto visível (`<nome do projeto>: ações do projeto`, `Em lote: aceitar ou rejeitar tudo`).
+- Seção `Revisao.md` e os guias de `ReviewHeader`, `ChangePopover` e do par de decisão com texto: o nome acessível dos botões com texto é `<texto visível>: <alvo>` (`Aceitar imagem: Confirmação`, `Sobrescrever: Nome`); o estado fica só no `aria-pressed` e o efeito do conflito na descrição (`aria-describedby`). Os botões de ícone não mudaram.
+- Guia de `Library`/paleta e do `ZoomField`: o nome acessível do botão de adicionar do tipo é `<texto visível>: <tipo>` e o do zoom é `<percentual>%: zoom atual; …`.
+
 ### Previews não mostram o estado novo
 
 A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, mas só acrescentou o estado novo ao preview de seis deles (decisão de escopo do dono). Continuam mostrando o estado antigo os previews de:

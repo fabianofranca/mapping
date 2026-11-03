@@ -88,12 +88,20 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
   const bulkDisabled = !open || (filtered && shown === 0);
 
   const bulk = compact ? (
-    <MenuPopover label={t('review.bulk')} buttonLabel={t('review.bulkTitle')}>
-      <Button disabled={bulkDisabled} onClick={() => decideVisible('accepted')}>
+    <MenuPopover label={t('review.bulk')} buttonLabel={t('review.bulkName')}>
+      <Button
+        role="menuitem"
+        disabled={bulkDisabled}
+        onClick={() => decideVisible('accepted')}
+      >
         <Icon name="check" />
         {acceptLabel}
       </Button>
-      <Button disabled={bulkDisabled} onClick={() => decideVisible('rejected')}>
+      <Button
+        role="menuitem"
+        disabled={bulkDisabled}
+        onClick={() => decideVisible('rejected')}
+      >
         <Icon name="close" />
         {rejectLabel}
       </Button>

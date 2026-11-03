@@ -205,7 +205,7 @@ export function CompareDialog() {
         <DecisionControl
           variant="text"
           value={decision}
-          name={t('review.compare.decisionName', { name })}
+          name={name}
           acceptText={t('review.compare.accept')}
           rejectText={t('review.compare.reject')}
           disabled={p.status !== 'open'}
