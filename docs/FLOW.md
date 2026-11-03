@@ -13,7 +13,7 @@ Crie uma issue roadmap: <ideia ou problema>. Origem: <de onde veio>.
 2. Detalhamento (Fable ou Opus):
 
 ```text
-Detalhe a issue #<roadmap> como etapa, com as fases e a tabela de modelos (linha Orquestrador e coluna Testador). Pergunte o que for decisão de produto.
+Detalhe a issue #<roadmap> como etapa, com as fases e a tabela de modelos (linha Orquestrador e coluna Testador). Pergunte o que for decisão de produto. Ao terminar, ponha o rótulo `pronta` e tire o `roadmap`.
 ```
 
 3. Implementação (no modelo da linha Orquestrador, no modo Auto):
