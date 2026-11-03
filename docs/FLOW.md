@@ -53,10 +53,10 @@ Com ❌ no relato, o orquestrador cria uma sub-issue `step` de correção (com `
 O orquestrador acha o ambiente "Mapping - testes" com `list_environments` e cria a sessão com `create_session`, `source_url` do repositório e `source_revision` = `epic/<nome>`:
 
 ```text
-Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: <roteiros da sub-issue da última fase>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do orquestrador>`.
+Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: <roteiros da sub-issue da última fase>. Passada visual: <lista da sub-issue, ou "nenhuma">. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do orquestrador>`.
 ```
 
-Reteste, depois da correção:
+Reteste, depois da correção (R0 reduzido ao R0.1 e aos passos de que os achados dependem; passada visual só das janelas e dos diálogos dos achados):
 
 ```text
 Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: os achados <números> do relato em <link do comentário>. Branch `epic/<nome>`, commit `<hash da correção>`. Relato na sub-issue #<fase de correção>. Coordenador: `<id da sessão do orquestrador>`.

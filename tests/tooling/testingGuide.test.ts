@@ -688,3 +688,58 @@ describe('docs/FLOW.md (mensagens do fluxo automatizado)', () => {
     expect(claude).not.toContain('Rodada dirigida na nuvem');
   });
 });
+
+// Etapa Testador mais rápido (TR2): reteste com o R0 reduzido, passada visual pelo que a
+// etapa toca e tempo real medido por `mark()` em vez de estimado.
+describe('TR2 — R0 reduzido no reteste, passada visual e tempo real', () => {
+  const cloud = read('docs/TESTING-NUVEM.md');
+  const guide = read('docs/TESTING.md');
+  const flow = read('docs/FLOW.md');
+  const claude = read('CLAUDE.md');
+
+  it('o reteste por achados roda só o R0.1 e os passos de que os achados dependem, não o R0 inteiro', () => {
+    const directed = cloud.slice(cloud.indexOf('**Rodada dirigida.**'));
+    expect(directed).toMatch(/R0\.1/);
+    expect(directed).toMatch(/s[óo] (o )?\*{0,2}R0\.1/i);
+    expect(directed).toMatch(/n[ãa]o repita o R0 inteiro/i);
+  });
+
+  it('a passada visual vem da linha da mensagem, "nenhuma" vira "não pedida" e o reteste usa só os achados', () => {
+    const section = cloud.slice(cloud.indexOf('## O que executar'));
+    expect(section).toMatch(/passada visual: `?<lista>`?/i);
+    expect(section).toContain('não pedida');
+    expect(section).toMatch(/[Rr]eteste[\s\S]{0,200}s[óo] as janelas e os di[áa]logos/);
+  });
+
+  it('o tempo real vem de apoio/tempos.log, por mark(), e nunca é estimado', () => {
+    expect(cloud).toMatch(/\bmark\(/);
+    expect(cloud).toContain('tempos.log');
+    expect(cloud).toContain('tempo não medido');
+    expect(cloud).toMatch(/nunca estime/i);
+  });
+
+  it('o template da seção 10 não pede tempo estimado e aponta para o tempos.log', () => {
+    const templates = guide.slice(guide.indexOf('## 10. Templates'));
+    expect(templates).not.toMatch(/ex\.:\s*R0 25 min/);
+    expect(templates).toContain('tempos.log');
+  });
+
+  it('as duas mensagens do testador no docs/FLOW.md têm a linha da passada visual', () => {
+    const testerSection = flow.slice(flow.indexOf('## Para o testador'));
+    const occurrences = testerSection.split(/[Pp]assada visual/).length - 1;
+    expect(occurrences).toBeGreaterThanOrEqual(2);
+  });
+
+  it('a mensagem de reteste do FLOW.md cita o R0 reduzido ao R0.1', () => {
+    const retest = flow.slice(
+      flow.indexOf('Reteste, depois da correção'),
+      flow.indexOf('## Notificação final'),
+    );
+    expect(retest).toMatch(/R0\.1/);
+  });
+
+  it('o CLAUDE.md manda o orquestrador passar a passada visual ao testador e a sub-issue da última fase trazer a linha', () => {
+    expect(claude).toMatch(/os roteiros e a passada visual/);
+    expect(claude).toContain('Passada visual:');
+  });
+});
