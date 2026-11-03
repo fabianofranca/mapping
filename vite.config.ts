@@ -10,6 +10,7 @@ import { channelManifest, stampServiceWorker, type BuildChannel } from './pwa/bu
 import { applyCsp } from './pwa/csp';
 import { tokensCss } from './pwa/tokensCss';
 import { resolveBuildId } from './src/utils/build';
+import TimedSequencer from './tests/support/timedSequencer';
 
 /** `VITE_CHANNEL=preview` no build do branch publicado em /preview/ (deploy.yml). */
 const channel: BuildChannel = process.env.VITE_CHANNEL === 'preview' ? 'preview' : 'main';
@@ -121,6 +122,14 @@ function wasmBytes(): Plugin {
   };
 }
 
+/**
+ * Nos shards do CI (`COVERAGE_REPORT=off`) o blob já leva os dados de cobertura e só o job
+ * `coverage` gera o relatório, no `--merge-reports`: gerá-lo em cada shard custava ~15 s.
+ * Local (`npm run test:coverage`) o relatório sai como sempre.
+ */
+const coverageReporters =
+  process.env.COVERAGE_REPORT === 'off' ? [] : ['text-summary', 'json-summary', 'html'];
+
 const testEnv = { PERF_BUDGETS: perfBudgets };
 
 const base = {
@@ -138,16 +147,19 @@ const base = {
 export default defineConfig({
   ...base,
   test: {
+    // `--shard=i/N` divide por tempo, não por número de arquivos (tests/support/timedSequencer.ts).
+    sequence: { sequencer: TimedSequencer },
     // Relatório informativo (sem limite mínimo por enquanto): `npm run test:coverage`.
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
-      reporter: ['text-summary', 'json-summary', 'html'],
+      reporter: coverageReporters,
       reportsDirectory: 'coverage',
     },
     projects: [
       {
-        ...base,
+        // Os projetos herdam os plugins e o `define` deste arquivo (Vitest 5): repeti-los
+        // aplicaria cada plugin duas vezes.
         // src/model/ precisa rodar em Node puro: será reutilizado pelo servidor MCP.
         test: {
           name: 'model',
@@ -157,8 +169,7 @@ export default defineConfig({
         },
       },
       {
-        ...base,
-        plugins: [...base.plugins, wasmBytes()],
+        plugins: [wasmBytes()],
         // Servidor MCP (etapa 3a): também em Node puro.
         test: {
           name: 'mcp',
@@ -171,7 +182,6 @@ export default defineConfig({
         },
       },
       {
-        ...base,
         test: {
           name: 'app',
           environment: 'jsdom',

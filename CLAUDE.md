@@ -23,6 +23,7 @@ npm run dev       # servidor de desenvolvimento
 npm run build     # gera dist/index.html
 npm test          # vitest (modelo, store, storage, canvas e componentes)
 npm run test:coverage # vitest com relatório de cobertura (coverage/); pula os orçamentos de desempenho
+npm run test:durations # regenera tests/support/durations.json (tempos por arquivo que balanceiam os 4 shards do CI; roda a suíte com cobertura)
 npm run test:perf # só os orçamentos de desempenho (sem cobertura; o CI roda separado)
 npm run test:e2e  # Playwright contra dist/index.html; roda no CI (localmente: npm run build e PLAYWRIGHT_CHROMIUM_EXECUTABLE=<chrome>)
 npm run build:mcp # gera dist-mcp/mapping-mcp.js (servidor MCP, etapa 3a)
