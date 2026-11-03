@@ -4,6 +4,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `em-andamento` e, antes delas, no histórico do git.
 
+## Testador mais rápido — [Não lançado] (épico `epic/testador-rapido`, PR a definir, MCP 0.13.0, schema v13)
+
+### Alterado
+
+- O testador da nuvem ganha auxiliares em `scripts/testing/` (`cloud-up.sh`, `cloud.mjs`, `atspi-allow.py`) que sobem o ambiente (build, servidor, tela virtual, Chrome) e operam os diálogos nativos (seletor de pasta ou arquivo, pedido de permissão, "Salvar como", cancelar) numa chamada só, em vez de reescrever os scripts a cada rodada.
+
 ## Rótulos de ciclo — 2026-11-03 (épico `epic/rotulos-ciclo`, PR #367, MCP 0.13.0, schema v13)
 
 ### Alterado

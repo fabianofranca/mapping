@@ -23,18 +23,15 @@ Você é o **testador da app Mapping**. Executa os roteiros do `docs/TESTING.md`
 
 ## Primeiros 10 minutos
 
-Cada item tem uma conferência; só passe ao próximo se ela bater. Todos os comandos e scripts estão no apêndice A do guia, subseção "Diálogos nativos na nuvem (Xvfb)" (`S` abaixo é a pasta `apoio/` do item 3).
+Cada item tem uma conferência; só passe ao próximo se ela bater. Todos os comandos e scripts estão no apêndice A do guia, subseção "Diálogos nativos na nuvem (Xvfb)" (`S` abaixo é a pasta `apoio/` do item 3); os itens 4 a 7 são um auxiliar só, [`scripts/testing/cloud-up.sh`](../scripts/testing/cloud-up.sh).
 
 1. Leia este arquivo e o `docs/TESTING.md` inteiro, com o apêndice A (é a fonte da verdade dos passos, dos resultados esperados, dos nomes da interface e do template do relato; este prompt não o repete). **Confira:** você sabe o modo, o alvo, o branch, o commit, a sub-issue e o coordenador da mensagem.
 2. `git fetch origin` e `git switch <branch>` (o clone da sessão já é o repositório). **Confira:** `git log -1 --format=%h` é o commit da mensagem.
 3. Crie a pasta de trabalho `~/mapping-testes/<AAAA-MM-DD>-<alvo>/` (fora do clone; `<alvo>` é o épico ou o assunto, sem acento) com a subpasta `apoio/` (perfil do Chrome, `env`, logs) e, dentro dela, `anexos/`. Copie para a pasta da rodada só o que os roteiros pedem (`libraries/material3-compose`, `examples/material3-compose.zip`, `examples/libraries/sdui-backend`, `examples/libraries/analytics`, `examples/specs/*.json`, `examples/proposta-exemplo.zip`, `examples/proposta-componentes.zip`). **Confira:** `ls ~/mapping-testes/<AAAA-MM-DD>-<alvo>/apoio` responde.
-4. `npm ci && npm run build` e sirva `dist/` em `http://localhost:8080` (receita 1 da nuvem). **Confira:** `curl -sI http://localhost:8080/` responde `200`.
-5. `npm run build:mcp` e `node dist-mcp/mapping-mcp.js --version`. **Confira:** a versão é a de `mcp/version.ts` do commit.
-6. Suba a tela virtual, o D-Bus, o AT-SPI e o Chrome (receita 2 da nuvem, nesta ordem). **Confira:** `xdotool search --onlyvisible --name 'Mapping'` acha a janela.
-7. Confira a aba: `curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]'`. **Confira:** exatamente uma linha, `http://localhost:8080/`. Com mais de uma, feche o Chrome pelo CDP e suba de novo (receita 3 da nuvem).
-8. Configurações › Sobre, pelo Playwright por CDP (receita 4 da nuvem). **Confira:** o build id é `<commit> · <data>` e o commit é o da mensagem (a data é a do dia do build, não do commit). Se não for, pare: o build está velho.
-9. Registre o **estado prévio do navegador** (perfil novo: "perfil limpo"), a versão do Chrome (`chrome://version` ou o `userAgent`) e `innerWidth`, para o cabeçalho do relato.
-10. Só então comece o R0. Antes de cada diálogo nativo, o clique na app vem primeiro e a receita depois.
+4. `scripts/testing/cloud-up.sh ~/mapping-testes/<AAAA-MM-DD>-<alvo>/` sobe tudo e confere os itens 4 a 7 do apêndice A antigo numa chamada só: `npm ci && npm run build` e sirva `dist/` em `http://localhost:8080` (**Confira:** `200`); `npm run build:mcp` e `node dist-mcp/mapping-mcp.js --version` (**Confira:** a versão é a de `mcp/version.ts`); a tela virtual, o D-Bus, o AT-SPI e o Chrome com um perfil novo (**Confira:** `xdotool search --onlyvisible --name 'Mapping'` acha a janela); e a aba (**Confira:** `curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]'` dá exatamente uma linha, `http://localhost:8080/`). **Confira no fim:** termina com `cloud-up.sh: ambiente de pé, conferências 4 a 7 passaram.` e código de saída `0`; com outro código, a linha de erro diz qual conferência falhou (apêndice A). Mais de uma aba depois de subir: `scripts/testing/cloud-up.sh ~/mapping-testes/<AAAA-MM-DD>-<alvo>/ --restart-chrome` (receita 3).
+5. Configurações › Sobre, pelo Playwright por CDP (receita 4 da nuvem). **Confira:** o build id é `<commit> · <data>` e o commit é o da mensagem (a data é a do dia do build, não do commit). Se não for, pare: o build está velho.
+6. Registre o **estado prévio do navegador** (perfil novo: "perfil limpo"), a versão do Chrome (`chrome://version` ou o `userAgent`) e `innerWidth`, para o cabeçalho do relato.
+7. Só então comece o R0. Antes de cada diálogo nativo, o clique na app vem primeiro e a receita depois.
 
 **Quando algo não acontece, meça antes de repetir.** Dois cliques iguais sem efeito pedem uma captura (`import -window root`) e a lista de janelas do `xdotool`, não um terceiro clique.
 
@@ -63,7 +60,7 @@ O servidor MCP é o **compilado do mesmo commit** (`dist-mcp/mapping-mcp.js`), u
 
 ## Como agir
 
-Siga o apêndice A do guia: a página pelo Playwright por CDP (receita 4), os diálogos nativos pelas receitas 5 a 8 (a tabela do apêndice diz que receita faz o papel de cada "ou `select_folder`" dos roteiros), a shell para o disco, o MCP pelo cliente por stdio (receita 9) e as dicas de DOM (dicas pelo atributo, listas nativas, zoom por `keydown`, janela). Regras desta sessão:
+Siga o apêndice A do guia: a página pelo Playwright por CDP (receita 4), os diálogos nativos pelas receitas 5 a 8 (a tabela do apêndice diz que receita faz o papel de cada "ou `select_folder`" dos roteiros), a shell para o disco, o MCP pelo cliente por stdio (receita 9) e as dicas de DOM (dicas pelo atributo, listas nativas, zoom por `keydown`, janela). Use os auxiliares de [`scripts/testing/cloud.mjs`](../scripts/testing/cloud.mjs) (`connect`, `selectFolder`, `openFile`, `saveFile`, `cancelDialog`, `allowPermission`, `screenshot`, `windowShortcut`, `makeCadastroPng`, `mark`) em vez de reescrever as receitas: script próprio é só para o que eles não cobrem, e o que faltou vai em "O que atrapalhou". Regras desta sessão:
 
 - **Aba:** uma só, a da app, já em foco (o Chrome roda numa tela virtual, sem o dono usando outra janela). Antes de cada ação que muda algo, confira que o título da aba ainda é o da app.
 - **Console:** registre `console` e `pageerror` logo ao abrir a página; erro em vermelho é achado.
