@@ -27,7 +27,7 @@ function renderLibrary(harness: LibraryHarness, onOpenSpecs = vi.fn()) {
 
 const addButton = (name: string) =>
   screen.getByRole<HTMLButtonElement>('button', {
-    name: t('library.addType', { name }),
+    name: new RegExp(`^${t('library.add')}.*: ${name}$`),
   });
 
 describe('paleta da Biblioteca', () => {

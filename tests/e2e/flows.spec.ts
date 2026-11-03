@@ -179,8 +179,8 @@ test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', as
   expect(await width()).toBe(before + 16);
 
   // O layout fica guardado: volta à tela inicial e abre o projeto de novo.
-  await page.getByRole('button', { name: 'Ações do projeto' }).click();
-  await page.getByRole('button', { name: 'Fechar projeto', exact: true }).click();
+  await page.getByRole('button', { name: /: ações do projeto$/ }).click();
+  await page.getByRole('menuitem', { name: 'Fechar projeto', exact: true }).click();
   await page.getByRole('button', { name: 'Abrir', exact: true }).first().click();
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
   await expect(list).toBeVisible();
@@ -331,8 +331,8 @@ test('desktop: Detalhes com atalhos, arrasto de pares e seções recolhíveis', 
 // R9: diálogos e tela inicial (B9, B10, B16, P8, P10).
 test('tela inicial: ações, busca e tabela de recentes', async ({ page }) => {
   await createProject(page, 'Carro');
-  await page.getByRole('button', { name: 'Ações do projeto' }).click();
-  await page.getByRole('button', { name: 'Fechar projeto', exact: true }).click();
+  await page.getByRole('button', { name: /: ações do projeto$/ }).click();
+  await page.getByRole('menuitem', { name: 'Fechar projeto', exact: true }).click();
 
   await expect(page.getByRole('button', { name: /Novo projeto/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /Abrir zip/ })).toBeVisible();

@@ -64,11 +64,11 @@ describe('decisão no popover do campo', () => {
     fireEvent.click(nameMark());
     const pop = screen.getByRole('dialog');
 
-    const accept = within(pop).getByRole('button', { name: 'Aceitar Nome' });
+    const accept = within(pop).getByRole('button', { name: 'Aceitar: Nome' });
     expect(accept.getAttribute('aria-keyshortcuts')).toBe('A');
     expect(
       within(pop)
-        .getByRole('button', { name: 'Rejeitar Nome' })
+        .getByRole('button', { name: 'Rejeitar: Nome' })
         .getAttribute('aria-keyshortcuts'),
     ).toBe('R');
     expect(within(pop).queryByRole('button', { name: 'Limpar' })).toBeNull();
@@ -82,7 +82,7 @@ describe('decisão no popover do campo', () => {
     expect(nameMark().getAttribute('aria-label')).toMatch(/^Nome: alterado, aceito\./);
     expect(
       within(pop)
-        .getByRole('button', { name: 'Aceita: Nome' })
+        .getByRole('button', { name: 'Aceitar: Nome' })
         .getAttribute('aria-pressed'),
     ).toBe('true');
     // A região `status` anuncia a decisão.
@@ -90,7 +90,7 @@ describe('decisão no popover do campo', () => {
       expect(within(pop).getByRole('status').textContent).toBe('Nome: aceita'),
     );
 
-    fireEvent.click(within(pop).getByRole('button', { name: 'Rejeitar Nome' }));
+    fireEvent.click(within(pop).getByRole('button', { name: 'Rejeitar: Nome' }));
     await waitFor(() => expect(stateOf(h, ids.name)).toBe('rejected'));
     expect(nameMark().getAttribute('data-state')).toBe('rejected');
     await waitFor(() =>
@@ -104,7 +104,7 @@ describe('decisão no popover do campo', () => {
     await waitFor(() => expect(stateOf(h, ids.name)).toBeNull());
     expect(nameMark().getAttribute('data-state')).toBe('undecided');
     expect(document.activeElement).toBe(
-      within(pop).getByRole('button', { name: 'Aceitar Nome' }),
+      within(pop).getByRole('button', { name: 'Aceitar: Nome' }),
     );
   });
 
@@ -119,11 +119,13 @@ describe('decisão no popover do campo', () => {
       screen.getByRole('button', { name: /^Nome: alterado, pendente, em conflito/ }),
     );
     const pop = screen.getByRole('dialog');
-    const overwrite = within(pop).getByRole('button', {
-      name: 'Aceitar: sobrescreve Topo por Porta dianteira',
-    });
+    const describedBy = (el: HTMLElement) =>
+      document.getElementById(el.getAttribute('aria-describedby') ?? '')?.textContent;
+    const overwrite = within(pop).getByRole('button', { name: 'Sobrescrever: Nome' });
+    expect(describedBy(overwrite)).toBe('Aceitar: sobrescreve Topo por Porta dianteira');
     expect(overwrite.textContent).toBe('Sobrescrever');
-    const keep = within(pop).getByRole('button', { name: 'Rejeitar: mantém Topo' });
+    const keep = within(pop).getByRole('button', { name: 'Manter atual: Nome' });
+    expect(describedBy(keep)).toBe('Rejeitar: mantém Topo');
     expect(keep.textContent).toBe('Manter atual');
     fireEvent.click(overwrite);
     await waitFor(() => expect(stateOf(h, ids.name)).toBe('accepted'));
@@ -166,7 +168,7 @@ describe('decisão no popover do campo', () => {
     const user = userEvent.setup();
     await user.click(nameMark());
     const pop = screen.getByRole('dialog');
-    await user.click(within(pop).getByRole('button', { name: 'Rejeitar Nome' }));
+    await user.click(within(pop).getByRole('button', { name: 'Rejeitar: Nome' }));
     await waitFor(() => expect(stateOf(h, ids.name)).toBe('rejected'));
     const box = within(pop).getByRole('textbox', { name: 'Nota para o agente' });
     expect(document.activeElement).toBe(box);
@@ -191,7 +193,7 @@ describe('decisão no popover do campo', () => {
     );
     await user.click(
       within(screen.getByRole('dialog')).getByRole('button', {
-        name: 'Rejeitar Anotação onClick criada',
+        name: 'Rejeitar: Anotação onClick criada',
       }),
     );
     await waitFor(() => expect(stateOf(h, created.id)).toBe('rejected'));
@@ -281,7 +283,7 @@ describe('decisão no popover do campo', () => {
     );
     fireEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', {
-        name: 'Rejeitar Anotação onClick criada',
+        name: 'Rejeitar: Anotação onClick criada',
       }),
     );
     await waitFor(() => expect(stateOf(h, created.id)).toBe('rejected'));
@@ -300,7 +302,7 @@ describe('decisão no popover do campo', () => {
     await user.tab();
     await user.tab();
     const reject = within(screen.getByRole('dialog')).getByRole('button', {
-      name: 'Rejeitar Nome',
+      name: 'Rejeitar: Nome',
     });
     expect(document.activeElement).toBe(reject);
     await user.keyboard(' ');
@@ -324,7 +326,7 @@ describe('decisão no popover do campo', () => {
     const user = userEvent.setup();
     await user.click(nameMark());
     const pop = screen.getByRole('dialog');
-    await user.click(within(pop).getByRole('button', { name: 'Rejeitar Nome' }));
+    await user.click(within(pop).getByRole('button', { name: 'Rejeitar: Nome' }));
     await waitFor(() => expect(stateOf(h, ids.name)).toBe('rejected'));
     const box = within(pop).getByRole('textbox', { name: 'Nota para o agente' });
     expect(document.activeElement).toBe(box);
@@ -348,7 +350,7 @@ describe('decisão no popover do campo', () => {
     const user = userEvent.setup();
     await user.click(nameMark());
     const pop = screen.getByRole('dialog');
-    await user.click(within(pop).getByRole('button', { name: 'Rejeitar Nome' }));
+    await user.click(within(pop).getByRole('button', { name: 'Rejeitar: Nome' }));
     const box = within(pop).getByRole('textbox', { name: 'Nota para o agente' });
     await user.type(box, 'O nome antigo estava certo.');
     await user.tab();
@@ -374,7 +376,7 @@ describe('decisão no popover do campo', () => {
     await user.tab();
     await user.tab();
     const reject = within(screen.getByRole('dialog')).getByRole('button', {
-      name: 'Rejeitar Nome',
+      name: 'Rejeitar: Nome',
     });
     expect(document.activeElement).toBe(reject);
     await user.keyboard('{Enter}');
@@ -401,7 +403,7 @@ describe('decisão no popover do campo', () => {
     act(() => h.review.setView('current'));
     fireEvent.click(nameMark());
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: 'Aceitar Nome' }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Aceitar: Nome' }),
     );
     const id = proposal.changes[0]?.id ?? '';
     await waitFor(() => expect(stateOf(h, id)).toBe('accepted'));

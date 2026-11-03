@@ -128,7 +128,7 @@ test('decidir pelos Detalhes: o cabeçalho do item, o popover do campo e o tecla
   await row(page, 'Campo Cupom').click();
   const header = page.getByRole('region', { name: 'Decisão' });
   await expect(header.getByText('Marcação criada')).toBeVisible();
-  await header.getByRole('button', { name: 'Aceitar Campo Cupom' }).click();
+  await header.getByRole('button', { name: /^Aceitar [^:]+: Campo Cupom$/ }).click();
   await expect(header.getByText('2 aceitas, 0 rejeitadas, 0 sem decisão')).toBeVisible();
 
   // O popover do campo decide só o campo; fica aberto mostrando a decisão.
@@ -136,7 +136,7 @@ test('decidir pelos Detalhes: o cabeçalho do item, o popover do campo e o tecla
   const mark = page.getByRole('button', { name: /^Nome: alterado/ });
   await mark.click();
   const popover = page.getByRole('dialog', { name: 'Nome · alterado' });
-  await popover.getByRole('button', { name: 'Rejeitar Nome' }).click();
+  await popover.getByRole('button', { name: 'Rejeitar: Nome' }).click();
   await expect(mark).toHaveAttribute('data-state', 'rejected');
   await expect(popover).toBeVisible();
   await expect(popover.getByRole('status')).toHaveText('Nome: rejeitada');

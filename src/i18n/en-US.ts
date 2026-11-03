@@ -236,7 +236,7 @@ export const enUS: Dictionary = {
   'crumbs.canvas': 'Canvas',
 
   'zoom.value': '{percent}%',
-  'zoom.reset': 'Zoom at {percent}%; click to go back to 100%',
+  'zoom.reset': '{percent}%: current zoom; click to go back to 100%',
   'zoom.in': 'Zoom in',
   'zoom.out': 'Zoom out',
 
@@ -257,7 +257,7 @@ export const enUS: Dictionary = {
   'status.channelLabel': 'Build channel: {channel}',
   'status.buildLabel': 'Build identifier: {id}',
 
-  'editor.projectMenu': 'Project actions',
+  'editor.projectMenuName': '{name}: project actions',
   'editor.appName': 'Mapping',
   'editor.fitAllShort': 'Fit',
 
@@ -868,7 +868,7 @@ export const enUS: Dictionary = {
   'library.container': 'Container',
   'library.typeSize': '{width} × {height}',
   'library.add': 'Add',
-  'library.addType': 'Add {name}',
+  'library.addType': '{label}: {name}',
   'library.addInside': 'Add inside {name}',
   'library.addToScreen': 'Add to screen {name}',
   'library.addToCanvas': 'Add to canvas',

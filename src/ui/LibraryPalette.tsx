@@ -115,7 +115,10 @@ export function LibraryPalette({ onOpenSpecs }: LibraryPaletteProps) {
                         </span>
                         <Button
                           size="sm"
-                          aria-label={t('library.addType', { name: type.name })}
+                          aria-label={t('library.addType', {
+                            label: labelFor(type),
+                            name: type.name,
+                          })}
                           disabled={disabledReason !== undefined}
                           title={disabledReason ?? labelFor(type)}
                           onClick={() => add(type.specId, type.typeId)}

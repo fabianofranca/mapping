@@ -35,7 +35,7 @@ describe('Outras mudanças', () => {
     // O popover é o mesmo dos campos, com a decisão.
     fireEvent.click(mark);
     const pop = screen.getByRole('dialog', { name: 'Trava · alterado' });
-    fireEvent.click(within(pop).getByRole('button', { name: 'Aceitar Trava' }));
+    fireEvent.click(within(pop).getByRole('button', { name: 'Aceitar: Trava' }));
     await waitFor(() =>
       expect(h.review.derived.levels.value.get('item:M4')?.state).toBe('accepted'),
     );

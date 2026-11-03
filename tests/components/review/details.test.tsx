@@ -117,7 +117,9 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
       'y 10',
     ]);
     expect(within(pop).getByText('Posição e tamanho são decididos juntos.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /^Aceitar Marcação sem nome$/ }));
+    fireEvent.click(
+      screen.getByRole('button', { name: /^Aceitar marcação: Marcação sem nome$/ }),
+    );
     await waitFor(() =>
       expect(h.review.derived.levels.value.get('item:M4')?.state).toBe('accepted'),
     );
@@ -280,14 +282,14 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
       within(pop).getByText(/Aceitar troca Porta traseira por Porta dianteira/),
     ).toBeTruthy();
     // A decisão do campo é no popover, e os botões dizem o efeito.
-    expect(
-      within(pop).getByRole('button', {
-        name: 'Aceitar: sobrescreve Porta traseira por Porta dianteira',
-      }),
-    ).toBeTruthy();
-    expect(
-      within(pop).getByRole('button', { name: 'Rejeitar: mantém Porta traseira' }),
-    ).toBeTruthy();
+    const describedBy = (el: HTMLElement) =>
+      document.getElementById(el.getAttribute('aria-describedby') ?? '')?.textContent;
+    const overwrite = within(pop).getByRole('button', { name: 'Sobrescrever: Nome' });
+    expect(describedBy(overwrite)).toBe(
+      'Aceitar: sobrescreve Porta traseira por Porta dianteira',
+    );
+    const keep = within(pop).getByRole('button', { name: 'Manter atual: Nome' });
+    expect(describedBy(keep)).toBe('Rejeitar: mantém Porta traseira');
   });
 
   it('teclado: Tab chega ao marcador e abre; Esc fecha e devolve o foco ao marcador', async () => {
@@ -313,7 +315,7 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     // último o popover fecha e o foco segue para o próximo controle.
     await user.keyboard('{Enter}');
     expect(screen.getByRole('dialog')).toBeTruthy();
-    for (const name of ['Ver tudo', /^Aceitar /, /^Rejeitar /, 'Adicionar nota']) {
+    for (const name of ['Ver tudo', /^Aceitar: /, /^Rejeitar: /, 'Adicionar nota']) {
       await user.tab();
       expect(document.activeElement).toBe(
         within(screen.getByRole('dialog')).getByRole('button', { name }),
@@ -419,7 +421,9 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
       within(others).getByRole('button', { name: /^Trava: alterado, pendente\./ }),
     );
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: /^Aceitar Trava$/ }),
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: /^Aceitar: Trava$/,
+      }),
     );
     await waitFor(() =>
       expect(h.review.derived.levels.value.get('item:M4')?.state).toBe('accepted'),
@@ -434,7 +438,9 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
       { level: 'item', id: 'M4' },
     );
     expect(screen.getByText('Item trancado')).toBeTruthy();
-    const accept = screen.getByRole('button', { name: /^Aceitar Marcação sem nome$/ });
+    const accept = screen.getByRole('button', {
+      name: /^Aceitar marcação: Marcação sem nome$/,
+    });
     expect((accept as HTMLButtonElement).disabled).toBe(false);
   });
 
@@ -515,9 +521,9 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     );
     expect(screen.getByText('Importação', { selector: 'strong' })).toBeTruthy();
     expect(screen.getByText('Proposta')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Aceitar Importação' }).textContent).toBe(
-      'Aceitar tudo',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Aceitar tudo: Importação' }).textContent,
+    ).toBe('Aceitar tudo');
     // O grupo Projeto: a criação da camada, com marcador e popover.
     const others = screen.getByRole('region', { name: 'Outras mudanças' });
     expect(within(others).getAllByRole('listitem')).toHaveLength(1);
@@ -541,9 +547,10 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(screen.getByText('Grupo Projeto')).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Outras mudanças' })).toBeTruthy();
     expect(screen.queryByRole('region', { name: 'Imagens' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Aceitar Projeto' }).textContent).toBe(
-      'Aceitar o grupo Projeto',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Aceitar o grupo Projeto: Projeto' })
+        .textContent,
+    ).toBe('Aceitar o grupo Projeto');
   });
 });
 
