@@ -168,3 +168,78 @@ describe('ci.yml exige o CHANGELOG.md nos PRs de épico para a main', () => {
     expect(existsSync('CHANGELOG.md')).toBe(true);
   });
 });
+
+// Etapa #375, fase CI1: cada commit de PR é validado uma vez (decisões 1, 2 e 3).
+describe('uma validação por commit', () => {
+  const preview = read('.github/workflows/preview-on-pr.yml');
+  const job = (yaml: string, name: string): string => {
+    const start = yaml.indexOf(`\n  ${name}:`);
+    const next = yaml.slice(start + 1).search(/\n {2}[a-z-]+:\n/);
+    return next < 0 ? yaml.slice(start) : yaml.slice(start, start + 1 + next);
+  };
+
+  it('o ci.yml não roda em push (só pull_request e workflow_call)', () => {
+    const on = ci.slice(ci.indexOf('\non:'), ci.indexOf('\npermissions:'));
+    expect(on).toMatch(/^ {2}pull_request:/m);
+    expect(on).toMatch(/^ {2}workflow_call:/m);
+    expect(on).not.toMatch(/^ {2}push:/m);
+  });
+
+  it('o preview sai por workflow_run do CI, só depois de sucesso num PR do próprio repositório', () => {
+    expect(preview).toMatch(
+      /^ {2}workflow_run:\n {4}workflows: \[CI\]\n {4}types: \[completed\]/m,
+    );
+    expect(preview).not.toMatch(/^ {2}pull_request:/m);
+    expect(preview).toContain("github.event.workflow_run.conclusion == 'success'");
+    expect(preview).toContain("github.event.workflow_run.event == 'pull_request'");
+    expect(preview).toContain(
+      'github.event.workflow_run.head_repository.full_name == github.repository',
+    );
+    expect(preview).toMatch(
+      /HEAD_BRANCH: \$\{\{ github\.event\.workflow_run\.head_branch \}\}/,
+    );
+    expect(preview).toMatch(
+      /HEAD_SHA: \$\{\{ github\.event\.workflow_run\.head_sha \}\}/,
+    );
+    expect(preview).toMatch(
+      /gh workflow run deploy\.yml [^\n]*--ref main [^\n]*-f branch="\$HEAD_BRANCH" -f sha="\$HEAD_SHA"/,
+    );
+    expect(preview).toContain('GITHUB_STEP_SUMMARY');
+  });
+
+  it('o Deploy aceita o sha e o plan confere os check runs check e e2e dele', () => {
+    expect(deploy).toMatch(/^ {6}sha:\n/m);
+    const plan = job(deploy, 'plan');
+    expect(plan).toMatch(/commits\/\$SHA\/check-runs/);
+    expect(plan).toMatch(/for name in check e2e/);
+    expect(plan).toContain('success');
+    expect(plan).toMatch(/^ {6}validated: /m);
+    expect(plan).toMatch(/^ {6}preview_sha: /m);
+  });
+
+  it('o checks-preview só roda sem a validação dos check runs, no SHA quando há', () => {
+    const checks = job(deploy, 'checks-preview');
+    expect(checks).toMatch(
+      /if: needs\.plan\.outputs\.preview != '' && needs\.plan\.outputs\.validated != 'true'/,
+    );
+    expect(checks).toMatch(
+      /ref: \$\{\{ needs\.plan\.outputs\.preview_sha \|\| needs\.plan\.outputs\.preview \}\}/,
+    );
+  });
+
+  it('o build aceita o checks-preview em sucesso ou pulado por já validado, e publica o SHA', () => {
+    const build = job(deploy, 'build');
+    expect(build).toContain("needs.checks-preview.result == 'success'");
+    expect(build).toMatch(
+      /needs\.checks-preview\.result == 'skipped' && needs\.plan\.outputs\.validated == 'true'/,
+    );
+    expect(build).toMatch(
+      /needs\.checks-preview\.result == 'skipped' && needs\.plan\.outputs\.preview == ''/,
+    );
+    expect(build).toMatch(
+      /PREVIEW_REF: \$\{\{ needs\.plan\.outputs\.preview_sha \|\| needs\.plan\.outputs\.preview \}\}/,
+    );
+    expect(build).toMatch(/ref: \$\{\{ env\.PREVIEW_REF \}\}/);
+    expect(build).toContain('previewSha');
+  });
+});
