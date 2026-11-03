@@ -323,9 +323,9 @@ describe('job check em paralelo e caches', () => {
     expect(read('.gitignore')).toMatch(/^\.cache$/m);
   });
 
-  it('o e2e usa todos os núcleos no CI e o install-deps só roda se o Chromium não abrir', () => {
+  it('o e2e usa 3 workers no CI e o install-deps só roda se o Chromium não abrir', () => {
     expect(read('playwright.config.ts')).toContain(
-      "workers: process.env.CI ? '100%' : undefined",
+      'workers: process.env.CI ? 3 : undefined',
     );
     const e2e = block('e2e');
     expect(e2e).toContain('id: chromium');

@@ -14,8 +14,8 @@ export default defineConfig({
   testMatch: '**/*.spec.ts',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
-  // No CI usa todos os núcleos do runner (o padrão é metade); localmente, o padrão.
-  workers: process.env.CI ? '100%' : undefined,
+  // No CI usa 3 workers (o padrão é metade dos núcleos); localmente, o padrão.
+  workers: process.env.CI ? 3 : undefined,
   // Uma repetição no CI, com trace só nela (a primeira falha fica no relatório).
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
