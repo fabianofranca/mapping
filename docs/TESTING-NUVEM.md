@@ -6,7 +6,7 @@ A sessão é criada pelo **orquestrador** do fluxo automatizado (`CLAUDE.md`, "F
 
 - **Dirigido por lista de roteiros ou de passos:** "Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: R0 e R2. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (vale também "R0, R4.1 a R4.5 e R6.8a a R6.11")
 - **Dirigido pelos achados de um relato anterior:** "… no modo dirigido: os achados 2 a 5 do relato em <link do comentário>. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o relato é um comentário de issue; vale número de achado ou código, como "A1 a A3")
-- **Dirigido pelas fases de uma etapa:** "… no modo dirigido: as fases X e Y da etapa #301. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o plano está na issue `etapa` e nas sub-issues `fase`)
+- **Dirigido pelas fases de uma etapa:** "… no modo dirigido: as fases X e Y da etapa #301. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o plano está na issue da etapa e nas sub-issues `fase`)
 - **Completo:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (R0 a R17, sem os roteiros sob demanda; a ordem está em "O que executar")
 - **Só um link de PR do Mapping** ("Teste <link>"): trate como dirigida pelos roteiros que o PR toca; leia o corpo e os arquivos do PR, monte a lista e siga o modo comum.
 
@@ -79,7 +79,7 @@ Siga o apêndice A do guia: a página pelo Playwright por CDP (receita 4), os di
 
 1. **achados de um relato anterior** (um comentário de issue, por número ou código): para cada achado, os passos citados em "Passos para reproduzir" e na coluna Observação da tabela de passos, mais os passos do guia que a correção afetava;
 2. **lista de roteiros ou de passos** do guia (ex.: "R0 e R2", "R0, R4.1 a R4.5, R6.8a a R6.11"): exatamente esses;
-3. **fases de uma etapa** (a issue `etapa` e as sub-issues `fase` no GitHub, lidas pelo MCP do GitHub): os passos do guia citados no "Aceite" e nos itens de cada fase, mais os que testam o que ela mudou.
+3. **fases de uma etapa** (a issue da etapa e as sub-issues `fase` no GitHub, lidas pelo MCP do GitHub): os passos do guia citados no "Aceite" e nos itens de cada fase, mais os que testam o que ela mudou.
 
 Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começo do relato (e na conversa). Execute **R0 inteiro** primeiro. Siga a ordem do guia; se um passo depende de outro (ex.: R6.10 de R6.8a a R6.9; R4.9 de R4.1 a R4.8), execute também os anteriores necessários e marque-os com o mesmo achado de origem.
 
