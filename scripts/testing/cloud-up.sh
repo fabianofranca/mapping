@@ -53,8 +53,14 @@ check_one_tab() {
 start_display_and_chrome() {
   export DISPLAY=:99
   Xvfb :99 -screen 0 1600x1000x24 >"$S/xvfb.log" 2>&1 &
-  sleep 1
+  # Espera o soquete do X aparecer: 1 s de `sleep` não basta sempre, e o openbox falha calado
+  # ("Failed to open the display") se nascer antes do Xvfb estar de pé.
+  for _ in $(seq 1 50); do
+    [ -e /tmp/.X11-unix/X99 ] && break
+    sleep 0.2
+  done
   openbox >"$S/openbox.log" 2>&1 &
+  sleep 1
   export DBUS_SESSION_BUS_ADDRESS=$(dbus-daemon --session --fork --print-address=1)
   /usr/libexec/at-spi-bus-launcher --launch-immediately >"$S/at-spi.log" 2>&1 &
   echo "export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >"$S/env"

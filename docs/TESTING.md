@@ -1149,7 +1149,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 | `accept_permission_prompt` | receita 6 (permissão pelo AT-SPI)                                                                |
 | `cancel_dialog`            | receita 8 (`alt+c`)                                                                              |
 
-- **Receita 1 (nuvem), build local e servidor.** O build id local é `<commit> · <data do build>` (a data é a do dia do build, não a do commit): confira o commit. Aparece em Configurações › Sobre e no rodapé da janela do projeto.
+- **Receita 1 (nuvem), build local e servidor.** O auxiliar faz isto: `scripts/testing/cloud-up.sh <pasta-da-rodada>`. O build id local é `<commit> · <data do build>` (a data é a do dia do build, não a do commit): confira o commit. Aparece em Configurações › Sobre e no rodapé da janela do projeto.
 
 ```bash
 npm ci && npm run build            # dist/index.html
@@ -1157,7 +1157,7 @@ npm ci && npm run build            # dist/index.html
 npm run build:mcp && node dist-mcp/mapping-mcp.js --version
 ```
 
-- **Receita 2 (nuvem), subir a tela, o D-Bus, o AT-SPI e o Chrome**, nesta ordem (o Chrome tem de subir já com o D-Bus). Conferência: `curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]'` lista exatamente uma linha, `http://localhost:8080/`. Erros de `system_bus_socket` no `chrome.log` são normais; a barra "Chrome for Testing é destinado apenas a testes automatizados" não atrapalha. Em cada chamada nova de shell, `source "$S/env"`.
+- **Receita 2 (nuvem), subir a tela, o D-Bus, o AT-SPI e o Chrome**, nesta ordem (o Chrome tem de subir já com o D-Bus). O auxiliar faz isto: `scripts/testing/cloud-up.sh <pasta-da-rodada>` (o mesmo comando da receita 1 já faz as duas). Conferência: `curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]'` lista exatamente uma linha, `http://localhost:8080/`. Erros de `system_bus_socket` no `chrome.log` são normais; a barra "Chrome for Testing é destinado apenas a testes automatizados" não atrapalha. Em cada chamada nova de shell, `source "$S/env"`.
 
 ```bash
 export DISPLAY=:99
@@ -1173,7 +1173,8 @@ GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sand
 ```
 
 - **Receita 3 (nuvem), reiniciar o Chrome sem duplicar abas.** Nunca `pkill -f chrome`: o padrão casa com a linha de comando da própria shell e a mata, e o SIGTERM conta como "Crashed" e restaura abas. Feche limpo pelo CDP (`const s = await browser.newBrowserCDPSession(); await s.send('Browser.close')`), espere `pgrep -x chrome` ficar vazio, apague `"$S/profile/Default/Sessions"` (sem isso o Chrome voltou com 3 abas) e suba de novo com o comando da receita 2. Reiniciar perde as permissões de pasta daquela visita (o pedido volta ao reabrir) e o histórico de desfazer.
-- **Receita 4 (nuvem), a página pelo Playwright por CDP.** Clique por papel e nome, com `noWaitAfter` em todo clique que abre um diálogo nativo (senão o Playwright espera e dá timeout). Encerre o script com `process.exit(0)`, não com `browser.close()`.
+- **Receita 3 (nuvem), continuação.** O auxiliar faz isto: `cloud-up.sh <pasta> --restart-chrome`.
+- **Receita 4 (nuvem), a página pelo Playwright por CDP.** O auxiliar faz isto: `connect(apoioDir)` e `clickNoWait(page, nome)` de `scripts/testing/cloud.mjs`. Clique por papel e nome, com `noWaitAfter` em todo clique que abre um diálogo nativo (senão o Playwright espera e dá timeout). Encerre o script com `process.exit(0)`, não com `browser.close()`.
 - **Receita 4 (nuvem), continuação.** Navegue a mesma aba com `page.goto`: é uma aba só. Nunca registre `page.on('filechooser')` nem `waitForEvent('filechooser')`: o Playwright intercepta o seletor e ele não abre de verdade (é imitar). Para capturar, use `import -window root x.png` (ImageMagick): sai a tela inteira, com os diálogos nativos; `convert x.png -resize 50% y.png` para olhar menor.
 
 ```js
@@ -1187,7 +1188,7 @@ const page = browser
 await page.getByRole('button', { name: 'Abrir pasta' }).click({ noWaitAfter: true });
 ```
 
-- **Receita 5 (nuvem), seletor GTK de pasta ou de arquivo** (validado em Abrir pasta e Adicionar imagens). O seletor não aparece no AT-SPI: ache a janela pelo título, que vem do Chrome em pt-BR (Abrir pasta: "Selecione onde este site pode salvar mudanças"; Adicionar imagens: "Abrir arquivos"; a janela do Chrome é "Mapping: Google Chrome for Testing").
+- **Receita 5 (nuvem), seletor GTK de pasta ou de arquivo** (validado em Abrir pasta e Adicionar imagens). O auxiliar faz isto: `selectFolder(apoioDir, caminho)` (pasta, já com a receita 6) ou `openFile(apoioDir, caminho)` (arquivo) de `scripts/testing/cloud.mjs`. O seletor não aparece no AT-SPI: ache a janela pelo título, que vem do Chrome em pt-BR (Abrir pasta: "Selecione onde este site pode salvar mudanças"; Adicionar imagens: "Abrir arquivos"; a janela do Chrome é "Mapping: Google Chrome for Testing").
 - **Receita 5 (nuvem), continuação.** Para listar os títulos, `for w in $(xdotool search --onlyvisible --name '.'); do echo "$w $(xdotool getwindowname $w)"; done`. Os botões do GTK ficam em inglês. Confira que o seletor sumiu da lista e a app reagiu (ex.: "Criar projeto nesta pasta?").
 - **Nunca Enter no seletor:** ele vaza para o pedido de permissão, cujo foco está em "Não permitir", e a app recebe `AbortError`. O `alt+o` aciona o **Open** pelo atalho e não vaza.
 
@@ -1202,7 +1203,7 @@ xdotool key --clearmodifiers alt+o
 - **Receita 5 (nuvem), pasta que tem conteúdo** (visto no R0.7, ao localizar a pasta de um projeto que já tem `images/` e `specs/`): a lista de autocompletar do GTK abre depois de digitar o caminho (uma janela "chromium" de uns 48 px na lista do `xdotool`) e o `alt+o` não faz nada. Aqui o `Escape` **apaga o campo do caminho**, e `Escape` + `alt+o` pode abrir o diretório pai (recusado como "contém arquivos do sistema"; **Escolher uma pasta diferente** reabre o seletor).
 - **Receita 5 (nuvem), pasta que tem conteúdo, contorno.** Digitar o caminho, **clicar no botão Open** do GTK por coordenada (`xdotool mousemove X Y click 1`; o primeiro clique só fecha a lista e mantém o caminho) e então `alt+o`. Confira o caminho no campo antes do `alt+o`.
 - **Receita 5 (nuvem), foco:** o `ctrl+l` e o `xdotool type` vão para onde estiver o foco. Com o seletor fora de foco, vão para a barra de endereço do Chrome: ative a janela com `xdotool windowactivate --sync $W` e confirme que `$W` não está vazio antes de digitar. O título do seletor de **Abrir zip** é "Abrir arquivo" (singular), diferente do de **Adicionar imagens** ("Abrir arquivos").
-- **Receita 6 (nuvem), pedido de permissão pelo AT-SPI.** O Chrome mostra "Permitir que este site edite arquivos?" com "Não permitir" (com o foco) e "Permitir". Use `/usr/bin/python3.12` (o `python3` do PATH quebra o `gi`). Saída esperada: `clicou Permitir press`; o `DeprecationWarning` é inofensivo.
+- **Receita 6 (nuvem), pedido de permissão pelo AT-SPI.** O auxiliar faz isto: `allowPermission(apoioDir)` de `scripts/testing/cloud.mjs`, que chama `scripts/testing/atspi-allow.py`. O Chrome mostra "Permitir que este site edite arquivos?" com "Não permitir" (com o foco) e "Permitir". Use `/usr/bin/python3.12` (o `python3` do PATH quebra o `gi`). Saída esperada: `clicou Permitir press`; o `DeprecationWarning` é inofensivo.
 - **Receita 6 (nuvem), continuação.** "nenhum botão de permitir" com a app já aberta quer dizer que o navegador já tinha a permissão (reabrir pelos **Projetos recentes** na mesma execução do Chrome não pede de novo): é tão sucesso quanto clicar. Para reabrir pelos recentes, clique em **Abrir** na linha (`getByRole('button', { name: 'Abrir', exact: true })`) e rode o script.
 
 ```python
@@ -1233,7 +1234,7 @@ for want in NAMES:
 print('nenhum botão de permitir'); sys.exit(1)
 ```
 
-- **Receita 7 (nuvem), "Salvar como"** (Exportar › Baixar). O título é "Aviso: este site pode conferir as edições que você faz"; o campo do nome vem com o foco e a pasta sugerida é a última usada. O caminho completo decide a pasta e o nome. Limpe o campo com `Home`, `shift+End`, `BackSpace` (o `ctrl+a` não seleciona tudo e saiu `nome.zip.zip`) e salve com `alt+s`. Conferência: `unzip -l` no zip; o diálogo "Exportar projeto" da app fechou sozinho neste teste.
+- **Receita 7 (nuvem), "Salvar como"** (Exportar › Baixar). O auxiliar faz isto: `saveFile(apoioDir, caminho)` de `scripts/testing/cloud.mjs` (recusa sobrescrever um caminho que já existe). O título é "Aviso: este site pode conferir as edições que você faz"; o campo do nome vem com o foco e a pasta sugerida é a última usada. O caminho completo decide a pasta e o nome. Limpe o campo com `Home`, `shift+End`, `BackSpace` (o `ctrl+a` não seleciona tudo e saiu `nome.zip.zip`) e salve com `alt+s`. Conferência: `unzip -l` no zip; o diálogo "Exportar projeto" da app fechou sozinho neste teste.
 - **Antes de salvar,** confira pela shell que o destino **não existe** (`test -e`): salvar por cima de um arquivo existente sobrescreve **sem pedir confirmação**.
 - **Lista de autocompletar:** ela aparece quando o nome digitado casa com um arquivo da pasta (uma janela "chromium" de uns 48 px de altura na lista do `xdotool`) e, aberta, o `alt+s` não salva. Feche com **um** `Escape` antes do `alt+s`: ele fecha só a lista. Sem a lista, **não** aperte `Escape` (cancelaria o diálogo).
 
@@ -1247,7 +1248,7 @@ xdotool key --clearmodifiers alt+s
 
 - **`alt+s` que não salva:** na primeira exportação de uma rodada, o `alt+s` logo depois de digitar o caminho pode não salvar. Espere uns 2 s depois de digitar, confira com `xdotool search --onlyvisible --name 'Aviso: este site'` se o diálogo continua aberto e só então repita o `alt+s` **uma vez** (nunca Enter).
 
-- **Receita 8 (nuvem), cancelar um diálogo nativo.** `xdotool windowactivate --sync $W; xdotool key --clearmodifiers alt+c` (**Cancel**). O diálogo "Exportar projeto" da app continua aberto depois de cancelar o "Salvar como" (R2.3): feche-o com **Cancelar** da app.
+- **Receita 8 (nuvem), cancelar um diálogo nativo.** O auxiliar faz isto: `cancelDialog(apoioDir)` de `scripts/testing/cloud.mjs`. Na mão: `xdotool windowactivate --sync $W; xdotool key --clearmodifiers alt+c` (**Cancel**). O diálogo "Exportar projeto" da app continua aberto depois de cancelar o "Salvar como" (R2.3): feche-o com **Cancelar** da app.
 - **Receita 9 (nuvem), MCP por stdio.** O cliente `scripts/testing/mcp-stdio-client.mjs` roda o `dist-mcp/mapping-mcp.js` compilado do commit (receita 1), com a raiz na pasta de trabalho. Para um workspace igual ao da seção 6, monte o `.mcp.json` com o caminho desse arquivo. O download de uma Release (`curl -sSL -o mapping-mcp.js https://github.com/fabianofranca/mapping/releases/download/<tag>/mapping-mcp.js`) funciona na rede do ambiente: use só quando a mensagem pedir a rc.
 
 ```bash

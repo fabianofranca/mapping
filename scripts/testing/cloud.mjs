@@ -124,6 +124,12 @@ function typePathIntoDialog(windowId, targetPath) {
   execFileSync('xdotool', ['windowactivate', '--sync', windowId]);
   execFileSync('xdotool', ['key', '--clearmodifiers', 'ctrl+l']);
   execFileSync('xdotool', ['type', '--delay', '20', targetPath]);
+  // Quando a pasta digitada tem exatamente uma subpasta que casa, o GTK completa a barra de
+  // caminho sozinho com o nome dela, já selecionado (sem janela de autocompletar à parte); um
+  // "Delete" apaga só esse texto selecionado. Sem seleção (nenhuma ou várias subpastas casando,
+  // que abre a janela de autocompletar de verdade), o cursor já está no fim e o Delete não apaga
+  // nada: é seguro mandá-lo sempre.
+  execFileSync('xdotool', ['key', '--clearmodifiers', 'Delete']);
 }
 
 /**
@@ -239,15 +245,16 @@ export async function saveFile(apoioDir, targetPath) {
   }
 }
 
-/** Receita 8 do apêndice A: cancela o diálogo nativo em foco (`alt+c`). */
+/**
+ * Receita 8 do apêndice A: cancela o diálogo nativo em foco (`alt+c`). O diálogo nativo é a
+ * janela visível que não é a janela principal do Chrome (cujo título sempre termina em
+ * "Google Chrome for Testing"); essa é a única forma estável achada nesta fase, já que o título
+ * do diálogo varia ("Aviso: este site…", "Selecione onde…", "Abrir arquivos…").
+ */
 export async function cancelDialog(apoioDir) {
-  const windows = listWindows();
-  const current = windows.find(
-    (w) => /chromium/i.test(w.name) && w.name.trim().length > 0,
-  );
-  const windowId = current ? current.id : findWindow(['chromium']);
+  const windowId = listWindows().find((w) => !/Chrome for Testing$/.test(w.name))?.id;
   if (!windowId) {
-    throw new Error('Nenhuma janela do Chrome encontrada para cancelar.');
+    throw new Error('Nenhum diálogo nativo encontrado para cancelar.');
   }
   fs.appendFileSync(
     path.join(apoioDir, 'console.log'),
@@ -256,9 +263,30 @@ export async function cancelDialog(apoioDir) {
   xdotoolKey(windowId, 'alt+c');
 }
 
+/** Uma chamada a `atspi-allow.py`; código 1 ("nenhum botão de permitir") também é sucesso. */
+async function runAllowPermissionOnce(scriptPath) {
+  try {
+    const { stdout } = await execFileAsync('/usr/bin/python3.12', [scriptPath]);
+    return stdout.trim();
+  } catch (error) {
+    if (error.code === 1)
+      return (error.stdout ?? '').trim() || 'nenhum botão de permitir';
+    throw new Error(
+      `allowPermission falhou (código ${error.code}): ${(error.stdout ?? '').trim()} ${(error.stderr ?? '').trim()}`,
+      { cause: error },
+    );
+  }
+}
+
 /**
  * Receita 6 do apêndice A: pedido de permissão pelo AT-SPI. Chama `atspi-allow.py`; tanto
- * "clicou" quanto "nenhum botão de permitir" contam como sucesso (a app já tinha a permissão).
+ * "clicou" quanto "nenhum botão de permitir" contam como sucesso (a app já tinha a permissão,
+ * ou o diálogo já fechou). Decisão desta fase: ativa a janela do Chrome antes de clicar — o
+ * `do_action` do AT-SPI devolve sucesso mesmo com a janela do Chrome sem foco (ex.: logo depois
+ * de fechar o seletor GTK, que fica com o foco), mas o clique não tem efeito nenhum nesse caso;
+ * ativando a janela primeiro, o clique passou a surtir efeito de primeira em todas as tentativas
+ * desta fase. Mesmo assim, repete até o diálogo sumir de verdade ("nenhum botão de permitir"
+ * numa chamada seguinte) ou até o limite de tentativas, como rede de segurança.
  */
 export async function allowPermission(apoioDir) {
   const scriptPath = path.join(
@@ -266,25 +294,31 @@ export async function allowPermission(apoioDir) {
     'atspi-allow.py',
   );
   const logFile = path.join(apoioDir, 'console.log');
+  const attempts = [];
   try {
-    const { stdout } = await execFileAsync('/usr/bin/python3.12', [scriptPath]);
-    fs.appendFileSync(logFile, `[allowPermission] ${stdout.trim()}\n`);
-    return stdout.trim();
-  } catch (error) {
-    // code 1 = "nenhum botão de permitir": sucesso na prática (apêndice A, receita 6).
-    if (error.code === 1) {
-      const out = (error.stdout ?? '').trim() || 'nenhum botão de permitir';
-      fs.appendFileSync(logFile, `[allowPermission] ${out}\n`);
-      return out;
+    const chromeWindowId = findWindow(['Chrome for Testing']);
+    if (chromeWindowId) {
+      execFileSync('xdotool', ['windowactivate', '--sync', chromeWindowId]);
     }
+    // O Chrome ignora cliques nos primeiros instantes do pedido de permissão (proteção contra
+    // clique acidental logo que um elemento aparece); sem essa espera, as tentativas rápidas
+    // batem nessa janela e o clique do AT-SPI não tem efeito nenhuma vez (visto nesta fase).
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    for (let i = 0; i < 6; i += 1) {
+      const out = await runAllowPermissionOnce(scriptPath);
+      attempts.push(out);
+      if (out.startsWith('nenhum botão')) break;
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    }
+    const summary = attempts.join('; ');
+    fs.appendFileSync(logFile, `[allowPermission] ${summary}\n`);
+    return summary;
+  } catch (error) {
     fs.appendFileSync(
       logFile,
-      `[allowPermission] falhou (código ${error.code}): ${(error.stdout ?? '').trim()} ${(error.stderr ?? '').trim()}\n`,
+      `[allowPermission] falhou depois de ${attempts.length} tentativa(s) (${attempts.join('; ')}): ${error.message}\n`,
     );
-    throw new Error(
-      `allowPermission falhou (código ${error.code}): ${(error.stdout ?? '').trim()} ${(error.stderr ?? '').trim()}`,
-      { cause: error },
-    );
+    throw error;
   }
 }
 
@@ -326,7 +360,9 @@ export async function makeCadastroPng(dest) {
     headless: true,
   });
   try {
-    const page = await browser.newPage();
+    // Viewport pequeno (o guia estima ~484 px de largura a 100%) para o PNG sair recortado no
+    // conteúdo, e não do tamanho padrão do viewport do Playwright (1280×720).
+    const page = await browser.newPage({ viewport: { width: 484, height: 450 } });
     await page.setContent(CADASTRO_HTML);
     await page.screenshot({ path: dest, fullPage: true });
   } finally {
