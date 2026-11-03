@@ -57,7 +57,8 @@ Como é gerado, o que abrir o exemplo grava e como mudar o exemplo: [`docs/GUIDE
 ```bash
 npm run build:mcp    # gera dist-mcp/mapping-mcp.js (servidor MCP em arquivo único)
 npm run lint         # eslint + prettier --check (inclui complexidade por função até 10; legado em eslint-suppressions.json)
-npm run typecheck    # tsc --noEmit (app e servidor MCP)
+npm run lint:ci      # o mesmo, com cache em .cache/ (usado pelo CI)
+npm run typecheck    # tsc --noEmit (app e servidor MCP); build e build:mcp não repetem o tsc
 npm test             # Vitest: modelo (Node), store, storage, canvas e componentes
 npm run test:coverage # com relatório de cobertura em coverage/ (pula os orçamentos de desempenho)
 npm run test:perf    # só os orçamentos de desempenho por quadro
@@ -72,7 +73,7 @@ O E2E roda no CI. Localmente, rode `npm run build` e informe o Chrome com `PLAYW
 
 Os workflows em `.github/workflows/`:
 
-- **`ci.yml`**: em todo PR (e por `workflow_call`, chamado pelo `deploy.yml`; não roda mais em push): o job `epic` confere a origem (PR para a `main` só a partir de `epic/*` ou do Dependabot; check obrigatório no ruleset da `main`), e depois lint, typecheck, testes com cobertura, orçamentos de desempenho, build (app e servidor MCP), orçamento de tamanho do `dist/index.html` (1,5 MB, valor em `INDEX_HTML_MAX_BYTES`; o tamanho aparece no resumo do job) e E2E (jobs `check` e `e2e`). O Playwright repete uma vez no CI, com trace só na repetição.
+- **`ci.yml`**: em todo PR (e por `workflow_call`, chamado pelo `deploy.yml`; não roda mais em push): o job `epic` confere a origem (PR para a `main` só a partir de `epic/*` ou do Dependabot; check obrigatório no ruleset da `main`), e depois lint, typecheck, testes com cobertura, orçamentos de desempenho, build (app e servidor MCP), orçamento de tamanho do `dist/index.html` (1,5 MB, valor em `INDEX_HTML_MAX_BYTES`; o tamanho aparece no resumo do job) e E2E. O `check` é o agregador de quatro jobs em paralelo (`static`: lint e typecheck; `test`: 3 shards do Vitest com cobertura; `coverage`: junta os blobs e relata; `build`: desempenho, build, tamanho, MCP e visualizador), ao lado do `e2e`; `node_modules`, o cache do ESLint/Prettier e o navegador do Playwright ficam em cache. O Playwright repete uma vez no CI, com trace só na repetição.
 - **`mcp-prerelease.yml`**: pre-releases do servidor MCP para testar antes da estável: um snapshot por PR com base em `epic/**` (`mcp-snapshot-pr<N>`, apagado quando o PR fecha) e uma release candidate no merge do PR da última fase do épico, o que leva o rótulo `mcp-rc` (`mcp-v<versão>-rc.<n>`, apagadas quando a estável sai); ver [`docs/MCP.md`](docs/MCP.md).
 - **`mcp-release.yml`**: ao criar uma tag `mcp-v<versão>` (a versão precisa ser a de `mcp/version.ts`), gera `mapping-mcp.js` e o anexa à Release do GitHub, criada antes pela tela ou não; também pode ser rodado à mão (Run workflow) para uma tag que já existe (ver [`docs/MCP.md`](docs/MCP.md)).
 - **`preview-on-pr.yml`**: por `workflow_run`, quando o `ci.yml` de um PR do próprio repositório termina em sucesso, dispara o `deploy.yml` com o branch e o SHA validado do PR, que passa a ocupar o `/preview/`. Commit superado (CI cancelado) não gera preview.

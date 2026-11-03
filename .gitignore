@@ -8,3 +8,5 @@ dist-mcp
 dist-viewer
 dist-viewer-demo
 examples/exemplo-completo/specs/
+.cache
+.vitest

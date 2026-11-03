@@ -31,7 +31,8 @@ npm run build:viewer # gera dist-viewer/ (mapping-viewer.js, mapping-viewer-reac
 npm run build:example # gera examples/exemplo-completo.zip e materializa examples/exemplo-completo/specs/ das fontes (zip conferido por teste)
 npm run build:guia # gera public/guia/index.html (o guia interativo; o `npm run build` já roda; conferido por teste)
 npm run lint      # eslint + prettier --check
-npm run typecheck # tsc --noEmit (app e mcp/)
+npm run lint:ci   # o mesmo lint com cache em .cache/ (só o CI usa)
+npm run typecheck # tsc --noEmit (app e mcp/); os tipos só são checados aqui: `build` e `build:mcp` não rodam o `tsc`
 ```
 
 Antes de finalizar qualquer tarefa: `npm run lint && npm run typecheck && npm test && npm run build` precisam passar.

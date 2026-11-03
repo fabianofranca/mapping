@@ -104,26 +104,106 @@ jobs:
             exit 1
           fi
 
-  check:
+  # O `check` (check obrigatório do ruleset) é só o agregador de quatro jobs em paralelo:
+  # `static`, `test` (+ `coverage`) e `build`. Os nomes dos checks obrigatórios (`check`,
+  # `e2e`, `epic`) não mudam (etapa #375, decisão 4).
+  static:
     runs-on: ubuntu-latest
-    env:
-      # Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64). Só aqui.
-      INDEX_HTML_MAX_BYTES: 1572864
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
       # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
       - uses: actions/setup-node@v7
+        id: node
         with:
           node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
           node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
           cache: npm
-      - run: npm ci
-      - run: npm run lint
+      # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
+      - uses: actions/cache@v5
+        id: modules
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
+      # Caches do ESLint e do Prettier (`lint:ci`); o `npm run lint` local não usa cache.
+      - uses: actions/cache@v5
+        with:
+          path: .cache
+          key: lint-${{ runner.os }}-${{ hashFiles('package-lock.json', 'eslint.config.*', 'eslint-suppressions.json', '.prettierrc*') }}-${{ github.sha }}
+          restore-keys: |
+            lint-${{ runner.os }}-${{ hashFiles('package-lock.json', 'eslint.config.*', 'eslint-suppressions.json', '.prettierrc*') }}-
+      - run: npm run lint:ci
       - run: npm run typecheck
-      # Testes unitários e de componentes, com relatório de cobertura (sem limite mínimo).
-      - run: npm run test:coverage
+
+  # Testes unitários e de componentes com cobertura, em 3 shards; cada um sobe o blob
+  # (o job `coverage` junta e relata). O número de shards se ajusta depois de medido.
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
+      - uses: actions/setup-node@v7
+        id: node
+        with:
+          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
+          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
+          cache: npm
+      # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
+      - uses: actions/cache@v5
+        id: modules
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
+      - run: npx vitest run --coverage --shard=${{ matrix.shard }}/3 --reporter=blob
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: vitest-blob${{ inputs.label && format('-{0}', inputs.label) || '' }}-${{ matrix.shard }}
+          path: .vitest/blob
+          if-no-files-found: ignore
+
+  # Junta os blobs dos shards: resultado completo, relatório de cobertura (sem limite mínimo)
+  # e resumo no job.
+  coverage:
+    needs: test
+    if: ${{ !cancelled() && needs.test.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
+      - uses: actions/setup-node@v7
+        id: node
+        with:
+          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
+          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
+          cache: npm
+      # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
+      - uses: actions/cache@v5
+        id: modules
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: vitest-blob${{ inputs.label && format('-{0}', inputs.label) || '' }}-*
+          path: .vitest/blob
+          merge-multiple: true
+      - run: npx vitest run --merge-reports --coverage
       - name: Resumo da cobertura
         if: always()
         run: |
@@ -141,8 +221,34 @@ jobs:
           name: coverage${{ inputs.label && format('-{0}', inputs.label) || '' }}
           path: coverage
           if-no-files-found: ignore
+
+  build:
+    runs-on: ubuntu-latest
+    env:
+      # Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64). Só aqui.
+      INDEX_HTML_MAX_BYTES: 1572864
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
+      - uses: actions/setup-node@v7
+        id: node
+        with:
+          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
+          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
+          cache: npm
+      # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
+      - uses: actions/cache@v5
+        id: modules
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
       # Orçamentos de desempenho por quadro: sem cobertura (ela deixa o código mais lento).
       - run: npm run test:perf
+      # Os tipos ficam só no `typecheck` (job `static`): `build` e `build:mcp` não repetem o `tsc`.
       - run: npm run build
       - name: Tamanho do dist/index.html
         run: |
@@ -161,6 +267,24 @@ jobs:
       # (`checks-main`), que pode ainda não ter o script do visualizador (fase L1).
       - run: npm run build:viewer --if-present
 
+  # Agregador: o check obrigatório `check` falha se algum dos quatro jobs não terminou em sucesso.
+  check:
+    needs: [static, test, coverage, build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Todos os jobs em sucesso
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Resultados: $RESULTS"
+          for r in $RESULTS; do
+            if [ "$r" != "success" ]; then
+              echo "::error::Algum job do check não terminou em success: $RESULTS"
+              exit 1
+            fi
+          done
+
   # Ponta a ponta no `dist/index.html` final, no desktop (a app é só desktop desde a fase 5.8).
   # Só roda aqui: o ambiente de desenvolvimento pode não conseguir baixar o navegador.
   e2e:
@@ -171,12 +295,31 @@ jobs:
           ref: ${{ inputs.ref }}
       # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
       - uses: actions/setup-node@v7
+        id: node
         with:
           node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
           node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
           cache: npm
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
+      - uses: actions/cache@v5
+        id: modules
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Versão do Playwright
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v5
+        id: browser
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - if: steps.browser.outputs.cache-hit != 'true'
+        run: npx playwright install chromium
+      # As bibliotecas do sistema não ficam no cache do navegador: sempre.
+      - run: npx playwright install-deps chromium
       - run: npm run build
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v7
