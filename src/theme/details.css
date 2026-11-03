@@ -187,6 +187,20 @@
 
 .props-value > .segmented {
   align-self: flex-start;
+  /* Não passa da coluna do painel: os itens encolhem e cortam o texto com reticências. */
+  min-width: 0;
+  max-width: 100%;
+}
+
+.props-value > .segmented .tooltip-anchor,
+.props-value > .segmented .segmented-item {
+  min-width: 0;
+}
+
+.props-value > .segmented .segmented-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .props-value > .choice {
