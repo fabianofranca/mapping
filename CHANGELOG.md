@@ -2,7 +2,13 @@
 
 Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o servidor MCP. Formato inspirado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/), adaptado: uma seção por épico ou etapa mesclada na `main`, da mais recente para a mais antiga.
 
-**Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `etapa` e, antes delas, no histórico do git.
+**Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `em-andamento` e, antes delas, no histórico do git.
+
+## Rótulos de ciclo — [Não lançado] (épico `epic/rotulos-ciclo`, PR #<a definir>, MCP 0.13.0, schema v13)
+
+### Alterado
+
+- O planejamento ganha o rótulo `pronta` (etapa detalhada, pronta para desenvolver) e o `etapa` passa a se chamar `em-andamento`: o ciclo é `roadmap` → `pronta` → `em-andamento`, e as concluídas são as issues fechadas com `em-andamento`.
 
 ## Acabamento a 900 px — 2026-11-02 (épico `epic/acabamento-900`, PR #337, MCP 0.13.0, schema v13)
 
