@@ -203,8 +203,8 @@ Sem token, ícone nem tamanho novo. Para aplicar no artefato:
 - Seção `Revisao.md` e os guias de `ReviewHeader`, `ChangePopover` e do par de decisão com texto: o nome acessível dos botões com texto é `<texto visível>: <alvo>` (`Aceitar imagem: Confirmação`, `Sobrescrever: Nome`); o estado fica só no `aria-pressed` e o efeito do conflito na descrição (`aria-describedby`). Os botões de ícone não mudaram.
 - Guia de `Library`/paleta e do `ZoomField`: o nome acessível do botão de adicionar do tipo é `<texto visível>: <tipo>` e o do zoom é `<percentual>%: zoom atual; …`.
 
-- Componente `Segmented` (SA3): dentro de um campo dos Detalhes (`.props-value > .segmented`, `src/theme/details.css`) o grupo tem `max-width: 100%` e os itens encolhem com o texto em reticências, para não passar da coluna do painel. Só vale se o guia do `Segmented` descreve o comportamento em coluna estreita.
-- Seção `Atalhos.md` (SA2): o texto do rótulo `shortcuts.toggleWindow` (`src/i18n/pt-BR.ts`, `src/i18n/en-US.ts`) mudou de "Abrir ou esconder a janela {window}" para "Abrir ou ir para {window}; com o foco, esconder" ("Open or go to {window}; hide when focused"). Só vale se a seção reproduz o texto da linha.
+- Componente `Segmented` (SA3/SA4): dentro de um campo dos Detalhes (`.props-value > .segmented`, `src/theme/details.css`) o grupo quebra de linha (`flex-wrap`) em coluna estreita e cada opção vira um botão com borda própria (borda `--color-border-control`, ou `--color-danger` se inválido), sem texto cortado nem `overflow: clip`; fora dos Detalhes continua unido numa borda só. Só vale se o guia do `Segmented` descreve o comportamento em coluna estreita.
+- Seção `Atalhos.md` (SA2): o texto do rótulo `shortcuts.toggleWindow` (`src/i18n/pt-BR.ts`, `src/i18n/en-US.ts`) mudou de "Abrir ou esconder a janela {window}" para "Ir para {window} (com o foco, esconde)" ("Go to {window} (hides when focused)"; SA4 encurtou o texto de SA2 para caber numa linha em pt-BR). Só vale se a seção reproduz o texto da linha.
 
 ### Previews não mostram o estado novo
 
