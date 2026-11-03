@@ -434,8 +434,8 @@ test.describe('mudanças externas no mapping.json', () => {
 // testes do controller (handles falsos: granted, prompt, denied, NotFoundError).
 test.describe('recentes de pasta', () => {
   async function closeProject(page: Page): Promise<void> {
-    await page.getByRole('button', { name: 'Ações do projeto' }).click();
-    await page.getByRole('button', { name: 'Fechar projeto', exact: true }).click();
+    await page.getByRole('button', { name: /: ações do projeto$/ }).click();
+    await page.getByRole('menuitem', { name: 'Fechar projeto', exact: true }).click();
   }
 
   /** Grava uma entrada dos recentes (nome do projeto e da pasta, sem handle) no IndexedDB. */

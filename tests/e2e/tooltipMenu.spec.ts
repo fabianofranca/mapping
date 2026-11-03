@@ -22,14 +22,14 @@ test('dica da barra lateral some enquanto o menu do projeto está aberto', async
   await strip.hover();
   await expect(strip.locator('.tooltip')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Ações do projeto' }).click();
+  await page.getByRole('button', { name: /: ações do projeto$/ }).click();
   await expect(
-    page.getByRole('button', { name: 'Fechar projeto', exact: true }),
+    page.getByRole('menuitem', { name: 'Fechar projeto', exact: true }),
   ).toBeVisible();
   await strip.hover();
   await expect(strip.locator('.tooltip')).toBeHidden();
   // O item do menu continua livre para o clique (nada o cobre).
-  const item = page.getByRole('button', { name: 'Fechar projeto', exact: true });
+  const item = page.getByRole('menuitem', { name: 'Fechar projeto', exact: true });
   const box = (await item.boundingBox())!;
   const covered = await item.evaluate(
     (el, pt) => !el.contains(document.elementFromPoint(pt.x, pt.y)),

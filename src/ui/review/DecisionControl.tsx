@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'preact/hooks';
+import { useId, useLayoutEffect, useRef } from 'preact/hooks';
 import { t } from '../../i18n';
 import { ariaKeys } from '../../app/shortcuts';
 import { Button, IconButton } from '../controls';
@@ -87,6 +87,8 @@ export function DecisionControl({
   }, []);
   const toggle = (state: 'accepted' | 'rejected') =>
     onDecide(value === state ? null : state);
+  // Versão de ícone: o nome diz a ação e o estado. Versão de texto: o nome é "<texto
+  // visível>: <alvo>" (WCAG 2.5.3), o estado fica no `aria-pressed` e o conflito na descrição.
   const acceptLabel = conflict
     ? t('review.decide.acceptConflict', { name })
     : value === 'accepted'
@@ -97,6 +99,12 @@ export function DecisionControl({
     : value === 'rejected'
       ? t('review.decide.rejected', { name })
       : t('review.decide.reject', { name });
+  const conflictId = useId();
+  const acceptShown = acceptText ?? t('review.accept');
+  const rejectShown = rejectText ?? t('review.reject');
+  const textDescribed = (hint: string) =>
+    [reason, conflict ? `${conflictId}-${hint}` : undefined].filter(Boolean).join(' ') ||
+    undefined;
   const acceptTip = disabled && disabledReason ? disabledReason : t('review.accept');
   const rejectTip = disabled && disabledReason ? disabledReason : t('review.reject');
 
@@ -106,29 +114,39 @@ export function DecisionControl({
         <Button
           variant="accept"
           aria-pressed={value === 'accepted'}
-          aria-label={acceptLabel}
+          aria-label={t('review.decide.named', { text: acceptShown, name })}
           aria-keyshortcuts={ariaKeys(REVIEW_KEYS.accept)}
-          aria-describedby={reason}
+          aria-describedby={textDescribed('accept')}
           title={`${acceptTip}  ${REVIEW_KEYS.accept}`}
           disabled={disabled}
           onClick={() => toggle('accepted')}
         >
           <Icon name="check" />
-          {acceptText ?? t('review.accept')}
+          {acceptShown}
         </Button>
         <Button
           variant="reject"
           aria-pressed={value === 'rejected'}
-          aria-label={rejectLabel}
+          aria-label={t('review.decide.named', { text: rejectShown, name })}
           aria-keyshortcuts={ariaKeys(REVIEW_KEYS.reject)}
-          aria-describedby={reason}
+          aria-describedby={textDescribed('reject')}
           title={`${rejectTip}  ${REVIEW_KEYS.reject}`}
           disabled={disabled}
           onClick={() => toggle('rejected')}
         >
           <Icon name="close" />
-          {rejectText ?? t('review.reject')}
+          {rejectShown}
         </Button>
+        {conflict && (
+          <>
+            <span class="visually-hidden" id={`${conflictId}-accept`}>
+              {t('review.decide.acceptConflictHint')}
+            </span>
+            <span class="visually-hidden" id={`${conflictId}-reject`}>
+              {t('review.decide.rejectConflictHint')}
+            </span>
+          </>
+        )}
       </div>
     );
   }

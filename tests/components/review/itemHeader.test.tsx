@@ -43,10 +43,13 @@ describe('cabeçalho do item', () => {
       { level: 'item', id: 'M1' },
     );
     expect(within(header()).getByText('Marcação alterada')).toBeTruthy();
-    const accept = within(header()).getByRole('button', { name: 'Aceitar Porta' });
+    const accept = within(header()).getByRole('button', {
+      name: 'Aceitar marcação: Porta',
+    });
     expect(accept.textContent).toBe('Aceitar marcação');
     expect(
-      within(header()).getByRole('button', { name: 'Rejeitar Porta' }).textContent,
+      within(header()).getByRole('button', { name: 'Rejeitar marcação: Porta' })
+        .textContent,
     ).toBe('Rejeitar marcação');
     expect(
       within(header()).getByText('0 aceitas, 0 rejeitadas, 1 sem decisão'),
@@ -61,7 +64,9 @@ describe('cabeçalho do item', () => {
       screen.getByRole('button', { name: /^Nome: alterado, aceito\./ }),
     ).toBeTruthy();
     // Apertar de novo o botão marcado volta a "sem decisão".
-    fireEvent.click(within(header()).getByRole('button', { name: /^Aceita: / }));
+    fireEvent.click(
+      within(header()).getByRole('button', { name: /^Aceitar marcação: / }),
+    );
     await waitFor(() => expect(stateOf(h, ids.name)).toBeNull());
   });
 
@@ -82,12 +87,12 @@ describe('cabeçalho do item', () => {
     // Parcial: nenhum dos dois botões do item fica marcado.
     expect(
       within(header())
-        .getByRole('button', { name: 'Aceitar Formulário' })
+        .getByRole('button', { name: 'Aceitar marcação: Formulário' })
         .getAttribute('aria-pressed'),
     ).toBe('false');
     expect(
       within(header())
-        .getByRole('button', { name: 'Rejeitar Formulário' })
+        .getByRole('button', { name: 'Rejeitar marcação: Formulário' })
         .getAttribute('aria-pressed'),
     ).toBe('false');
   });
@@ -107,7 +112,8 @@ describe('cabeçalho do item', () => {
     ).toBeTruthy();
     expect(screen.getByText('Criada pela proposta')).toBeTruthy();
     expect(
-      within(header()).getByRole('button', { name: 'Aceitar Formulário' }).textContent,
+      within(header()).getByRole('button', { name: 'Aceitar marcação: Formulário' })
+        .textContent,
     ).toBe('Aceitar marcação');
   });
 
@@ -190,11 +196,14 @@ describe('cabeçalho do item', () => {
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     expect(within(header()).getByText(/Vidros/)).toBeTruthy();
     expect(
-      within(header()).getByRole('button', { name: 'Rejeitar Porta' }).textContent,
+      within(header()).getByRole('button', { name: 'Rejeitar remoção: Porta' })
+        .textContent,
     ).toBe('Rejeitar remoção');
 
     // Rejeitada, a remoção não vale: o nome deixa de ser riscado.
-    fireEvent.click(within(header()).getByRole('button', { name: 'Rejeitar Porta' }));
+    fireEvent.click(
+      within(header()).getByRole('button', { name: 'Rejeitar remoção: Porta' }),
+    );
     await waitFor(() => expect(document.querySelector('del.identity-name')).toBeNull());
     expect(document.querySelector('strong.identity-name')?.textContent).toBe('Porta');
   });
@@ -215,7 +224,7 @@ describe('cabeçalho do item', () => {
     expect(
       (
         within(header()).getByRole('button', {
-          name: 'Aceitar Marcação sem nome',
+          name: 'Aceitar marcação: Marcação sem nome',
         }) as HTMLButtonElement
       ).disabled,
     ).toBe(false);

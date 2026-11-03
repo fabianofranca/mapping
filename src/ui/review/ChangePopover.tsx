@@ -318,31 +318,25 @@ function PopoverDecision({
   const field = markFieldLabel(names, subject);
   const conflict = situation?.conflict === true;
   const apply = (state: DecisionValue) => decide({ level: 'change', id: c.id }, state);
-  const describedBy = disabled ? reasonId : undefined;
-
-  let acceptLabel = t(
-    decision === 'accepted' ? 'review.decide.accepted' : 'review.decide.accept',
-    {
-      name: field,
-    },
-  );
-  let rejectLabel = t(
-    decision === 'rejected' ? 'review.decide.rejected' : 'review.decide.reject',
-    {
-      name: field,
-    },
-  );
-  if (conflict) {
-    if (c.kind === 'update') {
-      const current = text(valueParts(names, c, situation.current, c.to));
-      const after = text(valueParts(names, c, c.to, c.from));
-      acceptLabel = t('review.pop.acceptConflict', { current, after });
-      rejectLabel = t('review.pop.rejectConflict', { current });
-    } else {
-      acceptLabel = t('review.decide.acceptConflict', { name: field });
-      rejectLabel = t('review.decide.rejectConflict', { name: field });
-    }
+  const conflictId = useId();
+  // Nome = "<texto visível>: <campo>" (WCAG 2.5.3); o estado fica no `aria-pressed` e o
+  // efeito do conflito na descrição, junto com o motivo de estar desabilitado.
+  const acceptShown = conflict ? t('review.pop.overwrite') : t('review.accept');
+  const rejectShown = conflict ? t('review.pop.keepCurrent') : t('review.reject');
+  const acceptLabel = t('review.decide.named', { text: acceptShown, name: field });
+  const rejectLabel = t('review.decide.named', { text: rejectShown, name: field });
+  let acceptHint = t('review.decide.acceptConflictHint');
+  let rejectHint = t('review.decide.rejectConflictHint');
+  if (conflict && c.kind === 'update') {
+    const current = text(valueParts(names, c, situation.current, c.to));
+    const after = text(valueParts(names, c, c.to, c.from));
+    acceptHint = t('review.pop.acceptConflict', { current, after });
+    rejectHint = t('review.pop.rejectConflict', { current });
   }
+  const describedBy = (id: string) =>
+    [disabled ? reasonId : undefined, conflict ? id : undefined]
+      .filter(Boolean)
+      .join(' ') || undefined;
 
   return (
     <div class="change-popover-actions" role="group" aria-label={field}>
@@ -353,7 +347,7 @@ function PopoverDecision({
         aria-pressed={decision === 'accepted'}
         aria-label={acceptLabel}
         aria-keyshortcuts={ariaKeys(REVIEW_KEYS.accept)}
-        aria-describedby={describedBy}
+        aria-describedby={describedBy(`${conflictId}-accept`)}
         title={`${t('review.accept')}  ${REVIEW_KEYS.accept}`}
         disabled={disabled}
         {...acceptClick.handlers}
@@ -365,7 +359,7 @@ function PopoverDecision({
         }}
       >
         <Icon name="check" />
-        {conflict ? t('review.pop.overwrite') : t('review.accept')}
+        {acceptShown}
       </Button>
       <Button
         size="sm"
@@ -374,7 +368,7 @@ function PopoverDecision({
         aria-pressed={decision === 'rejected'}
         aria-label={rejectLabel}
         aria-keyshortcuts={ariaKeys(REVIEW_KEYS.reject)}
-        aria-describedby={describedBy}
+        aria-describedby={describedBy(`${conflictId}-reject`)}
         title={`${t('review.reject')}  ${REVIEW_KEYS.reject}`}
         disabled={disabled}
         {...rejectClick.handlers}
@@ -389,8 +383,18 @@ function PopoverDecision({
         }}
       >
         <Icon name="close" />
-        {conflict ? t('review.pop.keepCurrent') : t('review.reject')}
+        {rejectShown}
       </Button>
+      {conflict && (
+        <>
+          <span class="visually-hidden" id={`${conflictId}-accept`}>
+            {acceptHint}
+          </span>
+          <span class="visually-hidden" id={`${conflictId}-reject`}>
+            {rejectHint}
+          </span>
+        </>
+      )}
       {decision !== null && !disabled && (
         <Button
           size="sm"

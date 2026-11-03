@@ -641,10 +641,12 @@ describe('barras do editor', () => {
       />,
     );
     const user = userEvent.setup();
-    const trigger = screen.getByRole('button', { name: t('editor.projectMenu') });
+    const trigger = screen.getByRole('button', {
+      name: t('editor.projectMenuName', { name: harness.project().project.name }),
+    });
     expect(trigger.textContent).toContain(harness.project().project.name);
     await user.click(trigger);
-    await user.click(screen.getByRole('button', { name: t('editor.closeProject') }));
+    await user.click(screen.getByRole('menuitem', { name: t('editor.closeProject') }));
     expect(commands.closeProject).toHaveBeenCalledOnce();
     // O menu fecha ao escolher.
     expect(screen.queryByRole('menu')).toBeNull();

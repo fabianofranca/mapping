@@ -97,6 +97,9 @@ describe('dicionários', () => {
       'library.typeSize',
       'image.containerUntitled',
       'diagnostics.fontStyle.normal',
+      // Formatos "<texto>: <alvo>" iguais nos dois idiomas (nome acessível, SA1).
+      'review.decide.named',
+      'library.addType',
       // O nome do produto é "Mapping" nos dois idiomas.
       'app.title',
       'editor.appName',

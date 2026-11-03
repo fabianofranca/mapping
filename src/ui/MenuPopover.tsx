@@ -2,6 +2,7 @@ import type { ComponentChildren } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { returnFocusToTrigger } from './focus';
 import { Icon } from './icons';
+import { menuKeyDown, useFocusFirstItem } from './useMenuNavigation';
 
 // Menu em popover (o "projeto ▾" da barra principal). Não usa diálogo: fecha com Esc,
 // com clique fora e ao escolher um item, e funciona em `file://` (sem API nova). Em todo
@@ -10,10 +11,10 @@ import { Icon } from './icons';
 interface MenuPopoverProps {
   /** Texto do botão que abre o menu. */
   readonly label: string;
-  /** Nome acessível do botão (quando o texto visível não basta). */
+  /** Nome acessível do botão: começa pelo texto visível (WCAG 2.5.3), ex.: "Em lote: …". */
   readonly buttonLabel?: string;
   readonly class?: string;
-  /** Itens do menu (botões); o clique em qualquer um fecha o popover. */
+  /** Itens do menu (botões com `role="menuitem"`); o clique em qualquer um fecha o popover. */
   readonly children: ComponentChildren;
 }
 
@@ -42,22 +43,20 @@ export function MenuPopover({
     return () => document.removeEventListener('pointerdown', onDown);
   }, [open]);
 
+  useFocusFirstItem(root, open);
+
   return (
     <div
       class={extra ? `menu-popover ${extra}` : 'menu-popover'}
       ref={root}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape' && open) {
-          e.stopPropagation();
-          close();
-        }
-      }}
+      onKeyDown={menuKeyDown(root, open, close)}
     >
       <button
         ref={trigger}
         type="button"
         class="menu-trigger"
         aria-label={buttonLabel}
+        aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >

@@ -39,7 +39,9 @@ describe('proposta aplicada', () => {
     expect(screen.getByText(/^Proposta aplicada em .*Só para ver/)).toBeTruthy();
 
     const header = screen.getByRole('region', { name: 'Decisão' });
-    const accept = within(header).getByRole('button', { name: /^Aceita: Porta$/ });
+    const accept = within(header).getByRole('button', {
+      name: /^Aceitar marcação: Porta$/,
+    });
     expect((accept as HTMLButtonElement).disabled).toBe(true);
     const reason = document.getElementById(accept.getAttribute('aria-describedby') ?? '');
     expect(reason?.textContent).toBe('Esta proposta não recebe mais decisões');
@@ -89,7 +91,7 @@ describe('proposta substituída', () => {
     await superseded();
     fireEvent.click(screen.getByRole('button', { name: /^Nome: alterado, pendente/ }));
     const pop = screen.getByRole('dialog');
-    const accept = within(pop).getByRole('button', { name: 'Aceitar Nome' });
+    const accept = within(pop).getByRole('button', { name: 'Aceitar: Nome' });
     expect((accept as HTMLButtonElement).disabled).toBe(true);
     const reason = document.getElementById(accept.getAttribute('aria-describedby') ?? '');
     expect(reason?.textContent).toBe(
