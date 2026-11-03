@@ -37,7 +37,7 @@ A lista é um filtro rápido, não um limite: uma mudança em `src/model/` ou `s
 
 ## Como verificar, fase a fase
 
-1. Cruze o "Toca em:" da fase (na sub-issue da fase, rótulo `fase`) com a tabela acima e com o mapa.
+1. Cruze o "Toca em:" da fase (na sub-issue da fase, rótulo `step`) com a tabela acima e com o mapa.
 2. Declare o resultado no item **Impacto no DS** da descrição do PR: `nenhum`, ou o que a mudança afeta.
 3. Se não for `nenhum`, acrescente a pendência na seção "Pendências" deste arquivo, no mesmo PR, com o que mudou e os arquivos que provam.
 
@@ -267,3 +267,4 @@ A sincronia de 2026-11-02 achou três erros na lista de pendências que a DS1 mo
 - O `KeyValueGrid` foi listado como afetado pelo vocabulário sugerido. As células de chave e valor da anotação livre **não** têm lista: o vocabulário é dos campos e colunas `string` da especialização. O guia ganhou esse esclarecimento.
 - A pendência dizia que a string `review.legend.rejected` não existia mais em `src/`. A chave existe (`src/i18n/review.ts`); o que saiu do texto dela foi o "(só em Atual)".
   | 2026-11-03 | `epic/rotulos-ciclo` | Sem impacto no DS: o épico só muda os rótulos de planejamento e a documentação do fluxo. Nada foi gravado no artefato. |
+  | 2026-11-03 | `epic/bugs-evidencia` | Sem impacto no DS: o épico só muda os rótulos de planejamento e a documentação do fluxo. Nada foi gravado no artefato. |

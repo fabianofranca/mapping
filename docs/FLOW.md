@@ -4,16 +4,16 @@ As regras estão no `CLAUDE.md` ("Fluxo automatizado"); aqui ficam só as mensag
 
 ## Para o dono, nos três chats
 
-1. Roadmap (qualquer modelo):
+1. Roadmap ou bug (qualquer modelo):
 
 ```text
-Crie uma issue roadmap: <ideia ou problema>. Origem: <de onde veio>.
+Crie uma issue roadmap (ou bug, se for defeito): <ideia ou problema>. Origem: <de onde veio>.
 ```
 
 2. Detalhamento (Fable ou Opus):
 
 ```text
-Detalhe a issue #<roadmap> como etapa, com as fases e a tabela de modelos (linha Orquestrador e coluna Testador). Pergunte o que for decisão de produto. Ao terminar, ponha o rótulo `pronta` e tire o `roadmap`.
+Detalhe a issue #<roadmap ou bug> como etapa, com as fases e a tabela de modelos (linha Orquestrador e coluna Testador). Pergunte o que for decisão de produto. Ao terminar, ponha o rótulo `ready` e tire o `roadmap` (o `bug` fica).
 ```
 
 3. Implementação (no modelo da linha Orquestrador, no modo Auto):
@@ -46,7 +46,7 @@ Coordenador: `<id da sessão do orquestrador>`
 
 ## Fase de correção
 
-Com ❌ no relato, o orquestrador cria uma sub-issue `fase` de correção (com `parent_issue_number` da etapa, a lista dos achados com o link do comentário do relato e o aceite "os roteiros que falharam passam") e uma sessão filha com a mesma mensagem da fase, apontando essa sub-issue. Só uma correção por etapa. Na segunda falha, em achado de perda de dados, integridade do `mapping.json` ou segurança, ou se a correção pedir decisão de produto, o orquestrador chama o dono.
+Com ❌ no relato, o orquestrador cria uma sub-issue `step` de correção (com `parent_issue_number` da etapa, a lista dos achados com o link do comentário do relato e o aceite "os roteiros que falharam passam") e uma sessão filha com a mesma mensagem da fase, apontando essa sub-issue. Só uma correção por etapa. Na segunda falha, em achado de perda de dados, integridade do `mapping.json` ou segurança, ou se a correção pedir decisão de produto, o orquestrador chama o dono.
 
 ## Para o testador
 
