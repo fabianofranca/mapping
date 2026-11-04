@@ -32,6 +32,16 @@ export function checkRectSize(
 /** Tolerância para comparar coordenadas do canvas (ponto flutuante). */
 const EPSILON = 1e-6;
 
+/**
+ * Tira o ruído de ponto flutuante: perto de um inteiro (a menos de `eps`) devolve o inteiro,
+ * nunca `-0`; fração de verdade (`1868.13`, `0.5`) fica como está. Valor não finito passa.
+ */
+export function snapNearInteger(v: number, eps: number = EPSILON): number {
+  const rounded = Math.round(v);
+  if (!Number.isFinite(v) || Math.abs(v - rounded) >= eps) return v;
+  return rounded === 0 ? 0 : rounded;
+}
+
 export function right(r: Rect): number {
   return r.x + r.width;
 }

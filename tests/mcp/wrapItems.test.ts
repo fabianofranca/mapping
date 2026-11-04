@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -200,6 +200,37 @@ describe('wrap_items: criação', () => {
       { settle: true },
     );
     expect(shape(after, id)).toEqual(shape(expected, id));
+  });
+});
+
+describe('wrap_items: ruído no placement', () => {
+  it('o ruído de ponto flutuante do arrasto não tira a margem de 8 px', async () => {
+    const name = 'ruido';
+    ok(await mcp.call('create_project', { path: `projetos/${name}`, name }));
+    const noisyDir = join(root, 'projetos', name);
+    const base = await propose(mcp, name, [
+      { op: 'add_container', name: 'Um', width: 300, height: 200, background: '#FFFFFF' },
+    ]);
+    expect(base.valid, JSON.stringify(base.errors)).toBe(true);
+    acceptAllAndApply(noisyDir, base.proposal.id);
+    // O arrasto de ida e volta deixou ruído no disco (o relato da rodada: -2.27e-13).
+    const file = join(noisyDir, 'mapping.json');
+    const onDisk = JSON.parse(readFileSync(file, 'utf8')) as Project;
+    const noisy: Project = {
+      ...onDisk,
+      containers: onDisk.containers.map((c, i) =>
+        i === 0 ? { ...c, placement: { x: -2.2737367544323206e-13, y: 0, scale: 1 } } : c,
+      ),
+    };
+    writeFileSync(file, JSON.stringify(noisy, null, 2));
+
+    const before = readProject(noisyDir);
+    const items = [before.containers[0]!.id];
+    const proposed = await propose(mcp, name, [{ op: 'wrap_items', items }]);
+    expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
+    const after = acceptAllAndApply(noisyDir, proposed.proposal.id);
+    const wrapper = created(before, after);
+    expect(wrapper.rect).toEqual({ x: -8, y: -8, width: 316, height: 216 });
   });
 });
 

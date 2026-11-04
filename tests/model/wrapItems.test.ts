@@ -11,7 +11,7 @@ import {
   type Project,
 } from '../../src/model';
 import { expectValid } from './fixtures';
-import { mk, multiProject, rect } from './multiSelectionFixtures';
+import { container, mk, multiProject, rect } from './multiSelectionFixtures';
 
 // Envolver a seleção numa marcação pai (docs/ARCHITECTURE.md, "Marcação pai (Envolver)").
 // Fixture: ver tests/model/multiSelectionFixtures.ts.
@@ -170,6 +170,30 @@ describe('wrapItems', () => {
     expect(Number.isInteger(r.x + r.y + r.width + r.height)).toBe(true);
     expect(r.x).toBe(392);
     expect(r.x + r.width).toBeGreaterThanOrEqual(3001 + WRAP_MARGIN);
+  });
+
+  it('ruído de ponto flutuante no placement conta como inteiro: 8 px de margem', () => {
+    const base = multiProject();
+    const noisy = (id: string, x: number, scale = 1) =>
+      container(id, 100, 100, { x, y: 0, scale });
+    const wrapOf = (x: number, scale = 1) => {
+      const p = { ...base, containers: [noisy('A', 0), noisy('B', x, scale)] };
+      return wrapItems(p, { id: 'W', items: [img('A'), img('B')] }).markings.find(
+        (m) => m.id === 'W',
+      )!.rect;
+    };
+    // O ruído que o relato achou depois de ir e voltar com um arrasto.
+    expect(wrapOf(-2.2737367544323206e-13)).toEqual(rect(-8, -8, 116, 116));
+    // Ruído abaixo e acima de um inteiro, nas bordas esquerda e direita.
+    const alone = (x: number) =>
+      wrapItems(
+        { ...base, containers: [noisy('B', x)] },
+        { id: 'W', items: [img('B')] },
+      ).markings.find((m) => m.id === 'W')!.rect;
+    expect(alone(211.99999999999977)).toEqual(rect(204, -8, 116, 116));
+    expect(alone(100.00000000000023)).toEqual(rect(92, -8, 116, 116));
+    // Fração de verdade: o retângulo inteiro cobre, com margem entre 8 e 9.
+    expect(alone(1868.13)).toEqual(rect(1860, -8, 117, 116));
   });
 
   it('só seta e nota flutuante: não dá para envolver', () => {
