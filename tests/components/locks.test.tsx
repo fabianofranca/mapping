@@ -20,6 +20,10 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+/** O texto da dica (`Tooltip`) de um `IconButton`. */
+const tipOf = (button: HTMLElement) =>
+  button.parentElement?.querySelector('[data-tooltip]')?.textContent;
+
 const marking = (p: Project, id: string) => {
   const found = p.markings.find((m) => m.id === id);
   if (!found) throw new Error(id);
@@ -55,6 +59,14 @@ const lockButton = () =>
   screen.getByRole('button', { name: t('lock.markingLock') }) as HTMLButtonElement;
 
 describe('Detalhes da marcação: cadeado', () => {
+  it('trancada: nome e dica seguem "Trancar marcação", com aria-pressed="true"', async () => {
+    const { user } = renderMarkingPanel('M2');
+    await user.click(lockButton());
+    const locked = screen.getByRole('button', { name: 'Trancar marcação' });
+    expect(locked.getAttribute('aria-pressed')).toBe('true');
+    expect(tipOf(locked)).toContain('Trancar marcação');
+  });
+
   it('o botão tranca e destranca, com o estado em aria-pressed e uma entrada de desfazer por clique', async () => {
     const { harness, user } = renderMarkingPanel('M2');
     expect(lockButton().getAttribute('aria-pressed')).toBe('false');
@@ -173,6 +185,8 @@ describe('Detalhes da imagem: cadeado', () => {
     await user.click(imageLock());
     expect(harness.project().containers[1]?.locked).toBe(true);
     expect(imageLock().getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Trancar imagem' })).toBe(imageLock());
+    expect(tipOf(imageLock())).toContain('Trancar imagem');
     expect(screen.getByText(t('lock.imageNotice'))).toBeTruthy();
     const remove = screen.getByRole('button', { name: t('image.delete') });
     expect((remove as HTMLButtonElement).disabled).toBe(true);
@@ -241,6 +255,17 @@ describe('Árvore: cadeado na linha', () => {
     screen.getByRole('button', {
       name: t('lock.treeLock', { name }),
     }) as HTMLButtonElement;
+
+  // SN2: o nome e a dica são os mesmos nos dois estados; o estado fica no aria-pressed.
+  it('trancado: o nome e a dica seguem "Trancar {nome}", com aria-pressed="true"', async () => {
+    const harness = createHarness(sampleProject());
+    const { user } = renderTree(harness);
+    await user.click(treeLock('Porta'));
+    const locked = screen.getByRole('button', { name: 'Trancar Porta' });
+    expect(locked.getAttribute('aria-pressed')).toBe('true');
+    expect(locked.title).toBe('Trancar Porta');
+    expect(screen.queryByRole('button', { name: 'Destrancar Porta' })).toBeNull();
+  });
 
   it('cada linha de imagem e marcação tem o cadeado, e clicar alterna sem selecionar', async () => {
     const harness = createHarness(sampleProject());

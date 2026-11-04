@@ -92,7 +92,7 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
   await page.getByLabel('id', { exact: true }).fill('input_nome');
   await page.getByLabel('id', { exact: true }).press('Enter');
   // Seletor de referência em popup (B14): busca e Enter escolhe.
-  const dado = page.getByRole('button', { name: /^dado: / });
+  const dado = page.getByRole('button', { name: /: dado$/ });
   await dado.click();
   await page.getByRole('combobox', { name: 'Buscar alvo' }).fill('name');
   await page.getByRole('combobox', { name: 'Buscar alvo' }).press('Enter');
@@ -220,14 +220,14 @@ test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page })
   await expect(palette).toBeHidden();
 
   // A camada ativa muda pelo botão da linha; o chip da barra acompanha.
-  await layers.getByRole('button', { name: 'Tornar ativa' }).last().click();
+  await layers.getByRole('button', { name: 'Tornar ativa: Pintura' }).click();
   await expect(
     page.getByRole('button', { name: 'Camadas (ativa: Pintura)' }),
   ).toBeVisible();
 
   // Excluir fica no menu da linha e pede confirmação.
   await layers.getByRole('button', { name: 'Mais ações da camada Pintura' }).click();
-  await page.getByRole('button', { name: 'Excluir camada' }).click();
+  await page.getByRole('menuitem', { name: 'Excluir camada' }).click();
   await page.getByRole('button', { name: 'Excluir', exact: true }).click();
   await expect(names).toHaveCount(2);
 

@@ -106,6 +106,12 @@ describe('Detalhes da seta', () => {
     const user = renderArrowPanel(harness);
     await user.click(screen.getByRole('button', { name: t('arrow.lock') }));
     expect(arrowOf(harness.project()).locked).toBe(true);
+    // SN2: o nome e a dica não mudam; o estado fica no aria-pressed.
+    const lock = screen.getByRole('button', { name: t('arrow.lock') });
+    expect(lock.getAttribute('aria-pressed')).toBe('true');
+    expect(lock.parentElement?.querySelector('[data-tooltip]')?.textContent).toContain(
+      t('arrow.lock'),
+    );
     expect(
       screen.getByRole<HTMLButtonElement>('button', { name: t('arrow.style.straight') })
         .disabled,

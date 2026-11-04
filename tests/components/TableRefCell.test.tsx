@@ -41,8 +41,8 @@ function setup(project: Project, readOnly = false) {
   return { harness, onGoToAnnotation, user: userEvent.setup() };
 }
 
-/** O botão da célula `alvo` da linha 1 (o nome acessível é "Alvo (Linha 1): <valor>"). */
-const cellButton = () => screen.getByRole('button', { name: /^Alvo \(Linha 1\): / });
+/** O botão da célula `alvo` da linha 1 (o nome acessível é "<valor>: Alvo (Linha 1)"). */
+const cellButton = () => screen.getByRole('button', { name: /: Alvo \(Linha 1\)$/ });
 
 const cellValue = (h: { project(): Project }) => {
   const rows = annotationOf(h.project(), 'AL').values?.alvos as Record<string, unknown>[];
@@ -53,6 +53,8 @@ describe('TableField: célula de coluna ref', () => {
   it('célula vazia mostra "Escolher…", o cabeçalho da coluna e o botão Limpar desabilitado', () => {
     setup(build());
     expect(cellButton().textContent).toContain('Escolher…');
+    // SN2: o nome começa pelo texto visível, sem as reticências.
+    expect(cellButton().getAttribute('aria-label')).toBe('Escolher: Alvo (Linha 1)');
     expect(cellButton().className).toContain('is-empty');
     expect(screen.getByRole('columnheader', { name: 'Alvo *' })).toBeTruthy();
     expect(
@@ -154,7 +156,17 @@ describe('TableField: célula de coluna ref', () => {
     const linked = setTableCell(build(), 'AL', 'alvos', 'L1', 'alvo', R1);
     setup(removeTableRow(linked, 'AM', 'campos', 'R1'));
     expect(cellButton().textContent).toContain('(referência quebrada)');
+    expect(cellButton().getAttribute('aria-label')).toBe(
+      'Referência quebrada: Alvo (Linha 1)',
+    );
     expect(cellButton().className).toContain('is-broken');
+  });
+
+  it('célula preenchida: o nome começa pelo alvo e termina no campo com a linha', () => {
+    setup(setTableCell(build(), 'AL', 'alvos', 'L1', 'alvo', R1));
+    const name = cellButton().getAttribute('aria-label') ?? '';
+    expect(name).toMatch(/: Alvo \(Linha 1\)$/);
+    expect(name.startsWith(cellButton().textContent?.trim() ?? '?')).toBe(true);
   });
 
   it('somente leitura: a célula e o Limpar ficam desabilitados', () => {

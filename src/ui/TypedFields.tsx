@@ -26,7 +26,7 @@ import { linkedFieldTargets } from './linkedRef';
 import { Property } from './PropertyGrid';
 import { RefPicker, type RefFieldDef } from './RefPicker';
 import { TableField } from './TableField';
-import { issueReason, issuesOf, labelTexts } from './typedText';
+import { issueReason, issuesOf, labelTexts, refButtonName } from './typedText';
 
 export type { FieldContext } from './FieldEditors';
 
@@ -180,7 +180,14 @@ function RefField({
         aria-haspopup="dialog"
         aria-expanded={picking}
         aria-invalid={invalid || undefined}
-        aria-label={t('ref.fieldButton', { field: fieldLabel(field), value: text })}
+        aria-label={refButtonName(
+          fieldLabel(field),
+          !hasValue
+            ? { kind: 'empty' }
+            : broken || !target
+              ? { kind: 'broken' }
+              : { kind: 'value', value: text, layer: layer?.name },
+        )}
         aria-keyshortcuts="Control+B"
         // O valor pode sair cortado no campo ("→ User.no…"): inteiro na dica.
         title={`${tip}${layer ? ` (${layer.name})` : ''}\n${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
