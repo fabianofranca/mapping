@@ -984,7 +984,8 @@ export const ptBR = {
   'view.arrowsHint': 'Desenha no canvas as setas que ligam as marcações',
   'multi.selectWithContents': 'Selecionar com o conteúdo',
   'shortcuts.shiftClick':
-    'Acrescentar ou tirar da seleção (Shift+clique no canvas e na Árvore)',
+    'Acrescentar ou tirar da seleção (Shift ou Ctrl/Cmd+clique no canvas e na Árvore)',
+  'shortcuts.nudge': 'Mover a seleção (Shift: 10 px)',
   'shortcuts.doubleClick': 'Selecionar a marcação com o conteúdo (duplo clique)',
   'shortcuts.escapeToPrimary': 'Com vários itens selecionados, voltar ao item principal',
   'shortcuts.key.click': 'clique',

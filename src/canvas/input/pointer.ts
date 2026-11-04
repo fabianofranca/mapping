@@ -58,6 +58,7 @@ import {
 } from '../markingGeometry';
 import { wheelZoomFactor, type Point } from '../viewport';
 import type { ViewportController } from '../viewportController';
+import { isMultiSelectClick } from '../../utils/platform';
 import {
   isStoreGesture,
   startGesture,
@@ -119,7 +120,7 @@ export class PointerInput {
   private lastTap: Point | null = null;
   /** Tipo do último ponteiro apertado: o `contextmenu` de um toque demorado não é do mouse. */
   private lastPointerType = 'mouse';
-  /** Shift estava apertado quando o ponteiro desceu: o toque (sem arrasto) alterna o item. */
+  /** O modificador da seleção múltipla (Shift, Cmd ou, fora do macOS, Ctrl) estava apertado quando o ponteiro desceu: o toque (sem arrasto) alterna o item. */
   private pressShift = false;
   /**
    * Seleção primária de antes do último toque. O segundo toque de um duplo clique, por cair no
@@ -162,6 +163,11 @@ export class PointerInput {
     return () => {
       for (const cleanup of cleanups.splice(0)) cleanup();
     };
+  }
+
+  /** Há um gesto de ponteiro em andamento (ponteiro apertado, arrasto ou pinça). */
+  isInteracting(): boolean {
+    return this.gesture !== null;
   }
 
   /** Cancela o gesto de mover/redimensionar/desenhar em andamento. `true` se havia um. */
@@ -240,7 +246,7 @@ export class PointerInput {
 
   private onPointerDown(e: PointerEvent): void {
     this.lastPointerType = e.pointerType;
-    this.pressShift = e.shiftKey;
+    this.pressShift = isMultiSelectClick(e);
     if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
     const p = this.o.viewport.screenPoint(e);
     this.pointers.set(e.pointerId, p);
@@ -688,8 +694,8 @@ export class PointerInput {
   }
 
   /**
-   * Seleciona pelo clique em `p` (tela); clicar de novo no mesmo ponto sobe para o pai. Com Shift
-   * (`shift`), alterna o primeiro item sob o ponto na seleção (sem o ciclo de subir para o pai);
+   * Seleciona pelo clique em `p` (tela); clicar de novo no mesmo ponto sobe para o pai. Com o modificador
+   * da seleção múltipla (`shift`: Shift, Ctrl ou Cmd), alterna o primeiro item sob o ponto na seleção (sem o ciclo de subir para o pai);
    * no vazio, Shift não muda nada. Na revisão, Shift+clique é um clique simples.
    */
   private tap(p: Point, shift: boolean): void {
@@ -743,7 +749,8 @@ export class PointerInput {
     this.lastTap = null;
     const project = this.project();
     const target = this.selectionBeforeTap;
-    if (e.shiftKey || this.lastPointerType === 'touch' || !project || !target) return;
+    if (isMultiSelectClick(e) || this.lastPointerType === 'touch' || !project || !target)
+      return;
     if (this.o.reviewing?.()) return;
     if (!ui.cleanView.peek() && ui.mode.peek() !== 'navigate') return;
     const index = projectIndex(project);

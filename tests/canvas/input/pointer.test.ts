@@ -52,7 +52,14 @@ function setup(
     type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel',
     x: number,
     y: number,
-    { id = 1, kind = 'mouse', button = 0, shift = false } = {},
+    {
+      id = 1,
+      kind = 'mouse',
+      button = 0,
+      shift = false,
+      ctrl = false,
+      meta = false,
+    } = {},
   ) =>
     container.dispatchEvent(
       new PointerEvent(type, {
@@ -62,6 +69,8 @@ function setup(
         clientX: x,
         clientY: y,
         shiftKey: shift,
+        ctrlKey: ctrl,
+        metaKey: meta,
         bubbles: true,
       }),
     );
@@ -69,7 +78,7 @@ function setup(
   const click = (
     x: number,
     y: number,
-    options: { shift?: boolean; kind?: string } = {},
+    options: { shift?: boolean; ctrl?: boolean; meta?: boolean; kind?: string } = {},
   ) => {
     fire('pointerdown', x, y, options);
     fire('pointerup', x, y, options);
@@ -1242,6 +1251,37 @@ describe('PointerInput: seleção múltipla', () => {
       s.drag([2600, 600], [2800, 700]); // (1300, 300) -> (1400, 350) no canvas
       expect(s.containerOf('I2')?.placement).toEqual({ x: 1200, y: 50, scale: 1 });
       expect(s.markingRect('C')).toEqual({ x: 0, y: -50, width: 2400, height: 1000 });
+      s.cleanup();
+    });
+  });
+
+  describe('Ctrl/Cmd+clique', () => {
+    const platform = (value: string) =>
+      vi.spyOn(globalThis.navigator, 'platform', 'get').mockReturnValue(value);
+    afterEach(() => vi.restoreAllMocks());
+
+    it('Ctrl+clique (fora do macOS) e Cmd+clique juntam e tiram como o Shift+clique', () => {
+      platform('Win32');
+      const s = setup();
+      s.click(250, 250); // M2
+      s.click(1300, 300, { ctrl: true }); // I2
+      expect(ids(s)).toEqual(['marking:M2', 'image:I2']);
+      s.click(1200, 100, { meta: true }); // M3
+      expect(ids(s)).toEqual(['marking:M2', 'image:I2', 'marking:M3']);
+      s.click(1300, 300, { ctrl: true }); // I2 sai
+      expect(ids(s)).toEqual(['marking:M2', 'marking:M3']);
+      s.cleanup();
+    });
+
+    it('no macOS, Ctrl+clique não junta (é o clique direito); Cmd+clique junta', () => {
+      platform('MacIntel');
+      const s = setup();
+      s.click(250, 250); // M2
+      s.click(1300, 300, { ctrl: true });
+      expect(ids(s)).toEqual(['image:I2']);
+      s.click(250, 250);
+      s.click(1300, 300, { meta: true });
+      expect(ids(s)).toEqual(['marking:M2', 'image:I2']);
       s.cleanup();
     });
   });

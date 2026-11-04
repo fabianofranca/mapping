@@ -202,6 +202,13 @@ O fechamento do épico gravou no artefato o que dava (ver o histórico). Ficou s
 - **`Segmented`, CSS e preview.** O guia já descreve o grupo dos Detalhes (quebra de linha, borda própria por opção), mas o `project/components/bundle.css` do artefato só tem `.props-value > .segmented { align-self: flex-start; }`. Faltam as regras de `src/theme/details.css` (`flex-wrap`, `gap`, `border: 0`, `overflow: visible`, borda por `.segmented-item`, `.segmented-invalid .segmented-item`, `.segmented-text { white-space: nowrap }`) e um exemplo do `Segmented` dentro de `.props-value` em coluna estreita no preview. Conferir o contraste nos dois temas ao gravar.
 - **Paleta da biblioteca.** O botão de adicionar do tipo tem nome acessível `{label}: {name}` (`library.addType`, `src/ui/LibraryPalette.tsx`), mas o artefato não tem guia da paleta (`LibraryPalette`/`Library`; só `LibraryIssueList`). Criar o guia é decisão do dono, como em "Com forma visível e sem componente no DS".
 
+### Atalhos da seleção múltipla (`epic/selecao-multipla`, fase SM1, #414; etapa #296)
+
+A lista de atalhos (`src/ui/shortcutList.ts`) mudou e a seção `Atalhos.md` do artefato ainda não a reproduz:
+
+- **Linha nova "Mover a seleção":** `←↑→↓` move 1 px e `Shift+←↑→↓` move 10 px (no espaço próprio de cada item).
+- **Linha existente do Shift+clique:** passa a citar Ctrl/Cmd (`Ctrl+clique` fora do macOS e `Cmd+clique` no macOS juntam e tiram itens da seleção como o Shift+clique). No macOS o `Ctrl+clique` segue sendo o clique direito e não junta.
+
 ### Previews não mostram o estado novo
 
 A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, mas só acrescentou o estado novo ao preview de seis deles (decisão de escopo do dono). Continuam mostrando o estado antigo os previews de:

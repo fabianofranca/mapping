@@ -31,7 +31,9 @@ export type Shortcut =
   /** Ctrl+Alt+C: copia como PNG o recorte da marcação selecionada. */
   | { readonly kind: 'copy-crop' }
   /** Alt+Shift+A: arruma as filhas do container selecionado (etapa Biblioteca, B3). */
-  | { readonly kind: 'arrange' };
+  | { readonly kind: 'arrange' }
+  /** ←↑→↓ movem a seleção 1 px; Shift+seta, 10 px (`dx`, `dy` já com o passo). */
+  | { readonly kind: 'nudge'; readonly dx: number; readonly dy: number };
 
 /**
  * Texto dos atalhos nas dicas dos botões. Nas janelas e no redimensionar é sempre
@@ -203,10 +205,39 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   }
 
   if (key === 'f1') return { kind: 'help' };
+  const nudge = nudgeShortcut(key, e.shiftKey);
+  if (nudge) return nudge;
   if (e.shiftKey) return key === 'escape' ? { kind: 'hide-window' } : null;
   if (key === 'delete' || key === 'backspace') return { kind: 'delete' };
   if (key === 'escape') return { kind: 'escape' };
   return null;
+}
+
+/** Passo das setas sem Ctrl/Alt: 1 px, ou 10 px com Shift. */
+export const NUDGE_STEP = 1;
+export const NUDGE_STEP_SHIFT = 10;
+
+function nudgeShortcut(key: string, shift: boolean): Shortcut | null {
+  const arrow = ARROWS[key];
+  if (!arrow) return null;
+  const step = shift ? NUDGE_STEP_SHIFT : NUDGE_STEP;
+  return { kind: 'nudge', dx: arrow.dx * step, dy: arrow.dy * step };
+}
+
+/** Controles de dentro do canvas que usam as setas (ou o foco) por conta própria. */
+const OWN_ARROWS =
+  'button, a[href], input, select, textarea, [contenteditable], [role="menu"], [role="menuitem"], [role="slider"], [role="tab"], [role="listbox"], [role="option"], [role="radio"], [role="tree"], [role="treeitem"], [tabindex]:not([tabindex="-1"])';
+
+/**
+ * As setas são do editor (movem a seleção) só com o foco no canvas ou em nenhum controle
+ * (`body`). Num campo, na Árvore, num menu, lista, abas ou qualquer controle que use setas, o
+ * teclado é dele.
+ */
+export function arrowsBelongToEditor(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return true;
+  if (target === document.body || target === document.documentElement) return true;
+  if (!target.closest('[data-canvas-area]')) return false;
+  return target.closest(OWN_ARROWS) === null;
 }
 
 /** Atalhos que valem também com o foco num campo de texto (os "de campo"). */

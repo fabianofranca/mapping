@@ -54,7 +54,12 @@ export function shortcutGroups(): readonly ShortcutGroup[] {
         row('shortcuts.delete', ['Delete'], ['Backspace']),
         row('shortcuts.escape', ['Esc']),
         row('shortcuts.escapeToPrimary', ['Esc']),
-        row('shortcuts.shiftClick', ['Shift', t('shortcuts.key.click')]),
+        row(
+          'shortcuts.shiftClick',
+          ['Shift', t('shortcuts.key.click')],
+          ['Ctrl', t('shortcuts.key.click')],
+        ),
+        row('shortcuts.nudge', ['←↑→↓'], ['Shift', '←↑→↓']),
         row('shortcuts.doubleClick', [t('shortcuts.key.doubleClick')]),
         row('shortcuts.toggleLock', combo(SHORTCUT_LABELS.toggleLock)),
         row('shortcuts.copyReference', combo(SHORTCUT_LABELS.copyReference)),

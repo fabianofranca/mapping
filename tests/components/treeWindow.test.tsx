@@ -200,6 +200,26 @@ describe('Árvore: seleção múltipla', () => {
     expect(onSelect).toHaveBeenCalledWith({ kind: 'marking', id: 'M1' });
   });
 
+  it('Ctrl+clique e Cmd+clique na linha juntam e tiram como o Shift+clique', async () => {
+    const harness = createHarness(sampleProject());
+    const onSelect = vi.fn();
+    withContext(harness, <TreeWindow onSelect={onSelect} />);
+    selectItems(harness.ui, [{ kind: 'marking', id: 'M1' }]);
+    const user = userEvent.setup();
+    await user.keyboard('{Control>}');
+    await user.click(rowOf('Fechadura'));
+    await user.keyboard('{/Control}');
+    await user.keyboard('{Meta>}');
+    await user.click(rowOf('Maçaneta'));
+    await user.keyboard('{/Meta}');
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(selectedItems(harness.ui).map((i) => i.id)).toEqual(['M1', 'M3', 'M2']);
+    await user.keyboard('{Control>}');
+    await user.click(rowOf('Fechadura'));
+    await user.keyboard('{/Control}');
+    expect(selectedItems(harness.ui).map((i) => i.id)).toEqual(['M1', 'M2']);
+  });
+
   it('o menu da linha tem "Selecionar com o conteúdo" e fecha ao escolher', async () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <TreeWindow onSelect={vi.fn()} />);

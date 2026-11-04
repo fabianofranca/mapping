@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
+import { NudgeSession } from './nudgeKeys';
 import { modalOpen } from '../ui/focus';
 import { projectIndex } from '../model';
 import {
@@ -33,6 +34,7 @@ import type { EditorDialogs } from './useEditorDialogs';
 import type { ProjectCommands } from './useProjectCommands';
 import {
   altNumbersAvailable,
+  arrowsBelongToEditor,
   isTextInput,
   reviewShortcutFor,
   shortcutFor,
@@ -327,7 +329,22 @@ export function useEditorShortcuts(
       }
     };
 
+    // As setas movem a seleção: apertar e soltar é um gesto; segurar soma passos no mesmo gesto.
+    const nudge = new NudgeSession(actions, () =>
+      existingItems(shown.peek(), peekSelectedItems(ui)),
+    );
+    const onNudge = (e: KeyboardEvent, dx: number, dy: number) => {
+      const busy = store.locked.peek() || review.proposalId.peek() !== null;
+      if (busy || !arrowsBelongToEditor(e.target) || canvas.current?.isInteracting()) {
+        return;
+      }
+      e.preventDefault();
+      nudge.step(e.key, dx, dy);
+    };
+
     const onKeyDown = (e: KeyboardEvent) => {
+      // Qualquer outra tecla (o Shift solto no meio, Ctrl+Z...) fecha o gesto das setas.
+      if (shortcutFor(e, altNumbers)?.kind !== 'nudge') nudge.end();
       if (e.defaultPrevented || !enabledRef.current) return;
       if (modalOpen.peek() > 0) return;
       if (review.proposalId.peek() !== null && !isTextInput(e.target)) {
@@ -340,6 +357,7 @@ export function useEditorShortcuts(
       }
       const shortcut = shortcutFor(e, altNumbers);
       if (!shortcut) return;
+      if (shortcut.kind === 'nudge') return onNudge(e, shortcut.dx, shortcut.dy);
       if (isTextInput(e.target) && !worksInTextInput(shortcut)) return;
       // Copiar: só assume o atalho com um item para copiar; senão o copiar nativo continua.
       if (
@@ -351,7 +369,15 @@ export function useEditorShortcuts(
       e.preventDefault();
       run(shortcut);
     };
+    const endNudge = () => nudge.end();
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', endNudge);
+    window.addEventListener('blur', endNudge);
+    return () => {
+      nudge.end();
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', endNudge);
+      window.removeEventListener('blur', endNudge);
+    };
   }, [editor, store, ui, canvas, actions, review, shown]);
 }

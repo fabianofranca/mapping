@@ -295,6 +295,19 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       dy: number,
     ): ActionResult =>
       finishGesture((base) => model.moveItems(base, items, dx, dy, settleOptions(base))),
+    /**
+     * Prévia do passo das setas (`nudgeItems`): `dx`, `dy` somados desde o começo do gesto, cada
+     * item no próprio espaço. Tudo ou nada, como o arrasto conjunto.
+     */
+    previewItemsNudge: (items: readonly model.ItemRef[], dx: number, dy: number) =>
+      store.updateGesture((p) => model.nudgeItems(p, items, dx, dy, { settle: false })),
+    /** Final do passo das setas: repete a operação com o último deslocamento válido e assenta. */
+    finishItemsNudge: (
+      items: readonly model.ItemRef[],
+      dx: number,
+      dy: number,
+    ): ActionResult =>
+      finishGesture((base) => model.nudgeItems(base, items, dx, dy, settleOptions(base))),
     commitGesture: () => store.commitGesture(),
     cancelGesture: () => store.cancelGesture(),
 

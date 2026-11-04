@@ -4,6 +4,14 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
+## Seleção múltipla — [Não lançado] (épico `epic/selecao-multipla`, PR do épico a abrir, MCP 0.13.0, schema v13)
+
+### Adicionado
+
+- **Ctrl+clique e Cmd+clique juntam e tiram itens da seleção**, como o Shift+clique, no canvas (inclusive sobre uma alça) e na Árvore. No macOS, o Ctrl+clique segue sendo o clique direito e não junta (use o Cmd+clique). Na revisão de propostas nenhum dos três vale, e Ctrl+roda continua sendo zoom.
+- **As setas do teclado movem a seleção:** `←↑→↓` move todos os itens selecionados 1 px e `Shift+←↑→↓` move 10 px, em cada item no espaço dele (pixels da imagem para marcação de container; unidades do canvas para marcação do canvas, flutuante e container). O container leva as marcações e a marcação de container leva as descendentes; a seta (o traço) não anda. É tudo ou nada: se algum item não puder andar (trancado, sairia do container, container passaria a sobrepor outro), nada se move, sem aviso. Apertar e soltar vira uma entrada no desfazer; segurar a tecla é um gesto só, fechado ao soltar. Só vale com o foco no canvas ou em nenhum controle, em Navegar e Desenhar; não vale em campo de texto, Árvore, menu, abas, somente leitura nem na revisão de propostas.
+- A lista de atalhos ganha "Mover a seleção" (setas; Shift+setas, 10 px) e o Shift+clique passa a citar Ctrl/Cmd.
+
 ## Zoom do projeto grande mais rápido — 2026-11-04 (épico `epic/zoom-rapido`, PR #434, MCP 0.13.0, schema v13)
 
 ### Alterado
