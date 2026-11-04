@@ -206,6 +206,12 @@ O fechamento do épico gravou no artefato o que dava (ver o histórico). Ficou s
 
 - **`LayerGroup`, guia e preview.** O selo da especialização sob `.layer-group-head` encolhe (`flex: 0 1 auto`, `min-width: 0`, `overflow: hidden`, `text-overflow: ellipsis`) e leva o nome inteiro no `title`; o nome da camada e a meta têm prioridade. O guia deve descrever o selo cortado com dica, e o preview, um cabeçalho estreito com selo longo ("Material 3 (Compose)"). Sem token nem ícone novo. Prova: `src/theme/details.css`, `src/ui/AnnotationsPanel.tsx`, `tests/e2e/detailsLayerTag.spec.ts`.
 
+### Nomes acessíveis (`epic/selo-nomes-acessiveis`, SN2)
+
+- **`LayerGroup`/lista de camadas e `Menu`, guia.** O ⋮ da camada passa a ser um menu completo (`Popover` com `role="menu"` liga `useFocusFirstItem` e `menuKeyDown`; itens `menuitem`; foco no primeiro habilitado, ↑/↓ circulam, Esc devolve o foco ao ⋮). O ✓ "Tornar ativa" tem nome e dica fixos "Tornar ativa: {camada}", com `aria-pressed` na ativa. Arquivos: `src/ui/Popover.tsx`, `src/ui/LayersPanel.tsx`.
+- **`TreeRow`, `MarkingPanel` e o painel da imagem/seta.** Os cadeados têm nome e dica iguais ("Trancar {nome}", "Trancar marcação", "Trancar imagem", "Trancar seta") e o estado só no `aria-pressed` (o ícone continua mostrando aberto/fechado). Arquivos: `src/ui/MarkingTree.tsx`, `src/ui/MarkingPanel.tsx`, `src/ui/SelectionPanel.tsx`, `src/ui/ArrowPanel.tsx`.
+- **`RefCell` e `ReferenceField`, guia.** O nome acessível do botão da referência começa pelo texto visível: "{valor} {camada do alvo}: {campo}", "Escolher: {campo}" e "Referência quebrada: {campo}" (`refButtonName` em `src/ui/typedText.ts`). Sem token nem ícone novo.
+
 ### Previews não mostram o estado novo
 
 A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, mas só acrescentou o estado novo ao preview de seis deles (decisão de escopo do dono). Continuam mostrando o estado antigo os previews de:

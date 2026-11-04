@@ -90,7 +90,6 @@ export function ArrowPanel({
           <IconButton
             icon={arrow.locked ? 'lock' : 'unlock'}
             label={t('arrow.lock')}
-            tooltip={t(arrow.locked ? 'arrow.unlock' : 'arrow.lock')}
             shortcut={SHORTCUT_LABELS.toggleLock}
             pressed={arrow.locked}
             disabled={readOnly}

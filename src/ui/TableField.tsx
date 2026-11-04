@@ -32,7 +32,7 @@ import {
 import { linkedCellTargets, type LinkedTargets } from './linkedRef';
 import { RefCell } from './RefCell';
 import type { ActionResult } from '../store/history';
-import { issueMessage, issuesOf } from './typedText';
+import { issueMessage, issuesOf, refButtonName } from './typedText';
 
 // DataGrid do DS 2.0 para campos `table`: coluna # numerada, alça de arraste (P6),
 // edição na célula e menu ⋯ por linha.
@@ -420,9 +420,8 @@ export function TableEditor({
                             class="ref-control is-empty"
                             disabled
                             title={t('typedForm.refUnavailable')}
-                            aria-label={t('ref.fieldButton', {
-                              field: `${fieldLabel(column)} (${name})`,
-                              value: t('ref.choosePlaceholder'),
+                            aria-label={refButtonName(`${fieldLabel(column)} (${name})`, {
+                              kind: 'empty',
                             })}
                           >
                             <Icon name="search" />

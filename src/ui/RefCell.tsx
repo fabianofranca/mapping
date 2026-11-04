@@ -17,7 +17,7 @@ import { IconButton } from './controls';
 import { classes } from './controls/classes';
 import { Icon } from './icons';
 import { RefPicker } from './RefPicker';
-import { labelTexts } from './typedText';
+import { labelTexts, refButtonName } from './typedText';
 
 // Célula de uma coluna `ref` de tabela (ME4, decisão (e)): a versão compacta do `RefField`.
 // Mostra o alvo (ou "Escolher…", ou a referência quebrada) e abre o seletor compacto (também
@@ -110,7 +110,14 @@ export function RefCell({
         aria-haspopup="dialog"
         aria-expanded={picking}
         aria-invalid={invalid || undefined}
-        aria-label={t('ref.fieldButton', { field: label, value: text })}
+        aria-label={refButtonName(
+          label,
+          !hasValue
+            ? { kind: 'empty' }
+            : broken || !target
+              ? { kind: 'broken' }
+              : { kind: 'value', value: text },
+        )}
         aria-keyshortcuts="Control+B"
         title={`${tip}\n${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
         disabled={readOnly}

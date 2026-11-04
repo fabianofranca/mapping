@@ -378,7 +378,7 @@ describe('Detalhes — escolher e ir até o alvo (F2)', () => {
       );
     });
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: /^dado: / }));
+    await user.click(screen.getByRole('button', { name: /: dado$/ }));
     await vi.waitFor(() => {
       const el = document.querySelector('dialog');
       if (!el?.contains(document.activeElement)) throw new Error('o seletor não abriu');

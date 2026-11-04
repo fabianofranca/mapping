@@ -9,6 +9,9 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 ### Corrigido
 
 - O selo da especialização no cabeçalho de camada dos Detalhes encolhe com reticências e mostra o nome inteiro na dica: a 900 px, "Material 3 (Compose)" não passa mais da borda do painel, não fica sob o **+** e o painel não ganha barra horizontal. O nome da camada e a meta (`· Ativa · N`) têm prioridade; os selos curtos e a janela larga ficam como antes (#371).
+- Para leitor de tela e comando de voz, o menu ⋮ da camada é um menu de verdade: os itens (**Subir camada**, **Descer camada**, **Excluir camada**) são `menuitem`, o foco vai ao primeiro habilitado ao abrir, ↑/↓ circulam entre os habilitados e Esc fecha devolvendo o foco ao ⋮. A dica do **Excluir camada** desabilitado continua aparecendo (#372).
+- Os cadeados da Árvore, da marcação e da imagem e o ✓ **Tornar ativa** têm nome fixo, igual à dica, e o estado só no `aria-pressed` ("Trancar Botão Pagar", "Trancar marcação", "Trancar imagem"); o cadeado da seta (**Trancar seta**) segue o mesmo padrão. Cada **Tornar ativa** diz a camada ("Tornar ativa: Componentes") (#372).
+- O botão da referência (campo, célula de tabela e os botões desabilitados do formulário sem projeto) tem o nome começando pelo texto que mostra: "User.name Modelo de dados: Destino", "Escolher: Destino" e "Referência quebrada: Destino" (WCAG 2.5.3). A dica e o seletor não mudam (#372).
 
 ## Testador da nuvem por passo — 2026-11-04 (épico `epic/testador-por-passo`, PR #429, MCP 0.13.0, schema v13)
 
