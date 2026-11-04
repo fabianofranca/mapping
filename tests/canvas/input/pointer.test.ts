@@ -1975,3 +1975,207 @@ describe('PointerInput: setas (ME4)', () => {
     });
   });
 });
+
+// Seleção por retângulo (SM2): Shift+arrasto soma à seleção os itens inteiramente dentro.
+describe('PointerInput: seleção por retângulo (SM2)', () => {
+  type S = ReturnType<typeof setup>;
+  const SHIFT = { shift: true };
+  /** Shift+arrasto de `from` a `to` em alguns passos, soltando em `to`. */
+  const shiftDrag = (
+    s: S,
+    from: [number, number],
+    to: [number, number],
+    options: { kind?: string; button?: number; shift?: boolean } = SHIFT,
+  ) => {
+    s.fire('pointerdown', ...from, options);
+    for (const f of [0.5, 1]) {
+      s.fire(
+        'pointermove',
+        from[0] + (to[0] - from[0]) * f,
+        from[1] + (to[1] - from[1]) * f,
+        options,
+      );
+    }
+    s.fire('pointerup', ...to, options);
+  };
+  const ids = (s: S) => peekSelectedItems(s.ui).map((i) => `${i.kind}:${i.id}`);
+  // Em volta de I1 (0..1000 × 0..800) e I2 (1100..1600 × 0..500).
+  const AROUND_BOTH: [[number, number], [number, number]] = [
+    [-50, -50],
+    [1700, 900],
+  ];
+
+  it('soma os dois containers e o principal atual continua', () => {
+    const s = setup();
+    s.ui.selection.value = { kind: 'marking', id: 'M3' };
+    shiftDrag(s, ...AROUND_BOTH);
+    expect(new Set(ids(s))).toEqual(new Set(['marking:M3', 'image:I1', 'image:I2']));
+    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M3' });
+    s.cleanup();
+  });
+
+  it('sem seleção antes, o principal é o primeiro na ordem da Árvore', () => {
+    const s = setup();
+    shiftDrag(s, ...AROUND_BOTH);
+    expect(new Set(ids(s))).toEqual(new Set(['image:I1', 'image:I2']));
+    expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'I1' });
+    s.cleanup();
+  });
+
+  it('o retângulo aparece em state.marquee durante o arrasto e some ao soltar', () => {
+    const s = setup();
+    s.fire('pointerdown', 10, 20, SHIFT);
+    s.fire('pointermove', 60, 90, SHIFT);
+    expect(s.state.marquee.value).toEqual({ x: 10, y: 20, width: 50, height: 70 });
+    s.fire('pointermove', 5, 5, SHIFT);
+    expect(s.state.marquee.value).toEqual({ x: 5, y: 5, width: 5, height: 15 });
+    s.input.updateCursor(null);
+    expect(s.container.style.cursor).toBe('crosshair');
+    s.fire('pointerup', 5, 5, SHIFT);
+    expect(s.state.marquee.value).toBeNull();
+    s.cleanup();
+  });
+
+  it('sem item dentro a seleção não muda (mesmos objetos)', () => {
+    const s = setup();
+    s.ui.selection.value = { kind: 'marking', id: 'M1' };
+    const { value: selection } = s.ui.selection;
+    shiftDrag(s, [3000, 3000], [3100, 3100]);
+    expect(s.ui.selection.value).toBe(selection);
+    expect(s.ui.selectionGroup.value).toBeNull();
+    s.cleanup();
+  });
+
+  it('nunca tira um item já selecionado', () => {
+    const s = setup();
+    s.ui.selection.value = { kind: 'image', id: 'I1' };
+    shiftDrag(s, ...AROUND_BOTH);
+    expect(new Set(ids(s))).toEqual(new Set(['image:I1', 'image:I2']));
+    expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'I1' });
+    s.cleanup();
+  });
+
+  it('não muda o projeto nem ganha entrada no desfazer', () => {
+    const s = setup();
+    const before = s.store.project.peek();
+    shiftDrag(s, ...AROUND_BOTH);
+    expect(s.store.project.peek()).toBe(before);
+    expect(s.store.canUndo.value).toBe(false);
+    s.cleanup();
+  });
+
+  it('abaixo do limiar de arrasto vale o Shift+clique de sempre', () => {
+    const s = setup();
+    s.fire('pointerdown', 250, 250, SHIFT);
+    s.fire('pointermove', 252, 251, SHIFT);
+    expect(s.state.marquee.value).toBeNull();
+    s.fire('pointerup', 252, 251, SHIFT);
+    expect(ids(s)).toEqual(['marking:M2']);
+    s.cleanup();
+  });
+
+  it('Esc (cancelInteraction) cancela: seleção intacta, retângulo some e o resto do arrasto é ignorado', () => {
+    const s = setup();
+    s.ui.selection.value = { kind: 'marking', id: 'M3' };
+    const { value: selection } = s.ui.selection;
+    s.fire('pointerdown', ...AROUND_BOTH[0], SHIFT);
+    s.fire('pointermove', ...AROUND_BOTH[1], SHIFT);
+    expect(s.state.marquee.value).not.toBeNull();
+    expect(s.input.cancelInteraction()).toBe(true);
+    expect(s.state.marquee.value).toBeNull();
+    s.fire('pointermove', 1600, 800, SHIFT);
+    expect(s.state.marquee.value).toBeNull();
+    s.fire('pointerup', 1600, 800, SHIFT);
+    expect(s.ui.selection.value).toBe(selection);
+    expect(s.ui.selectionGroup.value).toBeNull();
+    expect(s.input.isInteracting()).toBe(false);
+    s.cleanup();
+  });
+
+  it('pointercancel não muda a seleção e o retângulo some', () => {
+    const s = setup();
+    s.fire('pointerdown', ...AROUND_BOTH[0], SHIFT);
+    s.fire('pointermove', ...AROUND_BOTH[1], SHIFT);
+    s.fire('pointercancel', ...AROUND_BOTH[1], SHIFT);
+    expect(s.state.marquee.value).toBeNull();
+    expect(s.ui.selection.value).toBeNull();
+    s.cleanup();
+  });
+
+  it('Navegar: Shift+arrasto sobre o item selecionado ainda o move', () => {
+    const s = setup();
+    s.ui.selection.value = { kind: 'marking', id: 'M1' };
+    shiftDrag(s, [400, 400], [500, 450]);
+    expect(s.markingRect('M1')).toEqual({ x: 200, y: 150, width: 600, height: 500 });
+    expect(s.state.marquee.value).toBeNull();
+    s.cleanup();
+  });
+
+  it('Navegar: Shift+arrasto na alça ainda redimensiona', () => {
+    const s = setup();
+    s.ui.selection.value = { kind: 'marking', id: 'M2' };
+    shiftDrag(s, [300, 300], [340, 360]);
+    expect(s.markingRect('M2')).toEqual({ x: 200, y: 200, width: 140, height: 160 });
+    s.cleanup();
+  });
+
+  it('Desenhar: Shift+arrasto não cria marcação, só seleciona', () => {
+    const s = setup();
+    s.ui.mode.value = 'draw';
+    const count = s.store.project.peek()?.markings.length;
+    shiftDrag(s, [190, 190], [310, 310]);
+    expect(s.store.project.peek()?.markings.length).toBe(count);
+    expect(s.state.draft.value).toBeNull();
+    expect(ids(s)).toEqual(['marking:M2']);
+    s.cleanup();
+  });
+
+  it('Ctrl/Cmd+arrasto não ganha o retângulo (pan)', () => {
+    const s = setup();
+    s.drag([700, 700], [750, 730]);
+    expect(s.viewport.viewport.value).toMatchObject({ x: 50, y: 30 });
+    const c = setup();
+    c.fire('pointerdown', 700, 700, { ctrl: true });
+    c.fire('pointermove', 750, 730, { ctrl: true });
+    expect(c.state.marquee.value).toBeNull();
+    c.fire('pointerup', 750, 730, { ctrl: true });
+    s.cleanup();
+    c.cleanup();
+  });
+
+  it('Espaço, botão do meio e toque fazem pan, sem retângulo', () => {
+    const space = setup();
+    space.setSpace(true);
+    shiftDrag(space, [700, 700], [750, 730]);
+    expect(space.viewport.viewport.value).toMatchObject({ x: 50, y: 30 });
+    expect(space.ui.selection.value).toBeNull();
+    space.cleanup();
+
+    const middle = setup();
+    shiftDrag(middle, [700, 700], [750, 730], { shift: true, button: 1 });
+    expect(middle.viewport.viewport.value).toMatchObject({ x: 50, y: 30 });
+    middle.cleanup();
+
+    const touch = setup();
+    shiftDrag(touch, [700, 700], [750, 730], { shift: true, kind: 'touch' });
+    expect(touch.viewport.viewport.value).toMatchObject({ x: 50, y: 30 });
+    expect(touch.ui.selection.value).toBeNull();
+    touch.cleanup();
+  });
+
+  it('revisão de propostas: sem retângulo (pan)', () => {
+    const s = setup();
+    s.setReviewing(true);
+    shiftDrag(s, [700, 700], [750, 730]);
+    expect(s.viewport.viewport.value).toMatchObject({ x: 50, y: 30 });
+    expect(s.state.marquee.value).toBeNull();
+    s.cleanup();
+  });
+
+  it('somente leitura: o retângulo vale', () => {
+    const s = setup(true);
+    shiftDrag(s, ...AROUND_BOTH);
+    expect(new Set(ids(s))).toEqual(new Set(['image:I1', 'image:I2']));
+    s.cleanup();
+  });
+});

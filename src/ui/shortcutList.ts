@@ -59,6 +59,7 @@ export function shortcutGroups(): readonly ShortcutGroup[] {
           ['Shift', t('shortcuts.key.click')],
           ['Ctrl', t('shortcuts.key.click')],
         ),
+        row('shortcuts.selectRect', ['Shift', t('shortcuts.key.drag')]),
         row('shortcuts.nudge', ['←↑→↓'], ['Shift', '←↑→↓']),
         row('shortcuts.doubleClick', [t('shortcuts.key.doubleClick')]),
         row('shortcuts.toggleLock', combo(SHORTCUT_LABELS.toggleLock)),

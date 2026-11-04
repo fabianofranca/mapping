@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addAnnotation, createArrow, removeLayer, removeMarking } from '../../src/model';
 import {
+  addSelectedItems,
   collapseTree,
   createEditorUi,
   existingItems,
@@ -268,5 +269,47 @@ describe('estado da UI: setas (ME4)', () => {
     expect(ui.collapsedTree.value.has(treeKey('marking', 'M1'))).toBe(false);
     expect(ui.collapsedTree.value.has(treeKey('image', 'I1'))).toBe(false);
     expect(revealInTree(ui, p, { kind: 'arrow', id: 'R9' })).toBe(false);
+  });
+
+  describe('addSelectedItems (seleção por retângulo)', () => {
+    const m = (id: string) => ({ kind: 'marking' as const, id });
+
+    it('soma sem tirar nada e o principal atual continua', () => {
+      const ui = createEditorUi();
+      selectItems(ui, [m('a'), m('b')]);
+      addSelectedItems(ui, [m('c'), m('d')]);
+      expect(peekSelectedItems(ui)).toEqual([m('c'), m('d'), m('a'), m('b')]);
+      expect(ui.selection.value).toEqual(m('b'));
+    });
+
+    it('sem seleção antes, o principal é o primeiro dos novos', () => {
+      const ui = createEditorUi();
+      addSelectedItems(ui, [m('a'), m('b'), m('c')]);
+      expect(ui.selection.value).toEqual(m('a'));
+      expect(
+        peekSelectedItems(ui)
+          .map((i) => i.id)
+          .sort(),
+      ).toEqual(['a', 'b', 'c']);
+    });
+
+    it('ignora o que já está selecionado', () => {
+      const ui = createEditorUi();
+      selectItems(ui, [m('a'), m('b')]);
+      addSelectedItems(ui, [m('a'), m('c')]);
+      expect(peekSelectedItems(ui)).toEqual([m('c'), m('a'), m('b')]);
+      expect(ui.selection.value).toEqual(m('b'));
+    });
+
+    it('lista efetivamente vazia não escreve nada', () => {
+      const ui = createEditorUi();
+      selectItems(ui, [m('a'), m('b')]);
+      const { value: selection } = ui.selection;
+      const { value: group } = ui.selectionGroup;
+      addSelectedItems(ui, []);
+      addSelectedItems(ui, [m('a')]);
+      expect(ui.selection.value).toBe(selection);
+      expect(ui.selectionGroup.value).toBe(group);
+    });
   });
 });

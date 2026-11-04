@@ -69,6 +69,7 @@ export const TOKENS: CanvasTokens = {
   line: '#fefefe',
   halo: 'rgba(1, 2, 3, 0.7)',
   select: '#0057b8',
+  selectFill: 'rgba(0, 87, 184, 0.15)',
   selectSecondary: '#3b7ad8',
   invalid: '#cc0000',
   canvasMarking: '#5a3fc1',
@@ -210,6 +211,7 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     review: null,
     arrows: visibleArrowShapes(store.project.peek(), derived.markingVisibility.peek()),
     arrowDraft: null,
+    marquee: null,
     ...overrides,
   };
 }

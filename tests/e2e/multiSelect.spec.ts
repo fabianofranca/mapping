@@ -1,8 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
-import { createProject, drag, exportMapping, setMode, type Rect } from './helpers';
+import {
+  createProject,
+  drag,
+  exportMapping,
+  setMode,
+  type Point,
+  type Rect,
+} from './helpers';
 
 // Seleção múltipla (SM1): Ctrl/Cmd+clique junta itens e as setas movem a seleção, com uma
-// entrada de desfazer por toque.
+// entrada de desfazer por toque. SM2: Shift+arrasto seleciona por retângulo.
 
 /** Margem do enquadramento em volta de tudo, em px de tela (`FIT_PADDING`). */
 const FIT_PADDING = 24;
@@ -21,10 +28,18 @@ async function closeExport(page: Page): Promise<void> {
   await expect(page.getByRole('dialog')).toBeHidden();
 }
 
-test('Ctrl/Cmd+clique junta dois itens e a seta move a seleção em uma entrada de desfazer', async ({
-  page,
-}) => {
-  await createProject(page, 'Setas');
+/** Cria um projeto com um container e duas marcações dentro dele; devolve os pontos de tela. */
+async function twoMarkings(
+  page: Page,
+  name: string,
+): Promise<{
+  spots: Point[];
+  sizeW: number;
+  sizeH: number;
+  centers: Point[];
+  screen: Rect;
+}> {
+  await createProject(page, name);
   const host = page.locator('.canvas-host');
   await addContainer(page, 'Tela');
   const fitsBefore = Number((await host.getAttribute('data-fits')) ?? 0);
@@ -58,6 +73,13 @@ test('Ctrl/Cmd+clique junta dois itens e a seta move a seleção em uma entrada 
   }
   await setMode(page, 'Navegar');
   const centers = spots.map((s) => ({ x: s.x + sizeW / 2, y: s.y + sizeH / 2 }));
+  return { spots, sizeW, sizeH, centers, screen };
+}
+
+test('Ctrl/Cmd+clique junta dois itens e a seta move a seleção em uma entrada de desfazer', async ({
+  page,
+}) => {
+  const { centers } = await twoMarkings(page, 'Setas');
   const before = (await exportMapping(page)).mapping.markings;
   expect(before).toHaveLength(2);
   await closeExport(page);
@@ -83,4 +105,69 @@ test('Ctrl/Cmd+clique junta dois itens e a seta move a seleção em uma entrada 
       return rects;
     })
     .toEqual(before.map((m) => m.rect));
+});
+
+/** Shift+arrasto de `from` a `to` (move em passos, para passar do limiar). */
+async function shiftDrag(
+  page: Page,
+  from: Point,
+  to: Point,
+  release = true,
+): Promise<void> {
+  await page.keyboard.down('Shift');
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 5 });
+  await page.mouse.move(to.x, to.y, { steps: 5 });
+  if (release) {
+    await page.mouse.up();
+    await page.keyboard.up('Shift');
+  }
+}
+
+test('Shift+arrasto em volta de duas marcações seleciona as duas, no Navegar e no Desenhar', async ({
+  page,
+}) => {
+  const { spots, sizeW, sizeH, centers } = await twoMarkings(page, 'Retângulo');
+  const [s0, s1] = spots;
+  if (!s0 || !s1) throw new Error('sem pontos');
+  // Longe das alças do item já selecionado (22 px de alcance), senão o gesto redimensiona.
+  const around = { x: s0.x - 40, y: s0.y - 40 };
+  const end = { x: s1.x + sizeW + 40, y: s1.y + sizeH + 40 };
+  const count = async (): Promise<number> => {
+    const n = (await exportMapping(page)).mapping.markings.length;
+    await closeExport(page);
+    return n;
+  };
+
+  await page.mouse.click(centers[0]?.x ?? 0, centers[0]?.y ?? 0);
+  await expect(page.getByText('2 itens selecionados')).toBeHidden();
+  await shiftDrag(page, around, end);
+  await expect(page.getByText('2 itens selecionados').first()).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await setMode(page, 'Desenhar');
+  expect(await count()).toBe(2);
+  await shiftDrag(page, around, end);
+  await expect(page.getByText('2 itens selecionados').first()).toBeVisible();
+  expect(await count()).toBe(2);
+});
+
+test('Esc no meio do Shift+arrasto cancela o retângulo e não muda a seleção', async ({
+  page,
+}) => {
+  const { spots, sizeW, sizeH, centers } = await twoMarkings(page, 'Cancelar');
+  const [s0, s1] = spots;
+  if (!s0 || !s1) throw new Error('sem pontos');
+  await page.mouse.click(centers[0]?.x ?? 0, centers[0]?.y ?? 0);
+  await shiftDrag(
+    page,
+    { x: s0.x - 10, y: s0.y - 10 },
+    { x: s1.x + sizeW + 10, y: s1.y + sizeH + 10 },
+    false,
+  );
+  await page.keyboard.press('Escape');
+  await page.mouse.up();
+  await page.keyboard.up('Shift');
+  await expect(page.getByText('2 itens selecionados')).toBeHidden();
 });

@@ -209,6 +209,11 @@ A lista de atalhos (`src/ui/shortcutList.ts`) mudou e a seção `Atalhos.md` do 
 - **Linha nova "Mover a seleção":** `←↑→↓` move 1 px e `Shift+←↑→↓` move 10 px (no espaço próprio de cada item).
 - **Linha existente do Shift+clique:** passa a citar Ctrl/Cmd (`Ctrl+clique` fora do macOS e `Cmd+clique` no macOS juntam e tiram itens da seleção como o Shift+clique). No macOS o `Ctrl+clique` segue sendo o clique direito e não junta.
 
+### Seleção por retângulo (`epic/selecao-multipla`, fase SM2; etapa #296)
+
+- **`Canvas.md`:** o retângulo de seleção do Shift+arrasto (Navegar e Desenhar): borda tracejada com `cv-select` e preenchimento com o token novo `cv-select-fill` (rgba translúcido do azul de seleção, o mesmo nos dois temas). Sem prévia ao vivo dos itens; fica acima das imagens, na mesma camada do rascunho de marcação. Acrescentar `cv-select-fill` à tabela de tokens do canvas.
+- **`Atalhos.md`:** linha nova "Selecionar por retângulo" com `Shift+arrasto` (grupo de edição, antes de "Mover a seleção").
+
 ### Previews não mostram o estado novo
 
 A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, mas só acrescentou o estado novo ao preview de seis deles (decisão de escopo do dono). Continuam mostrando o estado antigo os previews de:
