@@ -188,6 +188,14 @@ export function useEditorShortcuts(
       return true;
     };
 
+    /**
+     * Envolver não age na tecla repetida (segurar o Ctrl+G aninharia um pai por repetição) nem
+     * com um gesto de ponteiro em andamento (o store recusaria e o aviso apareceria no meio do
+     * arrasto). O `preventDefault` já foi chamado: o "localizar próximo" do navegador fica fora.
+     */
+    const wrapIgnored = (shortcut: Shortcut, e: KeyboardEvent): boolean =>
+      shortcut.kind === 'wrap' && (e.repeat || canvas.current?.isInteracting() === true);
+
     const run = (shortcut: Shortcut) => {
       switch (shortcut.kind) {
         case 'wrap':
@@ -379,6 +387,7 @@ export function useEditorShortcuts(
       if (isTextInput(e.target) && !worksInTextInput(shortcut)) return;
       if (!applies(shortcut)) return;
       e.preventDefault();
+      if (wrapIgnored(shortcut, e)) return;
       run(shortcut);
     };
     const endNudge = () => nudge.end();

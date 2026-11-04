@@ -13,6 +13,13 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 - **Envolver com um item só**: uma marcação ou um container sozinhos podem ser envolvidos pelo atalho e pelos menus, com o mesmo resultado de hoje (margem de 8 px, limitada ao container e ao pai atual).
 - **MCP 0.14.0: operação `wrap_items`** em `plan_changes` e `propose_changes`: cria uma marcação em volta de marcações e containers (`items`), o mesmo resultado do **Envolver** da app, com `as` (apelido para as operações seguintes do lote), `name` e `source` opcionais. Notas e setas na lista são ignoradas com aviso `ignored-argument`; sem nada que entre, falha com `invalid-parent` e um `detail`. A revisão mostra a criação de uma marcação, como um `create_marking`.
 
+### Corrigido
+
+- **Segurar o Ctrl+G (Cmd+G) não empilha pais:** a tecla repetida não envolve de novo (antes, cada repetição envolvia a marcação nova que acabou de ficar selecionada) e o atalho não age com um arrasto ou redimensionamento em andamento (antes, o aviso "Não foi possível envolver" aparecia no meio do gesto). O "localizar próximo" do navegador continua fora do caminho.
+- **Envolver na imagem fora de uma pasta:** o ⋯ da linha da imagem na Árvore e o clique direito na imagem mostram **Envolver** (a imagem é um container) também num projeto aberto fora de uma pasta, sem trazer as entradas de copiar, que dependem de pasta.
+- **MCP: `wrap_items` em empate de retângulo.** Quando o item envolvido preenche o container, a marcação nova fica com o mesmo retângulo dele e, ao aplicar a proposta, a hierarquia pode sair inversa da do plano (a nova filha do item). O comportamento não mudou; a documentação (`docs/MCP.md`, `docs/AGENT-GUIDE.md`, `examples/workspace/AGENTS.md`) passa a dizer isso e um teste o fixa.
+- **Roteiros R12.13 e R12.20a** (`docs/TESTING.md`): o R12.13 manda limpar os campos da nota (que nasce com "Título" e "Escreva aqui o comentário.") antes de digitar e cita o texto certo da aba **Componentes**; o R12.20a descreve o que o `wrap_items` faz com marcações de containers diferentes (envolve os containers).
+
 ## Seleção múltipla — 2026-11-04 (épico `epic/selecao-multipla`, PR #448, MCP 0.13.0, schema v13)
 
 ### Adicionado
