@@ -83,8 +83,9 @@ describe('abrir e fechar janelas', () => {
     expect(toolWindowByNumber(2)).toBe('layers');
     expect(toolWindowByNumber(5)).toBe('incomplete');
     expect(toolWindowByNumber(6)).toBe('diagnostics');
-    // O 8 ficou vago quando a paleta da B3 virou aba do Catálogo (B5).
-    expect(toolWindowByNumber(8)).toBeNull();
+    // O 8 ficou vago quando a paleta da B3 virou aba do Catálogo (B5); a etapa #486 o deu à
+    // janela Avisos.
+    expect(toolWindowByNumber(8)).toBe('notices');
     expect(toolWindowByNumber(9)).toBe('catalog');
     expect(toolWindowByNumber(10)).toBeNull();
   });

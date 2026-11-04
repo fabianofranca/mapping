@@ -182,6 +182,7 @@ describe('janela inferior: abas e faixa', () => {
     expect(tabs.map((tab) => tab.textContent)).toEqual([
       t('view.list'),
       t('incomplete.title'),
+      t('notices.title'),
       t('diagnostics.title'),
       t('proposals.title'),
     ]);

@@ -5,6 +5,7 @@ import {
   acceptedPending,
   buildIncompleteList,
   buildListing,
+  buildNoticeList,
   changeStatus,
   changeType,
   checkRemoteImageUrl,
@@ -18,6 +19,8 @@ import {
   levelType,
   markingLockStates,
   markingVisibility,
+  noticeCounts,
+  noticedCount,
   previewProject,
   projectIndex,
   projectIssues,
@@ -46,6 +49,8 @@ import {
   type ListedImage,
   type MarkingLockState,
   type MarkingVisibility,
+  type NoticeCounts,
+  type NoticeGroup,
   type PatchResult,
   type Project,
   type Proposal,
@@ -94,6 +99,12 @@ export interface EditorDerived {
   readonly incompleteList: ReadonlySignal<readonly IncompleteImage[]>;
   /** Quantas anotações estão incompletas no projeto (todas as camadas). */
   readonly incompleteCount: ReadonlySignal<number>;
+  /** Avisos da especialização com as anotações afetadas, para a janela Avisos (etapa #486). */
+  readonly noticeList: ReadonlySignal<readonly NoticeGroup[]>;
+  /** Contagens de anotações com aviso (por `kind` e no total), com os filtros da janela. */
+  readonly noticeCounts: ReadonlySignal<NoticeCounts>;
+  /** Quantas anotações têm algum aviso (aba da janela e barra de status; sem filtros). */
+  readonly noticedCount: ReadonlySignal<number>;
   /** Componentes das especializações aplicadas ao projeto (vazio enquanto não carregam). */
   readonly catalog: ReadonlySignal<ComponentCatalog>;
   /**
@@ -434,6 +445,32 @@ export function createEditorDerived(
 
   const incompleteCount = computed(() => issues.value.size);
 
+  // Avisos da especialização (etapa #486): lidos de `model/noticeList.ts`, memoizado pela versão
+  // do projeto; só a escolha dos filtros e das camadas visíveis é recalculada, nunca pan ou zoom.
+  const noticeFilters = computed(() => ({
+    inUseOnly: ui.noticesInUseOnly.value,
+    onlyLayers: ui.noticesVisibleOnly.value ? visible.value : undefined,
+  }));
+  const noticeList = computed((): readonly NoticeGroup[] => {
+    const p = project.value;
+    if (!p) return [];
+    return buildNoticeList(p, { ...noticeFilters.value, kind: ui.noticeKind.value });
+  });
+  const noticeCountsSignal = computed((): NoticeCounts => {
+    const p = project.value;
+    if (!p)
+      return {
+        total: 0,
+        byKind: { removed: 0, deprecated: 0, diverges: 0, pending: 0 },
+        present: [],
+      };
+    return noticeCounts(p, noticeFilters.value);
+  });
+  const noticedCountSignal = computed(() => {
+    const p = project.value;
+    return p ? noticedCount(p) : 0;
+  });
+
   let lastOrigins = NO_IMAGE_ORIGINS;
   const remoteImageOrigins = computed((): readonly RemoteImageOrigin[] => {
     const policy = {
@@ -544,6 +581,9 @@ export function createEditorDerived(
     listing,
     incompleteList,
     incompleteCount,
+    noticeList,
+    noticeCounts: noticeCountsSignal,
+    noticedCount: noticedCountSignal,
     catalog: components.catalog,
     componentScenes: scenes,
     floatingMarkings,

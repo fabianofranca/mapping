@@ -16,6 +16,7 @@ import {
   useCopyErrors,
 } from '../ui/DiagnosticsView';
 import { IncompleteView } from '../ui/IncompleteView';
+import { NoticesView } from '../ui/NoticesView';
 import { ListView } from '../ui/ListView';
 import { LayersWindow } from '../ui/LayersWindow';
 import { ToolStrip } from '../ui/ToolStrip';
@@ -82,6 +83,18 @@ function Window({
       return (
         <ToolWindow id={id}>
           <IncompleteView onGoToAnnotation={goTo} />
+        </ToolWindow>
+      );
+    }
+    case 'notices': {
+      // Ir até a anotação precisa do painel de Detalhes à vista (como em Incompletas).
+      const goTo: EditorPanelProps['onGoToAnnotation'] = (annotation) => {
+        openToolWindow('details');
+        panel.onGoToAnnotation(annotation);
+      };
+      return (
+        <ToolWindow id={id}>
+          <NoticesView onGoToAnnotation={goTo} />
         </ToolWindow>
       );
     }

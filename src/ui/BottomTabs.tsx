@@ -7,12 +7,13 @@ import { openToolWindow } from './toolWindowLayout';
 import { toolWindowMeta, windowBadge, windowsOfSide } from './toolWindowMeta';
 
 /**
- * Abas da janela inferior (Lista | Incompletas | Diagnóstico). Incompletas mostra
- * quantas anotações estão pendentes; Diagnóstico, o ponto de alerta de erro novo (B4).
+ * Abas da janela inferior (Lista | Incompletas | Avisos | Diagnóstico | Propostas). Incompletas mostra
+ * quantas anotações estão pendentes; Avisos, quantas têm aviso da especialização; Diagnóstico, o ponto de alerta de erro novo (B4).
  */
 export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
   const { derived, review } = useEditor();
   const incomplete = derived.incompleteCount.value;
+  const noticed = derived.noticedCount.value;
   const fresh = review.derived.freshIds.value.length;
   const unseen = diagnosticsUnseen.value;
 
@@ -23,7 +24,7 @@ export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
       id,
       label: meta.tab?.() ?? title,
       title,
-      ...windowBadge(id, incomplete, fresh),
+      ...windowBadge(id, incomplete, fresh, noticed),
       alert: id === 'diagnostics' && unseen,
     };
   });
