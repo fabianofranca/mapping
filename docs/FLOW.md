@@ -10,6 +10,8 @@ As regras estão no `CLAUDE.md` ("Fluxo automatizado"); aqui ficam só as mensag
 Crie uma issue roadmap (ou bug, se for defeito): <ideia ou problema>. Origem: <de onde veio>.
 ```
 
+Para um bug, o agente procura antes uma issue igual ou que o agrupe e põe o rótulo de severidade (`severity: high`, `severity: medium` ou `severity: low`), como diz o `CLAUDE.md` ("Bugs e evidência visual"); a mensagem não precisa pedir.
+
 2. Detalhamento (Fable ou Opus):
 
 ```text

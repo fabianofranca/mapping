@@ -207,6 +207,8 @@ Limites de imagem: por `base64`, até 16 MB por imagem; maiores vão por `file` 
 - **média**: há contorno, mas quem não leu este guia tropeça.
 - **baixa**: cosmético ou texto.
 
+Na issue `bug`, a severidade vira rótulo: **bloqueia** e **alta** → `severity: high`, **média** → `severity: medium`, **baixa** → `severity: low`. Antes de abrir a issue, procure se já há uma igual ou que agrupe o defeito ("Bugs e evidência visual" do `CLAUDE.md`).
+
 **Console do navegador (opcional).** Se você usa o DevTools, deixe o console visível durante o teste (F12, ou `Cmd+Option+J` no Mac): qualquer erro em vermelho é um achado. Sem o console, os erros da app aparecem também no **Diagnóstico** (item 1). Dois erros do console são conhecidos e não contam:
 
 - `[open.repair] …` logo depois de um **Reparar e abrir**: é o registro esperado do reparo (vai também para o Diagnóstico);
