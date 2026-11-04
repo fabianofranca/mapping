@@ -543,8 +543,10 @@ a.button {
   transition-delay: var(--duration-instant), var(--duration-instant);
 }
 
-.tooltip-dismissed .tooltip,
-.tooltip-dismissed:hover .tooltip {
+/* Depois do Esc a dica some também com o foco de teclado (WCAG 1.4.13): a classe do anchor
+   junta-se a `.tooltip-anchor` para vencer `:has(:focus-visible)` (0,3,0) pela ordem. */
+.tooltip-anchor.tooltip-dismissed .tooltip,
+.tooltip-anchor.tooltip-dismissed:hover .tooltip {
   opacity: 0;
   visibility: hidden;
   transition-delay: var(--duration-instant), var(--duration-instant);

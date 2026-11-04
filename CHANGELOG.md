@@ -18,6 +18,9 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 - Na paleta da Biblioteca, o nome do tipo (por exemplo `LazyColumn`, `HorizontalPager`) fica inteiro na linha, com reticências se não couber, e o ícone de container fica ao lado dele, não numa segunda linha.
 - O container (imagem) trancado trata a trava como a marcação e a seta: some o quadro "Trancada: …" embaixo do cabeçalho e entra o ícone "Sobre a trava" ao lado do cadeado. Na seta trancada, o ícone e o cadeado ficam juntos em qualquer largura (a 1280 e 1600 px o ícone ia para a linha do título).
 - Os documentos do Catálogo passam a entender a citação (`> texto`): vira bloco de citação em vez de mostrar o sinal `>` solto (por exemplo, nas notas do `code` do **Button**).
+- O Esc agora esconde a dica de um botão também quando o foco é de teclado (antes só sumia com o ponteiro sobre ele): vale para o ícone de ajuda (ⓘ) e para as dicas dos botões; Enter, clique ou o ponteiro a reabrem.
+- Na paleta da Biblioteca, o rótulo do botão Adicionar ("Adicionar na tela …", "Adicionar no canvas") deixa de ser cortado dos dois lados e passa a terminar em reticências quando não cabe.
+- Nos Detalhes da revisão a 900 px, os campos de X, Y, L e A deixam de cortar os dígitos (menos respiro lateral nos campos).
 
 ## Seleção múltipla — 2026-11-04 (épico `epic/selecao-multipla`, PR #448, MCP 0.13.0, schema v13)
 
