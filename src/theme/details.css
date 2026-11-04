@@ -447,6 +447,19 @@ button.layer-group-label:hover {
   text-overflow: ellipsis;
 }
 
+.layer-group-head .flag {
+  /* Como o selo, o Flag da revisão (camada escondida) encolhe com reticências a 900 px
+     em vez de passar do rótulo e empurrar o + para fora (#372). */
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.layer-group-head .flag .flag-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .layer-group-meta {
   flex: none;
   font: var(--t-text-small);

@@ -22,7 +22,7 @@ export function Flag({
   return (
     <span class={tone === 'neutral' ? 'flag' : `flag flag-${tone}`} title={title}>
       {icon && <Icon name={icon} />}
-      {children}
+      <span class="flag-text">{children}</span>
     </span>
   );
 }
