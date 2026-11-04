@@ -4,7 +4,7 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
-## [Não lançado] Testador paralelo (épico `epic/testador-paralelo`, etapa #424, MCP 0.14.0, schema v13)
+## Testador paralelo — 2026-11-04 (épico `epic/testador-paralelo`, PR #470, MCP 0.14.0, schema v13)
 
 ### Adicionado
 
