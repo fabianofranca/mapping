@@ -4,7 +4,7 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
-## [Não lançado] — Avisos na especialização (épico `epic/avisos-especializacao`, PR #<n>, MCP 0.15.0, schema v13)
+## [Não lançado] — Avisos na especialização (épico `epic/avisos-especializacao`, PR #491, MCP 0.15.0, schema v13)
 
 ### Adicionado
 
