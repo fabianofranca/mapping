@@ -4,6 +4,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
+## Testador da nuvem por passo — [Não lançado] (épico `epic/testador-por-passo`, MCP 0.13.0, schema v13)
+
+### Alterado
+
+- Auxiliares do testador da nuvem (`scripts/testing/`): `connect()` com timeout curto (5 s nas ações, 15 s nas navegações), ambiente (`DISPLAY`, D-Bus) carregado sozinho de `apoio/env`, aba da app escolhida sem pegar a do guia (falha com as URLs se houver duas), `cloud-up.sh` que volta sozinho (processos com `setsid`), `state()` (aba, diálogos, avisos, gravação, foco, janelas nativas e o que mudou no `mapping.json`) e `round-guide.mjs`, que gera o guia da rodada só com os roteiros pedidos.
+
 ## Auxiliares da nuvem e guia corrigidos — 2026-11-04 (épico `epic/testador-ajustes`, PR #417, MCP 0.13.0, schema v13)
 
 ### Corrigido
