@@ -1,4 +1,4 @@
-# Registros por épico — [Não lançado] (épico `epic/registros-por-epico`, PR #500, MCP 0.14.0, schema v13)
+# Registros por épico — 2026-11-04 (épico `epic/registros-por-epico`, PR #500, MCP 0.14.0, schema v13)
 
 ## Alterado
 

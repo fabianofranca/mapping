@@ -1,4 +1,4 @@
-# Registros por épico — [Não lançado] (épico `epic/registros-por-epico`)
+# Registros por épico — 2026-11-04 (épico `epic/registros-por-epico`)
 
 ## Sincronização
 
