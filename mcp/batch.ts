@@ -92,6 +92,9 @@ import {
   type Spec,
   type SpecField,
   type SpecUpdateImpact,
+  canWrapItems,
+  wrapItems,
+  type ItemRef,
 } from '../src/model';
 import type { LibraryIssue } from '../src/model/library';
 import { ToolError } from './errors';
@@ -1092,6 +1095,8 @@ class Batch {
         return this.deleteContainerOp(this.containerItem(op.image, p), p);
       case 'create_marking':
         return this.createMarkingOp(op);
+      case 'wrap_items':
+        return this.wrapItemsOp(op);
       case 'move_marking': {
         const id = this.item(op.marking, 'm');
         const before = siblingPosition(p, id);
@@ -1519,6 +1524,17 @@ class Batch {
    * Alvo do `near`: um container ou uma marcação (nunca uma seta), por apelido, referência ou id.
    */
   private nearTarget(text: string): FloatingNearTarget {
+    const target = this.containerOrMarking(text);
+    if (target.kind === 'marking' && projectIndex(this.p).arrows.has(target.id)) {
+      throw new ToolError('invalid-arguments', '`near` não aceita uma seta', {
+        hint: 'informe um container ou uma marcação',
+      });
+    }
+    return target;
+  }
+
+  /** Container ou marcação (ou seta, que é uma marcação para a referência), por apelido, referência ou id. */
+  private containerOrMarking(text: string): FloatingNearTarget {
     const wanted = text.trim();
     const index = projectIndex(this.p);
     if (wanted.startsWith('$')) {
@@ -1533,13 +1549,57 @@ class Batch {
         if (index.containers.has(wanted)) return { kind: 'container', id: wanted };
       }
     }
-    const id = this.item(wanted, 'm');
-    if (index.arrows.has(id)) {
-      throw new ToolError('invalid-arguments', '`near` não aceita uma seta', {
-        hint: 'informe um container ou uma marcação',
-      });
+    return { kind: 'marking', id: this.item(wanted, 'm') };
+  }
+
+  /**
+   * `wrap_items`: o `wrapItems` do modelo (o mesmo Envolver da app), com id novo, nome e origem
+   * opcionais. Notas e setas não entram (aviso); sem nada que entre, `invalid-parent`.
+   */
+  private wrapItemsOp(op: Extract<Operation, { op: 'wrap_items' }>): Step {
+    const p = this.p;
+    const index = projectIndex(p);
+    const refs = new Map<string, ItemRef>();
+    for (const text of op.items) {
+      const target = this.containerOrMarking(text);
+      const kind =
+        target.kind === 'container'
+          ? 'image'
+          : index.arrows.has(target.id)
+            ? 'arrow'
+            : 'marking';
+      refs.set(`${kind}:${target.id}`, { kind, id: target.id });
     }
-    return { kind: 'marking', id };
+    const items = [...refs.values()];
+    const entering = items.filter((item) => canWrapItems(p, [item]));
+    if (entering.length === 0) {
+      throw new ModelError(
+        'invalid-parent',
+        'nada para envolver: notas (flutuantes) e setas não entram; informe ao menos uma marcação não flutuante ou um container',
+      );
+    }
+    const ignored = items.length - entering.length;
+    const markingId = crypto.randomUUID();
+    let project = wrapItems(p, { id: markingId, items });
+    if (op.name !== undefined) project = renameMarking(project, markingId, op.name);
+    if (op.source !== undefined) {
+      project = setMarkingSource(project, markingId, toSource(op.source));
+    }
+    const { rect } = projectIndex(project).markings.get(markingId)!;
+    return {
+      project,
+      ...(ignored > 0
+        ? {
+            notes: [
+              `${ignored} item(ns) ignorado(s): notas (flutuantes) e setas não entram numa marcação pai`,
+            ],
+          }
+        : {}),
+      description: `Envolver ${entering.length} ${entering.length === 1 ? 'item' : 'itens'} numa marcação nova "${this.markingLabel(project, markingId)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
+        op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
+      })`,
+      created: [{ kind: 'm', id: markingId }],
+    };
   }
 
   private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {
