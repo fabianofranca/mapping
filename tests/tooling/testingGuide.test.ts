@@ -479,18 +479,15 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('o prompt da nuvem lista os roteiros até o R17', () => {
-      expect(prompt).toContain('R0 a R17');
+    it('o prompt da nuvem lista os roteiros até o R18', () => {
+      expect(prompt).toContain('R0 a R18');
     });
   });
 
   // Etapa Biblioteca Material 3 (MD5): o R17 roda sozinho, pelo cliente MCP por stdio, a shell e o Playwright.
   describe('R17 — Biblioteca Material 3 (Compose)', () => {
     const guide = read('docs/TESTING.md');
-    const r17 = guide.slice(
-      guide.indexOf('### R17 '),
-      guide.indexOf('### Roteiros sob demanda (manuais)'),
-    );
+    const r17 = guide.slice(guide.indexOf('### R17 '), guide.indexOf('### R18 '));
 
     it('está no quadro "Comece aqui", depois do R16 e antes dos roteiros sob demanda', () => {
       expect(guide).toMatch(/^\| 19 +\| R17 — Biblioteca Material 3 \(Compose\)/m);
@@ -551,8 +548,49 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(r17).toContain('Aplicar zip…');
     });
 
-    it('o prompt da nuvem lista os roteiros até o R17', () => {
-      expect(prompt).toContain('R0 a R17');
+    it('o prompt da nuvem lista os roteiros até o R18', () => {
+      expect(prompt).toContain('R0 a R18');
+    });
+  });
+
+  // Etapa Avisos na especialização (AV4): o R18 roda sozinho, pelo cliente MCP por stdio, a shell e a app.
+  describe('R18 — Avisos na especialização', () => {
+    const guide = read('docs/TESTING.md');
+    const r18 = guide.slice(
+      guide.indexOf('### R18 '),
+      guide.indexOf('### Roteiros sob demanda (manuais)'),
+    );
+
+    it('está no quadro "Comece aqui", depois do R17 e antes dos roteiros sob demanda', () => {
+      expect(guide).toMatch(/^\| 20 +\| R18 — Avisos na especialização/m);
+      expect(guide.indexOf('### R18 ')).toBeGreaterThan(guide.indexOf('### R17 '));
+      expect(guide.indexOf('### R18 ')).toBeLessThan(
+        guide.indexOf('### Roteiros sob demanda (manuais)'),
+      );
+      expect(guide).toMatch(/^- R18 usa a pasta própria `avisos`/m);
+    });
+
+    it('tem os passos R18.1 a R18.12, em ordem, e nenhum depende do dono', () => {
+      const codes = [...stepActions(r18).keys()];
+      expect(codes).toEqual(Array.from({ length: 12 }, (_, i) => `R18.${i + 1}`));
+      expect(/sem substituto/i.test(r18)).toBe(false);
+      expect(r18).not.toContain('[pessoa]');
+    });
+
+    it('a especialização do roteiro é uma v10 válida com os quatro kind', async () => {
+      const block = /```json\n([\s\S]*?)\n```/.exec(r18)?.[1];
+      expect(block).toBeDefined();
+      const { parseSpecText } = await import('../../src/model');
+      const result = parseSpecText(block ?? '');
+      expect(result.ok).toBe(true);
+      const kinds = new Set(
+        [...(block ?? '').matchAll(/"kind": "(\w+)"/g)].map((m) => m[1]),
+      );
+      expect(kinds).toEqual(new Set(['removed', 'deprecated', 'diverges', 'pending']));
+    });
+
+    it('o prompt da nuvem lista os roteiros até o R18', () => {
+      expect(prompt).toContain('R0 a R18');
     });
   });
 });

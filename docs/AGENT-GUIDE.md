@@ -86,12 +86,14 @@ No texto: `container` diz de qual container é o recorte (`ref`, `file`, `backgr
    - `summary`: uma linha legível por operação válida;
    - `changes`: quantos itens serão criados, alterados e excluídos por coleção, e `reviewChanges`: quantas mudanças o usuário terá de revisar;
    - `issues`: pendências antes e depois, e as anotações que ficam incompletas (`new`);
+   - `notices`: os avisos da especialização que as anotações criadas ou alteradas passam a ter, `{ new: [{ annotation, type, kind, message, key?, column? }] }` (`new: []` sem nenhum). Veja "Avisos da especialização";
    - `warnings` (só se houver): avisos das operações, como os do validador de um pacote de biblioteca (`library-warning`);
    - `created`: as referências `mapping://` dos itens que serão criados (as definitivas), com o apelido de cada um.
 3. **`propose_changes(project, title, operations[], { description?, origin?, author?, supersedes? })`** faz a mesma validação e **grava a proposta** em `proposals/<id>/proposal.json` (imagens novas em `proposals/<id>/images/`). Um lote com qualquer erro não grava nada: corrija e mande o lote inteiro de novo. A resposta traz:
    - `proposal.ref`: a referência `mapping://<projeto>/p/<código>`; guarde-a;
    - `reviewChanges` (criações, alterações, remoções) e `levels`: o resumo por nível (Projeto e uma linha por container em `levels.containers`, com `change` `new`/`removed`/`changed`/`items` e quantos itens e mudanças);
    - `created`: as referências **definitivas** dos itens criados, por apelido. Elas só passam a existir no projeto depois que o usuário aceitar e aplicar;
+   - `issues` e `notices`, como no `plan_changes`;
    - `warnings` (se houver) e `superseded` (com `supersedes`).
 4. **Avise o usuário**: a proposta espera a revisão dele na app (janela Propostas). Diga o título, o que a proposta faz e a referência. Não grave mais nada nesse meio-tempo.
 5. **Espere a revisão terminar.** Consulte `get_proposal(ref)` (ou `list_proposals`): a revisão terminou quando `progress.complete` é `true`, isto é, **nada pendente (`pending`) nem aceito sem aplicar (`accepted`)**. Se não terminou, avise o usuário e espere; não substitua a proposta antes.
@@ -455,6 +457,21 @@ O **repositório é da biblioteca**: cada especialização declara o da própria
 ### O que o servidor nunca faz
 
 Nunca **lê nem grava arquivos de código**: só monta o caminho e confere se o arquivo existe (e só dentro do diretório de trabalho do cliente). Quem lê, cria e edita o código é você, com as suas ferramentas.
+
+### Avisos da especialização
+
+Uma especialização `formatVersion` 10 pode declarar `notices` no tipo, no campo e na coluna de `table`. Leia-os em `get_specialization` (dentro de `spec`) antes de criar anotações; o `plan_changes` e o `propose_changes` devolvem em `notices.new` os que o seu lote cria. **Aviso só informa**: nada é bloqueado e não é pendência (`issues` não muda). O que fazer com cada `kind`:
+
+- `removed`: saiu do contrato. **Não crie anotação desse tipo nem grave valor nesse campo ou coluna sem dizer ao usuário**; prefira o que a mensagem indicar.
+- `deprecated`: obsoleto. Use o que a mensagem diz no lugar; se precisar mesmo do antigo, diga ao usuário.
+- `diverges`: as fontes discordam. Leia a mensagem e confirme com o usuário qual vale.
+- `pending`: uma fonte já tem, a outra ainda não. Pode usar; avise o usuário se o código gerado depender disso.
+
+Ao propor, cite os avisos que aparecem em `notices.new` na mensagem ao usuário: ele os vê também na revisão da proposta.
+
+### Mudança na versão 0.15.0 (Avisos na especialização)
+
+`get_specialization` mostra os `notices` e `plan_changes`/`propose_changes` devolvem a chave `notices`. Nenhuma tool nova. Ver "Avisos da especialização".
 
 ### Mudança na versão 0.12.0 (Biblioteca Material 3)
 

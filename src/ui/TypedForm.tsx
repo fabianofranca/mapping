@@ -74,6 +74,7 @@ function TypedFormField({ field, value, readOnly, onChange }: FieldProps) {
       required={field.required}
       hint={field.description}
       focusKey={field.key}
+      notices={field.notices}
     >
       {field.type === 'ref' ? (
         <button

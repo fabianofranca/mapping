@@ -16,6 +16,7 @@ import { Button, IconButton } from '../controls';
 import { useEditor } from '../EditorContext';
 import { Icon, type IconName } from '../icons';
 import { ChangeKind } from './ChangeKind';
+import { ChangeNotices } from './ChangeNotices';
 import { changeTitle, valueParts, type ReviewNames, type ValuePart } from './changeText';
 import { useClickSource } from './clickSource';
 import { REVIEW_KEYS, type DecisionValue } from './DecisionControl';
@@ -547,6 +548,7 @@ export function ChangePopover({
           <DiffValue rows={rows} />
         )}
       </div>
+      <ChangeNotices change={c} field={subject.field} />
       {long && !all && (
         <Button size="sm" class="button-link" onClick={() => setAll(true)}>
           {t('review.pop.showAll')}

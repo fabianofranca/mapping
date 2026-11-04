@@ -32,10 +32,11 @@ function spec(formatVersion: number, floating?: unknown): unknown {
 }
 
 describe('formatVersion 7: floating no tipo', () => {
-  it('a versão atual é a 9 e as anteriores continuam aceitas', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(9);
-    expect(SPEC_FORMAT_VERSIONS).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-    for (const v of [1, 2, 3, 4, 5, 6, 7, 8, 9]) expect(parseSpec(spec(v)).ok).toBe(true);
+  it('a versão atual é a 10 e as anteriores continuam aceitas', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(10);
+    expect(SPEC_FORMAT_VERSIONS).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    for (const v of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+      expect(parseSpec(spec(v)).ok).toBe(true);
   });
 
   it('aceita floating booleano na 7 e o devolve no tipo', () => {

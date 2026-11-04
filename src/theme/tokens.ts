@@ -237,7 +237,7 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-proposal-col-counts': '236px',
   /** Largura mínima da app (só desktop): abaixo dela, o aviso "Abra numa janela maior". */
   'size-app-min': `${BREAKPOINTS.appMin}px`,
-  'size-canvas-min': '320px',
+  'size-canvas-min': '360px',
   'size-resize-hit': '8px',
   'size-label-col': '92px',
   /** Largura mínima de uma coluna de valor na tabela (DataGrid); acima disso a tabela rola. */
