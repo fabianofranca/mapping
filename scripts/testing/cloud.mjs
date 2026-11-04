@@ -57,6 +57,43 @@ async function waitUntil(predicate, { timeoutMs = 4000, stepMs = 150 } = {}) {
   return value;
 }
 
+/** Título da janela ativa do sistema (via `xdotool getactivewindow getwindowname`), ou ''. */
+function activeWindowTitle() {
+  const result = spawnSync('xdotool', ['getactivewindow', 'getwindowname'], {
+    encoding: 'utf8',
+  });
+  return result.status === 0 ? result.stdout.trim() : '';
+}
+
+/** Prazo padrão (ms) da espera por um diálogo nativo (etapa #405, decisão 2). */
+const DIALOG_TIMEOUT_MS = 5000;
+
+/**
+ * Espera uma janela visível cujo título case com algum nome da lista e devolve o id dela. Tenta
+ * a cada `stepMs` (150 ms) até `timeoutMs` (5 s). Ao esgotar o prazo, lança com os títulos
+ * esperados e o título da janela ativa; se a ativa não é a da app (título "Mapping…"), acrescenta
+ * a frase das duas abas. `find` e `activeTitle` são injetáveis para o teste rodar sem `xdotool`.
+ */
+export async function waitForWindow(
+  names,
+  {
+    timeoutMs = DIALOG_TIMEOUT_MS,
+    stepMs = 150,
+    find = findWindow,
+    activeTitle = activeWindowTitle,
+  } = {},
+) {
+  const id = await waitUntil(() => find(names), { timeoutMs, stepMs });
+  if (id) return id;
+  const active = activeTitle();
+  let message = `Nenhum seletor de arquivo/pasta encontrado em ${timeoutMs} ms (títulos esperados: ${names.join(', ')}; janela ativa: "${active}").`;
+  if (active && !/^Mapping\b/.test(active)) {
+    message +=
+      ' Causa provável: a aba ativa da janela não é a da app; o seletor nativo só abre com ela em foco no sistema (feche a outra aba).';
+  }
+  throw new Error(message);
+}
+
 /** Lista {id, name} de toda janela visível (via `xdotool getwindowname`). */
 function listWindows() {
   const search = spawnSync('xdotool', ['search', '--onlyvisible', '--name', '.'], {
@@ -108,9 +145,24 @@ export async function connect(apoioDir, cdpUrl = 'http://localhost:9222') {
   return { browser, page };
 }
 
-/** Clique por papel e nome que pode abrir um diálogo nativo, sem esperar depois (receita 4). */
-export async function clickNoWait(page, name) {
-  await page.getByRole('button', { name }).click({ noWaitAfter: true });
+/**
+ * Clique por papel e nome que pode abrir um diálogo nativo, sem esperar depois (receita 4).
+ * Nomes acessíveis se repetem na página ("Adicionar imagens", "Local", "Ajuda", "Rejeitar"):
+ * `scope` (um `Locator` ou um seletor CSS) restringe a busca a um container e `exact` vai para o
+ * `getByRole`. Conta os candidatos antes de clicar e só clica com exatamente 1; nunca escolhe um
+ * em silêncio (etapa #405, decisão 3).
+ */
+export async function clickNoWait(page, name, { scope, exact } = {}) {
+  const root = typeof scope === 'string' ? page.locator(scope) : (scope ?? page);
+  const options = exact === undefined ? { name } : { name, exact };
+  const target = root.getByRole('button', options);
+  const count = await target.count();
+  if (count !== 1) {
+    throw new Error(
+      `clickNoWait: o botão "${name}" casou com ${count} candidato(s); passe \`scope\` (um container) ou \`exact: true\`.`,
+    );
+  }
+  await target.click({ noWaitAfter: true });
 }
 
 const OPEN_DIALOG_TITLES = [
@@ -160,13 +212,11 @@ function clickOpenButtonByCoordinate(dialogWindowId) {
  * digite o caminho e confirme com alt+o — resolvendo sozinho a lista de autocompletar do GTK
  * quando a pasta já tem conteúdo (ela some da lista do `xdotool`, não some como o seletor).
  */
-async function runOpenDialog(targetPath, { expectAutocomplete = false } = {}) {
-  const windowId = findWindow(OPEN_DIALOG_TITLES);
-  if (!windowId) {
-    throw new Error(
-      `Nenhum seletor de arquivo/pasta encontrado (títulos esperados: ${OPEN_DIALOG_TITLES.join(', ')}).`,
-    );
-  }
+async function runOpenDialog(
+  targetPath,
+  { expectAutocomplete = false, timeoutMs = DIALOG_TIMEOUT_MS } = {},
+) {
+  const windowId = await waitForWindow(OPEN_DIALOG_TITLES, { timeoutMs });
   typePathIntoDialog(windowId, targetPath);
   // Dá tempo para o GTK decidir se abre a lista de autocompletar (ela só aparece quando a
   // pasta digitada já tem conteúdo que casa com o que foi digitado).
@@ -193,33 +243,28 @@ async function runOpenDialog(targetPath, { expectAutocomplete = false } = {}) {
  * `select_folder` dos roteiros: abre o seletor de pasta, resolve a lista de autocompletar do
  * GTK quando a pasta já tem conteúdo e, em seguida, trata o pedido de permissão (receita 6).
  */
-export async function selectFolder(apoioDir, targetPath) {
-  const dialogResult = await runOpenDialog(targetPath);
+export async function selectFolder(apoioDir, targetPath, { timeoutMs } = {}) {
+  const dialogResult = await runOpenDialog(targetPath, { timeoutMs });
   const permissionResult = await allowPermission(apoioDir);
   return { ...dialogResult, permission: permissionResult };
 }
 
 /** `open_file` dos roteiros: seletor de arquivo, sem o passo de permissão. */
-export async function openFile(apoioDir, targetPath) {
-  return runOpenDialog(targetPath);
+export async function openFile(apoioDir, targetPath, { timeoutMs } = {}) {
+  return runOpenDialog(targetPath, { timeoutMs });
 }
 
 /**
  * Receita 7 do apêndice A: "Salvar como" (Exportar › Baixar). Recusa-se a sobrescrever um
  * arquivo que já existe, porque o GTK sobrescreve sem perguntar.
  */
-export async function saveFile(apoioDir, targetPath) {
+export async function saveFile(apoioDir, targetPath, { timeoutMs } = {}) {
   if (fs.existsSync(targetPath)) {
     throw new Error(
       `saveFile: ${targetPath} já existe no disco; o GTK sobrescreveria sem perguntar.`,
     );
   }
-  const windowId = findWindow(['Aviso: este site']);
-  if (!windowId) {
-    throw new Error(
-      'Nenhum diálogo "Salvar como" encontrado (título "Aviso: este site…").',
-    );
-  }
+  const windowId = await waitForWindow(['Aviso: este site'], { timeoutMs });
   execFileSync('xdotool', ['windowactivate', '--sync', windowId]);
   execFileSync('xdotool', ['key', '--clearmodifiers', 'Home', 'shift+End', 'BackSpace']);
   execFileSync('xdotool', ['type', '--delay', '20', targetPath]);
@@ -251,10 +296,15 @@ export async function saveFile(apoioDir, targetPath) {
  * "Google Chrome for Testing"); essa é a única forma estável achada nesta fase, já que o título
  * do diálogo varia ("Aviso: este site…", "Selecione onde…", "Abrir arquivos…").
  */
-export async function cancelDialog(apoioDir) {
-  const windowId = listWindows().find((w) => !/Chrome for Testing$/.test(w.name))?.id;
+export async function cancelDialog(apoioDir, { timeoutMs = DIALOG_TIMEOUT_MS } = {}) {
+  const windowId = await waitUntil(
+    () => listWindows().find((w) => !/Chrome for Testing$/.test(w.name))?.id,
+    { timeoutMs, stepMs: 150 },
+  );
   if (!windowId) {
-    throw new Error('Nenhum diálogo nativo encontrado para cancelar.');
+    throw new Error(
+      `Nenhum diálogo nativo encontrado para cancelar em ${timeoutMs} ms (janela ativa: "${activeWindowTitle()}").`,
+    );
   }
   fs.appendFileSync(
     path.join(apoioDir, 'console.log'),
