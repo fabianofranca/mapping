@@ -16,6 +16,27 @@ export function connect(
   cdpUrl?: string,
   options?: ConnectOptions,
 ): Promise<{ browser: unknown; page: unknown }>;
+export function connectGuide(
+  apoioDir: string,
+  cdpUrl?: string,
+  options?: ConnectOptions,
+): Promise<{ browser: unknown; page: unknown }>;
+export const OPEN_DIALOG_TITLES: string[];
+export interface X11Window {
+  id: string;
+  name: string;
+}
+export function pickAutocompletePopup(
+  windows: X11Window[],
+  geometryOf: (id: string) => { HEIGHT: number },
+  dialogWindowId: string,
+): { window: X11Window; geometry: { HEIGHT: number } } | null;
+export function openButtonPoints(geometry: {
+  X: number;
+  Y: number;
+  WIDTH: number;
+  HEIGHT: number;
+}): { x: number; y: number }[];
 export interface PageInfo {
   url: string;
   title?: string;
@@ -93,3 +114,17 @@ export function screenshot(apoioDir: string, name: string): Promise<string>;
 export function windowShortcut(page: unknown, n: number): Promise<void>;
 export function makeCadastroPng(dest: string): Promise<void>;
 export function mark(apoioDir: string, roteiro: string, fase: 'start' | 'end'): void;
+
+export interface TempoItem {
+  nome: string;
+  /** Duração do primeiro `start` ao último `end`; `null` quando falta uma marca (tempo não medido). */
+  segundos: number | null;
+}
+export interface Tempos {
+  itens: TempoItem[];
+  avisos: string[];
+  totalSegundos: number;
+}
+export function temposFromLog(text: string): Tempos;
+export function temposFromDir(apoioDir: string): Tempos;
+export function formatTempos(tempos: Tempos): string;

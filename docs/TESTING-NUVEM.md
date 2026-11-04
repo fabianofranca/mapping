@@ -62,7 +62,7 @@ O servidor MCP é o **compilado do mesmo commit** (`dist-mcp/mapping-mcp.js`), u
 
 ## Como agir
 
-Siga o apêndice A do guia: a página pelo Playwright por CDP (receita 4), os diálogos nativos pelas receitas 5 a 8 (a tabela do apêndice diz que receita faz o papel de cada "ou `select_folder`" dos roteiros), a shell para o disco, o MCP pelo cliente por stdio (receita 9) e as dicas de DOM (dicas pelo atributo, listas nativas, zoom por `keydown`, janela). Use os auxiliares de [`scripts/testing/cloud.mjs`](../scripts/testing/cloud.mjs) (`connect`, `state`, `selectFolder`, `openFile`, `saveFile`, `cancelDialog`, `allowPermission`, `screenshot`, `windowShortcut`, `makeCadastroPng`, `mark`) em vez de reescrever as receitas: script próprio é só para o que eles não cobrem, e o que faltou vai em "O que atrapalhou". Regras desta sessão:
+Siga o apêndice A do guia: a página pelo Playwright por CDP (receita 4), os diálogos nativos pelas receitas 5 a 8 (a tabela do apêndice diz que receita faz o papel de cada "ou `select_folder`" dos roteiros), a shell para o disco, o MCP pelo cliente por stdio (receita 9) e as dicas de DOM (dicas pelo atributo, listas nativas, zoom por `keydown`, janela). Use os auxiliares de [`scripts/testing/cloud.mjs`](../scripts/testing/cloud.mjs) (`connect`, `connectGuide`, `state`, `selectFolder`, `openFile`, `saveFile`, `cancelDialog`, `allowPermission`, `screenshot`, `windowShortcut`, `makeCadastroPng`, `mark`) em vez de reescrever as receitas: script próprio é só para o que eles não cobrem, e o que faltou vai em "O que atrapalhou". Regras desta sessão:
 
 - **Agir e conferir numa chamada:** todo script de passo abre com `connect()` (que carrega o `apoio/env`, acha a aba da app e usa o timeout de 5 s) e **termina com `console.log(formatState(await state(page, apoioDir, { projectDir })))`**: a mesma chamada age e devolve a tela (título, diálogos, avisos, gravação, foco, janelas nativas) e o disco (a `revision` e o que mudou no `mapping.json`). Não faça uma segunda chamada só para olhar; sem `projectDir` (antes de abrir a pasta), o `state()` devolve só a tela e as janelas nativas. Também roda sozinho: `node scripts/testing/cloud.mjs state <pasta>`.
 - **Captura de tela só onde o `state()` não alcança:** o que se confere no **canvas** (é desenhado, não tem DOM), os ❌ e a passada visual. O resto sai do `state()` e do disco.
@@ -96,7 +96,7 @@ Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começ
 - **Rodada dirigida** (modos 2 e 3: lista de roteiros/passos ou fases de uma etapa): a linha "passada visual: `<lista>`" da mensagem; "passada visual: nenhuma" pula a passada, e o relato diz "Passada visual: não pedida"; sem a linha na mensagem, a lista padrão (abaixo).
 - **Reteste** (modo 1, achados de um relato anterior): só as janelas e os diálogos citados nos achados do relato, nunca a lista padrão nem a da mensagem.
 - **Rodada completa:** a lista padrão; se a mensagem trouxer "passada visual: `<lista>`", use essa em vez da padrão.
-- **Rodada completa em blocos:** só o **bloco 1** faz a passada visual (lista padrão, ou a da mensagem); nos blocos 2 e 3, o relato diz "Passada visual: no bloco 1".
+- **Rodada completa em blocos:** só o **bloco 2** faz a passada visual (lista padrão, ou a da mensagem); nos blocos 1 e 3, o relato diz "Passada visual: no bloco 2".
 
 **Lista padrão:** as sete janelas (**Árvore**, **Camadas**, **Detalhes**, **Lista**, **Incompletas**, **Diagnóstico** e **Propostas**) e os diálogos **Configurações**, **Exportar**, **Especializações**, **Pasta indisponível** e **Sair da revisão?**.
 
@@ -106,13 +106,15 @@ Procure texto cortado ou sobreposto, barra de rolagem horizontal, dica cobrindo 
 
 A rodada completa (R0 a R18) roda em **3 sessões ao mesmo tempo**, uma por bloco, com a divisão fixa abaixo. Cada sessão faz o ambiente, o R0 inteiro e os roteiros do seu bloco, e entrega o relato dela; um coordenador (o orquestrador da etapa ou um chat avulso do dono, ver [`docs/FLOW.md`](FLOW.md)) cria as três e resume.
 
-| Bloco | Roteiros, na ordem do guia                                           | Passos |
-| ----- | -------------------------------------------------------------------- | ------ |
-| 1     | R0, R1, seção 6, R3, R6.3 a R6.7, R7, R5, R8, R18 e a passada visual | 94     |
-| 2     | R0, R2, seção 6, R4, R6.8a a R6.11, R9, R10, R11 e R13               | 92     |
-| 3     | R0, seção 6, R12, R14, R15, R16 e R17                                | 95     |
+| Bloco | Roteiros, na ordem do guia                                               | Passos |
+| ----- | ------------------------------------------------------------------------ | ------ |
+| 1     | R0, R1, seção 6, R3, R6.3 a R6.7, R7, R5, R8 e R18                       | 94     |
+| 2     | R0, R2, seção 6, R4, R6.8a a R6.11, R9, R10, R11, R13 e a passada visual | 93     |
+| 3     | R0, seção 6, R12, R14, R15, R16 e R17                                    | 95     |
 
-Por quê: as dependências da seção 8 do guia e a contagem de passos (a coluna **Passos** conta o R0, que está nos três; no total são 269 passos distintos, e nenhum bloco passa de 40%). R1, R3, R5, R6.3 a R6.7, R7 e R8 usam o `principal` e o repositório de teste; R6.8a a R6.11 usam a pasta `loja` do R4.11; o R10.7 usa o projeto `telas` do R9; o resto usa pastas próprias. A passada visual fica no bloco 1, o de menos passos, que tem o que ela abre (propostas e revisão, especializações, exportar e pasta indisponível). A seção 6 (repositório de teste e MCP) está nos três blocos, porque todos têm R3, R5, R9, R12, R16 ou R17. O teste `tests/tooling/roundBlocks.test.ts` confere a tabela contra os passos do guia: um roteiro novo (R19) o faz falhar até ser posto num bloco.
+Por quê: as dependências da seção 8 do guia e a contagem de passos (a coluna **Passos** conta o R0, que está nos três; no total são 270 passos distintos, e nenhum bloco passa de 40%). R1, R3, R5, R6.3 a R6.7, R7 e R8 usam o `principal` e o repositório de teste; R6.8a a R6.11 usam a pasta `loja` do R4.11; o R10.7 usa o projeto `telas` do R9; o resto usa pastas próprias. A passada visual fica no bloco 2 (decisão 7 da etapa #482): o bloco 1 é a cadeia do `principal`, que não se divide e é o mais lento (47:18 na #424, com a passada de 1:55), e o bloco 2 tem o que a lista padrão abre: **Pasta indisponível** pelo R0.7 (nos três blocos), **Sair da revisão?** pelo R4 e as propostas e a revisão do R4, e **Especializações**, **Exportar** e **Configurações** com qualquer projeto. A seção 6 (repositório de teste e MCP) está nos três blocos, porque todos têm R3, R5, R9, R12, R16 ou R17. O teste `tests/tooling/roundBlocks.test.ts` confere a tabela contra os passos do guia: um roteiro novo (R19) o faz falhar até ser posto num bloco, e ele confere que a passada visual está em exatamente um bloco, o da tabela.
+
+**Linha de base (tempo medido por bloco, etapa #482, commit `159f46d`):** bloco 1 43:44, bloco 2 36:33 (com a passada visual) e bloco 3 33:52 ([resumo](https://github.com/fabianofranca/mapping/issues/485#issuecomment-6643772361)); a da etapa #424 era 47:18, 35:13 e 38:11 ([resumo](https://github.com/fabianofranca/mapping/issues/424)). Meta indicativa de 45 min, sem ser critério de falha.
 
 **Modo "completo, bloco k de 3".** A mensagem "execute o modo completo, bloco k de 3" (k de 1 a 3) manda:
 
@@ -138,7 +140,7 @@ No modo de bloco, o `relato.md` abre com `Modo: completo, bloco k de 3 (<roteiro
 
 **✅ agrupados.** Na tabela de passos, passos seguidos do mesmo roteiro que passaram **sem observação** viram uma **faixa** de uma linha (`R11.1 a R11.10 | | ✅ |`). ❌, "não executado" e passo com observação têm linha própria, e a faixa recomeça depois deles. Na dirigida por achados, a faixa só junta passos do mesmo achado de origem. O **Resumo** continua contando por passo: dez passos numa faixa são dez ✅. A regra completa está no template da seção 10 do guia.
 
-**Tempo real.** Marque o início e o fim de cada roteiro e da passada visual (use `visual` como nome) com `mark(apoioDir, '<roteiro>', 'start' | 'end')` de [`scripts/testing/cloud.mjs`](../scripts/testing/cloud.mjs) (ou, da shell, `APOIO=<pasta>/apoio node scripts/testing/cloud.mjs mark <roteiro> start|end`); o `cloud-up.sh` já marca o `ambiente`. O **Tempo por roteiro** do cabeçalho sai de `apoio/tempos.log`: minutos e segundos por roteiro (fim menos início), o `ambiente` à parte e o total. Sem o arquivo (ou faltando uma marca), escreva "tempo não medido" no lugar — **nunca estime**.
+**Tempo real.** Marque o início e o fim de cada roteiro e da passada visual (use `visual` como nome) com `mark(apoioDir, '<roteiro>', 'start' | 'end')` de [`scripts/testing/cloud.mjs`](../scripts/testing/cloud.mjs) (ou, da shell, `APOIO=<pasta>/apoio node scripts/testing/cloud.mjs mark <roteiro> start|end`); o `cloud-up.sh` já marca o `ambiente`. A seção 6 (repositório de teste e MCP) também é marcada, como `secao6`. O **Tempo por roteiro** do cabeçalho sai de `apoio/tempos.log` por um comando, sem conta à mão: `node scripts/testing/cloud.mjs tempos <apoio>` imprime, por nome, a duração do primeiro `start` ao último `end` e o total; **copie a saída** para o cabeçalho. Marca repetida ou faltando sai como aviso, e o nome sem par sai como "tempo não medido"; copie os avisos também. Sem o arquivo, escreva "tempo não medido" no lugar — **nunca estime**.
 
 **Entrega, no fim da rodada:**
 

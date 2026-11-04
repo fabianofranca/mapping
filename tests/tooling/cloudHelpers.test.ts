@@ -34,18 +34,25 @@ const EXPECTED_EXPORTS = [
   'cancelDialog',
   'clickNoWait',
   'connect',
+  'connectGuide',
   'diffJson',
   'formatState',
   'loadEnv',
   'makeCadastroPng',
   'mark',
+  'OPEN_DIALOG_TITLES',
   'openFile',
   'parseEnvFile',
   'pickAppPage',
+  'pickAutocompletePopup',
+  'openButtonPoints',
   'saveFile',
   'screenshot',
   'selectFolder',
   'state',
+  'temposFromDir',
+  'temposFromLog',
+  'formatTempos',
   'waitForWindow',
   'windowShortcut',
 ].sort();
@@ -115,6 +122,49 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       expect(hora2).toMatch(iso);
       // Ordem cronológica: start antes de end.
       expect(Date.parse(hora1!)).toBeLessThanOrEqual(Date.parse(hora2!));
+    });
+
+    it('tempos: duração do primeiro start ao último end, aviso de marca repetida e "tempo não medido"', async () => {
+      const { temposFromLog, formatTempos } =
+        await import('../../scripts/testing/cloud.mjs');
+      const log = [
+        'ambiente start 2026-11-04T10:00:00.000Z',
+        'ambiente end 2026-11-04T10:02:15.000Z',
+        'R0 start 2026-11-04T10:03:00.000Z',
+        'R0 end 2026-11-04T10:12:42.000Z',
+        // R1 com marcas repetidas: vale o primeiro start e o último end.
+        'R1 start 2026-11-04T10:13:00.000Z',
+        'R1 start 2026-11-04T10:14:00.000Z',
+        'R1 end 2026-11-04T10:20:00.000Z',
+        'R1 end 2026-11-04T10:26:30.000Z',
+        // secao6 sem o end e visual sem o start: tempo não medido.
+        'secao6 start 2026-11-04T10:30:00.000Z',
+        'visual end 2026-11-04T10:40:00.000Z',
+      ].join('\n');
+      const r = temposFromLog(log);
+      const by = (nome: string): number | null | undefined =>
+        r.itens.find((i) => i.nome === nome)?.segundos;
+      expect(by('ambiente')).toBe(135);
+      expect(by('R0')).toBe(9 * 60 + 42);
+      expect(by('R1')).toBe(13 * 60 + 30);
+      expect(by('secao6')).toBeNull();
+      expect(by('visual')).toBeNull();
+      expect(r.totalSegundos).toBe(135 + 582 + 810);
+      expect(r.avisos.join('\n')).toMatch(/R1.*start.*2/);
+      expect(r.avisos.join('\n')).toMatch(/R1.*end.*2/);
+      const out = formatTempos(r);
+      expect(out).toMatch(/R1\s+13min30s/);
+      expect(out).toMatch(/secao6\s+tempo não medido/);
+      expect(out).toMatch(/visual\s+tempo não medido/);
+      expect(out).toMatch(/total\s+25min27s/);
+      expect(out).toMatch(/aviso.*R1/i);
+    });
+
+    it('tempos: sem o arquivo, a CLI avisa "tempo não medido"', async () => {
+      apoioDir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-tempos-'));
+      const { temposFromDir, formatTempos } =
+        await import('../../scripts/testing/cloud.mjs');
+      expect(formatTempos(temposFromDir(apoioDir))).toMatch(/tempo não medido/);
     });
 
     it('rejeita uma fase que não seja start/end', async () => {
@@ -548,5 +598,120 @@ describe('diffJson e formatState (etapa #421, TS1, decisão 6)', () => {
       project: { revision: 1, changes: null },
     });
     expect(first).toContain('primeira leitura');
+  });
+});
+
+describe('seletor de leitura e connectGuide (etapa #482, GT1)', () => {
+  it('OPEN_DIALOG_TITLES inclui o seletor de leitura (Aplicar pasta…, Abrir biblioteca)', async () => {
+    const { OPEN_DIALOG_TITLES, waitForWindow } =
+      await import('../../scripts/testing/cloud.mjs');
+    const reading = 'Selecione uma pasta que este site pode ver';
+    expect(OPEN_DIALOG_TITLES).toContain(reading);
+    // Com a busca de janelas injetada: só uma janela com esse título existe.
+    const find = (names: string[]) => (names.includes(reading) ? '42' : null);
+    await expect(
+      waitForWindow(OPEN_DIALOG_TITLES, { timeoutMs: 50, stepMs: 10, find }),
+    ).resolves.toBe('42');
+  });
+
+  it('connectGuide escolhe a aba /guia/ com os mesmos 5 s e 15 s', async () => {
+    const { connectGuide } = await import('../../scripts/testing/cloud.mjs');
+    const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-guide-'));
+    try {
+      const calls: [string, number][] = [];
+      const logged: string[] = [];
+      const make = (url: string) => ({
+        url: () => url,
+        title: async () => `t:${url}`,
+        on: (event: string) => logged.push(event),
+        setDefaultTimeout: (ms: number) => calls.push(['timeout', ms]),
+        setDefaultNavigationTimeout: (ms: number) => calls.push(['nav', ms]),
+      });
+      const pages = [make('http://localhost:8080/'), make('http://localhost:8080/guia/')];
+      const browser = { contexts: () => [{ pages: () => pages }], close: async () => {} };
+      const { page } = await connectGuide(dir, undefined, {
+        connectOverCDP: async () => browser,
+      });
+      expect(page).toBe(pages[1]);
+      expect(calls).toEqual([
+        ['timeout', 5000],
+        ['nav', 15000],
+      ]);
+      expect(logged).toEqual(['console', 'pageerror']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('connectGuide sem a aba do guia lança com as abas achadas e fecha a conexão', async () => {
+    const { connectGuide } = await import('../../scripts/testing/cloud.mjs');
+    const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-guide-'));
+    try {
+      let closed = 0;
+      const page = {
+        url: () => 'http://localhost:8080/',
+        title: async () => 'Mapping',
+        on: () => undefined,
+        setDefaultTimeout: () => undefined,
+        setDefaultNavigationTimeout: () => undefined,
+      };
+      const browser = {
+        contexts: () => [{ pages: () => [page] }],
+        close: async () => {
+          closed += 1;
+        },
+      };
+      await expect(
+        connectGuide(dir, undefined, { connectOverCDP: async () => browser }),
+      ).rejects.toThrow(/guia/);
+      expect(closed).toBe(1);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('lista de autocompletar do GTK com pastas irmãs (etapa #482, GT1)', () => {
+  // Geometrias medidas no Chrome de verdade: a lista de uma pasta só tem ~48 px de altura e a de
+  // `migracao` com `migracao10..12` ao lado, 94 px (cresce com o número de sugestões).
+  const dialog = { id: '6301026', name: 'Selecione uma pasta que este site pode ver' };
+  const main = { id: '4194307', name: 'Mapping: Google Chrome for Testing' };
+  const geometries: Record<string, { HEIGHT: number }> = {
+    '6301026': { HEIGHT: 822 },
+    '4194307': { HEIGHT: 999 },
+    '6302837': { HEIGHT: 94 },
+    '6302838': { HEIGHT: 48 },
+  };
+  const geometryOf = (id: string) => geometries[id] ?? { HEIGHT: 0 };
+
+  it('acha a lista de 94 px (quatro sugestões), não só a de 48 px', async () => {
+    const { pickAutocompletePopup } = await import('../../scripts/testing/cloud.mjs');
+    const popup = { id: '6302837', name: 'chromium' };
+    expect(pickAutocompletePopup([main, dialog, popup], geometryOf, dialog.id)).toEqual({
+      window: popup,
+      geometry: { HEIGHT: 94 },
+    });
+    const small = { id: '6302838', name: 'chromium' };
+    expect(
+      pickAutocompletePopup([main, dialog, small], geometryOf, dialog.id)?.window,
+    ).toBe(small);
+  });
+
+  it('não confunde com o seletor nem com a janela principal do Chrome', async () => {
+    const { pickAutocompletePopup } = await import('../../scripts/testing/cloud.mjs');
+    expect(pickAutocompletePopup([main, dialog], geometryOf, dialog.id)).toBeNull();
+    expect(pickAutocompletePopup([], geometryOf, dialog.id)).toBeNull();
+  });
+
+  it('openButtonPoints: o centro do Open medido (a ~45 px da base) vem primeiro, com variações', async () => {
+    const { openButtonPoints } = await import('../../scripts/testing/cloud.mjs');
+    // Seletor medido: X=238 Y=116 de 1124 × 822; o botão Open fica em (1312, 893) na tela.
+    const points = openButtonPoints({ X: 238, Y: 116, WIDTH: 1124, HEIGHT: 822 });
+    expect(points[0]).toEqual({ x: 1312, y: 893 });
+    expect(points.length).toBeGreaterThanOrEqual(3);
+    for (const point of points) {
+      expect(point.x).toBeLessThan(238 + 1124);
+      expect(point.y).toBeLessThan(116 + 822);
+    }
   });
 });

@@ -7,6 +7,7 @@
 //
 // Uso como CLI:
 //   node scripts/testing/cloud.mjs mark <roteiro> <start|end>   (o cloud-up.sh chama)
+//   node scripts/testing/cloud.mjs tempos <apoio>               (duração por roteiro, do tempos.log)
 //   node scripts/testing/cloud.mjs state [<pasta-do-projeto>]    (conecta, imprime o estado, sai)
 //
 // Pasta de apoio: toda função que precisa de disco recebe `apoioDir` (a pasta `apoio/` da
@@ -197,21 +198,37 @@ export function pickAppPage(pages, { origin = APP_ORIGIN } = {}) {
 }
 
 /**
- * Conecta no Chrome por CDP (receita 4 do apêndice A), acha a aba da app (`pickAppPage`),
- * aplica o timeout curto (`timeoutMs` 5 s nas ações, `navigationTimeoutMs` 15 s nas navegações;
- * espera longa passa `{ timeout }` na própria chamada) e registra console e erros de página em
- * `<apoioDir>/console.log`. Devolve `{ browser, page }`.
+ * Escolhe a aba do guia entre `pages` (`{ url, title? }`): a da origem cujo caminho começa por
+ * `/guia/`. Com zero ou mais de uma, lança com as URLs e os títulos achados. Pura.
  */
-export async function connect(
-  apoioDir,
-  cdpUrl = 'http://localhost:9222',
-  {
-    timeoutMs = 5000,
-    navigationTimeoutMs = 15000,
-    origin = APP_ORIGIN,
-    connectOverCDP = (url) => chromium.connectOverCDP(url),
-  } = {},
-) {
+function pickGuidePage(pages, { origin = APP_ORIGIN } = {}) {
+  const wanted = new URL(origin).origin;
+  const matches = pages.filter((candidate) => {
+    try {
+      const url = new URL(candidate.url);
+      return url.origin === wanted && url.pathname.startsWith('/guia/');
+    } catch {
+      return false;
+    }
+  });
+  if (matches.length === 1) return matches[0];
+  const list = (items) =>
+    items
+      .map((item) => `  - ${item.url}${item.title ? ` ("${item.title}")` : ''}`)
+      .join('\n');
+  throw new Error(
+    matches.length === 0
+      ? `Nenhuma aba do guia (${wanted}/guia/) encontrada. Abas achadas:\n${list(pages)}`
+      : `${matches.length} abas do guia abertas:\n${list(matches)}\nDica: feche as abas a mais (receita 3).`,
+  );
+}
+
+/**
+ * Conecta no Chrome por CDP, escolhe a aba com `pick`, aplica o timeout curto e registra console
+ * e erros de página em `<apoioDir>/console.log`. Base de `connect` e `connectGuide`.
+ */
+async function connectTab(apoioDir, cdpUrl, pick, options) {
+  const { timeoutMs, navigationTimeoutMs, origin, connectOverCDP } = options;
   const browser = await connectOverCDP(cdpUrl);
   const pages = browser.contexts().flatMap((context) => context.pages());
   const described = await Promise.all(
@@ -223,7 +240,7 @@ export async function connect(
   );
   let page;
   try {
-    ({ page } = pickAppPage(described, { origin }));
+    ({ page } = pick(described, { origin }));
   } catch (error) {
     // Sem fechar a conexão CDP o processo `node` do script não sai.
     await browser.close().catch(() => undefined);
@@ -240,6 +257,35 @@ export async function connect(
     appendLog(`[pageerror] ${error instanceof Error ? error.message : String(error)}`);
   });
   return { browser, page };
+}
+
+const CONNECT_DEFAULTS = {
+  timeoutMs: 5000,
+  navigationTimeoutMs: 15000,
+  origin: APP_ORIGIN,
+  connectOverCDP: (url) => chromium.connectOverCDP(url),
+};
+
+/**
+ * Conecta no Chrome por CDP (receita 4 do apêndice A), acha a aba da app (`pickAppPage`),
+ * aplica o timeout curto (`timeoutMs` 5 s nas ações, `navigationTimeoutMs` 15 s nas navegações;
+ * espera longa passa `{ timeout }` na própria chamada) e registra console e erros de página em
+ * `<apoioDir>/console.log`. Devolve `{ browser, page }`.
+ */
+export async function connect(apoioDir, cdpUrl = 'http://localhost:9222', options = {}) {
+  return connectTab(apoioDir, cdpUrl, pickAppPage, { ...CONNECT_DEFAULTS, ...options });
+}
+
+/**
+ * Como o `connect()`, mas escolhe a aba do guia (`/guia/`) em vez da da app (etapa #482, GT1):
+ * os mesmos 5 s e 15 s e o mesmo registro de console. Devolve `{ browser, page }`.
+ */
+export async function connectGuide(
+  apoioDir,
+  cdpUrl = 'http://localhost:9222',
+  options = {},
+) {
+  return connectTab(apoioDir, cdpUrl, pickGuidePage, { ...CONNECT_DEFAULTS, ...options });
 }
 
 /**
@@ -262,8 +308,10 @@ export async function clickNoWait(page, name, { scope, exact } = {}) {
   await target.click({ noWaitAfter: true });
 }
 
-const OPEN_DIALOG_TITLES = [
+export const OPEN_DIALOG_TITLES = [
   'Selecione onde este site pode salvar mudanças',
+  // Seletor de leitura: Aplicar pasta…, Atualizar de pasta… e Abrir biblioteca (etapa #482).
+  'Selecione uma pasta que este site pode ver',
   'Abrir arquivos',
   'Abrir arquivo',
 ];
@@ -272,6 +320,10 @@ const OPEN_DIALOG_TITLES = [
 function typePathIntoDialog(windowId, targetPath) {
   execFileSync('xdotool', ['windowactivate', '--sync', windowId]);
   execFileSync('xdotool', ['key', '--clearmodifiers', 'ctrl+l']);
+  // O campo pode já ter texto (o GTK guarda o caminho da vez anterior e o `ctrl+l` não o
+  // seleciona): sem limpar, o caminho saía dobrado ("…/migracao/tmp/…/migracao"). O `ctrl+a`
+  // não seleciona tudo; `Home`, `shift+End` e `BackSpace` sim (como no "Salvar como").
+  execFileSync('xdotool', ['key', '--clearmodifiers', 'Home', 'shift+End', 'BackSpace']);
   execFileSync('xdotool', ['type', '--delay', '20', targetPath]);
   // Quando a pasta digitada tem exatamente uma subpasta que casa, o GTK completa a barra de
   // caminho sozinho com o nome dela, já selecionado (sem janela de autocompletar à parte); um
@@ -281,27 +333,65 @@ function typePathIntoDialog(windowId, targetPath) {
   execFileSync('xdotool', ['key', '--clearmodifiers', 'Delete']);
 }
 
+/** Altura máxima (px) de uma janela de autocompletar: ~48 px com 1 sugestão, 94 px com 4. */
+const AUTOCOMPLETE_MAX_HEIGHT = 400;
+
 /**
- * Janela de autocompletar do GTK aberta sobre o seletor: uma janela "chromium" pequena
- * (~48 px de altura) que não é o próprio seletor. Devolve a janela achada, ou null.
+ * Entre `windows` (`{ id, name }`), acha a janela de autocompletar do GTK aberta sobre o seletor:
+ * uma janela de nome "chromium" (a principal do Chrome e o seletor têm título próprio)
+ * e baixa, cuja altura cresce com o número de sugestões (pastas irmãs com o mesmo começo, como
+ * `migracao` e `migracao10`, dão ~94 px; o limite antigo de 70 px não as via). Devolve
+ * `{ window, geometry }` ou null. Pura: `geometryOf(id)` é injetável para o teste.
  */
-function findAutocompletePopup(dialogWindowId) {
-  for (const window of listWindows()) {
+export function pickAutocompletePopup(windows, geometryOf, dialogWindowId) {
+  for (const window of windows) {
     if (window.id === dialogWindowId) continue;
     if (!/chromium/i.test(window.name)) continue;
-    const geometry = windowGeometry(window.id);
-    if (geometry.HEIGHT > 0 && geometry.HEIGHT <= 70) return { window, geometry };
+    const geometry = geometryOf(window.id);
+    if (geometry.HEIGHT > 0 && geometry.HEIGHT <= AUTOCOMPLETE_MAX_HEIGHT) {
+      return { window, geometry };
+    }
   }
   return null;
 }
 
-/** Clica no botão **Open** do GTK por coordenada, dentro da janela do seletor (receita 5, pasta com conteúdo). */
-function clickOpenButtonByCoordinate(dialogWindowId) {
-  const geometry = windowGeometry(dialogWindowId);
-  // O botão "Open" fica no canto inferior direito do seletor GTK padrão.
-  const x = geometry.X + geometry.WIDTH - 60;
-  const y = geometry.Y + geometry.HEIGHT - 28;
-  execFileSync('xdotool', ['mousemove', String(x), String(y), 'click', '1']);
+/** Janela de autocompletar do GTK aberta sobre o seletor (`pickAutocompletePopup`), ou null. */
+function findAutocompletePopup(dialogWindowId) {
+  return pickAutocompletePopup(listWindows(), windowGeometry, dialogWindowId);
+}
+
+/**
+ * Pontos de tela onde clicar no botão **Open** do GTK, dada a geometria `{ X, Y, WIDTH, HEIGHT }`
+ * do seletor. O centro medido (seletor de 1124 × 822: o botão fica em (1312, 893), a 50 px da
+ * borda direita e 45 px da base) vem primeiro; os outros dois sobem e descem uns 8 px, para o caso
+ * de o clique cair na borda do botão (com 28 px da base, que era o valor antigo, errava).
+ */
+export function openButtonPoints(geometry) {
+  const x = geometry.X + geometry.WIDTH - 50;
+  const bottom = geometry.Y + geometry.HEIGHT;
+  return [45, 37, 53].map((fromBottom) => ({ x, y: bottom - fromBottom }));
+}
+
+/**
+ * Clica no botão **Open** do GTK por coordenada, dentro da janela do seletor (receita 5, pasta com
+ * conteúdo). O primeiro clique só fecha a lista de autocompletar e mantém o caminho: repete com
+ * outro ponto do botão enquanto a lista continuar aberta (até 3 pontos).
+ */
+async function clickOpenButtonByCoordinate(dialogWindowId) {
+  for (const point of openButtonPoints(windowGeometry(dialogWindowId))) {
+    execFileSync('xdotool', [
+      'mousemove',
+      String(point.x),
+      String(point.y),
+      'click',
+      '1',
+    ]);
+    const gone = await waitUntil(() => !findAutocompletePopup(dialogWindowId), {
+      timeoutMs: 800,
+      stepMs: 100,
+    });
+    if (gone) return;
+  }
 }
 
 /**
@@ -322,7 +412,7 @@ async function runOpenDialog(
     stepMs: 100,
   });
   if (popup) {
-    clickOpenButtonByCoordinate(windowId);
+    await clickOpenButtonByCoordinate(windowId);
   } else if (expectAutocomplete) {
     throw new Error('Lista de autocompletar do GTK esperada, mas não apareceu.');
   }
@@ -331,6 +421,11 @@ async function runOpenDialog(
     timeoutMs: 4000,
   });
   if (!closed) {
+    if (findAutocompletePopup(windowId)) {
+      throw new Error(
+        'O seletor de arquivo/pasta continuou aberto: lista de autocompletar aberta (pastas irmãs com o mesmo começo).',
+      );
+    }
     throw new Error('O seletor de arquivo/pasta continuou aberto depois do alt+o.');
   }
   return { hadAutocomplete: Boolean(popup) };
@@ -530,6 +625,76 @@ export function mark(apoioDir, roteiro, fase) {
   }
   const file = path.join(apoioDir, 'tempos.log');
   fs.appendFileSync(file, `${roteiro} ${fase} ${new Date().toISOString()}\n`);
+}
+
+/**
+ * Lê o texto de um `tempos.log` (`<nome> <start|end> <hora ISO>` por linha) e devolve, por nome,
+ * a duração do primeiro `start` ao último `end`, o total e os avisos (etapa #482, decisão 8).
+ * Marca repetida vira aviso; nome sem par (ou com o fim antes do início) fica com `segundos: null`.
+ */
+export function temposFromLog(text) {
+  const nomes = new Map();
+  const avisos = [];
+  for (const linha of String(text ?? '').split('\n')) {
+    const [nome, fase, hora] = linha.trim().split(/\s+/);
+    if (!nome || (fase !== 'start' && fase !== 'end')) continue;
+    const t = Date.parse(hora ?? '');
+    if (Number.isNaN(t)) {
+      avisos.push(`${nome} ${fase}: hora inválida "${hora ?? ''}" (linha ignorada)`);
+      continue;
+    }
+    const e = nomes.get(nome) ?? { start: [], end: [] };
+    e[fase].push(t);
+    nomes.set(nome, e);
+  }
+  const itens = [];
+  let totalSegundos = 0;
+  for (const [nome, e] of nomes) {
+    for (const fase of ['start', 'end']) {
+      if (e[fase].length > 1) {
+        avisos.push(
+          `${nome} ${fase}: marca repetida (${e[fase].length} vezes); valem o primeiro start e o último end`,
+        );
+      }
+    }
+    const ini = e.start.length ? Math.min(...e.start) : null;
+    const fim = e.end.length ? Math.max(...e.end) : null;
+    let segundos = null;
+    if (ini === null || fim === null) {
+      avisos.push(`${nome}: falta a marca de ${ini === null ? 'start' : 'end'}`);
+    } else if (fim < ini) {
+      avisos.push(`${nome}: o end vem antes do start`);
+    } else {
+      segundos = Math.round((fim - ini) / 1000);
+      totalSegundos += segundos;
+    }
+    itens.push({ nome, segundos });
+  }
+  return { itens, avisos, totalSegundos };
+}
+
+/** `<apoioDir>/tempos.log` lido por `temposFromLog`; sem o arquivo, não há nada medido. */
+export function temposFromDir(apoioDir) {
+  const file = path.join(apoioDir, 'tempos.log');
+  if (!fs.existsSync(file)) {
+    return { itens: [], avisos: ['sem tempos.log: tempo não medido'], totalSegundos: 0 };
+  }
+  return temposFromLog(fs.readFileSync(file, 'utf8'));
+}
+
+const fmtDuracao = (s) => `${Math.floor(s / 60)}min${String(s % 60).padStart(2, '0')}s`;
+
+/** O texto que a CLI imprime e que o relato copia no "Tempo por roteiro". */
+export function formatTempos({ itens, avisos, totalSegundos }) {
+  const largura = Math.max(5, ...itens.map((i) => i.nome.length));
+  const linhas = itens.map(
+    (i) =>
+      `${i.nome.padEnd(largura)}  ${i.segundos === null ? 'tempo não medido' : fmtDuracao(i.segundos)}`,
+  );
+  if (itens.length)
+    linhas.push(`${'total'.padEnd(largura)}  ${fmtDuracao(totalSegundos)}`);
+  for (const a of avisos) linhas.push(`aviso: ${a}`);
+  return linhas.join('\n');
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -804,7 +969,17 @@ async function runCli(argv) {
     }
     return;
   }
-  console.error(`Comando desconhecido: ${command}. Comandos: mark, state.`);
+  if (command === 'tempos') {
+    const apoioDir = rest[0] ?? process.env.APOIO;
+    if (!apoioDir) {
+      console.error('Uso: node cloud.mjs tempos <apoio>');
+      process.exitCode = 2;
+      return;
+    }
+    console.log(formatTempos(temposFromDir(apoioDir)));
+    return;
+  }
+  console.error(`Comando desconhecido: ${command}. Comandos: mark, state, tempos.`);
   process.exitCode = 2;
 }
 
