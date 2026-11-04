@@ -176,8 +176,7 @@ export const ptBR = {
   'layer.color': 'Cor da camada {name}',
   'layer.customColor': 'Outra cor',
   'layer.more': 'Mais ações da camada {name}',
-  'layer.isActive': 'Ativa',
-  'layer.makeActive': 'Tornar ativa',
+  'layer.makeActive': 'Tornar ativa: {name}',
   'layer.moveUp': 'Subir camada',
   'layer.moveDown': 'Descer camada',
   'layer.delete': 'Excluir camada',
@@ -720,7 +719,10 @@ export const ptBR = {
   'issue.item': '{annotation} · {reason}',
   'typedForm.refUnavailable': 'Escolher referência só funciona dentro de um projeto.',
   'ref.choosePlaceholder': 'Escolher…',
-  'ref.fieldButton': '{field}: {value}',
+  'ref.fieldValue': '{value}: {field}',
+  'ref.fieldValueLayer': '{value} {layer}: {field}',
+  'ref.fieldEmpty': 'Escolher: {field}',
+  'ref.fieldBroken': 'Referência quebrada: {field}',
   'ref.goToShortcut': 'Ctrl+clique',
   'ref.freeTag': 'livre',
   'ref.free': 'livres',
@@ -737,11 +739,8 @@ export const ptBR = {
 
   // Trava (etapa 2.5)
   'lock.markingLock': 'Trancar marcação',
-  'lock.markingUnlock': 'Destrancar marcação',
   'lock.imageLock': 'Trancar imagem',
-  'lock.imageUnlock': 'Destrancar imagem',
   'lock.treeLock': 'Trancar {name}',
-  'lock.treeUnlock': 'Destrancar {name}',
   'lock.inherited': 'Posição e tamanho travados: a marcação pai está trancada',
   'lock.markingNotice':
     'Trancada: não pode ser movida, redimensionada nem excluída. A seleção e as anotações continuam livres.',
@@ -957,7 +956,6 @@ export const ptBR = {
   'arrow.style.curve': 'Curva',
   'arrow.style.elbow': 'Canto',
   'arrow.lock': 'Trancar seta',
-  'arrow.unlock': 'Destrancar seta',
   'arrow.lockNotice':
     'Trancada: a rota, as pontas e o estilo não mudam e ela não pode ser excluída. O nome e as anotações continuam livres.',
   'arrow.delete': 'Excluir seta',

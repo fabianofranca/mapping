@@ -13,6 +13,7 @@ import { SimpleEditor } from './FieldEditors';
 import { Icon } from './icons';
 import { PropertyGrid, Property } from './PropertyGrid';
 import { TableEditor } from './TableField';
+import { refButtonName } from './typedText';
 
 // Formulário dos campos de um tipo, sem projeto: os valores vêm de fora e cada edição sai
 // por `onChange`. É o mesmo desenho dos Detalhes (SimpleEditor, TableEditor), usado pelo
@@ -82,10 +83,7 @@ function TypedFormField({ field, value, readOnly, onChange }: FieldProps) {
           class="ref-control is-empty"
           disabled
           title={t('typedForm.refUnavailable')}
-          aria-label={t('ref.fieldButton', {
-            field: label,
-            value: t('ref.choosePlaceholder'),
-          })}
+          aria-label={refButtonName(label, { kind: 'empty' })}
         >
           <Icon name="search" />
           <span class="ref-control-text">{t('ref.choosePlaceholder')}</span>

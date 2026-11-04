@@ -177,8 +177,7 @@ export const enUS: Dictionary = {
   'layer.color': 'Color of layer {name}',
   'layer.customColor': 'Other color',
   'layer.more': 'More actions for layer {name}',
-  'layer.isActive': 'Active',
-  'layer.makeActive': 'Make active',
+  'layer.makeActive': 'Make active: {name}',
   'layer.moveUp': 'Move layer up',
   'layer.moveDown': 'Move layer down',
   'layer.delete': 'Delete layer',
@@ -717,7 +716,10 @@ export const enUS: Dictionary = {
   'issue.item': '{annotation} · {reason}',
   'typedForm.refUnavailable': 'Picking a reference only works inside a project.',
   'ref.choosePlaceholder': 'Choose…',
-  'ref.fieldButton': '{field}: {value}',
+  'ref.fieldValue': '{value}: {field}',
+  'ref.fieldValueLayer': '{value} {layer}: {field}',
+  'ref.fieldEmpty': 'Choose: {field}',
+  'ref.fieldBroken': 'Broken reference: {field}',
   'ref.goToShortcut': 'Ctrl+click',
   'ref.freeTag': 'free',
   'ref.free': 'free',
@@ -734,11 +736,8 @@ export const enUS: Dictionary = {
 
   // Lock (stage 2.5)
   'lock.markingLock': 'Lock marking',
-  'lock.markingUnlock': 'Unlock marking',
   'lock.imageLock': 'Lock image',
-  'lock.imageUnlock': 'Unlock image',
   'lock.treeLock': 'Lock {name}',
-  'lock.treeUnlock': 'Unlock {name}',
   'lock.inherited': 'Position and size are locked: the parent marking is locked',
   'lock.markingNotice':
     'Locked: it cannot be moved, resized or deleted. Selection and annotations stay free.',
@@ -953,7 +952,6 @@ export const enUS: Dictionary = {
   'arrow.style.curve': 'Curve',
   'arrow.style.elbow': 'Elbow',
   'arrow.lock': 'Lock arrow',
-  'arrow.unlock': 'Unlock arrow',
   'arrow.lockNotice':
     'Locked: the route, ends and style stay as they are and it cannot be deleted. The name and annotations stay free.',
   'arrow.delete': 'Delete arrow',

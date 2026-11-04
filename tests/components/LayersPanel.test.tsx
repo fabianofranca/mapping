@@ -39,7 +39,7 @@ async function menuItem(
     screen.getByRole('button', { name: `Mais ações da camada ${layerName}` }),
   );
   const menu = screen.getByRole('menu', { name: `Mais ações da camada ${layerName}` });
-  return within(menu).getByRole('button', { name: item });
+  return within(menu).getByRole('menuitem', { name: item });
 }
 
 describe('LayersPanel', () => {
@@ -173,6 +173,34 @@ describe('LayersPanel', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('menu ⋮: itens menuitem, foco no primeiro habilitado, setas circulam e Esc devolve o foco', async () => {
+    const { harness, user } = setup();
+    const first = harness.project().layers[0];
+    if (!first) throw new Error('sem camadas');
+    const more = screen.getByRole('button', {
+      name: `Mais ações da camada ${first.name}`,
+    });
+    await user.click(more);
+    const menu = screen.getByRole('menu', { name: `Mais ações da camada ${first.name}` });
+    const items = within(menu).getAllByRole('menuitem');
+    expect(items.map((i) => i.textContent)).toEqual([
+      'Subir camada',
+      'Descer camada',
+      'Excluir camada',
+    ]);
+    // Na primeira camada "Subir" está desabilitado: o foco vai ao "Descer".
+    expect(document.activeElement).toBe(items[1]);
+    await user.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(items[2]);
+    await user.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(items[1]);
+    await user.keyboard('{ArrowUp}');
+    expect(document.activeElement).toBe(items[2]);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(more);
+  });
+
   it('excluir pede confirmação com a contagem de anotações afetadas', async () => {
     const { harness, user } = setup();
     const free = harness.project().layers.find((l) => l.spec === null);
@@ -220,11 +248,23 @@ describe('LayersPanel', () => {
     const second = p.layers[1];
     const first = p.layers[0];
     if (!first || !second) throw new Error('precisa de duas camadas');
-    const makeActive = screen.getAllByRole('button', { name: 'Tornar ativa' });
-    await user.click(makeActive[0]!);
+    // SN2: cada camada tem um nome único; o nome não muda com o estado.
+    const makeActive = screen.getByRole('button', {
+      name: `Tornar ativa: ${second.name}`,
+    });
+    expect(makeActive.getAttribute('aria-pressed')).toBe('false');
+    await user.click(makeActive);
     expect(resolveActiveLayerId(p, harness.ui.activeLayer.value)).toBe(second.id);
-    // A ativa fica pressionada e a linha dela marcada.
-    expect(screen.getAllByRole('button', { name: 'Ativa' })).toHaveLength(1);
+    // A ativa fica pressionada, com o mesmo nome e dica, e a linha dela marcada.
+    const active = screen.getByRole('button', { name: `Tornar ativa: ${second.name}` });
+    expect(active.getAttribute('aria-pressed')).toBe('true');
+    expect(active.parentElement?.querySelector('[data-tooltip]')?.textContent).toBe(
+      `Tornar ativa: ${second.name}`,
+    );
+    expect(screen.queryByRole('button', { name: 'Ativa' })).toBeNull();
+    expect(
+      screen.getAllByRole('button', { pressed: true, name: /^Tornar ativa: / }),
+    ).toHaveLength(1);
     expect(document.querySelectorAll('.layer-row-active')).toHaveLength(1);
 
     // A ativa não pode ser escondida; as outras sim.
@@ -269,10 +309,9 @@ describe('LayersPanel', () => {
         'disabled',
         true,
       );
-      expect(await screen.findByRole('button', { name: 'Subir camada' })).toHaveProperty(
-        'disabled',
-        true,
-      );
+      expect(
+        await screen.findByRole('menuitem', { name: 'Subir camada' }),
+      ).toHaveProperty('disabled', true);
       await user.keyboard('{Escape}');
     }
   });

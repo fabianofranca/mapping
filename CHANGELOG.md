@@ -17,6 +17,16 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 - O **Esc cancela o retângulo de seleção** (e os outros gestos de ponteiro em andamento) também com o Shift apertado: o `Shift+Esc` só esconde a janela em foco quando não há gesto. A introdução da Ajuda › Atalhos não contradiz mais o Cmd+clique da seleção no macOS.
 
+## Selo da camada e nomes acessíveis — 2026-11-04 (épico `epic/selo-nomes-acessiveis`, PR #440, MCP 0.13.0, schema v13)
+
+### Corrigido
+
+- A 900 px, na revisão de proposta com a camada escondida revelada (**Mostrar aqui**), o Flag "escondida" do cabeçalho de camada dos Detalhes encolhe com reticências em vez de passar do rótulo: o painel não ganha barra horizontal. O passo R11.11 do guia de testes deixa de prometer o selo "Modelo de dados" inteiro a 900 px (o nome da camada tem prioridade) e o R11.12 cobre o Flag.
+- O selo da especialização no cabeçalho de camada dos Detalhes encolhe com reticências e mostra o nome inteiro na dica: a 900 px, "Material 3 (Compose)" não passa mais da borda do painel, não fica sob o **+** e o painel não ganha barra horizontal. O nome da camada e a meta (`· Ativa · N`) têm prioridade; os selos curtos e a janela larga ficam como antes (#371).
+- Para leitor de tela e comando de voz, o menu ⋮ da camada é um menu de verdade: os itens (**Subir camada**, **Descer camada**, **Excluir camada**) são `menuitem`, o foco vai ao primeiro habilitado ao abrir, ↑/↓ circulam entre os habilitados e Esc fecha devolvendo o foco ao ⋮. A dica do **Excluir camada** desabilitado continua aparecendo (#372).
+- Os cadeados da Árvore, da marcação e da imagem e o ✓ **Tornar ativa** têm nome fixo, igual à dica, e o estado só no `aria-pressed` ("Trancar Botão Pagar", "Trancar marcação", "Trancar imagem"); o cadeado da seta (**Trancar seta**) segue o mesmo padrão. Cada **Tornar ativa** diz a camada ("Tornar ativa: Componentes") (#372).
+- O botão da referência (campo, célula de tabela e os botões desabilitados do formulário sem projeto) tem o nome começando pelo texto que mostra: "User.name Modelo de dados: Destino", "Escolher: Destino" e "Referência quebrada: Destino" (WCAG 2.5.3). A dica e o seletor não mudam (#372).
+
 ## Zoom do projeto grande mais rápido — 2026-11-04 (épico `epic/zoom-rapido`, PR #434, MCP 0.13.0, schema v13)
 
 ### Alterado
