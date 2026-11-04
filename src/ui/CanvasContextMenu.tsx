@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from 'preact/hooks';
 import { captureFocusOrigin, restoreFocusAfterRender, type FocusOrigin } from './focus';
 import { t } from '../i18n';
 import { canCopyItems, type CopyTarget } from '../app/itemClipboard';
+import { wrapAvailable } from '../app/wrapSelection';
 import { ARROW_STYLES, canEditArrow, projectIndex, type ArrowStyle } from '../model';
 import { arrangeMarking, canArrangeMarking } from './arrange';
 import { CopyMenuItems } from './CopyActions';
@@ -151,7 +152,13 @@ export function CanvasContextMenu() {
       ? target.id
       : null;
   const selectable = target?.kind === 'm';
-  if (!menu || !(copyable || arrangeId !== null || selectable || arrowId !== null)) {
+  // Marcação e imagem (container) sempre têm o Envolver, com ou sem pasta (`WrapMenuItem` some
+  // sozinho quando ele não existe: somente leitura, revisão).
+  const wrappable = copyTarget !== null && wrapAvailable(editor);
+  if (
+    !menu ||
+    !(copyable || arrangeId !== null || selectable || arrowId !== null || wrappable)
+  ) {
     return null;
   }
   return (
@@ -162,7 +169,7 @@ export function CanvasContextMenu() {
       ref={panel}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {copyTarget && (copyable || selectable) && (
+      {copyTarget && (copyable || selectable || wrappable) && (
         <CopyMenuItems target={copyTarget} close={close} copyable={copyable} />
       )}
       {arrowId !== null && <ArrowMenuItems arrowId={arrowId} close={close} />}

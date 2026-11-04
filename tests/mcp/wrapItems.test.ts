@@ -45,7 +45,8 @@ const created = (before: Project, after: Project) =>
 /**
  * O projeto sem o que varia entre uma execução e outra (revisão e data), com cada lista
  * ordenada por id: a aplicação de uma proposta acrescenta a marcação criada, enquanto o
- * `wrapItems` da app a põe antes da primeira envolvida (só muda o empate de área igual).
+ * `wrapItems` da app a põe antes da primeira envolvida (a hierarquia só difere no empate
+ * de retângulo; ver "empate de retângulo" abaixo).
  */
 const shape = (p: Project, newId: string) => {
   const sorted = (list: readonly unknown[]) =>
@@ -199,6 +200,112 @@ describe('wrap_items: criação', () => {
       { settle: true },
     );
     expect(shape(after, id)).toEqual(shape(expected, id));
+  });
+});
+
+describe('wrap_items: empate de retângulo', () => {
+  const tieProject = 'envolver-empate';
+  let tieDir: string;
+
+  beforeAll(async () => {
+    ok(
+      await mcp.call('create_project', {
+        path: `projetos/${tieProject}`,
+        name: tieProject,
+      }),
+    );
+    tieDir = join(root, 'projetos', tieProject);
+    const base = await propose(mcp, tieProject, [
+      {
+        op: 'add_container',
+        name: 'Cheio',
+        width: 300,
+        height: 200,
+        background: '#FFFFFF',
+      },
+      {
+        op: 'create_marking',
+        container: 'Cheio',
+        rect: { x: 0, y: 0, width: 300, height: 200 },
+        name: 'A',
+      },
+      {
+        op: 'create_marking',
+        container: 'Cheio',
+        rect: { x: 50, y: 50, width: 40, height: 30 },
+        name: 'B',
+      },
+      {
+        op: 'create_marking',
+        container: 'Cheio',
+        rect: { x: 100, y: 100, width: 40, height: 30 },
+        name: 'D',
+      },
+    ]);
+    expect(base.valid, JSON.stringify(base.errors)).toBe(true);
+    acceptAllAndApply(tieDir, base.proposal.id);
+  });
+
+  const parentOf = (p: Project, id: string) =>
+    p.markings.find((m) => m.id === id)!.parentId;
+
+  it('item que preenche o container: a nova fica com o retângulo dele e, ao aplicar, a hierarquia é a inversa da do modelo', async () => {
+    const before = readProject(tieDir);
+    const a = byName(before, 'A');
+    const b = byName(before, 'B');
+    expect(parentOf(before, b.id)).toBe(a.id);
+
+    const proposed = await propose(mcp, tieProject, [
+      { op: 'wrap_items', items: [a.id] },
+    ]);
+    expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
+    const after = acceptAllAndApply(tieDir, proposed.proposal.id);
+    const id = created(before, after).id;
+    const wrapper = after.markings.find((m) => m.id === id)!;
+    // Sem margem para crescer: o retângulo da nova é o de A (o recorte de 8 px).
+    expect(wrapper.rect).toEqual(a.rect);
+
+    // O Envolver da app (e o plano) põe a nova ANTES de A: ela é pai de A, e A de B.
+    const model = wrapItems(
+      before,
+      { id, items: [{ kind: 'marking', id: a.id }] },
+      { settle: true },
+    );
+    expect(parentOf(model, a.id)).toBe(id);
+    expect(parentOf(model, b.id)).toBe(a.id);
+
+    // Aplicada, a nova entra no fim da lista e o assentar desempata por ordem: A fica sem
+    // pai, a nova é filha de A e B é filha da nova (a inversa). Documentado em docs/MCP.md.
+    expect(parentOf(after, a.id)).toBeNull();
+    expect(parentOf(after, id)).toBe(a.id);
+    expect(parentOf(after, b.id)).toBe(id);
+  });
+
+  it('sem empate (o retângulo cresce), a hierarquia aplicada é a do modelo', async () => {
+    const before = readProject(tieDir);
+    const b = byName(before, 'B');
+    const d = byName(before, 'D');
+    const proposed = await propose(mcp, tieProject, [
+      { op: 'wrap_items', items: [b.id, d.id] },
+    ]);
+    expect(proposed.valid, JSON.stringify(proposed.errors)).toBe(true);
+    const after = acceptAllAndApply(tieDir, proposed.proposal.id);
+    const id = created(before, after).id;
+    expect(after.markings.find((m) => m.id === id)!.rect).not.toEqual(b.rect);
+    const model = wrapItems(
+      before,
+      {
+        id,
+        items: [
+          { kind: 'marking', id: b.id },
+          { kind: 'marking', id: d.id },
+        ],
+      },
+      { settle: true },
+    );
+    for (const m of model.markings) {
+      expect(parentOf(after, m.id), m.name ?? m.id).toBe(m.parentId);
+    }
   });
 });
 

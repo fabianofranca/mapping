@@ -1000,4 +1000,34 @@ describe('useEditorShortcuts: Envolver (Ctrl/Cmd+G)', () => {
     expect(s.press('g', { ctrl: true }).defaultPrevented).toBe(false);
     expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
   });
+
+  it('segurar o Ctrl+G (tecla repetida) envolve uma vez só, sem aninhar pais', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
+    s.press('g', { ctrl: true });
+    const wrap = created(s.harness);
+    expect(wrap).toBeDefined();
+    const repeated = s.press('g', { ctrl: true }, { repeat: true });
+    s.press('g', { ctrl: true }, { repeat: true });
+    // O "localizar próximo" do navegador continua fora do caminho; o atalho só não age.
+    expect(repeated.defaultPrevented).toBe(true);
+    expect(s.harness.project().markings).toHaveLength(5);
+    expect(marking(s.harness, wrap?.id ?? '').parentId).toBeNull();
+    expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: wrap?.id });
+    // Uma só entrada de desfazer.
+    s.press('z', { ctrl: true });
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+  });
+
+  it('com um arrasto ou redimensionamento em andamento, não age nem mostra o aviso', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
+    s.canvas.isInteracting.mockReturnValue(true);
+    s.press('g', { ctrl: true });
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+    expect(s.harness.ui.toast.value).toBeNull();
+    s.canvas.isInteracting.mockReturnValue(false);
+    s.press('g', { ctrl: true });
+    expect(created(s.harness)).toBeDefined();
+  });
 });

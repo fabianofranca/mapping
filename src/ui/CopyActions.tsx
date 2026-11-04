@@ -164,7 +164,8 @@ export function ItemMenu({
 }) {
   const editor = useEditor();
   const copyable = canCopyItems(editor);
-  if (!copyable && target.kind !== 'm') return null;
+  // Fora de uma pasta não há o que copiar, mas o Envolver vale para marcação e container.
+  if (!copyable && target.kind === 'a') return null;
   const label = t('copy.itemActions', { name });
   return (
     <Popover
