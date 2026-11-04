@@ -4,6 +4,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
+## Registros por épico — [Não lançado] (épico `epic/registros-por-epico`, PR #<n>, MCP 0.14.0, schema v13)
+
+### Alterado
+
+- **Tabelas largas do guia de teste (`docs/TESTING.md`) e do registro do DS (`docs/DESIGN-SYSTEM.md`) sem alinhamento.** Acrescentar ou mudar um passo muda só a linha dele, em vez de realinhar a tabela inteira; o `docs/TESTING.md` encolhe cerca de 43%.
+
 ## Avisos na especialização — 2026-11-04 (épico `epic/avisos-especializacao`, PR #498, MCP 0.15.0, schema v13)
 
 ### Adicionado

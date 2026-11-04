@@ -1,1 +1,14 @@
-{ "singleQuote": true, "semi": true, "trailingComma": "all", "printWidth": 90 }
+{
+  "singleQuote": true,
+  "semi": true,
+  "trailingComma": "all",
+  "printWidth": 90,
+  "overrides": [
+    {
+      "files": ["docs/TESTING.md", "docs/DESIGN-SYSTEM.md"],
+      "options": {
+        "proseWrap": "never"
+      }
+    }
+  ]
+}

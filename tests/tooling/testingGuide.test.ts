@@ -73,7 +73,7 @@ function longBullets(md: string, max = 600): string[] {
     .filter((line) => /^\s*(?:[-*]|\d+\.)\s/.test(line) && line.trim().length > max);
 }
 
-/** Códigos de passo cuja linha da tabela (células sem o código) passa de `max` caracteres (o limite subiu de 1.200 para 1.300 com as anotações "ou `ferramenta`" nos passos [pessoa]). */
+/** Códigos de passo cuja linha da tabela (células sem o código) passa de `max` caracteres (o limite subiu de 1.200 para 1.300 com as anotações "ou `ferramenta`" nos passos [pessoa]). Com as tabelas compactas (`proseWrap: "never"` no `.prettierrc.json`) a medida é só de conteúdo; antes contava também os espaços do alinhamento. */
 function longSteps(md: string, max = 1300): string[] {
   const out: string[] = [];
   for (const line of stripFences(md).split('\n')) {
@@ -929,5 +929,22 @@ describe('rodada completa em 3 blocos (etapa #424, PL1)', () => {
     expect(claude).toMatch(/rodada completa[^\n]*3 sessões/);
     expect(claude).toContain('bloco k de 3');
     expect(claude).toMatch(/\bk\.n\b/);
+  });
+});
+
+describe('.prettierrc.json (tabelas compactas, etapa #478)', () => {
+  it('tem um override com proseWrap "never" só para o guia de teste e o registro do DS', () => {
+    const config = JSON.parse(read('.prettierrc.json')) as {
+      proseWrap?: string;
+      overrides?: { files: string | string[]; options: { proseWrap?: string } }[];
+    };
+    expect(config.proseWrap).toBeUndefined();
+    expect(config.overrides).toHaveLength(1);
+    const [override] = config.overrides!;
+    expect([override!.files].flat().sort()).toEqual([
+      'docs/DESIGN-SYSTEM.md',
+      'docs/TESTING.md',
+    ]);
+    expect(override!.options.proseWrap).toBe('never');
   });
 });
