@@ -13,6 +13,10 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 - **Seleção por retângulo:** Shift+arrasto, em qualquer modo (Navegar e Desenhar), desenha um retângulo e, ao soltar, soma à seleção os itens inteiros dentro dele, sem os que já vão junto com outro item da seleção (a marcação de um container que entrou, por exemplo). Esc cancela. Sobre um item selecionado ou uma alça, o Shift+arrasto continua movendo e redimensionando. A lista de atalhos ganha "Selecionar por retângulo".
 - A lista de atalhos ganha "Mover a seleção" (setas; Shift+setas, 10 px) e o Shift+clique passa a citar Ctrl/Cmd.
 
+### Corrigido
+
+- O **Esc cancela o retângulo de seleção** (e os outros gestos de ponteiro em andamento) também com o Shift apertado: o `Shift+Esc` só esconde a janela em foco quando não há gesto. A introdução da Ajuda › Atalhos não contradiz mais o Cmd+clique da seleção no macOS.
+
 ## Zoom do projeto grande mais rápido — 2026-11-04 (épico `epic/zoom-rapido`, PR #434, MCP 0.13.0, schema v13)
 
 ### Alterado

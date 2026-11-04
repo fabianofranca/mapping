@@ -523,7 +523,7 @@ export const ptBR = {
   'help.noResults': 'Nada encontrado para "{query}".',
   'help.shortcuts.title': 'Atalhos de teclado',
   'help.shortcuts.intro':
-    'Os atalhos valem no editor do desktop, com o foco fora de um campo de texto. No macOS use Ctrl, não Cmd. O Alt+número é um atalho extra: só funciona onde o navegador não o usa (no Chrome do Linux, só com a app instalada).',
+    'Os atalhos valem no editor do desktop, com o foco fora de um campo de texto. No macOS use Ctrl, não Cmd (só o clique da seleção usa Cmd). O Alt+número é um atalho extra: só funciona onde o navegador não o usa (no Chrome do Linux, só com a app instalada).',
   'shortcuts.or': 'ou',
   'shortcuts.group.windows': 'Janelas',
   'shortcuts.group.edit': 'Edição e seleção',

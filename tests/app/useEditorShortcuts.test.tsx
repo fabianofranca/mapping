@@ -513,6 +513,23 @@ describe('useEditorShortcuts: janelas', () => {
     expect(isToolWindowOpen('details')).toBe(false);
   });
 
+  it('Shift+Esc com gesto de ponteiro em andamento cancela o gesto e não esconde a janela', () => {
+    const s = setup();
+    showToolWindow('details');
+    const el = document.createElement('section');
+    el.className = 'tool-window';
+    el.setAttribute('data-window', 'details');
+    el.tabIndex = 0;
+    document.body.append(el);
+    el.focus();
+    s.canvas.cancelInteraction.mockReturnValue(true);
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    s.press('Escape', { shift: true });
+    expect(s.canvas.cancelInteraction).toHaveBeenCalled();
+    expect(isToolWindowOpen('details')).toBe(true);
+    expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+  });
+
   it('Ctrl+Shift+setas redimensionam a janela em foco em passos de 16 px', () => {
     const s = setup();
     resetToolWindowSize('right', { width: 1400, height: 800, otherWidth: 0 });
