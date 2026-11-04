@@ -131,8 +131,9 @@ test('Shift+arrasto em volta de duas marcações seleciona as duas, no Navegar e
   const { spots, sizeW, sizeH, centers } = await twoMarkings(page, 'Retângulo');
   const [s0, s1] = spots;
   if (!s0 || !s1) throw new Error('sem pontos');
-  const around = { x: s0.x - 10, y: s0.y - 10 };
-  const end = { x: s1.x + sizeW + 10, y: s1.y + sizeH + 10 };
+  // Longe das alças do item já selecionado (22 px de alcance), senão o gesto redimensiona.
+  const around = { x: s0.x - 40, y: s0.y - 40 };
+  const end = { x: s1.x + sizeW + 40, y: s1.y + sizeH + 40 };
   const count = async (): Promise<number> => {
     const n = (await exportMapping(page)).mapping.markings.length;
     await closeExport(page);
