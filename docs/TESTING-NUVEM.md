@@ -8,6 +8,7 @@ A sessão é criada pelo **orquestrador** do fluxo automatizado (`CLAUDE.md`, "F
 - **Dirigido pelos achados de um relato anterior:** "… no modo dirigido: os achados 2 a 5 do relato em <link do comentário>. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o relato é um comentário de issue; vale número de achado ou código, como "A1 a A3")
 - **Dirigido pelas fases de uma etapa:** "… no modo dirigido: as fases X e Y da etapa #301. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o plano está na issue da etapa e nas sub-issues `step`)
 - **Completo:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (R0 a R17, sem os roteiros sob demanda; a ordem está em "O que executar")
+- **Completo, em bloco:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco k de 3. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (só os roteiros do bloco k da tabela de "Rodada completa em blocos"; o coordenador cria os três blocos ao mesmo tempo)
 - **Só um link de PR do Mapping** ("Teste <link>"): trate como dirigida pelos roteiros que o PR toca; leia o corpo e os arquivos do PR, monte a lista e siga o modo comum.
 
 Em qualquer modo, a mensagem pode trazer a lista da **passada visual** ("passada visual: Detalhes, Propostas"); sem lista, vale a padrão (em "O que executar").
@@ -76,7 +77,7 @@ Siga o apêndice A do guia: a página pelo Playwright por CDP (receita 4), os di
 
 ## O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, **R0 a R17** (sem o RP, o RF, o RA e o RB), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8, R9, R10, R11, R12, R13, R14, R15, R16 e R17. A seção 9 do guia (teste manual avançado) não entra, é do dono. Os roteiros principais são feitos para você executar **sozinho**; nenhum passo deles fica com o dono.
+**Rodada completa (padrão).** Todos os roteiros, **R0 a R17** (sem o RP, o RF, o RA e o RB), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8, R9, R10, R11, R12, R13, R14, R15, R16 e R17. A seção 9 do guia (teste manual avançado) não entra, é do dono. Os roteiros principais são feitos para você executar **sozinho**; nenhum passo deles fica com o dono. Com "bloco k de 3" na mensagem, você roda só o bloco k (ver "Rodada completa em blocos"); sem bloco, uma sessão roda tudo.
 
 **Rodada dirigida.** A mensagem aponta o alvo de um destes três jeitos:
 
@@ -95,10 +96,32 @@ Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começ
 - **Rodada dirigida** (modos 2 e 3: lista de roteiros/passos ou fases de uma etapa): a linha "passada visual: `<lista>`" da mensagem; "passada visual: nenhuma" pula a passada, e o relato diz "Passada visual: não pedida"; sem a linha na mensagem, a lista padrão (abaixo).
 - **Reteste** (modo 1, achados de um relato anterior): só as janelas e os diálogos citados nos achados do relato, nunca a lista padrão nem a da mensagem.
 - **Rodada completa:** a lista padrão; se a mensagem trouxer "passada visual: `<lista>`", use essa em vez da padrão.
+- **Rodada completa em blocos:** só o **bloco 1** faz a passada visual (lista padrão, ou a da mensagem); nos blocos 2 e 3, o relato diz "Passada visual: no bloco 1".
 
 **Lista padrão:** as sete janelas (**Árvore**, **Camadas**, **Detalhes**, **Lista**, **Incompletas**, **Diagnóstico** e **Propostas**) e os diálogos **Configurações**, **Exportar**, **Especializações**, **Pasta indisponível** e **Sair da revisão?**.
 
 Procure texto cortado ou sobreposto, barra de rolagem horizontal, dica cobrindo menu e foco perdido ao fechar um diálogo: feche cada diálogo uma vez pelo teclado (Esc) e uma pelo mouse (**Cancelar** ou o X) e confira que o foco volta ao controle que o abriu, nunca ao `body` (em **Pasta indisponível**, o **Abrir** da linha que abriu o aviso, mesmo que não seja a primeira da lista: abra por uma linha de baixo). A regra do foco vale para os diálogos e para as janelas de ferramenta (**Árvore**, **Camadas**, **Catálogo**, **Detalhes** e as abas da janela inferior): fechar uma janela com o foco dentro devolve o foco a quem a abriu, senão ao botão da faixa, senão ao canvas, e trocar de aba da janela inferior (clique ou atalho) deixa o foco na aba ativa. Foco no `body` ou na seção da janela depois dessas ações é falha, não observação. Registre cada janela ou diálogo como uma linha da tabela ("Visual: Camadas"). Se a janela não redimensionar, marque a passada estreita como "não executado (janela não redimensionou; layout estreito coberto pelo e2e `narrowLayout.spec.ts`)".
+
+## Rodada completa em blocos
+
+A rodada completa (R0 a R17) roda em **3 sessões ao mesmo tempo**, uma por bloco, com a divisão fixa abaixo. Cada sessão faz o ambiente, o R0 inteiro e os roteiros do seu bloco, e entrega o relato dela; um coordenador (o orquestrador da etapa ou um chat avulso do dono, ver [`docs/FLOW.md`](FLOW.md)) cria as três e resume.
+
+| Bloco | Roteiros, na ordem do guia                                      | Passos |
+| ----- | --------------------------------------------------------------- | ------ |
+| 1     | R0, R1, seção 6, R3, R6.3 a R6.7, R7, R5, R8 e a passada visual | 82     |
+| 2     | R0, R2, seção 6, R4, R6.8a a R6.11, R9, R10, R11 e R13          | 92     |
+| 3     | R0, seção 6, R12, R14, R15, R16 e R17                           | 95     |
+
+Por quê: as dependências da seção 8 do guia e a contagem de passos (a coluna **Passos** conta o R0, que está nos três; no total são 257 passos distintos, e nenhum bloco passa de 40%). R1, R3, R5, R6.3 a R6.7, R7 e R8 usam o `principal` e o repositório de teste; R6.8a a R6.11 usam a pasta `loja` do R4.11; o R10.7 usa o projeto `telas` do R9; o resto usa pastas próprias. A passada visual fica no bloco 1, o de menos passos, que tem o que ela abre (propostas e revisão, especializações, exportar e pasta indisponível). A seção 6 (repositório de teste e MCP) está nos três blocos, porque todos têm R3, R5, R9, R12, R16 ou R17. O teste `tests/tooling/roundBlocks.test.ts` confere a tabela contra os passos do guia: um roteiro novo (R18) o faz falhar até ser posto num bloco.
+
+**Modo "completo, bloco k de 3".** A mensagem "execute o modo completo, bloco k de 3" (k de 1 a 3) manda:
+
+1. Montar a lista da rodada com os roteiros do bloco k (R6 entra inteiro no guia da rodada; só execute os passos que a tabela dá ao bloco) e gerar o guia da rodada com eles: `node scripts/testing/round-guide.mjs <roteiros do bloco> --out …/apoio/guia.md`. O ambiente, as pastas de trabalho e o MCP são seus, de mais ninguém: três blocos não dividem pasta, perfil do Chrome nem porta.
+2. Executar o **R0 inteiro primeiro** (ele está nos três blocos) e depois os roteiros do bloco, na ordem da tabela.
+3. Relatar no template da seção 10: `Modo: completo, bloco k de 3 (<roteiros>)`; a primeira linha do comentário é "Rodada completa — bloco k de 3"; os achados são numerados `k.1`, `k.2`… (o código do achado carrega o bloco, para o reteste dirigido achar de onde veio).
+4. O aviso ao coordenador (item 5 da "Entrega") cita o bloco: "Bloco k de 3: relato em <link>: …".
+
+"Bloco" não colide com o "Parte i de n" dos comentários acima de 65 mil caracteres: um bloco longo vira "Rodada completa — bloco k de 3 · Parte i de n". O "modo completo" sem bloco continua valendo: uma sessão roda tudo.
 
 ## Conferir e registrar
 
@@ -111,7 +134,7 @@ Procure texto cortado ou sobreposto, barra de rolagem horizontal, dica cobrindo 
 
 **Escreva o relato a cada roteiro concluído, não só no fim.** Ao terminar o R0, crie o `relato.md` na pasta de trabalho com o cabeçalho e os passos do R0; ao terminar cada roteiro seguinte, acrescente os passos e os achados dele e grave o arquivo (template da seção 10 do guia). Uma sessão interrompida não pode perder o que já foi observado, e o `relato.md` é gravado mesmo se a rodada parar no meio (ambiente incompleto, passo bloqueado): o motivo da parada vai no **Resumo**.
 
-O `relato.md` leva o cabeçalho inteiro (inclusive o **Tempo por roteiro**, ver abaixo), em **Ferramenta**: "Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)" e o MCP por stdio; o **Resumo** (obrigatório), os passos, os achados com a severidade da escala do guia, as **Observações (sem severidade)** e "O que atrapalhou", inclusive o que atrapalhou **você** como testador (passo ambíguo, esperado que não dá para observar, contorno que precisou usar). Essa última parte é a que mais importa para a etapa seguinte. As capturas e os `mapping.json` dos ❌ ficam em `anexos/`, com o número do achado no nome.
+No modo de bloco, o `relato.md` abre com `Modo: completo, bloco k de 3 (<roteiros>)` e os achados são `k.1`, `k.2`… (seção "Rodada completa em blocos"). O `relato.md` leva o cabeçalho inteiro (inclusive o **Tempo por roteiro**, ver abaixo), em **Ferramenta**: "Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)" e o MCP por stdio; o **Resumo** (obrigatório), os passos, os achados com a severidade da escala do guia, as **Observações (sem severidade)** e "O que atrapalhou", inclusive o que atrapalhou **você** como testador (passo ambíguo, esperado que não dá para observar, contorno que precisou usar). Essa última parte é a que mais importa para a etapa seguinte. As capturas e os `mapping.json` dos ❌ ficam em `anexos/`, com o número do achado no nome.
 
 **✅ agrupados.** Na tabela de passos, passos seguidos do mesmo roteiro que passaram **sem observação** viram uma **faixa** de uma linha (`R11.1 a R11.10 | | ✅ |`). ❌, "não executado" e passo com observação têm linha própria, e a faixa recomeça depois deles. Na dirigida por achados, a faixa só junta passos do mesmo achado de origem. O **Resumo** continua contando por passo: dez passos numa faixa são dez ✅. A regra completa está no template da seção 10 do guia.
 
@@ -123,7 +146,7 @@ O `relato.md` leva o cabeçalho inteiro (inclusive o **Tempo por roteiro**, ver 
 2. **Em partes se passar de 65 mil caracteres** (o limite do GitHub é 65.536; confira com `wc -m relato.md`): corte entre seções ou roteiros, nunca no meio de uma tabela ou de um achado, e ponha "Parte i de n" na primeira linha de cada comentário. O cabeçalho e o Resumo vão na parte 1.
 3. **Termine cada comentário com o rodapé de atribuição** que a sessão exige para o que ela escreve no GitHub.
 4. **Anexos:** comentário de issue não aceita anexo pela API. As capturas dos ❌ vão no branch `evidencias`, em `<sub-issue>/achado-<n>-<nome>.png`, pelo procedimento do `CLAUDE.md` ("Bugs e evidência visual"), num commit só, **antes** de postar o comentário. Cada ❌ no comentário mostra a imagem com `![…](…?raw=true)`, **descreve em texto o que ela mostra** e cola o trecho relevante do `mapping.json` num bloco de código. Se o push falhar, volta ao que era: a descrição em texto e os arquivos de `anexos/` enviados com a ferramenta de envio de arquivos da sessão, se houver.
-5. **Avise o coordenador** (o id do fim da mensagem) com a ferramenta `send_message` do servidor `claude-code-remote` (não o `SendMessage`, que falha): uma linha com o link do (primeiro) comentário, o total de ✅ e ❌, os achados por severidade e a duração total medida (ex.: "Relato em <link>: 212 ✅, 3 ❌; achados: alta 1, média 1, baixa 1; 19min32s" ou "; tempo não medido"). Sem o id, pule este item.
+5. **Avise o coordenador** (o id do fim da mensagem) com a ferramenta `send_message` do servidor `claude-code-remote` (não o `SendMessage`, que falha): uma linha com o link do (primeiro) comentário, o total de ✅ e ❌, os achados por severidade e a duração total medida (ex.: "Relato em <link>: 212 ✅, 3 ❌; achados: alta 1, média 1, baixa 1; 19min32s" ou "; tempo não medido"). No modo de bloco, a linha começa com o bloco e traz também o total de "não executado" (ex.: "Bloco 2 de 3: relato em <link>: 88 ✅, 2 ❌, 2 não executado; achados: média 2 (2.1, 2.2); 38min10s"). Sem o id, pule este item.
 6. **Cole o Resumo na conversa**, com o caminho completo do `relato.md`, e diga quais passos ficaram "não executado (precisa do dono)" e se algum achado impede o uso com pessoas.
 
 Você não cria branch, não faz commit nem abre PR, e não edita nada no repositório. Não apague a pasta de trabalho.
