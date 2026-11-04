@@ -219,6 +219,27 @@ const APPLIES_TO_EXCERPT = `{
   "fields": [{ "key": "uri", "label": "URI", "type": "string", "required": true }]
 }`;
 
+/** Trecho de uma especialização v10: avisos (`notices`) em tipo e campo. */
+const NOTICES_EXCERPT = `{
+  "id": "alert",
+  "name": "Alert",
+  "notices": [
+    {
+      "kind": "pending",
+      "message": "O contrato aceita avatarVariant; o SDK do BFF ainda não tem.",
+      "since": "2026-11-04",
+      "ref": "cross/sdui/all/pe-core/base/plugins/alert.md"
+    }
+  ],
+  "fields": [
+    {
+      "key": "legacyStyle",
+      "type": "string",
+      "notices": [{ "kind": "deprecated", "message": "Use variant." }]
+    }
+  ]
+}`;
+
 /** Trecho de uma especialização v7: o "flutuante que aponta" (tabela flutuante com coluna `ref`). */
 const POINTING_EXCERPT = `{
   "id": "tabela-eventos",
@@ -442,6 +463,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 7 é a 6 mais floating no tipo de anotação (o tipo cuja instância é uma marcação flutuante, um comentário solto sobre o canvas: seção "Tipo flutuante"), appliesTo no tipo (onde a anotação se aplica: marcação, seta ou ambas: seção "Onde o tipo se aplica") e ref como tipo de coluna de table (uma lista de referências como dado). As versões 1 a 6 continuam aceitas.',
           'A formatVersion 8 acrescenta `suggestions` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor) e `linkedRef` (liga o texto a um campo/coluna `ref` do mesmo tipo/tabela: a lista de sugestões também mostra os alvos mapeados que esse `ref` aceita).',
           'A formatVersion 9 acrescenta `variants` na entrada de `code`: um campo enum do tipo escolhe a variante do código (em Compose, `Button`, `OutlinedButton` ou `TextButton`), que troca symbol, path e notes e soma params e values (seção "Plataformas e code"). As versões 1 a 8 continuam aceitas.',
+          'A formatVersion 10 acrescenta `notices` no tipo, no campo e na coluna de table: avisos curtos (pendente, obsoleto, diverge, removido) que só informam, sem impedir nada (seção "Avisos (notices)"). As versões 1 a 9 continuam aceitas.',
         ],
       },
     ],
@@ -452,7 +474,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 9), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 10), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -805,6 +827,46 @@ const ptBR: readonly HelpSection[] = [
     ],
   },
   {
+    id: 'notices',
+    title: 'Avisos (notices)',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'A formatVersion 10 deixa a especialização avisar sobre um tipo, um campo ou uma coluna de table com notices: uma lista de avisos curtos, escritos por quem gera a especialização, para registrar que duas fontes discordam (o contrato diz uma coisa e o código outra), que algo está pendente numa delas, obsoleto ou removido. A app mostra o aviso ao lado do tipo, do campo ou da coluna; o agente o lê ao instanciar o tipo.',
+      },
+      { kind: 'code', code: NOTICES_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'kind',
+            text: 'Obrigatório. Um de removed (Removido: saiu do contrato e não deve ser usado), deprecated (Obsoleto: a message diz o que usar no lugar), diverges (Diverge: as fontes discordam, a message diz em quê) e pending (Pendente: uma fonte já tem e a outra ainda não; o nome da plataforma ou da origem vai na message). A gravidade é fixa: removed > deprecated = diverges > pending.',
+          },
+          {
+            term: 'message',
+            text: 'Obrigatória. O que a pessoa precisa saber: texto não vazio e que não seja só espaços.',
+          },
+          {
+            term: 'since',
+            text: 'Opcional. Desde quando o aviso vale: data real no formato AAAA-MM-DD.',
+          },
+          {
+            term: 'ref',
+            text: 'Opcional, texto livre não vazio. De onde o aviso vem (a página do contrato, o arquivo do código).',
+          },
+        ],
+      },
+      {
+        kind: 'list',
+        items: [
+          'Os avisos aparecem na ordem removed, deprecated, diverges, pending e, dentro do mesmo kind, na ordem do arquivo. Dois avisos com o mesmo kind e a mesma message na lista são o erro aviso repetido.',
+          'O aviso só informa: nenhum, nem removed, impede importar a especialização, aplicá-la, criar uma anotação do tipo ou aceitar uma proposta. Também não é pendência: a janela Incompletas não muda.',
+          'Fora do contrato de versão: incluir, mudar ou tirar notices é compatível e nunca pede migração. Quem gera a especialização pode regravar todos os avisos a cada rodada; o aviso some sozinho quando a diferença entre as fontes some. Atualizar a especialização só por avisos não mostra impacto.',
+        ],
+      },
+    ],
+  },
+  {
     id: 'sources',
     title: 'Origens (sources)',
     blocks: [
@@ -989,7 +1051,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 9), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 10), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
@@ -998,6 +1060,7 @@ const ptBR: readonly HelpSection[] = [
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
+          'formatVersion 10, notices: só na versão 10 (antes dela o erro é só é permitido com formatVersion 10, no caminho do tipo, do campo ou da coluna); lista de objetos estritos com kind (pending, deprecated, diverges ou removed) e message (não vazia nem só espaços) obrigatórios, since (data real AAAA-MM-DD) e ref (texto não vazio) opcionais; dois avisos com o mesmo kind e a mesma message são o erro aviso repetido, no caminho do segundo; qualquer outra propriedade é recusada;',
           'formatVersion 7, floating, appliesTo e coluna ref: só na versão 7 (antes dela o erro é só é permitido com formatVersion 7); floating booleano; appliesTo não vazio, sem repetição, só com "marking" e "arrow", e sem component nem floating num tipo só de seta;',
           'formatVersion 6, containers: só na versão 6 (antes dela o erro é só é permitido com formatVersion 6); id no formato [a-z0-9-]+ e único na lista; name não vazio; width e height inteiros de 1 a 20000; background opcional, #RRGGBB; qualquer outra propriedade é recusada;',
           'formatVersion 5, repo: só na versão 5, dentro de uma entrada de platforms (antes dela o erro é só é permitido com formatVersion 5); url obrigatória, começando com http:// ou https://; urlTemplate opcional, http(s):// e com {path}; ref opcional, texto não vazio; qualquer outra propriedade é recusada. Plataforma com path em algum tipo e sem repo é só aviso (path-without-repo);',
@@ -1053,6 +1116,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 7 is 6 plus floating on the annotation type (the type whose instance is a floating marking, a loose comment over the canvas: section "Floating type"), appliesTo on the type (what the annotation applies to: marking, arrow or both: section "What the type applies to") and ref as a column type of table (a list of references as data). Versions 1 to 6 are still accepted.',
           'formatVersion 8 adds `suggestions` to `string` fields and columns (vocabulary suggested while typing, without restricting the value) and `linkedRef` (links the text to a `ref` field/column of the same type/table: the suggestion list also shows the mapped targets that `ref` accepts).',
           'formatVersion 9 adds `variants` to the `code` entry: an enum field of the type picks the code variant (in Compose, `Button`, `OutlinedButton` or `TextButton`), which replaces symbol, path and notes and adds to params and values (section "Platforms and code"). Versions 1 to 8 are still accepted.',
+          'formatVersion 10 adds `notices` to the type, the field and the table column: short notices (pending, deprecated, diverges, removed) that only inform and block nothing (section "Notices (notices)"). Versions 1 to 9 are still accepted.',
         ],
       },
     ],
@@ -1063,7 +1127,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 9), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 10), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -1419,6 +1483,46 @@ const enUS: readonly HelpSection[] = [
     ],
   },
   {
+    id: 'notices',
+    title: 'Notices (notices)',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'formatVersion 10 lets the specialization warn about a type, a field or a table column with notices: a list of short notices, written by whoever generates the specialization, to record that two sources disagree (the contract says one thing and the code another), or that something is pending in one of them, deprecated or removed. The app shows the notice beside the type, the field or the column; the agent reads it when instantiating the type.',
+      },
+      { kind: 'code', code: NOTICES_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'kind',
+            text: 'Required. One of removed (Removed: left the contract and must not be used), deprecated (Deprecated: the message says what to use instead), diverges (Diverges: the sources disagree, the message says on what) and pending (Pending: one source already has it and the other does not yet; the name of the platform or origin goes in the message). The severity is fixed: removed > deprecated = diverges > pending.',
+          },
+          {
+            term: 'message',
+            text: 'Required. What the person needs to know: non-empty text that is not only spaces.',
+          },
+          {
+            term: 'since',
+            text: 'Optional. Since when the notice holds: a real date in YYYY-MM-DD format.',
+          },
+          {
+            term: 'ref',
+            text: 'Optional, free non-empty text. Where the notice comes from (the contract page, the code file).',
+          },
+        ],
+      },
+      {
+        kind: 'list',
+        items: [
+          'Notices are shown in the order removed, deprecated, diverges, pending and, within the same kind, in file order. Two notices with the same kind and message in the list are the error aviso repetido.',
+          'A notice only informs: none, not even removed, prevents importing the specialization, applying it, creating an annotation of the type or accepting a proposal. It is not an incompleteness either: the Incomplete window does not change.',
+          'Outside the version contract: adding, changing or removing notices is compatible and never asks for a migration. Whoever generates the specialization may rewrite all notices on every run; a notice disappears by itself when the difference between the sources disappears. Updating the specialization only through notices shows no impact.',
+        ],
+      },
+    ],
+  },
+  {
     id: 'sources',
     title: 'Sources (sources)',
     blocks: [
@@ -1603,7 +1707,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 9), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 10), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type;',
@@ -1612,6 +1716,8 @@ const enUS: readonly HelpSection[] = [
           'labelField points to a string field of the type;',
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
+          'formatVersion 10, notices: only in version 10 (before it the error is only allowed with formatVersion 10, at the type, field or column path); a list of strict objects with kind (pending, deprecated, diverges or removed) and message (not empty or only spaces) required, since (a real YYYY-MM-DD date) and ref (non-empty text) optional; two notices with the same kind and message are the error repeated notice (aviso repetido), at the path of the second; any other property is refused;',
+          'formatVersion 10, notices: only in version 10 (before it the error is only allowed with formatVersion 10, at the type, field or column path); a list of strict objects with kind (pending, deprecated, diverges or removed) and message (not empty or only spaces) required, since (a real YYYY-MM-DD date) and ref (non-empty text) optional; two notices with the same kind and message are the error aviso repetido, at the path of the second; any other property is refused;',
           'formatVersion 7, floating, appliesTo and ref column: version 7 only (before it the error is only allowed with formatVersion 7); floating is boolean; appliesTo is non-empty, without repetition, with "marking" and "arrow" only, and an arrow-only type has no component or floating;',
           'formatVersion 6, containers: version 6 only (before it the error is only allowed with formatVersion 6); id in the [a-z0-9-]+ format and unique in the list; name non-empty; width and height integers from 1 to 20000; background optional, #RRGGBB; any other property is rejected;',
           'formatVersion 5, repo: version 5 only, inside a platforms entry (before it the error is only allowed with formatVersion 5); url required, starting with http:// or https://; urlTemplate optional, http(s):// and containing {path}; ref optional, non-empty text; any other property is rejected. A platform with a path on some type and no repo is only a warning (path-without-repo);',

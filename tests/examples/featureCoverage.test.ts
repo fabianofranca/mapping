@@ -63,7 +63,39 @@ const LEAVING: string[] = [];
 const PENDING_AFTER_REMOVAL: string[] = [];
 
 /** Recursos sem exemplo hoje; ganham exemplo nesta etapa. */
-const MISSING_TODAY: string[] = [];
+/*
+ * `notices` (formatVersion 10, etapa #486): o guia e os exemplos não ganham avisos nesta etapa
+ * (decisão 'Fora' da #486); o recurso é coberto por tests/model/specV10.test.ts e pelo roteiro R18.
+ */
+const MISSING_TODAY: string[] = [
+  'spec:layers[].annotationTypes[].notices',
+  'spec:layers[].annotationTypes[].notices[].kind',
+  'spec:layers[].annotationTypes[].notices[].kind=deprecated',
+  'spec:layers[].annotationTypes[].notices[].kind=diverges',
+  'spec:layers[].annotationTypes[].notices[].kind=pending',
+  'spec:layers[].annotationTypes[].notices[].kind=removed',
+  'spec:layers[].annotationTypes[].notices[].message',
+  'spec:layers[].annotationTypes[].notices[].ref',
+  'spec:layers[].annotationTypes[].notices[].since',
+  'spec:layers[].annotationTypes[].fields[].notices',
+  'spec:layers[].annotationTypes[].fields[].notices[].kind',
+  'spec:layers[].annotationTypes[].fields[].notices[].kind=deprecated',
+  'spec:layers[].annotationTypes[].fields[].notices[].kind=diverges',
+  'spec:layers[].annotationTypes[].fields[].notices[].kind=pending',
+  'spec:layers[].annotationTypes[].fields[].notices[].kind=removed',
+  'spec:layers[].annotationTypes[].fields[].notices[].message',
+  'spec:layers[].annotationTypes[].fields[].notices[].ref',
+  'spec:layers[].annotationTypes[].fields[].notices[].since',
+  'spec:layers[].annotationTypes[].fields[].columns[].notices',
+  'spec:layers[].annotationTypes[].fields[].columns[].notices[].kind',
+  'spec:layers[].annotationTypes[].fields[].columns[].notices[].kind=deprecated',
+  'spec:layers[].annotationTypes[].fields[].columns[].notices[].kind=diverges',
+  'spec:layers[].annotationTypes[].fields[].columns[].notices[].kind=pending',
+  'spec:layers[].annotationTypes[].fields[].columns[].notices[].kind=removed',
+  'spec:layers[].annotationTypes[].fields[].columns[].notices[].message',
+  'spec:layers[].annotationTypes[].fields[].columns[].notices[].ref',
+  'spec:layers[].annotationTypes[].fields[].columns[].notices[].since',
+];
 
 // ---------------------------------------------------------------------------------------
 

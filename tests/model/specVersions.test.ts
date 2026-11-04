@@ -184,6 +184,32 @@ describe('diffSpecs: aditivas', () => {
     ]);
   });
 
+  it('notices (incluir, mudar, tirar) fica fora do contrato: não gera SpecChange', () => {
+    const notice = { kind: 'deprecated', message: 'use outro' } as const;
+    const withNotices = (message: string): SpecAnnotationType =>
+      button({
+        notices: [{ ...notice, message }],
+        fields: button().fields.map((f) =>
+          f.type === 'table'
+            ? {
+                ...f,
+                notices: [{ ...notice, message }],
+                columns: f.columns.map((c) => ({
+                  ...c,
+                  notices: [{ ...notice, message }],
+                })),
+              }
+            : { ...f, notices: [{ ...notice, message }] },
+        ),
+      });
+    const plain = spec(1, [button(), badge]);
+    const noticed = spec(2, [withNotices('a'), badge]);
+    expect(diffSpecs(plain, noticed)).toEqual([]);
+    expect(diffSpecs(noticed, plain)).toEqual([]);
+    expect(diffSpecs(noticed, spec(3, [withNotices('b'), badge]))).toEqual([]);
+    expect(missingMigrations(noticed, plain)).toEqual([]);
+  });
+
   it('appliesTo trocado de um tipo existente é aditivo; igual ao padrão não conta', () => {
     const before = spec(1, [button(), badge]);
     const same = spec(2, [button({ appliesTo: ['marking'] }), badge]);
