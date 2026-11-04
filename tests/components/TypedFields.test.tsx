@@ -1,4 +1,4 @@
-import { cleanup, screen, within } from '@testing-library/preact';
+import { cleanup, fireEvent, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setFieldValue, typeOfAnnotation, type Project } from '../../src/model';
@@ -457,14 +457,65 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(screen.getByLabelText('texto').tagName).toBe('INPUT');
   });
 
-  it('a quebra de linha no fim não é gravada (Enter de sobra num texto longo, como uma URL)', async () => {
+  it('Enter grava o texto longo sem quebra, sem precisar de blur, e o foco fica no campo', async () => {
     const { harness, user } = setup('AB', 'texto', withText(LONG));
+    const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
+    await user.clear(area);
+    await user.type(area, `${LONG}y{Enter}`);
+    expect(valueOf(harness, 'AB', 'texto')).toBe(`${LONG}y`);
+    const after = screen.getByLabelText('texto') as HTMLTextAreaElement;
+    expect(after.value).toBe(`${LONG}y`);
+    expect(document.activeElement).toBe(after);
+  });
+
+  it('Enter que grava um valor curto passa o foco ao campo de uma linha, com o cursor no fim', async () => {
+    const { harness, user } = setup('AB', 'texto', withText(LONG));
+    const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
+    await user.clear(area);
+    await user.type(area, 'curto{Enter}');
+    expect(valueOf(harness, 'AB', 'texto')).toBe('curto');
+    const input = screen.getByLabelText('texto') as HTMLInputElement;
+    expect(input.tagName).toBe('INPUT');
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(5);
+  });
+
+  it('Shift+Enter no editor de várias linhas quebra a linha e não grava', async () => {
+    const { harness, user } = setup('AB', 'texto', withText(LONG));
+    const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
+    await user.click(area);
+    await user.keyboard('{Control>}{End}{/Control}{Shift>}{Enter}{/Shift}');
+    expect(area.value).toBe(`${LONG}\n`);
+    expect(valueOf(harness, 'AB', 'texto')).toBe(LONG);
+  });
+
+  it('com uma quebra no texto, Enter quebra a linha e o blur grava (a quebra do fim sai)', async () => {
+    const { harness, user } = setup('AB', 'texto', withText('a\nb'));
+    const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
+    await user.click(area);
+    await user.keyboard('{Control>}{End}{/Control}{Enter}');
+    expect(area.value).toBe('a\nb\n');
+    expect(valueOf(harness, 'AB', 'texto')).toBe('a\nb');
+    await user.tab();
+    expect(valueOf(harness, 'AB', 'texto')).toBe('a\nb');
+  });
+
+  it('durante a composição de IME o Enter não grava', async () => {
+    const { harness } = setup('AB', 'texto', withText(LONG));
+    const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
+    area.focus();
+    fireEvent.keyDown(area, { key: 'Enter', isComposing: true });
+    expect(valueOf(harness, 'AB', 'texto')).toBe(LONG);
+  });
+
+  it('a quebra de linha no fim não é gravada (Enter de sobra, texto que já tem quebra)', async () => {
+    const { harness, user } = setup('AB', 'texto', withText(`${LONG}\nfim`));
     const area = screen.getByLabelText('texto');
     await user.click(area);
     await user.keyboard('{Control>}{End}{/Control}{Enter}');
-    expect((area as HTMLTextAreaElement).value).toBe(`${LONG}\n`);
+    expect((area as HTMLTextAreaElement).value).toBe(`${LONG}\nfim\n`);
     await user.tab();
-    expect(valueOf(harness, 'AB', 'texto')).toBe(LONG);
+    expect(valueOf(harness, 'AB', 'texto')).toBe(`${LONG}\nfim`);
   });
 
   it('só quebras de linha gravam null; as do meio ficam', async () => {

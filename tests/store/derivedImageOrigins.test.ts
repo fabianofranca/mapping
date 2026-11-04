@@ -136,6 +136,24 @@ describe('remoteImageOrigins e pendingImageOrigins', () => {
     expect(origins(derived.pendingImageOrigins.value)).toEqual(['https://c.com']);
   });
 
+  it('trocar a URL por endereço não aceito ou vazio esvazia as pendentes na hora', () => {
+    const { derived, actions } = setup(
+      withMarking(componentProject(), 'M1', 'https://a.com/x.png'),
+    );
+    expect(origins(derived.pendingImageOrigins.value)).toEqual(['https://a.com']);
+    for (const next of [
+      'http://127.0.0.1:8765/foto.png',
+      'https://192.168.0.10/foto.png',
+      'isto não é um endereço',
+      null,
+    ]) {
+      expect(actions.setFieldValue('A_M1', 'label', 'https://a.com/x.png').ok).toBe(true);
+      expect(origins(derived.pendingImageOrigins.value)).toEqual(['https://a.com']);
+      expect(actions.setFieldValue('A_M1', 'label', next).ok).toBe(true);
+      expect(derived.pendingImageOrigins.value).toEqual([]);
+    }
+  });
+
   it('sem edição que mude as origens, a lista é o mesmo objeto', () => {
     const { derived, actions } = setup(
       withMarking(componentProject(), 'M1', 'https://a.com/x.png'),

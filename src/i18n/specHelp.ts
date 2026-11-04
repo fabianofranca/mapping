@@ -797,7 +797,7 @@ const ptBR: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'A biblioteca de notas do repositório (camada Notas, tipos nota e tabela, componentes post-it) é um pacote comum, embutido na app e aplicado por padrão: o projeto novo nasce com ela, e o projeto aberto de um schema anterior ao 13 a ganha ao abrir. Ela se remove por Especializações › Remover, como qualquer outra, e não volta. Campos string do tipo aceitam várias linhas na interface (o editor abre em várias linhas quando o texto tem quebra ou passa de 60 caracteres, ou com Shift+Enter).',
+        text: 'A biblioteca de notas do repositório (camada Notas, tipos nota e tabela, componentes post-it) é um pacote comum, embutido na app e aplicado por padrão: o projeto novo nasce com ela, e o projeto aberto de um schema anterior ao 13 a ganha ao abrir. Ela se remove por Especializações › Remover, como qualquer outra, e não volta. Campos string do tipo aceitam várias linhas na interface (o editor abre em várias linhas quando o texto tem quebra ou passa de 60 caracteres, ou com Shift+Enter; enquanto o texto não tem quebra, o Enter grava e o Shift+Enter quebra a linha).',
       },
     ],
   },
@@ -1453,7 +1453,7 @@ const enUS: readonly HelpSection[] = [
       },
       {
         kind: 'p',
-        text: 'The repository notes library (Notes layer, nota and tabela types, sticky-note components) is a regular package, embedded in the app and applied by default: a new project is born with it, and a project opened from a schema older than 13 gains it on opening. It is removed through Specializations › Remove, like any other, and does not come back. String fields of the type accept several lines in the interface (the editor opens in several lines when the text has a break or goes past 60 characters, or with Shift+Enter).',
+        text: 'The repository notes library (Notes layer, nota and tabela types, sticky-note components) is a regular package, embedded in the app and applied by default: a new project is born with it, and a project opened from a schema older than 13 gains it on opening. It is removed through Specializations › Remove, like any other, and does not come back. String fields of the type accept several lines in the interface (the editor opens in several lines when the text has a break or goes past 60 characters, or with Shift+Enter; while the text has no line break, Enter saves and Shift+Enter breaks the line).',
       },
     ],
   },
