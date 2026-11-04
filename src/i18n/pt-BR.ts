@@ -988,7 +988,9 @@ export const ptBR = {
   'shortcuts.nudge': 'Mover a seleção (Shift: 10 px)',
   'shortcuts.doubleClick': 'Selecionar a marcação com o conteúdo (duplo clique)',
   'shortcuts.escapeToPrimary': 'Com vários itens selecionados, voltar ao item principal',
+  'shortcuts.selectRect': 'Selecionar por retângulo (soma os itens inteiros dentro dele)',
   'shortcuts.key.click': 'clique',
+  'shortcuts.key.drag': 'arrasto',
   'shortcuts.key.doubleClick': 'duplo clique',
 } as const;
 

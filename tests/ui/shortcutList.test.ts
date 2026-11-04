@@ -90,6 +90,15 @@ describe('lista de atalhos da Ajuda (P10)', () => {
     }
   });
 
+  it('lista o Shift+arrasto de selecionar por retângulo na seção de edição', () => {
+    const edit = groups.find((g) => g.id === 'edit');
+    const row = edit?.rows.find((r) =>
+      r.combos.some((c) => comboText(c) === `Shift + ${t('shortcuts.key.drag')}`),
+    );
+    expect(row).toBeDefined();
+    expect(row?.label).toBe(t('shortcuts.selectRect'));
+  });
+
   it('nenhuma linha vazia e nenhum texto repetido', () => {
     const labels = groups.flatMap((g) => g.rows.map((r) => r.label));
     expect(new Set(labels).size).toBe(labels.length);

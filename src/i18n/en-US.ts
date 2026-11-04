@@ -984,6 +984,8 @@ export const enUS: Dictionary = {
   'shortcuts.nudge': 'Move the selection (Shift: 10 px)',
   'shortcuts.doubleClick': 'Select the marking with its contents (double click)',
   'shortcuts.escapeToPrimary': 'With several items selected, go back to the main item',
+  'shortcuts.selectRect': 'Select by rectangle (adds the items fully inside it)',
   'shortcuts.key.click': 'click',
+  'shortcuts.key.drag': 'drag',
   'shortcuts.key.doubleClick': 'double click',
 };
