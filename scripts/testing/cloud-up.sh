@@ -52,19 +52,21 @@ check_one_tab() {
 
 start_display_and_chrome() {
   export DISPLAY=:99
-  Xvfb :99 -screen 0 1600x1000x24 >"$S/xvfb.log" 2>&1 &
+  # Os processos que ficam de pé sobem com `setsid`, stdin de /dev/null e saída num log: nenhum
+  # segura o terminal nem o pipe de quem chamou o script (`... | tail`), então ele volta sozinho.
+  setsid Xvfb :99 -screen 0 1600x1000x24 </dev/null >"$S/xvfb.log" 2>&1 &
   # Espera o soquete do X aparecer: 1 s de `sleep` não basta sempre, e o openbox falha calado
   # ("Failed to open the display") se nascer antes do Xvfb estar de pé.
   for _ in $(seq 1 50); do
     [ -e /tmp/.X11-unix/X99 ] && break
     sleep 0.2
   done
-  openbox >"$S/openbox.log" 2>&1 &
+  setsid openbox </dev/null >"$S/openbox.log" 2>&1 &
   sleep 1
-  export DBUS_SESSION_BUS_ADDRESS=$(dbus-daemon --session --fork --print-address=1)
-  /usr/libexec/at-spi-bus-launcher --launch-immediately >"$S/at-spi.log" 2>&1 &
+  export DBUS_SESSION_BUS_ADDRESS=$(setsid dbus-daemon --session --fork --print-address=1 </dev/null 2>"$S/dbus.log")
+  setsid /usr/libexec/at-spi-bus-launcher --launch-immediately </dev/null >"$S/at-spi.log" 2>&1 &
   echo "export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >"$S/env"
-  GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup "${CHROME_CMD[@]}" >"$S/chrome.log" 2>&1 &
+  GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 setsid nohup "${CHROME_CMD[@]}" </dev/null >"$S/chrome.log" 2>&1 &
 }
 
 if [ "$RESTART_CHROME" -eq 1 ]; then
@@ -90,7 +92,7 @@ if [ "$RESTART_CHROME" -eq 1 ]; then
   if ! (pgrep -x Xvfb >/dev/null 2>&1 && pgrep -x dbus-daemon >/dev/null 2>&1); then
     start_display_and_chrome
   else
-    GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup "${CHROME_CMD[@]}" >>"$S/chrome.log" 2>&1 &
+    GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 setsid nohup "${CHROME_CMD[@]}" </dev/null >>"$S/chrome.log" 2>&1 &
   fi
   sleep 2
   check_one_tab
@@ -104,7 +106,9 @@ cd "$REPO_DIR"
 npm ci
 npm run build
 
-(cd dist && nohup python3 -m http.server 8080 --bind 127.0.0.1 >"$S/http.log" 2>&1 &)
+# A redireção vai no grupo todo: o subshell que espera o servidor também larga o pipe de quem
+# chamou o script (com ela só no `python3`, um `| tail` nunca fechava).
+(cd dist && exec setsid python3 -m http.server 8080 --bind 127.0.0.1) </dev/null >"$S/http.log" 2>&1 &
 
 npm run build:mcp
 MCP_VERSION_OUTPUT=$(node dist-mcp/mapping-mcp.js --version)

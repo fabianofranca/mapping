@@ -1049,17 +1049,18 @@ Um template só, para a rodada completa, a dirigida e o teste avançado. Quem te
 
 ## Resumo
 
-- Passos: total, ✅, ❌, não executados.
+- Passos: total, ✅, ❌, não executados (contados por passo, não por linha da tabela).
 - Achados por severidade: bloqueia N, alta N, média N, baixa N.
 - Impede o uso com pessoas? sim | não, e por quê.
 
 ## Passos
 
-| Passo | Achado de origem | Resultado     | Observação      |
-| ----- | ---------------- | ------------- | --------------- |
-| R0.1  |                  | ✅            |                 |
-| R0.2  |                  | ❌            | achado 1        |
-| R3.6  |                  | não executado | sem Claude Code |
+| Passo       | Achado de origem | Resultado     | Observação      |
+| ----------- | ---------------- | ------------- | --------------- |
+| R0.1 a R0.4 |                  | ✅            |                 |
+| R0.5        |                  | ❌            | achado 1        |
+| R0.6 a R0.9 |                  | ✅            |                 |
+| R3.6        |                  | não executado | sem Claude Code |
 
 ## Achados
 
@@ -1085,6 +1086,8 @@ Um template só, para a rodada completa, a dirigida e o teste avançado. Quem te
 
 - (inclusive o que atrapalhou quem testou: passo ambíguo neste guia, resultado esperado que não dá para observar, contorno que precisou usar)
 ```
+
+**Regra da faixa.** Passos seguidos do mesmo roteiro que passaram sem observação viram **uma linha** (a faixa, ex.: `R11.1 a R11.10 | | ✅ |`). Passo com ❌, "não executado" ou observação tem linha própria, e a faixa recomeça depois dele. Na dirigida por achados, a faixa só junta passos do mesmo achado de origem (a coluna **Achado de origem** da faixa repete o achado). O **Resumo** continua contando por passo: a faixa não muda o total.
 
 ### Registro do marco "Uso real"
 
@@ -1159,7 +1162,8 @@ npm ci && npm run build            # dist/index.html
 npm run build:mcp && node dist-mcp/mapping-mcp.js --version
 ```
 
-- **Receita 2 (nuvem), subir a tela, o D-Bus, o AT-SPI e o Chrome**, nesta ordem (o Chrome tem de subir já com o D-Bus). O auxiliar faz isto: `scripts/testing/cloud-up.sh <pasta-da-rodada>` (o mesmo comando da receita 1 já faz as duas). Conferência: `curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]'` lista exatamente uma linha, `http://localhost:8080/`. Erros de `system_bus_socket` no `chrome.log` são normais; a barra "Chrome for Testing é destinado apenas a testes automatizados" não atrapalha. Em cada chamada nova de shell, `source "$S/env"`.
+- **Receita 2 (nuvem), subir a tela, o D-Bus, o AT-SPI e o Chrome**, nesta ordem (o Chrome tem de subir já com o D-Bus). O auxiliar faz isto: `scripts/testing/cloud-up.sh <pasta-da-rodada>` (o mesmo comando da receita 1 já faz as duas). Conferência: `curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]'` lista exatamente uma linha, `http://localhost:8080/`. Erros de `system_bus_socket` no `chrome.log` são normais; a barra "Chrome for Testing é destinado apenas a testes automatizados" não atrapalha.
+- **Receita 2 (nuvem), `source` só na shell.** Os auxiliares de `cloud.mjs` leem o `apoio/env` sozinhos: o `source "$S/env"` só vale, em cada chamada nova de shell, para os comandos fora deles (`xdotool`, `import`, `curl` no CDP).
 
 ```bash
 export DISPLAY=:99
@@ -1176,7 +1180,11 @@ GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sand
 
 - **Receita 3 (nuvem), reiniciar o Chrome sem duplicar abas.** Nunca `pkill -f chrome`: o padrão casa com a linha de comando da própria shell e a mata, e o SIGTERM conta como "Crashed" e restaura abas. Feche limpo pelo CDP (`const s = await browser.newBrowserCDPSession(); await s.send('Browser.close')`), espere `pgrep -x chrome` ficar vazio, apague `"$S/profile/Default/Sessions"` (sem isso o Chrome voltou com 3 abas) e suba de novo com o comando da receita 2. Reiniciar perde as permissões de pasta daquela visita (o pedido volta ao reabrir) e o histórico de desfazer.
 - **Receita 3 (nuvem), continuação.** O auxiliar faz isto: `cloud-up.sh <pasta> --restart-chrome`.
-- **Receita 4 (nuvem), a página pelo Playwright por CDP.** O auxiliar faz isto: `connect(apoioDir)` e `clickNoWait(page, nome)` de `scripts/testing/cloud.mjs`. Clique por papel e nome, com `noWaitAfter` em todo clique que abre um diálogo nativo (senão o Playwright espera e dá timeout). Encerre o script com `process.exit(0)`, não com `browser.close()`.
+- **Receita 4 (nuvem), a página pelo Playwright por CDP.** O auxiliar faz isto: `connect(apoioDir)`, `clickNoWait(page, nome)` e `state(page, apoioDir, { projectDir })` de `scripts/testing/cloud.mjs`.
+- **Receita 4 (nuvem), o que o `connect()` faz.** Ele carrega o `apoio/env` (`DISPLAY`, D-Bus), escolhe a aba da app (`http://localhost:8080`, fora de `/guia/`; com duas abas falha com as URLs) e usa timeout de 5 s nas ações e 15 s nas navegações: localizador errado falha em 5 s, e espera longa passa `{ timeout }` na própria chamada.
+- **Receita 4 (nuvem), o `state()` no fim.** O script do passo termina com `console.log(formatState(await state(page, apoioDir, { projectDir })))`, que devolve numa chamada a tela (título, diálogos, avisos, gravação, foco, janelas nativas) e o disco (`revision` e o que mudou no `mapping.json`). Exemplo: `const { page } = await connect(apoioDir); await clickNoWait(page, 'Criar marcação'); console.log(formatState(await state(page, apoioDir, { projectDir }))); process.exit(0);`.
+- **Receita 4 (nuvem), cliques.** Clique por papel e nome, com `noWaitAfter` em todo clique que abre um diálogo nativo (senão o Playwright espera e dá timeout). Encerre o script com `process.exit(0)`, não com `browser.close()`.
+
 - **Receita 4 (nuvem), nomes repetidos.** Nomes acessíveis se repetem na página ("Adicionar imagens", "Local", "Ajuda", "Rejeitar"): o `clickNoWait` conta os candidatos e **falha** se achar mais de um (ou nenhum), em vez de escolher um. Passe o container do passo em `scope` (`clickNoWait(page, 'Adicionar imagens', { scope: '.canvas-empty' })`, um seletor CSS ou um `Locator`) ou `{ exact: true }`; nunca use `.first()` num `getByRole` ambíguo, que clica no botão errado sem avisar (já clicou em **Rejeitar tudo** no lugar de **Rejeitar**).
 - **Receita 4 (nuvem), continuação.** Navegue a mesma aba com `page.goto`: é uma aba só. Nunca registre `page.on('filechooser')` nem `waitForEvent('filechooser')`: o Playwright intercepta o seletor e ele não abre de verdade (é imitar). Para capturar, use `import -window root x.png` (ImageMagick): sai a tela inteira, com os diálogos nativos; `convert x.png -resize 50% y.png` para olhar menor.
 
@@ -1298,6 +1306,7 @@ WS=<pasta de trabalho> MAPPING_MCP_ARGS='["<clone>/dist-mcp/mapping-mcp.js","--r
 - **R11 (guia interativo), duas abas e o seletor nativo.** Com a aba do guia aberta, feche-a antes do Abrir zip do R11.4 (e de qualquer passo com diálogo nativo) e abra de novo depois, se o passo seguinte precisar do guia: com outra aba ativa na janela o seletor GTK não abre, e `page.bringToFront()` não basta. `selectFolder`/`openFile` esperam até 5 s e, se esgotarem, dizem na mensagem qual é a janela ativa.
 - **Exportação:** o diálogo "Exportar projeto" da app continua aberto depois do download; feche-o (**Cancelar**) antes do passo seguinte, ou a app parece travada.
 - **Console:** registre `page.on('console')` e `page.on('pageerror')` logo ao abrir a página, antes da primeira ação: o que veio antes se perde.
+- **Console, em cada script.** Cada script é um processo novo e o `state()` não lê o console: registre os dois listeners em todo script de passo e imprima o que vier depois do `state()`.
 - **Relato:** grave o `relato.md` na pasta de trabalho ao fim de cada roteiro e, no fechamento, entregue-o como comentário na sub-issue da fase (`docs/TESTING-NUVEM.md`). Vale mesmo se a rodada parar no meio.
 
 **MCP.**

@@ -2,7 +2,14 @@
 // Fase TR1 (etapa #359): os auxiliares da nuvem em `scripts/testing/` (decisão 2) existem, o
 // `cloud.mjs` importa sem efeito colateral e exporta os nomes certos, o guia aponta para eles
 // (decisão 4) e a parte pura de `cloud.mjs` (`mark`) tem teste unitário.
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -27,12 +34,18 @@ const EXPECTED_EXPORTS = [
   'cancelDialog',
   'clickNoWait',
   'connect',
+  'diffJson',
+  'formatState',
+  'loadEnv',
   'makeCadastroPng',
   'mark',
   'openFile',
+  'parseEnvFile',
+  'pickAppPage',
   'saveFile',
   'screenshot',
   'selectFolder',
+  'state',
   'waitForWindow',
   'windowShortcut',
 ].sort();
@@ -60,6 +73,22 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
   it('cloud-up.sh nunca roda pkill -f chrome como comando (fecha pelo CDP, receita 3)', () => {
     expect(codeLines(read(CLOUD_UP))).not.toContain('pkill -f chrome');
     expect(read(CLOUD_UP)).toContain('Browser.close');
+  });
+
+  it('cloud-up.sh: nenhum subshell em segundo plano segura o pipe de quem o chamou (TS1, decisão 5)', () => {
+    const lines = codeLines(read(CLOUD_UP)).split('\n');
+    // `(cd dist && … &)`: a redireção de dentro só vale para o comando, e o subshell que o espera
+    // fica com o stdout do script (o `| tail` nunca fecha). A redireção vai no grupo todo.
+    const server = lines.find((line) => line.includes('http.server'));
+    expect(server).toBeDefined();
+    expect(server).toMatch(/\)\s*<\/dev\/null\s*>"\$S\/http\.log"\s*2>&1\s*&/);
+    for (const line of lines.filter(
+      (l) =>
+        /\b(Xvfb|openbox|at-spi-bus-launcher|CHROME_CMD)\b/.test(l) && /&\s*$/.test(l),
+    )) {
+      expect(line, line).toContain('setsid');
+      expect(line, line).toContain('</dev/null');
+    }
   });
 
   describe('mark (parte pura de cloud.mjs)', () => {
@@ -276,7 +305,7 @@ describe('docs/TESTING.md e docs/TESTING-NUVEM.md apontam para os auxiliares (de
 });
 
 describe('scripts/testing/ listado no repositório', () => {
-  it('só os três auxiliares novos e o cliente MCP por stdio existem na pasta', () => {
+  it('os auxiliares, o cliente MCP por stdio e o guia da rodada existem na pasta', () => {
     const files = readdirSync('scripts/testing').sort();
     expect(files).toEqual(
       [
@@ -285,7 +314,239 @@ describe('scripts/testing/ listado no repositório', () => {
         'cloud.d.mts',
         'cloud.mjs',
         'mcp-stdio-client.mjs',
+        'round-guide.d.mts',
+        'round-guide.mjs',
       ].sort(),
     );
+  });
+});
+
+describe('ambiente e aba dos auxiliares (etapa #421, TS1, decisões 3 e 4)', () => {
+  const ENV_LINE =
+    'export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=unix:path=/tmp/dbus-abc,guid=0123\n';
+
+  it('parseEnvFile lê a linha que o cloud-up.sh grava', async () => {
+    const { parseEnvFile } = await import('../../scripts/testing/cloud.mjs');
+    expect(parseEnvFile(ENV_LINE)).toEqual({
+      DISPLAY: ':99',
+      DBUS_SESSION_BUS_ADDRESS: 'unix:path=/tmp/dbus-abc,guid=0123',
+    });
+  });
+
+  it('loadEnv preenche só o que falta e não sobrescreve variável já definida', async () => {
+    const { loadEnv } = await import('../../scripts/testing/cloud.mjs');
+    const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-env-'));
+    try {
+      writeFileSync(path.join(dir, 'env'), ENV_LINE);
+      const env: Record<string, string | undefined> = { DISPLAY: ':7' };
+      loadEnv(dir, env);
+      expect(env.DISPLAY).toBe(':7');
+      expect(env.DBUS_SESSION_BUS_ADDRESS).toBe('unix:path=/tmp/dbus-abc,guid=0123');
+      expect(env.APOIO).toBe(dir);
+      const outro: Record<string, string | undefined> = { APOIO: '/x' };
+      loadEnv(dir, outro);
+      expect(outro.APOIO).toBe('/x');
+      expect(outro.DISPLAY).toBe(':99');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('loadEnv sem o arquivo e sem DISPLAY lança a dica do cloud-up.sh', async () => {
+    const { loadEnv } = await import('../../scripts/testing/cloud.mjs');
+    const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-env-'));
+    try {
+      expect(() => loadEnv(dir, {})).toThrow('apoio/env não existe: rode o cloud-up.sh');
+      expect(() => loadEnv(dir, { DISPLAY: ':1' })).not.toThrow();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  const app = { url: 'http://localhost:8080/', title: 'Mapping' };
+  const guia = { url: 'http://localhost:8080/guia/index.html', title: 'Guia' };
+
+  it('pickAppPage com a app e o guia abertos devolve a app', async () => {
+    const { pickAppPage } = await import('../../scripts/testing/cloud.mjs');
+    expect(pickAppPage([guia, app])).toBe(app);
+    expect(pickAppPage([guia, { url: 'about:blank' }, app])).toBe(app);
+  });
+
+  it('pickAppPage com duas abas da app lança com as duas URLs e a dica da receita 3', async () => {
+    const { pickAppPage } = await import('../../scripts/testing/cloud.mjs');
+    const outra = { url: 'http://localhost:8080/?x=1', title: 'Mapping 2' };
+    expect(() => pickAppPage([app, outra])).toThrow(
+      /http:\/\/localhost:8080\/[\s\S]*\?x=1[\s\S]*feche as abas a mais \(receita 3\)/,
+    );
+  });
+
+  it('pickAppPage sem nenhuma aba da app lança com o que achou', async () => {
+    const { pickAppPage } = await import('../../scripts/testing/cloud.mjs');
+    expect(() => pickAppPage([guia])).toThrow(/guia\/index\.html/);
+    expect(() => pickAppPage([])).toThrow(/Nenhuma aba/);
+  });
+
+  it('pickAppPage respeita a origem informada', async () => {
+    const { pickAppPage } = await import('../../scripts/testing/cloud.mjs');
+    const other = { url: 'http://localhost:9000/', title: 'Outra' };
+    expect(pickAppPage([app, other], { origin: 'http://localhost:9000' })).toBe(other);
+  });
+});
+
+describe('connect com timeout curto (etapa #421, TS1, decisão 2)', () => {
+  function fakeBrowser(urls: string[]) {
+    const calls: [string, number][] = [];
+    const pages = urls.map((url) => ({
+      url: () => url,
+      title: async () => `t:${url}`,
+      on: () => undefined,
+      setDefaultTimeout: (ms: number) => calls.push(['timeout', ms]),
+      setDefaultNavigationTimeout: (ms: number) => calls.push(['nav', ms]),
+    }));
+    const browser = {
+      contexts: () => [{ pages: () => pages }],
+      close: async () => {
+        calls.push(['close', 0]);
+      },
+    };
+    return { calls, pages, connectOverCDP: async () => browser };
+  }
+
+  it('chama setDefaultTimeout(5000) e setDefaultNavigationTimeout(15000) na aba da app', async () => {
+    const { connect } = await import('../../scripts/testing/cloud.mjs');
+    const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-connect-'));
+    try {
+      const fake = fakeBrowser(['http://localhost:8080/guia/', 'http://localhost:8080/']);
+      const { page } = await connect(dir, undefined, {
+        connectOverCDP: fake.connectOverCDP,
+      });
+      expect(page).toBe(fake.pages[1]);
+      expect(fake.calls).toEqual([
+        ['timeout', 5000],
+        ['nav', 15000],
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('respeita timeoutMs e navigationTimeoutMs', async () => {
+    const { connect } = await import('../../scripts/testing/cloud.mjs');
+    const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-connect-'));
+    try {
+      const fake = fakeBrowser(['http://localhost:8080/']);
+      await connect(dir, undefined, {
+        timeoutMs: 1200,
+        navigationTimeoutMs: 3400,
+        connectOverCDP: fake.connectOverCDP,
+      });
+      expect(fake.calls).toEqual([
+        ['timeout', 1200],
+        ['nav', 3400],
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('com duas abas da app, connect lança com as URLs', async () => {
+    const { connect } = await import('../../scripts/testing/cloud.mjs');
+    const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-connect-'));
+    try {
+      const fake = fakeBrowser(['http://localhost:8080/', 'http://localhost:8080/?b=1']);
+      await expect(
+        connect(dir, undefined, { connectOverCDP: fake.connectOverCDP }),
+      ).rejects.toThrow(/\?b=1/);
+      // Sem fechar a conexão CDP, o processo `node` do script não sairia.
+      expect(fake.calls).toEqual([['close', 0]]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('diffJson e formatState (etapa #421, TS1, decisão 6)', () => {
+  it('escalar alterado mostra antigo → novo', async () => {
+    const { diffJson } = await import('../../scripts/testing/cloud.mjs');
+    const lines = diffJson(
+      { revision: 3, a: { b: 'x' } },
+      { revision: 4, a: { b: 'x' } },
+    );
+    expect(lines).toEqual(['~ revision: 3 → 4']);
+  });
+
+  it('item acrescentado num array com id aparece pelo id', async () => {
+    const { diffJson } = await import('../../scripts/testing/cloud.mjs');
+    const lines = diffJson(
+      { markings: [{ id: 'm1', x: 1 }] },
+      {
+        markings: [
+          { id: 'm1', x: 1 },
+          { id: 'm2', x: 5 },
+        ],
+      },
+    );
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(/^\+ markings\[m2\]/);
+  });
+
+  it('alteração dentro de item de array pelo id e chave removida', async () => {
+    const { diffJson } = await import('../../scripts/testing/cloud.mjs');
+    const lines = diffJson(
+      { markings: [{ id: 'm1', x: 1 }], name: 'n' },
+      { markings: [{ id: 'm1', x: 2 }] },
+    );
+    expect(lines).toContain('~ markings[m1].x: 1 → 2');
+    expect(lines.some((l) => /^- name/.test(l))).toBe(true);
+  });
+
+  it('além do limite vira "+N"', async () => {
+    const { diffJson } = await import('../../scripts/testing/cloud.mjs');
+    const before: Record<string, number> = {};
+    const after: Record<string, number> = {};
+    for (let i = 0; i < 25; i += 1) {
+      before[`k${i}`] = 0;
+      after[`k${i}`] = 1;
+    }
+    const lines = diffJson(before, after, { limit: 20 });
+    expect(lines).toHaveLength(21);
+    expect(lines[20]).toMatch(/^\+5\b/);
+  });
+
+  it('sem diferença devolve lista vazia', async () => {
+    const { diffJson } = await import('../../scripts/testing/cloud.mjs');
+    expect(diffJson({ a: [1, 2] }, { a: [1, 2] })).toEqual([]);
+  });
+
+  it('formatState imprime poucas linhas, sem JSON cru', async () => {
+    const { formatState } = await import('../../scripts/testing/cloud.mjs');
+    const text = formatState({
+      title: 'Mapping',
+      url: 'http://localhost:8080/',
+      dialogs: ['Excluir marcação'],
+      notices: ['Projeto aberto'],
+      saveStatus: 'Salvo',
+      focus: { role: 'button', name: 'Cancelar' },
+      windows: [],
+      project: { revision: 8, changes: ['~ revision: 7 → 8', '+ markings[m2]'] },
+    });
+    expect(text).not.toContain('{');
+    expect(text.split('\n').length).toBeLessThanOrEqual(12);
+    expect(text).toContain('Excluir marcação');
+    expect(text).toContain('Salvo');
+    expect(text).toContain('button "Cancelar"');
+    expect(text).toContain('revision 8');
+    expect(text).toContain('+ markings[m2]');
+    const first = formatState({
+      title: 'x',
+      url: 'u',
+      dialogs: [],
+      notices: [],
+      saveStatus: null,
+      focus: null,
+      windows: [],
+      project: { revision: 1, changes: null },
+    });
+    expect(first).toContain('primeira leitura');
   });
 });

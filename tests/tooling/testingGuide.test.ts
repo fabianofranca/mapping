@@ -3,6 +3,7 @@
 // do agente testador fica no apêndice A, e o prompt vivo do testador é `docs/TESTING-NUVEM.md`.
 // Estes testes leem os documentos e falham se o padrão antigo voltar (achados G1 a G16 da
 // revisão técnica de 2026-10-12, seção 6).
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parseArgs } from '../../mcp/args';
@@ -741,5 +742,91 @@ describe('TR2 — R0 reduzido no reteste, passada visual e tempo real', () => {
   it('o CLAUDE.md manda o orquestrador passar a passada visual ao testador e a sub-issue da última fase trazer a linha', () => {
     expect(claude).toMatch(/os roteiros e a passada visual/);
     expect(claude).toContain('Passada visual:');
+  });
+});
+
+describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato agrupado', () => {
+  const cloud = read('docs/TESTING-NUVEM.md');
+  const guide = read('docs/TESTING.md');
+  const { appendixA } = splitAppendixA(guide);
+  const first10 = cloud.slice(
+    cloud.indexOf('## Primeiros 10 minutos'),
+    cloud.indexOf('## Ambiente'),
+  );
+  const howTo = cloud.slice(
+    cloud.indexOf('## Como agir'),
+    cloud.indexOf('## O que executar'),
+  );
+
+  it('manda gerar o guia da rodada e não ler o docs/TESTING.md inteiro', () => {
+    expect(first10).toContain('node scripts/testing/round-guide.mjs');
+    expect(first10).toContain('apoio/guia.md');
+    expect(first10).toMatch(/`all`/);
+    expect(first10).toMatch(/Grep/);
+    expect(first10).not.toMatch(/docs\/TESTING\.md` inteiro/);
+    expect(cloud).not.toMatch(/leia os dois inteiros/);
+  });
+
+  it('o cloud-up.sh roda em primeiro plano, com timeout de 600000 ms e sem run_in_background', () => {
+    expect(first10).toMatch(/primeiro plano/);
+    expect(first10).toContain('run_in_background');
+    expect(first10).toContain('600000');
+  });
+
+  it('todo script de passo termina com state(), e a captura fica para o canvas, os ❌ e a passada visual', () => {
+    expect(howTo).toContain('formatState(await state(page, apoioDir, { projectDir }))');
+    expect(howTo).toContain('connect()');
+    expect(howTo).toMatch(/canvas/);
+    expect(howTo).toContain('60000');
+    expect(howTo).toContain('{ timeout }');
+  });
+
+  it('o aviso ao coordenador usa o send_message do claude-code-remote, não o SendMessage', () => {
+    expect(cloud).toMatch(/`send_message`[^\n]*claude-code-remote/);
+    expect(cloud).toMatch(/n[ãa]o o `SendMessage`/);
+  });
+
+  it('o relato agrupa os ✅ e o template tem a regra da faixa', () => {
+    expect(cloud.slice(cloud.indexOf('## Relato'))).toMatch(
+      /ao? mesm[oa] roteiro[^\n]*✅|faixa/i,
+    );
+    const templates = guide.slice(guide.indexOf('## 10. Templates'));
+    expect(templates).toContain('R11.1 a R11.10');
+    expect(templates).toMatch(/faixa/);
+    expect(templates).toMatch(/mesmo achado de origem/);
+    expect(templates).toMatch(/Resumo[^\n]*por passo/);
+  });
+
+  it('o apêndice A: receita 4 descreve o connect() e o state(); receita 2 limita o source à shell', () => {
+    const recipe4 = appendixA.slice(
+      appendixA.indexOf('**Receita 4 (nuvem), a página'),
+      appendixA.indexOf('**Receita 5 (nuvem), seletor'),
+    );
+    expect(recipe4).toContain('apoio/env');
+    expect(recipe4).toMatch(/5 s/);
+    expect(recipe4).toContain('state(');
+    const recipe2 = appendixA.slice(
+      appendixA.indexOf('**Receita 2 (nuvem)'),
+      appendixA.indexOf('**Receita 3 (nuvem)'),
+    );
+    expect(recipe2).toMatch(/source "\$S\/env"[^\n]*(xdotool|shell)/);
+    expect(recipe2).toMatch(/auxiliares/);
+  });
+
+  it('o prompt manda gerar o guia da rodada com os roteiros do recorte (R0 R2 R4 R11 gera mesmo)', () => {
+    const out = `${process.env.TMPDIR ?? '/tmp'}/guia-ts2-test.md`;
+    execFileSync('node', [
+      'scripts/testing/round-guide.mjs',
+      'R0',
+      'R2',
+      'R4',
+      'R11',
+      '--out',
+      out,
+    ]);
+    const generated = read(out);
+    expect(generated).toContain('## Apêndice A');
+    expect(generated).toContain('Relato de uma rodada de teste');
+    expect(generated.length).toBeLessThan(guide.length / 2);
   });
 });

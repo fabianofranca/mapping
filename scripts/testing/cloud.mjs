@@ -5,8 +5,9 @@
 // Uso como biblioteca:
 //   import { connect, selectFolder, ... } from './cloud.mjs';
 //
-// Uso como CLI (hoje só o `mark`, que o cloud-up.sh chama):
-//   node scripts/testing/cloud.mjs mark <roteiro> <start|end>
+// Uso como CLI:
+//   node scripts/testing/cloud.mjs mark <roteiro> <start|end>   (o cloud-up.sh chama)
+//   node scripts/testing/cloud.mjs state [<pasta-do-projeto>]    (conecta, imprime o estado, sai)
 //
 // Pasta de apoio: toda função que precisa de disco recebe `apoioDir` (a pasta `apoio/` da
 // pasta de trabalho da rodada, docs/TESTING-NUVEM.md item 3) como argumento explícito; a CLI
@@ -16,7 +17,9 @@
 // Nunca: registrar `page.on('filechooser')` ou `waitForEvent('filechooser')`, nem usar
 // `setInputFiles` como atalho (regra do "Nunca" do docs/TESTING-NUVEM.md); nunca enviar Enter a
 // um seletor de arquivo/pasta ou a um "Salvar como" do GTK — só alt+o / alt+s / alt+c.
+/* global document, location, CSS -- só dentro de `readAppDom`, que roda na página */
 import { chromium } from 'playwright';
+import { createHash } from 'node:crypto';
 import { execFile, execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,6 +30,43 @@ const execFileAsync = promisify(execFile);
 
 /** Caminho fixo do Chrome for Testing headless usado por `makeCadastroPng` (docs do ambiente). */
 const HEADLESS_CHROMIUM = '/opt/pw-browsers/chromium';
+
+/**
+ * Lê o formato que o `cloud-up.sh` grava em `apoio/env` (`export A=1 B=2`, uma ou mais linhas;
+ * aspas simples ou duplas em volta do valor são tiradas). Pura.
+ */
+export function parseEnvFile(text) {
+  const values = {};
+  for (const rawLine of String(text).split('\n')) {
+    const line = rawLine.trim().replace(/^export\s+/, '');
+    if (!line || line.startsWith('#')) continue;
+    for (const token of line.split(/\s+/)) {
+      const eq = token.indexOf('=');
+      if (eq <= 0) continue;
+      values[token.slice(0, eq)] = token.slice(eq + 1).replace(/^(['"])(.*)\1$/, '$2');
+    }
+  }
+  return values;
+}
+
+/**
+ * Carrega o ambiente da rodada (`DISPLAY`, `DBUS_SESSION_BUS_ADDRESS`, `APOIO`) de
+ * `<apoioDir>/env`, preenchendo só o que falta em `env` (padrão `process.env`). Sem o arquivo e
+ * sem `DISPLAY`, lança. O script do passo não precisa mais de `source apoio/env`.
+ */
+export function loadEnv(apoioDir, env = process.env) {
+  const file = path.join(apoioDir, 'env');
+  if (fs.existsSync(file)) {
+    const values = parseEnvFile(fs.readFileSync(file, 'utf8'));
+    for (const key of ['DISPLAY', 'DBUS_SESSION_BUS_ADDRESS']) {
+      if (!env[key] && values[key]) env[key] = values[key];
+    }
+  } else if (!env.DISPLAY) {
+    throw new Error('apoio/env não existe: rode o cloud-up.sh');
+  }
+  if (!env.APOIO) env.APOIO = apoioDir;
+  return env;
+}
 
 /** `xdotool key` sem Enter: atalho de um diálogo nativo (receitas 5, 7 e 8 do apêndice A). */
 function xdotoolKey(windowId, ...keys) {
@@ -121,19 +161,76 @@ function windowGeometry(windowId) {
   return values;
 }
 
+/** Origem padrão da app servida pelo `cloud-up.sh`. */
+const APP_ORIGIN = 'http://localhost:8080';
+
 /**
- * Conecta no Chrome por CDP (receita 4 do apêndice A), acha a aba da app e registra console e
- * erros de página em `<apoioDir>/console.log`. Devolve `{ browser, page }`.
+ * Escolhe a aba da app entre `pages` (`{ url, title? }`): a da origem cujo caminho não começa por
+ * `/guia/`. Com zero ou mais de uma, lança com as URLs e os títulos achados em vez de escolher em
+ * silêncio. Pura.
  */
-export async function connect(apoioDir, cdpUrl = 'http://localhost:9222') {
-  const browser = await chromium.connectOverCDP(cdpUrl);
-  const page = browser
-    .contexts()
-    .flatMap((context) => context.pages())
-    .find((candidate) => candidate.url().startsWith('http'));
-  if (!page) {
-    throw new Error('Nenhuma aba http(s) encontrada no Chrome conectado por CDP.');
+export function pickAppPage(pages, { origin = APP_ORIGIN } = {}) {
+  const wanted = new URL(origin).origin;
+  const matches = pages.filter((candidate) => {
+    try {
+      const url = new URL(candidate.url);
+      return url.origin === wanted && !url.pathname.startsWith('/guia/');
+    } catch {
+      return false;
+    }
+  });
+  if (matches.length === 1) return matches[0];
+  const list = (items) =>
+    items
+      .map((item) => `  - ${item.url}${item.title ? ` ("${item.title}")` : ''}`)
+      .join('\n');
+  if (matches.length === 0) {
+    throw new Error(
+      pages.length === 0
+        ? `Nenhuma aba encontrada no Chrome conectado por CDP (esperava a app em ${wanted}).`
+        : `Nenhuma aba da app (${wanted}, fora de /guia/) encontrada. Abas achadas:\n${list(pages)}`,
+    );
   }
+  throw new Error(
+    `${matches.length} abas da app abertas:\n${list(matches)}\nDica: feche as abas a mais (receita 3).`,
+  );
+}
+
+/**
+ * Conecta no Chrome por CDP (receita 4 do apêndice A), acha a aba da app (`pickAppPage`),
+ * aplica o timeout curto (`timeoutMs` 5 s nas ações, `navigationTimeoutMs` 15 s nas navegações;
+ * espera longa passa `{ timeout }` na própria chamada) e registra console e erros de página em
+ * `<apoioDir>/console.log`. Devolve `{ browser, page }`.
+ */
+export async function connect(
+  apoioDir,
+  cdpUrl = 'http://localhost:9222',
+  {
+    timeoutMs = 5000,
+    navigationTimeoutMs = 15000,
+    origin = APP_ORIGIN,
+    connectOverCDP = (url) => chromium.connectOverCDP(url),
+  } = {},
+) {
+  const browser = await connectOverCDP(cdpUrl);
+  const pages = browser.contexts().flatMap((context) => context.pages());
+  const described = await Promise.all(
+    pages.map(async (candidate) => ({
+      url: candidate.url(),
+      title: await candidate.title().catch(() => ''),
+      page: candidate,
+    })),
+  );
+  let page;
+  try {
+    ({ page } = pickAppPage(described, { origin }));
+  } catch (error) {
+    // Sem fechar a conexão CDP o processo `node` do script não sai.
+    await browser.close().catch(() => undefined);
+    throw error;
+  }
+  page.setDefaultTimeout(timeoutMs);
+  page.setDefaultNavigationTimeout(navigationTimeoutMs);
   const logFile = path.join(apoioDir, 'console.log');
   const appendLog = (line) => fs.appendFileSync(logFile, `${line}\n`);
   page.on('console', (message) => {
@@ -244,6 +341,7 @@ async function runOpenDialog(
  * GTK quando a pasta já tem conteúdo e, em seguida, trata o pedido de permissão (receita 6).
  */
 export async function selectFolder(apoioDir, targetPath, { timeoutMs } = {}) {
+  loadEnv(apoioDir);
   const dialogResult = await runOpenDialog(targetPath, { timeoutMs });
   const permissionResult = await allowPermission(apoioDir);
   return { ...dialogResult, permission: permissionResult };
@@ -251,6 +349,7 @@ export async function selectFolder(apoioDir, targetPath, { timeoutMs } = {}) {
 
 /** `open_file` dos roteiros: seletor de arquivo, sem o passo de permissão. */
 export async function openFile(apoioDir, targetPath, { timeoutMs } = {}) {
+  loadEnv(apoioDir);
   return runOpenDialog(targetPath, { timeoutMs });
 }
 
@@ -259,6 +358,7 @@ export async function openFile(apoioDir, targetPath, { timeoutMs } = {}) {
  * arquivo que já existe, porque o GTK sobrescreve sem perguntar.
  */
 export async function saveFile(apoioDir, targetPath, { timeoutMs } = {}) {
+  loadEnv(apoioDir);
   if (fs.existsSync(targetPath)) {
     throw new Error(
       `saveFile: ${targetPath} já existe no disco; o GTK sobrescreveria sem perguntar.`,
@@ -297,6 +397,7 @@ export async function saveFile(apoioDir, targetPath, { timeoutMs } = {}) {
  * do diálogo varia ("Aviso: este site…", "Selecione onde…", "Abrir arquivos…").
  */
 export async function cancelDialog(apoioDir, { timeoutMs = DIALOG_TIMEOUT_MS } = {}) {
+  loadEnv(apoioDir);
   const windowId = await waitUntil(
     () => listWindows().find((w) => !/Chrome for Testing$/.test(w.name))?.id,
     { timeoutMs, stepMs: 150 },
@@ -339,6 +440,7 @@ async function runAllowPermissionOnce(scriptPath) {
  * numa chamada seguinte) ou até o limite de tentativas, como rede de segurança.
  */
 export async function allowPermission(apoioDir) {
+  loadEnv(apoioDir);
   const scriptPath = path.join(
     path.dirname(new URL(import.meta.url).pathname),
     'atspi-allow.py',
@@ -374,6 +476,7 @@ export async function allowPermission(apoioDir) {
 
 /** Captura `import -window root` (ImageMagick) em `<apoioDir>/anexos/<name>.png`. */
 export async function screenshot(apoioDir, name) {
+  loadEnv(apoioDir);
   const anexosDir = path.join(apoioDir, 'anexos');
   fs.mkdirSync(anexosDir, { recursive: true });
   const file = path.join(anexosDir, `${name}.png`);
@@ -429,7 +532,244 @@ export function mark(apoioDir, roteiro, fase) {
   fs.appendFileSync(file, `${roteiro} ${fase} ${new Date().toISOString()}\n`);
 }
 
-/** Roda a CLI (hoje só `mark`); lê a pasta de apoio da variável de ambiente `APOIO`. */
+// ---------------------------------------------------------------------------------------------
+// state(): agir e conferir numa chamada (etapa #421, decisão 6)
+// ---------------------------------------------------------------------------------------------
+
+/** Compara dois JSON e lista o que mudou (pura). Ver `diffJson`. */
+function collectDiff(before, after, where, out) {
+  const isObj = (v) => v !== null && typeof v === 'object';
+  const show = (v) => (typeof v === 'string' ? JSON.stringify(v) : String(v));
+  if (!isObj(before) || !isObj(after) || Array.isArray(before) !== Array.isArray(after)) {
+    if (before !== after) {
+      if (isObj(before) || isObj(after))
+        out.push(
+          `~ ${where || '(raiz)'}: ${isObj(before) ? 'estrutura' : show(before)} → ${isObj(after) ? 'estrutura' : show(after)}`,
+        );
+      else out.push(`~ ${where || '(raiz)'}: ${show(before)} → ${show(after)}`);
+    }
+    return;
+  }
+  if (Array.isArray(before)) {
+    const byId = [...before, ...after].every(
+      (v) => isObj(v) && !Array.isArray(v) && typeof v.id === 'string',
+    );
+    if (byId) {
+      const old = new Map(before.map((v) => [v.id, v]));
+      const next = new Map(after.map((v) => [v.id, v]));
+      for (const [id, value] of next) {
+        const label = `${where}[${id}]`;
+        if (!old.has(id)) out.push(`+ ${label}`);
+        else collectDiff(old.get(id), value, label, out);
+      }
+      for (const id of old.keys()) if (!next.has(id)) out.push(`- ${where}[${id}]`);
+      return;
+    }
+    const length = Math.max(before.length, after.length);
+    for (let i = 0; i < length; i += 1) {
+      const label = `${where}[${i}]`;
+      if (i >= before.length)
+        out.push(isObj(after[i]) ? `+ ${label}` : `+ ${label} = ${show(after[i])}`);
+      else if (i >= after.length) out.push(`- ${label}`);
+      else collectDiff(before[i], after[i], label, out);
+    }
+    return;
+  }
+  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+  for (const key of keys) {
+    const label = where ? `${where}.${key}` : key;
+    if (!(key in before))
+      out.push(isObj(after[key]) ? `+ ${label}` : `+ ${label} = ${show(after[key])}`);
+    else if (!(key in after)) out.push(`- ${label}`);
+    else collectDiff(before[key], after[key], label, out);
+  }
+}
+
+/**
+ * Lista caminhos alterados (`~ a.b: antigo → novo`), acrescentados (`+ a[id]`) e removidos
+ * (`- a.b`) entre dois JSON; itens de array com `id` são casados pelo id. Passando de `limit`,
+ * a última linha diz `+N mudanças além do limite`. Pura.
+ */
+export function diffJson(before, after, { limit = 20 } = {}) {
+  const lines = [];
+  collectDiff(before, after, '', lines);
+  if (lines.length <= limit) return lines;
+  return [...lines.slice(0, limit), `+${lines.length - limit} mudanças além do limite`];
+}
+
+/** Texto curto do estado (poucas linhas, sem JSON cru). */
+export function formatState(state) {
+  const quoted = (items) =>
+    items.length ? items.map((i) => `"${i}"`).join(', ') : 'nenhum';
+  const lines = [
+    `Aba: ${state.title} — ${state.url}`,
+    `Diálogos: ${quoted(state.dialogs)}`,
+    `Avisos: ${quoted(state.notices)}`,
+    `Gravação: ${state.saveStatus ?? 'sem indicador'}`,
+    `Foco: ${state.focus ? `${state.focus.role} "${state.focus.name}"` : 'nenhum'}`,
+    `Janelas nativas: ${quoted(state.windows)}`,
+  ];
+  const project = state.project;
+  if (project) {
+    if (project.error) {
+      lines.push(`mapping.json: ${project.error}`);
+    } else if (project.changes === null) {
+      lines.push(`mapping.json: revision ${project.revision} (primeira leitura)`);
+    } else if (project.changes.length === 0) {
+      lines.push(
+        `mapping.json: revision ${project.revision}, sem mudança desde a última leitura`,
+      );
+    } else {
+      lines.push(`mapping.json: revision ${project.revision}; mudou:`);
+      for (const change of project.changes) lines.push(`  ${change}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+/** Lê o DOM da app (roda dentro da página): diálogos, avisos, gravação e foco. */
+function readAppDom() {
+  const visible = (el) =>
+    !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  const text = (el) => (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+  const labelled = (el) => {
+    const ids = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
+    return ids
+      .map((id) => text(document.getElementById(id) ?? document.createElement('i')))
+      .join(' ')
+      .trim();
+  };
+  const dialogs = [];
+  for (const el of document.querySelectorAll(
+    'dialog[open], [role="dialog"], [role="alertdialog"]',
+  )) {
+    if (!visible(el)) continue;
+    const name =
+      el.getAttribute('aria-label') ||
+      labelled(el) ||
+      text(el.querySelector('h1,h2,h3') ?? document.createElement('i'));
+    dialogs.push(name || '(sem nome)');
+  }
+  const notices = [];
+  for (const el of document.querySelectorAll(
+    '[role="status"], [role="alert"], [aria-live]:not([aria-live="off"])',
+  )) {
+    if (!visible(el) || el.closest('.status-item')) continue;
+    const value = text(el).slice(0, 120);
+    if (value && !notices.includes(value)) notices.push(value);
+    if (notices.length >= 8) break;
+  }
+  const saveEl = document.querySelector(
+    '.status-item-error, .status-item-ok, .status-item[aria-live]',
+  );
+  const saveStatus = saveEl ? text(saveEl) : null;
+  const implicit = {
+    BUTTON: 'button',
+    A: 'link',
+    SELECT: 'combobox',
+    TEXTAREA: 'textbox',
+    SUMMARY: 'button',
+  };
+  const inputRole = {
+    checkbox: 'checkbox',
+    radio: 'radio',
+    button: 'button',
+    submit: 'button',
+    range: 'slider',
+  };
+  const active = document.activeElement;
+  let focus = null;
+  if (active && active !== document.body && active !== document.documentElement) {
+    const tag = active.tagName;
+    const role =
+      active.getAttribute('role') ||
+      (tag === 'INPUT'
+        ? (inputRole[active.type] ?? 'textbox')
+        : (implicit[tag] ?? tag.toLowerCase()));
+    const label = active.id
+      ? document.querySelector(`label[for="${CSS.escape(active.id)}"]`)
+      : null;
+    const name =
+      active.getAttribute('aria-label') ||
+      labelled(active) ||
+      (label ? text(label) : '') ||
+      (tag === 'BUTTON' || tag === 'A' ? text(active) : '') ||
+      active.getAttribute('title') ||
+      active.getAttribute('placeholder') ||
+      text(active).slice(0, 60);
+    focus = { role, name: name.slice(0, 80) };
+  }
+  return {
+    title: document.title,
+    url: location.href,
+    dialogs,
+    notices,
+    saveStatus,
+    focus,
+  };
+}
+
+/** Lê e parseia `<projectDir>/mapping.json`; JSON que não parseia: espera 1 s e lê uma vez mais. */
+async function readMapping(projectDir) {
+  const file = path.join(projectDir, 'mapping.json');
+  if (!fs.existsSync(file)) return { error: `não existe em ${projectDir}` };
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return { json: JSON.parse(fs.readFileSync(file, 'utf8')) };
+    } catch (error) {
+      if (attempt === 1) return { error: `JSON inválido (${error.message})` };
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+  return { error: 'JSON inválido' };
+}
+
+/**
+ * Estado numa chamada, para agir e conferir sem idas extras ao modelo: aba, diálogos abertos,
+ * avisos visíveis, gravação, foco, janelas nativas além do Chrome e, com `projectDir`, a
+ * `revision` do `mapping.json` e o que mudou desde a última chamada para a mesma pasta (o
+ * retrato anterior fica em `<apoioDir>/state/`). Não muda a app: lê o DOM e o disco.
+ */
+export async function state(page, apoioDir, { projectDir } = {}) {
+  loadEnv(apoioDir);
+  const dom = await page.evaluate(readAppDom);
+  let windows;
+  try {
+    windows = [
+      ...new Set(
+        listWindows()
+          .map((w) => w.name)
+          .filter((n) => n && !/Chrome for Testing$/.test(n)),
+      ),
+    ];
+  } catch {
+    windows = [];
+  }
+  const result = { ...dom, windows };
+  if (projectDir) {
+    const read = await readMapping(projectDir);
+    if (read.error) {
+      result.project = { revision: null, changes: null, error: read.error };
+    } else {
+      const dir = path.join(apoioDir, 'state');
+      fs.mkdirSync(dir, { recursive: true });
+      const key = createHash('sha1')
+        .update(path.resolve(projectDir))
+        .digest('hex')
+        .slice(0, 12);
+      const snapshot = path.join(dir, `${key}.json`);
+      let changes = null;
+      if (fs.existsSync(snapshot)) {
+        changes = diffJson(JSON.parse(fs.readFileSync(snapshot, 'utf8')), read.json);
+      }
+      fs.writeFileSync(snapshot, JSON.stringify(read.json));
+      result.project = { revision: read.json.revision ?? null, changes };
+    }
+  }
+  return result;
+}
+
+/** Roda a CLI (`mark` e `state`); lê a pasta de apoio da variável de ambiente `APOIO`. */
 async function runCli(argv) {
   const [command, ...rest] = argv;
   if (command === 'mark') {
@@ -449,7 +789,22 @@ async function runCli(argv) {
     mark(apoioDir, roteiro, fase);
     return;
   }
-  console.error(`Comando desconhecido: ${command}. Comandos: mark.`);
+  if (command === 'state') {
+    const apoioDir = process.env.APOIO;
+    if (!apoioDir) {
+      console.error('APOIO (a pasta apoio/ da rodada) precisa estar definida.');
+      process.exitCode = 2;
+      return;
+    }
+    const { browser, page } = await connect(apoioDir);
+    try {
+      console.log(formatState(await state(page, apoioDir, { projectDir: rest[0] })));
+    } finally {
+      await browser.close();
+    }
+    return;
+  }
+  console.error(`Comando desconhecido: ${command}. Comandos: mark, state.`);
   process.exitCode = 2;
 }
 
