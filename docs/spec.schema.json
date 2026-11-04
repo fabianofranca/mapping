@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/spec.schema.json",
-  "title": "Mapping — especialização (formatVersion 1, 2, 3, 4, 5, 6, 7, 8 e 9)",
-  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) e, na formatVersion 4, as chaves novas só com formatVersion 4, sources com slot/ignore/path só em sistema declarado em origins (com path obrigatório lá e name obrigatório fora), exemplos com um só modo e valores compatíveis com os campos do tipo, system dos exemplos declarado em origins, par family+weight+style único em fonts, faixa de peso com o primeiro valor menor, regras de origins (o detalhe está em origins, validado pelo parseOrigins) e as conferências das migrations (to maior que from e até version, from único, a chave de campo de um passo é campo ou tabela.coluna, o lado novo existe e o lado antigo não existe mais, destinos de map-values nas options, default de fill-field compatível) só são verificadas pelo validador da app; na formatVersion 5, platforms[].repo (a formatVersion 5 é a 4 mais repo; em versão anterior é erro) também só é verificado pelo validador da app; na formatVersion 6, containers (a 6 é a 5 mais containers; em versão anterior é erro, e o id repetido é verificado pelo validador da app); na formatVersion 7, floating e appliesTo no tipo e ref como tipo de coluna de table (a 7 é a 6 mais floating, appliesTo e a coluna ref; em versão anterior é erro, verificado pelo validador da app; appliesTo não vazio, sem repetição, e um tipo só de seta não tem component nem floating); na formatVersion 8, suggestions e linkedRef em campo e coluna string (a 8 é a 7 mais suggestions e linkedRef; linkedRef aponta para um campo ref do tipo ou uma coluna ref da table; em versão anterior ou em outro tipo é erro, verificado pelo validador da app; lista não vazia, até 200 textos únicos, não vazios e sem espaço nas pontas; não restringe o valor); na formatVersion 9, variants na entrada de code (a 9 é a 8 mais variants; em versão anterior é erro; field é a key de um campo enum do tipo no nível de cima, cada chave de cases é uma das options dele, o caso não é vazio e params e values dos casos seguem as regras dos da base, tudo verificado pelo validador da app); veja SPEC-FORMAT.md.",
+  "title": "Mapping — especialização (formatVersion 1, 2, 3, 4, 5, 6, 7, 8, 9 e 10)",
+  "description": "Valida a estrutura. Regras entre elementos (ids únicos, allowedChildren em outra camada, requiresOwner, labelField, rowLabel, default compatível, rowLabel/tags, plataformas declaradas em platforms, chaves de params e values, platforms/code a partir do formatVersion 2, sources só no formatVersion 3, values de sources só em campos enum e com destinos nas options) e, na formatVersion 4, as chaves novas só com formatVersion 4, sources com slot/ignore/path só em sistema declarado em origins (com path obrigatório lá e name obrigatório fora), exemplos com um só modo e valores compatíveis com os campos do tipo, system dos exemplos declarado em origins, par family+weight+style único em fonts, faixa de peso com o primeiro valor menor, regras de origins (o detalhe está em origins, validado pelo parseOrigins) e as conferências das migrations (to maior que from e até version, from único, a chave de campo de um passo é campo ou tabela.coluna, o lado novo existe e o lado antigo não existe mais, destinos de map-values nas options, default de fill-field compatível) só são verificadas pelo validador da app; na formatVersion 5, platforms[].repo (a formatVersion 5 é a 4 mais repo; em versão anterior é erro) também só é verificado pelo validador da app; na formatVersion 6, containers (a 6 é a 5 mais containers; em versão anterior é erro, e o id repetido é verificado pelo validador da app); na formatVersion 7, floating e appliesTo no tipo e ref como tipo de coluna de table (a 7 é a 6 mais floating, appliesTo e a coluna ref; em versão anterior é erro, verificado pelo validador da app; appliesTo não vazio, sem repetição, e um tipo só de seta não tem component nem floating); na formatVersion 8, suggestions e linkedRef em campo e coluna string (a 8 é a 7 mais suggestions e linkedRef; linkedRef aponta para um campo ref do tipo ou uma coluna ref da table; em versão anterior ou em outro tipo é erro, verificado pelo validador da app; lista não vazia, até 200 textos únicos, não vazios e sem espaço nas pontas; não restringe o valor); na formatVersion 9, variants na entrada de code (a 9 é a 8 mais variants; em versão anterior é erro; field é a key de um campo enum do tipo no nível de cima, cada chave de cases é uma das options dele, o caso não é vazio e params e values dos casos seguem as regras dos da base, tudo verificado pelo validador da app); na formatVersion 10, notices no tipo, no campo e na coluna de table (a 10 é a 9 mais notices; em versão anterior é erro, verificado pelo validador da app; dois avisos com o mesmo kind e a mesma message na lista são erro, o que o JSON Schema não expressa; o aviso só informa); veja SPEC-FORMAT.md.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "version", "layers"],
@@ -11,7 +11,7 @@
       "enum": ["mapping-spec", "mapeador-spec"]
     },
     "formatVersion": {
-      "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     },
     "id": {
       "type": "string",
@@ -177,6 +177,13 @@
             "enum": ["marking", "arrow"]
           },
           "description": "formatVersion 7: a que a anotação se aplica, marking (uma marcação), arrow (uma seta) ou os dois; padrão [\"marking\"]. Um tipo só de seta não tem component nem floating. Em versão anterior é erro."
+        },
+        "notices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/notice"
+          },
+          "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
         }
       }
     },
@@ -246,6 +253,13 @@
             "linkedRef": {
               "type": "string",
               "description": "formatVersion 8: chave de um campo ref do mesmo tipo (ou de uma coluna ref da mesma table) cujos alvos mapeados entram na lista de sugestões; só em campo ou coluna string. Em versão anterior, em outro tipo ou com chave que não é ref é erro (verificado pelo validador da app)."
+            },
+            "notices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/notice"
+              },
+              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
             }
           }
         },
@@ -284,6 +298,13 @@
               "items": {
                 "$ref": "#/$defs/fieldSource"
               }
+            },
+            "notices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/notice"
+              },
+              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
             }
           }
         },
@@ -331,6 +352,13 @@
               "items": {
                 "$ref": "#/$defs/fieldSource"
               }
+            },
+            "notices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/notice"
+              },
+              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
             }
           }
         }
@@ -383,6 +411,13 @@
             "linkedRef": {
               "type": "string",
               "description": "formatVersion 8: chave de um campo ref do mesmo tipo (ou de uma coluna ref da mesma table) cujos alvos mapeados entram na lista de sugestões; só em campo ou coluna string. Em versão anterior, em outro tipo ou com chave que não é ref é erro (verificado pelo validador da app)."
+            },
+            "notices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/notice"
+              },
+              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
             }
           }
         },
@@ -415,6 +450,13 @@
               "items": {
                 "$ref": "#/$defs/fieldSource"
               }
+            },
+            "notices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/notice"
+              },
+              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
             }
           }
         },
@@ -456,6 +498,13 @@
               "items": {
                 "$ref": "#/$defs/fieldSource"
               }
+            },
+            "notices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/notice"
+              },
+              "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
             }
           }
         },
@@ -507,6 +556,13 @@
           "items": {
             "$ref": "#/$defs/fieldSource"
           }
+        },
+        "notices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/notice"
+          },
+          "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
         }
       }
     },
@@ -573,6 +629,13 @@
           "items": {
             "$ref": "#/$defs/fieldSource"
           }
+        },
+        "notices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/notice"
+          },
+          "description": "formatVersion 10: avisos (pode ser vazia). Em versão anterior é erro (verificado pelo validador da app)."
         }
       }
     },
@@ -1268,6 +1331,34 @@
         },
         "file": {
           "$ref": "#/$defs/jsonFile"
+        }
+      }
+    },
+    "notice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "message"],
+      "description": "formatVersion 10: aviso sobre um tipo, campo ou coluna. Só informa: não impede importar, aplicar nem criar anotação, e não é pendência. A lista de avisos não pode repetir o mesmo kind com a mesma message (erro \"aviso repetido\"); o JSON Schema não expressa a unicidade do par e o validador da app a confere.",
+      "properties": {
+        "kind": {
+          "enum": ["pending", "deprecated", "diverges", "removed"],
+          "description": "pending: uma fonte já tem e a outra ainda não; deprecated: obsoleto; diverges: as fontes discordam; removed: saiu do contrato. Gravidade: removed > deprecated = diverges > pending."
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S",
+          "description": "Texto não vazio e que não seja só espaços."
+        },
+        "since": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$",
+          "description": "Data AAAA-MM-DD. O validador da app confere que é uma data real (ex.: recusa 2026-02-30)."
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "De onde o aviso vem (texto livre não vazio): a página do contrato, o arquivo do código."
         }
       }
     }

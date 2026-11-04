@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 9)
+# Formato da especialização (`formatVersion` 1 a 10)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -10,7 +10,7 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - Uma especialização **não cita outra pelo nome**. A ligação entre elas é feita por **referências fortes** (tipo `ref`) que escolhem os alvos por **etiquetas**.
 - Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
 - A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido. A cópia mantém a `formatVersion` com que foi aplicada.
-- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 9; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 10; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
@@ -18,6 +18,7 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - A `formatVersion` 7 é a 6 mais `floating` no tipo de anotação (o tipo cuja instância é uma **marcação flutuante**, um comentário solto sobre o canvas: ver "Tipo flutuante"), `appliesTo` no tipo (a que a anotação se aplica: marcação, seta ou ambas: ver "Onde o tipo se aplica") e `ref` como tipo de coluna de `table` (uma lista de referências como dado: ver "Tipos de valor"). A 7 é aditiva: as versões 1 a 6 continuam aceitas sem mudança, e cada chave da 7 numa versão anterior é o erro `só é permitido com formatVersion 7`, no caminho exato.
 - A `formatVersion` 8 é a 7 mais `suggestions` e `linkedRef` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor, e os alvos mapeados na mesma lista: ver "Sugestões de texto" e "Alvos mapeados na lista (`linkedRef`)"). A 8 é aditiva: as versões 1 a 7 continuam aceitas sem mudança, e `suggestions` ou `linkedRef` numa versão anterior é o erro `só é permitido com formatVersion 8`, no caminho exato.
 - A `formatVersion` 9 é a 8 mais `variants` na entrada de `code`: o campo `enum` do tipo que escolhe a variante do código de instanciação, como o `style` de um botão que em Compose troca o composable (`Button`, `OutlinedButton`, `TextButton`; ver "Variantes do código (`variants`)"). A 9 é aditiva: as versões 1 a 8 continuam aceitas sem mudança, e `variants` numa versão anterior é o erro `só é permitido com formatVersion 9`, no caminho exato. Só sobe para a 9 a especialização que usa `variants`.
+- A `formatVersion` 10 é a 9 mais `notices` no tipo, no campo e na coluna de `table`: avisos curtos que dizem a quem usa a especialização que algo diverge entre as fontes, está pendente, obsoleto ou removido (ver "Avisos (notices)"). A 10 é aditiva: as versões 1 a 9 continuam aceitas sem mudança, e `notices` numa versão anterior é o erro `só é permitido com formatVersion 10`, no caminho exato. Só sobe para a 10 a especialização que usa `notices`.
 
 Arquivos de apoio:
 
@@ -92,6 +93,7 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `9`), `id`, 
 | `examples`        | não         | A partir da `formatVersion` 4. Exemplos nomeados do tipo: valores dos campos ou o JSON de um sistema externo.             |
 | `floating`        | não         | A partir da `formatVersion` 7. Padrão `false`. A instância é uma marcação flutuante (ver "Tipo flutuante").               |
 | `appliesTo`       | não         | A partir da `formatVersion` 7. `["marking"]`, `["arrow"]` ou os dois; padrão `["marking"]` (ver "Onde o tipo se aplica"). |
+| `notices`         | não         | A partir da `formatVersion` 10. Avisos sobre o tipo (ver "Avisos (notices)").                                             |
 
 ### Campo
 
@@ -111,6 +113,7 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `9`), `id`, 
 | `accepts`     | só `ref`           | `{ "tags": [...], "free": true\|false }`. Precisa de pelo menos uma etiqueta ou `free: true`.                                                                                                               |
 | `description` | não                | Texto de ajuda exibido no editor.                                                                                                                                                                           |
 | `sources`     | não                | A partir da `formatVersion` 3. Propriedades de origem do campo, inclusive em colunas; na v4, `path` em sistema declarado em `origins` (ver "Origens (sources)").                                            |
+| `notices`     | não                | A partir da `formatVersion` 10. Avisos sobre o campo; vale também numa coluna de `table` (ver "Avisos (notices)").                                                                                          |
 
 ## Tipos de valor
 
@@ -457,6 +460,54 @@ A `formatVersion` 7 diz a que uma anotação se aplica com `appliesTo` no tipo: 
 }
 ```
 
+## Avisos (notices)
+
+A `formatVersion` 10 deixa a especialização **avisar** sobre um tipo, um campo ou uma coluna de `table` com `notices`: uma lista de avisos curtos, escritos por quem gera a especialização, para quem a usa saber que ali há algo a considerar. É o lugar de registrar que duas fontes **discordam** (o contrato diz uma coisa e o código outra), que algo está **pendente** numa delas, ficou **obsoleto** ou **saiu** do contrato. A pessoa vê o aviso na app ao lado do tipo, do campo ou da coluna; o agente o lê ao instanciar o tipo.
+
+```json
+{
+  "id": "alert",
+  "name": "Alert",
+  "notices": [
+    {
+      "kind": "pending",
+      "message": "O contrato aceita avatarVariant; o SDK do BFF ainda não tem.",
+      "since": "2026-11-04",
+      "ref": "cross/sdui/all/pe-core/base/plugins/alert.md"
+    }
+  ],
+  "fields": [
+    {
+      "key": "legacyStyle",
+      "type": "string",
+      "notices": [{ "kind": "deprecated", "message": "Use variant." }]
+    }
+  ]
+}
+```
+
+Cada aviso é um objeto estrito:
+
+| Propriedade | Obrigatória | Descrição                                                                               |
+| ----------- | ----------- | --------------------------------------------------------------------------------------- |
+| `kind`      | sim         | Um de `pending`, `deprecated`, `diverges` ou `removed` (tabela abaixo).                 |
+| `message`   | sim         | O que a pessoa precisa saber. Texto não vazio e que não seja só espaços.                |
+| `since`     | não         | Desde quando o aviso vale: data real no formato `AAAA-MM-DD`.                           |
+| `ref`       | não         | De onde o aviso vem, texto livre não vazio (a página do contrato, o arquivo do código). |
+
+Os quatro `kind` têm **gravidade fixa**, na ordem `removed` > `deprecated` = `diverges` > `pending`; a lista é exibida na ordem `removed`, `deprecated`, `diverges`, `pending` e, dentro do mesmo `kind`, na ordem do arquivo.
+
+| `kind`       | Rótulo (pt-BR / en-US) | Significa                                                                                                                               |
+| ------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `removed`    | Removido / Removed     | Saiu do contrato e não deve ser usado.                                                                                                  |
+| `deprecated` | Obsoleto / Deprecated  | Obsoleto; a `message` diz o que usar no lugar.                                                                                          |
+| `diverges`   | Diverge / Diverges     | As fontes discordam; a `message` diz em quê.                                                                                            |
+| `pending`    | Pendente / Pending     | Uma fonte já tem e a outra ainda não; o nome da plataforma ou da origem vai na `message` (o núcleo da app não leva nome de plataforma). |
+
+- `notices`: lista (pode ser vazia) no tipo (`layers[n].annotationTypes[m].notices`), no campo (`…fields[k].notices`) e na coluna de `table` (`…fields[k].columns[j].notices`). Dois avisos com o mesmo `kind` e a mesma `message` na lista são o erro `aviso repetido`, no caminho do segundo. Um `kind` fora dos quatro, uma `message` vazia ou só de espaços, uma `since` que não é data real, uma `ref` vazia e qualquer outra propriedade são erros. Numa versão anterior à 10 o erro é `só é permitido com formatVersion 10`, no caminho exato.
+- **O aviso só informa.** Nenhum aviso, nem `removed`, impede importar a especialização, aplicá-la, criar uma anotação do tipo ou aceitar uma proposta que o use. O aviso também não é pendência: a janela **Incompletas** e os códigos de problema das anotações não mudam.
+- **Fora do contrato de versão:** incluir, mudar ou tirar `notices` é compatível e nunca pede migração (ver "Contrato de versão"). `diffSpecs` ignora `notices` e não gera diferença, então quem gera a especialização pode regravar **todos** os avisos a cada rodada, e o aviso some sozinho quando a diferença entre as fontes some. Atualizar a especialização só por avisos não mostra impacto.
+
 ## Origens (sources)
 
 A `formatVersion` 3 diz a que elementos de um **sistema externo** (uma ferramenta de design, outro catálogo de componentes…) cada tipo corresponde e de que propriedade de origem vem cada campo. É o que um agente de importação usa para saber que componente vira que tipo, sem deduzir pelo nome. O núcleo não interpreta `system` nem os nomes: só valida a estrutura e devolve os dados a quem pedir.
@@ -670,7 +721,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Quebra** (e só isto): remover ou renomear um **tipo**, um **campo** (ou coluna) ou uma **opção de `enum`**; tornar um campo **obrigatório**, inclusive um campo novo que já nasce obrigatório (os valores existentes ficam incompletos); mudar o `type` de um campo.
 
-**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions` e `linkedRef`, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
+**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef` e `notices`, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
 
 ### `migrations`
 
@@ -896,7 +947,7 @@ Os pacotes `libraries/material3-compose/` e `examples/libraries/sdui-backend/` p
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 9), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 10), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada**;
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo;
@@ -906,6 +957,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `accepts` com pelo menos uma etiqueta ou `free: true`; etiquetas no formato `[a-z0-9-]+`;
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
+- **v10, `notices`:** só a partir da `formatVersion` 10 (numa versão anterior o erro é `só é permitido com formatVersion 10`, no caminho `…annotationTypes[n].notices`, `…fields[n].notices` ou `…columns[m].notices`); lista (pode ser vazia) de objetos estritos com `kind` (`pending`, `deprecated`, `diverges` ou `removed`) e `message` (não vazia nem só espaços) obrigatórios, `since` (data real `AAAA-MM-DD`) e `ref` (texto não vazio) opcionais; dois avisos com o mesmo `kind` e a mesma `message` na lista são o erro `aviso repetido`, no caminho do segundo; qualquer outra propriedade é recusada; o aviso só informa (ver "Avisos (notices)");
 - **v9, `variants`:** só a partir da `formatVersion` 9 (numa versão anterior o erro é `só é permitido com formatVersion 9`, no caminho `…code.<plataforma>.variants`); `field` é a `key` de um campo `enum` do tipo (nível de cima); `cases` não vazio, com chaves nas `options` do campo e casos não vazios; `params` e `values` dos casos como os da base; um nível só (o caso não tem `variants`); qualquer outra propriedade é recusada (ver "Variantes do código");
 - **v8, `suggestions`:** só a partir da `formatVersion` 8 (numa versão anterior o erro é `só é permitido com formatVersion 8`, no caminho `…fields[n].suggestions` ou `…columns[m].suggestions`); só em campo ou coluna `string`; lista não vazia, até 200 itens, de textos únicos, não vazios e sem espaço nas pontas; não restringe o valor, e o `default` pode ficar fora da lista;
 - **v8, `linkedRef`:** só a partir da `formatVersion` 8 (numa versão anterior o erro é `só é permitido com formatVersion 8`, no caminho `…fields[n].linkedRef` ou `…columns[m].linkedRef`); só em campo ou coluna `string`; a `key` precisa ser a de um campo `ref` do mesmo tipo (na coluna, de uma coluna `ref` da mesma `table`); não restringe o valor e independe de `suggestions`;

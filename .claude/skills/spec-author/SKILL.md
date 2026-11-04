@@ -146,9 +146,40 @@ Use `image` quando o desenho mostra uma foto cuja URL vem do dado (avatar, foto,
 - `fit`: `cover` (padrão), `contain` ou `fill`. Dê tamanho fixo, `fill` ou `%`; **nunca `hug`** (é erro). `fill` (cor) serve de fundo atrás da imagem e `cornerRadius` faz avatar redondo.
 - Um componente com nó `image` usa a `formatVersion` 3 do componente. A especialização não muda (nada de declarar origem) e o `preview` traz uma URL `https://` só se você a viu na origem.
 
-### 11. Versão
+### 11. Avisos (`formatVersion` 10)
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`; 8 com `suggestions` ou `linkedRef` em algum campo ou coluna `string`; 9 com `variants` no `code` de algum tipo. A versão atual do formato é a 9. **Só suba para a 9 se algum tipo usa `variants`**: o resto da biblioteca fica na versão que o conteúdo pede (a Kotlin e a de notas ficam na 8). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+`notices` (lista, opcional) no tipo, no campo ou na coluna de `table` registra um **aviso curto** para quem usa a especialização. Escreva um quando **duas fontes que você leu discordam** (o contrato diz uma coisa e o código outra) ou quando o que você viu pede cuidado: nunca invente aviso sem ter visto a diferença nas fontes.
+
+```json
+{
+  "id": "alert",
+  "notices": [
+    {
+      "kind": "pending",
+      "message": "O contrato aceita avatarVariant; o SDK do BFF ainda não tem.",
+      "since": "2026-11-04",
+      "ref": "cross/sdui/all/pe-core/base/plugins/alert.md"
+    }
+  ],
+  "fields": [
+    {
+      "key": "legacyStyle",
+      "type": "string",
+      "notices": [{ "kind": "deprecated", "message": "Use variant." }]
+    }
+  ]
+}
+```
+
+- `kind` (obrigatório): `pending` (uma fonte já tem e a outra ainda não; **o nome da plataforma ou da origem vai na `message`**, não em outro lugar), `deprecated` (obsoleto; a `message` diz o que usar no lugar), `diverges` (as fontes discordam; a `message` diz em quê) ou `removed` (saiu do contrato; não deve ser usado). `message` obrigatória, não vazia nem só espaços; `since` (data real `AAAA-MM-DD`) e `ref` (texto livre: a página do contrato, o arquivo do código) opcionais. Não repita o mesmo `kind` com a mesma `message` na lista (erro `aviso repetido`).
+- **Regrave TODOS os avisos a cada rodada**, a partir do que as fontes mostram hoje: o aviso é um retrato da diferença, não um histórico. Quando a diferença some (o SDK ganhou o campo), o aviso simplesmente não é escrito de novo e some sozinho. Não carregue aviso antigo "por garantia".
+- **Só informa.** Nenhum aviso, nem `removed`, impede importar, aplicar, criar anotação ou aceitar proposta, e não vira pendência. Por isso um campo que deve ser **obrigatório** continua com `required`, e um tipo que não pode mais existir continua precisando de migração, não de aviso.
+- **Fora do contrato de versão:** incluir, mudar ou tirar `notices` nunca pede migração nem sobe a `version` por si só (`diffSpecs` os ignora); atualizar a especialização só por avisos não mostra impacto.
+- **Só suba para a `formatVersion` 10 se algo usa `notices`.** Numa versão anterior, `notices` é erro (`só é permitido com formatVersion 10`, no caminho exato).
+
+### 12. Versão
+
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`; 8 com `suggestions` ou `linkedRef` em algum campo ou coluna `string`; 9 com `variants` no `code` de algum tipo; 10 com `notices` em algum tipo, campo ou coluna. A versão atual do formato é a 10. **Só suba para a 9 se algum tipo usa `variants`, e só para a 10 se algum tipo, campo ou coluna usa `notices`**: o resto da biblioteca fica na versão que o conteúdo pede (a Kotlin e a de notas ficam na 8). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
@@ -238,6 +269,7 @@ Não aplique a especialização a um projeto nem crie proposta, a menos que o pr
 - Booleano como `string` com `default: "true"`: use `enum`.
 - `enum` para um texto que não se esgota na lista (o tipo de uma propriedade): trava valores legítimos; use `string` com `suggestions`. E o contrário: `suggestions` para um conjunto fechado, que não impede o valor errado.
 - `default` fora de `options`, ou `default` em `ref`.
+- `notices` carregado de uma rodada para outra depois que a diferença sumiu, ou aviso inventado sem ter visto a divergência nas fontes; `notices` numa especialização que ficou na `formatVersion` 9 ou menos.
 - Campo `codeRef` (onde a instância foi escrita): saiu do formato; remova.
 - `symbol` com o nome do nó de saída (`"onClick"`, `"image"`) em vez da função ou classe que o gera.
 - Plataforma com `path` em algum tipo e sem `repo` (aviso): preencha `url` e `ref` do repositório que você leu.
@@ -255,7 +287,7 @@ O prompt só precisa especificar. Modelo:
 
 > /spec-author
 >
-> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9>.
+> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9|10>.
 >
 > **Origem:** <repositório, pasta ou design system>, lendo <o que ler: pasta dos componentes, catálogo exportado, documento>. Ignore <o que ignorar>.
 >
@@ -268,6 +300,8 @@ O prompt só precisa especificar. Modelo:
 > **Tipos flutuantes:** <tipos que são comentários soltos, fora de qualquer tela, e as tabelas de dados ligadas ao elemento por uma seta>. (Só na `formatVersion` 7; omitir sem evidência.)
 >
 > **Tipos de seta:** <tipos de anotação que descrevem a relação entre duas marcações (`appliesTo: ["arrow"]`)>. (Só na `formatVersion` 7; omitir sem evidência.)
+>
+> **Avisos:** <diferenças entre as fontes (contrato × código) a registrar em `notices`, com o `kind` de cada uma>. (Só na `formatVersion` 10; omitir sem evidência.)
 >
 > **Fora:** <o que não modelar>.
 >

@@ -4,6 +4,20 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
+## [Não lançado] — Avisos na especialização (épico `epic/avisos-especializacao`, PR #<n>, MCP 0.15.0, schema v13)
+
+### Adicionado
+
+- **`formatVersion` 10 da especialização, com avisos (`notices`)** em tipo, campo e coluna de `table`: cada aviso tem `kind` (`pending`, `deprecated`, `diverges` ou `removed`), `message` e, opcionais, `since` (data) e `ref` (de onde vem). Os avisos só informam: nenhum impede importar, aplicar, criar anotação nem aceitar proposta, e não são pendência. Ficam fora do contrato de versão (incluir, mudar ou tirar avisos nunca pede migração), então quem gera a especialização pode regravar todos a cada rodada e o aviso some sozinho quando a diferença entre as fontes some. Documentado em `docs/SPEC-FORMAT.md` (seção "Avisos (notices)"), na ajuda "Especializações", no `docs/spec.schema.json` e na skill `spec-author`.
+
+### Alterado
+
+—
+
+### Corrigido
+
+—
+
 ## Testador paralelo — 2026-11-04 (épico `epic/testador-paralelo`, PR #470, MCP 0.14.0, schema v13)
 
 ### Adicionado
