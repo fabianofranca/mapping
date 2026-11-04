@@ -4,13 +4,14 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
-## Envolver — [Não lançado] (épico `epic/envolver`, PR a definir, MCP a definir pela EV2, schema v13)
+## Envolver — [Não lançado] (épico `epic/envolver`, PR a definir, MCP 0.14.0, schema v13)
 
 ### Adicionado
 
 - **Ctrl+G (Cmd+G no macOS) envolve a seleção** numa marcação nova, com um ou mais itens, numa entrada só de desfazer; a marcação nova fica selecionada, como no botão **Envolver** do resumo. O atalho não age (e o navegador segue com o "localizar próximo") com o foco num campo de texto, no projeto somente leitura, na revisão de propostas, sem seleção ou quando só há notas e setas. Entra na lista de atalhos da Ajuda e na dica do botão **Envolver**.
 - **Envolver no menu de contexto do canvas e no menu ⋯ da Árvore**, com o atalho ao lado: no canvas, envolve a seleção atual; no ⋯ da linha, a seleção se o item está nela, senão só o item da linha. Desabilitado, com a dica, quando nada entra (nota); sem a entrada na seta, no somente leitura e na revisão.
 - **Envolver com um item só**: uma marcação ou um container sozinhos podem ser envolvidos pelo atalho e pelos menus, com o mesmo resultado de hoje (margem de 8 px, limitada ao container e ao pai atual).
+- **MCP 0.14.0: operação `wrap_items`** em `plan_changes` e `propose_changes`: cria uma marcação em volta de marcações e containers (`items`), o mesmo resultado do **Envolver** da app, com `as` (apelido para as operações seguintes do lote), `name` e `source` opcionais. Notas e setas na lista são ignoradas com aviso `ignored-argument`; sem nada que entre, falha com `invalid-parent` e um `detail`. A revisão mostra a criação de uma marcação, como um `create_marking`.
 
 ## Seleção múltipla — 2026-11-04 (épico `epic/selecao-multipla`, PR #448, MCP 0.13.0, schema v13)
 
