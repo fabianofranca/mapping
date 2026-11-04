@@ -4,6 +4,13 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
+## Bugs sem duplicadas e com severidade — [Não lançado] (épico `epic/bugs-severidade`, MCP 0.13.0, schema v13)
+
+### Alterado
+
+- Antes de abrir uma issue `bug`, o agente procura uma igual ou que agrupe o defeito, nas abertas e nas fechadas: o igual vira comentário na existente, o agrupável entra nela como item (ou fica relacionado, se ela já estiver em andamento) e o que voltou depois de fechado vira issue nova que cita a antiga. A busca fica registrada no corpo.
+- Todo `bug` aberto leva um rótulo de severidade: `severity: high`, `severity: medium` ou `severity: low`, com a correspondência da escala do relato de teste (bloqueia e alta → high, média → medium, baixa → low). Os bugs abertos foram classificados: #405 e #372 médios, #371 baixo.
+
 ## Orçamentos estáveis — 2026-11-04 (épico `epic/orcamentos-estaveis`, PR #408, MCP 0.13.0, schema v13)
 
 ### Corrigido
