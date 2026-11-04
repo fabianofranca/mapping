@@ -1,4 +1,4 @@
-# Guia do testador e auxiliares da nuvem — [Não lançado] (épico `epic/guia-testador`, PR #0, MCP 0.14.0, schema v13)
+# Guia do testador e auxiliares da nuvem — [Não lançado] (épico `epic/guia-testador`, PR #508, MCP 0.14.0, schema v13)
 
 ## Adicionado
 
