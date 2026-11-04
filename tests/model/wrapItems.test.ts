@@ -222,3 +222,61 @@ describe('wrapItems', () => {
     expect(get(next, 'a1')).toMatchObject({ locked: true, rect: get(p, 'a1').rect });
   });
 });
+
+// Um item só (etapa Envolver, EV1, decisão 4): o resultado é o do `wrapItems` de hoje.
+describe('wrapItems com um item só', () => {
+  it('marcação de container: a nova é do container, com a margem', () => {
+    const next = wrapItems(multiProject(), { id: 'W', items: [mark('a3')] });
+    expectValid(next);
+    expect(get(next, 'W')).toMatchObject({
+      containerId: 'A',
+      parentId: null,
+      rect: rect(592, 592, 216, 216),
+    });
+    expect(get(next, 'a3').parentId).toBe('W');
+  });
+
+  it('marcação do canvas: a nova é do canvas, com a margem', () => {
+    const next = wrapItems(multiProject(), { id: 'W', items: [mark('H')] });
+    expectValid(next);
+    expect(get(next, 'W')).toMatchObject({
+      containerId: null,
+      floating: false,
+      rect: rect(392, 1292, 216, 116),
+    });
+    expect(get(next, 'H').parentId).toBe('W');
+  });
+
+  it('container: a nova é do canvas e o container vira filho', () => {
+    const next = wrapItems(multiProject(), { id: 'W', items: [img('D')] });
+    expectValid(next);
+    const w = get(next, 'W');
+    expect(w.containerId).toBeNull();
+    expect(w.rect).toEqual(rect(6992, -8, 1016, 1016));
+    expect(next.containers.find((c) => c.id === 'D')?.parentId).toBe('W');
+  });
+
+  it('marcação que ocupa o container inteiro: a nova tem o mesmo retângulo, sem falhar', () => {
+    const full = mk('full', 'D', rect(0, 0, 1000, 1000));
+    const p = settleHierarchy({
+      ...multiProject(),
+      markings: [...multiProject().markings, full],
+    });
+    expect(canWrapItems(p, [mark('full')])).toBe(true);
+    const next = wrapItems(p, { id: 'W', items: [mark('full')] });
+    expectValid(next);
+    expect(get(next, 'W')).toMatchObject({
+      containerId: 'D',
+      rect: rect(0, 0, 1000, 1000),
+    });
+    expect(get(next, 'full').parentId).toBe('W');
+  });
+
+  it('nota (flutuante) sozinha: não entra e falha com invalid-parent', () => {
+    const p = multiProject();
+    expect(canWrapItems(p, [mark('N')])).toBe(false);
+    expect(codeOf(() => wrapItems(p, { id: 'W', items: [mark('N')] }))).toBe(
+      'invalid-parent',
+    );
+  });
+});

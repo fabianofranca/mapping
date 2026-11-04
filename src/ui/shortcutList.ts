@@ -66,6 +66,7 @@ export function shortcutGroups(): readonly ShortcutGroup[] {
         row('shortcuts.copyReference', combo(SHORTCUT_LABELS.copyReference)),
         row('shortcuts.copyCrop', combo(SHORTCUT_LABELS.copyCrop)),
         row('shortcuts.arrange', combo(SHORTCUT_LABELS.arrange)),
+        row('shortcuts.wrap', combo(SHORTCUT_LABELS.wrap)),
         row('shortcuts.selectParent', ['Alt', '↑']),
         row('shortcuts.selectChild', ['Alt', '↓']),
       ],

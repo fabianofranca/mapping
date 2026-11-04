@@ -1,9 +1,10 @@
 import { t } from '../i18n';
 import { canDeleteItems, canWrapItems, type ItemRef, type Project } from '../model';
+import { SHORTCUT_LABELS, ariaKeys } from '../app/shortcuts';
+import { wrapItemsNow } from '../app/wrapSelection';
 import { useEditor } from './EditorContext';
 import { Button } from './controls';
 import { Icon } from './icons';
-import { selectItems, showToast } from '../store/ui';
 
 interface MultiSelectionPanelProps {
   readonly project: Project;
@@ -21,7 +22,8 @@ export function MultiSelectionPanel({
   readOnly,
   onDelete,
 }: MultiSelectionPanelProps) {
-  const { actions, ui } = useEditor();
+  const editor = useEditor();
+  const { actions } = editor;
   const containers = items.filter((i) => i.kind === 'image').length;
   const arrows = items.filter((i) => i.kind === 'arrow').length;
   const markings = items.length - containers - arrows;
@@ -34,6 +36,7 @@ export function MultiSelectionPanel({
   const locked = items.filter((i) => index.get(i.id) === true).length;
   const deletable = canDeleteItems(project, items);
   const wrappable = canWrapItems(project, items);
+  const wrapBlockedHint = !readOnly ? t('multi.wrapBlocked') : undefined;
   return (
     <div
       class="details-empty"
@@ -48,12 +51,11 @@ export function MultiSelectionPanel({
       <div class="multi-actions">
         <Button
           disabled={readOnly || !wrappable}
-          title={!readOnly && !wrappable ? t('multi.wrapBlocked') : undefined}
-          onClick={() => {
-            const result = actions.wrapItems(items);
-            if (result.ok) selectItems(ui, [{ kind: 'marking', id: result.value }]);
-            else showToast(ui, t('multi.wrapFailed'));
-          }}
+          title={
+            wrappable ? `${t('multi.wrap')} (${SHORTCUT_LABELS.wrap})` : wrapBlockedHint
+          }
+          aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.wrap)}
+          onClick={() => wrapItemsNow(editor, items)}
         >
           {t('multi.wrap')}
         </Button>

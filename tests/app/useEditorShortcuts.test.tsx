@@ -951,3 +951,104 @@ describe('useEditorShortcuts: seleção múltipla', () => {
     expect(marking(s.harness, 'M1').locked).toBe(false);
   });
 });
+
+describe('useEditorShortcuts: Envolver (Ctrl/Cmd+G)', () => {
+  const ids = (h: Harness) => h.project().markings.map((m) => m.id);
+  const created = (h: Harness) =>
+    h.project().markings.find((m) => !'M1M2M3M4'.includes(m.id));
+
+  it('com um item só, envolve e deixa a nova selecionada; Ctrl+Z desfaz', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
+    const event = s.press('g', { ctrl: true });
+    expect(event.defaultPrevented).toBe(true);
+    const wrap = created(s.harness);
+    expect(wrap).toBeDefined();
+    expect(marking(s.harness, 'M4').parentId).toBe(wrap?.id);
+    expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: wrap?.id });
+    s.press('z', { ctrl: true });
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+  });
+
+  it('com três itens, envolve os três numa entrada só (Cmd+G também vale)', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [
+      { kind: 'marking', id: 'M1' },
+      { kind: 'marking', id: 'M2' },
+      { kind: 'marking', id: 'M3' },
+    ]);
+    s.press('g', { meta: true });
+    const wrap = created(s.harness);
+    expect(wrap?.containerId).toBe('I1');
+    for (const id of ['M1']) expect(marking(s.harness, id).parentId).toBe(wrap?.id);
+    expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: wrap?.id });
+    s.press('z', { ctrl: true });
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+  });
+
+  it('não age, e não chama preventDefault, sem seleção', () => {
+    const s = setup();
+    expect(s.press('g', { ctrl: true }).defaultPrevented).toBe(false);
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+  });
+
+  it('não age com o foco num campo de texto', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
+    const input = document.createElement('input');
+    document.body.append(input);
+    expect(pressOn(input, 'g', { ctrl: true }).defaultPrevented).toBe(false);
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+  });
+
+  it('não age com o projeto somente leitura', () => {
+    const s = setup({ readOnly: true });
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
+    expect(s.press('g', { ctrl: true }).defaultPrevented).toBe(false);
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+  });
+
+  it('não age quando nada da seleção entra (só nota ou seta)', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'arrow', id: 'nada' }]);
+    expect(s.press('g', { ctrl: true }).defaultPrevented).toBe(false);
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+  });
+
+  it('não age com o atalho desligado (janela estreita)', () => {
+    const s = setup({ enabled: false });
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
+    expect(s.press('g', { ctrl: true }).defaultPrevented).toBe(false);
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+  });
+
+  it('segurar o Ctrl+G (tecla repetida) envolve uma vez só, sem aninhar pais', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
+    s.press('g', { ctrl: true });
+    const wrap = created(s.harness);
+    expect(wrap).toBeDefined();
+    const repeated = s.press('g', { ctrl: true }, { repeat: true });
+    s.press('g', { ctrl: true }, { repeat: true });
+    // O "localizar próximo" do navegador continua fora do caminho; o atalho só não age.
+    expect(repeated.defaultPrevented).toBe(true);
+    expect(s.harness.project().markings).toHaveLength(5);
+    expect(marking(s.harness, wrap?.id ?? '').parentId).toBeNull();
+    expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: wrap?.id });
+    // Uma só entrada de desfazer.
+    s.press('z', { ctrl: true });
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+  });
+
+  it('com um arrasto ou redimensionamento em andamento, não age nem mostra o aviso', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M4' }]);
+    s.canvas.isInteracting.mockReturnValue(true);
+    s.press('g', { ctrl: true });
+    expect(ids(s.harness)).toEqual(['M1', 'M2', 'M3', 'M4']);
+    expect(s.harness.ui.toast.value).toBeNull();
+    s.canvas.isInteracting.mockReturnValue(false);
+    s.press('g', { ctrl: true });
+    expect(created(s.harness)).toBeDefined();
+  });
+});

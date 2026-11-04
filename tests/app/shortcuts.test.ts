@@ -333,3 +333,22 @@ describe('ariaKeys', () => {
     }
   });
 });
+
+describe('atalho Envolver (etapa Envolver, EV1)', () => {
+  it('Ctrl+G e Cmd+G envolvem', () => {
+    expect(shortcutFor(key('g', { ctrl: true }))).toEqual({ kind: 'wrap' });
+    expect(shortcutFor(key('g', { meta: true }))).toEqual({ kind: 'wrap' });
+    expect(shortcutFor(key('G', { ctrl: true }))).toEqual({ kind: 'wrap' });
+  });
+
+  it('G sozinho, Ctrl+Shift+G e Alt+G não são o atalho', () => {
+    expect(shortcutFor(key('g'))).toBeNull();
+    expect(shortcutFor(key('g', { ctrl: true, shift: true }))).toBeNull();
+    expect(shortcutFor(key('g', { alt: true }))).toBeNull();
+    expect(shortcutFor(key('g', { ctrl: true, alt: true }))).toBeNull();
+  });
+
+  it('não é atalho de campo: no campo de texto, o Ctrl+G é do navegador', () => {
+    expect(worksInTextInput({ kind: 'wrap' })).toBe(false);
+  });
+});

@@ -45,6 +45,7 @@ import {
 import { useApplyAccepted, useDecide } from '../ui/review/useReview';
 import { ADD_ANNOTATION_ACTION } from '../ui/AnnotationsPanel';
 import { arrangeMarking, canArrangeMarking } from '../ui/arrange';
+import { canWrapNow, currentWrapItems, wrapItemsNow } from './wrapSelection';
 import {
   canCopyItems,
   canCopyCrop,
@@ -174,8 +175,31 @@ export function useEditorShortcuts(
       return copyShortcutTarget(editor);
     };
 
+    /**
+     * O atalho assume a tecla só quando tem o que fazer; senão o evento segue para o navegador
+     * (copiar nativo, "localizar próximo"): copiar sem item para copiar; envolver sem nada que
+     * entre numa marcação pai (somente leitura, revisão, sem seleção, só notas e setas).
+     */
+    const applies = (shortcut: Shortcut): boolean => {
+      if (shortcut.kind === 'copy-reference' || shortcut.kind === 'copy-crop') {
+        return copyTarget(shortcut) !== null;
+      }
+      if (shortcut.kind === 'wrap') return canWrapNow(editor, currentWrapItems(editor));
+      return true;
+    };
+
+    /**
+     * Envolver não age na tecla repetida (segurar o Ctrl+G aninharia um pai por repetição) nem
+     * com um gesto de ponteiro em andamento (o store recusaria e o aviso apareceria no meio do
+     * arrasto). O `preventDefault` já foi chamado: o "localizar próximo" do navegador fica fora.
+     */
+    const wrapIgnored = (shortcut: Shortcut, e: KeyboardEvent): boolean =>
+      shortcut.kind === 'wrap' && (e.repeat || canvas.current?.isInteracting() === true);
+
     const run = (shortcut: Shortcut) => {
       switch (shortcut.kind) {
+        case 'wrap':
+          return void wrapItemsNow(editor, currentWrapItems(editor));
         case 'copy-reference': {
           const target = copyTarget(shortcut);
           if (target) void copyReference(editor, target);
@@ -361,14 +385,9 @@ export function useEditorShortcuts(
       if (!shortcut) return;
       if (shortcut.kind === 'nudge') return onNudge(e, shortcut.dx, shortcut.dy);
       if (isTextInput(e.target) && !worksInTextInput(shortcut)) return;
-      // Copiar: só assume o atalho com um item para copiar; senão o copiar nativo continua.
-      if (
-        (shortcut.kind === 'copy-reference' || shortcut.kind === 'copy-crop') &&
-        !copyTarget(shortcut)
-      ) {
-        return;
-      }
+      if (!applies(shortcut)) return;
       e.preventDefault();
+      if (wrapIgnored(shortcut, e)) return;
       run(shortcut);
     };
     const endNudge = () => nudge.end();

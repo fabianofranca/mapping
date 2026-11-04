@@ -398,6 +398,22 @@ export const operationSchema = z.discriminatedUnion('op', [
       ),
   }),
   z.object({
+    op: z.literal('wrap_items'),
+    as: alias,
+    items: z
+      .array(item('Marcação ou container'))
+      .min(1)
+      .describe(
+        'Marcações e containers a envolver (referência, id ou apelido; o mesmo Envolver da app). Notas (flutuantes) e setas são ignoradas com aviso; sem nada que entre, a operação falha com `invalid-parent`.',
+      ),
+    name: name
+      .optional()
+      .describe(
+        'Nome da marcação nova (como em `create_marking`); sem nome, ela nasce sem.',
+      ),
+    source: externalSource.optional(),
+  }),
+  z.object({
     op: z.literal('move_marking'),
     marking: item('Marcação'),
     index: int

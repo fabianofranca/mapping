@@ -914,6 +914,7 @@ export const ptBR = {
   'arrange.doneWarnings': 'Arrumado com {count} aviso(s): {first}',
   'arrange.nothing': 'Nada a arrumar',
   'shortcuts.arrange': 'Arrumar o container selecionado',
+  'shortcuts.wrap': 'Envolver a seleção numa marcação nova',
   'view.componentsOnPhotos': 'Mostrar componentes sobre fotos',
   'view.componentsOnPhotosHint':
     'Desenha o componente por cima da foto. Nos containers sem arquivo ele sempre aparece.',

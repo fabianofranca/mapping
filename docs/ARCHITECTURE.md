@@ -167,9 +167,16 @@ e container dentro de uma marcação do canvas que entrou entra. Itens invisíve
 entram, setas só com "Mostrar setas" ligado, e os trancados entram. Esc ou ponteiro cancelado apaga o retângulo sem mudar a seleção.
 O gesto não altera o projeto e não gera entrada de desfazer.
 
-**Marcação pai (Envolver).** `wrapItems` (`src/model/multiSelection.ts`) cria uma marcação que envolve a seleção; o botão
-**Envolver** fica no resumo da seleção múltipla. Entram marcações não flutuantes e containers (setas e notas ficam fora do
-pertencimento). O modelo não escolhe pai: cria e assenta.
+**Marcação pai (Envolver).** `wrapItems` (`src/model/multiSelection.ts`) cria uma marcação que envolve a seleção, com uma ou mais
+itens (uma marcação não flutuante ou um container sozinhos também: a nova fica em volta dele com a margem de 8 px, limitada ao
+container e ao pai atual). Entram marcações não flutuantes e containers (setas e notas ficam fora do pertencimento). O modelo não
+escolhe pai: cria e assenta. Onde aparece: o botão **Envolver** do resumo da seleção múltipla, o atalho **Ctrl/Cmd+G**
+(`useEditorShortcuts`) e a entrada **Envolver** do menu de contexto do canvas e do ⋯ da linha da Árvore (`WrapMenuItem` em
+`src/ui/CopyActions.tsx`). Os quatro passam por `src/app/wrapSelection.ts`: `currentWrapItems` diz o que envolver agora (a
+seleção atual; ou, num menu, só o item da linha quando ele está fora da seleção), `canWrapNow` confere (fora do somente leitura
+e da revisão, e se algum item entra) e `wrapItemsNow` chama a action `wrapItems`, seleciona a marcação nova e avisa
+`multi.wrapFailed` se o modelo recusar. O atalho só assume a tecla quando `canWrapNow` vale e nunca com o foco num campo de
+texto; senão o evento segue para o navegador.
 
 - **Espaço:** se tudo o que entra são marcações do mesmo container, a nova é desse container; senão é do canvas, com o
   retângulo em unidades do canvas arredondado para fora, e a marcação de um container conta pelo **container inteiro** (só o
