@@ -123,7 +123,7 @@ describe('renderização do canvas com o projeto grande', () => {
   });
 
   budgetIt(
-    `pan, zoom e edição desenham em menos de ${RENDER_BUDGET_MS} ms (com ${ARROW_COUNT} setas)`,
+    `pan, zoom e edição do projeto grande (com ${ARROW_COUNT} setas) desenham em menos de ${RENDER_BUDGET_MS} ms`,
     BUDGET_OPTIONS,
     () => {
       const { project, actions, ui, controller, container } = setup();
@@ -136,14 +136,12 @@ describe('renderização do canvas com o projeto grande', () => {
       controller.centerSelection();
       flush();
 
-      const pans: number[] = [];
-      const zooms: number[] = [];
-      const edits: number[] = [];
-      for (let i = 0; i < 7; i++) {
+      // Uma rodada de cada métrica: pan, zoom (roda) e edição, alternando o sentido.
+      const round = (i: number): { pan: number; zoom: number; edit: number } => {
         // Pan: centraliza alternando entre duas marcações vizinhas.
         ui.selection.value = { kind: 'marking', id: (i % 2 ? first : second).id };
         controller.centerSelection();
-        pans.push(flush());
+        const pan = flush();
         container.dispatchEvent(
           new WheelEvent('wheel', {
             deltaY: i % 2 ? 40 : -40,
@@ -151,14 +149,19 @@ describe('renderização do canvas com o projeto grande', () => {
             clientY: 350,
           }),
         );
-        zooms.push(flush());
+        const zoom = flush();
         expect(actions.renameMarking(first.id, `Renomeada ${i}`).ok).toBe(true);
-        edits.push(flush());
-      }
-      const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[3] ?? Number.NaN;
-      expect(median(pans)).toBeLessThan(RENDER_BUDGET_MS);
-      expect(median(zooms)).toBeLessThan(RENDER_BUDGET_MS);
-      expect(median(edits)).toBeLessThan(RENDER_BUDGET_MS);
+        return { pan, zoom, edit: flush() };
+      };
+      // Aquece (JIT e coletor) como os orçamentos irmãos: as 3 primeiras rodadas não contam.
+      for (let i = 0; i < 3; i++) round(i);
+      const samples = Array.from({ length: 15 }, (_, i) => round(i));
+      const median = (xs: number[]) =>
+        [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
+      // A métrica no `expect`: a falha diz qual estourou.
+      expect(median(samples.map((r) => r.pan)), 'pan').toBeLessThan(RENDER_BUDGET_MS);
+      expect(median(samples.map((r) => r.zoom)), 'zoom').toBeLessThan(RENDER_BUDGET_MS);
+      expect(median(samples.map((r) => r.edit)), 'edição').toBeLessThan(RENDER_BUDGET_MS);
       controller.destroy();
     },
   );

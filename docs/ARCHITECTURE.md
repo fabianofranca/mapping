@@ -260,6 +260,11 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   tipadas, e 500 referências) em menos de 8 ms (`tests/model/performance.test.ts`, mediana de várias rodadas, cada uma numa versão
   nova do projeto); uma renderização do canvas com o projeto já indexado em menos de 16 ms (`tests/canvas/renderPerformance.test.ts`,
   Konva em jsdom com contexto 2D falso). Cada teste repete uma vez para separar ruído do runner de regressão real.
+  O teste do canvas com 200 setas mede como os irmãos: 3 rodadas de aquecimento descartadas e a mediana de 15, uma por métrica
+  (pan, zoom, edição), com a métrica no `expect`. No `npm test` os 3 arquivos de orçamento (`tests/model/performance.test.ts`,
+  `tests/canvas/renderPerformance.test.ts`, `tests/store/reviewPerf.test.ts`) rodam em projetos próprios do Vitest (`perf-model`
+  e `perf-app`, em `vite.config.ts`), com `sequence.groupOrder` maior que o dos demais e um arquivo por vez: começam depois do
+  resto da suíte, sem disputar CPU com ela.
 
 ## Onde fica cada coisa
 
