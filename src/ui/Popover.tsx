@@ -1,6 +1,7 @@
-import type { ComponentChildren } from 'preact';
+import type { ComponentChildren, RefObject } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { FOCUSABLE, returnFocusToTrigger } from './focus';
+import { menuKeyDown, useFocusFirstItem } from './useMenuNavigation';
 
 // Popover ancorado num botão (paleta de cor e ações da linha da janela Camadas). Fica em
 // `position: fixed`, então não é cortado pela rolagem da janela onde está. Fecha com Esc,
@@ -72,6 +73,27 @@ export function place(
   panel.style.top = `${top}px`;
 }
 
+/**
+ * Teclado do popover. Com `role="menu"`, o padrão de menu (foco no primeiro item
+ * habilitado, ↑/↓ circulam, Esc fecha), com a lógica do `MenuPopover` e do `ActionMenu`;
+ * nos outros, só o Esc.
+ */
+function usePopoverKeys(
+  panel: RefObject<HTMLElement>,
+  open: boolean,
+  isMenu: boolean,
+  close: () => void,
+): (e: KeyboardEvent) => void {
+  useFocusFirstItem(panel, open && isMenu);
+  const menuKeys = menuKeyDown(panel, open && isMenu, close);
+  return (e) => {
+    if (isMenu) return menuKeys(e);
+    if (e.key !== 'Escape' || !open) return;
+    e.stopPropagation();
+    close();
+  };
+}
+
 export function Popover({
   class: extra,
   role = 'dialog',
@@ -108,6 +130,8 @@ export function Popover({
     if (open && host.current && panel.current) place(host.current, panel.current, align);
   }, [open, align]);
 
+  const onKeyDown = usePopoverKeys(panel, open, role === 'menu', close);
+
   // Em layout effect: o clique fora vale desde o commit que abre o popover.
   useLayoutEffect(() => {
     if (!open) return;
@@ -136,11 +160,7 @@ export function Popover({
     <span
       class={extra ? `popover-host ${extra}` : 'popover-host'}
       ref={host}
-      onKeyDown={(e) => {
-        if (e.key !== 'Escape' || !open) return;
-        e.stopPropagation();
-        close();
-      }}
+      onKeyDown={onKeyDown}
     >
       {trigger({ open, toggle: () => setOpen(!open) })}
       {open && (

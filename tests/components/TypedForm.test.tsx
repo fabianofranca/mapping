@@ -89,7 +89,10 @@ describe('TypedForm (sem projeto nem EditorProvider)', () => {
 
   it('referência sem projeto: desabilitada mesmo editável', () => {
     setup();
-    const button = screen.getByRole('button', { name: /destino/ }) as HTMLButtonElement;
+    // SN2: o nome começa pelo texto visível.
+    const button = screen.getByRole('button', {
+      name: 'Escolher: destino',
+    }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     expect(button.title).toContain('projeto');
   });
@@ -140,7 +143,7 @@ describe('TypedForm: coluna ref de uma tabela (sem projeto)', () => {
         onChange={vi.fn()}
       />,
     );
-    const button = screen.getByRole('button', { name: /^Alvo \(Linha 1\): / });
+    const button = screen.getByRole('button', { name: 'Escolher: Alvo (Linha 1)' });
     expect(button).toHaveProperty('disabled', true);
     expect(button.title).toBe('Escolher referência só funciona dentro de um projeto.');
   });

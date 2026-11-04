@@ -176,7 +176,7 @@ function LayerRow({
 
       <IconButton
         icon="check"
-        label={t(active ? 'layer.isActive' : 'layer.makeActive')}
+        label={t('layer.makeActive', { name: layer.name })}
         pressed={active}
         onClick={() => setActiveLayer(ui, layer.id)}
       />
@@ -199,6 +199,7 @@ function LayerRow({
         {(close) => (
           <div class="menu-items">
             <Button
+              role="menuitem"
               disabled={readOnly || index === 0}
               onClick={() => {
                 actions.moveLayer(layer.id, index - 1);
@@ -208,6 +209,7 @@ function LayerRow({
               {t('layer.moveUp')}
             </Button>
             <Button
+              role="menuitem"
               disabled={readOnly || index === last}
               onClick={() => {
                 actions.moveLayer(layer.id, index + 1);
@@ -217,6 +219,7 @@ function LayerRow({
               {t('layer.moveDown')}
             </Button>
             <Button
+              role="menuitem"
               variant="danger"
               title={deleteTip}
               disabled={readOnly || lockedBySpec || onlyLayer}
