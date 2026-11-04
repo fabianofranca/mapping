@@ -190,6 +190,36 @@ describe('ci.yml exige o changelog do épico nos PRs de épico para a main', () 
   });
 });
 
+describe('ci.yml exige o registro do DS do épico nos PRs de épico para a main', () => {
+  const job = ci.slice(ci.indexOf('  epic:'), ci.indexOf('  static:'));
+  const step = job.slice(job.indexOf('Design system registrado'));
+
+  it('o job epic confere o arquivo docs/design-system/<nome>.md do próprio épico', () => {
+    expect(step).toMatch(/pulls\/\$PR\/files/);
+    expect(step).toContain('name="${HEAD#epic/}"');
+    expect(step).toContain(
+      'grep -qxE "docs/design-system/([0-9]{4}-[0-9]{2}-[0-9]{2}-)?$name\\.md"',
+    );
+    expect(step).not.toContain("grep -qx 'docs/DESIGN-SYSTEM.md'");
+  });
+
+  it('continua só para epic/* com base na main', () => {
+    expect(step).toMatch(/\[ "\$BASE" != "main" \]/);
+    expect(step).toMatch(/epic\/\*\) ;;/);
+  });
+
+  it('a mensagem de erro diz o caminho esperado', () => {
+    expect(step).toContain('docs/design-system/$name.md');
+    expect(step).toContain('docs/design-system/AAAA-MM-DD-$name.md');
+  });
+
+  it('o CLAUDE.md descreve a regra e a pasta existe', () => {
+    const claude = read('CLAUDE.md');
+    expect(claude).toContain('`docs/design-system/<nome>.md`');
+    expect(existsSync('docs/design-system')).toBe(true);
+  });
+});
+
 // Etapa #375, fase CI1: cada commit de PR é validado uma vez (decisões 1, 2 e 3).
 describe('uma validação por commit', () => {
   const preview = read('.github/workflows/preview-on-pr.yml');
