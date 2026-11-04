@@ -607,8 +607,10 @@ export class CanvasController {
     const scaleChanged = last?.viewport.scale !== v.scale;
 
     this.stage.size({ width: Math.max(1, size.width), height: Math.max(1, size.height) });
-    this.stage.position({ x: v.x, y: v.y });
-    this.stage.scale({ x: v.scale, y: v.scale });
+    // Posição e escala numa chamada só: o Konva agrupa os atributos de transformação numa
+    // cascata. Cada atributo separado (`scale()` sozinho são duas) limpa o cache de
+    // transformação de todos os nós do stage e dispara `absoluteTransformChange` neles.
+    this.stage.setAttrs({ x: v.x, y: v.y, scaleX: v.scale, scaleY: v.scale });
 
     this.refreshRemoteImages();
 
