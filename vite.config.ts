@@ -100,7 +100,8 @@ function serviceWorker(): Plugin {
  * Com `--coverage` o código roda instrumentado e bem mais lento: os orçamentos de
  * desempenho por quadro ficam de fora (o CI os mede num passo sem cobertura).
  * `PERF_BUDGETS=off` também os desliga: o deploy roda a suíte em paralelo e mede
- * os orçamentos depois, sozinhos (`npm run test:perf`), sem disputar CPU.
+ * os orçamentos depois, sozinhos (`npm run test:perf`), sem disputar CPU. No `npm test`
+ * local eles rodam por último e sozinhos (projetos `perf-*`, abaixo).
  */
 const perfBudgets =
   process.argv.includes('--coverage') || process.env.PERF_BUDGETS === 'off'
@@ -131,6 +132,19 @@ const coverageReporters =
   process.env.COVERAGE_REPORT === 'off' ? [] : ['text-summary', 'json-summary', 'html'];
 
 const testEnv = { PERF_BUDGETS: perfBudgets };
+
+/**
+ * Orçamentos de desempenho (#373): rodam em projetos próprios, depois dos demais
+ * (`sequence.groupOrder` maior) e um arquivo por vez, para a medição não disputar CPU com
+ * a suíte inteira. Os mesmos caminhos saem de `model` e `app` (`exclude`); `npm run test:perf`
+ * os roda pelo nome dos arquivos.
+ */
+const perfModelFiles = ['tests/model/performance.test.ts'];
+const perfAppFiles = [
+  'tests/canvas/renderPerformance.test.ts',
+  'tests/store/reviewPerf.test.ts',
+];
+const perfGroupOrder = 1;
 
 const base = {
   base: './',
@@ -166,6 +180,18 @@ export default defineConfig({
           environment: 'node',
           env: testEnv,
           include: ['tests/model/**/*.test.ts'],
+          exclude: perfModelFiles,
+        },
+      },
+      {
+        // Orçamentos do modelo, sozinhos e por último (ver `perfModelFiles`).
+        test: {
+          name: 'perf-model',
+          environment: 'node',
+          env: testEnv,
+          include: perfModelFiles,
+          fileParallelism: false,
+          sequence: { groupOrder: perfGroupOrder },
         },
       },
       {
@@ -190,7 +216,26 @@ export default defineConfig({
           env: testEnv,
           setupFiles: ['tests/setup.ts'],
           include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
-          exclude: ['tests/model/**', 'tests/mcp/**', 'tests/viewer/react*.test.tsx'],
+          exclude: [
+            'tests/model/**',
+            'tests/mcp/**',
+            'tests/viewer/react*.test.tsx',
+            ...perfAppFiles,
+          ],
+        },
+      },
+      {
+        // Orçamentos do canvas e da revisão, sozinhos e por último (ver `perfModelFiles`):
+        // o mesmo ambiente, pool e `setupFiles` do projeto `app`.
+        test: {
+          name: 'perf-app',
+          environment: 'jsdom',
+          pool: 'vmThreads',
+          env: testEnv,
+          setupFiles: ['tests/setup.ts'],
+          include: perfAppFiles,
+          fileParallelism: false,
+          sequence: { groupOrder: perfGroupOrder },
         },
       },
       {
