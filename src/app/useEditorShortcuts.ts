@@ -255,6 +255,8 @@ export function useEditorShortcuts(
         case 'clean-view':
           return setCleanView(ui, !ui.cleanView.peek());
         case 'hide-window': {
+          // Quem faz o retângulo de seleção tem o Shift apertado: com gesto em andamento, o Esc cancela.
+          if (canvas.current?.cancelInteraction()) return;
           const focused = focusedWindow();
           if (focused) closeToolWindow(focused.id);
           return;

@@ -522,7 +522,7 @@ export const enUS: Dictionary = {
   'help.noResults': 'Nothing found for "{query}".',
   'help.shortcuts.title': 'Keyboard shortcuts',
   'help.shortcuts.intro':
-    'Shortcuts work in the desktop editor, with focus outside a text field. On macOS use Ctrl, not Cmd. Alt+number is an extra shortcut: it only works where the browser does not use it (in Chrome on Linux, only with the app installed).',
+    'Shortcuts work in the desktop editor, with focus outside a text field. On macOS use Ctrl, not Cmd (only the selection click uses Cmd). Alt+number is an extra shortcut: it only works where the browser does not use it (in Chrome on Linux, only with the app installed).',
   'shortcuts.or': 'or',
   'shortcuts.group.windows': 'Windows',
   'shortcuts.group.edit': 'Editing and selection',

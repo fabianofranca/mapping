@@ -213,6 +213,7 @@ A lista de atalhos (`src/ui/shortcutList.ts`) mudou e a seção `Atalhos.md` do 
 
 - **`Canvas.md`:** o retângulo de seleção do Shift+arrasto (Navegar e Desenhar): borda tracejada com `cv-select` e preenchimento com o token novo `cv-select-fill` (rgba translúcido do azul de seleção, o mesmo nos dois temas). Sem prévia ao vivo dos itens; fica acima das imagens, na mesma camada do rascunho de marcação. Acrescentar `cv-select-fill` à tabela de tokens do canvas.
 - **`Atalhos.md`:** linha nova "Selecionar por retângulo" com `Shift+arrasto` (grupo de edição, antes de "Mover a seleção").
+- **`Atalhos.md` (SM3):** a introdução da Ajuda › Atalhos passa a dizer, depois de "No macOS use Ctrl, não Cmd", "(só o clique da seleção usa Cmd)" (`ajuda.shortcuts.intro` em `src/i18n/`).
 
 ### Previews não mostram o estado novo
 
