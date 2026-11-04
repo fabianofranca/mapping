@@ -550,6 +550,18 @@ a.button {
   transition-delay: var(--duration-instant), var(--duration-instant);
 }
 
+/* Dica fixada aberta pelo clique (HelpTip): vale também sem hover. */
+.tooltip-open .tooltip {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: var(--duration-instant), var(--duration-instant);
+}
+
+.tooltip-open.tooltip-dismissed .tooltip {
+  opacity: 0;
+  visibility: hidden;
+}
+
 /* Com o menu ou o popover do botão aberto, a dica não cobre o que ele abriu. */
 .tooltip-anchor:has([aria-haspopup][aria-expanded='true']) .tooltip {
   display: none;
@@ -560,9 +572,33 @@ a.button {
   .tooltip {
     display: none;
   }
+
+  .tooltip-open .tooltip {
+    display: flex;
+  }
 }
 
 /* Com um menu ou popover aberto, a dica das barras laterais não o cobre. */
 body:has(.popover, .menu-list, .action-menu-list) .tool-strip .tooltip-anchor .tooltip {
   display: none;
+}
+
+/* Explicação em ícone com dica (HelpTip): ícone discreto, a dica quebra linha. */
+.help-tip {
+  display: inline-flex;
+  flex: none;
+}
+
+.help-tip-button {
+  color: var(--color-text-muted);
+}
+
+.help-tip-button[aria-expanded='true'] {
+  color: var(--color-accent);
+}
+
+.help-tip .tooltip {
+  width: max-content;
+  max-width: var(--size-change-popover);
+  white-space: normal;
 }

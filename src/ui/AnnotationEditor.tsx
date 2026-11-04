@@ -23,7 +23,7 @@ import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
-import { Button, IconButton, Select } from './controls';
+import { Button, HelpTip, IconButton, Select } from './controls';
 import { KeyValueGrid } from './KeyValueGrid';
 import { annotationLabel } from './labels';
 import { Property, PropertyGrid } from './PropertyGrid';
@@ -97,9 +97,6 @@ function TypedBody({
   const ctx = { project, annotation, readOnly, onGoToAnnotation };
   return (
     <>
-      {resolved.type.description && (
-        <p class="muted typed-description">{resolved.type.description}</p>
-      )}
       <PropertyGrid>
         {resolved.type.fields.map((field) => (
           <TypedField key={field.key} field={field} {...ctx} />
@@ -238,6 +235,9 @@ export function AnnotationEditor({
         {typed && (
           <span class="type">{resolved?.type.name ?? annotation.type?.typeId}</span>
         )}
+        {resolved?.type.description && (
+          <HelpTip name={resolved.type.name} text={resolved.type.description} />
+        )}
         {ext?.mark(annotation.id, 'type')}
         <IssueBadge project={project} annotation={annotation} />
         <CommitInput
@@ -305,14 +305,7 @@ export function AnnotationEditor({
                 hint={t('annotation.ownerHelp')}
                 mark={ownerMark}
                 below={ownerBelow}
-                note={
-                  <>
-                    <span>{t('annotation.ownerHelp')}</span>
-                    {noOwnerOptions && (
-                      <span data-owner-empty>{t('annotation.ownerEmpty')}</span>
-                    )}
-                  </>
-                }
+                status={noOwnerOptions ? t('annotation.ownerEmpty') : null}
                 issue={ownerIssue ? issueReason(project, annotation, ownerIssue) : null}
               >
                 <Select

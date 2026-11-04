@@ -3,6 +3,7 @@
 export { Button, LinkButton, type ButtonVariant } from './Button';
 export { Chip } from './Chip';
 export { Choice } from './Choice';
+export { HelpTip } from './HelpTip';
 export { IconButton, IconLink } from './IconButton';
 export { Segmented, type SegmentedItem } from './Segmented';
 export { Select } from './Select';

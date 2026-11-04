@@ -16,6 +16,7 @@ import { MarkingTree } from '../../src/ui/MarkingTree';
 import { MultiSelectionPanel } from '../../src/ui/MultiSelectionPanel';
 import { SettingsBar } from '../../src/ui/SettingsBar';
 import { sampleProject } from '../model/fixtures';
+import { descriptionOf } from './describedBy';
 import { createHarness, renderLive, type Harness } from './harness';
 
 // Setas na interface (ME4, decisão 14): Detalhes da seta, "Ligar a…", Árvore, exclusão com a
@@ -106,6 +107,10 @@ describe('Detalhes da seta', () => {
     const user = renderArrowPanel(harness);
     await user.click(screen.getByRole('button', { name: t('arrow.lock') }));
     expect(arrowOf(harness.project()).locked).toBe(true);
+    // Decisão 8 da #353: sem o aviso embaixo do cabeçalho; o ícone de ajuda ao lado do cadeado.
+    expect(document.querySelector('.notice')).toBeNull();
+    const help = screen.getByRole('button', { name: 'Sobre a trava' });
+    expect(descriptionOf(help)).toBe(t('arrow.lockNotice'));
     // SN2: o nome e a dica não mudam; o estado fica no aria-pressed.
     const lock = screen.getByRole('button', { name: t('arrow.lock') });
     expect(lock.getAttribute('aria-pressed')).toBe('true');

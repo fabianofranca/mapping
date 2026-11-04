@@ -83,7 +83,6 @@ export function TypedField({
       hint={field.description}
       focusKey={field.key}
       issue={issue ? issueReason(project, annotation, issue) : null}
-      note={field.description}
       mark={ext?.mark(annotation.id, `values.${field.key}`)}
       below={ext?.below(annotation.id, `values.${field.key}`)}
     >
