@@ -1630,3 +1630,10 @@ del.identity-name {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Avisos da especialização no popover da mudança (etapa #486) */
+.change-notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}

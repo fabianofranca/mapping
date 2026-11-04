@@ -9,7 +9,7 @@ import { readSetting, writeSetting } from '../utils/safeStorage';
 
 /**
  * Janelas disponíveis. A janela inferior tem uma aba por janela: Lista, Incompletas,
- * Diagnóstico e Propostas (etapa 4).
+ * Avisos, Diagnóstico e Propostas (etapa 4).
  */
 export const TOOL_WINDOWS = [
   'tree',
@@ -17,6 +17,7 @@ export const TOOL_WINDOWS = [
   'details',
   'list',
   'incomplete',
+  'notices',
   'diagnostics',
   'proposals',
   'catalog',
@@ -33,6 +34,7 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
   details: 'right',
   list: 'bottom',
   incomplete: 'bottom',
+  notices: 'bottom',
   diagnostics: 'bottom',
   proposals: 'bottom',
   catalog: 'left',
@@ -42,8 +44,8 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
  * Número do atalho de cada janela (Ctrl+Shift+N, e Alt+N onde o navegador deixa).
  * A numeração é a da seção Atalhos do DS 2.0: Árvore 1, Camadas 2, Detalhes 3, e na
  * janela inferior Lista 4, Incompletas 5, Diagnóstico 6 e Propostas 7; o Catálogo
- * (etapa Biblioteca, B5, que guarda a paleta da B3 como aba) é o 9. O 8, da Biblioteca da
- * B3, ficou vago.
+ * (etapa Biblioteca, B5, que guarda a paleta da B3 como aba) é o 9. O 8, vago desde a B3,
+ * é a janela Avisos (etapa #486), que fica na aba entre Incompletas e Diagnóstico.
  */
 export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   tree: 1,
@@ -51,6 +53,7 @@ export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   details: 3,
   list: 4,
   incomplete: 5,
+  notices: 8,
   diagnostics: 6,
   proposals: 7,
   catalog: 9,

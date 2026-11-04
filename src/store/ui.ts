@@ -9,6 +9,7 @@ import {
   type Project,
   type ProjectContainer,
   type Space,
+  type SpecNoticeKind,
 } from '../model';
 
 /**
@@ -67,6 +68,12 @@ export interface EditorUi {
   readonly listIncompleteOnly: Signal<boolean>;
   /** Janela Incompletas: só as pendências das camadas visíveis (B5). */
   readonly incompleteVisibleOnly: Signal<boolean>;
+  /** Janela Avisos: só os avisos de um `kind` (`null` = todos). */
+  readonly noticeKind: Signal<SpecNoticeKind | null>;
+  /** Janela Avisos: só os avisos que alguma anotação usa (desmarcado mostra os sem uso). */
+  readonly noticesInUseOnly: Signal<boolean>;
+  /** Janela Avisos: só as anotações das camadas visíveis. */
+  readonly noticesVisibleOnly: Signal<boolean>;
   /** Anotação para rolar até (e focar) no painel assim que ela aparecer. */
   readonly focusAnnotation: Signal<string | null>;
   /** Nós recolhidos da janela Árvore (`treeKey`); vazio = tudo aberto. */
@@ -111,6 +118,9 @@ export function createEditorUi(): EditorUi {
     listShowEmpty: signal<boolean>(false),
     listIncompleteOnly: signal<boolean>(false),
     incompleteVisibleOnly: signal<boolean>(false),
+    noticeKind: signal<SpecNoticeKind | null>(null),
+    noticesInUseOnly: signal<boolean>(true),
+    noticesVisibleOnly: signal<boolean>(false),
     focusAnnotation: signal<string | null>(null),
     collapsedTree: signal<ReadonlySet<string>>(new Set()),
     focusField: signal<string | null>(null),

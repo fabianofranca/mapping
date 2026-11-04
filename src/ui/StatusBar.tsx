@@ -128,6 +128,24 @@ function ProposalsItem() {
   );
 }
 
+/** Avisos da especialização (etapa #486): quantas anotações têm aviso; abre a janela Avisos. */
+function NoticesItem() {
+  const { derived } = useEditor();
+  const count = derived.noticedCount.value;
+  if (count === 0) return null;
+  return (
+    <button
+      type="button"
+      class="status-item status-item-button"
+      title={t('notices.statusTip', { count })}
+      onClick={() => showAndFocusToolWindow('notices')}
+    >
+      <Icon name="warning" />
+      {t('notices.status', { count })}
+    </button>
+  );
+}
+
 /** Destino do salvamento, "não exportado", schema e canal: comuns às duas barras. */
 function useStatusTexts() {
   const { open } = useEditor();
@@ -150,6 +168,7 @@ export function StatusBar() {
         <span class="status-item status-item-warn">{t('status.unexported')}</span>
       )}
       <ProposalsItem />
+      <NoticesItem />
       <span class="statusbar-gap" />
       <SelectionItem />
       <Separator />

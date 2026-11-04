@@ -39,6 +39,7 @@ export * from './listing';
 export * from './display';
 export * from './spec';
 export * from './notices';
+export * from './noticeList';
 export * from './specLookup';
 export * from './specializations';
 export * from './libraryPackage';

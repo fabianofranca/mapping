@@ -83,8 +83,9 @@ describe('abrir e fechar janelas', () => {
     expect(toolWindowByNumber(2)).toBe('layers');
     expect(toolWindowByNumber(5)).toBe('incomplete');
     expect(toolWindowByNumber(6)).toBe('diagnostics');
-    // O 8 ficou vago quando a paleta da B3 virou aba do Catálogo (B5).
-    expect(toolWindowByNumber(8)).toBeNull();
+    // O 8 ficou vago quando a paleta da B3 virou aba do Catálogo (B5); a etapa #486 o deu à
+    // janela Avisos.
+    expect(toolWindowByNumber(8)).toBe('notices');
     expect(toolWindowByNumber(9)).toBe('catalog');
     expect(toolWindowByNumber(10)).toBeNull();
   });
@@ -124,10 +125,11 @@ describe('tamanhos', () => {
     expect(clampWindowSize('right', 300, SPACE)).toBe(300);
   });
 
-  it('não deixa o canvas abaixo de 320px', () => {
+  it('não deixa o canvas abaixo de 360px', () => {
     const tight = { width: 900, height: 800, otherWidth: 360 };
-    // 900 − 360 (Detalhes) − 320 (canvas) = 220 para a esquerda.
-    expect(clampWindowSize('left', 480, tight)).toBe(220);
+    // 900 − 360 (Detalhes) − 360 (canvas) = 180: vale o mínimo do lado (200).
+    expect(clampWindowSize('left', 480, tight)).toBe(WINDOW_LIMITS.left.min);
+    expect(clampWindowSize('left', 480, { ...tight, otherWidth: 280 })).toBe(260);
     // Sem espaço nenhum, vale o mínimo do lado.
     expect(clampWindowSize('left', 480, { ...tight, width: 400 })).toBe(
       WINDOW_LIMITS.left.min,
@@ -221,21 +223,21 @@ describe('fitSideWidths', () => {
   });
 
   it('encolhe a direita primeiro e depois a esquerda, até o mínimo de cada uma', () => {
-    expect(fitSideWidths(264, 560, 1000)).toEqual({ left: 264, right: 416 });
-    expect(fitSideWidths(480, 560, 900)).toEqual({ left: 300, right: 280 });
+    expect(fitSideWidths(264, 560, 1000)).toEqual({ left: 264, right: 376 });
+    expect(fitSideWidths(480, 560, 900)).toEqual({ left: 260, right: 280 });
   });
 
   it('a partir de 900px o canvas mantém o mínimo e as laterais nunca o invadem', () => {
     for (const avail of [820, 900, 1000]) {
       const { left, right } = fitSideWidths(480, 560, avail);
-      expect(left + right + 320).toBeLessThanOrEqual(Math.max(avail, 200 + 280 + 320));
+      expect(left + right + 360).toBeLessThanOrEqual(Math.max(avail, 200 + 280 + 360));
       expect(left).toBeGreaterThanOrEqual(200);
       expect(right).toBeGreaterThanOrEqual(280);
     }
   });
 
   it('lado recolhido (0) não ocupa nem recebe corte', () => {
-    expect(fitSideWidths(0, 560, 700)).toEqual({ left: 0, right: 380 });
-    expect(fitSideWidths(480, 0, 600)).toEqual({ left: 280, right: 0 });
+    expect(fitSideWidths(0, 560, 700)).toEqual({ left: 0, right: 340 });
+    expect(fitSideWidths(480, 0, 600)).toEqual({ left: 240, right: 0 });
   });
 });
