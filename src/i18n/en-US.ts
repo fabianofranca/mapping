@@ -908,6 +908,7 @@ export const enUS: Dictionary = {
   'arrange.doneWarnings': 'Arranged with {count} warning(s): {first}',
   'arrange.nothing': 'Nothing to arrange',
   'shortcuts.arrange': 'Arrange the selected container',
+  'shortcuts.wrap': 'Wrap the selection in a new marking',
   'view.componentsOnPhotos': 'Show components over photos',
   'view.componentsOnPhotosHint':
     'Draws the component over the photo. On containers without a file it always shows.',

@@ -32,6 +32,8 @@ export type Shortcut =
   | { readonly kind: 'copy-crop' }
   /** Alt+Shift+A: arruma as filhas do container selecionado (etapa Biblioteca, B3). */
   | { readonly kind: 'arrange' }
+  /** Ctrl/Cmd+G: envolve a seleção numa marcação nova (etapa Envolver). */
+  | { readonly kind: 'wrap' }
   /** ←↑→↓ movem a seleção 1 px; Shift+seta, 10 px (`dx`, `dy` já com o passo). */
   | { readonly kind: 'nudge'; readonly dx: number; readonly dy: number };
 
@@ -54,6 +56,7 @@ export const SHORTCUT_LABELS = {
   copyReference: 'Ctrl+C',
   copyCrop: 'Ctrl+Alt+C',
   arrange: 'Alt+Shift+A',
+  wrap: 'Ctrl+G',
 } as const;
 
 const ARIA_MODIFIERS: Readonly<Record<string, string>> = {
@@ -147,13 +150,34 @@ function numberOf(e: KeyInfo): number | null {
   return Number.isInteger(n) && n >= 1 && n <= 9 ? n : null;
 }
 
+/** Teclas de Ctrl/Cmd (sem Shift nem Alt) que sempre dão o mesmo atalho. */
+const MOD_KEYS: Readonly<Record<string, Shortcut>> = {
+  z: { kind: 'undo' },
+  c: { kind: 'copy-reference' },
+  e: { kind: 'export' },
+  g: { kind: 'wrap' },
+  l: { kind: 'layers' },
+  ',': { kind: 'settings' },
+  '=': { kind: 'zoom', factor: ZOOM_STEP },
+  '+': { kind: 'zoom', factor: ZOOM_STEP },
+  '-': { kind: 'zoom', factor: 1 / ZOOM_STEP },
+  '0': { kind: 'zoom-reset' },
+};
+
+/** Atalhos com Ctrl/Cmd (sem Shift nem Alt). */
+function modShortcut(e: KeyInfo, key: string): Shortcut | null {
+  // Ctrl+Y refaz; o Cmd+Y do macOS é do navegador.
+  if (key === 'y') return e.ctrlKey && !e.metaKey ? { kind: 'redo' } : null;
+  return MOD_KEYS[key] ?? null;
+}
+
 /**
  * Ctrl/Cmd+Z desfaz; Ctrl/Cmd+Shift+Z e Ctrl+Y refazem; Delete (ou Backspace, a
  * tecla "delete" do Mac) exclui; Esc cancela/desseleciona; Shift+Esc esconde a
  * janela em foco. Ctrl+Shift+número abre e fecha as janelas (Alt+número é o extra,
  * ligado por `altNumbers`), Ctrl+Shift+setas as redimensiona, Alt+↑/↓ anda na
  * seleção, Alt+N cria uma anotação na camada ativa, Alt+L tranca/destranca o item
- * selecionado, Alt+H liga o Ver limpo, Ctrl/Cmd+C copia a referência do item, Ctrl+Alt+C copia o recorte da
+ * selecionado, Alt+H liga o Ver limpo, Ctrl/Cmd+C copia a referência do item, Ctrl/Cmd+G envolve a seleção, Ctrl+Alt+C copia o recorte da
  * marcação e Ctrl+=/−/0 controlam o zoom.
  */
 export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
@@ -191,18 +215,7 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
     return null;
   }
 
-  if (mod) {
-    if (key === 'z') return { kind: 'undo' };
-    if (e.ctrlKey && !e.metaKey && key === 'y') return { kind: 'redo' };
-    if (key === 'c') return { kind: 'copy-reference' };
-    if (key === 'e') return { kind: 'export' };
-    if (key === 'l') return { kind: 'layers' };
-    if (key === ',') return { kind: 'settings' };
-    if (key === '=' || key === '+') return { kind: 'zoom', factor: ZOOM_STEP };
-    if (key === '-') return { kind: 'zoom', factor: 1 / ZOOM_STEP };
-    if (key === '0') return { kind: 'zoom-reset' };
-    return null;
-  }
+  if (mod) return modShortcut(e, key);
 
   if (key === 'f1') return { kind: 'help' };
   const nudge = nudgeShortcut(key, e.shiftKey);

@@ -246,7 +246,7 @@ describe('menu de contexto do canvas', () => {
     expect(harness.ui.canvasMenu.value).toBeNull();
   });
 
-  it('fora de uma pasta não mostra nada para a imagem e só "selecionar" para a marcação', async () => {
+  it('fora de uma pasta não mostra nada para a imagem e só "selecionar" e "Envolver" para a marcação', async () => {
     const harness = createHarness(sampleProject());
     makeNotAFolder(harness);
     renderMenu(harness);
@@ -254,6 +254,10 @@ describe('menu de contexto do canvas', () => {
     expect(screen.queryByRole('menu')).toBeNull();
     harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'm', id: 'M1' } };
     const items = await screen.findAllByRole('menuitem');
-    expect(items.map((i) => i.textContent)).toEqual([t('multi.selectWithContents')]);
+    expect(items.map((i) => i.textContent)).toEqual([
+      t('multi.selectWithContents'),
+      // Envolver (EV1): a entrada nova do menu, com o atalho.
+      `${t('multi.wrap')}Ctrl+G`,
+    ]);
   });
 });

@@ -23,10 +23,9 @@ async function closeExport(page: Page): Promise<void> {
   await expect(page.getByRole('dialog')).toBeHidden();
 }
 
-test('Envolver cria a marcação pai das duas selecionadas e desfazer volta tudo', async ({
-  page,
-}) => {
-  await createProject(page, 'Envolver');
+/** Projeto novo com um container e duas marcações separadas (nada selecionado). */
+async function twoMarkings(page: Page, name: string) {
+  await createProject(page, name);
   const host = page.locator('.canvas-host');
   await addContainer(page, 'Tela');
   const fitsBefore = Number((await host.getAttribute('data-fits')) ?? 0);
@@ -66,6 +65,14 @@ test('Envolver cria a marcação pai das duas selecionadas e desfazer volta tudo
 
   const before = (await exportMapping(page)).mapping;
   expect(before.markings).toHaveLength(2);
+
+  return { host, first, screen, centers, before };
+}
+
+test('Envolver cria a marcação pai das duas selecionadas e desfazer volta tudo', async ({
+  page,
+}) => {
+  const { first, centers, before } = await twoMarkings(page, 'Envolver');
 
   // O diálogo Exportar fica aberto depois de baixar: fecha para clicar no canvas.
   await closeExport(page);
@@ -122,4 +129,72 @@ test('Envolver cria a marcação pai das duas selecionadas e desfazer volta tudo
   const undone = (await exportMapping(page)).mapping;
   await closeExport(page);
   expect(undone.markings.every((m) => m.parentId === null)).toBe(true);
+});
+
+test('Ctrl+G com um container selecionado cria a marcação do canvas em volta dele', async ({
+  page,
+}) => {
+  const { first, screen } = await twoMarkings(page, 'Atalho');
+  await closeExport(page);
+  // Sem marcações por cima: o clique no meio do container seleciona só ele.
+  const markings = (await exportMapping(page)).mapping.markings;
+  await closeExport(page);
+  expect(markings).toHaveLength(2);
+  await page.mouse.click(screen.x + screen.width * 0.9, screen.y + screen.height * 0.9);
+
+  await page.keyboard.press('ControlOrMeta+g');
+
+  const { mapping } = await exportMapping(page);
+  await closeExport(page);
+  expect(mapping.markings).toHaveLength(3);
+  const wrap = mapping.markings.find((m) => !markings.some((o) => o.id === m.id));
+  if (!wrap) throw new Error('sem a marcação nova');
+  expect(wrap.containerId).toBeNull();
+  expect(wrap.floating).toBe(false);
+  const container = mapping.containers.find((c) => c.id === first.id);
+  expect(container?.parentId).toBe(wrap.id);
+  expect(wrap.rect).toEqual({
+    x: first.placement.x - MARGIN,
+    y: first.placement.y - MARGIN,
+    width: first.width * first.placement.scale + 2 * MARGIN,
+    height: first.height * first.placement.scale + 2 * MARGIN,
+  });
+
+  // Ctrl+Z desfaz o envolvimento.
+  await page.keyboard.press('ControlOrMeta+z');
+  await expect
+    .poll(async () => {
+      const count = (await exportMapping(page)).mapping.markings.length;
+      await closeExport(page);
+      return count;
+    })
+    .toBe(2);
+});
+
+test('Envolver pelo botão direito com dois itens selecionados', async ({ page }) => {
+  const { first, centers, before } = await twoMarkings(page, 'Menu');
+  await closeExport(page);
+  await page.mouse.click(centers[0]?.x ?? 0, centers[0]?.y ?? 0);
+  await page.keyboard.down('Shift');
+  await page.mouse.click(centers[1]?.x ?? 0, centers[1]?.y ?? 0);
+  await page.keyboard.up('Shift');
+  await expect(page.getByText('2 itens selecionados').first()).toBeVisible();
+
+  // O botão direito sobre um item da seleção mantém a seleção; o menu envolve os dois.
+  await page.mouse.click(centers[1]?.x ?? 0, centers[1]?.y ?? 0, { button: 'right' });
+  const menu = page.getByRole('menu');
+  await menu.getByRole('menuitem', { name: 'Envolver' }).click();
+  await expect(page.getByText('2 itens selecionados')).toHaveCount(0);
+
+  const { mapping } = await exportMapping(page);
+  await closeExport(page);
+  expect(mapping.markings).toHaveLength(3);
+  const parent = mapping.markings.find(
+    (m) => !before.markings.some((o) => o.id === m.id),
+  );
+  if (!parent) throw new Error('sem a marcação nova');
+  expect(parent.containerId).toBe(first.id);
+  for (const m of mapping.markings.filter((x) => x.id !== parent.id)) {
+    expect(m.parentId).toBe(parent.id);
+  }
 });

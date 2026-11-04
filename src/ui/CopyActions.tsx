@@ -1,7 +1,13 @@
 import { t } from '../i18n';
-import { selectionWithContents } from '../model';
+import { selectionWithContents, type ItemRef } from '../model';
 import { selectItems } from '../store/ui';
-import { SHORTCUT_LABELS } from '../app/shortcuts';
+import { SHORTCUT_LABELS, ariaKeys } from '../app/shortcuts';
+import {
+  canWrapNow,
+  currentWrapItems,
+  wrapAvailable,
+  wrapItemsNow,
+} from '../app/wrapSelection';
 import {
   canCopyCrop,
   canCopyItems,
@@ -67,6 +73,41 @@ export function SelectContentsItem({
   );
 }
 
+/**
+ * "Envolver": a seleção atual ou, se a linha/alvo do menu está fora dela, só esse item
+ * (`currentWrapItems`). Desabilitado, com a dica, quando nada entra (nota, seta); some no
+ * somente leitura e na revisão. Mostra o atalho Ctrl/Cmd+G.
+ */
+export function WrapMenuItem({
+  target,
+  close,
+}: {
+  readonly target: CopyTarget;
+  readonly close: () => void;
+}) {
+  const editor = useEditor();
+  if (target.kind === 'a' || !wrapAvailable(editor)) return null;
+  const row: ItemRef = { kind: target.kind === 'i' ? 'image' : 'marking', id: target.id };
+  const enabled = canWrapNow(editor, currentWrapItems(editor, row));
+  return (
+    <Button
+      role="menuitem"
+      disabled={!enabled}
+      title={enabled ? undefined : t('multi.wrapBlocked')}
+      aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.wrap)}
+      onClick={() => {
+        close();
+        wrapItemsNow(editor, currentWrapItems(editor, row));
+      }}
+    >
+      {t('multi.wrap')}
+      <kbd class="kbd menu-shortcut" aria-hidden="true">
+        {SHORTCUT_LABELS.wrap}
+      </kbd>
+    </Button>
+  );
+}
+
 /** Itens do menu (botões) de um item da imagem ou da marcação; `close` fecha o menu. */
 export function CopyMenuItems({
   target,
@@ -108,6 +149,7 @@ export function CopyMenuItems({
         </>
       )}
       {selectable && <SelectContentsItem markingId={target.id} close={close} />}
+      <WrapMenuItem target={target} close={close} />
     </div>
   );
 }
