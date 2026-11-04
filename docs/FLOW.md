@@ -69,7 +69,7 @@ Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: os achados <números> d
 Quando a seção **Testador** da sub-issue da última fase pede a rodada completa, o orquestrador (o **coordenador**) cria **três** sessões do testador de uma vez, uma por bloco da tabela de [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md) ("Rodada completa em blocos"). Cada uma usa `list_environments` ("Mapping - testes"), `create_session` com `source_url` do repositório, `source_revision` = `epic/<nome>`, o mesmo commit nas três e o título "Testador — <alvo>, bloco <k> de 3". Mensagem do bloco `<k>` (1, 2 ou 3):
 
 ```text
-Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco <k> de 3. Passada visual: <lista da sub-issue, no bloco 1; "no bloco 1" nos blocos 2 e 3>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do coordenador>`.
+Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco <k> de 3. Passada visual: <lista da sub-issue, no bloco 2; "no bloco 2" nos blocos 1 e 3>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do coordenador>`.
 ```
 
 - **Conferência de reserva:** agenda um `send_later` de 60 min e só segue com os **três avisos** (um por bloco, cada um cita o bloco). Bloco que não avisou até lá: `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, chama o dono.

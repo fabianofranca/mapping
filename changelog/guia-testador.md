@@ -6,6 +6,11 @@
 
 - Apêndice A do `docs/TESTING.md`, subseção "Seletores e nomes que enganam": as janelas (`data-window`), os `<dialog>` e o `alertdialog`, `button.tree-item`, as coordenadas de `page.mouse` (do viewport, não da captura) e os nomes acessíveis repetidos ou diferentes da tela ("Novo container", **Rótulo**, `⚠Idade`, X/Y/Largura, a busca do Catálogo, "Revisar: <proposta>"). Um teste confere que cada `data-window` listado existe em `src/`.
 - Passo R10.7a (a variante "tela fora de vista" saiu do R10.7, que passou do limite de tamanho do passo).
+- `node scripts/testing/cloud.mjs tempos <apoio>`: imprime, por nome, a duração do primeiro `start` ao último `end` do `tempos.log` e o total; marca repetida ou faltando sai como aviso e o nome sem par, como "tempo não medido". A seção 6 do guia ganha as marcas `secao6`.
+
+## Alterado
+
+- Rodada completa em 3 blocos: a passada visual sai do bloco 1 (a cadeia do `principal`, o mais lento) e vai para o bloco 2, que tem o que a lista padrão abre. O tempo por roteiro do relato passa a vir da saída do `tempos`, sem conta à mão.
 
 ## Corrigido
 
