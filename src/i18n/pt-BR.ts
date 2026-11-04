@@ -508,6 +508,7 @@ export const ptBR = {
     'Problemas da cópia da biblioteca aplicada ao abrir o projeto.',
   'diagnostics.libraryItem': '{name}: {errors} erro(s) e {warnings} aviso(s)',
   'help.open': 'Ajuda',
+  'help.about': 'Sobre {name}',
   'dialog.close': 'Fechar diálogo',
   'help.title': 'Ajuda',
   'help.search': 'Buscar na ajuda',
@@ -742,6 +743,7 @@ export const ptBR = {
   'lock.imageLock': 'Trancar imagem',
   'lock.treeLock': 'Trancar {name}',
   'lock.inherited': 'Posição e tamanho travados: a marcação pai está trancada',
+  'lock.helpName': 'a trava',
   'lock.markingNotice':
     'Trancada: não pode ser movida, redimensionada nem excluída. A seleção e as anotações continuam livres.',
   'lock.inheritedNotice':

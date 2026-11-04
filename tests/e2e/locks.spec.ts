@@ -38,8 +38,11 @@ test('marcação trancada não se move nem é excluída; destrancada, volta ao n
   await expect(
     page.getByRole('button', { name: 'Trancar marcação', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
-  // Detalhes avisa e desabilita o que a trava bloqueia, mas o nome segue editável.
-  await expect(page.getByRole('status').filter({ hasText: 'Trancada:' })).toBeVisible();
+  // Detalhes explica a trava num ícone com dica ("Sobre a trava", descrição acessível) e
+  // desabilita o que ela bloqueia, mas o nome segue editável.
+  await expect(
+    page.getByRole('button', { name: 'Sobre a trava' }),
+  ).toHaveAccessibleDescription(/^Trancada:/);
   await expect(page.getByLabel('X', { exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Excluir marcação' })).toBeDisabled();
   await expect(page.getByLabel('Nome', { exact: true }).first()).toBeEnabled();

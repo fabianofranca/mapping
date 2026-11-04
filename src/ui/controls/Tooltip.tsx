@@ -1,5 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { tokenValue } from '../../theme/tokens';
 import { classes } from './classes';
 
@@ -19,6 +19,8 @@ interface TooltipProps {
   /** Atalho mostrado ao lado do texto (ex.: `Ctrl+Z`). */
   readonly shortcut?: string;
   readonly placement?: 'bottom' | 'top';
+  /** Dica fixada aberta (o clique do `HelpTip`), mesmo sem hover nem foco visível. */
+  readonly open?: boolean;
   readonly children: ComponentChildren;
 }
 
@@ -65,6 +67,7 @@ export function Tooltip({
   label,
   shortcut,
   placement = 'bottom',
+  open = false,
   children,
 }: TooltipProps) {
   const [dismissed, setDismissed] = useState(false);
@@ -72,6 +75,9 @@ export function Tooltip({
   const show = () => {
     if (anchor.current) place(anchor.current, placement);
   };
+  useEffect(() => {
+    if (open && anchor.current) place(anchor.current, placement);
+  }, [open, placement]);
   return (
     <span
       ref={anchor}
@@ -79,6 +85,7 @@ export function Tooltip({
         'tooltip-anchor',
         `tooltip-${placement}`,
         dismissed && 'tooltip-dismissed',
+        open && 'tooltip-open',
       )}
       onKeyDown={(e) => {
         if (e.key === 'Escape') setDismissed(true);

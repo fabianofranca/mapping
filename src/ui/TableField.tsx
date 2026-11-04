@@ -15,7 +15,7 @@ import {
   type TableRow,
 } from '../model';
 import { ActionMenu } from './ActionMenu';
-import { Button } from './controls';
+import { Button, HelpTip } from './controls';
 import { useDetailsExtension } from './DetailsExtension';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
@@ -265,7 +265,7 @@ export function TableEditor({
       }}
     >
       <div class="table-field-head">
-        <span class="props-label" title={field.description}>
+        <span class="props-label">
           {label}
           {field.required && (
             <span
@@ -277,6 +277,7 @@ export function TableEditor({
             </span>
           )}
         </span>
+        {field.description && <HelpTip name={label} text={field.description} />}
         {ext &&
           annotationId !== undefined &&
           ext.mark(annotationId, `values.${field.key}`)}
@@ -297,7 +298,6 @@ export function TableEditor({
           {t('typed.addRow')}
         </Button>
       </div>
-      {field.description && <small class="muted props-note">{field.description}</small>}
       {ext &&
         annotationId !== undefined &&
         ext.below(annotationId, `values.${field.key}`)}

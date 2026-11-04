@@ -5,6 +5,7 @@ import type { SpecField } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { MULTILINE_MIN_LENGTH } from '../../src/ui/FieldEditors';
 import { TypedForm } from '../../src/ui/TypedForm';
+import { descriptionOf } from './describedBy';
 
 beforeEach(() => {
   locale.value = 'pt-BR';
@@ -39,7 +40,11 @@ describe('TypedForm (sem projeto nem EditorProvider)', () => {
     expect(screen.getByLabelText('idade')).toBeTruthy();
     expect(screen.getByRole('group', { name: 'estilo' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /destino/ })).toBeTruthy();
-    expect(screen.getByText('Nome visível', { selector: 'small' })).toBeTruthy();
+    // A descrição do campo é um ícone com dica, não um texto sempre visível.
+    expect(document.querySelector('.props-note')).toBeNull();
+    const help = screen.getByRole('button', { name: 'Sobre nome' });
+    expect(descriptionOf(help)).toBe('Nome visível');
+    expect(descriptionOf(screen.getByLabelText('nome'))).toBe('Nome visível');
     expect(screen.getByRole('button', { name: '+ Linha' })).toBeTruthy();
   });
 

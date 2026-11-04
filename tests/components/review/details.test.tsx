@@ -508,7 +508,8 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
         onGoToAnnotation={() => {}}
       />,
     );
-    expect(document.querySelector('.change-mark, .props-label-cell')).toBeNull();
+    // A célula do rótulo também existe com o ícone de ajuda: só o marcador da revisão não.
+    expect(document.querySelector('.change-mark, .change-mark-host')).toBeNull();
     expect(field('Nome').disabled).toBe(false);
     expect(screen.getAllByRole('button', { name: /^Ações do par/ }).length).toBe(3);
   });

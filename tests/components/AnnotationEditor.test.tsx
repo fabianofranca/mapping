@@ -7,6 +7,7 @@ import { locale } from '../../src/store/settings';
 import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
 import { sampleProject } from '../model/fixtures';
 import { cadastroProject, layerOf } from '../model/specFixtures';
+import { descriptionOf } from './describedBy';
 import { annotationOf, createHarness, renderLive, type Harness } from './harness';
 
 beforeEach(() => {
@@ -220,13 +221,54 @@ describe('AnnotationEditor — anotação tipada', () => {
   });
 });
 
+describe('AnnotationEditor — descrição do tipo', () => {
+  /** O projeto da especialização com a descrição do tipo `button`. */
+  function withTypeDescription(): Project {
+    const p = cadastroProject();
+    return {
+      ...p,
+      specializations: p.specializations.map((entry) => ({
+        ...entry,
+        spec: entry.spec && {
+          ...entry.spec,
+          layers: entry.spec.layers.map((layer) => ({
+            ...layer,
+            annotationTypes: layer.annotationTypes.map((type) =>
+              type.id === 'button' ? { ...type, description: 'Aciona uma ação.' } : type,
+            ),
+          })),
+        },
+      })),
+    };
+  }
+
+  it('é um ícone "Sobre {tipo}" ao lado do nome do tipo, fora de botão, sem texto fixo', () => {
+    setup('AB', withTypeDescription());
+    expect(document.querySelector('.typed-description')).toBeNull();
+    const help = screen.getByRole('button', { name: 'Sobre Button' });
+    expect(descriptionOf(help)).toBe('Aciona uma ação.');
+    // Botão dentro de botão não pode.
+    expect(help.parentElement?.closest('button')).toBeNull();
+    expect(help.closest('.annotation-header')).not.toBeNull();
+  });
+
+  it('tipo sem descrição não tem o ícone', () => {
+    setup('AB');
+    expect(screen.queryByRole('button', { name: 'Sobre Button' })).toBeNull();
+  });
+});
+
 describe('AnnotationEditor — "Vinculada a"', () => {
   const owner = () => screen.getByLabelText('Vinculada a') as HTMLSelectElement;
 
   it('explica que só aparecem anotações da mesma marcação em outras camadas', () => {
     // A1 (M1, camada L1) pode pertencer a A2 (M1, camada L2).
     setup('A1', sampleProject());
-    expect(screen.getByText(t('annotation.ownerHelp'))).toBeTruthy();
+    // A explicação é um ícone com dica; o texto fica como descrição do ícone e do campo.
+    const help = screen.getByRole('button', { name: 'Sobre Vinculada a' });
+    expect(descriptionOf(help)).toBe(t('annotation.ownerHelp'));
+    expect(descriptionOf(owner())).toBe(t('annotation.ownerHelp'));
+    expect(document.querySelector('.props-note')).toBeNull();
     expect(screen.queryByText(t('annotation.ownerEmpty'))).toBeNull();
     expect(owner().disabled).toBe(false);
     const options = [...owner().options].map((o) => o.textContent);
@@ -237,7 +279,7 @@ describe('AnnotationEditor — "Vinculada a"', () => {
     // A3 é a única anotação de M2: não há outra camada com anotação para ser a dona.
     setup('A3', sampleProject());
     expect(screen.queryByLabelText('Vinculada a')).toBeNull();
-    expect(screen.queryByText(t('annotation.ownerHelp'))).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Sobre Vinculada a' })).toBeNull();
     expect(screen.queryByText(t('annotation.ownerEmpty'))).toBeNull();
   });
 
@@ -280,11 +322,10 @@ describe('AnnotationEditor — "Vinculada a"', () => {
     expect(owner().value).toBe('AB');
   });
 
-  it('a dica também vai no título do rótulo', () => {
+  it('o rótulo não tem title: a dica é o ícone de ajuda', () => {
     setup('A1', sampleProject());
-    expect(screen.getByText('Vinculada a').getAttribute('title')).toBe(
-      t('annotation.ownerHelp'),
-    );
+    expect(screen.getByText('Vinculada a').getAttribute('title')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Sobre Vinculada a' })).toBeTruthy();
   });
 
   it('com a lista vazia mas um dono já definido, o campo continua habilitado', async () => {

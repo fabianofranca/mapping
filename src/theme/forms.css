@@ -11,11 +11,6 @@
   color: var(--color-danger);
 }
 
-.typed-description {
-  margin: 0;
-  font: var(--t-text-small);
-}
-
 .required {
   color: var(--color-danger);
 }

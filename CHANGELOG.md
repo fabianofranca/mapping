@@ -8,6 +8,7 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 ### Alterado
 
+- As explicações deixam de ocupar linhas de texto na tela e passam a ser um ícone de ajuda (ⓘ) com dica: a descrição de cada campo, a do tipo da anotação (ao lado do nome do tipo), o "Vinculada a" e o aviso da trava da seta e da marcação (ao lado do cadeado, inclusive quando a trava vem de um pai trancado). A dica aparece com o mouse e com o foco do teclado; Enter a fixa e Esc a fecha. Para leitor de tela, cada ícone tem o nome "Sobre …" e o texto como descrição, e o campo passa a ter a explicação como descrição acessível. Erros, pendências e avisos de estado (como o dono vazio) continuam visíveis.
 - O container deixa de ser marcado pela pílula "Container" e passa a ter um ícone discreto (uma moldura sem o **+**, sem borda) na lista do Catálogo, no título da página do componente e na paleta da Biblioteca. A palavra "Container" fica na dica (mouse e teclado) e no nome acessível. As listas do Catálogo e da paleta também deixam de mostrar o tamanho padrão (L × A); ele continua no diálogo de novo container e no Experimentar da página do componente.
 
 ## Selo da camada e nomes acessíveis — 2026-11-04 (épico `epic/selo-nomes-acessiveis`, PR #440, MCP 0.13.0, schema v13)

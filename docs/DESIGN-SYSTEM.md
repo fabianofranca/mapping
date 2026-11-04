@@ -18,18 +18,18 @@ Este arquivo é o registro dele no repositório. Ele diz o que o DS é, **quando
 
 Se o "Toca em:" da fase (na sub-issue da fase, no GitHub) cruzar qualquer caminho abaixo, a fase precisa olhar o DS. É leitura do mapa: não exige abrir o artefato.
 
-| Mudou no código                                                                                | Olhe no DS                                                                                      |
-| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `src/ui/controls/**`                                                                           | `Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs`, `Tooltip`, `Tags` |
-| `src/ui/**` (fora de `controls/` e `review/`)                                                  | o componente correspondente no mapa: painéis, janelas, diálogos e barras                        |
-| `src/ui/review/**`                                                                             | os componentes de revisão e a seção `Revisao.md`                                                |
-| `src/ui/catalog/**`                                                                            | `CatalogPage`, `CatalogScreen`, `CatalogWindow`                                                 |
-| `src/app/Home.tsx`, `NarrowWindow.tsx`, `CatalogScreen.tsx`, `Editor*.tsx`, `*Dialog*.tsx`     | `Home`, `NarrowWindow`, `ConfirmDialogs`, `ToolWindow` e a seção `Layouts.md`                   |
-| `src/canvas/renderers/**`, `src/canvas/components/**`, `theme.ts`, `viewport.ts`, `minimap.ts` | `Arrow`, `CanvasMarking`, `Container`, `ComponentDrawing`, `Minimap` e a seção `Canvas.md`      |
-| `src/theme/tokens.ts`                                                                          | `tokens.json` e a seção `Contraste.md`                                                          |
-| `src/ui/icons.tsx`                                                                             | o grupo de ícones `Icons`                                                                       |
-| `src/app/shortcuts.ts`, `src/app/useEditorShortcuts.ts`, `src/ui/shortcutList.ts`              | a seção `Atalhos.md`                                                                            |
-| `src/i18n/**`                                                                                  | só quando muda um rótulo que aparece num preview ou num guia                                    |
+| Mudou no código                                                                                | Olhe no DS                                                                                                 |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `src/ui/controls/**`                                                                           | `Button`, `IconButton`, `TextField`, `Select`, `Choice`, `Segmented`, `Tabs`, `Tooltip`, `HelpTip`, `Tags` |
+| `src/ui/**` (fora de `controls/` e `review/`)                                                  | o componente correspondente no mapa: painéis, janelas, diálogos e barras                                   |
+| `src/ui/review/**`                                                                             | os componentes de revisão e a seção `Revisao.md`                                                           |
+| `src/ui/catalog/**`                                                                            | `CatalogPage`, `CatalogScreen`, `CatalogWindow`                                                            |
+| `src/app/Home.tsx`, `NarrowWindow.tsx`, `CatalogScreen.tsx`, `Editor*.tsx`, `*Dialog*.tsx`     | `Home`, `NarrowWindow`, `ConfirmDialogs`, `ToolWindow` e a seção `Layouts.md`                              |
+| `src/canvas/renderers/**`, `src/canvas/components/**`, `theme.ts`, `viewport.ts`, `minimap.ts` | `Arrow`, `CanvasMarking`, `Container`, `ComponentDrawing`, `Minimap` e a seção `Canvas.md`                 |
+| `src/theme/tokens.ts`                                                                          | `tokens.json` e a seção `Contraste.md`                                                                     |
+| `src/ui/icons.tsx`                                                                             | o grupo de ícones `Icons`                                                                                  |
+| `src/app/shortcuts.ts`, `src/app/useEditorShortcuts.ts`, `src/ui/shortcutList.ts`              | a seção `Atalhos.md`                                                                                       |
+| `src/i18n/**`                                                                                  | só quando muda um rótulo que aparece num preview ou num guia                                               |
 
 A lista é um filtro rápido, não um limite: uma mudança em `src/model/` ou `src/store/` que altere **o que a pessoa vê na tela** também conta — foi o caso de `src/store/proposedCatalog.ts` (visão Proposto) e de `src/store/imagePermissions.ts` (Privacidade).
 
@@ -70,6 +70,7 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `Segmented`       | `src/ui/controls/Segmented.tsx`                                                                                                   |                                                                                                   |
 | `Tabs`            | `src/ui/controls/Tabs.tsx`, `src/ui/BottomTabs.tsx`                                                                               | `BottomTabs` é o uso na janela inferior.                                                          |
 | `Tooltip`         | `src/ui/controls/Tooltip.tsx`                                                                                                     |                                                                                                   |
+| `HelpTip`         | `src/ui/controls/HelpTip.tsx`                                                                                                     | Usa `Tooltip` e o ícone `info`; padrão "explicação = ícone com dica".                             |
 | `Menu`            | `src/ui/MenuPopover.tsx`, `src/ui/ActionMenu.tsx`, `src/ui/CanvasContextMenu.tsx`, `src/ui/CopyActions.tsx`, `src/ui/Popover.tsx` | Três menus num guia só; `Popover` é a base de posicionamento.                                     |
 | `Dialog`          | `src/ui/Dialog.tsx`                                                                                                               |                                                                                                   |
 | `ConfirmDialogs`  | `src/app/EditorDialogs.tsx`, `src/app/useEditorDialogs.ts`                                                                        | `ConfirmDialog` e `ExternalChangeDialog` moram no `EditorDialogs.tsx`.                            |
@@ -200,6 +201,12 @@ O que o código já tem e o DS ainda não descreve. O fechamento do épico aplic
 - **Ícone novo `container-mark.svg`** (chave `containerMark` em `src/ui/icons.tsx`): moldura de container sem o **+**, para não se confundir com `container` ("Novo container"). No grupo `Icons`, a contagem passa de 85 para 86.
 - **Marcador `.container-mark`** (`src/ui/ContainerMark.tsx`, `src/theme/catalog.css`): ícone sem borda, `--color-text-muted`, `--control-icon`, com `Tooltip` "Container" e `role="img"` + `aria-label`. Substitui o `.badge` "Container" em `CatalogScreen`/`CatalogWindow` (lista de componentes), `CatalogPage` (título) e `LibraryPalette` (paleta, que ainda não tem guia no DS; ver a pendência abaixo). Os previews devem trocar o selo pelo ícone.
 - **Tamanho fora das listas:** a lista do Catálogo e a paleta não mostram mais L × A (saíram `.catalog-entry-size` e `.library-type-size`). O `ContainerDialog` e o Experimentar da página continuam mostrando.
+
+### Limpeza visual — explicações em ícone (`epic/limpeza-visual`, LV2)
+
+- **Componente novo `HelpTip`** (`src/ui/controls/HelpTip.tsx`; mapa de componentes e tabela de controles): botão `info` (`icon-button-sm`) com `Tooltip` no hover e no foco, Enter/clique fixa a dica (`aria-expanded`), Esc fecha; nome acessível "Sobre {name}" e o texto também num `.visually-hidden` como descrição acessível (`aria-describedby`). Padrão do DS: **explicação = ícone com dica**, nunca texto corrido sempre visível. Nenhum ícone novo (usa `info`).
+- **`PropertyGrid`** (`src/ui/PropertyGrid.tsx`): o `Property` com `hint` mostra o `HelpTip` ao lado do rótulo (o `title` saiu) e, com `for`, põe `aria-describedby` no controle; a prop `note` virou `status` (aviso de estado sempre visível, hoje só o `annotation.ownerEmpty`). O guia e o preview ganham a variante com o ícone de ajuda.
+- **Previews de `LayerGroup`, `ArrowPanel`, `MarkingPanel` e dos painéis com anotação tipada** (`src/ui/AnnotationEditor.tsx`, `src/ui/TableField.tsx`): sem o texto de explicação sempre visível (descrição de campo, descrição do tipo, "Vinculada a", `small.props-note`) e sem o aviso `p.notice` da trava; o cabeçalho ganha o `HelpTip` "Sobre a trava" ao lado do cadeado (`src/ui/ArrowPanel.tsx`, `src/ui/MarkingPanel.tsx`), só quando há trava, inclusive herdada. O aviso da trava da imagem não mudou.
 
 ### Resto da semântica acessível (`epic/semantica-acessivel`)
 

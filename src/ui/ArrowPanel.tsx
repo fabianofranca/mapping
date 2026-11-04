@@ -5,7 +5,7 @@ import { SHORTCUT_LABELS } from '../app/shortcuts';
 import type { ActionResult } from '../store/history';
 import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
-import { Button, IconButton, Segmented, TextField } from './controls';
+import { Button, HelpTip, IconButton, Segmented, TextField } from './controls';
 import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
 import { Section } from './DetailsSection';
@@ -87,24 +87,23 @@ export function ArrowPanel({
         flags={identity?.flags}
         struck={identity?.struck}
         actions={
-          <IconButton
-            icon={arrow.locked ? 'lock' : 'unlock'}
-            label={t('arrow.lock')}
-            shortcut={SHORTCUT_LABELS.toggleLock}
-            pressed={arrow.locked}
-            disabled={readOnly}
-            onClick={() => report(actions.setArrowLocked(arrow.id, !arrow.locked))}
-          />
+          <>
+            {arrow.locked && (
+              <HelpTip name={t('lock.helpName')} text={t('arrow.lockNotice')} />
+            )}
+            <IconButton
+              icon={arrow.locked ? 'lock' : 'unlock'}
+              label={t('arrow.lock')}
+              shortcut={SHORTCUT_LABELS.toggleLock}
+              pressed={arrow.locked}
+              disabled={readOnly}
+              onClick={() => report(actions.setArrowLocked(arrow.id, !arrow.locked))}
+            />
+          </>
         }
       />
 
       {ext?.header(arrow.id)}
-
-      {arrow.locked && (
-        <p class="notice notice-info" role="status">
-          {t('arrow.lockNotice')}
-        </p>
-      )}
 
       <Section section={{ kind: 'arrow' }} title={t('arrow.section')} summary={ends.text}>
         <PropertyGrid>
