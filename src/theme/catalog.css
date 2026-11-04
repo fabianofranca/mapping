@@ -338,3 +338,16 @@
   flex: 1;
   min-width: 0;
 }
+
+/* Marcador de container (ícone sem pílula); a palavra vem na dica e no nome acessível. */
+.container-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  color: var(--color-text-muted);
+}
+
+.container-mark .icon {
+  width: var(--control-icon);
+  height: var(--control-icon);
+}

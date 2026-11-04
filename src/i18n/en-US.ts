@@ -507,6 +507,7 @@ export const enUS: Dictionary = {
     'Issues in the copy of the applied library, checked when the project opens.',
   'diagnostics.libraryItem': '{name}: {errors} error(s) and {warnings} warning(s)',
   'help.open': 'Help',
+  'help.about': 'About {name}',
   'dialog.close': 'Close dialog',
   'help.title': 'Help',
   'help.search': 'Search help',
@@ -739,6 +740,7 @@ export const enUS: Dictionary = {
   'lock.imageLock': 'Lock image',
   'lock.treeLock': 'Lock {name}',
   'lock.inherited': 'Position and size are locked: the parent marking is locked',
+  'lock.helpName': 'the lock',
   'lock.markingNotice':
     'Locked: it cannot be moved, resized or deleted. Selection and annotations stay free.',
   'lock.inheritedNotice':

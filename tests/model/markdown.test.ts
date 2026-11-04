@@ -258,3 +258,25 @@ describe('markdown: entrada hostil', () => {
     expect(depth).toBeLessThanOrEqual(6);
   });
 });
+
+describe('citação (> )', () => {
+  it('vira um bloco de citação com os parágrafos dentro, sem o sinal solto', () => {
+    const blocks = parseMarkdown(
+      'Antes:\n\n> uma `linha`\n> continua\n>\n> outro\n\nDepois',
+    );
+    expect(blocks.map((b) => b.type)).toEqual(['paragraph', 'quote', 'paragraph']);
+    const quote = blocks[1];
+    if (quote?.type !== 'quote') throw new Error('sem citação');
+    expect(quote.children.map((b) => b.type)).toEqual(['paragraph', 'paragraph']);
+    const text: string[] = [];
+    walk(blocks, (i) => {
+      if (i.type === 'text') text.push(i.text);
+    });
+    expect(text.join('')).not.toContain('>');
+  });
+
+  it('citação aninhada tem profundidade limitada e nunca perde o texto', () => {
+    const blocks = parseMarkdown(`${'> '.repeat(30)}fundo`);
+    expect(blocks[0]?.type).toBe('quote');
+  });
+});

@@ -15,7 +15,7 @@ import type { ActionResult } from '../store/history';
 import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
-import { Button, Choice, IconButton, TextField } from './controls';
+import { Button, Choice, HelpTip, IconButton, TextField } from './controls';
 import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
@@ -159,27 +159,24 @@ export function MarkingPanel({
         actions={
           <>
             <CopyButtons target={{ kind: 'm', id: marking.id }} />
-            <IconButton
-              icon={marking.locked ? 'lock' : 'unlock'}
-              label={t('lock.markingLock')}
-              shortcut={SHORTCUT_LABELS.toggleLock}
-              pressed={marking.locked}
-              disabled={readOnly}
-              onClick={() =>
-                report(actions.setMarkingLocked(marking.id, !marking.locked))
-              }
-            />
+            <span class="identity-lock">
+              {lockNotice && <HelpTip name={t('lock.helpName')} text={lockNotice} />}
+              <IconButton
+                icon={marking.locked ? 'lock' : 'unlock'}
+                label={t('lock.markingLock')}
+                shortcut={SHORTCUT_LABELS.toggleLock}
+                pressed={marking.locked}
+                disabled={readOnly}
+                onClick={() =>
+                  report(actions.setMarkingLocked(marking.id, !marking.locked))
+                }
+              />
+            </span>
           </>
         }
       />
 
       {ext?.header(marking.id)}
-
-      {lockNotice && (
-        <p class="notice notice-info" role="status">
-          {lockNotice}
-        </p>
-      )}
 
       {marking.needsReview && (
         <div class="notice" role="status">
@@ -278,6 +275,7 @@ export function MarkingPanel({
                 </span>
               }
               hint={t('marking.pixelsHint')}
+              hintName={`${t('marking.position')} / ${t('marking.size')}`}
               mark={<span class="props-rect-bracket">{rectMark}</span>}
               below={rectBelow}
             >
