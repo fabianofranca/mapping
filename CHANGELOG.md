@@ -4,6 +4,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
+## Limpeza visual — [Não lançado] (épico `epic/limpeza-visual`, PR a definir, MCP 0.13.0, schema v13)
+
+### Alterado
+
+- O container deixa de ser marcado pela pílula "Container" e passa a ter um ícone discreto (uma moldura sem o **+**, sem borda) na lista do Catálogo, no título da página do componente e na paleta da Biblioteca. A palavra "Container" fica na dica (mouse e teclado) e no nome acessível. As listas do Catálogo e da paleta também deixam de mostrar o tamanho padrão (L × A); ele continua no diálogo de novo container e no Experimentar da página do componente.
+
 ## Zoom do projeto grande mais rápido — 2026-11-04 (épico `epic/zoom-rapido`, PR #434, MCP 0.13.0, schema v13)
 
 ### Alterado

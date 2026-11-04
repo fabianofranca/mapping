@@ -81,13 +81,24 @@ const entryButton = (name: string) =>
   screen.getByRole<HTMLButtonElement>('button', { name: new RegExp(`^${name}`) });
 
 describe('lista', () => {
-  it('lista os 15 componentes por camada, com selo de container e tamanho', () => {
+  it('lista os 15 componentes por camada, com o ícone de container e sem tamanho', () => {
     view();
     const list = screen.getByRole('navigation', { name: t('catalog.view.components') });
     expect(within(list).getAllByRole('button').length).toBe(15);
     const column = entryButton('Column');
-    expect(within(column).getByText(t('library.container'))).toBeTruthy();
-    expect(within(column).getByText('380 × 200')).toBeTruthy();
+    expect(
+      within(column).getByRole('img', { name: t('library.container') }),
+    ).toBeTruthy();
+    expect(column.querySelector('.badge')).toBeNull();
+    expect(column.getAttribute('aria-label') ?? column.textContent).toContain(
+      t('library.container'),
+    );
+    expect(within(column).queryByText('380 × 200')).toBeNull();
+    expect(list.textContent).not.toMatch(/\d+ × \d+/);
+    const button = entryButton('Button');
+    expect(
+      within(button).queryByRole('img', { name: t('library.container') }),
+    ).toBeNull();
   });
 
   it('busca por texto filtra e avisa quando nada bate', async () => {
@@ -132,6 +143,16 @@ describe('lista', () => {
 });
 
 describe('página', () => {
+  it('o título de um container leva o ícone de container, sem pílula', () => {
+    view({ initialTypeId: 'm3-column' });
+    const page = screen.getByRole('article', { name: 'Column' });
+    expect(within(page).getByRole('img', { name: t('library.container') })).toBeTruthy();
+    expect(page.querySelector('.catalog-page-title .badge')).toBeNull();
+    view({ initialTypeId: 'm3-fab' });
+    const fab = screen.getByRole('article', { name: 'FAB' });
+    expect(within(fab).queryByRole('img', { name: t('library.container') })).toBeNull();
+  });
+
   it('mostra a tabela de propriedades gerada dos campos', () => {
     view({ initialTypeId: 'm3-button' });
     const section = screen.getByRole('region', { name: t('catalog.page.properties') });

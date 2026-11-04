@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
 import { type Catalog, type CatalogEntry, type Project, findEntry } from '../../model';
 import { Button, TextField } from '../controls';
+import { ContainerMark } from '../ContainerMark';
 import { Dialog } from '../Dialog';
 import { LibraryIssueList } from '../LibraryIssueList';
 import { CatalogPage } from './CatalogPage';
@@ -225,7 +226,6 @@ export function CatalogView({
                   <h3 class="catalog-layer-name">{layer.name}</h3>
                   <ul class="catalog-entries">
                     {layer.entries.map((entry) => {
-                      const component = entry.component;
                       return (
                         <li key={entry.type.id}>
                           <button
@@ -238,14 +238,7 @@ export function CatalogView({
                             onClick={() => select(entry.type.id)}
                           >
                             <span class="catalog-entry-name">{entry.type.name}</span>
-                            {entry.container && (
-                              <span class="badge">{t('library.container')}</span>
-                            )}
-                            {component !== null && (
-                              <span class="muted catalog-entry-size">
-                                {t('library.typeSize', component.size)}
-                              </span>
-                            )}
+                            {entry.container && <ContainerMark />}
                           </button>
                         </li>
                       );

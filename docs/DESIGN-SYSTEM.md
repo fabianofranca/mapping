@@ -195,6 +195,12 @@ Composições e lógica sem forma própria (não precisam de componente): `src/u
 
 O que o código já tem e o DS ainda não descreve. O fechamento do épico aplica isto no artefato e esvazia a lista.
 
+### Limpeza visual — marcador de container (`epic/limpeza-visual`, LV1)
+
+- **Ícone novo `container-mark.svg`** (chave `containerMark` em `src/ui/icons.tsx`): moldura de container sem o **+**, para não se confundir com `container` ("Novo container"). No grupo `Icons`, a contagem passa de 85 para 86.
+- **Marcador `.container-mark`** (`src/ui/ContainerMark.tsx`, `src/theme/catalog.css`): ícone sem borda, `--color-text-muted`, `--control-icon`, com `Tooltip` "Container" e `role="img"` + `aria-label`. Substitui o `.badge` "Container" em `CatalogScreen`/`CatalogWindow` (lista de componentes), `CatalogPage` (título) e `LibraryPalette` (paleta, que ainda não tem guia no DS; ver a pendência abaixo). Os previews devem trocar o selo pelo ícone.
+- **Tamanho fora das listas:** a lista do Catálogo e a paleta não mostram mais L × A (saíram `.catalog-entry-size` e `.library-type-size`). O `ContainerDialog` e o Experimentar da página continuam mostrando.
+
 ### Resto da semântica acessível (`epic/semantica-acessivel`)
 
 O fechamento do épico gravou no artefato o que dava (ver o histórico). Ficou sem gravar:

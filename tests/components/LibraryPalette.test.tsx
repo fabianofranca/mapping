@@ -31,7 +31,7 @@ const addButton = (name: string) =>
   });
 
 describe('paleta da Biblioteca', () => {
-  it('lista os tipos por especialização e camada, com selo de container e tamanho', async () => {
+  it('lista os tipos por especialização e camada, com o ícone de container e sem tamanho', async () => {
     const harness = await libraryHarness();
     renderLibrary(harness);
     const group = screen.getByRole('region', { name: 'Material Design 3 (baseline)' });
@@ -39,12 +39,18 @@ describe('paleta da Biblioteca', () => {
     expect(within(group).getAllByRole('listitem')).toHaveLength(15);
 
     const button = within(group).getByText('Button').closest('li') as HTMLElement;
-    expect(within(button).getByText('120 × 40')).toBeTruthy();
-    expect(within(button).queryByText(t('library.container'))).toBeNull();
+    expect(within(button).queryByText('120 × 40')).toBeNull();
+    expect(
+      within(button).queryByRole('img', { name: t('library.container') }),
+    ).toBeNull();
 
     const column = within(group).getByText('Column').closest('li') as HTMLElement;
-    expect(within(column).getByText(t('library.container'))).toBeTruthy();
-    expect(within(column).getByText('380 × 200')).toBeTruthy();
+    expect(
+      within(column).getByRole('img', { name: t('library.container') }),
+    ).toBeTruthy();
+    expect(column.querySelector('.badge')).toBeNull();
+    expect(within(column).queryByText('380 × 200')).toBeNull();
+    expect(group.textContent).not.toMatch(/\d+ × \d+/);
   });
 
   it('Adicionar põe o componente no centro da tela à vista e o seleciona', async () => {
