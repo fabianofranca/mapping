@@ -33,6 +33,7 @@ const EXPECTED_EXPORTS = [
   'saveFile',
   'screenshot',
   'selectFolder',
+  'waitForWindow',
   'windowShortcut',
 ].sort();
 
@@ -96,6 +97,141 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       expect(() => mark(apoioDir, 'ambiente', fase)).toThrow();
       expect(existsSync(path.join(apoioDir, 'tempos.log'))).toBe(false);
     });
+  });
+});
+
+describe('waitForWindow (etapa #405, decisão 2)', () => {
+  it('devolve o id quando a janela aparece na 3ª tentativa', async () => {
+    const { waitForWindow } = await import('../../scripts/testing/cloud.mjs');
+    let calls = 0;
+    const id = await waitForWindow(['Abrir arquivos'], {
+      timeoutMs: 2000,
+      stepMs: 1,
+      find: () => {
+        calls += 1;
+        return calls >= 3 ? '4242' : null;
+      },
+    });
+    expect(id).toBe('4242');
+    expect(calls).toBe(3);
+  });
+
+  it('lança depois do prazo, com os títulos esperados e o título da janela ativa', async () => {
+    const { waitForWindow } = await import('../../scripts/testing/cloud.mjs');
+    const error = await waitForWindow(['Abrir arquivos', 'Abrir arquivo'], {
+      timeoutMs: 30,
+      stepMs: 5,
+      find: () => null,
+      activeTitle: () => 'Mapping: Google Chrome for Testing',
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(Error);
+    const message = (error as Error).message;
+    expect(message).toContain('Abrir arquivos');
+    expect(message).toContain('Abrir arquivo');
+    expect(message).toContain('Mapping: Google Chrome for Testing');
+    expect(message).not.toContain('aba ativa da janela não é a da app');
+  });
+
+  it('com outra aba ativa, a mensagem traz a frase das duas abas', async () => {
+    const { waitForWindow } = await import('../../scripts/testing/cloud.mjs');
+    const error = await waitForWindow(['Abrir arquivos'], {
+      timeoutMs: 30,
+      stepMs: 5,
+      find: () => null,
+      activeTitle: () => 'Guia do Mapping: Google Chrome for Testing',
+    }).catch((e: unknown) => e);
+    expect((error as Error).message).toContain(
+      'a aba ativa da janela não é a da app; o seletor nativo só abre com ela em foco no sistema (feche a outra aba)',
+    );
+  });
+});
+
+interface FakeLocator {
+  count: () => Promise<number>;
+  click: (options?: unknown) => Promise<void>;
+  getByRole?: (role: string, options?: unknown) => FakeLocator;
+}
+
+function fakePage(counts: { page: number; scope: number }) {
+  const clicks: { where: string; options: unknown }[] = [];
+  const roleCalls: { where: string; role: string; options: unknown }[] = [];
+  const make = (where: 'page' | 'scope'): FakeLocator => ({
+    count: async () => counts[where],
+    click: async (options) => {
+      clicks.push({ where, options });
+    },
+  });
+  const scopeLocator: FakeLocator = {
+    ...make('scope'),
+    getByRole: (role, options) => {
+      roleCalls.push({ where: 'scope', role, options });
+      return make('scope');
+    },
+  };
+  const page = {
+    getByRole: (role: string, options: unknown) => {
+      roleCalls.push({ where: 'page', role, options });
+      return make('page');
+    },
+    locator: (selector: string) => {
+      roleCalls.push({ where: `locator:${selector}`, role: '', options: undefined });
+      return scopeLocator;
+    },
+  };
+  return { page, clicks, roleCalls, scopeLocator };
+}
+
+describe('clickNoWait (etapa #405, decisão 3)', () => {
+  it('com 2 candidatos lança com o nome, a contagem e a dica, sem clicar', async () => {
+    const { clickNoWait } = await import('../../scripts/testing/cloud.mjs');
+    const fake = fakePage({ page: 2, scope: 1 });
+    const error = await clickNoWait(fake.page, 'Adicionar imagens').catch(
+      (e: unknown) => e,
+    );
+    expect(error).toBeInstanceOf(Error);
+    const message = (error as Error).message;
+    expect(message).toContain('Adicionar imagens');
+    expect(message).toContain('2');
+    expect(message).toContain('passe `scope` (um container) ou `exact: true`');
+    expect(fake.clicks).toEqual([]);
+  });
+
+  it('com 0 candidatos também lança, sem clicar', async () => {
+    const { clickNoWait } = await import('../../scripts/testing/cloud.mjs');
+    const fake = fakePage({ page: 0, scope: 0 });
+    await expect(clickNoWait(fake.page, 'Nada')).rejects.toThrow(/0/);
+    expect(fake.clicks).toEqual([]);
+  });
+
+  it('com 1 candidato clica com noWaitAfter', async () => {
+    const { clickNoWait } = await import('../../scripts/testing/cloud.mjs');
+    const fake = fakePage({ page: 1, scope: 1 });
+    await clickNoWait(fake.page, 'Abrir pasta');
+    expect(fake.clicks).toEqual([{ where: 'page', options: { noWaitAfter: true } }]);
+  });
+
+  it('exact é repassado ao getByRole', async () => {
+    const { clickNoWait } = await import('../../scripts/testing/cloud.mjs');
+    const fake = fakePage({ page: 1, scope: 1 });
+    await clickNoWait(fake.page, 'Local', { exact: true });
+    expect(fake.roleCalls[0]).toEqual({
+      where: 'page',
+      role: 'button',
+      options: { name: 'Local', exact: true },
+    });
+  });
+
+  it('scope (seletor CSS ou Locator) restringe a busca ao container', async () => {
+    const { clickNoWait } = await import('../../scripts/testing/cloud.mjs');
+    const css = fakePage({ page: 2, scope: 1 });
+    await clickNoWait(css.page, 'Adicionar imagens', { scope: '.canvas-empty' });
+    expect(css.clicks).toEqual([{ where: 'scope', options: { noWaitAfter: true } }]);
+    expect(css.roleCalls.map((c) => c.where)).toEqual(['locator:.canvas-empty', 'scope']);
+
+    const loc = fakePage({ page: 2, scope: 1 });
+    await clickNoWait(loc.page, 'Adicionar imagens', { scope: loc.scopeLocator });
+    expect(loc.clicks).toEqual([{ where: 'scope', options: { noWaitAfter: true } }]);
+    expect(loc.roleCalls.map((c) => c.where)).toEqual(['scope']);
   });
 });
 
