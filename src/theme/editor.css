@@ -321,6 +321,21 @@
   border-color: transparent;
 }
 
+/* Atalho da entrada, alinhado à direita (Envolver: Ctrl+G). */
+.menu-items .menu-shortcut {
+  margin-left: auto;
+  padding: 0 var(--space-1);
+  font: var(--t-kbd);
+  border: 1px solid currentcolor;
+  border-radius: var(--radius-xs);
+  opacity: var(--opacity-ancestor);
+}
+
+.menu-items .menu-shortcut:first-child,
+.menu-items .button > .menu-shortcut {
+  margin-inline-start: var(--space-4);
+}
+
 .tool-window-head {
   flex: none;
   display: flex;

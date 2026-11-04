@@ -207,6 +207,11 @@ O fechamento do épico gravou no artefato o que dava (ver o histórico). Ficou s
 - **Preview do `HelpDialog` (e a frase da introdução, SM3).** O preview estático `project/components/HelpDialog/preview.html` ainda mostra a lista de atalhos antiga ("Acrescentar ou tirar da seleção (Shift+clique no canvas e na Árvore)", sem as linhas "Selecionar por retângulo" e "Mover a seleção") e a introdução sem o "(só o clique da seleção usa Cmd)" (`help.shortcuts.intro` em `src/i18n/`). Refazer o preview inteiro a partir de `src/ui/shortcutList.ts` e da introdução, junto de "Previews não mostram o estado novo"; remendar só a frase o deixaria pela metade.
 - **Contraste do retângulo de seleção.** `renderMarquee` (`src/canvas/renderers/overlay.ts`) desenha só a borda e o preenchimento, sem o halo `cv-halo` da seleção comum: a borda mede 2,26:1 sobre o canvas claro (abaixo de 3:1). Registrado em `project/Contraste.md`; a decisão é do dono (issue `roadmap` #456).
 
+### Envolver: atalho e entrada de menu (`epic/envolver`, EV1)
+
+- **`Atalhos.md`.** A lista de atalhos ganha "Envolver a seleção numa marcação nova" (**Ctrl/Cmd+G**, `shortcuts.wrap`, `src/ui/shortcutList.ts`, `SHORTCUT_LABELS.wrap` em `src/app/shortcuts.ts`). O atalho não vale com o foco num campo de texto, no somente leitura, na revisão, sem seleção ou só com notas e setas. O preview do `HelpDialog` ainda mostra a lista antiga (junto de "Previews não mostram o estado novo").
+- **`Menu`.** Os menus do canvas e do ⋯ da Árvore ganham a entrada **Envolver** (`WrapMenuItem`, `src/ui/CopyActions.tsx`): botão `menuitem` com o atalho à direita num `<kbd class="kbd menu-shortcut">` (`aria-hidden`, o atalho está em `aria-keyshortcuts`), desabilitado com a dica `multi.wrapBlocked` quando só há nota; ausente na seta, no somente leitura e na revisão. A classe `.menu-shortcut` (`src/theme/editor.css`: `margin-left: auto`, `font: var(--t-kbd)`, borda `currentcolor`, `--radius-xs`, `--opacity-ancestor`) falta no `bundle.css` do artefato. O botão **Envolver** do resumo da seleção múltipla ganhou a dica com o atalho (`title`).
+
 ### Previews não mostram o estado novo
 
 A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, mas só acrescentou o estado novo ao preview de seis deles (decisão de escopo do dono). Continuam mostrando o estado antigo os previews de:

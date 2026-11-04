@@ -73,8 +73,8 @@ function ArrowMenuItems({
 }
 
 /**
- * Menu de contexto do canvas (botão direito do mouse): copiar a referência e o recorte do
- * item sob o cursor, que o clique direito seleciona; numa seta, o estilo e Excluir. Aberto por
+ * Menu de contexto do canvas (botão direito do mouse): copiar a referência e o recorte, Envolver
+ * (Ctrl/Cmd+G) do item sob o cursor, que o clique direito seleciona; numa seta, o estilo e Excluir. Aberto por
  * `ui.canvasMenu`; fecha com Esc, clique fora, rolagem ou ao escolher um item.
  */
 export function CanvasContextMenu() {
