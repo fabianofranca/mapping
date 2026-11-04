@@ -33,6 +33,43 @@ const container = (store: Store, id: string) =>
 const marking = (store: Store, id: string) =>
   project(store).markings.find((m) => m.id === id);
 
+describe('store: passo das setas', () => {
+  const items = [img('A'), mark('N'), mark('b1')];
+
+  it('prévias somam o deslocamento do começo do gesto e a final grava uma entrada', () => {
+    const { store, actions } = setup();
+    const before = project(store);
+    expect(actions.beginGesture().ok).toBe(true);
+    expect(actions.previewItemsNudge(items, 1, 0).ok).toBe(true);
+    expect(actions.previewItemsNudge(items, 3, 0).ok).toBe(true);
+    // b1 anda 3 px da imagem de B (escala 2), N e A andam 3 unidades do canvas.
+    expect(marking(store, 'b1')?.rect.x).toBe(53);
+    expect(marking(store, 'N')?.rect.x).toBe(103);
+    expect(container(store, 'A')?.placement.x).toBe(3);
+    expect(store.canUndo.value).toBe(false);
+    expect(actions.finishItemsNudge(items, 3, 0).ok).toBe(true);
+    actions.commitGesture();
+    expect(store.revision.value).toBe(1);
+    expect(store.undo()).toBe(true);
+    expect(project(store).containers).toBe(before.containers);
+    expect(project(store).markings).toBe(before.markings);
+    expect(store.canUndo.value).toBe(false);
+  });
+
+  it('tudo ou nada: o passo que não cabe fica na última prévia válida', () => {
+    const { store, actions } = setup();
+    actions.beginGesture();
+    // c1 está colada na borda de C: o passo inteiro é recusado.
+    expect(actions.previewItemsNudge([mark('N'), mark('c1')], 1, 0)).toEqual({
+      ok: false,
+      error: 'rect-out-of-image',
+    });
+    expect(marking(store, 'N')?.rect.x).toBe(100);
+    actions.commitGesture();
+    expect(store.canUndo.value).toBe(false);
+  });
+});
+
 describe('store: arrasto conjunto', () => {
   // A (container), N (flutuante, no canvas) e b1 (marcação do container B, escala 2).
   const items = [img('A'), mark('N'), mark('b1')];

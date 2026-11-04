@@ -261,6 +261,7 @@ export class CanvasController {
       review: clean ? null : this.reviewCanvas.value,
       arrows: this.arrowShapes.value,
       arrowDraft: clean ? null : this.state.arrowDraft.value,
+      marquee: this.state.marquee.value,
     };
   });
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
@@ -462,6 +463,11 @@ export class CanvasController {
   /** Destaca o alvo de um arrastar-e-soltar (`null` remove o destaque). */
   setDropTarget(target: DropTarget): void {
     this.dropTarget.value = target;
+  }
+
+  /** Há um gesto de ponteiro em andamento (as setas do teclado esperam). */
+  isInteracting(): boolean {
+    return this.pointer.isInteracting();
   }
 
   /** Cancela o gesto de mover/redimensionar/desenhar em andamento. `true` se havia um. */

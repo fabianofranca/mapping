@@ -23,6 +23,7 @@ import {
 } from '../store/ui';
 import { ItemMenu } from './CopyActions';
 import { useEditor } from './EditorContext';
+import { isMultiSelectClick } from '../utils/platform';
 import { Icon } from './icons';
 import { arrowEndLabel, arrowShort, arrowText, imageLabel, markingLabel } from './labels';
 
@@ -85,9 +86,9 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
   const items = selectedItems(ui);
   const isGrouped = (kind: SelectionItem['kind'], id: string) =>
     items.length > 1 && isItemSelected(items, { kind, id });
-  /** Shift+clique acrescenta ou tira o item da seleção; o clique simples seleciona. */
+  /** Shift, Ctrl (fora do macOS) ou Cmd+clique acrescenta ou tira o item da seleção; o clique simples seleciona. */
   const pick = (e: MouseEvent, item: SelectionItem) => {
-    if (e.shiftKey) toggleSelectedItem(ui, item);
+    if (isMultiSelectClick(e)) toggleSelectedItem(ui, item);
     else onSelect(item);
   };
 

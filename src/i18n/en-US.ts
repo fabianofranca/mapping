@@ -522,7 +522,7 @@ export const enUS: Dictionary = {
   'help.noResults': 'Nothing found for "{query}".',
   'help.shortcuts.title': 'Keyboard shortcuts',
   'help.shortcuts.intro':
-    'Shortcuts work in the desktop editor, with focus outside a text field. On macOS use Ctrl, not Cmd. Alt+number is an extra shortcut: it only works where the browser does not use it (in Chrome on Linux, only with the app installed).',
+    'Shortcuts work in the desktop editor, with focus outside a text field. On macOS use Ctrl, not Cmd (only the selection click uses Cmd). Alt+number is an extra shortcut: it only works where the browser does not use it (in Chrome on Linux, only with the app installed).',
   'shortcuts.or': 'or',
   'shortcuts.group.windows': 'Windows',
   'shortcuts.group.edit': 'Editing and selection',
@@ -980,9 +980,12 @@ export const enUS: Dictionary = {
   'view.arrowsHint': 'Draws the arrows that link markings on the canvas',
   'multi.selectWithContents': 'Select with contents',
   'shortcuts.shiftClick':
-    'Add to or remove from the selection (Shift+click on the canvas and in the Tree)',
+    'Add to or remove from the selection (Shift or Ctrl/Cmd+click on the canvas and in the Tree)',
+  'shortcuts.nudge': 'Move the selection (Shift: 10 px)',
   'shortcuts.doubleClick': 'Select the marking with its contents (double click)',
   'shortcuts.escapeToPrimary': 'With several items selected, go back to the main item',
+  'shortcuts.selectRect': 'Select by rectangle (adds the items fully inside it)',
   'shortcuts.key.click': 'click',
+  'shortcuts.key.drag': 'drag',
   'shortcuts.key.doubleClick': 'double click',
 };

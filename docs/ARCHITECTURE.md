@@ -135,14 +135,37 @@ nunca falha (se falhar, assenta a última prévia válida).
 
 **Seleção múltipla e arrasto conjunto.** `ui.selection` continua sendo o item **principal** (alças, Detalhes); `ui.selectionGroup`
 guarda os **outros** itens presos ao objeto do principal, então qualquer escrita direta em `ui.selection` desfaz o grupo sem
-código extra; `selectedItems(ui)` junta os dois. Shift+clique, o duplo clique e "Selecionar com o conteúdo"
-(`selectionWithContents`, `src/model/multiSelection.ts`) montam o grupo. O arrasto conjunto é a operação pura `moveItems`: tudo ou
+código extra; `selectedItems(ui)` junta os dois. Shift+clique (e Ctrl+clique ou Cmd+clique, que valem o mesmo no canvas, inclusive
+sobre alça, e na Árvore; no macOS o Ctrl+clique é o clique direito e não junta; na revisão de propostas nenhum dos três vale), o duplo
+clique e "Selecionar com o conteúdo" (`selectionWithContents`, `src/model/multiSelection.ts`) montam o grupo. O arrasto conjunto é a operação pura `moveItems`: tudo ou
 nada (trava ou sobreposição com container que não se move falham), com o deslocamento em unidades do canvas; a marcação de
 container o recebe dividido pela escala e preso ao container, e o item levado por outro (marcação dentro de container movido,
 descendente) não recebe deslocamento à parte. As prévias usam `settle: false`; ao soltar, a ação final repete a operação com o
 assentar e há **uma** entrada de desfazer. O arrastar da Paleta usa `componentDropTarget` (`src/ui/componentTarget.ts`, puro: slot,
 container ou canvas, e o que acender) e o hook `useComponentDrop`, com o MIME `application/x-mapping-component`; o botão
 **Adicionar** usa o mesmo alvo pela seleção.
+
+As setas do teclado movem a seleção pela operação pura `nudgeItems` (`src/model/multiSelection.ts`): 1 px, ou 10 px com Shift, no
+espaço próprio de cada item (marcação de container em pixels da imagem, em qualquer escala; marcação do canvas, flutuante e container
+em unidades do canvas). Container leva as marcações, marcação de container leva as descendentes e a seta (traço) não anda. É tudo ou
+nada, como em `moveItems` (trancado, sair do container ou container sobrepondo outro: nada se move, sem aviso). O movimento é um
+gesto do store: a primeira seta chama `beginGesture`, cada repetição `updateGesture` (prévia com `settle: false`) e `commitGesture`
+fecha com o assentar numa só entrada de desfazer. Apertar e soltar é um gesto de um passo; segurar a tecla (repetição) é um gesto
+só, fechado no keyup, na perda de foco da janela ou ao apertar outra tecla. A tecla só vale com o foco no canvas ou em nenhum controle
+(`body`); não vale em campo de texto, Árvore, menu, abas etc., com `defaultPrevented`, em somente leitura, na revisão de propostas nem
+com um gesto de ponteiro em andamento, e vale em Navegar e Desenhar. Alt+↑/↓, Alt+Shift+↑/↓ e Ctrl+Shift+setas seguem com os usos
+que já tinham.
+
+O **retângulo de seleção** (SM2) é o Shift+arrasto em qualquer modo (Navegar e Desenhar): o gesto em `src/canvas/input/pointer.ts`
+vira a intenção `select-rect` e desenha o retângulo (borda tracejada `cv-select`, preenchimento `cv-select-fill`) em `state.marquee`,
+pela camada de sobreposição, sem prévia ao vivo nem rolagem automática. Sobre item selecionado ou alça no Navegar o Shift+arrasto
+continua movendo ou redimensionando, e o que não passa do limiar de arrasto segue sendo o Shift+clique. Ao soltar, a função pura
+`marqueeItems` (`src/canvas/input/marquee.ts`) escolhe os itens **inteiramente** dentro do retângulo e eles são **somados** à
+seleção (nunca tira item; mantém o principal, ou, sem seleção antes, o primeiro dos novos na ordem da Árvore). Vale a regra "só os de
+fora": reaproveita `movingItems`, então marcação de um container que entrou, ou descendente dela, não entra (já vai com o container),
+e container dentro de uma marcação do canvas que entrou entra. Itens invisíveis (camada escondida, visibilidade, Ver limpo) não
+entram, setas só com "Mostrar setas" ligado, e os trancados entram. Esc ou ponteiro cancelado apaga o retângulo sem mudar a seleção.
+O gesto não altera o projeto e não gera entrada de desfazer.
 
 **Marcação pai (Envolver).** `wrapItems` (`src/model/multiSelection.ts`) cria uma marcação que envolve a seleção; o botão
 **Envolver** fica no resumo da seleção múltipla. Entram marcações não flutuantes e containers (setas e notas ficam fora do

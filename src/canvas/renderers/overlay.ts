@@ -60,6 +60,7 @@ export type OverlayFrame = Pick<
   | 'mode'
   | 'arrows'
   | 'arrowDraft'
+  | 'marquee'
   | 'viewport'
   | 'size'
 >;
@@ -76,6 +77,8 @@ export class OverlayRenderer {
   readonly selectionOutline = new KonvaRect({ visible: false });
   readonly draftRect = new KonvaRect({ visible: false });
   readonly dropRect = new KonvaRect({ visible: false });
+  /** Retângulo da seleção por Shift+arrasto (Shift+arrasto soma o que estiver dentro). */
+  readonly marqueeRect = new KonvaRect({ visible: false, listening: false });
   /** Destaques dos itens que o desenho ou o redimensionamento absorveria ao soltar (um reaproveitado por item). */
   private readonly absorbRects: KonvaRect[] = [];
   /** Contornos dos itens selecionados que não são o primário (um reaproveitado por item). */
@@ -113,7 +116,7 @@ export class OverlayRenderer {
     this.container = container;
     this.layer = layer;
     this.nameTag.add(this.nameTagBox, this.nameTagText);
-    layer.add(this.selectionOutline, this.draftRect, this.dropRect);
+    layer.add(this.selectionOutline, this.draftRect, this.dropRect, this.marqueeRect);
     for (const corner of CORNERS) {
       const handle = new KonvaRect({ visible: false });
       this.handles.set(corner, handle);
@@ -172,6 +175,25 @@ export class OverlayRenderer {
     this.renderArrowDraft(frame);
     this.renderHoverLock(frame, placements);
     this.renderDropTarget(frame);
+    this.renderMarquee(frame);
+  }
+
+  /** O retângulo do Shift+arrasto: tracejado azul com preenchimento leve. */
+  private renderMarquee(frame: OverlayFrame): void {
+    const { marquee, tokens } = frame;
+    if (!marquee) {
+      this.marqueeRect.visible(false);
+      return;
+    }
+    const zoom = frame.viewport.scale;
+    this.marqueeRect.setAttrs({
+      ...marquee,
+      visible: true,
+      stroke: tokens.select,
+      strokeWidth: SELECTION_STROKE / zoom,
+      dash: [6 / zoom, 4 / zoom],
+      fill: tokens.selectFill,
+    });
   }
 
   /** Cadeado no item trancado sob o mouse (a menos que seja o selecionado, que já tem o dele). */

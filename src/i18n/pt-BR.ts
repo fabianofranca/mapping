@@ -523,7 +523,7 @@ export const ptBR = {
   'help.noResults': 'Nada encontrado para "{query}".',
   'help.shortcuts.title': 'Atalhos de teclado',
   'help.shortcuts.intro':
-    'Os atalhos valem no editor do desktop, com o foco fora de um campo de texto. No macOS use Ctrl, não Cmd. O Alt+número é um atalho extra: só funciona onde o navegador não o usa (no Chrome do Linux, só com a app instalada).',
+    'Os atalhos valem no editor do desktop, com o foco fora de um campo de texto. No macOS use Ctrl, não Cmd (só o clique da seleção usa Cmd). O Alt+número é um atalho extra: só funciona onde o navegador não o usa (no Chrome do Linux, só com a app instalada).',
   'shortcuts.or': 'ou',
   'shortcuts.group.windows': 'Janelas',
   'shortcuts.group.edit': 'Edição e seleção',
@@ -984,10 +984,13 @@ export const ptBR = {
   'view.arrowsHint': 'Desenha no canvas as setas que ligam as marcações',
   'multi.selectWithContents': 'Selecionar com o conteúdo',
   'shortcuts.shiftClick':
-    'Acrescentar ou tirar da seleção (Shift+clique no canvas e na Árvore)',
+    'Acrescentar ou tirar da seleção (Shift ou Ctrl/Cmd+clique no canvas e na Árvore)',
+  'shortcuts.nudge': 'Mover a seleção (Shift: 10 px)',
   'shortcuts.doubleClick': 'Selecionar a marcação com o conteúdo (duplo clique)',
   'shortcuts.escapeToPrimary': 'Com vários itens selecionados, voltar ao item principal',
+  'shortcuts.selectRect': 'Selecionar por retângulo (soma os itens inteiros dentro dele)',
   'shortcuts.key.click': 'clique',
+  'shortcuts.key.drag': 'arrasto',
   'shortcuts.key.doubleClick': 'duplo clique',
 } as const;
 

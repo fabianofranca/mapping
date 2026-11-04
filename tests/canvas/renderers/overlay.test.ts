@@ -480,6 +480,28 @@ describe('OverlayRenderer: marcações do canvas', () => {
     expect(overlay.handles.get('se')?.getAttrs()).toMatchObject({ x: 1695, y: 895 });
   });
 
+  it('retângulo de seleção: tracejado, com o token de seleção; some sem marquee', () => {
+    const { overlay, render } = spatialSetup();
+    render({
+      marquee: { x: 10, y: 20, width: 300, height: 200 },
+      viewport: { x: 0, y: 0, scale: 2 },
+    });
+    expect(overlay.marqueeRect.getAttrs()).toMatchObject({
+      visible: true,
+      x: 10,
+      y: 20,
+      width: 300,
+      height: 200,
+      stroke: TOKENS.select,
+      fill: TOKENS.selectFill,
+    });
+    // Espessura e traço divididos pelo zoom: ficam constantes na tela.
+    expect(overlay.marqueeRect.dash()).toEqual([3, 2]);
+    expect(overlay.marqueeRect.strokeWidth()).toBe(1);
+    render({ marquee: null });
+    expect(overlay.marqueeRect.visible()).toBe(false);
+  });
+
   it('itens a absorver acendem com o token novo e somem quando a lista esvazia', () => {
     const { overlay, render } = spatialSetup();
     render({ absorb: [{ x: 10, y: 20, width: 30, height: 40 }] });

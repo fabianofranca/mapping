@@ -146,6 +146,16 @@ export type Gesture =
       readonly currentSide: ArrowSide;
       valid: boolean;
     }
+  /**
+   * Seleção por retângulo (SM2, Shift+arrasto): sem gesto do store (o projeto não muda e nada
+   * vai ao desfazer); o retângulo vive em `state.marquee` e soltar soma os itens dentro dele.
+   */
+  | {
+      readonly kind: 'select-rect';
+      readonly pointerId: number;
+      /** Onde o arrasto começou (canvas): um canto do retângulo. */
+      readonly startCanvas: Point;
+    }
   /** Arrasto do mouse sobre o item trancado: não faz nada até soltar (cursor "não permitido"). */
   | { readonly kind: 'blocked'; readonly pointerId: number }
   /** Dois dedos. Termina quando todos saem da tela. */
@@ -197,6 +207,9 @@ export function startGesture(
   beginGesture: () => boolean,
 ): StartedGesture | null {
   if (!project || intent.kind === 'pan') return null;
+  if (intent.kind === 'select-rect') {
+    return { gesture: { kind: 'select-rect', pointerId, startCanvas }, draft: null };
+  }
   if (intent.kind === 'locked') {
     return { gesture: { kind: 'blocked', pointerId }, draft: null };
   }
