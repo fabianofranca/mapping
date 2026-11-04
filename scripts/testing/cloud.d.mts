@@ -5,17 +5,39 @@ export function connect(
   apoioDir: string,
   cdpUrl?: string,
 ): Promise<{ browser: unknown; page: unknown }>;
-export function clickNoWait(page: unknown, name: string): Promise<void>;
+export function clickNoWait(
+  page: unknown,
+  name: string,
+  options?: { scope?: unknown; exact?: boolean },
+): Promise<void>;
+export function waitForWindow(
+  names: string[],
+  options?: {
+    timeoutMs?: number;
+    stepMs?: number;
+    find?: (names: string[]) => string | null | undefined;
+    activeTitle?: () => string;
+  },
+): Promise<string>;
 export function selectFolder(
   apoioDir: string,
   targetPath: string,
+  options?: { timeoutMs?: number },
 ): Promise<{ hadAutocomplete: boolean; permission: string }>;
 export function openFile(
   apoioDir: string,
   targetPath: string,
+  options?: { timeoutMs?: number },
 ): Promise<{ hadAutocomplete: boolean }>;
-export function saveFile(apoioDir: string, targetPath: string): Promise<void>;
-export function cancelDialog(apoioDir: string): Promise<void>;
+export function saveFile(
+  apoioDir: string,
+  targetPath: string,
+  options?: { timeoutMs?: number },
+): Promise<void>;
+export function cancelDialog(
+  apoioDir: string,
+  options?: { timeoutMs?: number },
+): Promise<void>;
 export function allowPermission(apoioDir: string): Promise<string>;
 export function screenshot(apoioDir: string, name: string): Promise<string>;
 export function windowShortcut(page: unknown, n: number): Promise<void>;
