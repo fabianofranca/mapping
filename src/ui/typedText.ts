@@ -22,6 +22,24 @@ export function labelTexts(): LabelTexts {
   return { untitled: t('annotation.untitled'), broken: t('ref.broken') };
 }
 
+/** Estado do botão da referência para o nome acessível. */
+export type RefButtonState =
+  | { readonly kind: 'empty' }
+  | { readonly kind: 'broken' }
+  | { readonly kind: 'value'; readonly value: string; readonly layer?: string };
+
+/**
+ * Nome acessível do botão da referência: começa pelo texto que ele mostra (WCAG 2.5.3) e
+ * termina no campo ("User.name: Destino", "Escolher: Destino", "Referência quebrada: Destino").
+ */
+export function refButtonName(field: string, state: RefButtonState): string {
+  if (state.kind === 'empty') return t('ref.fieldEmpty', { field });
+  if (state.kind === 'broken') return t('ref.fieldBroken', { field });
+  return state.layer
+    ? t('ref.fieldValueLayer', { value: state.value, layer: state.layer, field })
+    : t('ref.fieldValue', { value: state.value, field });
+}
+
 export function displayTexts(): DisplayTexts {
   return {
     ...labelTexts(),

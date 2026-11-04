@@ -121,7 +121,7 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
         class={locked ? 'tree-lock tree-lock-on' : 'tree-lock'}
         aria-pressed={locked}
         aria-label={t('lock.treeLock', { name })}
-        title={t(locked ? 'lock.treeUnlock' : 'lock.treeLock', { name })}
+        title={t('lock.treeLock', { name })}
         disabled={readOnly}
         onClick={toggle}
       >

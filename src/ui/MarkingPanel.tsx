@@ -162,7 +162,6 @@ export function MarkingPanel({
             <IconButton
               icon={marking.locked ? 'lock' : 'unlock'}
               label={t('lock.markingLock')}
-              tooltip={t(marking.locked ? 'lock.markingUnlock' : 'lock.markingLock')}
               shortcut={SHORTCUT_LABELS.toggleLock}
               pressed={marking.locked}
               disabled={readOnly}

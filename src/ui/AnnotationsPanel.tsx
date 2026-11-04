@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   annotationsOf,
+  projectIndex,
   validTypedOwners,
   type Annotation,
   type AnnotationTypeRef,
@@ -355,8 +356,9 @@ function LayerGroup({
   const empty = annotations.length === 0;
   const incomplete = annotations.some((a) => issuesOf(project, a.id).length > 0);
   const spec = layer.spec
-    ? project.specializations.find((s) => s.id === layer.spec?.specId)
+    ? projectIndex(project).specializations.get(layer.spec.specId)
     : undefined;
+  const specName = spec ? (spec.spec?.name ?? spec.id) : '';
   const first = annotations[0];
   const meta = [
     active ? t('layerGroup.active') : null,
@@ -374,7 +376,11 @@ function LayerGroup({
     <>
       <span class="layer-dot" aria-hidden="true" />
       <strong class="layer-group-name">{layer.name}</strong>
-      {spec && <span class="tag">{spec.spec?.name ?? spec.id}</span>}
+      {spec && (
+        <span class="tag" title={specName}>
+          {specName}
+        </span>
+      )}
       {ext?.layerTag(layer.id)}
       {meta.length > 0 && (
         <span class="layer-group-meta">{` · ${meta.join(' · ')}`}</span>

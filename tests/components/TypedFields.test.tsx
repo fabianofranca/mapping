@@ -78,8 +78,16 @@ describe('TypedFields — campos simples', () => {
 });
 
 describe('TypedFields — referência (ref)', () => {
-  /** Botão do campo `dado` (o nome acessível começa pelo rótulo do campo). */
-  const field = () => screen.getByRole('button', { name: /^dado: / });
+  /** Botão do campo `dado` (o nome acessível termina no rótulo do campo). */
+  const field = () => screen.getByRole('button', { name: /: dado$/ });
+
+  // SN2 (WCAG 2.5.3): o nome acessível começa pelo texto que o botão mostra.
+  it('nome acessível: valor e camada do alvo primeiro, campo no fim; vazio e quebrado', async () => {
+    const { user } = setup('AIN', 'dado');
+    expect(field().getAttribute('aria-label')).toMatch(/^User\.name .+: dado$/);
+    await user.click(screen.getByRole('button', { name: 'Limpar' }));
+    expect(screen.getByRole('button', { name: 'Escolher: dado' })).toBeTruthy();
+  });
 
   it('mostra o alvo atual e os botões', () => {
     setup('AIN', 'dado');
@@ -275,9 +283,9 @@ describe('TypedFields — referência (ref)', () => {
       ),
     };
     setup('AIN', 'dado', broken);
-    expect(screen.getByRole('button', { name: /^dado: / }).textContent).toContain(
-      '(referência quebrada)',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Referência quebrada: dado' }).textContent,
+    ).toContain('(referência quebrada)');
     expect(screen.getByRole('button', { name: 'Ir para o alvo' })).toHaveProperty(
       'disabled',
       true,

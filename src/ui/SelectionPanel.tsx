@@ -95,7 +95,6 @@ export function SelectionPanel({
             <IconButton
               icon={image.locked ? 'lock' : 'unlock'}
               label={t('lock.imageLock')}
-              tooltip={t(image.locked ? 'lock.imageUnlock' : 'lock.imageLock')}
               shortcut={SHORTCUT_LABELS.toggleLock}
               pressed={image.locked}
               disabled={readOnly}
