@@ -618,6 +618,14 @@ export const enUS: Dictionary = {
   'help.specs.download.schema': 'Download JSON Schema (spec.schema.json)',
   'help.specs.applyHint':
     'To use an example: open a project, choose Specializations (a button on the main bar) → Apply and pick the downloaded file.',
+  'notice.kind.removed': 'Removed',
+  'notice.kind.deprecated': 'Deprecated',
+  'notice.kind.diverges': 'Diverges',
+  'notice.kind.pending': 'Pending',
+  'notice.badge': 'Notice {kind}: {message}',
+  'notice.since': 'Since {date}',
+  'notice.ref': 'Source:',
+  'notice.column': 'Column {column}: {message}',
   'typed.chooseTypeTitle': 'New annotation in {layer}',
   'typed.chooseTypeHint':
     'Pick the type. The fields are predefined; just fill in the values.',

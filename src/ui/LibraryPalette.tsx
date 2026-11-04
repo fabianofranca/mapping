@@ -1,10 +1,11 @@
 import { COMPONENT_DRAG_MIME, setDraggedComponent } from '../app/componentDrag';
 import { t } from '../i18n';
-import type { ComponentType, Project } from '../model';
+import { findSpecType, type ComponentType, type Project } from '../model';
 import { ContainerMark } from './ContainerMark';
 import { useEditor } from './EditorContext';
 import { Button } from './controls';
 import { useAddComponent } from './useAddComponent';
+import { TypeNoticeBadge } from './NoticeBadge';
 
 // Paleta (etapa Biblioteca, B3; aba Paleta da janela Catálogo, B5): os componentes das especializações
 // aplicadas, por especialização e camada, cada um com o botão Adicionar. O componente
@@ -48,6 +49,18 @@ function groupTypes(
     layer.types.push(type);
   }
   return groups;
+}
+
+/** O selo de aviso do tipo do componente (resolvido na especialização do projeto). */
+function ComponentNotice({
+  project,
+  type,
+}: {
+  readonly project: Project;
+  readonly type: ComponentType;
+}) {
+  const resolved = findSpecType(project, { specId: type.specId, typeId: type.typeId });
+  return resolved ? <TypeNoticeBadge type={resolved.type} /> : null;
 }
 
 interface LibraryPaletteProps {
@@ -108,6 +121,7 @@ export function LibraryPalette({ onOpenSpecs }: LibraryPaletteProps) {
                         <span class="library-type-main">
                           <span class="library-type-name">{type.name}</span>
                           {type.container && <ContainerMark />}
+                          <ComponentNotice project={project} type={type} />
                         </span>
                         <Button
                           size="sm"

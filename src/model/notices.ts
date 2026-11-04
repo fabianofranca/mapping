@@ -47,7 +47,7 @@ export function sortNotices(notices: readonly SpecNotice[]): SpecNotice[] {
 }
 
 /** Avisos do tipo, depois dos campos e depois das colunas, na ordem do arquivo. */
-function typeNotices(type: SpecAnnotationType): SpecNotice[] {
+export function typeNotices(type: SpecAnnotationType): SpecNotice[] {
   const list: SpecNotice[] = [...(type.notices ?? [])];
   const columns: SpecNotice[] = [];
   for (const field of type.fields) {

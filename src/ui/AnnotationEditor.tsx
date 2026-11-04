@@ -8,6 +8,7 @@ import {
   rawValueLines,
   refsBrokenBy,
   removeEntry,
+  sortNotices,
   typeOfAnnotation,
   validAnnotationOwners,
   type Annotation,
@@ -27,6 +28,7 @@ import { Button, HelpTip, IconButton, Select } from './controls';
 import { KeyValueGrid } from './KeyValueGrid';
 import { annotationLabel } from './labels';
 import { Property, PropertyGrid } from './PropertyGrid';
+import { NoticeBlock, TypeNoticeBadge } from './NoticeBadge';
 import { TypedField } from './TypedFields';
 import {
   annotationDisplayName,
@@ -97,6 +99,9 @@ function TypedBody({
   const ctx = { project, annotation, readOnly, onGoToAnnotation };
   return (
     <>
+      {sortNotices(resolved.type.notices ?? []).map((notice, index) => (
+        <NoticeBlock key={`${notice.kind}-${index}`} notice={notice} />
+      ))}
       <PropertyGrid>
         {resolved.type.fields.map((field) => (
           <TypedField key={field.key} field={field} {...ctx} />
@@ -239,6 +244,7 @@ export function AnnotationEditor({
           <HelpTip name={resolved.type.name} text={resolved.type.description} />
         )}
         {ext?.mark(annotation.id, 'type')}
+        {resolved && <TypeNoticeBadge type={resolved.type} />}
         <IssueBadge project={project} annotation={annotation} />
         <CommitInput
           class="input input-sm annotation-name"

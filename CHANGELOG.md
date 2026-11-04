@@ -9,6 +9,8 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 ### Adicionado
 
 - **`formatVersion` 10 da especialização, com avisos (`notices`)** em tipo, campo e coluna de `table`: cada aviso tem `kind` (`pending`, `deprecated`, `diverges` ou `removed`), `message` e, opcionais, `since` (data) e `ref` (de onde vem). Os avisos só informam: nenhum impede importar, aplicar, criar anotação nem aceitar proposta, e não são pendência. Ficam fora do contrato de versão (incluir, mudar ou tirar avisos nunca pede migração), então quem gera a especialização pode regravar todos a cada rodada e o aviso some sozinho quando a diferença entre as fontes some. Documentado em `docs/SPEC-FORMAT.md` (seção "Avisos (notices)"), na ajuda "Especializações", no `docs/spec.schema.json` e na skill `spec-author`.
+- **Selo de aviso na escolha de tipo e no Catálogo.** Um tipo com aviso mostra um selo (Removido, Obsoleto, Diverge ou Pendente, sempre com ícone e texto) em "+ Anotação", na aba Componentes e na Paleta; o selo mostra o aviso de maior gravidade entre o do tipo, dos campos e das colunas, e a dica lista todos.
+- **Avisos do tipo, dos campos e das colunas nos Detalhes.** O aviso do tipo fica no topo da anotação (com `since` e `ref`), o do campo abaixo do controle (e o rótulo ganha o ícone) e o da coluna abaixo da tabela. Aparecem também em só leitura, não bloqueiam nada e não tornam a anotação incompleta.
 
 ### Alterado
 
