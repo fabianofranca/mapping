@@ -80,9 +80,10 @@ jobs:
             exit 1
           fi
       # O fechamento de todo épico aplica as pendências no design system e registra a
-      # sincronização em docs/DESIGN-SYSTEM.md (CLAUDE.md, "Fluxo de trabalho"). O artefato
-      # do DS vive fora do repositório e o CI não o alcança; o registro aqui, sim. Um épico
-      # sem impacto no DS também toca o arquivo, para dizer que não houve.
+      # sincronização em docs/design-system/<nome>.md (ou docs/design-system/AAAA-MM-DD-<nome>.md)
+      # (CLAUDE.md, "Fluxo de trabalho"). O artefato do DS vive fora do repositório e o CI não
+      # o alcança; o registro aqui, sim. Um épico sem impacto no DS também cria o arquivo, para
+      # dizer que não houve.
       - name: Design system registrado
         env:
           BASE: ${{ github.base_ref }}
@@ -99,10 +100,11 @@ jobs:
             epic/*) ;;
             *) echo "PR de $HEAD: o registro do design system só é exigido nos épicos."; exit 0 ;;
           esac
-          if gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep -qx 'docs/DESIGN-SYSTEM.md'; then
-            echo "docs/DESIGN-SYSTEM.md atualizado neste PR."
+          name="${HEAD#epic/}"
+          if gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep -qxE "docs/design-system/([0-9]{4}-[0-9]{2}-[0-9]{2}-)?$name\.md"; then
+            echo "registro do design system do épico $name presente neste PR."
           else
-            echo "::error::A entrega de $HEAD para a main precisa atualizar o docs/DESIGN-SYSTEM.md (pendências aplicadas e histórico de sincronização, ou o registro de que não houve impacto)."
+            echo "::error::A entrega de $HEAD para a main precisa trazer docs/design-system/$name.md (ou docs/design-system/AAAA-MM-DD-$name.md): pendências aplicadas e sincronização, ou o registro de que não houve impacto."
             exit 1
           fi
 
