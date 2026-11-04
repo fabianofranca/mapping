@@ -55,6 +55,14 @@
   color: var(--color-accent);
 }
 
+.identity-lock {
+  /* O ícone de ajuda e o cadeado andam juntos: se faltar espaço, descem os dois. */
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-0-5);
+}
+
 .identity-name {
   /* Base no tamanho do texto: sem espaço para o ID e os botões, eles descem para a linha de baixo. */
   flex: 1 1 auto;

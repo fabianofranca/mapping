@@ -88,17 +88,19 @@ export function ArrowPanel({
         struck={identity?.struck}
         actions={
           <>
-            {arrow.locked && (
-              <HelpTip name={t('lock.helpName')} text={t('arrow.lockNotice')} />
-            )}
-            <IconButton
-              icon={arrow.locked ? 'lock' : 'unlock'}
-              label={t('arrow.lock')}
-              shortcut={SHORTCUT_LABELS.toggleLock}
-              pressed={arrow.locked}
-              disabled={readOnly}
-              onClick={() => report(actions.setArrowLocked(arrow.id, !arrow.locked))}
-            />
+            <span class="identity-lock">
+              {arrow.locked && (
+                <HelpTip name={t('lock.helpName')} text={t('arrow.lockNotice')} />
+              )}
+              <IconButton
+                icon={arrow.locked ? 'lock' : 'unlock'}
+                label={t('arrow.lock')}
+                shortcut={SHORTCUT_LABELS.toggleLock}
+                pressed={arrow.locked}
+                disabled={readOnly}
+                onClick={() => report(actions.setArrowLocked(arrow.id, !arrow.locked))}
+              />
+            </span>
           </>
         }
       />

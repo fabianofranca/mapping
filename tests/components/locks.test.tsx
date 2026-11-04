@@ -199,7 +199,11 @@ describe('Detalhes da imagem: cadeado', () => {
     expect(imageLock().getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: 'Trancar imagem' })).toBe(imageLock());
     expect(tipOf(imageLock())).toContain('Trancar imagem');
-    expect(screen.getByText(t('lock.imageNotice'))).toBeTruthy();
+    // Mesmo tratamento da marcação e da seta: sem o quadro escrito; o ícone ao lado do cadeado.
+    expect(document.querySelector('.notice')).toBeNull();
+    const help = lockHelp() as HTMLElement;
+    expect(descriptionOf(help)).toBe(t('lock.imageNotice'));
+    expect(help.closest('.identity-lock')).toBe(imageLock().closest('.identity-lock'));
     const remove = screen.getByRole('button', { name: t('image.delete') });
     expect((remove as HTMLButtonElement).disabled).toBe(true);
     await user.click(remove);

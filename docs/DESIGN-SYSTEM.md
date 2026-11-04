@@ -208,6 +208,14 @@ O que o código já tem e o DS ainda não descreve. O fechamento do épico aplic
 - **`PropertyGrid`** (`src/ui/PropertyGrid.tsx`): o `Property` com `hint` mostra o `HelpTip` ao lado do rótulo (o `title` saiu) e, com `for`, põe `aria-describedby` no controle; a prop `note` virou `status` (aviso de estado sempre visível, hoje só o `annotation.ownerEmpty`). O guia e o preview ganham a variante com o ícone de ajuda.
 - **Previews de `LayerGroup`, `ArrowPanel`, `MarkingPanel` e dos painéis com anotação tipada** (`src/ui/AnnotationEditor.tsx`, `src/ui/TableField.tsx`): sem o texto de explicação sempre visível (descrição de campo, descrição do tipo, "Vinculada a", `small.props-note`) e sem o aviso `p.notice` da trava; o cabeçalho ganha o `HelpTip` "Sobre a trava" ao lado do cadeado (`src/ui/ArrowPanel.tsx`, `src/ui/MarkingPanel.tsx`), só quando há trava, inclusive herdada. O aviso da trava da imagem não mudou.
 
+### Limpeza visual — correção (`epic/limpeza-visual`, LV3)
+
+- **`HelpTip`/`Tooltip`** (`src/ui/controls/`): o `Tooltip` ganha a prop `onDismiss`; com ela o Esc que fecha a dica visível é consumido (`stopPropagation` e `preventDefault`), então não chega aos atalhos nem ao `cancel` do `<dialog>`. Reabrir a dica fixada zera o estado "dispensada". Guia do `HelpTip`: Esc fecha só a dica; Enter/clique reabre.
+- **`PropertyGrid`** (`src/ui/PropertyGrid.tsx`): o `Property` ganha a prop `hintName` (assunto do `HelpTip` quando o rótulo não é texto; "Sobre Posição / Tamanho" na revisão). Na revisão (`.review-details-panel .props`), a coluna do rótulo é `--size-label-col` + `--control-height-sm`, e `.props-label-cell` quebra linha sem partir a palavra. Preview de `PropertyGrid`/Detalhes da revisão: Posição e Tamanho com o ícone e o marcador.
+- **Cabeçalho dos Detalhes** (`ArrowPanel`, `MarkingPanel`, `SelectionPanel`): `.identity-lock` junta o `HelpTip` "Sobre a trava" e o cadeado (não se separam ao quebrar linha). O container (imagem) trancado perde o `p.notice` e ganha o `HelpTip`, como a marcação e a seta; previews de container, marcação e seta trancados.
+- **Paleta da biblioteca** (`src/ui/LibraryPalette.tsx`, `src/theme/panels.css`): `.library-type-main` sem quebra de linha, nome com reticências e o ícone de container ao lado; botão Adicionar com no máximo metade da linha.
+- **Markdown do Catálogo** (`src/ui/markdown/Markdown.tsx`, `src/theme/dialogs.css`): bloco `blockquote` (`> `), borda à esquerda `--color-border-control` e texto `--color-text-muted`. Guia/preview do documento do componente.
+
 ### Resto da semântica acessível (`epic/semantica-acessivel`)
 
 O fechamento do épico gravou no artefato o que dava (ver o histórico). Ficou sem gravar:

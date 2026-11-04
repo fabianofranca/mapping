@@ -18,8 +18,8 @@ interface HelpTipProps {
 /**
  * Explicação em ícone com dica ("explicação = ícone com dica"): um botão `info` focável
  * pelo teclado, com a dica no hover e no foco (`Tooltip`). Enter ou clique fixa a dica
- * aberta (`aria-expanded`), para quem usa toque; Esc, outro clique ou a perda de foco a
- * fecham. O texto também fica no DOM, fora da tela, como descrição acessível do ícone.
+ * aberta (`aria-expanded`), para quem usa toque; Esc (que fecha só a dica, sem chegar aos atalhos do editor), outro clique
+ * ou a perda de foco a fecham. O texto também fica no DOM, fora da tela, como descrição acessível do ícone.
  * Não muda a seleção nem o projeto.
  */
 export function HelpTip({ name, text, descriptionId }: HelpTipProps) {
@@ -38,15 +38,8 @@ export function HelpTip({ name, text, descriptionId }: HelpTipProps) {
     return () => document.removeEventListener('pointerdown', close);
   }, [pinned]);
   return (
-    <span
-      ref={root}
-      class="help-tip"
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') setPinned(false);
-      }}
-      onFocusOut={() => setPinned(false)}
-    >
-      <Tooltip label={text} open={pinned}>
+    <span ref={root} class="help-tip" onFocusOut={() => setPinned(false)}>
+      <Tooltip label={text} open={pinned} onDismiss={() => setPinned(false)}>
         <button
           type="button"
           class="icon-button icon-button-sm help-tip-button"

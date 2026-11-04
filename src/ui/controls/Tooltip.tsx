@@ -21,6 +21,8 @@ interface TooltipProps {
   readonly placement?: 'bottom' | 'top';
   /** Dica fixada aberta (o clique do `HelpTip`), mesmo sem hover nem foco visível. */
   readonly open?: boolean;
+  /** Chamado quando o Esc fecha a dica visível; com ele, o Esc é consumido (não propaga). */
+  readonly onDismiss?: () => void;
   readonly children: ComponentChildren;
 }
 
@@ -68,6 +70,7 @@ export function Tooltip({
   shortcut,
   placement = 'bottom',
   open = false,
+  onDismiss,
   children,
 }: TooltipProps) {
   const [dismissed, setDismissed] = useState(false);
@@ -76,7 +79,10 @@ export function Tooltip({
     if (anchor.current) place(anchor.current, placement);
   };
   useEffect(() => {
-    if (open && anchor.current) place(anchor.current, placement);
+    if (!open) return;
+    // Reabrir a dica fixada (Enter ou clique) depois de um Esc volta a mostrá-la.
+    setDismissed(false);
+    if (anchor.current) place(anchor.current, placement);
   }, [open, placement]);
   return (
     <span
@@ -88,7 +94,16 @@ export function Tooltip({
         open && 'tooltip-open',
       )}
       onKeyDown={(e) => {
-        if (e.key === 'Escape') setDismissed(true);
+        if (e.key !== 'Escape') return;
+        const visible = open || !dismissed;
+        setDismissed(true);
+        // Com `onDismiss` (HelpTip), o Esc que fecha a dica é consumido: não chega aos atalhos
+        // do editor (limpar a seleção) nem ao `cancel` nativo de um `<dialog>`.
+        if (onDismiss && visible) {
+          onDismiss();
+          e.stopPropagation();
+          e.preventDefault();
+        }
       }}
       onPointerEnter={show}
       onFocusIn={show}

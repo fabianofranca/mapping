@@ -31,6 +31,7 @@ export type MarkdownBlock =
     }
   | { readonly type: 'paragraph'; readonly inlines: readonly MarkdownInline[] }
   | { readonly type: 'code'; readonly lang: string; readonly text: string }
+  | { readonly type: 'quote'; readonly children: readonly MarkdownBlock[] }
   | {
       readonly type: 'list';
       readonly ordered: boolean;
@@ -292,6 +293,7 @@ export function parseInlines(source: string): MarkdownInline[] {
 const FENCE = /^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)/;
 const HEADING = /^ {0,3}(#{1,6})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
 const LIST_ITEM = /^([ \t]*)([-*+]|\d{1,9}[.)])[ \t]+(.*)$/;
+const QUOTE = /^ {0,3}>[ \t]?(.*)$/;
 const RULE = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
 const TABLE_SEP_CELL = /^:?-+:?$/;
 
@@ -345,6 +347,7 @@ function startsBlock(lines: readonly string[], i: number): boolean {
     FENCE.test(line) ||
     HEADING.test(line) ||
     RULE.test(line) ||
+    QUOTE.test(line) ||
     LIST_ITEM.test(line) ||
     startsTable(lines, i)
   );
@@ -440,6 +443,19 @@ function finishList(list: ListBuilder): MarkdownBlock {
   };
 }
 
+/** Linhas seguidas de citação (`> `): o conteúdo, sem o sinal, e a próxima linha. */
+function takeQuote(lines: readonly string[], start: number): [string[], number] {
+  const body: string[] = [];
+  let i = start;
+  while (i < lines.length) {
+    const m = QUOTE.exec(lines[i] as string);
+    if (!m) break;
+    body.push(m[1] as string);
+    i++;
+  }
+  return [body, i];
+}
+
 export function parseMarkdown(text: string): MarkdownBlock[] {
   try {
     return parseBlocks(String(text));
@@ -453,7 +469,7 @@ export function parseMarkdown(text: string): MarkdownBlock[] {
   }
 }
 
-function parseBlocks(text: string): MarkdownBlock[] {
+function parseBlocks(text: string, quoteDepth = 0): MarkdownBlock[] {
   const lines = text.replace(/\r\n?/g, '\n').split('\n').map(expandTabs);
   const blocks: MarkdownBlock[] = [];
   const used = new Set<string>();
@@ -507,6 +523,15 @@ function parseBlocks(text: string): MarkdownBlock[] {
         id: uniqueId(slugifyHeading(inlinesToText(inlines))),
       });
       i++;
+      continue;
+    }
+    if (quoteDepth < MAX_LIST_DEPTH && QUOTE.test(line)) {
+      const [body, next] = takeQuote(lines, i);
+      blocks.push({
+        type: 'quote',
+        children: parseBlocks(body.join('\n'), quoteDepth + 1),
+      });
+      i = next;
       continue;
     }
     if (RULE.test(line)) {
