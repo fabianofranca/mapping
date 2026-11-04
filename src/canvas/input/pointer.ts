@@ -23,6 +23,7 @@ import type { ProjectStore } from '../../store/history';
 import type { ProjectActions } from '../../store/project';
 import { showArrows } from '../../store/settings';
 import {
+  addSelectedItems,
   existingItems,
   isItemSelected,
   peekSelectedItems,
@@ -65,6 +66,7 @@ import {
   type Gesture,
   type StoreGesture,
 } from './gestures';
+import { marqueeItems, rectFromCorners } from './marquee';
 import {
   cursorFor,
   dragModeOf,
@@ -104,7 +106,18 @@ const MOVE_GESTURES: ReadonlySet<Gesture['kind']> = new Set([
 ]);
 
 /** Gestos de seta que puxam uma linha até uma marcação: o cursor é o de mirar. */
-const AIM_GESTURES: ReadonlySet<Gesture['kind']> = new Set(['arrow-link', 'arrow-end']);
+const AIM_GESTURES: ReadonlySet<Gesture['kind']> = new Set([
+  'arrow-link',
+  'arrow-end',
+  'select-rect',
+]);
+
+/** Gestos sem o store que Esc cancela (o store tem o `cancelGesture`). */
+const CANCELLABLE_GESTURES: ReadonlySet<Gesture['kind']> = new Set([
+  'draw',
+  'arrow-link',
+  'select-rect',
+]);
 
 function sameRect(a: Rect, b: Rect): boolean {
   return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
@@ -173,8 +186,7 @@ export class PointerInput {
   /** Cancela o gesto de mover/redimensionar/desenhar em andamento. `true` se havia um. */
   cancelInteraction(): boolean {
     const g = this.gesture;
-    if (!isStoreGesture(g) && g?.kind !== 'draw' && g?.kind !== 'arrow-link')
-      return false;
+    if (!isStoreGesture(g) && !(g && CANCELLABLE_GESTURES.has(g.kind))) return false;
     if (isStoreGesture(g)) this.o.actions.cancelGesture();
     this.clearTransient();
     this.gesture = { kind: 'pinch' }; // Ignora o resto do arrasto até soltar.
@@ -189,6 +201,7 @@ export class PointerInput {
     state.draft.value = null;
     state.moveTarget.value = null;
     if (state.arrowDraft.peek() !== null) state.arrowDraft.value = null;
+    if (state.marquee.peek() !== null) state.marquee.value = null;
     if (state.absorb.peek().length > 0) state.absorb.value = [];
   }
 
@@ -210,7 +223,7 @@ export class PointerInput {
     this.o.container.style.cursor = cursor;
   }
 
-  private context(): IntentContext {
+  private context(rectSelect = false): IntentContext {
     const { store, ui, derived } = this.o;
     const project = this.project();
     return {
@@ -225,6 +238,7 @@ export class PointerInput {
       titles: this.o.containerTitles?.(),
       zoom: this.o.viewport.scale,
       spaceDown: this.o.spaceDown(),
+      rectSelect,
     };
   }
 
@@ -239,9 +253,33 @@ export class PointerInput {
     return { shapes: this.arrowShapes(project), zoom: this.o.viewport.scale };
   }
 
-  /** Intenção de um arrasto começando em `p` (tela). */
-  private intentAt(p: Point): Intent {
-    return intentAt(this.context(), this.o.viewport.toCanvas(p));
+  /** Intenção de um arrasto começando em `p` (tela); `rectSelect`: Shift apertado com o mouse. */
+  private intentAt(p: Point, rectSelect = false): Intent {
+    return intentAt(this.context(rectSelect), this.o.viewport.toCanvas(p));
+  }
+
+  /** Shift+arrasto do mouse (botão esquerdo) fora da revisão faz o retângulo de seleção. */
+  private wantsRectSelect(e: PointerEvent): boolean {
+    return (
+      e.pointerType === 'mouse' &&
+      e.button === 0 &&
+      e.shiftKey &&
+      !(this.o.reviewing?.() ?? false)
+    );
+  }
+
+  /** O que o arrasto que começa com `e` (em `p`, tela) faria. */
+  private pressIntent(e: PointerEvent, p: Point): Intent {
+    if (e.button === 1) return { kind: 'pan' };
+    const intent = this.intentAt(p, this.wantsRectSelect(e));
+    // Numa tela de toque, arrastar sobre um item (livre ou trancado) faz pan, como rolar a
+    // página; alças (resize) e o modo Desenhar continuam diretos, e o mouse não muda.
+    const dragsItem =
+      intent.kind === 'locked' ||
+      intent.kind === 'move-marking' ||
+      intent.kind === 'move-image' ||
+      intent.kind === 'move-items';
+    return e.pointerType === 'touch' && dragsItem ? { kind: 'pan' } : intent;
   }
 
   private onPointerDown(e: PointerEvent): void {
@@ -264,18 +302,7 @@ export class PointerInput {
       }).state;
       return;
     }
-    let intent: Intent = e.button === 1 ? { kind: 'pan' } : this.intentAt(p);
-    // Numa tela de toque, arrastar sobre um item (livre ou trancado) faz pan, como rolar a
-    // página; alças (resize) e o modo Desenhar continuam diretos, e o mouse não muda.
-    if (
-      e.pointerType === 'touch' &&
-      (intent.kind === 'locked' ||
-        intent.kind === 'move-marking' ||
-        intent.kind === 'move-image' ||
-        intent.kind === 'move-items')
-    ) {
-      intent = { kind: 'pan' };
-    }
+    const intent = this.pressIntent(e, p);
     this.gesture = { kind: 'pending', pointerId: e.pointerId, start: p, intent };
     this.gestureState = stepGesture(IDLE, {
       type: 'down',
@@ -323,6 +350,9 @@ export class PointerInput {
         g.last = p;
         return;
       case 'blocked':
+        return;
+      case 'select-rect':
+        this.moveMarquee(g, p);
         return;
       case 'move-image': {
         const c = viewport.toCanvas(p);
@@ -434,6 +464,33 @@ export class PointerInput {
         return;
       }
     }
+  }
+
+  /** O retângulo da seleção vai do início do arrasto até o ponteiro. */
+  private moveMarquee(g: Extract<Gesture, { kind: 'select-rect' }>, p: Point): void {
+    this.o.state.marquee.value = rectFromCorners(
+      g.startCanvas,
+      this.o.viewport.toCanvas(p),
+    );
+  }
+
+  /**
+   * Soltar o retângulo soma à seleção os itens inteiramente dentro dele (sem tirar nenhum); o
+   * projeto não muda. Cancelado, a seleção fica como estava. O retângulo sempre some.
+   */
+  private finishMarquee(
+    g: Extract<Gesture, { kind: 'select-rect' }>,
+    end: Point,
+    cancelled: boolean,
+  ): void {
+    this.o.state.marquee.value = null;
+    const project = this.project();
+    if (cancelled || !project) return;
+    const items = marqueeItems(project, rectFromCorners(g.startCanvas, end), {
+      visibility: this.o.derived.markingVisibility.peek(),
+      arrows: this.arrowShapes(project),
+    });
+    addSelectedItems(this.o.ui, items);
   }
 
   /**
@@ -605,6 +662,13 @@ export class PointerInput {
     }
     if (g.kind === 'draw') this.finishDraw(g, cancelled);
     if (g.kind === 'arrow-link') this.finishArrowLink(g, cancelled);
+    if (g.kind === 'select-rect') {
+      this.finishMarquee(
+        g,
+        this.o.viewport.toCanvas(this.o.viewport.screenPoint(e)),
+        cancelled,
+      );
+    }
     if (e.pointerType === 'mouse') this.updateCursor(this.o.viewport.screenPoint(e));
   }
 

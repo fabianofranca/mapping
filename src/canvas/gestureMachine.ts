@@ -7,7 +7,7 @@ import type { Point } from './viewport';
 export const DRAG_THRESHOLD = 6;
 
 /** O que o arrasto faz. */
-export type DragMode = 'pan' | 'move' | 'resize' | 'draw';
+export type DragMode = 'pan' | 'move' | 'resize' | 'draw' | 'select';
 
 export type GestureState =
   | { readonly phase: 'idle' }

@@ -89,10 +89,16 @@ export type Intent =
       readonly handle: ArrowHandle;
     }
   /** Sobre o item selecionado e trancado: arrastar não faz nada (cursor "não permitido"). */
-  | { readonly kind: 'locked' };
+  | { readonly kind: 'locked' }
+  /**
+   * Seleção por retângulo (SM2): Shift+arrasto onde, sem Shift, haveria pan ou desenho. Soma à
+   * seleção os itens inteiramente dentro do retângulo; não muda o projeto.
+   */
+  | { readonly kind: 'select-rect' };
 
 const PAN: Intent = { kind: 'pan' };
 const LOCKED: Intent = { kind: 'locked' };
+const RECT_SELECT: Intent = { kind: 'select-rect' };
 
 /** Estado do editor que decide a intenção (lido sem assinar, no momento do evento). */
 export interface IntentContext {
@@ -125,6 +131,11 @@ export interface IntentContext {
   readonly zoom: number;
   /** Espaço pressionado: arrastar sempre faz pan. */
   readonly spaceDown: boolean;
+  /**
+   * Shift apertado com o mouse (botão esquerdo) fora da revisão: o arrasto que faria pan ou
+   * desenharia vira `select-rect`, mesmo em somente leitura. Só o toque do ponteiro o liga.
+   */
+  readonly rectSelect?: boolean;
 }
 
 /**
@@ -137,6 +148,12 @@ export interface IntentContext {
  * no modo Desenhar fica com a barra de espaço, o botão do meio e a roda.
  */
 export function intentAt(ctx: IntentContext, c: Point): Intent {
+  const intent = baseIntentAt(ctx, c);
+  const swap = ctx.rectSelect && ctx.project && !ctx.spaceDown;
+  return swap && (intent.kind === 'pan' || intent.kind === 'draw') ? RECT_SELECT : intent;
+}
+
+function baseIntentAt(ctx: IntentContext, c: Point): Intent {
   const { project, zoom } = ctx;
   if (ctx.spaceDown || !project || ctx.readOnly) return PAN;
   if (ctx.mode === 'draw') {
@@ -368,6 +385,7 @@ export function tapSelection(
 
 export function dragModeOf(intent: Intent): DragMode {
   if (intent.kind === 'pan' || intent.kind === 'draw') return intent.kind;
+  if (intent.kind === 'select-rect') return 'select';
   return intent.kind === 'move-image' ||
     intent.kind === 'move-marking' ||
     intent.kind === 'move-items' ||
@@ -389,6 +407,7 @@ export function cursorFor(intent: Intent): string {
         ? 'nwse-resize'
         : 'nesw-resize';
     case 'draw':
+    case 'select-rect':
       return 'crosshair';
     case 'locked':
       return 'not-allowed';

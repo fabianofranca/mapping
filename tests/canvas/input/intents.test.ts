@@ -745,3 +745,94 @@ describe('setas no toque e nas alças', () => {
     expect(dragModeOf(point)).toBe('resize');
   });
 });
+
+// Seleção por retângulo (SM2): com Shift (`rectSelect`) o arrasto que faria pan ou desenharia vira
+// o retângulo; sobre o item selecionado e as alças continua o que era.
+describe('intentAt: seleção por retângulo (rectSelect)', () => {
+  const RECT = { kind: 'select-rect' } as const;
+  const rc = (overrides: Partial<IntentContext> = {}) =>
+    ctx({ rectSelect: true, ...overrides });
+
+  it('Navegar: o fundo e o item não selecionado viram retângulo', () => {
+    expect(intentAt(rc(), { x: 150, y: 150 })).toEqual(RECT);
+    expect(intentAt(rc(), { x: 5000, y: 5000 })).toEqual(RECT);
+    const c = rc({ selection: { kind: 'marking', id: 'M1' } });
+    expect(intentAt(c, { x: 1300, y: 300 })).toEqual(RECT); // dentro de I2, não selecionado
+    expect(intentAt(c, { x: 900, y: 700 })).toEqual(RECT); // fora da selecionada
+  });
+
+  it('sem Shift (rectSelect desligado) nada muda', () => {
+    expect(intentAt(ctx(), { x: 150, y: 150 })).toEqual({ kind: 'pan' });
+    expect(intentAt(ctx({ rectSelect: false }), { x: 150, y: 150 })).toEqual({
+      kind: 'pan',
+    });
+  });
+
+  it('sobre o item selecionado ou a alça dele continua mover e redimensionar', () => {
+    const c = rc({ selection: { kind: 'marking', id: 'M1' } });
+    expect(intentAt(c, { x: 400, y: 400 })).toEqual({
+      kind: 'move-marking',
+      markingId: 'M1',
+    });
+    expect(intentAt(c, { x: 102, y: 98 })).toMatchObject({ kind: 'resize-marking' });
+    const image = rc({ selection: { kind: 'image', id: 'I2' } });
+    expect(intentAt(image, { x: 1300, y: 300 })).toMatchObject({ kind: 'move-image' });
+    const items: SelectionItem[] = [
+      { kind: 'image', id: 'I2' },
+      { kind: 'marking', id: 'M2' },
+    ];
+    const multi = rc({ items, selection: items[1] ?? null });
+    expect(intentAt(multi, { x: 1300, y: 300 })).toEqual({ kind: 'move-items', items });
+  });
+
+  it('item selecionado trancado continua not-allowed', () => {
+    const locked = setImageLocked(project, 'I2', true);
+    const c = rc({ project: locked, selection: { kind: 'image', id: 'I2' } });
+    expect(intentAt(c, { x: 1300, y: 300 })).toEqual({ kind: 'locked' });
+  });
+
+  it('alças de seta continuam (arrow-handle e arrow-link)', () => {
+    const p = setArrowStyle(arrowProject(), 'r1', 'straight');
+    const arrows = visibleArrowShapes(p, NONE);
+    const onArrow = rc({
+      project: p,
+      arrows,
+      selection: { kind: 'arrow', id: 'r1' },
+    });
+    expect(intentAt(onArrow, { x: 402, y: 251 })).toMatchObject({ kind: 'arrow-handle' });
+    const onMarking = rc({
+      project: p,
+      arrows,
+      selection: { kind: 'marking', id: 'a1' },
+    });
+    expect(intentAt(onMarking, { x: 414, y: 250 })).toMatchObject({ kind: 'arrow-link' });
+  });
+
+  it('Desenhar: qualquer ponto vira retângulo, não marcação', () => {
+    expect(intentAt(rc({ mode: 'draw' }), { x: 150, y: 150 })).toEqual(RECT);
+    expect(intentAt(rc({ mode: 'draw' }), { x: 5000, y: 5000 })).toEqual(RECT);
+    expect(intentAt(ctx({ mode: 'draw' }), { x: 150, y: 150 }).kind).toBe('draw');
+  });
+
+  it('Espaço faz pan e sem projeto também', () => {
+    expect(intentAt(rc({ spaceDown: true }), { x: 150, y: 150 })).toEqual({
+      kind: 'pan',
+    });
+    expect(intentAt(rc({ project: null }), { x: 150, y: 150 })).toEqual({ kind: 'pan' });
+  });
+
+  it('somente leitura: o retângulo vale (a seleção não muda o projeto)', () => {
+    expect(intentAt(rc({ readOnly: true }), { x: 150, y: 150 })).toEqual(RECT);
+    expect(intentAt(rc({ readOnly: true, mode: 'draw' }), { x: 150, y: 150 })).toEqual(
+      RECT,
+    );
+    expect(intentAt(ctx({ readOnly: true }), { x: 150, y: 150 })).toEqual({
+      kind: 'pan',
+    });
+  });
+
+  it('cursor mira e o modo do arrasto é "select"', () => {
+    expect(cursorFor(RECT)).toBe('crosshair');
+    expect(dragModeOf(RECT)).toBe('select');
+  });
+});

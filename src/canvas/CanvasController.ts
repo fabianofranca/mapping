@@ -261,6 +261,7 @@ export class CanvasController {
       review: clean ? null : this.reviewCanvas.value,
       arrows: this.arrowShapes.value,
       arrowDraft: clean ? null : this.state.arrowDraft.value,
+      marquee: this.state.marquee.value,
     };
   });
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
