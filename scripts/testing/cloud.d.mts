@@ -114,3 +114,17 @@ export function screenshot(apoioDir: string, name: string): Promise<string>;
 export function windowShortcut(page: unknown, n: number): Promise<void>;
 export function makeCadastroPng(dest: string): Promise<void>;
 export function mark(apoioDir: string, roteiro: string, fase: 'start' | 'end'): void;
+
+export interface TempoItem {
+  nome: string;
+  /** Duração do primeiro `start` ao último `end`; `null` quando falta uma marca (tempo não medido). */
+  segundos: number | null;
+}
+export interface Tempos {
+  itens: TempoItem[];
+  avisos: string[];
+  totalSegundos: number;
+}
+export function temposFromLog(text: string): Tempos;
+export function temposFromDir(apoioDir: string): Tempos;
+export function formatTempos(tempos: Tempos): string;

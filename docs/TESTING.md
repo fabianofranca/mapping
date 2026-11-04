@@ -188,6 +188,8 @@ O servidor deixa um agente (o Claude Code) ler projetos em pasta e **propor** al
 4. Abra o Claude Code na raiz desse repositório e aprove o servidor `mapping`. As tools aparecem como `mcp__mapping__…`. Se não aparecerem, veja "Solução de problemas" no `docs/MCP.md`.
 5. Na app, crie ou abra os projetos de teste **como pasta** dentro de `design/mapeamentos/`.
 
+**Tempo (agente da nuvem):** marque esta seção com `mark(apoioDir, 'secao6', 'start')` ao começar e `mark(apoioDir, 'secao6', 'end')` ao terminar (ou, da shell, `APOIO=<pasta>/apoio node scripts/testing/cloud.mjs mark secao6 start|end`), como os roteiros.
+
 **Repositório com `"type": "module"` no `package.json`** (o seu repositório de verdade, não o de teste, que nasce vazio): o `mapping-mcp.js` precisa de um `package.json` com `{"type":"commonjs"}` na pasta `tools/`. Detalhes no `docs/MCP.md`.
 
 Limites de imagem: por `base64`, até 16 MB por imagem; maiores vão por `file` (até 64 MB e 40 megapixels). Acima disso a resposta é `image-too-large`.
@@ -1158,7 +1160,7 @@ Um template só, para a rodada completa, a dirigida e o teste avançado. Quem te
 - Estado prévio do navegador: perfil limpo | projetos pré-existentes (quais)
 - MCP: versão (`node tools/mapping-mcp.js --version`), origem (Release ou gerado localmente do commit …) e sha256 conferido (sim | não)
 - Data:
-- Tempo por roteiro: de `apoio/tempos.log` (marcado por `mark()`), minutos e segundos por roteiro, o ambiente à parte e o total (ex.: "R0 9min42s, R1 24min10s; ambiente 2min15s; total 36min07s") | tempo não medido (sem o arquivo; nunca estimado)
+- Tempo por roteiro: a saída de `node scripts/testing/cloud.mjs tempos <apoio>` (lê `apoio/tempos.log`, marcado por `mark()`): minutos e segundos por nome (roteiros, `secao6`, `visual` e `ambiente`), o total e os avisos de marca repetida (ex.: "R0 9min42s, R1 24min10s, secao6 3min05s; ambiente 2min15s; total 39min12s") | tempo não medido (sem o arquivo; nunca estimado)
 
 ## Resumo
 

@@ -7,6 +7,7 @@
 //
 // Uso como CLI:
 //   node scripts/testing/cloud.mjs mark <roteiro> <start|end>   (o cloud-up.sh chama)
+//   node scripts/testing/cloud.mjs tempos <apoio>               (duração por roteiro, do tempos.log)
 //   node scripts/testing/cloud.mjs state [<pasta-do-projeto>]    (conecta, imprime o estado, sai)
 //
 // Pasta de apoio: toda função que precisa de disco recebe `apoioDir` (a pasta `apoio/` da
@@ -626,6 +627,76 @@ export function mark(apoioDir, roteiro, fase) {
   fs.appendFileSync(file, `${roteiro} ${fase} ${new Date().toISOString()}\n`);
 }
 
+/**
+ * Lê o texto de um `tempos.log` (`<nome> <start|end> <hora ISO>` por linha) e devolve, por nome,
+ * a duração do primeiro `start` ao último `end`, o total e os avisos (etapa #482, decisão 8).
+ * Marca repetida vira aviso; nome sem par (ou com o fim antes do início) fica com `segundos: null`.
+ */
+export function temposFromLog(text) {
+  const nomes = new Map();
+  const avisos = [];
+  for (const linha of String(text ?? '').split('\n')) {
+    const [nome, fase, hora] = linha.trim().split(/\s+/);
+    if (!nome || (fase !== 'start' && fase !== 'end')) continue;
+    const t = Date.parse(hora ?? '');
+    if (Number.isNaN(t)) {
+      avisos.push(`${nome} ${fase}: hora inválida "${hora ?? ''}" (linha ignorada)`);
+      continue;
+    }
+    const e = nomes.get(nome) ?? { start: [], end: [] };
+    e[fase].push(t);
+    nomes.set(nome, e);
+  }
+  const itens = [];
+  let totalSegundos = 0;
+  for (const [nome, e] of nomes) {
+    for (const fase of ['start', 'end']) {
+      if (e[fase].length > 1) {
+        avisos.push(
+          `${nome} ${fase}: marca repetida (${e[fase].length} vezes); valem o primeiro start e o último end`,
+        );
+      }
+    }
+    const ini = e.start.length ? Math.min(...e.start) : null;
+    const fim = e.end.length ? Math.max(...e.end) : null;
+    let segundos = null;
+    if (ini === null || fim === null) {
+      avisos.push(`${nome}: falta a marca de ${ini === null ? 'start' : 'end'}`);
+    } else if (fim < ini) {
+      avisos.push(`${nome}: o end vem antes do start`);
+    } else {
+      segundos = Math.round((fim - ini) / 1000);
+      totalSegundos += segundos;
+    }
+    itens.push({ nome, segundos });
+  }
+  return { itens, avisos, totalSegundos };
+}
+
+/** `<apoioDir>/tempos.log` lido por `temposFromLog`; sem o arquivo, não há nada medido. */
+export function temposFromDir(apoioDir) {
+  const file = path.join(apoioDir, 'tempos.log');
+  if (!fs.existsSync(file)) {
+    return { itens: [], avisos: ['sem tempos.log: tempo não medido'], totalSegundos: 0 };
+  }
+  return temposFromLog(fs.readFileSync(file, 'utf8'));
+}
+
+const fmtDuracao = (s) => `${Math.floor(s / 60)}min${String(s % 60).padStart(2, '0')}s`;
+
+/** O texto que a CLI imprime e que o relato copia no "Tempo por roteiro". */
+export function formatTempos({ itens, avisos, totalSegundos }) {
+  const largura = Math.max(5, ...itens.map((i) => i.nome.length));
+  const linhas = itens.map(
+    (i) =>
+      `${i.nome.padEnd(largura)}  ${i.segundos === null ? 'tempo não medido' : fmtDuracao(i.segundos)}`,
+  );
+  if (itens.length)
+    linhas.push(`${'total'.padEnd(largura)}  ${fmtDuracao(totalSegundos)}`);
+  for (const a of avisos) linhas.push(`aviso: ${a}`);
+  return linhas.join('\n');
+}
+
 // ---------------------------------------------------------------------------------------------
 // state(): agir e conferir numa chamada (etapa #421, decisão 6)
 // ---------------------------------------------------------------------------------------------
@@ -898,7 +969,17 @@ async function runCli(argv) {
     }
     return;
   }
-  console.error(`Comando desconhecido: ${command}. Comandos: mark, state.`);
+  if (command === 'tempos') {
+    const apoioDir = rest[0] ?? process.env.APOIO;
+    if (!apoioDir) {
+      console.error('Uso: node cloud.mjs tempos <apoio>');
+      process.exitCode = 2;
+      return;
+    }
+    console.log(formatTempos(temposFromDir(apoioDir)));
+    return;
+  }
+  console.error(`Comando desconhecido: ${command}. Comandos: mark, state, tempos.`);
   process.exitCode = 2;
 }
 

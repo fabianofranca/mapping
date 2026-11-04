@@ -763,6 +763,16 @@ describe('TR2 — R0 reduzido no reteste, passada visual e tempo real', () => {
     expect(templates).toContain('tempos.log');
   });
 
+  it('a seção 6 marca o tempo (secao6) e o relato copia a saída do `cloud.mjs tempos` (etapa #482, GT3)', () => {
+    const start = guide.indexOf('## 6. Instalar o servidor MCP');
+    const section6 = guide.slice(start, guide.indexOf('## 7. ', start));
+    expect(section6).toContain("mark(apoioDir, 'secao6', 'start')");
+    expect(section6).toContain("mark(apoioDir, 'secao6', 'end')");
+    expect(cloud).toMatch(/cloud\.mjs tempos/);
+    const templates = guide.slice(guide.indexOf('## 10. Templates'));
+    expect(templates).toMatch(/cloud\.mjs tempos/);
+  });
+
   it('as duas mensagens do testador no docs/FLOW.md têm a linha da passada visual', () => {
     const testerSection = flow.slice(flow.indexOf('## Para o testador'));
     const occurrences = testerSection.split(/[Pp]assada visual/).length - 1;

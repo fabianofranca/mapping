@@ -143,8 +143,28 @@ describe('divisão da rodada completa em 3 blocos (etapa #424, decisão 2)', () 
     for (const b of blocks) expect(b.declared, `bloco ${b.n}`).toBe(b.steps.length);
   });
 
-  it('a passada visual está só no bloco 1', () => {
-    expect(blocks.filter((b) => b.visual).map((b) => b.n)).toEqual([1]);
+  it('a passada visual está em exatamente um bloco, o que a tabela diz', () => {
+    const visual = blocks.filter((b) => b.visual);
+    expect(visual).toHaveLength(1);
+    const owner = visual[0] as Block;
+    // A etapa #482 (GT3, decisão 7): sai do bloco 1, a cadeia do `principal`, que é o mais lento.
+    expect(owner.n).not.toBe(1);
+    // O bloco precisa ter o que a lista padrão abre: "Sair da revisão?" pelo R4.
+    expect(owner.roteiros).toContain('R4');
+    // A linha "Por quê" e as mensagens citam o mesmo bloco, nunca o bloco 1.
+    expect(NUVEM).toMatch(new RegExp(`A passada visual fica no bloco ${owner.n}\\b`));
+    expect(NUVEM).toMatch(
+      new RegExp(`só o \\*\\*bloco ${owner.n}\\*\\* faz a passada visual`),
+    );
+    for (const [name, text] of [
+      ['TESTING-NUVEM', NUVEM],
+      ['FLOW', readFileSync('docs/FLOW.md', 'utf8')],
+      ['CLAUDE', readFileSync('CLAUDE.md', 'utf8')],
+    ] as const) {
+      expect(text, name).not.toMatch(/passada visual[^.\n]{0,40}só[^.\n]{0,20}bloco 1/i);
+      expect(text, name).not.toMatch(/no bloco 1[^.\n]{0,40}passada visual/i);
+      expect(text, name).not.toMatch(/(vai|faz) só no bloco 1/);
+    }
   });
 
   it('os roteiros de cada bloco são aceitos pelo round-guide.mjs', async () => {

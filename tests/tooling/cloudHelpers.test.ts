@@ -50,6 +50,9 @@ const EXPECTED_EXPORTS = [
   'screenshot',
   'selectFolder',
   'state',
+  'temposFromDir',
+  'temposFromLog',
+  'formatTempos',
   'waitForWindow',
   'windowShortcut',
 ].sort();
@@ -119,6 +122,49 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       expect(hora2).toMatch(iso);
       // Ordem cronológica: start antes de end.
       expect(Date.parse(hora1!)).toBeLessThanOrEqual(Date.parse(hora2!));
+    });
+
+    it('tempos: duração do primeiro start ao último end, aviso de marca repetida e "tempo não medido"', async () => {
+      const { temposFromLog, formatTempos } =
+        await import('../../scripts/testing/cloud.mjs');
+      const log = [
+        'ambiente start 2026-11-04T10:00:00.000Z',
+        'ambiente end 2026-11-04T10:02:15.000Z',
+        'R0 start 2026-11-04T10:03:00.000Z',
+        'R0 end 2026-11-04T10:12:42.000Z',
+        // R1 com marcas repetidas: vale o primeiro start e o último end.
+        'R1 start 2026-11-04T10:13:00.000Z',
+        'R1 start 2026-11-04T10:14:00.000Z',
+        'R1 end 2026-11-04T10:20:00.000Z',
+        'R1 end 2026-11-04T10:26:30.000Z',
+        // secao6 sem o end e visual sem o start: tempo não medido.
+        'secao6 start 2026-11-04T10:30:00.000Z',
+        'visual end 2026-11-04T10:40:00.000Z',
+      ].join('\n');
+      const r = temposFromLog(log);
+      const by = (nome: string): number | null | undefined =>
+        r.itens.find((i) => i.nome === nome)?.segundos;
+      expect(by('ambiente')).toBe(135);
+      expect(by('R0')).toBe(9 * 60 + 42);
+      expect(by('R1')).toBe(13 * 60 + 30);
+      expect(by('secao6')).toBeNull();
+      expect(by('visual')).toBeNull();
+      expect(r.totalSegundos).toBe(135 + 582 + 810);
+      expect(r.avisos.join('\n')).toMatch(/R1.*start.*2/);
+      expect(r.avisos.join('\n')).toMatch(/R1.*end.*2/);
+      const out = formatTempos(r);
+      expect(out).toMatch(/R1\s+13min30s/);
+      expect(out).toMatch(/secao6\s+tempo não medido/);
+      expect(out).toMatch(/visual\s+tempo não medido/);
+      expect(out).toMatch(/total\s+25min27s/);
+      expect(out).toMatch(/aviso.*R1/i);
+    });
+
+    it('tempos: sem o arquivo, a CLI avisa "tempo não medido"', async () => {
+      apoioDir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-tempos-'));
+      const { temposFromDir, formatTempos } =
+        await import('../../scripts/testing/cloud.mjs');
+      expect(formatTempos(temposFromDir(apoioDir))).toMatch(/tempo não medido/);
     });
 
     it('rejeita uma fase que não seja start/end', async () => {
