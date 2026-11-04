@@ -80,6 +80,8 @@ export interface InteractionState {
   readonly absorb: Signal<readonly Rect[]>;
   /** Gesto de seta em andamento (criar ou trocar uma ponta); `null` fora dele. */
   readonly arrowDraft: Signal<ArrowDraft | null>;
+  /** Retângulo da seleção por Shift+arrasto (canvas); `null` fora do gesto. */
+  readonly marquee: Signal<Rect | null>;
 }
 
 /** Sinais de interação vazios (o canvas e os testes montam o estado por aqui). */
@@ -92,6 +94,7 @@ export function createInteractionState(): InteractionState {
     moveTarget: signal<string | null>(null),
     absorb: signal<readonly Rect[]>([]),
     arrowDraft: signal<ArrowDraft | null>(null),
+    marquee: signal<Rect | null>(null),
   };
 }
 
@@ -143,6 +146,8 @@ export interface Frame {
   readonly arrows: readonly ArrowShape[];
   /** Gesto de seta em andamento (linha provisória e marcação de destino). */
   readonly arrowDraft: ArrowDraft | null;
+  /** Retângulo da seleção por Shift+arrasto (canvas); `null` fora do gesto. */
+  readonly marquee: Rect | null;
 }
 
 /** `true` se `a` e `b` têm os mesmos valores (por referência) nas chaves dadas. */
@@ -175,6 +180,7 @@ export const OVERLAY_KEYS = [
   'mode',
   'arrows',
   'arrowDraft',
+  'marquee',
 ] as const;
 
 /** Parte do canvas visível na tela, em coordenadas do canvas. */

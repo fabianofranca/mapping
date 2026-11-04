@@ -20,3 +20,27 @@ export function isStandalone(): boolean {
     return false;
   }
 }
+
+/** O navegador roda no macOS (Ctrl+clique ali é o clique direito). Puro: recebe os textos. */
+export function isApplePlatform(userAgent: string, platform: string): boolean {
+  return /^Mac/i.test(platform) || /Macintosh/.test(userAgent);
+}
+
+/** Lê a plataforma do navegador na hora (sem cache: o teste e a app trocam o `navigator`). */
+export function onApplePlatform(): boolean {
+  return isApplePlatform(
+    globalThis.navigator?.userAgent ?? '',
+    globalThis.navigator?.platform ?? '',
+  );
+}
+
+/**
+ * O clique é da seleção múltipla: Shift, Cmd (`metaKey`) ou, fora do macOS, Ctrl. No macOS
+ * Ctrl+clique é o clique direito (menu de contexto) e não junta.
+ */
+export function isMultiSelectClick(
+  e: Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'metaKey'>,
+  apple: boolean = onApplePlatform(),
+): boolean {
+  return e.shiftKey || e.metaKey || (e.ctrlKey && !apple);
+}

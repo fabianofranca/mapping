@@ -16,6 +16,20 @@ describe('startGesture', () => {
     expect(begin).not.toHaveBeenCalled();
   });
 
+  it('select-rect: gesto sem store, sem rascunho; sem projeto não começa', () => {
+    const begin = vi.fn(() => true);
+    const started = startGesture(project, 7, at, { kind: 'select-rect' }, begin);
+    expect(started?.gesture).toEqual({
+      kind: 'select-rect',
+      pointerId: 7,
+      startCanvas: at,
+    });
+    expect(started?.draft).toBeNull();
+    expect(isStoreGesture(started?.gesture ?? null)).toBe(false);
+    expect(startGesture(null, 7, at, { kind: 'select-rect' }, begin)).toBeNull();
+    expect(begin).not.toHaveBeenCalled();
+  });
+
   it('desenhar: rascunho no ponto inicial, sem abrir gesto no store', () => {
     const begin = vi.fn(() => true);
     const started = startGesture(

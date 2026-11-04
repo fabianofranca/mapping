@@ -199,6 +199,21 @@ export function moveItems(
     }
   }
 
+  return applyMoves(p, placements, rects, options);
+}
+
+/**
+ * Fecha um movimento: confere que nenhum container movido passa a sobrepor um que não se move
+ * (`image-overlap`), grava os novos `placement` e `rect` e assenta uma vez (salvo `settle: false`).
+ * Sem nada a gravar devolve `p` como está.
+ */
+function applyMoves(
+  p: Project,
+  placements: ReadonlyMap<string, Placement>,
+  rects: ReadonlyMap<string, Rect>,
+  options?: SettleOptions,
+): Project {
+  const index = projectIndex(p);
   if (placements.size > 0) {
     const fixed = p.containers
       .filter((c) => !placements.has(c.id))
@@ -231,6 +246,80 @@ export function moveItems(
           }),
   };
   return settleIf(next, options);
+}
+
+/**
+ * Passo de teclado (setas): move os itens `dx`, `dy` (inteiros) **no espaço próprio de cada um**:
+ * container e marcação do canvas (flutuante inclusive) andam `dx`, `dy` unidades do canvas;
+ * marcação de container anda `dx`, `dy` pixels da imagem dela, seja qual for a escala (por isso não
+ * é `moveItems`, que divide pela escala e zeraria o passo de 1 com escala acima de 2). Quem anda e
+ * quem vai junto segue `movingItems`; a seta não anda. Tudo ou nada, como `moveItems`: trancado
+ * falha com `locked`, marcação que sairia do container com `rect-out-of-image`, container sobre
+ * outro com `image-overlap`. Passo zero ou nada para mover devolve `p`. Assenta no fim, salvo
+ * `settle: false` (prévia de gesto).
+ */
+export function nudgeItems(
+  p: Project,
+  items: readonly ItemRef[],
+  dx: number,
+  dy: number,
+  options?: SettleOptions,
+): Project {
+  if (!Number.isInteger(dx) || !Number.isInteger(dy)) fail('invalid-placement');
+  if (dx === 0 && dy === 0) return p;
+  const moving = movingItems(p, items);
+  if (moving.length === 0) return p;
+  for (const item of moving) requireUnlocked(canEditItemGeometry(p, item));
+
+  const { placements, rects } = nudgedMoves(p, moving, dx, dy);
+  return applyMoves(p, placements, rects, options);
+}
+
+/** Os novos `placement` (containers) e `rect` (marcações) de um passo, cada item no seu espaço. */
+function nudgedMoves(
+  p: Project,
+  moving: readonly ItemRef[],
+  dx: number,
+  dy: number,
+): { placements: Map<string, Placement>; rects: Map<string, Rect> } {
+  const index = projectIndex(p);
+  const placements = new Map<string, Placement>();
+  const rects = new Map<string, Rect>();
+  for (const item of moving) {
+    if (item.kind === 'image') {
+      const container = index.containers.get(item.id);
+      if (!container) continue;
+      const { x, y, scale } = container.placement;
+      placements.set(item.id, { x: x + dx, y: y + dy, scale });
+      continue;
+    }
+    const marking = index.markings.get(item.id);
+    if (!marking) continue;
+    for (const [id, rect] of nudgedMarkingRects(p, marking, dx, dy)) rects.set(id, rect);
+  }
+  return { placements, rects };
+}
+
+/** Os novos `rect` de uma marcação e das descendentes (as do canvas andam sozinhas). */
+function nudgedMarkingRects(
+  p: Project,
+  marking: Marking,
+  dx: number,
+  dy: number,
+): Map<string, Rect> {
+  const out = new Map<string, Rect>();
+  if (marking.containerId === null) {
+    out.set(marking.id, translateRect(marking.rect, dx, dy));
+    return out;
+  }
+  const space = spaceOf(p, marking);
+  for (const m of [marking, ...descendantsOf(p, marking.id)]) {
+    const next = translateRect(m.rect, dx, dy);
+    if (space.bounds && !containsRect(space.bounds, next))
+      fail('rect-out-of-image', m.id);
+    out.set(m.id, next);
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------

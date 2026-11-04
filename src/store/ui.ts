@@ -199,6 +199,22 @@ export function toggleSelectedItem(ui: EditorUi, item: SelectionItem): void {
   }
 }
 
+/**
+ * Seleção por retângulo (Shift+arrasto): soma `items` à seleção sem tirar nada. O primário atual
+ * continua; sem seleção antes, o primário é o primeiro dos novos. Os já selecionados são
+ * ignorados e, sem nada novo, não escreve nada.
+ */
+export function addSelectedItems(ui: EditorUi, items: readonly SelectionItem[]): void {
+  const current = peekSelectedItems(ui);
+  const fresh = items.filter(
+    (item, i) =>
+      !isItemSelected(current, item) && items.findIndex((o) => sameItem(o, item)) === i,
+  );
+  const [first, ...rest] = fresh;
+  if (!first) return;
+  selectItems(ui, current.length > 0 ? [...fresh, ...current] : [...rest, first]);
+}
+
 /** Esc com vários itens: fica só o primário. Devolve `true` se havia outros itens. */
 export function collapseToPrimary(ui: EditorUi): boolean {
   if (peekSelectedItems(ui).length < 2) return false;

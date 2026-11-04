@@ -18,6 +18,8 @@ export interface CanvasTokens {
   readonly halo: string;
   /** Seleção, alças, rascunho e alvo de soltar. */
   readonly select: string;
+  /** Preenchimento do retângulo de seleção (Shift+arrasto). */
+  readonly selectFill: string;
   /** Contorno dos itens selecionados que não são o primário (seleção múltipla). */
   readonly selectSecondary: string;
   /** Gesto inválido. */
@@ -103,6 +105,7 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
     line: read('--cv-line'),
     halo: read('--cv-halo'),
     select: read('--cv-select'),
+    selectFill: read('--cv-select-fill'),
     selectSecondary: read('--cv-select-secondary'),
     invalid: read('--cv-invalid'),
     canvasMarking: read('--cv-canvas-marking'),

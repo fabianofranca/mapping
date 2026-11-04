@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   altNumbersAvailable,
+  arrowsBelongToEditor,
   ariaKeys,
   SHORTCUT_LABELS,
   isTextInput,
@@ -131,6 +132,43 @@ describe('atalhos do editor', () => {
       kind: 'toggle-window',
       window: 'list',
     });
+  });
+
+  it('setas movem a seleção 1 px; com Shift, 10 px; com Ctrl ou Alt não fazem isso', () => {
+    expect(shortcutFor(key('ArrowLeft'))).toEqual({ kind: 'nudge', dx: -1, dy: 0 });
+    expect(shortcutFor(key('ArrowDown'))).toEqual({ kind: 'nudge', dx: 0, dy: 1 });
+    expect(shortcutFor(key('ArrowRight', { shift: true }))).toEqual({
+      kind: 'nudge',
+      dx: 10,
+      dy: 0,
+    });
+    expect(shortcutFor(key('ArrowUp', { shift: true }))).toEqual({
+      kind: 'nudge',
+      dx: 0,
+      dy: -10,
+    });
+    expect(shortcutFor(key('ArrowRight', { ctrl: true }))).toBeNull();
+    expect(shortcutFor(key('ArrowLeft', { alt: true }))).toBeNull();
+    // Os atalhos com modificador seguem como estavam.
+    expect(shortcutFor(key('ArrowUp', { alt: true }))).toEqual({ kind: 'select-parent' });
+  });
+
+  it('as setas são do editor só com o foco no canvas ou em nenhum controle', () => {
+    const area = document.createElement('main');
+    area.setAttribute('data-canvas-area', '');
+    const button = document.createElement('button');
+    const input = document.createElement('input');
+    const outside = document.createElement('div');
+    area.append(button, input);
+    document.body.append(area, outside);
+    expect(arrowsBelongToEditor(document.body)).toBe(true);
+    expect(arrowsBelongToEditor(window)).toBe(true);
+    expect(arrowsBelongToEditor(area)).toBe(true);
+    expect(arrowsBelongToEditor(button)).toBe(false);
+    expect(arrowsBelongToEditor(input)).toBe(false);
+    expect(arrowsBelongToEditor(outside)).toBe(false);
+    area.remove();
+    outside.remove();
   });
 
   it('redimensionar a janela em foco e andar na seleção', () => {

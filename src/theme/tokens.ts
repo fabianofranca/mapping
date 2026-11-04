@@ -68,6 +68,11 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'cv-halo': 'rgba(10, 12, 16, 0.72)',
   'cv-select': '#4d8dff',
   /**
+   * Preenchimento do retângulo de seleção (Shift+arrasto): o azul de `cv-select` translúcido, igual
+   * nos dois temas (fica sobre a imagem e o fundo do canvas).
+   */
+  'cv-select-fill': 'rgba(77, 141, 255, 0.15)',
+  /**
    * Contorno dos itens selecionados que não são o primário (seleção múltipla, ME2): o mesmo azul
    * da seleção, mais discreto que ela. Fica sobre o fundo do canvas e sobre as fotos: passa de
    * 3:1 sobre `color-canvas-bg` nos dois temas.

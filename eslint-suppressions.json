@@ -196,7 +196,7 @@
   },
   "src/canvas/input/pointer.ts": {
     "complexity": {
-      "count": 8
+      "count": 7
     }
   },
   "src/canvas/markingGeometry.ts": {
