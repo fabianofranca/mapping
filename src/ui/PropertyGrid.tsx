@@ -20,6 +20,8 @@ interface PropertyProps {
    * `for`, a descrição acessível do controle (`aria-describedby`). Pede `label` em texto.
    */
   readonly hint?: string;
+  /** O assunto do `HelpTip` quando o rótulo não é texto simples ("Sobre {hintName}"). */
+  readonly hintName?: string;
   /** Erro de uma edição recusada, abaixo do controle (anunciado). */
   readonly error?: string | null;
   /** Pendência do valor gravado (ex.: obrigatório vazio), abaixo do controle. */
@@ -74,12 +76,21 @@ interface LabelProps {
   readonly htmlFor?: string;
   readonly required?: boolean;
   readonly hint?: string;
+  readonly hintName?: string;
   readonly descriptionId: string;
   readonly mark?: ComponentChildren;
 }
 
 /** A célula do rótulo: o texto, o `HelpTip` da explicação e o marcador da revisão. */
-function LabelCell({ label, htmlFor, required, hint, descriptionId, mark }: LabelProps) {
+function LabelCell({
+  label,
+  htmlFor,
+  required,
+  hint,
+  hintName,
+  descriptionId,
+  mark,
+}: LabelProps) {
   const text = (
     <>
       {label}
@@ -107,7 +118,11 @@ function LabelCell({ label, htmlFor, required, hint, descriptionId, mark }: Labe
     <div class="props-label-cell">
       {labelCell}
       {hint && (
-        <HelpTip name={plainLabel(label)} text={hint} descriptionId={descriptionId} />
+        <HelpTip
+          name={hintName ?? plainLabel(label)}
+          text={hint}
+          descriptionId={descriptionId}
+        />
       )}
       {mark}
     </div>
@@ -120,6 +135,7 @@ export function Property({
   for: htmlFor,
   required,
   hint,
+  hintName,
   error,
   issue,
   status,
@@ -144,6 +160,7 @@ export function Property({
         htmlFor={htmlFor}
         required={required}
         hint={hint || undefined}
+        hintName={hintName}
         descriptionId={descriptionId}
         mark={mark}
       />

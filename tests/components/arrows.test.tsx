@@ -111,6 +111,10 @@ describe('Detalhes da seta', () => {
     expect(document.querySelector('.notice')).toBeNull();
     const help = screen.getByRole('button', { name: 'Sobre a trava' });
     expect(descriptionOf(help)).toBe(t('arrow.lockNotice'));
+    // O ícone e o cadeado ficam juntos em qualquer largura (um só bloco que não quebra).
+    const lockButton = screen.getByRole('button', { name: t('arrow.lock') });
+    expect(help.closest('.identity-lock')).not.toBeNull();
+    expect(help.closest('.identity-lock')).toBe(lockButton.closest('.identity-lock'));
     // SN2: o nome e a dica não mudam; o estado fica no aria-pressed.
     const lock = screen.getByRole('button', { name: t('arrow.lock') });
     expect(lock.getAttribute('aria-pressed')).toBe('true');

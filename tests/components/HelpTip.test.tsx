@@ -50,6 +50,25 @@ describe('HelpTip', () => {
     expect(button.getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('reabre por Enter e por clique depois de um Esc', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<HelpTip name="Largura" text="Em pixels da imagem." />);
+    const button = screen.getByRole('button', { name: 'Sobre Largura' });
+    const anchor = container.querySelector('.tooltip-anchor') as HTMLElement;
+    await user.tab();
+    await user.keyboard('{Enter}');
+    await user.keyboard('{Escape}');
+    expect(anchor.classList.contains('tooltip-open')).toBe(false);
+    await user.keyboard('{Enter}');
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(anchor.classList.contains('tooltip-open')).toBe(true);
+    expect(anchor.classList.contains('tooltip-dismissed')).toBe(false);
+    await user.keyboard('{Escape}');
+    await user.click(button);
+    expect(anchor.classList.contains('tooltip-open')).toBe(true);
+    expect(anchor.classList.contains('tooltip-dismissed')).toBe(false);
+  });
+
   it('o clique fixa a dica e um clique fora fecha', async () => {
     const user = userEvent.setup();
     render(

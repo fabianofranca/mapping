@@ -159,17 +159,19 @@ export function MarkingPanel({
         actions={
           <>
             <CopyButtons target={{ kind: 'm', id: marking.id }} />
-            {lockNotice && <HelpTip name={t('lock.helpName')} text={lockNotice} />}
-            <IconButton
-              icon={marking.locked ? 'lock' : 'unlock'}
-              label={t('lock.markingLock')}
-              shortcut={SHORTCUT_LABELS.toggleLock}
-              pressed={marking.locked}
-              disabled={readOnly}
-              onClick={() =>
-                report(actions.setMarkingLocked(marking.id, !marking.locked))
-              }
-            />
+            <span class="identity-lock">
+              {lockNotice && <HelpTip name={t('lock.helpName')} text={lockNotice} />}
+              <IconButton
+                icon={marking.locked ? 'lock' : 'unlock'}
+                label={t('lock.markingLock')}
+                shortcut={SHORTCUT_LABELS.toggleLock}
+                pressed={marking.locked}
+                disabled={readOnly}
+                onClick={() =>
+                  report(actions.setMarkingLocked(marking.id, !marking.locked))
+                }
+              />
+            </span>
           </>
         }
       />
@@ -273,6 +275,7 @@ export function MarkingPanel({
                 </span>
               }
               hint={t('marking.pixelsHint')}
+              hintName={`${t('marking.position')} / ${t('marking.size')}`}
               mark={<span class="props-rect-bracket">{rectMark}</span>}
               below={rectBelow}
             >

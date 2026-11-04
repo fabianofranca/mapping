@@ -111,6 +111,12 @@ function renderBlock(b: MarkdownBlock, key: number, ctx: Ctx): VNode {
           <code data-lang={b.lang === '' ? undefined : b.lang}>{b.text}</code>
         </pre>
       );
+    case 'quote':
+      return (
+        <blockquote key={key}>
+          {b.children.map((c, i) => renderBlock(c, i, ctx))}
+        </blockquote>
+      );
     case 'list': {
       const items = b.items.map((it, i) => renderItem(it, i, ctx));
       return b.ordered ? <ol key={key}>{items}</ol> : <ul key={key}>{items}</ul>;

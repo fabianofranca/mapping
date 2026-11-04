@@ -103,6 +103,21 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     ).toEqual(['Proposto', 'Atual']);
   });
 
+  it('todo HelpTip dos Detalhes da revisão tem nome com o assunto (Posição / Tamanho incluso)', async () => {
+    const { proposal } = richScenario();
+    await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M4' });
+    const tips = screen
+      .getAllByRole('button')
+      .filter((b) => (b.getAttribute('aria-label') ?? '').startsWith('Sobre'));
+    expect(tips.length).toBeGreaterThan(0);
+    for (const tip of tips) {
+      expect((tip.getAttribute('aria-label') ?? '').replace('Sobre', '').trim()).not.toBe(
+        '',
+      );
+    }
+    expect(screen.getByRole('button', { name: 'Sobre Posição / Tamanho' })).toBeTruthy();
+  });
+
   it('o cabeçalho do item decide o item e o marcador mostra a decisão', async () => {
     const { proposal } = richScenario();
     const h = await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M4' });

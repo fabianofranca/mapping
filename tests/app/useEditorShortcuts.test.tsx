@@ -1,4 +1,6 @@
-import { cleanup, render } from '@testing-library/preact';
+import { cleanup, render, screen } from '@testing-library/preact';
+import userEvent from '@testing-library/user-event';
+import { HelpTip } from '../../src/ui/controls';
 import { modalOpen } from '../../src/ui/focus';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CanvasController } from '../../src/canvas/CanvasController';
@@ -20,6 +22,7 @@ import {
 } from '../../src/store/toolWindows';
 import { ADD_ANNOTATION_ACTION } from '../../src/ui/AnnotationsPanel';
 import { EditorContext } from '../../src/ui/EditorContext';
+import { locale } from '../../src/store/settings';
 import { selectItems } from '../../src/store/ui';
 import { createHarness, type Harness } from '../components/harness';
 import { sampleProject } from '../model/fixtures';
@@ -182,6 +185,24 @@ describe('useEditorShortcuts: edição', () => {
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
     s.canvas.cancelInteraction.mockReturnValue(false);
     s.press('Escape');
+    expect(s.harness.ui.selection.value).toBeNull();
+  });
+
+  it('Esc com a dica de ajuda aberta fecha só a dica e não limpa a seleção', async () => {
+    locale.value = 'pt-BR';
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    render(<HelpTip name="Largura" text="Em pixels da imagem." />);
+    const user = userEvent.setup();
+    await user.tab();
+    await user.keyboard('{Enter}');
+    const button = screen.getByRole('button', { name: 'Sobre Largura' });
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    await user.keyboard('{Escape}');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    // Sem dica aberta, o Esc segue para quem o trata hoje.
+    await user.keyboard('{Escape}');
     expect(s.harness.ui.selection.value).toBeNull();
   });
 

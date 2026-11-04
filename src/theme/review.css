@@ -1341,14 +1341,25 @@
 /* Rótulo com o marcador no fim da coluna (o rótulo quebra linha, o controle não anda). */
 .props-label-cell {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--space-1);
   min-width: 0;
 }
 
+/* O rótulo nunca quebra no meio da palavra: se faltar espaço, o ícone de ajuda e o marcador descem. */
 .props-label-cell > .props-label {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: min-content;
+  overflow-wrap: break-word;
+}
+
+/* Nos Detalhes da revisão a coluna do rótulo ganha a largura do ícone de ajuda (Posição, Tamanho). */
+.review-details-panel .props {
+  grid-template-columns: calc(var(--size-label-col) + var(--control-height-sm)) minmax(
+      0,
+      1fr
+    );
 }
 
 .props-label-cell > .change-mark-host,

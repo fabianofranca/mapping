@@ -780,15 +780,33 @@ button.tree-toggle:hover {
 }
 
 .library-type-main {
+  /* O nome e o ícone de container ficam na mesma linha; o nome corta com reticências. */
   display: flex;
-  flex-wrap: wrap;
+  flex: 1 1 0;
   align-items: center;
   gap: var(--space-1);
   min-width: 0;
 }
 
+.library-type-main > .icon,
+.library-type-main > .container-mark {
+  flex: none;
+}
+
 .library-type-name {
-  overflow-wrap: anywhere;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* O botão Adicionar cede espaço ao nome: fica com no máximo metade da linha. */
+.library-type > button {
+  flex: 0 1 auto;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Ordem entre irmãs (Detalhes da marcação): "N de M" e os dois botões. */

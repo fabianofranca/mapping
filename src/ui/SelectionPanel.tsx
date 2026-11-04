@@ -12,7 +12,7 @@ import { containerErrorMessage, imageLabel, markingLabel } from './labels';
 import { parseContainerColor, parseContainerSide } from './containerForm';
 import type { DisplayImage } from '../store/displayImages';
 import { useEditor } from './EditorContext';
-import { Button, IconButton, TextField } from './controls';
+import { Button, HelpTip, IconButton, TextField } from './controls';
 import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
@@ -92,23 +92,23 @@ export function SelectionPanel({
         actions={
           <>
             <CopyButtons target={{ kind: 'i', id: image.id }} />
-            <IconButton
-              icon={image.locked ? 'lock' : 'unlock'}
-              label={t('lock.imageLock')}
-              shortcut={SHORTCUT_LABELS.toggleLock}
-              pressed={image.locked}
-              disabled={readOnly}
-              onClick={() => actions.setImageLocked(image.id, !image.locked)}
-            />
+            <span class="identity-lock">
+              {image.locked && (
+                <HelpTip name={t('lock.helpName')} text={t('lock.imageNotice')} />
+              )}
+              <IconButton
+                icon={image.locked ? 'lock' : 'unlock'}
+                label={t('lock.imageLock')}
+                shortcut={SHORTCUT_LABELS.toggleLock}
+                pressed={image.locked}
+                disabled={readOnly}
+                onClick={() => actions.setImageLocked(image.id, !image.locked)}
+              />
+            </span>
           </>
         }
       />
       {ext?.header(image.id)}
-      {image.locked && (
-        <p class="notice notice-info" role="status">
-          {t('lock.imageNotice')}
-        </p>
-      )}
       {broken && (
         <div class="notice" role="status">
           <strong>{t(missing ? 'image.missingTitle' : 'canvas.imageError')}</strong>
