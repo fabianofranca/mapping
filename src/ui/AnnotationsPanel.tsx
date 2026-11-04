@@ -26,6 +26,7 @@ import { DialogSlotContext, useDialogSlot } from './focus';
 import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
+import { TypeNoticeBadge } from './NoticeBadge';
 import {
   annotationDisplayName,
   annotationSummary,
@@ -492,7 +493,7 @@ function IssuesNotice({
 }
 
 /** Tipos da camada, com a descrição de cada um. */
-function TypeList({
+export function TypeList({
   types,
   onChoose,
 }: {
@@ -506,7 +507,10 @@ function TypeList({
       <div class="dialog-stack">
         {types.map((type) => (
           <Button key={type.id} class="type-option" onClick={() => onChoose(type)}>
-            <strong>{type.name}</strong>
+            <span class="type-option-head">
+              <strong>{type.name}</strong>
+              <TypeNoticeBadge type={type} />
+            </span>
             {type.description && <small class="muted">{type.description}</small>}
           </Button>
         ))}

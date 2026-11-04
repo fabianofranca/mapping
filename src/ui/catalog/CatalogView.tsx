@@ -3,6 +3,7 @@ import { t } from '../../i18n';
 import { type Catalog, type CatalogEntry, type Project, findEntry } from '../../model';
 import { Button, TextField } from '../controls';
 import { ContainerMark } from '../ContainerMark';
+import { TypeNoticeBadge } from '../NoticeBadge';
 import { Dialog } from '../Dialog';
 import { LibraryIssueList } from '../LibraryIssueList';
 import { CatalogPage } from './CatalogPage';
@@ -239,6 +240,7 @@ export function CatalogView({
                           >
                             <span class="catalog-entry-name">{entry.type.name}</span>
                             {entry.container && <ContainerMark />}
+                            <TypeNoticeBadge type={entry.type} />
                           </button>
                         </li>
                       );

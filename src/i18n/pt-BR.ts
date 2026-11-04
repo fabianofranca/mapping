@@ -621,6 +621,14 @@ export const ptBR = {
   'help.specs.download.schema': 'Baixar JSON Schema (spec.schema.json)',
   'help.specs.applyHint':
     'Para usar um exemplo: abra um projeto, escolha Especializações (botão da barra principal) → Aplicar e selecione o arquivo baixado.',
+  'notice.kind.removed': 'Removido',
+  'notice.kind.deprecated': 'Obsoleto',
+  'notice.kind.diverges': 'Diverge',
+  'notice.kind.pending': 'Pendente',
+  'notice.badge': 'Aviso {kind}: {message}',
+  'notice.since': 'Desde {date}',
+  'notice.ref': 'Origem:',
+  'notice.column': 'Coluna {column}: {message}',
   'typed.chooseTypeTitle': 'Nova anotação em {layer}',
   'typed.chooseTypeHint':
     'Escolha o tipo. Os campos já vêm definidos; é só preencher os valores.',

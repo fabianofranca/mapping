@@ -196,6 +196,14 @@ Composições e lógica sem forma própria (não precisam de componente): `src/u
 
 O que o código já tem e o DS ainda não descreve. O fechamento do épico aplica isto no artefato e esvazia a lista.
 
+### Avisos na especialização (`epic/avisos-especializacao`)
+
+AV2 (#488). Nenhum ícone novo (`blocked`, `warning`, `compare` e `info` já existem). Contraste conferido com os valores de `src/theme/tokens.ts`: todos os pares passam 4,5:1 nos dois temas (danger 4,92 claro e 6,67 escuro; warning 5,41 e 9,24; text-muted sobre selection-muted 5,20 e 5,26).
+
+- **`NoticeBadge` (componente novo).** Pílula de `radius-full` com ícone e rótulo do `kind` (`Removido`/`Obsoleto`/`Diverge`/`Pendente`), nome acessível "Aviso <rótulo>: <mensagem>" e dica com a mensagem. Estados por `kind`, nos temas claro e escuro: `removed` = `color-danger` sobre `color-danger-bg` com `blocked`; `deprecated` = `color-warning` sobre `color-warning-bg` com `warning`; `diverges` = o mesmo par com `compare`; `pending` = `color-text-muted` sobre `color-selection-muted` com `info`. No selo de um **tipo**, vale o aviso de maior gravidade entre o do tipo, dos campos e das colunas, e a dica lista todos (`TypeNoticeBadge`). Origem: `src/ui/NoticeBadge.tsx`; CSS em `src/theme/details.css` (`.notice-*`).
+- **Selo na escolha de tipo e no Catálogo.** O selo do tipo aparece ao lado do nome em `TypeList` (`src/ui/AnnotationsPanel.tsx`, "+ Anotação"), na aba Componentes (`src/ui/catalog/CatalogView.tsx`, `.catalog-entry`) e na Paleta (`src/ui/LibraryPalette.tsx`, `.library-type-main`). Atualizar os guias de `CatalogPage`/`CatalogView` e o da paleta (que o DS ainda não tem; ver "Resto da semântica acessível").
+- **Bloco e linha de aviso nos Detalhes.** O aviso do tipo é um bloco de `radius-lg` no topo da anotação (ícone, rótulo, mensagem, `since` e `ref` em `font-mono`); o do campo é uma linha com o fundo do `kind` abaixo do controle, e o rótulo ganha o ícone do `kind`; o da coluna é uma linha abaixo da tabela, citando a coluna. Aparecem também em só leitura. O cabeçalho da anotação ganha o selo do tipo. Origem: `src/ui/AnnotationEditor.tsx` (`TypedBody`), `src/ui/PropertyGrid.tsx` (`Property`, prop `notices`), `src/ui/TableField.tsx` (`TableEditor`), `src/ui/TypedForm.tsx`. Atualizar `AnnotationEditor`, `PropertyGrid`, `DataGrid` e os previews.
+
 ### Resto da semântica acessível (`epic/semantica-acessivel`)
 
 O fechamento do épico gravou no artefato o que dava (ver o histórico). Ficou sem gravar:
