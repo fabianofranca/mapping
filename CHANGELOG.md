@@ -4,6 +4,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 
 **Regra:** toda entrega de `epic/*` para a `main` atualiza este arquivo no próprio PR do épico, com uma nova seção no topo. A entrada `[Não lançado]` vira a data do merge quando o dono mesclar. Os detalhes de cada etapa estão nas issues fechadas com o rótulo `in-progress` (`em-andamento` até 2026-11-03) e, antes delas, no histórico do git.
 
+## Selo da camada e nomes acessíveis — [Não lançado] (épico `epic/selo-nomes-acessiveis`, PR a definir, MCP 0.13.0, schema v13)
+
+### Corrigido
+
+- O selo da especialização no cabeçalho de camada dos Detalhes encolhe com reticências e mostra o nome inteiro na dica: a 900 px, "Material 3 (Compose)" não passa mais da borda do painel, não fica sob o **+** e o painel não ganha barra horizontal. O nome da camada e a meta (`· Ativa · N`) têm prioridade; os selos curtos e a janela larga ficam como antes (#371).
+
 ## Testador da nuvem por passo — 2026-11-04 (épico `epic/testador-por-passo`, PR #429, MCP 0.13.0, schema v13)
 
 ### Alterado

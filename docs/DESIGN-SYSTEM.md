@@ -202,6 +202,10 @@ O fechamento do épico gravou no artefato o que dava (ver o histórico). Ficou s
 - **`Segmented`, CSS e preview.** O guia já descreve o grupo dos Detalhes (quebra de linha, borda própria por opção), mas o `project/components/bundle.css` do artefato só tem `.props-value > .segmented { align-self: flex-start; }`. Faltam as regras de `src/theme/details.css` (`flex-wrap`, `gap`, `border: 0`, `overflow: visible`, borda por `.segmented-item`, `.segmented-invalid .segmented-item`, `.segmented-text { white-space: nowrap }`) e um exemplo do `Segmented` dentro de `.props-value` em coluna estreita no preview. Conferir o contraste nos dois temas ao gravar.
 - **Paleta da biblioteca.** O botão de adicionar do tipo tem nome acessível `{label}: {name}` (`library.addType`, `src/ui/LibraryPalette.tsx`), mas o artefato não tem guia da paleta (`LibraryPalette`/`Library`; só `LibraryIssueList`). Criar o guia é decisão do dono, como em "Com forma visível e sem componente no DS".
 
+### Selo da camada sem barra horizontal (`epic/selo-nomes-acessiveis`, SN1)
+
+- **`LayerGroup`, guia e preview.** O selo da especialização sob `.layer-group-head` encolhe (`flex: 0 1 auto`, `min-width: 0`, `overflow: hidden`, `text-overflow: ellipsis`) e leva o nome inteiro no `title`; o nome da camada e a meta têm prioridade. O guia deve descrever o selo cortado com dica, e o preview, um cabeçalho estreito com selo longo ("Material 3 (Compose)"). Sem token nem ícone novo. Prova: `src/theme/details.css`, `src/ui/AnnotationsPanel.tsx`, `tests/e2e/detailsLayerTag.spec.ts`.
+
 ### Previews não mostram o estado novo
 
 A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, mas só acrescentou o estado novo ao preview de seis deles (decisão de escopo do dono). Continuam mostrando o estado antigo os previews de:
