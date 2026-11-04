@@ -409,7 +409,7 @@
   gap: 0;
 }
 
-/* Abas mais justas: as quatro cabem na largura mínima do canvas (`--size-canvas-min`). */
+/* Abas mais justas: as cinco cabem na largura mínima do canvas (`--size-canvas-min`). */
 .tool-window-bottom .tool-window-tabs .tab {
   padding: 0 var(--space-1);
 }

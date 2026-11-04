@@ -210,6 +210,7 @@ AV3 (#489). Nenhum ícone novo (a aba usa `warning`; o item da barra, `warning`;
 - **Aba com contagem.** A aba Avisos mostra o número de anotações com aviso (`windowBadge`, mesmo selo numérico de Incompletas). Origem: `src/ui/BottomTabs.tsx`, `src/ui/toolWindowMeta.ts`.
 - **Item "Avisos: N" na barra de status.** Botão com ícone `warning` e texto, no mesmo estilo de "N proposta(s) nova(s)" (`.status-item-button`), escondido com N = 0; clicar abre a janela. Origem: `src/ui/StatusBar.tsx` (`NoticesItem`). Atualizar `StatusBar`.
 - **Aviso na revisão.** No popover da mudança (`ChangePopover`), logo abaixo dos valores, uma linha `NoticeLine` por aviso que a mudança traz (criação de anotação, troca de tipo, valor de campo ou de coluna), no estilo do `kind`. Origem: `src/ui/review/ChangeNotices.tsx`, `src/ui/review/ChangePopover.tsx`; CSS `.change-notices` em `src/theme/review.css`. Atualizar `Revisao.md` (popover) e o preview de revisão.
+- **Token `size-canvas-min` 320 → 360 px.** Com a aba Avisos a janela inferior tem cinco abas, e as cinco só cabem sem rolar com o canvas em 360 px (a 900 px com as três janelas abertas). Origem: `src/theme/tokens.ts`; o mínimo de cada lateral não mudou. Atualizar o token e a seção `Layouts`.
 
 ### Resto da semântica acessível (`epic/semantica-acessivel`)
 
