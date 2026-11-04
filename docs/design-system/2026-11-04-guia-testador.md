@@ -1,4 +1,4 @@
-# Guia do testador e auxiliares da nuvem — [Não lançado] (épico `epic/guia-testador`)
+# Guia do testador e auxiliares da nuvem — 2026-11-04 (épico `epic/guia-testador`)
 
 ## Sincronização
 
