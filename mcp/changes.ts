@@ -11,6 +11,7 @@ import {
 import {
   changeCounts,
   issueChanges,
+  noticeChanges,
   runBatch,
   type BatchIo,
   type BatchResult,
@@ -216,6 +217,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
     summary: result.steps.map((s) => `${s.index}. ${s.description}`),
     changes: changeCounts(result.before, result.project),
     issues: issueChanges(refs, result.before),
+    notices: noticeChanges(refs, result.before),
     ...(warnings.length > 0 ? { warnings } : {}),
     created: createdRefs(refs, result),
   };

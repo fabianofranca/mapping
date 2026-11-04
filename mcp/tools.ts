@@ -530,7 +530,7 @@ export function registerTools(
     'get_specialization',
     {
       description:
-        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações, e as plataformas de código com o `repo` de cada uma; com plataformas, `codeHint` diz o que é o `code` dos tipos (o código de instanciação: `symbol` é o que se chama para criar uma instância, `path` o arquivo que o define, para ler a assinatura)), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas. Na formatVersion 4 traz também `component`, `doc`, `examples`, `fonts`, `origins` e `migrations` e, quando a cópia é um pacote, `package: { dir, files }` (veja list_components e get_component para ler os componentes).',
+        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações, e as plataformas de código com o `repo` de cada uma; com plataformas, `codeHint` diz o que é o `code` dos tipos (o código de instanciação: `symbol` é o que se chama para criar uma instância, `path` o arquivo que o define, para ler a assinatura)), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas. Na formatVersion 4 traz também `component`, `doc`, `examples`, `fonts`, `origins` e `migrations` e, quando a cópia é um pacote, `package: { dir, files }` (veja list_components e get_component para ler os componentes). Na formatVersion 10 os tipos, campos e colunas `table` podem trazer `notices` (avisos `{ kind, message, since?, ref? }`, com `kind` `removed`, `deprecated`, `diverges` ou `pending`): leia-os antes de criar anotação ou gravar valor; aviso só informa e não bloqueia nada, mas não use sem dizer ao usuário o que for `removed` ou `deprecated`.',
       inputSchema: {
         project: projectArg,
         specId: z
@@ -657,7 +657,7 @@ export function registerTools(
     'plan_changes',
     {
       description:
-        'Prévia de um lote de alterações: valida contra as regras do Mapping e devolve se é válido, os erros por operação, um resumo legível, as contagens, as pendências novas, as referências dos itens que serão criados e quantas mudanças o usuário teria de revisar. NÃO grava nada (nem proposta). ' +
+        'Prévia de um lote de alterações: valida contra as regras do Mapping e devolve se é válido, os erros por operação, um resumo legível, as contagens, as pendências novas (`issues`), os avisos novos da especialização (`notices.new`: os avisos de tipo, campo ou coluna que as anotações criadas ou alteradas passam a ter; aviso não bloqueia nada), as referências dos itens que serão criados e quantas mudanças o usuário teria de revisar. NÃO grava nada (nem proposta). ' +
         'As operações são aplicadas em ordem; um item criado pode ser citado nas seguintes pelo apelido de `as` (ex: "$porta"). Itens trancados não podem ser movidos, redimensionados nem excluídos. Para enviar a alteração ao usuário, use propose_changes (o agente nunca grava o projeto direto).',
       inputSchema: {
         project: projectArg,
@@ -682,7 +682,7 @@ export function registerTools(
     {
       description:
         'Envia uma alteração ao usuário como PROPOSTA para revisão: valida o lote como o plan_changes, calcula as mudanças (criações, alterações campo a campo, remoções) e grava `proposals/<id>/proposal.json` (imagens novas em `proposals/<id>/images/`). O `mapping.json` NÃO é alterado: o usuário revisa na app, aceita ou rejeita em qualquer nível (proposta, container, item, mudança), deixa notas e aplica o que aceitou. ' +
-        'Devolve a referência `mapping://<projeto>/p/<código>`, um resumo por nível e as referências definitivas dos itens criados. Depois, avise o usuário e espere a revisão terminar (get_proposal: nada pendente nem aceito sem aplicar); leia o resultado com get_proposal_review e, para corrigir, envie outra proposta com `supersedes` só com as correções. Reexportações: use `source` nos containers e marcações e find_by_source para propor só o que mudou.',
+        'Devolve a referência `mapping://<projeto>/p/<código>`, um resumo por nível e as referências definitivas dos itens criados, com as pendências novas (`issues`) e os avisos novos da especialização (`notices.new`, como no plan_changes; aviso não bloqueia a proposta). Depois, avise o usuário e espere a revisão terminar (get_proposal: nada pendente nem aceito sem aplicar); leia o resultado com get_proposal_review e, para corrigir, envie outra proposta com `supersedes` só com as correções. Reexportações: use `source` nos containers e marcações e find_by_source para propor só o que mudou.',
       inputSchema: {
         project: projectArg,
         title: z

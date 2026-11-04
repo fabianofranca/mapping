@@ -1,5 +1,9 @@
 import {
   ModelError,
+  NOTICE_KINDS,
+  changeNotices,
+  computeChanges,
+  type SpecNotice,
   addAnnotation,
   addBackgroundContainer,
   addComponentMarking,
@@ -1932,4 +1936,41 @@ export function issueChanges(refs: Refs, before: Project): Record<string, unknow
     }));
   const resolved = [...old.keys()].filter((id) => !next.has(id)).length;
   return { before: old.size, after: next.size, resolved, new: added };
+}
+
+/**
+ * Os avisos da especialização que as anotações criadas ou alteradas pelo lote passam a ter
+ * (etapa #486, decisão 11), pelas mesmas mudanças que a revisão da proposta mostra
+ * (`changeNotices`), do mais grave ao menos e, no mesmo `kind`, na ordem em que surgem.
+ */
+export function noticeChanges(refs: Refs, before: Project): Record<string, unknown> {
+  const after = refs.project;
+  const seen = new Set<string>();
+  const entries: { kind: SpecNotice['kind']; view: Record<string, unknown> }[] = [];
+  for (const change of computeChanges(before, after)) {
+    for (const usage of changeNotices(after, change, change.field ?? '')) {
+      const id = JSON.stringify([
+        change.entityId,
+        usage.key,
+        usage.column,
+        usage.notice.kind,
+        usage.notice.message,
+      ]);
+      if (seen.has(id)) continue;
+      seen.add(id);
+      entries.push({
+        kind: usage.notice.kind,
+        view: {
+          annotation: refs.ref('a', change.entityId),
+          type: usage.typeId,
+          kind: usage.notice.kind,
+          message: usage.notice.message,
+          ...(usage.key ? { key: usage.key } : {}),
+          ...(usage.column ? { column: usage.column } : {}),
+        },
+      });
+    }
+  }
+  entries.sort((a, b) => NOTICE_KINDS.indexOf(a.kind) - NOTICE_KINDS.indexOf(b.kind));
+  return { new: entries.map((e) => e.view) };
 }
