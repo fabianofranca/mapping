@@ -119,7 +119,7 @@ export function LibraryPalette({ onOpenSpecs }: LibraryPaletteProps) {
                           title={disabledReason ?? labelFor(type)}
                           onClick={() => add(type.specId, type.typeId)}
                         >
-                          {labelFor(type)}
+                          <span class="library-type-add-label">{labelFor(type)}</span>
                         </Button>
                       </li>
                     ))}

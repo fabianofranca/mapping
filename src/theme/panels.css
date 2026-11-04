@@ -800,10 +800,16 @@ button.tree-toggle:hover {
   white-space: nowrap;
 }
 
-/* O botão Adicionar cede espaço ao nome: fica com no máximo metade da linha. */
+/* O botão Adicionar cede espaço ao nome: fica com no máximo metade da linha; o rótulo corta com
+   reticências à direita (o botão é flex, então o corte fica no span interno). */
 .library-type > button {
   flex: 0 1 auto;
+  min-width: 0;
   max-width: 50%;
+}
+
+.library-type-add-label {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

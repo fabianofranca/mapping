@@ -216,6 +216,12 @@ O que o código já tem e o DS ainda não descreve. O fechamento do épico aplic
 - **Paleta da biblioteca** (`src/ui/LibraryPalette.tsx`, `src/theme/panels.css`): `.library-type-main` sem quebra de linha, nome com reticências e o ícone de container ao lado; botão Adicionar com no máximo metade da linha.
 - **Markdown do Catálogo** (`src/ui/markdown/Markdown.tsx`, `src/theme/dialogs.css`): bloco `blockquote` (`> `), borda à esquerda `--color-border-control` e texto `--color-text-muted`. Guia/preview do documento do componente.
 
+### Limpeza visual — correção estreita (`epic/limpeza-visual`, LV4)
+
+- **`Tooltip`/`HelpTip`** (`src/theme/controls.css`): depois do Esc a dica some também com o foco de teclado (`.tooltip-anchor.tooltip-dismissed .tooltip` vence `:has(:focus-visible)`, WCAG 1.4.13); Enter, clique ou o ponteiro a reabrem. Os previews de `Tooltip` e `HelpTip` devem esconder a dica no Esc mesmo com o foco no botão.
+- **Paleta da Biblioteca** (`src/ui/LibraryPalette.tsx`, `src/theme/panels.css`): o rótulo do botão Adicionar vai num `span.library-type-add-label` com reticências à direita (antes era cortado dos dois lados); o `aria-label` não muda.
+- **`PropertyGrid` na revisão** (`src/theme/review.css`): os campos de X, Y, L e A (`.props-pair`) usam `gap: --space-1` e `padding-inline: --space-1` nos Detalhes da revisão, para caberem os dígitos a 900 px.
+
 ### Resto da semântica acessível (`epic/semantica-acessivel`)
 
 O fechamento do épico gravou no artefato o que dava (ver o histórico). Ficou sem gravar:
