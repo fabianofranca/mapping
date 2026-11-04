@@ -109,10 +109,10 @@ A rodada completa (R0 a R18) roda em **3 sessões ao mesmo tempo**, uma por bloc
 | Bloco | Roteiros, na ordem do guia                                           | Passos |
 | ----- | -------------------------------------------------------------------- | ------ |
 | 1     | R0, R1, seção 6, R3, R6.3 a R6.7, R7, R5, R8, R18 e a passada visual | 94     |
-| 2     | R0, R2, seção 6, R4, R6.8a a R6.11, R9, R10, R11 e R13               | 92     |
+| 2     | R0, R2, seção 6, R4, R6.8a a R6.11, R9, R10, R11 e R13               | 93     |
 | 3     | R0, seção 6, R12, R14, R15, R16 e R17                                | 95     |
 
-Por quê: as dependências da seção 8 do guia e a contagem de passos (a coluna **Passos** conta o R0, que está nos três; no total são 269 passos distintos, e nenhum bloco passa de 40%). R1, R3, R5, R6.3 a R6.7, R7 e R8 usam o `principal` e o repositório de teste; R6.8a a R6.11 usam a pasta `loja` do R4.11; o R10.7 usa o projeto `telas` do R9; o resto usa pastas próprias. A passada visual fica no bloco 1, o de menos passos, que tem o que ela abre (propostas e revisão, especializações, exportar e pasta indisponível). A seção 6 (repositório de teste e MCP) está nos três blocos, porque todos têm R3, R5, R9, R12, R16 ou R17. O teste `tests/tooling/roundBlocks.test.ts` confere a tabela contra os passos do guia: um roteiro novo (R19) o faz falhar até ser posto num bloco.
+Por quê: as dependências da seção 8 do guia e a contagem de passos (a coluna **Passos** conta o R0, que está nos três; no total são 270 passos distintos, e nenhum bloco passa de 40%). R1, R3, R5, R6.3 a R6.7, R7 e R8 usam o `principal` e o repositório de teste; R6.8a a R6.11 usam a pasta `loja` do R4.11; o R10.7 usa o projeto `telas` do R9; o resto usa pastas próprias. A passada visual fica no bloco 1, o de menos passos, que tem o que ela abre (propostas e revisão, especializações, exportar e pasta indisponível). A seção 6 (repositório de teste e MCP) está nos três blocos, porque todos têm R3, R5, R9, R12, R16 ou R17. O teste `tests/tooling/roundBlocks.test.ts` confere a tabela contra os passos do guia: um roteiro novo (R19) o faz falhar até ser posto num bloco.
 
 **Modo "completo, bloco k de 3".** A mensagem "execute o modo completo, bloco k de 3" (k de 1 a 3) manda:
 

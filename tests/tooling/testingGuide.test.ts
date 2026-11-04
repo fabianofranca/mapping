@@ -948,3 +948,53 @@ describe('.prettierrc.json (tabelas compactas, etapa #478)', () => {
     expect(override!.options.proseWrap).toBe('never');
   });
 });
+
+describe('GT2 — guia acertado com a app (etapa #482)', () => {
+  const guide = read('docs/TESTING.md');
+
+  /** Item numerado do "Preparo do R3.8…" que começa com `prefix`. */
+  const prepStep = (prefix: string): string =>
+    guide.split('\n').find((l) => l.startsWith(prefix)) ?? '';
+
+  it('o preparo do R3.8 e do R3.8b troca containers/containerId por images/imageId, como o v8 e o v10 de verdade', () => {
+    for (const prefix of [
+      '3. Fora da app: em `migracao/mapping.json`',
+      '5. Fora da app, em `migracao10/mapping.json`',
+    ]) {
+      const step = prepStep(prefix);
+      expect(step, prefix).not.toBe('');
+      expect(step, prefix).toContain('"containers"');
+      expect(step, prefix).toContain('"images"');
+      expect(step, prefix).toContain('imageId');
+    }
+  });
+
+  it('R3.1: a versão da Notas é a do notas.spec.json', () => {
+    const spec = JSON.parse(read('libraries/notas/notas.spec.json')) as {
+      version: number;
+    };
+    const row = guide.split('\n').find((l) => /^\| R3\.1 \|/.test(l)) ?? '';
+    expect(row).toContain(`**Notas** (versão ${spec.version})`);
+  });
+
+  it('apêndice A: "Seletores e nomes que enganam" lista só data-window que existem em src/', () => {
+    const { appendixA } = splitAppendixA(guide);
+    const block = /### Seletores e nomes que enganam([\s\S]*?)(?=\n### |\n## |$)/.exec(
+      appendixA,
+    )?.[1];
+    expect(block).toBeDefined();
+    const listed = /\[data-window=([a-z|]+)\]/.exec(block!)?.[1]?.split('|') ?? [];
+    expect(listed.length).toBeGreaterThanOrEqual(7);
+    const source = read('src/store/toolWindows.ts');
+    for (const id of listed) expect(source, id).toContain(`'${id}'`);
+    for (const word of [
+      'alertdialog',
+      'button.tree-item',
+      'page.mouse',
+      'Novo container',
+      '/^Revisar/',
+    ]) {
+      expect(block, word).toContain(word);
+    }
+  });
+});
