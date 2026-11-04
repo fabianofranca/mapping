@@ -155,18 +155,38 @@ describe('mcp-release.yml anexa o mapping-mcp.js à Release', () => {
   });
 });
 
-describe('ci.yml exige o CHANGELOG.md nos PRs de épico para a main', () => {
-  it('o job epic confere que o PR altera o CHANGELOG.md', () => {
-    const job = ci.slice(ci.indexOf('  epic:'), ci.indexOf('  static:'));
+describe('ci.yml exige o changelog do épico nos PRs de épico para a main', () => {
+  const job = ci.slice(ci.indexOf('  epic:'), ci.indexOf('  static:'));
+  const step = job.slice(
+    job.indexOf('Changelog atualizado'),
+    job.indexOf('Design system registrado'),
+  );
+
+  it('o job epic confere o arquivo changelog/<nome>.md do próprio épico', () => {
     expect(job).toContain('Changelog atualizado');
-    expect(job).toMatch(/pulls\/\$PR\/files/);
-    expect(job).toMatch(/grep -qx 'CHANGELOG\.md'/);
-    expect(job).toMatch(/epic\/\*\) ;;/);
+    expect(step).toMatch(/pulls\/\$PR\/files/);
+    expect(step).toContain('name="${HEAD#epic/}"');
+    expect(step).toContain(
+      'grep -qxE "changelog/([0-9]{4}-[0-9]{2}-[0-9]{2}-)?$name\\.md"',
+    );
+    expect(step).not.toMatch(/grep -qx 'CHANGELOG\.md'/);
   });
 
-  it('o CLAUDE.md descreve a regra e o CHANGELOG.md existe', () => {
-    expect(read('CLAUDE.md')).toContain('**Changelog por épico:**');
-    expect(existsSync('CHANGELOG.md')).toBe(true);
+  it('continua só para epic/* com base na main', () => {
+    expect(step).toMatch(/\[ "\$BASE" != "main" \]/);
+    expect(step).toMatch(/epic\/\*\) ;;/);
+  });
+
+  it('a mensagem de erro diz o caminho esperado', () => {
+    expect(step).toContain('changelog/$name.md');
+    expect(step).toContain('changelog/AAAA-MM-DD-$name.md');
+  });
+
+  it('o CLAUDE.md descreve a regra e a pasta changelog/ existe', () => {
+    const claude = read('CLAUDE.md');
+    expect(claude).toContain('**Changelog por épico:**');
+    expect(claude).toContain('`changelog/<nome>.md`');
+    expect(existsSync('changelog/README.md')).toBe(true);
   });
 });
 
