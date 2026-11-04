@@ -1,3 +1,4 @@
+import type Konva from 'konva';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
 import { createDisplayImages } from '../../src/store/displayImages';
@@ -51,6 +52,37 @@ describe('CanvasController', () => {
     ]);
     controller.destroy();
     expect(container.querySelectorAll('canvas')).toHaveLength(0);
+  });
+
+  it('o stage refaz o cache de transformação uma vez por quadro de zoom e de pan, e nenhuma na edição', () => {
+    const { controller, container, ui, actions } = setup();
+    flush();
+    const { stage } = controller as unknown as { stage: Konva.Stage };
+    let cascades = 0;
+    stage.on('absoluteTransformChange', () => cascades++);
+    /** Eventos de transformação absoluta do stage no quadro que `act` agenda. */
+    const count = (act: () => void): number => {
+      cascades = 0;
+      act();
+      flush();
+      return cascades;
+    };
+    const zoom = count(() =>
+      container.dispatchEvent(
+        new WheelEvent('wheel', { deltaY: -40, clientX: 190, clientY: 350 }),
+      ),
+    );
+    const pan = count(() => {
+      ui.selection.value = { kind: 'image', id: 'I2' };
+      controller.centerSelection();
+    });
+    const edit = count(() => {
+      expect(actions.renameContainer('I1', 'Outro nome').ok).toBe(true);
+    });
+    // Posição e escala numa chamada só: cada atributo separado refaz o cache de transformação
+    // de todos os nós do stage (docs/ARCHITECTURE.md, "Desempenho").
+    expect({ zoom, pan, edit }).toEqual({ zoom: 1, pan: 1, edit: 0 });
+    controller.destroy();
   });
 
   it('comandos do editor: enquadrar, centralizar, ponto e imagem sob o dedo', () => {

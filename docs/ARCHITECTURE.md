@@ -255,6 +255,10 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   `WeakMap<Project, ProjectIndex>` (funciona em Node), então `issues`, `refs`, `hierarchy` e a listagem usam mapas por id em vez de
   `find`/`filter` em laços. `derived.ts` separa o que depende do **projeto e da UI** do que depende do **viewport**: pan e zoom só
   atualizam a transformação do stage e o que depende de escala (texto do zoom semântico, espessuras).
+  O stage recebe posição e escala numa chamada só (`stage.setAttrs({ x, y, scaleX, scaleY })` em `CanvasController.render`): o Konva
+  agrupa os atributos numa cascata só, e cada atributo de transformação aplicado à parte limparia o cache de transformação de todos
+  os nós (milhares, num projeto grande) e dispararia `absoluteTransformChange` neles; o zoom passou de 3 cascatas por quadro para 1
+  (`tests/canvas/CanvasController.test.ts` conta: zoom 1, pan 1, edição 0).
 - **Orçamentos** (medidos em testes, ligados por `npm run test:perf` e desligados com `--coverage` porque o código instrumentado
   é mais lento): índice, pendências, indicadores e visibilidade de um projeto grande (500 marcações, 1.500 anotações, metade
   tipadas, e 500 referências) em menos de 8 ms (`tests/model/performance.test.ts`, mediana de várias rodadas, cada uma numa versão
