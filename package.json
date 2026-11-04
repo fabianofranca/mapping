@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:durations": "node scripts/test-durations.mjs",
     "test:perf": "vitest run tests/model/performance.test.ts tests/canvas/renderPerformance.test.ts tests/store/reviewPerf.test.ts",
     "test:e2e": "playwright test",
     "lint": "eslint . && prettier --check .",
