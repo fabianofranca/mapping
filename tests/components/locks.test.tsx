@@ -9,6 +9,7 @@ import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { MarkingTree } from '../../src/ui/MarkingTree';
 import { SelectionPanel } from '../../src/ui/SelectionPanel';
 import { sampleProject } from '../model/fixtures';
+import { descriptionOf } from './describedBy';
 import { createHarness, renderLive, type Harness } from './harness';
 
 // Etapa 2.5: o cadeado na Árvore e em Detalhes. A seleção e as anotações seguem livres;
@@ -55,6 +56,9 @@ function renderMarkingPanel(
   return { harness, onDelete, user: userEvent.setup() };
 }
 
+/** O ícone de ajuda da trava (decisão 8 da #353): só existe com trava. */
+const lockHelp = () => screen.queryByRole('button', { name: 'Sobre a trava' });
+
 const lockButton = () =>
   screen.getByRole('button', { name: t('lock.markingLock') }) as HTMLButtonElement;
 
@@ -73,10 +77,13 @@ describe('Detalhes da marcação: cadeado', () => {
     await user.click(lockButton());
     expect(marking(harness.project(), 'M2').locked).toBe(true);
     expect(lockButton().getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByText(t('lock.markingNotice'))).toBeTruthy();
+    expect(document.querySelector('.notice')).toBeNull();
+    const help = lockHelp();
+    expect(help).not.toBeNull();
+    expect(descriptionOf(help as HTMLElement)).toBe(t('lock.markingNotice'));
     await user.click(lockButton());
     expect(marking(harness.project(), 'M2').locked).toBe(false);
-    expect(screen.queryByText(t('lock.markingNotice'))).toBeNull();
+    expect(lockHelp()).toBeNull();
     harness.store.undo();
     expect(marking(harness.project(), 'M2').locked).toBe(true);
   });
@@ -117,7 +124,12 @@ describe('Detalhes da marcação: cadeado', () => {
     const { harness, user } = renderMarkingPanel('M2', {
       setup: (h) => h.actions.setMarkingLocked('M1', true),
     });
-    expect(screen.getByText(t('lock.inheritedNotice', { parent: 'Porta' }))).toBeTruthy();
+    expect(document.querySelector('.notice')).toBeNull();
+    const help = lockHelp();
+    expect(help).not.toBeNull();
+    expect(descriptionOf(help as HTMLElement)).toBe(
+      t('lock.inheritedNotice', { parent: 'Porta' }),
+    );
     expect((screen.getByLabelText('Largura') as HTMLInputElement).disabled).toBe(true);
     // Só a geometria trava: excluir a filha segue permitido.
     const remove = screen.getByRole('button', { name: t('marking.delete') });
@@ -130,7 +142,7 @@ describe('Detalhes da marcação: cadeado', () => {
   it('pai com um filho trancado: nada fica bloqueado nem avisado', () => {
     renderMarkingPanel('M1', { setup: (h) => h.actions.setMarkingLocked('M3', true) });
     expect(document.querySelector('.notice')).toBeNull();
-    expect(screen.queryByText(t('lock.markingNotice'))).toBeNull();
+    expect(lockHelp()).toBeNull();
     for (const label of ['X', 'Y', 'Largura', 'Altura']) {
       expect((screen.getByLabelText(label) as HTMLInputElement).disabled).toBe(false);
     }
@@ -187,7 +199,11 @@ describe('Detalhes da imagem: cadeado', () => {
     expect(imageLock().getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: 'Trancar imagem' })).toBe(imageLock());
     expect(tipOf(imageLock())).toContain('Trancar imagem');
-    expect(screen.getByText(t('lock.imageNotice'))).toBeTruthy();
+    // Mesmo tratamento da marcação e da seta: sem o quadro escrito; o ícone ao lado do cadeado.
+    expect(document.querySelector('.notice')).toBeNull();
+    const help = lockHelp() as HTMLElement;
+    expect(descriptionOf(help)).toBe(t('lock.imageNotice'));
+    expect(help.closest('.identity-lock')).toBe(imageLock().closest('.identity-lock'));
     const remove = screen.getByRole('button', { name: t('image.delete') });
     expect((remove as HTMLButtonElement).disabled).toBe(true);
     await user.click(remove);

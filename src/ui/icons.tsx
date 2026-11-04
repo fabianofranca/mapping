@@ -152,6 +152,13 @@ const SHAPES = {
       'M6 7.5h4',
     ],
   },
+  /** Marcador de "é container": a moldura do ícone `container`, sem o + de "Novo container". */
+  containerMark: {
+    d: [
+      'M4.5 2.5h7a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z',
+      'M6.5 6h3v4h-3Z',
+    ],
+  },
   arrange: {
     d: ['M2.5 3.5h11', 'M2.5 8h7', 'M2.5 12.5h9', 'm12 6.5 1.5 1.5L12 9.5'],
   },

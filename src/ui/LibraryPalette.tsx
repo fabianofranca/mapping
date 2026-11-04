@@ -1,6 +1,7 @@
 import { COMPONENT_DRAG_MIME, setDraggedComponent } from '../app/componentDrag';
 import { t } from '../i18n';
 import type { ComponentType, Project } from '../model';
+import { ContainerMark } from './ContainerMark';
 import { useEditor } from './EditorContext';
 import { Button } from './controls';
 import { useAddComponent } from './useAddComponent';
@@ -106,12 +107,7 @@ export function LibraryPalette({ onOpenSpecs }: LibraryPaletteProps) {
                       >
                         <span class="library-type-main">
                           <span class="library-type-name">{type.name}</span>
-                          {type.container && (
-                            <span class="badge">{t('library.container')}</span>
-                          )}
-                          <span class="muted library-type-size">
-                            {t('library.typeSize', type.component.size)}
-                          </span>
+                          {type.container && <ContainerMark />}
                         </span>
                         <Button
                           size="sm"
@@ -123,7 +119,7 @@ export function LibraryPalette({ onOpenSpecs }: LibraryPaletteProps) {
                           title={disabledReason ?? labelFor(type)}
                           onClick={() => add(type.specId, type.typeId)}
                         >
-                          {labelFor(type)}
+                          <span class="library-type-add-label">{labelFor(type)}</span>
                         </Button>
                       </li>
                     ))}

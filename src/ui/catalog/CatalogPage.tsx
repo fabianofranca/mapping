@@ -9,6 +9,7 @@ import {
   codeLink,
   exampleDrawing,
 } from '../../model';
+import { ContainerMark } from '../ContainerMark';
 import { Button } from '../controls';
 import { Markdown } from '../markdown/Markdown';
 import { Playground } from './Playground';
@@ -402,7 +403,7 @@ export function CatalogPage({
       <header class="catalog-page-header">
         <div class="catalog-page-title">
           <h2 class="catalog-page-name">{entry.type.name}</h2>
-          {entry.container && <span class="badge">{t('library.container')}</span>}
+          {entry.container && <ContainerMark />}
           {onAddToScreen !== undefined && (
             <Button
               variant="primary"

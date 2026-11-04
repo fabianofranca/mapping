@@ -92,4 +92,13 @@ describe('Markdown', () => {
     const { container } = render(<Markdown text="[ir](#nada)" />);
     expect(container.querySelector('a')).toBeNull();
   });
+
+  it('renderiza a citação (> ) como blockquote, sem o sinal solto e sem HTML cru', () => {
+    const { container } = render(
+      <Markdown text={'> `onClick` liga à lógica.\n> Segue.'} />,
+    );
+    const quote = container.querySelector('blockquote');
+    expect(quote?.querySelector('code')?.textContent).toBe('onClick');
+    expect(quote?.textContent).not.toContain('>');
+  });
 });

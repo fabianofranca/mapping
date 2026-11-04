@@ -543,11 +543,25 @@ a.button {
   transition-delay: var(--duration-instant), var(--duration-instant);
 }
 
-.tooltip-dismissed .tooltip,
-.tooltip-dismissed:hover .tooltip {
+/* Depois do Esc a dica some também com o foco de teclado (WCAG 1.4.13): a classe do anchor
+   junta-se a `.tooltip-anchor` para vencer `:has(:focus-visible)` (0,3,0) pela ordem. */
+.tooltip-anchor.tooltip-dismissed .tooltip,
+.tooltip-anchor.tooltip-dismissed:hover .tooltip {
   opacity: 0;
   visibility: hidden;
   transition-delay: var(--duration-instant), var(--duration-instant);
+}
+
+/* Dica fixada aberta pelo clique (HelpTip): vale também sem hover. */
+.tooltip-open .tooltip {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: var(--duration-instant), var(--duration-instant);
+}
+
+.tooltip-open.tooltip-dismissed .tooltip {
+  opacity: 0;
+  visibility: hidden;
 }
 
 /* Com o menu ou o popover do botão aberto, a dica não cobre o que ele abriu. */
@@ -560,9 +574,33 @@ a.button {
   .tooltip {
     display: none;
   }
+
+  .tooltip-open .tooltip {
+    display: flex;
+  }
 }
 
 /* Com um menu ou popover aberto, a dica das barras laterais não o cobre. */
 body:has(.popover, .menu-list, .action-menu-list) .tool-strip .tooltip-anchor .tooltip {
   display: none;
+}
+
+/* Explicação em ícone com dica (HelpTip): ícone discreto, a dica quebra linha. */
+.help-tip {
+  display: inline-flex;
+  flex: none;
+}
+
+.help-tip-button {
+  color: var(--color-text-muted);
+}
+
+.help-tip-button[aria-expanded='true'] {
+  color: var(--color-accent);
+}
+
+.help-tip .tooltip {
+  width: max-content;
+  max-width: var(--size-change-popover);
+  white-space: normal;
 }

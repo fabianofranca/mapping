@@ -103,6 +103,21 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     ).toEqual(['Proposto', 'Atual']);
   });
 
+  it('todo HelpTip dos Detalhes da revisão tem nome com o assunto (Posição / Tamanho incluso)', async () => {
+    const { proposal } = richScenario();
+    await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M4' });
+    const tips = screen
+      .getAllByRole('button')
+      .filter((b) => (b.getAttribute('aria-label') ?? '').startsWith('Sobre'));
+    expect(tips.length).toBeGreaterThan(0);
+    for (const tip of tips) {
+      expect((tip.getAttribute('aria-label') ?? '').replace('Sobre', '').trim()).not.toBe(
+        '',
+      );
+    }
+    expect(screen.getByRole('button', { name: 'Sobre Posição / Tamanho' })).toBeTruthy();
+  });
+
   it('o cabeçalho do item decide o item e o marcador mostra a decisão', async () => {
     const { proposal } = richScenario();
     const h = await showLevel({ proposals: [proposal] }, { level: 'item', id: 'M4' });
@@ -508,7 +523,8 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
         onGoToAnnotation={() => {}}
       />,
     );
-    expect(document.querySelector('.change-mark, .props-label-cell')).toBeNull();
+    // A célula do rótulo também existe com o ícone de ajuda: só o marcador da revisão não.
+    expect(document.querySelector('.change-mark, .change-mark-host')).toBeNull();
     expect(field('Nome').disabled).toBe(false);
     expect(screen.getAllByRole('button', { name: /^Ações do par/ }).length).toBe(3);
   });
