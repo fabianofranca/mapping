@@ -6,7 +6,7 @@ import { isPackagePath, packagePathProblem } from './packagePaths';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 9), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
+// Formato da especialização (`formatVersion` 1 a 10), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
 // biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
@@ -20,7 +20,9 @@ export { isPackagePath };
 // `suggestions` e `linkedRef` em campo e coluna `string` (vocabulário sugerido ao digitar, sem
 // restringir o valor; `linkedRef` liga o texto a um campo/coluna `ref` do mesmo tipo/tabela); a
 // versão 9 é a 8 mais `variants` na entrada de `code` (um campo `enum` do tipo escolhe, por
-// valor, o composable/classe/arquivo: `resolveCode` em `codeVariants.ts` aplica o caso).
+// valor, o composable/classe/arquivo: `resolveCode` em `codeVariants.ts` aplica o caso); a
+// versão 10 é a 9 mais `notices` (avisos `removed`, `deprecated`, `diverges` ou `pending` no
+// tipo, no campo e na coluna de `table`: informam, não geram pendência; ver `notices.ts`).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -33,9 +35,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 9;
+export const SPEC_FORMAT_VERSION = 10;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -187,6 +189,25 @@ export interface SpecRefAccepts {
   free?: boolean;
 }
 
+/** Tipos de aviso (v10), na ordem de exibição; a gravidade está em `notices.ts`. */
+export const SPEC_NOTICE_KINDS = [
+  'removed',
+  'deprecated',
+  'diverges',
+  'pending',
+] as const;
+export type SpecNoticeKind = (typeof SPEC_NOTICE_KINDS)[number];
+
+/** Aviso de um tipo, campo ou coluna (só `formatVersion` 10). */
+export interface SpecNotice {
+  kind: SpecNoticeKind;
+  message: string;
+  /** Data real `AAAA-MM-DD` desde quando o aviso vale. */
+  since?: string;
+  /** Referência livre (issue, ticket, link) que explica o aviso. */
+  ref?: string;
+}
+
 interface SpecFieldBase {
   key: string;
   label?: string;
@@ -195,6 +216,8 @@ interface SpecFieldBase {
   tags?: string[];
   /** Propriedades de origem (`formatVersion` 3 em diante). */
   sources?: SpecFieldSource[];
+  /** Avisos do campo ou da coluna (só `formatVersion` 10). */
+  notices?: SpecNotice[];
 }
 
 /** Campo simples (e coluna simples): texto, número, data ou enum. */
@@ -251,6 +274,8 @@ export interface SpecAnnotationType {
    * Um tipo só de seta não tem `component` nem `floating`: a seta não tem desenho de componente.
    */
   appliesTo?: SpecAppliesTo[];
+  /** Avisos do tipo (só `formatVersion` 10). */
+  notices?: SpecNotice[];
 }
 
 /** Itens a que um tipo de anotação se aplica (ME4, decisão 14). */
@@ -388,6 +413,48 @@ const acceptsSchema = z
     'precisa de pelo menos uma etiqueta ou "free": true',
   );
 
+const noticeShape = z
+  .object({
+    kind: z.enum(SPEC_NOTICE_KINDS, {
+      error: (issue) =>
+        issue.input === undefined
+          ? 'obrigatório'
+          : typeof issue.input === 'string'
+            ? `"${issue.input}" inválido; use "removed", "deprecated", "diverges" ou "pending"`
+            : 'deve ser "removed", "deprecated", "diverges" ou "pending"',
+    }),
+    message: z
+      .string({
+        error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+      })
+      .refine((m) => m.trim() !== '', 'não pode ser vazio'),
+    since: dateString.optional(),
+    ref: nonEmpty.optional(),
+  })
+  .strict();
+
+const noticesShape = z.array(noticeShape);
+
+/** Dois avisos com o mesmo `kind` e a mesma `message` no mesmo `notices` (v10). */
+function checkNotices(
+  notices: readonly { kind: string; message: string }[] | undefined,
+  ctx: z.RefinementCtx,
+  path: (string | number)[],
+): void {
+  const seen = new Set<string>();
+  (notices ?? []).forEach((notice, i) => {
+    const id = `${notice.kind}\u0000${notice.message}`;
+    if (seen.has(id)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: [...path, 'notices', i],
+        message: 'aviso repetido',
+      });
+    }
+    seen.add(id);
+  });
+}
+
 /** Forma de um campo (coluna ou campo de nível superior); regras cruzadas ficam adiante. */
 const fieldShape = z
   .object({
@@ -407,6 +474,7 @@ const fieldShape = z
     platforms: z.unknown().optional(),
     description: z.string().optional(),
     sources: z.array(fieldSourceShape).optional(),
+    notices: noticesShape.optional(),
   })
   .strict();
 
@@ -492,6 +560,7 @@ function checkField(
   }
   // Tipo removido: o campo é ignorado inteiro (com um aviso de quem importa), sem conferir nada.
   if (type === REMOVED_FIELD_TYPE) return;
+  checkNotices(field.notices, ctx, path);
   if (type === 'enum') {
     const options = field.options;
     if (!options || options.length === 0) {
@@ -893,9 +962,11 @@ const annotationTypeShape = z
         }),
       )
       .optional(),
+    notices: noticesShape.optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
+    checkNotices(type.notices, ctx, []);
     checkFields(type.fields, ctx, ['fields']);
     checkAppliesTo(type, ctx);
     checkCode(type, ctx);
@@ -911,6 +982,39 @@ const annotationTypeShape = z
       }
     }
   });
+
+/** Antes da v10, `notices` (no tipo, no campo e na coluna) é erro no caminho exato. */
+function checkNoNotices(
+  layers: readonly { annotationTypes: readonly RawNoticeHolder[] }[],
+  ctx: z.RefinementCtx,
+): void {
+  const only10 = (path: (string | number)[]) =>
+    ctx.addIssue({
+      code: 'custom',
+      path: [...path, 'notices'],
+      message: 'só é permitido com formatVersion 10',
+    });
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      const typePath = ['layers', li, 'annotationTypes', ti];
+      if (type.notices !== undefined) only10(typePath);
+      type.fields.forEach((field, fi) => {
+        const fieldPath = [...typePath, 'fields', fi];
+        if (field.notices !== undefined) only10(fieldPath);
+        (field.columns ?? []).forEach((column, ci) => {
+          if (isRecord(column) && column.notices !== undefined) {
+            only10([...fieldPath, 'columns', ci]);
+          }
+        });
+      });
+    });
+  });
+}
+
+interface RawNoticeHolder {
+  notices?: unknown;
+  fields: readonly { notices?: unknown; columns?: readonly unknown[] }[];
+}
 
 const layerShape = z
   .object({
@@ -1550,6 +1654,7 @@ export const specSchema = z
         z.literal(7),
         z.literal(8),
         z.literal(9),
+        z.literal(10),
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
@@ -1663,6 +1768,8 @@ export const specSchema = z
         });
       });
     }
+    // v10: `notices` no tipo, no campo e na coluna. Antes dela, é erro no caminho exato.
+    if (spec.formatVersion < 10) checkNoNotices(spec.layers, ctx);
     // v6: `containers`. Antes dela, é erro no caminho exato.
     if (spec.containers !== undefined && spec.formatVersion < 6) {
       ctx.addIssue({

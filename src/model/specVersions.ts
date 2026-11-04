@@ -14,7 +14,7 @@ import type {
 // O que é quebra (e só isto): remover ou renomear tipo, campo ou opção de `enum`; tornar um campo
 // obrigatório (inclusive um campo novo que já nasce obrigatório); mudar o `type` de um campo.
 // Todo o resto é aditivo. Ficam FORA do contrato, de propósito: camadas, `labelField`,
-// `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `sources`
+// `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `sources`, `notices`
 // (e a troca de camada de um tipo; `appliesTo` gera só o aviso aditivo `changed-applies-to`), além de remover `component`/`doc`/exemplo/fonte: nada disso
 // gera `SpecChange`. Renome é indistinguível de remover + acrescentar; quem renomeia o declara
 // num passo `rename-*`, e é isso que o diferencia de uma remoção.
