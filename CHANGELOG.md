@@ -13,6 +13,12 @@ Este arquivo registra, por etapa (épico), o que mudou para quem usa a app e o s
 - Os cadeados da Árvore, da marcação e da imagem e o ✓ **Tornar ativa** têm nome fixo, igual à dica, e o estado só no `aria-pressed` ("Trancar Botão Pagar", "Trancar marcação", "Trancar imagem"); o cadeado da seta (**Trancar seta**) segue o mesmo padrão. Cada **Tornar ativa** diz a camada ("Tornar ativa: Componentes") (#372).
 - O botão da referência (campo, célula de tabela e os botões desabilitados do formulário sem projeto) tem o nome começando pelo texto que mostra: "User.name Modelo de dados: Destino", "Escolher: Destino" e "Referência quebrada: Destino" (WCAG 2.5.3). A dica e o seletor não mudam (#372).
 
+## Zoom do projeto grande mais rápido — 2026-11-04 (épico `epic/zoom-rapido`, PR #434, MCP 0.13.0, schema v13)
+
+### Alterado
+
+- O zoom do canvas em projetos grandes ficou mais rápido: posição e escala do stage passam a ser aplicadas numa transformação só por quadro (antes eram três cascatas de transformação no zoom). No cenário do orçamento de desempenho (500 marcações, zoom semântico, 200 setas), a mediana do quadro de zoom caiu de cerca de 7,8 para 5,9 ms. O pan e a edição não mudam; o orçamento de 16 ms continua o mesmo.
+
 ## Testador da nuvem por passo — 2026-11-04 (épico `epic/testador-por-passo`, PR #429, MCP 0.13.0, schema v13)
 
 ### Alterado
