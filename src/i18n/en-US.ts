@@ -980,7 +980,8 @@ export const enUS: Dictionary = {
   'view.arrowsHint': 'Draws the arrows that link markings on the canvas',
   'multi.selectWithContents': 'Select with contents',
   'shortcuts.shiftClick':
-    'Add to or remove from the selection (Shift+click on the canvas and in the Tree)',
+    'Add to or remove from the selection (Shift or Ctrl/Cmd+click on the canvas and in the Tree)',
+  'shortcuts.nudge': 'Move the selection (Shift: 10 px)',
   'shortcuts.doubleClick': 'Select the marking with its contents (double click)',
   'shortcuts.escapeToPrimary': 'With several items selected, go back to the main item',
   'shortcuts.key.click': 'click',

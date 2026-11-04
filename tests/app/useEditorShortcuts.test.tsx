@@ -42,6 +42,7 @@ interface Fake {
   };
   readonly canvas: {
     cancelInteraction: ReturnType<typeof vi.fn>;
+    isInteracting: ReturnType<typeof vi.fn>;
     centerSelection: ReturnType<typeof vi.fn>;
     zoomBy: ReturnType<typeof vi.fn>;
     zoomTo: ReturnType<typeof vi.fn>;
@@ -68,6 +69,7 @@ function setup({ enabled = true, readOnly = false } = {}): Fake {
   const harness = createHarness(sampleProject(), readOnly);
   const canvas = {
     cancelInteraction: vi.fn(() => false),
+    isInteracting: vi.fn(() => false),
     centerSelection: vi.fn(),
     zoomBy: vi.fn(),
     zoomTo: vi.fn(),
@@ -335,6 +337,98 @@ describe('useEditorShortcuts: andar na seleção (Alt+↑ / Alt+↓)', () => {
     s.harness.ui.selection.value = { kind: 'image', id: 'I2' };
     s.press('ArrowDown', { alt: true });
     expect(s.harness.ui.selection.value).toEqual({ kind: 'image', id: 'I2' });
+  });
+});
+
+const keyup = (key = 'ArrowRight') =>
+  window.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
+
+describe('useEditorShortcuts: setas movem a seleção', () => {
+  const x = (s: Fake) => marking(s.harness, 'M1').rect.x;
+
+  it('apertar e soltar é uma entrada no desfazer; Ctrl+Z volta tudo', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
+    const x0 = x(s);
+    const event = s.press('ArrowRight');
+    expect(event.defaultPrevented).toBe(true);
+    keyup();
+    expect(x(s)).toBe(x0 + 1);
+    s.press('ArrowRight', { shift: true });
+    keyup();
+    expect(x(s)).toBe(x0 + 11);
+    s.press('z', { ctrl: true });
+    expect(x(s)).toBe(x0 + 1);
+    s.press('z', { ctrl: true });
+    expect(x(s)).toBe(x0);
+    expect(s.harness.store.canUndo.value).toBe(false);
+  });
+
+  it('segurar (keydown repetido, um keyup) é um gesto só', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
+    const x0 = x(s);
+    s.press('ArrowRight');
+    for (let i = 0; i < 4; i++) s.press('ArrowRight', {}, { repeat: true });
+    expect(s.harness.store.canUndo.value).toBe(false);
+    keyup();
+    expect(x(s)).toBe(x0 + 5);
+    s.press('z', { ctrl: true });
+    expect(x(s)).toBe(x0);
+    expect(s.harness.store.canUndo.value).toBe(false);
+  });
+
+  it('perder o foco da janela fecha o gesto', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
+    s.press('ArrowRight');
+    window.dispatchEvent(new Event('blur'));
+    expect(s.harness.store.canUndo.value).toBe(true);
+  });
+
+  it('não move com foco em campo, defaultPrevented, somente leitura ou gesto de ponteiro', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
+    const x0 = x(s);
+    const input = document.createElement('input');
+    document.body.append(input);
+    pressOn(input, 'ArrowRight');
+    input.remove();
+    s.press('ArrowRight', {}, { cancelable: true });
+    keyup();
+    expect(x(s)).toBe(x0 + 1);
+    // defaultPrevented: um listener anterior já tratou.
+    const stop = (e: Event) => e.preventDefault();
+    window.addEventListener('keydown', stop, true);
+    s.press('ArrowRight');
+    window.removeEventListener('keydown', stop, true);
+    keyup();
+    expect(x(s)).toBe(x0 + 1);
+    s.canvas.isInteracting.mockReturnValue(true);
+    s.press('ArrowRight');
+    keyup();
+    expect(x(s)).toBe(x0 + 1);
+    s.unmount();
+    const ro = setup({ readOnly: true });
+    selectItems(ro.harness.ui, [{ kind: 'marking', id: 'M1' }]);
+    const r0 = x(ro);
+    ro.press('ArrowRight');
+    keyup();
+    expect(x(ro)).toBe(r0);
+  });
+
+  it('item trancado não move e nada entra no desfazer', () => {
+    const s = setup();
+    selectItems(s.harness.ui, [{ kind: 'marking', id: 'M1' }]);
+    s.harness.actions.setMarkingLocked('M1', true);
+    const x0 = x(s);
+    s.harness.store.undo();
+    s.harness.actions.setMarkingLocked('M1', true);
+    const revision = s.harness.store.revision.value;
+    s.press('ArrowRight');
+    keyup();
+    expect(x(s)).toBe(x0);
+    expect(s.harness.store.revision.value).toBe(revision);
   });
 });
 

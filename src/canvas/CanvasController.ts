@@ -464,6 +464,11 @@ export class CanvasController {
     this.dropTarget.value = target;
   }
 
+  /** Há um gesto de ponteiro em andamento (as setas do teclado esperam). */
+  isInteracting(): boolean {
+    return this.pointer.isInteracting();
+  }
+
   /** Cancela o gesto de mover/redimensionar/desenhar em andamento. `true` se havia um. */
   cancelInteraction(): boolean {
     return this.pointer.cancelInteraction();

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { detectPlatform } from '../../src/utils/platform';
+import {
+  detectPlatform,
+  isApplePlatform,
+  isMultiSelectClick,
+} from '../../src/utils/platform';
 
 const IPHONE =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1';
@@ -23,5 +27,31 @@ describe('detectPlatform', () => {
   it('Mac e Windows de verdade são "other"', () => {
     expect(detectPlatform(MAC, 0)).toBe('other');
     expect(detectPlatform(WINDOWS, 0)).toBe('other');
+  });
+});
+
+describe('isApplePlatform e isMultiSelectClick', () => {
+  const click = (init: Partial<Record<'shiftKey' | 'ctrlKey' | 'metaKey', boolean>>) => ({
+    shiftKey: false,
+    ctrlKey: false,
+    metaKey: false,
+    ...init,
+  });
+
+  it('reconhece o macOS pela plataforma ou pelo user agent', () => {
+    expect(isApplePlatform('', 'MacIntel')).toBe(true);
+    expect(isApplePlatform('Mozilla/5.0 (Macintosh; Intel Mac OS X)', '')).toBe(true);
+    expect(isApplePlatform('Mozilla/5.0 (X11; Linux x86_64)', 'Linux x86_64')).toBe(
+      false,
+    );
+    expect(isApplePlatform('Mozilla/5.0 (Windows NT 10.0)', 'Win32')).toBe(false);
+  });
+
+  it('Shift e Cmd juntam sempre; Ctrl só fora do macOS', () => {
+    expect(isMultiSelectClick(click({ shiftKey: true }), true)).toBe(true);
+    expect(isMultiSelectClick(click({ metaKey: true }), true)).toBe(true);
+    expect(isMultiSelectClick(click({ ctrlKey: true }), false)).toBe(true);
+    expect(isMultiSelectClick(click({ ctrlKey: true }), true)).toBe(false);
+    expect(isMultiSelectClick(click({}), false)).toBe(false);
   });
 });
