@@ -1,4 +1,4 @@
-# Enter grava o campo longo e Envolver com margem exata — [Não lançado] (épico `epic/enter-e-margem`, PR #523, MCP 0.16.0, schema v13)
+# Enter grava o campo longo e Envolver com margem exata — 2026-11-05 (épico `epic/enter-e-margem`, PR #523, MCP 0.16.0, schema v13)
 
 ## Corrigido
 
