@@ -556,10 +556,7 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
   // Etapa Avisos na especialização (AV4): o R18 roda sozinho, pelo cliente MCP por stdio, a shell e a app.
   describe('R18 — Avisos na especialização', () => {
     const guide = read('docs/TESTING.md');
-    const r18 = guide.slice(
-      guide.indexOf('### R18 '),
-      guide.indexOf('### Roteiros sob demanda (manuais)'),
-    );
+    const r18 = guide.slice(guide.indexOf('### R18 '), guide.indexOf('### R19 '));
 
     it('está no quadro "Comece aqui", depois do R17 e antes dos roteiros sob demanda', () => {
       expect(guide).toMatch(/^\| 20 +\| R18 — Avisos na especialização/m);
