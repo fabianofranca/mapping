@@ -240,7 +240,7 @@ async function externalDocument(
   return {
     text: null,
     view,
-    hint: externalDocHint(doc, found, url ?? `${doc.repo}: ${doc.path}`),
+    hint: externalDocHint(doc, found, url),
   };
 }
 
@@ -259,22 +259,28 @@ function externalDocView(
   };
 }
 
-/** O que fazer quando o documento externo não veio: configurar o clone ou abrir o link. */
+/** O que fazer quando o documento externo não veio: configurar o clone ou abrir o link (se há). */
 function externalDocHint(
   doc: { readonly repo: string; readonly path: string },
   found: ExternalDoc | null,
-  link: string,
+  url: string | null,
 ): string {
+  // Sem urlTemplate não há link: a dica diz só o caminho no repositório.
+  const orLink =
+    url === null
+      ? `; o documento fica em ${doc.path}, no repositório ${doc.repo}`
+      : `, ou abra o link: ${url}`;
+  const orLinkAfter = url === null ? '' : ` ou o link: ${url}`;
   if (found === null) {
-    return `o documento ${doc.path} está no repositório ${doc.repo}, fora do pacote; leia por um projeto (\`project\` + \`specId\`) com o clone configurado (set_doc_repo) ou abra o link: ${link}`;
+    return `o documento ${doc.path} está no repositório ${doc.repo}, fora do pacote; leia por um projeto (\`project\` + \`specId\`) com o clone configurado (set_doc_repo)${url === null ? '' : ` ou abra o link: ${url}`}`;
   }
   if (found.tooLarge) {
-    return `o documento ${doc.path} passa de ${MAX_DOC_BYTES} bytes e não foi lido; abra o arquivo no clone ou o link: ${link}`;
+    return `o documento ${doc.path} passa de ${MAX_DOC_BYTES} bytes e não foi lido; abra o arquivo no clone${orLinkAfter}`;
   }
   if (found.exists === null) {
-    return `o projeto não configura o clone do repositório ${doc.repo} (ou o caminho sai do diretório de trabalho): informe \`localPath\` com set_doc_repo, ou abra o link: ${link}`;
+    return `o projeto não configura o clone do repositório ${doc.repo} (ou o caminho sai do diretório de trabalho): informe \`localPath\` com set_doc_repo${orLink}`;
   }
-  return `o documento ${doc.path} não está no clone de ${doc.repo} (${found.localFile}); confira a ref do clone, ou abra o link: ${link}`;
+  return `o documento ${doc.path} não está no clone de ${doc.repo} (${found.localFile}); confira a ref do clone${orLink}`;
 }
 
 /** `get_component`: tudo de um tipo da biblioteca. */

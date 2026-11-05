@@ -284,16 +284,22 @@ describe('documento externo: link', () => {
 });
 
 describe('documento externo: Markdown', () => {
-  it('imagem vira o texto alternativo e link relativo vira texto', async () => {
+  it('imagem vira o texto alternativo, link relativo vira texto e o absoluto é link', async () => {
     const text =
       '![diagrama alt](rel.png)\n\nVeja [outro](./outro.md) e [site](https://x.com).';
     page(fakeAccess([{ status: 'found', text }]));
     const section = docSection();
     expect(await within(section).findByText(/diagrama alt/)).toBeTruthy();
     expect(section.querySelector('img')).toBeNull();
-    expect(within(section).getByText(/Veja outro e site\./)).toBeTruthy();
-    const anchors = [...section.querySelectorAll('a')].map((a) => a.getAttribute('href'));
-    expect(anchors).toEqual([URL_FILE]);
+    expect(section.textContent).toContain('Veja outro e site.');
+    const anchors = [...section.querySelectorAll('a')];
+    expect(anchors.map((a) => a.getAttribute('href'))).toEqual([
+      'https://x.com',
+      URL_FILE,
+    ]);
+    expect(anchors[0]?.textContent).toBe('site');
+    expect(anchors[0]?.getAttribute('target')).toBe('_blank');
+    expect(anchors[0]?.getAttribute('rel')).toBe('noopener noreferrer');
   });
 });
 

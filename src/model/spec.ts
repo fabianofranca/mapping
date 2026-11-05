@@ -1020,12 +1020,22 @@ const childClauseShape = z
   .strict();
 
 /** Reemite no `ctx` os problemas de um objeto lido por outro schema, no mesmo caminho relativo. */
+/** Propriedade a mais (`.strict()` do zod) em português, no molde dos outros erros da spec. */
+function unknownKeysMessage(issue: { readonly keys: readonly string[] }): string {
+  return `propriedade desconhecida: ${issue.keys.map((k) => `"${k}"`).join(', ')}`;
+}
+
 function forwardIssues(
   result: { success: boolean; error?: { issues: readonly z.core.$ZodIssue[] } },
   ctx: z.RefinementCtx,
 ): void {
   for (const issue of result.error?.issues ?? []) {
-    ctx.addIssue({ code: 'custom', path: [...issue.path], message: issue.message });
+    ctx.addIssue({
+      code: 'custom',
+      path: [...issue.path],
+      message:
+        issue.code === 'unrecognized_keys' ? unknownKeysMessage(issue) : issue.message,
+    });
   }
 }
 

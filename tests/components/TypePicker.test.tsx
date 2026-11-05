@@ -33,6 +33,17 @@ describe('TypePicker', () => {
     expect(field.getAttribute('placeholder')).toBe('Buscar entre 4 tipos');
   });
 
+  it('com um tipo só, o campo de busca fica no singular (pt-BR e en-US)', () => {
+    const { unmount } = render(
+      <TypePicker types={[types[0]!]} groups={groups} onChoose={vi.fn()} />,
+    );
+    expect(screen.getByRole('searchbox', { name: 'Buscar entre 1 tipo' })).toBeTruthy();
+    unmount();
+    locale.value = 'en-US';
+    render(<TypePicker types={[types[0]!]} groups={groups} onChoose={vi.fn()} />);
+    expect(screen.getByRole('searchbox', { name: 'Search among 1 type' })).toBeTruthy();
+  });
+
   it('cabeçalhos de grupo na ordem e "Outros" no fim', () => {
     render(<TypePicker types={types} groups={groups} onChoose={vi.fn()} />);
     const headings = screen
