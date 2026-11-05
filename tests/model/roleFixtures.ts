@@ -67,3 +67,11 @@ export function addChild(
     parentRole: role,
   });
 }
+
+/** Força `parentRole` sem a validação do modelo (papel que o dono deixou de oferecer). */
+export function forceRole(p: Project, id: string, role: string | null): Project {
+  return {
+    ...p,
+    annotations: p.annotations.map((a) => (a.id === id ? { ...a, parentRole: role } : a)),
+  };
+}

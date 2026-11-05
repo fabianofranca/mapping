@@ -52,6 +52,7 @@ const PAGE_STEP = 20;
 function isAnnotationPanelField(field: string): boolean {
   return (
     field === 'parentAnnotationId' ||
+    field === 'parentRole' ||
     field.startsWith(VALUES_FIELD_PREFIX) ||
     field.startsWith(ENTRIES_FIELD_PREFIX)
   );

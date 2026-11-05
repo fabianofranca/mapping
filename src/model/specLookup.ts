@@ -131,3 +131,30 @@ export function ownerRolesOf(p: Project, owner: Annotation): OwnerRoles | null {
   const resolved = typeOfAnnotation(p, owner);
   return { label: resolved?.type.childRolesLabel ?? null, roles };
 }
+
+/**
+ * Nome do papel `roleId` entre os que o tipo de `owner` oferece (v11, `childRoles`); o
+ * próprio id quando o dono não o oferece, não tem papéis ou não existe (papel que a
+ * especialização deixou de declarar não some do texto).
+ */
+export function roleNameOf(
+  p: Project,
+  owner: Annotation | undefined,
+  roleId: string,
+): string {
+  const offered = owner ? ownerRolesOf(p, owner) : null;
+  return offered?.roles.find((r) => r.id === roleId)?.name ?? roleId;
+}
+
+/**
+ * O nome do papel em que `a` se liga ao dono ("Clique"), pelo tipo do dono; o id cru se o
+ * dono não o oferece; `null` sem papel.
+ */
+export function roleLabelOf(p: Project, a: Annotation): string | null {
+  if (a.parentRole === null) return null;
+  const owner =
+    a.parentAnnotationId === null
+      ? undefined
+      : projectIndex(p).annotations.get(a.parentAnnotationId);
+  return roleNameOf(p, owner, a.parentRole);
+}

@@ -18,6 +18,7 @@ import { ToolWindow } from '../../src/ui/ToolWindow';
 import { clearReportedErrors, reportError } from '../../src/utils/report';
 import { sampleProject } from '../model/fixtures';
 import { cadastroProject } from '../model/specFixtures';
+import { addChild, forceRole, roleProject, withRoles } from '../model/roleFixtures';
 import { createHarness, type Harness } from './harness';
 
 // Janela inferior (R7): Lista em tabela (P7), Incompletas (B5) e Diagnóstico (B4).
@@ -94,6 +95,31 @@ describe('Lista em tabela (P7)', () => {
     await user.click(screen.getByLabelText(`⚠ ${t('list.incomplete')}`));
     expect(screen.getByText(t('list.emptyIncomplete'))).toBeTruthy();
     expect(screen.queryByRole('table')).toBeNull();
+  });
+});
+
+describe('Lista: vínculo por papel (etapa #559, PD4)', () => {
+  const linked = (role: string | null) =>
+    role === 'gone'
+      ? forceRole(addChild(roleProject(withRoles), 'E1', 'A1', 'click'), 'E1', role)
+      : addChild(roleProject(withRoles), 'E1', 'A1', role);
+
+  function linkedText(role: string | null): string | undefined {
+    const harness = createHarness(linked(role));
+    const { container } = withContext(harness, <ListView onSelect={vi.fn()} />);
+    return container.querySelector('.list-linked')?.textContent ?? undefined;
+  }
+
+  it('mostra o nome do papel depois do dono', () => {
+    expect(linkedText('click')).toMatch(/^↳ de .+ \(Clique\)$/);
+  });
+
+  it('papel desconhecido: o id cru entre parênteses', () => {
+    expect(linkedText('gone')).toMatch(/\(gone\)$/);
+  });
+
+  it('sem papel: só o dono', () => {
+    expect(linkedText(null)).toMatch(/^↳ de [^()]+$/);
   });
 });
 
