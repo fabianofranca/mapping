@@ -1,6 +1,12 @@
 import { projectIndex, typeKey } from './projectIndex';
 import { isChildTypeAllowed } from './specChildren';
-import type { Spec, SpecAnnotationType, SpecField, SpecLayer } from './spec';
+import type {
+  Spec,
+  SpecAnnotationType,
+  SpecChildRole,
+  SpecField,
+  SpecLayer,
+} from './spec';
 import type {
   Annotation,
   AnnotationTypeRef,
@@ -107,4 +113,21 @@ export function isAllowedOwner(
   return (
     resolved !== null && isChildTypeAllowed(resolved.spec, resolved.type.id, child.typeId)
   );
+}
+
+/** Papéis que o tipo da dona oferece e o rótulo deles (v11, `childRoles`); `null` = dono sem papéis. */
+export interface OwnerRoles {
+  readonly label: string | null;
+  readonly roles: readonly SpecChildRole[];
+}
+
+/**
+ * Os papéis que o tipo de `owner` oferece aos filhos. `null` quando a dona é livre, de tipo
+ * desconhecido ou o tipo dela não declara `childRoles`.
+ */
+export function ownerRolesOf(p: Project, owner: Annotation): OwnerRoles | null {
+  const roles = typeOfAnnotation(p, owner)?.type.childRoles;
+  if (!roles || roles.length === 0) return null;
+  const resolved = typeOfAnnotation(p, owner);
+  return { label: resolved?.type.childRolesLabel ?? null, roles };
 }

@@ -31,6 +31,7 @@ export function buildLargeTypedProject(): Project {
       layerId,
       name: null,
       parentAnnotationId: null,
+      parentRole: null,
       type: null,
       values: null,
       entries: [
@@ -52,6 +53,7 @@ export function buildLargeTypedProject(): Project {
       layerId,
       name: null,
       parentAnnotationId: null,
+      parentRole: null,
       type: { specId, typeId },
       values,
       entries: [],

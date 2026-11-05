@@ -3,7 +3,7 @@ import type { Spec } from './spec';
 // Tipos do `mapping.json` (schema v13). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -216,6 +216,18 @@ export interface PlatformRepo {
 /** `platformRepos` do `mapping.json`: sobreposição local por id de plataforma. */
 export type PlatformRepos = { readonly [platformId: string]: PlatformRepo };
 
+/**
+ * Sobreposição local do repositório de documentos de uma especialização (v14), no nível do
+ * projeto: onde está o clone. O endereço do repositório é da especialização (`docRepos`).
+ */
+export interface DocRepo {
+  /** Raiz do clone, relativa à pasta do projeto (ex: `../docs`). */
+  readonly localPath: string;
+}
+
+/** `docRepos` do `mapping.json`: sobreposição local por id de repositório de documentos. */
+export type DocRepos = { readonly [docRepoId: string]: DocRepo };
+
 export interface Annotation {
   readonly id: string;
   /** Marcação (ou seta, v13) dona da anotação. */
@@ -224,6 +236,12 @@ export interface Annotation {
   readonly name: string | null;
   /** Anotação "dona" (mesma marcação, outra camada, sem ciclos) ou `null`. */
   readonly parentAnnotationId: string | null;
+  /**
+   * Papel que esta anotação ocupa na dona (v14): id de um `childRoles` do tipo da dona, ou `null`
+   * = sem papel. Só existe com dona (`parentAnnotationId` não nulo). Falta e papel que a dona não
+   * oferece viram pendência (`missing-role`, `unknown-role`), não erro.
+   */
+  readonly parentRole: string | null;
   /** `null` = anotação livre (pares em `entries`). */
   readonly type: AnnotationTypeRef | null;
   /** Valores da anotação tipada; `null` na anotação livre. */
@@ -273,6 +291,11 @@ export interface Project {
    * diferentes são a mesma e usam a mesma configuração.
    */
   readonly platformRepos: PlatformRepos;
+  /**
+   * Clone local de cada repositório de documentos (v14), por id do `docRepos` da especialização.
+   * Mesmas regras do `platformRepos`: o mesmo id em especializações diferentes é a mesma entrada.
+   */
+  readonly docRepos: DocRepos;
   readonly layers: readonly Layer[];
   readonly containers: readonly ProjectContainer[];
   readonly markings: readonly Marking[];

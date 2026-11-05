@@ -101,6 +101,7 @@ export function buildLargeProject(options: LargeProjectOptions = {}): Project {
         layerId,
         name: `Anotação ${index}`,
         parentAnnotationId: null,
+        parentRole: null,
         type: null,
         values: null,
         entries: [

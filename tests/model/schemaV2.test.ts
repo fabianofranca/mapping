@@ -35,13 +35,13 @@ function load(text: string): Project {
 }
 
 describe('migração v1 → v2', () => {
-  it('abre um v1 real como v13 sem perder nada', () => {
+  it('abre um v1 real como v14 sem perder nada', () => {
     const result = deserialize(v1Text);
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(1);
     expect(result.readOnly).toBe(false);
     const p = result.project;
-    expect(p.schemaVersion).toBe(13);
+    expect(p.schemaVersion).toBe(14);
     expect(p.containers.every((i) => i.name === null)).toBe(true);
     expect(p.annotations.every((a) => a.parentAnnotationId === null)).toBe(true);
     // Os dados originais continuam idênticos.
@@ -66,15 +66,15 @@ describe('migração v1 → v2', () => {
     ).toEqual(original.images);
     expect(
       p.annotations.map((a) => ({
-        ...omit(a, ['parentAnnotationId', 'type', 'values']),
+        ...omit(a, ['parentAnnotationId', 'parentRole', 'type', 'values']),
         entries: a.entries.map((e) => omit(e, ['id'])),
       })),
     ).toEqual(original.annotations);
   });
 
-  it('salvar o v1 migrado gera v13 estável (round-trip)', () => {
+  it('salvar o v1 migrado gera v14 estável (round-trip)', () => {
     const saved = serialize(load(v1Text));
-    expect(JSON.parse(saved).schemaVersion).toBe(13);
+    expect(JSON.parse(saved).schemaVersion).toBe(14);
     expect(serialize(load(saved))).toBe(saved);
   });
 
@@ -100,6 +100,7 @@ describe('migração v1 → v2', () => {
       'layerId',
       'name',
       'parentAnnotationId',
+      'parentRole',
       'type',
       'values',
       'entries',

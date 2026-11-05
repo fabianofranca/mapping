@@ -43,6 +43,9 @@ export type ModelErrorCode =
   // O tipo não se aplica à dona (appliesTo: marcação ou seta, ME4)
   | 'type-not-applicable'
   | 'owner-required'
+  // Papel no vínculo (v14)
+  | 'unknown-role'
+  | 'role-without-owner'
   | 'unknown-field'
   | 'invalid-value'
   | 'unknown-option'
@@ -54,6 +57,7 @@ export type ModelErrorCode =
   // Repositórios por plataforma (etapa 3b)
   | 'unknown-platform'
   | 'invalid-local-path'
+  | 'unknown-doc-repo'
   // Propostas de alteração (etapa 4)
   | 'invalid-source'
   // Componentes (etapa Biblioteca)

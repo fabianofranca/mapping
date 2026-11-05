@@ -55,6 +55,12 @@ export function serialize(p: Project): string {
         { localPath: repo.localPath },
       ]),
     ),
+    docRepos: Object.fromEntries(
+      Object.entries(p.docRepos).map(([repo, entry]) => [
+        repo,
+        { localPath: entry.localPath },
+      ]),
+    ),
     layers: p.layers.map((l) => ({
       id: l.id,
       name: l.name,
@@ -102,6 +108,7 @@ export function serialize(p: Project): string {
       layerId: a.layerId,
       name: a.name,
       parentAnnotationId: a.parentAnnotationId,
+      parentRole: a.parentRole,
       type: a.type && { specId: a.type.specId, typeId: a.type.typeId },
       values:
         a.values &&
