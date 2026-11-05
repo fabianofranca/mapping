@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 10)
+# Formato da especialização (`formatVersion` 1 a 11)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -10,7 +10,7 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - Uma especialização **não cita outra pelo nome**. A ligação entre elas é feita por **referências fortes** (tipo `ref`) que escolhem os alvos por **etiquetas**.
 - Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
 - A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido. A cópia mantém a `formatVersion` com que foi aplicada.
-- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 10; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 11; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
@@ -19,10 +19,11 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - A `formatVersion` 8 é a 7 mais `suggestions` e `linkedRef` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor, e os alvos mapeados na mesma lista: ver "Sugestões de texto" e "Alvos mapeados na lista (`linkedRef`)"). A 8 é aditiva: as versões 1 a 7 continuam aceitas sem mudança, e `suggestions` ou `linkedRef` numa versão anterior é o erro `só é permitido com formatVersion 8`, no caminho exato.
 - A `formatVersion` 9 é a 8 mais `variants` na entrada de `code`: o campo `enum` do tipo que escolhe a variante do código de instanciação, como o `style` de um botão que em Compose troca o composable (`Button`, `OutlinedButton`, `TextButton`; ver "Variantes do código (`variants`)"). A 9 é aditiva: as versões 1 a 8 continuam aceitas sem mudança, e `variants` numa versão anterior é o erro `só é permitido com formatVersion 9`, no caminho exato. Só sobe para a 9 a especialização que usa `variants`.
 - A `formatVersion` 10 é a 9 mais `notices` no tipo, no campo e na coluna de `table`: avisos curtos que dizem a quem usa a especialização que algo diverge entre as fontes, está pendente, obsoleto ou removido (ver "Avisos (notices)"). A 10 é aditiva: as versões 1 a 9 continuam aceitas sem mudança, e `notices` numa versão anterior é o erro `só é permitido com formatVersion 10`, no caminho exato. Só sobe para a 10 a especialização que usa `notices`.
+- A `formatVersion` 11 é a 10 mais três recursos, todos opcionais: `allowedChildren` que aceita, além de ids de tipo, uma **cláusula** `{ layer, groups? }` que cobre uma camada inteira ou só os **grupos** dela (`groups` na camada e no tipo: ver "Filhos por camada e grupo"); `childRoles` e `childRolesLabel` no tipo dono, os **papéis** em que um filho se liga a ele (ver "Papéis no vínculo (childRoles)"); e `docRepos` na raiz com o `doc` do tipo como objeto `{ repo, path }`, o documento que vive em **outro repositório** (ver "Documento em repositório externo (docRepos)"). A 11 é aditiva: as versões 1 a 10 continuam aceitas sem mudança, e cada chave da 11 numa versão anterior é o erro `só é permitido com formatVersion 11`, no caminho exato. Só sobe para a 11 a especialização que usa alguma dessas chaves; o `doc` como texto (o arquivo do pacote) continua valendo desde a 4.
 
 Arquivos de apoio:
 
-- `docs/spec.schema.json`: JSON Schema (draft 2020-12). Valida só a **estrutura**; as regras entre elementos (ids únicos, `allowedChildren`, `requiresOwner`, `labelField`, `rowLabel`, `default` compatível, plataformas declaradas, chaves de `params` e `values`, `sources` só a partir da versão 3, `values` das origens só em `enum` e com destinos nas `options`, `path`/`slot`/`ignore` só em sistema declarado em `origins`, `examples` em um modo só, os passos de `migrations` coerentes com os tipos e campos) só são verificadas pelo validador da app (`src/model/spec.ts`, que é a fonte da verdade).
+- `docs/spec.schema.json`: JSON Schema (draft 2020-12). Valida só a **estrutura**; as regras entre elementos (ids únicos, `allowedChildren` com as cláusulas e os `groups`, `requiresOwner`, `childRoles`, o `repo` de `docRepos`, `labelField`, `rowLabel`, `default` compatível, plataformas declaradas, chaves de `params` e `values`, `sources` só a partir da versão 3, `values` das origens só em `enum` e com destinos nas `options`, `path`/`slot`/`ignore` só em sistema declarado em `origins`, `examples` em um modo só, os passos de `migrations` coerentes com os tipos e campos) só são verificadas pelo validador da app (`src/model/spec.ts`, que é a fonte da verdade).
 - `docs/component.schema.json`: JSON Schema do arquivo de componente (`docs/COMPONENT-FORMAT.md`).
 - `examples/specs/sdui.json` (`formatVersion` 5) e `examples/specs/modelo-de-dados.json` (`formatVersion` 1): exemplos completos.
 - `examples/libraries/sdui-backend/`: o exemplo de **origem executável** (v9, 6 tipos): `origins` com `booleans`, `background.values` e raízes com `anchor`, `margin` e `scrim`; `sources` de tipo (`slot`, `ignore`, `id`) e de campo e coluna (`path`, `values`); exemplos do sistema externo (`examples[].system` e `file`) e a tela de exemplo; e `migrations` com os seis passos. É o exemplo de `origins`, `sources` e `migrations`.
@@ -73,27 +74,30 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `9`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`. A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `11`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
-| Propriedade       | Obrigatória | Descrição                                                                                                                 |
-| ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `id`              | sim         | Único **na especialização inteira**.                                                                                      |
-| `name`            | sim         | Nome exibido (ex: "Button").                                                                                              |
-| `description`     | não         | Texto de ajuda.                                                                                                           |
-| `labelField`      | não         | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio.                 |
-| `requiresOwner`   | não         | Padrão `false`. A anotação precisa ter exatamente um dono (ver "Relações").                                               |
-| `allowedChildren` | não         | Ids dos tipos que podem ser **vinculados** a este.                                                                        |
-| `fields`          | sim         | Lista de campos (pode ser vazia).                                                                                         |
-| `code`            | não         | A partir da `formatVersion` 2. Como se cria uma instância do tipo, por plataforma declarada (ver "Plataformas e code").   |
-| `sources`         | não         | A partir da `formatVersion` 3. Elementos de origem a que o tipo corresponde (ver "Origens (sources)").                    |
-| `component`       | não         | A partir da `formatVersion` 4. Caminho do arquivo `.json` do componente que desenha o tipo (ver "Biblioteca: o pacote").  |
-| `doc`             | não         | A partir da `formatVersion` 4. Caminho do documento `.md` do tipo (ver "Biblioteca: o pacote").                           |
-| `examples`        | não         | A partir da `formatVersion` 4. Exemplos nomeados do tipo: valores dos campos ou o JSON de um sistema externo.             |
-| `floating`        | não         | A partir da `formatVersion` 7. Padrão `false`. A instância é uma marcação flutuante (ver "Tipo flutuante").               |
-| `appliesTo`       | não         | A partir da `formatVersion` 7. `["marking"]`, `["arrow"]` ou os dois; padrão `["marking"]` (ver "Onde o tipo se aplica"). |
-| `notices`         | não         | A partir da `formatVersion` 10. Avisos sobre o tipo (ver "Avisos (notices)").                                             |
+| Propriedade       | Obrigatória | Descrição                                                                                                                                                                                                                |
+| ----------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`              | sim         | Único **na especialização inteira**.                                                                                                                                                                                     |
+| `name`            | sim         | Nome exibido (ex: "Button").                                                                                                                                                                                             |
+| `description`     | não         | Texto de ajuda.                                                                                                                                                                                                          |
+| `labelField`      | não         | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio.                                                                                                                |
+| `requiresOwner`   | não         | Padrão `false`. A anotação precisa ter exatamente um dono (ver "Relações").                                                                                                                                              |
+| `allowedChildren` | não         | Os tipos que podem ser **vinculados** a este: ids de tipo e, a partir da `formatVersion` 11, cláusulas `{ layer, groups? }` (ver "Filhos por camada e grupo").                                                           |
+| `groups`          | não         | A partir da `formatVersion` 11. Ids dos grupos da **própria camada** a que o tipo pertence (ver "Filhos por camada e grupo").                                                                                            |
+| `childRoles`      | não         | A partir da `formatVersion` 11. Os papéis em que um filho se liga a este tipo (ver "Papéis no vínculo (childRoles)").                                                                                                    |
+| `childRolesLabel` | não         | A partir da `formatVersion` 11. O nome do seletor de papel, com `childRoles` (padrão "Papel").                                                                                                                           |
+| `fields`          | sim         | Lista de campos (pode ser vazia).                                                                                                                                                                                        |
+| `code`            | não         | A partir da `formatVersion` 2. Como se cria uma instância do tipo, por plataforma declarada (ver "Plataformas e code").                                                                                                  |
+| `sources`         | não         | A partir da `formatVersion` 3. Elementos de origem a que o tipo corresponde (ver "Origens (sources)").                                                                                                                   |
+| `component`       | não         | A partir da `formatVersion` 4. Caminho do arquivo `.json` do componente que desenha o tipo (ver "Biblioteca: o pacote").                                                                                                 |
+| `doc`             | não         | A partir da `formatVersion` 4. Caminho do documento `.md` do tipo (ver "Biblioteca: o pacote"); na 11, também `{ repo, path }`, um documento em repositório externo (ver "Documento em repositório externo (docRepos)"). |
+| `examples`        | não         | A partir da `formatVersion` 4. Exemplos nomeados do tipo: valores dos campos ou o JSON de um sistema externo.                                                                                                            |
+| `floating`        | não         | A partir da `formatVersion` 7. Padrão `false`. A instância é uma marcação flutuante (ver "Tipo flutuante").                                                                                                              |
+| `appliesTo`       | não         | A partir da `formatVersion` 7. `["marking"]`, `["arrow"]` ou os dois; padrão `["marking"]` (ver "Onde o tipo se aplica").                                                                                                |
+| `notices`         | não         | A partir da `formatVersion` 10. Avisos sobre o tipo (ver "Avisos (notices)").                                                                                                                                            |
 
 ### Campo
 
@@ -170,8 +174,170 @@ Também na `formatVersion` 8, um campo `string` (ou coluna `string` de `table`) 
 
 Sempre dentro da mesma especialização.
 
-- `allowedChildren`: tipos que podem ser vinculados (via `parentAnnotationId`) a este. Um dono pode ter N filhos, inclusive do mesmo tipo. Os filhos devem estar em **outra camada**.
-- `requiresOwner: true`: a anotação precisa de exatamente um dono, de um tipo que a liste em `allowedChildren`.
+- `allowedChildren`: tipos que podem ser vinculados (via `parentAnnotationId`) a este. Um dono pode ter N filhos, inclusive do mesmo tipo. Os filhos devem estar em **outra camada**. Cada item é o id de um tipo ou, a partir da `formatVersion` 11, uma cláusula `{ layer, groups? }` que cobre uma camada ou os grupos dela (ver "Filhos por camada e grupo").
+- `requiresOwner: true`: a anotação precisa de exatamente um dono, de um tipo que a liste em `allowedChildren` (por id ou pela cláusula que a cobre).
+- `childRoles` (`formatVersion` 11): os papéis em que um filho se liga ao dono (ver "Papéis no vínculo (childRoles)").
+
+## Filhos por camada e grupo
+
+Até a v10, `allowedChildren` lista os filhos **um a um**, por id. Uma camada de eventos com trinta tipos obriga cada dono a repetir os trinta ids, e um tipo novo na camada pede a edição de todos os donos. A `formatVersion` 11 deixa um item de `allowedChildren` ser, em vez do id, uma **cláusula** `{ "layer": "<id da camada>", "groups": ["<id>", …] }` (`groups` é opcional), e deixa a camada declarar **grupos** (`layers[].groups`) a que os tipos dela pertencem (`annotationTypes[].groups`).
+
+```json
+{
+  "formatVersion": 11,
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "allowedChildren": [{ "layer": "eventos" }],
+          "fields": []
+        },
+        {
+          "id": "card",
+          "name": "Card",
+          "allowedChildren": [{ "layer": "eventos", "groups": ["navegacao"] }, "submit"],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#E53935",
+      "groups": [
+        { "id": "navegacao", "name": "Navegação" },
+        {
+          "id": "dados",
+          "name": "Dados",
+          "description": "Eventos que leem ou gravam dados."
+        }
+      ],
+      "annotationTypes": [
+        {
+          "id": "navigate",
+          "name": "Navigate",
+          "groups": ["navegacao"],
+          "requiresOwner": true,
+          "fields": [{ "key": "destino", "type": "string", "required": true }]
+        },
+        {
+          "id": "back",
+          "name": "Back",
+          "groups": ["navegacao"],
+          "requiresOwner": true,
+          "fields": []
+        },
+        {
+          "id": "submit",
+          "name": "Submit",
+          "groups": ["dados"],
+          "requiresOwner": true,
+          "fields": []
+        }
+      ]
+    }
+  ]
+}
+```
+
+- **A cláusula.** Sem `groups`, cobre **todos os tipos da camada** (o Button acima aceita todo evento, inclusive os que forem acrescentados depois). Com `groups`, cobre os tipos da camada que estão em **algum** dos grupos listados (o Card aceita `navigate` e `back`, mais o `submit` citado por id). A cláusula só tem `layer` e `groups`; qualquer outra propriedade é erro, e `groups: []` também (para a camada inteira, omita `groups`).
+- **O conjunto resolvido.** Os tipos que um dono aceita como filhos são a **união dos itens, na ordem deles**; dentro de uma cláusula, os tipos vêm na ordem da camada; um tipo que aparece mais de uma vez fica na **primeira** posição. Um id de texto continua sendo um tipo só, em outra camada, como antes. Toda leitura de "quem pode ser filho de quem" (o editor do dono, a validação do vínculo, `requiresOwner`) usa esse mesmo conjunto.
+- **Os grupos.** `layers[].groups` é uma lista de `{ id, name, description? }`: `id` não vazio e único **dentro da camada**, `name` não vazio, `description` opcional. A ordem da lista é a ordem dos cabeçalhos com que a app apresenta os tipos. `annotationTypes[].groups` é a lista, não vazia e sem repetição, dos ids de grupo da **própria camada** a que o tipo pertence; um tipo pode estar em vários grupos, e um tipo sem `groups` só entra por uma cláusula da camada inteira ou pelo próprio id. Um grupo é só um agrupamento: não muda o que o tipo é nem onde ele vive.
+- **Outra camada, como sempre.** A `layer` da cláusula precisa existir e **não pode ser a camada do próprio dono** (o erro é o de hoje: `filhos devem estar em outra camada`); um `group` precisa existir **na camada da cláusula**.
+- **`requiresOwner`** é conferido no conjunto resolvido: o tipo precisa estar no conjunto de algum dono, seja por id, por camada inteira ou por grupo.
+- **Avisos** (`specWarnings`; não bloqueiam): `allowedChildren` com 20 ids ou mais **em texto** avisa `N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos` (com 19, não); grupo declarado que nenhum tipo usa também avisa.
+- **Fora do contrato de versão:** incluir, mudar ou tirar `groups`, e trocar uma lista de ids por uma cláusula, é compatível e nunca pede migração (ver "Contrato de versão"). `diffSpecs` não gera diferença para `allowedChildren`, como hoje, nem para `groups`.
+- Só a partir da `formatVersion` 11: a cláusula, `layers[n].groups` e `annotationTypes[m].groups` numa versão anterior são o erro `só é permitido com formatVersion 11`, no caminho exato (`layers[0].annotationTypes[0].allowedChildren[0]`, `layers[1].groups`, `layers[1].annotationTypes[0].groups`).
+
+## Papéis no vínculo (childRoles)
+
+Um dono às vezes liga o mesmo tipo de filho em **pontos diferentes** dele: o Button tem um evento de clique e um de pressionar, e os dois são do tipo `navigate`. Quando o filho precisa dizer **em que ponto do dono se liga**, isso é um **papel**, não um campo do filho nem um id de tipo (quando só o ponto de ligação muda, não crie um tipo por gatilho, como `onClick` e `onHold`, nem um campo `trigger` em cada evento). A `formatVersion` 11 declara os papéis no **dono**, com `childRoles`, e um nome para o seletor, com `childRolesLabel`.
+
+```json
+{
+  "id": "button",
+  "name": "Button",
+  "allowedChildren": [{ "layer": "eventos" }],
+  "childRolesLabel": "Trigger",
+  "childRoles": [
+    { "id": "click", "name": "Clique" },
+    { "id": "hold", "name": "Pressionar", "description": "Toque longo no botão." }
+  ],
+  "fields": []
+}
+```
+
+- `childRoles`: lista **não vazia** de `{ id, name, description? }`, com `id` não vazio e **único no tipo** e `name` não vazio. O papel pertence ao **vínculo** entre o dono e o filho, não ao filho: o mesmo tipo de filho pode ocupar papéis diferentes no mesmo dono (um `navigate` no clique, outro no pressionar) e em donos diferentes.
+- `childRoles` só vale em um tipo **com `allowedChildren`** (sem filhos não há vínculo para levar papel): em outro caso é erro.
+- `childRolesLabel`: texto não vazio, o nome com que a app chama o seletor do papel ("Trigger", "Slot", "Posição"). Só vale com `childRoles` (senão é erro). Sem ele, a app usa **Papel** (pt-BR) e **Role** (en-US).
+- **Fora do contrato de versão:** incluir, mudar ou tirar `childRoles` e `childRolesLabel` é compatível e nunca pede migração (ver "Contrato de versão"); `diffSpecs` os ignora.
+- Só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `layers[0].annotationTypes[0].childRoles` ou `….childRolesLabel`).
+
+## Documento em repositório externo (docRepos)
+
+Até a v10, o `doc` de um tipo é um arquivo `.md` **dentro do pacote**. Quando a documentação do componente vive no repositório do design system ou do contrato, e não na pasta da especialização, copiá-la para o pacote cria uma segunda fonte que envelhece. A `formatVersion` 11 declara na raiz os repositórios de documentos (`docRepos`) e deixa o `doc` do tipo apontar para um arquivo de um deles.
+
+```json
+{
+  "docRepos": [
+    {
+      "id": "design-docs",
+      "url": "https://gitlab.empresa.com/grupo/design-docs",
+      "urlTemplate": "https://gitlab.empresa.com/grupo/design-docs/-/blob/main/{path}",
+      "ref": "main"
+    }
+  ],
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "doc": { "repo": "design-docs", "path": "components/button.md" },
+          "allowedChildren": [{ "layer": "eventos" }],
+          "childRolesLabel": "Trigger",
+          "childRoles": [
+            { "id": "click", "name": "Clique" },
+            { "id": "hold", "name": "Pressionar" }
+          ],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#E53935",
+      "groups": [{ "id": "navegacao", "name": "Navegação" }],
+      "annotationTypes": [
+        {
+          "id": "navigate",
+          "name": "Navigate",
+          "groups": ["navegacao"],
+          "requiresOwner": true,
+          "fields": [{ "key": "destino", "type": "string", "required": true }]
+        }
+      ]
+    }
+  ]
+}
+```
+
+- `docRepos`: lista de `{ id, url, urlTemplate?, ref? }`, com as **mesmas regras do `repo` de uma plataforma** (ver "Plataformas e code"): `url` obrigatória, `http://` ou `https://`, sem espaços; `urlTemplate` opcional, `http(s)://` e com `{path}`; `ref` opcional, texto não vazio, informativa; qualquer outra propriedade é recusada. `id` no formato `[a-z0-9-]+` (o do id de plataforma) e **único** na lista.
+- `doc` com **dois jeitos**: **texto** (`"docs/button.md"`) é o arquivo `.md` do pacote, como desde a v4; **objeto** `{ "repo": "<id de docRepos>", "path": "<caminho>" }` é um arquivo do repositório declarado. O `repo` precisa existir em `docRepos`, e o objeto não tem outra propriedade.
+- `path` segue as regras do `path` de `code`: relativo à raiz do repositório, `/` como separador, sem `.`, `..` nem `/` no começo. Além disso termina em **`.md`** e **não tem `#`** (a âncora dentro do documento não faz parte do caminho do arquivo).
+- **O pacote não leva o documento.** O `doc` objeto não conta como arquivo citado do pacote: uma especialização cujos únicos arquivos citados são documentos externos vale como **arquivo isolado** (ver "Biblioteca: o pacote"), e o nível 1 da validação do pacote não confere o documento externo (a app não o baixa; quem o lê chega a ele pelo repositório).
+- **Fora do contrato de versão:** incluir, mudar ou tirar `docRepos`, e trocar o `doc` entre texto e objeto, é compatível e nunca pede migração (ver "Contrato de versão"); `diffSpecs` não gera diferença.
+- **Aviso** (`specWarnings`; não bloqueia): um repositório de `docRepos` que nenhum `doc` usa.
+- Só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `docRepos` ou `layers[0].annotationTypes[0].doc`, este quando o `doc` é objeto).
 
 ## Referências e etiquetas
 
@@ -657,7 +823,7 @@ Os nomes das pastas (`components/`, `docs/`, `examples/`, `fonts/`) são conven�
 | Chave                       | Onde             | Extensão                             |
 | --------------------------- | ---------------- | ------------------------------------ |
 | `component`                 | tipo de anotação | `.json` (um componente)              |
-| `doc`                       | tipo de anotação | `.md`                                |
+| `doc` (texto)               | tipo de anotação | `.md`                                |
 | `examples[].file`           | tipo de anotação | `.json` (o nó de um sistema externo) |
 | `origins[].examples[].file` | origem           | `.json` (uma tela inteira)           |
 | `fonts[].file`              | raiz             | `.ttf`, `.otf`, `.woff` ou `.woff2`  |
@@ -667,7 +833,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 | Propriedade  | Onde             | Descrição                                                                                                                                                                                                                                                                          |
 | ------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `component`  | tipo de anotação | O arquivo do componente que desenha o tipo. Opcional: um tipo sem componente continua valendo, só não tem desenho.                                                                                                                                                                 |
-| `doc`        | tipo de anotação | O documento markdown do tipo (quando usar, variantes, exemplos de uso).                                                                                                                                                                                                            |
+| `doc`        | tipo de anotação | O documento markdown do tipo (quando usar, variantes, exemplos de uso). Na `formatVersion` 11 também pode ser `{ repo, path }`, um documento em repositório externo, que **não** faz parte do pacote (ver "Documento em repositório externo (docRepos)").                          |
 | `examples`   | tipo de anotação | Lista de exemplos. `name` (não vazio e único no tipo) e `description` opcional, mais **um** de dois modos: `values` (valores dos campos do tipo) ou `system` com `file` (o JSON de **um nó** de um sistema externo declarado em `origins`: um componente, não uma tela).           |
 | `values`     | exemplo          | Chave de um campo do próprio tipo (coluna não vale) → valor. `null` é sempre aceito; `string` pede texto, `date` pede `AAAA-MM-DD` válido, `number` pede número finito e `enum` pede uma das `options`. Campo `table` e campo `ref` **não** aceitam valor em exemplo nesta versão. |
 | `fonts`      | raiz             | Lista de `{ family, file, weight?, style? }`. `family` não vazio; `weight` é um inteiro de 100 a 1000 ou uma faixa `"100 900"` (dois inteiros, o primeiro menor); `style` é `normal` (padrão) ou `italic`. O par `family` + `weight` + `style` não pode se repetir.                |
@@ -703,7 +869,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Fontes.** O arquivo de uma fonte declarada pode não estar no pacote (as fontes têm licença e peso; o pacote de exemplo não leva os `.ttf`). A fonte ausente **avisa** e o desenho cai na fonte do sistema; o pacote continua válido.
 
-**Aplicar a um projeto.** Aplicar uma biblioteca **copia a pasta inteira** para `specs/<id>/` (a cópia de uma especialização v1 a v3 continua sendo o arquivo `specs/<id>.json`). Na app, **Especializações** aceita a pasta (`showDirectoryPicker`, Chrome/Edge) ou um zip do pacote (com ou sem uma pasta-raiz única), confere os três níveis e mostra erros (bloqueiam) e avisos (deixam aplicar); **Atualizar de pasta…/zip…** passa a versão aplicada como `previous` ao contrato de versão (quebra sem migração é erro) e regrava a pasta, e **Remover** a apaga. Uma especialização v4 ou v5 que **não cita nenhum arquivo do pacote** (nenhum tipo com `component`, `doc` ou `examples`, e sem `fonts` nem `origins` na raiz; `migrations` não conta) vale como arquivo isolado, como a v1 a v3: a app a aplica e atualiza com o `.json` e a cópia é `specs/<id>.json`. Um `.json` v4 ou v5 que cita arquivos do pacote é **recusado** na app: ele pede a pasta (ou o zip). Ao abrir o projeto, o Diagnóstico mostra os problemas dos níveis 1 e 2 da cópia. As tools do servidor MCP e a skill que escreve o pacote são da B2 também.
+**Aplicar a um projeto.** Aplicar uma biblioteca **copia a pasta inteira** para `specs/<id>/` (a cópia de uma especialização v1 a v3 continua sendo o arquivo `specs/<id>.json`). Na app, **Especializações** aceita a pasta (`showDirectoryPicker`, Chrome/Edge) ou um zip do pacote (com ou sem uma pasta-raiz única), confere os três níveis e mostra erros (bloqueiam) e avisos (deixam aplicar); **Atualizar de pasta…/zip…** passa a versão aplicada como `previous` ao contrato de versão (quebra sem migração é erro) e regrava a pasta, e **Remover** a apaga. Uma especialização v4 ou v5 que **não cita nenhum arquivo do pacote** (nenhum tipo com `component`, `doc` em texto ou `examples`, e sem `fonts` nem `origins` na raiz; `migrations` não conta, e o `doc` objeto da v11, que é um documento em repositório externo, também não) vale como arquivo isolado, como a v1 a v3: a app a aplica e atualiza com o `.json` e a cópia é `specs/<id>.json`. Um `.json` v4 ou v5 que cita arquivos do pacote é **recusado** na app: ele pede a pasta (ou o zip). Ao abrir o projeto, o Diagnóstico mostra os problemas dos níveis 1 e 2 da cópia. As tools do servidor MCP e a skill que escreve o pacote são da B2 também.
 
 **Pacote embutido.** `libraries/notas/` (especialização v7: a camada Notas, o tipo flutuante `nota` e o componente post-it) é um pacote comum que a app traz dentro do build e **aplica por padrão** em projeto novo e em projeto aberto de um schema anterior ao 13 (ver "Tipo flutuante"). Para o resto do ciclo ele é uma biblioteca como as outras: a cópia vai para `specs/notas/` e a pessoa pode removê-la.
 
@@ -721,7 +887,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Quebra** (e só isto): remover ou renomear um **tipo**, um **campo** (ou coluna) ou uma **opção de `enum`**; tornar um campo **obrigatório**, inclusive um campo novo que já nasce obrigatório (os valores existentes ficam incompletos); mudar o `type` de um campo.
 
-**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef` e `notices`, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
+**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren` (inclusive a cláusula `{ layer, groups }`), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `groups` (da camada e do tipo), `childRoles`, `childRolesLabel` e `docRepos`, trocar o `doc` entre texto e objeto, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
 
 ### `migrations`
 
@@ -947,16 +1113,19 @@ Os pacotes `libraries/material3-compose/` e `examples/libraries/sdui-backend/` p
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 10), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 11), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada**;
-- todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo;
+- todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo (na v11, no conjunto **resolvido** dos filhos de algum dono: por id, por camada inteira ou por grupo);
 - `default` compatível com o tipo (e presente em `options` no `enum`); `ref` sem `default`;
 - `columns` só com tipos simples ou, na `formatVersion` 7, `ref` (com `accepts`); `table` dentro de `table` é recusado; `rowLabel` obrigatório em `table` com `tags` e apontando para uma coluna `string`;
 - `labelField` aponta para um campo `string` do tipo;
 - `accepts` com pelo menos uma etiqueta ou `free: true`; etiquetas no formato `[a-z0-9-]+`;
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
+- **v11, filhos por camada e grupo:** só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].allowedChildren[k]` para a cláusula, `layers[n].groups` e `…annotationTypes[m].groups`); cada item de `allowedChildren` é um id de tipo ou uma cláusula `{ layer, groups? }` estrita (outra propriedade é erro, e `groups: []` também); erros: `layer` que não é uma camada da especialização, `layer` que é a camada do próprio dono (`filhos devem estar em outra camada`) e grupo inexistente na camada da cláusula; `requiresOwner` é conferido no conjunto resolvido; `layers[n].groups`: `id` não vazio e único na camada, `name` não vazio; `annotationTypes[m].groups`: lista não vazia, sem repetição, só de grupos da própria camada (grupo inexistente na camada é erro); **avisos:** 20 ids ou mais em texto no mesmo `allowedChildren` (`N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos`; com 19, não) e grupo declarado que nenhum tipo usa (ver "Filhos por camada e grupo");
+- **v11, `childRoles` e `childRolesLabel`:** só a partir da `formatVersion` 11 (`só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].childRoles` ou `….childRolesLabel`); `childRoles` não vazia, de `{ id, name, description? }` estritos, com `id` não vazio e único no tipo e `name` não vazio; só em tipo com `allowedChildren` (senão é erro); `childRolesLabel` texto não vazio e só com `childRoles` (senão é erro); sem ele a app usa "Papel" / "Role" (ver "Papéis no vínculo (childRoles)");
+- **v11, `docRepos` e `doc` objeto:** só a partir da `formatVersion` 11 (`só é permitido com formatVersion 11`, no caminho `docRepos` ou `…annotationTypes[n].doc`); `docRepos[n]` com as regras do `repo` de plataforma (`url` obrigatória `http(s)://` sem espaços, `urlTemplate` opcional com `{path}`, `ref` opcional não vazio, nenhuma outra propriedade), `id` no formato `[a-z0-9-]+` e único na lista (id repetido e `urlTemplate` sem `{path}` são erro); `doc` objeto `{ repo, path }` estrito: `repo` precisa estar em `docRepos`, `path` relativo (sem `.`, `..` nem `/` no começo), terminando em `.md` e sem `#`; o `doc` texto continua valendo da v4 em diante; **aviso:** repositório de `docRepos` que nenhum `doc` usa (ver "Documento em repositório externo (docRepos)");
 - **v10, `notices`:** só a partir da `formatVersion` 10 (numa versão anterior o erro é `só é permitido com formatVersion 10`, no caminho `…annotationTypes[n].notices`, `…fields[n].notices` ou `…columns[m].notices`); lista (pode ser vazia) de objetos estritos com `kind` (`pending`, `deprecated`, `diverges` ou `removed`) e `message` (não vazia nem só espaços) obrigatórios, `since` (data real `AAAA-MM-DD`) e `ref` (texto não vazio) opcionais; dois avisos com o mesmo `kind` e a mesma `message` na lista são o erro `aviso repetido`, no caminho do segundo; qualquer outra propriedade é recusada; o aviso só informa (ver "Avisos (notices)");
 - **v9, `variants`:** só a partir da `formatVersion` 9 (numa versão anterior o erro é `só é permitido com formatVersion 9`, no caminho `…code.<plataforma>.variants`); `field` é a `key` de um campo `enum` do tipo (nível de cima); `cases` não vazio, com chaves nas `options` do campo e casos não vazios; `params` e `values` dos casos como os da base; um nível só (o caso não tem `variants`); qualquer outra propriedade é recusada (ver "Variantes do código");
 - **v8, `suggestions`:** só a partir da `formatVersion` 8 (numa versão anterior o erro é `só é permitido com formatVersion 8`, no caminho `…fields[n].suggestions` ou `…columns[m].suggestions`); só em campo ou coluna `string`; lista não vazia, até 200 itens, de textos únicos, não vazios e sem espaço nas pontas; não restringe o valor, e o `default` pode ficar fora da lista;
@@ -965,7 +1134,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - **v6, `containers`:** só a partir da `formatVersion` 6 (numa versão anterior o erro é `só é permitido com formatVersion 6`, no caminho `containers`); `id` no formato `[a-z0-9-]+` e único na lista; `name` não vazio; `width` e `height` inteiros de 1 a 20000; `background` opcional no formato `#RRGGBB`; qualquer outra propriedade é recusada;
 - `sources` a partir da `formatVersion` 3; origem de tipo com `system` e pelo menos `id` ou `name`; origem de campo com `system` e `name` (ou `path`, na v4, em sistema de `origins`); `values` só em campos `enum` e com destinos que existam em `options`;
 - **v4, chaves novas:** `fonts`, `origins`, `migrations` (raiz), `component`, `doc` e `examples` (tipo) só a partir da `formatVersion` 4: numa versão anterior o erro é `só é permitido com formatVersion 4`, no caminho da chave;
-- **v4, caminhos do pacote:** `component` e `examples[].file` com extensão `.json`, `doc` com `.md`, `fonts[].file` com `.ttf`, `.otf`, `.woff` ou `.woff2`, e `origins[].examples[].file` com `.json`; todos relativos, normalizados, com `/`, sem `.`, `..`, `/` no começo nem unidade;
+- **v4, caminhos do pacote:** `component` e `examples[].file` com extensão `.json`, `doc` (texto) com `.md`, `fonts[].file` com `.ttf`, `.otf`, `.woff` ou `.woff2`, e `origins[].examples[].file` com `.json`; todos relativos, normalizados, com `/`, sem `.`, `..`, `/` no começo nem unidade;
 - **v4, `fonts`:** `family` não vazio; `weight` inteiro de 100 a 1000 ou faixa `"100 900"` (o primeiro número menor); `style` `normal` ou `italic`; o par `family` + `weight` + `style` não se repete;
 - **v4, `examples`:** `name` não vazio e único no tipo; ou `values` ou `system` com `file`, nunca os dois modos nem nenhum; as chaves de `values` são campos do tipo, com valor `null` ou compatível com o tipo (`table` e `ref` não aceitam); `system` precisa estar em `origins`;
 - **v4, `sources`:** `path` só em sistema declarado em `origins` (e obrigatório nele), com sintaxe válida (`a.b[0].c`) e sem `[*]`; fora de `origins`, `name` é obrigatório e `path` é proibido; `slot` e `ignore` só em sistema declarado em `origins`, e `ignore` sem repetição;

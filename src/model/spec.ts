@@ -3,10 +3,11 @@ import { isValidCodePath, isValidUrlTemplate } from './codeLocations';
 import { MAX_CONTAINER_SIZE } from './containers';
 import { parseOrigins, parsePath, type Origin } from './components/origin';
 import { isPackagePath, packagePathProblem } from './packagePaths';
+import { childSets } from './specChildren';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 10), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
+// Formato da especialização (`formatVersion` 1 a 11), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
 // biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
@@ -22,7 +23,11 @@ export { isPackagePath };
 // versão 9 é a 8 mais `variants` na entrada de `code` (um campo `enum` do tipo escolhe, por
 // valor, o composable/classe/arquivo: `resolveCode` em `codeVariants.ts` aplica o caso); a
 // versão 10 é a 9 mais `notices` (avisos `removed`, `deprecated`, `diverges` ou `pending` no
-// tipo, no campo e na coluna de `table`: informam, não geram pendência; ver `notices.ts`).
+// tipo, no campo e na coluna de `table`: informam, não geram pendência; ver `notices.ts`); a
+// versão 11 é a 10 mais os filhos por camada e grupo (`allowedChildren` aceita cláusulas
+// `{ layer, groups? }` e a camada e o tipo têm `groups`; o resolvedor é `specChildren.ts`), os
+// papéis no vínculo (`childRoles` e `childRolesLabel`) e o documento em repositório externo
+// (`docRepos` na raiz e `doc` como objeto `{ repo, path }`).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -35,9 +40,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 10;
+export const SPEC_FORMAT_VERSION = 11;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -247,21 +252,72 @@ export type SpecField =
   | (SpecFieldBase & { type: 'table'; columns: SpecColumn[]; rowLabel?: string })
   | SpecRefColumn;
 
+/**
+ * Cláusula de `allowedChildren` (só `formatVersion` 11): os tipos da camada `layer`; com `groups`,
+ * só os que estão em algum desses grupos da camada.
+ */
+export interface SpecChildClause {
+  layer: string;
+  groups?: string[];
+}
+
+/** Item de `allowedChildren`: o id de um tipo ou uma cláusula de camada e grupos. */
+export type SpecAllowedChild = string | SpecChildClause;
+
+/** Grupo de tipos de uma camada (só `formatVersion` 11): agrupa os tipos num cabeçalho. */
+export interface SpecLayerGroup {
+  /** Único dentro da camada. */
+  id: string;
+  name: string;
+  description?: string;
+}
+
+/** Papel que um filho assume no vínculo com o dono (só `formatVersion` 11). */
+export interface SpecChildRole {
+  /** Único dentro do tipo. */
+  id: string;
+  name: string;
+  description?: string;
+}
+
+/** Repositório onde vivem os documentos externos (só `formatVersion` 11); ver `doc`. */
+export interface SpecDocRepo extends SpecRepo {
+  /** Id citado por `doc.repo`: `[a-z0-9-]+`, único na especialização. */
+  id: string;
+}
+
+/** Documento de um tipo que vive em um repositório declarado em `docRepos` (v11). */
+export interface SpecDocRef {
+  repo: string;
+  /** Arquivo `.md` relativo à raiz do repositório, sem `#`. */
+  path: string;
+}
+
 export interface SpecAnnotationType {
   id: string;
   name: string;
   description?: string;
   labelField?: string | null;
   requiresOwner?: boolean;
-  allowedChildren?: string[];
+  /** Ids de tipo e, na `formatVersion` 11, cláusulas de camada e grupos (ver `specChildren.ts`). */
+  allowedChildren?: SpecAllowedChild[];
+  /** Grupos da própria camada a que o tipo pertence (só `formatVersion` 11). */
+  groups?: string[];
+  /** Papéis que um filho pode ter no vínculo com este tipo (só `formatVersion` 11). */
+  childRoles?: SpecChildRole[];
+  /** Rótulo do papel na interface; ausente = "Papel" (só `formatVersion` 11, com `childRoles`). */
+  childRolesLabel?: string;
   fields: SpecField[];
   code?: SpecCodeMap;
   /** Elementos de origem a que o tipo corresponde (`formatVersion` 3 em diante). */
   sources?: SpecTypeSource[];
   /** Caminho do pacote do componente `.json` que desenha o tipo (só `formatVersion` 4). */
   component?: string;
-  /** Caminho do pacote do documento `.md` do tipo (só `formatVersion` 4). */
-  doc?: string;
+  /**
+   * Documento `.md` do tipo: um caminho do pacote (`formatVersion` 4 em diante) ou, na
+   * `formatVersion` 11, `{ repo, path }` de um repositório declarado em `docRepos`.
+   */
+  doc?: string | SpecDocRef;
   /** Exemplos do tipo (só `formatVersion` 4). */
   examples?: SpecExample[];
   /**
@@ -309,6 +365,8 @@ export interface SpecLayer {
   id: string;
   name: string;
   color: string;
+  /** Grupos de tipos da camada, na ordem dos cabeçalhos (só `formatVersion` 11). */
+  groups?: SpecLayerGroup[];
   annotationTypes: SpecAnnotationType[];
 }
 
@@ -320,6 +378,8 @@ export interface Spec {
   version: number;
   description?: string;
   platforms?: SpecPlatform[];
+  /** Repositórios dos documentos externos (só `formatVersion` 11). */
+  docRepos?: SpecDocRepo[];
   /** Presets do diálogo Novo container (só `formatVersion` 6). */
   containers?: SpecContainer[];
   layers: SpecLayer[];
@@ -937,6 +997,157 @@ function checkAppliesTo(
   }
 }
 
+const GROUPS_EMPTY = 'não pode ser vazio; tire a chave ou liste ao menos um grupo';
+const ALLOWED_CHILD_SHAPE_MESSAGE =
+  'deve ser um id de tipo (texto) ou uma cláusula { layer, groups }';
+const DOC_SHAPE_MESSAGE = 'deve ser texto (arquivo do pacote) ou um objeto { repo, path }';
+const DOC_PATH_MESSAGE =
+  'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: components/button.md)';
+
+/** Texto obrigatório e não vazio (as mensagens dos objetos novos da v11). */
+const requiredText = z
+  .string({
+    error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+  })
+  .min(1, 'não pode ser vazio');
+
+const childClauseShape = z
+  .object({
+    layer: requiredText,
+    groups: z.array(nonEmpty, { error: 'deve ser uma lista de ids de grupo' }).optional(),
+  })
+  .strict();
+
+/** Reemite no `ctx` os problemas de um objeto lido por outro schema, no mesmo caminho relativo. */
+function forwardIssues(
+  result: { success: boolean; error?: { issues: readonly z.core.$ZodIssue[] } },
+  ctx: z.RefinementCtx,
+): void {
+  for (const issue of result.error?.issues ?? []) {
+    ctx.addIssue({ code: 'custom', path: [...issue.path], message: issue.message });
+  }
+}
+
+/** Um item de `allowedChildren`: o id de um tipo ou uma cláusula `{ layer, groups? }`. */
+function checkAllowedChild(value: unknown, ctx: z.RefinementCtx): void {
+  if (typeof value === 'string') {
+    if (value === '') ctx.addIssue({ code: 'custom', message: 'não pode ser vazio' });
+    return;
+  }
+  if (!isRecord(value)) {
+    ctx.addIssue({ code: 'custom', message: ALLOWED_CHILD_SHAPE_MESSAGE });
+    return;
+  }
+  const parsed = childClauseShape.safeParse(value);
+  forwardIssues(parsed, ctx);
+  if (parsed.success && parsed.data.groups?.length === 0) {
+    ctx.addIssue({ code: 'custom', path: ['groups'], message: GROUPS_EMPTY });
+  }
+}
+
+const allowedChildShape = z
+  .custom<SpecAllowedChild>()
+  .superRefine((value: unknown, ctx) => checkAllowedChild(value, ctx));
+
+/** Por que o `path` não vale como arquivo `.md` de um repositório; `undefined` se vale. */
+function docPathProblem(path: string): string | undefined {
+  if (path.includes('#')) return 'não pode ter "#" (âncora)';
+  if (!isValidCodePath(path)) return DOC_PATH_MESSAGE;
+  const base = path.slice(path.lastIndexOf('/') + 1);
+  return base.length > '.md'.length && base.endsWith('.md')
+    ? undefined
+    : 'extensão inválida: esperava .md';
+}
+
+const docRefShape = z
+  .object({
+    repo: requiredText,
+    path: z
+      .string({
+        error: (issue) => (issue.input === undefined ? 'obrigatório' : 'deve ser texto'),
+      })
+      .superRefine((path, ctx) => {
+        const problem = docPathProblem(path);
+        if (problem !== undefined) ctx.addIssue({ code: 'custom', message: problem });
+      }),
+  })
+  .strict();
+
+const docPackageShape = packagePath('.md');
+
+/** `doc`: um caminho `.md` do pacote ou, na v11, `{ repo, path }` de um repositório de `docRepos`. */
+const docShape = z.custom<string | SpecDocRef>().superRefine((value: unknown, ctx) => {
+  if (typeof value === 'string') {
+    forwardIssues(docPackageShape.safeParse(value), ctx);
+  } else if (isRecord(value)) {
+    forwardIssues(docRefShape.safeParse(value), ctx);
+  } else {
+    ctx.addIssue({ code: 'custom', message: DOC_SHAPE_MESSAGE });
+  }
+});
+
+const childRoleShape = z
+  .object({ id: requiredText, name: requiredText, description: z.string().optional() })
+  .strict();
+
+const layerGroupShape = z
+  .object({ id: requiredText, name: requiredText, description: z.string().optional() })
+  .strict();
+
+/** `childRoles` e `childRolesLabel` (v11): papéis não vazios e únicos, só em tipo com filhos. */
+function checkChildRoles(
+  type: {
+    allowedChildren?: readonly unknown[] | undefined;
+    childRoles?: readonly { id: string }[] | undefined;
+    childRolesLabel?: string | undefined;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  const add = (path: (string | number)[], message: string) =>
+    ctx.addIssue({ code: 'custom', path, message });
+  const { childRoles } = type;
+  if (childRoles === undefined) {
+    if (type.childRolesLabel !== undefined) {
+      add(['childRolesLabel'], 'só é permitido com childRoles');
+    }
+    return;
+  }
+  if ((type.allowedChildren ?? []).length === 0) {
+    add(['childRoles'], 'só é permitido em tipo com allowedChildren');
+  }
+  if (childRoles.length === 0) {
+    add(['childRoles'], 'não pode ser vazio; tire a chave ou declare ao menos um papel');
+  }
+  const seen = new Set<string>();
+  childRoles.forEach((role, i) => {
+    if (seen.has(role.id)) add(['childRoles', i, 'id'], `id "${role.id}" repetido`);
+    seen.add(role.id);
+  });
+}
+
+/** `groups` de um tipo (v11): não vazio e sem repetição; a existência é conferida na camada. */
+function checkTypeGroups(
+  groups: readonly string[] | undefined,
+  ctx: z.RefinementCtx,
+): void {
+  if (groups === undefined) return;
+  if (groups.length === 0) {
+    ctx.addIssue({ code: 'custom', path: ['groups'], message: GROUPS_EMPTY });
+    return;
+  }
+  const seen = new Set<string>();
+  groups.forEach((group, i) => {
+    if (seen.has(group)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['groups', i],
+        message: `grupo "${group}" repetido`,
+      });
+    }
+    seen.add(group);
+  });
+}
+
 const annotationTypeShape = z
   .object({
     id: nonEmpty,
@@ -944,12 +1155,15 @@ const annotationTypeShape = z
     description: z.string().optional(),
     labelField: z.string().nullable().optional(),
     requiresOwner: z.boolean().optional(),
-    allowedChildren: z.array(nonEmpty).optional(),
+    allowedChildren: z.array(allowedChildShape).optional(),
+    groups: z.array(nonEmpty).optional(),
+    childRoles: z.array(childRoleShape).optional(),
+    childRolesLabel: nonEmpty.optional(),
     fields: z.array(fieldShape),
     code: z.record(z.string(), codeEntryShape).optional(),
     sources: z.array(typeSourceShape).optional(),
     component: packagePath('.json').optional(),
-    doc: packagePath('.md').optional(),
+    doc: docShape.optional(),
     examples: z.array(exampleShape).optional(),
     floating: z.boolean().optional(),
     appliesTo: z
@@ -969,6 +1183,8 @@ const annotationTypeShape = z
     checkNotices(type.notices, ctx, []);
     checkFields(type.fields, ctx, ['fields']);
     checkAppliesTo(type, ctx);
+    checkChildRoles(type, ctx);
+    checkTypeGroups(type.groups, ctx);
     checkCode(type, ctx);
     checkExamples(type, ctx);
     if (type.labelField != null) {
@@ -1021,6 +1237,7 @@ const layerShape = z
     id: nonEmpty,
     name: nonEmpty,
     color,
+    groups: z.array(layerGroupShape).optional(),
     annotationTypes: z.array(annotationTypeShape),
   })
   .strict();
@@ -1044,6 +1261,13 @@ const repoShape = z
       )
       .optional(),
     ref: nonEmpty.optional(),
+  })
+  .strict();
+
+const docRepoShape = z
+  .object({
+    id: requiredText.regex(PLATFORM_ID_RE, 'id de repositório inválido; use [a-z0-9-]+'),
+    ...repoShape.shape,
   })
   .strict();
 
@@ -1638,6 +1862,205 @@ export function parseSpecPath(text: string): (string | number)[] {
   return keys;
 }
 
+/** O que os conferidores da v11 leem de um tipo (a forma crua, lida pelo zod). */
+interface V11Type {
+  readonly id: string;
+  readonly groups?: readonly string[] | undefined;
+  readonly allowedChildren?: readonly SpecAllowedChild[] | undefined;
+  readonly childRoles?: readonly unknown[] | undefined;
+  readonly childRolesLabel?: string | undefined;
+  readonly doc?: string | SpecDocRef | undefined;
+}
+
+interface V11Layer {
+  readonly id: string;
+  readonly groups?: readonly { readonly id: string }[] | undefined;
+  readonly annotationTypes: readonly V11Type[];
+}
+
+type IssueAdder = (path: (string | number)[], message: string) => void;
+
+const issueAdder =
+  (ctx: z.RefinementCtx): IssueAdder =>
+  (path, message) =>
+    ctx.addIssue({ code: 'custom', path, message });
+
+/** Caminho de cada tipo: `['layers', li, 'annotationTypes', ti]`. */
+function eachV11Type(
+  layers: readonly V11Layer[],
+  visit: (type: V11Type, layer: V11Layer, path: (string | number)[], li: number) => void,
+): void {
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      visit(type, layer, ['layers', li, 'annotationTypes', ti], li);
+    });
+  });
+}
+
+/** Antes da v11, cada chave nova (cláusula, groups, childRoles, docRepos, doc objeto) é erro. */
+function checkNoV11Keys(
+  spec: { formatVersion: number; docRepos?: unknown; layers: readonly V11Layer[] },
+  ctx: z.RefinementCtx,
+): void {
+  const add = issueAdder(ctx);
+  const only11 = (path: (string | number)[]) =>
+    add(path, 'só é permitido com formatVersion 11');
+  if (spec.docRepos !== undefined) only11(['docRepos']);
+  spec.layers.forEach((layer, li) => {
+    if (layer.groups !== undefined) only11(['layers', li, 'groups']);
+  });
+  eachV11Type(spec.layers, (type, _layer, path) => {
+    for (const key of ['groups', 'childRoles', 'childRolesLabel'] as const) {
+      if (type[key] !== undefined) only11([...path, key]);
+    }
+    // Antes da v4 o `doc` já é erro (qualquer forma); da v4 à v10 só o objeto.
+    if (isRecord(type.doc) && spec.formatVersion >= 4) only11([...path, 'doc']);
+    (type.allowedChildren ?? []).forEach((item, ci) => {
+      if (isRecord(item)) only11([...path, 'allowedChildren', ci]);
+    });
+  });
+}
+
+/** Ids dos grupos de cada camada (a primeira camada com o id vale) e o índice dela. */
+function layerGroupIndex(
+  layers: readonly V11Layer[],
+): Map<string, { index: number; groups: Set<string> }> {
+  const byId = new Map<string, { index: number; groups: Set<string> }>();
+  layers.forEach((layer, index) => {
+    if (byId.has(layer.id)) return;
+    byId.set(layer.id, { index, groups: new Set((layer.groups ?? []).map((g) => g.id)) });
+  });
+  return byId;
+}
+
+/** Uma cláusula de `allowedChildren` (v11): a camada existe, é outra e os grupos são dela. */
+function checkChildClause(
+  clause: SpecChildClause,
+  li: number,
+  layers: ReadonlyMap<string, { index: number; groups: ReadonlySet<string> }>,
+  path: (string | number)[],
+  add: IssueAdder,
+): void {
+  const target = layers.get(clause.layer);
+  if (target === undefined) {
+    add([...path, 'layer'], `camada "${clause.layer}" não existe na especialização`);
+    return;
+  }
+  if (target.index === li) {
+    add(
+      [...path, 'layer'],
+      `camada "${clause.layer}" é a do próprio tipo; filhos devem estar em outra camada`,
+    );
+    return;
+  }
+  (clause.groups ?? []).forEach((group, gi) => {
+    if (target.groups.has(group)) return;
+    add(
+      [...path, 'groups', gi],
+      `grupo "${group}" não existe na camada "${clause.layer}"`,
+    );
+  });
+}
+
+/** Um id de tipo de `allowedChildren`: existe e está em outra camada. */
+function checkChildId(
+  childId: string,
+  li: number,
+  typeLayer: ReadonlyMap<string, number>,
+  path: (string | number)[],
+  add: IssueAdder,
+): void {
+  const childLayer = typeLayer.get(childId);
+  if (childLayer === undefined) {
+    add(path, `tipo "${childId}" não existe na especialização`);
+  } else if (childLayer === li) {
+    add(
+      path,
+      `tipo "${childId}" está na mesma camada; filhos devem estar em outra camada`,
+    );
+  }
+}
+
+/** Cada item de `allowedChildren` (id ou, na v11, cláusula) aponta para o que existe. */
+function checkAllowedChildren(
+  spec: { formatVersion: number; layers: readonly V11Layer[] },
+  typeLayer: ReadonlyMap<string, number>,
+  ctx: z.RefinementCtx,
+): void {
+  const add = issueAdder(ctx);
+  const layers = layerGroupIndex(spec.layers);
+  eachV11Type(spec.layers, (type, _layer, path, li) => {
+    (type.allowedChildren ?? []).forEach((item, ci) => {
+      const itemPath = [...path, 'allowedChildren', ci];
+      if (typeof item === 'string') checkChildId(item, li, typeLayer, itemPath, add);
+      else if (spec.formatVersion >= 11 && isRecord(item) && typeof item.layer === 'string') {
+        checkChildClause(item, li, layers, itemPath, add);
+      }
+    });
+  });
+}
+
+/** v11: ids de grupo únicos na camada e `groups` do tipo só com grupos da própria camada. */
+function checkLayerGroups(layers: readonly V11Layer[], ctx: z.RefinementCtx): void {
+  const add = issueAdder(ctx);
+  layers.forEach((layer, li) => {
+    const declared = new Set<string>();
+    (layer.groups ?? []).forEach((group, gi) => {
+      if (declared.has(group.id)) {
+        add(['layers', li, 'groups', gi, 'id'], `id "${group.id}" repetido`);
+      }
+      declared.add(group.id);
+    });
+    layer.annotationTypes.forEach((type, ti) => {
+      (type.groups ?? []).forEach((group, gi) => {
+        if (declared.has(group)) return;
+        add(
+          ['layers', li, 'annotationTypes', ti, 'groups', gi],
+          `grupo "${group}" não existe na camada "${layer.id}"`,
+        );
+      });
+    });
+  });
+}
+
+/** v11: `docRepos` com ids únicos e todo `doc` objeto citando um deles. */
+function checkDocRepos(
+  spec: { docRepos?: readonly { readonly id: string }[] | undefined; layers: readonly V11Layer[] },
+  ctx: z.RefinementCtx,
+): void {
+  const add = issueAdder(ctx);
+  const declared = new Set<string>();
+  (spec.docRepos ?? []).forEach((repo, ri) => {
+    if (declared.has(repo.id)) add(['docRepos', ri, 'id'], `id "${repo.id}" repetido`);
+    declared.add(repo.id);
+  });
+  eachV11Type(spec.layers, (type, _layer, path) => {
+    const { doc } = type;
+    if (!isRecord(doc) || typeof doc.repo !== 'string' || declared.has(doc.repo)) return;
+    add([...path, 'doc', 'repo'], `repositório "${doc.repo}" não declarado em docRepos`);
+  });
+}
+
+/** `requiresOwner`: o tipo precisa estar no conjunto resolvido de filhos de algum tipo. */
+function checkRequiresOwner(
+  spec: { layers: readonly V11Layer[] },
+  ctx: z.RefinementCtx,
+): void {
+  const owners = childSets(spec).owners;
+  const add = issueAdder(ctx);
+  spec.layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      const requires = (type as { requiresOwner?: boolean }).requiresOwner;
+      if (requires && !owners.has(type.id)) {
+        add(
+          ['layers', li, 'annotationTypes', ti, 'requiresOwner'],
+          `"${type.id}" exige dono, mas nenhum tipo o lista em allowedChildren`,
+        );
+      }
+    });
+  });
+}
+
 export const specSchema = z
   .object({
     format: z.union([z.literal(SPEC_FORMAT), z.literal(LEGACY_SPEC_FORMAT)], {
@@ -1655,6 +2078,7 @@ export const specSchema = z
         z.literal(8),
         z.literal(9),
         z.literal(10),
+        z.literal(11),
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
@@ -1665,6 +2089,7 @@ export const specSchema = z
     version: z.number().int('deve ser inteiro').min(1, 'deve ser >= 1'),
     description: z.string().optional(),
     platforms: z.array(platformShape).optional(),
+    docRepos: z.array(docRepoShape).optional(),
     containers: z.array(containerShape).optional(),
     layers: z.array(layerShape),
     fonts: z.array(fontShape).optional(),
@@ -1770,6 +2195,8 @@ export const specSchema = z
     }
     // v10: `notices` no tipo, no campo e na coluna. Antes dela, é erro no caminho exato.
     if (spec.formatVersion < 10) checkNoNotices(spec.layers, ctx);
+    // v11: cláusulas, `groups`, papéis e documento externo. Antes dela, é erro no caminho exato.
+    if (spec.formatVersion < 11) checkNoV11Keys(spec, ctx);
     // v6: `containers`. Antes dela, é erro no caminho exato.
     if (spec.containers !== undefined && spec.formatVersion < 6) {
       ctx.addIssue({
@@ -1820,7 +2247,6 @@ export const specSchema = z
     const layerIds = new Set<string>();
     /** id do tipo → índice da camada onde está definido. */
     const typeLayer = new Map<string, number>();
-    const owned = new Set<string>();
 
     spec.layers.forEach((layer, li) => {
       if (layerIds.has(layer.id)) {
@@ -1844,29 +2270,11 @@ export const specSchema = z
       });
     });
 
-    spec.layers.forEach((layer, li) => {
-      layer.annotationTypes.forEach((type, ti) => {
-        (type.allowedChildren ?? []).forEach((childId, ci) => {
-          const childLayer = typeLayer.get(childId);
-          const p = ['layers', li, 'annotationTypes', ti, 'allowedChildren', ci];
-          if (childLayer === undefined) {
-            ctx.addIssue({
-              code: 'custom',
-              path: p,
-              message: `tipo "${childId}" não existe na especialização`,
-            });
-          } else if (childLayer === li) {
-            ctx.addIssue({
-              code: 'custom',
-              path: p,
-              message: `tipo "${childId}" está na mesma camada; filhos devem estar em outra camada`,
-            });
-          } else {
-            owned.add(childId);
-          }
-        });
-      });
-    });
+    checkAllowedChildren(spec, typeLayer, ctx);
+    if (spec.formatVersion >= 11) {
+      checkLayerGroups(spec.layers, ctx);
+      checkDocRepos(spec, ctx);
+    }
 
     spec.layers.forEach((layer, li) => {
       layer.annotationTypes.forEach((type, ti) => {
@@ -1892,17 +2300,7 @@ export const specSchema = z
       });
     });
 
-    spec.layers.forEach((layer, li) => {
-      layer.annotationTypes.forEach((type, ti) => {
-        if (type.requiresOwner && !owned.has(type.id)) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['layers', li, 'annotationTypes', ti, 'requiresOwner'],
-            message: `"${type.id}" exige dono, mas nenhum tipo o lista em allowedChildren`,
-          });
-        }
-      });
-    });
+    checkRequiresOwner(spec, ctx);
   });
 
 export type SpecIssue = { path: string; message: string };

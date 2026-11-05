@@ -240,6 +240,129 @@ const NOTICES_EXCERPT = `{
   ]
 }`;
 
+/** Trecho de uma especialização v11: filhos por camada e grupo (cláusula em `allowedChildren` e `groups`). */
+const CHILDREN_EXCERPT = `{
+  "formatVersion": 11,
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "allowedChildren": [{ "layer": "eventos" }],
+          "fields": []
+        },
+        {
+          "id": "card",
+          "name": "Card",
+          "allowedChildren": [{ "layer": "eventos", "groups": ["navegacao"] }, "submit"],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#E53935",
+      "groups": [
+        { "id": "navegacao", "name": "Navegação" },
+        {
+          "id": "dados",
+          "name": "Dados",
+          "description": "Eventos que leem ou gravam dados."
+        }
+      ],
+      "annotationTypes": [
+        {
+          "id": "navigate",
+          "name": "Navigate",
+          "groups": ["navegacao"],
+          "requiresOwner": true,
+          "fields": [{ "key": "destino", "type": "string", "required": true }]
+        },
+        {
+          "id": "back",
+          "name": "Back",
+          "groups": ["navegacao"],
+          "requiresOwner": true,
+          "fields": []
+        },
+        {
+          "id": "submit",
+          "name": "Submit",
+          "groups": ["dados"],
+          "requiresOwner": true,
+          "fields": []
+        }
+      ]
+    }
+  ]
+}`;
+
+/** Trecho de uma especialização v11: os papéis (`childRoles`) de um dono. */
+const ROLES_EXCERPT = `{
+  "id": "button",
+  "name": "Button",
+  "allowedChildren": [{ "layer": "eventos" }],
+  "childRolesLabel": "Trigger",
+  "childRoles": [
+    { "id": "click", "name": "Clique" },
+    { "id": "hold", "name": "Pressionar", "description": "Toque longo no botão." }
+  ],
+  "fields": []
+}`;
+
+/** Trecho de uma especialização v11: `docRepos` na raiz e o `doc` do tipo como objeto. */
+const DOC_REPOS_EXCERPT = `{
+  "docRepos": [
+    {
+      "id": "design-docs",
+      "url": "https://gitlab.empresa.com/grupo/design-docs",
+      "urlTemplate": "https://gitlab.empresa.com/grupo/design-docs/-/blob/main/{path}",
+      "ref": "main"
+    }
+  ],
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "doc": { "repo": "design-docs", "path": "components/button.md" },
+          "allowedChildren": [{ "layer": "eventos" }],
+          "childRolesLabel": "Trigger",
+          "childRoles": [
+            { "id": "click", "name": "Clique" },
+            { "id": "hold", "name": "Pressionar" }
+          ],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#E53935",
+      "groups": [{ "id": "navegacao", "name": "Navegação" }],
+      "annotationTypes": [
+        {
+          "id": "navigate",
+          "name": "Navigate",
+          "groups": ["navegacao"],
+          "requiresOwner": true,
+          "fields": [{ "key": "destino", "type": "string", "required": true }]
+        }
+      ]
+    }
+  ]
+}`;
+
 /** Trecho de uma especialização v7: o "flutuante que aponta" (tabela flutuante com coluna `ref`). */
 const POINTING_EXCERPT = `{
   "id": "tabela-eventos",
@@ -464,6 +587,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 8 acrescenta `suggestions` em campo e coluna `string` (vocabulário sugerido ao digitar, sem restringir o valor) e `linkedRef` (liga o texto a um campo/coluna `ref` do mesmo tipo/tabela: a lista de sugestões também mostra os alvos mapeados que esse `ref` aceita).',
           'A formatVersion 9 acrescenta `variants` na entrada de `code`: um campo enum do tipo escolhe a variante do código (em Compose, `Button`, `OutlinedButton` ou `TextButton`), que troca symbol, path e notes e soma params e values (seção "Plataformas e code"). As versões 1 a 8 continuam aceitas.',
           'A formatVersion 10 acrescenta `notices` no tipo, no campo e na coluna de table: avisos curtos (pendente, obsoleto, diverge, removido) que só informam, sem impedir nada (seção "Avisos (notices)"). As versões 1 a 9 continuam aceitas.',
+          'A formatVersion 11 acrescenta três recursos opcionais: allowedChildren com cláusula { layer, groups } e os groups da camada e do tipo (seção "Filhos por camada e grupo"); childRoles e childRolesLabel no dono, os papéis em que um filho se liga a ele (seção "Papéis no vínculo (childRoles)"); e docRepos na raiz com o doc do tipo como objeto { repo, path }, um documento em repositório externo (seção "Documento em repositório externo (docRepos)"). As versões 1 a 10 continuam aceitas.',
         ],
       },
     ],
@@ -474,7 +598,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 10), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 11), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -493,7 +617,19 @@ const ptBR: readonly HelpSection[] = [
           },
           {
             term: 'allowedChildren',
-            text: 'Ids dos tipos que podem ser vinculados a este.',
+            text: 'Os tipos que podem ser vinculados a este: ids de tipo e, a partir da formatVersion 11, cláusulas { layer, groups } (seção "Filhos por camada e grupo").',
+          },
+          {
+            term: 'groups',
+            text: 'Opcional (formatVersion 11). Ids dos grupos da própria camada a que o tipo pertence (seção "Filhos por camada e grupo").',
+          },
+          {
+            term: 'childRoles',
+            text: 'Opcional (formatVersion 11). Os papéis em que um filho se liga a este tipo (seção "Papéis no vínculo (childRoles)").',
+          },
+          {
+            term: 'childRolesLabel',
+            text: 'Opcional (formatVersion 11). O nome do seletor de papel, com childRoles; sem ele, "Papel".',
           },
           { term: 'fields', text: 'Obrigatório. Lista de campos (pode ser vazia).' },
           {
@@ -506,7 +642,7 @@ const ptBR: readonly HelpSection[] = [
           },
           {
             term: 'doc',
-            text: 'Opcional (formatVersion 4). Caminho do documento .md do tipo.',
+            text: 'Opcional (formatVersion 4). Caminho do documento .md do tipo; na formatVersion 11, também { repo, path }, um documento em repositório externo (seção "Documento em repositório externo (docRepos)").',
           },
           {
             term: 'examples',
@@ -599,9 +735,111 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'allowedChildren: tipos que podem ser vinculados a este (ex: um Button aceita onClick e onHold). Um dono pode ter vários filhos, inclusive do mesmo tipo. Os filhos ficam em outra camada.',
-          'requiresOwner: true: a anotação precisa de exatamente um dono, de um tipo que a liste em allowedChildren. Ex: um evento sem componente não faz sentido.',
+          'allowedChildren: tipos que podem ser vinculados a este (ex: um Button aceita onClick e onHold). Um dono pode ter vários filhos, inclusive do mesmo tipo. Os filhos ficam em outra camada. A partir da formatVersion 11, um item também pode ser uma cláusula que cobre uma camada ou os grupos dela (seção "Filhos por camada e grupo").',
+          'requiresOwner: true: a anotação precisa de exatamente um dono, de um tipo que a liste em allowedChildren (por id ou pela cláusula que a cobre). Ex: um evento sem componente não faz sentido.',
+          'childRoles (formatVersion 11): quando o mesmo tipo de filho se liga a pontos diferentes do dono, o ponto é um papel do vínculo (seção "Papéis no vínculo (childRoles)").',
           'No editor do dono aparecem botões "+ filho" (ex: "+ onClick") que criam a anotação já vinculada.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'children',
+    title: 'Filhos por camada e grupo',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'Até a formatVersion 10, allowedChildren lista os filhos um a um, por id. A formatVersion 11 deixa um item ser uma cláusula { "layer": "<id da camada>", "groups": ["<id>", …] } (groups é opcional) e deixa a camada declarar grupos (groups) a que os tipos dela pertencem. Assim um dono aceita uma camada inteira, ou só alguns grupos dela, sem repetir os ids e sem editar todos os donos quando a camada ganha um tipo.',
+      },
+      { kind: 'code', code: CHILDREN_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'layer',
+            text: 'Obrigatório na cláusula. O id de uma camada da especialização, que não pode ser a do próprio dono (filhos devem estar em outra camada). Sem groups, cobre todos os tipos da camada.',
+          },
+          {
+            term: 'groups',
+            text: 'Na cláusula: opcional e não vazio; cobre os tipos da camada que estão em algum dos grupos, e cada grupo precisa existir na camada da cláusula. Na camada: lista de { id, name, description? }, com id não vazio e único na camada e name não vazio; a ordem é a dos cabeçalhos. No tipo: lista não vazia, sem repetição, de grupos da própria camada.',
+          },
+        ],
+      },
+      {
+        kind: 'list',
+        items: [
+          'O conjunto de filhos de um dono é a união dos itens de allowedChildren, na ordem deles; dentro de uma cláusula, os tipos vêm na ordem da camada; um tipo repetido fica na primeira posição. A cláusula só tem layer e groups: outra propriedade é erro.',
+          'Um tipo sem groups só entra por uma cláusula da camada inteira ou pelo próprio id. requiresOwner é conferido no conjunto resolvido: o tipo precisa estar no conjunto de algum dono, por id, por camada ou por grupo.',
+          'Avisos, que não bloqueiam: allowedChildren com 20 ids ou mais em texto (uma cláusula cobre a camada ou os grupos; com 19 não avisa) e grupo declarado que nenhum tipo usa.',
+          'Fora do contrato de versão: incluir, mudar ou tirar groups, ou trocar uma lista de ids por uma cláusula, é compatível e nunca pede migração.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'roles',
+    title: 'Papéis no vínculo (childRoles)',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'Um dono às vezes liga o mesmo tipo de filho em pontos diferentes dele: o Button tem um evento de clique e um de pressionar, e os dois são um navigate. Se o filho precisa dizer em que ponto do dono se liga, isso é um papel, não um campo do filho nem um id de tipo. A formatVersion 11 declara os papéis no dono, com childRoles, e um nome para o seletor, com childRolesLabel.',
+      },
+      { kind: 'code', code: ROLES_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'childRoles',
+            text: 'Lista não vazia de { id, name, description? }, com id não vazio e único no tipo e name não vazio. O papel pertence ao vínculo, não ao filho: o mesmo tipo de filho pode ocupar papéis diferentes no mesmo dono. Só vale em tipo com allowedChildren.',
+          },
+          {
+            term: 'childRolesLabel',
+            text: 'Texto não vazio: o nome com que a app chama o seletor do papel (ex: "Trigger"). Só vale com childRoles. Sem ele, a app usa "Papel".',
+          },
+        ],
+      },
+      {
+        kind: 'list',
+        items: [
+          'Fora do contrato de versão: incluir, mudar ou tirar childRoles e childRolesLabel é compatível e nunca pede migração.',
+          'Numa versão anterior à 11 o erro é só é permitido com formatVersion 11, no caminho exato.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'docrepos',
+    title: 'Documento em repositório externo (docRepos)',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'Até a formatVersion 10, o doc de um tipo é um arquivo .md dentro do pacote. Quando a documentação do componente vive no repositório do design system ou do contrato, a formatVersion 11 declara na raiz os repositórios de documentos (docRepos) e deixa o doc do tipo apontar para um arquivo de um deles, sem copiá-lo para o pacote.',
+      },
+      { kind: 'code', code: DOC_REPOS_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'docRepos',
+            text: 'Na raiz: lista de { id, url, urlTemplate?, ref? } com as mesmas regras do repo de uma plataforma (url http(s):// sem espaços; urlTemplate com {path}; ref informativa). O id segue [a-z0-9-]+ e é único na lista.',
+          },
+          {
+            term: 'doc',
+            text: 'Em texto, é o arquivo .md do pacote (como desde a formatVersion 4); como objeto { repo, path }, é um arquivo do repositório declarado em docRepos.',
+          },
+          { term: 'repo', text: 'O id de um repositório declarado em docRepos.' },
+          {
+            term: 'path',
+            text: 'Relativo à raiz do repositório, com /, sem ., .. nem / no começo (como o path do code); termina em .md e não tem #.',
+          },
+        ],
+      },
+      {
+        kind: 'list',
+        items: [
+          'O pacote não leva o documento: o doc objeto não conta como arquivo citado do pacote, então uma especialização cujos únicos arquivos citados são documentos externos vale como arquivo isolado, e a validação do pacote não confere o documento externo.',
+          'Fora do contrato de versão: incluir, mudar ou tirar docRepos, ou trocar o doc entre texto e objeto, é compatível e nunca pede migração. Aviso, que não bloqueia: repositório de docRepos que nenhum doc usa.',
+          'Numa versão anterior à 11 o erro é só é permitido com formatVersion 11, no caminho exato.',
         ],
       },
     ],
@@ -1051,15 +1289,18 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 10), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 11), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
-          'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo;',
+          'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo (na formatVersion 11, no conjunto resolvido dos filhos de algum dono: por id, por camada inteira ou por grupo);',
           'default compatível com o tipo (e presente em options no enum); ref sem default;',
           'columns só com tipos simples ou, na formatVersion 7, ref (com accepts; table dentro de table não existe); rowLabel obrigatório em table com tags e apontando para uma coluna string;',
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
+          'formatVersion 11, filhos por camada e grupo: só na versão 11 (antes dela o erro é só é permitido com formatVersion 11, no caminho exato); cada item de allowedChildren é um id de tipo ou uma cláusula { layer, groups } estrita (outra propriedade é erro, e groups vazio também); erros: layer que não é camada da especialização ou é a do próprio dono (filhos devem estar em outra camada) e grupo inexistente na camada da cláusula; requiresOwner conferido no conjunto resolvido; groups da camada com id não vazio e único na camada e name não vazio; groups do tipo não vazio, sem repetição e só da própria camada; avisos: 20 ids ou mais em texto no mesmo allowedChildren e grupo que nenhum tipo usa;',
+          'formatVersion 11, childRoles e childRolesLabel: só na versão 11; childRoles não vazia, de { id, name, description? } estritos, com id não vazio e único no tipo e name não vazio; só em tipo com allowedChildren; childRolesLabel texto não vazio e só com childRoles; sem ele a app usa "Papel";',
+          'formatVersion 11, docRepos e doc objeto: só na versão 11; docRepos[n] com as regras do repo de plataforma (url obrigatória http(s):// sem espaços, urlTemplate opcional com {path}, ref opcional não vazio) e id no formato [a-z0-9-]+ e único; doc objeto { repo, path } estrito: repo precisa estar em docRepos, path relativo (sem ., .. nem / no começo), terminando em .md e sem #; o doc em texto continua valendo da versão 4 em diante; aviso: repositório de docRepos que nenhum doc usa;',
           'formatVersion 10, notices: só na versão 10 (antes dela o erro é só é permitido com formatVersion 10, no caminho do tipo, do campo ou da coluna); lista de objetos estritos com kind (pending, deprecated, diverges ou removed) e message (não vazia nem só espaços) obrigatórios, since (data real AAAA-MM-DD) e ref (texto não vazio) opcionais; dois avisos com o mesmo kind e a mesma message são o erro aviso repetido, no caminho do segundo; qualquer outra propriedade é recusada;',
           'formatVersion 7, floating, appliesTo e coluna ref: só na versão 7 (antes dela o erro é só é permitido com formatVersion 7); floating booleano; appliesTo não vazio, sem repetição, só com "marking" e "arrow", e sem component nem floating num tipo só de seta;',
           'formatVersion 6, containers: só na versão 6 (antes dela o erro é só é permitido com formatVersion 6); id no formato [a-z0-9-]+ e único na lista; name não vazio; width e height inteiros de 1 a 20000; background opcional, #RRGGBB; qualquer outra propriedade é recusada;',
@@ -1117,6 +1358,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 8 adds `suggestions` to `string` fields and columns (vocabulary suggested while typing, without restricting the value) and `linkedRef` (links the text to a `ref` field/column of the same type/table: the suggestion list also shows the mapped targets that `ref` accepts).',
           'formatVersion 9 adds `variants` to the `code` entry: an enum field of the type picks the code variant (in Compose, `Button`, `OutlinedButton` or `TextButton`), which replaces symbol, path and notes and adds to params and values (section "Platforms and code"). Versions 1 to 8 are still accepted.',
           'formatVersion 10 adds `notices` to the type, the field and the table column: short notices (pending, deprecated, diverges, removed) that only inform and block nothing (section "Notices (notices)"). Versions 1 to 9 are still accepted.',
+          'formatVersion 11 adds three optional features: allowedChildren with a { layer, groups } clause and the groups of the layer and of the type (section "Children by layer and group"); childRoles and childRolesLabel on the owner, the roles a child attaches to it in (section "Roles on the link (childRoles)"); and docRepos at the root with the type’s doc as a { repo, path } object, a document in an external repository (section "Document in an external repository (docRepos)"). Versions 1 to 10 are still accepted.',
         ],
       },
     ],
@@ -1127,7 +1369,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 10), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 11), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -1149,7 +1391,19 @@ const enUS: readonly HelpSection[] = [
           },
           {
             term: 'allowedChildren',
-            text: 'Ids of the types that can be linked to this one.',
+            text: 'The types that can be linked to this one: type ids and, from formatVersion 11, { layer, groups } clauses (section "Children by layer and group").',
+          },
+          {
+            term: 'groups',
+            text: 'Optional (formatVersion 11). Ids of the groups of the type’s own layer it belongs to (section "Children by layer and group").',
+          },
+          {
+            term: 'childRoles',
+            text: 'Optional (formatVersion 11). The roles a child attaches to this type in (section "Roles on the link (childRoles)").',
+          },
+          {
+            term: 'childRolesLabel',
+            text: 'Optional (formatVersion 11). The name of the role selector, with childRoles; without it, "Role".',
           },
           { term: 'fields', text: 'Required. List of fields (may be empty).' },
           {
@@ -1162,7 +1416,7 @@ const enUS: readonly HelpSection[] = [
           },
           {
             term: 'doc',
-            text: 'Optional (formatVersion 4). Path of the type’s .md document.',
+            text: 'Optional (formatVersion 4). Path of the type’s .md document; in formatVersion 11, also { repo, path }, a document in an external repository (section "Document in an external repository (docRepos)").',
           },
           {
             term: 'examples',
@@ -1255,9 +1509,111 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'allowedChildren: types that can be linked to this one (e.g. a Button accepts onClick and onHold). An owner can have many children, even of the same type. Children live in another layer.',
-          'requiresOwner: true: the annotation needs exactly one owner, of a type that lists it in allowedChildren. E.g. an event without a component makes no sense.',
+          'allowedChildren: types that can be linked to this one (e.g. a Button accepts onClick and onHold). An owner can have many children, even of the same type. Children live in another layer. From formatVersion 11, an item can also be a clause that covers a layer or its groups (section "Children by layer and group").',
+          'requiresOwner: true: the annotation needs exactly one owner, of a type that lists it in allowedChildren (by id or through the clause that covers it). E.g. an event without a component makes no sense.',
+          'childRoles (formatVersion 11): when the same child type attaches to different points of the owner, the point is a role on the link (section "Roles on the link (childRoles)").',
           'The owner’s editor shows "+ child" buttons (e.g. "+ onClick") that create the annotation already linked.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'children',
+    title: 'Children by layer and group',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'Until formatVersion 10, allowedChildren lists the children one by one, by id. formatVersion 11 lets an item be a clause { "layer": "<layer id>", "groups": ["<id>", …] } (groups is optional) and lets the layer declare groups (groups) its types belong to. An owner then accepts a whole layer, or only some of its groups, without repeating the ids and without editing every owner when the layer gains a type.',
+      },
+      { kind: 'code', code: CHILDREN_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'layer',
+            text: 'Required in the clause. The id of a layer of the specialization, which cannot be the owner’s own (children must be in another layer). Without groups, it covers every type of the layer.',
+          },
+          {
+            term: 'groups',
+            text: 'In the clause: optional and non-empty; covers the types of the layer that are in any of the groups, and each group must exist in the clause’s layer. On the layer: a list of { id, name, description? }, with a non-empty id unique in the layer and a non-empty name; the order is the order of the headings. On the type: a non-empty list, without repetition, of groups of its own layer.',
+          },
+        ],
+      },
+      {
+        kind: 'list',
+        items: [
+          'An owner’s set of children is the union of the allowedChildren items, in their order; inside a clause, the types come in the layer’s order; a repeated type stays in the first position. The clause only has layer and groups: any other property is an error.',
+          'A type without groups only enters through a whole-layer clause or its own id. requiresOwner is checked against the resolved set: the type must be in the set of some owner, by id, by layer or by group.',
+          'Warnings, which block nothing: allowedChildren with 20 ids or more in text (a clause covers the layer or the groups; 19 does not warn) and a declared group no type uses.',
+          'Outside the version contract: adding, changing or removing groups, or replacing a list of ids with a clause, is compatible and never asks for a migration.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'roles',
+    title: 'Roles on the link (childRoles)',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'An owner sometimes links the same child type at different points of itself: the Button has a click event and a hold event, and both are a navigate. If the child needs to say at which point of the owner it attaches, that is a role, not a field of the child nor a type id. formatVersion 11 declares the roles on the owner, with childRoles, and a name for the selector, with childRolesLabel.',
+      },
+      { kind: 'code', code: ROLES_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'childRoles',
+            text: 'Non-empty list of { id, name, description? }, with a non-empty id unique in the type and a non-empty name. The role belongs to the link, not to the child: the same child type can occupy different roles in the same owner. Only valid on a type with allowedChildren.',
+          },
+          {
+            term: 'childRolesLabel',
+            text: 'Non-empty text: the name the app gives the role selector (e.g. "Trigger"). Only valid with childRoles. Without it, the app uses "Role".',
+          },
+        ],
+      },
+      {
+        kind: 'list',
+        items: [
+          'Outside the version contract: adding, changing or removing childRoles and childRolesLabel is compatible and never asks for a migration.',
+          'Before version 11 the error is only allowed with formatVersion 11, at the exact path.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'docrepos',
+    title: 'Document in an external repository (docRepos)',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'Until formatVersion 10, a type’s doc is a .md file inside the package. When the component documentation lives in the design system or contract repository, formatVersion 11 declares the document repositories at the root (docRepos) and lets the type’s doc point to a file in one of them, without copying it into the package.',
+      },
+      { kind: 'code', code: DOC_REPOS_EXCERPT },
+      {
+        kind: 'terms',
+        items: [
+          {
+            term: 'docRepos',
+            text: 'At the root: a list of { id, url, urlTemplate?, ref? } with the same rules as a platform repo (url http(s):// without spaces; urlTemplate with {path}; ref informative). The id follows [a-z0-9-]+ and is unique in the list.',
+          },
+          {
+            term: 'doc',
+            text: 'As text, it is the package .md file (as since formatVersion 4); as an object { repo, path }, it is a file of the repository declared in docRepos.',
+          },
+          { term: 'repo', text: 'The id of a repository declared in docRepos.' },
+          {
+            term: 'path',
+            text: 'Relative to the repository root, with /, without ., .. or a leading / (like the path of code); ends in .md and has no #.',
+          },
+        ],
+      },
+      {
+        kind: 'list',
+        items: [
+          'The package does not carry the document: the doc object does not count as a cited package file, so a specialization whose only cited files are external documents is valid as a standalone file, and package validation does not check the external document.',
+          'Outside the version contract: adding, changing or removing docRepos, or switching the doc between text and object, is compatible and never asks for a migration. Warning, which blocks nothing: a docRepos repository no doc uses.',
+          'Before version 11 the error is only allowed with formatVersion 11, at the exact path.',
         ],
       },
     ],
@@ -1707,15 +2063,18 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 10), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 11), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
-          'every type with requiresOwner: true appears in the allowedChildren of some type;',
+          'every type with requiresOwner: true appears in the allowedChildren of some type (in formatVersion 11, in the resolved set of children of some owner: by id, by whole layer or by group);',
           'default compatible with the type (and present in options for enum); ref without default;',
           'columns with simple types only or, in formatVersion 7, ref (with accepts; a table inside a table does not exist); rowLabel required on a table with tags and pointing to a string column;',
           'labelField points to a string field of the type;',
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
+          'formatVersion 11, children by layer and group: version 11 only (before it the error is only allowed with formatVersion 11, at the exact path); each allowedChildren item is a type id or a strict { layer, groups } clause (any other property is an error, and so is an empty groups); errors: a layer that is not a layer of the specialization or is the owner’s own (children must be in another layer) and a group that does not exist in the clause’s layer; requiresOwner is checked against the resolved set; layer groups with a non-empty id unique in the layer and a non-empty name; type groups non-empty, without repetition and only from its own layer; warnings: 20 ids or more in text in the same allowedChildren and a group no type uses;',
+          'formatVersion 11, childRoles and childRolesLabel: version 11 only; childRoles non-empty, of strict { id, name, description? }, with a non-empty id unique in the type and a non-empty name; only on a type with allowedChildren; childRolesLabel non-empty text and only with childRoles; without it the app uses "Role";',
+          'formatVersion 11, docRepos and doc object: version 11 only; docRepos[n] with the rules of a platform repo (url required, http(s):// without spaces, urlTemplate optional with {path}, ref optional non-empty) and an id in the [a-z0-9-]+ format, unique; doc object { repo, path } strict: repo must be in docRepos, path relative (no ., .. or leading /), ending in .md and without #; the text doc is still valid from version 4 on; warning: a docRepos repository no doc uses;',
           'formatVersion 10, notices: only in version 10 (before it the error is only allowed with formatVersion 10, at the type, field or column path); a list of strict objects with kind (pending, deprecated, diverges or removed) and message (not empty or only spaces) required, since (a real YYYY-MM-DD date) and ref (non-empty text) optional; two notices with the same kind and message are the error repeated notice (aviso repetido), at the path of the second; any other property is refused;',
           'formatVersion 10, notices: only in version 10 (before it the error is only allowed with formatVersion 10, at the type, field or column path); a list of strict objects with kind (pending, deprecated, diverges or removed) and message (not empty or only spaces) required, since (a real YYYY-MM-DD date) and ref (non-empty text) optional; two notices with the same kind and message are the error aviso repetido, at the path of the second; any other property is refused;',
           'formatVersion 7, floating, appliesTo and ref column: version 7 only (before it the error is only allowed with formatVersion 7); floating is boolean; appliesTo is non-empty, without repetition, with "marking" and "arrow" only, and an arrow-only type has no component or floating;',
