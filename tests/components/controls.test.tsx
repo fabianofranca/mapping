@@ -13,6 +13,7 @@ import {
   Tabs,
   TextArea,
   TextField,
+  Tooltip,
 } from '../../src/ui/controls';
 
 afterEach(cleanup);
@@ -101,6 +102,50 @@ describe('IconButton', () => {
     // Centrada no botão iria para x = 14 − 80 < 0: fica encostada na margem da janela.
     expect(tip.style.left).toBe('8px');
     expect(tip.style.top).toBe('128px');
+  });
+
+  // #497 (AC1): na faixa lateral a dica sai ao lado do botão, e não embaixo, onde cobria o
+  // conteúdo da janela aberta.
+  it('placement="end" põe a dica à direita do controle, centrada na vertical', () => {
+    const { container } = render(
+      <Tooltip label="Catálogo" placement="end">
+        <button type="button">x</button>
+      </Tooltip>,
+    );
+    const anchor = container.querySelector<HTMLElement>('.tooltip-anchor');
+    const tip = container.querySelector<HTMLElement>('.tooltip');
+    if (!anchor || !tip) throw new Error('sem dica');
+    expect(anchor.className).toContain('tooltip-end');
+    vi.spyOn(anchor, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ x: 2, y: 100, width: 36, height: 28 }),
+    );
+    vi.spyOn(tip, 'offsetWidth', 'get').mockReturnValue(80);
+    vi.spyOn(tip, 'offsetHeight', 'get').mockReturnValue(20);
+    fireEvent.pointerEnter(anchor);
+    // Direita do botão (2 + 36) mais o espaço (4); centro vertical 100 + 14 − 10.
+    expect(tip.style.left).toBe('42px');
+    expect(tip.style.top).toBe('104px');
+  });
+
+  it('placement="end" fica dentro da janela: sem espaço à direita, vai para a esquerda', () => {
+    const { container } = render(
+      <Tooltip label="Propriedades" placement="end">
+        <button type="button">x</button>
+      </Tooltip>,
+    );
+    const anchor = container.querySelector<HTMLElement>('.tooltip-anchor');
+    const tip = container.querySelector<HTMLElement>('.tooltip');
+    if (!anchor || !tip) throw new Error('sem dica');
+    const width = globalThis.innerWidth;
+    vi.spyOn(anchor, 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ x: width - 38, y: 100, width: 36, height: 28 }),
+    );
+    vi.spyOn(tip, 'offsetWidth', 'get').mockReturnValue(120);
+    vi.spyOn(tip, 'offsetHeight', 'get').mockReturnValue(20);
+    fireEvent.pointerEnter(anchor);
+    // À direita não cabe: a dica sai pela esquerda do botão (x − 4 − 120).
+    expect(tip.style.left).toBe(`${width - 38 - 4 - 120}px`);
+    expect(tip.style.top).toBe('104px');
   });
 });
 

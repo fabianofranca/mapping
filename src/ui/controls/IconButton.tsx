@@ -2,7 +2,7 @@ import type { JSX, Ref } from 'preact';
 import { ariaKeys } from '../../app/shortcuts';
 import { Icon, type IconName } from '../icons';
 import { classes } from './classes';
-import { Tooltip } from './Tooltip';
+import { Tooltip, type TooltipPlacement } from './Tooltip';
 
 type NativeButton = Omit<
   JSX.ButtonHTMLAttributes<HTMLButtonElement>,
@@ -29,6 +29,8 @@ interface IconButtonProps extends NativeButton {
   readonly alert?: boolean;
   /** Selo numérico informativo no canto (ex.: propostas novas na faixa lateral). */
   readonly badge?: string;
+  /** Onde a dica abre (`end`: ao lado, na faixa lateral); padrão: embaixo. */
+  readonly tooltipPlacement?: TooltipPlacement;
   /** O `<button>` (para devolver o foco a ele), como o `inputRef` do `TextField`. */
   readonly buttonRef?: Ref<HTMLButtonElement>;
 }
@@ -46,6 +48,7 @@ export function IconButton({
   icon,
   label,
   tooltip,
+  tooltipPlacement,
   variant = 'default',
   text,
   shortcut,
@@ -58,7 +61,7 @@ export function IconButton({
   ...rest
 }: IconButtonProps) {
   return (
-    <Tooltip label={tooltip ?? label} shortcut={shortcut}>
+    <Tooltip label={tooltip ?? label} shortcut={shortcut} placement={tooltipPlacement}>
       <button
         {...rest}
         ref={buttonRef}

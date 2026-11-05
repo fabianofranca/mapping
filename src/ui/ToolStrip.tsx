@@ -32,6 +32,7 @@ function StripButton({ id }: { readonly id: ToolWindowId }) {
       alert={alert}
       badge={fresh > 0 ? String(fresh) : undefined}
       tooltip={name}
+      tooltipPlacement="end"
       shortcut={toolWindowShortcut(id)}
       pressed={open}
       onClick={() => toggleToolWindowFocus(id)}

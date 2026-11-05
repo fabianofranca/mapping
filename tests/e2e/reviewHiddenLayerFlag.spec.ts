@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
 // Revisão a 900 px com a camada escondida revelada ("Mostrar aqui"): o Flag "escondida" do
@@ -7,9 +7,7 @@ import { readFileSync } from 'node:fs';
 
 test.use({ viewport: { width: 900, height: 700 } });
 
-test('Flag da camada escondida cabe no rótulo e os Detalhes ficam sem barra horizontal a 900 px', async ({
-  page,
-}) => {
+async function revealHiddenLayer(page: Page): Promise<Locator> {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
@@ -47,6 +45,13 @@ test('Flag da camada escondida cabe no rótulo e os Detalhes ficam sem barra hor
     .filter({ hasText: 'Componentes M3' })
     .first();
   await expect(head.locator('.flag')).toBeVisible();
+  return head;
+}
+
+test('Flag da camada escondida cabe no rótulo e os Detalhes ficam sem barra horizontal a 900 px', async ({
+  page,
+}) => {
+  const head = await revealHiddenLayer(page);
 
   const geo = await head.evaluate((el) => {
     const label = el.querySelector<HTMLElement>('.layer-group-label')!;
@@ -65,3 +70,23 @@ test('Flag da camada escondida cabe no rótulo e os Detalhes ficam sem barra hor
   }));
   expect(sizes.scroll).toBeLessThanOrEqual(sizes.client);
 });
+
+// Prioridade do cabeçalho: nome > flag > selo (#447, AC1). A flag "escondida" mantém o texto
+// inteiro, porque é um estado da camada; o que é cortado (selo, depois o nome) tem a dica.
+for (const width of [900, 1280]) {
+  test(`a flag "escondida" mantém o texto inteiro a ${width} px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 700 });
+    const head = await revealHiddenLayer(page);
+    const text = head.locator('.flag .flag-text');
+    const m = await text.evaluate((e) => ({
+      scroll: e.scrollWidth,
+      client: e.clientWidth,
+    }));
+    expect(m.scroll).toBeLessThanOrEqual(m.client);
+    // O que encolheu para dar lugar à flag mostra o texto inteiro na dica.
+    for (const part of await head.locator('.layer-group-name, .tag').all()) {
+      const cut = await part.evaluate((e) => e.scrollWidth > e.clientWidth);
+      if (cut) await expect(part).toHaveAttribute('title', /\S/);
+    }
+  });
+}

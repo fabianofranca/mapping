@@ -1,0 +1,8 @@
+# Acabamento visual — [Não lançado] (épico `epic/acabamento-visual`)
+
+## Pendências
+
+- **`Menu` (entrada com atalho):** o `kbd.menu-shortcut` vai à direita da entrada (`margin-inline-start: auto`); o espaço mínimo entre rótulo e atalho passa a ser o `gap` do botão (`--space-4`). Antes uma regra de maior especificidade zerava o `auto` e o atalho ficava colado ao rótulo. Só tokens. Arquivo: `src/theme/editor.css` (`.menu-items .button`, `.menu-items .menu-shortcut`). Atualizar a entrada com atalho do `Menu` no artefato.
+- **`Tooltip` (posição `end`):** nova posição `placement="end"`: a dica abre à direita do controle, centrada na vertical, e vira para a esquerda se não couber; `IconButton` ganha `tooltipPlacement`. Todos os botões da faixa lateral usam `end`. Arquivos: `src/ui/controls/Tooltip.tsx`, `src/ui/controls/IconButton.tsx`, `src/ui/ToolStrip.tsx`. Documentar a posição no `Tooltip` e a dica da faixa lateral no artefato.
+- **Campos de Posição e Tamanho dos Detalhes (`.props-pair`):** com a coluna do valor estreita (container query `props-pair`, até 170 px), X, Y, L e A trocam o respiro lateral (`--space-1`) e o spinner por dígitos, para caberem 5 dígitos; Posição e Tamanho seguem em duas linhas (X e Y; L e A). Nas larguras maiores nada muda. Arquivo: `src/theme/details.css`. Mostrar o painel estreito na prévia de `MarkingPanel`.
+- **Cabeçalho de camada (`Flag` e selo):** a flag da camada escondida não encolhe (`flex: none`); o selo encolhe primeiro (`flex: 0 100 auto`), depois o nome (`flex: 0 1 auto`, com `title`). Arquivos: `src/theme/details.css` (`.layer-group-name`, `.layer-group-head .tag`, `.layer-group-head .flag`), `src/ui/AnnotationsPanel.tsx`. Atualizar o `LayerGroup` e o `Flag` no artefato.
