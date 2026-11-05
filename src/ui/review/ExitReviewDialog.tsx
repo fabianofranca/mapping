@@ -1,6 +1,8 @@
+import { useRef } from 'preact/hooks';
 import { t } from '../../i18n';
 import { Button } from '../controls';
 import { Dialog } from '../Dialog';
+import { reviewExitTarget } from '../toolWindowLayout';
 import { useEditor } from '../EditorContext';
 import { DecisionMark } from './DecisionMark';
 import { useApplyAccepted } from './useReview';
@@ -15,6 +17,8 @@ export function ExitReviewDialog({ onClose }: { readonly onClose: () => void }) 
   const apply = useApplyAccepted();
   const counts = review.derived.counts.value;
   const canApply = review.derived.canApply.value;
+  // A proposta de quando o diálogo abriu: sair zera `proposalId` antes do foco voltar.
+  const proposalId = useRef(review.proposalId.peek());
   const exit = () => {
     onClose();
     review.close();
@@ -23,6 +27,8 @@ export function ExitReviewDialog({ onClose }: { readonly onClose: () => void }) 
     <Dialog
       title={t('review.exitDialog.title')}
       onCancel={onClose}
+      // "Continuar revisando" volta ao botão da faixa; sair leva ao botão da proposta.
+      returnFocus={() => reviewExitTarget(proposalId.current)}
       actions={
         <div class="exit-review-actions">
           <Button onClick={onClose}>{t('review.exitDialog.continue')}</Button>

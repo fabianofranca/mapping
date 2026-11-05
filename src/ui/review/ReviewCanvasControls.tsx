@@ -1,4 +1,4 @@
-import type { ComponentChildren } from 'preact';
+import { createRef, type ComponentChildren } from 'preact';
 import { useEffect } from 'preact/hooks';
 import { t } from '../../i18n';
 import {
@@ -22,6 +22,9 @@ import { useDecide } from './useReview';
 
 // Controles do canvas na revisão (HANDOFF-PROPOSALS 4.6 e 5.2): Atual / Proposto (P), a
 // legenda das marcas (L) e "Comparar" na imagem trocada, que abre o ImageCompare.
+
+/** O botão "Legenda das marcas", para onde o foco volta ao fechar a legenda. */
+const legendToggle = createRef<HTMLButtonElement>();
 
 /** A troca de arquivo da imagem ainda não aplicada (a que "Comparar" mostra). */
 export function replaceChangeOf(p: Proposal, imageId: string): Change | null {
@@ -94,6 +97,7 @@ export function ReviewCanvasControls() {
         label={t('review.legend.open')}
         shortcut={REVIEW_KEYS.legend}
         pressed={ui.reviewLegend.value}
+        buttonRef={legendToggle}
         onClick={() => (ui.reviewLegend.value = !ui.reviewLegend.peek())}
       />
       {comparable && (
@@ -112,7 +116,17 @@ export function ReviewCanvasControls() {
 export function ReviewLegend() {
   const { review, ui } = useEditor();
   if (review.proposalId.value === null || !ui.reviewLegend.value) return null;
-  const close = () => (ui.reviewLegend.value = false);
+  // Fechar (X ou Esc) devolve o foco ao botão que a abre, nunca ao body (etapa #515, FN1).
+  const close = () => {
+    ui.reviewLegend.value = false;
+    legendToggle.current?.focus();
+  };
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+  };
   const rows: readonly [ComponentChildren, string][] = [
     [<ChangeKind type="created" size="sm" decorative />, t('review.legend.created')],
     [<ChangeKind type="moved" size="sm" decorative />, t('review.legend.moved')],
@@ -145,10 +159,19 @@ export function ReviewLegend() {
     ],
   ];
   return (
-    <section class="review-legend" aria-label={t('review.legend.title')}>
+    <section
+      class="review-legend"
+      aria-label={t('review.legend.title')}
+      onKeyDown={onKeyDown}
+    >
       <header class="review-legend-head">
         <h2>{t('review.legend.title')}</h2>
-        <IconButton icon="close" size="sm" label={t('dialog.close')} onClick={close} />
+        <IconButton
+          icon="close"
+          size="sm"
+          label={t('review.legend.close')}
+          onClick={close}
+        />
       </header>
       <ul>
         {rows.map(([glyph, text]) => (

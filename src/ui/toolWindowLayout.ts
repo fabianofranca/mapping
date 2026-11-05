@@ -141,3 +141,24 @@ export function showAndFocusToolWindow(id: ToolWindowId): void {
   openToolWindow(id);
   queueMicrotask(() => (switchesBottomTab ? focusActiveTab(id) : focusToolWindow(id)));
 }
+
+/**
+ * Alvo do foco ao sair da revisão (etapa #515, FN1): sair tira da tela o botão clicado
+ * (a faixa da revisão), então o foco vai ao botão da proposta (Revisar ou Continuar) na
+ * janela Propostas, se ela estiver aberta; senão, ao canvas.
+ */
+export function reviewExitTarget(proposalId: string | null): HTMLElement | null {
+  if (proposalId !== null) {
+    for (const row of document.querySelectorAll<HTMLElement>('[data-proposal]')) {
+      if (row.dataset.proposal !== proposalId) continue;
+      const action = row.querySelector<HTMLElement>('[data-proposal-action]');
+      if (action) return action;
+    }
+  }
+  return document.querySelector<HTMLElement>(`[${CANVAS_AREA_ATTR}]`);
+}
+
+/** Leva o foco ao alvo da saída, ainda com a faixa no DOM (nenhum quadro no `body`). */
+export function focusReviewExitTarget(proposalId: string | null): void {
+  reviewExitTarget(proposalId)?.focus();
+}

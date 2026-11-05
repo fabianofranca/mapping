@@ -4,6 +4,7 @@ import { Button } from '../ui/controls';
 import { Icon } from '../ui/icons';
 import type { LibraryPreview } from '../store/libraryPreview';
 import { closeLibrary } from './controller';
+import { requestHomeFocus } from './homeFocus';
 import { NarrowWindowNotice, useNarrowWindow } from './NarrowWindow';
 
 // Tela do Catálogo de uma biblioteca aberta pela tela inicial, sem projeto (etapa Biblioteca,
@@ -21,7 +22,12 @@ export function CatalogScreen({ library }: CatalogScreenProps) {
     <>
       <main class="catalog-screen" aria-label={t('catalog.home.screen')} hidden={narrow}>
         <header class="catalog-screen-bar">
-          <Button onClick={closeLibrary}>
+          <Button
+            onClick={() => {
+              requestHomeFocus();
+              closeLibrary();
+            }}
+          >
             <Icon name="arrowLeft" />
             {t('catalog.home.back')}
           </Button>

@@ -1,5 +1,6 @@
 import { needsExitReminder } from '../model';
 import { useEditor } from '../ui/EditorContext';
+import { focusReviewExitTarget } from '../ui/toolWindowLayout';
 import type { EditorDialogs } from './useEditorDialogs';
 
 /**
@@ -12,6 +13,10 @@ export function useExitReview(dialogs: EditorDialogs): () => void {
     const p = review.derived.proposal.peek();
     if (needsExitReminder(p?.status, review.derived.counts.peek().acceptedPending)) {
       dialogs.show({ kind: 'exitReview' });
-    } else review.close();
+    } else {
+      const id = review.proposalId.peek();
+      review.close();
+      focusReviewExitTarget(id);
+    }
   };
 }

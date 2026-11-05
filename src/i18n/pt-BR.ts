@@ -263,8 +263,6 @@ export const ptBR = {
   'view.cleanViewHint':
     'Ver limpo: esconde marcações, nomes e seleção; só a imagem e os componentes',
   'view.list': 'Lista',
-  'view.showList': 'Mostrar a lista',
-  'view.hideList': 'Esconder a lista',
 
   'list.title': 'Lista de anotações',
   'list.showEmpty': 'Mostrar marcações sem anotação',

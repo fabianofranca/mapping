@@ -119,7 +119,7 @@ export function ListToggleButton({
   return (
     <IconButton
       icon="list"
-      label={t(open ? 'view.hideList' : 'view.showList')}
+      label={t('view.list')}
       text={t('view.list')}
       pressed={open}
       onClick={onToggle}

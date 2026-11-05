@@ -59,7 +59,7 @@ describe('IconButton', () => {
 
   it('com texto visível, o nome vem do texto; a dica pode ter outro texto', () => {
     const { container } = render(
-      <IconButton icon="list" label="Mostrar lista" text="Lista" tooltip="Outra dica" />,
+      <IconButton icon="list" label="Lista" text="Lista" tooltip="Outra dica" />,
     );
     expect(screen.getByRole('button', { name: 'Lista' })).toBeTruthy();
     expect(container.querySelector('.tooltip')?.textContent).toBe('Outra dica');

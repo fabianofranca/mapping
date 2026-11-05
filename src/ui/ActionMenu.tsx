@@ -61,14 +61,25 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
       if (!root.current?.contains(e.target as Node)) close();
     };
     // Fechar ao rolar (qualquer ancestral, em captura) ou redimensionar: a lista é fixa.
+    // O próprio clique que abre pode rolar a página até a linha, e o evento de rolagem
+    // chega depois de o menu abrir: até o próximo quadro, a rolagem não conta (etapa #515).
+    let armed = typeof requestAnimationFrame !== 'function';
+    const frame =
+      typeof requestAnimationFrame === 'function'
+        ? requestAnimationFrame(() => (armed = true))
+        : 0;
+    const onScroll = () => {
+      if (armed) close();
+    };
     const onMove = () => close();
     if (list.current && trigger.current) place(list.current, trigger.current);
     document.addEventListener('pointerdown', onDown);
-    document.addEventListener('scroll', onMove, true);
+    document.addEventListener('scroll', onScroll, true);
     globalThis.addEventListener('resize', onMove);
     return () => {
+      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
       document.removeEventListener('pointerdown', onDown);
-      document.removeEventListener('scroll', onMove, true);
+      document.removeEventListener('scroll', onScroll, true);
       globalThis.removeEventListener('resize', onMove);
     };
   }, [open]);
