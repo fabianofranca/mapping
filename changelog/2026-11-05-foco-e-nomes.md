@@ -1,4 +1,4 @@
-# Foco que não se perde e nomes acessíveis estáveis — [Não lançado] (épico `epic/foco-e-nomes`, PR #535, MCP 0.16.0 sem mudança, schema v13)
+# Foco que não se perde e nomes acessíveis estáveis — 2026-11-05 (épico `epic/foco-e-nomes`, PR #535, MCP 0.16.0 sem mudança, schema v13)
 
 ## Corrigido
 

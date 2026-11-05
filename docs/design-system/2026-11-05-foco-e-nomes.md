@@ -1,4 +1,4 @@
-# Foco que não se perde e nomes acessíveis estáveis — [Não lançado] (épico `epic/foco-e-nomes`)
+# Foco que não se perde e nomes acessíveis estáveis — 2026-11-05 (épico `epic/foco-e-nomes`)
 
 ## Pendências
 
