@@ -11,3 +11,4 @@
 - Detalhes: com o painel estreito (a 900 px, na revisão ou fora dela), X, Y, L e A mostram valores de 4 dígitos por inteiro; antes o terceiro dígito de Y e L ficava cortado.
 - Canvas: o retângulo de seleção (Shift+arrasto) ganha o mesmo halo escuro da seleção e do rascunho; a silhueta dele passa de 3:1 sobre o fundo do canvas nos temas claro e escuro.
 - Console: o aviso do Konva de que o palco tem 6 camadas não aparece mais ao abrir um projeto (setas e marcações passaram a dividir uma camada, sem mudar a ordem de desenho).
+- Detalhes: com o projeto aberto por pasta (onde há o botão **Copiar referência**), o cabeçalho do cartão de uma anotação quebra em duas linhas e o campo do nome mantém uma largura mínima; a 900 px, na revisão, o painel não ganha mais barra horizontal nem o campo do nome é espremido (o defeito já existia antes da etapa).
