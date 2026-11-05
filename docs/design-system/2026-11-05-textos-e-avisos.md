@@ -7,8 +7,12 @@
 
 ## Sincronização
 
-_(preenchida no fechamento do épico)_
+Gravado no artefato **Mapping** em 2026-11-05: versão 35 (conteúdo) e versão 36 (índice, só com o `lastChange`).
+
+- **`NoticeBadge`:** o guia (`README.md`) descreve o grid de duas colunas da linha de aviso (`auto 1fr`, vão `space-2`, `align-items: start`); o `bundle.css` ganhou a regra nova de `.notice-line` (e `.notice-origin` e `.notice-since` na coluna 2), igual a `src/theme/details.css`; a prévia ganhou um exemplo de mensagem longa em coluna estreita (`height` de 1700 para 1840).
+- **Textos:** a dica de Posição e Tamanho ("Em pixels do container" na marcação de container, "Em unidades do canvas" na do canvas) nas prévias de `MarkingPanel`, `PropertyGrid` e `HelpTip`, e o texto da biblioteca ("`formatVersion` 4 em diante") na prévia de `SpecsDialog`.
+- **Contraste:** sem impacto (nenhuma cor mudou).
 
 ## Ficou sem gravar
 
-_(preenchida no fechamento do épico)_
+Nada. Fica só uma conferência visual: o exemplo novo do `NoticeBadge` (linha de aviso com mensagem longa) não foi olhado no viewer do DS; convém abrir a prévia "Linha do campo" nos dois temas uma vez.
