@@ -1,6 +1,6 @@
 import { cleanup, screen, within } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Project } from '../../src/model';
+import { setFieldValue, type Project } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
 import { annotationOf, createHarness, renderLive } from './harness';
@@ -11,8 +11,11 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-function setup(annotationId: string, readOnly = false) {
-  const harness = createHarness(noticeProject());
+function setup(annotationId: string, readOnly = false, emptyLegacy = false) {
+  const base = noticeProject();
+  const harness = createHarness(
+    emptyLegacy ? setFieldValue(base, 'AA', 'legacyStyle', '') : base,
+  );
   if (readOnly) harness.store.load(harness.project(), { readOnly: true });
   renderLive(harness, (p: Project) => (
     <AnnotationEditor
@@ -66,6 +69,20 @@ describe('Detalhes — avisos da especialização', () => {
     expect(
       plain.closest('.props-label-cell')?.querySelector('.notice-label-icon') ?? null,
     ).toBeNull();
+  });
+
+  it('o campo vazio com aviso continua mostrando a linha e o ícone (decisão 2 da #513)', () => {
+    // A contagem e a janela Avisos só contam o campo com valor; os Detalhes informam antes.
+    setup('AA', false, true);
+    const input = screen.getByLabelText('legacyStyle') as HTMLInputElement;
+    expect(input.value).toBe('');
+    const line = document.querySelector('.notice-line.notice-deprecated');
+    if (!line) throw new Error('sem a linha do campo vazio');
+    expect(line.textContent).toContain('Use variant.');
+    const label = screen.getByText('legacyStyle', { selector: 'label' });
+    expect(
+      label.closest('.props-label-cell')?.querySelector('.notice-label-icon'),
+    ).not.toBeNull();
   });
 
   it('o aviso da coluna fica abaixo da tabela e cita a coluna', () => {
