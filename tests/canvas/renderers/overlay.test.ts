@@ -117,6 +117,43 @@ describe('OverlayRenderer', () => {
       expect(overlay.nameTag.y()).toBe(200 - 20);
     });
 
+    it('marcação removida na revisão: a etiqueta do nome leva o risco, a qualquer zoom', () => {
+      const removed = {
+        key: 'marking:M2',
+        placement: { x: 0, y: 0, scale: 1 },
+        rect: { x: 200, y: 200, width: 50, height: 50 },
+        name: 'Maçaneta',
+        badges: ['removed' as const],
+      };
+      for (const scale of [0.56, 1.1]) {
+        const { overlay, render } = setup();
+        render({
+          selection: SELECTED,
+          viewport: at(100, scale),
+          review: {
+            view: 'current',
+            markings: new Map(),
+            images: new Map(),
+            ghosts: [],
+            removed: [removed],
+          },
+        });
+        // A etiqueta está em px de tela (o grupo tem a escala inversa): o risco também.
+        const strike = overlay.nameTag.findOne('.name-tag-strike');
+        expect(strike?.visible()).toBe(true);
+        expect(strike?.getAttr('stroke')).toBe(TOKENS.nameTagText);
+        expect(strike?.getAttr('strokeWidth')).toBe(1.5);
+        const points = strike?.getAttr('points') as number[];
+        expect(points[0]).toBeLessThan(points[2] ?? 0);
+        expect(points[1]).toBeGreaterThan(0);
+        expect(points[1]).toBeLessThan(overlay.nameTagBox.height());
+      }
+      // Sem revisão (ou não removida), a etiqueta fica como estava.
+      const { overlay, render } = setup();
+      render({ selection: SELECTED, viewport: at(100) });
+      expect(overlay.nameTag.findOne('.name-tag-strike')?.visible()).toBe(false);
+    });
+
     it('mantém o tamanho em px de tela com zoom', () => {
       const { overlay, render } = setup();
       render({ selection: SELECTED, viewport: at(100, 2) });

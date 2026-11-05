@@ -221,7 +221,7 @@
   },
   "src/canvas/renderers/review.ts": {
     "complexity": {
-      "count": 2
+      "count": 1
     }
   },
   "src/canvas/renderers/semanticCard.ts": {

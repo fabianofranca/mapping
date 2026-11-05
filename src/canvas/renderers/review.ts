@@ -4,6 +4,7 @@
 // dupla, pontilhada, inválida) fica no `MarkingRenderer`. Tudo em px de tela, na escala
 // inversa do zoom; cores e fontes só dos tokens.
 import Konva from 'konva/lib/Core';
+import { Line as KonvaLine } from 'konva/lib/shapes/Line';
 import { Path as KonvaPath } from 'konva/lib/shapes/Path';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
@@ -21,7 +22,13 @@ import { visibleArea, type Frame } from '../frame';
 import { markingCanvasRect, placementOfSpace } from '../markingGeometry';
 import { importantBadge, type ReviewBadge, type ReviewShape } from '../reviewMarks';
 import type { CanvasTokens } from '../theme';
-import { HALO_WIDTH, fontStyle, intersectRects } from './metrics';
+import {
+  HALO_WIDTH,
+  STRIKE_HEIGHT,
+  STRIKE_WIDTH,
+  fontStyle,
+  intersectRects,
+} from './metrics';
 
 /** Selo (px de tela): lado, vão entre selos e distância da borda. */
 export const REVIEW_KIND_BADGE = 16;
@@ -70,6 +77,9 @@ interface ShapeNode {
   readonly halo: KonvaRect;
   readonly line: KonvaRect;
   readonly name: KonvaText;
+  /** Risco do nome da removida: halo por baixo e linha por cima (o do Konva some no texto). */
+  readonly strikeHalo: KonvaLine;
+  readonly strike: KonvaLine;
   readonly badges: readonly BadgeNode[];
 }
 
@@ -279,10 +289,19 @@ export class ReviewRenderer {
         hatch: new Konva.Shape(),
         halo: new KonvaRect(),
         line: new KonvaRect(),
-        name: new KonvaText({ textDecoration: 'line-through', wrap: 'none' }),
+        name: new KonvaText({ wrap: 'none' }),
+        strikeHalo: new KonvaLine({ name: 'review-strike-halo', lineCap: 'butt' }),
+        strike: new KonvaLine({ name: 'review-strike', lineCap: 'butt' }),
         badges: [createBadge(), createBadge()],
       };
-      node.group.add(node.hatch, node.halo, node.line, node.name);
+      node.group.add(
+        node.hatch,
+        node.halo,
+        node.line,
+        node.name,
+        node.strikeHalo,
+        node.strike,
+      );
       for (const badge of node.badges) node.group.add(badge.group);
       this.layer.add(node.group);
       this.shapes.set(shape.key, node);
@@ -353,11 +372,43 @@ export class ReviewRenderer {
         stroke: tokens.halo,
         strokeWidth: 3 / zoom,
         fillAfterStrokeEnabled: true,
-        textDecoration: removed ? 'line-through' : '',
+        textDecoration: '',
       });
+      this.drawStrike(node, removed, zoom, tokens);
     } else {
       node.name.visible(false);
+      node.strikeHalo.visible(false);
+      node.strike.visible(false);
     }
     placeBadges(node.badges, shape.badges, rect, zoom, tokens);
+  }
+
+  /**
+   * Risco do nome da removida. O `line-through` do Konva usa o preenchimento do texto, com
+   * ~0,8 px: branco sobre o texto branco, some. Aqui é um traço próprio (linha do canvas
+   * com halo por baixo), do tamanho do texto.
+   */
+  private drawStrike(
+    node: ShapeNode,
+    removed: boolean,
+    zoom: number,
+    tokens: CanvasTokens,
+  ): void {
+    node.strikeHalo.visible(removed);
+    node.strike.visible(removed);
+    if (!removed) return;
+    const y = node.name.y() + node.name.fontSize() * STRIKE_HEIGHT;
+    const x = node.name.x();
+    const points = [x, y, x + node.name.width(), y];
+    node.strikeHalo.setAttrs({
+      points,
+      stroke: tokens.halo,
+      strokeWidth: (STRIKE_WIDTH + 2 * HALO_WIDTH) / zoom,
+    });
+    node.strike.setAttrs({
+      points,
+      stroke: tokens.line,
+      strokeWidth: STRIKE_WIDTH / zoom,
+    });
   }
 }

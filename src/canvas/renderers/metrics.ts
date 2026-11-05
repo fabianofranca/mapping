@@ -7,6 +7,9 @@ export const OPAQUE = 1;
 /** Largura do halo de cada lado de uma linha (px de tela). */
 export const HALO_WIDTH = 1;
 export const REVIEW_BADGE_SIZE = 14;
+/** Risco do nome da removida na revisão (px de tela): espessura e altura na caixa do texto (0 = topo, 1 = base). */
+export const STRIKE_WIDTH = 1.5;
+export const STRIKE_HEIGHT = 0.55;
 /** Indicadores de camada: bolinhas (px de tela), no máximo `MAX_DOTS` e depois "+N". */
 export const DOT_RADIUS = 4;
 export const DOT_GAP = 3;
