@@ -3,7 +3,12 @@ import { cleanup, render, screen, waitFor } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/app/App';
-import { closeLibrary, openLibrary, openLibraryPackage } from '../../src/app/controller';
+import {
+  closeLibrary,
+  features,
+  openLibrary,
+  openLibraryPackage,
+} from '../../src/app/controller';
 import { t } from '../../src/i18n';
 import { MAX_PACKAGE_FILES } from '../../src/model';
 import { locale } from '../../src/store/settings';
@@ -132,5 +137,21 @@ describe('tela do Catálogo (sem projeto)', () => {
     await userEvent.click(screen.getByRole('button', { name: t('catalog.home.back') }));
     await waitFor(() => expect(openLibrary.value).toBeNull());
     expect(screen.queryByRole('main', { name: t('catalog.home.screen') })).toBeNull();
+  });
+
+  // Etapa #515 (FN1, #497 parte 1): o Voltar some com a tela; o foco vai ao controle da
+  // tela inicial que abriu a biblioteca, nunca ao body.
+  it('voltar por Enter leva o foco ao "Abrir biblioteca" da tela inicial', async () => {
+    features.value = { folder: true, local: true, fileProtocol: false };
+    fakePicker(await memoryDir(material3Package()));
+    await openLibraryPackage({ kind: 'folder' });
+    render(<App />);
+    const back = screen.getByRole('button', { name: t('catalog.home.back') });
+    back.focus();
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() => expect(openLibrary.value).toBeNull());
+    const opener = await screen.findByRole('button', { name: t('catalog.home.open') });
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.activeElement).toBe(opener);
   });
 });

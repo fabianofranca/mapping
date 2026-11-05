@@ -4,7 +4,7 @@ import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
 import { locale } from '../store/settings';
 import { Button, TextField } from '../ui/controls';
 import { Dialog } from '../ui/Dialog';
-import { DialogSlotContext, useDialogSlot } from '../ui/focus';
+import { DialogSlotContext, FOCUSABLE, useDialogSlot } from '../ui/focus';
 import { HELP_SHORTCUTS, HelpDialog } from '../ui/HelpDialog';
 import { Icon } from '../ui/icons';
 import { InconsistentProjectDialog } from '../ui/InconsistentProjectDialog';
@@ -13,6 +13,7 @@ import { PreviewBadge } from '../ui/PreviewBanner';
 import { SettingsDialog } from '../ui/SettingsDialog';
 import { guideUrl } from '../utils/guideLink';
 import { matchesSearch } from '../utils/search';
+import { fulfillHomeFocus } from './homeFocus';
 import { MAX_PACKAGE_BYTES, MAX_PACKAGE_FILES } from '../model';
 import { canPickDirectory } from '../ui/specPackageImport';
 import {
@@ -99,6 +100,12 @@ export function Home() {
   });
 
   const available = features.value;
+  // Voltou do Catálogo da biblioteca: o foco vai ao "Abrir biblioteca" (ou ao primeiro
+  // controle), no commit em que a tela já tem controles.
+  const mainRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (available && mainRef.current) fulfillHomeFocus(mainRef.current, FOCUSABLE);
+  }, [available]);
   if (!available) {
     return (
       <main class="home">
@@ -375,7 +382,7 @@ export function Home() {
           </div>
         </aside>
 
-        <main class="home-main">
+        <main class="home-main" ref={mainRef}>
           <div class="home-heading">
             <h2>{t('home.start')}</h2>
             <HomeButtons {...actions} />
@@ -637,7 +644,12 @@ function HomeButtons({
           {t('home.openZip')}
         </Button>
       )}
-      <Button disabled={busy} title={t('catalog.home.openHint')} onClick={onOpenLibrary}>
+      <Button
+        disabled={busy}
+        title={t('catalog.home.openHint')}
+        data-home-open-library=""
+        onClick={onOpenLibrary}
+      >
         <Icon name="library" />
         {t('catalog.home.open')}
       </Button>

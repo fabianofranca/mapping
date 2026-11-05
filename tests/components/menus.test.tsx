@@ -195,6 +195,11 @@ describe('ActionMenu (posição fixa)', () => {
     const list = await screen.findByRole('menu');
     expect(list.style.left).toMatch(/px$/);
     expect(list.style.top).toMatch(/px$/);
+    // A rolagem que a própria abertura provoca (no mesmo quadro) não fecha (etapa #515).
+    fireEvent.scroll(document.body);
+    expect(screen.queryByRole('menu')).not.toBeNull();
+    // Depois do próximo quadro, rolar fecha.
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
     fireEvent.scroll(document.body);
     await vi.waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
   });
