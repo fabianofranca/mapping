@@ -421,7 +421,7 @@ Use `floating` só para o que é comentário ou anotação solta que não perten
 
 - `floating`: booleano, opcional; o padrão é `false`. Só a partir da `formatVersion` 7 (numa versão anterior o erro é `só é permitido com formatVersion 7`, no caminho `layers[0].annotationTypes[0].floating`).
 - A biblioteca de **notas** do repositório (`libraries/notas/`: camada **Notas**, tipos `nota` com `titulo` e `texto` e `tabela` com `titulo` e `linhas` chave/valor, componentes no estilo post-it) é um pacote comum, embutido na app e **aplicado por padrão**: o projeto novo nasce com ela, e o projeto aberto de um schema anterior ao 13 a ganha ao abrir. Ela se remove por **Especializações › Remover**, como qualquer outra, e não volta.
-- Campos `string` do tipo aceitam várias linhas na interface (o editor abre em várias linhas quando o texto tem quebra ou passa de 60 caracteres, ou com Shift+Enter).
+- Campos `string` do tipo aceitam várias linhas na interface (o editor abre em várias linhas quando o texto tem quebra ou passa de 60 caracteres, ou com Shift+Enter; enquanto o texto não tem quebra, o Enter grava e o Shift+Enter quebra a linha).
 
 ## Onde o tipo se aplica
 

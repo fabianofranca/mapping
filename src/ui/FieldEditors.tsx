@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   type Annotation,
@@ -47,6 +47,25 @@ export function parseNumberInput(text: string): number | null | undefined {
 export const MULTILINE_MIN_LENGTH = 60;
 const MULTILINE_ROWS = 4;
 
+/** Ignora a quebra de linha do Enter que ainda está em curso (até o `keyup` dele). */
+function swallowEnterOnce(el: HTMLTextAreaElement) {
+  const block = (e: Event) => {
+    if (
+      e instanceof InputEvent &&
+      e.inputType.startsWith('insert') &&
+      e.inputType !== 'insertText'
+    )
+      e.preventDefault();
+  };
+  const stop = () => {
+    el.removeEventListener('beforeinput', block);
+    el.removeEventListener('keyup', stop);
+  };
+  el.addEventListener('beforeinput', block);
+  el.addEventListener('keyup', stop);
+  setTimeout(stop, 0);
+}
+
 interface MultilineProps {
   readonly id: string | undefined;
   readonly label: string;
@@ -56,10 +75,17 @@ interface MultilineProps {
   readonly required: boolean;
   /** Foca ao montar, com o cursor no fim (a troca por Shift+Enter). */
   readonly autoFocus: boolean;
+  /** O foco veio no meio de um Enter: a quebra desse mesmo Enter não entra no campo novo. */
+  readonly swallowBreak?: boolean;
   readonly onCommit: (text: string) => void;
+  /** Avisa que o Enter gravou (o pai cuida do foco se o editor trocar). */
+  readonly onEnterCommit?: () => void;
 }
 
-/** Texto em várias linhas: Enter quebra a linha, sair do campo grava. */
+/**
+ * Texto em várias linhas: sair do campo grava. Enquanto o texto não tem quebra, o Enter também
+ * grava (como no campo de uma linha) e o Shift+Enter quebra; com uma quebra, o Enter quebra.
+ */
 function MultilineEditor({
   id,
   label,
@@ -68,7 +94,9 @@ function MultilineEditor({
   invalid,
   required,
   autoFocus,
+  swallowBreak = false,
   onCommit,
+  onEnterCommit,
 }: MultilineProps) {
   const [current, setCurrent] = useState(initial);
   return (
@@ -82,10 +110,18 @@ function MultilineEditor({
       value={current}
       onInput={setCurrent}
       onCommit={onCommit}
+      onKeyDown={(e) => {
+        if (e.key !== 'Enter' || e.shiftKey || e.isComposing || readOnly) return;
+        if (e.currentTarget.value.includes('\n')) return;
+        e.preventDefault();
+        onEnterCommit?.();
+        onCommit(e.currentTarget.value);
+      }}
       textAreaRef={(el) => {
         if (el === null || !autoFocus) return;
         el.focus();
         el.setSelectionRange(el.value.length, el.value.length);
+        if (swallowBreak) swallowEnterOnce(el);
       }}
     />
   );
@@ -104,14 +140,42 @@ export function StringEditor(props: SimpleEditorProps) {
   const [error, setError] = useState<string | null>(null);
   const multiline =
     draft !== null || text.includes('\n') || text.length > MULTILINE_MIN_LENGTH;
+  const box = useRef<HTMLDivElement>(null);
+  const refocus = useRef(false);
+  // O Enter gravou no campo de uma linha e o valor passou a pedir várias: o TEXTAREA nasce focado.
+  const focusMultiline = useRef(false);
+  const focusOnMount = multiline && focusMultiline.current;
+  useLayoutEffect(() => {
+    if (multiline) focusMultiline.current = false;
+  }, [multiline]);
+  // O Enter gravou um valor curto e o editor voltou a uma linha: o foco vai ao campo novo.
+  useLayoutEffect(() => {
+    if (multiline || !refocus.current) return;
+    refocus.current = false;
+    // Só se o foco ainda estava neste editor (o campo trocado deixou-o no `body`).
+    const active = document.activeElement;
+    if (active !== null && active !== document.body) return;
+    const input = box.current?.querySelector('input');
+    if (!input) return;
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }, [multiline]);
   if (!multiline) {
     return (
       <div
         class="string-editor"
+        ref={box}
+        onFocusOut={() => {
+          focusMultiline.current = false;
+        }}
         onKeyDownCapture={(e) => {
           const input = e.target;
-          if (e.key !== 'Enter' || !e.shiftKey || readOnly) return;
+          if (e.key !== 'Enter' || readOnly || e.isComposing) return;
           if (!(input instanceof HTMLInputElement)) return;
+          if (!e.shiftKey) {
+            focusMultiline.current = true;
+            return;
+          }
           e.preventDefault();
           e.stopPropagation();
           setDraft(`${input.value}\n`);
@@ -130,7 +194,11 @@ export function StringEditor(props: SimpleEditorProps) {
         readOnly={readOnly}
         invalid={invalid || error !== null}
         required={field.required === true}
-        autoFocus={draft !== null}
+        autoFocus={draft !== null || focusOnMount}
+        swallowBreak={focusOnMount}
+        onEnterCommit={() => {
+          refocus.current = true;
+        }}
         onCommit={(typed) => {
           // A quebra de linha no fim (um Enter de sobra) não é parte do texto: tira, para que
           // um valor como a URL de uma imagem não vá ao disco com `\n`.

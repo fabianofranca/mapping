@@ -276,6 +276,32 @@ describe('moveItems: cada item no próprio espaço', () => {
   });
 });
 
+describe('moveItems: ruído de ponto flutuante no placement', () => {
+  it('ir e voltar com um container volta ao x exato, sem ruído', () => {
+    let q = multiProject();
+    // 0,1 + 0,2 − 0,3 deixaria 5,55e-17; 212 + 24,67 − 24,67 deixaria 211,99999999999997.
+    for (const d of [0.1, 0.2, -0.3]) q = moveItems(q, [img('A')], d, d);
+    expect(image(q, 'A').placement).toEqual({ x: 0, y: 0, scale: 1 });
+    expect(Object.is(image(q, 'A').placement.x, 0)).toBe(true);
+
+    let r = multiProject();
+    r = {
+      ...r,
+      containers: r.containers.map((c) =>
+        c.id === 'A' ? { ...c, placement: { x: 212, y: 0, scale: 1 } } : c,
+      ),
+    };
+    for (const d of [24.666666666666668, -24.666666666666668])
+      r = moveItems(r, [img('A')], d, 0);
+    expect(image(r, 'A').placement).toEqual({ x: 212, y: 0, scale: 1 });
+  });
+
+  it('fração de verdade continua: +0,5 dá 0,5', () => {
+    const q = moveItems(multiProject(), [img('A')], 0.5, 0.5);
+    expect(image(q, 'A').placement).toEqual({ x: 0.5, y: 0.5, scale: 1 });
+  });
+});
+
 describe('moveItems: tudo ou nada', () => {
   it('container que passa a sobrepor um container que não se move falha', () => {
     const p = multiProject();

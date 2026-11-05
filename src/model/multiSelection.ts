@@ -10,6 +10,7 @@ import {
   imagePixelRect,
   isIntegerRect,
   rectsOverlap,
+  snapNearInteger,
   translateRect,
 } from './geometry';
 import { ancestorsOf, descendantsOf } from './hierarchy';
@@ -134,7 +135,9 @@ export function canMoveItems(p: Project, items: readonly ItemRef[]): boolean {
  * e vale também para os containers: o retângulo da marcação é inteiro e o do container não,
  * então cada um com o seu deslocamento deixaria um container colado na borda da marcação
  * poucas frações para fora dela e o assentar o tiraria do pertencimento. Sem marcação do canvas
- * o container anda pelo `dx`, `dy` exatos (arrasto suave com zoom).
+ * o container anda pelo `dx`, `dy` exatos (arrasto suave com zoom); só o ruído de ponto
+ * flutuante perto de um inteiro some do `placement` (`snapNearInteger`), para ir e voltar não
+ * deixar `-2.27e-13` no `mapping.json`.
  *
  * Tudo ou nada: com qualquer item de `movingItems` travado falha com `locked`; um container
  * movido que passe a sobrepor um container que NÃO se move falha com `image-overlap` (os
@@ -172,7 +175,11 @@ export function moveItems(
       const container = index.containers.get(item.id);
       if (!container || (canvasDx === 0 && canvasDy === 0)) continue;
       const { x, y, scale } = container.placement;
-      placements.set(item.id, { x: x + canvasDx, y: y + canvasDy, scale });
+      placements.set(item.id, {
+        x: snapNearInteger(x + canvasDx),
+        y: snapNearInteger(y + canvasDy),
+        scale,
+      });
       continue;
     }
     const marking = index.markings.get(item.id);
@@ -655,13 +662,14 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
       }),
       ...containers.map((c) => imageCanvasRect(c, c.placement)),
     ]) as Rect;
-    const x = Math.floor(raw.x);
-    const y = Math.floor(raw.y);
+    // O ruído do arrasto (`-2.27e-13`) conta como inteiro; fração de verdade arredonda para fora.
+    const x = Math.floor(snapNearInteger(raw.x));
+    const y = Math.floor(snapNearInteger(raw.y));
     bbox = {
       x,
       y,
-      width: Math.ceil(raw.x + raw.width) - x,
-      height: Math.ceil(raw.y + raw.height) - y,
+      width: Math.ceil(snapNearInteger(raw.x + raw.width)) - x,
+      height: Math.ceil(snapNearInteger(raw.y + raw.height)) - y,
     };
   }
 
