@@ -209,6 +209,38 @@ test('o menu do traço troca o estilo (reta, curva, canto), uma entrada cada, e 
   expect(await arrowsOf(page)).toHaveLength(0);
 });
 
+test('no menu do traço, o espaço entre o check e o rótulo é o de sempre (6 px)', async ({
+  page,
+}) => {
+  await createProject(page, 'Setas');
+  const host = page.locator('.canvas-host');
+  const [first, second] = await twoMarkedScreens(page, host);
+  await page.mouse.click(centerOf(first).x, centerOf(first).y);
+  await drag(
+    page,
+    { x: first.x + first.width + LINK_HANDLE_OFFSET, y: first.y + first.height / 2 },
+    centerOf(second),
+  );
+  await expect(host).toHaveAttribute('data-arrows', '1');
+  const middle = {
+    x: (centerOf(first).x + centerOf(second).x) / 2,
+    y: (centerOf(first).y + centerOf(second).y) / 2,
+  };
+  await page.mouse.click(middle.x, middle.y, { button: 'right' });
+  const menu = page.getByRole('menu', { name: 'Menu do item no canvas' });
+  await expect(menu).toBeVisible();
+  const checked = menu.locator('[role=menuitemradio][aria-checked=true]');
+  await expect(checked).toHaveCount(1);
+  const space = await checked.evaluate((button) => {
+    const icon = button.querySelector('.icon')!.getBoundingClientRect();
+    const text = [...button.childNodes].find((n) => n.nodeType === Node.TEXT_NODE)!;
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    return range.getBoundingClientRect().left - icon.right;
+  });
+  expect(space).toBe(6);
+});
+
 test('arrastar o meio do traço cria um ponto de passagem', async ({ page }) => {
   await createProject(page, 'Setas');
   const host = page.locator('.canvas-host');

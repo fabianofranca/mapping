@@ -459,7 +459,7 @@ button.layer-group-label:hover {
 }
 
 .layer-group-name {
-  /* Prioridade do cabeçalho: nome > flag > selo. O nome encolhe só depois do selo (#447). */
+  /* Prioridade do cabeçalho: nome > flag > selo. O nome encolhe só depois do selo (#447): o selo cede quase tudo. */
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -470,7 +470,7 @@ button.layer-group-label:hover {
 .layer-group-head .tag {
   /* O selo da especialização é o primeiro a encolher, com reticências (a dica traz o nome
      inteiro); o nome da camada, a flag e a meta têm prioridade (#371, #447). */
-  flex: 0 100 auto;
+  flex: 0 1000 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

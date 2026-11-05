@@ -70,6 +70,39 @@ test('selo longo da especialização encolhe sem criar barra horizontal nos Deta
   }
 });
 
+test('o nome da camada só encolhe depois de o selo ter sumido (900 e 1000 px)', async ({
+  page,
+}) => {
+  for (const width of [900, 1000]) {
+    await page.setViewportSize({ width, height: 700 });
+    await openExample(page);
+    await page
+      .getByRole('list', { name: 'Árvore de marcações' })
+      .getByRole('button', { name: 'Cadastrar', exact: true })
+      .click();
+    const heads = await page.locator('.layer-group-head').evaluateAll((all) =>
+      all.flatMap((head) => {
+        const name = head.querySelector<HTMLElement>('.layer-group-name');
+        const tag = head.querySelector<HTMLElement>('.tag');
+        if (!name || !tag) return [];
+        return [
+          {
+            name: name.textContent ?? '',
+            nameCut: name.scrollWidth > name.clientWidth,
+            tagWidth: tag.clientWidth,
+            tagCut: tag.scrollWidth > tag.clientWidth,
+          },
+        ];
+      }),
+    );
+    // O cenário existe: um selo cortado, que ainda mostra texto.
+    expect(heads.some((h) => h.tagCut && h.tagWidth > 0)).toBe(true);
+    for (const h of heads) {
+      if (h.tagWidth > 0) expect(h.nameCut, `${h.name} a ${width} px`).toBe(false);
+    }
+  }
+});
+
 test('a 1592 px os selos curtos (SDUI, Modelo de dados) continuam inteiros', async ({
   page,
 }) => {

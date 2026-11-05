@@ -399,10 +399,29 @@ button.tree-toggle:hover {
   min-width: 0;
 }
 
-/* Sem espaço para o campo com a largura mínima da coluna, ele desce para a linha de baixo. */
 .annotation-name {
   flex: 1 1 var(--size-grid-col-min);
   min-width: 0;
+}
+
+/* Copiar e lixeira andam juntos; sem espaço para o campo, eles ficam na 1ª linha, à direita, e
+   o campo desce inteiro para a 2ª (`is-split`, medido por `useSplitHeader`). Onde tudo cabe, o
+   grupo não tem caixa e o cabeçalho é o de sempre. */
+.annotation-header-actions {
+  display: contents;
+}
+
+.annotation-header.is-split .annotation-header-actions {
+  display: flex;
+  order: 1;
+  align-items: center;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+}
+
+.annotation-header.is-split .annotation-name {
+  order: 2;
+  flex: 1 1 100%;
 }
 
 /* Janela inferior: Lista (P7), Incompletas (B5) e Diagnóstico (B4) */

@@ -318,9 +318,13 @@
 
 .menu-items .button {
   justify-content: flex-start;
-  /* Espaço mínimo entre o rótulo e o atalho: o atalho em si vai à direita pela margem auto. */
-  gap: var(--space-4);
   border-color: transparent;
+}
+
+/* Espaço mínimo entre o rótulo e o atalho. Só a entrada com atalho (que não tem ícone) o leva;
+   o espaço entre ícone ou check e rótulo continua o do `.button` (#531). */
+.menu-items .button:has(> .menu-shortcut) {
+  gap: var(--space-4);
 }
 
 /* Atalho da entrada, alinhado à direita (Envolver: Ctrl+G). */

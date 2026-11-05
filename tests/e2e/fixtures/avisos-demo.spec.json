@@ -1,0 +1,72 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 10,
+  "id": "avisos-demo",
+  "name": "Avisos Demo",
+  "version": 1,
+  "layers": [
+    {
+      "id": "ui",
+      "name": "UI",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "legado",
+          "name": "Legado",
+          "notices": [{ "kind": "removed", "message": "Saiu do contrato; use Cartao." }],
+          "fields": [{ "key": "titulo", "type": "string" }]
+        },
+        {
+          "id": "cartao",
+          "name": "Cartao",
+          "notices": [
+            {
+              "kind": "pending",
+              "message": "O contrato aceita avatar; o SDK ainda não.",
+              "since": "2026-11-04",
+              "ref": "contrato/cartao.md"
+            }
+          ],
+          "fields": [
+            {
+              "key": "estilo",
+              "type": "string",
+              "notices": [{ "kind": "deprecated", "message": "Use variante." }]
+            },
+            {
+              "key": "variante",
+              "type": "string",
+              "notices": [
+                { "kind": "diverges", "message": "As fontes discordam do padrão." }
+              ]
+            },
+            {
+              "key": "itens",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "rotulo",
+                  "type": "string",
+                  "notices": [{ "kind": "pending", "message": "Coluna ainda sem SDK." }]
+                },
+                { "key": "valor", "type": "string" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simples",
+          "name": "Simples",
+          "fields": [
+            { "key": "texto", "type": "string" },
+            {
+              "key": "rascunho",
+              "type": "string",
+              "notices": [{ "kind": "removed", "message": "Campo fora do contrato." }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
