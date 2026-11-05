@@ -43,4 +43,11 @@ test('a legenda das marcas fica por cima do minimapa a 900 px', async ({ page })
   // Os dois se sobrepõem a 900 px; no ponto em comum, quem aparece é a legenda.
   expect(overlap).not.toBeNull();
   expect(overlap?.onLegend).toBe(true);
+
+  // Inteira à vista: sem rolagem interna (R13.5; #552, AG4).
+  const fit = await legend.evaluate((el) => ({
+    scroll: el.scrollHeight,
+    client: el.clientHeight,
+  }));
+  expect(fit.scroll).toBeLessThanOrEqual(fit.client);
 });
