@@ -35,6 +35,7 @@ export * from './componentArrange';
 export * from './locks';
 export * from './annotations';
 export * from './links';
+export * from './linkedByRole';
 export * from './listing';
 export * from './display';
 export * from './spec';
