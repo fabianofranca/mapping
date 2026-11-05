@@ -20,7 +20,8 @@ import { AT, decided, propose } from './proposalFixtures';
 
 // Proposta formatVersion 4: a marcação criada carrega `insertBefore` (a primeira marcação da
 // base depois dela no projeto proposto), e aplicar todas as mudanças dá a mesma ordem do
-// array `markings` e os mesmos pais do projeto proposto (docs/PROPOSAL-FORMAT.md).
+// array `markings` e os mesmos pais do projeto proposto (docs/PROPOSAL-FORMAT.md), desde que o
+// lote não tenha reordenação; com ela, o limite está em proposalReorderLimit.test.ts (#549).
 
 const rect = (x: number, y: number, width: number, height: number) => ({
   x,
@@ -146,7 +147,7 @@ describe('proposta v4: aplicado = proposto (ordem e pais)', () => {
     expectApplied(base, after);
   });
 
-  it('envolver junto com uma troca de ordem (reorderMarking): mesmos pais e mesma ordem entre as irmãs', () => {
+  it('envolver junto com uma troca de ordem (reorderMarking), sem empate: mesmos pais e mesma ordem entre as irmãs', () => {
     // O `position` só ordena irmãs (as irmãs trocam de casa no array e as outras ficam): onde
     // uma filha cai no array entre elas não é expressável, então a ordem exata do array só é
     // garantida sem troca de ordem. Com ela, valem os pais e a ordem relativa das irmãs.
