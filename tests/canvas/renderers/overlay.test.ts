@@ -500,6 +500,32 @@ describe('OverlayRenderer: marcações do canvas', () => {
     expect(overlay.marqueeRect.strokeWidth()).toBe(1);
     render({ marquee: null });
     expect(overlay.marqueeRect.visible()).toBe(false);
+    expect(overlay.marqueeHalo.visible()).toBe(false);
+  });
+
+  it('retângulo de seleção: halo cv-halo por baixo da borda, mesmo traço e sem preenchimento', () => {
+    const { overlay, render } = spatialSetup();
+    render({
+      marquee: { x: 10, y: 20, width: 300, height: 200 },
+      viewport: { x: 0, y: 0, scale: 2 },
+    });
+    // O halo é um traço mais largo (1 px de tela de cada lado) desenhado antes da borda.
+    expect(overlay.marqueeHalo.getAttrs()).toMatchObject({
+      visible: true,
+      x: 10,
+      y: 20,
+      width: 300,
+      height: 200,
+      stroke: TOKENS.halo,
+    });
+    expect(overlay.marqueeHalo.strokeWidth()).toBe(2); // (2 + 2·1) px de tela ÷ zoom 2
+    expect(overlay.marqueeHalo.dash()).toEqual([3, 2]);
+    expect(overlay.marqueeHalo.fillEnabled()).toBe(false);
+    // O halo precisa estar na mesma camada da borda, e por baixo dela.
+    const parent = overlay.marqueeRect.getParent();
+    expect(parent).not.toBeNull();
+    expect(overlay.marqueeHalo.getParent()).toBe(parent);
+    expect(overlay.marqueeHalo.zIndex()).toBeLessThan(overlay.marqueeRect.zIndex());
   });
 
   it('itens a absorver acendem com o token novo e somem quando a lista esvazia', () => {

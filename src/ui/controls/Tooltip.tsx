@@ -13,12 +13,15 @@ const EDGE = px('space-2');
 /** Espaço entre o controle e a dica (`--space-1`). */
 const GAP = px('space-1');
 
+export type TooltipPlacement = 'bottom' | 'top' | 'end';
+
 interface TooltipProps {
   /** Texto da dica. */
   readonly label: string;
   /** Atalho mostrado ao lado do texto (ex.: `Ctrl+Z`). */
   readonly shortcut?: string;
-  readonly placement?: 'bottom' | 'top';
+  /** `end`: ao lado do controle (faixa lateral), sem cobrir o conteúdo ao lado dela. */
+  readonly placement?: TooltipPlacement;
   /** Dica fixada aberta (o clique do `HelpTip`), mesmo sem hover nem foco visível. */
   readonly open?: boolean;
   /** Chamado quando o Esc fecha a dica visível; com ele, o Esc é consumido (não propaga). */
@@ -27,11 +30,30 @@ interface TooltipProps {
 }
 
 /**
+ * Põe a dica ao lado do controle, centrada na vertical, dentro da janela do navegador: à
+ * direita e, se não couber, à esquerda.
+ */
+function placeEnd(
+  tip: HTMLElement,
+  box: DOMRect,
+  viewport: { readonly width: number; readonly height: number },
+): void {
+  const width = tip.offsetWidth;
+  const height = tip.offsetHeight;
+  const right = box.right + GAP;
+  const left = right + width <= viewport.width - EDGE ? right : box.left - GAP - width;
+  const centered = box.top + box.height / 2 - height / 2;
+  const top = Math.max(EDGE, Math.min(centered, viewport.height - height - EDGE));
+  tip.style.left = `${Math.max(EDGE, left)}px`;
+  tip.style.top = `${top}px`;
+}
+
+/**
  * Põe a dica centrada embaixo (ou em cima) do controle, dentro da janela do navegador.
  * A dica é `position: fixed`: fora do fluxo, não alarga nem rola o painel onde está e
  * não é cortada pela borda dele.
  */
-function place(anchor: HTMLElement, placement: 'bottom' | 'top'): void {
+function place(anchor: HTMLElement, placement: TooltipPlacement): void {
   const tip = anchor.querySelector<HTMLElement>(':scope > [data-tooltip]');
   if (!tip) return;
   const box = anchor.getBoundingClientRect();
@@ -41,6 +63,10 @@ function place(anchor: HTMLElement, placement: 'bottom' | 'top'): void {
     width: globalThis.innerWidth || document.documentElement.clientWidth,
     height: globalThis.innerHeight || document.documentElement.clientHeight,
   };
+  if (placement === 'end') {
+    placeEnd(tip, box, viewport);
+    return;
+  }
   const centered = box.left + box.width / 2 - width / 2;
   const left = Math.max(EDGE, Math.min(centered, viewport.width - width - EDGE));
   const below = box.bottom + GAP;

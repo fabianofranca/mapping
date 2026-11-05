@@ -318,22 +318,19 @@
 
 .menu-items .button {
   justify-content: flex-start;
+  /* Espaço mínimo entre o rótulo e o atalho: o atalho em si vai à direita pela margem auto. */
+  gap: var(--space-4);
   border-color: transparent;
 }
 
 /* Atalho da entrada, alinhado à direita (Envolver: Ctrl+G). */
 .menu-items .menu-shortcut {
-  margin-left: auto;
+  margin-inline-start: auto;
   padding: 0 var(--space-1);
   font: var(--t-kbd);
   border: 1px solid currentcolor;
   border-radius: var(--radius-xs);
   opacity: var(--opacity-ancestor);
-}
-
-.menu-items .menu-shortcut:first-child,
-.menu-items .button > .menu-shortcut {
-  margin-inline-start: var(--space-4);
 }
 
 .tool-window-head {

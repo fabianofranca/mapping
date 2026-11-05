@@ -268,6 +268,35 @@ code.props-text {
   min-width: 0;
 }
 
+/*
+ * Painel estreito (Detalhes a 900 px, na revisão ou fora dela): a coluna do valor decide, não
+ * a janela. Posição (X, Y) e Tamanho (L, A) seguem em duas linhas, e cada campo troca o respiro
+ * lateral e o spinner por dígitos, para caber pelo menos 5 (#465).
+ */
+.props-value:has(> .props-pair) {
+  container: props-pair / inline-size;
+}
+
+@container props-pair (max-width: 170px) {
+  .props-pair {
+    gap: var(--space-1);
+  }
+
+  .props-pair-item {
+    gap: var(--space-0-5);
+  }
+
+  .props-pair-item .input {
+    padding-inline: var(--space-1);
+    appearance: textfield;
+  }
+
+  .props-pair-item .input::-webkit-inner-spin-button,
+  .props-pair-item .input::-webkit-outer-spin-button {
+    display: none;
+  }
+}
+
 /* Cor das linhas: rádios Tema + paleta (24px) */
 .color-field {
   display: flex;
@@ -430,33 +459,27 @@ button.layer-group-label:hover {
 }
 
 .layer-group-name {
-  flex: none;
-  max-width: 50%;
+  /* Prioridade do cabeçalho: nome > flag > selo. O nome encolhe só depois do selo (#447). */
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .layer-group-head .tag {
-  /* O selo da especialização encolhe com reticências (a dica traz o nome inteiro);
-     o nome da camada e a meta têm prioridade (#371). */
-  flex: 0 1 auto;
+  /* O selo da especialização é o primeiro a encolher, com reticências (a dica traz o nome
+     inteiro); o nome da camada, a flag e a meta têm prioridade (#371, #447). */
+  flex: 0 100 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .layer-group-head .flag {
-  /* Como o selo, o Flag da revisão (camada escondida) encolhe com reticências a 900 px
-     em vez de passar do rótulo e empurrar o + para fora (#372). */
-  flex: 0 1 auto;
-  min-width: 0;
-}
-
-.layer-group-head .flag .flag-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* A flag da revisão (camada escondida) é um estado da camada: o texto fica inteiro e quem
+     encolhe é o selo, depois o nome (#372, #447). */
+  flex: none;
 }
 
 .layer-group-meta {

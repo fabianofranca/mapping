@@ -376,7 +376,9 @@ function LayerGroup({
   const heading = (
     <>
       <span class="layer-dot" aria-hidden="true" />
-      <strong class="layer-group-name">{layer.name}</strong>
+      <strong class="layer-group-name" title={layer.name}>
+        {layer.name}
+      </strong>
       {spec && (
         <span class="tag" title={specName}>
           {specName}
