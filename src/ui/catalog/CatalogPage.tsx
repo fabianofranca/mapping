@@ -9,9 +9,11 @@ import {
   codeLink,
   exampleDrawing,
 } from '../../model';
+import { docFolderAccess, type DocFolderAccess } from '../../storage/docRepoFolders';
 import { ContainerMark } from '../ContainerMark';
 import { Button } from '../controls';
 import { Markdown } from '../markdown/Markdown';
+import { ExternalDoc } from './ExternalDoc';
 import { Playground } from './Playground';
 import type { CatalogRenderer } from './renderer';
 
@@ -29,6 +31,8 @@ export interface CatalogPageProps {
   readonly onLink?: (href: string) => void;
   readonly onAddToScreen?: (typeId: string) => void;
   readonly addDisabledReason?: string;
+  /** Acesso às pastas dos repositórios de documentos (os testes injetam um falso). */
+  readonly docAccess?: DocFolderAccess;
 }
 
 const TYPE_LABEL = {
@@ -394,6 +398,7 @@ export function CatalogPage({
   onLink,
   onAddToScreen,
   addDisabledReason,
+  docAccess = docFolderAccess,
 }: CatalogPageProps) {
   const uid = useId();
   const layer = catalog.layers.find((l) => l.id === entry.layerId);
@@ -431,7 +436,14 @@ export function CatalogPage({
 
       <section aria-labelledby={section('doc')} class="catalog-section">
         <h3 id={section('doc')}>{t('catalog.page.document')}</h3>
-        {entry.docText !== null ? (
+        {entry.docExternal !== null ? (
+          <ExternalDoc
+            key={`${entry.docExternal.repo}|${entry.docExternal.path}`}
+            external={entry.docExternal}
+            access={docAccess}
+            onLink={onLink}
+          />
+        ) : entry.docText !== null ? (
           <Markdown text={entry.docText} onLink={onLink} />
         ) : (
           <p class="muted">{t('catalog.page.noDoc')}</p>
