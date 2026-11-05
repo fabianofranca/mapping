@@ -79,6 +79,12 @@ export class OverlayRenderer {
   readonly dropRect = new KonvaRect({ visible: false });
   /** Retângulo da seleção por Shift+arrasto (Shift+arrasto soma o que estiver dentro). */
   readonly marqueeRect = new KonvaRect({ visible: false, listening: false });
+  /** Halo `cv-halo` por baixo da borda do retângulo, como o da seleção e o do rascunho. */
+  readonly marqueeHalo = new KonvaRect({
+    visible: false,
+    listening: false,
+    fillEnabled: false,
+  });
   /** Destaques dos itens que o desenho ou o redimensionamento absorveria ao soltar (um reaproveitado por item). */
   private readonly absorbRects: KonvaRect[] = [];
   /** Contornos dos itens selecionados que não são o primário (um reaproveitado por item). */
@@ -116,7 +122,13 @@ export class OverlayRenderer {
     this.container = container;
     this.layer = layer;
     this.nameTag.add(this.nameTagBox, this.nameTagText);
-    layer.add(this.selectionOutline, this.draftRect, this.dropRect, this.marqueeRect);
+    layer.add(
+      this.selectionOutline,
+      this.draftRect,
+      this.dropRect,
+      this.marqueeHalo,
+      this.marqueeRect,
+    );
     for (const corner of CORNERS) {
       const handle = new KonvaRect({ visible: false });
       this.handles.set(corner, handle);
@@ -178,20 +190,29 @@ export class OverlayRenderer {
     this.renderMarquee(frame);
   }
 
-  /** O retângulo do Shift+arrasto: tracejado azul com preenchimento leve. */
+  /** O retângulo do Shift+arrasto: tracejado azul com preenchimento leve e halo por fora e por dentro. */
   private renderMarquee(frame: OverlayFrame): void {
     const { marquee, tokens } = frame;
     if (!marquee) {
       this.marqueeRect.visible(false);
+      this.marqueeHalo.visible(false);
       return;
     }
     const zoom = frame.viewport.scale;
+    const dash = [6 / zoom, 4 / zoom];
+    this.marqueeHalo.setAttrs({
+      ...marquee,
+      visible: true,
+      stroke: tokens.halo,
+      strokeWidth: (SELECTION_STROKE + 2 * HALO_WIDTH) / zoom,
+      dash,
+    });
     this.marqueeRect.setAttrs({
       ...marquee,
       visible: true,
       stroke: tokens.select,
       strokeWidth: SELECTION_STROKE / zoom,
-      dash: [6 / zoom, 4 / zoom],
+      dash,
       fill: tokens.selectFill,
     });
   }

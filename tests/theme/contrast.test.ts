@@ -61,6 +61,46 @@ describe.each(['light', 'dark'] as const)('marcação do canvas no tema %s', (th
   );
 });
 
+/** Cor `cv-*` ('#rrggbb' ou 'rgba(r, g, b, a)') como [r, g, b, a]. */
+function rgba(value: string): [number, number, number, number] {
+  if (value.startsWith('#')) {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(value.slice(i, i + 2), 16));
+    return [r!, g!, b!, 1];
+  }
+  const [r, g, b, a] = value.match(/[\d.]+/g)!.map(Number);
+  return [r!, g!, b!, a ?? 1];
+}
+
+/** '#rrggbb' do `fg` (com alfa) pintado sobre o `bg` opaco. */
+function over(fg: string, bg: string): string {
+  const [r, g, b, a] = rgba(fg);
+  const base = rgba(bg);
+  const mix = [r, g, b].map((v, i) => Math.round(v * a + base[i]! * (1 - a)));
+  return `#${mix.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+// Retângulo de seleção (Shift+arrasto): borda `cv-select` sobre um halo `cv-halo`. No tema claro a
+// borda sozinha não chega a 3:1 sobre o canvas (o azul é claro); quem separa o retângulo do
+// canvas é o halo, escuro. No escuro é a borda. A silhueta passa de 3:1 nos dois temas.
+describe.each(['light', 'dark'] as const)(
+  'retângulo de seleção com halo no tema %s',
+  (theme) => {
+    const canvasBg = tokenValue('color-canvas-bg', theme);
+    const border = tokenValue('cv-select', theme);
+    const halo = over(tokenValue('cv-halo', theme), canvasBg);
+
+    it('a silhueta (o halo ou a borda) se destaca do canvas vazio em ≥ 3', () => {
+      const silhouette = Math.max(contrast(border, canvasBg), contrast(halo, canvasBg));
+      expect(silhouette).toBeGreaterThanOrEqual(3);
+    });
+
+    it('sem o halo, só o tema claro ficaria abaixo de 3 (por isso o halo)', () => {
+      const borderAlone = contrast(border, canvasBg) >= 3;
+      expect(borderAlone).toBe(theme === 'dark');
+    });
+  },
+);
+
 describe('canvas (iguais nos dois temas)', () => {
   const cv = (name: string) => tokenValue(name, 'light');
 
