@@ -1,4 +1,4 @@
-# Textos da interface, linha de aviso e guia acertados — [Não lançado] (épico `epic/textos-e-avisos`, PR #530, MCP 0.16.0, schema v13)
+# Textos da interface, linha de aviso e guia acertados — 2026-11-05 (épico `epic/textos-e-avisos`, PR #530, MCP 0.16.0, schema v13)
 
 ## Corrigido
 

@@ -1,4 +1,4 @@
-# Textos da interface, linha de aviso e guia acertados — [Não lançado] (épico `epic/textos-e-avisos`)
+# Textos da interface, linha de aviso e guia acertados — 2026-11-05 (épico `epic/textos-e-avisos`)
 
 ## Pendências
 
