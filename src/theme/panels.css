@@ -393,13 +393,15 @@ button.tree-toggle:hover {
 
 .annotation-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
   min-width: 0;
 }
 
+/* Sem espaço para o campo com a largura mínima da coluna, ele desce para a linha de baixo. */
 .annotation-name {
-  flex: 1;
+  flex: 1 1 var(--size-grid-col-min);
   min-width: 0;
 }
 
