@@ -12,8 +12,14 @@
 
 ## Sincronização
 
-(A preencher no fechamento do épico.)
+Gravado no artefato **Mapping** em 2026-11-05: versão 37 (conteúdo) e versão 38 (índice, só com o `lastChange`).
+
+- **`bundle.css`:** espelha `editor.css` (atalho do `Menu` à direita, `gap` de `space-4`), `details.css` (container query `props-pair`; cabeçalho de camada: nome `0 1`, selo `0 100`, `Flag` `none`) e `panels.css` (`.annotation-header` com `flex-wrap`, `.annotation-name` com base `size-grid-col-min`). A posição `end` do `Tooltip` não tem CSS: é calculada em JS.
+- **Guias:** `Menu`, `Tooltip` (`end`), `IconButton` (`tooltipPlacement`), `ToolStripButton` (dica ao lado), `MarkingPanel` (painel estreito), `LayerGroup` (nome > flag > selo e cabeçalho do cartão de anotação) e `Flag`; `Canvas.md` (halo do retângulo de seleção; setas e marcações dividem uma camada do Konva) e `Contraste.md` (halo composto 7,24:1 no claro; borda 2,58:1 no claro e 6,08:1 no escuro).
+- **Prévias:** `Tooltip` (exemplo `end`, `height` de 215 para 310), `MarkingPanel` (card do painel estreito de 280 px, com 5 dígitos e o cabeçalho de anotação quebrando linha) e `LayerGroup` (rótulo do `Flag`).
+- **Tokens e contraste:** nenhum token novo; `tokens.json` não mudou. O testador mediu 7,26:1 para o halo na captura; os 7,24:1 são da composição exata.
+- **Pendências do app que a gravação revelou:** o `gap` de `space-4` dos menus também alarga o espaço entre ícone e rótulo, e o nome do cabeçalho de camada perde frações de pixel antes de o selo sumir (issue #545). O DS espelha o app como está.
 
 ## Ficou sem gravar
 
-(A preencher no fechamento do épico.)
+Nada deixou de ser gravado. Fica só a conferência visual no viewer do DS: a verificação foi num render local (Chrome headless), nos dois temas para `Tooltip`, `MarkingPanel` (card estreito) e `LayerGroup` (cabeçalhos estreitos), e só no claro para `Menu`. Convém abrir essas quatro prévias nos dois temas e ver se o card do `Tooltip` (310) não corta. A prévia do `ToolStripButton` segue com `tooltip-bottom` no HTML estático, sem efeito visual.
