@@ -45,9 +45,33 @@ async function openFolderProject(page: Page): Promise<void> {
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
 }
 
+/** Volta o SDUI atual (formatVersion 11) ao que a v5 conhece: sem grupos, papéis, documento externo nem `migrations`. */
+function downgradeToV5(spec: Record<string, unknown>): void {
+  delete spec.docRepos;
+  delete spec.migrations;
+  const layers = spec.layers as {
+    groups?: unknown;
+    annotationTypes: Record<string, unknown>[];
+  }[];
+  for (const layer of layers) {
+    delete layer.groups;
+    for (const type of layer.annotationTypes) {
+      delete type.groups;
+      delete type.childRoles;
+      delete type.childRolesLabel;
+      delete type.doc;
+      if (type.allowedChildren) {
+        type.allowedChildren =
+          type.id === 'input' ? ['validation'] : ['action', 'feedback'];
+      }
+    }
+  }
+}
+
 /** A SDUI v1 (sem plataformas, `code` nem a camada Telas): o ponto de partida do passo 1. */
 async function sduiV1(): Promise<Buffer> {
   const spec = JSON.parse(await readFile(SDUI, 'utf8')) as Record<string, unknown>;
+  downgradeToV5(spec);
   const layers = (spec.layers as { id: string; annotationTypes: object[] }[])
     .filter((layer) => layer.id !== 'telas')
     .map((layer) => ({
@@ -71,6 +95,7 @@ async function sduiV5(): Promise<Buffer> {
     formatVersion: number;
     platforms: { id: string; repo?: unknown }[];
   };
+  downgradeToV5(spec as unknown as Record<string, unknown>);
   spec.formatVersion = 5;
   for (const platform of spec.platforms) {
     if (platform.id === 'android') platform.repo = ANDROID_REPO;

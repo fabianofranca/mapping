@@ -109,17 +109,20 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 
 ### `examples/specs/sdui.json`
 
-**O que é.** A especialização SDUI, `formatVersion` 5: componentes de uma interface descrita por servidor (Button, Input, Text, Image), eventos (onClick, onHold, onChange) e telas.
+**O que é.** A especialização SDUI, `formatVersion` 11: componentes de uma interface descrita por servidor (Button, Input, Text, Image), eventos (Ação, Feedback e Validação) e telas. O gatilho do evento (Clique, Pressionar, Alteração) é o **papel** dele no componente, não um tipo.
 
 **O que dá para ver.**
 
 - Três plataformas (Android, iOS e BFF), cada uma com `repo`, `urlTemplate` e `ref`, e o `code` de cada tipo nelas (`symbol`, `path`, `params`, `values` e `notes`). Nos Detalhes, a linha **Definição** tem **Abrir no repositório** e **Copiar caminho**.
-- Relações entre camadas: o Button aceita `onClick` e `onHold` como filhos (`allowedChildren`); os eventos exigem um dono (`requiresOwner`).
+- Relações entre camadas: o Button aceita como filhos os eventos do grupo Interação, por **cláusula** (`allowedChildren: [{ "layer": "eventos", "groups": ["interacao"] }]`), e o Input os do grupo Dados; os eventos exigem um dono (`requiresOwner`) e a camada Eventos tem `groups`.
+- Papéis no vínculo: `childRoles` (Clique e Pressionar no Button, Alteração no Input) com `childRolesLabel: "Trigger"`; a anotação filha guarda o papel (`parentRole`) e o "+ Vincular…" do dono cria o evento já no papel.
+- Documento em repositório externo: `docRepos` e o `doc` do Button como objeto (`{ "repo", "path" }`).
+- Contrato de versão: a v4 troca `onClick`, `onHold` e `onChange` por `action`, `feedback` e `validation` (`migrations`, três `rename-type`); os vínculos migrados ficam sem papel (pendência) até alguém escolher o papel.
 - Referência forte: o campo `dado` do Input e do Text é um `ref` que aceita a etiqueta `data-field` ou uma anotação livre (`accepts`).
-- Os tipos de valor `string`, `number`, `enum` (com valor padrão) e `table` (os `parametros` do onClick), e campos obrigatórios.
+- Os tipos de valor `string`, `number`, `enum` (com valor padrão) e `table` (os `parametros` da Ação), e campos obrigatórios.
 - Um arquivo sem biblioteca: não tem componente nem documento.
 
-**Roteiros.** R1.3, R3 (R3.1 a R3.9) e R8.
+**Roteiros.** R1.3, R1.16, R3 (R3.1 a R3.9), R8, R19 e R20.
 
 ### `examples/specs/modelo-de-dados.json`
 
@@ -144,7 +147,7 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 **O que dá para ver.**
 
 - Quatro telas lado a lado: Cadastro e Login (com foto), Configurações e Detalhes do pedido (container sem foto, com componentes da `material3-compose` desenhados com os textos das anotações).
-- Dez camadas e quatro especializações aplicadas: SDUI, Modelo de dados, `material3-compose` (uma camada para o layout, com Row e Column, e outra para os componentes) e Notas. Há anotações de todos os tipos principais (Button, Input, Text, onClick, onHold, onChange, Screen, classe e endpoint) e livres (Model e Dúvidas).
+- Dez camadas e quatro especializações aplicadas: SDUI, Modelo de dados, `material3-compose` (uma camada para o layout, com Row e Column, e outra para os componentes) e Notas. Há anotações de todos os tipos principais (Button, Input, Text, Ação, Feedback, Validação, Screen, classe e endpoint; os eventos já ligados por papel) e livres (Model e Dúvidas).
 - Casos de edição: uma marcação trancada (**Título**), uma com posição a revisar (**Idade**, em **Incompletas**), uma nota flutuante da biblioteca de notas e as marcações aninhadas na **Árvore**.
 - Uma proposta aberta, **Tela de Perfil e ajuste no Cadastro**, com dez mudanças para praticar a revisão (os tipos são os da `material3-compose`: `top-app-bar`, `list-item` e `button`): aceitar, rejeitar com nota e aplicar.
 - O **Arrumar** (`Alt+Shift+A`) de um Row com chips e a Column **Preferências** com os dois Switches e o Checkbox dentro, o **Catálogo** com a **Paleta** e o **Diagnóstico**.
@@ -226,12 +229,12 @@ Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executáv
 | `number`                                                     | `surface.tonalElevation` (`material3-compose`); `endpoint.timeoutMs` (`modelo-de-dados.json`)                                     |
 | `date`                                                       | `classe.revisadoEm` (`modelo-de-dados.json`); coluna `since` de `endpoint.params` (`sdui-backend`)                                |
 | `enum` e booleano como `enum`                                | `button.enabled` e `button.style` (`material3-compose`); visibilidade das classes (`kotlin`)                                      |
-| `table`                                                      | Tabela: `linhas` (`notas`); Propriedades e Funções (`kotlin`); `onClick.parametros` (`sdui.json`)                                 |
+| `table`                                                      | Tabela: `linhas` (`notas`); Propriedades e Funções (`kotlin`); `action.parametros` (`sdui.json`)                                  |
 | `ref` e `accepts`                                            | `outer` e **Tipo mapeado** (`kotlin`); `input.dado` com `free` (`sdui.json`)                                                      |
 | Etiquetas (`tags`) e `rowLabel`                              | Propriedades com `data-field` e `kotlin-property` (`kotlin`); `classe.atributos` (`modelo-de-dados.json`)                         |
 | `suggestions`                                                | Coluna **Tipo** de Propriedades (`kotlin`); campos de ícone (`material3-compose`)                                                 |
 | `linkedRef`                                                  | Colunas **Tipo** de Propriedades e de Supertipos (`kotlin`); `examples/sugestoes-kotlin.zip` mostra o uso                         |
-| Relações: `allowedChildren` e `requiresOwner`                | `button` e `onClick` (`sdui.json`)                                                                                                |
+| Relações: `allowedChildren` e `requiresOwner`                | `button` e `action` (`sdui.json`)                                                                                                 |
 | Referências entre tipos                                      | **Declarada em** e **Supertipos** (`kotlin`); `input.dado` aponta para o Modelo de dados (`sdui.json` com `modelo-de-dados.json`) |
 | `platforms` e `repo` (`url`, `urlTemplate`, `ref`)           | `compose` fixado num commit (`material3-compose`); `android`, `ios` e `bff` (`sdui.json`)                                         |
 | `code`: `symbol`, `path`, `params`, `values`, `notes`        | Todos os tipos (`material3-compose`); `button` e `input` em três plataformas (`sdui.json`)                                        |

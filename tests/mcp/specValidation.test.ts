@@ -56,6 +56,21 @@ function v3(): Json {
   spec.formatVersion = 3;
   // A v3 não tem `repo` (só a v5).
   for (const platform of spec.platforms) delete platform.repo;
+  // E a v11 (grupos, papéis, cláusulas e documento externo) volta ao que a v3 conhece.
+  delete spec.docRepos;
+  delete spec.migrations;
+  for (const layer of spec.layers) {
+    delete layer.groups;
+    for (const type of layer.annotationTypes) {
+      delete type.groups;
+      delete type.childRoles;
+      delete type.childRolesLabel;
+      delete type.doc;
+      if (type.allowedChildren)
+        type.allowedChildren =
+          type.id === 'input' ? ['validation'] : ['action', 'feedback'];
+    }
+  }
   const button = spec.layers[0].annotationTypes[0];
   button.sources = [{ system: 'figma', id: '3f2a9c', name: 'DS/Button' }];
   button.fields[1].sources = [{ system: 'figma', name: 'Label' }];

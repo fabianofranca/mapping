@@ -1,6 +1,6 @@
 // @vitest-environment node
 // Etapa #424 (PL1, decisão 2): a rodada completa roda em 3 blocos paralelos. A tabela de blocos
-// do docs/TESTING-NUVEM.md é conferida contra os passos do docs/TESTING.md: um roteiro novo (R18)
+// do docs/TESTING-NUVEM.md é conferida contra os passos do docs/TESTING.md: um roteiro novo (R20)
 // ou um passo novo fora da tabela faz este teste falhar até ser posto num bloco.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -10,7 +10,7 @@ const NUVEM = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
 
 const STEP_RE = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
 
-/** Os passos dos roteiros principais (R0 a R17), na ordem do guia, fora dos roteiros sob demanda. */
+/** Os passos dos roteiros principais (R0 a R20), na ordem do guia, fora dos roteiros sob demanda. */
 function guideSteps(): string[] {
   const lines = GUIDE.split('\n');
   const start = lines.findIndex((l) => /^## 8\. Roteiros/.test(l));
@@ -97,13 +97,13 @@ const blockOf = (step: string): number[] =>
   blocks.filter((b) => b.steps.includes(step)).map((b) => b.n);
 
 describe('divisão da rodada completa em 3 blocos (etapa #424, decisão 2)', () => {
-  it('o guia tem os passos de R0 a R17 e a tabela tem 3 blocos numerados de 1 a 3', () => {
+  it('o guia tem os passos de R0 a R20 e a tabela tem 3 blocos numerados de 1 a 3', () => {
     expect(steps.length).toBeGreaterThan(200);
     expect(steps.some((s) => s.startsWith('R17.'))).toBe(true);
     expect(blocks.map((b) => b.n)).toEqual([1, 2, 3]);
   });
 
-  it('todo passo de R0 a R17 está em exatamente um bloco, e o R0 nos três', () => {
+  it('todo passo de R0 a R20 está em exatamente um bloco, e o R0 nos três', () => {
     for (const s of steps) {
       const where = blockOf(s);
       if (roteiroOf(s) === 'R0') expect(where, s).toEqual([1, 2, 3]);

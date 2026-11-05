@@ -147,11 +147,11 @@ describe('SpecsDialog', () => {
 
   it('a atualização com o campo removido também avisa; a próxima escolha limpa o aviso', async () => {
     const { choose, user } = setup();
-    choose(exampleText('sdui'));
-    await screen.findByText(/aplicada/);
-    expect(screen.queryByText(/^Campos ignorados/)).toBeNull();
-
+    // Parte do SDUI legado na versão atual (o do exemplo, v11, exige migração para o legado).
     const legacy = JSON.parse(legacySduiText()) as { version: number };
+    choose(JSON.stringify({ ...legacy, version: SDUI_VERSION }));
+    await screen.findByText(/aplicada/);
+
     choose(JSON.stringify({ ...legacy, version: SDUI_VERSION + 1 }));
     const dialog = await dialogTitled('Atualizar "SDUI"?');
     await user.click(within(dialog).getByRole('button', { name: 'Atualizar' }));
@@ -447,16 +447,9 @@ describe('SpecsDialog: pacote da biblioteca', () => {
 
   it('arquivo .json v4 sem arquivo do pacote vale isolado: aplica e grava specs/<id>.json', async () => {
     const { harness, choose } = setup();
-    const raw = JSON.parse(exampleText('sdui')) as {
-      platforms: { repo?: unknown }[];
-    };
-    // O `repo` das plataformas é da formatVersion 5.
-    const platforms = raw.platforms.map((platform) => {
-      const copy = { ...platform };
-      delete copy.repo;
-      return copy;
-    });
-    choose(JSON.stringify({ ...raw, formatVersion: 4, platforms }));
+    // O SDUI de `tests/fixtures/sdui-v2.json` (sem `repo`) declarado como formatVersion 4: nenhuma chave de pacote.
+    const raw = JSON.parse(readFileSync('tests/fixtures/sdui-v2.json', 'utf8')) as object;
+    choose(JSON.stringify({ ...raw, formatVersion: 4 }));
     await screen.findByText(/"SDUI" aplicada/);
     const entry = harness.project().specializations[0];
     expect(entry?.file).toBe('specs/sdui.json');
