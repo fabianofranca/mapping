@@ -87,7 +87,7 @@ No texto: `container` diz de qual container é o recorte (`ref`, `file`, `backgr
    - `changes`: quantos itens serão criados, alterados e excluídos por coleção, e `reviewChanges`: quantas mudanças o usuário terá de revisar;
    - `issues`: pendências antes e depois, e as anotações que ficam incompletas (`new`);
    - `notices`: os avisos da especialização que as anotações criadas ou alteradas passam a ter, `{ new: [{ annotation, type, kind, message, key?, column? }] }` (`new: []` sem nenhum). Veja "Avisos da especialização";
-   - `membership` (só se houver): quem **já existia** e muda de pai ou de espaço pela geometria, `{ kind, ref, name, from, to, message }` ("Botão sai de Topo; agora direto em Detalhes"). Confira-o em vez de calcular interseções;
+   - `membership` (só se houver): quem **já existia** e muda de pai ou de espaço pela geometria, `{ kind, ref, name, from, to, message }` ("Botão sai de Topo; agora direto em Detalhes"). Confira-o em vez de calcular interseções (ele descreve o plano: com um `move_marking` no mesmo lote e retângulos iguais, o aplicado pode divergir dele, #549; nesse caso confira com `get_marking` depois de aplicar);
    - `warnings` (só se houver): avisos das operações, como os do validador de um pacote de biblioteca (`library-warning`);
    - `created`: as referências `mapping://` dos itens que serão criados (as definitivas), com o apelido de cada um.
 3. **`propose_changes(project, title, operations[], { description?, origin?, author?, supersedes? })`** faz a mesma validação e **grava a proposta** em `proposals/<id>/proposal.json` (imagens novas em `proposals/<id>/images/`). Um lote com qualquer erro não grava nada: corrija e mande o lote inteiro de novo. A resposta traz:

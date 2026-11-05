@@ -10,5 +10,5 @@
 
 ## Corrigido
 
-- O `wrap_items` aplicado tem a hierarquia do plano no empate de retângulo (quando o item envolvido preenche o container): a marcação nova fica sem pai, o item vira filho dela e as filhas do item continuam nele. Aplicar todas as mudanças de uma proposta dá a mesma ordem de marcações e os mesmos pais do projeto proposto.
+- O `wrap_items` aplicado tem a hierarquia do plano no empate de retângulo (quando o item envolvido preenche o container): a marcação nova fica sem pai, o item vira filho dela e as filhas do item continuam nele. Aplicar todas as mudanças de uma proposta dá a mesma ordem de marcações e os mesmos pais do projeto proposto, desde que o lote não tenha reordenação (`move_marking`); com reordenação e retângulos iguais o aplicado ainda pode divergir (issue #549), e a documentação diz isso.
 - O `move_marking` que não muda nada (a marcação já está na posição pedida, no estado do lote naquele ponto) diz "já está na posição N entre as K irmãs: nada muda" no resumo, em vez de descrever um movimento; o `index` explica que as irmãs são as do estado do lote.
