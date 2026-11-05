@@ -1,4 +1,4 @@
-import { cleanup, screen, within } from '@testing-library/preact';
+import { act, cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { addTypedAnnotation, createMarking, type Project } from '../../src/model';
@@ -6,7 +6,9 @@ import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
 import { sampleProject } from '../model/fixtures';
+import { addChild, roleProject, withRoles } from '../model/roleFixtures';
 import { cadastroProject, layerOf } from '../model/specFixtures';
+import type { Json } from '../model/specV11Fixtures';
 import { descriptionOf } from './describedBy';
 import { annotationOf, createHarness, renderLive, type Harness } from './harness';
 
@@ -204,10 +206,15 @@ describe('AnnotationEditor — anotação tipada', () => {
     expect(screen.getAllByTitle('obrigatório').length).toBeGreaterThan(0);
   });
 
-  it('oferece criar o filho permitido pelo tipo', async () => {
+  it('oferece vincular um filho pelo diálogo (não há botão "+ tipo" direto)', async () => {
     const { harness, user, onGoToAnnotation } = setup('AB');
     const before = harness.project().annotations.length;
-    await user.click(screen.getByRole('button', { name: /^\+ onChange|^\+ onClick/ }));
+    expect(screen.queryByRole('button', { name: /^\+ onChange|^\+ onClick/ })).toBeNull();
+    await user.click(screen.getByRole('button', { name: '+ Vincular…' }));
+    const dialog = document.querySelector('dialog') as HTMLElement;
+    await user.click(
+      within(dialog).getByRole('button', { name: /^onChange|^onClick/, hidden: true }),
+    );
     expect(harness.project().annotations.length).toBe(before + 1);
     expect(onGoToAnnotation).toHaveBeenCalledOnce();
   });
@@ -335,5 +342,94 @@ describe('AnnotationEditor — "Vinculada a"', () => {
     expect(screen.queryByText(t('annotation.ownerEmpty'))).toBeNull();
     // A2 passa a ter a A1 vinculada: nada para escolher, mas não é a lista vazia.
     expect(owner().disabled).toBe(false);
+  });
+});
+
+describe('AnnotationEditor — papel no dono (decisão 20)', () => {
+  const role = (label = 'Trigger') => screen.getByLabelText(label) as HTMLSelectElement;
+  const edit = (s: Json) => {
+    withRoles(s);
+    // A `image` também aceita eventos, mas não oferece papéis.
+    (s.layers[0].annotationTypes[1] as Json).allowedChildren = [{ layer: 'eventos' }];
+  };
+  const noLabel = (s: Json) => {
+    withRoles(s);
+    delete (s.layers[0].annotationTypes[0] as Json).childRolesLabel;
+  };
+
+  it('dono com papéis: o Select leva o rótulo do childRolesLabel e as opções do dono', () => {
+    setup('E1', addChild(roleProject(withRoles), 'E1', 'A1', 'click'));
+    expect(role().value).toBe('click');
+    expect([...role().options].map((o) => [o.value, o.textContent])).toEqual([
+      ['click', 'Clique'],
+      ['hold', 'Pressionar'],
+    ]);
+    expect(screen.getByText('Trigger')).toBeTruthy();
+  });
+
+  it('sem childRolesLabel o rótulo é "Papel"', () => {
+    setup('E1', addChild(roleProject(noLabel), 'E1', 'A1', 'click'));
+    expect(role('Papel')).toBeTruthy();
+  });
+
+  it('dono sem papéis: o Select não aparece', () => {
+    setup('E1', addChild(roleProject(), 'E1', 'A1', null));
+    expect(screen.queryByLabelText('Trigger')).toBeNull();
+    expect(screen.queryByLabelText('Papel')).toBeNull();
+  });
+
+  it('sem papel: "Escolha…" e a pendência', () => {
+    setup('E1', addChild(roleProject(withRoles), 'E1', 'A1', null));
+    expect(role().value).toBe('');
+    expect(role().options[0]?.textContent).toBe('Escolha…');
+    expect(role().getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByText(/sem Trigger \(escolha Clique ou Pressionar\)/)).toBeTruthy();
+  });
+
+  it('papel que o dono não oferece: pendência', () => {
+    const p = addChild(roleProject(withRoles), 'E1', 'A1', 'click');
+    setup('E1', {
+      ...p,
+      annotations: p.annotations.map((a) =>
+        a.id === 'E1' ? { ...a, parentRole: 'sumiu' } : a,
+      ),
+    });
+    expect(screen.getByText('Trigger que o dono não oferece')).toBeTruthy();
+  });
+
+  it('escolher grava o papel, numa só entrada de desfazer', async () => {
+    const { harness, user } = setup(
+      'E1',
+      addChild(roleProject(withRoles), 'E1', 'A1', null),
+    );
+    await user.selectOptions(role(), 'hold');
+    expect(annotationOf(harness.project(), 'E1').parentRole).toBe('hold');
+    expect(screen.queryByText(/sem Trigger/)).toBeNull();
+    act(() => {
+      harness.store.undo();
+    });
+    expect(annotationOf(harness.project(), 'E1').parentRole).toBeNull();
+  });
+
+  it('trocar para um dono que não oferece o papel limpa o papel na mesma entrada', async () => {
+    let p = addChild(roleProject(edit), 'E1', 'A1', 'hold');
+    p = addTypedAnnotation(p, {
+      id: 'IMG',
+      markingId: 'M1',
+      layerId: layerOf(p, 's', 'componentes'),
+      type: { specId: 's', typeId: 'image' },
+    });
+    const { harness, user } = setup('E1', p);
+    await user.selectOptions(screen.getByLabelText('Vinculada a'), 'IMG');
+    const after = annotationOf(harness.project(), 'E1');
+    expect(after.parentAnnotationId).toBe('IMG');
+    expect(after.parentRole).toBeNull();
+    expect(screen.queryByLabelText('Trigger')).toBeNull();
+    act(() => {
+      harness.store.undo();
+    });
+    const undone = annotationOf(harness.project(), 'E1');
+    expect(undone.parentAnnotationId).toBe('A1');
+    expect(undone.parentRole).toBe('hold');
   });
 });

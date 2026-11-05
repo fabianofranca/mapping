@@ -8,6 +8,7 @@ import {
   findSpecType,
   isRecord,
   projectIndex,
+  roleNameOf,
   type Annotation,
   type Change,
   type JsonValue,
@@ -142,6 +143,23 @@ function annotationName(names: ReviewNames, id: string): string {
     }
   }
   return t('annotation.unnamed');
+}
+
+/**
+ * Nome do papel do vínculo de uma anotação ("Clique"): pelo tipo do dono dela na prévia e,
+ * senão, no projeto atual (o dono pode mudar na mesma proposta); o id se nenhum oferece.
+ */
+function roleName(names: ReviewNames, annotationId: string, roleId: string): string {
+  for (const p of [names.preview, names.current]) {
+    const index = p ? projectIndex(p) : null;
+    const parentId = index?.annotations.get(annotationId)?.parentAnnotationId;
+    const owner = parentId ? index?.annotations.get(parentId) : undefined;
+    if (p && owner) {
+      const name = roleNameOf(p, owner, roleId);
+      if (name !== roleId) return name;
+    }
+  }
+  return roleId;
 }
 
 /**
@@ -481,6 +499,9 @@ export function valueParts(
   }
   if (field === 'parentAnnotationId' && typeof value === 'string') {
     return [{ text: annotationName(names, value) }];
+  }
+  if (field === 'parentRole' && typeof value === 'string') {
+    return [{ text: roleName(names, c.entityId, value) }];
   }
   if (field === 'size' && isRecord(value)) {
     if (typeof value.width === 'number' && typeof value.height === 'number') {

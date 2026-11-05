@@ -1,6 +1,12 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
-import type { Annotation, Layer, ListedMarking, Project } from '../model';
+import {
+  roleLabelOf,
+  type Annotation,
+  type Layer,
+  type ListedMarking,
+  type Project,
+} from '../model';
 import { toggleLayerVisible, type Selection } from '../store/ui';
 import { AnnotationLines, AnnotationTitle, IssueBadge } from './AnnotationSummary';
 import { Choice } from './controls';
@@ -38,6 +44,15 @@ function LayerCell({ layer }: { readonly layer: Layer }) {
   );
 }
 
+/** "↳ de Button" e, no vínculo por papel, "↳ de Button (Clique)". */
+function linkedText(project: Project, a: Annotation, owner: Annotation): string {
+  const name = annotationDisplayName(project, owner);
+  const role = roleLabelOf(project, a);
+  return role === null
+    ? t('annotation.linkedTo', { name })
+    : t('annotation.linkedToRole', { name, role });
+}
+
 function AnnotationCell({
   project,
   row,
@@ -58,11 +73,7 @@ function AnnotationCell({
       ) : (
         <IssueBadge project={project} annotation={a} />
       )}
-      {owner && (
-        <span class="muted list-linked">
-          {t('annotation.linkedTo', { name: annotationDisplayName(project, owner) })}
-        </span>
-      )}
+      {owner && <span class="muted list-linked">{linkedText(project, a, owner)}</span>}
     </>
   );
 }

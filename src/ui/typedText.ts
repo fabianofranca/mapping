@@ -148,17 +148,13 @@ export function annotationSummary(p: Project, a: Annotation): string {
 }
 
 /**
- * Alvo do link de uma pendência (`data-focus` do campo em Detalhes): o dono, a célula
+ * Alvo do link de uma pendência (`data-focus` do campo em Detalhes): o dono, o papel, a célula
  * da tabela ou o campo; `null` quando a pendência não aponta um campo.
  */
 export function issueFocusKey(issue: AnnotationIssue): string | null {
-  if (
-    issue.code === 'missing-owner' ||
-    issue.code === 'owner-not-allowed' ||
-    issue.code === 'missing-role' ||
-    issue.code === 'unknown-role'
-  )
+  if (issue.code === 'missing-owner' || issue.code === 'owner-not-allowed')
     return 'owner';
+  if (issue.code === 'missing-role' || issue.code === 'unknown-role') return 'role';
   if (issue.code === 'unknown-field' || !issue.key) return null;
   if (issue.rowId !== undefined)
     return `${issue.key}:${issue.rowId}:${issue.column ?? ''}`;
