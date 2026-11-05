@@ -5,7 +5,7 @@ import { fixtureFiles, fixtureProject } from './proposalFixture';
 
 // Etapa #515 (FN1 e FN2, #446 item 2): o menu ⋮ de uma linha fora da vista abre no primeiro clique.
 // O clique rola a página até a linha, e essa rolagem chega depois de o menu abrir; o menu
-// ignora a rolagem que a própria abertura provoca (até o próximo quadro).
+// ignora a rolagem que a própria abertura provoca (janela de 300 ms em `openScrollGuard`).
 
 test.use({ viewport: { width: 1280, height: 600 } });
 
