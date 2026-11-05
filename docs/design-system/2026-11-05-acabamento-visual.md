@@ -1,4 +1,4 @@
-# Acabamento visual — [Não lançado] (épico `epic/acabamento-visual`)
+# Acabamento visual — 2026-11-05 (épico `epic/acabamento-visual`)
 
 ## Pendências
 
@@ -9,3 +9,11 @@
 - **Canvas — retângulo de seleção (`cv-select`, nota de contraste):** o retângulo do Shift+arrasto ganha o halo `cv-halo` por baixo da borda (traço de `2 + 2·1` px de tela, mesmo tracejado, sem preenchimento), como a seleção e o rascunho. Contraste medido com a função de `tests/theme/contrast.test.ts` (nenhum token novo): tema claro, borda `cv-select` sobre o canvas 2,58:1 (abaixo de 3) e halo composto sobre o canvas 7,24:1, então é o halo que separa o retângulo; tema escuro, borda sobre o canvas 6,08:1. A silhueta passa de 3:1 nos dois temas. Arquivos: `src/canvas/renderers/overlay.ts` (`renderMarquee`), `tests/theme/contrast.test.ts`. Atualizar `Canvas.md` (retângulo de seleção) e a nota de `Contraste.md` sobre `cv-select`.
 - **Canvas — camadas:** o palco passa de seis a cinco camadas do Konva: setas e marcações dividem uma (um grupo para cada, a ordem de desenho é a mesma). Sem efeito visual; só se reflete se o `Canvas.md` descrever as camadas. Arquivo: `src/canvas/CanvasController.ts`.
 - **Cabeçalho do cartão de anotação (`AnnotationEditor`/`MarkingPanel`):** `.annotation-header` passa a quebrar linha (`flex-wrap: wrap`) e `.annotation-name` a ter base `--size-grid-col-min` (`flex: 1 1`); com o painel estreito e o botão **Copiar referência** (só com pasta), o campo do nome desce para a linha de baixo em vez de ser espremido e estourar a largura. Só tokens. Arquivo: `src/theme/panels.css`. Mostrar o cartão de anotação no painel estreito na prévia de `MarkingPanel`.
+
+## Sincronização
+
+(A preencher no fechamento do épico.)
+
+## Ficou sem gravar
+
+(A preencher no fechamento do épico.)
