@@ -1,4 +1,4 @@
-# Papéis e documentos externos — [Não lançado] (épico `epic/papeis-e-docs-externos`)
+# Papéis e documentos externos — 2026-11-05 (épico `epic/papeis-e-docs-externos`)
 
 ## Pendências
 
@@ -25,8 +25,17 @@ PD5:
 
 ## Sincronização
 
-Preenchida no fechamento do épico.
+Gravado no artefato **Mapping** em 2026-11-05: versão 39 (conteúdo, 9 arquivos) e versão 40 (índice, só com o `lastChange`).
+
+- **PD3:** `LayerGroup/README.md` descreve a escolha do tipo (`TypePicker`: busca "Buscar entre N tipos", cabeçalhos de grupo, bloco "Outros", estado `Nenhum tipo com "<texto>"`) e o passo do dono com papel ("Button Continuar › Clique").
+- **PD4:** `LayerGroup/README.md` descreve o "Vinculadas" por papel, o diálogo "Vincular a <dono> [› <papel>]" e o `Select` do papel no cartão do filho; `Dialog/README.md` cita o `LinkDialog`; `DataGrid/README.md` traz o texto da Lista ("↳ de Button Continuar (Clique)"); `ChangePopover/README.md` e `OtherChanges/README.md` trazem a mudança de `parentRole` e os repositórios de documentos na revisão.
+- **PD5:** `CatalogPage/README.md` e a prévia ganharam a seção Documento nos cinco estados (altura 2300 para 3300, estimada); `SettingsDialog/README.md` e a prévia ganharam o diálogo "Repositórios" com as subseções Código e Documentos (altura 6000 para 6400, estimada).
+- Tokens e ícones: só os existentes. `tokens.json` e `bundle.css` não mudaram. Os previews declaram no próprio `<style>` as classes `.external-doc*`, `.repos-group` e `.repos-subtitle`.
+- **Contraste:** sem cor nova; conferência visual pendente (abaixo).
 
 ## Ficou sem gravar
 
-Nada.
+- Não há componente no mapa para `TypePicker`, `LinkDialog`, `AnnotationEditor`/`LinkedRow`/`OwnerRoleField` nem `PlatformRepos`: ficaram descritos nos guias de `LayerGroup`, `Dialog` e `SettingsDialog`. Decidir se algum merece componente próprio.
+- A prévia do `LayerGroup` (61 KB, renderizada da app) não ganhou os estados de PD3 e PD4 (busca com grupos, linhas por papel, `Select` do papel), e não há prévia do `LinkDialog`.
+- Conferência visual, nos temas claro e escuro, das prévias de `CatalogPage` (cinco cartões "Documento externo") e de `SettingsDialog` (cartão "No editor" com Código e Documentos): contraste, alturas estimadas e o link `.external-doc-link` no tema escuro.
+- Classes que faltam no `bundle.css` (somadas em `docs/DESIGN-SYSTEM.md`, "Classes que faltam no `bundle.css`"): `.external-doc*`, `.repos-group`, `.repos-subtitle`; e, só descritas nos guias, `.type-search`, `.type-section`, `.type-group-title`, `.linked-role-*`.
