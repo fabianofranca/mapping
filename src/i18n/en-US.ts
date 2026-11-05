@@ -446,7 +446,7 @@ export const enUS: Dictionary = {
   'spec.updateFolder': 'Update from folder…',
   'spec.updateZip': 'Update from zip…',
   'spec.packageHint':
-    'A library (version 4 to 7) comes in a folder or a zip: the specialization, components, documents and fonts. If it does not refer to package files, a lone .json also works.',
+    'A library (`formatVersion` 4 or later) comes in a folder or a zip: the specialization, components, documents and fonts. If it does not refer to package files, a lone .json also works.',
   'spec.v4NeedsPackage':
     '"{name}" refers to package files (components, documents, examples or fonts) and needs the whole folder: a lone .json file is not enough. Use "Apply folder…" or "Apply zip…".',
   'spec.packageValidating': 'Checking the package…',
@@ -718,7 +718,8 @@ export const enUS: Dictionary = {
   'marking.section': 'Marking',
   'marking.position': 'Position',
   'marking.size': 'Size',
-  'marking.pixelsHint': 'In original image pixels',
+  'marking.pixelsHint': 'In container pixels',
+  'marking.canvasUnitsHint': 'In canvas units',
   'marking.widthShort': 'W',
   'marking.heightShort': 'H',
   'marking.rectSummary': 'X {x} · Y {y} · {width} × {height} px',
