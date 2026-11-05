@@ -2,7 +2,12 @@
 
 ## Pendências
 
-Nenhuma. A PD1 (`formatVersion` 11 da especialização: modelo, validação, MCP e documentação) não muda tamanho, token, ícone nem anatomia de componente; a página Ajuda → Especializações só ganha texto. A PD2 (schema v14: `parentRole`, `docRepos`, migração, pendências de papel e ações do store) não tem tela nova: as duas pendências novas usam a lista de pendências do cartão e a janela Incompletas como estão.
+PD1 e PD2: nenhuma (formato v11 e schema v14 não mudam tamanho, token, ícone nem anatomia de componente).
+
+PD3:
+
+- **Lista de tipos com busca e grupos** (`src/ui/TypePicker.tsx`, CSS em `src/theme/forms.css`): campo de busca no topo (`TextField` com o texto "Buscar entre N tipos"), cabeçalhos de grupo (`h3`) na ordem da camada, bloco "Outros" no fim e o estado "Nenhum tipo com \"<texto>\"". Os itens (`.type-option` com `NoticeBadge`) não mudam. Nenhum ícone novo.
+- **Passo do dono com papel** (`src/ui/AnnotationsPanel.tsx`): uma opção por dono e papel ("Button Continuar › Clique") no diálogo "Dono do <tipo>", quando o dono tem `childRoles`; sem papéis, o botão por dono de hoje.
 
 ## Sincronização
 
