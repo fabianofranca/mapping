@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildCatalog, type CatalogEntry } from '../../src/model';
 import { locale } from '../../src/store/settings';
-import { TypeList } from '../../src/ui/AnnotationsPanel';
+import { TypePicker } from '../../src/ui/TypePicker';
 import { CatalogView } from '../../src/ui/catalog/CatalogView';
 import { createCatalogRenderer } from '../../src/ui/catalog/renderer';
 import { approximateMeasurer } from '../../src/model';
@@ -20,9 +20,9 @@ afterEach(cleanup);
 
 const noticeTypes = () => noticeSpec().layers[0]?.annotationTypes ?? [];
 
-describe('selo na escolha de tipo (TypeList)', () => {
+describe('selo na escolha de tipo (TypePicker)', () => {
   it('mostra o selo nos tipos com aviso e some no tipo sem aviso', () => {
-    render(<TypeList types={noticeTypes()} onChoose={vi.fn()} />);
+    render(<TypePicker types={noticeTypes()} onChoose={vi.fn()} />);
     const option = (name: string) =>
       screen.getByText(name, { selector: 'strong' }).closest('button') as HTMLElement;
     expect(
@@ -40,7 +40,7 @@ describe('selo na escolha de tipo (TypeList)', () => {
 
   it('escolher o tipo continua funcionando com aviso', async () => {
     const onChoose = vi.fn();
-    render(<TypeList types={noticeTypes()} onChoose={onChoose} />);
+    render(<TypePicker types={noticeTypes()} onChoose={onChoose} />);
     await userEvent.setup().click(screen.getByText('Gone', { selector: 'strong' }));
     expect(onChoose).toHaveBeenCalledOnce();
   });

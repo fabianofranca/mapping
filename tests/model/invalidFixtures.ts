@@ -67,6 +67,7 @@ const freeAnnotation = (p: Project, annotation: Partial<Annotation>): Project =>
       layerId: 'LM',
       name: 'Extra',
       parentAnnotationId: null,
+      parentRole: null,
       type: null,
       values: null,
       entries: [{ id: 'EX', key: 'campo', value: 'texto' }],

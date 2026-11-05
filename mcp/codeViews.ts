@@ -6,6 +6,7 @@ import {
   repoLink,
   resolveCode,
   specPlatformRepo,
+  projectIndex,
   projectPlatforms,
   typeOfAnnotation,
   type Annotation,
@@ -199,11 +200,15 @@ function hintAnnotation(
 ): Json {
   const linked = annotation.linked.map((a) => hintAnnotation(a, refs, codes));
   const code = codes.get(annotation.annotationId);
+  const parentRole = projectIndex(refs.project).annotations.get(
+    annotation.annotationId,
+  )?.parentRole;
   return {
     ref: refs.bare('a', annotation.annotationId),
     type: `${annotation.specId}/${annotation.typeId}`,
     label: annotation.label,
     layer: annotation.layer,
+    ...(parentRole ? { parentRole } : {}),
     ...(code === undefined ? {} : { code }),
     ...(annotation.params.length > 0
       ? {

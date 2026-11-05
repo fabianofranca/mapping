@@ -68,8 +68,6 @@ export interface TypeDef {
   readonly layerName: string;
   readonly layerColor: string;
   readonly labelField?: string;
-  /** Ids dos tipos que podem ser filhos (ausente = qualquer um). */
-  readonly allowedChildren?: readonly string[];
   readonly fields: readonly FieldDef[];
   /** Caminho do arquivo do componente, como está na especialização. */
   readonly componentPath?: string;
@@ -273,9 +271,6 @@ export function loadLibrary(files: readonly TextFile[]): Library {
         layerName,
         layerColor,
         labelField: typeof type.labelField === 'string' ? type.labelField : undefined,
-        allowedChildren: Array.isArray(type.allowedChildren)
-          ? type.allowedChildren.filter((c): c is string => typeof c === 'string')
-          : undefined,
         fields,
         componentPath,
         component,

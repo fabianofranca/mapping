@@ -1,7 +1,7 @@
 // Textos da apresentação do Catálogo (etapa Biblioteca, B5): lista, página do componente,
 // galeria e playground. Entram nos dicionários por `...catalogPtBR` / `...catalogEnUS`. Mesmas
 // chaves e mesmos {parâmetros} nos dois idiomas. Subprefixos: `catalog.view.*`, `catalog.page.*`,
-// `catalog.gallery.*`, `catalog.playground.*` (`catalog.home.*` e `catalog.window.*` ficam nos
+// `catalog.doc.*`, `catalog.gallery.*`, `catalog.playground.*` (`catalog.home.*` e `catalog.window.*` ficam nos
 // dicionários gerais).
 
 export const catalogPtBR = {
@@ -24,6 +24,13 @@ export const catalogPtBR = {
   'catalog.page.componentProblem': 'O componente não carregou: {problem}',
   'catalog.page.document': 'Documento',
   'catalog.page.noDoc': 'Este componente não tem documento.',
+  'catalog.doc.openRepo': 'Abrir no repositório',
+  'catalog.doc.connect': 'Conectar a pasta de {repo}…',
+  'catalog.doc.allow': 'Permitir acesso a {repo}',
+  'catalog.doc.change': 'Trocar pasta…',
+  'catalog.doc.missing': '{path} não está em {repo}',
+  'catalog.doc.loading': 'Lendo o documento…',
+
   'catalog.page.properties': 'Propriedades',
   'catalog.page.noFields': 'Este componente não tem propriedades.',
   'catalog.page.col.key': 'Chave',
@@ -92,6 +99,13 @@ export const catalogEnUS: Record<keyof typeof catalogPtBR, string> = {
   'catalog.page.componentProblem': 'The component did not load: {problem}',
   'catalog.page.document': 'Document',
   'catalog.page.noDoc': 'This component has no document.',
+  'catalog.doc.openRepo': 'Open in repository',
+  'catalog.doc.connect': 'Connect the {repo} folder…',
+  'catalog.doc.allow': 'Allow access to {repo}',
+  'catalog.doc.change': 'Change folder…',
+  'catalog.doc.missing': '{path} is not in {repo}',
+  'catalog.doc.loading': 'Reading the document…',
+
   'catalog.page.properties': 'Properties',
   'catalog.page.noFields': 'This component has no properties.',
   'catalog.page.col.key': 'Key',

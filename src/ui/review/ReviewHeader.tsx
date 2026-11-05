@@ -107,7 +107,13 @@ export function issueText(names: ReviewNames, issue: ProposalIssue): string {
     if (found !== null) return found;
     const kind = entityKindOf(names, id);
     // Especialização e repositório têm id legível (`sdui`, `android`): é o próprio nome.
-    if (kind === null || kind === 'specialization' || kind === 'platformRepo') return id;
+    if (
+      kind === null ||
+      kind === 'specialization' ||
+      kind === 'platformRepo' ||
+      kind === 'docRepo'
+    )
+      return id;
     return kindText(kind);
   };
   // A mudança cita um alvo que não existe mais (nem no projeto, nem na proposta).

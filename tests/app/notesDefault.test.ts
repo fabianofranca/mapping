@@ -15,7 +15,7 @@ import { MemoryDirectory } from '../storage/memoryFs';
 
 // ME3: a biblioteca de notas embutida é aplicada por padrão. Projeto novo (local e em pasta) já
 // nasce com ela; projeto de schema anterior ao 13 a ganha ao abrir (em memória, sem desfazer, e
-// a primeira gravação escreve `specs/notas/`); projeto já na v13 fica como está.
+// a primeira gravação escreve `specs/notas/`); projeto já na v14 fica como está.
 
 const pickDirectory = vi.fn<() => Promise<DirectoryHandleLike | null>>();
 
@@ -168,7 +168,7 @@ describe('projeto novo', () => {
 });
 
 describe('abrir projeto existente', () => {
-  it('v12 sem notas: abre com a biblioteca em memória, sem desfazer; a primeira gravação escreve specs/notas/, o backup e um mapping v13', async () => {
+  it('v12 sem notas: abre com a biblioteca em memória, sem desfazer; a primeira gravação escreve specs/notas/, o backup e um mapping v14', async () => {
     const original = v12Text(sampleProject());
     const root = folderOf(original);
     pickDirectory.mockResolvedValue(root);
@@ -199,7 +199,7 @@ describe('abrir projeto existente', () => {
     }
     const saved = deserialize((await root.read('mapping.json')) ?? '');
     if (!saved.ok) throw new Error('mapping inválido');
-    expect(saved.project.schemaVersion).toBe(13);
+    expect(saved.project.schemaVersion).toBe(14);
     expect(saved.project.project.name).toBe('Renomeado');
     expect(saved.project.specializations).toEqual([
       expect.objectContaining({ id: 'notas', file: SPEC_FILE }),
@@ -244,7 +244,7 @@ describe('abrir projeto existente', () => {
     library?.close();
   });
 
-  it('já na v13 sem a especialização notas: não a adiciona', async () => {
+  it('já na v14 sem a especialização notas: não a adiciona', async () => {
     const root = folderOf(serialize(sampleProject()));
     pickDirectory.mockResolvedValue(root);
     expect((await app.openFolder()).ok).toBe(true);

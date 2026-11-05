@@ -210,7 +210,7 @@ A sincronia de 2026-11-02 corrigiu os guias de todos os componentes afetados, ma
 
 ### Classes que faltam no `bundle.css`
 
-Os previews de `TextField`, `SettingsDialog`, `CatalogPage` e `Home` declaram no próprio `<style>` classes que a app tem e o `bundle.css` do DS não: `.suggestions`, `.suggestion`, `.suggestion-label`, `.suggestion-detail` (na app, em `src/theme/editor.css`), `.privacy-*` (em `src/theme/layout.css`), `.catalog-variants-caption` e o `white-space: nowrap` de `.project-actions .button` e `.project-table .badge` (em `src/theme/layout.css`, desde o `epic/acabamento-900`). Funciona, mas o certo é o bundle ganhar essas classes quando for regerado, e os previews pararem de declará-las.
+Os previews de `TextField`, `SettingsDialog`, `CatalogPage` e `Home` declaram no próprio `<style>` classes que a app tem e o `bundle.css` do DS não: `.suggestions`, `.suggestion`, `.suggestion-label`, `.suggestion-detail` (na app, em `src/theme/editor.css`), `.privacy-*` (em `src/theme/layout.css`), `.catalog-variants-caption` e o `white-space: nowrap` de `.project-actions .button` e `.project-table .badge` (em `src/theme/layout.css`, desde o `epic/acabamento-900`). Desde o `epic/papeis-e-docs-externos` somam-se `.external-doc`, `.external-doc-actions`, `.external-doc-link`, `.external-doc-path` (em `src/theme/catalog.css`), `.repos-group` e `.repos-subtitle` (em `src/theme/layout.css`), declaradas nos previews de `CatalogPage` e `SettingsDialog`; e, só descritas nos guias, `.type-search`, `.type-section`, `.type-group-title` e `.linked-role-*`. Funciona, mas o certo é o bundle ganhar essas classes quando for regerado, e os previews pararem de declará-las.
 
 ### Alias de texto fora do `tokens.json`
 

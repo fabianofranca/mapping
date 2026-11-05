@@ -8,6 +8,7 @@ import {
   findSpecType,
   isRecord,
   projectIndex,
+  roleNameOf,
   type Annotation,
   type Change,
   type JsonValue,
@@ -145,6 +146,23 @@ function annotationName(names: ReviewNames, id: string): string {
 }
 
 /**
+ * Nome do papel do vínculo de uma anotação ("Clique"): pelo tipo do dono dela na prévia e,
+ * senão, no projeto atual (o dono pode mudar na mesma proposta); o id se nenhum oferece.
+ */
+function roleName(names: ReviewNames, annotationId: string, roleId: string): string {
+  for (const p of [names.preview, names.current]) {
+    const index = p ? projectIndex(p) : null;
+    const parentId = index?.annotations.get(annotationId)?.parentAnnotationId;
+    const owner = parentId ? index?.annotations.get(parentId) : undefined;
+    if (p && owner) {
+      const name = roleNameOf(p, owner, roleId);
+      if (name !== roleId) return name;
+    }
+  }
+  return roleId;
+}
+
+/**
  * Nome do tipo ("Button"), com a mesma caixa da lista e de Detalhes: da especialização do
  * projeto, senão da que a própria proposta aplica (importação nova); por último, o id.
  */
@@ -222,6 +240,7 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'image.source': 'review.field.source',
   'annotation.name': 'review.field.annotationName',
   'annotation.parentAnnotationId': 'review.field.owner',
+  'annotation.parentRole': 'review.field.role',
   'annotation.markingId': 'review.field.marking',
   'annotation.layerId': 'review.field.layer',
   'annotation.type': 'review.field.type',
@@ -234,6 +253,7 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
 const ENTITY_KEYS = {
   specialization: 'review.entity.specialization',
   platformRepo: 'review.entity.platformRepo',
+  docRepo: 'review.entity.docRepo',
   layer: 'review.entity.layer',
   image: 'review.entity.image',
   marking: 'review.entity.marking',
@@ -277,7 +297,7 @@ export function entityName(names: ReviewNames, id: string): string | null {
     if (c.entity === 'specialization') {
       const name = text(record && isRecord(record.spec) ? record.spec.name : undefined);
       if (name) return name;
-    } else if (c.entity !== 'platformRepo') {
+    } else if (c.entity !== 'platformRepo' && c.entity !== 'docRepo') {
       const name =
         text(record?.name) ??
         (c.entity === 'image' ? (text(record?.file) ?? backgroundName(record)) : null);
@@ -308,6 +328,7 @@ function subjectName(names: ReviewNames, c: Change): string | null {
     case 'specialization':
       return specName(names, c);
     case 'platformRepo':
+    case 'docRepo':
       return c.entityId;
     case 'image':
       return imageName(names, c.entityId);
@@ -442,6 +463,7 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
       return [specName(names, c), version].filter(Boolean).join(' ');
     }
     case 'platformRepo':
+    case 'docRepo':
       return text(value.localPath) ?? c.entityId;
   }
 }
@@ -477,6 +499,9 @@ export function valueParts(
   }
   if (field === 'parentAnnotationId' && typeof value === 'string') {
     return [{ text: annotationName(names, value) }];
+  }
+  if (field === 'parentRole' && typeof value === 'string') {
+    return [{ text: roleName(names, c.entityId, value) }];
   }
   if (field === 'size' && isRecord(value)) {
     if (typeof value.width === 'number' && typeof value.height === 'number') {

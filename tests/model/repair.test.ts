@@ -432,6 +432,7 @@ describe('repairProject: setas', () => {
             layerId: 'L1',
             name: null,
             parentAnnotationId: null,
+            parentRole: null,
             type: null,
             values: null,
             entries: [],

@@ -1,7 +1,13 @@
 import { findById } from './project';
 import { memoByProject, projectIndex } from './projectIndex';
 import { isTargetAccepted, parseRefValue, resolveRef, tableRows } from './refs';
-import { fieldOf, isAllowedOwner, specLayerOf, typeOfAnnotation } from './specLookup';
+import {
+  fieldOf,
+  isAllowedOwner,
+  ownerRolesOf,
+  specLayerOf,
+  typeOfAnnotation,
+} from './specLookup';
 import { checkSimpleValue, isEmptyValue } from './typed';
 import { typeAppliesTo, type SpecRefAccepts } from './spec';
 import type { Annotation, JsonValue, Project } from './types';
@@ -26,6 +32,10 @@ export type AnnotationIssueCode =
   | 'missing-owner'
   /** Dono cujo tipo não lista este em `allowedChildren`. */
   | 'owner-not-allowed'
+  /** O dono tem `childRoles` e esta anotação não tem papel (v14). */
+  | 'missing-role'
+  /** O papel não existe no dono (ou o dono não tem `childRoles`) (v14). */
+  | 'unknown-role'
   /** O tipo deixou de se aplicar à dona (marcação ou seta) depois de uma atualização. */
   | 'type-not-applicable'
   /** O alvo da referência não existe mais. */
@@ -152,8 +162,22 @@ function annotationIssues(p: Project, a: Annotation): AnnotationIssue[] {
     if (owner && !ownerUnknown && !isAllowedOwner(p, a.type, owner)) {
       issues.push({ code: 'owner-not-allowed' });
     }
+    if (owner && !ownerUnknown) issues.push(...roleIssues(p, a, owner));
   }
   return issues;
+}
+
+/**
+ * Pendências de papel (v14): dono com `childRoles` e filho sem papel (`missing-role`); papel que o
+ * dono não oferece, inclusive dono sem `childRoles` (`unknown-role`). Dono livre ou de tipo
+ * desconhecido não gera pendência de papel.
+ */
+function roleIssues(p: Project, a: Annotation, owner: Annotation): AnnotationIssue[] {
+  if (owner.type === null) return [];
+  const offered = ownerRolesOf(p, owner);
+  if (a.parentRole === null) return offered ? [{ code: 'missing-role' }] : [];
+  const known = offered?.roles.some((r) => r.id === a.parentRole) ?? false;
+  return known ? [] : [{ code: 'unknown-role' }];
 }
 
 /** Pendências da anotação; vazio = completa. */

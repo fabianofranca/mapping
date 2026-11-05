@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v13)
+# Formato do `mapping.json` (schema v14)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` (os arquivos de imagem dos containers) e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
@@ -33,13 +33,14 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 13,
+  "schemaVersion": 14,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
   "project": { "name": "Carro", "createdAt": "…", "updatedAt": "…" },
   "specializations": [],
   "platformRepos": {},
+  "docRepos": {},
   "layers": [{ "id": "L1", "name": "Componentes", "color": "#E53935", "spec": null }],
   "containers": [
     {
@@ -94,13 +95,14 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo    | Descrição                                                                    |
 | ------------------ | ------- | ---------------------------------------------------------------------------- |
-| `schemaVersion`    | `13`    | Versão do schema.                                                            |
+| `schemaVersion`    | `14`    | Versão do schema.                                                            |
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                      |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).           |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.      |
 | `project`          | objeto  | `name` (texto), `createdAt` e `updatedAt` (ISO 8601; fuso vira UTC).         |
 | `specializations`  | array   | Especializações aplicadas (ver v4).                                          |
 | `platformRepos`    | objeto  | Clone local de cada plataforma (v7; só `localPath` desde a v11, ver abaixo). |
+| `docRepos`         | objeto  | Clone local de cada repositório de documentos (v14, ver "Campos da v14").    |
 | `layers`           | array   | Camadas, **globais** (valem para todos os containers), na ordem de exibição. |
 | `containers`       | array   | Containers do projeto (v12; antes `images`).                                 |
 | `markings`         | array   | Marcações retangulares (de um container ou do canvas, v13).                  |
@@ -128,7 +130,7 @@ calculado pela app desde a v13); `name` (`string` ou `null`);
 `name` (`string` ou `null`); `locked` (booleano). Ver "Campos da v13 (setas)".
 
 **`annotations[]`**: `id`; `markingId` (o id de uma marcação **ou de uma seta**, v13); `layerId`; `name` (`string` ou `null`);
-`parentAnnotationId`; `type`, `values` e `entries` (ver v4). Livre: `type` e `values` são `null`.
+`parentAnnotationId`; `parentRole` (v14: o papel no dono, `string` ou `null`; ver "Campos da v14"); `type`, `values` e `entries` (ver v4). Livre: `type` e `values` são `null`.
 Tipada: os dois preenchidos e `entries` vazio.
 
 ## Regras de validade
@@ -156,6 +158,12 @@ arquivo ao ler.
 - `platformRepos` (v11): chaves no formato `[a-z0-9-]+`; cada valor com `localPath` (texto). Uma chave
   desconhecida na entrada (o antigo `urlTemplate`) é descartada na leitura. Configuração de uma plataforma
   que nenhuma especialização declara não impede a abertura.
+- `docRepos` (v14): chaves no formato `[a-z0-9-]+`; cada valor com `localPath` (texto não vazio). A entrada
+  sem `localPath` sai na leitura, e outra chave na entrada é descartada. O id de um repositório que nenhuma
+  especialização declara não impede a abertura, e remover a especialização não apaga a entrada.
+- Papel do vínculo (v14): `parentRole` não nulo é texto não vazio (`empty-role`) e exige `parentAnnotationId`
+  não nulo (`role-without-owner`). Papel que o dono não oferece, ou faltando num dono com `childRoles`, **não**
+  impede a abertura: vira pendência (`unknown-role`, `missing-role`).
 - Anotação "dona" (`parentAnnotationId`): existe, está na **mesma marcação** e em **outra camada**, e a
   cadeia não tem ciclos.
 
@@ -624,6 +632,7 @@ com ou sem arquivo de imagem). Só o vocabulário do `mapping.json` muda; os dad
 | v11    | `platformRepos` guarda só o `localPath`                                                                                                                    |
 | v12    | `images` → `containers`, `imageId` → `containerId` (só os nomes)                                                                                           |
 | v13    | Sem herança de anotações (`annotations[].inherit` saiu); marcação do canvas (`containerId` nulo), `floating`, `containers[].parentId` e a coleção `arrows` |
+| v14    | `annotations[].parentRole` (o papel no dono) e `docRepos` (o clone local dos repositórios de documentos)                                                   |
 
 ## Campos da v13 (sem herança)
 
@@ -806,6 +815,45 @@ removida, e as anotações dela saem na rodada seguinte; o id repetido não tem 
 **Migração v12 → v13.** A migração grava `arrows: []` e **nunca cria uma seta**. Um `mapping.json` v13 gravado antes
 das setas (sem `arrows`) abre sem migração, com `[]`.
 
+## Campos da v14 (papéis no vínculo e documentos externos)
+
+A v14 acrescenta dois campos, ligados aos recursos da `formatVersion` 11 das especializações
+([`SPEC-FORMAT.md`](SPEC-FORMAT.md): `childRoles` e `docRepos`).
+
+### Papel do vínculo (`annotations[].parentRole`)
+
+`parentRole` fica ao lado de `parentAnnotationId` e está **sempre presente**: `null` ou o `id` de um papel
+(`childRoles[].id`) do tipo da dona. Um papel aceita vários filhos, sem máximo.
+
+- **Invariante de abertura:** `parentRole` não nulo é texto não vazio (`empty-role`) e a anotação tem dona
+  (`role-without-owner`). O arquivo que viola uma das duas é recusado, com a mensagem; não há reparo
+  mecânico.
+- **Pendências** (calculadas, nunca gravadas; contam no selo "Incompleta" e na janela Incompletas, e não
+  bloqueiam nada): `missing-role` (o tipo da dona declara `childRoles` e a filha não tem papel) e
+  `unknown-role` (a filha tem um papel que a dona não oferece, inclusive quando o tipo da dona não declara
+  `childRoles`). Dona livre ou de tipo desconhecido não gera pendência de papel.
+- **Quem muda o papel** (cada gesto é uma entrada de desfazer): criar a anotação já vinculada e com papel;
+  trocar o papel; trocar a dona (uma dona que **não** oferece o papel atual limpa o papel **na mesma
+  entrada**; uma que oferece o mantém); tirar a dona (limpa o papel). Fora disso o papel não é mexido: um papel
+  que deixou de existir porque a especialização foi atualizada vira pendência.
+
+### Clone local dos documentos (`docRepos`)
+
+```json
+"docRepos": { "design-docs": { "localPath": "../design-docs" } }
+```
+
+No molde do `platformRepos`: a chave é o `id` do `docRepos` da especialização (o mesmo id em
+especializações diferentes é a mesma entrada) e o valor tem só `localPath`, relativo à pasta do projeto, texto
+não vazio. Quem lê é o servidor MCP; a app usa a pasta conectada no navegador. O objeto começa `{}`.
+
+### Migração v13 → v14
+
+Toda anotação ganha `parentRole: null` e o projeto ganha `docRepos: {}`. Os vínculos existentes ficam
+**sem papel**: se o tipo de uma dona ganhar `childRoles` depois, as filhas mostram `missing-role`. Como
+em toda migração, o original vai para `backups/` antes da primeira gravação e a faixa da migração aparece no
+topo. Um valor já presente é preservado.
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
@@ -816,7 +864,7 @@ imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 rece
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
 recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
-cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Ao salvar, o
-arquivo passa a ser v13 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Ao salvar, o
+arquivo passa a ser v14 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

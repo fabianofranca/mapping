@@ -1,9 +1,9 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 5,
+  "formatVersion": 11,
   "id": "sdui",
   "name": "SDUI",
-  "version": 3,
+  "version": 4,
   "description": "Componentes de tela e seus eventos para Server-Driven UI.",
   "platforms": [
     {
@@ -37,6 +37,14 @@
       }
     }
   ],
+  "docRepos": [
+    {
+      "id": "design-docs",
+      "url": "https://gitlab.empresa.com/grupo/sdui-docs",
+      "urlTemplate": "https://gitlab.empresa.com/grupo/sdui-docs/-/blob/main/{path}",
+      "ref": "main"
+    }
+  ],
   "layers": [
     {
       "id": "componentes",
@@ -46,7 +54,29 @@
         {
           "id": "button",
           "name": "Button",
-          "allowedChildren": ["onClick", "onHold"],
+          "doc": {
+            "repo": "design-docs",
+            "path": "componentes/button.md"
+          },
+          "allowedChildren": [
+            {
+              "layer": "eventos",
+              "groups": ["interacao"]
+            }
+          ],
+          "childRolesLabel": "Trigger",
+          "childRoles": [
+            {
+              "id": "click",
+              "name": "Clique",
+              "description": "O toque ou clique no componente."
+            },
+            {
+              "id": "hold",
+              "name": "Pressionar",
+              "description": "O toque longo, que segura o componente."
+            }
+          ],
           "fields": [
             {
               "key": "id",
@@ -129,7 +159,20 @@
         {
           "id": "input",
           "name": "Input",
-          "allowedChildren": ["onChange"],
+          "allowedChildren": [
+            {
+              "layer": "eventos",
+              "groups": ["dados"]
+            }
+          ],
+          "childRolesLabel": "Trigger",
+          "childRoles": [
+            {
+              "id": "change",
+              "name": "Alteração",
+              "description": "O valor digitado mudou."
+            }
+          ],
           "fields": [
             {
               "key": "id",
@@ -304,7 +347,20 @@
         {
           "id": "image",
           "name": "Image",
-          "allowedChildren": ["onClick"],
+          "allowedChildren": [
+            {
+              "layer": "eventos",
+              "groups": ["interacao"]
+            }
+          ],
+          "childRolesLabel": "Trigger",
+          "childRoles": [
+            {
+              "id": "click",
+              "name": "Clique",
+              "description": "O toque ou clique no componente."
+            }
+          ],
           "fields": [
             {
               "key": "id",
@@ -357,8 +413,9 @@
       "color": "#FB8C00",
       "annotationTypes": [
         {
-          "id": "onClick",
-          "name": "onClick",
+          "id": "action",
+          "name": "Ação",
+          "groups": ["interacao"],
           "requiresOwner": true,
           "fields": [
             {
@@ -391,16 +448,16 @@
           ],
           "code": {
             "android": {
-              "symbol": "com.app.ds.OnClick",
+              "symbol": "com.app.ds.Action",
               "params": {
                 "acao": "action",
                 "destino": "target",
                 "parametros": "params"
               },
-              "notes": "Associe o evento ao componente dono por meio do parâmetro onClick."
+              "notes": "Passe o evento no parâmetro do papel que ele ocupa no componente dono (Clique em onClick, Pressionar em onHold)."
             },
             "ios": {
-              "symbol": "OnClick",
+              "symbol": "Action",
               "params": {
                 "acao": "action",
                 "destino": "target",
@@ -408,7 +465,7 @@
               }
             },
             "bff": {
-              "symbol": "com.app.bff.sdui.onClick",
+              "symbol": "com.app.bff.sdui.action",
               "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
               "params": {
                 "acao": "action",
@@ -420,8 +477,9 @@
           }
         },
         {
-          "id": "onHold",
-          "name": "onHold",
+          "id": "feedback",
+          "name": "Feedback",
+          "groups": ["interacao"],
           "requiresOwner": true,
           "fields": [
             {
@@ -440,21 +498,21 @@
           ],
           "code": {
             "android": {
-              "symbol": "com.app.ds.OnHold",
+              "symbol": "com.app.ds.Feedback",
               "params": {
                 "acao": "action",
                 "duracaoMs": "durationMs"
               }
             },
             "ios": {
-              "symbol": "OnHold",
+              "symbol": "Feedback",
               "params": {
                 "acao": "action",
                 "duracaoMs": "duration"
               }
             },
             "bff": {
-              "symbol": "com.app.bff.sdui.onHold",
+              "symbol": "com.app.bff.sdui.feedback",
               "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
               "params": {
                 "acao": "action",
@@ -465,8 +523,9 @@
           }
         },
         {
-          "id": "onChange",
-          "name": "onChange",
+          "id": "validation",
+          "name": "Validação",
+          "groups": ["dados"],
           "requiresOwner": true,
           "fields": [
             {
@@ -484,21 +543,21 @@
           ],
           "code": {
             "android": {
-              "symbol": "com.app.ds.OnChange",
+              "symbol": "com.app.ds.Validation",
               "params": {
                 "acao": "action",
                 "regra": "rule"
               }
             },
             "ios": {
-              "symbol": "OnChange",
+              "symbol": "Validation",
               "params": {
                 "acao": "action",
                 "regra": "rule"
               }
             },
             "bff": {
-              "symbol": "com.app.bff.sdui.onChange",
+              "symbol": "com.app.bff.sdui.validation",
               "path": "src/main/kotlin/com/app/bff/sdui/Events.kt",
               "params": {
                 "acao": "action",
@@ -507,6 +566,18 @@
               "notes": "A função devolve o nó do componente no JSON da tela."
             }
           }
+        }
+      ],
+      "groups": [
+        {
+          "id": "interacao",
+          "name": "Interação",
+          "description": "O que acontece quando a pessoa toca, clica ou segura o componente."
+        },
+        {
+          "id": "dados",
+          "name": "Dados",
+          "description": "Validação e máscara do valor digitado."
         }
       ]
     },
@@ -530,6 +601,29 @@
               "type": "string"
             }
           ]
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 3,
+      "to": 4,
+      "steps": [
+        {
+          "op": "rename-type",
+          "from": "onClick",
+          "to": "action"
+        },
+        {
+          "op": "rename-type",
+          "from": "onHold",
+          "to": "feedback"
+        },
+        {
+          "op": "rename-type",
+          "from": "onChange",
+          "to": "validation"
         }
       ]
     }

@@ -218,6 +218,7 @@ export const enUS: Dictionary = {
   'annotation.ownerEmpty':
     'No options: create an annotation in another layer on this marking so you can link this one to it.',
   'annotation.linkedTo': '↳ of {name}',
+  'annotation.linkedToRole': '↳ of {name} ({role})',
   'annotation.linkedHeading': 'Linked',
   'annotation.goToAnnotation': 'Go to annotation {name}',
   'annotation.showLayer': 'Show layer {layer}',
@@ -364,6 +365,8 @@ export const enUS: Dictionary = {
   'invariant.annotation-parent-other-marking': 'owner in another marking',
   'invariant.annotation-parent-same-layer': 'owner in the same layer',
   'invariant.annotation-cycle': 'cycle between annotations',
+  'invariant.empty-role': 'empty link role',
+  'invariant.role-without-owner': 'link role without an owner',
   'invariant.empty-key': 'entry with empty key',
   'invariant.duplicate-key': 'duplicate key',
   'invariant.duplicate-spec-file': 'duplicate specialization file',
@@ -645,13 +648,22 @@ export const enUS: Dictionary = {
     'Pick the type. The fields are predefined; just fill in the values.',
   'typed.noTypes':
     'The specialization of this layer is unavailable or has no annotation types.',
+  'typed.searchTypes': 'Search among {count} types',
+  'typed.noTypeMatch': 'No type matching "{query}"',
+  'typed.otherTypes': 'Other',
+  'typed.ownerRoleOption': '{owner} › {role}',
   'typed.chooseOwnerTitle': 'Owner of the {type}',
   'typed.chooseOwnerHint': '{type} must belong to another annotation of this marking.',
   'typed.noOwner':
-    'To create a {type}, this marking needs an owner that accepts {type} ({owners}). Create the owner first and use the "+ {type}" button in its editor.',
+    'To create a {type}, this marking needs an owner that accepts {type} ({owners}). Create the owner first and use the "+ Link…" button in its editor.',
   'typed.ownersJoin': ' or ',
-  'typed.addChild': 'Add {type}',
-  'typed.addChildIn': 'Create a linked {type} in the {layer} layer',
+  'typed.linkAction': '+ Link…',
+  'typed.linkTitle': 'Link to {owner}',
+  'typed.linkTitleRole': 'Link to {owner} › {role}',
+  'typed.linkedNone': 'none',
+  'typed.linkedNoRole': 'No {label}',
+  'typed.roleDefaultLabel': 'Role',
+  'typed.rolePlaceholder': 'Choose…',
   'typed.childHidden': '{type} created in the {layer} layer, which is hidden.',
   'typed.showLayer': 'Show {layer}',
   'typed.instanceName': 'Instance label (optional)',
@@ -706,6 +718,9 @@ export const enUS: Dictionary = {
   'issue.layer-mismatch': 'outside the layer of its type',
   'issue.missing-owner': 'no owner (must belong to {owners})',
   'issue.owner-not-allowed': 'owner type not allowed',
+  'issue.missing-role': 'no {label} (choose {roles})',
+  'issue.unknown-role': '{label} the owner does not offer',
+  'typed.roleLabel': 'Role',
   'issue.type-not-applicable': 'the type does not apply to this item (marking or arrow)',
   'issue.broken-ref': 'broken reference',
   'issue.ref-not-accepted': 'target not accepted (lost the tag or is no longer free)',
@@ -843,7 +858,12 @@ export const enUS: Dictionary = {
     'Schema 11: the file address left the project and was discarded from {platforms} ({templates}). The repository now belongs to the specialization: rewrite the specialization with `repo` (formatVersion 5) and update it in the project.',
   'migration.v13.discardedInherit':
     'Schema 13: annotation inheritance was removed from the format. {count} annotation(s) also applied to the descendant markings and now apply only to their own marking: {markings}. No annotation was deleted.',
-  'repos.title': 'Code repositories',
+  'repos.title': 'Repositories',
+  'repos.code.title': 'Code',
+  'repos.docs.title': 'Documents',
+  'repos.docs.intro':
+    'Document repositories come from the specialization. Say where the local clone is on your computer: the path is saved in the project, so the agent (MCP) can open the file. The folder the app uses to read the document is a different one, connected per machine on the component page, and is not shown here.',
+  'repos.docs.clear': 'Clear the document repository {id}',
   'repos.intro':
     'The repository address of each platform comes from the specialization and is shown here for reference only. Just say where the local clone of the code is on your computer.',
   'repos.noneDeclared':
@@ -871,7 +891,7 @@ export const enUS: Dictionary = {
   'help.code.definition':
     'Definition: in the Details of a typed annotation, one line per platform with a path, like "Platform · File.ext", with the full path and the symbol in the tooltip. It comes from the specialization and is not edited in the app.',
   'help.code.repos':
-    'Repositories: the repository address of each platform (repo) comes from the specialization. In Settings (gear), in the "Code repositories" section, give only the local path of the clone root, relative to the project folder. A platform where some type points to a file, without a repo, raises a warning when the specialization is imported.',
+    'Repositories: the repository address of each platform (repo) comes from the specialization. In Settings (gear), in the "Repositories" section, "Code" subsection, give only the local path of the clone root, relative to the project folder. A platform where some type points to a file, without a repo, raises a warning when the specialization is imported.',
   // Component library in the app (Library stage, B3)
   // Catalog: editor window and the project-less library screen (Library stage, B5)
   'catalog.window.title': 'Catalog',

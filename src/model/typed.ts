@@ -1,6 +1,6 @@
 import { requireAnnotationOwner } from './arrows';
 import { fail } from './errors';
-import { annotationWithLinked } from './links';
+import { annotationWithLinked, checkRole } from './links';
 import { findById, moveItem, normalizeOptionalName, updateById } from './project';
 import { projectIndex } from './projectIndex';
 import {
@@ -22,12 +22,14 @@ import {
   type SpecSimpleColumn,
 } from './spec';
 import {
+  childTypeIds,
   fieldOf,
   findSpecType,
   isAllowedOwner,
   projectLayerFor,
   typeOfAnnotation,
   type ResolvedType,
+  ownerRolesOf,
 } from './specLookup';
 import type {
   Annotation,
@@ -118,7 +120,7 @@ export function childTypesOf(p: Project, annotationId: string): ChildType[] {
   if (!resolved || !owner.type) return [];
   const specId = owner.type.specId;
   const result: ChildType[] = [];
-  for (const typeId of resolved.type.allowedChildren ?? []) {
+  for (const typeId of childTypeIds(resolved.spec, resolved.type.id)) {
     const child = findSpecType(p, { specId, typeId });
     if (!child) continue;
     result.push({
@@ -146,6 +148,8 @@ export interface NewTypedAnnotationArgs {
   readonly name?: string | null;
   /** Dono (obrigatório quando o tipo tem `requiresOwner`). */
   readonly parentAnnotationId?: string | null;
+  /** Papel no dono (id de um `childRoles` do tipo do dono); só com dono. */
+  readonly parentRole?: string | null;
 }
 
 /** Cria a anotação tipada com os `default` dos campos. */
@@ -175,12 +179,18 @@ export function addTypedAnnotation(p: Project, args: NewTypedAnnotationArgs): Pr
       fail('invalid-annotation-parent', ownerId);
     }
   }
+  const role = args.parentRole ?? null;
+  if (role !== null) {
+    const owner = ownerId === null ? null : findById(p.annotations, ownerId);
+    checkRole(owner && ownerRolesOf(p, owner), role, ownerId !== null);
+  }
   const annotation: Annotation = {
     id: args.id,
     markingId: args.markingId,
     layerId: args.layerId,
     name: normalizeOptionalName(args.name ?? null),
     parentAnnotationId: ownerId,
+    parentRole: role,
     type: { specId: args.type.specId, typeId: args.type.typeId },
     values: defaultValues(resolved.type),
     entries: [],

@@ -131,6 +131,8 @@ export const annotationSchema = z
     layerId: id,
     name: z.string().nullable(),
     parentAnnotationId: id.nullable(),
+    // Texto vazio passa aqui e é recusado pelo invariante `empty-role` (com a mensagem).
+    parentRole: z.string().nullable(),
     type: z.object({ specId: id, typeId: id }).nullable(),
     values: z.record(z.string(), jsonValue).nullable(),
     entries: z.array(entrySchema),
@@ -164,6 +166,24 @@ export const platformRepoSchema = z.object({
   localPath: z.string().nullable(),
 });
 
+/**
+ * Clone local de um repositório de documentos (v14): `localPath` texto não vazio; chave
+ * desconhecida é descartada na leitura.
+ */
+export const docRepoSchema = z.object({ localPath: z.string().min(1) });
+
+/** `docRepos` lido: a entrada sem `localPath` válido sai (o arquivo não guarda entrada vazia). */
+const docReposSchema = z
+  .record(z.string().regex(PLATFORM_ID_RE), z.unknown())
+  .transform((entries) =>
+    Object.fromEntries(
+      Object.entries(entries).flatMap(([key, value]) => {
+        const parsed = docRepoSchema.safeParse(value);
+        return parsed.success ? [[key, parsed.data]] : [];
+      }),
+    ),
+  );
+
 export const projectSchema: z.ZodType<ProjectFile> = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   revision: z.number().int().min(0),
@@ -179,6 +199,7 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   }),
   specializations: z.array(specializationSchema),
   platformRepos: z.record(z.string().regex(PLATFORM_ID_RE), platformRepoSchema),
+  docRepos: docReposSchema,
   layers: z.array(layerSchema),
   containers: z.array(containerSchema),
   markings: z.array(markingSchema),

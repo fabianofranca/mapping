@@ -32,6 +32,7 @@ describe('anotações', () => {
       layerId: 'L2',
       name: null,
       parentAnnotationId: null,
+      parentRole: null,
       type: null,
       values: null,
       entries: [{ id: expect.any(String), key: 'cor', value: ' azul ' }],

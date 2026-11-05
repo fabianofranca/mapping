@@ -44,7 +44,7 @@ npm run build:guia      # public/guia/index.html, do template e do exemplo
 - `pwa/sw.js` põe `./guia/index.html` no precache e serve a navegação para `guia/` (e `guia/index.html`) do cache: o guia funciona sem internet. O carimbo do `sw.js` (`vite.config.ts`) leva o conteúdo do guia, então mudar só o guia também dispara o aviso de nova versão.
 - O `deploy.yml` copia `dist/` inteiro: a versão principal fica em `/guia/` e o preview em `/preview/guia/`, sem mudança no workflow.
 - Aberto como arquivo (`file://`), o `index.html` costuma estar sozinho (é o artefato avulso do deploy): a app não mostra o link do guia (`src/utils/guideLink.ts`).
-- O zip do exemplo (289 KB, com a biblioteca `material3-compose` e a Roboto) **não** entra no `dist/index.html`: embuti-lo levaria o arquivo a 1.868.223 bytes (acima do orçamento de 1,5 MiB), então o botão **Abrir projeto de exemplo** saiu e a app orienta a baixar o zip do repositório.
+- O zip do exemplo (289 KB, com a biblioteca `material3-compose` e a Roboto) **não** entra no `dist/index.html`: embuti-lo levaria o arquivo a 1.868.223 bytes (acima do orçamento da época, de 1,5 MiB), então o botão **Abrir projeto de exemplo** saiu e a app orienta a baixar o zip do repositório.
 
 ## O que abrir o exemplo grava
 

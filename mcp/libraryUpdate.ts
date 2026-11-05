@@ -19,6 +19,8 @@ import {
   type LibraryIssue,
   type LibraryReport,
 } from '../src/model/library';
+import { LocalFileChecker } from './codeFiles';
+import { externalDocWarnings, projectDocChecker } from './docFiles';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import {
@@ -437,7 +439,13 @@ export async function planLibraryUpdate(
     const previous = decision === 'update' ? (applied?.spec ?? undefined) : undefined;
     const report = validatePackage(input.pkg, previous);
     const errors = issuesView(report.errors);
-    const warnings = issuesView(report.warnings);
+    // O documento externo é conferido pelo clone que o projeto já guarda (`docRepos`).
+    const docWarnings = await externalDocWarnings(
+      spec,
+      input.pkg.specPath ?? '',
+      projectDocChecker(p, new LocalFileChecker(roots.workDir), location.dir),
+    );
+    const warnings = issuesView([...report.warnings, ...docWarnings]);
     valid = report.ok;
     validation = {
       valid,

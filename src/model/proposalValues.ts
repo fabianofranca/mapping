@@ -13,6 +13,7 @@ import type {
   JsonValue,
   Layer,
   Marking,
+  DocRepo,
   PlatformRepo,
   Project,
   ProjectContainer,
@@ -94,6 +95,7 @@ export function annotationValue(a: Annotation): JsonValue {
     layerId: a.layerId,
     name: a.name,
     parentAnnotationId: a.parentAnnotationId,
+    parentRole: a.parentRole,
     type: a.type,
     values: a.values,
     entries: a.entries,
@@ -106,6 +108,10 @@ export function layerValue(l: Layer): JsonValue {
 
 export function specializationValue(s: ProjectSpecialization): JsonValue {
   return toJson({ id: s.id, version: s.version, file: s.file, spec: s.spec });
+}
+
+export function docRepoValue(r: DocRepo): JsonValue {
+  return toJson({ localPath: r.localPath });
 }
 
 export function platformRepoValue(r: PlatformRepo): JsonValue {
@@ -131,7 +137,7 @@ export const COMPARED_FIELDS = {
   marking: ['name', 'space', 'rect', 'floating', 'locked', 'source'],
   // A seta só se cria e se remove: nenhum campo dela é comparado (ver `ARROW_FIELDS`).
   arrow: [],
-  annotation: ['name', 'parentAnnotationId', 'markingId', 'layerId'],
+  annotation: ['name', 'parentAnnotationId', 'parentRole', 'markingId', 'layerId'],
   layer: ['name', 'color', 'spec'],
 } as const;
 
@@ -222,6 +228,8 @@ export function annotationField(a: Annotation, field: string): JsonValue | undef
       return a.name;
     case 'parentAnnotationId':
       return a.parentAnnotationId;
+    case 'parentRole':
+      return a.parentRole;
     case 'markingId':
       return a.markingId;
     case 'layerId':
@@ -266,6 +274,12 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
         ? p.platformRepos[c.entityId]
         : undefined;
       return r ? platformRepoValue(r) : undefined;
+    }
+    case 'docRepo': {
+      const r = Object.hasOwn(p.docRepos, c.entityId)
+        ? p.docRepos[c.entityId]
+        : undefined;
+      return r ? docRepoValue(r) : undefined;
     }
     case 'layer': {
       const l = index.layers.get(c.entityId);

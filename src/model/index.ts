@@ -35,6 +35,7 @@ export * from './componentArrange';
 export * from './locks';
 export * from './annotations';
 export * from './links';
+export * from './linkedByRole';
 export * from './listing';
 export * from './display';
 export * from './spec';
@@ -73,3 +74,5 @@ export { annotationField, imageField, markingField } from './proposalValues';
 export * from './specWarnings';
 // Subconjunto de markdown dos documentos da biblioteca (Catálogo).
 export * from './markdown';
+// Escolha de tipo: agrupar por grupo e filtrar pela busca.
+export * from './typeChoice';

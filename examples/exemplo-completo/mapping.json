@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 14,
   "revision": 1,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -11,7 +11,7 @@
   "specializations": [
     {
       "id": "sdui",
-      "version": 3,
+      "version": 4,
       "file": "specs/sdui.json"
     },
     {
@@ -31,6 +31,7 @@
     }
   ],
   "platformRepos": {},
+  "docRepos": {},
   "layers": [
     {
       "id": "cad1cc53-4610-48e5-9411-5405a34bce39",
@@ -708,6 +709,7 @@
       "layerId": "4ce345f4-26dc-47ee-8966-41700458ae9b",
       "name": "Usuário",
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": null,
       "values": null,
       "entries": [
@@ -734,6 +736,7 @@
       "layerId": "dd571b7f-00e1-400e-8be5-f4a8f24d208e",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "modelo-dados",
         "typeId": "classe"
@@ -761,6 +764,7 @@
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "input"
@@ -784,6 +788,7 @@
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "input"
@@ -807,6 +812,7 @@
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "input"
@@ -830,6 +836,7 @@
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "button"
@@ -848,6 +855,7 @@
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "text"
@@ -866,9 +874,10 @@
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
       "parentAnnotationId": "2db84c4b-ac59-40d1-9163-1e73d85aeda3",
+      "parentRole": "click",
       "type": {
         "specId": "sdui",
-        "typeId": "onClick"
+        "typeId": "action"
       },
       "values": {
         "acao": "submit",
@@ -889,9 +898,10 @@
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
       "parentAnnotationId": "2db84c4b-ac59-40d1-9163-1e73d85aeda3",
+      "parentRole": "hold",
       "type": {
         "specId": "sdui",
-        "typeId": "onHold"
+        "typeId": "feedback"
       },
       "values": {
         "acao": "track",
@@ -905,9 +915,10 @@
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
       "parentAnnotationId": "e938c1dc-98a4-4a6c-8d78-255bbef46f38",
+      "parentRole": "change",
       "type": {
         "specId": "sdui",
-        "typeId": "onChange"
+        "typeId": "validation"
       },
       "values": {
         "acao": "validate",
@@ -921,6 +932,7 @@
       "layerId": "4fbfc25c-db0c-4c38-b984-387782a306c3",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "modelo-dados",
         "typeId": "endpoint"
@@ -940,6 +952,7 @@
       "layerId": "5d9375dc-fede-471d-853a-e4a0e6473112",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "screen"
@@ -956,6 +969,7 @@
       "layerId": "cad1cc53-4610-48e5-9411-5405a34bce39",
       "name": "Dúvida",
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": null,
       "values": null,
       "entries": [
@@ -977,6 +991,7 @@
       "layerId": "4ce345f4-26dc-47ee-8966-41700458ae9b",
       "name": "Credenciais",
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": null,
       "values": null,
       "entries": [
@@ -998,6 +1013,7 @@
       "layerId": "5d9375dc-fede-471d-853a-e4a0e6473112",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "screen"
@@ -1014,6 +1030,7 @@
       "layerId": "4fbfc25c-db0c-4c38-b984-387782a306c3",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "modelo-dados",
         "typeId": "endpoint"
@@ -1033,6 +1050,7 @@
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "text"
@@ -1051,6 +1069,7 @@
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "input"
@@ -1074,6 +1093,7 @@
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "input"
@@ -1097,6 +1117,7 @@
       "layerId": "17dbedeb-5a90-4f69-b544-51635127d069",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "button"
@@ -1115,9 +1136,10 @@
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
       "parentAnnotationId": "fd80b227-48f0-4e75-afba-af85c4eb4509",
+      "parentRole": "click",
       "type": {
         "specId": "sdui",
-        "typeId": "onClick"
+        "typeId": "action"
       },
       "values": {
         "acao": "submit",
@@ -1138,6 +1160,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "top-app-bar"
@@ -1156,6 +1179,7 @@
       "layerId": "54b32ef1-173a-47a5-b334-c43bd0a4078b",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "row"
@@ -1175,6 +1199,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "chip"
@@ -1193,6 +1218,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "chip"
@@ -1211,6 +1237,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "chip"
@@ -1229,6 +1256,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "text-field"
@@ -1249,6 +1277,7 @@
       "layerId": "54b32ef1-173a-47a5-b334-c43bd0a4078b",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "column"
@@ -1268,6 +1297,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "switch"
@@ -1285,6 +1315,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "switch"
@@ -1302,6 +1333,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "checkbox"
@@ -1319,6 +1351,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "card"
@@ -1337,6 +1370,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "button"
@@ -1354,6 +1388,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "button"
@@ -1371,6 +1406,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "navigation-bar"
@@ -1406,6 +1442,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "top-app-bar"
@@ -1424,6 +1461,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "card"
@@ -1442,6 +1480,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "list-item"
@@ -1460,6 +1499,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "list-item"
@@ -1478,6 +1518,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "button"
@@ -1495,6 +1536,7 @@
       "layerId": "b00f8727-d7bd-4ffc-8e2c-d174ac3134f2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "material3-compose",
         "typeId": "fab"
@@ -1513,6 +1555,7 @@
       "layerId": "5e299d69-feba-479d-b923-1e67b775d9d2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "notas",
         "typeId": "nota"

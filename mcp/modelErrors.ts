@@ -51,6 +51,8 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'type-not-applicable':
     'o tipo não se aplica a este item (veja `appliesTo` do tipo em get_specialization: marcação, seta ou ambos)',
   'owner-required': 'este tipo exige uma anotação dona (`owner`)',
+  'unknown-role': 'o dono não oferece este papel',
+  'role-without-owner': 'um papel exige uma anotação dona (`owner`)',
   'unknown-field': 'campo inexistente no tipo (veja os campos em get_specialization)',
   'invalid-value': 'valor incompatível com o tipo do campo',
   'unknown-option': 'valor fora das opções do campo',
@@ -60,6 +62,8 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'spec-not-newer': 'a versão não é maior que a aplicada',
   'spec-missing-migrations': 'a versão nova tem quebras sem migração declarada',
   'unknown-platform': 'plataforma não declarada pelas especializações aplicadas',
+  'unknown-doc-repo':
+    'repositório de documentos não declarado pelas especializações aplicadas',
   'invalid-local-path':
     'localPath inválido: caminho relativo à pasta do projeto (ex: ../..), não absoluto',
   'invalid-source': 'source inválido: informe system e id não vazios (url é opcional)',

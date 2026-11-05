@@ -217,6 +217,7 @@ export const ptBR = {
   'annotation.ownerEmpty':
     'Nenhuma opção: crie, nesta marcação, uma anotação em outra camada para poder vincular esta a ela.',
   'annotation.linkedTo': '↳ de {name}',
+  'annotation.linkedToRole': '↳ de {name} ({role})',
   'annotation.linkedHeading': 'Vinculadas',
   'annotation.goToAnnotation': 'Ir para a anotação {name}',
   'annotation.showLayer': 'Mostrar a camada {layer}',
@@ -365,6 +366,8 @@ export const ptBR = {
   'invariant.annotation-parent-other-marking': 'dona em outra marcação',
   'invariant.annotation-parent-same-layer': 'dona na mesma camada',
   'invariant.annotation-cycle': 'ciclo entre anotações',
+  'invariant.empty-role': 'papel do vínculo vazio',
+  'invariant.role-without-owner': 'papel do vínculo sem dona',
   'invariant.empty-key': 'par com chave vazia',
   'invariant.duplicate-key': 'chave repetida',
   'invariant.duplicate-spec-file': 'arquivo de especialização repetido',
@@ -648,13 +651,22 @@ export const ptBR = {
     'Escolha o tipo. Os campos já vêm definidos; é só preencher os valores.',
   'typed.noTypes':
     'A especialização desta camada não está disponível ou não tem tipos de anotação.',
+  'typed.searchTypes': 'Buscar entre {count} tipos',
+  'typed.noTypeMatch': 'Nenhum tipo com "{query}"',
+  'typed.otherTypes': 'Outros',
+  'typed.ownerRoleOption': '{owner} › {role}',
   'typed.chooseOwnerTitle': 'Dono do {type}',
   'typed.chooseOwnerHint': '{type} precisa pertencer a outra anotação desta marcação.',
   'typed.noOwner':
-    'Para criar um {type}, esta marcação precisa de um dono que aceite {type} ({owners}). Crie o dono antes e use o botão "+ {type}" no editor dele.',
+    'Para criar um {type}, esta marcação precisa de um dono que aceite {type} ({owners}). Crie o dono antes e use o botão "+ Vincular…" no editor dele.',
   'typed.ownersJoin': ' ou ',
-  'typed.addChild': '+ {type}',
-  'typed.addChildIn': 'Criar {type} vinculado, na camada {layer}',
+  'typed.linkAction': '+ Vincular…',
+  'typed.linkTitle': 'Vincular a {owner}',
+  'typed.linkTitleRole': 'Vincular a {owner} › {role}',
+  'typed.linkedNone': 'nenhuma',
+  'typed.linkedNoRole': 'Sem {label}',
+  'typed.roleDefaultLabel': 'Papel',
+  'typed.rolePlaceholder': 'Escolha…',
   'typed.childHidden': '{type} criado na camada {layer}, que está oculta.',
   'typed.showLayer': 'Mostrar {layer}',
   'typed.instanceName': 'Rótulo da instância (opcional)',
@@ -709,6 +721,9 @@ export const ptBR = {
   'issue.layer-mismatch': 'fora da camada do seu tipo',
   'issue.missing-owner': 'sem dono (precisa pertencer a {owners})',
   'issue.owner-not-allowed': 'dono de tipo não permitido',
+  'issue.missing-role': 'sem {label} (escolha {roles})',
+  'issue.unknown-role': '{label} que o dono não oferece',
+  'typed.roleLabel': 'Papel',
   'issue.type-not-applicable': 'o tipo não se aplica a este item (marcação ou seta)',
   'issue.broken-ref': 'referência quebrada',
   'issue.ref-not-accepted': 'alvo não aceito (perdeu a etiqueta ou deixou de ser livre)',
@@ -849,7 +864,12 @@ export const ptBR = {
     'Schema 11: o endereço dos arquivos saiu do projeto e foi descartado de {platforms} ({templates}). O repositório agora é da especialização: regrave a especialização com `repo` (formatVersion 5) e atualize-a no projeto.',
   'migration.v13.discardedInherit':
     'Schema 13: a herança de anotações saiu do formato. {count} anotação(ões) valiam também para as marcações descendentes e agora valem só para a própria marcação: {markings}. Nenhuma anotação foi apagada.',
-  'repos.title': 'Repositórios de código',
+  'repos.title': 'Repositórios',
+  'repos.code.title': 'Código',
+  'repos.docs.title': 'Documentos',
+  'repos.docs.intro':
+    'Os repositórios de documentos vêm da especialização. Informe onde está o clone local no seu computador: o caminho é gravado no projeto, para o agente (MCP) abrir o arquivo. A pasta que a app usa para ler o documento é outra, conectada por máquina na página do componente, e não aparece aqui.',
+  'repos.docs.clear': 'Limpar repositório de documentos {id}',
   'repos.intro':
     'O endereço do repositório de cada plataforma vem da especialização e aparece aqui só para consulta. Informe apenas onde está o clone local do código no seu computador.',
   'repos.noneDeclared': 'A especialização não declara o repositório desta plataforma.',
@@ -876,7 +896,7 @@ export const ptBR = {
   'help.code.definition':
     'Definição: nos Detalhes de uma anotação tipada, uma linha por plataforma com path, como "Plataforma · Arquivo.ext", com o caminho completo e o símbolo na dica. Vem da especialização e não se edita na app.',
   'help.code.repos':
-    'Repositórios: o endereço do repositório de cada plataforma (repo) vem da especialização. Em Configurações (engrenagem), na seção "Repositórios de código", informe só o caminho local da raiz do clone, relativo à pasta do projeto. Plataforma em que algum tipo aponta um arquivo, sem repo, gera um aviso na importação da especialização.',
+    'Repositórios: o endereço do repositório de cada plataforma (repo) vem da especialização. Em Configurações (engrenagem), na seção "Repositórios", subseção "Código", informe só o caminho local da raiz do clone, relativo à pasta do projeto. Plataforma em que algum tipo aponta um arquivo, sem repo, gera um aviso na importação da especialização.',
   // Biblioteca de componentes na app (etapa Biblioteca, B3)
   // Catálogo: janela do editor e tela da biblioteca sem projeto (etapa Biblioteca, B5)
   'catalog.window.title': 'Catálogo',

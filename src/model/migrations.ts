@@ -274,6 +274,17 @@ export const migrateFrom12To13: Migration = (data) => ({
   }),
 });
 
+/**
+ * v13 → v14 (papéis no vínculo e documentos externos): toda anotação ganha `parentRole: null` (os
+ * vínculos existentes ficam sem papel; se o tipo de uma dona ganhar `childRoles`, os filhos
+ * mostram `missing-role`) e o projeto ganha `docRepos: {}`. Valores já presentes são preservados.
+ */
+export const migrateFrom13To14: Migration = (data) => ({
+  docRepos: {},
+  ...data,
+  annotations: mapItems(data.annotations, (a) => ({ parentRole: null, ...a })),
+});
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -288,6 +299,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [10, migrateFrom10To11],
   [11, migrateFrom11To12],
   [12, migrateFrom12To13],
+  [13, migrateFrom13To14],
 ]);
 
 export type MigrationResult =

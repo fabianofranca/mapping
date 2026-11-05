@@ -4,6 +4,8 @@ import { t } from '../i18n';
 import {
   annotationsOf,
   projectIndex,
+  specLayerOf,
+  typeOfAnnotation,
   validTypedOwners,
   type Annotation,
   type AnnotationTypeRef,
@@ -26,7 +28,7 @@ import { DialogSlotContext, useDialogSlot } from './focus';
 import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
-import { TypeNoticeBadge } from './NoticeBadge';
+import { TypePicker } from './TypePicker';
 import {
   annotationDisplayName,
   annotationSummary,
@@ -145,9 +147,17 @@ export function AnnotationsPanel({
     }
   };
 
-  const createTyped = (layer: Layer, type: AnnotationTypeRef, owner: string | null) => {
+  const createTyped = (
+    layer: Layer,
+    type: AnnotationTypeRef,
+    owner: string | null,
+    role: string | null = null,
+  ) => {
     steps.close();
-    created(layer.id, actions.addTypedAnnotation(marking.id, layer.id, type, owner));
+    created(
+      layer.id,
+      actions.addTypedAnnotation(marking.id, layer.id, type, owner, role),
+    );
   };
 
   const chooseType = (layer: Layer, definition: SpecAnnotationType) => {
@@ -245,8 +255,9 @@ export function AnnotationsPanel({
             onCancel={() => steps.close()}
             actions={<Button onClick={() => steps.close()}>{t('common.cancel')}</Button>}
           >
-            <TypeList
+            <TypePicker
               types={offeredTypes(project, step.layer.id, ownerKind)}
+              groups={specLayerOf(project, step.layer)?.groups}
               onChoose={(definition) => chooseType(step.layer, definition)}
             />
           </Dialog>
@@ -262,14 +273,18 @@ export function AnnotationsPanel({
               {t('typed.chooseOwnerHint', { type: step.definition.name })}
             </p>
             <div class="dialog-stack">
-              {step.owners.map((owner) => (
-                <Button
-                  key={owner.id}
-                  onClick={() => createTyped(step.layer, step.type, owner.id)}
-                >
-                  {annotationDisplayName(project, owner)}
-                </Button>
-              ))}
+              {step.owners.flatMap((owner) =>
+                ownerOptions(project, owner).map((option) => (
+                  <Button
+                    key={`${owner.id}:${option.role ?? ''}`}
+                    onClick={() =>
+                      createTyped(step.layer, step.type, owner.id, option.role)
+                    }
+                  >
+                    {option.label}
+                  </Button>
+                )),
+              )}
             </div>
           </Dialog>
         )}
@@ -494,29 +509,16 @@ function IssuesNotice({
   );
 }
 
-/** Tipos da camada, com a descrição de cada um. */
-export function TypeList({
-  types,
-  onChoose,
-}: {
-  readonly types: readonly SpecAnnotationType[];
-  readonly onChoose: (type: SpecAnnotationType) => void;
-}) {
-  if (types.length === 0) return <p>{t('typed.noTypes')}</p>;
-  return (
-    <>
-      <p class="muted">{t('typed.chooseTypeHint')}</p>
-      <div class="dialog-stack">
-        {types.map((type) => (
-          <Button key={type.id} class="type-option" onClick={() => onChoose(type)}>
-            <span class="type-option-head">
-              <strong>{type.name}</strong>
-              <TypeNoticeBadge type={type} />
-            </span>
-            {type.description && <small class="muted">{type.description}</small>}
-          </Button>
-        ))}
-      </div>
-    </>
-  );
+/** Opções do passo do dono: uma por papel (dono com `childRoles`) ou uma só, sem papel. */
+function ownerOptions(
+  project: Project,
+  owner: Annotation,
+): { readonly role: string | null; readonly label: string }[] {
+  const name = annotationDisplayName(project, owner);
+  const roles = typeOfAnnotation(project, owner)?.type.childRoles ?? [];
+  if (roles.length === 0) return [{ role: null, label: name }];
+  return roles.map((role) => ({
+    role: role.id,
+    label: t('typed.ownerRoleOption', { owner: name, role: role.name }),
+  }));
 }

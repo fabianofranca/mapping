@@ -14,6 +14,7 @@ import type { Size } from './geometry';
 import { type LibraryFile, type LibraryReport, validateLibrary } from './library';
 import { defaultValues, nodeProbeLibrary, withoutNodePrefix } from './libraryDrawing';
 import { resolveCode } from './codeVariants';
+import { repoLink } from './codeLocations';
 import { packageSpecNameOf } from './libraryPackage';
 import {
   type FieldType,
@@ -101,6 +102,17 @@ export interface CatalogExample {
   readonly json?: unknown;
 }
 
+/** Documento de um tipo que vive num repositório declarado em `docRepos` (nada é lido aqui). */
+export interface CatalogDocExternal {
+  /** Id do `docRepos` citado por `doc.repo`. */
+  readonly repo: string;
+  readonly path: string;
+  /** `url` do repositório declarado; `null` se o id não existe na especialização. */
+  readonly repoUrl: string | null;
+  /** Link do arquivo pelo `urlTemplate` do repositório; `null` sem repositório ou sem template válido. */
+  readonly url: string | null;
+}
+
 export interface CatalogEntry {
   readonly type: SpecAnnotationType;
   readonly layerId: string;
@@ -110,6 +122,8 @@ export interface CatalogEntry {
   readonly container: boolean;
   /** Texto do `.md` do tipo; `null` sem `doc` ou com o arquivo ausente. */
   readonly docText: string | null;
+  /** `doc` objeto (v11): o `.md` vive num repositório de `docRepos`; `null` nos demais casos. */
+  readonly docExternal: CatalogDocExternal | null;
   readonly fields: readonly CatalogField[];
   readonly code: readonly CatalogCode[];
   readonly sources: readonly CatalogSourceGroup[];
@@ -224,6 +238,18 @@ function codeOf(spec: Spec, type: SpecAnnotationType): CatalogCode[] {
   return out;
 }
 
+function docExternalOf(spec: Spec, type: SpecAnnotationType): CatalogDocExternal | null {
+  const doc = type.doc;
+  if (doc === undefined || typeof doc === 'string') return null;
+  const repo = spec.docRepos?.find((r) => r.id === doc.repo);
+  return {
+    repo: doc.repo,
+    path: doc.path,
+    repoUrl: repo?.url ?? null,
+    url: repoLink(repo, doc.path),
+  };
+}
+
 function sourcesOf(type: SpecAnnotationType): CatalogSourceGroup[] {
   const groups = new Map<string, SpecTypeSource[]>();
   for (const source of type.sources ?? []) {
@@ -332,7 +358,9 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
         component,
         ...(componentProblem === undefined ? {} : { componentProblem }),
         container: component !== null && hasSlotComponent(component),
-        docText: type.doc === undefined ? null : (texts.get(resolve(type.doc)) ?? null),
+        docText:
+          typeof type.doc === 'string' ? (texts.get(resolve(type.doc)) ?? null) : null,
+        docExternal: docExternalOf(spec, type),
         fields: type.fields.map(fieldOf),
         code: codeOf(spec, type),
         sources: sourcesOf(type),

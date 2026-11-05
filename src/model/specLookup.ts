@@ -1,5 +1,12 @@
 import { projectIndex, typeKey } from './projectIndex';
-import type { Spec, SpecAnnotationType, SpecField, SpecLayer } from './spec';
+import { isChildTypeAllowed } from './specChildren';
+import type {
+  Spec,
+  SpecAnnotationType,
+  SpecChildRole,
+  SpecField,
+  SpecLayer,
+} from './spec';
 import type {
   Annotation,
   AnnotationTypeRef,
@@ -9,6 +16,15 @@ import type {
 } from './types';
 
 // Consultas às especializações aplicadas ao projeto (conteúdo em memória).
+
+// O resolvedor dos filhos de um tipo (`allowedChildren` com ids e cláusulas) mora em
+// `specChildren.ts`, sem dependência do índice do projeto, porque o validador de `spec.ts` o usa.
+export {
+  childTypeIds,
+  isChildTypeAllowed,
+  ownerTypeIds,
+  type ChildSets,
+} from './specChildren';
 
 export function getSpecialization(
   p: Project,
@@ -93,6 +109,52 @@ export function isAllowedOwner(
   owner: Annotation,
 ): boolean {
   if (owner.type?.specId !== child.specId) return false;
-  const ownerType = typeOfAnnotation(p, owner)?.type;
-  return (ownerType?.allowedChildren ?? []).includes(child.typeId);
+  const resolved = typeOfAnnotation(p, owner);
+  return (
+    resolved !== null && isChildTypeAllowed(resolved.spec, resolved.type.id, child.typeId)
+  );
+}
+
+/** Papéis que o tipo da dona oferece e o rótulo deles (v11, `childRoles`); `null` = dono sem papéis. */
+export interface OwnerRoles {
+  readonly label: string | null;
+  readonly roles: readonly SpecChildRole[];
+}
+
+/**
+ * Os papéis que o tipo de `owner` oferece aos filhos. `null` quando a dona é livre, de tipo
+ * desconhecido ou o tipo dela não declara `childRoles`.
+ */
+export function ownerRolesOf(p: Project, owner: Annotation): OwnerRoles | null {
+  const roles = typeOfAnnotation(p, owner)?.type.childRoles;
+  if (!roles || roles.length === 0) return null;
+  const resolved = typeOfAnnotation(p, owner);
+  return { label: resolved?.type.childRolesLabel ?? null, roles };
+}
+
+/**
+ * Nome do papel `roleId` entre os que o tipo de `owner` oferece (v11, `childRoles`); o
+ * próprio id quando o dono não o oferece, não tem papéis ou não existe (papel que a
+ * especialização deixou de declarar não some do texto).
+ */
+export function roleNameOf(
+  p: Project,
+  owner: Annotation | undefined,
+  roleId: string,
+): string {
+  const offered = owner ? ownerRolesOf(p, owner) : null;
+  return offered?.roles.find((r) => r.id === roleId)?.name ?? roleId;
+}
+
+/**
+ * O nome do papel em que `a` se liga ao dono ("Clique"), pelo tipo do dono; o id cru se o
+ * dono não o oferece; `null` sem papel.
+ */
+export function roleLabelOf(p: Project, a: Annotation): string | null {
+  if (a.parentRole === null) return null;
+  const owner =
+    a.parentAnnotationId === null
+      ? undefined
+      : projectIndex(p).annotations.get(a.parentAnnotationId);
+  return roleNameOf(p, owner, a.parentRole);
 }

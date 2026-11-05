@@ -5,6 +5,10 @@ import {
   annotationShortLabel,
   getBacklinks,
   getLinkedAnnotations,
+  linkedByRole,
+  roleLabelOf,
+  projectDocRepos,
+  docRepoOf,
   getSpec,
   isMarkingGeometryLocked,
   markingLockStates,
@@ -157,6 +161,8 @@ export function annotationView(
     to: refLabel(p, link.ref),
   }));
   const linked = getLinkedAnnotations(p, annotation.id).map((a) => refs.bare('a', a.id));
+  const byRole = linkedByRoleView(refs, annotation);
+  const roleName = roleLabelOf(p, annotation);
   const code = annotation.type ? (options.code ?? null) : null;
 
   return {
@@ -170,7 +176,11 @@ export function annotationView(
       annotation.parentAnnotationId === null
         ? null
         : refs.bare('a', annotation.parentAnnotationId),
+    ...(annotation.parentRole === null
+      ? {}
+      : { parentRole: annotation.parentRole, roleName }),
     ...(linked.length > 0 ? { linked } : {}),
+    ...(byRole ? { linkedByRole: byRole } : {}),
     ...(annotation.type
       ? {
           type: {
@@ -188,10 +198,31 @@ export function annotationView(
   };
 }
 
+/**
+ * Os filhos de um dono com `childRoles` agrupados pelo papel (na ordem dos papéis), mais os que
+ * ficaram sem papel ou com um papel que o dono não oferece (`unassigned`). `null` num dono sem
+ * papéis: ali o agente lê `linked`. É o resolvedor do modelo, não uma lista crua.
+ */
+function linkedByRoleView(refs: Refs, owner: Annotation): Json | null {
+  const grouped = linkedByRole(refs.project, owner);
+  if (!grouped) return null;
+  const bare = (items: readonly Annotation[]) => items.map((a) => refs.bare('a', a.id));
+  return {
+    label: grouped.label,
+    roles: grouped.rows.map((row) => ({
+      id: row.role.id,
+      name: row.role.name,
+      linked: bare(row.items),
+    })),
+    unassigned: bare(grouped.unassigned),
+  };
+}
+
 interface LinkNode {
   readonly ref: string;
   readonly title: string;
   readonly layer: string;
+  readonly parentRole?: string;
   readonly linked?: LinkNode[];
 }
 
@@ -210,6 +241,7 @@ function linkTree(refs: Refs, own: readonly Annotation[]): LinkNode[] | null {
       ref: refs.bare('a', a.id),
       title: annotationShortLabel(p, a),
       layer: index.layers.get(a.layerId)?.name ?? a.layerId,
+      ...(a.parentRole === null ? {} : { parentRole: a.parentRole }),
       ...(children.length > 0 ? { linked: children } : {}),
     };
   };
@@ -551,6 +583,12 @@ export function projectDetail(refs: Refs): Json {
     platforms,
     ...(platforms.length > 0 ? { codeHint: CODE_HINT } : {}),
     platformRepos: p.platformRepos,
+    docRepos: projectDocRepos(p).map((r) => ({
+      id: r.id,
+      specs: r.specIds,
+      repos: r.repos.map((x) => ({ specId: x.specId, ...x.repo })),
+      localPath: docRepoOf(p, r.id)?.localPath ?? null,
+    })),
     lockedMarkings: p.markings.filter((m) => m.locked).length,
     needsReview: p.markings.filter((m) => m.needsReview).length,
     issues: {

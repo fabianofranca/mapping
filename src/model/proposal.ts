@@ -9,6 +9,7 @@ import {
   markingSchema,
   normalizeIsoDate,
   placementSchema,
+  docRepoSchema,
   platformRepoSchema,
   sourceSchema,
 } from './schema';
@@ -53,6 +54,7 @@ export type ChangeKind = 'create' | 'update' | 'remove';
 export type ChangeEntity =
   | 'specialization'
   | 'platformRepo'
+  | 'docRepo'
   | 'layer'
   | 'image'
   | 'marking'
@@ -62,6 +64,7 @@ export type ChangeEntity =
 export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
   'specialization',
   'platformRepo',
+  'docRepo',
   'layer',
   'image',
   'marking',
@@ -116,6 +119,7 @@ export const ARROW_FIELDS = [] as const;
 export const ANNOTATION_FIELDS = [
   'name',
   'parentAnnotationId',
+  'parentRole',
   'markingId',
   'layerId',
   'type',
@@ -313,14 +317,30 @@ const specializationValue = z
 /** A seta numa proposta: sem `points` (a rota é só da pessoa; um `points` que venha é ignorado). */
 const arrowValue = arrowSchema.omit({ points: true });
 
+/**
+ * A anotação numa proposta. O `parentRole` é da v14, mas a proposta continua na `formatVersion` 4:
+ * quem escreve sem ele (agente antes da v14) vale como sem papel (`null`).
+ */
+const annotationValueSchema = z.preprocess(
+  (value) =>
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !('parentRole' in value)
+      ? { ...value, parentRole: null }
+      : value,
+  annotationSchema,
+);
+
 const entitySchemas: Record<ChangeEntity, z.ZodType> = {
   specialization: specializationValue,
   platformRepo: platformRepoSchema,
+  docRepo: docRepoSchema,
   layer: layerSchema,
   image: containerSchema,
   marking: markingSchema,
   arrow: arrowValue,
-  annotation: annotationSchema,
+  annotation: annotationValueSchema,
 };
 
 const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
@@ -359,6 +379,7 @@ const markingFieldSchemas: Record<(typeof MARKING_FIELDS)[number], z.ZodType> = 
 const annotationFieldSchemas: Record<(typeof ANNOTATION_FIELDS)[number], z.ZodType> = {
   name: z.string().nullable(),
   parentAnnotationId: id.nullable(),
+  parentRole: z.string().min(1).nullable(),
   markingId: id,
   layerId: id,
   type: annotationTypeValue,
@@ -444,9 +465,13 @@ const changeSchema = z
     if (c.entity === 'platformRepo' && !PLATFORM_ID_RE.test(c.entityId)) {
       add(['entityId'], 'id de plataforma inválido; use [a-z0-9-]+');
     }
+    if (c.entity === 'docRepo' && !PLATFORM_ID_RE.test(c.entityId)) {
+      add(['entityId'], 'id de repositório inválido; use [a-z0-9-]+');
+    }
     const projectLevel =
       c.entity === 'specialization' ||
       c.entity === 'platformRepo' ||
+      c.entity === 'docRepo' ||
       c.entity === 'layer';
     if (projectLevel && (c.imageId !== null || c.markingId !== null)) {
       add(['imageId'], 'mudanças do projeto não têm imageId nem markingId');
@@ -470,7 +495,10 @@ const changeSchema = z
       add(['imageId'], `deve ser "${c.entityId}"`);
     }
 
-    const wholeEntity = c.entity === 'specialization' || c.entity === 'platformRepo';
+    const wholeEntity =
+      c.entity === 'specialization' ||
+      c.entity === 'platformRepo' ||
+      c.entity === 'docRepo';
     if (c.kind === 'update' && !wholeEntity) {
       if (c.field === null) {
         add(['field'], 'obrigatório na alteração');
@@ -496,7 +524,7 @@ const changeSchema = z
     if (c.kind !== 'remove') checkValue(schema, c.to, ctx, ['to']);
     else if (c.to !== null) add(['to'], 'deve ser null na remoção');
 
-    if (c.entity === 'platformRepo') return;
+    if (c.entity === 'platformRepo' || c.entity === 'docRepo') return;
     // Criação e remoção levam a entidade inteira: o id dela é o `entityId`.
     for (const side of ['from', 'to'] as const) {
       const value = c[side];

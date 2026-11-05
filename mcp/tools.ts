@@ -256,7 +256,7 @@ export function registerTools(
     'get_project',
     {
       description:
-        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) e o clone local por plataforma (`platformRepos`), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
+        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) o clone local por plataforma (`platformRepos`), os repositórios de documentos das especializações (`docRepos`: `id`, o `repos` que cada especialização declara e o `localPath` do clone do projeto, `null` sem clone), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -413,7 +413,7 @@ export function registerTools(
     'get_annotation',
     {
       description:
-        'Uma anotação (livre ou tipada): conteúdo, camada, marcação, dona e vinculadas, referências de saída resolvidas, backlinks e pendências.',
+        'Uma anotação (livre ou tipada): conteúdo, camada, marcação, dona e vinculadas, referências de saída resolvidas, backlinks e pendências. Uma vinculada traz o papel que ocupa na dona (`parentRole` e `roleName`); uma dona cujo tipo declara papéis traz `linkedByRole` (`label`, `roles` com os filhos de cada papel na ordem do tipo e `unassigned`: os sem papel ou com um papel que a dona não oferece, que são pendência `missing-role` / `unknown-role`). Para achar os filhos de uma dona leia `linkedByRole` (ou `linked`), não a lista crua `allowedChildren`.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -530,7 +530,7 @@ export function registerTools(
     'get_specialization',
     {
       description:
-        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações, e as plataformas de código com o `repo` de cada uma; com plataformas, `codeHint` diz o que é o `code` dos tipos (o código de instanciação: `symbol` é o que se chama para criar uma instância, `path` o arquivo que o define, para ler a assinatura)), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas. Na formatVersion 4 traz também `component`, `doc`, `examples`, `fonts`, `origins` e `migrations` e, quando a cópia é um pacote, `package: { dir, files }` (veja list_components e get_component para ler os componentes). Na formatVersion 10 os tipos, campos e colunas `table` podem trazer `notices` (avisos `{ kind, message, since?, ref? }`, com `kind` `removed`, `deprecated`, `diverges` ou `pending`): leia-os antes de criar anotação ou gravar valor; aviso só informa e não bloqueia nada, mas não use sem dizer ao usuário o que for `removed` ou `deprecated`.',
+        'O JSON completo de uma especialização aplicada ao projeto (camadas, tipos, campos, descrições e orientações, e as plataformas de código com o `repo` de cada uma; com plataformas, `codeHint` diz o que é o `code` dos tipos (o código de instanciação: `symbol` é o que se chama para criar uma instância, `path` o arquivo que o define, para ler a assinatura)), para aprender os tipos de anotação antes de ler ou escrever anotações tipadas. Na formatVersion 4 traz também `component`, `doc`, `examples`, `fonts`, `origins` e `migrations` e, quando a cópia é um pacote, `package: { dir, files }` (veja list_components e get_component para ler os componentes). Na formatVersion 10 os tipos, campos e colunas `table` podem trazer `notices` (avisos `{ kind, message, since?, ref? }`, com `kind` `removed`, `deprecated`, `diverges` ou `pending`): leia-os antes de criar anotação ou gravar valor; aviso só informa e não bloqueia nada, mas não use sem dizer ao usuário o que for `removed` ou `deprecated`. Na formatVersion 11 o JSON vem como está: `allowedChildren` pode misturar ids de tipo e CLÁUSULAS `{ layer, groups? }` (a camada inteira, ou só os tipos dos grupos listados; os tipos que um dono aceita são a união, na ordem; o servidor já resolve isso para você nas vistas e na validação, então não monte a lista à mão), as camadas declaram `groups` e os tipos dizem a quais pertencem, `childRoles` (+ `childRolesLabel`) no dono listam os PAPÉIS em que um filho se liga a ele (use `role` em create_annotation/update_annotation) e `docRepos` + o `doc` objeto `{ repo, path }` apontam o documento do tipo num repositório externo (get_component o lê pelo clone do projeto).',
       inputSchema: {
         project: projectArg,
         specId: z
@@ -825,7 +825,7 @@ export function registerTools(
     'validate_specialization',
     {
       description:
-        'Valida um arquivo de especialização (`path`, dentro das raízes) ou um texto JSON (`text`), sem aplicar a nenhum projeto. Aceita qualquer formatVersion de 1 a 10, mas valida só o ARQUIVO (para o pacote inteiro use validate_library). Devolve os MESMOS erros que a importação da app, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), e avisos que não impedem a importação (plataforma declarada e não usada, tipo sem `code`). É o ciclo gerar, validar, corrigir.',
+        'Valida um arquivo de especialização (`path`, dentro das raízes) ou um texto JSON (`text`), sem aplicar a nenhum projeto. Aceita qualquer formatVersion de 1 a 11, mas valida só o ARQUIVO (para o pacote inteiro use validate_library). Devolve os MESMOS erros que a importação da app, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), e avisos que não impedem a importação (plataforma declarada e não usada, tipo sem `code`). É o ciclo gerar, validar, corrigir.',
       inputSchema: {
         path: z
           .string()
@@ -844,7 +844,7 @@ export function registerTools(
     'validate_library',
     {
       description:
-        'Valida o PACOTE de uma biblioteca (especialização formatVersion 4 com `components/`, `docs/`, `examples/` e `fonts/`) com os mesmos três níveis da app e da skill: (1) cada arquivo, (2) a coerência entre eles (componente, slot, campos, exemplos, fontes, origens e, com `previous`, o contrato de versão) e (3) a prova de desenho (instancia cada componente e passa os exemplos de sistema externo pela declaração). `path` é a pasta do pacote ou o arquivo da especialização dentro dela, dentro das raízes. Devolve `valid`, `errors` e `warnings` (cada um com `file`, `path`, `message`, `severity`): erro impede usar, aviso deixa usar. Somente leitura: não aplica nada a projeto algum (para aplicar ou atualizar, use apply_specialization/update_specialization em propose_changes; antes, plan_library_update mostra o impacto). É o ciclo gerar, validar, corrigir.',
+        'Valida o PACOTE de uma biblioteca (especialização formatVersion 4 com `components/`, `docs/`, `examples/` e `fonts/`) com os mesmos três níveis da app e da skill: (1) cada arquivo, (2) a coerência entre eles (componente, slot, campos, exemplos, fontes, origens e, com `previous`, o contrato de versão) e (3) a prova de desenho (instancia cada componente e passa os exemplos de sistema externo pela declaração). `path` é a pasta do pacote ou o arquivo da especialização dentro dela, dentro das raízes. Devolve `valid`, `errors` e `warnings` (cada um com `file`, `path`, `message`, `severity`): erro impede usar, aviso deixa usar. Somente leitura: não aplica nada a projeto algum (para aplicar ou atualizar, use apply_specialization/update_specialization em propose_changes; antes, plan_library_update mostra o impacto). O documento de um tipo em repositório externo (`doc` objeto) está fora do pacote: com `docClones` (`{ repositório: pasta dentro das raízes }`) cada documento é conferido no clone e o ausente é AVISO; sem o clone de um repositório, um aviso por repositório conta os documentos não conferidos. Um `doc` cujo `repo` não está em `docRepos` é erro do nível 1. É o ciclo gerar, validar, corrigir.',
       inputSchema: {
         path: z
           .string()
@@ -861,6 +861,12 @@ export function registerTools(
           .union([z.literal(1), z.literal(2), z.literal(3)])
           .optional()
           .describe('Até que nível validar (padrão 3, a prova de desenho).'),
+        docClones: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe(
+            'Clones dos repositórios de documentos (`docRepos` da especialização): `{ "<id do repositório>": "<pasta dentro das raízes>" }`. Com o clone, cada documento externo (`doc` objeto) é conferido: o que não está lá é AVISO ("documento não encontrado em <repo>"). Sem o clone de um repositório, um aviso por repositório conta os documentos não conferidos.',
+          ),
       },
       annotations: READ_ONLY,
     },
@@ -919,7 +925,7 @@ export function registerTools(
     'get_component',
     {
       description:
-        'Tudo de um tipo da biblioteca para montar telas com ele: o documento markdown (`doc`), os campos (chave, rótulo, tipo, obrigatório, opções, padrão, descrição), os exemplos nomeados (valores, ou sistema + arquivo com o JSON do exemplo externo quando pequeno), `code` (o código de instanciação por plataforma: `symbol` e `definition`, com a `url` e a `ref` do `repo` da especialização e, com `project`, o `localFile` pelo clone local), `sources` e o JSON do componente (`component`). `type` é o id (ou o nome) do tipo. Tipo sem componente ou documento: resposta com `hasComponent: false` e `hint`. Informe `project` + `specId` ou `path` do pacote. Somente leitura.',
+        'Tudo de um tipo da biblioteca para montar telas com ele: o documento markdown (`doc`), os campos (chave, rótulo, tipo, obrigatório, opções, padrão, descrição), os exemplos nomeados (valores, ou sistema + arquivo com o JSON do exemplo externo quando pequeno), `code` (o código de instanciação por plataforma: `symbol` e `definition`, com a `url` e a `ref` do `repo` da especialização e, com `project`, o `localFile` pelo clone local), `sources` e o JSON do componente (`component`). `type` é o id (ou o nome) do tipo. Tipo sem componente ou documento: resposta com `hasComponent: false` e `hint`. Informe `project` + `specId` ou `path` do pacote. Documento em repositório externo (`doc` objeto, formatVersion 11): com `project`, o servidor lê o `.md` pelo clone do repositório (`docRepos[<id>].localPath` do projeto, veja set_doc_repo), dentro do diretório de trabalho do cliente, e devolve o texto em `doc`; sem clone, sem o arquivo ou fora do diretório de trabalho, `doc` é `null` e `docExternal` traz `{ repo, path, url, localFile, exists }` (o `url` vem do `urlTemplate` do repositório, ou é `null`) mais uma `hint`. Somente leitura.',
       inputSchema: {
         ...packageArgs,
         type: z

@@ -11,7 +11,7 @@ import {
   type LabelTexts,
 } from './refs';
 import type { SpecAnnotationType, SpecColumn, SpecField, SpecSimpleColumn } from './spec';
-import { getSpec, typeOfAnnotation } from './specLookup';
+import { findSpecType, getSpec, ownerTypeIds, typeOfAnnotation } from './specLookup';
 import { checkSimpleValue, isEmptyValue } from './typed';
 import type { Annotation, AnnotationTypeRef, JsonValue, Project } from './types';
 
@@ -292,13 +292,16 @@ export function rawValueLines(a: Annotation): { key: string; text: string }[] {
 }
 
 /**
- * Tipos da mesma especialização que aceitam `child` em `allowedChildren` (para
- * explicar o que criar antes de um tipo com `requiresOwner`, ex.: Button ou Image).
+ * Tipos da mesma especialização que aceitam `child` em `allowedChildren` (por id ou por
+ * cláusula; para explicar o que criar antes de um tipo com `requiresOwner`, ex.: Button ou Image).
  */
 export function ownerTypesOf(p: Project, child: AnnotationTypeRef): SpecAnnotationType[] {
   const spec = getSpec(p, child.specId);
   if (!spec) return [];
-  return spec.layers.flatMap((layer) =>
-    layer.annotationTypes.filter((t) => (t.allowedChildren ?? []).includes(child.typeId)),
-  );
+  const owners: SpecAnnotationType[] = [];
+  for (const typeId of ownerTypeIds(spec, child.typeId)) {
+    const owner = findSpecType(p, { specId: child.specId, typeId });
+    if (owner) owners.push(owner.type);
+  }
+  return owners;
 }
