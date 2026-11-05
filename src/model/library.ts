@@ -329,7 +329,8 @@ function level1(
         readComponent(file, pkg, out);
       }
     }
-    if (type.doc !== undefined) {
+    // O `doc` em repositório externo (objeto) não é arquivo do pacote: o nível 1 não o confere.
+    if (typeof type.doc === 'string') {
       const path = resolve(type.doc);
       referenced.add(path);
       const file = byPath.get(path);
@@ -818,7 +819,7 @@ function summarize(
   eachType(spec, (type) => {
     types += 1;
     if (type.component !== undefined) components.add(pkg.resolve(type.component));
-    if (type.doc !== undefined) docs.add(pkg.resolve(type.doc));
+    if (typeof type.doc === 'string') docs.add(pkg.resolve(type.doc));
     examples += type.examples?.length ?? 0;
   });
   for (const origin of spec.origins ?? []) examples += origin.examples?.length ?? 0;

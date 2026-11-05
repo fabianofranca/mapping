@@ -53,7 +53,7 @@ describe('pacote material3 é válido', () => {
     for (const layer of parsed.spec.layers) {
       for (const type of layer.annotationTypes) {
         if (type.component) cited.push(type.component);
-        if (type.doc) cited.push(type.doc);
+        if (typeof type.doc === 'string') cited.push(type.doc);
         for (const e of type.examples ?? []) if (e.file) cited.push(e.file);
       }
     }

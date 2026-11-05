@@ -71,7 +71,7 @@ Uma camada por natureza, não por módulo do código. `id` em `[a-z0-9-]+` e ún
 
 ### 5. Relações e referências
 
-- `allowedChildren`: ids de tipos de outra camada que podem ser vinculados a este (um dono, N filhos). Todo tipo com `requiresOwner: true` tem de aparecer no `allowedChildren` de algum tipo, senão o validador recusa.
+- `allowedChildren`: ids de tipos de outra camada que podem ser vinculados a este (um dono, N filhos). Todo tipo com `requiresOwner: true` tem de aparecer no `allowedChildren` de algum tipo, senão o validador recusa. Na `formatVersion` 11 o item também pode ser uma **cláusula** que cobre uma camada ou grupos dela, e o dono pode declarar **papéis** para os filhos (ver o passo 12).
 - `ref` é referência **forte** a uma tupla de outra anotação, por **etiqueta**: o campo alvo declara `tags`, e o campo `ref` declara `accepts: { tags: [...], free: true|false }`, com ao menos uma etiqueta ou `free: true`. Etiquetas em `[a-z0-9-]+`.
 - Uma especialização **nunca cita outra pelo nome**: a ligação entre elas é só por etiquetas. Reutilize `data-field` para atributo de um modelo de dados (classe, entidade, DTO); invente etiqueta nova só quando nenhuma existente serve, e registre-a na entrega.
 
@@ -177,9 +177,97 @@ Use `image` quando o desenho mostra uma foto cuja URL vem do dado (avatar, foto,
 - **Fora do contrato de versão:** incluir, mudar ou tirar `notices` nunca pede migração nem sobe a `version` por si só (`diffSpecs` os ignora); atualizar a especialização só por avisos não mostra impacto.
 - **Só suba para a `formatVersion` 10 se algo usa `notices`.** Numa versão anterior, `notices` é erro (`só é permitido com formatVersion 10`, no caminho exato).
 
-### 12. Versão
+### 12. Filhos por camada e grupo, papéis e documentos externos (`formatVersion` 11)
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`; 8 com `suggestions` ou `linkedRef` em algum campo ou coluna `string`; 9 com `variants` no `code` de algum tipo; 10 com `notices` em algum tipo, campo ou coluna. A versão atual do formato é a 10. **Só suba para a 9 se algum tipo usa `variants`, e só para a 10 se algum tipo, campo ou coluna usa `notices`**: o resto da biblioteca fica na versão que o conteúdo pede (a Kotlin e a de notas ficam na 8). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+Três recursos opcionais, cada um para um problema de modelagem. Use o que a origem pede e **não suba para a 11 por garantia**: sem nenhuma chave nova, a especialização fica na versão que o conteúdo pede.
+
+**Cláusula no lugar de lista longa.** Quando um dono aceita **toda** uma camada (todo evento) ou uma parte coerente dela, escreva `allowedChildren: [{ "layer": "eventos" }]` ou `[{ "layer": "eventos", "groups": ["navegacao"] }]` em vez de listar os ids. Um tipo novo na camada passa a valer para o dono sem editá-lo. Itens em texto e cláusulas podem se misturar na mesma lista; a lista de ids continua certa para poucos filhos específicos. Com 20 ids ou mais em texto, o validador avisa que uma cláusula cobre a camada.
+
+- **`groups`** (`layers[].groups`: `[{ id, name, description? }]`, `id` único na camada, a ordem é a dos cabeçalhos; `annotationTypes[].groups`: lista não vazia, sem repetição, de ids da **própria** camada; um tipo pode estar em vários grupos). Declare só os grupos que a origem evidencia (as seções do contrato, as pastas, as categorias do design system); grupo que nenhum tipo usa é aviso. Um tipo sem `groups` só entra por cláusula da camada inteira ou pelo id.
+- A cláusula só tem `layer` e `groups`, aponta para **outra** camada (a do próprio dono é erro) e os `groups` dela existem na camada citada (`groups: []` é erro; para a camada inteira, omita). `requiresOwner` é conferido no conjunto **resolvido**: o filho precisa estar no conjunto de algum dono, por id, por camada ou por grupo.
+
+**Papéis no vínculo.** Se o filho precisa dizer em que ponto do dono se liga, isso é papel, não campo nem id de tipo. Declare no **dono** `childRoles: [{ id, name, description? }]` (não vazia, `id` único no tipo; só em tipo com `allowedChildren`) e, se o nome padrão ("Papel" / "Role") não serve, `childRolesLabel` ("Trigger", "Slot"; só com `childRoles`). O papel pertence ao **vínculo**: o mesmo tipo de filho pode ocupar papéis diferentes no mesmo dono.
+
+**`docRepos`: o documento mora noutro repositório.** Quando a documentação de um componente vive no repositório do design system ou do contrato, não a copie para o pacote (a cópia vira uma segunda fonte que envelhece): declare o repositório na raiz, `docRepos: [{ id, url, urlTemplate?, ref? }]` (as mesmas regras do `repo` de uma plataforma: `url` e `ref` do repositório que você leu, nunca de memória; `urlTemplate` com `{path}` só quando souber o formato do endereço de um arquivo no host), e aponte o `doc` do tipo para ele: `"doc": { "repo": "design-docs", "path": "components/button.md" }`. O `path` é relativo à raiz do repositório, termina em `.md`, sem `#`, `.`, `..` nem `/` no começo; o `repo` precisa estar em `docRepos`. O `doc` externo **não é arquivo do pacote**: uma biblioteca em que ele é o único arquivo citado vale como arquivo isolado, e a validação do pacote não o confere. O `doc` em texto (o `.md` do pacote) continua valendo; escreva o documento no pacote quando **você** o escreve. Repositório declarado que nenhum `doc` usa é aviso.
+
+**Três anti-padrões** que a 11 existe para evitar:
+
+1. **O gatilho no id do tipo:** dois tipos `onClick` e `onHold` que são o mesmo evento e só diferem no ponto do botão em que se ligam. Faça um tipo (`navigate`) e dois papéis no dono (`click`, `hold`).
+2. **Um campo `trigger` em cada evento:** o ponto de ligação é dado do vínculo, não do filho; o campo se repete em todo tipo de evento e nada o liga ao que o dono oferece. Use `childRoles`.
+3. **`allowedChildren` par a par:** os mesmos trinta ids copiados em cada dono, para que a camada inteira (ou um grupo) seja aceita. Use a cláusula `{ layer, groups? }`.
+
+Um dono com papéis e eventos em grupos:
+
+```json
+{
+  "docRepos": [
+    {
+      "id": "design-docs",
+      "url": "https://gitlab.empresa.com/grupo/design-docs",
+      "urlTemplate": "https://gitlab.empresa.com/grupo/design-docs/-/blob/main/{path}",
+      "ref": "main"
+    }
+  ],
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "doc": { "repo": "design-docs", "path": "components/button.md" },
+          "allowedChildren": [{ "layer": "eventos" }],
+          "childRolesLabel": "Trigger",
+          "childRoles": [
+            { "id": "click", "name": "Clique" },
+            { "id": "hold", "name": "Pressionar" }
+          ],
+          "fields": [{ "key": "label", "type": "string", "required": true }]
+        },
+        {
+          "id": "card",
+          "name": "Card",
+          "allowedChildren": [{ "layer": "eventos", "groups": ["navegacao"] }],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#E53935",
+      "groups": [
+        { "id": "navegacao", "name": "Navegação" },
+        { "id": "dados", "name": "Dados" }
+      ],
+      "annotationTypes": [
+        {
+          "id": "navigate",
+          "name": "Navigate",
+          "groups": ["navegacao"],
+          "requiresOwner": true,
+          "fields": [{ "key": "destino", "type": "string", "required": true }]
+        },
+        {
+          "id": "submit",
+          "name": "Submit",
+          "groups": ["dados"],
+          "requiresOwner": true,
+          "fields": []
+        }
+      ]
+    }
+  ]
+}
+```
+
+O Button aceita todo evento (e, nele, o mesmo `navigate` pode ser ligado no clique e no pressionar); o Card só os do grupo `navegacao`. **Fora do contrato de versão:** incluir, mudar ou tirar `groups`, `childRoles`, `childRolesLabel`, `docRepos` e o formato do `doc` nunca pede migração nem sobe a `version` por si só. Numa versão anterior à 11, cada uma dessas chaves é erro (`só é permitido com formatVersion 11`, no caminho exato).
+
+### 13. Versão
+
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`; 8 com `suggestions` ou `linkedRef` em algum campo ou coluna `string`; 9 com `variants` no `code` de algum tipo; 10 com `notices` em algum tipo, campo ou coluna; 11 com cláusula em `allowedChildren`, `groups` (na camada ou no tipo), `childRoles`, `childRolesLabel`, `docRepos` ou `doc` como objeto. A versão atual do formato é a 11. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, e para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta)**: o resto da biblioteca fica na versão que o conteúdo pede (a Kotlin e a de notas ficam na 8). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
@@ -273,7 +361,8 @@ Não aplique a especialização a um projeto nem crie proposta, a menos que o pr
 - Campo `codeRef` (onde a instância foi escrita): saiu do formato; remova.
 - `symbol` com o nome do nó de saída (`"onClick"`, `"image"`) em vez da função ou classe que o gera.
 - Plataforma com `path` em algum tipo e sem `repo` (aviso): preencha `url` e `ref` do repositório que você leu.
-- `requiresOwner: true` sem nenhum tipo listando o filho em `allowedChildren`.
+- `requiresOwner: true` sem nenhum tipo listando o filho em `allowedChildren` (na 11, nem por id nem por cláusula que o cubra).
+- Na `formatVersion` 11: o gatilho no id do tipo (`onClick` e `onHold` como tipos), um campo `trigger` em cada evento ou `allowedChildren` par a par com uma camada inteira listada id a id: use papéis (`childRoles`) e a cláusula `{ layer, groups? }`. Cláusula para a camada do próprio dono, `groups: []` ou grupo que não existe na camada citada; `childRoles` em tipo sem `allowedChildren`; `childRolesLabel` sem `childRoles`; `doc` objeto com `repo` fora de `docRepos` ou `path` com `#`; a 11 declarada numa especialização que não usa nenhuma dessas chaves.
 - `code` referindo plataforma não declarada, ou `params` com chave que não é campo do tipo.
 - `sources[].values` em campo que não é `enum`, ou destino que não está em `options`.
 - `formatVersion` 3 numa especialização sem `sources`, só "para garantir".
@@ -287,7 +376,7 @@ O prompt só precisa especificar. Modelo:
 
 > /spec-author
 >
-> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9|10>.
+> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9|10|11>.
 >
 > **Origem:** <repositório, pasta ou design system>, lendo <o que ler: pasta dos componentes, catálogo exportado, documento>. Ignore <o que ignorar>.
 >
@@ -302,6 +391,8 @@ O prompt só precisa especificar. Modelo:
 > **Tipos de seta:** <tipos de anotação que descrevem a relação entre duas marcações (`appliesTo: ["arrow"]`)>. (Só na `formatVersion` 7; omitir sem evidência.)
 >
 > **Avisos:** <diferenças entre as fontes (contrato × código) a registrar em `notices`, com o `kind` de cada uma>. (Só na `formatVersion` 10; omitir sem evidência.)
+>
+> **Filhos, papéis e documentos externos:** <donos que aceitam uma camada ou grupos inteiros, os papéis de ligação do filho (`childRoles`) e os repositórios onde vive a documentação dos tipos (`docRepos`)>. (Só na `formatVersion` 11; omitir sem evidência.)
 >
 > **Fora:** <o que não modelar>.
 >

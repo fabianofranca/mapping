@@ -230,7 +230,8 @@ export async function getComponent(
   }
   const { layerId, layerName, type } = matches[0]!;
   const loaded = await loadComponent(source, type);
-  const docPath = type.doc === undefined ? null : source.resolve(type.doc);
+  // `doc` objeto: o documento vive em outro repositório, sem texto no pacote.
+  const docPath = typeof type.doc === 'string' ? source.resolve(type.doc) : null;
   const doc = docPath === null ? null : await source.read(docPath);
   const examples: Json[] = [];
   for (const example of type.examples ?? []) {
@@ -243,7 +244,7 @@ export async function getComponent(
     });
   }
   const hint =
-    loaded === null && doc === null
+    loaded === null && doc === null && type.doc === undefined
       ? 'o tipo não tem componente nem documento na biblioteca (só campos); ele não desenha na app'
       : loaded?.problem !== undefined
         ? `o componente não carregou: ${loaded.problem}; rode validate_library no pacote`
@@ -272,6 +273,7 @@ export async function getComponent(
         }),
     docPath,
     doc,
+    ...(typeof type.doc === 'object' ? { docRef: { ...type.doc } } : {}),
     fields: type.fields.map(fieldView),
     examples,
     ...(type.code === undefined

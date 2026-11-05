@@ -22,6 +22,7 @@ import {
   type SpecSimpleColumn,
 } from './spec';
 import {
+  childTypeIds,
   fieldOf,
   findSpecType,
   isAllowedOwner,
@@ -118,7 +119,7 @@ export function childTypesOf(p: Project, annotationId: string): ChildType[] {
   if (!resolved || !owner.type) return [];
   const specId = owner.type.specId;
   const result: ChildType[] = [];
-  for (const typeId of resolved.type.allowedChildren ?? []) {
+  for (const typeId of childTypeIds(resolved.spec, resolved.type.id)) {
     const child = findSpecType(p, { specId, typeId });
     if (!child) continue;
     result.push({

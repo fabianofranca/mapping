@@ -1,4 +1,5 @@
 import { projectIndex, typeKey } from './projectIndex';
+import { isChildTypeAllowed } from './specChildren';
 import type { Spec, SpecAnnotationType, SpecField, SpecLayer } from './spec';
 import type {
   Annotation,
@@ -9,6 +10,15 @@ import type {
 } from './types';
 
 // Consultas às especializações aplicadas ao projeto (conteúdo em memória).
+
+// O resolvedor dos filhos de um tipo (`allowedChildren` com ids e cláusulas) mora em
+// `specChildren.ts`, sem dependência do índice do projeto, porque o validador de `spec.ts` o usa.
+export {
+  childTypeIds,
+  isChildTypeAllowed,
+  ownerTypeIds,
+  type ChildSets,
+} from './specChildren';
 
 export function getSpecialization(
   p: Project,
@@ -93,6 +103,8 @@ export function isAllowedOwner(
   owner: Annotation,
 ): boolean {
   if (owner.type?.specId !== child.specId) return false;
-  const ownerType = typeOfAnnotation(p, owner)?.type;
-  return (ownerType?.allowedChildren ?? []).includes(child.typeId);
+  const resolved = typeOfAnnotation(p, owner);
+  return (
+    resolved !== null && isChildTypeAllowed(resolved.spec, resolved.type.id, child.typeId)
+  );
 }

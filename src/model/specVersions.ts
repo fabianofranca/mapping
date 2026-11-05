@@ -14,7 +14,8 @@ import type {
 // O que é quebra (e só isto): remover ou renomear tipo, campo ou opção de `enum`; tornar um campo
 // obrigatório (inclusive um campo novo que já nasce obrigatório); mudar o `type` de um campo.
 // Todo o resto é aditivo. Ficam FORA do contrato, de propósito: camadas, `labelField`,
-// `allowedChildren`, `requiresOwner`, `description`, `tags`, `code`, `platforms`, `sources`, `notices`
+// `allowedChildren` (ids e cláusulas), `groups`, `childRoles`, `childRolesLabel`, `docRepos` e o
+// `doc` objeto (v11), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `sources`, `notices`
 // (e a troca de camada de um tipo; `appliesTo` gera só o aviso aditivo `changed-applies-to`), além de remover `component`/`doc`/exemplo/fonte: nada disso
 // gera `SpecChange`. Renome é indistinguível de remover + acrescentar; quem renomeia o declara
 // num passo `rename-*`, e é isso que o diferencia de uma remoção.
@@ -305,7 +306,8 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
         message: `o tipo "${id}" passou a se aplicar a: ${newApplies} (antes: ${oldApplies}); anotações que deixaram de se aplicar viram pendência`,
       });
     }
-    if (type.doc !== undefined && old.type.doc === undefined) {
+    // O `doc` objeto (repositório externo, v11) fica fora do contrato, como a troca entre as formas.
+    if (typeof type.doc === 'string' && old.type.doc === undefined) {
       out.push({
         kind: 'additive',
         code: 'added-doc',
