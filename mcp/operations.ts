@@ -189,6 +189,26 @@ export const operationSchema = z.discriminatedUnion('op', [
     op: z.literal('remove_platform_repo'),
     platform: z.string().describe('Plataforma cuja configuração de repositório sai.'),
   }),
+  // Repositórios de documentos (clone local, no molde dos de plataforma)
+  z.object({
+    op: z.literal('set_doc_repo'),
+    repo: z
+      .string()
+      .describe(
+        'Id de um repositório de documentos (`docRepos`) declarado pelas especializações aplicadas (veja `docRepos` em get_project).',
+      ),
+    localPath: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        'Raiz do clone local do repositório de documentos, relativa à pasta do projeto (ex: `../../design-docs`). É por ela que get_component lê o `.md` do tipo. `null` ou vazio remove a configuração. O endereço do repositório vem da especialização (`docRepos[].url`), não do projeto.',
+      ),
+  }),
+  z.object({
+    op: z.literal('remove_doc_repo'),
+    repo: z.string().describe('Repositório de documentos cujo clone local sai.'),
+  }),
   // Camadas
   z.object({
     op: z.literal('create_layer'),
@@ -502,6 +522,13 @@ export const operationSchema = z.discriminatedUnion('op', [
     entries: entries.optional(),
     values: values.optional(),
     owner,
+    role: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        'Papel (id de um `childRoles` do tipo do dono) em que a anotação se liga ao `owner`. Exige `owner` (`role-without-owner`) e um papel que o dono ofereça (`unknown-role`). Sem `role` num dono que tem papéis o lote vale e o plano devolve `missing-role` em `issues`. Trocar o `owner` limpa o papel que o novo dono não oferece. Veja `childRoles` em get_specialization.',
+      ),
     inherit: z
       .boolean()
       .optional()
@@ -518,6 +545,13 @@ export const operationSchema = z.discriminatedUnion('op', [
       .optional()
       .describe('Só os campos informados mudam (veja `values` em create_annotation).'),
     owner,
+    role: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        'Troca o papel no dono (`null` limpa). Confere contra o dono já com o `owner` novo, se vier no mesmo passo. Veja `role` em create_annotation.',
+      ),
     inherit: z
       .boolean()
       .optional()

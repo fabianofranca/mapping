@@ -3,6 +3,7 @@ import type { ComponentFile } from '../src/model/components/componentFormat';
 import {
   getSpec,
   getSpecialization,
+  repoLink,
   type Spec,
   type SpecAnnotationType,
 } from '../src/model';
@@ -14,6 +15,12 @@ import {
   type PackageSource,
 } from './library';
 import { LocalFileChecker } from './codeFiles';
+import {
+  MAX_DOC_BYTES,
+  docLocalPath,
+  readExternalDoc,
+  type ExternalDoc,
+} from './docFiles';
 import { packageCodeView } from './codeViews';
 import { Refs } from './items';
 import { findProject, loadProject, type LoadedProject } from './projects';
@@ -200,6 +207,76 @@ async function externalExample(source: PackageSource, file: string): Promise<Jso
   }
 }
 
+interface ExternalDocument {
+  readonly text: string | null;
+  readonly view: Json;
+  readonly hint?: string;
+}
+
+/**
+ * O `doc` objeto (v11): o `.md` mora num repositório de `docRepos`. Com o clone do projeto
+ * (`docRepos[<id>].localPath`) e o arquivo dentro do diretório de trabalho, devolve o texto;
+ * sem eles, o link (`url`, do `urlTemplate`) e a dica do que fazer.
+ */
+async function externalDocument(
+  roots: Roots,
+  spec: Spec,
+  project: LoadedProject | null,
+  doc: { readonly repo: string; readonly path: string },
+): Promise<ExternalDocument> {
+  const repo = spec.docRepos?.find((r) => r.id === doc.repo);
+  const url = repoLink(repo, doc.path);
+  const found =
+    project === null
+      ? null
+      : await readExternalDoc(
+          new LocalFileChecker(roots.workDir),
+          roots.workDir,
+          project.location.dir,
+          docLocalPath(project.project, doc.repo, doc.path),
+        );
+  const view = externalDocView(doc, url, found);
+  if (found?.text != null) return { text: found.text, view };
+  return {
+    text: null,
+    view,
+    hint: externalDocHint(doc, found, url ?? `${doc.repo}: ${doc.path}`),
+  };
+}
+
+function externalDocView(
+  doc: { readonly repo: string; readonly path: string },
+  url: string | null,
+  found: ExternalDoc | null,
+): Json {
+  return {
+    repo: doc.repo,
+    path: doc.path,
+    url,
+    localFile: found?.localFile ?? null,
+    exists: found?.exists ?? null,
+    ...(found?.problem ? { localFileProblem: found.problem } : {}),
+  };
+}
+
+/** O que fazer quando o documento externo não veio: configurar o clone ou abrir o link. */
+function externalDocHint(
+  doc: { readonly repo: string; readonly path: string },
+  found: ExternalDoc | null,
+  link: string,
+): string {
+  if (found === null) {
+    return `o documento ${doc.path} está no repositório ${doc.repo}, fora do pacote; leia por um projeto (\`project\` + \`specId\`) com o clone configurado (set_doc_repo) ou abra o link: ${link}`;
+  }
+  if (found.tooLarge) {
+    return `o documento ${doc.path} passa de ${MAX_DOC_BYTES} bytes e não foi lido; abra o arquivo no clone ou o link: ${link}`;
+  }
+  if (found.exists === null) {
+    return `o projeto não configura o clone do repositório ${doc.repo} (ou o caminho sai do diretório de trabalho): informe \`localPath\` com set_doc_repo, ou abra o link: ${link}`;
+  }
+  return `o documento ${doc.path} não está no clone de ${doc.repo} (${found.localFile}); confira a ref do clone, ou abra o link: ${link}`;
+}
+
 /** `get_component`: tudo de um tipo da biblioteca. */
 export async function getComponent(
   roots: Roots,
@@ -232,7 +309,12 @@ export async function getComponent(
   const loaded = await loadComponent(source, type);
   // `doc` objeto: o documento vive em outro repositório, sem texto no pacote.
   const docPath = typeof type.doc === 'string' ? source.resolve(type.doc) : null;
-  const doc = docPath === null ? null : await source.read(docPath);
+  const packageDoc = docPath === null ? null : await source.read(docPath);
+  const external =
+    typeof type.doc === 'object'
+      ? await externalDocument(roots, source.spec, project, type.doc)
+      : null;
+  const doc = external ? external.text : packageDoc;
   const examples: Json[] = [];
   for (const example of type.examples ?? []) {
     examples.push({
@@ -244,13 +326,14 @@ export async function getComponent(
     });
   }
   const hint =
-    loaded === null && doc === null && type.doc === undefined
+    external?.hint ??
+    (loaded === null && doc === null && type.doc === undefined
       ? 'o tipo não tem componente nem documento na biblioteca (só campos); ele não desenha na app'
       : loaded?.problem !== undefined
         ? `o componente não carregou: ${loaded.problem}; rode validate_library no pacote`
         : docPath !== null && doc === null
           ? 'o documento do tipo está ausente no pacote; rode validate_library'
-          : undefined;
+          : undefined);
   return {
     spec: { id: source.spec.id, name: source.spec.name, version: source.spec.version },
     type: type.id,
@@ -274,6 +357,7 @@ export async function getComponent(
     docPath,
     doc,
     ...(typeof type.doc === 'object' ? { docRef: { ...type.doc } } : {}),
+    ...(external ? { docExternal: external.view } : {}),
     fields: type.fields.map(fieldView),
     examples,
     ...(type.code === undefined

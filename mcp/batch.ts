@@ -53,6 +53,7 @@ import {
   removeContainer,
   removeLayer,
   removeMarking,
+  removeDocRepo,
   removePlatformRepo,
   removeSpecialization,
   removeTableRow,
@@ -61,7 +62,10 @@ import {
   renameLayer,
   renameMarking,
   replaceContainer,
+  roleNameOf,
   setAnnotationParent,
+  setAnnotationRole,
+  setDocRepo,
   setEntries,
   setFieldValue,
   setImageLocked,
@@ -967,6 +971,27 @@ class Batch {
           project: removePlatformRepo(p, op.platform),
           description: `Remover o clone local da plataforma "${op.platform}"`,
         };
+      case 'set_doc_repo': {
+        if (op.localPath === undefined) {
+          throw new ToolError(
+            'nothing-to-change',
+            'informe `localPath` (ou use remove_doc_repo)',
+          );
+        }
+        const project = setDocRepo(p, op.repo, { localPath: op.localPath });
+        const repo = project.docRepos[op.repo];
+        return {
+          project,
+          description: repo?.localPath
+            ? `Informar o clone local do repositório de documentos "${op.repo}": localPath "${repo.localPath}"`
+            : `Informar o clone local do repositório de documentos "${op.repo}": localPath removido`,
+        };
+      }
+      case 'remove_doc_repo':
+        return {
+          project: removeDocRepo(p, op.repo),
+          description: `Remover o clone local do repositório de documentos "${op.repo}"`,
+        };
       case 'create_layer': {
         const id = crypto.randomUUID();
         const project = addLayer(p, {
@@ -1833,8 +1858,16 @@ class Batch {
       });
       if (ownerId !== null) project = setAnnotationParent(project, id, ownerId);
     }
-    const owner = ownerId
-      ? `, vinculada a ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`
+    if (op.role !== undefined && op.role !== null) {
+      project = setAnnotationRole(project, id, op.role);
+    }
+    const ownerAnnotation = ownerId
+      ? projectIndex(project).annotations.get(ownerId)
+      : undefined;
+    const owner = ownerAnnotation
+      ? `, vinculada a ${annotationShortLabel(project, ownerAnnotation)}${
+          op.role ? ` (papel "${roleNameOf(project, ownerAnnotation, op.role)}")` : ''
+        }`
       : '';
     const layerName = projectIndex(project).layers.get(
       projectIndex(project).annotations.get(id)!.layerId,
@@ -1845,6 +1878,15 @@ class Batch {
       created: [{ kind: 'a', id }],
       rowAliases,
     };
+  }
+
+  /** Nome do papel que a anotação ocupa no dono, para a descrição do passo. */
+  private roleName(p: Project, id: string): string {
+    const a = projectIndex(p).annotations.get(id)!;
+    const owner = a.parentAnnotationId
+      ? projectIndex(p).annotations.get(a.parentAnnotationId)
+      : undefined;
+    return roleNameOf(p, owner, a.parentRole ?? '');
   }
 
   private updateAnnotation(op: Extract<Operation, { op: 'update_annotation' }>): Step {
@@ -1873,6 +1915,12 @@ class Batch {
         ownerId === null
           ? 'sem dona'
           : `dona ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`,
+      );
+    }
+    if (op.role !== undefined) {
+      project = setAnnotationRole(project, id, op.role);
+      changes.push(
+        op.role === null ? 'sem papel' : `papel "${this.roleName(project, id)}"`,
       );
     }
     return {
@@ -1919,6 +1967,8 @@ export function changeCounts(before: Project, after: Project): Record<string, un
     p.specializations.map((s) => ({ id: s.id, version: s.version, file: s.file }));
   const repos = (p: Project) =>
     Object.entries(p.platformRepos).map(([id, repo]) => ({ id, ...repo }));
+  const docRepos = (p: Project) =>
+    Object.entries(p.docRepos).map(([id, repo]) => ({ id, ...repo }));
   return {
     specializations: count(specs(before), specs(after)),
     layers: count(before.layers, after.layers),
@@ -1927,6 +1977,7 @@ export function changeCounts(before: Project, after: Project): Record<string, un
     arrows: count(before.arrows, after.arrows),
     annotations: count(before.annotations, after.annotations),
     platformRepos: count(repos(before), repos(after)),
+    docRepos: count(docRepos(before), docRepos(after)),
   };
 }
 
