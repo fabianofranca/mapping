@@ -65,12 +65,19 @@ export function packageTexts(): Map<string, string | Buffer> {
   return out;
 }
 
-/** A especialização do Material 3 com outro `id` (para simular um pacote que a proposta traz). */
+/**
+ * A especialização do Material 3 com outro `id` (para simular um pacote que a proposta traz).
+ * Com o `id` da biblioteca ela mantém o nome dela ("Material 3 (Compose)"); com outro, o nome é o `id`.
+ */
 export function loadSpec(id: string): Spec {
   const raw = JSON.parse(
     readFileSync(join(PACKAGE_DIR, 'material3-compose.spec.json'), 'utf8'),
   ) as Record<string, unknown>;
-  const parsed = parseSpec({ ...raw, id, name: id });
+  const parsed = parseSpec({
+    ...raw,
+    id,
+    name: id === raw.id ? raw.name : id,
+  });
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
   return parsed.spec;
 }

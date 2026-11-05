@@ -137,12 +137,64 @@ describe('ReviewRenderer', () => {
     // Removida: nome riscado.
     const name = layer.find('Text')[0];
     expect(name?.getAttr('text')).toBe('Banner');
-    expect(name?.getAttr('textDecoration')).toBe('line-through');
 
     // Sem revisão, nada fica desenhado.
     renderer.render(frame(null), PLACEMENTS);
     expect(layer.getChildren()).toHaveLength(0);
   });
+
+  it.each([0.56, 1.1])(
+    'removida: o risco do nome é um traço próprio, visível sobre o texto, a %s de zoom',
+    (zoom) => {
+      const { frame } = setup();
+      const layer = new Konva.Layer();
+      const renderer = new ReviewRenderer(layer);
+      const shape = (key: string, badges: ('removed' | 'rejected')[]) => ({
+        key,
+        placement: { x: 0, y: 0, scale: 1 },
+        rect: { x: 300, y: 300, width: 200, height: 100 },
+        name: 'Banner',
+        badges,
+      });
+      renderer.render(
+        frame(review({ removed: [shape('marking:M9', ['removed'])] }), {
+          viewport: { x: 0, y: 0, scale: zoom },
+        }),
+        PLACEMENTS,
+      );
+      const name = layer.find('Text')[0];
+      const strike = layer.find('.review-strike')[0];
+      const halo = layer.find('.review-strike-halo')[0];
+      expect(strike?.visible()).toBe(true);
+      // O risco usa a linha do canvas e um halo por baixo, para não sumir sobre o texto
+      // (o do Konva usa o preenchimento do texto, com ~0,8 px, e some nele).
+      expect(strike?.getAttr('stroke')).toBe(TOKENS.line);
+      expect(halo?.getAttr('stroke')).toBe(TOKENS.halo);
+      expect(strike?.getAttr('strokeWidth') * zoom).toBeCloseTo(1.5);
+      expect(halo?.getAttr('strokeWidth')).toBeGreaterThan(
+        strike?.getAttr('strokeWidth'),
+      );
+      // Atravessa o texto: começa e termina em x do nome e fica entre o topo e a base dele.
+      const points = strike?.getAttr('points') as number[];
+      const textTop = name?.y() ?? 0;
+      const textHeight = Number(name?.getAttr('fontSize') ?? 0);
+      expect(points[0]).toBe(name?.x());
+      expect(points[2]).toBeGreaterThan(points[0] ?? 0);
+      expect(points[1]).toBeGreaterThan(textTop);
+      expect(points[1]).toBeLessThan(textTop + textHeight);
+      // O Konva não desenha mais o risco (some sobre o texto branco).
+      expect(name?.getAttr('textDecoration')).toBe('');
+
+      // Nome rejeitado (fantasma) não leva risco.
+      renderer.render(
+        frame(review({ ghosts: [shape('rejected:M7', ['rejected'])] }), {
+          viewport: { x: 0, y: 0, scale: zoom },
+        }),
+        PLACEMENTS,
+      );
+      expect(layer.find('.review-strike').every((n) => !n.visible())).toBe(true);
+    },
+  );
 
   it('fantasma da criação rejeitada na visão Proposto: pontilhado 1,5/2,5, nome e selo ✕', () => {
     const { frame } = setup();
