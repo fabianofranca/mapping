@@ -521,6 +521,10 @@ describe('OverlayRenderer: marcações do canvas', () => {
     expect(overlay.marqueeHalo.strokeWidth()).toBe(2); // (2 + 2·1) px de tela ÷ zoom 2
     expect(overlay.marqueeHalo.dash()).toEqual([3, 2]);
     expect(overlay.marqueeHalo.fillEnabled()).toBe(false);
+    // O halo precisa estar na mesma camada da borda, e por baixo dela.
+    const parent = overlay.marqueeRect.getParent();
+    expect(parent).not.toBeNull();
+    expect(overlay.marqueeHalo.getParent()).toBe(parent);
     expect(overlay.marqueeHalo.zIndex()).toBeLessThan(overlay.marqueeRect.zIndex());
   });
 
