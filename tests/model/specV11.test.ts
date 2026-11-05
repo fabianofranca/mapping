@@ -148,7 +148,8 @@ describe('formatVersion 11: cláusula de allowedChildren', () => {
   it('camada igual à do dono', () => {
     expect(issuesOf(v11Json(clause({ layer: 'componentes' })))).toContainEqual({
       path: `${at}.layer`,
-      message: 'camada "componentes" é a do próprio tipo; filhos devem estar em outra camada',
+      message:
+        'camada "componentes" é a do próprio tipo; filhos devem estar em outra camada',
     });
   });
 
@@ -304,7 +305,10 @@ describe('formatVersion 11: doc em repositório externo', () => {
 
   it('repo fora de docRepos (e sem docRepos)', () => {
     expect(issuesOf(withDoc({ repo: 'outro', path: 'a.md' }))).toEqual([
-      { path: `${OWNER}.doc.repo`, message: 'repositório "outro" não declarado em docRepos' },
+      {
+        path: `${OWNER}.doc.repo`,
+        message: 'repositório "outro" não declarado em docRepos',
+      },
     ]);
     const none = v11Json((s) => (owner(s).doc = doc('a.md')));
     expect(issuesOf(none)).toEqual([
@@ -374,16 +378,25 @@ describe('formatVersion 11: doc em repositório externo', () => {
     ).toEqual([{ path: 'docRepos[1].id', message: 'id "d" repetido' }]);
     expect(
       issuesOf(
-        v11Json(repos([{ id: 'd', url: 'https://x.com/a', urlTemplate: 'https://x.com/a' }])),
+        v11Json(
+          repos([{ id: 'd', url: 'https://x.com/a', urlTemplate: 'https://x.com/a' }]),
+        ),
       ),
     ).toEqual([{ path: 'docRepos[0].urlTemplate', message: 'deve conter {path}' }]);
   });
 });
 
 describe('formatVersion 11: requiresOwner no conjunto resolvido', () => {
+  const requires = (spec: Json) => (event(spec, 2).requiresOwner = true);
+  const NOT_OWNED = {
+    path: `${EVENTS}.annotationTypes[2].requiresOwner`,
+    message: '"navigate" exige dono, mas nenhum tipo o lista em allowedChildren',
+  };
+
   it('um dono que lista o tipo por cláusula atende', () => {
-    expect(issuesOf(v11Json())).toEqual([]);
+    expect(issuesOf(v11Json(requires))).toEqual([]);
     const byGroup = v11Json((s) => {
+      requires(s);
       owner(s).allowedChildren = [{ layer: 'eventos', groups: ['navegacao'] }];
     });
     expect(issuesOf(byGroup)).toEqual([]);
@@ -391,24 +404,24 @@ describe('formatVersion 11: requiresOwner no conjunto resolvido', () => {
 
   it('erro quando nenhuma cláusula nem id cobre o tipo', () => {
     const spec = v11Json((s) => {
+      requires(s);
       owner(s).allowedChildren = [{ layer: 'eventos', groups: ['dados'] }];
     });
-    expect(issuesOf(spec)).toEqual([
-      {
-        path: `${EVENTS}.annotationTypes[2].requiresOwner`,
-        message: '"navigate" exige dono, mas nenhum tipo o lista em allowedChildren',
-      },
-    ]);
+    expect(issuesOf(spec)).toEqual([NOT_OWNED]);
   });
 
-  it('erro quando ninguém lista nada', () => {
-    const spec = v11Json((s) => delete owner(s).allowedChildren);
-    expect(issuesOf(spec)).toEqual([
-      {
-        path: `${EVENTS}.annotationTypes[2].requiresOwner`,
-        message: '"navigate" exige dono, mas nenhum tipo o lista em allowedChildren',
-      },
-    ]);
+  it('erro quando ninguém lista nada; outro dono por id atende', () => {
+    const none = v11Json((s) => {
+      requires(s);
+      delete owner(s).allowedChildren;
+    });
+    expect(issuesOf(none)).toEqual([NOT_OWNED]);
+    const other = v11Json((s) => {
+      requires(s);
+      delete owner(s).allowedChildren;
+      s.layers[0].annotationTypes[1].allowedChildren = ['navigate'];
+    });
+    expect(issuesOf(other)).toEqual([]);
   });
 });
 

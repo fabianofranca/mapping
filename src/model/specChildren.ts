@@ -8,7 +8,8 @@
 // Regra: a lista é a união dos itens na ordem deles; dentro de uma cláusula, os tipos saem na
 // ordem da camada (sem `groups`, a camada inteira; com `groups`, só os tipos que estão em algum
 // dos grupos); um tipo repetido fica na primeira posição. O que não se resolve (id ou camada
-// inexistente) é ignorado: quem aponta o erro é o validador.
+// inexistente, ou um item malformado do JSON ainda não validado) é ignorado: quem aponta o
+// erro é o validador.
 
 /** Cláusula de `allowedChildren`: a camada inteira ou os tipos dela que estão nos grupos. */
 export interface ChildClauseLike {
@@ -50,7 +51,7 @@ function clauseIds(
 ): string[] {
   const types = layers.get(clause.layer);
   if (types === undefined) return [];
-  const wanted = clause.groups === undefined ? null : new Set(clause.groups);
+  const wanted = Array.isArray(clause.groups) ? new Set(clause.groups) : null;
   const ids: string[] = [];
   for (const type of types) {
     if (wanted === null || inAnyGroup(type, wanted)) ids.push(type.id);
@@ -59,7 +60,8 @@ function clauseIds(
 }
 
 function inAnyGroup(type: ChildTypeLike, wanted: ReadonlySet<string>): boolean {
-  for (const group of type.groups ?? []) {
+  if (!Array.isArray(type.groups)) return false;
+  for (const group of type.groups) {
     if (wanted.has(group)) return true;
   }
   return false;
@@ -72,11 +74,14 @@ function ownerChildren(
   layers: ReadonlyMap<string, readonly ChildTypeLike[]>,
 ): Set<string> {
   const ids = new Set<string>();
-  for (const item of type.allowedChildren ?? []) {
+  const items: readonly unknown[] = Array.isArray(type.allowedChildren)
+    ? type.allowedChildren
+    : [];
+  for (const item of items) {
     if (typeof item === 'string') {
       if (known.has(item)) ids.add(item);
-    } else {
-      for (const id of clauseIds(item, layers)) ids.add(id);
+    } else if (typeof item === 'object' && item !== null) {
+      for (const id of clauseIds(item as ChildClauseLike, layers)) ids.add(id);
     }
   }
   return ids;

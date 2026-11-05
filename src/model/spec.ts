@@ -1000,7 +1000,8 @@ function checkAppliesTo(
 const GROUPS_EMPTY = 'não pode ser vazio; tire a chave ou liste ao menos um grupo';
 const ALLOWED_CHILD_SHAPE_MESSAGE =
   'deve ser um id de tipo (texto) ou uma cláusula { layer, groups }';
-const DOC_SHAPE_MESSAGE = 'deve ser texto (arquivo do pacote) ou um objeto { repo, path }';
+const DOC_SHAPE_MESSAGE =
+  'deve ser texto (arquivo do pacote) ou um objeto { repo, path }';
 const DOC_PATH_MESSAGE =
   'caminho inválido: use um caminho relativo à raiz do repositório, com "/", sem "." nem ".." e sem unidade (ex: components/button.md)';
 
@@ -1865,6 +1866,7 @@ export function parseSpecPath(text: string): (string | number)[] {
 /** O que os conferidores da v11 leem de um tipo (a forma crua, lida pelo zod). */
 interface V11Type {
   readonly id: string;
+  readonly requiresOwner?: boolean | undefined;
   readonly groups?: readonly string[] | undefined;
   readonly allowedChildren?: readonly SpecAllowedChild[] | undefined;
   readonly childRoles?: readonly unknown[] | undefined;
@@ -1993,7 +1995,11 @@ function checkAllowedChildren(
     (type.allowedChildren ?? []).forEach((item, ci) => {
       const itemPath = [...path, 'allowedChildren', ci];
       if (typeof item === 'string') checkChildId(item, li, typeLayer, itemPath, add);
-      else if (spec.formatVersion >= 11 && isRecord(item) && typeof item.layer === 'string') {
+      else if (
+        spec.formatVersion >= 11 &&
+        isRecord(item) &&
+        typeof item.layer === 'string'
+      ) {
         checkChildClause(item, li, layers, itemPath, add);
       }
     });
@@ -2025,7 +2031,10 @@ function checkLayerGroups(layers: readonly V11Layer[], ctx: z.RefinementCtx): vo
 
 /** v11: `docRepos` com ids únicos e todo `doc` objeto citando um deles. */
 function checkDocRepos(
-  spec: { docRepos?: readonly { readonly id: string }[] | undefined; layers: readonly V11Layer[] },
+  spec: {
+    docRepos?: readonly { readonly id: string }[] | undefined;
+    layers: readonly V11Layer[];
+  },
   ctx: z.RefinementCtx,
 ): void {
   const add = issueAdder(ctx);
@@ -2050,8 +2059,7 @@ function checkRequiresOwner(
   const add = issueAdder(ctx);
   spec.layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
-      const requires = (type as { requiresOwner?: boolean }).requiresOwner;
-      if (requires && !owners.has(type.id)) {
+      if (type.requiresOwner && !owners.has(type.id)) {
         add(
           ['layers', li, 'annotationTypes', ti, 'requiresOwner'],
           `"${type.id}" exige dono, mas nenhum tipo o lista em allowedChildren`,

@@ -53,7 +53,9 @@ describe('specWarnings: formatVersion 11', () => {
   });
 
   it('grupo declarado que nenhum tipo usa', () => {
-    const spec = parsedV11((s) => s.layers[1].groups.push({ id: 'vazio', name: 'Vazio' }));
+    const spec = parsedV11((s) =>
+      s.layers[1].groups.push({ id: 'vazio', name: 'Vazio' }),
+    );
     expect(codes(specWarnings(spec), 'unused-group')).toEqual([
       {
         code: 'unused-group',
@@ -78,8 +80,7 @@ describe('specWarnings: formatVersion 11', () => {
       {
         code: 'unused-doc-repo',
         path: 'docRepos[1]',
-        message:
-          'o repositório "solto" de docRepos é declarado, mas nenhum `doc` o usa',
+        message: 'o repositório "solto" de docRepos é declarado, mas nenhum `doc` o usa',
       },
     ]);
   });
@@ -145,7 +146,9 @@ describe('usesPackageFiles: doc em repositório externo', () => {
   });
 
   it('doc texto pede a pasta do pacote', () => {
-    expect(usesPackageFiles(parsedV11((s) => (owner(s).doc = 'docs/button.md')))).toBe(true);
+    expect(usesPackageFiles(parsedV11((s) => (owner(s).doc = 'docs/button.md')))).toBe(
+      true,
+    );
   });
 
   it('doc objeto num tipo e doc texto noutro: pede o pacote', () => {

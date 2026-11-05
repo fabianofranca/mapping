@@ -332,7 +332,8 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
         component,
         ...(componentProblem === undefined ? {} : { componentProblem }),
         container: component !== null && hasSlotComponent(component),
-        docText: type.doc === undefined ? null : (texts.get(resolve(type.doc)) ?? null),
+        docText:
+          typeof type.doc === 'string' ? (texts.get(resolve(type.doc)) ?? null) : null,
         fields: type.fields.map(fieldOf),
         code: codeOf(spec, type),
         sources: sourcesOf(type),

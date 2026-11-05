@@ -118,7 +118,7 @@ describe('isChildTypeAllowed e ownerTypeIds', () => {
 describe('as leituras do projeto passam pelo resolvedor', () => {
   /** Projeto com a especialização, uma marcação `M1` e um `button` (`A1`) nela. */
   function project(edit?: (s: Json) => void): Project {
-    let p = applySpecialization(emptyProject(), parsedV11(edit), { newId: idGen('L') });
+    let p = applySpecialization(emptyProject(), parsedV11(edit), { newId: idGen('SL') });
     p = addContainer(p, { id: 'I1', file: 'a.png', width: 100, height: 100 });
     p = createMarking(p, {
       id: 'M1',
@@ -155,9 +155,9 @@ describe('as leituras do projeto passam pelo resolvedor', () => {
     expect(isAllowedOwner(p, { specId: 's', typeId: 'navigate' }, a1)).toBe(true);
     expect(isAllowedOwner(p, { specId: 's', typeId: 'track' }, a1)).toBe(false);
     expect(isAllowedOwner(p, { specId: 'outra', typeId: 'navigate' }, a1)).toBe(false);
-    expect(
-      ownerTypesOf(p, { specId: 's', typeId: 'navigate' }).map((t) => t.id),
-    ).toEqual(['button']);
+    expect(ownerTypesOf(p, { specId: 's', typeId: 'navigate' }).map((t) => t.id)).toEqual(
+      ['button'],
+    );
     expect(ownerTypesOf(p, { specId: 's', typeId: 'track' })).toEqual([]);
   });
 });

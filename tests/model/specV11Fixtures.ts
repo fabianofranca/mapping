@@ -8,7 +8,7 @@ export const OWNER = 'layers[0].annotationTypes[0]';
 /**
  * Especialização v11 de teste: a camada `componentes` (donos `button`, `image`, `text`) e a
  * camada `eventos` (o `button` aceita a camada inteira), com dois grupos (`navegacao` e `dados`), em ordem: onClick (navegacao),
- * onHold, navigate (navegacao, requiresOwner), track (dados) e both (navegacao e dados).
+ * onHold, navigate (navegacao), track (dados) e both (navegacao e dados).
  */
 export function v11Json(edit?: (spec: Json) => void, formatVersion = 11): Json {
   const spec: Json = {
@@ -35,13 +35,7 @@ export function v11Json(edit?: (spec: Json) => void, formatVersion = 11): Json {
         annotationTypes: [
           { id: 'onClick', name: 'onClick', fields: [], groups: ['navegacao'] },
           { id: 'onHold', name: 'onHold', fields: [] },
-          {
-            id: 'navigate',
-            name: 'navigate',
-            requiresOwner: true,
-            groups: ['navegacao'],
-            fields: [],
-          },
+          { id: 'navigate', name: 'navigate', groups: ['navegacao'], fields: [] },
           { id: 'track', name: 'track', fields: [], groups: ['dados'] },
           { id: 'both', name: 'both', fields: [], groups: ['dados', 'navegacao'] },
         ],
@@ -57,7 +51,6 @@ export function v11Json(edit?: (spec: Json) => void, formatVersion = 11): Json {
   } else {
     spec.layers[0].annotationTypes[0].allowedChildren = ['onClick', 'navigate'];
     for (const type of spec.layers[1].annotationTypes) delete type.groups;
-    delete spec.layers[1].annotationTypes[2].requiresOwner;
   }
   edit?.(spec);
   return spec;

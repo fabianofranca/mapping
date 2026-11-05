@@ -23,7 +23,13 @@ export type SpecWarningCode =
   /** O `format` antigo (`mapeador-spec`), ainda aceito na importação. */
   | 'legacy-format'
   /** Campo de um tipo que saiu do formato (`REMOVED_FIELD_TYPE`): lido e ignorado. */
-  | 'ignored-field';
+  | 'ignored-field'
+  /** `allowedChildren` com muitos ids em texto: uma cláusula `{ layer, groups }` cobre o mesmo. */
+  | 'many-children-ids'
+  /** Grupo de `layers[].groups` que nenhum tipo da camada usa. */
+  | 'unused-group'
+  /** Repositório de `docRepos` que nenhum `doc` usa. */
+  | 'unused-doc-repo';
 
 export interface SpecWarning {
   readonly code: SpecWarningCode;
@@ -43,9 +49,67 @@ export function ignoredFieldWarnings(
   }));
 }
 
+/** Quantos ids em texto no `allowedChildren` de um tipo bastam para sugerir uma cláusula. */
+const MANY_CHILD_IDS = 20;
+
+/** `many-children-ids`: tipos com 20 ids ou mais em texto no `allowedChildren`. */
+function manyChildIdsWarnings(spec: Spec): SpecWarning[] {
+  const warnings: SpecWarning[] = [];
+  spec.layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      const ids = (type.allowedChildren ?? []).filter((c) => typeof c === 'string');
+      if (ids.length < MANY_CHILD_IDS) return;
+      warnings.push({
+        code: 'many-children-ids',
+        path: `layers[${li}].annotationTypes[${ti}].allowedChildren`,
+        message: `${ids.length} tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos`,
+      });
+    });
+  });
+  return warnings;
+}
+
+/** `unused-group`: grupos declarados numa camada que nenhum tipo dela usa. */
+function unusedGroupWarnings(spec: Spec): SpecWarning[] {
+  const warnings: SpecWarning[] = [];
+  spec.layers.forEach((layer, li) => {
+    const used = new Set(layer.annotationTypes.flatMap((type) => type.groups ?? []));
+    (layer.groups ?? []).forEach((group, gi) => {
+      if (used.has(group.id)) return;
+      warnings.push({
+        code: 'unused-group',
+        path: `layers[${li}].groups[${gi}]`,
+        message: `o grupo "${group.id}" da camada "${layer.id}" é declarado, mas nenhum tipo está nele`,
+      });
+    });
+  });
+  return warnings;
+}
+
+/** `unused-doc-repo`: repositórios de `docRepos` que nenhum `doc` objeto cita. */
+function unusedDocRepoWarnings(spec: Spec): SpecWarning[] {
+  const used = new Set<string>();
+  for (const layer of spec.layers) {
+    for (const type of layer.annotationTypes) {
+      if (typeof type.doc === 'object') used.add(type.doc.repo);
+    }
+  }
+  const warnings: SpecWarning[] = [];
+  (spec.docRepos ?? []).forEach((repo, i) => {
+    if (used.has(repo.id)) return;
+    warnings.push({
+      code: 'unused-doc-repo',
+      path: `docRepos[${i}]`,
+      message: `o repositório "${repo.id}" de docRepos é declarado, mas nenhum \`doc\` o usa`,
+    });
+  });
+  return warnings;
+}
+
 /**
  * Avisos da especialização (já validada), na ordem do arquivo (os de tipo, depois
- * `unused-platform` e `path-without-repo`, por plataforma); `ignored` são os campos
+ * `unused-platform` e `path-without-repo`, por plataforma, e por fim os da v11:
+ * `many-children-ids`, `unused-group` e `unused-doc-repo`); `ignored` são os campos
  * ignorados na leitura (`parseSpec`), que vêm logo depois do formato antigo.
  */
 export function specWarnings(
@@ -101,5 +165,10 @@ export function specWarnings(
       message: `a plataforma "${platform.id}" tem tipos com \`path\` (${count}), mas não declara \`repo\`: o agente não sabe em que repositório estão esses arquivos; declare \`repo\` (formatVersion 5)`,
     });
   });
+  warnings.push(
+    ...manyChildIdsWarnings(spec),
+    ...unusedGroupWarnings(spec),
+    ...unusedDocRepoWarnings(spec),
+  );
   return warnings;
 }
