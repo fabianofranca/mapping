@@ -1,4 +1,4 @@
-# Papéis e documentos externos — [Não lançado] (épico `epic/papeis-e-docs-externos`, PR #571, MCP 0.18.0, schema v14)
+# Papéis e documentos externos — [Não lançado] (épico `epic/papeis-e-docs-externos`, PR #568, MCP 0.18.0, schema v14)
 
 ## Adicionado
 
