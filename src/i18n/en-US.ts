@@ -647,6 +647,10 @@ export const enUS: Dictionary = {
     'Pick the type. The fields are predefined; just fill in the values.',
   'typed.noTypes':
     'The specialization of this layer is unavailable or has no annotation types.',
+  'typed.searchTypes': 'Search among {count} types',
+  'typed.noTypeMatch': 'No type matching "{query}"',
+  'typed.otherTypes': 'Other',
+  'typed.ownerRoleOption': '{owner} › {role}',
   'typed.chooseOwnerTitle': 'Owner of the {type}',
   'typed.chooseOwnerHint': '{type} must belong to another annotation of this marking.',
   'typed.noOwner':

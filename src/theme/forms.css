@@ -71,3 +71,33 @@
   color: var(--color-text-muted);
   font-weight: 600;
 }
+
+.type-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.type-search > .icon {
+  position: absolute;
+  left: var(--space-2);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.type-search > .input {
+  width: 100%;
+  padding-left: var(--space-6);
+}
+
+.type-section + .type-section {
+  margin-top: var(--space-3);
+}
+
+.type-group-title {
+  margin: 0 0 var(--space-1);
+  font: var(--t-text-small);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}

@@ -11,6 +11,8 @@
 - **Pendências de papel** na janela Incompletas e no selo "Incompleta": a filha sem papel numa dona que tem papéis (`missing-role`) e a filha com um papel que a dona não oferece (`unknown-role`). Não bloqueiam nada; dona livre ou de tipo desconhecido não gera pendência de papel.
 - **Clone dos documentos no projeto:** `docRepos` guarda o `localPath` do clone de cada repositório de documentos declarado pela especialização (gravar e remover são ações desfazíveis).
 - As propostas levam o `parentRole` da anotação e a entidade `docRepo`, comparados, decididos e aplicados como os demais campos; o formato da proposta continua o 4.
+- **Escolha de tipo com busca e grupos:** a lista de tipos do "+ Anotação" ganha um campo de busca no topo ("Buscar entre N tipos", com o foco ao abrir; filtra por nome, id e descrição, sem diferenciar maiúsculas nem acentos) e, nas camadas que declaram grupos, cabeçalhos por grupo na ordem da camada, com os tipos sem grupo em "Outros" no fim. Sem resultado, a lista diz "Nenhum tipo com \"<texto>\"".
+- **O papel no mesmo passo da escolha do dono:** ao criar um tipo que exige dono, quando o dono tem papéis a lista oferece uma opção por dono e papel ("Button Continuar › Clique"), os mesmos dois cliques de antes; com um dono sem papéis, o passo não muda.
 
 ## Alterado
 

@@ -57,6 +57,7 @@ describe('dicionários', () => {
       'spec.impact.lossTarget',
       'spec.impact.lossMore',
       'annotation.ownerOption',
+      'typed.ownerRoleOption',
       'help.specs.downloads',
       'zoom.value',
       'status.empty',

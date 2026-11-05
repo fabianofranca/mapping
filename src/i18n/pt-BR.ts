@@ -650,6 +650,10 @@ export const ptBR = {
     'Escolha o tipo. Os campos já vêm definidos; é só preencher os valores.',
   'typed.noTypes':
     'A especialização desta camada não está disponível ou não tem tipos de anotação.',
+  'typed.searchTypes': 'Buscar entre {count} tipos',
+  'typed.noTypeMatch': 'Nenhum tipo com "{query}"',
+  'typed.otherTypes': 'Outros',
+  'typed.ownerRoleOption': '{owner} › {role}',
   'typed.chooseOwnerTitle': 'Dono do {type}',
   'typed.chooseOwnerHint': '{type} precisa pertencer a outra anotação desta marcação.',
   'typed.noOwner':
