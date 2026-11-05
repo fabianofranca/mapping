@@ -6,6 +6,7 @@ import { locale } from '../../../src/store/settings';
 import { useDialogSlot } from '../../../src/ui/focus';
 import { ExitReviewDialog } from '../../../src/ui/review/ExitReviewDialog';
 import { ProposalList } from '../../../src/ui/review/ProposalList';
+import { ProposalsWindow } from '../../../src/ui/review/ProposalsWindow';
 import { ReviewBar } from '../../../src/ui/review/ReviewBar';
 import { decided } from '../../model/proposalFixtures';
 import { richScenario } from '../../store/proposalHarness';
@@ -22,6 +23,20 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const noop = () => {};
+
+// A janela real troca a árvore da revisão pela lista quando a revisão fecha: a lista só
+// entra no DOM depois da renderização seguinte ao `review.close()` (achado 1 da FN1).
+function RealShell() {
+  const dialogs = useDialogSlot<{ readonly kind: 'exitReview' }>();
+  const exit = useExitReview(dialogs as unknown as EditorDialogs);
+  return (
+    <>
+      <main data-canvas-area tabIndex={-1} aria-label="canvas" />
+      <ReviewBar onExit={exit} />
+      <ProposalsWindow onHelp={noop} />
+    </>
+  );
+}
 
 function Shell({ withList }: { readonly withList: boolean }) {
   const dialogs = useDialogSlot<{ readonly kind: 'exitReview' }>();
@@ -97,5 +112,18 @@ describe('Sair da revisão: o foco não vai ao body', () => {
     await waitFor(() => expect(h.review.proposalId.value).toBeNull());
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
     expect(document.activeElement).toBe(canvas());
+  });
+
+  it('pelo botão, com a janela Propostas real (troca a árvore pela lista) → o botão da proposta', async () => {
+    const { base, proposal } = richScenario();
+    void base;
+    const h = await openReviewHarness({ proposals: [proposal] });
+    h.review.open('P1');
+    renderInEditor(h, <RealShell />);
+    const exit = screen.getByRole('button', { name: 'Sair da revisão' });
+    exit.focus();
+    fireEvent.click(exit);
+    await waitFor(() => expect(rowAction()).not.toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(rowAction()));
   });
 });

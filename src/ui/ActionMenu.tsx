@@ -2,6 +2,7 @@ import type { Ref } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { IconButton } from './controls';
 import { assignRef, returnFocusToTrigger } from './focus';
+import { createOpenScrollGuard } from './openScrollGuard';
 import { menuKeyDown, useFocusFirstItem } from './useMenuNavigation';
 
 // Menu ⋯ de uma linha (KeyValueGrid e DataGrid): subir, descer, remover. Popover
@@ -61,15 +62,10 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
       if (!root.current?.contains(e.target as Node)) close();
     };
     // Fechar ao rolar (qualquer ancestral, em captura) ou redimensionar: a lista é fixa.
-    // O próprio clique que abre pode rolar a página até a linha, e o evento de rolagem
-    // chega depois de o menu abrir: até o próximo quadro, a rolagem não conta (etapa #515).
-    let armed = typeof requestAnimationFrame !== 'function';
-    const frame =
-      typeof requestAnimationFrame === 'function'
-        ? requestAnimationFrame(() => (armed = true))
-        : 0;
-    const onScroll = () => {
-      if (armed) close();
+    // A rolagem que a própria abertura provoca não conta (openScrollGuard).
+    const scrollCloses = createOpenScrollGuard(() => trigger.current);
+    const onScroll = (e: Event) => {
+      if (scrollCloses(e)) close();
     };
     const onMove = () => close();
     if (list.current && trigger.current) place(list.current, trigger.current);
@@ -77,7 +73,6 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
     document.addEventListener('scroll', onScroll, true);
     globalThis.addEventListener('resize', onMove);
     return () => {
-      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
       document.removeEventListener('pointerdown', onDown);
       document.removeEventListener('scroll', onScroll, true);
       globalThis.removeEventListener('resize', onMove);
