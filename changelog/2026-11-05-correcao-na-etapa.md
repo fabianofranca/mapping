@@ -1,4 +1,4 @@
-# Defeitos corrigidos na própria etapa — [Não lançado] (épico `epic/correcao-na-etapa`, parte PR #583, MCP 0.18.0, schema v14)
+# Defeitos corrigidos na própria etapa — 2026-11-05 (épico `epic/correcao-na-etapa`, PR #586, MCP 0.18.0, schema v14)
 
 ## Alterado
 
