@@ -1104,9 +1104,16 @@ class Batch {
       case 'move_marking': {
         const id = this.item(op.marking, 'm');
         const before = siblingPosition(p, id);
+        const label = this.markingLabel(p, id);
+        if (before.index === op.index) {
+          return {
+            project: p,
+            description: `A marcação "${label}" já está na posição ${op.index} entre as ${before.count} irmãs (no estado do lote neste ponto): nada muda`,
+          };
+        }
         return {
           project: reorderMarking(p, id, op.index),
-          description: `Mover a marcação "${this.markingLabel(p, id)}" para a posição ${op.index} entre as ${before.count} irmãs (0 = por baixo)`,
+          description: `Mover a marcação "${label}" para a posição ${op.index} entre as ${before.count} irmãs (0 = por baixo)`,
         };
       }
       case 'update_marking': {
