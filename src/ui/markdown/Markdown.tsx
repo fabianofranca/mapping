@@ -49,6 +49,13 @@ function renderInlines(nodes: readonly MarkdownInline[], ctx: Ctx): ComponentChi
         return <em key={i}>{renderInlines(n.children, ctx)}</em>;
       case 'link': {
         const children = renderInlines(n.children, ctx);
+        if (n.kind === 'external') {
+          return (
+            <a key={i} href={n.href} target="_blank" rel="noopener noreferrer">
+              {children}
+            </a>
+          );
+        }
         if (n.kind === 'mapping') {
           const { onLink } = ctx;
           if (!onLink) return children;
@@ -151,7 +158,7 @@ function renderBlock(b: MarkdownBlock, key: number, ctx: Ctx): VNode {
   }
 }
 
-/** Documento em markdown (subconjunto): nunca HTML cru nem imagens; links só `mapping://` e âncoras. */
+/** Documento em markdown (subconjunto): nunca HTML cru nem imagens; links só `mapping://`, âncoras e `http(s)://` absoluto (nova aba). */
 export function Markdown({ text, onLink }: MarkdownProps): VNode {
   const uid = useId();
   const blocks = useMemo(() => parseMarkdown(text), [text]);

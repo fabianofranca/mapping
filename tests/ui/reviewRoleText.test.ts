@@ -74,7 +74,7 @@ describe('entidade docRepo', () => {
     const names: ReviewNames = { current: base, preview: withPath, proposal };
     const c = changeOf(proposal, 'docRepo', 'design-docs');
     expect(c.kind).toBe('create');
-    expect(changeTitle(names, c)).toBe('Repositório de documentos design-docs criada');
+    expect(changeTitle(names, c)).toBe('Repositório de documentos design-docs criado');
     expect(changeSummary(names, c)).toBe('../docs');
   });
 
@@ -85,7 +85,7 @@ describe('entidade docRepo', () => {
     const c = changeOf(proposal, 'docRepo', 'design-docs');
     expect(c.kind).toBe('update');
     expect(changeTitle(names, c)).toBe(
-      'Repositório de documentos design-docs atualizada',
+      'Repositório de documentos design-docs atualizado',
     );
     expect(changeSummary(names, c)).toBe('../docs → ../novo');
   });
@@ -96,7 +96,7 @@ describe('entidade docRepo', () => {
     const names: ReviewNames = { current: withPath, preview: after, proposal };
     const c = changeOf(proposal, 'docRepo', 'design-docs');
     expect(c.kind).toBe('remove');
-    expect(changeTitle(names, c)).toBe('Repositório de documentos design-docs removida');
+    expect(changeTitle(names, c)).toBe('Repositório de documentos design-docs removido');
     expect(changeSummary(names, c)).toBe('../docs');
   });
 

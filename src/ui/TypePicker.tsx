@@ -69,7 +69,9 @@ export function TypePicker({ types, groups, onChoose }: TypePickerProps) {
   }, []);
   if (types.length === 0) return <p>{t('typed.noTypes')}</p>;
   const choice = chooseTypes(types, groups, query);
-  const label = t('typed.searchTypes', { count: choice.total });
+  const label = t(choice.total === 1 ? 'typed.searchOneType' : 'typed.searchTypes', {
+    count: choice.total,
+  });
   return (
     <>
       <p class="muted">{t('typed.chooseTypeHint')}</p>

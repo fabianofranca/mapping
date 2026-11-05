@@ -80,6 +80,9 @@ describe('get_component com documento externo', () => {
       exists: null,
     });
     expect(result.hint).toContain('set_doc_repo');
+    // Sem urlTemplate não há link: a hint diz só o caminho no repositório.
+    expect(result.hint).not.toContain('link');
+    expect(result.hint).toContain('text.md');
 
     const none = ok(await component('button', 'proj-sem'));
     expect(none.doc).toBeNull();
@@ -110,6 +113,19 @@ describe('get_component com documento externo', () => {
 describe('validate_library com docClones', () => {
   const validate = (extra: Record<string, unknown> = {}) =>
     mcp.call<Report>('validate_library', { path: 'lib', ...extra });
+
+  it('summary.docs conta os documentos do pacote e os externos e concorda com spec.docs', async () => {
+    for (const extra of [{}, { docClones: { 'design-docs': 'clone' } }]) {
+      const result = ok(
+        await mcp.call<{ summary: { docs: number }; spec: { docs: number } }>(
+          'validate_library',
+          { path: 'lib', ...extra },
+        ),
+      );
+      expect(result.spec.docs).toBe(3);
+      expect(result.summary.docs).toBe(result.spec.docs);
+    }
+  });
 
   it('sem docClones dá um aviso por repositório, com a contagem', async () => {
     const result = ok(await validate());

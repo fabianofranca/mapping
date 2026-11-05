@@ -251,6 +251,26 @@ describe('validateLibrary: pacote válido', () => {
     });
   });
 
+  it('docs conta os documentos do pacote e os externos (docRepos), e concorda com o número de tipos com doc', () => {
+    const spec = structuredClone(SPEC_JSON) as unknown as {
+      formatVersion: number;
+      docRepos: unknown[];
+      layers: { annotationTypes: Record<string, unknown>[] }[];
+    };
+    spec.formatVersion = 11;
+    spec.docRepos = [{ id: 'design-docs', url: 'https://git.example.com/g/design-docs' }];
+    spec.layers[0]!.annotationTypes[1]!.doc = {
+      repo: 'design-docs',
+      path: 'components/card.md',
+    };
+    const files = miniPackage().map((f) =>
+      f.path === SPEC ? { ...f, text: json(spec) } : f,
+    );
+    const report = validateLibrary({ files, specPath: SPEC });
+    expect(report.errors).toEqual([]);
+    expect(report.summary.docs).toBe(2);
+  });
+
   it('acha a especialização sozinha ou pelo specPath, com o pacote numa subpasta', () => {
     const nested = miniPackage().map((f) => ({ ...f, path: `pack/${f.path}` }));
     expect(validate(nested).issues).toEqual([]);

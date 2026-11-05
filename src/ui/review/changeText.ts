@@ -343,13 +343,17 @@ function subjectName(names: ReviewNames, c: Change): string | null {
 export function changeTitle(names: ReviewNames, c: Change): string {
   const entity = t(ENTITY_KEYS[c.entity]);
   const subject = subjectName(names, c);
+  // "Repositório" é masculino em português: "criado", "removido", "atualizado".
+  const form =
+    c.entity === 'platformRepo' || c.entity === 'docRepo' ? 'titleMasc' : 'title';
   if (c.kind === 'create') {
-    return t('review.title.created', { entity, name: subject ?? '' }).trim();
+    return t(`review.${form}.created`, { entity, name: subject ?? '' }).trim();
   }
   if (c.kind === 'remove') {
-    return t('review.title.removed', { entity, name: subject ?? '' }).trim();
+    return t(`review.${form}.removed`, { entity, name: subject ?? '' }).trim();
   }
-  if (c.field === null) return t('review.title.updated', { entity, name: subject ?? '' });
+  if (c.field === null)
+    return t(`review.${form}.updated`, { entity, name: subject ?? '' });
   const field = c.field;
   let label: string;
   if (field.startsWith(VALUES_FIELD_PREFIX)) {

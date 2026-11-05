@@ -169,7 +169,7 @@ describe('formatVersion 11: cláusula de allowedChildren', () => {
 
   it('propriedade a mais na cláusula', () => {
     expect(issuesOf(v11Json(clause({ layer: 'eventos', extra: 1 })))).toEqual([
-      { path: at, message: 'Unrecognized key: "extra"' },
+      { path: at, message: 'propriedade desconhecida: "extra"' },
     ]);
   });
 
@@ -341,7 +341,7 @@ describe('formatVersion 11: doc em repositório externo', () => {
 
   it('propriedade a mais, repo ou path ausente, tipo errado', () => {
     expect(issuesOf(withDoc({ ...doc('a.md'), x: 1 }))).toEqual([
-      { path: `${OWNER}.doc`, message: 'Unrecognized key: "x"' },
+      { path: `${OWNER}.doc`, message: 'propriedade desconhecida: "x"' },
     ]);
     expect(issuesOf(withDoc({ path: 'a.md' }))).toContainEqual({
       path: `${OWNER}.doc.repo`,

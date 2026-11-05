@@ -163,7 +163,7 @@ describe('usesPackageFiles: doc em repositório externo', () => {
 });
 
 describe('validateLibrary: doc em repositório externo', () => {
-  it('o nível 1 não confere o doc externo nem o conta como documento do pacote', () => {
+  it('o nível 1 não confere o doc externo, mas o conta entre os documentos', () => {
     const json = v11Json((s) => {
       s.docRepos = [{ id: 'd', url: 'https://x.com/a' }];
       owner(s).doc = { repo: 'd', path: 'components/button.md' };
@@ -178,6 +178,6 @@ describe('validateLibrary: doc em repositório externo', () => {
     });
     expect(report.issues.filter((i) => i.severity === 'error')).toEqual([]);
     expect(report.issues.filter((i) => i.message.includes('button.md'))).toEqual([]);
-    expect(report.summary.docs).toBe(1);
+    expect(report.summary.docs).toBe(2);
   });
 });

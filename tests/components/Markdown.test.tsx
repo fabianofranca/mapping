@@ -40,12 +40,12 @@ describe('Markdown', () => {
     expect(container.querySelector('pre code')?.textContent).toBe('const x = 1;');
   });
 
-  it('nunca cria script, img nem link externo; HTML aparece como texto', () => {
+  it('nunca cria script nem img; só http(s) absoluto vira link; HTML aparece como texto', () => {
     const { container } = render(<Markdown text={DOC} onLink={vi.fn()} />);
     expect(container.querySelector('script')).toBeNull();
     expect(container.querySelector('img')).toBeNull();
     for (const a of container.querySelectorAll('a')) {
-      expect(a.getAttribute('href')).not.toMatch(/^(https?|javascript|data):/i);
+      expect(a.getAttribute('href')).not.toMatch(/^(javascript|data):/i);
     }
     expect(container.textContent).toContain('<script>alert(1)</script>');
     expect(container.textContent).toContain('<img src=x onerror=alert(1)>');
@@ -59,11 +59,43 @@ describe('Markdown', () => {
     const onLink = vi.fn();
     const { container } = render(<Markdown text={DOC} onLink={onLink} />);
     const links = [...container.querySelectorAll('a')];
-    expect(links).toHaveLength(2);
+    expect(links).toHaveLength(3);
     await user.click(links.find((a) => a.textContent === 'doc') as HTMLElement);
     expect(onLink).toHaveBeenCalledExactlyOnceWith('mapping://material3/button');
     await user.click(links.find((a) => a.textContent === 'ir') as HTMLElement);
     expect(onLink).toHaveBeenCalledTimes(1);
+  });
+
+  it('link absoluto http(s) abre em outra aba, com rel seguro; relativos e âncoras seguem texto', async () => {
+    const user = userEvent.setup();
+    const onLink = vi.fn();
+    const { container } = render(
+      <Markdown
+        text="[a](https://exemplo.com/x) [b](http://exemplo.com) [rel](outro.md) [ftp](ftp://x.com/a)"
+        onLink={onLink}
+      />,
+    );
+    const links = [...container.querySelectorAll('a')];
+    expect(links.map((a) => a.getAttribute('href'))).toEqual([
+      'https://exemplo.com/x',
+      'http://exemplo.com',
+    ]);
+    for (const a of links) {
+      expect(a.getAttribute('target')).toBe('_blank');
+      expect(a.getAttribute('rel')).toBe('noopener noreferrer');
+    }
+    expect(container.textContent).toContain('rel');
+    expect(container.textContent).toContain('ftp');
+    await user.click(links[0] as HTMLElement);
+    expect(onLink).not.toHaveBeenCalled();
+  });
+
+  it('sem onLink, o link absoluto continua link e o mapping:// vira texto', () => {
+    const { container } = render(
+      <Markdown text="[doc](mapping://a/b) [w](https://x.io)" />,
+    );
+    expect(container.querySelectorAll('a')).toHaveLength(1);
+    expect(container.textContent).toBe('doc w');
   });
 
   it('sem onLink, o link mapping:// vira texto', () => {
