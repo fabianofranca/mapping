@@ -5,7 +5,7 @@ import { fixtureZip } from './proposalFixture';
 // Revisar/Continuar da proposta (janela Propostas aberta) ou ao canvas (fechada); nunca ao
 // body. A janela troca a árvore da revisão pela lista depois do `review.close()`.
 
-test.use({ viewport: { width: 1280, height: 800 } });
+test.use({ viewport: { width: 1280, height: 850 } });
 
 async function openFixture(page: import('@playwright/test').Page) {
   await page.goto('/');

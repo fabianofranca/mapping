@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 // Selo da especialização no cabeçalho de camada dos Detalhes a 900 px (#371): o selo
 // encolhe com reticências e dica, o + não o cobre e o painel não ganha barra horizontal.
 
-test.use({ viewport: { width: 900, height: 700 } });
+test.use({ viewport: { width: 900, height: 850 } });
 
 async function openExample(page: Page): Promise<void> {
   await page.goto('/');
@@ -74,7 +74,7 @@ test('o nome da camada só encolhe depois de o selo ter sumido (900 e 1000 px)',
   page,
 }) => {
   for (const width of [900, 1000]) {
-    await page.setViewportSize({ width, height: 700 });
+    await page.setViewportSize({ width, height: 850 });
     await openExample(page);
     await page
       .getByRole('list', { name: 'Árvore de marcações' })
@@ -106,7 +106,7 @@ test('o nome da camada só encolhe depois de o selo ter sumido (900 e 1000 px)',
 test('a 1592 px os selos curtos (SDUI, Modelo de dados) continuam inteiros', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1592, height: 800 });
+  await page.setViewportSize({ width: 1592, height: 850 });
   await openExample(page);
   await page
     .getByRole('list', { name: 'Árvore de marcações' })

@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 // "Copiar referência" (só existe com pasta de origem) e nenhum filho passa da largura do
 // painel, sem barra horizontal.
 
-test.use({ viewport: { width: 900, height: 700 } });
+test.use({ viewport: { width: 900, height: 850 } });
 
 const FOLDER = 'exemplo-pasta-e2e';
 

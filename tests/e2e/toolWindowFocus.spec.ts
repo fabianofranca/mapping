@@ -20,7 +20,7 @@ const activeTag = (page: Page) => page.evaluate(() => document.activeElement?.ta
 test('Árvore: fechar pelo atalho e pelo X mantém o foco fora do body', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.setViewportSize({ width: 1280, height: 850 });
   await open(page);
   const tree = page.getByRole('region', { name: 'Árvore' });
   // Se a Árvore já veio aberta, fecha para começar do canvas.

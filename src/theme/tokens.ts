@@ -237,6 +237,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-proposal-col-counts': '236px',
   /** Largura mínima da app (só desktop): abaixo dela, o aviso "Abra numa janela maior". */
   'size-app-min': `${BREAKPOINTS.appMin}px`,
+  /** Altura mínima da app (só desktop): abaixo dela também vale o aviso. */
+  'size-app-min-height': `${BREAKPOINTS.appMinHeight}px`,
   'size-canvas-min': '360px',
   'size-resize-hit': '8px',
   'size-label-col': '92px',
