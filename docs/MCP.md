@@ -169,7 +169,7 @@ Sem tool nova e sem mudança no `mapping.json` (schema v13), na proposta (`forma
 
 ### Mudança da 0.9.0 (Marcações espaciais, notas e setas)
 
-O schema do `mapping.json` é o v13 e a proposta fica no `formatVersion` 3 (a 2 continua lida). **Quem pertence a quem é lido, nunca calculado**: o servidor devolve `parent` e `members` prontos.
+O schema do `mapping.json` é o v13 e a proposta fica no `formatVersion` 4 (as 1 a 3 continuam lidas). **Quem pertence a quem é lido, nunca calculado**: o servidor devolve `parent` e `members` prontos.
 
 - **`get_marking`** ganha `space` (`"canvas"` ou `"container"`), `floating` (boolean) e `members` = `{ markings: [{ ref, name, rect }], containers: [{ ref, name }] }` (os itens cujo pai é a marcação; acima de `LIST_LIMIT` vêm `markingsTotal` e `containersTotal`). `children` continua. Numa marcação do canvas, `container` é `null`, o `rect` está em unidades do canvas (pode ser negativo) e o `path` começa por um segmento `{ ref: null, name: "Canvas" }` (texto legível "Canvas › …"). Traz `arrows: { outgoing, incoming }` quando há setas (ME4).
 - **`list_markings`**: as linhas ganham `space` e `floating`; filtro novo `canvas: true` (só as marcações do canvas, na ordem em profundidade; junto de `container`/`image` falha com `invalid-arguments`) e `floating` (boolean).

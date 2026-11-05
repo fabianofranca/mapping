@@ -1,4 +1,5 @@
 import { clearArrowRoutes, settleHierarchy } from './hierarchySettle';
+import { anchorsOfChanges, placeCreatedMarkings } from './proposalOrder';
 import { validateProject, type InvariantCode } from './invariants';
 import { packageDirOf } from './libraryPackage';
 import {
@@ -265,7 +266,7 @@ export interface PatchResult {
 
 /**
  * Aplica `changes` ao projeto, sem validar o resultado: criações entram no fim das
- * listas, remoções de entidade ausente não fazem nada, e as camadas e as marcações reposicionadas vão
+ * listas (a marcação, antes da âncora `insertBefore`, se ela tiver uma e estiver na lista), remoções de entidade ausente não fazem nada, e as camadas e as marcações reposicionadas vão
  * para o índice proposto (em ordem crescente). O que não pôde ser aplicado volta em
  * `problems` e fica de fora. Mexer em marcação ou container assenta o pertencimento
  * (`settleHierarchy`) antes das posições: o pai sempre sai da geometria, nunca da proposta, e
@@ -322,7 +323,10 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     if (layer) layers.splice(Math.min(c.to as number, layers.length), 0, layer);
   }
 
-  let markings = [...maps.marking.values()] as Marking[];
+  let markings = placeCreatedMarkings(
+    [...maps.marking.values()] as Marking[],
+    anchorsOfChanges(ordered, new Set(p.markings.map((m) => m.id))),
+  );
   let containers = [...maps.image.values()] as ProjectContainer[];
   let arrows = [...maps.arrow.values()] as Arrow[];
   if (changes.some((c) => c.entity === 'marking' || c.entity === 'image')) {

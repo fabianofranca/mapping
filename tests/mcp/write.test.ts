@@ -605,7 +605,7 @@ describe('regras do modelo no lote', () => {
       formatVersion: number;
       changes: { entity: string; field: string | null; to: unknown }[];
     };
-    expect(saved.formatVersion).toBe(3);
+    expect(saved.formatVersion).toBe(4);
     // A anotação a criar e as mudanças não levam `inherit` (a operação crua fica como o agente a enviou).
     expect(saved.changes.some((c) => c.field === 'inherit')).toBe(false);
     const created = saved.changes.find((c) => c.entity === 'annotation');

@@ -443,7 +443,7 @@ describe('proposta', () => {
     });
     expect(p).toMatchObject({
       format: 'mapping-proposal',
-      formatVersion: 3,
+      formatVersion: 4,
       id: 'P1',
       title: 'Checkout a partir do Figma',
       createdAt: AT,
