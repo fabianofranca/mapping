@@ -371,7 +371,7 @@ a.home-nav-item {
   margin-top: 0;
 }
 
-/* Repositórios de código por plataforma (Configurações do editor) */
+/* Repositórios (código por plataforma e documentos; Configurações do editor) */
 .repos {
   display: flex;
   flex-direction: column;
@@ -387,7 +387,18 @@ a.home-nav-item {
   font: var(--t-text-title);
 }
 
-.repos > p {
+.repos-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.repos-subtitle {
+  margin: 0;
+  font: var(--t-text-heading);
+}
+
+.repos-group > p {
   margin: 0;
 }
 

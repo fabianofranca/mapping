@@ -858,7 +858,12 @@ export const enUS: Dictionary = {
     'Schema 11: the file address left the project and was discarded from {platforms} ({templates}). The repository now belongs to the specialization: rewrite the specialization with `repo` (formatVersion 5) and update it in the project.',
   'migration.v13.discardedInherit':
     'Schema 13: annotation inheritance was removed from the format. {count} annotation(s) also applied to the descendant markings and now apply only to their own marking: {markings}. No annotation was deleted.',
-  'repos.title': 'Code repositories',
+  'repos.title': 'Repositories',
+  'repos.code.title': 'Code',
+  'repos.docs.title': 'Documents',
+  'repos.docs.intro':
+    'Document repositories come from the specialization. Say where the local clone is on your computer: the path is saved in the project, so the agent (MCP) can open the file. The folder the app uses to read the document is a different one, connected per machine on the component page, and is not shown here.',
+  'repos.docs.clear': 'Clear the document repository {id}',
   'repos.intro':
     'The repository address of each platform comes from the specialization and is shown here for reference only. Just say where the local clone of the code is on your computer.',
   'repos.noneDeclared':
@@ -886,7 +891,7 @@ export const enUS: Dictionary = {
   'help.code.definition':
     'Definition: in the Details of a typed annotation, one line per platform with a path, like "Platform · File.ext", with the full path and the symbol in the tooltip. It comes from the specialization and is not edited in the app.',
   'help.code.repos':
-    'Repositories: the repository address of each platform (repo) comes from the specialization. In Settings (gear), in the "Code repositories" section, give only the local path of the clone root, relative to the project folder. A platform where some type points to a file, without a repo, raises a warning when the specialization is imported.',
+    'Repositories: the repository address of each platform (repo) comes from the specialization. In Settings (gear), in the "Repositories" section, "Code" subsection, give only the local path of the clone root, relative to the project folder. A platform where some type points to a file, without a repo, raises a warning when the specialization is imported.',
   // Component library in the app (Library stage, B3)
   // Catalog: editor window and the project-less library screen (Library stage, B5)
   'catalog.window.title': 'Catalog',

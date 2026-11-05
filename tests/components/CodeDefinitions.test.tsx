@@ -225,7 +225,7 @@ describe('Configurações: clone local por plataforma', () => {
         onShowShortcuts={() => undefined}
       />
     ));
-    expect(screen.queryByText('Repositórios de código')).toBeNull();
+    expect(screen.queryByText('Repositórios')).toBeNull();
   });
 });
 
