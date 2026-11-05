@@ -10,6 +10,7 @@ import { Dialog } from '../../src/ui/Dialog';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { DialogSlotContext, useDialogSlot } from '../../src/ui/focus';
 import { MenuPopover } from '../../src/ui/MenuPopover';
+import { OPEN_SCROLL_GRACE_MS } from '../../src/ui/openScrollGuard';
 import { Popover } from '../../src/ui/Popover';
 import { sampleProject } from '../model/fixtures';
 import { createHarness } from './harness';
@@ -198,8 +199,8 @@ describe('ActionMenu (posição fixa)', () => {
     // A rolagem que a própria abertura provoca (no mesmo quadro) não fecha (etapa #515).
     fireEvent.scroll(document.body);
     expect(screen.queryByRole('menu')).not.toBeNull();
-    // Depois do próximo quadro, rolar fecha.
-    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    // Passada a janela da abertura, rolar fecha.
+    await new Promise((resolve) => setTimeout(resolve, OPEN_SCROLL_GRACE_MS + 20));
     fireEvent.scroll(document.body);
     await vi.waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
   });
@@ -247,5 +248,31 @@ describe('CanvasContextMenu', () => {
     await user.click(within(menu).getByRole('menuitem', { name: t('copy.reference') }));
     await vi.waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
     await vi.waitFor(() => expect(document.activeElement).toBe(origin));
+  });
+});
+
+describe('Popover (rolagem)', () => {
+  it('ignora a rolagem da abertura e fecha ao rolar depois', async () => {
+    render(
+      <Popover
+        role="menu"
+        label="Mais"
+        trigger={({ toggle }) => (
+          <button type="button" onClick={toggle}>
+            Abrir
+          </button>
+        )}
+      >
+        <button type="button">Item</button>
+      </Popover>,
+    );
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Abrir' }));
+    await screen.findByRole('menu');
+    fireEvent.scroll(document.body);
+    expect(screen.queryByRole('menu')).not.toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, OPEN_SCROLL_GRACE_MS + 20));
+    fireEvent.scroll(document.body);
+    await vi.waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
   });
 });

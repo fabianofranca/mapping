@@ -158,7 +158,33 @@ export function reviewExitTarget(proposalId: string | null): HTMLElement | null 
   return document.querySelector<HTMLElement>(`[${CANVAS_AREA_ATTR}]`);
 }
 
-/** Leva o foco ao alvo da saída, ainda com a faixa no DOM (nenhum quadro no `body`). */
+const EXIT_FOCUS_TRIES = 30;
+const EXIT_FOCUS_STEP_MS = 16;
+
+/**
+ * Leva o foco ao alvo da saída, ainda com a faixa no DOM (nenhum quadro no `body`).
+ * Ao fechar a revisão, a janela Propostas só troca a árvore pela lista na renderização
+ * seguinte: o botão da proposta ainda não existe. O foco vai ao canvas já e passa ao
+ * botão quando ele aparece (até ~0,5 s), se a pessoa não o tiver levado a outro lugar.
+ */
 export function focusReviewExitTarget(proposalId: string | null): void {
-  reviewExitTarget(proposalId)?.focus();
+  const first = reviewExitTarget(proposalId);
+  first?.focus();
+  if (proposalId === null || (first && first !== canvasArea())) return;
+  const parked = first;
+  let tries = 0;
+  const retry = () => {
+    const target = reviewExitTarget(proposalId);
+    if (target && target !== canvasArea()) {
+      const now = document.activeElement;
+      if (now === parked || now === document.body || now === null) target.focus();
+      return;
+    }
+    if (++tries < EXIT_FOCUS_TRIES) setTimeout(retry, EXIT_FOCUS_STEP_MS);
+  };
+  setTimeout(retry, EXIT_FOCUS_STEP_MS);
+}
+
+function canvasArea(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(`[${CANVAS_AREA_ATTR}]`);
 }
