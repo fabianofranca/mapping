@@ -110,7 +110,7 @@ A rodada completa (R0 a R18) roda em **3 sessões ao mesmo tempo**, uma por bloc
 | ----- | ------------------------------------------------------------------------ | ------ |
 | 1     | R0, R1, seção 6, R3, R6.3 a R6.7, R7, R5, R8 e R18                       | 94     |
 | 2     | R0, R2, seção 6, R4, R6.8a a R6.11, R9, R10, R11, R13 e a passada visual | 93     |
-| 3     | R0, seção 6, R12, R14, R15, R16 e R17                                    | 95     |
+| 3     | R0, seção 6, R12, R14, R15, R16 e R17                                    | 96     |
 
 Por quê: as dependências da seção 8 do guia e a contagem de passos (a coluna **Passos** conta o R0, que está nos três; no total são 270 passos distintos, e nenhum bloco passa de 40%). R1, R3, R5, R6.3 a R6.7, R7 e R8 usam o `principal` e o repositório de teste; R6.8a a R6.11 usam a pasta `loja` do R4.11; o R10.7 usa o projeto `telas` do R9; o resto usa pastas próprias. A passada visual fica no bloco 2 (decisão 7 da etapa #482): o bloco 1 é a cadeia do `principal`, que não se divide e é o mais lento (47:18 na #424, com a passada de 1:55), e o bloco 2 tem o que a lista padrão abre: **Pasta indisponível** pelo R0.7 (nos três blocos), **Sair da revisão?** pelo R4 e as propostas e a revisão do R4, e **Especializações**, **Exportar** e **Configurações** com qualquer projeto. A seção 6 (repositório de teste e MCP) está nos três blocos, porque todos têm R3, R5, R9, R12, R16 ou R17. O teste `tests/tooling/roundBlocks.test.ts` confere a tabela contra os passos do guia: um roteiro novo (R19) o faz falhar até ser posto num bloco, e ele confere que a passada visual está em exatamente um bloco, o da tabela.
 

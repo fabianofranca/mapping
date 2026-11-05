@@ -44,5 +44,5 @@ Para escrever, revisar ou atualizar uma especialização, use a skill `spec-auth
 
 1. `list_projects` → `get_project` → `get_specialization` dos tipos que vai usar.
 2. Leia os containers e marcações que interessam (`list_markings`, `get_marking`, `get_marking_image`). Se o seu cliente não mostra imagens no chat (como o Cursor), cole o `markdown` que `get_marking_image`/`get_container_file` devolvem (URL local do servidor).
-3. Monte o lote, confira com `plan_changes`, envie com `propose_changes`, avise a pessoa.
+3. Monte o lote, confira com `plan_changes` (leia o `membership` da resposta, que lista quem muda de pai ou de espaço; não calcule interseções), envie com `propose_changes`, avise a pessoa.
 4. Quando a revisão terminar, leia `get_proposal_review` e, se preciso, envie outra proposta com `supersedes`.

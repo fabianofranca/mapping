@@ -419,7 +419,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     index: int
       .min(0)
       .describe(
-        'Nova posição entre as irmãs (mesmo container e mesmo pai): 0 = a primeira, desenhada por baixo; a última fica por cima.',
+        'Nova posição entre as irmãs (mesmo container e mesmo pai): 0 = a primeira, desenhada por baixo; a última fica por cima. As irmãs são as do estado do lote naquele ponto, depois das operações anteriores (um `update_marking` antes pode tirar ou pôr irmãs); se a marcação já está nessa posição, nada muda e o resumo diz isso.',
       ),
   }),
   z.object({
