@@ -43,25 +43,22 @@ const created = (before: Project, after: Project) =>
   after.markings.find((m) => !before.markings.some((b) => b.id === m.id))!;
 
 /**
- * O projeto sem o que varia entre uma execução e outra (revisão e data), com cada lista
- * ordenada por id: a aplicação de uma proposta acrescenta a marcação criada, enquanto o
- * `wrapItems` da app a põe antes da primeira envolvida (a hierarquia só difere no empate
- * de retângulo; ver "empate de retângulo" abaixo).
+ * O projeto sem o que varia entre uma execução e outra (revisão e data): o id da marcação
+ * nova vira `NEW`. A ordem de cada lista é mantida: o aplicado tem a mesma ordem do
+ * `wrapItems` da app (a proposta formatVersion 4 carrega a posição da criada).
  */
 const shape = (p: Project, newId: string) => {
-  const sorted = (list: readonly unknown[]) =>
-    list
-      .map((x) =>
-        JSON.stringify(
-          Object.entries(x as object).sort(([a], [b]) => a.localeCompare(b)),
-        ).replaceAll(newId, 'NEW'),
-      )
-      .sort();
+  const normalized = (list: readonly unknown[]) =>
+    list.map((x) =>
+      JSON.stringify(
+        Object.entries(x as object).sort(([a], [b]) => a.localeCompare(b)),
+      ).replaceAll(newId, 'NEW'),
+    );
   return {
-    containers: sorted(p.containers),
-    markings: sorted(p.markings),
-    arrows: sorted(p.arrows),
-    annotations: sorted(p.annotations),
+    containers: normalized(p.containers),
+    markings: normalized(p.markings),
+    arrows: normalized(p.arrows),
+    annotations: normalized(p.annotations),
   };
 };
 
@@ -280,7 +277,7 @@ describe('wrap_items: empate de retângulo', () => {
   const parentOf = (p: Project, id: string) =>
     p.markings.find((m) => m.id === id)!.parentId;
 
-  it('item que preenche o container: a nova fica com o retângulo dele e, ao aplicar, a hierarquia é a inversa da do modelo', async () => {
+  it('item que preenche o container: a nova fica com o retângulo dele e, ao aplicar, a hierarquia e a ordem são as do modelo', async () => {
     const before = readProject(tieDir);
     const a = byName(before, 'A');
     const b = byName(before, 'B');
@@ -305,11 +302,13 @@ describe('wrap_items: empate de retângulo', () => {
     expect(parentOf(model, a.id)).toBe(id);
     expect(parentOf(model, b.id)).toBe(a.id);
 
-    // Aplicada, a nova entra no fim da lista e o assentar desempata por ordem: A fica sem
-    // pai, a nova é filha de A e B é filha da nova (a inversa). Documentado em docs/MCP.md.
-    expect(parentOf(after, a.id)).toBeNull();
-    expect(parentOf(after, id)).toBe(a.id);
-    expect(parentOf(after, b.id)).toBe(id);
+    // Aplicada, a proposta formatVersion 4 leva a nova para o mesmo lugar do array: a
+    // hierarquia e a ordem são as do modelo (a nova sem pai, A filha dela, B filha de A).
+    expect(parentOf(after, id)).toBeNull();
+    expect(parentOf(after, a.id)).toBe(id);
+    expect(parentOf(after, b.id)).toBe(a.id);
+    expect(after.markings.map((m) => m.id)).toEqual(model.markings.map((m) => m.id));
+    expect(shape(after, id)).toEqual(shape(model, id));
   });
 
   it('sem empate (o retângulo cresce), a hierarquia aplicada é a do modelo', async () => {
@@ -420,10 +419,17 @@ describe('wrap_items: plano e revisão', () => {
     expect(wrapped.reviewChanges).toEqual(marked.reviewChanges);
     expect(wrapped.levels).toEqual(marked.levels);
     expect(wrapped.changes).toEqual(marked.changes);
-    // As mudanças são as mesmas, a menos do id da nova e do id de cada mudança.
+    // As mudanças são as mesmas, a menos do id da nova, do id de cada mudança e da posição
+    // da criada: o envolver a põe antes da primeira envolvida (`insertBefore`), e o
+    // create_marking, no fim (sem o campo).
+    expect(made.insertBefore).toBe(p.markings.find((m) => items.includes(m.id))!.id);
+    expect(
+      markProposal.changes.find((c) => c.entity === 'marking' && c.kind === 'create')!
+        .insertBefore,
+    ).toBeUndefined();
     const norm = (proposal: typeof wrapProposal, id: string) =>
       proposal.changes
-        .map((c) => ({ ...c, id: undefined }))
+        .map((c) => ({ ...c, id: undefined, insertBefore: undefined }))
         .map((c) => JSON.stringify(c).replaceAll(id, 'NEW'))
         .sort();
     expect(norm(wrapProposal, made.entityId)).toEqual(norm(markProposal, markId));

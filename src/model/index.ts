@@ -64,6 +64,8 @@ export * from './proposal';
 export * from './proposalChanges';
 export * from './proposalReview';
 export * from './proposalApply';
+export * from './proposalOrder';
+export * from './membership';
 export * from './proposalCompare';
 export * from './proposalView';
 // Valor de um campo na forma de `from`/`to` (os marcadores dos Detalhes na revisão).

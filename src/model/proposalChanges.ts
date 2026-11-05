@@ -25,6 +25,7 @@ import {
   toJson,
 } from './proposalValues';
 import { siblingPosition } from './markings';
+import { insertAnchors, placeCreatedMarkings } from './proposalOrder';
 import type { Annotation, JsonValue, Marking, Project } from './types';
 
 // Cálculo das mudanças (etapa 4): quem envia a proposta aplica as operações a uma cópia
@@ -67,16 +68,18 @@ function longestIncreasing(seq: readonly number[]): Set<number> {
 
 /**
  * Ordem entre irmãs (mesmo espaço e mesmo pai): quem sai da maior subsequência crescente da
- * ordem do array muda de posição. O array aplicado é o de antes, com as criadas no fim (na
- * ordem de depois); reparentar não mexe no array. `from` é o índice entre as irmãs de antes
+ * ordem do array muda de posição. O array aplicado é o de antes, com cada criada antes da
+ * âncora dela (`insertBefore`, ver `proposalOrder.ts`) ou no fim; reparentar não mexe no array. `from` é o índice entre as irmãs de antes
  * (`null` na criada); `to`, o índice entre as irmãs de depois.
  */
 function markingPositions(diff: Diff, base: Project, after: Project): void {
   const baseIds = new Set(base.markings.map((m) => m.id));
-  const rank = new Map<string, number>(base.markings.map((m, i) => [m.id, i]));
-  after.markings
-    .filter((m) => !baseIds.has(m.id))
-    .forEach((m, i) => rank.set(m.id, base.markings.length + i));
+  const created = after.markings.filter((m) => !baseIds.has(m.id));
+  const applied = placeCreatedMarkings(
+    [...base.markings, ...created],
+    insertAnchors(baseIds, after.markings),
+  );
+  const rank = new Map<string, number>(applied.map((m, i) => [m.id, i]));
   const groups = new Map<string, Marking[]>();
   for (const m of after.markings) {
     const key = `${m.containerId ?? ''}|${m.parentId ?? ''}`;
@@ -104,6 +107,16 @@ function markingPositions(diff: Diff, base: Project, after: Project): void {
 
 class Diff {
   readonly out: Draft[] = [];
+
+  /** Põe `insertBefore` (a âncora) nas criações de marcação que têm uma. */
+  insertBefore(anchors: ReadonlyMap<string, string>): void {
+    this.out.forEach((d, i) => {
+      const anchor = anchors.get(d.entityId);
+      if (d.entity === 'marking' && d.kind === 'create' && anchor !== undefined) {
+        this.out[i] = { ...d, insertBefore: anchor };
+      }
+    });
+  }
 
   push(draft: Draft): void {
     this.out.push(draft);
@@ -356,6 +369,7 @@ export function computeChanges(base: Project, after: Project): Change[] {
       (marking, f) => markingField(after, marking, f),
     );
   }
+  diff.insertBefore(insertAnchors(new Set(baseMarkings.keys()), after.markings));
   markingPositions(diff, base, after);
 
   // A seta aparece na revisão sob a marcação de origem: o container dela (ou o canvas). Criar e

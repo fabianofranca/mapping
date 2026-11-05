@@ -164,7 +164,7 @@ describe('create-arrow e delete-arrow: a leitura', () => {
     if (!parsed.ok) return;
     expect(parsed.warnings).toEqual([]);
     expect(parsed.proposal.changes).toEqual(p.changes);
-    expect(parsed.proposal.formatVersion).toBe(3);
+    expect(parsed.proposal.formatVersion).toBe(4);
   });
 
   it('uma alteração de campo de seta é ignorada, com aviso; o resto da proposta fica', () => {

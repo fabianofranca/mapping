@@ -90,12 +90,12 @@ describe('proposta com `inherit` (formatVersion 1 e 2)', () => {
   });
 });
 
-describe('proposta formatVersion 3', () => {
+describe('proposta formatVersion 4 (sem inherit desde a 3)', () => {
   it('é aceita e volta igual', () => {
     const base = sampleProject();
     const p = propose(base, renameAnnotation(base, 'A3', 'Trinco'));
     const json = JSON.parse(serializeProposal(p)) as Json;
-    expect(json.formatVersion).toBe(3);
+    expect(json.formatVersion).toBe(4);
     const result = parseProposal(json);
     if (!result.ok) throw new Error(result.errors.join('\n'));
     expect(result.warnings).toEqual([]);

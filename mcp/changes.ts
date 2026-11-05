@@ -18,6 +18,7 @@ import {
 } from './batch';
 import { ToolError } from './errors';
 import { Refs } from './items';
+import { membershipView } from './membership';
 import type { Operation } from './operations';
 import { Roots, resolveProjectFile } from './paths';
 import { readSpecInput } from './library';
@@ -205,6 +206,11 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
       message: d.message,
     })),
   ];
+  const membership = membershipView(
+    result.before,
+    new Refs({ ...loaded, project: result.before }),
+    refs,
+  );
   return {
     valid: prepared.valid,
     project: { name: location.name, path: location.path },
@@ -218,6 +224,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
     changes: changeCounts(result.before, result.project),
     issues: issueChanges(refs, result.before),
     notices: noticeChanges(refs, result.before),
+    ...(membership.length > 0 ? { membership } : {}),
     ...(warnings.length > 0 ? { warnings } : {}),
     created: createdRefs(refs, result),
   };

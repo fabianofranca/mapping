@@ -16,18 +16,19 @@ import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './sp
 import type { JsonValue } from './types';
 
 // Formato da proposta de alteração (etapa 4): `proposals/<id>/proposal.json`,
-// `formatVersion` 3 (a 1 e a 2 continuam lidas). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
+// `formatVersion` 4 (a 1, a 2 e a 3 continuam lidas). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
 // leitura devolve os erros com o caminho exato (`changes[3].to.rect.width: …`).
 
 export const PROPOSAL_FORMAT = 'mapping-proposal';
-export const PROPOSAL_FORMAT_VERSION = 3;
+export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versões lidas: a 3 não tem `inherit` na anotação nem `parentId` comparado na marcação (a
+ * Versões lidas: a 4 acrescenta `insertBefore` à criação de marcação (a posição dela no array);
+ * uma app antiga recusa a 4 em vez de descartar o campo ao regravar as decisões. A 3 não tem `inherit` na anotação nem `parentId` comparado na marcação (a
  * mudança de uma proposta antiga é ignorada, com aviso), e traz o nível `canvas`, a mudança
  * composta `space` e `floating`, e as mudanças `create-arrow` e `delete-arrow` (entidade `arrow`,
  * ME4); a 2 acrescenta `add_container` às `operations`; a 1 continua válida.
  */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3] as const;
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4] as const;
 /** Pasta das propostas, relativa à raiz do projeto. */
 export const PROPOSALS_DIR = 'proposals';
 /** Nome do arquivo da proposta dentro de `proposals/<id>/`. */
@@ -146,6 +147,12 @@ export interface Change {
   readonly field: string | null;
   readonly from: JsonValue;
   readonly to: JsonValue;
+  /**
+   * Só na criação de marcação (formatVersion 4): o id da primeira marcação depois da criada, no
+   * projeto proposto, que já existia na base. Ausente ou `null`: a criada vai para o fim. Uma
+   * âncora que não está na base ao aplicar (removida, ou inexistente) também manda para o fim.
+   */
+  readonly insertBefore?: string | null;
 }
 
 export type DecisionState = 'accepted' | 'rejected';
@@ -429,6 +436,7 @@ const changeSchema = z
     field: z.string().nullable(),
     from: jsonValue,
     to: jsonValue,
+    insertBefore: id.nullable().optional(),
   })
   .superRefine((c, ctx) => {
     const add = (path: (string | number)[], message: string) =>
@@ -526,8 +534,8 @@ const targetSchema = z
 export const proposalSchema = z
   .object({
     format: z.literal(PROPOSAL_FORMAT, { error: `deve ser "${PROPOSAL_FORMAT}"` }),
-    formatVersion: z.union([z.literal(1), z.literal(2), z.literal(3)], {
-      error: 'deve ser 1, 2 ou 3',
+    formatVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)], {
+      error: 'deve ser 1, 2, 3 ou 4',
     }),
     id: proposalId,
     title: z.string().trim().min(1, 'não pode ser vazio'),
@@ -562,6 +570,12 @@ export const proposalSchema = z
     p.changes.forEach((c, i) => {
       if (changeIds.has(c.id)) add(['changes', i, 'id'], `id "${c.id}" repetido`);
       changeIds.add(c.id);
+      if (
+        c.insertBefore !== undefined &&
+        (c.kind !== 'create' || c.entity !== 'marking')
+      ) {
+        add(['changes', i, 'insertBefore'], 'só na criação de marcação');
+      }
     });
     if (p.supersedes !== null && p.supersedes === p.id) {
       add(['supersedes'], 'uma proposta não substitui a si mesma');
@@ -778,9 +792,27 @@ function withoutArrowUpdates(data: unknown): { data: unknown; ignored: number } 
   return { data: pruneChanges(data, changes, dropped), ignored: dropped.size };
 }
 
+/**
+ * Antes da formatVersion 4 a mudança não tem `insertBefore`: se o campo aparecer numa proposta
+ * 1 a 3, ele é ignorado (essas versões são lidas e aplicadas como sempre foram).
+ */
+function withoutInsertBefore(data: unknown): unknown {
+  if (!isPlainRecord(data) || !Array.isArray(data.changes)) return data;
+  if (typeof data.formatVersion !== 'number' || data.formatVersion >= 4) return data;
+  return {
+    ...data,
+    changes: data.changes.map((c: unknown) => {
+      if (!isPlainRecord(c) || !Object.hasOwn(c, 'insertBefore')) return c;
+      const { insertBefore, ...rest } = c;
+      void insertBefore;
+      return rest;
+    }),
+  };
+}
+
 /** Valida um JSON já lido; erros no formato `caminho: mensagem`. */
 export function parseProposal(data: unknown): ProposalParseResult {
-  const noInherit = withoutInherit(withContainerIdOnMarkings(data));
+  const noInherit = withoutInherit(withContainerIdOnMarkings(withoutInsertBefore(data)));
   const noParent = withDerivedParent(noInherit.data);
   const noArrowUpdate = withoutArrowUpdates(noParent.data);
   const result = proposalSchema.safeParse(noArrowUpdate.data);
@@ -859,6 +891,7 @@ export function serializeProposal(p: Proposal): string {
       field: c.field,
       from: c.from,
       to: c.to,
+      ...(c.insertBefore === undefined ? {} : { insertBefore: c.insertBefore }),
     })),
     decisions: Object.fromEntries(
       Object.entries(p.decisions).map(([k, d]) => [k, { state: d.state, at: d.at }]),
