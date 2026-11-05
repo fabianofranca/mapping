@@ -129,7 +129,7 @@ describe('markdown: construção', () => {
     expect(b.type === 'table' && b.align).toEqual([null, null]);
   });
 
-  it('links: só mapping:// e âncora são vivos', () => {
+  it('links: mapping://, âncora e http(s):// absoluto são vivos', () => {
     const [a, b, c, d] = [
       inlinesOf('[x](mapping://material3/button)')[0],
       inlinesOf('[x](#secao)')[0],
@@ -142,16 +142,20 @@ describe('markdown: construção', () => {
       href: 'mapping://material3/button',
     });
     expect(b).toMatchObject({ type: 'link', kind: 'anchor' });
-    expect(c).toEqual({ type: 'text', text: 'x' });
+    expect(c).toMatchObject({ type: 'link', kind: 'external', href: 'http://e.com' });
     expect(d).toEqual({ type: 'text', text: 'x' });
     expect(isSafeLinkTarget('mapping://a/b')).toBe(true);
     expect(isSafeLinkTarget('#a')).toBe(true);
+    expect(isSafeLinkTarget('https://exemplo.com/a?b=1#c')).toBe(true);
     for (const bad of [
       '',
       '#',
       'mapping://',
       'javascript:alert(1)',
-      'https://x',
+      'https://',
+      'https:/x',
+      'ftp://x.com/a',
+      'https://a b',
       'data:text/html,a',
       'a b',
     ])
@@ -192,7 +196,6 @@ describe('markdown: entrada hostil', () => {
       '[x](javascript:alert(1))',
       '[x](JavaScript:alert(1))',
       '[x](data:text/html,<script>alert(1)</script>)',
-      '[x](http://evil.example)',
       '[x]()',
       '![alt](http://evil.example/a.png)',
       '[x](mapping://)',

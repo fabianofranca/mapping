@@ -652,6 +652,7 @@ export const ptBR = {
   'typed.noTypes':
     'A especialização desta camada não está disponível ou não tem tipos de anotação.',
   'typed.searchTypes': 'Buscar entre {count} tipos',
+  'typed.searchOneType': 'Buscar entre {count} tipo',
   'typed.noTypeMatch': 'Nenhum tipo com "{query}"',
   'typed.otherTypes': 'Outros',
   'typed.ownerRoleOption': '{owner} › {role}',

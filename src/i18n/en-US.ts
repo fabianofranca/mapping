@@ -649,6 +649,7 @@ export const enUS: Dictionary = {
   'typed.noTypes':
     'The specialization of this layer is unavailable or has no annotation types.',
   'typed.searchTypes': 'Search among {count} types',
+  'typed.searchOneType': 'Search among {count} type',
   'typed.noTypeMatch': 'No type matching "{query}"',
   'typed.otherTypes': 'Other',
   'typed.ownerRoleOption': '{owner} › {role}',

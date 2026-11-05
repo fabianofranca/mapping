@@ -1,5 +1,5 @@
 // Subconjunto de markdown para os documentos da biblioteca (Catálogo). Puro: só dados,
-// nenhum HTML. HTML cru é texto; só links `mapping://` e âncoras `#…` viram link.
+// nenhum HTML. HTML cru é texto; só links `mapping://`, âncoras `#…` e `http(s)://` absolutos viram link.
 // Nunca lança: entrada hostil devolve algo, com limites de profundidade e de tamanho.
 
 export type MarkdownAlign = 'left' | 'center' | 'right' | null;
@@ -12,7 +12,7 @@ export type MarkdownInline =
   | {
       readonly type: 'link';
       readonly href: string;
-      readonly kind: 'mapping' | 'anchor';
+      readonly kind: 'mapping' | 'anchor' | 'external';
       readonly children: readonly MarkdownInline[];
     };
 
@@ -57,10 +57,11 @@ function hasControl(text: string): boolean {
   return false;
 }
 
-/** Classifica o destino de um link: só `mapping://…` e `#âncora` são vivos. */
-export function linkKind(href: string): 'mapping' | 'anchor' | null {
+/** Classifica o destino de um link: só `mapping://…`, `#âncora` e `http(s)://` absoluto são vivos. */
+export function linkKind(href: string): 'mapping' | 'anchor' | 'external' | null {
   if (hasControl(href)) return null;
   if (/^mapping:\/\/[^\s<>"'`\\]+$/.test(href)) return 'mapping';
+  if (/^https?:\/\/[^\s<>"'`\\/][^\s<>"'`\\]*$/.test(href)) return 'external';
   if (/^#[^\s<>"'`\\]+$/.test(href)) return 'anchor';
   return null;
 }

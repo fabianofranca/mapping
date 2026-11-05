@@ -820,6 +820,8 @@ function summarize(
     types += 1;
     if (type.component !== undefined) components.add(pkg.resolve(type.component));
     if (typeof type.doc === 'string') docs.add(pkg.resolve(type.doc));
+    // Documento em repositório externo (docRepos): conta também, por repositório e caminho.
+    else if (type.doc !== undefined) docs.add(`${type.doc.repo}\u0000${type.doc.path}`);
     examples += type.examples?.length ?? 0;
   });
   for (const origin of spec.origins ?? []) examples += origin.examples?.length ?? 0;

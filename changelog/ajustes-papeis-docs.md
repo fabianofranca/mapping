@@ -1,4 +1,4 @@
-# Ajustes de papéis e documentos externos — [Não lançado] (épico `epic/ajustes-papeis-docs`, PR #0, MCP 0.18.1, schema v14)
+# Ajustes de papéis e documentos externos — [Não lançado] (épico `epic/ajustes-papeis-docs`, PR #584, MCP 0.18.1, schema v14)
 
 ## Corrigido
 
