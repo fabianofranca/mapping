@@ -1159,8 +1159,18 @@ button.layer-group-label:hover {
 }
 
 .notice-line {
+  /* Ícone fixo na coluna da esquerda, alinhado à primeira linha; a mensagem quebra na sua. */
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--space-2);
+  align-items: start;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
+}
+
+.notice-line > .notice-origin,
+.notice-line > .notice-since {
+  grid-column: 2;
 }
 
 .notice-head {

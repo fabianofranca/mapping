@@ -125,6 +125,7 @@ export function MarkingPanel({
   const arrangeable = canArrangeMarking(editor, marking.id);
   // Posição e tamanho são uma mudança só (`rect`): com um marcador, as duas linhas viram
   // uma, com o rótulo de duas linhas e um colchete (HANDOFF-REVIEW-DETAILS 2.2).
+  const spaceHint = t(image ? 'marking.pixelsHint' : 'marking.canvasUnitsHint');
   const rectMark =
     ext?.mark(marking.id, 'rect') || ext?.mark(marking.id, 'space') || null;
   const rectBelow = ext?.below(marking.id, 'rect') ?? ext?.below(marking.id, 'space');
@@ -274,7 +275,7 @@ export function MarkingPanel({
                   <span>{t('marking.size')}</span>
                 </span>
               }
-              hint={t('marking.pixelsHint')}
+              hint={spaceHint}
               hintName={`${t('marking.position')} / ${t('marking.size')}`}
               mark={<span class="props-rect-bracket">{rectMark}</span>}
               below={rectBelow}
@@ -284,10 +285,10 @@ export function MarkingPanel({
             </Property>
           ) : (
             <>
-              <Property label={t('marking.position')} hint={t('marking.pixelsHint')}>
+              <Property label={t('marking.position')} hint={spaceHint}>
                 {position}
               </Property>
-              <Property label={t('marking.size')} hint={t('marking.pixelsHint')}>
+              <Property label={t('marking.size')} hint={spaceHint}>
                 {size}
               </Property>
             </>

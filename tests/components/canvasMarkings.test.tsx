@@ -225,6 +225,27 @@ describe('Detalhes', () => {
     );
   });
 
+  it('a dica de Posição e Tamanho segue o espaço: unidades do canvas ou pixels do container', () => {
+    // TX1 (#514): a marcação do canvas não está em "pixels da imagem original".
+    renderPanel('C1');
+    const section = screen.getByRole('region', { name: t('marking.section') });
+    expect(
+      within(section).getAllByText(t('marking.canvasUnitsHint')).length,
+    ).toBeGreaterThan(0);
+    expect(within(section).queryByText(t('marking.pixelsHint'))).toBeNull();
+    expect(t('marking.canvasUnitsHint')).toBe('Em unidades do canvas');
+  });
+
+  it('marcação de container: a dica de Posição e Tamanho fala em pixels do container', () => {
+    renderPanel('M2');
+    const section = screen.getByRole('region', { name: t('marking.section') });
+    expect(within(section).getAllByText(t('marking.pixelsHint')).length).toBeGreaterThan(
+      0,
+    );
+    expect(within(section).queryByText(t('marking.canvasUnitsHint'))).toBeNull();
+    expect(t('marking.pixelsHint')).toBe('Em pixels do container');
+  });
+
   it('marcação de container: mostra o pai assentado e também tem o interruptor', () => {
     renderPanel('M2');
     expect(screen.getByText('Porta', { selector: '.props-text' })).toBeTruthy();

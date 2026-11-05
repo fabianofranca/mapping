@@ -1007,4 +1007,21 @@ describe('GT2 — guia acertado com a app (etapa #482)', () => {
       expect(block, word).toContain(word);
     }
   });
+
+  it('R11.9: cita todo atalho Ctrl+Shift+<n> das janelas (WINDOW_NUMBER de toolWindows.ts)', () => {
+    const source = read('src/store/toolWindows.ts');
+    const numbers = [
+      ...(/WINDOW_NUMBER[^=]*=\s*\{([\s\S]*?)\n\};/.exec(source)?.[1] ?? '').matchAll(
+        /:\s*(\d+),/g,
+      ),
+    ].map((m) => m[1]);
+    expect(numbers.length).toBeGreaterThanOrEqual(9);
+    const row = guide.split('\n').find((l) => /^\| R11\.9 \|/.test(l)) ?? '';
+    expect(row).not.toBe('');
+    for (const n of numbers) {
+      expect(row, `Ctrl+Shift+${n}`).toMatch(
+        new RegExp(`Ctrl\\+Shift\\+${n}\\b|\`${n}\`(?![\\d])`),
+      );
+    }
+  });
 });
