@@ -90,6 +90,8 @@ export class ProposalLabels {
         return `especialização ${c.entityId}`;
       case 'platformRepo':
         return `repositório da plataforma ${c.entityId}`;
+      case 'docRepo':
+        return `repositório de documentos ${c.entityId}`;
     }
   }
 }

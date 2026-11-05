@@ -27,6 +27,7 @@ import type {
   LayerSpecRef,
   Marking,
   Placement,
+  DocRepo,
   PlatformRepo,
   Project,
   ProjectContainer,
@@ -58,6 +59,7 @@ export interface PatchProblem {
 type Entity =
   | ProjectSpecialization
   | PlatformRepo
+  | DocRepo
   | Layer
   | ProjectContainer
   | Marking
@@ -68,20 +70,22 @@ type Entity =
 const UPSERT_PHASE: Record<ChangeEntity, number> = {
   specialization: 0,
   platformRepo: 1,
-  layer: 2,
-  image: 3,
-  marking: 4,
-  arrow: 5,
-  annotation: 6,
+  docRepo: 2,
+  layer: 3,
+  image: 4,
+  marking: 5,
+  arrow: 6,
+  annotation: 7,
 };
 const REMOVE_PHASE: Record<ChangeEntity, number> = {
-  annotation: 7,
-  arrow: 8,
-  marking: 9,
-  image: 10,
-  layer: 11,
-  specialization: 12,
-  platformRepo: 13,
+  annotation: 8,
+  arrow: 9,
+  marking: 10,
+  image: 11,
+  layer: 12,
+  specialization: 13,
+  platformRepo: 14,
+  docRepo: 15,
 };
 
 /**
@@ -107,6 +111,10 @@ function decodeArrow(value: JsonValue): Arrow {
 
 function decode(entity: ChangeEntity, value: JsonValue): Entity {
   if (entity === 'arrow') return decodeArrow(value);
+  // Proposta escrita antes da v14: a anotação sem `parentRole` vale como sem papel.
+  if (entity === 'annotation' && isRecord(value) && !('parentRole' in value)) {
+    return { ...value, parentRole: null } as unknown as Entity;
+  }
   if (entity === 'specialization' && isRecord(value)) {
     return {
       id: value.id as string,
@@ -237,6 +245,7 @@ function withField(
     }
     case 'specialization':
     case 'platformRepo':
+    case 'docRepo':
       return decode(entity, to);
   }
 }
@@ -277,6 +286,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   const maps: Record<ChangeEntity, Map<string, Entity>> = {
     specialization: new Map(p.specializations.map((s) => [s.id, s])),
     platformRepo: new Map(Object.entries(p.platformRepos)),
+    docRepo: new Map(Object.entries(p.docRepos)),
     layer: new Map(p.layers.map((l) => [l.id, l])),
     image: new Map(p.containers.map((i) => [i.id, i])),
     marking: new Map(p.markings.map((m) => [m.id, m])),
@@ -358,6 +368,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
         string,
         PlatformRepo
       >,
+      docRepos: Object.fromEntries(maps.docRepo) as Record<string, DocRepo>,
       layers,
       containers,
       markings,

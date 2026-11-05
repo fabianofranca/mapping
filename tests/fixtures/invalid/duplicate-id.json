@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 14,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -21,6 +21,7 @@
     }
   ],
   "platformRepos": {},
+  "docRepos": {},
   "layers": [
     {
       "id": "L1",
@@ -221,6 +222,7 @@
       "layerId": "LM",
       "name": "User",
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": null,
       "values": null,
       "entries": [
@@ -242,6 +244,7 @@
       "layerId": "LD1",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "modelo-dados",
         "typeId": "classe"
@@ -269,6 +272,7 @@
       "layerId": "LS1",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "input"
@@ -292,6 +296,7 @@
       "layerId": "LS1",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "input"
@@ -315,6 +320,7 @@
       "layerId": "LS1",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "input"
@@ -339,6 +345,7 @@
       "layerId": "LS1",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "button"
@@ -357,6 +364,7 @@
       "layerId": "LS1",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "text"
@@ -375,6 +383,7 @@
       "layerId": "LS2",
       "name": null,
       "parentAnnotationId": "AB",
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "onClick"
@@ -398,6 +407,7 @@
       "layerId": "LS2",
       "name": null,
       "parentAnnotationId": "AB",
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "onHold"
@@ -414,6 +424,7 @@
       "layerId": "LS2",
       "name": null,
       "parentAnnotationId": "AIE",
+      "parentRole": null,
       "type": {
         "specId": "sdui",
         "typeId": "onChange"
@@ -430,6 +441,7 @@
       "layerId": "LD2",
       "name": null,
       "parentAnnotationId": null,
+      "parentRole": null,
       "type": {
         "specId": "modelo-dados",
         "typeId": "endpoint"

@@ -63,6 +63,7 @@ export function addAnnotation(p: Project, args: NewAnnotationArgs): Project {
     layerId: args.layerId,
     name: normalizeOptionalName(args.name ?? null),
     parentAnnotationId: null,
+    parentRole: null,
     type: null,
     values: null,
     entries: checkEntries(p, args.id, args.entries ?? []),

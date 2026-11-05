@@ -20,6 +20,7 @@ import {
   markingField,
   markingFieldsFor,
   markingValue,
+  docRepoValue,
   platformRepoValue,
   specializationValue,
   toJson,
@@ -280,6 +281,46 @@ export function computeChanges(base: Project, after: Project): Change[] {
         before,
         next,
         platformRepoValue,
+        [],
+        () => undefined,
+      );
+    }
+  }
+
+  // Repositórios de documentos (schema v14): o clone local por id.
+  const docRepoIds = [
+    ...Object.keys(after.docRepos),
+    ...Object.keys(base.docRepos).filter((k) => !Object.hasOwn(after.docRepos, k)),
+  ];
+  for (const docRepo of docRepoIds) {
+    const before = Object.hasOwn(base.docRepos, docRepo)
+      ? base.docRepos[docRepo]
+      : undefined;
+    const next = Object.hasOwn(after.docRepos, docRepo)
+      ? after.docRepos[docRepo]
+      : undefined;
+    if (before && next) {
+      const from = docRepoValue(before);
+      const to = docRepoValue(next);
+      if (!jsonEqual(from, to)) {
+        diff.push({
+          entity: 'docRepo',
+          entityId: docRepo,
+          ...projectLevel,
+          kind: 'update',
+          field: null,
+          from,
+          to,
+        });
+      }
+    } else {
+      diff.entity(
+        'docRepo',
+        docRepo,
+        projectLevel,
+        before,
+        next,
+        docRepoValue,
         [],
         () => undefined,
       );

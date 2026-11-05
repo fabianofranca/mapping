@@ -36,6 +36,8 @@ export type InvariantCode =
   | 'annotation-parent-other-marking'
   | 'annotation-parent-same-layer'
   | 'annotation-cycle'
+  | 'empty-role'
+  | 'role-without-owner'
   | 'empty-key'
   | 'duplicate-key'
   | 'duplicate-spec-file'
@@ -250,7 +252,11 @@ export function validateProject(p: Project): InvariantIssue[] {
     for (const entryIssue of validateEntries(a.entries)) {
       if (entryIssue) annotation(entryIssue, a);
     }
-    if (a.parentAnnotationId === null) continue;
+    if (a.parentRole === '') annotation('empty-role', a);
+    if (a.parentAnnotationId === null) {
+      if (a.parentRole !== null) annotation('role-without-owner', a);
+      continue;
+    }
     const owner = annotations.get(a.parentAnnotationId);
     if (!owner) {
       annotation('missing-parent-annotation', a, a.parentAnnotationId);

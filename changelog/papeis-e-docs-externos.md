@@ -7,3 +7,11 @@
   - **Papéis no vínculo:** `childRoles` (e `childRolesLabel`, o nome do seletor) no tipo dono declara os pontos em que um filho se liga a ele, sem criar um tipo por gatilho nem um campo no filho.
   - **Documento em repositório externo:** `docRepos` na raiz declara os repositórios de documentos e o `doc` do tipo pode ser `{ repo, path }`, um arquivo `.md` de um deles, em vez de um arquivo do pacote. O documento externo não conta como arquivo do pacote.
 - O JSON Schema (`docs/spec.schema.json`), a página Ajuda → Especializações (pt-BR e en-US), o `docs/SPEC-FORMAT.md` e a skill `spec-author` descrevem a `formatVersion` 11, com as três seções novas, as regras de validação e os anti-padrões (gatilho no id do tipo, campo `trigger` em cada evento e `allowedChildren` par a par).
+- **O papel do vínculo no projeto:** a anotação vinculada guarda em `parentRole` o papel que ocupa na dona (o `id` de um `childRoles` do tipo da dona, ou nenhum). Criar a anotação já vinculada e com papel, trocar o papel e trocar a dona são cada um uma entrada de desfazer; uma dona que não oferece o papel atual limpa o papel na mesma entrada, e tirar a dona também.
+- **Pendências de papel** na janela Incompletas e no selo "Incompleta": a filha sem papel numa dona que tem papéis (`missing-role`) e a filha com um papel que a dona não oferece (`unknown-role`). Não bloqueiam nada; dona livre ou de tipo desconhecido não gera pendência de papel.
+- **Clone dos documentos no projeto:** `docRepos` guarda o `localPath` do clone de cada repositório de documentos declarado pela especialização (gravar e remover são ações desfazíveis).
+- As propostas levam o `parentRole` da anotação e a entidade `docRepo`, comparados, decididos e aplicados como os demais campos; o formato da proposta continua o 4.
+
+## Alterado
+
+- **Schema v14:** o `mapping.json` ganha `annotations[].parentRole` e `docRepos`. A migração v13 → v14 é automática, com o backup do original em `backups/` e a faixa no topo: todo vínculo existente fica sem papel e `docRepos` começa vazio. Um papel sem dona ou vazio recusa a abertura do arquivo, com a mensagem. Uma app anterior abre o projeto v14 só para leitura, e um MCP anterior não grava nele.

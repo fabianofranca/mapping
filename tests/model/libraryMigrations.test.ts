@@ -94,6 +94,7 @@ describe('remove-type', () => {
       layerId: 'L1',
       name: null,
       parentAnnotationId: 'B1',
+      parentRole: null,
       type: null,
       values: null,
       entries: [],

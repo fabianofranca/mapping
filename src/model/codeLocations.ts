@@ -2,7 +2,7 @@ import { fail } from './errors';
 import { memoByProject, projectIndex } from './projectIndex';
 import { resolveCode } from './codeVariants';
 import type { SpecCode, SpecField, SpecRepo } from './spec';
-import type { PlatformRepo, PlatformRepos, Project } from './types';
+import type { DocRepo, PlatformRepo, PlatformRepos, Project } from './types';
 
 // Código de instanciação das especializações (etapa 3b; schema v11): o `code` de um tipo diz
 // com que código se cria uma instância dele em cada plataforma (`symbol` é o que se chama),
@@ -436,4 +436,53 @@ export function findByCode(p: Project, query: CodeQuery): CodeTypeMatch[] {
     code: match.code.map((e) => ({ platform: e.platform, code: e.code })),
     annotations: annotations.get(key) ?? [],
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Repositórios de documentos (schema v14)
+
+/** Repositório de documentos declarado por alguma especialização aplicada (`docRepos`). */
+const declaredDocRepoIds = memoByProject(
+  (p) =>
+    new Set(p.specializations.flatMap((s) => (s.spec?.docRepos ?? []).map((r) => r.id))),
+);
+
+/** Clone local gravado para o repositório de documentos; `null` se não houver. */
+export function docRepoOf(p: Project, docRepoId: string): DocRepo | null {
+  return Object.hasOwn(p.docRepos, docRepoId) ? (p.docRepos[docRepoId] ?? null) : null;
+}
+
+function withoutDocRepo(
+  repos: Project['docRepos'],
+  docRepoId: string,
+): Project['docRepos'] {
+  return Object.fromEntries(Object.entries(repos).filter(([id]) => id !== docRepoId));
+}
+
+/**
+ * Informa onde está o clone local de um repositório de documentos declarado por alguma
+ * especialização aplicada. Texto vazio ou `null` remove a entrada.
+ */
+export function setDocRepo(
+  p: Project,
+  docRepoId: string,
+  input: { readonly localPath: string | null },
+): Project {
+  if (!declaredDocRepoIds(p).has(docRepoId)) fail('unknown-doc-repo', docRepoId);
+  const current = docRepoOf(p, docRepoId);
+  const localPath = input.localPath === null ? null : normalizeLocalPath(input.localPath);
+  if (localPath !== null && !isValidLocalPath(localPath)) {
+    fail('invalid-local-path', localPath);
+  }
+  if (localPath === null) {
+    return current ? { ...p, docRepos: withoutDocRepo(p.docRepos, docRepoId) } : p;
+  }
+  if (current?.localPath === localPath) return p;
+  return { ...p, docRepos: { ...p.docRepos, [docRepoId]: { localPath } } };
+}
+
+/** Remove o clone local do repositório de documentos (declarado ou não). */
+export function removeDocRepo(p: Project, docRepoId: string): Project {
+  if (!Object.hasOwn(p.docRepos, docRepoId)) fail('not-found', docRepoId);
+  return { ...p, docRepos: withoutDocRepo(p.docRepos, docRepoId) };
 }

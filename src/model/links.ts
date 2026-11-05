@@ -1,7 +1,12 @@
 import { fail } from './errors';
 import { findById, updateById } from './project';
 import { projectIndex } from './projectIndex';
-import { isAllowedOwner, typeOfAnnotation } from './specLookup';
+import {
+  isAllowedOwner,
+  ownerRolesOf,
+  typeOfAnnotation,
+  type OwnerRoles,
+} from './specLookup';
 import type { Annotation, Project } from './types';
 
 // Vínculos (anotação → anotação dona).
@@ -57,7 +62,30 @@ export function validAnnotationOwners(p: Project, annotationId: string): Annotat
   );
 }
 
-/** Define (ou, com `null`, remove) a dona da anotação, respeitando os invariantes. */
+/**
+ * Confere um papel (v14) contra o que o dono oferece: sem dono, `role-without-owner`; papel que o
+ * dono não oferece (inclusive dono sem `childRoles`), `unknown-role`.
+ */
+export function checkRole(
+  offered: OwnerRoles | null,
+  role: string,
+  hasOwner: boolean,
+): void {
+  if (!hasOwner) fail('role-without-owner', role);
+  if (!offered?.roles.some((r) => r.id === role)) fail('unknown-role', role);
+}
+
+/** Papel que sobrevive à troca de dono: o atual, se o novo dono o oferece; senão `null`. */
+function roleAfterOwnerChange(p: Project, role: string | null, ownerId: string | null) {
+  if (role === null || ownerId === null) return null;
+  const offered = ownerRolesOf(p, findById(p.annotations, ownerId));
+  return offered?.roles.some((r) => r.id === role) ? role : null;
+}
+
+/**
+ * Define (ou, com `null`, remove) a dona da anotação, respeitando os invariantes. O papel atual
+ * fica só se a nova dona o oferece; tirar a dona limpa o papel (tudo na mesma operação).
+ */
 export function setAnnotationParent(
   p: Project,
   annotationId: string,
@@ -77,6 +105,34 @@ export function setAnnotationParent(
     annotations: updateById(p.annotations, annotationId, (a) => ({
       ...a,
       parentAnnotationId: ownerId,
+      parentRole: roleAfterOwnerChange(p, a.parentRole, ownerId),
+    })),
+  };
+}
+
+/**
+ * Troca o papel da anotação no dono (`null` limpa). O papel precisa existir no dono; sem dono,
+ * só `null` vale.
+ */
+export function setAnnotationRole(
+  p: Project,
+  annotationId: string,
+  role: string | null,
+): Project {
+  const annotation = findById(p.annotations, annotationId);
+  if (role !== null) {
+    const owner =
+      annotation.parentAnnotationId === null
+        ? null
+        : findById(p.annotations, annotation.parentAnnotationId);
+    checkRole(owner && ownerRolesOf(p, owner), role, owner !== null);
+  }
+  if (annotation.parentRole === role) return p;
+  return {
+    ...p,
+    annotations: updateById(p.annotations, annotationId, (a) => ({
+      ...a,
+      parentRole: role,
     })),
   };
 }

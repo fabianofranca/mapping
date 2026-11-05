@@ -4,7 +4,9 @@ import {
   annotationShortLabel,
   annotationTitle,
   fieldLabel,
+  ownerRolesOf,
   ownerTypesOf,
+  projectIndex,
   projectIssues as modelProjectIssues,
   tableRows,
   typeOfAnnotation,
@@ -90,8 +92,15 @@ export function ownerTypeNames(p: Project, a: Pick<Annotation, 'type'>): string 
 
 /** Só o motivo da pendência (embaixo do próprio campo, o nome dele já está ao lado). */
 export function issueReason(p: Project, a: Annotation, issue: AnnotationIssue): string {
+  const owner =
+    a.parentAnnotationId === null
+      ? null
+      : projectIndex(p).annotations.get(a.parentAnnotationId);
+  const offered = owner ? ownerRolesOf(p, owner) : null;
   return t(`issue.${issue.code}` satisfies TranslationKey, {
     owners: ownerTypeNames(p, a),
+    label: offered?.label ?? t('typed.roleLabel'),
+    roles: (offered?.roles ?? []).map((r) => r.name).join(t('typed.ownersJoin')),
   });
 }
 
@@ -143,7 +152,12 @@ export function annotationSummary(p: Project, a: Annotation): string {
  * da tabela ou o campo; `null` quando a pendência não aponta um campo.
  */
 export function issueFocusKey(issue: AnnotationIssue): string | null {
-  if (issue.code === 'missing-owner' || issue.code === 'owner-not-allowed')
+  if (
+    issue.code === 'missing-owner' ||
+    issue.code === 'owner-not-allowed' ||
+    issue.code === 'missing-role' ||
+    issue.code === 'unknown-role'
+  )
     return 'owner';
   if (issue.code === 'unknown-field' || !issue.key) return null;
   if (issue.rowId !== undefined)

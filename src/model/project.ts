@@ -24,6 +24,7 @@ export function createProject({ name, now, firstLayer }: NewProjectArgs): Projec
     project: { name: name.trim(), createdAt: now, updatedAt: now },
     specializations: [],
     platformRepos: {},
+    docRepos: {},
     layers: [{ ...firstLayer, spec: null }],
     containers: [],
     markings: [],

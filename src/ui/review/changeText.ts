@@ -222,6 +222,7 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'image.source': 'review.field.source',
   'annotation.name': 'review.field.annotationName',
   'annotation.parentAnnotationId': 'review.field.owner',
+  'annotation.parentRole': 'review.field.role',
   'annotation.markingId': 'review.field.marking',
   'annotation.layerId': 'review.field.layer',
   'annotation.type': 'review.field.type',
@@ -234,6 +235,7 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
 const ENTITY_KEYS = {
   specialization: 'review.entity.specialization',
   platformRepo: 'review.entity.platformRepo',
+  docRepo: 'review.entity.docRepo',
   layer: 'review.entity.layer',
   image: 'review.entity.image',
   marking: 'review.entity.marking',
@@ -277,7 +279,7 @@ export function entityName(names: ReviewNames, id: string): string | null {
     if (c.entity === 'specialization') {
       const name = text(record && isRecord(record.spec) ? record.spec.name : undefined);
       if (name) return name;
-    } else if (c.entity !== 'platformRepo') {
+    } else if (c.entity !== 'platformRepo' && c.entity !== 'docRepo') {
       const name =
         text(record?.name) ??
         (c.entity === 'image' ? (text(record?.file) ?? backgroundName(record)) : null);
@@ -308,6 +310,7 @@ function subjectName(names: ReviewNames, c: Change): string | null {
     case 'specialization':
       return specName(names, c);
     case 'platformRepo':
+    case 'docRepo':
       return c.entityId;
     case 'image':
       return imageName(names, c.entityId);
@@ -442,6 +445,7 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
       return [specName(names, c), version].filter(Boolean).join(' ');
     }
     case 'platformRepo':
+    case 'docRepo':
       return text(value.localPath) ?? c.entityId;
   }
 }

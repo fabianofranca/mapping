@@ -471,6 +471,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.removeAnnotation(p, annotationId)),
     setAnnotationParent: (annotationId: string, ownerId: string | null) =>
       store.apply((p) => model.setAnnotationParent(p, annotationId, ownerId)),
+    setAnnotationRole: (annotationId: string, role: string | null) =>
+      store.apply((p) => model.setAnnotationRole(p, annotationId, role)),
     setEntries: (annotationId: string, entries: readonly EntryInput[]) =>
       store.apply((p) =>
         model.setEntries(
@@ -522,6 +524,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       layerId: string,
       type: AnnotationTypeRef,
       parentAnnotationId?: string | null,
+      parentRole?: string | null,
     ) =>
       create(
         (id) => (p) =>
@@ -531,6 +534,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
             layerId,
             type,
             parentAnnotationId,
+            parentRole,
           }),
       ),
     setFieldValue: (annotationId: string, key: string, value: JsonValue) =>
@@ -567,6 +571,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.setPlatformRepo(p, platformId, repo)),
     removePlatformRepo: (platformId: string) =>
       store.apply((p) => model.removePlatformRepo(p, platformId)),
+
+    // Repositórios de documentos (schema v14): cada chamada é uma entrada no histórico.
+    setDocRepo: (docRepoId: string, localPath: string | null) =>
+      store.apply((p) => model.setDocRepo(p, docRepoId, { localPath })),
+    removeDocRepo: (docRepoId: string) =>
+      store.apply((p) => model.removeDocRepo(p, docRepoId)),
   };
 }
 

@@ -40,6 +40,7 @@ function withScreen(p: Project): Project {
     layerId: 'LS3',
     name: null,
     parentAnnotationId: null,
+    parentRole: null,
     type: { specId: 'sdui', typeId: 'screen' },
     values: { nome: 'Cadastro', rota: null },
     entries: [],
@@ -52,7 +53,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     const result = load(v6Text(sampleProject()), sampleProject());
     expect(result.migratedFrom).toBe(6);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(13);
+    expect(result.project.schemaVersion).toBe(14);
     expect(result.project.platformRepos).toEqual({});
     expect(result.project).toEqual(sampleProject());
   });
@@ -74,11 +75,11 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(result.project.containers[0]?.locked).toBe(true);
   });
 
-  it('o v6 migrado salva como v13 estável (round-trip)', () => {
+  it('o v6 migrado salva como v14 estável (round-trip)', () => {
     const p = cadastroProject();
     const first = load(v6Text(p), p);
     const saved = serialize(first.project);
-    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 13, platformRepos: {} });
+    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 14, platformRepos: {} });
     const again = load(saved, p);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);
