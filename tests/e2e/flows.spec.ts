@@ -106,7 +106,7 @@ test('exemplo SDUI → Input com `dado` apontando para uma tupla livre', async (
     // A biblioteca de notas já vem aplicada em todo projeto novo (ME3).
     [
       { id: 'notas', version: 3 },
-      { id: 'sdui', version: 3 },
+      { id: 'sdui', version: 4 },
     ].map((s) => expect.objectContaining(s)),
   );
   const free = mapping.annotations.find((a) => a.type === null);
