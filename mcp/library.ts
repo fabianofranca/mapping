@@ -12,6 +12,7 @@ import {
   MAX_PACKAGE_FILES as MODEL_PACKAGE_FILES,
   usesPackageFiles,
 } from '../src/model/libraryPackage';
+import { docClonesChecker, externalDocWarnings } from './docFiles';
 import { ToolError } from './errors';
 import { hasParentSegment, isWithin, type Roots } from './paths';
 
@@ -203,6 +204,17 @@ export function issueView(issue: LibraryIssue): Json {
   };
 }
 
+async function docWarningsOf(
+  roots: Roots,
+  spec: Spec | undefined,
+  specPath: string | undefined,
+  docClones: Readonly<Record<string, string>> | undefined,
+): Promise<LibraryIssue[]> {
+  if (spec === undefined) return [];
+  const check = await docClonesChecker(roots, docClones);
+  return externalDocWarnings(spec, specPath ?? '', check);
+}
+
 /** `validate_library`: os três níveis sobre a pasta, no formato das outras tools de validação. */
 export async function validateLibraryTool(
   roots: Roots,
@@ -210,6 +222,7 @@ export async function validateLibraryTool(
     path: string;
     previous?: string | undefined;
     level?: 1 | 2 | 3 | undefined;
+    docClones?: Readonly<Record<string, string>> | undefined;
   },
   summarize: (spec: Spec) => Json,
 ): Promise<Json> {
@@ -225,7 +238,14 @@ export async function validateLibraryTool(
     ...(args.level === undefined ? {} : { level: args.level }),
   });
   const errors = report.errors.map(issueView);
-  const warnings = report.warnings.map(issueView);
+  // Documento em repositório externo: fora do pacote, é conferido aqui (aviso, nunca erro).
+  const docWarnings = await docWarningsOf(
+    roots,
+    report.spec,
+    pkg.specPath,
+    args.docClones,
+  );
+  const warnings = [...report.warnings, ...docWarnings].map(issueView);
   const hint = report.ok
     ? warnings.length > 0
       ? 'a biblioteca é válida; os avisos deixam usar, mas costumam apontar descuidos (fonte ausente, conteúdo maior que a caixa, arquivo sem uso)'
