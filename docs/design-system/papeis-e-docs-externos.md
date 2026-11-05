@@ -18,7 +18,7 @@ PD4:
 
 PD5:
 
-- **Seção Documento da página do componente, em cinco estados** (`src/ui/catalog/CatalogPage.tsx`, `src/ui/catalog/ExternalDoc.tsx`, estilos em `src/theme/`): (1) o documento renderizado com o link discreto "Abrir no repositório"; (2) o botão "Permitir acesso a <repo>"; (3) a mensagem "<path> não está em <repo>" com o botão "Trocar pasta…"; (4) o botão "Conectar a pasta de <repo>…"; (5) sem seletor de pasta ou sem `urlTemplate`, só o link ou o texto `<repo>: <path>`. Os botões são `Button` e o link é o `LinkButton`, sem variante nova. Nenhum ícone novo.
+- **Seção Documento da página do componente, em cinco estados** (`src/ui/catalog/CatalogPage.tsx`, `src/ui/catalog/ExternalDoc.tsx`, estilos em `src/theme/`): (1) o documento renderizado com o link discreto "Abrir no repositório"; (2) o botão "Permitir acesso a <repo>"; (3) a mensagem "<path> não está em <repo>" com o botão "Trocar pasta…"; (4) o botão "Conectar a pasta de <repo>…"; (5) sem seletor de pasta ou sem `urlTemplate`, só o link ou o texto `<repo>: <path>`. Os botões são `Button` e o link é um `<a>` com o estilo de link da app (`.external-doc-link`, `.external-doc-path` em `src/theme/catalog.css`), sem variante nova. Nenhum ícone novo.
 - **Diálogo "Repositórios" com a seção Documentos** (`src/ui/PlatformRepos.tsx`, CSS em `src/theme/layout.css`): o título passa de "Repositórios de código" a "Repositórios", com as subseções "Código" e "Documentos"; em Documentos, um `TextField` "Caminho local da raiz" por repositório de `docRepos`. Nenhum ícone novo.
 
 ## Sincronização
