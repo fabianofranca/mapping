@@ -949,7 +949,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'Como o agente chega ao arquivo: pelo urlTemplate do repo da plataforma, na especialização dona do tipo, com {path} trocado pelo path (a app mostra esse link na linha "Definição" logo depois de aplicar a especialização); ou pelo clone local, que o projeto pode informar em Configurações › Repositórios de código (platformRepos[plataforma].localPath, uma sobreposição local: o caminho local do arquivo é o localPath mais o path).',
+          'Como o agente chega ao arquivo: pelo urlTemplate do repo da plataforma, na especialização dona do tipo, com {path} trocado pelo path (a app mostra esse link na linha "Definição" logo depois de aplicar a especialização); ou pelo clone local, que o projeto pode informar em Configurações › Repositórios › Código (platformRepos[plataforma].localPath, uma sobreposição local: o caminho local do arquivo é o localPath mais o path).',
           'Plataformas com o mesmo id em especializações diferentes são o mesmo alvo de código. Cada especialização declara o repo da própria biblioteca, e eles podem diferir: o link de um tipo usa o repo da especialização dele.',
           'code só vale em especializações que declaram platforms; os ids citados precisam estar em platforms, e as chaves de params e values precisam ser campos do tipo.',
           'variants só a partir da formatVersion 9 (antes, o erro é só é permitido com formatVersion 9, no caminho code.<plataforma>.variants); field é a key de um campo enum do tipo; cases não vazio, com chaves nas options do campo e casos não vazios; params e values dos casos seguem as regras dos da base.',
@@ -1723,7 +1723,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'How the agent reaches the file: through the urlTemplate of the platform repo, in the specialization that owns the type, with {path} replaced by the path (the app shows this link in the "Definition" line right after the specialization is applied); or through the local clone, which the project can report in Settings › Code repositories (platformRepos[platform].localPath, a local overlay: the local path of the file is the localPath plus the path).',
+          'How the agent reaches the file: through the urlTemplate of the platform repo, in the specialization that owns the type, with {path} replaced by the path (the app shows this link in the "Definition" line right after the specialization is applied); or through the local clone, which the project can report in Settings › Repositories › Code (platformRepos[platform].localPath, a local overlay: the local path of the file is the localPath plus the path).',
           'Platforms with the same id in different specializations are the same code target. Each specialization declares the repo of its own library, and they may differ: the link of a type uses the repo of its specialization.',
           'code only works in specializations that declare platforms; the ids it cites must exist in platforms, and the keys of params and values must be fields of the type.',
           'variants only from formatVersion 9 (before it the error is only allowed with formatVersion 9, at code.<platform>.variants); field is the key of an enum field of the type; cases is not empty, with keys in the field options and non-empty cases; the params and values of the cases follow the rules of the base ones.',

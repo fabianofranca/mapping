@@ -123,7 +123,7 @@ async function closeDialog(page: Page): Promise<void> {
 async function openSettings(page: Page): Promise<void> {
   await projectAction(page, 'Configurações');
   await expect(
-    page.getByRole('heading', { name: 'Repositórios de código' }),
+    page.getByRole('heading', { name: 'Repositórios', exact: true }),
   ).toBeVisible();
 }
 

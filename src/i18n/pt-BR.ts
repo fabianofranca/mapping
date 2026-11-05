@@ -864,7 +864,12 @@ export const ptBR = {
     'Schema 11: o endereço dos arquivos saiu do projeto e foi descartado de {platforms} ({templates}). O repositório agora é da especialização: regrave a especialização com `repo` (formatVersion 5) e atualize-a no projeto.',
   'migration.v13.discardedInherit':
     'Schema 13: a herança de anotações saiu do formato. {count} anotação(ões) valiam também para as marcações descendentes e agora valem só para a própria marcação: {markings}. Nenhuma anotação foi apagada.',
-  'repos.title': 'Repositórios de código',
+  'repos.title': 'Repositórios',
+  'repos.code.title': 'Código',
+  'repos.docs.title': 'Documentos',
+  'repos.docs.intro':
+    'Os repositórios de documentos vêm da especialização. Informe onde está o clone local no seu computador: o caminho é gravado no projeto, para o agente (MCP) abrir o arquivo. A pasta que a app usa para ler o documento é outra, conectada por máquina na página do componente, e não aparece aqui.',
+  'repos.docs.clear': 'Limpar repositório de documentos {id}',
   'repos.intro':
     'O endereço do repositório de cada plataforma vem da especialização e aparece aqui só para consulta. Informe apenas onde está o clone local do código no seu computador.',
   'repos.noneDeclared': 'A especialização não declara o repositório desta plataforma.',
@@ -891,7 +896,7 @@ export const ptBR = {
   'help.code.definition':
     'Definição: nos Detalhes de uma anotação tipada, uma linha por plataforma com path, como "Plataforma · Arquivo.ext", com o caminho completo e o símbolo na dica. Vem da especialização e não se edita na app.',
   'help.code.repos':
-    'Repositórios: o endereço do repositório de cada plataforma (repo) vem da especialização. Em Configurações (engrenagem), na seção "Repositórios de código", informe só o caminho local da raiz do clone, relativo à pasta do projeto. Plataforma em que algum tipo aponta um arquivo, sem repo, gera um aviso na importação da especialização.',
+    'Repositórios: o endereço do repositório de cada plataforma (repo) vem da especialização. Em Configurações (engrenagem), na seção "Repositórios", subseção "Código", informe só o caminho local da raiz do clone, relativo à pasta do projeto. Plataforma em que algum tipo aponta um arquivo, sem repo, gera um aviso na importação da especialização.',
   // Biblioteca de componentes na app (etapa Biblioteca, B3)
   // Catálogo: janela do editor e tela da biblioteca sem projeto (etapa Biblioteca, B5)
   'catalog.window.title': 'Catálogo',

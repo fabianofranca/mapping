@@ -443,8 +443,39 @@ export function findByCode(p: Project, query: CodeQuery): CodeTypeMatch[] {
 
 /** Repositório de documentos declarado por alguma especialização aplicada (`docRepos`). */
 const declaredDocRepoIds = memoByProject(
-  (p) =>
-    new Set(p.specializations.flatMap((s) => (s.spec?.docRepos ?? []).map((r) => r.id))),
+  (p) => new Set(projectDocRepos(p).map((r) => r.id)),
+);
+
+/** Repositório de documentos declarado pelas especializações aplicadas ao projeto. */
+export interface ProjectDocRepo {
+  readonly id: string;
+  /** Especializações aplicadas que o declaram, na ordem de aplicação. */
+  readonly specIds: readonly string[];
+  /** O endereço (`url`, `urlTemplate`, `ref`) que cada uma declara para ele. */
+  readonly repos: readonly { readonly specId: string; readonly repo: SpecRepo }[];
+}
+
+/** Repositórios de documentos de todas as especializações aplicadas, sem repetir id, na ordem de aplicação. */
+export const projectDocRepos: (p: Project) => readonly ProjectDocRepo[] = memoByProject(
+  (p) => {
+    const byId = new Map<
+      string,
+      ProjectDocRepo & { specIds: string[]; repos: { specId: string; repo: SpecRepo }[] }
+    >();
+    for (const s of p.specializations) {
+      for (const { id, ...repo } of s.spec?.docRepos ?? []) {
+        let known = byId.get(id);
+        if (!known) {
+          known = { id, specIds: [], repos: [] };
+          byId.set(id, known);
+        }
+        if (known.specIds.includes(s.id)) continue;
+        known.specIds.push(s.id);
+        known.repos.push({ specId: s.id, repo });
+      }
+    }
+    return [...byId.values()];
+  },
 );
 
 /** Clone local gravado para o repositório de documentos; `null` se não houver. */

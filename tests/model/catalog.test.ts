@@ -309,3 +309,61 @@ describe('catálogo com variants no code (formatVersion 9)', () => {
     expect(code && 'variants' in code).toBe(false);
   });
 });
+
+describe('catálogo: documento externo (formatVersion 11)', () => {
+  const GITLAB = 'https://gitlab.empresa.com/grupo/design-docs';
+  const build = (
+    doc: unknown,
+    repo: Record<string, unknown> = {
+      id: 'design-docs',
+      url: GITLAB,
+      urlTemplate: `${GITLAB}/-/blob/main/{path}`,
+    },
+  ) => {
+    const json = variantsSpecJson(11) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    json.docRepos = [repo];
+    json.layers[0].annotationTypes[0].doc = doc;
+    return buildCatalog([{ path: 'm3.json', text: JSON.stringify(json) }])
+      .layers.flatMap((l) => l.entries)
+      .find((e) => e.type.id === 'button');
+  };
+
+  it('doc objeto: docExternal com repo, caminho, url do repo e link do arquivo', () => {
+    const entry = build({ repo: 'design-docs', path: 'components/button.md' });
+    expect(entry?.docText).toBeNull();
+    expect(entry?.docExternal).toEqual({
+      repo: 'design-docs',
+      path: 'components/button.md',
+      repoUrl: GITLAB,
+      url: `${GITLAB}/-/blob/main/components/button.md`,
+    });
+  });
+
+  it('sem urlTemplate: url nula, mas o repositório continua informado', () => {
+    const entry = build(
+      { repo: 'design-docs', path: 'components/button.md' },
+      { id: 'design-docs', url: GITLAB },
+    );
+    expect(entry?.docExternal).toEqual({
+      repo: 'design-docs',
+      path: 'components/button.md',
+      repoUrl: GITLAB,
+      url: null,
+    });
+  });
+
+  it('doc texto continua dando docText e docExternal nulo', () => {
+    const entry = build('docs/button.md');
+    expect(entry?.docText).toBeNull(); // arquivo fora do pacote de teste
+    expect(entry?.docExternal).toBeNull();
+    expect(
+      findEntry(catalog, 'm3-button')?.docExternal,
+      'tipo com doc texto no Material 3',
+    ).toBeNull();
+    expect(findEntry(catalog, 'm3-button')?.docText).toMatch(/\S/);
+  });
+
+  it('sem doc: docExternal nulo', () => {
+    expect(build(undefined)?.docExternal).toBeNull();
+  });
+});

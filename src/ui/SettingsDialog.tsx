@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
-import { SCHEMA_VERSION, projectPlatforms, type Project } from '../model';
+import { SCHEMA_VERSION, type Project } from '../model';
 import { BUILD_ID } from '../utils/build';
 import { CHANNEL } from '../utils/channel';
 import { writeClipboardText } from '../utils/clipboard';
@@ -8,7 +8,7 @@ import { formatBuildInfo } from '../utils/report';
 import { allowedOrigins } from '../store/imagePermissions';
 import { Dialog } from './Dialog';
 import { PrivacySettings } from './PrivacySettings';
-import { PlatformRepos } from './PlatformRepos';
+import { PlatformRepos, hasRepos } from './PlatformRepos';
 import { SettingsBar } from './SettingsBar';
 import { Button } from './controls';
 
@@ -94,7 +94,7 @@ export function SettingsDialog({
   project,
   readOnly = false,
 }: SettingsDialogProps) {
-  const repos = project !== undefined && projectPlatforms(project).length > 0;
+  const repos = project !== undefined && hasRepos(project);
   return (
     <Dialog
       title={t('settings.title')}

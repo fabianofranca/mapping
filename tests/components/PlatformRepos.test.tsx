@@ -3,11 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { locale } from '../../src/store/settings';
 import { PlatformRepos } from '../../src/ui/PlatformRepos';
+import type { Project } from '../../src/model';
+import { docReposProject } from '../model/roleFixtures';
 import { ANDROID_REPO, codeProject, withSpecRepo } from '../model/specFixtures';
 import { createHarness, renderLive } from './harness';
 
-// Código de instanciação: Configurações › Repositórios de código mostra o `repo` que a
-// especialização declara (só leitura) e deixa editar apenas o caminho local do clone.
+// Configurações › Repositórios: a subseção Código mostra o `repo` que a especialização declara
+// (só leitura) e deixa editar apenas o caminho local do clone; a subseção Documentos faz o mesmo
+// com os `docRepos` (etapa #559, PD5).
 
 beforeEach(() => {
   locale.value = 'pt-BR';
@@ -101,5 +104,138 @@ describe('PlatformRepos', () => {
       (group('Android').getByLabelText(LOCAL, { selector: 'input' }) as HTMLInputElement)
         .disabled,
     ).toBe(true);
+  });
+});
+
+/** `codeProject` cuja especialização também declara `docRepos`. */
+function codeAndDocsProject(): Project {
+  const p = codeProject();
+  return {
+    ...p,
+    specializations: p.specializations.map((s) =>
+      s.spec
+        ? {
+            ...s,
+            spec: {
+              ...s.spec,
+              formatVersion: 11,
+              docRepos: [
+                { id: 'design-docs', url: 'https://gitlab.example.com/g/design-docs' },
+              ],
+            },
+          }
+        : s,
+    ),
+  };
+}
+
+const heading = (name: string) => screen.queryByRole('heading', { name, hidden: true });
+
+describe('PlatformRepos › Documentos', () => {
+  it('lista os docRepos das especializações aplicadas: id, link e ref', () => {
+    setup(docReposProject());
+    const design = group('design-docs');
+    expect(design.getByText('design-docs')).toBeTruthy();
+    const link = design.getByRole('link', {
+      name: 'https://gitlab.example.com/g/design-docs',
+      hidden: true,
+    });
+    expect(link.getAttribute('href')).toBe('https://gitlab.example.com/g/design-docs');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(design.getByText('referência main')).toBeTruthy();
+    // Só o caminho local é editável.
+    expect(design.getAllByRole('textbox', { hidden: true })).toHaveLength(1);
+
+    const wiki = group('wiki');
+    expect(wiki.getByRole('link', { hidden: true }).getAttribute('href')).toBe(
+      'https://gitlab.example.com/g/wiki',
+    );
+    expect(wiki.queryByText(/^referência /)).toBeNull();
+  });
+
+  it('o caminho local grava e limpa (texto vazio) em uma entrada de desfazer cada', async () => {
+    const { harness, user } = setup(docReposProject());
+    const local = group('design-docs').getByLabelText(LOCAL, { selector: 'input' });
+    await user.type(local, '../docs{Enter}');
+    expect(harness.project().docRepos).toEqual({
+      'design-docs': { localPath: '../docs' },
+    });
+
+    await user.clear(local);
+    await user.keyboard('{Enter}');
+    expect(harness.project().docRepos).toEqual({});
+
+    harness.store.undo();
+    expect(harness.project().docRepos).toEqual({
+      'design-docs': { localPath: '../docs' },
+    });
+    harness.store.undo();
+    expect(harness.project().docRepos).toEqual({});
+  });
+
+  it('o botão Limpar remove o clone local e fica desabilitado sem ele', async () => {
+    const { harness, user } = setup(docReposProject());
+    const clear = () =>
+      group('design-docs').getByRole('button', {
+        name: 'Limpar repositório de documentos design-docs',
+        hidden: true,
+      }) as HTMLButtonElement;
+    expect(clear().disabled).toBe(true);
+    await user.type(
+      group('design-docs').getByLabelText(LOCAL, { selector: 'input' }),
+      '../docs{Enter}',
+    );
+    expect(clear().disabled).toBe(false);
+    await user.click(clear());
+    expect(harness.project().docRepos).toEqual({});
+    harness.store.undo();
+    expect(harness.project().docRepos).toEqual({
+      'design-docs': { localPath: '../docs' },
+    });
+  });
+
+  it('valor inválido mostra o erro e não grava', async () => {
+    const { harness, user } = setup(docReposProject());
+    const design = group('design-docs');
+    await user.type(
+      design.getByLabelText(LOCAL, { selector: 'input' }),
+      '/absoluto{Enter}',
+    );
+    expect(design.getByRole('alert', { hidden: true }).textContent).toMatch(
+      /relativo à pasta do projeto/,
+    );
+    expect(harness.project().docRepos).toEqual({});
+  });
+
+  it('somente leitura desabilita o campo', () => {
+    setup(docReposProject(), true);
+    expect(
+      (
+        group('design-docs').getByLabelText(LOCAL, {
+          selector: 'input',
+        }) as HTMLInputElement
+      ).disabled,
+    ).toBe(true);
+  });
+
+  it('a seção chama-se Repositórios, com as subseções Código e Documentos', () => {
+    setup(codeAndDocsProject());
+    expect(heading('Repositórios')).toBeTruthy();
+    expect(heading('Código')).toBeTruthy();
+    expect(heading('Documentos')).toBeTruthy();
+    expect(heading('Repositórios de código')).toBeNull();
+  });
+
+  it('sem docRepos não aparece a subseção Documentos', () => {
+    setup(codeProject());
+    expect(heading('Código')).toBeTruthy();
+    expect(heading('Documentos')).toBeNull();
+  });
+
+  it('sem plataformas não aparece a subseção Código', () => {
+    setup(docReposProject());
+    expect(heading('Documentos')).toBeTruthy();
+    expect(heading('Código')).toBeNull();
   });
 });

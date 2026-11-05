@@ -75,3 +75,16 @@ export function forceRole(p: Project, id: string, role: string | null): Project 
     annotations: p.annotations.map((a) => (a.id === id ? { ...a, parentRole: role } : a)),
   };
 }
+
+/** Declara os repositórios de documentos `design-docs` (com `ref`) e `wiki`. */
+export const withDocRepos = (s: Json): void => {
+  s.docRepos = [
+    { id: 'design-docs', url: 'https://gitlab.example.com/g/design-docs', ref: 'main' },
+    { id: 'wiki', url: 'https://gitlab.example.com/g/wiki' },
+  ];
+};
+
+/** Projeto com a especialização `s` declarando `design-docs` (com `ref`) e `wiki`. */
+export function docReposProject(): Project {
+  return roleProject(withDocRepos);
+}
