@@ -62,7 +62,13 @@ import {
   libSpec,
   valuesOf,
 } from './libraryMigrationFixtures';
-import { cadastroProject, codeProject, idGen, loadExample } from './specFixtures';
+import {
+  cadastroProject,
+  codeProject,
+  idGen,
+  loadExample,
+  loadLegacySdui,
+} from './specFixtures';
 
 const FIGMA = { system: 'figma', id: '1:2', url: 'https://figma.com/x' };
 
@@ -209,7 +215,8 @@ const scenarios: [string, () => [Project, Project]][] = [
     'especialização atualizada',
     () => {
       const base = cadastroProject();
-      const spec = loadExample('sdui');
+      // Aditiva: o SDUI de partida do `cadastroProject` com a versão seguinte.
+      const spec = loadLegacySdui();
       return [base, updateSpecialization(base, { ...spec, version: spec.version + 1 })];
     },
   ],

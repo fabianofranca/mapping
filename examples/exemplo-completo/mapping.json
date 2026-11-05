@@ -11,7 +11,7 @@
   "specializations": [
     {
       "id": "sdui",
-      "version": 3,
+      "version": 4,
       "file": "specs/sdui.json"
     },
     {
@@ -874,10 +874,10 @@
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
       "parentAnnotationId": "2db84c4b-ac59-40d1-9163-1e73d85aeda3",
-      "parentRole": null,
+      "parentRole": "click",
       "type": {
         "specId": "sdui",
-        "typeId": "onClick"
+        "typeId": "action"
       },
       "values": {
         "acao": "submit",
@@ -898,10 +898,10 @@
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
       "parentAnnotationId": "2db84c4b-ac59-40d1-9163-1e73d85aeda3",
-      "parentRole": null,
+      "parentRole": "hold",
       "type": {
         "specId": "sdui",
-        "typeId": "onHold"
+        "typeId": "feedback"
       },
       "values": {
         "acao": "track",
@@ -915,10 +915,10 @@
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
       "parentAnnotationId": "e938c1dc-98a4-4a6c-8d78-255bbef46f38",
-      "parentRole": null,
+      "parentRole": "change",
       "type": {
         "specId": "sdui",
-        "typeId": "onChange"
+        "typeId": "validation"
       },
       "values": {
         "acao": "validate",
@@ -1136,10 +1136,10 @@
       "layerId": "d717c9b8-2105-4906-b10b-49c1fca7d1b8",
       "name": null,
       "parentAnnotationId": "fd80b227-48f0-4e75-afba-af85c4eb4509",
-      "parentRole": null,
+      "parentRole": "click",
       "type": {
         "specId": "sdui",
-        "typeId": "onClick"
+        "typeId": "action"
       },
       "values": {
         "acao": "submit",

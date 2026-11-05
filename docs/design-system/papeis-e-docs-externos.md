@@ -4,6 +4,8 @@
 
 PD1 e PD2: nenhuma (formato v11 e schema v14 não mudam tamanho, token, ícone nem anatomia de componente).
 
+PD6 e PD7: nenhuma (MCP, exemplos, guia e documentação; nenhuma tela nova). As capturas das telas de PD3, PD4 e PD5 entram na passada visual do testador.
+
 PD3:
 
 - **Lista de tipos com busca e grupos** (`src/ui/TypePicker.tsx`, CSS em `src/theme/forms.css`): campo de busca no topo (`TextField` com o texto "Buscar entre N tipos"), cabeçalhos de grupo (`h3`) na ordem da camada, bloco "Outros" no fim e o estado "Nenhum tipo com \"<texto>\"". Os itens (`.type-option` com `NoticeBadge`) não mudam. Nenhum ícone novo.

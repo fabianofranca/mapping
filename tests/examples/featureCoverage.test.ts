@@ -68,23 +68,6 @@ const PENDING_AFTER_REMOVAL: string[] = [];
  * (decisão 'Fora' da #486); o recurso é coberto por tests/model/specV10.test.ts e pelo roteiro R18.
  */
 const MISSING_TODAY: string[] = [
-  // formatVersion 11 (etapa #559, PD1): os exemplos e o guia ganham `groups`, `childRoles` e
-  // `docRepos` em fase posterior da etapa; cobertos por tests/model/specV11.test.ts.
-  'spec:docRepos',
-  'spec:docRepos[].id',
-  'spec:docRepos[].ref',
-  'spec:docRepos[].url',
-  'spec:docRepos[].urlTemplate',
-  'spec:layers[].groups',
-  'spec:layers[].groups[].description',
-  'spec:layers[].groups[].id',
-  'spec:layers[].groups[].name',
-  'spec:layers[].annotationTypes[].groups',
-  'spec:layers[].annotationTypes[].childRoles',
-  'spec:layers[].annotationTypes[].childRoles[].description',
-  'spec:layers[].annotationTypes[].childRoles[].id',
-  'spec:layers[].annotationTypes[].childRoles[].name',
-  'spec:layers[].annotationTypes[].childRolesLabel',
   'spec:layers[].annotationTypes[].notices',
   'spec:layers[].annotationTypes[].notices[].kind',
   'spec:layers[].annotationTypes[].notices[].kind=deprecated',

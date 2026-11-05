@@ -18,7 +18,7 @@ O Mapping marca **áreas retangulares** em imagens (ou em containers só com fun
 - **O padrão "flutuante que aponta".** Uma tabela de analytics (ou qualquer nota estruturada) é uma marcação flutuante ligada ao elemento por uma seta; o dado está na anotação **dela**, não na do botão. Para achar: `get_marking` do botão, leia `arrows.outgoing` e `arrows.incoming` (cada uma traz a outra ponta em `to`/`from`), siga a ponta que é flutuante (`floating: true`) e leia as anotações dela. Para criar: `create_marking` com o tipo flutuante e `near` o botão, e `create_arrow` do botão para ela (ou ao contrário), tudo no mesmo lote, com apelidos `$nome`. Tipos com `appliesTo: ["arrow"]` anotam a seta em si; `appliesTo: ["marking"]` só marcações.
 - **Camadas.** Cada anotação pertence a uma camada. Camadas **livres** guardam anotações livres; camadas **de especialização** (com `spec`) guardam as anotações tipadas daquele domínio.
 - **Alcance da anotação.** Uma anotação vale só para a própria marcação; o contexto vem do `path` e do pai que `get_marking` devolve.
-- **Vínculos.** Uma anotação pode ter uma **dona** (`owner`), na mesma marcação e em outra camada (ex: um evento `onClick` vinculado ao `Button`). `linked` lista as vinculadas e `linkTree` mostra a árvore.
+- **Vínculos.** Uma anotação pode ter uma **dona** (`owner`), na mesma marcação e em outra camada (ex: uma Ação vinculada ao `Button` no papel Clique). `linked` lista as vinculadas e `linkTree` mostra a árvore.
 - **Referências fortes.** Campos do tipo `ref` apontam para uma tupla, uma linha de tabela ou um campo de outra anotação. Em `refs` você vê para onde cada campo aponta; em `backlinks`, quem aponta para a anotação.
 - **Pendências.** Anotação incompleta (`issues`): campo obrigatório vazio, valor inválido, referência quebrada, tipo inexistente etc. São calculadas na leitura, não gravadas.
 - **Plataformas e código de instanciação.** O `code` de um tipo diz como se cria uma instância dele em cada plataforma: `symbol` é o que se chama, `path` é o arquivo que o define (relativo à raiz do `repo` da plataforma), `params` e `values` dizem como passar os campos, `notes` orienta. O repositório (`repo`) é da biblioteca, logo da **especialização**; o projeto só sobrepõe o clone local (`platformRepos[x].localPath`). Você lê o arquivo para saber a assinatura e escreve a chamada na solução; o mapeamento não guarda nada sobre a solução. `get_specialization` e `get_project` repetem isso em `codeHint` quando há plataformas. Veja "Do mapeamento ao código de instanciação".
@@ -183,8 +183,9 @@ Um item criado no lote pode ser citado nas operações seguintes por um **apelid
   {
     "op": "create_annotation",
     "marking": "$botao",
-    "type": "onClick",
+    "type": "action",
     "owner": "$btn",
+    "role": "click",
     "values": { "acao": "submit" }
   }
 ]
@@ -286,7 +287,7 @@ Quando o projeto aplica uma especialização com **plataformas** (veja `platform
    - `repos`: por plataforma, o `url` e a `ref` do repositório (da especialização) e o `localPath` do clone local (do projeto); vazio se não houver nenhum dos dois;
    - `tree`: a árvore que espelha a marcação e as descendentes. Cada anotação traz `type` (a chave de `types`), `label`, `layer`, `args`, `values` e `linked`; nos tipos que têm `variants` (especialização 9), traz também `code`, o código **resolvido** da variante dela (`symbol`, `definition`, `params`, `values`, `notes`, sem `variants`). **Quando a anotação tem `code`, use-o no lugar do de `types`** (o de `types` é o da base, e pode trazer `variants`); sem `code` na anotação, vale o de `types`.
 3. **Abra a `definition` de cada tipo** que você vai usar. Se `exists` é `true`, leia o arquivo em `localFile` (relativo ao diretório de trabalho do cliente); senão, abra a `url` (o arquivo no repositório da especialização, na `ref` dela). Leia a assinatura do `symbol` antes de chamá-lo.
-4. **Escreva as chamadas** na solução, uma por anotação da árvore: `args` é `{ field, name, value }`, com o **nome do parâmetro** no código e o valor **já traduzido** (o enum `primary` vira o `ButtonStyle.Primary`). Campo que não está em `args` não é passado. Respeite as `notes` do tipo (elas costumam dizer detalhes como "use o valor do campo id") e o `linked`: as anotações vinculadas ficam sob a dona (o `onClick` sob o `Button`) e entram na chamada dela do jeito que as `notes` mandarem. `values` são os valores como estão no mapeamento (sem traduzir), com os `ref` resolvidos pelo rótulo do alvo (ex.: `dado: "User.name"`).
+4. **Escreva as chamadas** na solução, uma por anotação da árvore: `args` é `{ field, name, value }`, com o **nome do parâmetro** no código e o valor **já traduzido** (o enum `primary` vira o `ButtonStyle.Primary`). Campo que não está em `args` não é passado. Respeite as `notes` do tipo (elas costumam dizer detalhes como "use o valor do campo id") e o `linked`: as anotações vinculadas ficam sob a dona (a `Action` sob o `Button`, no papel Clique) e entram na chamada dela do jeito que as `notes` mandarem. `values` são os valores como estão no mapeamento (sem traduzir), com os `ref` resolvidos pelo rótulo do alvo (ex.: `dado: "User.name"`).
 5. O servidor **não lê nem grava código**. Se você tem o clone do repositório da plataforma fora do caminho esperado, proponha um `set_platform_repo` com `localPath` (ver "Repositórios por plataforma"); sem clone, a `url` basta.
 
 Exemplo: o `Button` do formulário na plataforma `android` (`get_code_hints("mapping://cadastro/m/2f7c4a1d", "android")`):
@@ -317,12 +318,12 @@ Exemplo: o `Button` do formulário na plataforma `android` (`get_code_hints("map
       "values": { "estilo": { "primary": "ButtonStyle.Primary" } },
       "notes": "Use o modifier de testTag com o valor do campo id."
     },
-    "sdui/onClick": {
-      "name": "onClick",
-      "symbol": "com.app.ds.OnClick",
+    "sdui/action": {
+      "name": "Ação",
+      "symbol": "com.app.ds.Action",
       "definition": null,
       "params": { "acao": "action" },
-      "notes": "Associe o evento ao componente dono por meio do parâmetro onClick."
+      "notes": "Passe o evento no parâmetro do papel que ele ocupa no componente dono (Clique em onClick, Pressionar em onHold)."
     }
   },
   "tree": {
@@ -349,8 +350,9 @@ Exemplo: o `Button` do formulário na plataforma `android` (`get_code_hints("map
         "linked": [
           {
             "ref": "a/7d41c2e8",
-            "type": "sdui/onClick",
-            "label": "onClick submit",
+            "type": "sdui/action",
+            "label": "Ação submit",
+            "parentRole": "click",
             "layer": "Eventos",
             "args": [{ "field": "acao", "name": "action", "value": "submit" }],
             "values": { "acao": "submit" }
@@ -362,7 +364,7 @@ Exemplo: o `Button` do formulário na plataforma `android` (`get_code_hints("map
 }
 ```
 
-A chamada a escrever sai de `types` (o `symbol` e como passar cada campo) e de `args` (os valores desta instância): `DSButton(text = "Cadastrar", style = ButtonStyle.Primary, enabled = true, onClick = OnClick(action = "submit"))`, com o `testTag` do `id` que as `notes` pedem. O que o exemplo mostra para o `onClick` vale para todo tipo sem `path`: `definition` é `null`, e o `symbol` é tudo o que o `code` diz (aqui, você acha a assinatura no repositório pelo nome). Na plataforma `bff`, o mesmo formulário dá as funções que **geram o JSON da tela** (`com.app.bff.sdui.button`, com o `path` do arquivo que a define), e a chamada a escrever é a dessas funções.
+A chamada a escrever sai de `types` (o `symbol` e como passar cada campo) e de `args` (os valores desta instância): `DSButton(text = "Cadastrar", style = ButtonStyle.Primary, enabled = true, onClick = Action(action = "submit"))`, com o `testTag` do `id` que as `notes` pedem. O que o exemplo mostra para a `Action` vale para todo tipo sem `path`: `definition` é `null`, e o `symbol` é tudo o que o `code` diz (aqui, você acha a assinatura no repositório pelo nome). Na plataforma `bff`, o mesmo formulário dá as funções que **geram o JSON da tela** (`com.app.bff.sdui.button`, com o `path` do arquivo que a define), e a chamada a escrever é a dessas funções.
 
 ### O `code` de um tipo: o `symbol` e o arquivo que o define
 
@@ -498,7 +500,7 @@ Uma especialização `formatVersion` 11 pode dizer **em que ponto da dona** uma 
   {
     "op": "create_annotation",
     "marking": "m/3f2a9c1e",
-    "type": "app/onClick",
+    "type": "app/action",
     "owner": "a/5d2c8e10",
     "role": "click"
   }
