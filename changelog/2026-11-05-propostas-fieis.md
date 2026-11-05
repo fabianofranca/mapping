@@ -1,4 +1,4 @@
-# Propostas fiéis ao aplicado — [Não lançado] (épico `epic/propostas-fieis`, PR #547, MCP 0.17.0, schema v13)
+# Propostas fiéis ao aplicado — 2026-11-05 (épico `epic/propostas-fieis`, PR #547, MCP 0.17.0, schema v13)
 
 ## Adicionado
 
