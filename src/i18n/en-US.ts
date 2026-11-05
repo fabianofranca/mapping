@@ -264,8 +264,6 @@ export const enUS: Dictionary = {
   'view.cleanViewHint':
     'Clean view: hides markings, names and selection; only the image and components',
   'view.list': 'List',
-  'view.showList': 'Show the list',
-  'view.hideList': 'Hide the list',
 
   'list.title': 'Annotation list',
   'list.showEmpty': 'Show markings without annotations',

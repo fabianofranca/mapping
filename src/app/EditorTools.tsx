@@ -108,21 +108,3 @@ export function CleanViewButton() {
     />
   );
 }
-
-export function ListToggleButton({
-  open,
-  onToggle,
-}: {
-  readonly open: boolean;
-  readonly onToggle: () => void;
-}) {
-  return (
-    <IconButton
-      icon="list"
-      label={t(open ? 'view.hideList' : 'view.showList')}
-      text={t('view.list')}
-      pressed={open}
-      onClick={onToggle}
-    />
-  );
-}

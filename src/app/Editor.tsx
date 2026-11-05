@@ -1,5 +1,5 @@
 import { useComputed } from '@preact/signals';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 import { CanvasHost } from '../canvas/CanvasHost';
 import { t } from '../i18n';
 import { BREAKPOINTS } from '../theme/breakpoints';
@@ -77,10 +77,12 @@ export function EditorScreen() {
   );
   const { busy } = notices;
 
-  // Desktop compacto (abaixo de 1200px): Detalhes começa recolhido (B2).
+  // Desktop compacto (abaixo de 1200px): Detalhes começa recolhido (B2). Só ao abrir o
+  // editor: estreitar a janela depois encolhe as laterais (`fitSideWidths`), não as fecha.
+  const openedCompact = useRef(compact);
   useEffect(() => {
-    if (compact) collapseDetailsOnCompact();
-  }, [compact]);
+    if (openedCompact.current) collapseDetailsOnCompact();
+  }, []);
 
   if (!hasProject.value) return null;
 

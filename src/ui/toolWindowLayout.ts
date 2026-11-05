@@ -141,3 +141,50 @@ export function showAndFocusToolWindow(id: ToolWindowId): void {
   openToolWindow(id);
   queueMicrotask(() => (switchesBottomTab ? focusActiveTab(id) : focusToolWindow(id)));
 }
+
+/**
+ * Alvo do foco ao sair da revisão (etapa #515, FN1): sair tira da tela o botão clicado
+ * (a faixa da revisão), então o foco vai ao botão da proposta (Revisar ou Continuar) na
+ * janela Propostas, se ela estiver aberta; senão, ao canvas.
+ */
+export function reviewExitTarget(proposalId: string | null): HTMLElement | null {
+  if (proposalId !== null) {
+    for (const row of document.querySelectorAll<HTMLElement>('[data-proposal]')) {
+      if (row.dataset.proposal !== proposalId) continue;
+      const action = row.querySelector<HTMLElement>('[data-proposal-action]');
+      if (action) return action;
+    }
+  }
+  return document.querySelector<HTMLElement>(`[${CANVAS_AREA_ATTR}]`);
+}
+
+const EXIT_FOCUS_TRIES = 30;
+const EXIT_FOCUS_STEP_MS = 16;
+
+/**
+ * Leva o foco ao alvo da saída, ainda com a faixa no DOM (nenhum quadro no `body`).
+ * Ao fechar a revisão, a janela Propostas só troca a árvore pela lista na renderização
+ * seguinte: o botão da proposta ainda não existe. O foco vai ao canvas já e passa ao
+ * botão quando ele aparece (até ~0,5 s), se a pessoa não o tiver levado a outro lugar.
+ */
+export function focusReviewExitTarget(proposalId: string | null): void {
+  const first = reviewExitTarget(proposalId);
+  first?.focus();
+  if (proposalId === null || (first && first !== canvasArea())) return;
+  const parked = first;
+  let tries = 0;
+  const retry = () => {
+    const target = reviewExitTarget(proposalId);
+    if (target && target !== canvasArea()) {
+      const now = document.activeElement;
+      if (now === parked || now === document.body || now === null) target.focus();
+      return;
+    }
+    if (++tries < EXIT_FOCUS_TRIES) setTimeout(retry, EXIT_FOCUS_STEP_MS);
+  };
+  setTimeout(retry, EXIT_FOCUS_STEP_MS);
+}
+
+function canvasArea(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(`[${CANVAS_AREA_ATTR}]`);
+}

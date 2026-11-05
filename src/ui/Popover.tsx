@@ -1,6 +1,7 @@
 import type { ComponentChildren, RefObject } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { FOCUSABLE, returnFocusToTrigger } from './focus';
+import { createOpenScrollGuard } from './openScrollGuard';
 import { menuKeyDown, useFocusFirstItem } from './useMenuNavigation';
 
 // Popover ancorado num botão (paleta de cor e ações da linha da janela Camadas). Fica em
@@ -138,11 +139,13 @@ export function Popover({
     const onDown = (e: PointerEvent) => {
       if (!host.current?.contains(e.target as Node)) close();
     };
+    const scrollCounts = createOpenScrollGuard(triggerEl);
     const onScroll = (e: Event) => {
-      // Rolar o próprio popover (paleta longa) não fecha.
+      // Rolar o próprio popover (paleta longa) não fecha; nem a rolagem da abertura.
       if (panel.current?.contains(e.target as Node)) return;
-      if (scroll === 'close') close();
-      else if (host.current && panel.current) place(host.current, panel.current, align);
+      if (scroll === 'close') {
+        if (scrollCounts(e)) close();
+      } else if (host.current && panel.current) place(host.current, panel.current, align);
     };
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('scroll', onScroll, true);

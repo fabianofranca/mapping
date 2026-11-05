@@ -12,6 +12,7 @@ import {
 import { EditorScreen } from '../../src/app/Editor';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
+import { isToolWindowOpen, showToolWindow } from '../../src/store/toolWindows';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { installFakeCanvas } from '../canvas/harness';
 import { sampleProject } from '../model/fixtures';
@@ -113,5 +114,18 @@ describe('janela estreita', () => {
     expect(canvas.current).toBe(controller);
     expect(view.container.querySelector('.canvas-host')).toBe(host);
     expect(viewState.viewport.value).toEqual(viewport);
+  });
+
+  // Etapa #515 (FN1, #446): estreitar de 1280 para 900 px encolhe as janelas laterais, não
+  // as fecha. Só abrir já compacto (< 1200 px) começa com Detalhes recolhido (B2).
+  it('estreitar de 1280 para 900 px, três vezes, mantém Detalhes aberta', () => {
+    const { resize } = mount(1280);
+    act(() => showToolWindow('details'));
+    for (let i = 0; i < 3; i++) {
+      act(() => resize(900));
+      expect(isToolWindowOpen('details')).toBe(true);
+      act(() => resize(1280));
+      expect(isToolWindowOpen('details')).toBe(true);
+    }
   });
 });
