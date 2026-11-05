@@ -20,6 +20,7 @@ import { CodeDefinitions } from './CodeDefinitions';
 import { CommitInput } from './CommitInput';
 import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
+import { useSplitHeader } from './useSplitHeader';
 import { Dialog } from './Dialog';
 import { LinkedRow } from './LinkedAnnotations';
 import { OwnerRoleField } from './OwnerRoleField';
@@ -133,6 +134,7 @@ export function AnnotationEditor({
   const { actions, ui } = useEditor();
   const ext = useDetailsExtension();
   const ownerId = useId();
+  const header = useSplitHeader();
   const [pending, setPending] = useState<PendingDelete | null>(null);
   /** Filho criado numa camada oculta: oferece mostrá-la. */
   const [hiddenChild, setHiddenChild] = useState<{
@@ -230,7 +232,10 @@ export function AnnotationEditor({
       class={typed ? 'annotation annotation-typed' : 'annotation'}
       data-annotation={annotation.id}
     >
-      <div class="annotation-header">
+      <div
+        ref={header.ref}
+        class={header.split ? 'annotation-header is-split' : 'annotation-header'}
+      >
         <IconButton
           icon={collapsed ? 'chevronRight' : 'chevronDown'}
           label={t(collapsed ? 'annotation.expand' : 'annotation.collapse', {
@@ -268,14 +273,16 @@ export function AnnotationEditor({
         {ext?.mark(annotation.id, 'layerId')}
         {ext?.mark(annotation.id, 'markingId')}
         {ext?.decision(annotation.id)}
-        <CopyButtons target={{ kind: 'a', id: annotation.id }} />
-        <IconButton
-          icon="trash"
-          label={t('annotation.delete')}
-          variant="danger"
-          disabled={readOnly}
-          onClick={requestDelete}
-        />
+        <span class="annotation-header-actions">
+          <CopyButtons target={{ kind: 'a', id: annotation.id }} />
+          <IconButton
+            icon="trash"
+            label={t('annotation.delete')}
+            variant="danger"
+            disabled={readOnly}
+            onClick={requestDelete}
+          />
+        </span>
       </div>
 
       {collapsed ? (

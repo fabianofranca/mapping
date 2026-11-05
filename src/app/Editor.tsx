@@ -145,8 +145,9 @@ export function EditorScreen() {
               <CanvasHost />
               <CanvasNotices notices={notices} />
               <CanvasContextMenu />
-              <ReviewLegend />
               <Minimap />
+              {/* Depois do minimapa: com o mesmo z-index, a legenda aberta fica por cima dele. */}
+              <ReviewLegend />
               {noImages.value && (
                 <div class="canvas-empty">
                   <p class="muted">{t('editor.emptyCanvas')}</p>
