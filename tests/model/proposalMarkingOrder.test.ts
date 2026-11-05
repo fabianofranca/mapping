@@ -68,7 +68,7 @@ describe('proposta: ordem entre marcações irmãs', () => {
     );
   });
 
-  it('criada fora do fim leva position com from nulo', () => {
+  it('criada no fim ou antes da âncora não leva position; o lugar dela vai em insertBefore', () => {
     const base = withSiblings();
     const created = reorderMarking(
       createMarking(base, {
@@ -80,13 +80,39 @@ describe('proposta: ordem entre marcações irmãs', () => {
       0,
     );
     const p = propose(base, created);
+    expect(p.changes.some((c) => c.field === 'position')).toBe(false);
+    expect(changeOf(p, 'marking', 'M7', null).insertBefore).toBe('M4');
+    const accepted = decided(p, base, { level: 'proposal', id: null }, 'accepted');
+    const applied = applyAccepted(base, accepted, AT);
+    expect(applied.ok).toBe(true);
+    if (applied.ok) expect(order(applied.project, 'I2')).toEqual(order(created, 'I2'));
+  });
+
+  it('criada que sai da maior subsequência leva position com from nulo', () => {
+    // Projeto proposto M7, M6, M4, M5: a âncora de M7 é M6 e o array aplicado fica M4, M5,
+    // M7, M6; a maior subsequência crescente tem empate, e M7 é uma das que se movem.
+    const base = withSiblings();
+    const withM7 = createMarking(base, {
+      id: 'M7',
+      containerId: 'I2',
+      rect: { x: 600, y: 0, width: 100, height: 100 },
+    });
+    const byId = new Map(withM7.markings.map((m) => [m.id, m]));
+    const after: Project = {
+      ...withM7,
+      markings: [
+        ...withM7.markings.filter((m) => !['M4', 'M5', 'M6', 'M7'].includes(m.id)),
+        ...['M7', 'M6', 'M4', 'M5'].map((id) => byId.get(id)!),
+      ],
+    };
+    const p = propose(base, after);
     const position = changeOf(p, 'marking', 'M7', 'position');
     expect(position).toMatchObject({ from: null, to: 0 });
     const accepted = decided(p, base, { level: 'proposal', id: null }, 'accepted');
     expect(changeStatus(accepted, position, base).conflict).toBe(false);
     const applied = applyAccepted(base, accepted, AT);
     expect(applied.ok).toBe(true);
-    if (applied.ok) expect(order(applied.project, 'I2')).toEqual(order(created, 'I2'));
+    if (applied.ok) expect(order(applied.project, 'I2')).toEqual(order(after, 'I2'));
   });
 
   it('aplicar reordena como o modelo e a visão Proposto mostra a mesma ordem', () => {
