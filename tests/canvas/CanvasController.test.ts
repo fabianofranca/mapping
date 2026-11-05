@@ -41,17 +41,55 @@ describe('CanvasController', () => {
     return { ...editor, container, controller, ensure };
   }
 
-  it('monta o stage com as seis camadas (imagens, componentes, setas, marcações, flutuantes, sobreposições) e pede os bitmaps das imagens', () => {
+  it('monta o stage com no máximo cinco camadas (o Konva avisa no console a partir de seis) e pede os bitmaps das imagens', () => {
     const { container, controller, ensure } = setup();
     flush();
     const canvases = container.querySelectorAll('canvas');
-    expect(canvases).toHaveLength(6);
+    expect(canvases.length).toBeLessThanOrEqual(5);
     expect(ensure.mock.calls.map(([file]) => file)).toEqual([
       'images/a.jpg',
       'images/b.jpg',
     ]);
     controller.destroy();
     expect(container.querySelectorAll('canvas')).toHaveLength(0);
+  });
+
+  it('a ordem de desenho segue a mesma: imagens, componentes, setas, marcações, flutuantes, sobreposições', () => {
+    const { controller } = setup();
+    flush();
+    const inner = controller as unknown as {
+      stage: Konva.Stage;
+      componentGroup: Konva.Layer;
+      arrows: { node: Konva.Shape };
+      markings: { nodes: Map<string, { group: Konva.Group }> };
+      floatingDrawings: Konva.Group;
+      overlay: OverlayRenderer;
+    };
+    // Ordem em que o Konva pinta os nós: camada por camada, cada filho depois do anterior.
+    const painted: Konva.Node[] = [];
+    const walk = (node: Konva.Node): void => {
+      painted.push(node);
+      if ('getChildren' in node) {
+        for (const child of (node as Konva.Container).getChildren()) walk(child);
+      }
+    };
+    walk(inner.stage);
+    const at = (node: Konva.Node): number => {
+      const index = painted.indexOf(node);
+      expect(index, 'nó fora do palco').toBeGreaterThanOrEqual(0);
+      return index;
+    };
+    const marking = [...inner.markings.nodes.values()][0]?.group;
+    expect(marking, 'o projeto de teste tem marcações').toBeDefined();
+    const order = [
+      inner.componentGroup,
+      inner.arrows.node,
+      marking!,
+      inner.floatingDrawings,
+      inner.overlay.selectionOutline,
+    ].map(at);
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    expect(new Set(order).size).toBe(order.length);
   });
 
   it('o stage refaz o cache de transformação uma vez por quadro de zoom e de pan, e nenhuma na edição', () => {

@@ -98,11 +98,11 @@ const topDownMarkings = memoByProject((p: Project) => topDown(p.markings));
  * `floatingParent`, acima de tudo (containers, componentes e as bordas das demais marcações).
  */
 export class MarkingRenderer {
-  private readonly layer: Konva.Layer;
+  private readonly layer: Konva.Container;
   private readonly floatingParent: Konva.Container;
   private readonly nodes = new Map<string, MarkingNode>();
 
-  constructor(layer: Konva.Layer, floatingParent: Konva.Container = layer) {
+  constructor(layer: Konva.Container, floatingParent: Konva.Container = layer) {
     this.layer = layer;
     this.floatingParent = floatingParent;
   }

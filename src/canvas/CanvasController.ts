@@ -139,7 +139,7 @@ export class CanvasController {
   /** Cores com que `componentLayer` foi criado: mudou o tema, ele é refeito. */
   private componentPalette: CanvasTokens['component'];
   private readonly markings: MarkingRenderer;
-  /** Camada das setas, entre os desenhos dos componentes e as marcações. */
+  /** Grupo das setas (na camada das marcações), entre os desenhos dos componentes e as marcações. */
   private readonly arrows: ArrowRenderer;
   private readonly overlay: OverlayRenderer;
   private readonly reviewLayer: ReviewRenderer;
@@ -296,15 +296,18 @@ export class CanvasController {
     this.stage = new Konva.Stage({ container, width: 1, height: 1 });
     const imageLayer = new Konva.Layer({ listening: false });
     this.componentGroup = new Konva.Layer({ listening: false });
-    const arrowLayer = new Konva.Layer({ listening: false });
-    const markingLayer = new Konva.Layer({ listening: false });
+    // Setas e marcações dividem uma camada (o Konva avisa no console a partir de seis): elas se
+    // redesenham juntas a cada edição, e um `Group` para cada mantém a ordem (setas por baixo).
+    const arrowMarkingLayer = new Konva.Layer({ listening: false });
+    const arrowLayer = new Konva.Group({ listening: false });
+    const markingLayer = new Konva.Group({ listening: false });
+    arrowMarkingLayer.add(arrowLayer, markingLayer);
     const overlayLayer = new Konva.Layer({ listening: false });
     const floatingTop = new Konva.Layer({ listening: false });
     this.stage.add(
       imageLayer,
       this.componentGroup,
-      arrowLayer,
-      markingLayer,
+      arrowMarkingLayer,
       floatingTop,
       overlayLayer,
     );
