@@ -457,6 +457,29 @@ describe('TypedFields: campo de texto (StringEditor)', () => {
     expect(screen.getByLabelText('texto').tagName).toBe('INPUT');
   });
 
+  it('Enter que grava um valor longo no campo de uma linha passa o foco ao TEXTAREA, com o cursor no fim', async () => {
+    const { harness, user } = setup('AB', 'texto');
+    const input = screen.getByLabelText('texto');
+    await user.clear(input);
+    await user.type(input, `${LONG}{Enter}`);
+    expect(valueOf(harness, 'AB', 'texto')).toBe(LONG);
+    const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
+    expect(area.tagName).toBe('TEXTAREA');
+    expect(document.activeElement).toBe(area);
+    expect(area.selectionStart).toBe(LONG.length);
+  });
+
+  it('longo→vazio e curto→curto mantêm o foco no campo de uma linha', async () => {
+    const { user } = setup('AB', 'texto');
+    const input = screen.getByLabelText('texto');
+    await user.clear(input);
+    await user.type(input, 'novo{Enter}');
+    expect(document.activeElement).toBe(screen.getByLabelText('texto'));
+    await user.clear(screen.getByLabelText('texto'));
+    await user.keyboard('{Enter}');
+    expect(document.activeElement).toBe(screen.getByLabelText('texto'));
+  });
+
   it('Enter grava o texto longo sem quebra, sem precisar de blur, e o foco fica no campo', async () => {
     const { harness, user } = setup('AB', 'texto', withText(LONG));
     const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
