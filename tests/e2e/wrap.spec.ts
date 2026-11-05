@@ -198,3 +198,28 @@ test('Envolver pelo botão direito com dois itens selecionados', async ({ page }
     expect(m.parentId).toBe(parent.id);
   }
 });
+
+// O atalho da entrada (Ctrl+G) fica à direita do botão, perto da borda, e não colado ao
+// rótulo (#468, AC1): a regra de maior especificidade zerava o `margin-left: auto`.
+test('o atalho Ctrl+G do menu Envolver fica à direita da entrada', async ({ page }) => {
+  const { centers } = await twoMarkings(page, 'Atalho');
+  await closeExport(page);
+  await page.mouse.click(centers[0]?.x ?? 0, centers[0]?.y ?? 0);
+  await page.keyboard.down('Shift');
+  await page.mouse.click(centers[1]?.x ?? 0, centers[1]?.y ?? 0);
+  await page.keyboard.up('Shift');
+  await expect(page.getByText('2 itens selecionados').first()).toBeVisible();
+  await page.mouse.click(centers[1]?.x ?? 0, centers[1]?.y ?? 0, { button: 'right' });
+  const item = page.getByRole('menu').getByRole('menuitem', { name: 'Envolver' });
+  await expect(item).toBeVisible();
+  const geo = await item.evaluate((el) => {
+    const kbd = el.querySelector<HTMLElement>('.menu-shortcut')!;
+    return {
+      right: el.getBoundingClientRect().right,
+      kbdRight: kbd.getBoundingClientRect().right,
+      padding: Number.parseFloat(getComputedStyle(el).paddingRight),
+    };
+  });
+  // Termina na borda interna do botão (a folga é o padding direito mais a borda).
+  expect(geo.right - geo.kbdRight).toBeLessThanOrEqual(geo.padding + 2);
+});

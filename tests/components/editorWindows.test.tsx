@@ -84,6 +84,21 @@ describe('faixas e janelas', () => {
     expect(button.getAttribute('aria-pressed')).toBe('true');
   });
 
+  // #497 (AC1): a dica da faixa sai ao lado do botão; embaixo, cobria o conteúdo da janela.
+  it('todos os botões das faixas abrem a dica ao lado (placement end)', () => {
+    const harness = createHarness(sampleProject());
+    withContext(
+      harness,
+      <>
+        <ToolStrip side="left" />
+        <ToolStrip side="right" />
+      </>,
+    );
+    const anchors = document.querySelectorAll('.tool-strip .tooltip-anchor');
+    expect(anchors.length).toBeGreaterThan(4);
+    for (const anchor of anchors) expect(anchor.className).toContain('tooltip-end');
+  });
+
   it('a janela mostra o título, a divisória e fecha pelo cabeçalho', async () => {
     const harness = createHarness(sampleProject());
     withContext(
