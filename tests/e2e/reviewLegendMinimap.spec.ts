@@ -53,6 +53,18 @@ test('a legenda das marcas fica por cima do minimapa a 900×720', async ({ page 
     client: el.clientHeight,
   }));
   expect(fit.scroll).toBeLessThanOrEqual(fit.client);
+
+  // Um diálogo aberto com a legenda à vista fica por cima dela (--z-dialog > --z-popover).
+  await page.getByRole('button', { name: 'Configurações', exact: true }).first().click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(legend).toBeVisible();
+  const legendHit = await legend.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return { onLegend: hit?.closest('.review-legend') !== null };
+  });
+  expect(legendHit.onLegend).toBe(false);
 });
 
 // Legenda sobre a Propostas (#598, JB1): com o canvas mais baixo que ela, a legenda sai do
