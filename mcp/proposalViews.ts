@@ -4,6 +4,10 @@ import {
   proposalIndex,
   reviewProgress,
   summarizeDecisions,
+  droppedNoteOrigin,
+  latestRevisionSummary,
+  revisionMark,
+  visibleRevisedChanges,
   type Change,
   type ChangeStatus,
   type ItemKind,
@@ -116,6 +120,30 @@ export function conflictView(status: ChangeStatus): Json | null {
     : { current: status.current };
 }
 
+/** A marca de revisão da mudança para o agente (`revised`), ou `null` se nenhuma revisão a cita. */
+export function revisedView(p: Proposal, c: Change): Json | null {
+  const mark = revisionMark(p, c.id);
+  if (mark === null) return null;
+  return {
+    at: mark.at,
+    kind: mark.kind,
+    ...(mark.previous
+      ? { previous: { to: slim(c, mark.previous.to), state: mark.previous.state } }
+      : {}),
+  };
+}
+
+/** Resumo das revisões da proposta (`revisions`): quantas e a data e as contagens da última. */
+export function revisionsView(p: Proposal): Json {
+  const last = latestRevisionSummary(p);
+  if (last === null) return {};
+  return { revisions: { count: p.revisions!.length, last } };
+}
+
+/** Pode ser revisada pelo agente: aberta e sem nada aplicado. */
+export const isRevisable = (p: Proposal): boolean =>
+  p.status === 'open' && Object.keys(p.applied).length === 0;
+
 /** Uma mudança: estado, alvo e valores antes e depois (e conflito/trava, se houver). */
 export function changeView(
   p: Proposal,
@@ -124,6 +152,8 @@ export function changeView(
   labels: ProposalLabels,
 ): Json {
   const conflict = conflictView(status);
+  // A marca só vale sem decisão (a mesma regra de `visibleRevisedChanges`).
+  const revised = p.decisions[c.id] === undefined ? revisedView(p, c) : null;
   return {
     id: c.id,
     state: stateOf(p, c.id),
@@ -135,6 +165,34 @@ export function changeView(
     ...(c.kind !== 'remove' ? { to: slim(c, c.to) } : {}),
     ...(conflict ? { conflict } : {}),
     ...(status.locked ? { locked: true } : {}),
+    ...(revised ? { revised } : {}),
+  };
+}
+
+/** Trocadas e novas que ainda aguardam a decisão do usuário (não são rejeitadas). */
+export function awaitingView(p: Proposal, labels: ProposalLabels): Json[] {
+  const byId = proposalIndex(p).changes;
+  return visibleRevisedChanges(p).map((id) => {
+    const c = byId.get(id)!;
+    return {
+      change: id,
+      target: labels.target(c),
+      ...(c.field !== null ? { field: c.field } : {}),
+      revised: revisedView(p, c),
+    };
+  });
+}
+
+/** Nota que subiu ao nível da proposta: de que mudança retirada ela veio. */
+export function droppedFrom(p: Proposal, noteId: string, labels: ProposalLabels): Json {
+  const origin = droppedNoteOrigin(p, noteId);
+  if (origin === null) return {};
+  return {
+    fromDroppedChange: {
+      id: origin.id,
+      target: labels.target(origin),
+      ...(origin.field !== null ? { field: origin.field } : {}),
+    },
   };
 }
 
@@ -227,4 +285,28 @@ export function noteView(p: Proposal, note: ProposalNote, labels: ProposalLabels
 /** O projeto com todas as mudanças da proposta (para rotular itens criados e removidos). */
 export function proposedProject(project: Project, p: Proposal): Project {
   return patchProject(project, p.changes).project;
+}
+
+const REVISE_HINT =
+  'a proposta ainda pode ser corrigida na mesma referência: use revise_proposal (troque o valor com `operations` ou retire com `drop`; mudança aceita fica congelada) em vez de enviar outra proposta';
+const SUPERSEDE_HINT =
+  'corrija só o que foi rejeitado (e os conflitos) lendo o projeto atual, e envie com propose_changes e supersedes apontando para esta proposta';
+
+/** Texto da dica de `get_proposal_review`: revisar na mesma proposta ou substituí-la. */
+export function reviewHint(
+  p: Proposal,
+  progress: { complete: boolean; undecided: number; acceptedPending: number },
+  toFix: number,
+): string {
+  const revisable = isRevisable(p);
+  if (!progress.complete) {
+    const wait = `a revisão ainda não terminou (${progress.undecided} sem decisão, ${progress.acceptedPending} aceita(s) sem aplicar)`;
+    if (revisable && toFix > 0) return `${wait}, mas há o que corrigir: ${REVISE_HINT}`;
+    return `${wait}: avise o usuário e espere antes de ${revisable ? 'corrigir' : 'enviar uma proposta que a substitua (propose_changes com supersedes)'}`;
+  }
+  if (toFix === 0)
+    return 'a revisão terminou sem rejeições nem conflitos: não há o que corrigir';
+  return revisable
+    ? `a revisão terminou: ${REVISE_HINT}. Se algo foi aplicado ou um pacote de biblioteca é novo, ${SUPERSEDE_HINT}`
+    : `a revisão terminou: ${SUPERSEDE_HINT}`;
 }

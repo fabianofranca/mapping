@@ -841,6 +841,7 @@ export const ptBR = {
   'proposal.notice.added': 'Nova proposta: {title}',
   'proposal.notice.changed': 'Proposta alterada fora da app: {title}',
   'proposal.notice.removed': 'Proposta apagada fora da app: {title}',
+  'proposal.notice.revised': 'Proposta revisada pelo agente: {title}',
   'external.title': 'Projeto alterado fora da app',
   'external.message':
     'O mapping.json foi alterado por outro programa (o servidor MCP, um editor de texto, o git…) desde que você o abriu. "Recarregar" descarta as suas alterações ainda não gravadas e abre o arquivo como está. "Manter as minhas" grava por cima, com a revisão nova.',

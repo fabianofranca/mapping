@@ -17,6 +17,7 @@ import {
   type ReviewTarget,
 } from '../../model';
 import { imageLabel, markingLabel } from '../labels';
+import { joinParts } from './format';
 
 // Textos das mudanças na revisão (títulos, valores antes/depois e o resumo de uma
 // linha). Só apresentação: o que é cada mudança vem do modelo (`Change`) e os valores,
@@ -307,6 +308,12 @@ export function entityName(names: ReviewNames, id: string): string | null {
   return null;
 }
 
+/** Rótulo de um campo de uma entidade (`marking` + `rect` → "Posição"); a chave quando não há rótulo. */
+export function entityFieldLabel(entity: Change['entity'], key: string): string {
+  const label = FIELD_KEYS[`${entity}.${key}`];
+  return label ? t(label) : key;
+}
+
 /** Nome do campo de uma tipada (o rótulo do campo na especialização, senão a chave). */
 function valueFieldLabel(names: ReviewNames, c: Change, key: string): string {
   const project = names.preview ?? names.current;
@@ -557,4 +564,16 @@ export function changeSummary(names: ReviewNames, c: Change): string {
       .join(' · ')}`;
   }
   return `${partsText(from)} → ${partsText(to)}`;
+}
+
+/**
+ * Resumo legível de uma mudança que o agente retirou da proposta. Ela já não está em
+ * `proposal.changes`, então é posta de volta nos nomes só para resolver o tipo e o alvo.
+ */
+export function droppedChangeSummary(names: ReviewNames, c: Change): string {
+  const withChange: ReviewNames = {
+    ...names,
+    proposal: { ...names.proposal, changes: [...names.proposal.changes, c] },
+  };
+  return joinParts([changeTitle(withChange, c), changeSummary(withChange, c)]);
 }

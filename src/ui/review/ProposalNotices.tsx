@@ -1,9 +1,11 @@
 import { t } from '../../i18n';
+import type { ProposalNotice } from '../../store/proposals';
 import { Button } from '../controls';
 import { useEditor } from '../EditorContext';
 import { proposalNoticeMessage } from '../labels';
 import { ImageConsentBanner } from '../ImageConsentBanner';
 import { Notice } from '../Notice';
+import { revisionParts } from './revisedText';
 import { useReviewCommands } from './useReviewCommands';
 import { undoMessage } from './useReview';
 
@@ -48,6 +50,50 @@ export function ProposalNotices() {
   );
 }
 
+const NO_REVISION = { changed: 0, added: 0, dropped: 0 };
+
+/** "O agente revisou <título>: 1 trocada(s)…" com Revisar, a menos que essa revisão já esteja aberta. */
+function RevisedNotice({
+  notice,
+  more,
+  onDismiss,
+}: {
+  readonly notice: ProposalNotice;
+  readonly more: string | null;
+  readonly onDismiss: () => void;
+}) {
+  const { review } = useEditor();
+  const { openReview } = useReviewCommands();
+  const text = t('review.revisedNotice.text', {
+    title: notice.title,
+    parts: revisionParts(notice.revision ?? NO_REVISION),
+  });
+  const showReview = review.proposalId.value !== notice.id;
+  return (
+    <Notice
+      tone="info"
+      icon="proposal"
+      onDismiss={onDismiss}
+      actions={
+        showReview && (
+          <Button
+            size="sm"
+            aria-label={t('review.revisedNotice.reviewLabel', { title: notice.title })}
+            onClick={() => {
+              if (openReview(notice.id)) onDismiss();
+            }}
+          >
+            {t('review.revisedNotice.review')}
+          </Button>
+        )
+      }
+    >
+      <span>{text}</span>
+      {more && <span class="muted">{more}</span>}
+    </Notice>
+  );
+}
+
 function ProposalNotice() {
   const { session } = useEditor();
   const { openReview } = useReviewCommands();
@@ -57,6 +103,9 @@ function ProposalNotice() {
   const others = notices.length - 1;
   const dismiss = () => session.proposals.clearNotices();
   const more = others > 0 ? t('proposals.noticeMore', { count: others }) : null;
+  if (latest.kind === 'revised') {
+    return <RevisedNotice notice={latest} more={more} onDismiss={dismiss} />;
+  }
   return latest.kind === 'added' ? (
     <Notice
       tone="info"

@@ -108,7 +108,7 @@ function ProposalsItem() {
         {pending > 0 && (
           <span class="status-item status-item-ok">
             <Icon name="check" />
-            {awaitingText(pending)}
+            <span class="status-item-text">{awaitingText(pending)}</span>
           </span>
         )}
       </>

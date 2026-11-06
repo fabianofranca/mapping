@@ -1,8 +1,16 @@
+import { Fragment } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
-import { reviewKey, type ProposalNote, type ReviewTarget } from '../../model';
+import {
+  droppedNoteOrigin,
+  reviewKey,
+  type ProposalNote,
+  type ReviewTarget,
+} from '../../model';
 import { TextArea } from '../controls';
 import { useEditor } from '../EditorContext';
+import { droppedChangeSummary } from './changeText';
+import { useReviewNames } from './useReview';
 import { useReviewCommands } from './useReviewCommands';
 
 // Nota para o agente (HANDOFF-REVIEW-DETAILS 5.5, fase 9.6): um campo de texto que grava ao
@@ -70,6 +78,15 @@ function NoteArea({ target, note, readOnly, focusSeq, onSettled }: NoteAreaProps
   );
 }
 
+/** "Da mudança retirada: <resumo>" numa nota que subiu de uma mudança que o agente retirou. */
+function DroppedOrigin({ noteId }: { readonly noteId: string }) {
+  const names = useReviewNames();
+  const origin = names ? droppedNoteOrigin(names.proposal, noteId) : null;
+  if (!names || !origin) return null;
+  const summary = droppedChangeSummary(names, origin);
+  return <p class="muted">{t('review.revised.droppedNote', { summary })}</p>;
+}
+
 interface NoteFieldProps {
   readonly target: ReviewTarget;
   /** O campo foi aberto pelo botão de nota (mesmo sem nota ainda). */
@@ -89,16 +106,18 @@ export function NoteField({ target, show, focusSeq, onHide }: NoteFieldProps) {
   return (
     <div class="review-note-field">
       {list.map((note, i) => (
-        <NoteArea
-          key={note?.id ?? 'new'}
-          target={target}
-          note={note}
-          readOnly={!open}
-          focusSeq={i === 0 ? focusSeq : 0}
-          onSettled={(empty) => {
-            if (empty) onHide();
-          }}
-        />
+        <Fragment key={note?.id ?? 'new'}>
+          {note && <DroppedOrigin noteId={note.id} />}
+          <NoteArea
+            target={target}
+            note={note}
+            readOnly={!open}
+            focusSeq={i === 0 ? focusSeq : 0}
+            onSettled={(empty) => {
+              if (empty) onHide();
+            }}
+          />
+        </Fragment>
       ))}
       {open && <small class="muted">{t('review.note.saveHint')}</small>}
     </div>

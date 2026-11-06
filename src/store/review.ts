@@ -231,6 +231,8 @@ const resumeSchema = z.object({
     layerId: z.string().nullable(),
     decision: z.enum(['all', 'undecided', 'accepted', 'rejected']),
     onlyConflicts: z.boolean(),
+    // Blob gravado antes da etapa #644 não tem o campo: vale desligado (sem mudar a versão).
+    onlyRevised: z.boolean().default(false),
   }),
   knownConflicts: z.array(z.string()),
 });

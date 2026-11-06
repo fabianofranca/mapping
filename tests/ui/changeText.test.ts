@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { t } from '../../src/i18n';
 import { createArrow, type Change, type JsonValue, type Proposal } from '../../src/model';
-import { changeTitle, markingName } from '../../src/ui/review/changeText';
+import {
+  changeTitle,
+  droppedChangeSummary,
+  markingName,
+} from '../../src/ui/review/changeText';
 import { emptyProject, sampleProject } from '../model/fixtures';
 import { propose } from '../model/proposalFixtures';
 import { cadastroProject, loadExample } from '../model/specFixtures';
@@ -100,5 +104,16 @@ describe('changeTitle: seta', () => {
     expect(changeTitle({ current: plain, preview: base, proposal }, c)).toContain(
       'Porta → Maçaneta',
     );
+  });
+});
+
+describe('droppedChangeSummary: resumo da mudança retirada', () => {
+  it('mostra o tipo da anotação criada, que já não está na proposta', () => {
+    const button = created({ name: null, type: { specId: 'sdui', typeId: 'button' } });
+    // A mudança foi retirada: a proposta já não a tem em `changes`.
+    const names = { current: cadastroProject(), preview: null, proposal: proposalOf([]) };
+    const summary = droppedChangeSummary(names, button);
+    expect(summary).toContain('Button');
+    expect(summary).not.toContain(t('annotation.unnamed'));
   });
 });
