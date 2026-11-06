@@ -7,7 +7,7 @@ import { childSets } from './specChildren';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 11), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
+// Formato da especialização (`formatVersion` 1 a 12), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
 // biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
@@ -27,7 +27,8 @@ export { isPackagePath };
 // versão 11 é a 10 mais os filhos por camada e grupo (`allowedChildren` aceita cláusulas
 // `{ layer, groups? }` e a camada e o tipo têm `groups`; o resolvedor é `specChildren.ts`), os
 // papéis no vínculo (`childRoles` e `childRolesLabel`) e o documento em repositório externo
-// (`docRepos` na raiz e `doc` como objeto `{ repo, path }`).
+// (`docRepos` na raiz e `doc` como objeto `{ repo, path }`); a versão 12 é a 11 mais os passos
+// de papel em `migrations` (`rename-role`, `remove-role` e `set-role`).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -40,9 +41,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 11;
+export const SPEC_FORMAT_VERSION = 12;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -180,7 +181,11 @@ export type SpecMigrationStep =
   | { op: 'rename-field'; type: string; from: string; to: string }
   | { op: 'remove-field'; type: string; field: string }
   | { op: 'map-values'; type: string; field: string; values: Record<string, string> }
-  | { op: 'fill-field'; type: string; field: string; default: string | number };
+  | { op: 'fill-field'; type: string; field: string; default: string | number }
+  // Passos de papel do vínculo (só `formatVersion` 12); `type` é o tipo do dono.
+  | { op: 'rename-role'; type: string; from: string; to: string }
+  | { op: 'remove-role'; type: string; role: string; mode: 'clear' | 'unlink' }
+  | { op: 'set-role'; type: string; role: string; childType?: string };
 
 /** Como ir da versão `from` do pacote até a `to` (v4). */
 export interface SpecMigration {
