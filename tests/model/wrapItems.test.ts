@@ -108,7 +108,7 @@ describe('wrapItems', () => {
     expect(get(next, 'm2').parentId).toBe('m1');
   });
 
-  it('retângulo igual ao do pai atual que vem depois: a nova entra logo depois dele', () => {
+  it('retângulo igual ao do pai atual que vem depois: a nova nasce filha dele, antes da selecionada', () => {
     const p = settleHierarchy({
       ...multiProject(),
       markings: [
@@ -120,7 +120,9 @@ describe('wrapItems', () => {
     expect(get(p, 'm3').parentId).toBe('m1');
     const next = wrapItems(p, { id: 'W', items: [mark('m3')] });
     expectValid(next);
-    expect(next.markings.map((m) => m.id).slice(0, 3)).toEqual(['m3', 'm1', 'W']);
+    // Desempate estável (#549): a nova entra antes da selecionada e o pai atual continua o de
+    // fora pela relação, não pelo array.
+    expect(next.markings.map((m) => m.id).slice(0, 3)).toEqual(['W', 'm3', 'm1']);
     expect(get(next, 'W').parentId).toBe('m1');
     expect(get(next, 'm3').parentId).toBe('W');
   });

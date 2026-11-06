@@ -725,10 +725,12 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
  * Cria uma marcação pai que envolve a seleção (docs/ARCHITECTURE.md, "Marcação pai (Envolver)"). Entram as
  * marcações não flutuantes e os containers; setas e notas são ignoradas, e sem nada que entre
  * falha com `invalid-parent`. O espaço e o retângulo saem de `wrapRect`. A nova entra no array
- * antes da primeira marcação selecionada (ou no fim, se só há containers) para ganhar o
- * desempate de área igual; se o retângulo coincide com o do pai atual e ele vem depois dessa
- * posição, entra logo depois dele. Quem passa a ser filho sai do assentar, nunca é escolhido
- * aqui. Nenhuma geometria existente muda, então a trava não impede.
+ * antes da primeira marcação selecionada (ou no fim, se só há containers): ela não tem relação
+ * com ninguém, então o empate de retângulo igual com uma selecionada é novo e o array decide
+ * (a de antes é a de fora). Se o retângulo coincide com o do pai atual, a nova nasce com ele de
+ * `parentId`: no desempate estável a relação atual vale, e ele continua o de fora mesmo vindo
+ * depois no array. Quem passa a ser filho sai do assentar, nunca é escolhido aqui. Nenhuma
+ * geometria existente muda, então a trava não impede.
  */
 export function wrapItems(
   p: Project,
@@ -752,16 +754,15 @@ export function wrapItems(
   let position = p.markings.findIndex((m) => chosen.has(m.id));
   if (position < 0) position = p.markings.length;
 
-  // Pai atual com o mesmo retângulo e depois da posição escolhida: a nova entra depois dele.
+  // Pai atual com o mesmo retângulo: a nova nasce filha dele, a relação que o desempate
+  // estável mantém, e fica de fora das selecionadas por vir antes delas no array.
   const outer = enclosingIndex >= 0 ? p.markings[enclosingIndex] : undefined;
-  if (outer && enclosingIndex >= position && sameRect(outer.rect, rect)) {
-    position = enclosingIndex + 1;
-  }
+  const parentId = outer && sameRect(outer.rect, rect) ? outer.id : null;
 
   const marking: Marking = {
     id: args.id,
     containerId,
-    parentId: null,
+    parentId,
     name: null,
     rect,
     needsReview: false,

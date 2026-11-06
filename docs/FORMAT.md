@@ -684,10 +684,20 @@ decidido pela ferramenta, a partir dos retângulos, e gravado no JSON. Quem lê 
    encostando conta). Sobreposição parcial não é relação nenhuma; não há tolerância no formato (a interação
    da app tem, ver `docs/ARCHITECTURE.md`).
 2. **Pai da marcação** = a **menor** marcação do **mesmo espaço** (o mesmo container, ou o canvas) que a
-   contém. Empate de área: a que vem **antes no array `markings`** é a de fora (o pai). Duas marcações iguais,
-   portanto, formam uma cadeia pela ordem do array.
+   contém. Nos empates, **a relação atual vale** e a ordem do array só decide o empate novo:
+   - **Retângulos iguais** (mesmo espaço, mesmo retângulo): se uma é pai da outra, continua sendo, mesmo que uma
+     reordenação a tenha posto depois no array. Dentro de cada grupo de retângulos iguais a ordem (de fora para
+     dentro) é total e sem ciclo: é a ordenação topológica dos `parentId` atuais dentro do grupo (o pai antes do
+     filho) e, entre as que estão livres ao mesmo tempo, vem primeiro a que vem antes no array. Quem não tem pai no
+     grupo (uma marcação nova, ou que chegou ao retângulo agora) entra pelo array: a de antes é a de fora. Um
+     `parentId` em ciclo (arquivo inválido) é quebrado pela que vem antes no array.
+   - **Candidatas de mesma área a pai** (a menor área que contém tem mais de uma marcação): de cada grupo de
+     retângulos iguais conta só a de dentro; se o pai atual (`parentId`) é uma delas, ele fica; senão ganha a que
+     vem por último (na ordem do array, com os grupos de retângulos iguais na ordem acima).
+   - Reordenar irmãs (a **Ordem** dos Detalhes, `move_marking`, o `position` da proposta) nunca muda pais, nem no
+     assentar seguinte.
 3. **Pai do container** = a **menor** marcação do **canvas** (não flutuante) que contém o retângulo dele no
-   canvas (`placement` × tamanho × escala; como esse retângulo pode ser decimal, a comparação tem uma folga ínfima de arredondamento). Container dentro de container não existe.
+   canvas (`placement` × tamanho × escala; como esse retângulo pode ser decimal, a comparação tem uma folga ínfima de arredondamento). Container dentro de container não existe. O empate segue a regra 2: entre candidatas de mesma área, o `parentId` atual do container fica se for uma delas (de cada grupo de retângulos iguais conta só a de dentro); senão ganha a que vem por último.
 4. **Troca de espaço.** Uma marcação de container cujo retângulo, no canvas, deixa de caber no container passa
    a marcação do canvas (e o contrário, ao caber inteira num container): o `containerId` muda e o `rect` é
    convertido de um espaço para o outro, sem mudar o tamanho que a pessoa vê. As descendentes dela vão junto.
