@@ -319,3 +319,168 @@ export async function updateStored(
     { proposal: id },
   );
 }
+
+// ---------------------------------------------------------------------------
+// Revisão do agente (etapa #644): troca, retira e acrescenta na proposta aberta
+
+/** O que `compute` devolve para gravar: a proposta revisada e as imagens que o lote criou. */
+export interface RevisionPlan<R> {
+  readonly proposal: Proposal;
+  /** Conteúdo das imagens novas do lote, por arquivo (`images/…`); só as citadas são gravadas. */
+  readonly images: ReadonlyMap<string, Uint8Array>;
+  /** Confere, imediatamente antes de gravar, que o cálculo ainda vale (ex.: `mapping.json`). */
+  readonly check: () => Promise<void>;
+  readonly result: R;
+}
+
+/** Fim sem gravar (ex.: lote com erro): o resultado volta como está. */
+export interface RevisionStop<R> {
+  readonly stop: R;
+}
+
+async function listFilesUnder(root: string, relative: string): Promise<string[]> {
+  let entries;
+  try {
+    entries = await readdir(join(root, relative), { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const files: string[] = [];
+  for (const entry of entries) {
+    const path = `${relative}/${entry.name}`;
+    if (entry.isDirectory()) files.push(...(await listFilesUnder(root, path)));
+    else if (entry.isFile()) files.push(path);
+  }
+  return files;
+}
+
+/** Arquivos de `images/` e das pastas de pacote que a proposta guarda, relativos ao projeto. */
+export async function proposalFiles(
+  location: ProjectLocation,
+  proposalId: string,
+): Promise<string[]> {
+  const base = proposalDir(proposalId);
+  const subfolders = ['images', 'specs'];
+  const lists = await Promise.all(
+    subfolders.map((sub) => listFilesUnder(location.dir, `${base}/${sub}`)),
+  );
+  return lists.flat();
+}
+
+/** Os arquivos que as mudanças da proposta ainda citam: imagens e pastas de pacote. */
+function citedFiles(p: Proposal): { files: Set<string>; packageDirs: string[] } {
+  const files = new Set<string>();
+  const packageDirs: string[] = [];
+  for (const c of p.changes) {
+    const image = changeImageFile(c);
+    if (image !== null) files.add(proposalImagePath(p.id, image));
+    if (c.entity === 'specialization' && c.kind !== 'remove') {
+      const file = (c.to as { file?: unknown } | null)?.file;
+      const dir = typeof file === 'string' ? packageDirOf(file) : null;
+      if (dir !== null) packageDirs.push(`${proposalDir(p.id)}/${dir}/`);
+    }
+  }
+  return { files, packageDirs };
+}
+
+/** Apaga, em melhor esforço, o que nenhuma mudança cita mais; a falha vira aviso no stderr. */
+async function removeUncited(location: ProjectLocation, next: Proposal): Promise<void> {
+  const { files, packageDirs } = citedFiles(next);
+  for (const file of await proposalFiles(location, next.id)) {
+    if (files.has(file) || packageDirs.some((dir) => file.startsWith(dir))) continue;
+    try {
+      await rm(join(location.dir, file), { force: true });
+    } catch (error) {
+      const code =
+        errnoCode(error) ?? (error instanceof Error ? error.message : String(error));
+      process.stderr.write(
+        `mapping-mcp: aviso: não foi possível apagar ${file} (${code}); ele pode ser apagado à mão\n`,
+      );
+    }
+  }
+}
+
+async function writeRevisionImages(
+  location: ProjectLocation,
+  next: Proposal,
+  images: ReadonlyMap<string, Uint8Array>,
+): Promise<string[]> {
+  const written: string[] = [];
+  const wanted = new Set(
+    next.changes.map(changeImageFile).filter((f): f is string => f !== null),
+  );
+  try {
+    for (const [file, data] of images) {
+      if (!wanted.has(file)) continue;
+      const relative = proposalImagePath(next.id, file);
+      await mkdir(dirname(join(location.dir, relative)), { recursive: true });
+      try {
+        await writeNewFile(join(location.dir, relative), data);
+      } catch (error) {
+        if (errnoCode(error) !== 'EEXIST') throw error;
+        throw new ToolError('image-exists', `já existe um arquivo em ${relative}`, {
+          file: relative,
+        });
+      }
+      written.push(relative);
+    }
+  } catch (error) {
+    for (const relative of written)
+      await rm(join(location.dir, relative), { force: true });
+    throw error;
+  }
+  return written;
+}
+
+/**
+ * Revisão de uma proposta existente: relê o arquivo, deixa `compute` calcular a proposta
+ * revisada sobre ele e, imediatamente antes de gravar, confere `plan.check()` e que o arquivo
+ * continua como foi lido. Se a app (ou outro processo) mudou o arquivo no meio, **recalcula
+ * tudo** sobre a versão nova (uma decisão nunca vale para um conteúdo que a pessoa não viu); sem
+ * sucesso em `MAX_ATTEMPTS`, `revision-conflict`. Grava as imagens novas antes do
+ * `proposal.json` (sem sobrescrever), com `revision + 1`, e depois apaga o que nenhuma mudança
+ * cita mais. Sem `write`, só calcula (`dryRun`): a proposta devolvida já vem com a `revision`
+ * que seria gravada.
+ */
+export async function reviseStored<R>(
+  roots: Roots,
+  location: ProjectLocation,
+  id: string,
+  write: boolean,
+  compute: (p: Proposal) => Promise<RevisionPlan<R> | RevisionStop<R>>,
+): Promise<{ proposal: Proposal | null; result: R }> {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const read = await readProposalText(roots, location, id);
+    if (read === null) {
+      throw new ToolError('proposal-not-found', `proposta não encontrada: ${id}`);
+    }
+    const stored = parseStored(id, read.text);
+    if (!('proposal' in stored)) {
+      throw new ToolError('invalid-proposal', `proposta ilegível: ${stored.error}`, {
+        proposal: id,
+      });
+    }
+    const plan = await compute(stored.proposal);
+    if ('stop' in plan) return { proposal: null, result: plan.stop };
+    const next: Proposal = { ...plan.proposal, revision: stored.proposal.revision + 1 };
+    if (!write) return { proposal: next, result: plan.result };
+    await plan.check();
+    const again = await readProposalText(roots, location, id);
+    if (again === null || again.text !== read.text) continue;
+    const written = await writeRevisionImages(location, next, plan.images);
+    try {
+      await writeFileAtomic(read.real, serializeProposal(next));
+    } catch (error) {
+      for (const relative of written)
+        await rm(join(location.dir, relative), { force: true });
+      throw error;
+    }
+    await removeUncited(location, next);
+    return { proposal: next, result: plan.result };
+  }
+  throw new ToolError(
+    'revision-conflict',
+    'a proposta foi alterada por outro processo enquanto era revisada; releia e tente de novo',
+    { proposal: id },
+  );
+}
