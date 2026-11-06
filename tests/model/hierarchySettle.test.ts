@@ -118,7 +118,7 @@ describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira'
     expect(parents(p)).toEqual({ first: null, second: 'first', third: 'second' });
   });
 
-  it('empate dentro de uma maior: a maior é o pai da primeira, a primeira da segunda', () => {
+  it('empate dentro de uma maior: a relação atual entre as iguais vale, não o array', () => {
     const p = settleHierarchy(
       project(
         [A],
@@ -129,8 +129,9 @@ describe('pai de uma marcação: a menor do mesmo espaço que a contém inteira'
         ],
       ),
     );
-    // A ordem do array decide, não o `parentId` gravado antes.
-    expect(parents(p)).toEqual({ twinB: 'big', big: null, twinA: 'twinB' });
+    // Desempate estável (#549): twinB já é filha de twinA, e continua, mesmo vindo antes no
+    // array. A maior é o pai da de fora do par.
+    expect(parents(p)).toEqual({ twinB: 'twinA', big: null, twinA: 'big' });
   });
 
   it('marcações que se cruzam não têm relação; o que está dentro das duas pertence à menor', () => {

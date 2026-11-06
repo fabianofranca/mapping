@@ -251,17 +251,47 @@ function withField(
 }
 
 /**
- * Põe a marcação na posição `index` entre as irmãs (mesmo espaço e mesmo pai), preso ao
- * intervalo válido; as irmãs ocupam as mesmas casas do array (como `reorderMarking`).
+ * Aplica os `position` de marcação por grupo de irmãs (mesmo espaço e mesmo pai, já
+ * assentados), todos juntos (etapa #549, decisão 4): tira do grupo as reposicionadas e as põe de
+ * volta em ordem crescente de `to`, cada uma no índice `to` entre as irmãs, preso ao intervalo
+ * válido. As irmãs ocupam as mesmas casas do array (como `reorderMarking`). Uma mudança sozinha
+ * dá o mesmo que `reorderMarking`; duas para a mesma marcação, a última vale.
  */
-function placeAmongSiblings(markings: Marking[], id: string, index: number): void {
-  const marking = markings.find((m) => m.id === id);
-  if (!marking) return;
+function placeAmongSiblings(markings: Marking[], changes: readonly Change[]): void {
+  const byGroup = new Map<string, Change[]>();
+  const byId = new Map(markings.map((m) => [m.id, m]));
+  for (const c of changes) {
+    const m = byId.get(c.entityId);
+    if (!m) continue;
+    const key = `${m.containerId ?? ''}|${m.parentId ?? ''}`;
+    byGroup.set(key, [...(byGroup.get(key) ?? []), c]);
+  }
+  for (const group of byGroup.values()) placeGroup(markings, group, byId);
+}
+
+function placeGroup(
+  markings: Marking[],
+  group: readonly Change[],
+  byId: ReadonlyMap<string, Marking>,
+): void {
+  // Duas mudanças para a mesma marcação: vale a última, como na aplicação uma a uma; sem isso
+  // ela entraria duas vezes e outra irmã sairia do array.
+  const latest = new Map(group.map((c) => [c.entityId, c]));
+  const first = byId.get((group[0] as Change).entityId) as Marking;
+  const moved = new Set(latest.keys());
   const siblings = markings.filter(
-    (m) => m.parentId === marking.parentId && m.containerId === marking.containerId,
+    (m) => m.parentId === first.parentId && m.containerId === first.containerId,
   );
-  const order = siblings.filter((m) => m.id !== id);
-  order.splice(Math.min(index, order.length), 0, marking);
+  const order = siblings.filter((m) => !moved.has(m.id));
+  for (const c of [...latest.values()].sort(
+    (a, b) => (a.to as number) - (b.to as number),
+  )) {
+    order.splice(
+      Math.min(c.to as number, order.length),
+      0,
+      byId.get(c.entityId) as Marking,
+    );
+  }
   const slots = siblings.map((m) => markings.indexOf(m));
   slots.forEach((slot, i) => {
     markings[slot] = order[i] as Marking;
@@ -275,8 +305,9 @@ export interface PatchResult {
 
 /**
  * Aplica `changes` ao projeto, sem validar o resultado: criações entram no fim das
- * listas (a marcação, antes da âncora `insertBefore`, se ela tiver uma e estiver na lista), remoções de entidade ausente não fazem nada, e as camadas e as marcações reposicionadas vão
- * para o índice proposto (em ordem crescente). O que não pôde ser aplicado volta em
+ * listas (a marcação, antes da âncora `insertBefore`, se ela tiver uma e estiver na lista), remoções de entidade ausente não fazem nada, as camadas reposicionadas vão
+ * para o índice proposto (em ordem crescente), e as marcações reposicionadas de um mesmo grupo de
+ * irmãs, todas juntas (`placeAmongSiblings`). O que não pôde ser aplicado volta em
  * `problems` e fica de fora. Mexer em marcação ou container assenta o pertencimento
  * (`settleHierarchy`) antes das posições: o pai sempre sai da geometria, nunca da proposta, e
  * as irmãs são as do espaço e do pai já assentados. A seta criada entra com `points: []`, e a
@@ -354,11 +385,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     }
     arrows = [...clearArrowRoutes({ ...p, arrows }, moved).arrows];
   }
-  for (const c of [...markingPositions].sort(
-    (a, b) => (a.to as number) - (b.to as number),
-  )) {
-    placeAmongSiblings(markings, c.entityId, c.to as number);
-  }
+  placeAmongSiblings(markings, markingPositions);
 
   return {
     project: {

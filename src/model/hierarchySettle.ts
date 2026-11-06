@@ -79,15 +79,130 @@ export function containerContaining(p: Project, canvas: Rect): ProjectContainer 
   return null;
 }
 
+/** Marcação de um espaço com o índice dela no array `markings`. */
+interface Entry {
+  readonly m: Marking;
+  readonly i: number;
+}
+
 /**
- * Pode `outer` (índice `io`) ser o pai de `inner` (índice `ii`)? Contém e é maior, ou é igual
- * e vem antes no array. Uma ordem estrita: nunca há ciclo.
+ * Pode `outer` (posto `ro`) ser o pai de `inner` (posto `ri`)? Contém e é maior, ou é igual e
+ * vem antes na ordem dos retângulos iguais (`equalRectRanks`). Uma ordem estrita: nunca há ciclo.
  */
-function canContain(outer: Rect, io: number, inner: Rect, ii: number): boolean {
+function canContain(outer: Rect, ro: number, inner: Rect, ri: number): boolean {
   if (!containsRect(outer, inner)) return false;
   const ao = area(outer);
   const ai = area(inner);
-  return ao > ai || (ao === ai && io < ii);
+  return ao > ai || (ao === ai && ro < ri);
+}
+
+const rectKey = (r: Rect): string => `${r.x},${r.y},${r.width},${r.height}`;
+
+/** O pai atual de `e` é uma das marcações de `ids` que ainda não foi posta na ordem? */
+function waitsForParent(e: Entry, ids: ReadonlySet<string>, done: ReadonlySet<string>) {
+  const parent = e.m.parentId;
+  return parent !== null && ids.has(parent) && !done.has(parent);
+}
+
+/**
+ * Ordem de fora para dentro de um grupo de retângulos iguais (em ordem de array): a ordenação
+ * topológica dos `parentId` atuais dentro do grupo (o pai antes do filho) e, entre as livres
+ * ao mesmo tempo, a que vem antes no array. Quem não tem pai no grupo (nova, ou que chegou
+ * agora ao retângulo) entra pelo array, como antes. `parentId` em ciclo (arquivo inválido) é
+ * quebrado pela primeira do array. Total e sem ciclo.
+ */
+function chainOrder(bucket: readonly Entry[]): Entry[] {
+  const ids = new Set(bucket.map((e) => e.m.id));
+  const done = new Set<string>();
+  const pending = [...bucket];
+  const out: Entry[] = [];
+  while (pending.length > 0) {
+    const free = pending.findIndex((e) => !waitsForParent(e, ids, done));
+    const [next] = pending.splice(Math.max(free, 0), 1) as [Entry];
+    done.add(next.m.id);
+    out.push(next);
+  }
+  return out;
+}
+
+/**
+ * Posto de cada marcação de um espaço: o índice no array, salvo nos grupos de retângulos
+ * iguais, onde as do grupo trocam de lugar entre si na ordem de `chainOrder`. Assim
+ * reordenar irmãs (que só troca índices) não muda quem é a de fora.
+ */
+function equalRectRanks(group: readonly Entry[], ranks: Map<string, number>): void {
+  const buckets = new Map<string, Entry[]>();
+  for (const e of group) {
+    ranks.set(e.m.id, e.i);
+    const key = rectKey(e.m.rect);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(e);
+    else buckets.set(key, [e]);
+  }
+  for (const bucket of buckets.values()) {
+    if (bucket.length < 2) continue;
+    chainOrder(bucket).forEach((e, k) => ranks.set(e.m.id, (bucket[k] as Entry).i));
+  }
+}
+
+/**
+ * As candidatas de menor área, com só a de dentro (maior posto) de cada grupo de retângulos
+ * iguais.
+ */
+function innermostOfLeast(
+  candidates: readonly Entry[],
+  rankOf: (id: string) => number,
+): Entry[] {
+  let least = Infinity;
+  for (const c of candidates) least = Math.min(least, area(c.m.rect));
+  const innermost = new Map<string, Entry>();
+  for (const c of candidates) {
+    if (area(c.m.rect) !== least) continue;
+    const key = rectKey(c.m.rect);
+    const seen = innermost.get(key);
+    if (!seen || rankOf(c.m.id) > rankOf(seen.m.id)) innermost.set(key, c);
+  }
+  return [...innermost.values()];
+}
+
+/**
+ * Entre as candidatas que contêm (todas válidas pela geometria), o pai: das de menor área
+ * (`innermostOfLeast`), o pai atual, se é uma delas; senão, a de maior posto (a que vem
+ * depois no array).
+ */
+function pickParent(
+  candidates: readonly Entry[],
+  current: string | null,
+  rankOf: (id: string) => number,
+): string | null {
+  let best: Entry | null = null;
+  for (const c of innermostOfLeast(candidates, rankOf)) {
+    if (c.m.id === current) return current;
+    if (best === null || rankOf(c.m.id) > rankOf(best.m.id)) best = c;
+  }
+  return best?.m.id ?? null;
+}
+
+/**
+ * O pai que o assentar escolheria entre as marcações `candidates` do espaço `containerId`
+ * (todas já válidas pela geometria: contêm o que se quer pôr dentro): das de menor área, a de
+ * dentro de cada cadeia de retângulos iguais (`equalRectRanks`), e o `current`, se é uma delas.
+ * O Envolver usa isto para achar o pai atual do conjunto pela cadeia, nunca pelo array.
+ */
+export function enclosingAmong(
+  p: Project,
+  containerId: string | null,
+  candidates: ReadonlySet<string>,
+  current: string | null,
+): string | null {
+  const group: Entry[] = [];
+  p.markings.forEach((m, i) => {
+    if (!m.floating && m.containerId === containerId) group.push({ m, i });
+  });
+  const ranks = new Map<string, number>();
+  equalRectRanks(group, ranks);
+  const inside = group.filter((e) => candidates.has(e.m.id));
+  return pickParent(inside, current, (id) => ranks.get(id) ?? -1);
 }
 
 /** O espaço e o `rect` que a geometria dá à marcação; ela mesma se nada muda. */
@@ -121,11 +236,19 @@ function settleSpace(
  * Assenta o pertencimento: para cada marcação não flutuante decide o espaço (o container que
  * contém inteiro o retângulo dela no canvas, senão o canvas) e, se mudou, converte o `rect`;
  * a flutuante vai sempre para o canvas. Depois recalcula o `parentId` de toda marcação (a
- * menor do mesmo espaço que a contém; empate de área: a que vem antes no array é a de fora)
- * e de todo container (a menor marcação do canvas que contém o retângulo dele), com as
- * flutuantes fora da relação nos dois sentidos. Não muda a ordem dos arrays. As setas não
- * entram na relação; só perdem os `points` quando uma das pontas troca de espaço. Determinística
- * e idempotente: nada a mudar devolve `p` como está (o mesmo objeto).
+ * menor do mesmo espaço que a contém) e de todo container (a menor marcação do canvas que
+ * contém o retângulo dele), com as flutuantes fora da relação nos dois sentidos.
+ *
+ * Desempate estável (etapa #549): nos empates vale a relação atual, e o array só decide empate
+ * novo. Retângulos iguais seguem a cadeia atual dos `parentId` (`chainOrder`; quem não está
+ * nela entra pelo array: a de antes é a de fora). Entre candidatas de mesma área, de cada grupo
+ * de retângulos iguais conta a de dentro, e o pai atual fica se for uma delas; senão, a que vem
+ * depois (`pickParent`). Por isso reordenar irmãs nunca muda pais, nem no assentar seguinte.
+ * O resultado depende do `parentId` atual só nesses empates.
+ *
+ * Não muda a ordem dos arrays. As setas não entram na relação; só perdem os `points` quando uma
+ * das pontas troca de espaço. Determinística e idempotente: nada a mudar devolve `p` como está
+ * (o mesmo objeto).
  */
 export function settleHierarchy(p: Project, options?: SettleOptions): Project {
   let changed = false;
@@ -140,42 +263,25 @@ export function settleHierarchy(p: Project, options?: SettleOptions): Project {
     return next;
   });
 
-  // Marcações por espaço, com o índice no array (o desempate da área).
-  const bySpace = new Map<string | null, { m: Marking; i: number }[]>();
+  // Marcações por espaço, com o índice no array; o posto resolve o empate de retângulo igual.
+  const bySpace = new Map<string | null, Entry[]>();
   placed.forEach((m, i) => {
     if (m.floating) return;
     const group = bySpace.get(m.containerId);
     if (group) group.push({ m, i });
     else bySpace.set(m.containerId, [{ m, i }]);
   });
+  const ranks = new Map<string, number>();
+  for (const group of bySpace.values()) equalRectRanks(group, ranks);
+  const rankOf = (id: string) => ranks.get(id) ?? -1;
 
-  const parentOf = (
-    rect: Rect,
-    index: number,
-    group: readonly { m: Marking; i: number }[],
-  ) => {
-    let best: { m: Marking; i: number } | null = null;
-    for (const candidate of group) {
-      if (
-        candidate.i === index ||
-        !canContain(candidate.m.rect, candidate.i, rect, index)
-      )
-        continue;
-      if (
-        best === null ||
-        area(candidate.m.rect) < area(best.m.rect) ||
-        (area(candidate.m.rect) === area(best.m.rect) && candidate.i > best.i)
-      ) {
-        best = candidate;
-      }
-    }
-    return best?.m.id ?? null;
-  };
-
-  const markings = placed.map((m, i) => {
-    const parentId = m.floating
-      ? null
-      : parentOf(m.rect, i, bySpace.get(m.containerId) ?? []);
+  const markings = placed.map((m) => {
+    const group = m.floating ? [] : (bySpace.get(m.containerId) ?? []);
+    const own = rankOf(m.id);
+    const candidates = group.filter((c) =>
+      canContain(c.m.rect, rankOf(c.m.id), m.rect, own),
+    );
+    const parentId = pickParent(candidates, m.parentId, rankOf);
     if (parentId === m.parentId) return m;
     changed = true;
     return { ...m, parentId };
@@ -185,18 +291,8 @@ export function settleHierarchy(p: Project, options?: SettleOptions): Project {
   const canvasGroup = bySpace.get(null) ?? [];
   const containers = p.containers.map((c) => {
     const rect = imageCanvasRect(c, c.placement);
-    let best: { m: Marking; i: number } | null = null;
-    for (const candidate of canvasGroup) {
-      if (!containsRectApprox(candidate.m.rect, rect)) continue;
-      if (
-        best === null ||
-        area(candidate.m.rect) < area(best.m.rect) ||
-        (area(candidate.m.rect) === area(best.m.rect) && candidate.i > best.i)
-      ) {
-        best = candidate;
-      }
-    }
-    const parentId = best?.m.id ?? null;
+    const candidates = canvasGroup.filter((e) => containsRectApprox(e.m.rect, rect));
+    const parentId = pickParent(candidates, c.parentId, rankOf);
     if (parentId === c.parentId) return c;
     changed = true;
     return { ...c, parentId };

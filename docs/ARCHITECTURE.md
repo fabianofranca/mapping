@@ -108,8 +108,13 @@ limites); `toCanvasRect`/`fromCanvasRect` (`geometry.ts`) convertem de um para o
 idempotente, devolve o mesmo objeto se nada muda) o recalcula pela geometria e, antes, decide o espaço de cada marcação
 não flutuante (o container que a contém inteira, senão o canvas; se mudou, converte o `rect` e as descendentes vão junto).
 As regras estão em [`FORMAT.md`](FORMAT.md), "Campos da v13 (pertencimento)": dentro é totalmente contido, o pai é a menor do
-mesmo espaço (empate de área pelo array), o pai do container é a menor marcação do canvas que o contém, e as flutuantes ficam
-fora da árvore. Os membros (`membersOf`, `projectIndex.members`/`canvasRoots`) saem do `parentId` e nunca são gravados.
+mesmo espaço, o pai do container é a menor marcação do canvas que o contém, e as flutuantes ficam fora da árvore. Nos empates
+(retângulos iguais; candidatas de mesma área a pai, também para o container) **a relação atual vale** e a ordem do array só
+decide o empate novo: dentro de um grupo de retângulos iguais a ordem de fora para dentro é a ordenação topológica dos
+`parentId` atuais (o pai antes do filho; entre as livres, a que vem antes no array; quem não tem pai no grupo entra pelo array;
+ciclo é quebrado pela que vem antes), e entre candidatas de mesma área o `parentId` atual fica se for uma delas (de cada grupo
+conta só a de dentro), senão ganha a que vem por último. Reordenar irmãs nunca muda pais, nem no assentar seguinte; o assentar
+continua determinístico, idempotente e sem mudar a ordem dos arrays, mas o resultado depende do `parentId` atual nos empates. Os membros (`membersOf`, `projectIndex.members`/`canvasRoots`) saem do `parentId` e nunca são gravados.
 
 **Quando assenta.** No fim de **toda** operação do modelo que mexe na geometria (desenhar, mover, redimensionar marcação,
 mover/redimensionar/trocar/excluir container, aplicar proposta: `applyAccepted` assenta depois do patch). **Não** assenta na
@@ -170,7 +175,8 @@ O gesto não altera o projeto e não gera entrada de desfazer.
 **Marcação pai (Envolver).** `wrapItems` (`src/model/multiSelection.ts`) cria uma marcação que envolve a seleção, com uma ou mais
 itens (uma marcação não flutuante ou um container sozinhos também: a nova fica em volta dele com a margem de 8 px, limitada ao
 container e ao pai atual). Entram marcações não flutuantes e containers (setas e notas ficam fora do pertencimento). O modelo não
-escolhe pai: cria e assenta. Onde aparece: o botão **Envolver** do resumo da seleção múltipla, o atalho **Ctrl/Cmd+G**
+escolhe pai: cria a nova com o **pai atual** do conjunto no `parentId` (a relação que o desempate estável mantém) e assenta, e o
+assentar confere o resto. Onde aparece: o botão **Envolver** do resumo da seleção múltipla, o atalho **Ctrl/Cmd+G**
 (`useEditorShortcuts`) e a entrada **Envolver** do menu de contexto do canvas e do ⋯ da linha da Árvore (`WrapMenuItem` em
 `src/ui/CopyActions.tsx`). Os quatro passam por `src/app/wrapSelection.ts`: `currentWrapItems` diz o que envolver agora (a
 seleção atual; ou, num menu, só o item da linha quando ele está fora da seleção), `canWrapNow` confere (fora do somente leitura
@@ -181,11 +187,17 @@ texto; senão o evento segue para o navegador.
 - **Espaço:** se tudo o que entra são marcações do mesmo container, a nova é desse container; senão é do canvas, com o
   retângulo em unidades do canvas arredondado para fora, e a marcação de um container conta pelo **container inteiro** (só o
   container pode ser filho de uma marcação do canvas).
+- **Pai atual:** entre as marcações do mesmo espaço que contêm o conjunto (fora da seleção e dos descendentes dela), a que o
+  assentar escolheria (`enclosingAmong` em `src/model/hierarchySettle.ts`): o pai comum das selecionadas de topo, se é uma das de
+  menor área; senão, a de dentro da cadeia de retângulos iguais. Nunca o último do array, que depois de reordenar marcações de
+  mesmo retângulo pode ser o de fora (#549).
 - **Retângulo:** o que envolve tudo, com margem de `MIN_MARKING_SIZE` (8 px) de cada lado, limitado ao container e ao **pai atual**
   do conjunto, para a nova nunca tirar o conjunto de dentro do pai que ele já tinha.
-- **Posição no array:** antes da primeira marcação selecionada, para ganhar o desempate de área igual (se o retângulo final
-  igualar o do pai atual e o pai vier depois, entra logo depois dele). Marcações não selecionadas que caem dentro do retângulo
-  também passam a ser filhas: é a geometria.
+- **Posição no array:** antes da primeira marcação selecionada. A nova não tem relação com as selecionadas, então o empate de
+  retângulo igual com elas é novo e o array decide: a de antes é a de fora. A nova nasce com o **pai atual** de `parentId`: ela
+  cabe nele e nenhuma menor a contém, e mesmo com o retângulo igual ao dele a relação atual o mantém de fora, venha ele antes ou
+  depois no array. Assim a nova fica filha do pai que as selecionadas tinham e mãe direta delas. Marcações não
+  selecionadas que caem dentro do retângulo também passam a ser filhas: é a geometria.
 - **Depois:** uma entrada de desfazer; a nova fica selecionada sozinha, sem nome e sem anotações. A trava não impede, porque
   nenhuma geometria existente muda, só o `parentId`.
 
@@ -317,7 +329,7 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
 - `exif.ts`: `readExifOrientation` (a orientação EXIF de um JPEG, lida dos bytes; usada pela importação da app e pelo MCP). `backups.ts`: `BACKUPS_DIR`, `backupFileName` e `backupTimestamp` (o nome da cópia do original antes de gravar um arquivo migrado, app e MCP).
 - `revision.ts`: `readRevision(texto)` (a `revision` de um `mapping.json`; `0` sem o campo, `null` se não for um objeto JSON). `clipboard.ts`: `itemClipboardData`, os dados do item que o Ctrl+C grava no formato próprio da app.
 - `sources.ts`: origem externa (`source`, v8) de imagens e marcações (`setImageSource`, `setMarkingSource`, `findBySource`) e a busca de tipos pelas origens das especializações `formatVersion` 3 (`findTypesBySource`). O núcleo não interpreta `system`.
-- `proposal.ts`, `proposalValues.ts`, `proposalChanges.ts`, `proposalOrder.ts`, `proposalReview.ts`, `proposalApply.ts`, `proposalCompare.ts`, `proposalView.ts`: propostas de alteração ([`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)). Formato (zod, erros por caminho) e caminhos em `proposals/`; cálculo das mudanças comparando o projeto antes e depois das operações (`computeChanges`, `buildProposal`: quem aplica as operações é o chamador, com as operações puras de sempre); revisão (dependências entre mudanças, níveis, decisões de três estados com "parcial", conflitos e aviso de item trancado); onde a marcação criada entra no array (`proposalOrder.ts`: `insertBefore`, a mesma regra no cálculo e na aplicação, para o aplicado ter a ordem e os pais do proposto, sem reordenação no lote: ver a Garantia em `PROPOSAL-FORMAT.md`); aplicação das aceitas (`applyAccepted`: um patch direto, sem as operações do modelo, validado pelas invariantes) e a visão "como ficaria" (`previewProject`); comparação com a proposta que substitui (`compareProposals`); leitura para a interface de revisão (`proposalView.ts`: tipo da mudança, filtros, pendências, o que ficou para trás, navegação, quem pode ser apagada: `canRemoveProposal`).
+- `proposal.ts`, `proposalValues.ts`, `proposalChanges.ts`, `proposalOrder.ts`, `proposalReview.ts`, `proposalApply.ts`, `proposalCompare.ts`, `proposalView.ts`: propostas de alteração ([`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md)). Formato (zod, erros por caminho) e caminhos em `proposals/`; cálculo das mudanças comparando o projeto antes e depois das operações (`computeChanges`, `buildProposal`: quem aplica as operações é o chamador, com as operações puras de sempre); revisão (dependências entre mudanças, níveis, decisões de três estados com "parcial", conflitos e aviso de item trancado); onde a marcação criada entra no array (`proposalOrder.ts`: `insertBefore`, a mesma regra no cálculo e na aplicação, e `proposalAnchors.ts`: `proposalAnchors` escolhe a âncora para os empates saírem como no proposto e `simulateApplied` monta o array que o aplicador monta, para o aplicado ter a ordem e os pais do proposto, com ou sem reordenação no lote, salvo o limite conhecido #625: ver a Garantia em `PROPOSAL-FORMAT.md`); aplicação das aceitas (`applyAccepted`: um patch direto, sem as operações do modelo, validado pelas invariantes) e a visão "como ficaria" (`previewProject`); comparação com a proposta que substitui (`compareProposals`); leitura para a interface de revisão (`proposalView.ts`: tipo da mudança, filtros, pendências, o que ficou para trás, navegação, quem pode ser apagada: `canRemoveProposal`).
 - `itemRef.ts`: a referência copiável `mapping://<projeto>/<m|i|a>/<código>`: `shortCode`/`shortCodes` (8 caracteres do id, crescendo de 4 em 4 se houver colisão, memoizado por projeto), `matchShortCode`, `encodeRefSegment` (projeto codificado pelo conjunto _unreserved_), `formatRef` (só a URL, sem caminho legível) e `parseRef` (estrito: só a URL, as formas curtas e o id; o resto é `null`). Não confundir com `refs.ts` (referências fortes entre anotações, `parseRefValue`).
 
 ### `mcp/` (servidor MCP)

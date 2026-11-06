@@ -26,7 +26,7 @@ import {
   toJson,
 } from './proposalValues';
 import { siblingPosition } from './markings';
-import { insertAnchors, placeCreatedMarkings } from './proposalOrder';
+import { proposalAnchors, simulateApplied } from './proposalAnchors';
 import type { Annotation, JsonValue, Marking, Project } from './types';
 
 // Cálculo das mudanças (etapa 4): quem envia a proposta aplica as operações a uma cópia
@@ -69,17 +69,19 @@ function longestIncreasing(seq: readonly number[]): Set<number> {
 
 /**
  * Ordem entre irmãs (mesmo espaço e mesmo pai): quem sai da maior subsequência crescente da
- * ordem do array muda de posição. O array aplicado é o de antes, com cada criada antes da
- * âncora dela (`insertBefore`, ver `proposalOrder.ts`) ou no fim; reparentar não mexe no array. `from` é o índice entre as irmãs de antes
- * (`null` na criada); `to`, o índice entre as irmãs de depois.
+ * ordem do array aplicado muda de posição. O array aplicado é o que `patchProject` monta sem os
+ * `position` (`simulateApplied`): o de antes, com cada criada antes da âncora dela e o assentar.
+ * `from` é o índice entre as irmãs de antes (`null` na criada); `to`, o índice entre as irmãs
+ * de depois.
  */
-function markingPositions(diff: Diff, base: Project, after: Project): void {
+function markingPositions(
+  diff: Diff,
+  base: Project,
+  after: Project,
+  anchors: ReadonlyMap<string, string>,
+): void {
   const baseIds = new Set(base.markings.map((m) => m.id));
-  const created = after.markings.filter((m) => !baseIds.has(m.id));
-  const applied = placeCreatedMarkings(
-    [...base.markings, ...created],
-    insertAnchors(baseIds, after.markings),
-  );
+  const applied = simulateApplied(base, after, anchors).markings;
   const rank = new Map<string, number>(applied.map((m, i) => [m.id, i]));
   const groups = new Map<string, Marking[]>();
   for (const m of after.markings) {
@@ -410,8 +412,9 @@ export function computeChanges(base: Project, after: Project): Change[] {
       (marking, f) => markingField(after, marking, f),
     );
   }
-  diff.insertBefore(insertAnchors(new Set(baseMarkings.keys()), after.markings));
-  markingPositions(diff, base, after);
+  const anchors = proposalAnchors(base, after);
+  diff.insertBefore(anchors);
+  markingPositions(diff, base, after, anchors);
 
   // A seta aparece na revisão sob a marcação de origem: o container dela (ou o canvas). Criar e
   // remover são as únicas mudanças (nenhum campo de uma seta que já existe é proposto, e a rota

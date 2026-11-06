@@ -2,7 +2,6 @@ import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { fail } from './errors';
 import {
   MIN_MARKING_SIZE,
-  area,
   boundingBox,
   checkRectSize,
   containsRect,
@@ -15,6 +14,7 @@ import {
 } from './geometry';
 import { ancestorsOf, descendantsOf } from './hierarchy';
 import {
+  enclosingAmong,
   markingCanvasRectOf,
   settleIf,
   spaceOf,
@@ -595,10 +595,6 @@ export function setItemsLocked(
 // ---------------------------------------------------------------------------
 // Envolver
 
-function sameRect(a: Rect, b: Rect): boolean {
-  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
-}
-
 /** Margem, de cada lado, entre o conjunto envolvido e a marcação pai nova. */
 export const WRAP_MARGIN = MIN_MARKING_SIZE;
 
@@ -633,8 +629,51 @@ export function wrapRect(
 interface WrapPlan {
   readonly containerId: string | null;
   readonly rect: Rect;
-  /** Índice, em `p.markings`, do pai atual do conjunto; -1 = nenhum. */
-  readonly enclosingIndex: number;
+  /** O pai atual do conjunto (`currentEnclosing`), ou `null`. */
+  readonly parentId: string | null;
+}
+
+/** O pai comum dos itens de topo da seleção (os que não estão dentro de outra selecionada); `null` se não há um só. */
+function commonParent(selected: ResolvedItems): string | null {
+  const parents = new Set<string | null>();
+  for (const item of [...selected.markings.values(), ...selected.containers.values()]) {
+    if (item.parentId === null || !selected.markings.has(item.parentId)) {
+      parents.add(item.parentId);
+    }
+  }
+  return parents.size === 1 ? ([...parents][0] as string | null) : null;
+}
+
+/**
+ * Pai atual do conjunto: entre as marcações do mesmo espaço que contêm `bbox`, fora da seleção
+ * e dos descendentes dela, a que o assentar escolheria (`enclosingAmong`): o pai comum das
+ * selecionadas de topo, se é uma das de menor área; senão, a de dentro da cadeia. Nunca o
+ * último do array, que depois de reordenar retângulos iguais pode ser o de fora (#549).
+ */
+function currentEnclosing(
+  p: Project,
+  selected: ResolvedItems,
+  containerId: string | null,
+  bbox: Rect,
+): Marking | null {
+  const excluded = new Set<string>();
+  for (const m of selected.markings.values()) {
+    excluded.add(m.id);
+    for (const d of descendantsOf(p, m.id)) excluded.add(d.id);
+  }
+  const candidates = new Set(
+    p.markings
+      .filter(
+        (m) =>
+          !m.floating &&
+          m.containerId === containerId &&
+          !excluded.has(m.id) &&
+          containsRect(m.rect, bbox),
+      )
+      .map((m) => m.id),
+  );
+  const id = enclosingAmong(p, containerId, candidates, commonParent(selected));
+  return id === null ? null : (projectIndex(p).markings.get(id) ?? null);
 }
 
 function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
@@ -673,28 +712,13 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
     };
   }
 
-  // Pai atual: a menor marcação do mesmo espaço, fora da seleção e dos descendentes dela.
-  const excluded = new Set<string>();
-  for (const m of selected.markings.values()) {
-    excluded.add(m.id);
-    for (const d of descendantsOf(p, m.id)) excluded.add(d.id);
-  }
-  let enclosing: Marking | null = null;
-  let enclosingIndex = -1;
-  p.markings.forEach((m, i) => {
-    if (m.floating || m.containerId !== containerId || excluded.has(m.id)) return;
-    if (!containsRect(m.rect, bbox)) return;
-    if (enclosing === null || area(m.rect) <= area(enclosing.rect)) {
-      enclosing = m;
-      enclosingIndex = i;
-    }
-  });
+  const enclosing = currentEnclosing(p, selected, containerId, bbox);
 
   let limit: Rect | null = containerId
     ? imagePixelRect(index.containers.get(containerId) as ProjectContainer)
     : null;
   if (enclosing !== null) {
-    const outer = (enclosing as Marking).rect;
+    const outer = enclosing.rect;
     if (limit === null) limit = outer;
     else {
       const x = Math.max(limit.x, outer.x);
@@ -717,7 +741,7 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
   return {
     containerId,
     rect: { x: left, y: top, width: rightLimited - left, height: bottomLimited - top },
-    enclosingIndex,
+    parentId: enclosing?.id ?? null,
   };
 }
 
@@ -725,10 +749,14 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
  * Cria uma marcação pai que envolve a seleção (docs/ARCHITECTURE.md, "Marcação pai (Envolver)"). Entram as
  * marcações não flutuantes e os containers; setas e notas são ignoradas, e sem nada que entre
  * falha com `invalid-parent`. O espaço e o retângulo saem de `wrapRect`. A nova entra no array
- * antes da primeira marcação selecionada (ou no fim, se só há containers) para ganhar o
- * desempate de área igual; se o retângulo coincide com o do pai atual e ele vem depois dessa
- * posição, entra logo depois dele. Quem passa a ser filho sai do assentar, nunca é escolhido
- * aqui. Nenhuma geometria existente muda, então a trava não impede.
+ * antes da primeira marcação selecionada (ou no fim, se só há containers): ela não tem relação
+ * com nenhuma selecionada, então o empate de retângulo igual com uma delas é novo e o array
+ * decide (a de antes é a de fora). A nova nasce com o pai atual do conjunto de `parentId`
+ * (`currentEnclosing`: o pai comum das selecionadas de topo, ou a de dentro da cadeia, nunca o
+ * último do array): ela cabe nele e nenhuma menor a contém, e no desempate estável a relação
+ * atual vale, então ele continua o pai mesmo com retângulo igual e vindo depois no array.
+ * Quem passa a ser filho sai do assentar, nunca é escolhido aqui. Nenhuma geometria existente
+ * muda, então a trava não impede.
  */
 export function wrapItems(
   p: Project,
@@ -743,7 +771,7 @@ export function wrapItems(
   }
   const target = planWrap(p, args.items);
   if (!target) fail('invalid-parent');
-  const { rect, containerId, enclosingIndex } = target;
+  const { rect, containerId, parentId } = target;
   if (!isIntegerRect(rect)) fail('rect-not-integer');
   checkRectSize(rect);
 
@@ -752,16 +780,10 @@ export function wrapItems(
   let position = p.markings.findIndex((m) => chosen.has(m.id));
   if (position < 0) position = p.markings.length;
 
-  // Pai atual com o mesmo retângulo e depois da posição escolhida: a nova entra depois dele.
-  const outer = enclosingIndex >= 0 ? p.markings[enclosingIndex] : undefined;
-  if (outer && enclosingIndex >= position && sameRect(outer.rect, rect)) {
-    position = enclosingIndex + 1;
-  }
-
   const marking: Marking = {
     id: args.id,
     containerId,
-    parentId: null,
+    parentId,
     name: null,
     rect,
     needsReview: false,

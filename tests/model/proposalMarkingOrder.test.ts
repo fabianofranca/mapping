@@ -4,6 +4,7 @@ import {
   changeStatus,
   createMarking,
   parseProposalText,
+  patchProject,
   previewProject,
   removeMarking,
   reorderMarking,
@@ -137,5 +138,130 @@ describe('proposta: ordem entre marcações irmãs', () => {
     expect(parseProposalText(text).ok).toBe(true);
     const bad = text.replace('"to": 0', '"to": -1');
     expect(parseProposalText(bad).ok).toBe(false);
+  });
+});
+
+/** Container 1000×200 com as marcações lado a lado (sem pertencimento entre elas). */
+function row(names: readonly string[]): Project {
+  let p = sampleProject();
+  names.forEach((id, i) => {
+    p = createMarking(p, {
+      id,
+      containerId: 'I2',
+      rect: { x: i * 100, y: 0, width: 90, height: 90 },
+    });
+  });
+  return p;
+}
+
+describe('proposta: várias reordenações e duas criadas na mesma âncora (#549)', () => {
+  /** Base P, Q, R, S, T e BIG, com as cinco primeiras dentro de BIG. */
+  function nested(): Project {
+    let p = sampleProject();
+    ['P', 'Q', 'R', 'S', 'T'].forEach((id, i) => {
+      p = createMarking(p, {
+        id,
+        containerId: 'I2',
+        rect: { x: 100 + i * 100, y: 100, width: 90, height: 90 },
+      });
+    });
+    return createMarking(p, {
+      id: 'BIG',
+      containerId: 'I2',
+      rect: { x: 50, y: 50, width: 700, height: 200 },
+    });
+  }
+  const children = (p: Project, parentId: string) =>
+    p.markings.filter((m) => m.parentId === parentId).map((m) => m.id);
+
+  it('os position de um grupo aplicados juntos dão a ordem do proposto', () => {
+    const base = nested();
+    expect(children(base, 'BIG')).toEqual(['P', 'Q', 'R', 'S', 'T']);
+    let after = reorderMarking(base, 'T', 0);
+    after = reorderMarking(after, 'S', 0);
+    after = reorderMarking(after, 'R', 0);
+    expect(children(after, 'BIG')).toEqual(['R', 'S', 'T', 'P', 'Q']);
+    const p = propose(base, after);
+    expect(p.changes.map((c) => [c.entityId, c.to])).toEqual([
+      ['P', 3],
+      ['Q', 4],
+    ]);
+    const all = patchProject(base, p.changes);
+    expect(all.problems).toEqual([]);
+    expect(children(all.project, 'BIG')).toEqual(['R', 'S', 'T', 'P', 'Q']);
+    expect(children(previewProject(base, p).project, 'BIG')).toEqual([
+      'R',
+      'S',
+      'T',
+      'P',
+      'Q',
+    ]);
+  });
+
+  it('com só um position aceito, o resultado é o de uma mudança sozinha', () => {
+    const base = nested();
+    let after = reorderMarking(base, 'T', 0);
+    after = reorderMarking(after, 'S', 0);
+    after = reorderMarking(after, 'R', 0);
+    const p = propose(base, after);
+    const applied = patchProject(base, [changeOf(p, 'marking', 'Q', 'position')]);
+    // Q para o índice 4 entre as irmãs, como o `reorderMarking` faria sozinho.
+    expect(children(applied.project, 'BIG')).toEqual(
+      children(reorderMarking(base, 'Q', 4), 'BIG'),
+    );
+  });
+
+  it('dois position da mesma marcação: nenhuma duplicada nem perdida, vale o último', () => {
+    let base = sampleProject();
+    ['A', 'B', 'D', 'E'].forEach((id, i) => {
+      base = createMarking(base, {
+        id,
+        containerId: 'I2',
+        rect: { x: 200 + i * 100, y: 0, width: 90, height: 90 },
+      });
+    });
+    const siblings = (p: Project) =>
+      p.markings
+        .filter((m) => m.containerId === 'I2' && m.parentId === null)
+        .map((m) => m.id);
+    const first = siblingPosition(base, 'A').index;
+    const p = propose(base, reorderMarking(base, 'E', first));
+    const toFirst = changeOf(p, 'marking', 'E', 'position');
+    const toThird = { ...toFirst, id: `${toFirst.id}-2`, to: first + 2 };
+    const applied = patchProject(base, [toFirst, toThird]);
+    expect(applied.problems).toEqual([]);
+    expect(siblings(applied.project)).toEqual(
+      siblings(reorderMarking(base, 'E', first + 2)),
+    );
+    expect([...applied.project.markings.map((m) => m.id)].sort()).toEqual(
+      base.markings.map((m) => m.id).sort(),
+    );
+  });
+
+  it('duas criadas antes da mesma âncora não trazem position', () => {
+    const base = row(['P', 'Q', 'R']);
+    let after = createMarking(base, {
+      id: 'N1',
+      containerId: 'I2',
+      rect: { x: 300, y: 100, width: 50, height: 50 },
+    });
+    after = createMarking(after, {
+      id: 'N2',
+      containerId: 'I2',
+      rect: { x: 400, y: 100, width: 50, height: 50 },
+    });
+    // Proposto P, Q, N1, N2, R: as duas criadas antes de R.
+    const [n1, n2] = after.markings.slice(-2);
+    const rest = after.markings.slice(0, -2);
+    const at = rest.findIndex((m) => m.id === 'R');
+    after = {
+      ...after,
+      markings: [...rest.slice(0, at), n1!, n2!, ...rest.slice(at)],
+    };
+    const p = propose(base, after);
+    expect(p.changes.filter((c) => c.field === 'position')).toEqual([]);
+    expect(
+      p.changes.filter((c) => c.kind === 'create').map((c) => c.insertBefore),
+    ).toEqual(['R', 'R']);
   });
 });
