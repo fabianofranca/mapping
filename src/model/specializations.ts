@@ -200,7 +200,7 @@ function planSpecializationUpdate(
 
 /**
  * Atualiza para uma versão maior: executa as `migrations` da versão nova (renomear e remover
- * campo, mapear valores, renomear e remover tipo, preencher campo obrigatório) sobre as
+ * campo, mapear valores, renomear e remover tipo, preencher campo obrigatório, renomear, remover e dar papel de vínculo) sobre as
  * anotações; substitui a cópia; camadas novas são criadas; as existentes mantêm cor e anotações
  * e seguem o nome novo; as que sumiram viram livres (com as anotações convertidas). Anotações
  * que ficarem inválidas não são alteradas: aparecem como pendências.

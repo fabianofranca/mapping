@@ -156,7 +156,7 @@ Acompanha o schema v14 do `mapping.json` (`annotations[].parentRole` e `docRepos
 **`role` em `create_annotation` e `update_annotation`.** `role` é o `id` de um `childRoles` do tipo da dona: o ponto em que a filha se liga a ela.
 
 - `create_annotation { owner, role }` cria a anotação vinculada e já com o papel; `update_annotation { role }` troca o papel e `role: null` o limpa. Com `owner` e `role` no mesmo passo, o papel é conferido contra a dona nova.
-- Erros do lote: `role-without-owner` (`role` sem `owner`) e `unknown-role` (a dona não oferece o papel). Trocar o `owner` (ou tirar a dona, com `owner: null`) limpa o papel que a dona nova não oferece, sem erro, e o plano avisa (ver "Mudança da 0.20.0").
+- Erros do lote: `role-without-owner` (`role` sem `owner`) e `unknown-role` (a dona não oferece o papel). Trocar o `owner` (ou tirar a dona, com `owner: null`) limpa o papel que a dona nova não oferece, sem erro, e o plano avisa (ver "Mudança da 0.19.0").
 - **Papel que falta não falha.** Sem `role` numa dona que tem papéis (ou com um papel que ela deixou de oferecer), o lote vale e o plano devolve `missing-role` (ou `unknown-role`) em `issues.new`, como as demais pendências. Escolher o papel é uma segunda proposta, `update_annotation { role }`.
 - O resumo do passo diz o papel (`vinculada a Button Continuar (papel "Clique")`).
 
