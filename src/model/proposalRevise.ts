@@ -258,29 +258,30 @@ function structure(p: Project): string {
   ]);
 }
 
+const isMarkingCreate = (c: Change) => c.kind === 'create' && c.entity === 'marking';
+
 /**
- * As intocadas mantêm a âncora (`insertBefore`) que tinham. Se, com elas, aplicar as mudanças
- * não dá os pais e a ordem entre irmãs do resultado do lote (a âncora antiga sumiu, ou o
- * `position` novo supõe outra), as criações de marcação passam à âncora do efeito líquido.
+ * As intocadas mantêm a âncora (`insertBefore`). Se, com elas, aplicar as mudanças não dá os
+ * pais e a ordem entre irmãs do resultado do lote (a âncora antiga sumiu, ou o `position` novo
+ * supõe outra), a criação de marcação cuja âncora do efeito líquido é outra passa a **trocada**:
+ * o lugar no array faz parte do efeito dela (perde a decisão; aceita, congela a revisão).
  */
-function refreshAnchors(
-  changes: readonly Change[],
-  net: readonly Change[],
+function settleAnchors(
   project: Project,
   target: Project,
-): Change[] {
-  if (structure(patchProject(project, changes).project) === structure(target)) {
-    return [...changes];
-  }
-  const anchors = new Map(
-    net
-      .filter((n) => n.kind === 'create' && n.entity === 'marking')
-      .map((n) => [n.entityId, n]),
-  );
-  return changes.map((c) => {
-    const n =
-      c.kind === 'create' && c.entity === 'marking' ? anchors.get(c.entityId) : undefined;
-    return !n || n.insertBefore === c.insertBefore ? c : withAnchor(c, n.insertBefore);
+  net: readonly Change[],
+  { verdicts, fresh }: Classification,
+): readonly Verdict[] {
+  const trial = assemble(net, verdicts, new Map(fresh.map((n) => [n, n])));
+  if (structure(patchProject(project, trial).project) === structure(target))
+    return verdicts;
+  return verdicts.map((v): Verdict => {
+    const moved =
+      v.kind === 'same' &&
+      v.next !== undefined &&
+      isMarkingCreate(v.old) &&
+      (v.next.insertBefore ?? null) !== (v.old.insertBefore ?? null);
+    return moved && v.next ? { kind: 'swapped', old: v.old, next: v.next } : v;
   });
 }
 
@@ -426,7 +427,9 @@ export function reviseProposal(
   const after = args.after ?? prep.proposed;
   const net = computeChanges(project, after);
   const batch = args.after ? computeChanges(prep.proposed, after) : [];
-  const { verdicts, fresh } = classify(kept, net, batch);
+  const classified = classify(kept, net, batch);
+  const { fresh } = classified;
+  const verdicts = settleAnchors(project, after, net, classified);
 
   const swapped = verdicts.filter((v) => v.kind === 'swapped');
   const undone = new Set(
@@ -446,7 +449,6 @@ export function reviseProposal(
     fresh,
     swapped,
     retired,
-    after,
   });
 }
 
@@ -456,7 +458,6 @@ interface Plan {
   readonly fresh: readonly Change[];
   readonly swapped: readonly Verdict[];
   readonly retired: readonly Change[];
-  readonly after: Project;
 }
 
 type Revised = {
@@ -473,12 +474,7 @@ function finish(
 ): Revised {
   const nextId = idCounter(proposal);
   const created = new Map(plan.fresh.map((n) => [n, { ...n, id: nextId() }]));
-  const changes = refreshAnchors(
-    assemble(plan.net, plan.verdicts, created),
-    plan.net,
-    project,
-    plan.after,
-  );
+  const changes = assemble(plan.net, plan.verdicts, created);
   const changedIds = new Set(plan.swapped.map((v) => v.old.id));
   const retiredIds = new Set(plan.retired.map((c) => c.id));
   const decisions = Object.fromEntries(

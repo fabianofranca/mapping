@@ -244,6 +244,61 @@ describe('reviseProposal: classificação das mudanças', () => {
     expectFidelity(base, r.proposal, revised as Project);
   });
 
+  it('âncora que precisa mudar: trocada; aceita: change-frozen', () => {
+    // Caso do fuzz (semente 644, caso 327): a criação de P0 entra antes de B2; o lote remove B2 e
+    // reordena B1, e a âncora de P0 passa a B3. O lugar no array faz parte do efeito da criação.
+    let base: Project = { ...emptyProject(), containers: [CONTAINER] };
+    const rects = {
+      B0: [50, 25, 25, 25],
+      B1: [75, 25, 25, 25],
+      B2: [0, 50, 50, 50],
+      B3: [50, 50, 50, 50],
+    };
+    for (const [id, [x, y, width, height]] of Object.entries(rects) as [
+      string,
+      number[],
+    ][]) {
+      base = createMarking(base, {
+        id,
+        containerId: 'C',
+        rect: {
+          x: x as number,
+          y: y as number,
+          width: width as number,
+          height: height as number,
+        },
+      });
+    }
+    const proposed = reorderMarking(
+      createMarking(base, {
+        id: 'P0',
+        containerId: 'C',
+        rect: { x: 0, y: 75, width: 75, height: 25 },
+      }),
+      'P0',
+      2,
+    );
+    const p = propose(base, proposed);
+    const creation = changeOf(p, 'marking', 'P0');
+    expect(creation.insertBefore).toBe('B2');
+    const batch = (x: Project) => reorderMarking(removeMarking(x, 'B2'), 'B1', 0);
+
+    const { result, after } = revise(base, p, [], batch);
+    const r = okOf(result);
+    const moved = changeOf(r.proposal, 'marking', 'P0');
+    expect(moved).toEqual({ ...creation, insertBefore: 'B3' });
+    expect(r.summary.changed).toEqual([creation.id]);
+    expect(r.proposal.revisions?.[0]?.changed).toEqual({
+      [creation.id]: { to: creation.to, state: null },
+    });
+    expectFidelity(base, r.proposal, after as Project);
+
+    const accepted = decided(p, base, { level: 'change', id: creation.id }, 'accepted');
+    const frozen = errorOf(revise(base, accepted, [], batch).result);
+    expect(frozen.code).toBe('change-frozen');
+    expect(frozen.changeIds).toEqual([creation.id]);
+  });
+
   it('a numeração dos ids novos nunca reaproveita um id retirado', () => {
     const base = sampleProject();
     const p = propose(base, renameMarking(base, 'M4', 'Farol'));
