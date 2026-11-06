@@ -483,6 +483,102 @@ describe('conflitos', () => {
   });
 });
 
+// AC1 (#641): o X dos avisos da lista. Estado da revisão aberta; nada é gravado.
+describe('X dos avisos da lista da revisão', () => {
+  async function withNewConflict() {
+    const { proposal, ids, base } = richScenario();
+    const h = await openHarness({ proposals: [proposal] });
+    h.review.open('P1');
+    h.review.close();
+    return { ...h, proposal, ids, base };
+  }
+
+  it('dispensar o aviso de conflitos novos o esconde; um conflito novo depois o faz voltar', async () => {
+    const { session, root, review, ids, base } = await withNewConflict();
+    root.put(
+      'mapping.json',
+      serialize({ ...renameMarking(base, 'M1', 'Outro nome'), revision: 4 }),
+    );
+    expect(await session.sync()).toBe('reloaded');
+    review.open('P1');
+    expect(review.staleNotice.value).toEqual(new Set([ids.name]));
+    review.dismissStaleNotice();
+    expect(review.staleNotice.value.size).toBe(0);
+    // O conflito dispensado continua novo para o resto (a regra não muda).
+    expect(review.newConflicts.value).toEqual(new Set([ids.name]));
+    // Recarga externa com outro conflito: o aviso volta.
+    root.put(
+      'mapping.json',
+      serialize({
+        ...removeContainer(renameMarking(base, 'M1', 'Outro nome'), 'I2'),
+        revision: 5,
+      }),
+    );
+    expect(await session.sync()).toBe('reloaded');
+    expect(review.staleNotice.value).toEqual(new Set([ids.name, ids.rect]));
+  });
+
+  it('dispensar o aviso de substituída o esconde', async () => {
+    const { proposal } = richScenario();
+    const { review } = await openHarness({
+      proposals: [{ ...proposal, status: 'superseded' }],
+    });
+    review.open('P1');
+    expect(review.supersededDismissed.value).toBe(false);
+    review.dismissSupersededNotice();
+    expect(review.supersededDismissed.value).toBe(true);
+  });
+
+  it('fechar e reabrir a revisão zera os dois', async () => {
+    const { proposal: sp } = richScenario();
+    const h = await openHarness({ proposals: [{ ...sp, status: 'superseded' }] });
+    h.review.open('P1');
+    h.review.dismissSupersededNotice();
+    h.review.close();
+    expect(h.review.supersededDismissed.value).toBe(false);
+    h.review.open('P1');
+    expect(h.review.supersededDismissed.value).toBe(false);
+  });
+
+  it('depois de sair e voltar o conflito já é conhecido: o aviso não volta', async () => {
+    const { session, root, review, ids, base } = await withNewConflict();
+    root.put(
+      'mapping.json',
+      serialize({ ...renameMarking(base, 'M1', 'Outro nome'), revision: 4 }),
+    );
+    expect(await session.sync()).toBe('reloaded');
+    review.open('P1');
+    review.dismissStaleNotice();
+    review.close();
+    review.open('P1');
+    expect(ids.name).toBeTruthy();
+    expect(review.staleNotice.value.size).toBe(0);
+  });
+
+  it('não muda o projeto, o mapping.json nem a memória da revisão', async () => {
+    const { proposal } = richScenario();
+    const h = await openHarness({ proposals: [{ ...proposal, status: 'superseded' }] });
+    h.review.open('P1');
+    const before = {
+      project: h.session.store.project.peek(),
+      disk: await h.root.read('mapping.json'),
+      memory: localStorage.getItem(
+        [...Object.keys(localStorage)].find((k) => k.includes('review')) ?? '',
+      ),
+    };
+    h.review.dismissStaleNotice();
+    h.review.dismissSupersededNotice();
+    await h.session.flush();
+    expect(h.session.store.project.peek()).toBe(before.project);
+    expect(await h.root.read('mapping.json')).toBe(before.disk);
+    expect(
+      localStorage.getItem(
+        [...Object.keys(localStorage)].find((k) => k.includes('review')) ?? '',
+      ),
+    ).toBe(before.memory);
+  });
+});
+
 // Devolução do portão da 8.2 (achado 7): enquanto o aplicar está em curso, a revisão não
 // reavalia (`derived.hold()`). O retrato é preso à proposta e some ao soltar: um conflito
 // real que surge durante a espera aparece ao soltar, e outra proposta aberta no meio

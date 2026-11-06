@@ -78,7 +78,7 @@ describe('ao reabrir', () => {
       h.review.open('P1');
     });
     renderInEditor(h, <ProposalsWindow onHelp={() => {}} />);
-    expect(screen.getByText('O projeto mudou desde a sua última sessão.')).toBeTruthy();
+    expect(screen.getByText('1 conflito(s) novo(s)')).toBeTruthy();
     expect(screen.getByText('Conflito novo')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Ver os conflitos novos (1)' }));
     expect(h.review.filters.value.onlyConflicts).toBe(true);
@@ -94,7 +94,7 @@ describe('ao reabrir', () => {
     const h = await openReviewHarness({ proposals: [old, next] });
     h.review.open('P1');
     renderInEditor(h, <ProposalsWindow onHelp={() => {}} />);
-    expect(screen.getByText('Esta proposta foi substituída por outra.')).toBeTruthy();
+    expect(screen.getByText('Proposta substituída')).toBeTruthy();
     expect(screen.getByText('Aceitas sem aplicar')).toBeTruthy();
     expect(screen.getByText('Sem decisão')).toBeTruthy();
     // Cada mudança diz como está na nova (as duas propostas são iguais aqui).

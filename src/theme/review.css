@@ -88,6 +88,36 @@
   margin-top: var(--space-1);
 }
 
+/* Linha: ícone, texto curto (reticências), ação e X numa linha só, da altura de um controle. */
+.notice-box-line {
+  align-items: center;
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-2);
+  font: var(--t-text-small);
+  white-space: nowrap;
+}
+
+.notice-box-line .notice-box-icon {
+  flex: none;
+  padding-top: 0;
+}
+
+.notice-box-line .tooltip-anchor {
+  flex: 1;
+  min-width: 0;
+}
+
+.notice-box-line .notice-box-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notice-box-line > .notice-box-actions {
+  flex: none;
+  flex-wrap: nowrap;
+}
+
 /* ---------- DecisionMark: o estado pela forma ---------- */
 .decision-mark {
   flex: none;
@@ -817,6 +847,11 @@
 
 .review-levels > .notice-box {
   margin: var(--space-1-5) var(--space-2) 0;
+}
+
+/* A linha rouba o mínimo da lista: a 900×720 sobram 2 linhas inteiras. */
+.review-levels > .notice-box-line {
+  margin-top: var(--space-1);
 }
 
 /* ---------- Controles do canvas: Atual / Proposto, legenda, Comparar ---------- */

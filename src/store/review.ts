@@ -108,6 +108,17 @@ export interface ReviewState {
    * (projeto recarregado por fora). Vazio fora da revisão.
    */
   readonly newConflicts: ReadonlySignal<ReadonlySet<string>>;
+  /**
+   * Os conflitos novos que o aviso da lista anuncia: os de `newConflicts`, ou vazio se a
+   * pessoa dispensou o aviso (X) e nenhum conflito novo surgiu depois. Estado da revisão
+   * aberta: nada é gravado e zera ao abrir e ao fechar.
+   */
+  readonly staleNotice: ReadonlySignal<ReadonlySet<string>>;
+  /** Dispensa o aviso de conflitos novos (X) até um conflito novo aparecer. */
+  dismissStaleNotice(): void;
+  /** A pessoa dispensou (X) o aviso de proposta substituída nesta revisão. */
+  readonly supersededDismissed: ReadonlySignal<boolean>;
+  dismissSupersededNotice(): void;
   /** A última decisão, enquanto o "Desfazer" vale; `null` depois de outra ação. */
   readonly undoable: ReadonlySignal<DecisionUndo | null>;
   /** Pedido pendente de focar o marcador de uma mudança (Detalhes); `null` sem pedido. */
@@ -351,6 +362,9 @@ export function createReviewState(session: ProjectSession): ReviewState {
   // que estavam à vista na abertura (anunciados pelo aviso), que ao fechar ficam conhecidos.
   const knownAtOpen = signal<ReadonlySet<string>>(NO_CONFLICTS);
   let conflictsAtOpen: ReadonlySet<string> = NO_CONFLICTS;
+  // Os conflitos novos que a pessoa dispensou no aviso (X) e se dispensou o de substituída.
+  const staleDismissed = signal<ReadonlySet<string>>(NO_CONFLICTS);
+  const supersededDismissed = signal(false);
   // Só as propostas desta cópia contam como vistas (a de uma cópia nova é nova, G1).
   const seen = signal<ReadonlySet<string>>(seenOf(readBlob(), scope));
 
@@ -389,6 +403,13 @@ export function createReviewState(session: ProjectSession): ReviewState {
     const fresh = new Set<string>();
     for (const id of derived.conflictIds.value) if (!known.has(id)) fresh.add(id);
     return fresh.size === 0 ? NO_CONFLICTS : fresh;
+  });
+
+  const staleNotice = computed((): ReadonlySet<string> => {
+    const fresh = newConflicts.value;
+    const dismissed = staleDismissed.value;
+    for (const id of fresh) if (!dismissed.has(id)) return fresh;
+    return NO_CONFLICTS;
   });
 
   /** O alvo existe na proposta aberta? */
@@ -464,6 +485,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
       selected.value = null;
       knownAtOpen.value = NO_CONFLICTS;
       conflictsAtOpen = NO_CONFLICTS;
+      staleDismissed.value = NO_CONFLICTS;
+      supersededDismissed.value = false;
       undoable.value = null;
       markRequest.value = null;
       noteRequest.value = null;
@@ -504,6 +527,14 @@ export function createReviewState(session: ProjectSession): ReviewState {
     filters,
     seen,
     newConflicts,
+    staleNotice,
+    dismissStaleNotice() {
+      staleDismissed.value = newConflicts.peek();
+    },
+    supersededDismissed,
+    dismissSupersededNotice() {
+      supersededDismissed.value = true;
+    },
     undoable,
     markRequest,
     noteRequest,
@@ -523,6 +554,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
         proposalId.value = id;
         store.setReviewing(true);
         undoable.value = null;
+        staleDismissed.value = NO_CONFLICTS;
+        supersededDismissed.value = false;
       });
       const conflicts = derived.conflictIds.peek();
       // Sem entrada (primeira abertura nesta cópia) não há com o que comparar: nada é novo.
