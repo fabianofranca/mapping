@@ -1,4 +1,4 @@
-# Correção na mesma proposta — [Não lançado] (épico `epic/corrigir-proposta`, PR #0, MCP 0.23.0, schema v14)
+# Correção na mesma proposta — [Não lançado] (épico `epic/corrigir-proposta`, PR #669, MCP 0.23.0, schema v14)
 
 ## Adicionado
 
