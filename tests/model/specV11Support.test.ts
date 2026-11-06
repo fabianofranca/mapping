@@ -96,11 +96,6 @@ describe('diffSpecs: as chaves novas ficam fora do contrato de versão', () => {
       (owner(s).allowedChildren = [{ layer: 'eventos', groups: ['navegacao'] }]),
     'groups da camada': (s) => s.layers[1].groups.push({ id: 'novo', name: 'Novo' }),
     'groups do tipo': (s) => (s.layers[1].annotationTypes[1].groups = ['dados']),
-    childRoles: (s) => (owner(s).childRoles = [{ id: 'a', name: 'A' }]),
-    childRolesLabel: (s) => {
-      owner(s).childRoles = [{ id: 'a', name: 'A' }];
-      owner(s).childRolesLabel = 'Trigger';
-    },
     docRepos: (s) => (s.docRepos = [{ id: 'd', url: 'https://x.com/a' }]),
     'doc objeto': (s) => {
       s.docRepos = [{ id: 'd', url: 'https://x.com/a' }];
@@ -116,10 +111,27 @@ describe('diffSpecs: as chaves novas ficam fora do contrato de versão', () => {
     expect(diffSpecs(added, plain)).toEqual([]);
     const changed = parsedV11((s) => {
       edit(s);
-      owner(s).childRoles = [{ id: 'b', name: 'B' }];
       s.layers[1].groups[0].name = 'Outro nome';
     });
     expect(diffSpecs(added, changed)).toEqual([]);
+  });
+
+  // `childRoles` como um todo saiu daqui na formatVersion 12 (decisões 1 a 5 da etapa #557): papel
+  // tirado é `removed-role`, e o tipo que passa a ter papéis é `roles-required` (specVersions.test.ts).
+  it('childRolesLabel, name e description dos papéis ficam fora do contrato', () => {
+    const roles = (s: Json) => (owner(s).childRoles = [{ id: 'a', name: 'A' }]);
+    const plain = parsedV11(roles);
+    const labelled = parsedV11((s) => {
+      roles(s);
+      owner(s).childRolesLabel = 'Trigger';
+    });
+    const renamed = parsedV11((s) => {
+      owner(s).childRoles = [{ id: 'a', name: 'Outro', description: 'd' }];
+      owner(s).childRolesLabel = 'Slot';
+    });
+    expect(diffSpecs(plain, labelled)).toEqual([]);
+    expect(diffSpecs(labelled, plain)).toEqual([]);
+    expect(diffSpecs(labelled, renamed)).toEqual([]);
   });
 
   it('a troca do doc entre texto e objeto não gera mudança', () => {

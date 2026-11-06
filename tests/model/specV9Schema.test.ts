@@ -104,7 +104,7 @@ describe('formatVersion 9: variants no code', () => {
     expect(parseSpec(spec).ok).toBe(false);
   });
 
-  it('o JSON Schema descreve variants na entrada de code e recusa formatVersion 12', () => {
+  it('o JSON Schema descreve variants na entrada de code e recusa formatVersion 13', () => {
     const defs = (jsonSchema as Json).$defs;
     expect(Object.keys(defs.codeEntry.properties)).toContain('variants');
     expect(Object.keys(defs.codeVariants.properties).sort()).toEqual(['cases', 'field']);
@@ -115,7 +115,7 @@ describe('formatVersion 9: variants no code', () => {
       'symbol',
       'values',
     ]);
-    expect(jsonValidator.safeParse({ ...button(), formatVersion: 12 }).success).toBe(
+    expect(jsonValidator.safeParse({ ...button(), formatVersion: 13 }).success).toBe(
       false,
     );
   });

@@ -1382,10 +1382,35 @@ const migrationStepShape = z.discriminatedUnion(
         default: z.union([z.string(), z.number()], { error: 'deve ser texto ou número' }),
       })
       .strict(),
+    // Passos de papel do vínculo (só `formatVersion` 12); `type` é o tipo do dono.
+    z
+      .object({
+        op: z.literal('rename-role'),
+        type: nonEmpty,
+        from: nonEmpty,
+        to: nonEmpty,
+      })
+      .strict(),
+    z
+      .object({
+        op: z.literal('remove-role'),
+        type: nonEmpty,
+        role: nonEmpty,
+        mode: z.enum(['clear', 'unlink'], { error: 'use "clear" ou "unlink"' }),
+      })
+      .strict(),
+    z
+      .object({
+        op: z.literal('set-role'),
+        type: nonEmpty,
+        role: nonEmpty,
+        childType: nonEmpty.optional(),
+      })
+      .strict(),
   ],
   {
     error:
-      '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values" ou "fill-field"',
+      '"op" inválido; use "rename-type", "remove-type", "rename-field", "remove-field", "map-values", "fill-field", "rename-role", "remove-role" ou "set-role"',
   },
 );
 
@@ -1659,6 +1684,97 @@ function parseFieldRef(ref: string): FieldRef {
   return { kind: 'column', table, column };
 }
 
+/** Passo de papel do vínculo (só `formatVersion` 12). */
+type RoleStep = Extract<
+  SpecMigrationStep,
+  { op: 'rename-role' | 'remove-role' | 'set-role' }
+>;
+
+/** O que `checkRoleStep` lê da especialização: tipos e papéis desta versão e o `add` do passo. */
+interface RoleStepEnv {
+  readonly formatVersion: number;
+  /** id do tipo → papéis (`childRoles`); o tipo sem `childRoles` não tem entrada. */
+  readonly roles: ReadonlyMap<string, ReadonlySet<string>>;
+  readonly hasType: (id: string) => boolean;
+  /** Erro no caminho `migrations[i].steps[j].<key>`. */
+  readonly add: (key: string, message: string) => void;
+}
+
+/** O papel existe no tipo (lado novo). */
+function roleHere(
+  roles: ReadonlySet<string>,
+  typeId: string,
+  role: string,
+  where: string,
+  env: RoleStepEnv,
+): void {
+  if (!roles.has(role)) env.add(where, `"${role}" não é um papel do tipo "${typeId}"`);
+}
+
+/** O papel não existe mais no tipo (lado antigo). */
+function roleGone(
+  roles: ReadonlySet<string> | undefined,
+  typeId: string,
+  role: string,
+  where: string,
+  env: RoleStepEnv,
+): void {
+  if (roles?.has(role)) {
+    env.add(where, `papel "${role}" ainda existe no tipo "${typeId}" nesta versão`);
+  }
+}
+
+/**
+ * Os passos de papel (formatVersion 12): `rename-role` e `set-role` pedem um tipo desta versão com
+ * `childRoles`; `remove-role` pede só o tipo (pode não ter mais papéis). `childType` de `set-role`
+ * só tem o formato conferido pelo zod, o tipo não precisa existir.
+ */
+function checkRoleStep(step: RoleStep, env: RoleStepEnv): void {
+  if (env.formatVersion < 12) {
+    env.add('op', 'só é permitido com formatVersion 12');
+    return;
+  }
+  if (!env.hasType(step.type)) {
+    env.add('type', `tipo "${step.type}" não existe nesta versão`);
+    return;
+  }
+  const roles = env.roles.get(step.type);
+  if (step.op === 'remove-role') {
+    roleGone(roles, step.type, step.role, 'role', env);
+    return;
+  }
+  if (roles === undefined) {
+    env.add('type', `o tipo "${step.type}" não tem papéis (childRoles) nesta versão`);
+    return;
+  }
+  if (step.op === 'set-role') {
+    roleHere(roles, step.type, step.role, 'role', env);
+    return;
+  }
+  roleHere(roles, step.type, step.to, 'to', env);
+  roleGone(roles, step.type, step.from, 'from', env);
+}
+
+/** id do tipo → ids dos papéis (`childRoles`); o tipo sem `childRoles` fica de fora. */
+function rolesByType(
+  layers: readonly {
+    annotationTypes: readonly {
+      id: string;
+      childRoles?: readonly { id: string }[] | undefined;
+    }[];
+  }[],
+): Map<string, Set<string>> {
+  const roles = new Map<string, Set<string>>();
+  for (const layer of layers) {
+    for (const type of layer.annotationTypes) {
+      if (type.childRoles !== undefined) {
+        roles.set(type.id, new Set(type.childRoles.map((r) => r.id)));
+      }
+    }
+  }
+  return roles;
+}
+
 /**
  * Conferências das `migrations` que um arquivo só permite: versões, `from` único e, em cada
  * passo, o lado novo existe e o lado antigo não existe mais nesta versão. A chave de campo de um
@@ -1669,8 +1785,13 @@ function parseFieldRef(ref: string): FieldRef {
 function checkMigrations(
   spec: {
     version: number;
+    formatVersion: number;
     layers: readonly {
-      annotationTypes: readonly { id: string; fields: readonly RawField[] }[];
+      annotationTypes: readonly {
+        id: string;
+        fields: readonly RawField[];
+        childRoles?: readonly { id: string }[] | undefined;
+      }[];
     }[];
   },
   migrations: readonly z.infer<typeof migrationShape>[],
@@ -1688,6 +1809,7 @@ function checkMigrations(
       );
     }
   }
+  const roles = rolesByType(spec.layers);
   const fromSeen = new Set<number>();
   migrations.forEach((migration, mi) => {
     const mp: PathKeys = ['migrations', mi];
@@ -1836,6 +1958,16 @@ function checkMigrations(
           if (problem !== undefined) stepAdd('default', problem);
           break;
         }
+        case 'rename-role':
+        case 'remove-role':
+        case 'set-role':
+          checkRoleStep(step, {
+            formatVersion: spec.formatVersion,
+            roles,
+            hasType: (id) => types.has(id),
+            add: stepAdd,
+          });
+          break;
       }
     });
   });
@@ -2102,6 +2234,7 @@ export const specSchema = z
         z.literal(9),
         z.literal(10),
         z.literal(11),
+        z.literal(12),
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
