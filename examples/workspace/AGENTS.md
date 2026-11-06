@@ -26,7 +26,7 @@ As tools aparecem como `mcp__mapping__…` (ou `mapping/…`, conforme o cliente
 node tools/mapping-mcp.js --root projetos --root especializacoes
 ```
 
-Comece por `list_projects`. O servidor descreve seu uso nas próprias instruções e no recurso `mapping-docs://AGENT-GUIDE.md`; leia o guia antes da primeira alteração. Itens são citados por referência `mapping://<projeto>/<m|i|a|p>/<código>`.
+Comece por `list_projects`. O servidor descreve seu uso nas próprias instruções e no recurso `mapping-docs://AGENT-GUIDE.md`; leia o guia antes da primeira alteração. Itens são citados por referência `mapping://<projeto>/<m|i|a|p>/<código>`, só a URL (sem caminho legível e com o projeto codificado: `Meu%20Projeto`); uma referência no formato antigo dá `invalid-ref` e precisa ser copiada de novo na app.
 
 ## Regras
 
