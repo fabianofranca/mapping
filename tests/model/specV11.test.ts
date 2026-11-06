@@ -37,18 +37,18 @@ function withDoc(doc: unknown, edit?: (spec: Json) => void): Json {
 }
 
 describe('formatVersion 11: versões', () => {
-  it('a versão atual é a 11 e v1 a v10 continuam aceitas', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(11);
-    expect(SPEC_FORMAT_VERSIONS).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  it('a versão atual é a 12 e v1 a v11 continuam aceitas', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(12);
+    expect(SPEC_FORMAT_VERSIONS).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
     for (const v of SPEC_FORMAT_VERSIONS) {
       expect(issuesOf(v11Json(undefined, v)), `v${v}`).toEqual([]);
     }
   });
 
-  it('a mensagem de versão inválida lista de 1 a 11', () => {
-    expect(issuesOf(v11Json(undefined, 12))).toContainEqual({
+  it('a mensagem de versão inválida lista de 1 a 12', () => {
+    expect(issuesOf(v11Json(undefined, 13))).toContainEqual({
       path: 'formatVersion',
-      message: 'deve ser 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ou 11',
+      message: 'deve ser 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ou 12',
     });
   });
 
@@ -59,7 +59,7 @@ describe('formatVersion 11: versões', () => {
         join('libraries', d, `${d}.spec.json`),
       ),
     ];
-    expect(files.length).toBe(5);
+    expect(files.length).toBe(6);
     for (const file of files) {
       const result = parseSpecText(readFileSync(file, 'utf8'));
       expect(result.ok ? [] : result.errors, file).toEqual([]);

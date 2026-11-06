@@ -644,6 +644,38 @@ function imageChecks(
   }
 }
 
+/** O que a conferência dos passos de papel lê da versão anterior. */
+interface RoleReferences {
+  readonly version: number;
+  /** id do tipo (na versão anterior) → ids dos papéis. */
+  readonly before: ReadonlyMap<string, ReadonlySet<string>>;
+  /** id novo do tipo → id antigo, dos `rename-type` da migração. */
+  readonly renamedFrom: ReadonlyMap<string, string>;
+  readonly warn: (path: string, message: string) => void;
+}
+
+/**
+ * `rename-role.from` e `remove-role.role` que não eram papéis do tipo dono na versão anterior
+ * (aviso). O dono é lido pelo id que tinha antes de um `rename-type`; um dono que não existia vira
+ * aviso do tipo. Os outros passos não citam papel antigo.
+ */
+function roleReference(step: SpecMigrationStep, at: string, refs: RoleReferences): void {
+  if (step.op !== 'rename-role' && step.op !== 'remove-role') return;
+  const role = step.op === 'rename-role' ? step.from : step.role;
+  const roles = refs.before.get(refs.renamedFrom.get(step.type) ?? step.type);
+  if (roles === undefined) {
+    refs.warn(
+      `${at}.type`,
+      `o tipo "${step.type}" não existia na versão ${refs.version}`,
+    );
+  } else if (!roles.has(role)) {
+    refs.warn(
+      step.op === 'rename-role' ? `${at}.from` : `${at}.role`,
+      `o papel "${role}" do tipo "${step.type}" não existia na versão ${refs.version}`,
+    );
+  }
+}
+
 /** Passos da migração que sai da versão anterior e citam o que não existia nela (aviso). */
 function migrationReferences(
   previous: Spec,
@@ -660,6 +692,16 @@ function migrationReferences(
   for (const step of migration.steps) {
     if (step.op === 'rename-type') renamedFrom.set(step.to, step.from);
   }
+  const rolesBefore = new Map<string, Set<string>>();
+  eachType(previous, (type) =>
+    rolesBefore.set(type.id, new Set((type.childRoles ?? []).map((r) => r.id))),
+  );
+  const roleRefs: RoleReferences = {
+    version: previous.version,
+    before: rolesBefore,
+    renamedFrom,
+    warn: (path, message) => out.warning(specPath, path, message),
+  };
   const missingType = (id: string, at: string): void =>
     out.warning(specPath, at, `o tipo "${id}" não existia na versão ${previous.version}`);
   const oldType = (step: Extract<SpecMigrationStep, { type: string }>, at: string) => {
@@ -707,6 +749,8 @@ function migrationReferences(
           );
         }
       }
+    } else {
+      roleReference(step, at, roleRefs);
     }
   });
 }

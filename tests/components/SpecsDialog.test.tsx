@@ -641,6 +641,167 @@ describe('UpdateImpact: biblioteca com migrações', () => {
   });
 });
 
+// Passos de papel do vínculo no diálogo de atualização (etapa #557, decisão 11).
+const ROLE_LIST = [
+  { id: 'click', name: 'Clique' },
+  { id: 'hover', name: 'Foco' },
+];
+
+function roleLib(version: number, roles = ROLE_LIST, over: Partial<Spec> = {}): Spec {
+  return libSpec(
+    version,
+    {
+      c: [buttonType({ allowedChildren: ['chip'], childRoles: roles })],
+      e: [chipType()],
+    },
+    { formatVersion: version === 1 ? 4 : 12, ...over },
+  );
+}
+
+const roleBase = () =>
+  libProject(roleLib(1), [
+    { id: 'B1', type: 'button' },
+    { id: 'C1', type: 'chip', parent: 'B1', role: 'click' },
+    { id: 'C2', type: 'chip', parent: 'B1', role: 'hover' },
+    { id: 'C3', type: 'chip', parent: 'B1' },
+  ]);
+
+const roleNext = (
+  steps: NonNullable<Spec['migrations']>[number]['steps'],
+  roles = ROLE_LIST,
+) => roleLib(2, roles, { migrations: [{ from: 1, to: 2, steps }] });
+
+describe('UpdateImpact: passos de papel (pt-BR)', () => {
+  it('rename-role: rótulo e contagem, sem perda', () => {
+    const { container } = renderImpact(
+      roleBase(),
+      roleNext(
+        [{ op: 'rename-role', type: 'button', from: 'click', to: 'hover' }],
+        [{ id: 'hover', name: 'Foco' }],
+      ),
+    );
+    expect(screen.getByText('Renomear o papel click → hover em button')).toBeTruthy();
+    expect(screen.getByText('1 anotação(ões)')).toBeTruthy();
+    expect(container.querySelector('p.notice.notice-error')).toBeNull();
+  });
+
+  it('remove-role com clear: rótulo, perda "papel limpo" e o total conta como valor', () => {
+    const { container } = renderImpact(
+      roleBase(),
+      roleNext(
+        [{ op: 'remove-role', type: 'button', role: 'hover', mode: 'clear' }],
+        [{ id: 'click', name: 'Clique' }],
+      ),
+    );
+    expect(
+      screen.getByText('Remover o papel hover em button (limpar o papel)'),
+    ).toBeTruthy();
+    expect(screen.getByText(/papel hover limpo/)).toBeTruthy();
+    expect(container.querySelector('p.notice.notice-error')?.textContent).toBe(
+      'Esta atualização apaga 1 valor(es) e 0 anotação(ões).',
+    );
+  });
+
+  it('remove-role com unlink: contagem de desvinculadas, perda e o total com vínculo(s)', () => {
+    const { container } = renderImpact(
+      roleBase(),
+      roleNext(
+        [{ op: 'remove-role', type: 'button', role: 'hover', mode: 'unlink' }],
+        [{ id: 'click', name: 'Clique' }],
+      ),
+    );
+    expect(
+      screen.getByText('Remover o papel hover em button (desvincular)'),
+    ).toBeTruthy();
+    expect(screen.getByText('1 anotação(ões), 1 desvinculada(s)')).toBeTruthy();
+    expect(screen.getByText(/vínculo desfeito \(papel hover\)/)).toBeTruthy();
+    expect(container.querySelector('p.notice.notice-error')?.textContent).toBe(
+      'Esta atualização apaga 0 valor(es) e 0 anotação(ões) e 1 vínculo(s).',
+    );
+  });
+
+  it('set-role sem e com childType', () => {
+    const base = libProject(roleLib(1, []), [
+      { id: 'B1', type: 'button' },
+      { id: 'C1', type: 'chip', parent: 'B1' },
+    ]);
+    renderImpact(
+      base,
+      roleNext([
+        { op: 'set-role', type: 'button', role: 'click' },
+        { op: 'set-role', type: 'button', childType: 'chip', role: 'hover' },
+      ]),
+    );
+    expect(screen.getByText('Dar o papel click aos filhos de button')).toBeTruthy();
+    expect(screen.getByText('Dar o papel hover aos filhos chip de button')).toBeTruthy();
+  });
+
+  it('quebra de papel sem passo: recusada com a mensagem da quebra', () => {
+    const { container } = renderImpact(
+      roleBase(),
+      roleLib(2, [{ id: 'click', name: 'Clique' }]),
+    );
+    const alert = container.querySelector('div.notice.notice-error');
+    expect(alert?.textContent).toContain('faltam migrações');
+    expect(alert?.textContent).toContain('hover');
+    expect(screen.queryByText('Passos da migração')).toBeNull();
+  });
+});
+
+describe('UpdateImpact: passos de papel (en-US)', () => {
+  beforeEach(() => {
+    locale.value = 'en-US';
+  });
+
+  it('rótulos, perdas e total', () => {
+    const clear = renderImpact(
+      roleBase(),
+      roleNext(
+        [{ op: 'remove-role', type: 'button', role: 'hover', mode: 'clear' }],
+        [{ id: 'click', name: 'Clique' }],
+      ),
+    );
+    expect(screen.getByText('Remove role hover in button (clear the role)')).toBeTruthy();
+    expect(screen.getByText(/role hover cleared/)).toBeTruthy();
+    clear.unmount();
+    const unlink = renderImpact(
+      roleBase(),
+      roleNext(
+        [{ op: 'remove-role', type: 'button', role: 'hover', mode: 'unlink' }],
+        [{ id: 'click', name: 'Clique' }],
+      ),
+    );
+    expect(screen.getByText('Remove role hover in button (unlink)')).toBeTruthy();
+    expect(screen.getByText('1 annotation(s), 1 unlinked')).toBeTruthy();
+    expect(unlink.container.querySelector('p.notice.notice-error')?.textContent).toBe(
+      'This update deletes 0 value(s) and 0 annotation(s) and 1 link(s).',
+    );
+    unlink.unmount();
+    renderImpact(
+      roleBase(),
+      roleNext(
+        [{ op: 'rename-role', type: 'button', from: 'click', to: 'hover' }],
+        [{ id: 'hover', name: 'Foco' }],
+      ),
+    );
+    expect(screen.getByText('Rename role click → hover in button')).toBeTruthy();
+  });
+
+  it('set-role', () => {
+    renderImpact(
+      libProject(roleLib(1, []), [{ id: 'B1', type: 'button' }]),
+      roleNext([
+        { op: 'set-role', type: 'button', role: 'click' },
+        { op: 'set-role', type: 'button', childType: 'chip', role: 'hover' },
+      ]),
+    );
+    expect(screen.getByText('Give role click to the children of button')).toBeTruthy();
+    expect(
+      screen.getByText('Give role hover to the chip children of button'),
+    ).toBeTruthy();
+  });
+});
+
 describe('SpecsDialog: atualizar biblioteca v4', () => {
   const chooseZip = (file: File) => {
     const input = document.querySelector<HTMLInputElement>('input[accept^=".zip"]');
@@ -744,6 +905,24 @@ describe('SpecsDialog: atualizar biblioteca v4', () => {
       true,
     );
     expect(within(dialog).getByText(/faltam migrações/)).toBeTruthy();
+    expect(harness.project().specializations[0]?.version).toBe(1);
+  }, 60_000);
+
+  it('quebra de papel sem passo: o Atualizar fica desabilitado e a mensagem cita o papel', async () => {
+    const { harness, user } = setup(roleBase());
+    // v11 (sem passo de papel): o papel `hover` sai dos `childRoles` do button.
+    const spec = { ...roleLib(2, [{ id: 'click', name: 'Clique' }]), formatVersion: 11 };
+    await user.click(screen.getByRole('button', { name: 'Atualizar de zip…' }));
+    chooseZip(await zipOf(pkg(spec as Spec)));
+    const dialog = await dialogTitled('Pacote "Lib"', 30_000);
+    expect(within(dialog).getByRole('button', { name: 'Atualizar' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    expect(within(dialog).getByText(/faltam migrações/)).toBeTruthy();
+    expect(
+      within(dialog).getAllByText(/hover/, { selector: 'li' }).length,
+    ).toBeGreaterThan(0);
     expect(harness.project().specializations[0]?.version).toBe(1);
   }, 60_000);
 });

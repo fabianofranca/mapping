@@ -422,6 +422,14 @@ export const enUS: Dictionary = {
   'spec.impact.op.removeField': 'Remove field {field} in {type}',
   'spec.impact.op.mapValues': 'Map values of {field} in {type}: {pairs}',
   'spec.impact.op.fillField': 'Fill {field} in {type} with {value}',
+  'spec.impact.op.renameRole': 'Rename role {from} → {to} in {type}',
+  'spec.impact.op.removeRoleClear': 'Remove role {role} in {type} (clear the role)',
+  'spec.impact.op.removeRoleUnlink': 'Remove role {role} in {type} (unlink)',
+  'spec.impact.op.setRole': 'Give role {role} to the children of {type}',
+  'spec.impact.op.setRoleOf': 'Give role {role} to the {child} children of {type}',
+  'spec.impact.unlinked': '{count} unlinked',
+  'spec.impact.lossClearedRole': '{target}: role {role} cleared',
+  'spec.impact.lossUnlinked': '{target}: link removed (role {role})',
   'spec.impact.annotations': '{count} annotation(s)',
   'spec.impact.values': '{count} value(s)',
   'spec.impact.converted': '{count} converted',
@@ -430,6 +438,8 @@ export const enUS: Dictionary = {
   'spec.impact.nothing': 'nothing to change in this project',
   'spec.impact.lossTotal':
     'This update deletes {values} value(s) and {annotations} annotation(s).',
+  'spec.impact.lossTotalLinks':
+    'This update deletes {values} value(s) and {annotations} annotation(s) and {links} link(s).',
   'spec.impact.lossTarget': '{marking} › {name}',
   'spec.impact.lossDeleted': '{target}: annotation deleted',
   'spec.impact.lossRemovedField': '{target}: field {field} removed (value "{value}")',
