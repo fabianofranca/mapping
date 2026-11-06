@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-// Legenda das marcas na revisão a 900×860 (#537): enquanto aberta, fica por cima do minimapa,
+// Legenda das marcas na revisão a 900×720 (#537): enquanto aberta, fica por cima do minimapa,
 // inteira à vista.
 
-test.use({ viewport: { width: 900, height: 860 } });
+test.use({ viewport: { width: 900, height: 720 } });
 
-test('a legenda das marcas fica por cima do minimapa a 900×860', async ({ page }) => {
+test('a legenda das marcas fica por cima do minimapa a 900×720', async ({ page }) => {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
@@ -43,7 +43,7 @@ test('a legenda das marcas fica por cima do minimapa a 900×860', async ({ page 
     const hit = document.elementFromPoint(x, y);
     return { onLegend: hit?.closest('.review-legend') !== null };
   });
-  // Os dois se sobrepõem a 900×860; no ponto em comum, quem aparece é a legenda.
+  // Os dois se sobrepõem a 900×720; no ponto em comum, quem aparece é a legenda.
   expect(overlap).not.toBeNull();
   expect(overlap?.onLegend).toBe(true);
 
@@ -53,6 +53,18 @@ test('a legenda das marcas fica por cima do minimapa a 900×860', async ({ page 
     client: el.clientHeight,
   }));
   expect(fit.scroll).toBeLessThanOrEqual(fit.client);
+
+  // Um diálogo aberto com a legenda à vista fica por cima dela (--z-dialog > --z-popover).
+  await page.getByRole('button', { name: 'Configurações', exact: true }).first().click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(legend).toBeVisible();
+  const legendHit = await legend.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return { onLegend: hit?.closest('.review-legend') !== null };
+  });
+  expect(legendHit.onLegend).toBe(false);
 });
 
 // Legenda sobre a Propostas (#598, JB1): com o canvas mais baixo que ela, a legenda sai do
@@ -136,7 +148,7 @@ test('a legenda cobre a Propostas quando o canvas é mais baixo que ela', async 
   await expect(toggle).toBeFocused();
 });
 
-// Altura padrão da janela inferior na revisão (#598, decisão 5): a 900×860, com as quatro
+// Altura padrão da janela inferior na revisão (#598, decisão 5): a 900×720, com as quatro
 // janelas abertas, a lista mostra ao menos 3 linhas inteiras e o rodapé de atalhos cabe na
 // janela (o mesmo critério do R4.14).
 test('a janela Propostas começa com 3 linhas inteiras e o rodapé à vista', async ({

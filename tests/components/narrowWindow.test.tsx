@@ -18,7 +18,7 @@ import { installFakeCanvas } from '../canvas/harness';
 import { sampleProject } from '../model/fixtures';
 import { createHarness } from './harness';
 
-// Fase 5.8: a app é só desktop. Abaixo da largura mínima (900px) ou da altura mínima (860px) o editor dá lugar a
+// Fase 5.8: a app é só desktop. Abaixo da largura mínima (900px) ou da altura mínima (720px) o editor dá lugar a
 // um aviso, sem desmontar nada: ao alargar a janela, a seleção, o viewport e o próprio
 // canvas continuam os mesmos.
 
@@ -108,10 +108,10 @@ describe('janela estreita', () => {
   it('abaixo da altura mínima mostra o aviso, sem desmontar, e volta ao crescer', () => {
     const { view, resize } = mount(1280);
     const host = view.container.querySelector('.canvas-host');
-    act(() => resize.height(859));
+    act(() => resize.height(719));
     expect(screen.getByText(t('narrow.title'))).toBeTruthy();
     expect(view.container.querySelector<HTMLElement>('.editor')?.hidden).toBe(true);
-    act(() => resize.height(860));
+    act(() => resize.height(720));
     expect(screen.queryByText(t('narrow.title'))).toBeNull();
     expect(view.container.querySelector('.canvas-host')).toBe(host);
   });

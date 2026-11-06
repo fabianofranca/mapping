@@ -6,6 +6,8 @@
 - **Token `size-tw-bottom-review`:** de 344px para **240px** (3 linhas de 28 px da lista, o cabeçalho, os filtros recolhidos e o rodapé de atalhos a 900 px de largura). Arquivo: `src/theme/tokens.ts`. Atualizar o valor no `tokens.json` e a altura da janela inferior da revisão nos mockups.
 - **Legenda das marcas (revisão):** deixa de ser `position: absolute` dentro do canvas e passa a `position: fixed`, ancorada no canto superior esquerdo do canvas, com a largura limitada à coluna dele e a altura até o topo da barra de status; pode cobrir a janela Propostas e o minimapa. Camada: `--z-popover` (acima das janelas, abaixo de `--z-tooltip`). As medidas chegam por variáveis CSS (`--legend-top`, `--legend-left`, `--legend-width`, `--legend-room`) escritas pelo `ReviewLegend`. Sem token novo. Arquivos: `src/ui/review/ReviewCanvasControls.tsx`, `src/theme/review.css` (`.review-legend`). Atualizar o guia e a prévia do `Minimap` (a legenda cobrindo a janela inferior quando o canvas é baixo).
 
+- **Janela mínima (`size-app-min-height`) e aviso "Abra numa janela maior":** o token passa de 860px para **720px** (`src/theme/tokens.ts`, vindo de `BREAKPOINTS.appMinHeight`); o aviso (`NarrowWindowNotice`, texto `narrow.body`) lê o valor e passa a dizer "900 × 720". Atualizar o valor no `tokens.json` e o número na prévia do aviso.
+
 ## Sincronização
 
 (Preenchida no fechamento do épico.)

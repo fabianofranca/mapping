@@ -129,7 +129,10 @@ export class PointerInput {
   private gesture: Gesture | null = null;
   /** Classificação do gesto em andamento (clique / pan / mover / …). */
   private gestureState: GestureState = IDLE;
-  /** Último clique (canvas), para o ciclo "clicar de novo sobe para o pai". */
+  /**
+   * Último clique (canvas), para o ciclo "clicar de novo sobe para o pai". Só vale para cliques
+   * seguidos: todo toque que deixa de ser clique (arrasto, cancelamento, pinça) o zera.
+   */
   private lastTap: Point | null = null;
   /** Tipo do último ponteiro apertado: o `contextmenu` de um toque demorado não é do mouse. */
   private lastPointerType = 'mouse';
@@ -296,6 +299,7 @@ export class PointerInput {
 
     if (this.pointers.size >= 2) {
       this.cancelInteraction();
+      this.lastTap = null; // A pinça recomeça o ciclo do clique.
       this.gesture = { kind: 'pinch' };
       this.gestureState = stepGesture(this.gestureState, {
         type: 'second-pointer',
@@ -340,6 +344,7 @@ export class PointerInput {
         const step = stepGesture(this.gestureState, { type: 'move', point: p });
         this.gestureState = step.state;
         if (step.effect.kind === 'start-drag') {
+          this.lastTap = null; // Deixou de ser clique: o próximo clique recomeça o ciclo.
           this.gesture = this.startDrag(g.pointerId, g.start, g.intent);
           this.onPointerMove(e);
         }
@@ -645,8 +650,9 @@ export class PointerInput {
     if (g.kind === 'pending' && step.effect.kind === 'tap') {
       this.tap(step.effect.at, this.pressShift);
     } else {
-      // Um arrasto (ou cancelamento) no meio de um duplo clique o desfaz.
+      // Um arrasto (ou cancelamento) no meio de um duplo clique o desfaz e recomeça o ciclo.
       this.selectionBeforeTap = null;
+      this.lastTap = null;
     }
     if (isStoreGesture(g)) {
       // Cancelado: volta ao projeto de antes do gesto. Senão, a operação final repete a mesma

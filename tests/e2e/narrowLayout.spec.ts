@@ -84,7 +84,7 @@ test('abas da janela inferior não passam sob as ações', async ({ page }) => {
 test('janela inferior a 900 px: abas inteiras, ações sem cobrir nenhuma', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 900, height: 860 });
+  await page.setViewportSize({ width: 900, height: 720 });
   await open(page);
   await page.keyboard.press('Control+Shift+6');
   const win = page.locator('[data-window="diagnostics"]');
