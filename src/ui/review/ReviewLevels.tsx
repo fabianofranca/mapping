@@ -8,12 +8,14 @@ import {
   reviewKey,
   type Change,
   type ChangeType,
+  type ReviewFilters as ReviewFiltersState,
   type LevelSummary,
   type Proposal,
   type ReviewTarget,
 } from '../../model';
 import { useEditor } from '../EditorContext';
 import { Icon } from '../icons';
+import { Popover } from '../Popover';
 import { Notice } from '../Notice';
 import { useMediaQuery } from '../useMediaQuery';
 import { Button, Chip, Choice, IconButton, Segmented, Select } from '../controls';
@@ -96,7 +98,24 @@ function useVirtualWindow(count: number, scroller: { current: HTMLElement | null
   return { start, end, row: view.row };
 }
 
-/** Filtros da revisão. */
+/**
+ * Quantos grupos de filtro estão ativos (decisão, tipos, imagem, camada, só conflitos):
+ * conta grupos, não valores.
+ */
+export function activeFilterGroups(f: ReviewFiltersState): number {
+  return [
+    f.decision !== 'all',
+    f.types.length > 0,
+    f.imageId !== null,
+    f.layerId !== null,
+    f.onlyConflicts,
+  ].filter(Boolean).length;
+}
+
+/**
+ * Filtros da revisão, recolhidos numa linha: o botão **Filtros** (com a contagem de grupos
+ * ativos) abre um popover com os controles. Escolher um filtro não fecha o popover.
+ */
 export function ReviewFilters({ names }: { readonly names: ReviewNames }) {
   const { review } = useEditor();
   const d = review.derived;
@@ -104,6 +123,7 @@ export function ReviewFilters({ names }: { readonly names: ReviewNames }) {
   const counts = d.counts.value;
   const tree = d.tree.value;
   const active = hasActiveFilters(filters);
+  const groups = activeFilterGroups(filters);
   const shown = d.visibleIds.value.length;
   const images = (tree?.root.children ?? []).filter((n) => n.level === 'image');
   const hasCanvas = (tree?.changeIdsOf({ level: 'canvas', id: null }).length ?? 0) > 0;
@@ -115,77 +135,94 @@ export function ReviewFilters({ names }: { readonly names: ReviewNames }) {
     review.setFilters({ types: CHANGE_TYPES.filter((x) => set.has(x)) });
   };
   return (
-    <div class="review-filters" role="group" aria-label={t('review.filters')}>
-      <Segmented
-        label={t('review.filter.decision')}
-        value={filters.decision}
-        onSelect={(decision) => review.setFilters({ decision })}
-        items={[
-          { id: 'all', label: t('review.filter.all', { count: counts.total }) },
-          {
-            id: 'undecided',
-            label: t('review.filter.undecided', { count: counts.undecided }),
-          },
-          {
-            id: 'accepted',
-            label: t('review.filter.accepted', { count: counts.accepted }),
-          },
-          {
-            id: 'rejected',
-            label: t('review.filter.rejected', { count: counts.rejected }),
-          },
-        ]}
-      />
-      <span class="review-chips" role="group" aria-label={t('review.filter.type')}>
-        {CHANGE_TYPES.map((type) => (
-          <Chip
-            key={type}
-            pressed={filters.types.includes(type)}
-            onClick={() => toggleType(type)}
+    <div class="review-filters">
+      <Popover
+        panelClass="review-filters-panel"
+        label={t('review.filters')}
+        trigger={({ open, toggle }) => (
+          <Button size="sm" aria-haspopup="dialog" aria-expanded={open} onClick={toggle}>
+            <Icon name="filter" />
+            {groups > 0
+              ? t('review.filtersButtonCount', { count: groups })
+              : t('review.filtersButton')}
+          </Button>
+        )}
+      >
+        <Segmented
+          label={t('review.filter.decision')}
+          value={filters.decision}
+          onSelect={(decision) => review.setFilters({ decision })}
+          items={[
+            { id: 'all', label: t('review.filter.all', { count: counts.total }) },
+            {
+              id: 'undecided',
+              label: t('review.filter.undecided', { count: counts.undecided }),
+            },
+            {
+              id: 'accepted',
+              label: t('review.filter.accepted', { count: counts.accepted }),
+            },
+            {
+              id: 'rejected',
+              label: t('review.filter.rejected', { count: counts.rejected }),
+            },
+          ]}
+        />
+        <span class="review-chips" role="group" aria-label={t('review.filter.type')}>
+          {CHANGE_TYPES.map((type) => (
+            <Chip
+              key={type}
+              pressed={filters.types.includes(type)}
+              onClick={() => toggleType(type)}
+            >
+              <ChangeKind type={type} size="sm" decorative />
+              {changeKindLabel(type)}
+            </Chip>
+          ))}
+        </span>
+        <span class="review-select">
+          <Select
+            size="sm"
+            aria-label={t('review.filter.image')}
+            value={filters.imageId ?? ''}
+            onChange={(e) =>
+              review.setFilters({ imageId: e.currentTarget.value || null })
+            }
           >
-            <ChangeKind type={type} size="sm" decorative />
-            {changeKindLabel(type)}
-          </Chip>
-        ))}
-      </span>
-      <span class="review-select">
-        <Select
-          size="sm"
-          aria-label={t('review.filter.image')}
-          value={filters.imageId ?? ''}
-          onChange={(e) => review.setFilters({ imageId: e.currentTarget.value || null })}
-        >
-          <option value="">{t('review.filter.allImages')}</option>
-          {hasCanvas && (
-            <option value={CANVAS_FILTER}>{t('review.filter.canvas')}</option>
-          )}
-          {images.map((n) => (
-            <option key={n.id} value={n.id ?? ''}>
-              {targetName(names, { level: 'image', id: n.id })}
-            </option>
-          ))}
-        </Select>
-      </span>
-      <span class="review-select">
-        <Select
-          size="sm"
-          aria-label={t('review.filter.layer')}
-          value={filters.layerId ?? ''}
-          onChange={(e) => review.setFilters({ layerId: e.currentTarget.value || null })}
-        >
-          <option value="">{t('review.filter.allLayers')}</option>
-          {layers.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-            </option>
-          ))}
-        </Select>
-      </span>
-      <Choice
-        checked={filters.onlyConflicts}
-        label={t('review.filter.onlyConflicts', { count: counts.conflicts })}
-        onChange={(e) => review.setFilters({ onlyConflicts: e.currentTarget.checked })}
-      />
+            <option value="">{t('review.filter.allImages')}</option>
+            {hasCanvas && (
+              <option value={CANVAS_FILTER}>{t('review.filter.canvas')}</option>
+            )}
+            {images.map((n) => (
+              <option key={n.id} value={n.id ?? ''}>
+                {targetName(names, { level: 'image', id: n.id })}
+              </option>
+            ))}
+          </Select>
+        </span>
+        <span class="review-select">
+          <Select
+            size="sm"
+            aria-label={t('review.filter.layer')}
+            value={filters.layerId ?? ''}
+            onChange={(e) =>
+              review.setFilters({ layerId: e.currentTarget.value || null })
+            }
+          >
+            <option value="">{t('review.filter.allLayers')}</option>
+            {layers.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </Select>
+        </span>
+        <Choice
+          checked={filters.onlyConflicts}
+          label={t('review.filter.onlyConflicts', { count: counts.conflicts })}
+          onChange={(e) => review.setFilters({ onlyConflicts: e.currentTarget.checked })}
+        />
+      </Popover>
       {active && (
         <>
           <span class="muted review-shown">
