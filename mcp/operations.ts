@@ -527,7 +527,7 @@ export const operationSchema = z.discriminatedUnion('op', [
       .nullable()
       .optional()
       .describe(
-        'Papel (id de um `childRoles` do tipo do dono) em que a anotação se liga ao `owner`. Exige `owner` (`role-without-owner`) e um papel que o dono ofereça (`unknown-role`). Sem `role` num dono que tem papéis o lote vale e o plano devolve `missing-role` em `issues`. Trocar o `owner` limpa o papel que o novo dono não oferece. Veja `childRoles` em get_specialization.',
+        'Papel (id de um `childRoles` do tipo do dono) em que a anotação se liga ao `owner`. Exige `owner` (`role-without-owner`) e um papel que o dono ofereça (`unknown-role`). Sem `role` num dono que tem papéis o lote vale e o plano devolve `missing-role` em `issues`. Trocar o `owner` (ou `owner: null`) limpa o papel que o novo dono não oferece, e o plano avisa com `role-cleared` em `warnings` e `; papel "…" limpo` no resumo. Veja `childRoles` em get_specialization.',
       ),
     inherit: z
       .boolean()
@@ -550,7 +550,7 @@ export const operationSchema = z.discriminatedUnion('op', [
       .nullable()
       .optional()
       .describe(
-        'Troca o papel no dono (`null` limpa). Confere contra o dono já com o `owner` novo, se vier no mesmo passo. Veja `role` em create_annotation.',
+        'Troca o papel no dono (`null` limpa). Confere contra o dono já com o `owner` novo, se vier no mesmo passo. Sem `role` no passo, a troca de `owner` que limpa o papel avisa com `role-cleared` em `warnings`. Veja `role` em create_annotation.',
       ),
     inherit: z
       .boolean()
