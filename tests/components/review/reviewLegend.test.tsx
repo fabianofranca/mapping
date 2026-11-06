@@ -8,7 +8,7 @@ import {
   ReviewLegend,
 } from '../../../src/ui/review/ReviewCanvasControls';
 import { richScenario } from '../../store/proposalHarness';
-import { openReviewHarness } from './reviewHarness';
+import { PanelWithShortcuts, openReviewHarness } from './reviewHarness';
 
 // Etapa #515 (FN1, #474): a legenda das marcas é um painel não modal; Esc com o foco
 // dentro fecha, e fechar (X ou Esc) devolve o foco ao botão "Legenda das marcas".
@@ -26,6 +26,7 @@ async function mount() {
     <EditorContext.Provider value={h.context}>
       <ReviewCanvasControls />
       <ReviewLegend />
+      <PanelWithShortcuts />
     </EditorContext.Provider>,
   );
   return h;
@@ -79,5 +80,29 @@ describe('legenda das marcas da revisão', () => {
     fireEvent.keyDown(button, { key: 'Escape' });
     await settle();
     expect(h.ui.reviewLegend.value).toBe(true);
+  });
+
+  it('L com o foco dentro da legenda a fecha e o foco volta ao botão que abriu', async () => {
+    const h = await mount();
+    const button = await openLegend();
+    const close = screen.getByRole('button', { name: t('review.legend.close') });
+    close.focus();
+    fireEvent.keyDown(close, { key: 'l' });
+    await settle();
+    expect(h.ui.reviewLegend.value).toBe(false);
+    expect(document.activeElement).toBe(button);
+  });
+
+  it('L com o foco fora da legenda a fecha sem mexer no foco', async () => {
+    const h = await mount();
+    await openLegend();
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    outside.focus();
+    fireEvent.keyDown(outside, { key: 'l' });
+    await settle();
+    expect(h.ui.reviewLegend.value).toBe(false);
+    expect(document.activeElement).toBe(outside);
+    outside.remove();
   });
 });

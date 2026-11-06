@@ -5,7 +5,7 @@ import { fixtureZip } from './proposalFixture';
 // Etapa limpeza visual, LV4: Esc esconde a dica com foco de teclado (WCAG 1.4.13), rótulo
 // do botão da Paleta sem corte e valores de X, Y, L e A legíveis na revisão a 900 px.
 
-test.use({ viewport: { width: 900, height: 860 } });
+test.use({ viewport: { width: 900, height: 720 } });
 
 test('Esc esconde a dica de um botão com foco de teclado', async ({ page }) => {
   await createProject(page, 'Telas');

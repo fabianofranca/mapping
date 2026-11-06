@@ -3,7 +3,7 @@ import { fixtureZip } from './proposalFixture';
 
 // A dica da barra lateral não cobre o menu do projeto aberto (900 px).
 
-test.use({ viewport: { width: 900, height: 860 } });
+test.use({ viewport: { width: 900, height: 720 } });
 
 test('dica da barra lateral some enquanto o menu do projeto está aberto', async ({
   page,

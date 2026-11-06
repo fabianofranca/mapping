@@ -1,5 +1,6 @@
+import type { Signal } from '@preact/signals';
 import { createRef, type ComponentChildren } from 'preact';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useLayoutEffect } from 'preact/hooks';
 import { t } from '../../i18n';
 import {
   arrowContainerId,
@@ -25,6 +26,20 @@ import { useDecide } from './useReview';
 
 /** O botão "Legenda das marcas", para onde o foco volta ao fechar a legenda. */
 const legendToggle = createRef<HTMLButtonElement>();
+/** O painel da legenda, para saber se o foco está dentro dele. */
+const legendPanel = createRef<HTMLElement>();
+
+/**
+ * Alterna a legenda (botão e atalho L). Ao fechar com o foco dentro dela, devolve-o ao
+ * botão que a abre: o painel sai do DOM e o foco cairia no body.
+ */
+export function toggleReviewLegend(ui: { readonly reviewLegend: Signal<boolean> }) {
+  const open = ui.reviewLegend.peek();
+  if (open && legendPanel.current?.contains(document.activeElement)) {
+    legendToggle.current?.focus();
+  }
+  ui.reviewLegend.value = !open;
+}
 
 /** A troca de arquivo da imagem ainda não aplicada (a que "Comparar" mostra). */
 export function replaceChangeOf(p: Proposal, imageId: string): Change | null {
@@ -98,7 +113,7 @@ export function ReviewCanvasControls() {
         shortcut={REVIEW_KEYS.legend}
         pressed={ui.reviewLegend.value}
         buttonRef={legendToggle}
-        onClick={() => (ui.reviewLegend.value = !ui.reviewLegend.peek())}
+        onClick={() => toggleReviewLegend(ui)}
       />
       {comparable && (
         <IconButton
@@ -112,10 +127,50 @@ export function ReviewCanvasControls() {
   );
 }
 
-/** Legenda das marcas do canvas (L), sobre o canvas. */
+/**
+ * Posiciona a legenda (que é `position: fixed`, para não ser recortada pelo canvas): o
+ * canto superior esquerdo do canvas, a largura da coluna dele e a altura até o fim das
+ * janelas (o topo da barra de status). Entrega as medidas ao CSS em variáveis; o espaço e a margem vêm dos
+ * tokens, não daqui.
+ */
+function useLegendPlacement(legend: { readonly current: HTMLElement | null }): void {
+  useLayoutEffect(() => {
+    const el = legend.current;
+    const area = el?.closest<HTMLElement>('[data-canvas-area]');
+    if (!el || !area) return;
+    const place = () => {
+      const a = area.getBoundingClientRect();
+      // O fim das janelas é o topo da barra de status.
+      const panes = area.closest<HTMLElement>('[data-panes]');
+      const bottom = panes?.getBoundingClientRect().bottom ?? globalThis.innerHeight;
+      el.style.setProperty('--legend-top', `${a.top}px`);
+      el.style.setProperty('--legend-left', `${a.left}px`);
+      el.style.setProperty('--legend-width', `${a.width}px`);
+      el.style.setProperty('--legend-room', `${Math.max(0, bottom - a.top)}px`);
+    };
+    place();
+    globalThis.addEventListener('resize', place);
+    const observer =
+      typeof ResizeObserver === 'function' ? new ResizeObserver(place) : null;
+    observer?.observe(area);
+    return () => {
+      globalThis.removeEventListener('resize', place);
+      observer?.disconnect();
+    };
+  }, [legend]);
+}
+
+/** Legenda das marcas do canvas (L), sobre o canvas e, se não couber nele, sobre as janelas. */
 export function ReviewLegend() {
   const { review, ui } = useEditor();
   if (review.proposalId.value === null || !ui.reviewLegend.value) return null;
+  return <LegendPanel />;
+}
+
+function LegendPanel() {
+  const { ui } = useEditor();
+  const panel = legendPanel;
+  useLegendPlacement(panel);
   // Fechar (X ou Esc) devolve o foco ao botão que a abre, nunca ao body (etapa #515, FN1).
   const close = () => {
     ui.reviewLegend.value = false;
@@ -161,6 +216,7 @@ export function ReviewLegend() {
   return (
     <section
       class="review-legend"
+      ref={panel}
       aria-label={t('review.legend.title')}
       onKeyDown={onKeyDown}
     >

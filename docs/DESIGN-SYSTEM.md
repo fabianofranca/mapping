@@ -131,7 +131,7 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `ProposalRow` | `src/ui/review/ProposalRow.tsx` | Usada em `ProposalList.tsx`; também exporta `DecisionCounts`. |
 | `ReviewBar` | `src/ui/review/ReviewBar.tsx` |  |
 | `ReviewHeader` | `src/ui/review/ReviewHeader.tsx` | Exporta também `IdentityFlags`. |
-| `ReviewRow` | `src/ui/review/ReviewRow.tsx` | Usada em `ReviewLevels.tsx`. |
+| `ReviewRow` | `src/ui/review/ReviewRow.tsx` | Usada em `ReviewLevels.tsx`; o guia e a prévia cobrem também a linha de filtros recolhida e o painel aberto. |
 | `UpdateImpact` | `src/ui/UpdateImpact.tsx` |  |
 | `CatalogPage` | `src/ui/catalog/CatalogPage.tsx` | Também `CatalogView.tsx`, `Playground.tsx`, `renderer.ts` e `src/ui/markdown/Markdown.tsx`. |
 | `CatalogScreen` | `src/app/CatalogScreen.tsx` | Usa `src/store/libraryPreview.ts`. |
@@ -189,7 +189,7 @@ Levantado em 2026-11-02. Estes arquivos aparecem na tela e nenhum guia do DS os 
 
 - Diálogos: `src/ui/review/ExitReviewDialog.tsx`, `src/app/ExportDialog.tsx`, `src/ui/SpecsDialog.tsx`, `src/ui/InconsistentProjectDialog.tsx` (os três últimos só citados no guia de `Dialog`).
 - Barras e faixas: `src/app/EditorMainBar.tsx`, `src/app/EditorTools.tsx`, `src/ui/SettingsBar.tsx`, `src/ui/ImageConsentBanner.tsx`, `src/ui/InstallHint.tsx`, `src/ui/review/ProposalNotices.tsx`.
-- Revisão: `src/ui/review/ReviewLevels.tsx` (a barra de progresso e os filtros), `src/ui/review/ProposalList.tsx` (a busca e o estado vazio), `src/ui/review/ReviewCanvasControls.tsx` (o alternador Atual/Proposto e a legenda das marcas).
+- Revisão: `src/ui/review/ReviewLevels.tsx` (a barra de progresso; os filtros recolhidos e o painel aberto estão no guia e na prévia do `ReviewRow`), `src/ui/review/ProposalList.tsx` (a busca e o estado vazio), `src/ui/review/ReviewCanvasControls.tsx` (o alternador Atual/Proposto e a legenda das marcas).
 - Detalhes e campos: `src/ui/FieldEditors.tsx`, `src/ui/CommitInput.tsx`, `src/ui/AnnotationEditor.tsx`, `src/ui/AnnotationSummary.tsx`, `src/ui/DetailsSection.tsx`, `src/ui/DetailsIdentity.tsx`, `src/ui/MarkingColorField.tsx`.
 - Configurações: `src/ui/PrivacySettings.tsx`, `src/ui/PlatformRepos.tsx`.
 - Outros: `src/ui/Popover.tsx`, `src/ui/LibraryPalette.tsx`, `src/ui/DiagnosticsView.tsx`, `src/ui/IncompleteView.tsx`, `src/ui/LayersWindow.tsx`, `src/ui/TreeWindow.tsx`.
