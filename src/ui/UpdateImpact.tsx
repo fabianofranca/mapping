@@ -160,7 +160,8 @@ export function UpdateImpact({
   readonly next: number;
 }) {
   const lostAnnotations = impact.losses.filter((l) => l.reason === 'removed-type').length;
-  const lostValues = impact.losses.length - lostAnnotations;
+  const lostLinks = impact.losses.filter((l) => l.reason === 'unlinked').length;
+  const lostValues = impact.losses.length - lostAnnotations - lostLinks;
   const additive = impact.additive && impact.steps.length === 0;
   return (
     <>
@@ -228,9 +229,10 @@ export function UpdateImpact({
       )}
       {!impact.refused && impact.losses.length > 0 && (
         <p class="notice notice-error" role="alert">
-          {t('spec.impact.lossTotal', {
+          {t(lostLinks > 0 ? 'spec.impact.lossTotalLinks' : 'spec.impact.lossTotal', {
             values: lostValues,
             annotations: lostAnnotations,
+            links: lostLinks,
           })}
         </p>
       )}
