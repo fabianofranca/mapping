@@ -1,4 +1,4 @@
-# Revisão em janelas baixas — [Não lançado] (épico `epic/revisao-janela-baixa`, PR #623, MCP 0.19.0, schema v14)
+# Revisão em janelas baixas — 2026-11-06 (épico `epic/revisao-janela-baixa`, PR #623, MCP 0.19.0, schema v14)
 
 ## Alterado
 

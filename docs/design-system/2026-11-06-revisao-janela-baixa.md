@@ -1,4 +1,4 @@
-# Revisão em janelas baixas — [Não lançado] (épico `epic/revisao-janela-baixa`)
+# Revisão em janelas baixas — 2026-11-06 (épico `epic/revisao-janela-baixa`)
 
 ## Pendências
 
@@ -10,8 +10,17 @@
 
 ## Sincronização
 
-(Preenchida no fechamento do épico.)
+Gravado no artefato **Mapping** em 2026-11-06, no fechamento do épico (versão `1793937636-5db9`; o índice por último, com `lastChange`):
+
+- `project/tokens.json`: `size-tw-bottom-review` de 344px para **240px** e `size-app-min-height` de 860px para **720px**, com os `usage` reescritos; o `usage` de `z-popover` passou a citar a legenda das marcas.
+- `project/components/bundle.css`: `.review-legend` (`position: fixed`, variáveis `--legend-*`, `z-index: var(--z-popover)`) e a regra nova `.review-filters-panel`.
+- `ReviewRow` (guia e prévia): a linha de filtros recolhida (**Filtros**, **Filtros · N**, "Mostrando N de M", **Limpar filtros**) e o painel aberto, em três cartões. Os filtros não têm componente próprio no Mapa.
+- `Minimap` (guia e prévia): a legenda das marcas ancorada, que desce por cima da Propostas e do minimapa quando o canvas é baixo (dois cartões: canvas alto e canvas baixo).
+- `NarrowWindow` (guia e prévia): 900×720.
+- `project/README.md` (princípio 1 e "Empilhamento"), `project/Layouts.md` e `project/Revisao.md` (um item em "Regras de comportamento", além das pendências).
+- `project/design-system.json`: só o `lastChange`.
 
 ## Ficou sem gravar
 
-(Preenchida no fechamento do épico.)
+- Conferência das prévias no visualizador real do artefato: foram conferidas em Chrome headless local, nos temas claro e escuro, e as alturas dos cartões novos (`ReviewRow` 1440 e `Minimap` 1340) podem pedir ajuste no visualizador.
+- O contraste não foi recalculado: só entraram tokens e pares que o `Contraste.md` já cobre, sem cor nova.

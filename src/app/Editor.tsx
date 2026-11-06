@@ -146,7 +146,7 @@ export function EditorScreen() {
               <CanvasNotices notices={notices} />
               <CanvasContextMenu />
               <Minimap />
-              {/* Depois do minimapa: com o mesmo z-index, a legenda aberta fica por cima dele. */}
+              {/* A legenda aberta fica por cima do minimapa pelo z-index (--z-popover acima do --z-canvas-overlay), não pela ordem no DOM. */}
               <ReviewLegend />
               {noImages.value && (
                 <div class="canvas-empty">
