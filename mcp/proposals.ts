@@ -9,12 +9,13 @@ import {
   withdrawProposal,
   packageDirOf,
   type Change,
-  type JsonValue,
   type Proposal,
   type ProposalStatus,
 } from '../src/model';
 import { batchReport, prepareBatch, readMapping, sha256 } from './changes';
 import { ToolError } from './errors';
+import { reviseOnDisk, type ReviseArgs } from './proposalRevise';
+import { storedOperations } from './proposalOperations';
 import { Refs } from './items';
 import type { Operation } from './operations';
 import type { Roots } from './paths';
@@ -35,8 +36,13 @@ import {
   kindCounts,
   levelsView,
   noteView,
+  awaitingView,
+  droppedFrom,
+  isRevisable,
   progressView,
   proposedProject,
+  reviewHint,
+  revisionsView,
   stateOf,
   type ChangeState,
 } from './proposalViews';
@@ -62,20 +68,6 @@ export interface ProposeArgs {
 }
 
 export type StateFilter = ChangeState | 'conflict';
-
-/**
- * As operações guardadas na proposta são só referência: o conteúdo `base64` das imagens (que
- * já está em `proposals/<id>/images/`) é trocado por um marcador, para o arquivo não crescer.
- */
-function storedOperations(operations: readonly Operation[]): JsonValue[] {
-  return operations.map((op) => {
-    const copy = JSON.parse(JSON.stringify(op)) as Record<string, JsonValue>;
-    if (typeof copy.base64 === 'string') {
-      copy.base64 = `(omitido: ${copy.base64.length} caracteres)`;
-    }
-    return copy;
-  });
-}
 
 const OPEN_STATUSES: readonly ProposalStatus[] = ['open', 'superseded'];
 
@@ -339,6 +331,7 @@ export class Proposals {
           ...(supersededBy.has(s.id) ? { supersededBy: supersededBy.get(s.id) } : {}),
           progress: progressView(p),
           conflicts,
+          ...lastRevisedView(p),
         };
       });
     return {
@@ -402,6 +395,7 @@ export class Proposals {
         baseRevision: p.baseRevision,
         supersedes: p.supersedes === null ? null : refTo(all, refs, p.supersedes),
         operations: p.operations.length,
+        ...revisionsView(p),
       },
       project: {
         name: location.name,
@@ -478,7 +472,7 @@ export class Proposals {
     // Notas gerais: tudo o que não é de uma mudança (as dela vão junto da rejeição).
     const notes = p.notes
       .filter((n) => n.target.level !== 'change')
-      .map((n) => noteView(p, n, labels));
+      .map((n) => ({ ...noteView(p, n, labels), ...droppedFrom(p, n.id, labels) }));
     // Notas de mudanças que não estão rejeitadas (ex: o usuário comentou numa aceita).
     const otherChangeNotes = p.notes
       .filter(
@@ -515,15 +509,21 @@ export class Proposals {
             })),
           }),
       ready: complete,
+      revisable: isRevisable(p),
       rejected,
+      awaitingUser: awaitingView(p, labels),
       notes: [...notes, ...otherChangeNotes],
       conflicts,
-      hint: complete
-        ? rejected.length === 0 && conflicts.length === 0
-          ? 'a revisão terminou sem rejeições nem conflitos: não há o que corrigir'
-          : 'a revisão terminou: corrija só o que foi rejeitado (e os conflitos) lendo o projeto atual, e envie com propose_changes e supersedes apontando para esta proposta'
-        : `a revisão ainda não terminou (${progress.undecided} sem decisão, ${progress.acceptedPending} aceita(s) sem aplicar): avise o usuário e espere antes de enviar uma proposta que a substitua`,
+      hint: reviewHint(p, progress, rejected.length + conflicts.length),
     };
+  }
+
+  // -------------------------------------------------------------------------
+  // revise_proposal (etapa #644): ver `proposalRevise.ts`
+
+  async revise(refText: string, projectArg: string | undefined, args: ReviseArgs) {
+    const resolved = await resolveProposal(this.roots, refText, projectArg);
+    return reviseOnDisk(this.roots, this.now, resolved, args);
   }
 
   // -------------------------------------------------------------------------
@@ -566,6 +566,12 @@ export class Proposals {
       hint: 'a proposta foi retirada: nada mais dela será aplicado (o que já foi aplicado continua no projeto). Os arquivos em proposals/ ficam para o histórico.',
     };
   }
+}
+
+/** `lastRevisedAt` de `list_proposals`: a data da última revisão do agente (ausente se nunca). */
+function lastRevisedView(p: Proposal): Json {
+  const at = p.revisions?.[p.revisions.length - 1]?.at;
+  return at === undefined ? {} : { lastRevisedAt: at };
 }
 
 /** Pastas de pacote gravadas na proposta, com a contagem de arquivos de cada uma. */

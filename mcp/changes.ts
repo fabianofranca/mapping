@@ -7,6 +7,7 @@ import {
   computeChanges,
   projectIndex,
   type ItemKind,
+  type Project,
 } from '../src/model';
 import {
   changeCounts,
@@ -127,6 +128,11 @@ export interface PrepareOptions {
   readonly now: () => number;
   /** Arquivos de `images/` já reservados por outras propostas ainda não aplicadas. */
   readonly reservedImages?: ReadonlySet<string>;
+  /**
+   * Projeto em que o lote começa, a partir do lido da pasta (a revisão da proposta parte do
+   * proposto inteiro). Pode recusar lançando um `ToolError`. Sem ele, o lote parte do projeto.
+   */
+  readonly startFrom?: (project: Project) => Project;
 }
 
 /**
@@ -158,7 +164,8 @@ export async function prepareBatch(
     takenImageFiles: taken,
     now: () => new Date(options.now()),
   };
-  const result = await runBatch(loaded, operations, io);
+  const start = options.startFrom?.(loaded.project) ?? loaded.project;
+  const result = await runBatch({ ...loaded, project: start }, operations, io);
   return {
     location,
     loaded,

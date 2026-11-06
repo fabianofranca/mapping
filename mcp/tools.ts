@@ -682,7 +682,7 @@ export function registerTools(
     {
       description:
         'Envia uma alteração ao usuário como PROPOSTA para revisão: valida o lote como o plan_changes, calcula as mudanças (criações, alterações campo a campo, remoções) e grava `proposals/<id>/proposal.json` (imagens novas em `proposals/<id>/images/`). O `mapping.json` NÃO é alterado: o usuário revisa na app, aceita ou rejeita em qualquer nível (proposta, container, item, mudança), deixa notas e aplica o que aceitou. ' +
-        'Devolve a referência `mapping://<projeto>/p/<código>`, um resumo por nível e as referências definitivas dos itens criados, com as pendências novas (`issues`) e os avisos novos da especialização (`notices.new`, como no plan_changes; aviso não bloqueia a proposta). Depois, avise o usuário e espere a revisão terminar (get_proposal: nada pendente nem aceito sem aplicar); leia o resultado com get_proposal_review e, para corrigir, envie outra proposta com `supersedes` só com as correções. Reexportações: use `source` nos containers e marcações e find_by_source para propor só o que mudou.',
+        'Devolve a referência `mapping://<projeto>/p/<código>`, um resumo por nível e as referências definitivas dos itens criados, com as pendências novas (`issues`) e os avisos novos da especialização (`notices.new`, como no plan_changes; aviso não bloqueia a proposta). Depois, avise o usuário e espere a revisão terminar (get_proposal: nada pendente nem aceito sem aplicar); leia o resultado com get_proposal_review e, para corrigir, use revise_proposal na mesma proposta (enquanto nada foi aplicado) ou, depois, envie outra proposta com `supersedes` só com as correções. Reexportações: use `source` nos containers e marcações e find_by_source para propor só o que mudou.',
       inputSchema: {
         project: projectArg,
         title: z
@@ -713,6 +713,37 @@ export function registerTools(
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
     (args) => respond(() => proposals.propose(args)),
+  );
+
+  server.registerTool(
+    'revise_proposal',
+    {
+      description:
+        'Corrige uma proposta ABERTA na mesma proposta (mesma referência), sem o usuário perder o que já decidiu. Use quando ele rejeitou mudanças (e deixou notas) ou quando você quer acrescentar ou retirar mudanças e NADA da proposta foi aplicado ainda (`revisable: true` em get_proposal_review). Se alguma mudança já foi aplicada, a proposta foi substituída ou retirada, ou o lote traz um pacote de biblioteca, use propose_changes com `supersedes`. ' +
+        '`drop`: ids de mudança (`c3`, como get_proposal mostra) a retirar, com o que depende delas (retirar a criação de um item retira as anotações e filhas dele). `operations`: o vocabulário do propose_changes, aplicado sobre o PROPOSTO INTEIRO (o projeto atual com todas as mudanças da proposta, até as rejeitadas, depois do `drop`); um item que a proposta cria é citado pela referência definitiva e pode ser editado. Cada mudança fica: intocada (idêntica, com a decisão e as notas), trocada (mesmo id, valor novo, volta a sem decisão e ganha a marca "Revisada"), nova (id novo, sem decisão) ou retirada (sai; a nota dela passa à proposta). ' +
+        'CONGELADO: mudança que o usuário aceitou não é trocada nem retirada; se o lote a atingiria, nada é gravado (`change-frozen`). `dryRun: true` devolve o resultado sem gravar. O mapping.json nunca é alterado. Depois, avise o usuário e espere a revisão terminar.',
+      inputSchema: {
+        ref: proposalRefArg,
+        project: optionalProjectArg,
+        drop: z
+          .array(z.string())
+          .optional()
+          .describe('Ids das mudanças a retirar (`c3`), como get_proposal mostra.'),
+        operations: z
+          .array(operationSchema)
+          .max(1000)
+          .optional()
+          .describe(
+            'Lote aplicado ao proposto inteiro, com a validação do propose_changes (apelidos `$nome` valem). Pacote de biblioteca novo ou trocado não cabe aqui.',
+          ),
+        dryRun: z
+          .boolean()
+          .optional()
+          .describe('Só calcula e devolve o resultado, sem gravar.'),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+    },
+    ({ ref, project, ...args }) => respond(() => proposals.revise(ref, project, args)),
   );
 
   server.registerTool(
@@ -764,7 +795,7 @@ export function registerTools(
     'get_proposal_review',
     {
       description:
-        'O resultado da revisão, só o que importa para a próxima rodada: as mudanças rejeitadas (com o alvo, antes/depois e as notas do usuário), as notas gerais (proposta, projeto, container, item), os conflitos e se a revisão terminou (`ready`). Corrija só isso e envie com propose_changes e `supersedes`.',
+        'O resultado da revisão, só o que importa para a próxima rodada: as mudanças rejeitadas (com o alvo, antes/depois e as notas do usuário), as notas gerais (proposta, projeto, container, item), os conflitos e se a revisão terminou (`ready`). Corrija só isso: com `revisable: true`, use revise_proposal na mesma proposta; senão envie propose_changes com `supersedes`. `awaitingUser` são as mudanças que você trocou ou acrescentou e ainda esperam o usuário (não estão rejeitadas).',
       inputSchema: { ref: proposalRefArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },

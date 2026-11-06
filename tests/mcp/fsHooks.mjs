@@ -12,12 +12,15 @@
 // }
 //
 // `match` é um trecho do caminho (qualquer argumento de texto da chamada). `afterRead` acrescenta
-// `text` a `file` depois de cada leitura que casa; `fail` faz a função rejeitar com o código.
+// `text` a `file` depois de cada leitura que casa (ou, com `copy: { from, to }`, copia `from`
+// sobre `to`); com `nth`, só depois da n-ésima leitura que casa (contada por regra, a partir do
+// início do processo). `fail` faz a função rejeitar com o código.
 
-import { appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, readFileSync } from 'node:fs';
 import fsp from 'node:fs/promises';
 
 const configFile = process.env.MAPPING_MCP_FS_HOOKS;
+const counts = new Map();
 
 function config() {
   if (!configFile || !existsSync(configFile)) return {};
@@ -51,7 +54,13 @@ for (const fn of ['readFile', 'link', 'rename', 'rm', 'writeFile']) {
     const result = await original(...args);
     if (fn === 'readFile') {
       for (const rule of hooks.afterRead ?? []) {
-        if (matches(args, rule.match)) appendFileSync(rule.append.file, rule.append.text);
+        if (!matches(args, rule.match)) continue;
+        const key = JSON.stringify(rule);
+        const count = (counts.get(key) ?? 0) + 1;
+        counts.set(key, count);
+        if (rule.nth !== undefined && count !== rule.nth) continue;
+        if (rule.copy) copyFileSync(rule.copy.from, rule.copy.to);
+        else appendFileSync(rule.append.file, rule.append.text);
       }
     }
     return result;

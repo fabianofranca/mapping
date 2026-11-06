@@ -1039,6 +1039,7 @@ describe('recursos e instruções', () => {
       'plan_library_update',
       'propose_changes',
       'resolve',
+      'revise_proposal',
       'validate_library',
       'validate_specialization',
       'withdraw_proposal',
@@ -1050,6 +1051,7 @@ describe('recursos e instruções', () => {
     expect(writers.sort()).toEqual([
       'create_project',
       'propose_changes',
+      'revise_proposal',
       'withdraw_proposal',
     ]);
     // plan_changes só valida: nada é gravado, nem proposta.
