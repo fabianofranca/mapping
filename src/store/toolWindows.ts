@@ -185,15 +185,23 @@ const openIds = signal<ReadonlySet<ToolWindowId>>(
 export const REVIEW_BOTTOM_DEFAULT = px('size-tw-bottom-review');
 
 /**
+ * O padrão antigo da revisão (344 px). O `persist()` gravava `bottomReview` até para quem
+ * nunca redimensionou; então um 344 guardado é o padrão de antes, não uma escolha, e passa
+ * ao padrão novo (#598). Qualquer outro valor guardado é escolha e fica.
+ */
+const OLD_REVIEW_BOTTOM_DEFAULT = 344;
+
+/**
  * A janela inferior tem duas alturas guardadas: a normal e a do modo revisão, que começa
- * maior (filtros, cerca de nove linhas e o rodapé de atalhos). `sizes.bottom` é a da vez.
+ * maior que a normal (três linhas inteiras da lista e o rodapé de atalhos). `sizes.bottom` é a da vez.
  */
 let bottomHeights = {
   normal: storedSize(stored.bottom, 'bottom'),
   review:
     typeof stored.bottomReview === 'number' &&
     Number.isFinite(stored.bottomReview) &&
-    stored.bottomReview > 0
+    stored.bottomReview > 0 &&
+    stored.bottomReview !== OLD_REVIEW_BOTTOM_DEFAULT
       ? stored.bottomReview
       : REVIEW_BOTTOM_DEFAULT,
 };
