@@ -206,15 +206,15 @@ export function annotationView(
 function linkedByRoleView(refs: Refs, owner: Annotation): Json | null {
   const grouped = linkedByRole(refs.project, owner);
   if (!grouped) return null;
-  const bare = (items: readonly Annotation[]) => items.map((a) => refs.ref('a', a.id));
+  const refsOf = (items: readonly Annotation[]) => items.map((a) => refs.ref('a', a.id));
   return {
     label: grouped.label,
     roles: grouped.rows.map((row) => ({
       id: row.role.id,
       name: row.role.name,
-      linked: bare(row.items),
+      linked: refsOf(row.items),
     })),
-    unassigned: bare(grouped.unassigned),
+    unassigned: refsOf(grouped.unassigned),
   };
 }
 
