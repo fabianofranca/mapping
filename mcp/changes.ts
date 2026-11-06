@@ -205,6 +205,14 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
       op: d.index,
       message: d.message,
     })),
+    ...result.rolesCleared.map((c) => ({
+      code: 'role-cleared',
+      op: c.index,
+      annotation: refs.bare('a', c.annotationId),
+      role: c.role,
+      roleName: c.roleName,
+      message: c.message,
+    })),
   ];
   const membership = membershipView(
     result.before,

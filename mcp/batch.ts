@@ -198,8 +198,19 @@ export interface BatchResult {
     /** Código do aviso no relatório; ausente = `deprecated-op`. */
     readonly code?: string;
   }[];
+  /** Papéis que a troca de dono limpou sem o passo pedir (aviso `role-cleared`). */
+  readonly rolesCleared: readonly RoleCleared[];
   /** Regras entre coleções violadas pelo resultado (não deveria acontecer). */
   readonly invariantIssues: readonly string[];
+}
+
+/** Papel limpo pela troca de dono de `update_annotation`: vira o aviso `role-cleared`. */
+export interface RoleCleared {
+  readonly index: number;
+  readonly annotationId: string;
+  readonly role: string;
+  readonly roleName: string;
+  readonly message: string;
 }
 
 /** Aviso do validador da biblioteca, com a operação e a especialização de origem. */
@@ -225,6 +236,8 @@ interface LoadedSpec {
 
 interface Step {
   readonly project: Project;
+  /** Papel que a troca de dono limpou sem o passo pedir. */
+  readonly roleCleared?: Omit<RoleCleared, 'index'>;
   /** Avisos da operação (argumento ignorado…): vão para `warnings` da resposta. */
   readonly notes?: readonly string[];
   /** Pacote da biblioteca levado pela operação: pasta definitiva e arquivos dela. */
@@ -319,6 +332,7 @@ class Batch {
     message: string;
     code?: string;
   }[] = [];
+  private readonly rolesCleared: RoleCleared[] = [];
   private readonly errors: OperationError[] = [];
   private readonly steps: { index: number; description: string }[] = [];
   private readonly created: CreatedItem[] = [];
@@ -388,6 +402,7 @@ class Batch {
               'o argumento `inherit` saiu do formato (v13) e foi ignorado: a anotação vale só para a própria marcação',
           });
         }
+        if (step.roleCleared) this.rolesCleared.push({ index, ...step.roleCleared });
         for (const note of step.notes ?? []) {
           this.deprecations.push({
             index,
@@ -430,6 +445,7 @@ class Batch {
       packageFiles: this.packageFiles,
       libraryWarnings: this.libraryWarnings,
       deprecations: this.deprecations,
+      rolesCleared: this.rolesCleared,
       invariantIssues,
     };
   }
@@ -1908,14 +1924,12 @@ class Batch {
       project = this.setValues(project, id, op.values, rowAliases);
       changes.push(`campos ${Object.keys(op.values).join(', ')}`);
     }
+    let roleCleared: Step['roleCleared'];
     if (op.owner !== undefined) {
-      const ownerId = op.owner === null ? null : this.item(op.owner, 'a', project);
-      project = setAnnotationParent(project, id, ownerId);
-      changes.push(
-        ownerId === null
-          ? 'sem dona'
-          : `dona ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`,
-      );
+      const moved = this.changeOwner(project, id, op.owner, op.role === undefined);
+      project = moved.project;
+      changes.push(moved.change);
+      roleCleared = moved.roleCleared;
     }
     if (op.role !== undefined) {
       project = setAnnotationRole(project, id, op.role);
@@ -1927,6 +1941,44 @@ class Batch {
       project,
       description: `Alterar a anotação ${label}: ${changes.join(', ') || 'nada'}`,
       rowAliases,
+      ...(roleCleared ? { roleCleared } : {}),
+    };
+  }
+
+  /**
+   * Troca a dona (ou tira, com `null`). Se o papel da anotação sai junto e o passo não traz
+   * `role` (`roleUnset`), a nota entra no texto do passo e o aviso `role-cleared` é devolvido.
+   */
+  private changeOwner(
+    p: Project,
+    id: string,
+    owner: string | null,
+    roleUnset: boolean,
+  ): { project: Project; change: string; roleCleared?: Step['roleCleared'] } {
+    const ownerId = owner === null ? null : this.item(owner, 'a', p);
+    const roleId = projectIndex(p).annotations.get(id)!.parentRole;
+    const roleName = roleId === null ? '' : this.roleName(p, id);
+    const project = setAnnotationParent(p, id, ownerId);
+    const where =
+      ownerId === null
+        ? 'sem dona'
+        : `dona ${annotationShortLabel(project, projectIndex(project).annotations.get(ownerId)!)}`;
+    const cleared =
+      roleId !== null &&
+      roleUnset &&
+      projectIndex(project).annotations.get(id)!.parentRole === null;
+    if (!cleared) return { project, change: where };
+    const reason =
+      ownerId === null ? 'a anotação fica sem dona' : 'a nova dona não o oferece';
+    return {
+      project,
+      change: `${where}; papel ${quoted(roleName)} limpo`,
+      roleCleared: {
+        annotationId: id,
+        role: roleId,
+        roleName,
+        message: `o papel ${quoted(roleName)} de ${this.annotationLabel(p, id)} é limpo: ${reason}`,
+      },
     };
   }
 }

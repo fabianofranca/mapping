@@ -13,7 +13,14 @@ interface Plan {
   errors?: { index: number; op: string; code: string; message: string }[];
   changes: Record<string, { created: number; updated: number; deleted: number }>;
   issues: { new: { codes?: string[]; issues?: { code: string }[] }[] };
-  warnings?: { code: string }[];
+  warnings?: {
+    code: string;
+    op?: number;
+    annotation?: string;
+    role?: string;
+    roleName?: string;
+    message?: string;
+  }[];
 }
 
 let ws: RoleWorkspace;
@@ -154,6 +161,93 @@ describe('update_annotation com role', () => {
       ]),
     );
     expect(result.valid).toBe(true);
+  });
+});
+
+describe('aviso role-cleared: a troca de dono que limpa o papel', () => {
+  const cleared = (r: Plan) =>
+    (r.warnings ?? []).filter((w) => w.code === 'role-cleared');
+  // Testes anteriores gravam alterações em C1 e C2: o passo 0 põe o papel de C1 de volta.
+  const clickOnC1 = () => ({
+    op: 'update_annotation',
+    annotation: ws.ref('C1'),
+    role: 'click',
+  });
+
+  it('dona que não oferece o papel: nota no passo e um aviso estruturado', async () => {
+    const result = ok(
+      await plan([
+        clickOnC1(),
+        { op: 'update_annotation', annotation: ws.ref('C1'), owner: ws.ref('A3') },
+      ]),
+    );
+    expect(result.valid).toBe(true);
+    expect(result.summary[1]).toMatch(/dona .*; papel "Clique" limpo$/);
+    expect(cleared(result)).toEqual([
+      {
+        code: 'role-cleared',
+        op: 1,
+        annotation: ws.ref('C1'),
+        role: 'click',
+        roleName: 'Clique',
+        message: expect.stringMatching(
+          /^o papel "Clique" de .* é limpo: a nova dona não o oferece$/,
+        ),
+      },
+    ]);
+  });
+
+  it('owner null num filho sem requiresOwner: sem dona e o aviso diz isso', async () => {
+    const result = ok(
+      await plan([
+        clickOnC1(),
+        { op: 'update_annotation', annotation: ws.ref('C1'), owner: null },
+      ]),
+    );
+    expect(result.valid).toBe(true);
+    expect(result.summary[1]).toMatch(/sem dona; papel "Clique" limpo$/);
+    const [warning] = cleared(result);
+    expect(cleared(result)).toHaveLength(1);
+    expect(warning).toMatchObject({ op: 1, annotation: ws.ref('C1'), role: 'click' });
+    expect(warning!.message).toMatch(/é limpo: a anotação fica sem dona$/);
+  });
+
+  it('sem aviso: sem papel antes, dona que oferece o mesmo papel, ou role no mesmo passo', async () => {
+    const result = ok(
+      await plan([
+        { op: 'update_annotation', annotation: ws.ref('C2'), owner: ws.ref('A3') },
+        clickOnC1(),
+        { op: 'update_annotation', annotation: ws.ref('C1'), owner: ws.ref('A2') },
+        {
+          op: 'update_annotation',
+          annotation: ws.ref('C1'),
+          owner: ws.ref('A3'),
+          role: 'tap',
+        },
+        {
+          op: 'update_annotation',
+          annotation: ws.ref('C1'),
+          owner: ws.ref('A1'),
+          role: 'click',
+        },
+        { op: 'update_annotation', annotation: ws.ref('C1'), owner: null, role: null },
+      ]),
+    );
+    expect(result.valid).toBe(true);
+    expect(cleared(result)).toEqual([]);
+    for (const line of result.summary) expect(line).not.toContain('limpo');
+  });
+
+  it('o propose_changes avisa igual e continua gravando a proposta', async () => {
+    const proposed = await propose(mcp, ws.project, [
+      clickOnC1(),
+      { op: 'update_annotation', annotation: ws.ref('C1'), owner: ws.ref('A3') },
+    ]);
+    expect(proposed.valid).toBe(true);
+    expect(proposed.proposed).toBe(true);
+    expect(proposed.summary[1]).toMatch(/; papel "Clique" limpo$/);
+    const warnings = (proposed as unknown as Plan).warnings ?? [];
+    expect(warnings.filter((w) => w.code === 'role-cleared')).toHaveLength(1);
   });
 });
 
