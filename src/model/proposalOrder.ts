@@ -6,28 +6,31 @@ import type { Marking } from './types';
 // (`patchProject`), para o aplicado ter a ordem do projeto proposto.
 
 /**
- * Âncora de cada marcação criada no projeto proposto: o id da primeira marcação **depois** dela
- * que já existia na base (ela continua no proposto, então a proposta não a remove). Sem uma,
- * a criada vai para o fim e não aparece no mapa.
+ * Âncora de partida de cada marcação criada no projeto proposto: o id da primeira marcação
+ * **depois** dela que já existia na base (ela continua no proposto, então a proposta não a
+ * remove). Sem uma, a criada vai para o fim e não aparece no mapa. O mapa sai na ordem do array
+ * (crescente). A âncora final, que respeita os empates, é a de `proposalAnchors`.
  */
 export function insertAnchors(
   baseIds: ReadonlySet<string>,
   afterMarkings: readonly Marking[],
 ): Map<string, string> {
-  const anchors = new Map<string, string>();
+  const found: [string, string][] = [];
   let next: string | undefined;
   for (let i = afterMarkings.length - 1; i >= 0; i--) {
     const m = afterMarkings[i] as Marking;
     if (baseIds.has(m.id)) next = m.id;
-    else if (next !== undefined) anchors.set(m.id, next);
+    else if (next !== undefined) found.push([m.id, next]);
   }
-  return anchors;
+  return new Map(found.reverse());
 }
 
 /**
  * Põe cada marcação criada (que `markings` traz no fim, na ordem das mudanças) antes da
  * âncora, se a âncora estiver na lista; sem âncora, ou com ela fora da lista, a criada fica no
- * fim. Várias criadas com a mesma âncora ficam na ordem recebida (`anchors` é lido na ordem).
+ * fim. `anchors` é lido na ordem: as criadas com a mesma âncora entram na ordem do mapa, que é a
+ * do proposto (as mudanças, em `anchorsOfChanges`, e o array, em `insertAnchors` e
+ * `proposalAnchors`).
  */
 export function placeCreatedMarkings(
   markings: readonly Marking[],
