@@ -755,10 +755,8 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
 
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     const text = String(writeText.mock.calls[0]?.[0]);
-    // Etapa 6 (6.4), achado 6: imagem sem nome com o mesmo texto do `resolve` do MCP.
-    expect(text).toBe(
-      `mapping://projeto/m/m2 (lateral.jpg${t('marking.pathSeparator')}Porta${t('marking.pathSeparator')}Maçaneta)`,
-    );
+    // Só a URL: sem o caminho legível (etapa referencia-url, decisão 1).
+    expect(text).toBe('mapping://projeto/m/m2');
     expect(parseRef(text)).toEqual({ project: 'projeto', kind: 'm', code: 'm2' });
     await vi.waitFor(() =>
       expect(s.harness.ui.toast.value).toBe(t('copy.referenceDone')),
@@ -800,6 +798,7 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     const data = JSON.parse(await item.data[`web ${ITEM_CLIPBOARD_MIME}`]!.text());
     expect(data).toMatchObject({ format: 'mapping-item', kind: 'm', project: 'projeto' });
     expect(data.item.id).toBe('M1');
+    expect(data.ref).toMatch(/^mapping:\/\/projeto\/m\/[0-9a-z]+$/);
     expect(await item.data['text/plain']!.text()).toBe(data.ref);
   });
 

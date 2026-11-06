@@ -14,8 +14,11 @@ import {
   addContainer,
   applySpecialization,
   createProject,
+  formatRef,
   parseSpecText,
   serialize,
+  shortCode,
+  type Project,
 } from '../../src/model';
 import { runBatch, type BatchResult } from '../../mcp/batch';
 import { MODEL_ERROR_HINTS, modelToolError } from '../../mcp/modelErrors';
@@ -145,18 +148,27 @@ describe('rect-too-small', () => {
   });
 });
 
+/** `mapping://telas/i/<código>` do container, como o MCP o devolve. */
+function containerRef(project: Project, id: string): string {
+  return formatRef({ project: 'telas', kind: 'i', code: shortCode(project, 'i', id) });
+}
+
 describe('image-overlap', () => {
   it('update_container que cresce sobre outro diz qual, pela referência', async () => {
-    const result = await run([
-      ENTRAR,
-      SAIR,
-      { op: 'update_container', container: '$a', width: 5000 },
-    ]);
+    const setup = await run([ENTRAR, SAIR]);
+    const [entrar, sair] = setup.created;
+    const result = await runBatch(
+      { ...loaded, project: setup.project },
+      [{ op: 'update_container', container: entrar!.id, width: 5000 }],
+      io,
+    );
     expect(result.errors).toHaveLength(1);
     const error = result.errors[0]!;
     expect(error.code).toBe('image-overlap');
-    expect(String(error.detail)).toContain('Sair');
-    expect(String(error.detail)).not.toContain('Entrar');
+    // Só a URL do outro container (sem o nome entre parênteses), nunca a do que cresce.
+    expect(error.detail).toBe(
+      `sobrepõe o container ${containerRef(setup.project, sair!.id)}`,
+    );
     expect(String(error.hint)).toMatch(/x.*y.*scale/);
   });
 
@@ -178,8 +190,9 @@ describe('image-overlap', () => {
     expect(result.errors).toHaveLength(1);
     const error = result.errors[0]!;
     expect(error.code).toBe('image-overlap');
-    expect(String(error.detail)).toContain('Entrar');
-    expect(String(error.detail)).not.toContain('Sair');
+    expect(error.detail).toBe(
+      `sobrepõe o container ${containerRef(setup.project, entrar.id)}`,
+    );
   });
 });
 

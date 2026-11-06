@@ -265,7 +265,7 @@ function lossView(refs: Refs, loss: MigrationLoss): Json {
     reason: loss.reason,
     message: LOSS_TEXT[loss.reason](field),
     annotation: refs.ref('a', loss.annotationId),
-    marking: refs.bare('m', loss.markingId),
+    marking: refs.ref('m', loss.markingId),
     markingLabel: refs.label('m', loss.markingId),
     ...(loss.typeId === '' ? {} : { typeId: loss.typeId }),
     ...(loss.field === undefined ? {} : { field: loss.field }),

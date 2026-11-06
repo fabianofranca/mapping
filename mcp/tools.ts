@@ -128,7 +128,7 @@ const optionalProjectArg = projectArg
 const refArg = z
   .string()
   .describe(
-    'Referência copiada da app (`mapping://projeto/m/3f2a9c1e (caminho)`), `m/3f2a9c1e` (com `project`) ou o id completo.',
+    'Referência copiada da app (`mapping://projeto/m/3f2a9c1e`, só a URL, com o projeto codificado), `m/3f2a9c1e` (com `project`) ou o id completo.',
   );
 
 const proposalRefArg = z
@@ -471,7 +471,7 @@ export function registerTools(
     'resolve',
     {
       description:
-        'Descobre o que uma referência designa (marcação, container ou anotação; a letra `i` da referência é o container) e devolve a referência completa, com o caminho legível. Use antes de get_* quando não souber o tipo.',
+        'Descobre o que uma referência designa (marcação, container ou anotação; a letra `i` da referência é o container) e devolve a referência (só a URL) e o caminho legível em campos à parte. Use antes de get_* quando não souber o tipo.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },

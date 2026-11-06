@@ -198,7 +198,7 @@ test('Detalhes: copiar referência e copiar recorte ao lado do ID', async ({
   await page.getByRole('button', { name: 'Copiar referência' }).first().click();
   await expect(toast(page, 'Referência copiada')).toBeVisible();
   const code = marking.id.replaceAll('-', '').slice(0, 8);
-  expect(await clipboardText(page)).toContain(`mapping://${FOLDER}/m/${code} (`);
+  expect(await clipboardText(page)).toContain(`mapping://${FOLDER}/m/${code}`);
 
   await page.getByRole('button', { name: 'Copiar recorte' }).click();
   await expect(toast(page, 'Recorte copiado')).toBeVisible();
@@ -232,7 +232,7 @@ test('menu da linha da Árvore (desktop) copia a referência', async ({
   await page.getByRole('button', { name: /^Ações de images\/tela\.webp/ }).click();
   await page.getByRole('menuitem', { name: 'Copiar referência' }).click();
   await expect(toast(page, 'Referência copiada')).toBeVisible();
-  expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/i\/[0-9a-f]{8} \(/);
+  expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/i\/[0-9a-f]{8}$/);
 });
 
 test('botão direito no canvas seleciona o item e abre o menu de cópia', async ({
@@ -251,7 +251,7 @@ test('botão direito no canvas seleciona o item e abre o menu de cópia', async 
   await menu.getByRole('menuitem', { name: 'Copiar referência' }).click();
   await expect(menu).toBeHidden();
   await expect(toast(page, 'Referência copiada')).toBeVisible();
-  expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/m\/[0-9a-f]{8} \(/);
+  expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/m\/[0-9a-f]{8}$/);
 });
 
 test('Ajuda → Atalhos lista os dois atalhos de copiar', async ({ page }) => {
