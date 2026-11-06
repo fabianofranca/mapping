@@ -94,3 +94,58 @@ export function droppedNoteOrigin(p: Proposal, noteId: string): Change | null {
   }
   return null;
 }
+
+/**
+ * Ids das mudanças que uma revisão que a pessoa ainda não viu trocou ou acrescentou: as
+ * revisões de `current` além das que `seen` já tinha. Base da guarda da decisão na app
+ * (etapa #644, decisão 8): decidir uma delas é recusado até a sessão adotar a versão nova.
+ */
+export function unseenRevisedIds(seen: Proposal, current: Proposal): ReadonlySet<string> {
+  const known = seen.revisions?.length ?? 0;
+  const fresh = (current.revisions ?? []).slice(known);
+  if (fresh.length === 0) return new Set();
+  const present = new Set(current.changes.map((c) => c.id));
+  const ids = new Set<string>();
+  for (const r of fresh) {
+    for (const id of [...Object.keys(r.changed), ...r.added]) {
+      if (present.has(id)) ids.add(id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * A revisão e a mudança retirada de onde a nota de uma mudança que já não existe saiu (ela
+ * sobe ao nível da proposta), ou `null` se a mudança nunca foi retirada.
+ */
+export function droppedEntryOf(
+  p: Proposal,
+  changeId: string,
+): { revisionIndex: number; droppedIndex: number } | null {
+  const revisions = p.revisions ?? [];
+  for (let revisionIndex = revisions.length - 1; revisionIndex >= 0; revisionIndex--) {
+    const droppedIndex =
+      revisions[revisionIndex]?.dropped.findIndex((d) => d.change.id === changeId) ?? -1;
+    if (droppedIndex >= 0) return { revisionIndex, droppedIndex };
+  }
+  return null;
+}
+
+/** Acrescenta o id da nota às notas da mudança retirada (a origem de "Da mudança retirada"). */
+export function withDroppedNote(
+  p: Proposal,
+  where: { revisionIndex: number; droppedIndex: number },
+  noteId: string,
+): Proposal {
+  const revisions = (p.revisions ?? []).map((r, i) =>
+    i !== where.revisionIndex
+      ? r
+      : {
+          ...r,
+          dropped: r.dropped.map((d, j) =>
+            j === where.droppedIndex ? { ...d, notes: [...d.notes, noteId] } : d,
+          ),
+        },
+  );
+  return { ...p, revisions };
+}

@@ -93,7 +93,15 @@ export type MutationPlan<T, E extends string> =
     }
   | { readonly ok: false; readonly error: E };
 
-export type Mutation<T, E extends string> = (p: Proposal) => MutationPlan<T, E>;
+/**
+ * `p` é a versão do disco (a que a mudança parte); `seen`, a que a sessão tinha antes de
+ * reler o arquivo. Quando o agente revisou a proposta por fora, `p.revisions` tem entradas
+ * que `seen` não tem: a guarda da decisão usa a diferença (etapa #644, decisão 8).
+ */
+export type Mutation<T, E extends string> = (
+  p: Proposal,
+  seen: Proposal,
+) => MutationPlan<T, E>;
 
 /** O que a conferência da pasta encontrou (ids). */
 export interface ProposalScan {
@@ -254,6 +262,7 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
       notify('removed', id, entry.proposal.title);
       return { ok: false, error: 'gone' };
     }
+    const seen = entry.proposal;
     if (text !== entry.text) {
       const parsed = parseProposalFile(id, text, await stampOf(id));
       if (!parsed.ok) return { ok: false, error: 'unreadable' };
@@ -262,7 +271,7 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
       publish();
       notify('changed', id, parsed.proposal.title);
     }
-    const plan = mutation(entry.proposal);
+    const plan = mutation(entry.proposal, seen);
     if (!plan.ok) return { ok: false, error: plan.error };
     if (plan.before) {
       const error = await plan.before();
