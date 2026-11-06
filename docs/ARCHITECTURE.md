@@ -108,8 +108,13 @@ limites); `toCanvasRect`/`fromCanvasRect` (`geometry.ts`) convertem de um para o
 idempotente, devolve o mesmo objeto se nada muda) o recalcula pela geometria e, antes, decide o espaço de cada marcação
 não flutuante (o container que a contém inteira, senão o canvas; se mudou, converte o `rect` e as descendentes vão junto).
 As regras estão em [`FORMAT.md`](FORMAT.md), "Campos da v13 (pertencimento)": dentro é totalmente contido, o pai é a menor do
-mesmo espaço (empate de área pelo array), o pai do container é a menor marcação do canvas que o contém, e as flutuantes ficam
-fora da árvore. Os membros (`membersOf`, `projectIndex.members`/`canvasRoots`) saem do `parentId` e nunca são gravados.
+mesmo espaço, o pai do container é a menor marcação do canvas que o contém, e as flutuantes ficam fora da árvore. Nos empates
+(retângulos iguais; candidatas de mesma área a pai, também para o container) **a relação atual vale** e a ordem do array só
+decide o empate novo: dentro de um grupo de retângulos iguais a ordem de fora para dentro é a ordenação topológica dos
+`parentId` atuais (o pai antes do filho; entre as livres, a que vem antes no array; quem não tem pai no grupo entra pelo array;
+ciclo é quebrado pela que vem antes), e entre candidatas de mesma área o `parentId` atual fica se for uma delas (de cada grupo
+conta só a de dentro), senão ganha a que vem por último. Reordenar irmãs nunca muda pais, nem no assentar seguinte; o assentar
+continua determinístico, idempotente e sem mudar a ordem dos arrays, mas o resultado depende do `parentId` atual nos empates. Os membros (`membersOf`, `projectIndex.members`/`canvasRoots`) saem do `parentId` e nunca são gravados.
 
 **Quando assenta.** No fim de **toda** operação do modelo que mexe na geometria (desenhar, mover, redimensionar marcação,
 mover/redimensionar/trocar/excluir container, aplicar proposta: `applyAccepted` assenta depois do patch). **Não** assenta na
@@ -183,9 +188,10 @@ texto; senão o evento segue para o navegador.
   container pode ser filho de uma marcação do canvas).
 - **Retângulo:** o que envolve tudo, com margem de `MIN_MARKING_SIZE` (8 px) de cada lado, limitado ao container e ao **pai atual**
   do conjunto, para a nova nunca tirar o conjunto de dentro do pai que ele já tinha.
-- **Posição no array:** antes da primeira marcação selecionada, para ganhar o desempate de área igual (se o retângulo final
-  igualar o do pai atual e o pai vier depois, entra logo depois dele). Marcações não selecionadas que caem dentro do retângulo
-  também passam a ser filhas: é a geometria.
+- **Posição no array:** antes da primeira marcação selecionada. A nova não tem relação com as selecionadas, então o empate de
+  retângulo igual com elas é novo e o array decide: a de antes é a de fora. Se o retângulo final igualar o do **pai atual**, a
+  nova nasce com ele de `parentId`, e a relação atual o mantém de fora mesmo que ele venha depois no array. Marcações não
+  selecionadas que caem dentro do retângulo também passam a ser filhas: é a geometria.
 - **Depois:** uma entrada de desfazer; a nova fica selecionada sozinha, sem nome e sem anotações. A trava não impede, porque
   nenhuma geometria existente muda, só o `parentId`.
 
