@@ -152,9 +152,10 @@ export interface Change {
   readonly from: JsonValue;
   readonly to: JsonValue;
   /**
-   * Só na criação de marcação (formatVersion 4): o id da primeira marcação depois da criada, no
-   * projeto proposto, que já existia na base. Ausente ou `null`: a criada vai para o fim. Uma
-   * âncora que não está na base ao aplicar (removida, ou inexistente) também manda para o fim.
+   * Só na criação de marcação (formatVersion 4): o id de uma marcação da base antes da qual a
+   * criada entra no array do aplicador, escolhida (`proposalAnchors`) para os empates saírem
+   * como no proposto. Ausente ou `null`: a criada vai para o fim. Uma âncora que não está na
+   * base ao aplicar (removida, ou inexistente) também manda para o fim.
    */
   readonly insertBefore?: string | null;
 }

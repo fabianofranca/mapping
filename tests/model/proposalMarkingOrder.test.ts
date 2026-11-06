@@ -211,6 +211,33 @@ describe('proposta: várias reordenações e duas criadas na mesma âncora (#549
     );
   });
 
+  it('dois position da mesma marcação: nenhuma duplicada nem perdida, vale o último', () => {
+    let base = sampleProject();
+    ['A', 'B', 'D', 'E'].forEach((id, i) => {
+      base = createMarking(base, {
+        id,
+        containerId: 'I2',
+        rect: { x: 200 + i * 100, y: 0, width: 90, height: 90 },
+      });
+    });
+    const siblings = (p: Project) =>
+      p.markings
+        .filter((m) => m.containerId === 'I2' && m.parentId === null)
+        .map((m) => m.id);
+    const first = siblingPosition(base, 'A').index;
+    const p = propose(base, reorderMarking(base, 'E', first));
+    const toFirst = changeOf(p, 'marking', 'E', 'position');
+    const toThird = { ...toFirst, id: `${toFirst.id}-2`, to: first + 2 };
+    const applied = patchProject(base, [toFirst, toThird]);
+    expect(applied.problems).toEqual([]);
+    expect(siblings(applied.project)).toEqual(
+      siblings(reorderMarking(base, 'E', first + 2)),
+    );
+    expect([...applied.project.markings.map((m) => m.id)].sort()).toEqual(
+      base.markings.map((m) => m.id).sort(),
+    );
+  });
+
   it('duas criadas antes da mesma âncora não trazem position', () => {
     const base = row(['P', 'Q', 'R']);
     let after = createMarking(base, {

@@ -255,7 +255,7 @@ function withField(
  * assentados), todos juntos (etapa #549, decisão 4): tira do grupo as reposicionadas e as põe de
  * volta em ordem crescente de `to`, cada uma no índice `to` entre as irmãs, preso ao intervalo
  * válido. As irmãs ocupam as mesmas casas do array (como `reorderMarking`). Uma mudança sozinha
- * dá o mesmo que `reorderMarking`.
+ * dá o mesmo que `reorderMarking`; duas para a mesma marcação, a última vale.
  */
 function placeAmongSiblings(markings: Marking[], changes: readonly Change[]): void {
   const byGroup = new Map<string, Change[]>();
@@ -274,13 +274,18 @@ function placeGroup(
   group: readonly Change[],
   byId: ReadonlyMap<string, Marking>,
 ): void {
+  // Duas mudanças para a mesma marcação: vale a última, como na aplicação uma a uma; sem isso
+  // ela entraria duas vezes e outra irmã sairia do array.
+  const latest = new Map(group.map((c) => [c.entityId, c]));
   const first = byId.get((group[0] as Change).entityId) as Marking;
-  const moved = new Set(group.map((c) => c.entityId));
+  const moved = new Set(latest.keys());
   const siblings = markings.filter(
     (m) => m.parentId === first.parentId && m.containerId === first.containerId,
   );
   const order = siblings.filter((m) => !moved.has(m.id));
-  for (const c of [...group].sort((a, b) => (a.to as number) - (b.to as number))) {
+  for (const c of [...latest.values()].sort(
+    (a, b) => (a.to as number) - (b.to as number),
+  )) {
     order.splice(
       Math.min(c.to as number, order.length),
       0,
