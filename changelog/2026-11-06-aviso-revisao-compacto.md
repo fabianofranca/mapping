@@ -1,4 +1,4 @@
-# Avisos da revisão numa linha — [Não lançado] (épico `epic/aviso-revisao-compacto`, PR #0, MCP 0.19.0, schema v14)
+# Avisos da revisão numa linha — 2026-11-06 (épico `epic/aviso-revisao-compacto`, PR #643, MCP 0.22.0, schema v14)
 
 ## Alterado
 
