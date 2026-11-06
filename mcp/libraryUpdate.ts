@@ -200,8 +200,11 @@ export function updateSummary(impact: SpecUpdateImpact): string[] {
     }
     parts.push(migration.join(', '));
   }
-  const lost = valueLosses(impact.losses);
+  const unlinked = impact.losses.filter((l) => l.reason === 'unlinked').length;
+  const lost = valueLosses(impact.losses) - unlinked;
   if (lost > 0) parts.push(plural(lost, 'valor perdido', 'valores perdidos'));
+  if (unlinked > 0)
+    parts.push(plural(unlinked, 'vínculo desfeito', 'vínculos desfeitos'));
   if (impact.pending.length > 0) {
     parts.push(plural(impact.pending.length, 'pendência nova', 'pendências novas'));
   }
@@ -211,7 +214,7 @@ export function updateSummary(impact: SpecUpdateImpact): string[] {
   return parts;
 }
 
-/** Perdas de valor (a anotação apagada por `remove-type` já conta em `deleted`). */
+/** Perdas de valor, papel limpo e vínculo desfeito (a anotação apagada por `remove-type` já conta em `deleted`). */
 function valueLosses(losses: readonly MigrationLoss[]): number {
   return losses.filter((l) => l.reason !== 'removed-type').length;
 }
@@ -250,6 +253,8 @@ const LOSS_TEXT: Record<MigrationLossReason, (field: string) => string> = {
   'replaced-value': (field) =>
     `o valor de "${field}" não vale mais no tipo do campo e é trocado pelo padrão`,
   'overwritten-value': (field) => `o campo "${field}" já tinha valor e é sobrescrito`,
+  'cleared-role': () => 'a anotação perde o papel no vínculo e continua vinculada',
+  unlinked: () => 'a anotação sai do vínculo com a dona',
 };
 
 function previewValue(value: JsonValue): JsonValue {
@@ -265,9 +270,10 @@ function lossView(refs: Refs, loss: MigrationLoss): Json {
     reason: loss.reason,
     message: LOSS_TEXT[loss.reason](field),
     annotation: refs.ref('a', loss.annotationId),
-    marking: refs.bare('m', loss.markingId),
+    marking: refs.ref('m', loss.markingId),
     markingLabel: refs.label('m', loss.markingId),
     ...(loss.typeId === '' ? {} : { typeId: loss.typeId }),
+    ...(loss.role === undefined ? {} : { role: loss.role }),
     ...(loss.field === undefined ? {} : { field: loss.field }),
     ...(loss.rowId === undefined ? {} : { rowId: loss.rowId }),
     ...(loss.value === undefined ? {} : { value: previewValue(loss.value) }),
@@ -299,6 +305,7 @@ function stepViews(refs: Refs, impact: SpecUpdateImpact): Json[] {
     converted: s.converted,
     deleted: s.deleted,
     refs: s.refs,
+    unlinked: s.unlinked,
     lossCount: s.losses.length,
     losses: s.losses.slice(0, MAX_STEP_LOSSES).map((l) => lossView(refs, l)),
   }));
@@ -360,7 +367,7 @@ function updateHint(impact: SpecUpdateImpact, valid: boolean): string {
   }
   if (impact.refused) {
     steps.push(
-      `declare \`migrations\` para cada quebra em \`missingMigrations\` (um passo rename-*, remove-*, map-values ou fill-field por quebra) e rode plan_library_update de novo; update_specialization é recusado enquanto faltar`,
+      `declare \`migrations\` para cada quebra em \`missingMigrations\` (um passo por quebra: rename-type, remove-type, rename-field, remove-field, map-values, fill-field, rename-role, remove-role ou set-role) e rode plan_library_update de novo; update_specialization é recusado enquanto faltar`,
     );
   } else if (impact.additive) {
     steps.push(

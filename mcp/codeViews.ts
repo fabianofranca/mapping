@@ -204,7 +204,7 @@ function hintAnnotation(
     annotation.annotationId,
   )?.parentRole;
   return {
-    ref: refs.bare('a', annotation.annotationId),
+    ref: refs.ref('a', annotation.annotationId),
     type: `${annotation.specId}/${annotation.typeId}`,
     label: annotation.label,
     layer: annotation.layer,
@@ -228,12 +228,11 @@ function hintNode(
   node: BlueprintNode,
   refs: Refs,
   codes: ReadonlyMap<string, Json>,
-  root: boolean,
 ): Json {
   const annotations = node.annotations.map((a) => hintAnnotation(a, refs, codes));
-  const children = node.children.map((c) => hintNode(c, refs, codes, false));
+  const children = node.children.map((c) => hintNode(c, refs, codes));
   return {
-    ref: root ? refs.ref('m', node.markingId) : refs.bare('m', node.markingId),
+    ref: refs.ref('m', node.markingId),
     name: node.name,
     rect: node.rect,
     ...(annotations.length > 0 ? { annotations } : {}),
@@ -320,6 +319,6 @@ export async function codeHintsView(
           hint: 'tipos em `unmappedTypes` não têm `code` nesta plataforma na especialização: não há código de instanciação mapeado para eles',
         }
       : {}),
-    tree: hintNode(blueprint.root, refs, codes, true),
+    tree: hintNode(blueprint.root, refs, codes),
   };
 }

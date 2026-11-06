@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 11)
+# Formato da especialização (`formatVersion` 1 a 12)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo; na 12, os passos de migração dos papéis). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -10,7 +10,8 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - Uma especialização **não cita outra pelo nome**. A ligação entre elas é feita por **referências fortes** (tipo `ref`) que escolhem os alvos por **etiquetas**.
 - Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
 - A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido. A cópia mantém a `formatVersion` com que foi aplicada.
-- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 11; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 12 é a 11 mais três **passos de migração dos papéis**, em `migrations`: `rename-role`, `remove-role` e `set-role` (ver "Contrato de versão" e "Papéis no vínculo (childRoles)"). Antes dela, tirar um papel de `childRoles` deixava `parentRole` das anotações apontando para um papel que não existe mais; a 12 trata essa troca como **quebra** e a cobre com um passo que renomeia, remove ou preenche o papel nas anotações do projeto. A 12 é aditiva: as versões 1 a 11 continuam aceitas sem mudança, e cada passo novo numa versão anterior é o erro `só é permitido com formatVersion 12`, no caminho exato. Só sobe para a 12 a especialização que declara algum desses passos. Uma v11 que remove ou torna obrigatório o papel de um tipo, sem o passo, é recusada na atualização até subir para a 12 com ele.
+- A `formatVersion` 2 liga a especialização ao código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 12; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
@@ -74,7 +75,7 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `11`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `12`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
@@ -275,8 +276,8 @@ Um dono às vezes liga o mesmo tipo de filho em **pontos diferentes** dele: o Bu
 - `childRoles`: lista **não vazia** de `{ id, name, description? }`, com `id` não vazio e **único no tipo** e `name` não vazio. O papel pertence ao **vínculo** entre o dono e o filho, não ao filho: o mesmo tipo de filho pode ocupar papéis diferentes no mesmo dono (um `navigate` no clique, outro no pressionar) e em donos diferentes.
 - `childRoles` só vale em um tipo **com `allowedChildren`** (sem filhos não há vínculo para levar papel): em outro caso é erro.
 - `childRolesLabel`: texto não vazio, o nome com que a app chama o seletor do papel ("Trigger", "Slot", "Posição"). Só vale com `childRoles` (senão é erro). Sem ele, a app usa **Papel** (pt-BR) e **Role** (en-US).
-- **Fora do contrato de versão:** incluir, mudar ou tirar `childRoles` e `childRolesLabel` é compatível e nunca pede migração (ver "Contrato de versão"); `diffSpecs` os ignora.
-- Só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `layers[0].annotationTypes[0].childRoles` ou `….childRolesLabel`).
+- **No contrato de versão (toda versão com papéis, da `formatVersion` 11 em diante; o passo que cobre a quebra é da `formatVersion` 12):** o `id` do papel é dado que as anotações guardam (`parentRole`). **Tirar** um papel de um tipo, ou dar `childRoles` a um tipo que não tinha, é **quebra** e pede um passo `rename-role`, `remove-role` ou `set-role` em `migrations`; **acrescentar** um papel a um tipo que já tinha papéis é aditivo (ver "Contrato de versão"). Continuam fora do contrato o `name` e a `description` do papel, a ordem dos `childRoles` e o `childRolesLabel`.
+- Só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `layers[0].annotationTypes[0].childRoles` ou `….childRolesLabel`). Os passos de migração dos papéis (`rename-role`, `remove-role` e `set-role`) são da `formatVersion` 12.
 
 ## Documento em repositório externo (docRepos)
 
@@ -882,12 +883,20 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 **Aditiva** (só acrescenta; atualizar não perde nada):
 
 - um tipo novo, um campo **opcional** novo (coluna incluída), uma opção nova de `enum`;
+- um **papel** novo (`childRoles`) em um tipo que já tinha papéis (`added-role`: as anotações existentes ficam com o papel que tinham);
 - um `component`, um `doc`, um exemplo ou uma fonte novos, ou outro arquivo de componente para o tipo;
 - trocar o **desenho** (o template do componente) sem mudar os campos.
 
 **Quebra** (e só isto): remover ou renomear um **tipo**, um **campo** (ou coluna) ou uma **opção de `enum`**; tornar um campo **obrigatório**, inclusive um campo novo que já nasce obrigatório (os valores existentes ficam incompletos); mudar o `type` de um campo.
 
-**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren` (inclusive a cláusula `{ layer, groups }`), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `groups` (da camada e do tipo), `childRoles`, `childRolesLabel` e `docRepos`, trocar o `doc` entre texto e objeto, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
+**Quebra dos papéis** (comparando o tipo pelo mesmo `id`; vale para toda versão que tem papéis, da 11 em diante):
+
+- `removed-role`: um papel de `childRoles` que sumiu, inclusive o tipo que perde todos. As anotações guardam o `id` do papel em `parentRole`, e esse `id` deixa de existir.
+- `roles-required`: um tipo que não tinha `childRoles` e passou a ter. Os filhos que já estavam vinculados ficam sem papel, e agora o dono pede um.
+
+Uma v11 que remove um papel é recusada até subir para a `formatVersion` 12 com o passo que o cobre. **Dono renomeado:** quando o tipo foi renomeado (`rename-type`), os papéis **não** são comparados entre o tipo antigo e o novo; um papel que as anotações usam e que não existe no tipo novo vira `unknown-role` ao migrar, e o autor pode declarar `rename-role` com o `id` novo, **depois** do `rename-type`.
+
+**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren` (inclusive a cláusula `{ layer, groups }`), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `groups` (da camada e do tipo), o `name` e a `description` de um papel, a ordem dos `childRoles`, `childRolesLabel` e `docRepos`, trocar o `doc` entre texto e objeto, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
 
 ### `migrations`
 
@@ -917,19 +926,23 @@ Toda quebra precisa de uma entrada em `migrations` na raiz da versão nova. Cada
 }
 ```
 
-`from` é um inteiro ≥ 1; `to` é maior que `from` e não passa de `version`; `steps` não é vazia; nenhum `from` se repete. Os seis passos e a quebra que cada um cobre:
+`from` é um inteiro ≥ 1; `to` é maior que `from` e não passa de `version`; `steps` não é vazia; nenhum `from` se repete. Os nove passos e a quebra que cada um cobre (os três últimos, dos papéis, são da `formatVersion` 12):
 
-| Passo (`op`)   | Chaves                     | Cobre a quebra                                                                                                                                                                                                 |
-| -------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rename-type`  | `from`, `to`               | tipo removido (`from` é o tipo que saiu; `to` existe na versão nova).                                                                                                                                          |
-| `remove-type`  | `type`, `mode`             | tipo removido. `mode` (`convert` ou `delete`) diz o destino das anotações do tipo.                                                                                                                             |
-| `rename-field` | `type`, `from`, `to`       | campo removido (`from` é o que saiu; `to` existe no tipo).                                                                                                                                                     |
-| `remove-field` | `type`, `field`            | campo removido (o tipo continua existindo).                                                                                                                                                                    |
-| `map-values`   | `type`, `field`, `values`  | opção de `enum` removida: cada chave de `values` é uma opção antiga e o destino é uma `option` atual.                                                                                                          |
-| `fill-field`   | `type`, `field`, `default` | campo que passou a obrigatório, campo novo obrigatório **ou** `type` trocado: o `default` (texto ou número, válido para o tipo do campo) entra no lugar; no `type` trocado os valores antigos são descartados. |
+| Passo (`op`)   | Chaves                       | Cobre a quebra                                                                                                                                                                                                 |
+| -------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rename-type`  | `from`, `to`                 | tipo removido (`from` é o tipo que saiu; `to` existe na versão nova).                                                                                                                                          |
+| `remove-type`  | `type`, `mode`               | tipo removido. `mode` (`convert` ou `delete`) diz o destino das anotações do tipo.                                                                                                                             |
+| `rename-field` | `type`, `from`, `to`         | campo removido (`from` é o que saiu; `to` existe no tipo).                                                                                                                                                     |
+| `remove-field` | `type`, `field`              | campo removido (o tipo continua existindo).                                                                                                                                                                    |
+| `map-values`   | `type`, `field`, `values`    | opção de `enum` removida: cada chave de `values` é uma opção antiga e o destino é uma `option` atual.                                                                                                          |
+| `fill-field`   | `type`, `field`, `default`   | campo que passou a obrigatório, campo novo obrigatório **ou** `type` trocado: o `default` (texto ou número, válido para o tipo do campo) entra no lugar; no `type` trocado os valores antigos são descartados. |
+| `rename-role`  | `type`, `from`, `to`         | `removed-role`: papel renomeado (`type` é o tipo **dono**; `from` é o papel que saiu; `to` existe no tipo). Se `to` já existia na versão anterior, os dois papéis se **juntam**.                               |
+| `remove-role`  | `type`, `role`, `mode`       | `removed-role`: papel removido (o tipo pode até não ter mais `childRoles`). `mode` (`clear` ou `unlink`) diz o destino dos filhos que usavam o papel.                                                          |
+| `set-role`     | `type`, `role`, `childType?` | `roles-required`: tipo que passou a ter `childRoles`. Dá o papel `role` aos filhos **sem papel** do dono (só aos do tipo `childType`, quando vem).                                                             |
 
+- **Papéis (v12).** Nos três passos de papel, `type` é o tipo do **dono** (o que tem `childRoles`), identificado pelo `id` que ele tem **naquele ponto da cadeia**: depois de um `rename-type` do dono, o id novo. `rename-role` e `set-role` só preenchem ou trocam o papel e nunca removem filho; `set-role` **preenche e nunca sobrescreve** (um filho que já tem papel fica como está). O `childType` do `set-role` pode ser um id antigo quando o passo vem **antes** do `rename-type` do filho. Cobertura: `removed-role` de um papel `r` do tipo `T` é coberto por `rename-role` com `type: T, from: r` ou por `remove-role` com `type: T, role: r`; `roles-required` de `T` é coberto por qualquer `set-role` com `type: T` (os filhos que nenhum passo alcança ficam com a pendência `missing-role`). Uma especialização v11 só declara esses passos depois de subir para a 12.
 - A chave de campo de um passo (`field`, `from`, `to`) é a `key` do campo **ou** `tabela.coluna`: a coluna de uma `table` também guarda dados, então mudar uma coluna (remover, trocar o `type`, torná-la obrigatória) é quebra e é coberta pelo mesmo passo.
-- O arquivo é conferido sozinho (nível 1 do validador): o **lado novo** do passo existe na versão (`rename-type.to` é um tipo daqui; o campo `to`/`field` existe no tipo; os destinos de `map-values` estão nas `options` de um campo `enum`; o `default` de `fill-field` é válido para o campo) e o **lado antigo** não existe mais (`rename-type.from`, `remove-type.type` não são tipos desta versão; `rename-field.from` e `remove-field.field` não são campos do tipo). Que o lado antigo existia na versão anterior é conferido quando se compara duas versões.
+- O arquivo é conferido sozinho (nível 1 do validador): o **lado novo** do passo existe na versão (`rename-type.to` é um tipo daqui; o campo `to`/`field` existe no tipo; os destinos de `map-values` estão nas `options` de um campo `enum`; o `default` de `fill-field` é válido para o campo) e o **lado antigo** não existe mais (`rename-type.from`, `remove-type.type` não são tipos desta versão; `rename-field.from` e `remove-field.field` não são campos do tipo). Que o lado antigo existia na versão anterior é conferido quando se compara duas versões. Nos passos de papel: `rename-role.type` é um tipo desta versão **com** `childRoles`, `to` é um papel dele e `from` não é; `remove-role.type` é um tipo desta versão (pode não ter mais `childRoles`), `role` não é papel dele e `mode` é `clear` ou `unlink`; `set-role.type` tem `childRoles`, `role` é um papel dele e `childType`, quando vem, só confere o formato de id (um tipo que não existe é um no-op). Na comparação (nível 2) um `rename-role.from` ou `remove-role.role` que não era papel do tipo na versão anterior (considerando o `rename-type` do dono) é um **aviso**.
 - A **cadeia** liga as entradas por `from → to`, a partir da versão que o projeto aplicou até a `version` nova (`migrationChain`). Uma cadeia rompida (falta a entrada de uma versão) deixa **toda** quebra sem cobertura. `missingMigrations(anterior, nova)` devolve as quebras que nenhum passo da cadeia cobre; lista vazia é contrato cumprido, e `migrationFor` diz que passo cobre uma quebra.
 - O validador da biblioteca (nível 2) usa o contrato quando recebe a versão anterior: cada quebra sem passo vira um **erro**, e uma `version` que não cresceu também.
 
@@ -940,20 +953,25 @@ Ao **atualizar** uma biblioteca aplicada (`updateSpecialization`, na app e no MC
 - **Encadeamento.** A cadeia parte da versão que o projeto aplicou e segue as entradas por `from → to` até a `version` nova; os passos rodam na ordem, e cada um opera sobre o resultado do anterior (o tipo é o que a anotação tem **naquele ponto**, depois dos renomes anteriores). Só as anotações da própria especialização são tocadas. Cadeia rompida (falta uma entrada) ou sem `migrations`: nada roda. Um passo que não acha nada é um no-op.
 - **Perda × pendência.** **Perda** é valor **não vazio** que o passo apagou ou sobrescreveu: aparece em destaque no diálogo antes de atualizar. **Pendência** é dado que a migração não consegue consertar e deixa como está: depois de atualizar ele aparece em **Incompletas**, sem apagar nada.
 
-| Passo          | O que faz nos dados                                                                                                                                                                                                                                                                                | Perda                                                          | Pendência                                                                    |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `rename-type`  | Troca o `typeId` das anotações do tipo. A camada **não** muda.                                                                                                                                                                                                                                     | não                                                            | `layer-mismatch` se a camada do tipo novo é outra                            |
-| `remove-type`  | `convert`: a anotação vira **livre** (os valores viram pares chave-valor, o vínculo fica). `delete`: apaga a anotação **e as vinculadas a ela** (também de outros tipos e livres).                                                                                                                 | só no `delete`: cada anotação apagada                          | `layer-mismatch` no `convert` (ela fica na camada)                           |
-| `rename-field` | Move o valor de `from` para `to`; em campo de nível superior reescreve também as referências (`ref`) do projeto inteiro que apontam para o campo ou para uma linha da tabela dele. Entre formas diferentes (campo × coluna, ou tabelas diferentes) não há como mover: o valor de `from` é apagado. | `to` já tinha valor (sobrescrito) ou a forma não permite mover | não                                                                          |
-| `remove-field` | Apaga a chave de `values` (ou a coluna, em cada linha). Valor vazio não conta como perda.                                                                                                                                                                                                          | valor não vazio                                                | não                                                                          |
-| `map-values`   | Troca o valor antigo da `enum` pelo destino de `values`.                                                                                                                                                                                                                                           | não                                                            | `unknown-option` para o valor que não está em `values` nem nas opções atuais |
-| `fill-field`   | Valor **vazio ou ausente** recebe o `default`. Valor que não vale **nada** no tipo do campo (`invalid-value`, como o texto num campo que virou número) é trocado pelo `default`.                                                                                                                   | só o valor trocado por `invalid-value`                         | `unknown-option` (valor fora das opções) fica como está                      |
+| Passo          | O que faz nos dados                                                                                                                                                                                                                                                                                | Perda                                                                                   | Pendência                                                                                                                |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `rename-type`  | Troca o `typeId` das anotações do tipo. A camada **não** muda.                                                                                                                                                                                                                                     | não                                                                                     | `layer-mismatch` se a camada do tipo novo é outra                                                                        |
+| `remove-type`  | `convert`: a anotação vira **livre** (os valores viram pares chave-valor, o vínculo fica). `delete`: apaga a anotação **e as vinculadas a ela** (também de outros tipos e livres).                                                                                                                 | só no `delete`: cada anotação apagada                                                   | `layer-mismatch` no `convert` (ela fica na camada)                                                                       |
+| `rename-field` | Move o valor de `from` para `to`; em campo de nível superior reescreve também as referências (`ref`) do projeto inteiro que apontam para o campo ou para uma linha da tabela dele. Entre formas diferentes (campo × coluna, ou tabelas diferentes) não há como mover: o valor de `from` é apagado. | `to` já tinha valor (sobrescrito) ou a forma não permite mover                          | não                                                                                                                      |
+| `remove-field` | Apaga a chave de `values` (ou a coluna, em cada linha). Valor vazio não conta como perda.                                                                                                                                                                                                          | valor não vazio                                                                         | não                                                                                                                      |
+| `map-values`   | Troca o valor antigo da `enum` pelo destino de `values`.                                                                                                                                                                                                                                           | não                                                                                     | `unknown-option` para o valor que não está em `values` nem nas opções atuais                                             |
+| `fill-field`   | Valor **vazio ou ausente** recebe o `default`. Valor que não vale **nada** no tipo do campo (`invalid-value`, como o texto num campo que virou número) é trocado pelo `default`.                                                                                                                   | só o valor trocado por `invalid-value`                                                  | `unknown-option` (valor fora das opções) fica como está                                                                  |
+| `rename-role`  | Troca o `parentRole` dos filhos do dono que usavam o papel `from` pelo `to`. Se `to` já existia na versão anterior, os dois papéis se juntam.                                                                                                                                                      | não                                                                                     | não                                                                                                                      |
+| `remove-role`  | `clear`: o filho continua vinculado ao dono e fica sem papel (`parentRole: null`). `unlink`: o filho é desvinculado (`parentAnnotationId: null` e `parentRole: null`) e continua existindo.                                                                                                        | `clear`: `cleared-role` (o papel que estava no valor). `unlink`: `unlinked` (o vínculo) | `clear`: `missing-role` se o dono ainda tem papéis. `unlink`: `missing-owner` quando o tipo do filho tem `requiresOwner` |
+| `set-role`     | Dá o papel `role` aos filhos do dono que **não têm papel**; com `childType`, só aos desse tipo. Preenche e nunca sobrescreve.                                                                                                                                                                      | não (nunca gera perda)                                                                  | não                                                                                                                      |
 
 A chave de campo de um passo é a `key` ou `tabela.coluna`; numa coluna o passo vale para cada linha da tabela.
 
+**Passos de papel (v12).** Os **filhos** do dono são as anotações cujo `parentAnnotationId` aponta para uma anotação da especialização cujo tipo, naquele ponto da cadeia, é o `type` do passo; o filho pode ser de qualquer tipo, de outra especialização ou livre. Invariante: `parentRole` não nulo exige `parentAnnotationId` não nulo. No relatório por passo, `annotations` conta os filhos alterados e `unlinked` conta os desvínculos.
+
 **O que é recusado.** Com especialização v4 ou v5 e a cópia aplicada disponível, `updateSpecialization` **recusa** uma versão com quebra sem passo que a cubra (`spec-missing-migrations`, e na app o botão **Atualizar** fica desabilitado): nada é alterado. As versões 1 a 3 não têm `migrations` e **não são recusadas**: a atualização segue como era (os valores que deixam de valer viram pendência). Sem a cópia aplicada, nada é comparado.
 
-**O que o impacto informa.** `specializationUpdateImpact` (em `src/model/specializations.ts`) devolve `changes`, `breaking`, `missingMigrations`, `migrations` e `comparable` e, com a execução simulada sobre o projeto, `additive` (nenhuma quebra: os dados ficam como estão), `refused` (quebra sem migração), `steps` (o relatório por passo: anotações, valores, convertidas, apagadas e referências), `losses` (cada valor ou anotação que a atualização apaga) e `pending` (o que vira pendência). O diálogo de atualização mostra isso: "Atualização aditiva: os dados ficam como estão.", ou **Passos da migração** com as contagens, as perdas em destaque ("Esta atualização apaga N valor(es) e M anotação(ões).") e as pendências ("N pendência(s) ficam"). Depois de atualizar com pendências, a janela **Incompletas** abre sozinha.
+**O que o impacto informa.** `specializationUpdateImpact` (em `src/model/specializations.ts`) devolve `changes`, `breaking`, `missingMigrations`, `migrations` e `comparable` e, com a execução simulada sobre o projeto, `additive` (nenhuma quebra: os dados ficam como estão), `refused` (quebra sem migração), `steps` (o relatório por passo: anotações, valores, convertidas, apagadas, referências e desvinculadas), `losses` (cada valor, anotação ou vínculo que a atualização apaga: inclui `papel limpo` e `vínculo desfeito`) e `pending` (o que vira pendência). O diálogo de atualização mostra isso: "Atualização aditiva: os dados ficam como estão.", ou **Passos da migração** com as contagens, as perdas em destaque ("Esta atualização apaga N valor(es) e M anotação(ões).", com "e K vínculo(s)" no fim quando há vínculo desfeito) e as pendências ("N pendência(s) ficam"). Depois de atualizar com pendências, a janela **Incompletas** abre sozinha.
 
 ### Exemplos
 
@@ -1084,6 +1102,84 @@ Com `convert`, a anotação de `selo` vira **livre**: `{ "texto": "Novo" }` pass
 
 Com `delete`, a anotação de `selo` é **apagada, e as vinculadas a ela também**. Isso é perda: antes de atualizar o diálogo avisa em destaque "Esta atualização apaga 0 valor(es) e 2 anotação(ões)." (uma por anotação apagada, com a lista de qual marcação e qual nome), e **Desfazer** traz tudo de volta.
 
+**(e) Papéis (`formatVersion` 12).** Na v3 da especialização `loja`, o `button` renomeou o papel `tap` para `click` e deixou de ter o papel `legado`, e o `card`, que não tinha papéis, passou a ter o papel `abrir`. Sem os três passos, a v3 seria recusada (`removed-role` e `roles-required`). Este é um arquivo completo, porque a `formatVersion` 12 é a que aceita os passos:
+
+```json
+{
+  "format": "mapping-spec",
+  "formatVersion": 12,
+  "id": "loja",
+  "name": "Loja",
+  "version": 3,
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "allowedChildren": [{ "layer": "eventos" }],
+          "childRoles": [
+            { "id": "click", "name": "Clique" },
+            { "id": "hold", "name": "Pressionar" }
+          ],
+          "fields": []
+        },
+        {
+          "id": "card",
+          "name": "Card",
+          "allowedChildren": [{ "layer": "eventos" }],
+          "childRoles": [{ "id": "abrir", "name": "Abrir" }],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#43A047",
+      "annotationTypes": [
+        { "id": "navigate", "name": "Navigate", "requiresOwner": true, "fields": [] }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 2,
+      "to": 3,
+      "steps": [
+        { "op": "rename-role", "type": "button", "from": "tap", "to": "click" },
+        { "op": "remove-role", "type": "button", "role": "legado", "mode": "clear" },
+        { "op": "set-role", "type": "card", "role": "abrir", "childType": "navigate" }
+      ]
+    }
+  ]
+}
+```
+
+Num projeto na v2, a atualização muda só o vínculo dos filhos (`parentRole`), nunca o filho em si:
+
+```json
+{
+  "antes": [
+    { "typeId": "navigate", "parentAnnotationId": "<button>", "parentRole": "tap" },
+    { "typeId": "navigate", "parentAnnotationId": "<button>", "parentRole": "legado" },
+    { "typeId": "navigate", "parentAnnotationId": "<card>", "parentRole": null }
+  ],
+  "depois": [
+    { "typeId": "navigate", "parentAnnotationId": "<button>", "parentRole": "click" },
+    { "typeId": "navigate", "parentAnnotationId": "<button>", "parentRole": null },
+    { "typeId": "navigate", "parentAnnotationId": "<card>", "parentRole": "abrir" }
+  ]
+}
+```
+
+- `rename-role` troca `tap` por `click` sem perda nem pendência. Se `click` já existisse na v2, os filhos dos dois papéis passariam a ocupar o mesmo: é assim que se **juntam** dois papéis.
+- `remove-role` com `clear` mantém o filho vinculado e apaga o papel: isso é **perda** (`cleared-role`, o `legado` que estava no valor, mostrada em destaque no diálogo) e, como o `button` ainda tem papéis, o filho fica em **Incompletas** (`missing-role`) até a pessoa escolher um. Com `unlink`, o filho seria desvinculado do `button` (perda `unlinked`) e, como o `navigate` tem `requiresOwner`, ficaria pendente de dono (`missing-owner`).
+- `set-role` dá `abrir` só aos filhos de `navigate` do `card` que **não tinham papel**; um filho que já tivesse papel fica como está, e o passo nunca gera perda. O `childType` pode ser o id **antigo** do filho quando o passo vem antes do `rename-type` dele: dar o papel **antes** do renome é o que mantém a informação de um tipo que vai ser renomeado.
+
 ## Validação da biblioteca
 
 `validateLibrary` (em `src/model/library.ts`) valida um pacote **já lido**: recebe a lista de arquivos (`{ path, text? }` para `.json` e `.md`, `{ path, binary: true }` para uma fonte presente), o caminho da especialização (sem ele, procura o único arquivo com `"format": "mapping-spec"`), opcionalmente a versão anterior (`previous`, que liga o contrato de versão) e até que nível ir (`level`, padrão 3). É puro: não lê disco nem rede.
@@ -1113,7 +1209,7 @@ Os pacotes `libraries/material3-compose/` e `examples/libraries/sdui-backend/` p
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 11), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 12), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada**;
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo (na v11, no conjunto **resolvido** dos filhos de algum dono: por id, por camada inteira ou por grupo);
@@ -1124,6 +1220,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
 - **v11, filhos por camada e grupo:** só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].allowedChildren[k]` para a cláusula, `layers[n].groups` e `…annotationTypes[m].groups`); cada item de `allowedChildren` é um id de tipo ou uma cláusula `{ layer, groups? }` estrita (outra propriedade é erro, e `groups: []` também); erros: `layer` que não é uma camada da especialização, `layer` que é a camada do próprio dono (`filhos devem estar em outra camada`) e grupo inexistente na camada da cláusula; `requiresOwner` é conferido no conjunto resolvido; `layers[n].groups`: `id` não vazio e único na camada, `name` não vazio; `annotationTypes[m].groups`: lista não vazia, sem repetição, só de grupos da própria camada (grupo inexistente na camada é erro); **avisos:** 20 ids ou mais em texto no mesmo `allowedChildren` (`N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos`; com 19, não) e grupo declarado que nenhum tipo usa (ver "Filhos por camada e grupo");
+- **v12, passos de papel em `migrations`:** `rename-role`, `remove-role` e `set-role` só a partir da `formatVersion` 12 (numa versão de 4 a 11 o erro é `só é permitido com formatVersion 12`, no caminho `migrations[i].steps[j].op`); a mensagem de um `op` inválido lista os nove passos; chaves estritas (`rename-role`: `type`, `from`, `to`; `remove-role`: `type`, `role`, `mode`; `set-role`: `type`, `role`, `childType` opcional); `rename-role`: `type` é um tipo desta versão com `childRoles`, `to` é um papel dele e `from` não é; `remove-role`: `type` é um tipo desta versão (pode não ter mais `childRoles`), `role` não é papel dele e `mode` é `clear` ou `unlink`; `set-role`: `type` tem `childRoles`, `role` é um papel dele e `childType`, se vier, só confere o formato de id (tipo inexistente é um no-op); **aviso** (nível 2, com a versão anterior): `rename-role.from` ou `remove-role.role` que não era papel do tipo naquela versão, considerando o `rename-type` do dono; contrato: `removed-role`, `roles-required` e `added-role` (ver "Contrato de versão");
 - **v11, `childRoles` e `childRolesLabel`:** só a partir da `formatVersion` 11 (`só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].childRoles` ou `….childRolesLabel`); `childRoles` não vazia, de `{ id, name, description? }` estritos, com `id` não vazio e único no tipo e `name` não vazio; só em tipo com `allowedChildren` (senão é erro); `childRolesLabel` texto não vazio e só com `childRoles` (senão é erro); sem ele a app usa "Papel" / "Role" (ver "Papéis no vínculo (childRoles)");
 - **v11, `docRepos` e `doc` objeto:** só a partir da `formatVersion` 11 (`só é permitido com formatVersion 11`, no caminho `docRepos` ou `…annotationTypes[n].doc`); `docRepos[n]` com as regras do `repo` de plataforma (`url` obrigatória `http(s)://` sem espaços, `urlTemplate` opcional com `{path}`, `ref` opcional não vazio, nenhuma outra propriedade), `id` no formato `[a-z0-9-]+` e único na lista (id repetido e `urlTemplate` sem `{path}` são erro); `doc` objeto `{ repo, path }` estrito: `repo` precisa estar em `docRepos`, `path` relativo (sem `.`, `..` nem `/` no começo), terminando em `.md` e sem `#`; o `doc` texto continua valendo da v4 em diante; **aviso:** repositório de `docRepos` que nenhum `doc` usa (ver "Documento em repositório externo (docRepos)");
 - **v10, `notices`:** só a partir da `formatVersion` 10 (numa versão anterior o erro é `só é permitido com formatVersion 10`, no caminho `…annotationTypes[n].notices`, `…fields[n].notices` ou `…columns[m].notices`); lista (pode ser vazia) de objetos estritos com `kind` (`pending`, `deprecated`, `diverges` ou `removed`) e `message` (não vazia nem só espaços) obrigatórios, `since` (data real `AAAA-MM-DD`) e `ref` (texto não vazio) opcionais; dois avisos com o mesmo `kind` e a mesma `message` na lista são o erro `aviso repetido`, no caminho do segundo; qualquer outra propriedade é recusada; o aviso só informa (ver "Avisos (notices)");

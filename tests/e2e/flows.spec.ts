@@ -438,17 +438,17 @@ test('Exportar: salvar pelo "Salvar como" grava o zip e limpa o aviso', async ({
   expect(Object.keys(zip.files)).toContain('mapping.json');
 });
 
-// Altura mínima (AG4, #552): abaixo de 860 px de altura também vale o aviso, sem desmontar.
-test('janela baixa: aviso abaixo de 860 px de altura e volta ao crescer', async ({
+// Altura mínima (AG4, #552): abaixo de 720 px de altura também vale o aviso, sem desmontar.
+test('janela baixa: aviso abaixo de 720 px de altura e volta ao crescer', async ({
   page,
 }) => {
   await createProject(page, 'Baixa');
-  await page.setViewportSize({ width: 1280, height: 859 });
+  await page.setViewportSize({ width: 1280, height: 719 });
   await expect(
     page.getByRole('heading', { name: 'Abra numa janela maior' }),
   ).toBeVisible();
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeHidden();
-  await page.setViewportSize({ width: 1280, height: 860 });
+  await page.setViewportSize({ width: 1280, height: 720 });
   await expect(page.getByRole('heading', { name: 'Abra numa janela maior' })).toHaveCount(
     0,
   );

@@ -208,7 +208,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
     ...result.rolesCleared.map((c) => ({
       code: 'role-cleared',
       op: c.index,
-      annotation: refs.bare('a', c.annotationId),
+      annotation: refs.ref('a', c.annotationId),
       role: c.role,
       roleName: c.roleName,
       message: c.message,

@@ -257,9 +257,7 @@ describe('importação inteira', () => {
       baseRevision: 0,
       supersedes: null,
     });
-    expect(first.proposal.ref).toMatch(
-      /^mapping:\/\/loja\/p\/[0-9a-f]{8} \(Loja a partir do Figma\)$/,
-    );
+    expect(first.proposal.ref).toMatch(/^mapping:\/\/loja\/p\/[0-9a-f]{8}$/);
 
     // Pasta, arquivo da proposta (válido pelo modelo) e imagens novas ao lado.
     const proposalDir = join(dir(), 'proposals', first.proposal.id);
@@ -346,11 +344,29 @@ describe('importação inteira', () => {
       ['new', 'undecided'],
       ['new', 'undecided'],
     ]);
-    // O alvo de uma marcação criada é a referência definitiva, com o caminho legível.
-    expect(
-      got.changes.find((c) => c.entity === 'marking' && c.target.includes('Botão Pagar'))!
-        .target,
-    ).toMatch(/^mapping:\/\/loja\/m\/[0-9a-f]{8} \(Checkout › Botão Pagar\)$/);
+    // O alvo de uma marcação criada é a referência definitiva, só a URL.
+    expect(got.changes.find((c) => c.entity === 'marking')!.target).toMatch(
+      /^mapping:\/\/loja\/m\/[0-9a-f]{8}$/,
+    );
+  });
+
+  it('get_proposal recusa a referência no formato antigo, com a hint e o accepted novo', async () => {
+    const code = first.proposal.ref.match(/\/p\/([0-9a-f]+)/)![1]!;
+    for (const ref of [
+      `mapping://loja/p/${code} (Loja a partir do Figma)`,
+      `mapping://Loja Final/p/${code}`,
+    ]) {
+      const result = await mcp.call('get_proposal', { ref });
+      expect(result.isError, ref).toBe(true);
+      const error = (
+        result.data as unknown as {
+          error: { code: string; hint: string; accepted: string[] };
+        }
+      ).error;
+      expect(error.code).toBe('invalid-ref');
+      expect(error.hint).toContain('copie de novo na app');
+      expect(error.accepted).toContain('mapping://projeto/p/3f2a9c1e');
+    }
   });
 
   it('get_proposal aceita o código curto, o id e filtra por estado, com paginação', async () => {
@@ -494,7 +510,7 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
       ['annotation', 'create', 'rejected'],
     ]);
     const [marking, annotation] = review.rejected;
-    expect(marking!.target).toContain('Campo cartão');
+    expect(marking!.target).toMatch(/^mapping:\/\/loja\/m\/[0-9a-f]{8}$/);
     expect(marking!.via).toBeUndefined();
     // A anotação foi rejeitada por depender da criação da marcação.
     expect(annotation!.via).toBe(marking!.id);
@@ -503,7 +519,7 @@ describe('revisão simulada (decisões e notas gravadas no arquivo, como a app)'
       ['item', 'O campo é mais largo e fica em y 90.'],
       ['proposal', 'Faltou a tela de erro.'],
     ]);
-    expect(review.notes[0]!.target).toContain('Campo cartão');
+    expect(review.notes[0]!.target).toBe(marking!.target);
     expect(review.conflicts).toEqual([]);
   });
 

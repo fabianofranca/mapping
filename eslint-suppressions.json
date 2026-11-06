@@ -114,11 +114,6 @@
       "count": 1
     }
   },
-  "src/app/itemClipboard.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/app/recents.ts": {
     "complexity": {
       "count": 1

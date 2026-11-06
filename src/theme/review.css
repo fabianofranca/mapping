@@ -257,6 +257,17 @@
 }
 
 /* ---------- Filtros no topo das janelas da revisão ---------- */
+/* Painel do popover do botão "Filtros": os controles empilhados. */
+.review-filters-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  /* O popover lê a largura do conteúdo; a lista de tipos quebra em linhas. */
+  max-width: calc(20 * var(--space-6));
+}
+
 .review-filters {
   display: flex;
   flex-wrap: wrap;
@@ -818,14 +829,20 @@
   border-right: 1px solid var(--color-border);
 }
 
-/* Legenda das marcas, sobre o canvas */
+/*
+ * Legenda das marcas. Fixa na janela (não é recortada pelo canvas): ancora no canto
+ * superior esquerdo do canvas, não passa da coluna dele e, se o canvas for mais baixo que
+ * ela, desce por cima das janelas até o topo da barra de status. O `ReviewLegend` mede o
+ * canvas e a barra e entrega nas variáveis `--legend-*`. Fica acima das janelas e abaixo
+ * de dicas, seletores e diálogos.
+ */
 .review-legend {
-  position: absolute;
-  top: var(--space-2);
-  left: var(--space-2);
-  z-index: var(--z-canvas-overlay);
-  width: min(calc(14 * var(--space-6)), calc(100% - 2 * var(--space-2)));
-  max-height: calc(100% - 2 * var(--space-2));
+  position: fixed;
+  top: calc(var(--legend-top) + var(--space-2));
+  left: calc(var(--legend-left) + var(--space-2));
+  z-index: var(--z-popover);
+  width: min(calc(14 * var(--space-6)), calc(var(--legend-width) - 2 * var(--space-2)));
+  max-height: calc(var(--legend-room) - 2 * var(--space-2));
   overflow: auto;
   padding: var(--space-2) var(--space-3) var(--space-3);
   font: var(--t-text-small);

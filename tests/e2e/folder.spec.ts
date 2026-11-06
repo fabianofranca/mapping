@@ -126,10 +126,8 @@ test('Ctrl+C copia a referência do item selecionado, com os dados do item junto
   await expect(toast(page, 'Referência copiada')).toBeVisible();
 
   const code = marking.id.replaceAll('-', '').slice(0, 8);
-  expect(await clipboardText(page)).toMatch(
-    // Imagem sem nome: o nome do arquivo sem a pasta, como no `resolve` do MCP (6.4).
-    new RegExp(`^mapping://${FOLDER}/m/${code} \\(tela\\.webp › .+\\)$`),
-  );
+  // Só a URL, sem o caminho legível.
+  expect(await clipboardText(page)).toBe(`mapping://${FOLDER}/m/${code}`);
 
   // O formato próprio da app vai junto (só a app o lê; o texto é o que o chat recebe).
   const custom = await page.evaluate(
@@ -198,7 +196,7 @@ test('Detalhes: copiar referência e copiar recorte ao lado do ID', async ({
   await page.getByRole('button', { name: 'Copiar referência' }).first().click();
   await expect(toast(page, 'Referência copiada')).toBeVisible();
   const code = marking.id.replaceAll('-', '').slice(0, 8);
-  expect(await clipboardText(page)).toContain(`mapping://${FOLDER}/m/${code} (`);
+  expect(await clipboardText(page)).toContain(`mapping://${FOLDER}/m/${code}`);
 
   await page.getByRole('button', { name: 'Copiar recorte' }).click();
   await expect(toast(page, 'Recorte copiado')).toBeVisible();
@@ -219,7 +217,7 @@ test('Detalhes: copiar referência só com clipboard-write não pede permissão 
   const code = marking.id.replaceAll('-', '').slice(0, 8);
   const text = await clipboardText(page);
   expect(text).toMatch(/^mapping:\/\//);
-  expect(text).toContain(`/m/${code} (`);
+  expect(text).toMatch(new RegExp(`/m/${code}$`));
 });
 
 test('menu da linha da Árvore (desktop) copia a referência', async ({
@@ -232,7 +230,7 @@ test('menu da linha da Árvore (desktop) copia a referência', async ({
   await page.getByRole('button', { name: /^Ações de images\/tela\.webp/ }).click();
   await page.getByRole('menuitem', { name: 'Copiar referência' }).click();
   await expect(toast(page, 'Referência copiada')).toBeVisible();
-  expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/i\/[0-9a-f]{8} \(/);
+  expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/i\/[0-9a-f]{8}$/);
 });
 
 test('botão direito no canvas seleciona o item e abre o menu de cópia', async ({
@@ -251,7 +249,7 @@ test('botão direito no canvas seleciona o item e abre o menu de cópia', async 
   await menu.getByRole('menuitem', { name: 'Copiar referência' }).click();
   await expect(menu).toBeHidden();
   await expect(toast(page, 'Referência copiada')).toBeVisible();
-  expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/m\/[0-9a-f]{8} \(/);
+  expect(await clipboardText(page)).toMatch(/^mapping:\/\/[^/]+\/m\/[0-9a-f]{8}$/);
 });
 
 test('Ajuda → Atalhos lista os dois atalhos de copiar', async ({ page }) => {
@@ -478,7 +476,7 @@ test.describe('recentes de pasta', () => {
   test('a 900 px a tabela não quebra selo e botões, não rola e a borda é contínua', async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 900, height: 860 });
+    await page.setViewportSize({ width: 900, height: 720 });
     await stubFolderPicker(page);
     await createProject(page, 'Local');
     await closeProject(page);

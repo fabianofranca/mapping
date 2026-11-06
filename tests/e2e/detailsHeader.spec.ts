@@ -101,7 +101,7 @@ test.describe('cabeçalho da anotação nos Detalhes', () => {
   test('por pasta a 900 px, copiar e lixeira ficam juntos na 1ª linha e o nome desce', async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 900, height: 860 });
+    await page.setViewportSize({ width: 900, height: 720 });
     await openExampleFolder(page);
     await page.keyboard.press('Control+Shift+Digit3');
     for (const name of ['Barra', 'Chip Dados']) {
@@ -128,7 +128,7 @@ test.describe('cabeçalho da anotação nos Detalhes', () => {
     }
 
     // Com a janela larga, tudo cabe numa linha e o cabeçalho é o de sempre.
-    await page.setViewportSize({ width: 1592, height: 860 });
+    await page.setViewportSize({ width: 1592, height: 720 });
     const handle = page.getByRole('separator', { name: /Detalhes/ });
     const box = (await handle.boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + 100);

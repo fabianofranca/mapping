@@ -1009,3 +1009,304 @@ describe('specializationUpdateImpact', () => {
     expect(impact.brokenRefs).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------------------
+// Papéis do vínculo (`childRoles`, formatVersion 11 e 12): etapa #557
+// ---------------------------------------------------------------------------------------
+
+describe('diffSpecs: papéis (childRoles)', () => {
+  const role = (id: string, over: Record<string, string> = {}) => ({
+    id,
+    name: id.toUpperCase(),
+    ...over,
+  });
+
+  /** Dono com os papéis dados (`undefined` = sem `childRoles`). */
+  function card(
+    roles?: readonly string[],
+    over: Partial<SpecAnnotationType> = {},
+  ): SpecAnnotationType {
+    return {
+      id: 'card',
+      name: 'Card',
+      allowedChildren: ['badge'],
+      fields: [],
+      ...(roles === undefined ? {} : { childRoles: roles.map((r) => role(r)) }),
+      ...over,
+    };
+  }
+
+  const at = (version: number, types: SpecAnnotationType[]): Spec =>
+    spec(version, types, { formatVersion: 12 });
+  const CARD_PATH = 'layers[0].annotationTypes[0]';
+
+  it('papel que sai: removed-role no caminho da versão anterior, com role', () => {
+    const changes = diffSpecs(
+      at(1, [card(['a', 'b', 'c']), badge]),
+      at(2, [card(['a', 'c']), badge]),
+    );
+    expect(changes).toEqual([
+      {
+        kind: 'breaking',
+        code: 'removed-role',
+        path: `${CARD_PATH}.childRoles[1]`,
+        typeId: 'card',
+        role: 'b',
+        message:
+          'o papel "b" do tipo "card" foi removido; declare um passo "rename-role" ou "remove-role" em migrations (formatVersion 12)',
+      },
+    ]);
+  });
+
+  it('tipo que perde todos os childRoles: um removed-role por papel e nenhum outro', () => {
+    const changes = diffSpecs(at(1, [card(['a', 'b']), badge]), at(2, [card(), badge]));
+    expect(changes.map((c) => [c.kind, c.code, c.path, c.role])).toEqual([
+      ['breaking', 'removed-role', `${CARD_PATH}.childRoles[0]`, 'a'],
+      ['breaking', 'removed-role', `${CARD_PATH}.childRoles[1]`, 'b'],
+    ]);
+  });
+
+  it('tipo que passa a ter childRoles: só roles-required, no caminho de childRoles da nova', () => {
+    const changes = diffSpecs(at(1, [card(), badge]), at(2, [card(['a', 'b']), badge]));
+    expect(changes).toEqual([
+      {
+        kind: 'breaking',
+        code: 'roles-required',
+        path: `${CARD_PATH}.childRoles`,
+        typeId: 'card',
+        message:
+          'o tipo "card" passou a ter papéis; declare um passo "set-role" em migrations (formatVersion 12)',
+      },
+    ]);
+  });
+
+  it('papel novo em tipo que já tinha papéis: added-role aditivo, com role', () => {
+    const changes = diffSpecs(
+      at(1, [card(['a']), badge]),
+      at(2, [card(['a', 'b']), badge]),
+    );
+    expect(changes).toEqual([
+      {
+        kind: 'additive',
+        code: 'added-role',
+        path: `${CARD_PATH}.childRoles[1]`,
+        typeId: 'card',
+        role: 'b',
+        message: 'o tipo "card" ganhou o papel "b"',
+      },
+    ]);
+    expect(
+      missingMigrations(at(1, [card(['a']), badge]), at(2, [card(['a', 'b']), badge])),
+    ).toEqual([]);
+  });
+
+  it('as mesmas regras valem com as duas versões na formatVersion 11', () => {
+    const v11 = (version: number, types: SpecAnnotationType[]): Spec =>
+      spec(version, types, { formatVersion: 11 });
+    expect(
+      codes(diffSpecs(v11(1, [card(['a', 'b']), badge]), v11(2, [card(['a']), badge]))),
+    ).toEqual(['breaking:removed-role']);
+    expect(
+      codes(diffSpecs(v11(1, [card(), badge]), v11(2, [card(['a']), badge]))),
+    ).toEqual(['breaking:roles-required']);
+  });
+
+  it('name, description, ordem dos papéis, childRolesLabel, allowedChildren e groups não geram nada', () => {
+    const before = at(1, [
+      card(['a', 'b'], {
+        childRolesLabel: 'Papel',
+        groups: ['g'],
+      }),
+      badge,
+    ]);
+    const next = at(2, [
+      card(['b', 'a'], {
+        childRolesLabel: 'Slot',
+        allowedChildren: ['badge', { layer: 'outra' }],
+        groups: ['h'],
+        childRoles: [
+          role('b', { name: 'Outro nome', description: 'nova descrição' }),
+          role('a', { description: 'd' }),
+        ],
+      }),
+      badge,
+    ]);
+    expect(diffSpecs(before, next)).toEqual([]);
+    expect(missingMigrations(before, next)).toEqual([]);
+  });
+
+  it('dono renomeado (ids diferentes) não é comparado: só removed-type e added-type', () => {
+    const before = at(1, [card(['a', 'b']), badge]);
+    const next = at(2, [{ ...card(['a', 'c']), id: 'panel', name: 'Panel' }, badge]);
+    expect(diffSpecs(before, next).map((c) => [c.code, c.typeId, c.role])).toEqual([
+      ['added-type', 'panel', undefined],
+      ['removed-type', 'card', undefined],
+    ]);
+  });
+
+  it('a ordem: added-role e roles-required depois dos exemplos novos; removed-role depois dos campos e opções removidos', () => {
+    const before = at(1, [
+      card(['a', 'b'], {
+        fields: [
+          { key: 'gone', type: 'string' },
+          { key: 'kind', type: 'enum', options: ['x', 'y'] },
+        ],
+      }),
+      { id: 'panel', name: 'Panel', allowedChildren: ['badge'], fields: [] },
+      badge,
+    ]);
+    const next = at(2, [
+      card(['a', 'c'], {
+        fields: [{ key: 'kind', type: 'enum', options: ['x', 'z'] }],
+        examples: [{ name: 'ex', values: {} }],
+      }),
+      { ...card(['p']), id: 'panel', name: 'Panel' },
+      badge,
+    ]);
+    expect(
+      diffSpecs(before, next).map((c) => [
+        c.code,
+        c.typeId,
+        c.role ?? c.fieldKey ?? c.option,
+      ]),
+    ).toEqual([
+      ['added-option', 'card', 'kind'],
+      ['added-example', 'card', undefined],
+      ['added-role', 'card', 'c'],
+      ['roles-required', 'panel', undefined],
+      ['removed-field', 'card', 'gone'],
+      ['removed-option', 'card', 'kind'],
+      ['removed-role', 'card', 'b'],
+    ]);
+  });
+});
+
+describe('migrationFor e missingMigrations: papéis', () => {
+  const owner = (roles?: readonly string[]): SpecAnnotationType => ({
+    id: 'card',
+    name: 'Card',
+    allowedChildren: ['badge'],
+    fields: [],
+    ...(roles === undefined
+      ? {}
+      : { childRoles: roles.map((id) => ({ id, name: id.toUpperCase() })) }),
+  });
+  const at = (version: number, roles?: readonly string[], extra: SpecMigration[] = []) =>
+    spec(version, [owner(roles), badge], { formatVersion: 12, migrations: extra });
+  const steps = (...list: SpecMigrationStep[]): SpecMigration[] => [
+    { from: 1, to: 2, steps: list },
+  ];
+
+  const lost = at(1, ['a', 'b']);
+  const lostNext = (list: SpecMigrationStep[] = []) => at(2, ['a'], steps(...list));
+  const required = at(1);
+  const requiredNext = (list: SpecMigrationStep[] = []) => at(2, ['a'], steps(...list));
+
+  it('removed-role: rename-role{from} e remove-role{role} cobrem; sem passo fica faltando', () => {
+    const [change] = missingMigrations(lost, lostNext());
+    expect(change?.code).toBe('removed-role');
+    expect(missingMigrations(lost, lostNext())).toHaveLength(1);
+    const rename: SpecMigrationStep = {
+      op: 'rename-role',
+      type: 'card',
+      from: 'b',
+      to: 'a',
+    };
+    const remove: SpecMigrationStep = {
+      op: 'remove-role',
+      type: 'card',
+      role: 'b',
+      mode: 'clear',
+    };
+    for (const step of [rename, remove]) {
+      const next = lostNext([step]);
+      expect(missingMigrations(lost, next)).toEqual([]);
+      expect(migrationFor(next, 1, change as SpecChange)).toEqual(step);
+    }
+    expect(missingMigrations(lost, lostNext([{ ...remove, mode: 'unlink' }]))).toEqual(
+      [],
+    );
+  });
+
+  it('removed-role: o tipo e o papel têm de bater; set-role não cobre', () => {
+    const [change] = missingMigrations(lost, lostNext()) as [SpecChange];
+    const wrong: SpecMigrationStep[] = [
+      { op: 'rename-role', type: 'outro', from: 'b', to: 'a' },
+      { op: 'rename-role', type: 'card', from: 'z', to: 'a' },
+      { op: 'remove-role', type: 'outro', role: 'b', mode: 'clear' },
+      { op: 'remove-role', type: 'card', role: 'z', mode: 'unlink' },
+      { op: 'set-role', type: 'card', role: 'a' },
+      { op: 'remove-field', type: 'card', field: 'b' },
+    ];
+    for (const step of wrong) {
+      const next = lostNext([step]);
+      expect(missingMigrations(lost, next), step.op).toEqual([change]);
+      expect(migrationFor(next, 1, change)).toBeUndefined();
+    }
+  });
+
+  it('roles-required: qualquer set-role do tipo cobre (com ou sem childType)', () => {
+    const [change] = missingMigrations(required, requiredNext()) as [SpecChange];
+    expect(change.code).toBe('roles-required');
+    for (const step of [
+      { op: 'set-role', type: 'card', role: 'a' },
+      { op: 'set-role', type: 'card', role: 'a', childType: 'badge' },
+    ] satisfies SpecMigrationStep[]) {
+      const next = requiredNext([step]);
+      expect(missingMigrations(required, next)).toEqual([]);
+      expect(migrationFor(next, 1, change)).toEqual(step);
+    }
+  });
+
+  it('roles-required: set-role de outro tipo, rename-role e remove-role não cobrem', () => {
+    const [change] = missingMigrations(required, requiredNext()) as [SpecChange];
+    const wrong: SpecMigrationStep[] = [
+      { op: 'set-role', type: 'outro', role: 'a' },
+      { op: 'rename-role', type: 'card', from: 'x', to: 'a' },
+      { op: 'remove-role', type: 'card', role: 'x', mode: 'clear' },
+    ];
+    for (const step of wrong) {
+      const next = requiredNext([step]);
+      expect(missingMigrations(required, next), step.op).toEqual([change]);
+      expect(migrationFor(next, 1, change)).toBeUndefined();
+    }
+  });
+
+  it('cadeia rompida deixa a quebra de papel sem cobertura', () => {
+    const next = spec(3, [owner(['a']), badge], {
+      formatVersion: 12,
+      migrations: [
+        {
+          from: 1,
+          to: 2,
+          steps: [{ op: 'remove-role', type: 'card', role: 'b', mode: 'clear' }],
+        },
+      ],
+    });
+    expect(migrationChain(next, 1)).toBeUndefined();
+    const missing = missingMigrations(lost, next);
+    expect(missing.map((c) => c.code)).toEqual(['removed-role']);
+    expect(migrationFor(next, 1, missing[0] as SpecChange)).toBeUndefined();
+  });
+
+  it('cadeia de duas entradas: cada uma cobre uma quebra de papel', () => {
+    const v1 = at(1, ['a', 'b', 'c']);
+    const next = spec(3, [owner(['a']), badge], {
+      formatVersion: 12,
+      migrations: [
+        {
+          from: 1,
+          to: 2,
+          steps: [{ op: 'remove-role', type: 'card', role: 'b', mode: 'clear' }],
+        },
+        {
+          from: 2,
+          to: 3,
+          steps: [{ op: 'rename-role', type: 'card', from: 'c', to: 'a' }],
+        },
+      ],
+    });
+    expect(diffSpecs(v1, next).map((c) => c.role)).toEqual(['b', 'c']);
+    expect(missingMigrations(v1, next)).toEqual([]);
+  });
+});

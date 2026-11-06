@@ -84,7 +84,16 @@ describe('literais fora dos tokens', () => {
   });
 
   it('todo var(--token) usado existe (ou é local ao componente)', () => {
-    const local = new Set(['--layer-color', '--cols', '--depth']);
+    const local = new Set([
+      '--layer-color',
+      '--cols',
+      '--depth',
+      // Medidas da legenda da revisão, escritas pelo `ReviewLegend`.
+      '--legend-top',
+      '--legend-left',
+      '--legend-width',
+      '--legend-room',
+    ]);
     const unknown = all
       .flatMap((d) => [...d.value.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]!))
       .filter((name) => !(name.slice(2) in TOKENS) && !local.has(name));

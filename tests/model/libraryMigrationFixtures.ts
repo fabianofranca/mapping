@@ -102,6 +102,8 @@ export interface FixtureAnnotation {
   readonly type: string;
   readonly values?: TypedValues;
   readonly parent?: string;
+  /** Papel no dono (`childRoles` do tipo do dono); só com `parent`. */
+  readonly role?: string;
 }
 
 /** Projeto com `spec` aplicada, duas marcações (M1, M2) e as anotações dadas (valores por cima dos padrões). */
@@ -130,6 +132,7 @@ export function libProject(
       layerId: layerOf(p, spec.id, layer.id),
       type: { specId: spec.id, typeId: a.type },
       parentAnnotationId: a.parent ?? null,
+      parentRole: a.role ?? null,
     });
     if (a.values) p = setRaw(p, a.id, { ...annotationOf(p, a.id).values, ...a.values });
   }

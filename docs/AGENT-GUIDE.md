@@ -31,12 +31,12 @@ O Mapping marca **áreas retangulares** em imagens (ou em containers só com fun
 Cada item devolvido traz uma referência no formato
 
 ```
-mapping://<projeto>/<m|i|a>/<código> (<caminho legível>)
+mapping://<projeto>/<m|i|a|p>/<código>
 ```
 
-- `<projeto>` é o nome da pasta do projeto; `m` marcação, `i` container, `a` anotação, `p` **proposta** (ex: `mapping://cadastro/p/8c1f2d9e`). A letra `i` é o **container** (não mudou, para as referências já coladas continuarem valendo).
+- `<projeto>` é o nome da pasta do projeto, codificado como em uma URL (`A-Z a-z 0-9 - . _ ~` ficam como estão, o resto vira `%XX`: `Meu Projeto` aparece como `Meu%20Projeto`); `m` marcação, `i` container, `a` anotação, `p` **proposta** (ex: `mapping://cadastro/p/8c1f2d9e`). A letra `i` é o **container** (não mudou, para as referências já coladas continuarem valendo).
 - `<código>` são os 8 primeiros caracteres hexadecimais do id (cresce de 4 em 4 se houver colisão).
-- O caminho entre parênteses (ex: `cadastro.png › Formulário › Nome`) é só para leitura: o servidor o ignora.
+- A referência é **só a URL**: não traz caminho legível. O nome e o caminho (ex: `cadastro.png › Formulário › Nome`) vêm do `path` de `get_marking` (o `resolve` devolve a referência, o tipo e os campos de identificação, sem o caminho legível). Uma referência do formato antigo (com o caminho entre parênteses) ou com o projeto sem codificar dá `invalid-ref`: peça ao dev para copiá-la de novo na app.
 
 Toda tool que recebe um item (`ref`) aceita: a referência completa (a que o dev cola do app com Ctrl+C), só `m/3f2a9c1e` com `project` informado, ou o id completo. Sem projeto na referência nem em `project`, o servidor procura em todos os projetos das raízes. Se o código for ambíguo, o erro `ambiguous-ref` devolve as candidatas: escolha uma pela referência completa.
 
@@ -141,7 +141,7 @@ O método completo para escrever uma especialização (leitura do formato, inven
 Uma **biblioteca** é uma especialização v4 e a **pasta** dela: a especialização na raiz, um arquivo por componente em `components/`, um documento `.md` por componente em `docs/`, exemplos nomeados (`examples` no tipo, e o JSON de um nó de sistema externo em `examples/`) e a lista de fontes em `fonts` (com os arquivos em `fonts/` ou, se não puderem ir, um `LEIA-ME.txt` dizendo quais são). Os formatos estão em `mapping-docs://SPEC-FORMAT.md` ("Biblioteca: o pacote") e `mapping-docs://COMPONENT-FORMAT.md`; o método completo, na skill `spec-author`. Regras que o agente precisa ter na cabeça:
 
 - **Todo caminho citado fica dentro da pasta**, relativo ao arquivo da especialização, sem `..`. O que não é citado e é `.json` ou `.md` vira aviso ("arquivo não referenciado").
-- **O que é aditivo e o que é quebra** (contrato de versão). _Aditivo_: tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, trocar só o desenho (template). _Quebra_: remover ou renomear tipo, campo ou opção de `enum`; tornar um campo obrigatório (inclusive um campo novo que já nasce obrigatório); mudar o `type` de um campo. Atualizar uma biblioteca já aplicada: mantenha o `id`, suba a `version`, preserve ids de tipo e `key` de campo e **só declare `migrations`** (`from`, `to`, passos `rename-type`, `remove-type`, `rename-field`, `remove-field`, `map-values`, `fill-field`) quando houver quebra; sem a migração o validador recusa o pacote quando você passa a versão anterior em `previous`.
+- **O que é aditivo e o que é quebra** (contrato de versão). _Aditivo_: tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, trocar só o desenho (template). _Quebra_: remover ou renomear tipo, campo ou opção de `enum`; tornar um campo obrigatório (inclusive um campo novo que já nasce obrigatório); mudar o `type` de um campo; remover ou renomear um papel (`childRoles`) e dar papéis a um dono que não tinha (formatVersion 12). Atualizar uma biblioteca já aplicada: mantenha o `id`, suba a `version`, preserve ids de tipo e `key` de campo e **só declare `migrations`** (`from`, `to`, passos `rename-type`, `remove-type`, `rename-field`, `remove-field`, `map-values`, `fill-field` e, na formatVersion 12, `rename-role`, `remove-role`, `set-role`) quando houver quebra; sem a migração o validador recusa o pacote quando você passa a versão anterior em `previous`.
 - **Gerar, validar, corrigir:** escreva o pacote, rode `validate_library({ path })` (com `previous` quando é uma atualização), corrija cada erro pelo `file` e `path` dele e valide de novo, até `valid: true`. **Erro impede usar; aviso deixa usar** (fonte ausente do pacote, conteúdo maior que a caixa, arquivo sem uso): explique na entrega o que ficou. Use `level: 1` ou `2` para iterar rápido e feche com o nível 3 (padrão), que instancia cada componente e passa os exemplos de sistema externo pela declaração.
 - **Aplicar e atualizar vão pela proposta.** `apply_specialization` (primeira vez) e `update_specialization` (versão maior de uma já aplicada) aceitam em `file` a **pasta** do pacote, ou o arquivo da especialização dentro dela (arquivos v1 a v3 continuam indo só pelo arquivo). O servidor valida o pacote com os mesmos níveis de `validate_library` (com a cópia aplicada como `previous` na atualização): **erro** recusa a operação com `invalid-library` (a resposta traz os primeiros erros, com `file` e `path`); **aviso** deixa seguir e volta em `warnings` (`code: "library-warning"`). Os arquivos do pacote, inclusive as fontes, esperam em `proposals/<id>/specs/<pasta>/…`; quando a pessoa aceita e aplica, a app copia a pasta para `specs/<pasta>/`. O servidor nunca grava `specs/` nem o `mapping.json`. Depois de aplicada, `list_components` e `get_component` com `project` + `specId` leem a cópia (`specs/<id>/`), e `get_specialization` lista os arquivos dela em `package`.
 - **Ler antes de montar:** para saber como usar um componente, `get_component` devolve o documento, os campos, os exemplos, o `code` e as `sources` do tipo de uma vez.
@@ -151,7 +151,7 @@ Uma **biblioteca** é uma especialização v4 e a **pasta** dela: a especializa�
 Subir a `version` de uma biblioteca mexe nos projetos que a aplicaram: as anotações já existem, com `values` pelas `key` dos campos. As regras:
 
 - **Prefira mudança aditiva** (tipo, campo opcional, opção de `enum`, componente, documento, exemplo ou fonte novos, ou só o desenho): ela atualiza sem migração e sem diálogo de impacto, e nada se perde.
-- **Declare `migrations` para toda quebra** (remover ou renomear tipo, campo ou opção; tornar um campo obrigatório; mudar o `type`). Cada quebra precisa de um passo (`rename-type`, `remove-type`, `rename-field`, `remove-field`, `map-values`, `fill-field`) na entrada que liga a versão aplicada à nova; sem ele a atualização é recusada. Quem **renomeia** declara `rename-*`: sem o passo, o renome é só uma remoção e os valores se perdem.
+- **Declare `migrations` para toda quebra** (remover ou renomear tipo, campo ou opção; tornar um campo obrigatório; mudar o `type`). Cada quebra precisa de um passo (`rename-type`, `remove-type`, `rename-field`, `remove-field`, `map-values`, `fill-field` e, na formatVersion 12, `rename-role`, `remove-role` com `mode` `clear` ou `unlink`, e `set-role` com `childType` opcional) na entrada que liga a versão aplicada à nova; sem ele a atualização é recusada. Quem **renomeia** declara `rename-*`: sem o passo, o renome é só uma remoção e os valores se perdem.
 - **Valide antes de propor:** `validate_library({ path, previous })` com o arquivo da cópia aplicada (`specs/<pasta>/<arquivo>.spec.json` do projeto) em `previous`, e depois `plan_library_update({ project, path })`. Ele não grava nada e responde o que a atualização faria **neste projeto**: `decision` (`apply`, `update` ou `not-newer`), `validation`, `additive`, `refused` com `missingMigrations`, os `steps` (contagens por passo), as `losses`, as `pending`, `brokenRefs` e as camadas novas ou liberadas, com uma `hint` do próximo passo.
 - **Nunca apague um tipo em uso sem `convert`.** `remove-type` com `mode: "delete"` apaga as anotações do tipo e as vinculadas a elas: use só com a confirmação explícita da pessoa. Qualquer `losses` no plano (valor apagado, sobrescrito ou trocado pelo padrão, anotação apagada) também pede confirmação **antes** de propor, e a proposta diz o que se perde.
 - **A atualização vai pela proposta e pela revisão:** `propose_changes` com `update_specialization` e `file` da pasta nova. A descrição da operação resume a migração (passos, valores alterados, anotações convertidas ou apagadas, valores perdidos, pendências), e a proposta traz também as mudanças de cada anotação migrada (`values.<campo>`), para a pessoa conferir uma a uma.
@@ -294,7 +294,7 @@ Exemplo: o `Button` do formulário na plataforma `android` (`get_code_hints("map
 
 ```json
 {
-  "marking": "mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário › Cadastrar)",
+  "marking": "mapping://cadastro/m/2f7c4a1d",
   "platform": { "id": "android", "name": "Android", "language": "kotlin" },
   "repos": {
     "android": {
@@ -327,7 +327,7 @@ Exemplo: o `Button` do formulário na plataforma `android` (`get_code_hints("map
     }
   },
   "tree": {
-    "ref": "mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário › Cadastrar)",
+    "ref": "mapping://cadastro/m/2f7c4a1d",
     "name": "Cadastrar",
     "rect": { "x": 40, "y": 900, "width": 300, "height": 80 },
     "annotations": [
@@ -432,11 +432,11 @@ A especialização `formatVersion` 9 pode declarar `variants` no `code` de uma p
       "annotationCount": 1,
       "annotations": [
         {
-          "annotation": "mapping://cadastro/a/5b2e91c0 (cadastro.png › Formulário › Cadastrar › Button btn_cadastrar)",
+          "annotation": "mapping://cadastro/a/5b2e91c0",
           "title": "Button btn_cadastrar",
-          "marking": "mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário › Cadastrar)",
+          "marking": "mapping://cadastro/m/2f7c4a1d",
           "markingName": "Cadastrar",
-          "container": "mapping://cadastro/i/9d0e3b77 (cadastro.png)"
+          "container": "mapping://cadastro/i/9d0e3b77"
         }
       ]
     }
