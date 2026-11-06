@@ -1,4 +1,4 @@
-# Aviso de papel limpo — [Não lançado] (épico `epic/aviso-papel-limpo`, PR #PR, MCP 0.19.0, schema v14)
+# Aviso de papel limpo — [Não lançado] (épico `epic/aviso-papel-limpo`, PR #600, MCP 0.19.0, schema v14)
 
 ## Adicionado
 
