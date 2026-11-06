@@ -1,4 +1,4 @@
-# Desempate estável — [Não lançado] (épico `epic/desempate-estavel`, PR #621, MCP 0.22.0, schema v14)
+# Desempate estável — 2026-11-06 (épico `epic/desempate-estavel`, PR #621, MCP 0.22.0, schema v14)
 
 ## Corrigido
 
