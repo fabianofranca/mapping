@@ -1,4 +1,4 @@
-# Migração dos papéis do vínculo — [Não lançado] (épico `epic/migracao-papeis`, PR #?, MCP 0.20.0, schema v14)
+# Migração dos papéis do vínculo — [Não lançado] (épico `epic/migracao-papeis`, PR #0, MCP 0.20.0, schema v14)
 
 ## Adicionado
 

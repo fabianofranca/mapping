@@ -95,6 +95,12 @@ const MISSING_TODAY: string[] = [
   'spec:layers[].annotationTypes[].fields[].columns[].notices[].message',
   'spec:layers[].annotationTypes[].fields[].columns[].notices[].ref',
   'spec:layers[].annotationTypes[].fields[].columns[].notices[].since',
+  // Passos de papel (formatVersion 12, etapa #557): o exemplo SDUI usa `set-role`; a PM3 (#557)
+  // acrescenta exemplo de `rename-role` e `remove-role`.
+  'spec:migrations[].steps[].mode=clear',
+  'spec:migrations[].steps[].mode=unlink',
+  'spec:migrations[].steps[].op=remove-role',
+  'spec:migrations[].steps[].op=rename-role',
 ];
 
 // ---------------------------------------------------------------------------------------

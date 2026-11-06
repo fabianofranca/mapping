@@ -1,6 +1,6 @@
-// O exemplo SDUI na formatVersion 11 (etapa #559, PD7): atualizar um projeto que aplicou o SDUI
-// v3 (eventos onClick/onHold/onChange) passa pelo contrato de versão, e os vínculos migrados ficam
-// sem papel (pendência `missing-role`) até alguém escolher o papel.
+// O exemplo SDUI na formatVersion 12 (etapa #559, PD7): atualizar um projeto que aplicou o SDUI
+// v3 (eventos onClick/onHold/onChange) passa pelo contrato de versão, e os vínculos migrados ganham
+// o papel pelos passos `set-role`, sem pendência.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -55,10 +55,10 @@ function projectV3() {
   return setFieldValue(p, 'E', 'acao', 'submit');
 }
 
-describe('exemplo SDUI v11', () => {
+describe('exemplo SDUI v12', () => {
   it('valida sem erro, sem aviso de lista longa nem de grupo ou repositório sem uso', () => {
     const spec = loadExample('sdui');
-    expect(spec.formatVersion).toBe(11);
+    expect(spec.formatVersion).toBe(12);
     // O Screen não tem `code` de propósito; o aviso que importa aqui é o da lista longa.
     const codes = specWarnings(spec).map((w) => w.code);
     expect(codes).toEqual(['type-without-code']);
@@ -70,7 +70,7 @@ describe('exemplo SDUI v11', () => {
     expect(impact.missingMigrations).toEqual([]);
   });
 
-  it('atualizar migra o tipo do vínculo e o deixa sem papel (missing-role)', () => {
+  it('atualizar migra o tipo do vínculo e dá o papel (set-role), sem pendência', () => {
     const before = projectV3();
     expect(getAnnotationIssues(before, 'E').map((i) => i.code)).not.toContain(
       'missing-role',
@@ -81,8 +81,10 @@ describe('exemplo SDUI v11', () => {
     const e = after.annotations.find((a) => a.id === 'E');
     expect(e?.type).toEqual({ specId: 'sdui', typeId: 'action' });
     expect(e?.parentAnnotationId).toBe('B');
-    expect(e?.parentRole).toBeNull();
+    expect(e?.parentRole).toBe('click');
     expect(e?.values).toMatchObject({ acao: 'submit' });
-    expect(getAnnotationIssues(after, 'E').map((i) => i.code)).toContain('missing-role');
+    expect(getAnnotationIssues(after, 'E').map((i) => i.code)).not.toContain(
+      'missing-role',
+    );
   });
 });

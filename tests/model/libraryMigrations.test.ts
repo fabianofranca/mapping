@@ -1110,4 +1110,44 @@ describe('impacto e atualização com passos de papel', () => {
     expect(out.specializations[0]?.version).toBe(2);
     expectRoleInvariant(out);
   });
+
+  it('sem o passo a atualização que tira um papel é recusada; com ele é aceita', () => {
+    const p = roleProject();
+    const without = roleSpec(2, v2Roles);
+    const refused = specializationUpdateImpact(p, without);
+    expect(refused.refused).toBe(true);
+    expect(refused.missingMigrations.map((c) => [c.code, c.role])).toEqual([
+      ['removed-role', 'click'],
+    ]);
+    expect(() => updateSpecialization(p, without, { newId: idGen('R') })).toThrow(
+      /spec-missing-migrations/,
+    );
+    const withSteps = roleSpec(2, v2Roles, {
+      migrations: [
+        {
+          from: 1,
+          to: 2,
+          steps: [{ op: 'rename-role', type: 'button', from: 'click', to: 'tap' }],
+        },
+      ],
+    });
+    expect(specializationUpdateImpact(p, withSteps).refused).toBe(false);
+  });
+
+  it('a atualização não altera o projeto de entrada (o desfazer devolve os papéis)', () => {
+    const p = roleProject();
+    const before = JSON.stringify(p);
+    const next = roleSpec(2, v2Roles, {
+      migrations: [
+        {
+          from: 1,
+          to: 2,
+          steps: [{ op: 'rename-role', type: 'button', from: 'click', to: 'tap' }],
+        },
+      ],
+    });
+    const out = updateSpecialization(p, next, { newId: idGen('U') });
+    expect(roleOf(out, 'C1')).toBe('tap');
+    expect(JSON.stringify(p)).toBe(before);
+  });
 });
