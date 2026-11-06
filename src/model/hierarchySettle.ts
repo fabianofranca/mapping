@@ -183,6 +183,28 @@ function pickParent(
   return best?.m.id ?? null;
 }
 
+/**
+ * O pai que o assentar escolheria entre as marcações `candidates` do espaço `containerId`
+ * (todas já válidas pela geometria: contêm o que se quer pôr dentro): das de menor área, a de
+ * dentro de cada cadeia de retângulos iguais (`equalRectRanks`), e o `current`, se é uma delas.
+ * O Envolver usa isto para achar o pai atual do conjunto pela cadeia, nunca pelo array.
+ */
+export function enclosingAmong(
+  p: Project,
+  containerId: string | null,
+  candidates: ReadonlySet<string>,
+  current: string | null,
+): string | null {
+  const group: Entry[] = [];
+  p.markings.forEach((m, i) => {
+    if (!m.floating && m.containerId === containerId) group.push({ m, i });
+  });
+  const ranks = new Map<string, number>();
+  equalRectRanks(group, ranks);
+  const inside = group.filter((e) => candidates.has(e.m.id));
+  return pickParent(inside, current, (id) => ranks.get(id) ?? -1);
+}
+
 /** O espaço e o `rect` que a geometria dá à marcação; ela mesma se nada muda. */
 function settleSpace(
   p: Project,
