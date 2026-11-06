@@ -856,7 +856,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'No contrato de versão (a partir da formatVersion 12): o id do papel é dado que as anotações guardam (parentRole). Tirar um papel de um tipo, ou dar childRoles a um tipo que não tinha, é quebra e pede um passo rename-role, remove-role ou set-role em migrations; acrescentar um papel a um tipo que já tinha papéis é aditivo. Continuam fora do contrato o name e a description do papel, a ordem dos childRoles e o childRolesLabel.',
+          'No contrato de versão (toda versão com papéis, da formatVersion 11 em diante; o passo que cobre a quebra é da formatVersion 12): o id do papel é dado que as anotações guardam (parentRole). Tirar um papel de um tipo, ou dar childRoles a um tipo que não tinha, é quebra e pede um passo rename-role, remove-role ou set-role em migrations; acrescentar um papel a um tipo que já tinha papéis é aditivo. Continuam fora do contrato o name e a description do papel, a ordem dos childRoles e o childRolesLabel.',
           'Numa versão anterior à 11 o erro é só é permitido com formatVersion 11, no caminho exato. Os passos de migração dos papéis são da formatVersion 12.',
         ],
       },
@@ -1310,7 +1310,7 @@ const ptBR: readonly HelpSection[] = [
       { kind: 'code', code: ROLES_MIGRATION_EXCERPT },
       {
         kind: 'p',
-        text: 'Ao atualizar, a app executa os passos da cadeia sobre as anotações do projeto e mostra antes o impacto: os passos com suas contagens, as perdas em destaque (valores ou anotações apagados) e as pendências que abrem em Incompletas. Uma quebra sem passo recusa a atualização, e Desfazer devolve a biblioteca e os dados juntos.',
+        text: 'Ao atualizar, a app executa os passos da cadeia sobre as anotações do projeto e mostra antes o impacto: os passos com suas contagens, as perdas em destaque (valores, anotações ou vínculos apagados, com o papel limpo contando como valor) e as pendências que abrem em Incompletas. Uma quebra sem passo recusa a atualização, e Desfazer devolve a biblioteca e os dados juntos.',
       },
     ],
   },
