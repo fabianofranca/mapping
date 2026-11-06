@@ -22,10 +22,13 @@ import { emptyProject } from './fixtures';
 // grade pequena, para forçar empates de retângulo e de área. `computeChanges` seguido de
 // `patchProject` precisa dar os mesmos pais (marcações e containers) e a mesma ordem entre irmãs
 // do projeto proposto, sem `problems`, e nenhum `position` pode ser redundante (tirar qualquer
-// um muda o aplicado). Semente fixa: o mesmo resultado em toda execução.
+// um muda o aplicado). A exceção é o lote em que nenhuma âncora daria os pais do proposto (um
+// empate decidido por um passo do lote que a proposta não registra; "Garantia" em
+// docs/PROPOSAL-FORMAT.md): o teste prova isso por força bruta e fixa os lotes. Semente fixa: o
+// mesmo resultado em toda execução.
 
-const BATCHES = Number(process.env.BATCHES ?? 2000);
-const SEED = Number(process.env.SEED ?? 549);
+const BATCHES = 2000;
+const SEED = 549;
 
 /** Gerador pseudoaleatório determinístico (mulberry32). */
 function rng(seed: number): () => number {
@@ -155,95 +158,77 @@ function cases(): Case[] {
 }
 
 const isPosition = (c: Change) => c.entity === 'marking' && c.field === 'position';
+const same = (a: Project, b: Project) =>
+  JSON.stringify(shape(a)) === JSON.stringify(shape(b));
+const sameParents = (a: Project, b: Project) => {
+  const [sa, sb] = [shape(a), shape(b)];
+  return (
+    JSON.stringify([sa.markings, sa.containers]) ===
+    JSON.stringify([sb.markings, sb.containers])
+  );
+};
+
+/**
+ * Nenhuma âncora reproduz os pais do proposto: o empate foi decidido por um passo do lote que a
+ * proposta não registra (a exceção da "Garantia" em docs/PROPOSAL-FORMAT.md). Prova por força
+ * bruta: toda escolha de `insertBefore` das criadas, no array e no assentar do aplicador.
+ */
+function unexpressible({ base, after }: Case): boolean {
+  const afterIds = new Set(after.markings.map((m) => m.id));
+  const baseIds = new Set(base.markings.map((m) => m.id));
+  const slots = base.markings.filter((m) => afterIds.has(m.id)).map((m) => m.id);
+  const created = after.markings.filter((m) => !baseIds.has(m.id)).map((m) => m.id);
+  const total = (slots.length + 1) ** created.length;
+  if (total > 100_000) throw new Error('caso grande demais para a força bruta');
+  for (let k = 0; k < total; k++) {
+    const anchors = new Map<string, string>();
+    let rest = k;
+    for (const id of created) {
+      const at = rest % (slots.length + 1);
+      rest = Math.floor(rest / (slots.length + 1));
+      if (at < slots.length) anchors.set(id, slots[at] as string);
+    }
+    if (sameParents(simulateApplied(base, after, anchors), after)) return false;
+  }
+  return true;
+}
+
+/** Algum `position` sai sem mudar o aplicado (seria redundante)? */
+function hasRedundantPosition({ base, after, changes }: Case): boolean {
+  return changes.filter(isPosition).some((c) =>
+    same(
+      patchProject(
+        base,
+        changes.filter((x) => x !== c),
+      ).project,
+      after,
+    ),
+  );
+}
 
 describe('proposta: o aplicado é igual ao proposto (fuzz, #549)', () => {
   it(`${BATCHES} lotes: mesmos pais e mesma ordem entre irmãs, sem position redundante`, () => {
-    const divergent: number[] = [];
     const unstable: number[] = [];
+    const divergent: number[] = [];
     const redundant: number[] = [];
-    const all = cases();
-    for (const { batch, base, after, changes } of all) {
-      if (settleHierarchy(after) !== after) unstable.push(batch);
-      const applied = patchProject(base, changes);
-      const expected = shape(after);
-      if (
-        applied.problems.length > 0 ||
-        JSON.stringify(shape(applied.project)) !== JSON.stringify(expected)
-      ) {
-        divergent.push(batch);
-        continue;
-      }
-      for (const c of changes.filter(isPosition)) {
-        const without = patchProject(
-          base,
-          changes.filter((x) => x !== c),
-        );
-        if (JSON.stringify(shape(without.project)) === JSON.stringify(expected)) {
-          redundant.push(batch);
-          break;
-        }
-      }
+    // A exceção da Garantia: divergem, e nenhuma âncora daria os pais do proposto.
+    const exception: number[] = [];
+    for (const c of cases()) {
+      if (settleHierarchy(c.after) !== c.after) unstable.push(c.batch);
+      const applied = patchProject(c.base, c.changes);
+      if (applied.problems.length > 0) divergent.push(c.batch);
+      else if (!same(applied.project, c.after)) {
+        if (unexpressible(c)) exception.push(c.batch);
+        else divergent.push(c.batch);
+      } else if (hasRedundantPosition(c)) redundant.push(c.batch);
     }
-    const parentDiv = divergent.filter((b) => {
-      const c = all[b] as Case;
-      const a = patchProject(c.base, c.changes).project;
-      return (
-        JSON.stringify(shape(a).markings) !== JSON.stringify(shape(c.after).markings) ||
-        JSON.stringify(shape(a).containers) !== JSON.stringify(shape(c.after).containers)
-      );
-    });
-    const withPos = divergent.filter((b) => (all[b] as Case).changes.some(isPosition));
-    console.log(
-      'DIV',
-      divergent.length,
-      'parents',
-      parentDiv.length,
-      'withPos',
-      withPos.length,
-      'parentNoPos',
-      parentDiv.filter((b) => !withPos.includes(b)).length,
-      'redundant',
-      redundant.length,
-      'unstable',
-      unstable.length,
-    );
-    const dump = (b: number) => {
-      const c = all[b] as Case;
-      const a = patchProject(c.base, c.changes).project;
-      const f = (p: Project) =>
-        p.markings
-          .map(
-            (m) =>
-              `${m.id}:${m.containerId ?? 'cv'}:${m.rect.x},${m.rect.y},${m.rect.width}x${m.rect.height}^${m.parentId ?? '-'}`,
-          )
-          .join('  ');
-      console.log(
-        `#${b}\nBASE  ${f(c.base)} C^${c.base.containers[0]?.parentId}\nAFTER ${f(c.after)} C^${c.after.containers[0]?.parentId}\nAPPL  ${f(a)} C^${a.containers[0]?.parentId}\nCH ${c.changes.map((x) => `${x.kind}:${x.entityId}:${x.field ?? ''}${x.field === 'position' ? '=' + String(x.to) : ''}${x.insertBefore ? '<' + x.insertBefore : ''}`).join(' ')}`,
-      );
-    };
-    const involvesCreated = (b: number) => { const c = all[b] as Case; const ids = new Set(c.base.markings.map((m) => m.id)); const a = new Map(patchProject(c.base, c.changes).project.markings.map((m) => [m.id, m.parentId])); return c.after.markings.some((m) => a.get(m.id) !== m.parentId && [m.id, m.parentId, a.get(m.id)].some((x) => x != null && !ids.has(x))); };
-    const oneShot = (b: number) => { const c = all[b] as Case; const bp = new Map(c.base.markings.map((m) => [m.id, m.parentId])); const bc = new Map(c.base.containers.map((x) => [x.id, x.parentId])); const r = settleHierarchy({ ...c.after, markings: c.after.markings.map((m) => (bp.has(m.id) ? { ...m, parentId: bp.get(m.id) ?? null } : m)), containers: c.after.containers.map((x) => ({ ...x, parentId: bc.get(x.id) ?? null })) }); return JSON.stringify(shape(r).markings) === JSON.stringify(shape(c.after).markings) && JSON.stringify(shape(r).containers) === JSON.stringify(shape(c.after).containers); };
-    const unexpressible = (b: number) => { const c = all[b] as Case; const ids = new Set(c.base.markings.map((m) => m.id)); const surv = c.base.markings.filter((m) => c.after.markings.some((x) => x.id === m.id)); const created = c.after.markings.filter((m) => !ids.has(m.id)); const want = JSON.stringify([shape(c.after).markings, shape(c.after).containers]); const total = (surv.length + 1) ** created.length; if (total > 50000) return false; for (let k = 0; k < total; k++) { const anchors = new Map<string, string>(); let r = k; for (const m of created) { const at = r % (surv.length + 1); r = Math.floor(r / (surv.length + 1)); if (at < surv.length) anchors.set(m.id, (surv[at] as { id: string }).id); } const a = simulateApplied(c.base, c.after, anchors); if (JSON.stringify([shape(a).markings, shape(a).containers]) === want) return false; } return true; };
-    console.log('EXPRESSIBLE-DIVERGENT', divergent.filter((b) => !unexpressible(b)).join(','));
-    console.log('ONESHOTOK-BUT-DIVERGENT', divergent.filter(oneShot).join(','));
-    console.log('CREATEDINV', divergent.filter(involvesCreated).join(','));
-    for (const b of (process.env.DUMP ?? '').split(',').filter(Boolean)) dump(Number(b));
-    console.log(
-      'PARENTNOPOS',
-      parentDiv
-        .filter((b) => !withPos.includes(b))
-        .slice(0, 5)
-        .join(','),
-      'ORDERONLY',
-      divergent
-        .filter((b) => !parentDiv.includes(b))
-        .slice(0, 5)
-        .join(','),
-    );
     expect({ unstable, divergent, redundant }).toEqual({
       unstable: [],
       divergent: [],
       redundant: [],
     });
+    // Antes da correção (semente 549): 6 lotes divergentes e 6 com position redundante.
+    // Sobram os dois da exceção (cerca de 1 lote em 1.000).
+    expect(exception).toEqual([182, 300]);
   });
 });
