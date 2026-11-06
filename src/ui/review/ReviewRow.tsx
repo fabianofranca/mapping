@@ -6,6 +6,7 @@ import { Icon } from '../icons';
 import { ChangeKind } from './ChangeKind';
 import { DecisionControl, type DecisionValue } from './DecisionControl';
 import { DecisionMark, type DecisionCounts } from './DecisionMark';
+import { badgeText, RevisedFlag, type RevisedBadge } from './RevisedFlag';
 
 // Linha dos níveis da revisão (HANDOFF-PROPOSALS 2.1, ReviewRow): um TreeRow de três
 // colunas — nome (chevron, decisão, tipo, rótulo e sinalizadores), resumo (contagens ou
@@ -26,6 +27,8 @@ export interface ReviewRowProps {
   readonly invalid?: boolean;
   /** Sinalizadores depois do rótulo (Flag, cadeado, nota…). */
   readonly flags?: ComponentChildren;
+  /** Marca "Revisada" à vista (etapa #644): o selo depois do rótulo e o nome acessível dela. */
+  readonly revised?: RevisedBadge | null;
   readonly summary: ComponentChildren;
   readonly decision: DecisionValue;
   readonly decisionDisabled?: boolean;
@@ -48,6 +51,7 @@ export function ReviewRow({
   selected,
   invalid,
   flags,
+  revised,
   summary,
   decision,
   decisionDisabled,
@@ -68,7 +72,7 @@ export function ReviewRow({
       aria-level={depth + 1}
       aria-expanded={expandable ? expanded : undefined}
       aria-selected={selected}
-      aria-label={label}
+      aria-label={revised ? `${label}, ${badgeText(revised)}` : label}
       data-row={rowKey}
       style={{ '--depth': depth }}
       onClick={(e) => {
@@ -96,6 +100,7 @@ export function ReviewRow({
         <span class="review-row-label" title={label}>
           {label}
         </span>
+        {revised && <RevisedFlag badge={revised} />}
         {flags}
       </span>
       <span class="review-row-summary">{summary}</span>

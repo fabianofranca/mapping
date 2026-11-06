@@ -466,6 +466,30 @@ export const reviewPtBR = {
     'Aplicar aceitas · N grava as mudanças aceitas no projeto de uma vez (e pode ser desfeito com Ctrl+Z). Se uma aceita depende de outra que não foi aceita, o botão explica o que falta antes de aplicar.',
   'help.proposals.resume':
     'Sair da revisão não perde nada: decisões e notas ficam na proposta e a revisão volta ao mesmo ponto. Se o projeto mudou entre sessões, os conflitos novos são avisados; uma proposta substituída por outra mostra o que ficou para trás.',
+  'proposal.error.revised':
+    'O agente revisou esta proposta enquanto você olhava. Confira antes de decidir.',
+  'review.revised.mark': 'Revisada',
+  'review.revised.markHint': 'O agente revisou esta mudança. Confira antes de decidir.',
+  'review.revised.markAdded': 'Nova na revisão',
+  'review.filter.onlyRevised': 'Só revisadas ({count})',
+  'review.revised.hintChanged':
+    'O agente trocou esta mudança em {date}. Confira antes de decidir.',
+  'review.revised.hintAdded':
+    'O agente acrescentou esta mudança em {date}. Confira antes de decidir.',
+  'review.revised.header': 'Revisada pelo agente em {date}: {parts}',
+  'review.revised.part.changed': '{count} trocada(s)',
+  'review.revised.part.added': '{count} nova(s)',
+  'review.revised.part.dropped': '{count} retirada(s)',
+  'review.revised.part.none': 'nenhuma mudança',
+  'review.revised.before': 'Antes da revisão',
+  'review.revised.beforeTo': 'O agente tinha proposto',
+  'review.revised.beforeState.rejected': 'Você tinha rejeitado',
+  'review.revised.beforeState.none': 'Sem decisão',
+  'review.revised.droppedNote': 'Da mudança retirada: {summary}',
+  'proposals.row.revised': 'Revisada · {count} para conferir',
+  'review.revisedNotice.text': 'O agente revisou {title}: {parts}.',
+  'review.revisedNotice.review': 'Revisar',
+  'review.revisedNotice.reviewLabel': 'Revisar {title}, revisada pelo agente',
 } as const;
 
 export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
@@ -926,4 +950,28 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
     'Apply accepted · N writes the accepted changes into the project at once (and can be undone with Ctrl+Z). If an accepted change depends on another one that was not accepted, the button explains what is missing before applying.',
   'help.proposals.resume':
     'Leaving the review loses nothing: decisions and notes stay in the proposal and the review returns to the same spot. If the project changed between sessions, new conflicts are flagged; a proposal superseded by another one shows what was left behind.',
+  'proposal.error.revised':
+    'The agent revised this proposal while you were looking. Check it before deciding.',
+  'review.revised.mark': 'Revised',
+  'review.revised.markHint': 'The agent revised this change. Check it before deciding.',
+  'review.revised.markAdded': 'New in the revision',
+  'review.filter.onlyRevised': 'Revised only ({count})',
+  'review.revised.hintChanged':
+    'The agent replaced this change on {date}. Check it before deciding.',
+  'review.revised.hintAdded':
+    'The agent added this change on {date}. Check it before deciding.',
+  'review.revised.header': 'Revised by the agent on {date}: {parts}',
+  'review.revised.part.changed': '{count} replaced',
+  'review.revised.part.added': '{count} new',
+  'review.revised.part.dropped': '{count} withdrawn',
+  'review.revised.part.none': 'no changes',
+  'review.revised.before': 'Before the revision',
+  'review.revised.beforeTo': 'The agent had proposed',
+  'review.revised.beforeState.rejected': 'You had rejected',
+  'review.revised.beforeState.none': 'No decision',
+  'review.revised.droppedNote': 'From the withdrawn change: {summary}',
+  'proposals.row.revised': 'Revised · {count} to check',
+  'review.revisedNotice.text': 'The agent revised {title}: {parts}.',
+  'review.revisedNotice.review': 'Review',
+  'review.revisedNotice.reviewLabel': 'Review {title}, revised by the agent',
 };

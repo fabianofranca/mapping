@@ -17,6 +17,9 @@ import {
   type ProposalIssue,
   type ProposalStatus,
   type ReviewTarget,
+  droppedEntryOf,
+  unseenRevisedIds,
+  withDroppedNote,
 } from '../model';
 import type { FlushResult } from '../storage/autosave';
 import { imageMimeType, type ProjectStorage } from '../storage/types';
@@ -32,7 +35,8 @@ import type { ProposalErrorCode, ProposalStore, RemoveProposalError } from './pr
 // fora, ela é refeita sobre a versão nova do disco.
 
 export type DecisionError =
-  'not-open' | 'unknown-target' | 'no-project' | ProposalErrorCode;
+  /** O agente revisou esta mudança enquanto a pessoa olhava a versão antiga (decisão 8). */
+  'revised' | 'not-open' | 'unknown-target' | 'no-project' | ProposalErrorCode;
 
 /** O que uma decisão mudou, para explicar ("4 mudanças rejeitadas junto") e para o "Desfazer" dos lotes. */
 export interface DecisionOutcome {
@@ -185,6 +189,15 @@ export interface ProposalActionsDeps {
   readonly flush: () => Promise<FlushResult>;
 }
 
+/** Alguma das mudanças que vão mudar de estado foi revisada pelo agente sem a pessoa ver? */
+function touchesUnseen(
+  unseen: ReadonlySet<string>,
+  changed: readonly string[],
+  cascaded: readonly string[],
+): boolean {
+  return [...changed, ...cascaded].some((changeId) => unseen.has(changeId));
+}
+
 function sameDecisions(a: ProposalDecisions, b: ProposalDecisions): boolean {
   const ka = Object.keys(a);
   if (ka.length !== Object.keys(b).length) return false;
@@ -248,43 +261,49 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
   const { store, proposals, storage, now } = deps;
 
   const decideMany: ProposalActions['decideMany'] = async (id, targets, state) => {
-    const result = await proposals.mutate<DecisionOutcome, DecisionError>(id, (p) => {
-      const project = store.committed.peek();
-      if (!project) return { ok: false, error: 'no-project' };
-      if (p.status !== 'open') return { ok: false, error: 'not-open' };
-      const tree = reviewTree(p, project);
-      const at = now();
-      const requested = new Set<string>();
-      let current = p;
-      for (const target of targets) {
-        const decided = decide(current, tree, target, state, at);
-        if (!decided.ok) {
-          // Um alvo que sumiu num lote é ignorado; sozinho, é erro.
-          if (targets.length === 1) return { ok: false, error: decided.reason };
-          continue;
+    const result = await proposals.mutate<DecisionOutcome, DecisionError>(
+      id,
+      (p, seen) => {
+        const project = store.committed.peek();
+        if (!project) return { ok: false, error: 'no-project' };
+        if (p.status !== 'open') return { ok: false, error: 'not-open' };
+        const tree = reviewTree(p, project);
+        const at = now();
+        const requested = new Set<string>();
+        let current = p;
+        for (const target of targets) {
+          const decided = decide(current, tree, target, state, at);
+          if (!decided.ok) {
+            // Um alvo que sumiu num lote é ignorado; sozinho, é erro.
+            if (targets.length === 1) return { ok: false, error: decided.reason };
+            continue;
+          }
+          for (const changeId of tree.changeIdsOf(target)) requested.add(changeId);
+          current = { ...current, decisions: decided.decisions };
         }
-        for (const changeId of tree.changeIdsOf(target)) requested.add(changeId);
-        current = { ...current, decisions: decided.decisions };
-      }
-      const changed: string[] = [];
-      const cascaded: string[] = [];
-      for (const c of p.changes) {
-        if (p.decisions[c.id]?.state === current.decisions[c.id]?.state) continue;
-        (requested.has(c.id) ? changed : cascaded).push(c.id);
-      }
-      const outcome: DecisionOutcome = {
-        proposal: current,
-        previous: p.decisions,
-        decisions: current.decisions,
-        changed,
-        cascaded,
-      };
-      return {
-        ok: true,
-        proposal: changed.length + cascaded.length === 0 ? p : current,
-        value: outcome,
-      };
-    });
+        const changed: string[] = [];
+        const cascaded: string[] = [];
+        for (const c of p.changes) {
+          if (p.decisions[c.id]?.state === current.decisions[c.id]?.state) continue;
+          (requested.has(c.id) ? changed : cascaded).push(c.id);
+        }
+        if (touchesUnseen(unseenRevisedIds(seen, p), changed, cascaded)) {
+          return { ok: false, error: 'revised' };
+        }
+        const outcome: DecisionOutcome = {
+          proposal: current,
+          previous: p.decisions,
+          decisions: current.decisions,
+          changed,
+          cascaded,
+        };
+        return {
+          ok: true,
+          proposal: changed.length + cascaded.length === 0 ? p : current,
+          value: outcome,
+        };
+      },
+    );
     if (!result.ok) return result;
     // Decidir é como editar: o "refazer" de uma aplicação desfeita deixaria de valer.
     if (result.value.changed.length + result.value.cascaded.length > 0) {
@@ -317,6 +336,28 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
     if (target.level === 'change') return proposalIndex(p).changes.has(target.id);
     const project = store.committed.peek();
     return project ? reviewTree(p, project).nodes.has(reviewKey(target)) : false;
+  };
+
+  /**
+   * Põe a nota no alvo. Uma mudança que o agente retirou numa revisão já não existe: a nota
+   * sobe ao nível da proposta e a mudança retirada a reivindica (decisão 6).
+   */
+  const addNoteTo = (
+    p: Proposal,
+    target: ReviewTarget,
+    text: string,
+  ): Proposal | NoteError => {
+    const noteId = deps.newId();
+    if (targetExists(p, target)) return addProposalNote(p, target, text, now(), noteId);
+    const where =
+      target.level === 'change' && target.id ? droppedEntryOf(p, target.id) : null;
+    if (where === null) return 'unknown-target';
+    const asProposal: ReviewTarget = { level: 'proposal', id: null };
+    return withDroppedNote(
+      addProposalNote(p, asProposal, text, now(), noteId),
+      where,
+      noteId,
+    );
   };
 
   const applyAcceptedChanges: ProposalActions['applyAccepted'] = async (id) => {
@@ -540,8 +581,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
         id,
         (p) => {
           if (text.trim() === '') return 'empty-note';
-          if (!targetExists(p, target)) return 'unknown-target';
-          return addProposalNote(p, target, text, now(), deps.newId());
+          return addNoteTo(p, target, text);
         },
         (_before, after) => after.notes.at(-1)?.id ?? null,
       ),

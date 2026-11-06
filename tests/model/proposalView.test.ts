@@ -113,6 +113,21 @@ describe('tipo e alvo das mudanças', () => {
 describe('filtros', () => {
   const noConflicts = new Set<string>();
 
+  it('só revisadas deixa as mudanças do conjunto revisado', () => {
+    const { base, proposal } = scenario();
+    const first = proposal.changes[0]?.id ?? '';
+    expect(hasActiveFilters({ ...NO_FILTERS, onlyRevised: true })).toBe(true);
+    expect(NO_FILTERS.onlyRevised).toBe(false);
+    const got = filterChanges(
+      proposal,
+      base,
+      { ...NO_FILTERS, onlyRevised: true },
+      noConflicts,
+      new Set([first]),
+    );
+    expect(got.map((c) => c.id)).toEqual([first]);
+  });
+
   it('sem filtros devolve todas, na ordem da proposta', () => {
     const { base, proposal } = scenario();
     expect(hasActiveFilters(NO_FILTERS)).toBe(false);

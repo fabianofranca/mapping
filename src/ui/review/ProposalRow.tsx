@@ -206,6 +206,11 @@ export function ProposalRow({
             {t('proposals.withdrawnCount', { count: progress.total })}
           </span>
         )}
+        {row.revised > 0 && (
+          <span class="proposal-row-await">
+            {t('proposals.row.revised', { count: row.revised })}
+          </span>
+        )}
         {behind && <span class="proposal-row-await proposal-row-warn">{behind}</span>}
         {awaiting && (
           <span class="proposal-row-await">

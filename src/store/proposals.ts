@@ -9,6 +9,7 @@ import {
   serializeProposal,
   type Change,
   type Proposal,
+  latestRevisionSummary,
 } from '../model';
 import {
   NO_PROPOSALS,
@@ -32,7 +33,7 @@ import { reportError } from '../utils/report';
 // (decidir, anotar, aplicar), então refazer é seguro e nada do que veio de fora se perde.
 // Cada gravação sobe a `revision` da proposta em 1.
 
-export type ProposalNoticeKind = 'added' | 'changed' | 'removed';
+export type ProposalNoticeKind = 'added' | 'changed' | 'removed' | 'revised';
 
 /** Algo que aconteceu com uma proposta por fora da app (nova, alterada ou apagada). */
 export interface ProposalNotice {
@@ -41,6 +42,15 @@ export interface ProposalNotice {
   readonly title: string;
   /** Data ISO de quando a app percebeu. */
   readonly at: string;
+  /** Só em `revised`: o resumo da revisão mais nova. */
+  readonly revision?: { changed: number; added: number; dropped: number };
+}
+
+/** `revised` quando `next` tem mais revisões que `prev` (o agente revisou por fora); senão `changed`. */
+export function noticeKindFor(prev: Proposal, next: Proposal): 'changed' | 'revised' {
+  return (next.revisions?.length ?? 0) > (prev.revisions?.length ?? 0)
+    ? 'revised'
+    : 'changed';
 }
 
 export type ProposalErrorCode =
@@ -93,7 +103,15 @@ export type MutationPlan<T, E extends string> =
     }
   | { readonly ok: false; readonly error: E };
 
-export type Mutation<T, E extends string> = (p: Proposal) => MutationPlan<T, E>;
+/**
+ * `p` é a versão do disco (a que a mudança parte); `seen`, a que a sessão tinha antes de
+ * reler o arquivo. Quando o agente revisou a proposta por fora, `p.revisions` tem entradas
+ * que `seen` não tem: a guarda da decisão usa a diferença (etapa #644, decisão 8).
+ */
+export type Mutation<T, E extends string> = (
+  p: Proposal,
+  seen: Proposal,
+) => MutationPlan<T, E>;
 
 /** O que a conferência da pasta encontrou (ids). */
 export interface ProposalScan {
@@ -199,6 +217,25 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     );
   };
 
+  /** Uma proposta conhecida mudou por fora: `revised` (com o resumo) ou `changed`. */
+  const notifyChanged = (prev: Proposal, next: Proposal) => {
+    const kind = noticeKindFor(prev, next);
+    const summary = kind === 'revised' ? latestRevisionSummary(next) : null;
+    const revision = summary
+      ? { changed: summary.changed, added: summary.added, dropped: summary.dropped }
+      : undefined;
+    notices.value = [
+      ...notices.value,
+      {
+        kind,
+        id: next.id,
+        title: next.title,
+        at: now(),
+        ...(revision ? { revision } : {}),
+      },
+    ].slice(-NOTICE_LIMIT);
+  };
+
   const load = (initial: LoadedProposals = NO_PROPOSALS) => {
     for (const item of initial.proposals) known.set(item.proposal.id, item);
     for (const problem of initial.problems) {
@@ -254,15 +291,16 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
       notify('removed', id, entry.proposal.title);
       return { ok: false, error: 'gone' };
     }
+    const seen = entry.proposal;
     if (text !== entry.text) {
       const parsed = parseProposalFile(id, text, await stampOf(id));
       if (!parsed.ok) return { ok: false, error: 'unreadable' };
       entry = { proposal: parsed.proposal, text: parsed.text, stamp: parsed.stamp };
       adopt(entry);
       publish();
-      notify('changed', id, parsed.proposal.title);
+      notifyChanged(seen, parsed.proposal);
     }
-    const plan = mutation(entry.proposal);
+    const plan = mutation(entry.proposal, seen);
     if (!plan.ok) return { ok: false, error: plan.error };
     if (plan.before) {
       const error = await plan.before();
@@ -383,7 +421,7 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
       } else if (read.text !== entry.text) {
         adopt(read);
         changed.push(id);
-        notify('changed', id, read.proposal.title);
+        notifyChanged(entry.proposal, read.proposal);
       } else {
         known.set(id, { ...entry, stamp: read.stamp });
       }

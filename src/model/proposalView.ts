@@ -141,6 +141,8 @@ export interface ReviewFilters {
   readonly layerId: string | null;
   readonly decision: DecisionFilter;
   readonly onlyConflicts: boolean;
+  /** Só as mudanças com a marca "Revisada" e sem decisão (etapa #644). */
+  readonly onlyRevised: boolean;
 }
 
 /**
@@ -155,7 +157,10 @@ export const NO_FILTERS: ReviewFilters = {
   layerId: null,
   decision: 'all',
   onlyConflicts: false,
+  onlyRevised: false,
 };
+
+const NO_REVISED: ReadonlySet<string> = new Set();
 
 export function hasActiveFilters(f: ReviewFilters): boolean {
   return (
@@ -163,7 +168,8 @@ export function hasActiveFilters(f: ReviewFilters): boolean {
     f.imageId !== null ||
     f.layerId !== null ||
     f.decision !== 'all' ||
-    f.onlyConflicts
+    f.onlyConflicts ||
+    f.onlyRevised
   );
 }
 
@@ -176,6 +182,7 @@ export function filterChanges(
   project: Project,
   filters: ReviewFilters,
   conflicts: ReadonlySet<string>,
+  revised: ReadonlySet<string> = NO_REVISED,
 ): Change[] {
   if (!hasActiveFilters(filters)) return [...p.changes];
   const types = new Set(filters.types);
@@ -188,6 +195,7 @@ export function filterChanges(
       return false;
     }
     if (filters.onlyConflicts && !conflicts.has(c.id)) return false;
+    if (filters.onlyRevised && !revised.has(c.id)) return false;
     const state = p.decisions[c.id]?.state ?? null;
     if (filters.decision === 'undecided') return state === null;
     if (filters.decision === 'accepted') return state === 'accepted';
