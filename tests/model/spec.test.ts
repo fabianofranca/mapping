@@ -41,11 +41,11 @@ describe('exemplos de especialização', () => {
     expect(jsonValidator.safeParse(JSON.parse(text)).success).toBe(true);
   });
 
-  it('lê os campos esperados do SDUI (formatVersion 11, com o repo de cada plataforma)', () => {
+  it('lê os campos esperados do SDUI (formatVersion 12, com o repo de cada plataforma)', () => {
     const result = parseSpecText(sdui);
     if (!result.ok) throw new Error('falhou');
     const { spec } = result;
-    expect(spec.formatVersion).toBe(11);
+    expect(spec.formatVersion).toBe(12);
     expect(spec.version).toBe(4);
     expect(spec.layers.map((l) => l.id)).toEqual(['componentes', 'eventos', 'telas']);
     expect(spec.layers[1]?.annotationTypes[0]?.requiresOwner).toBe(true);
