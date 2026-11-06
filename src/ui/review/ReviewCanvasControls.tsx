@@ -1,5 +1,6 @@
+import type { Signal } from '@preact/signals';
 import { createRef, type ComponentChildren } from 'preact';
-import { useEffect, useLayoutEffect, useRef } from 'preact/hooks';
+import { useEffect, useLayoutEffect } from 'preact/hooks';
 import { t } from '../../i18n';
 import {
   arrowContainerId,
@@ -25,6 +26,20 @@ import { useDecide } from './useReview';
 
 /** O botão "Legenda das marcas", para onde o foco volta ao fechar a legenda. */
 const legendToggle = createRef<HTMLButtonElement>();
+/** O painel da legenda, para saber se o foco está dentro dele. */
+const legendPanel = createRef<HTMLElement>();
+
+/**
+ * Alterna a legenda (botão e atalho L). Ao fechar com o foco dentro dela, devolve-o ao
+ * botão que a abre: o painel sai do DOM e o foco cairia no body.
+ */
+export function toggleReviewLegend(ui: { readonly reviewLegend: Signal<boolean> }) {
+  const open = ui.reviewLegend.peek();
+  if (open && legendPanel.current?.contains(document.activeElement)) {
+    legendToggle.current?.focus();
+  }
+  ui.reviewLegend.value = !open;
+}
 
 /** A troca de arquivo da imagem ainda não aplicada (a que "Comparar" mostra). */
 export function replaceChangeOf(p: Proposal, imageId: string): Change | null {
@@ -98,7 +113,7 @@ export function ReviewCanvasControls() {
         shortcut={REVIEW_KEYS.legend}
         pressed={ui.reviewLegend.value}
         buttonRef={legendToggle}
-        onClick={() => (ui.reviewLegend.value = !ui.reviewLegend.peek())}
+        onClick={() => toggleReviewLegend(ui)}
       />
       {comparable && (
         <IconButton
@@ -154,7 +169,7 @@ export function ReviewLegend() {
 
 function LegendPanel() {
   const { ui } = useEditor();
-  const panel = useRef<HTMLElement>(null);
+  const panel = legendPanel;
   useLegendPlacement(panel);
   // Fechar (X ou Esc) devolve o foco ao botão que a abre, nunca ao body (etapa #515, FN1).
   const close = () => {
