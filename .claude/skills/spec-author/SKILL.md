@@ -107,7 +107,7 @@ Só quando o prompt pede uma biblioteca (componentes que a app desenha). Faça o
 3. **Um documento por componente** (`doc`, `docs/<tipo>.md`): quando usar, variantes, o que não confundir; markdown simples (títulos, parágrafos, listas, tabelas, código). É o que o agente lê em `get_component`.
 4. **Exemplos nomeados** (`examples` no tipo): `values` (chaves de campos do próprio tipo, valores válidos) com `name` único; para uma origem de sistema externo (`origins`), `system` + `file` (o JSON de **um nó** em `examples/`) e, na origem, telas inteiras em `examples[]`.
 5. **Fontes:** `fonts` na raiz (`family`, `file`, `weight`, `style`). Os arquivos têm licença e peso: se não puder incluí-los, deixe `fonts/LEIA-ME.txt` dizendo quais arquivos faltam e de onde obtê-los (fonte ausente é **aviso**, não erro).
-6. **Atualização de biblioteca já aplicada:** preserve ids de tipo e `key` de campo, suba a `version`. **Aditivo** (não precisa de `migrations`): tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, mudar só o desenho. **Quebra** (exige entrada em `migrations`, com `from`, `to` e `steps`): remover ou renomear tipo, campo ou opção de `enum`, tornar um campo obrigatório, mudar o `type` de um campo. Passe a versão anterior à validação (`previous`).
+6. **Atualização de biblioteca já aplicada:** preserve ids de tipo e `key` de campo, suba a `version`. **Aditivo** (não precisa de `migrations`): tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, mudar só o desenho. **Quebra** (exige entrada em `migrations`, com `from`, `to` e `steps`): remover ou renomear tipo, campo ou opção de `enum`, tornar um campo obrigatório, mudar o `type` de um campo, tirar um papel de `childRoles` ou dar `childRoles` a um tipo que não tinha (passos `rename-role`, `remove-role` e `set-role`, da `formatVersion` 12: ver a seção 12). Passe a versão anterior à validação (`previous`).
 
 ### 9. Containers (`formatVersion` 6)
 
@@ -263,11 +263,35 @@ Um dono com papéis e eventos em grupos:
 }
 ```
 
-O Button aceita todo evento (e, nele, o mesmo `navigate` pode ser ligado no clique e no pressionar); o Card só os do grupo `navegacao`. **Fora do contrato de versão:** incluir, mudar ou tirar `groups`, `childRoles`, `childRolesLabel`, `docRepos` e o formato do `doc` nunca pede migração nem sobe a `version` por si só. Numa versão anterior à 11, cada uma dessas chaves é erro (`só é permitido com formatVersion 11`, no caminho exato).
+O Button aceita todo evento (e, nele, o mesmo `navigate` pode ser ligado no clique e no pressionar); o Card só os do grupo `navegacao`. **Fora do contrato de versão:** incluir, mudar ou tirar `groups`, `childRolesLabel`, `docRepos` e o formato do `doc`, e mudar o `name` ou a `description` de um papel ou a ordem dos `childRoles`, nunca pede migração nem sobe a `version` por si só. **Dentro do contrato** estão os `id` dos papéis (ver a seção seguinte). Numa versão anterior à 11, cada uma dessas chaves é erro (`só é permitido com formatVersion 11`, no caminho exato).
+
+#### Migração dos papéis (`formatVersion` 12)
+
+O `id` do papel é dado que as anotações guardam (`parentRole` no vínculo do filho). Por isso, ao **atualizar** uma biblioteca já aplicada, mexer nos papéis de um tipo é quebra e exige um passo em `migrations` (os três passos só existem na `formatVersion` 12; as chaves são estritas, `type` é o tipo **dono**):
+
+- **Papel que sumiu de `childRoles`** (`removed-role`, inclusive o tipo que perde todos): `rename-role { type, from, to }` quando o papel só mudou de `id` (o `to` existe no tipo) ou `remove-role { type, role, mode }` quando ele acabou. **Usar `rename-role` também para juntar dois papéis** em um (o `to` já existia na versão anterior): os filhos dos dois passam a ocupar o mesmo. `mode: "clear"` mantém o filho vinculado e apaga o papel (perda `cleared-role`; o filho fica em Incompletas, `missing-role`, se o dono ainda tem papéis); `mode: "unlink"` desvincula o filho (perda `unlinked`; pendência `missing-owner` se o tipo dele tem `requiresOwner`). Escolha `clear` quando o filho ainda faz sentido ligado ao dono, `unlink` quando o papel era o que o ligava.
+- **Tipo que não tinha `childRoles` e passou a ter** (`roles-required`): `set-role { type, role, childType? }` dá `role` aos filhos do dono que **não têm papel**; com `childType`, só aos desse tipo. Ele preenche e **nunca sobrescreve**, e nunca gera perda; filho que nenhum passo alcança fica em Incompletas (`missing-role`). Declare um `set-role` para cada papel inicial que a origem evidencia, com `childType` quando o papel depende do tipo do filho.
+- **Papel novo em tipo que já tinha papéis** (`added-role`) é aditivo: não pede passo.
+
+**Dono ou filho renomeado (caso SDUI).** O `type` do passo é o `id` do dono **naquele ponto da cadeia**: depois de um `rename-type` do dono, o `id` novo; os papéis não são comparados entre o tipo antigo e o novo, então um papel que o tipo novo não tem vira `unknown-role` e se resolve com `rename-role` declarado **depois** do `rename-type`. O `childType` do `set-role` pode ser o `id` **antigo** do filho: **escreva o `set-role` ANTES do `rename-type` do filho** para dar o papel enquanto o tipo ainda tem o nome antigo e não perder a informação do que vai ser renomeado (no SDUI, o evento `onClick` que vira `navigate` ganha o papel `click` antes do renome).
+
+```json
+{
+  "from": 2,
+  "to": 3,
+  "steps": [
+    { "op": "set-role", "type": "button", "role": "click", "childType": "onClick" },
+    { "op": "rename-type", "from": "onClick", "to": "navigate" }
+  ]
+}
+```
+
+- **Só suba para a `formatVersion` 12 se a especialização declara algum passo de papel.** Quem não usa `rename-role`, `remove-role` nem `set-role` fica na versão que o conteúdo pede (a 11, com papéis). Numa `formatVersion` de 4 a 11, o passo é erro (`só é permitido com formatVersion 12`, no caminho `migrations[i].steps[j].op`). A recíproca vale: uma v11 que tira um papel ou dá `childRoles` a um tipo sem o passo é recusada na atualização; suba para a 12 e declare-o.
+- **Anti-padrão: remover um papel (ou renomeá-lo) sem o passo.** Os filhos ficam com um `parentRole` que o tipo não tem mais e o contrato de versão recusa a atualização (`removed-role`). Também não use o passo para consertar o que a origem não evidencia: sem evidência do papel, não invente `set-role`.
 
 ### 13. Versão
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`; 8 com `suggestions` ou `linkedRef` em algum campo ou coluna `string`; 9 com `variants` no `code` de algum tipo; 10 com `notices` em algum tipo, campo ou coluna; 11 com cláusula em `allowedChildren`, `groups` (na camada ou no tipo), `childRoles`, `childRolesLabel`, `docRepos` ou `doc` como objeto. A versão atual do formato é a 11. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, e para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta)**: o resto da biblioteca fica na versão que o conteúdo pede (a Kotlin e a de notas ficam na 8). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`; 8 com `suggestions` ou `linkedRef` em algum campo ou coluna `string`; 9 com `variants` no `code` de algum tipo; 10 com `notices` em algum tipo, campo ou coluna; 11 com cláusula em `allowedChildren`, `groups` (na camada ou no tipo), `childRoles`, `childRolesLabel`, `docRepos` ou `doc` como objeto; 12 com `rename-role`, `remove-role` ou `set-role` em `migrations`. A versão atual do formato é a 12. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta) e para a 12 só se declara um passo de papel**: o resto da biblioteca fica na versão que o conteúdo pede (a Kotlin e a de notas ficam na 8). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
@@ -368,6 +392,7 @@ Não aplique a especialização a um projeto nem crie proposta, a menos que o pr
 - `formatVersion` 3 numa especialização sem `sources`, só "para garantir".
 - Nome de framework fora de `platforms`/`code`, ou especialização citando outra pelo nome.
 - Biblioteca: caminho com `..` ou fora da pasta; arquivo de componente, documento ou exemplo que ninguém cita (vira aviso); template citando chave de campo que o tipo não tem; exemplo com valor fora das `options`; `fonts` declarada sem arquivo nem `LEIA-ME.txt`.
+- Atualização de biblioteca que remove ou renomeia um papel de `childRoles` (ou dá papéis a um tipo que não tinha) sem `rename-role`, `remove-role` ou `set-role`; `set-role` escrito depois do `rename-type` do filho, quando a informação dependia do tipo antigo; a 12 declarada numa especialização sem nenhum passo de papel.
 - Biblioteca: validar só o arquivo (`validate_specialization`) e achar que o pacote passa; renomear campo ou tipo numa atualização sem `migrations`; tentar aplicar o pacote por `propose_changes`.
 
 ## Prompt que invoca esta skill
@@ -376,7 +401,7 @@ O prompt só precisa especificar. Modelo:
 
 > /spec-author
 >
-> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9|10|11>.
+> Especialização **`<id>`** ("<Nome>") para o Mapping, `formatVersion` <1|2|3|4|5|6|7|8|9|10|11|12>.
 >
 > **Origem:** <repositório, pasta ou design system>, lendo <o que ler: pasta dos componentes, catálogo exportado, documento>. Ignore <o que ignorar>.
 >
@@ -393,6 +418,8 @@ O prompt só precisa especificar. Modelo:
 > **Avisos:** <diferenças entre as fontes (contrato × código) a registrar em `notices`, com o `kind` de cada uma>. (Só na `formatVersion` 10; omitir sem evidência.)
 >
 > **Filhos, papéis e documentos externos:** <donos que aceitam uma camada ou grupos inteiros, os papéis de ligação do filho (`childRoles`) e os repositórios onde vive a documentação dos tipos (`docRepos`)>. (Só na `formatVersion` 11; omitir sem evidência.)
+>
+> **Migração dos papéis:** <papéis que saíram ou mudaram de `id` nesta atualização e os que um tipo passou a ter, com o destino dos filhos (`clear` ou `unlink`)>. (Só na `formatVersion` 12; omitir sem passo de papel.)
 >
 > **Fora:** <o que não modelar>.
 >

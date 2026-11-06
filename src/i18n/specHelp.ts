@@ -556,6 +556,60 @@ const MIGRATIONS_EXCERPT = `{
   ]
 }`;
 
+/** Uma especialização v12 completa: os passos de migração dos papéis (`rename-role`, `remove-role`, `set-role`). */
+const ROLES_MIGRATION_EXCERPT = `{
+  "format": "mapping-spec",
+  "formatVersion": 12,
+  "id": "loja",
+  "name": "Loja",
+  "version": 3,
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "allowedChildren": [{ "layer": "eventos" }],
+          "childRoles": [
+            { "id": "click", "name": "Clique" },
+            { "id": "hold", "name": "Pressionar" }
+          ],
+          "fields": []
+        },
+        {
+          "id": "card",
+          "name": "Card",
+          "allowedChildren": [{ "layer": "eventos" }],
+          "childRoles": [{ "id": "abrir", "name": "Abrir" }],
+          "fields": []
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#43A047",
+      "annotationTypes": [
+        { "id": "navigate", "name": "Navigate", "requiresOwner": true, "fields": [] }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 2,
+      "to": 3,
+      "steps": [
+        { "op": "rename-role", "type": "button", "from": "tap", "to": "click" },
+        { "op": "remove-role", "type": "button", "role": "legado", "mode": "clear" },
+        { "op": "set-role", "type": "card", "role": "abrir", "childType": "navigate" }
+      ]
+    }
+  ]
+}`;
+
 /** Um problema do validador da biblioteca. */
 const ISSUE_EXCERPT = `{
   "file": "sdui-backend.spec.json",
@@ -580,6 +634,7 @@ const ptBR: readonly HelpSection[] = [
           'Uma especialização não cita outra pelo nome. A ligação entre elas é feita por referências fortes (tipo ref), que escolhem os alvos por etiquetas.',
           'Camadas da especialização só aceitam anotações tipadas, sem chaves extras. Camadas criadas por você continuam livres.',
           'A especialização aplicada é copiada para specs/<id>.json dentro do projeto, que fica autocontido.',
+          'A formatVersion 12 acrescenta três passos de migração dos papéis em migrations: rename-role, remove-role e set-role (seções "Contrato de versão" e "Papéis no vínculo (childRoles)"). Tirar um papel de childRoles passa a ser quebra, e só sobe para a 12 quem declara um desses passos. As versões 1 a 11 continuam aceitas.',
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
           'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
@@ -598,7 +653,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 11), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 12), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -801,8 +856,8 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'Fora do contrato de versão: incluir, mudar ou tirar childRoles e childRolesLabel é compatível e nunca pede migração.',
-          'Numa versão anterior à 11 o erro é só é permitido com formatVersion 11, no caminho exato.',
+          'No contrato de versão (a partir da formatVersion 12): o id do papel é dado que as anotações guardam (parentRole). Tirar um papel de um tipo, ou dar childRoles a um tipo que não tinha, é quebra e pede um passo rename-role, remove-role ou set-role em migrations; acrescentar um papel a um tipo que já tinha papéis é aditivo. Continuam fora do contrato o name e a description do papel, a ordem dos childRoles e o childRolesLabel.',
+          'Numa versão anterior à 11 o erro é só é permitido com formatVersion 11, no caminho exato. Os passos de migração dos papéis são da formatVersion 12.',
         ],
       },
     ],
@@ -1209,7 +1264,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'version é a versão do pacote. Ao subir a versão, cada diferença é aditiva (só acrescenta: tipo, campo opcional, opção de enum, componente, documento, exemplo, fonte, ou um desenho novo sem mudar os campos) ou quebra (remove ou renomeia tipo, campo ou opção de enum, torna um campo obrigatório ou muda o type de um campo). Camadas, labelField, allowedChildren, requiresOwner, description, tags, code, platforms e sources ficam fora do contrato.',
+        text: 'version é a versão do pacote. Ao subir a versão, cada diferença é aditiva (só acrescenta: tipo, campo opcional, opção de enum, componente, documento, exemplo, fonte, ou um desenho novo sem mudar os campos) ou quebra (remove ou renomeia tipo, campo ou opção de enum, torna um campo obrigatório ou muda o type de um campo). Na formatVersion 12, os papéis (childRoles) entram no contrato: tirar um papel de um tipo ou dar papéis a um tipo que não tinha é quebra, e acrescentar um papel a um tipo que já tinha é aditivo. Camadas, labelField, allowedChildren, requiresOwner, description, tags, code, platforms e sources ficam fora do contrato, e também o name e a description do papel, a ordem dos childRoles e o childRolesLabel.',
       },
       {
         kind: 'p',
@@ -1234,8 +1289,25 @@ const ptBR: readonly HelpSection[] = [
             term: 'fill-field',
             text: 'Campo que passou a obrigatório, campo novo obrigatório ou type trocado: o default entra no lugar.',
           },
+          {
+            term: 'rename-role',
+            text: 'formatVersion 12. Papel renomeado no tipo dono (type, from → to). Se to já existia, os dois papéis se juntam. Sem perda nem pendência.',
+          },
+          {
+            term: 'remove-role',
+            text: 'formatVersion 12. Papel removido do tipo dono (type, role); mode diz o destino dos filhos: clear mantém o vínculo e apaga o papel (perda; pendência se o dono ainda tem papéis), unlink desvincula o filho (perda; pendência de dono se o tipo do filho exige dono).',
+          },
+          {
+            term: 'set-role',
+            text: 'formatVersion 12. Tipo que passou a ter papéis: dá o papel (type, role) aos filhos do dono que não têm papel, só aos do childType quando vem. Preenche e nunca sobrescreve; nunca gera perda. Use antes do rename-type do filho para não perder a informação.',
+          },
         ],
       },
+      {
+        kind: 'p',
+        text: 'Um exemplo de especialização v12 com os três passos de papel (as anotações só mudam o vínculo, parentRole, nunca o filho):',
+      },
+      { kind: 'code', code: ROLES_MIGRATION_EXCERPT },
       {
         kind: 'p',
         text: 'Ao atualizar, a app executa os passos da cadeia sobre as anotações do projeto e mostra antes o impacto: os passos com suas contagens, as perdas em destaque (valores ou anotações apagados) e as pendências que abrem em Incompletas. Uma quebra sem passo recusa a atualização, e Desfazer devolve a biblioteca e os dados juntos.',
@@ -1289,7 +1361,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 11), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 12), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes em outra camada;',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo (na formatVersion 11, no conjunto resolvido dos filhos de algum dono: por id, por camada inteira ou por grupo);',
@@ -1299,6 +1371,7 @@ const ptBR: readonly HelpSection[] = [
           'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
           'formatVersion 11, filhos por camada e grupo: só na versão 11 (antes dela o erro é só é permitido com formatVersion 11, no caminho exato); cada item de allowedChildren é um id de tipo ou uma cláusula { layer, groups } estrita (outra propriedade é erro, e groups vazio também); erros: layer que não é camada da especialização ou é a do próprio dono (filhos devem estar em outra camada) e grupo inexistente na camada da cláusula; requiresOwner conferido no conjunto resolvido; groups da camada com id não vazio e único na camada e name não vazio; groups do tipo não vazio, sem repetição e só da própria camada; avisos: 20 ids ou mais em texto no mesmo allowedChildren e grupo que nenhum tipo usa;',
+          'formatVersion 12, passos de papel em migrations: rename-role, remove-role e set-role só na versão 12 (de 4 a 11 o erro é só é permitido com formatVersion 12, no caminho migrations[i].steps[j].op); chaves estritas; rename-role: type é tipo desta versão com childRoles, to é papel dele e from não é; remove-role: type é tipo desta versão, role não é papel dele e mode é clear ou unlink; set-role: type tem childRoles, role é papel dele e childType só confere o formato de id; aviso: rename-role.from ou remove-role.role que não era papel do tipo na versão anterior;',
           'formatVersion 11, childRoles e childRolesLabel: só na versão 11; childRoles não vazia, de { id, name, description? } estritos, com id não vazio e único no tipo e name não vazio; só em tipo com allowedChildren; childRolesLabel texto não vazio e só com childRoles; sem ele a app usa "Papel";',
           'formatVersion 11, docRepos e doc objeto: só na versão 11; docRepos[n] com as regras do repo de plataforma (url obrigatória http(s):// sem espaços, urlTemplate opcional com {path}, ref opcional não vazio) e id no formato [a-z0-9-]+ e único; doc objeto { repo, path } estrito: repo precisa estar em docRepos, path relativo (sem ., .. nem / no começo), terminando em .md e sem #; o doc em texto continua valendo da versão 4 em diante; aviso: repositório de docRepos que nenhum doc usa;',
           'formatVersion 10, notices: só na versão 10 (antes dela o erro é só é permitido com formatVersion 10, no caminho do tipo, do campo ou da coluna); lista de objetos estritos com kind (pending, deprecated, diverges ou removed) e message (não vazia nem só espaços) obrigatórios, since (data real AAAA-MM-DD) e ref (texto não vazio) opcionais; dois avisos com o mesmo kind e a mesma message são o erro aviso repetido, no caminho do segundo; qualquer outra propriedade é recusada;',
@@ -1351,6 +1424,7 @@ const enUS: readonly HelpSection[] = [
           'A specialization never names another one. They are linked through strong references (ref type), which pick their targets by tags.',
           'Specialization layers only accept typed annotations, with no extra keys. Layers you create yourself stay free-form.',
           'The applied specialization is copied to specs/<id>.json inside the project, which stays self-contained.',
+          'formatVersion 12 adds three role migration steps to migrations: rename-role, remove-role and set-role (sections "Version contract" and "Roles on the link (childRoles)"). Removing a role from childRoles is now a breaking change, and only a specialization that declares one of these steps goes up to 12. Versions 1 to 11 are still accepted.',
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
           'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
@@ -1369,7 +1443,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 11), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 12), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -1575,8 +1649,8 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'Outside the version contract: adding, changing or removing childRoles and childRolesLabel is compatible and never asks for a migration.',
-          'Before version 11 the error is only allowed with formatVersion 11, at the exact path.',
+          'In the version contract (from formatVersion 12): the role id is data the annotations store (parentRole). Removing a role from a type, or giving childRoles to a type that had none, is breaking and needs a rename-role, remove-role or set-role step in migrations; adding a role to a type that already had roles is additive. The role name and description, the order of childRoles and childRolesLabel stay outside the contract.',
+          'Before version 11 the error is only allowed with formatVersion 11, at the exact path. The role migration steps belong to formatVersion 12.',
         ],
       },
     ],
@@ -1983,7 +2057,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'version is the package version. When it goes up, each difference is additive (it only adds: a type, an optional field, an enum option, a component, a document, an example, a font, or a new drawing without changing the fields) or breaking (it removes or renames a type, a field or an enum option, makes a field required or changes a field’s type). Layers, labelField, allowedChildren, requiresOwner, description, tags, code, platforms and sources are outside the contract.',
+        text: 'version is the package version. When it goes up, each difference is additive (it only adds: a type, an optional field, an enum option, a component, a document, an example, a font, or a new drawing without changing the fields) or breaking (it removes or renames a type, a field or an enum option, makes a field required or changes a field’s type). In formatVersion 12 the roles (childRoles) are in the contract: removing a role from a type or giving roles to a type that had none is breaking, and adding a role to a type that already had roles is additive. Layers, labelField, allowedChildren, requiresOwner, description, tags, code, platforms and sources are outside the contract, and so are the role name and description, the order of childRoles and childRolesLabel.',
       },
       {
         kind: 'p',
@@ -2008,8 +2082,25 @@ const enUS: readonly HelpSection[] = [
             term: 'fill-field',
             text: 'Field that became required, new required field or changed type: the default takes its place.',
           },
+          {
+            term: 'rename-role',
+            text: 'formatVersion 12. Role renamed on the owner type (type, from → to). If to already existed, the two roles merge. No loss and nothing pending.',
+          },
+          {
+            term: 'remove-role',
+            text: 'formatVersion 12. Role removed from the owner type (type, role); mode says where the children go: clear keeps the link and drops the role (a loss; pending if the owner still has roles), unlink detaches the child (a loss; pending owner if the child type requires an owner).',
+          },
+          {
+            term: 'set-role',
+            text: 'formatVersion 12. A type that gained roles: gives the role (type, role) to the owner’s children that have none, only those of childType when it comes. It fills and never overwrites; it never causes a loss. Use it before the child’s rename-type so the information is kept.',
+          },
         ],
       },
+      {
+        kind: 'p',
+        text: 'An example of a v12 specialization with the three role steps (the annotations only change the link, parentRole, never the child itself):',
+      },
+      { kind: 'code', code: ROLES_MIGRATION_EXCERPT },
       {
         kind: 'p',
         text: 'When updating, the app runs the chain steps on the project’s annotations and shows the impact first: the steps with their counts, the losses highlighted (deleted values or annotations) and the pending items that open in Incomplete. A breaking change without a step refuses the update, and Undo restores the library and the data together.',
@@ -2063,7 +2154,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 11), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 12), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types in another layer;',
           'every type with requiresOwner: true appears in the allowedChildren of some type (in formatVersion 11, in the resolved set of children of some owner: by id, by whole layer or by group);',
@@ -2073,6 +2164,7 @@ const enUS: readonly HelpSection[] = [
           'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
           'formatVersion 11, children by layer and group: version 11 only (before it the error is only allowed with formatVersion 11, at the exact path); each allowedChildren item is a type id or a strict { layer, groups } clause (any other property is an error, and so is an empty groups); errors: a layer that is not a layer of the specialization or is the owner’s own (children must be in another layer) and a group that does not exist in the clause’s layer; requiresOwner is checked against the resolved set; layer groups with a non-empty id unique in the layer and a non-empty name; type groups non-empty, without repetition and only from its own layer; warnings: 20 ids or more in text in the same allowedChildren and a group no type uses;',
+          'formatVersion 12, role steps in migrations: rename-role, remove-role and set-role in version 12 only (from 4 to 11 the error is only allowed with formatVersion 12, at migrations[i].steps[j].op); strict keys; rename-role: type is a type of this version with childRoles, to is one of its roles and from is not; remove-role: type is a type of this version, role is not one of its roles and mode is clear or unlink; set-role: type has childRoles, role is one of its roles and childType only checks the id format; warning: a rename-role.from or remove-role.role that was not a role of the type in the previous version;',
           'formatVersion 11, childRoles and childRolesLabel: version 11 only; childRoles non-empty, of strict { id, name, description? }, with a non-empty id unique in the type and a non-empty name; only on a type with allowedChildren; childRolesLabel non-empty text and only with childRoles; without it the app uses "Role";',
           'formatVersion 11, docRepos and doc object: version 11 only; docRepos[n] with the rules of a platform repo (url required, http(s):// without spaces, urlTemplate optional with {path}, ref optional non-empty) and an id in the [a-z0-9-]+ format, unique; doc object { repo, path } strict: repo must be in docRepos, path relative (no ., .. or leading /), ending in .md and without #; the text doc is still valid from version 4 on; warning: a docRepos repository no doc uses;',
           'formatVersion 10, notices: only in version 10 (before it the error is only allowed with formatVersion 10, at the type, field or column path); a list of strict objects with kind (pending, deprecated, diverges or removed) and message (not empty or only spaces) required, since (a real YYYY-MM-DD date) and ref (non-empty text) optional; two notices with the same kind and message are the error repeated notice (aviso repetido), at the path of the second; any other property is refused;',
