@@ -1,0 +1,56 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 12,
+  "id": "papeis-migracao",
+  "name": "Papéis em migração",
+  "version": 2,
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "allowedChildren": ["interaction"],
+          "childRolesLabel": "Gatilho",
+          "childRoles": [{ "id": "click", "name": "Clique" }],
+          "fields": [{ "key": "texto", "type": "string", "required": true }]
+        },
+        {
+          "id": "slider",
+          "name": "Slider",
+          "allowedChildren": ["interaction"],
+          "childRolesLabel": "Gatilho",
+          "childRoles": [{ "id": "change", "name": "Alteração" }],
+          "fields": [{ "key": "texto", "type": "string", "required": true }]
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#E53935",
+      "annotationTypes": [
+        {
+          "id": "interaction",
+          "name": "Interação",
+          "requiresOwner": true,
+          "fields": []
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 1,
+      "to": 2,
+      "steps": [
+        { "op": "rename-role", "type": "button", "from": "tap", "to": "click" },
+        { "op": "remove-role", "type": "button", "role": "hold", "mode": "clear" },
+        { "op": "remove-role", "type": "slider", "role": "drag", "mode": "unlink" }
+      ]
+    }
+  ]
+}

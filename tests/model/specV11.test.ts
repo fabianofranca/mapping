@@ -59,7 +59,7 @@ describe('formatVersion 11: versões', () => {
         join('libraries', d, `${d}.spec.json`),
       ),
     ];
-    expect(files.length).toBe(5);
+    expect(files.length).toBe(6);
     for (const file of files) {
       const result = parseSpecText(readFileSync(file, 'utf8'));
       expect(result.ok ? [] : result.errors, file).toEqual([]);

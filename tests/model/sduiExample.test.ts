@@ -88,3 +88,13 @@ describe('exemplo SDUI v12', () => {
     );
   });
 });
+
+describe('exemplo papeis-migracao (rename-role e remove-role)', () => {
+  it('valida na formatVersion 12 e declara os três passos de papel', () => {
+    const spec = loadExample('papeis-migracao');
+    expect(spec.formatVersion).toBe(12);
+    expect(specWarnings(spec)).toEqual([]);
+    const ops = (spec.migrations ?? []).flatMap((m) => m.steps.map((s) => s.op));
+    expect(ops).toEqual(['rename-role', 'remove-role', 'remove-role']);
+  });
+});
