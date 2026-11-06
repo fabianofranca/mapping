@@ -35,7 +35,7 @@ CHROME_CMD=(
   /opt/pw-browsers/chromium --no-sandbox
   --user-data-dir="$S/profile" --remote-debugging-port=9222 --force-renderer-accessibility
   --no-first-run --no-default-browser-check --hide-crash-restore-bubble
-  --window-position=0,0 --window-size=1600,1000 http://localhost:8080/
+  --window-position=0,0 --window-size=1600,1200 http://localhost:8080/
 )
 
 check_one_tab() {
@@ -54,7 +54,7 @@ start_display_and_chrome() {
   export DISPLAY=:99
   # Os processos que ficam de pé sobem com `setsid`, stdin de /dev/null e saída num log: nenhum
   # segura o terminal nem o pipe de quem chamou o script (`... | tail`), então ele volta sozinho.
-  setsid Xvfb :99 -screen 0 1600x1000x24 </dev/null >"$S/xvfb.log" 2>&1 &
+  setsid Xvfb :99 -screen 0 1600x1200x24 </dev/null >"$S/xvfb.log" 2>&1 &
   # Espera o soquete do X aparecer: 1 s de `sleep` não basta sempre, e o openbox falha calado
   # ("Failed to open the display") se nascer antes do Xvfb estar de pé.
   for _ in $(seq 1 50); do

@@ -21,7 +21,7 @@ import {
 } from '../../src/model';
 import { emptyProject } from './fixtures';
 
-export function loadExample(name: 'sdui' | 'modelo-de-dados'): Spec {
+export function loadExample(name: 'sdui' | 'modelo-de-dados' | 'papeis-migracao'): Spec {
   // A partir da raiz do projeto: no ambiente jsdom, `import.meta.url` não é `file:`.
   const text = readFileSync(
     join(process.cwd(), 'examples', 'specs', `${name}.json`),
