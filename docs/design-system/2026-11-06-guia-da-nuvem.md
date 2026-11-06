@@ -1,4 +1,4 @@
-# Guia da nuvem — [Não lançado] (épico `epic/guia-da-nuvem`)
+# Guia da nuvem — 2026-11-06 (épico `epic/guia-da-nuvem`)
 
 ## Pendências
 
@@ -6,8 +6,8 @@ Nenhuma. O épico só mexe no guia de testes, no auxiliar da nuvem e nos testes;
 
 ## Sincronização
 
-Preenchida no fechamento.
+Nada a gravar no artefato **Mapping**: o épico não mudou componente, token nem ícone.
 
 ## Ficou sem gravar
 
-Preenchida no fechamento.
+Nada.
