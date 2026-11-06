@@ -1,8 +1,8 @@
-# Formato da proposta de alteração (`formatVersion` 4)
+# Formato da proposta de alteração (`formatVersion` 5)
 
 Toda alteração feita por um agente chega como uma **proposta**: o usuário revisa as diferenças, aceita ou rejeita em qualquer nível e deixa notas; só o que foi aceito é aplicado ao `mapping.json`. Este documento descreve o arquivo da proposta e as regras da revisão. O formato do projeto está em [`FORMAT.md`](FORMAT.md).
 
-A funcionalidade é genérica: o núcleo não sabe de onde vêm os dados. A validação (zod) e todas as regras ficam em `src/model/` (`proposal.ts`, `proposalChanges.ts`, `proposalReview.ts`, `proposalApply.ts`, `proposalCompare.ts`), como funções puras usadas pela app e pelo servidor MCP.
+A funcionalidade é genérica: o núcleo não sabe de onde vêm os dados. A validação (zod) e todas as regras ficam em `src/model/` (`proposal.ts`, `proposalChanges.ts`, `proposalReview.ts`, `proposalApply.ts`, `proposalCompare.ts`, `proposalRevise.ts`), como funções puras usadas pela app e pelo servidor MCP.
 
 ## Onde fica
 
@@ -30,12 +30,13 @@ meu-projeto/
 
 ## Quem grava o quê
 
-- **Servidor MCP** (`propose_changes`, `withdraw_proposal`): cria a pasta e o `proposal.json` (`status: open`, `revision: 0`, sem decisões nem notas) e, depois, só muda o `status` (`superseded` quando uma proposta **aberta** é substituída, `withdrawn` ao ser retirada; uma `applied` substituída não muda), sempre relendo o arquivo antes de gravar e com `revision + 1`. Nunca grava o `mapping.json`. No campo `operations` o conteúdo `base64` das imagens é trocado por um marcador (a imagem já está em `proposals/<id>/images/`).
-- **App**: grava `decisions`, `notes`, `applied` e o `status` à medida que o usuário revisa e aplica; é a única que grava o `mapping.json`.
+- **Servidor MCP** (`propose_changes`, `withdraw_proposal`, `revise_proposal`): cria a pasta e o `proposal.json` (`status: open`, `revision: 0`, sem decisões nem notas, `formatVersion` 4) e, depois, muda o `status` (`superseded` quando uma proposta **aberta** é substituída, `withdrawn` ao ser retirada; uma `applied` substituída não muda) e grava a **revisão do agente** (`revise_proposal`: `changes`, as `decisions` das mudanças trocadas e retiradas, as `notes` das retiradas, `revisions` e `formatVersion` 5; veja "Revisão pelo agente"). Sempre relê o arquivo antes de gravar e grava com `revision + 1`. Nunca grava o `mapping.json`. No campo `operations` o conteúdo `base64` das imagens é trocado por um marcador (a imagem já está em `proposals/<id>/images/`).
+- **App**: grava `decisions`, `notes`, `applied` e o `status` à medida que o usuário revisa e aplica, mantendo a `formatVersion` do arquivo (e o `revisions`, se houver); é a única que grava o `mapping.json`.
 
 ## Versões do formato
 
-- **`formatVersion` 4** (posição da marcação criada): é a versão que a app e o servidor MCP gravam. A forma do arquivo é a da 3, com um campo a mais, **`insertBefore`**, só na mudança de criação de marcação (veja "Posição da marcação criada"). **Por que uma versão nova, e não um campo opcional na 3:** uma app antiga em cache leria a 3, descartaria o campo ao regravar as decisões e aplicaria a proposta com a hierarquia invertida, sem aviso; com a 4 ela **recusa o arquivo** (`formatVersion` deve ser 1, 2 ou 3). A 4 tem de ser lida pela app e pelo servidor MCP na mesma versão que a grava. As versões 1 a 3 continuam lidas e aplicadas como sempre: um `insertBefore` que apareça nelas é ignorado, e quem as regrava (a app, ao registrar as decisões) mantém a versão do arquivo.
+- **`formatVersion` 5** (revisão pelo agente): é a versão que a **revisão do agente** (`revise_proposal`) grava. A forma do arquivo é a da 4, com um campo a mais na raiz, **`revisions`**, o histórico das revisões do agente, da mais antiga para a mais nova (veja "Histórico das revisões"). **Só a revisão do agente grava a 5:** a criação (`propose_changes`) continua gravando a 4; a app, ao regravar decisões e notas, mantém a versão do arquivo; uma proposta 4 vira 5 na primeira revisão. **Por que uma versão nova:** uma app antiga em cache leria a proposta revisada sem a marca e descartaria o `revisions` ao regravar; pior, revisando ao mesmo tempo que o agente, refaria a decisão da pessoa sobre um conteúdo que ela não viu. Com a 5, a app antiga **recusa o arquivo** (`formatVersion` deve ser 1, 2, 3 ou 4) e nunca o sobrescreve (a regra de hoje para arquivo que mudou e ficou ilegível). Um servidor MCP antigo lista a proposta em `broken`. As versões 1 a 4 continuam lidas e aplicadas como sempre.
+- **`formatVersion` 4** (posição da marcação criada): é a versão que a **criação** (`propose_changes`) grava. A forma do arquivo é a da 3, com um campo a mais, **`insertBefore`**, só na mudança de criação de marcação (veja "Posição da marcação criada"). **Por que uma versão nova, e não um campo opcional na 3:** uma app antiga em cache leria a 3, descartaria o campo ao regravar as decisões e aplicaria a proposta com a hierarquia invertida, sem aviso; com a 4 ela **recusa o arquivo** (`formatVersion` deve ser 1, 2 ou 3). A 4 tem de ser lida pela app e pelo servidor MCP na mesma versão que a grava. As versões 1 a 3 continuam lidas e aplicadas como sempre: um `insertBefore` que apareça nelas é ignorado, e quem as regrava (a app, ao registrar as decisões) mantém a versão do arquivo.
 - **Schema v14 (papéis e documentos externos) não sobe a versão.** Continua `formatVersion` 4. O campo `parentRole` da anotação (na mudança de campo e dentro da anotação inteira de criação e remoção) e a entidade `docRepo` só existem em projeto v14, e uma app ou um MCP anteriores abrem o projeto v14 **só para leitura** (`readOnly`; a app bloqueia "Aplicar aceitas" (`read-only`) e o MCP recusa o lote), então nenhum leitor aplica a proposta sem entender o projeto v14. A proposta mora na pasta do projeto e é lida junto com o `mapping.json` (`loadProposals` na app, `proposalStore` no MCP); uma proposta com `docRepo` ou `parentRole` num leitor antigo dá erro de leitura da proposta, nunca uma aplicação parcial. Uma proposta escrita antes da v14 (a criação de anotação sem `parentRole`) é lida como sem papel (`parentRole: null`). Um `parentRole` vazio na mudança de campo é erro de leitura.
 - **`formatVersion` 3** (sem herança e com o pertencimento por geometria, schema v13): foi a versão gravada até a posição da marcação criada. A forma do arquivo é a da 2, com: `inherit` fora dos campos de `annotation` (na mudança e nas anotações inteiras de criação e remoção); a marcação do canvas (`containerId` nulo) e o nível **`canvas`** da revisão; a mudança composta **`space`**; **`floating`** comparado; **`parentId` fora da comparação** (veja "Marcação do canvas e pertencimento"); e a entidade **`arrow`** (a seta), só com criação e remoção (veja "Seta").
 - **Proposta antiga com `parentId`.** Uma proposta de `formatVersion` 1 ou 2 com mudança do campo `parentId` de marcação é lida com essa mudança **descartada**, com a decisão, a aplicação e a nota presa a ela (a nota passa ao nível da proposta), e a leitura devolve um aviso (`warnings`). O pai agora é sempre recalculado pela geometria ao aplicar. As criações e remoções antigas de marcação sem `floating` são lidas como `floating: false`. Mudanças separadas de `containerId` e de `rect` de uma mesma marcação (o jeito de antes de trocar de espaço) **continuam aplicando**, cada uma por si e como estão; o assentar que vem logo depois refaz o espaço e o pai pela geometria (se só uma das duas for aceita, o resultado é o que a geometria dá, não necessariamente o da proposta).
@@ -90,27 +91,56 @@ meu-projeto/
 
 ## Campos da raiz
 
-Todos são obrigatórios (o "vazio" é `null`).
+Todos são obrigatórios (o "vazio" é `null`), **menos `revisions`**, que só existe na `formatVersion` 5.
 
-| Campo           | Tipo             | Descrição                                                                                              |
-| --------------- | ---------------- | ------------------------------------------------------------------------------------------------------ |
-| `format`        | string           | Sempre `"mapping-proposal"`.                                                                           |
-| `formatVersion` | `1` a `4`        | Versão do formato. A 4 é a gravada hoje; a 1, a 2 e a 3 continuam lidas (veja "Versões do formato").   |
-| `id`            | string           | Id da proposta (nome da pasta em `proposals/`).                                                        |
-| `title`         | string           | Título (não vazio).                                                                                    |
-| `description`   | string ou `null` | Descrição.                                                                                             |
-| `origin`        | string ou `null` | De onde vieram os dados (texto livre).                                                                 |
-| `author`        | string ou `null` | Quem enviou (ex: o nome do agente).                                                                    |
-| `createdAt`     | string           | Data ISO 8601 (UTC).                                                                                   |
-| `baseRevision`  | inteiro ≥ 0      | `revision` do `mapping.json` sobre o qual as mudanças foram calculadas.                                |
-| `supersedes`    | string ou `null` | Id da proposta que esta substitui.                                                                     |
-| `status`        | string           | `open`, `applied`, `superseded` ou `withdrawn` (ver "Estados").                                        |
-| `revision`      | inteiro ≥ 0      | Contador de gravações do arquivo da proposta, com a mesma conferência do `mapping.json` (`FORMAT.md`). |
-| `operations`    | array            | As operações enviadas pelo agente, só para referência. A revisão e a aplicação usam as `changes`.      |
-| `changes`       | array            | As mudanças (abaixo).                                                                                  |
-| `decisions`     | objeto           | Decisão de cada mudança, por id: `{ "state": "accepted" \| "rejected", "at" }`. Ausente = sem decisão. |
-| `notes`         | array            | Notas da revisão: `{ id, target: { level, id }, text, at }`.                                           |
-| `applied`       | objeto           | Mudanças já efetivadas no projeto, por id: `{ "at" }`. Só uma mudança aceita pode estar aqui.          |
+| Campo           | Tipo             | Descrição                                                                                                                       |
+| --------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `format`        | string           | Sempre `"mapping-proposal"`.                                                                                                    |
+| `formatVersion` | `1` a `5`        | Versão do formato. A 4 é a da criação e a 5, a da revisão do agente; as anteriores continuam lidas (veja "Versões do formato"). |
+| `id`            | string           | Id da proposta (nome da pasta em `proposals/`).                                                                                 |
+| `title`         | string           | Título (não vazio).                                                                                                             |
+| `description`   | string ou `null` | Descrição.                                                                                                                      |
+| `origin`        | string ou `null` | De onde vieram os dados (texto livre).                                                                                          |
+| `author`        | string ou `null` | Quem enviou (ex: o nome do agente).                                                                                             |
+| `createdAt`     | string           | Data ISO 8601 (UTC).                                                                                                            |
+| `baseRevision`  | inteiro ≥ 0      | `revision` do `mapping.json` sobre o qual as mudanças foram calculadas.                                                         |
+| `supersedes`    | string ou `null` | Id da proposta que esta substitui.                                                                                              |
+| `status`        | string           | `open`, `applied`, `superseded` ou `withdrawn` (ver "Estados").                                                                 |
+| `revision`      | inteiro ≥ 0      | Contador de gravações do arquivo da proposta, com a mesma conferência do `mapping.json` (`FORMAT.md`).                          |
+| `operations`    | array            | As operações enviadas pelo agente, só para referência. A revisão e a aplicação usam as `changes`.                               |
+| `changes`       | array            | As mudanças (abaixo).                                                                                                           |
+| `decisions`     | objeto           | Decisão de cada mudança, por id: `{ "state": "accepted" \| "rejected", "at" }`. Ausente = sem decisão.                          |
+| `notes`         | array            | Notas da revisão: `{ id, target: { level, id }, text, at }`.                                                                    |
+| `applied`       | objeto           | Mudanças já efetivadas no projeto, por id: `{ "at" }`. Só uma mudança aceita pode estar aqui.                                   |
+| `revisions`     | array            | O histórico das revisões do agente (abaixo). **Só na `formatVersion` 5**, onde é obrigatório; antes dela não existe.            |
+
+### Histórico das revisões (`revisions`)
+
+Na `formatVersion` 5, cada revisão do agente acrescenta uma entrada ao fim de `revisions` (a mais antiga primeiro). O histórico é só registro: a revisão e a aplicação usam as `changes`, e o `baseRevision` da raiz continua sendo o da criação.
+
+```json
+"revisions": [
+  {
+    "at": "2026-11-07T10:00:00.000Z",
+    "baseRevision": 43,
+    "operations": [],
+    "changed": { "c3": { "to": "Título da tela", "state": "rejected" } },
+    "added": ["c9"],
+    "dropped": [
+      { "change": { "id": "c4", "kind": "update", "…": "…" }, "state": null, "notes": ["n2"] }
+    ]
+  }
+]
+```
+
+| Campo          | Descrição                                                                                                                                                              |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `at`           | Data ISO 8601 (UTC) da revisão.                                                                                                                                        |
+| `baseRevision` | `revision` do `mapping.json` sobre o qual a revisão foi calculada.                                                                                                     |
+| `operations`   | As operações do lote da revisão, só para referência (o `base64` das imagens é trocado pelo marcador, como na raiz).                                                    |
+| `changed`      | Por id de mudança trocada: `{ to, state }`, o `to` e a decisão **de antes** desta revisão. `state` é `"rejected"` ou `null` (sem decisão); uma aceita nunca é trocada. |
+| `added`        | Os ids das mudanças novas.                                                                                                                                             |
+| `dropped`      | As mudanças retiradas: `{ change, state, notes }`, a mudança inteira como era, a decisão de antes e os ids das notas dela que passaram ao nível da proposta.           |
 
 ## Mudanças
 
@@ -238,6 +268,34 @@ Cada mudança da proposta antiga mostra se a nova traz a **mesma** coisa, **outr
 
 Uma proposta **aplicada** substituída continua `applied`: a app deriva do `supersedes` da nova o "Aplicada · substituída por <título>", com **Abrir a nova**.
 
+### Revisão pelo agente
+
+O agente corrige a proposta **aberta** na própria proposta, sem criar outra (`revise_proposal`; `prepareRevision` e `reviseProposal`, em `proposalRevise.ts`). A revisão grava a `formatVersion` 5 e acrescenta uma entrada a `revisions`.
+
+- **Quando pode.** Proposta `open` e com `applied` vazio. Com mudança já aplicada, o erro é `proposal-applied` (a dica é `propose_changes` com `supersedes`); fora de `open`, `not-open`.
+- **`drop`.** Os ids das mudanças a retirar. Segue as dependências do `proposalIndex`: retirar a criação de um item retira o que depende dela, e retirar uma remoção da cascata retira a remoção de quem a causa. Id que não existe: `change-not-found`.
+- **O lote roda sobre o proposto inteiro** depois do `drop`: o projeto atual com todas as mudanças que ficaram, sem decisão, aceitas e rejeitadas. Por isso o agente edita pelo id definitivo um item que a proposta cria, mesmo rejeitado. Se o proposto inteiro não cabe no projeto atual: `proposal-not-applicable`, com os problemas e os ids.
+- **Classificação.** Cada mudança do resultado cai em uma de quatro:
+  - **intocada**: idêntica (id, `from`, `to`, `insertBefore`, decisão e notas);
+  - **trocada**: mantém o id, o `from` e as notas, recebe o `to` novo, perde a decisão e ganha a marca "Revisada";
+  - **nova**: recebe o próximo `c<n>` livre (nunca um id já usado, nem o de uma retirada), o `from` do projeto atual, nenhuma decisão e a marca;
+  - **retirada**: está no `drop`, ou o lote desfez o efeito dela; sai de `changes` com a decisão.
+- **Congelamento.** Trocar ou retirar uma mudança **aceita** (inclusive pelas dependências) recusa a chamada inteira, sem gravar nada: `change-frozen`, com os ids.
+- **Decisões.** Só as das trocadas e das retiradas mudam. Dependentes rejeitadas junto continuam rejeitadas (o item aparece Parcial).
+- **Como as trocadas são achadas, sem heurística.** Pela chave da mudança (entidade, id e campo; na criação e na remoção, a entidade), comparando o efeito líquido do resultado sobre o projeto atual com as mudanças que ficaram. O `compareProposals` não serve aqui, porque os ids criados se mantêm. _(Parágrafo sujeito a ajuste: a descrição vale até o algoritmo final da fase.)_
+- **Garantias.**
+  - **Fidelidade:** aplicar todas as mudanças da proposta revisada ao projeto atual, sem conflito, dá o mesmo que aplicar o lote sobre o proposto inteiro (mesmos valores, `parentId` e ordem entre irmãs), com o limite #625 de "Posição da marcação criada".
+  - As intocadas ficam byte a byte iguais na serialização canônica.
+  - Revisão sem efeito: `no-changes`.
+  - Conflito: as intocadas e as trocadas mantêm o `from` de quando foram propostas, e o conflito com o projeto atual aparece como hoje.
+  - Provado por um fuzz com semente fixa (`tests/model/proposalReviseFuzz.test.ts`, 1.000 casos ou mais).
+- **Nota de mudança retirada.** Passa ao nível da proposta (`target: { level: "proposal", id: null }`), com o texto e a data iguais, e o id entra em `dropped[].notes`. Na revisão ela aparece nas notas da proposta com "Da mudança retirada: <resumo da mudança>".
+- **A marca "Revisada"** (modelo, `proposalRevisions.ts`). Aparece quando a mudança está sem decisão e consta em `changed` ou `added` de alguma revisão. Decidir tira a marca da tela (o registro fica no arquivo); limpar a decisão a traz de volta. O "antes da revisão" vem da revisão mais nova que trocou a mudança.
+- **Fora da revisão.**
+  - Pacote de biblioteca novo ou trocado: `revise-unsupported`, vai numa proposta nova. Retirar uma mudança de pacote que já está na proposta pode, e os arquivos dela saem da pasta.
+  - Trocar título, descrição ou origem.
+  - O agente decidir ou escrever nota.
+
 ## Regras de validade
 
 `parseProposal` / `parseProposalText` validam o arquivo e devolvem os erros com o caminho exato (ex: `changes[3].to.rect.width: …`, `decisions.c9: mudança inexistente`):
@@ -248,11 +306,22 @@ Uma proposta **aplicada** substituída continua `applied`: a app deriva do `supe
 - `decisions` e `applied` só citam mudanças existentes, e `applied` só mudanças aceitas;
 - `target` das notas com `id` `null` em `proposal`, `project` e `canvas`, e citando uma mudança existente em `change`.
 
+Na `formatVersion` 5, mais:
+
+- `revisions` obrigatório (e ausente nas versões anteriores, com erro e caminho); `at` ISO 8601 em cada revisão;
+- `changed.<id>.state` só `"rejected"` ou `null`;
+- um id de `dropped` nunca volta a `changes` (`revisions[0].dropped[0].change.id: …`);
+- um id de `added` aparece uma só vez no histórico inteiro;
+- `dropped[].change` é validado como uma mudança;
+- o resto é histórico e pode citar mudança ou nota que já não existe.
+
 ## API em `src/model/`
 
-- Formato: `PROPOSAL_FORMAT`, `PROPOSAL_FORMAT_VERSION`, `PROPOSALS_DIR`, `proposalDir`, `proposalFilePath`, `proposalImagePath`, `parseProposal`, `parseProposalText`, `serializeProposal`; tipos `Proposal`, `Change`, `ChangeKind`, `ChangeEntity`, `Decision`, `DecisionState`, `ProposalNote`, `ReviewTarget`, `ReviewLevel`, `ProposalStatus`.
+- Formato: `PROPOSAL_FORMAT`, `PROPOSAL_FORMAT_VERSION`, `PROPOSAL_FORMAT_VERSIONS`, `PROPOSAL_REVISED_FORMAT_VERSION`, `PROPOSALS_DIR`, `proposalDir`, `proposalFilePath`, `proposalImagePath`, `parseProposal`, `parseProposalText`, `serializeProposal`; tipos `Proposal`, `Change`, `ChangeKind`, `ChangeEntity`, `Decision`, `DecisionState`, `ProposalNote`, `ReviewTarget`, `ReviewLevel`, `ProposalStatus`, `ProposalRevision`, `RevisionDropped`, `RevisedPriorState`.
 - Mudanças: `computeChanges(antes, depois)`, `buildProposal(antes, depois, { title, … })`.
 - Revisão: `proposalIndex` (dependências), `requiredChanges`, `dependentChanges`, `reviewTree`, `summarizeDecisions`, `reviewProgress`, `decide`, `changeStatus`, `changeStatuses`, `addNote`, `editNote`, `removeNote`, `notesOf`, `withdrawProposal`, `supersedeProposal`.
+- Revisão pelo agente: `prepareRevision`, `reviseProposal` (`proposalRevise.ts`; tipos `ReviseArgs`, `ReviseSummary`, `ReviseError`, `ReviseErrorCode`).
+- Marca da revisão (`proposalRevisions.ts`): `revisionMark`, `revisionMarks`, `visibleRevisedChanges`, `latestRevisionSummary`, `droppedNoteOrigin`; tipo `RevisionMark`.
 - Aplicação: `acceptedPending`, `validateAccepted`, `applyAccepted`, `previewProject` (a visão "como ficaria"), `patchProject`.
 - Comparação: `compareProposals`.
 - Leitura para a interface (`proposalView.ts`): `changeType`, `dominantChangeType`, `reviewKey`, `changeTarget`, `changeLayerId`, `changeImageFile`, `filterChanges` (`ReviewFilters`, `NO_FILTERS`), `undecidedChanges`, `acceptedPendingIds`, `leftBehind`, `stepChange`.
