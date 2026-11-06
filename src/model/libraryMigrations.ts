@@ -44,6 +44,19 @@ import type { Annotation, JsonValue, Project, TypedValues } from './types';
 //   ainda resolve o tipo; se não resolver, o fallback dele serve). A anotação convertida fica
 //   na camada em que estava: se for da especialização, vira a pendência `layer-mismatch`.
 // - `rename-type` não troca a camada da anotação (fora do contrato: vira `layer-mismatch`).
+// - Passos de papel do vínculo (`rename-role`, `remove-role`, `set-role`; `type` é o tipo do DONO):
+//   os filhos do passo são as anotações cujo `parentAnnotationId` aponta para uma anotação da
+//   especialização cujo `typeId` ATUAL é o `type` do passo. O filho pode ser de qualquer tipo, de
+//   outra especialização ou livre. `annotations` conta os filhos alterados.
+//   - `rename-role`: o filho com `parentRole === from` passa a `to` (se `to` já era papel de
+//     outros filhos, juntam-se); sem perda.
+//   - `remove-role` com `clear`: o filho com o papel fica sem papel e continua vinculado (perda
+//     `cleared-role`). Com `unlink`: sai do vínculo, sem dono e sem papel (perda `unlinked`,
+//     contada também em `unlinked` do relatório). A perda leva o papel perdido em `role`.
+//   - `set-role`: o filho sem papel (e do tipo `childType`, quando vem; sem `childType`, qualquer
+//     um, livre ou de outra especialização) recebe o papel. Quem já tem papel não é tocado;
+//     nunca gera perda.
+//   - Invariante: `parentRole` não nulo exige `parentAnnotationId` não nulo.
 // - Imutável; ids intocados; as outras chaves de `values` seguem como estavam.
 
 export type MigrationLossReason =
@@ -54,7 +67,11 @@ export type MigrationLossReason =
   /** `fill-field` trocou um valor que não vale mais no tipo do campo. */
   | 'replaced-value'
   /** `rename-field`: o campo destino já tinha um valor não vazio e foi sobrescrito. */
-  | 'overwritten-value';
+  | 'overwritten-value'
+  /** `remove-role` com `clear`: o filho perdeu o papel (`role`) e continua vinculado. */
+  | 'cleared-role'
+  /** `remove-role` com `unlink`: o filho saiu do vínculo com o dono (`role` era o papel). */
+  | 'unlinked';
 
 export interface MigrationLoss {
   readonly reason: MigrationLossReason;
@@ -68,6 +85,8 @@ export interface MigrationLoss {
   readonly rowId?: string;
   /** O valor perdido. Ausente em `removed-type`. */
   readonly value?: JsonValue;
+  /** O papel que o filho tinha, em `cleared-role` e `unlinked`. */
+  readonly role?: string;
 }
 
 export interface MigrationStepReport {
@@ -76,7 +95,7 @@ export interface MigrationStepReport {
   readonly to: number;
   readonly index: number;
   readonly step: SpecMigrationStep;
-  /** Anotações do tipo do passo que ele alterou, converteu ou apagou. */
+  /** Anotações do tipo do passo que ele alterou, converteu ou apagou (nos passos de papel, os filhos alterados). */
   readonly annotations: number;
   /** Valores alterados (cada célula de tabela conta uma vez). */
   readonly values: number;
@@ -86,6 +105,8 @@ export interface MigrationStepReport {
   readonly deleted: number;
   /** Referências (`ref`) reescritas por `rename-field`. */
   readonly refs: number;
+  /** Filhos que saíram do vínculo com o dono (`remove-role` com `unlink`). */
+  readonly unlinked: number;
   readonly losses: readonly MigrationLoss[];
 }
 
@@ -110,6 +131,7 @@ const NO_COUNTS: Counts = {
   converted: 0,
   deleted: 0,
   refs: 0,
+  unlinked: 0,
   losses: [],
 };
 
@@ -544,6 +566,87 @@ function mapAnnotations(
   };
 }
 
+/**
+ * Aplica `change` aos filhos das anotações da especialização cujo tipo atual é `ownerType`; o
+ * filho que `change` devolve igual (ou `null`) fica como está. Conta os filhos alterados.
+ */
+function changeChildren(
+  p: Project,
+  specId: string,
+  ownerType: string,
+  change: (child: Annotation) => Annotation | null,
+  losses: readonly MigrationLoss[] = [],
+): StepResult {
+  const owners = new Set(
+    p.annotations.filter((a) => isOfType(a, specId, ownerType)).map((a) => a.id),
+  );
+  let annotations = 0;
+  let unlinked = 0;
+  const list = p.annotations.map((a) => {
+    if (a.parentAnnotationId === null || !owners.has(a.parentAnnotationId)) return a;
+    const changed = change(a);
+    if (!changed) return a;
+    annotations++;
+    if (changed.parentAnnotationId === null) unlinked++;
+    return changed;
+  });
+  return {
+    project: annotations === 0 ? p : { ...p, annotations: list },
+    counts: { ...NO_COUNTS, annotations, unlinked, losses },
+  };
+}
+
+function renameRole(
+  p: Project,
+  specId: string,
+  step: Extract<SpecMigrationStep, { op: 'rename-role' }>,
+): StepResult {
+  return changeChildren(p, specId, step.type, (child) =>
+    child.parentRole === step.from && step.from !== step.to
+      ? { ...child, parentRole: step.to }
+      : null,
+  );
+}
+
+function removeRole(
+  p: Project,
+  specId: string,
+  step: Extract<SpecMigrationStep, { op: 'remove-role' }>,
+): StepResult {
+  const unlink = step.mode === 'unlink';
+  const losses: MigrationLoss[] = [];
+  return changeChildren(
+    p,
+    specId,
+    step.type,
+    (child) => {
+      if (child.parentRole !== step.role) return null;
+      losses.push({
+        reason: unlink ? 'unlinked' : 'cleared-role',
+        ...lossBase(child, child.type?.typeId ?? ''),
+        role: step.role,
+      });
+      return unlink
+        ? { ...child, parentAnnotationId: null, parentRole: null }
+        : { ...child, parentRole: null };
+    },
+    losses,
+  );
+}
+
+function setRole(
+  p: Project,
+  specId: string,
+  step: Extract<SpecMigrationStep, { op: 'set-role' }>,
+): StepResult {
+  const { childType } = step;
+  return changeChildren(p, specId, step.type, (child) => {
+    if (child.parentRole !== null) return null;
+    if (childType !== undefined && !isOfType(child, specId, childType)) return null;
+    return { ...child, parentRole: step.role };
+  });
+}
+
 function runStep(
   p: Project,
   next: Spec,
@@ -563,6 +666,12 @@ function runStep(
       return mapValues(p, next.id, step);
     case 'fill-field':
       return fillField(p, next.id, next, step);
+    case 'rename-role':
+      return renameRole(p, next.id, step);
+    case 'remove-role':
+      return removeRole(p, next.id, step);
+    case 'set-role':
+      return setRole(p, next.id, step);
   }
 }
 
