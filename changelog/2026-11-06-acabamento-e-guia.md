@@ -1,4 +1,4 @@
-# Acabamento e guia — [Não lançado] (épico `epic/acabamento-e-guia`, PR #593, MCP 0.18.1, schema v14)
+# Acabamento e guia — 2026-11-06 (épico `epic/acabamento-e-guia`, PR #593, MCP 0.18.1, schema v14)
 
 ## Corrigido
 
