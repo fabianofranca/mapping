@@ -424,15 +424,13 @@ export const ptBR = {
   'spec.impact.op.mapValues': 'Mapear valores de {field} em {type}: {pairs}',
   'spec.impact.op.fillField': 'Preencher {field} em {type} com {value}',
   'spec.impact.op.renameRole': 'Renomear o papel {from} → {to} em {type}',
-  'spec.impact.op.removeRoleClear':
-    'Remover o papel {role} em {type} (filhos ficam sem papel)',
-  'spec.impact.op.removeRoleUnlink':
-    'Remover o papel {role} em {type} (desvincular os filhos)',
-  'spec.impact.op.setRole': 'Dar o papel {role} aos filhos sem papel em {type}',
-  'spec.impact.op.setRoleOf': 'Dar o papel {role} aos filhos {child} sem papel em {type}',
+  'spec.impact.op.removeRoleClear': 'Remover o papel {role} em {type} (limpar o papel)',
+  'spec.impact.op.removeRoleUnlink': 'Remover o papel {role} em {type} (desvincular)',
+  'spec.impact.op.setRole': 'Dar o papel {role} aos filhos de {type}',
+  'spec.impact.op.setRoleOf': 'Dar o papel {role} aos filhos {child} de {type}',
   'spec.impact.unlinked': '{count} desvinculada(s)',
-  'spec.impact.lossClearedRole': '{target}: perdeu o papel {role}',
-  'spec.impact.lossUnlinked': '{target}: desvinculada (era o papel {role})',
+  'spec.impact.lossClearedRole': '{target}: papel {role} limpo',
+  'spec.impact.lossUnlinked': '{target}: vínculo desfeito (papel {role})',
   'spec.impact.annotations': '{count} anotação(ões)',
   'spec.impact.values': '{count} valor(es)',
   'spec.impact.converted': '{count} convertida(s)',
@@ -441,6 +439,8 @@ export const ptBR = {
   'spec.impact.nothing': 'nada a mudar neste projeto',
   'spec.impact.lossTotal':
     'Esta atualização apaga {values} valor(es) e {annotations} anotação(ões).',
+  'spec.impact.lossTotalLinks':
+    'Esta atualização apaga {values} valor(es) e {annotations} anotação(ões) e {links} vínculo(s).',
   'spec.impact.lossTarget': '{marking} › {name}',
   'spec.impact.lossDeleted': '{target}: anotação apagada',
   'spec.impact.lossRemovedField': '{target}: campo {field} removido (valor "{value}")',
