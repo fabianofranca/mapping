@@ -126,10 +126,8 @@ test('Ctrl+C copia a referência do item selecionado, com os dados do item junto
   await expect(toast(page, 'Referência copiada')).toBeVisible();
 
   const code = marking.id.replaceAll('-', '').slice(0, 8);
-  expect(await clipboardText(page)).toMatch(
-    // Imagem sem nome: o nome do arquivo sem a pasta, como no `resolve` do MCP (6.4).
-    new RegExp(`^mapping://${FOLDER}/m/${code} \\(tela\\.webp › .+\\)$`),
-  );
+  // Só a URL, sem o caminho legível.
+  expect(await clipboardText(page)).toBe(`mapping://${FOLDER}/m/${code}`);
 
   // O formato próprio da app vai junto (só a app o lê; o texto é o que o chat recebe).
   const custom = await page.evaluate(
@@ -219,7 +217,7 @@ test('Detalhes: copiar referência só com clipboard-write não pede permissão 
   const code = marking.id.replaceAll('-', '').slice(0, 8);
   const text = await clipboardText(page);
   expect(text).toMatch(/^mapping:\/\//);
-  expect(text).toContain(`/m/${code} (`);
+  expect(text).toMatch(new RegExp(`/m/${code}$`));
 });
 
 test('menu da linha da Árvore (desktop) copia a referência', async ({
