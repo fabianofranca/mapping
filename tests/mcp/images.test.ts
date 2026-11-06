@@ -143,9 +143,7 @@ describe('get_marking_image: recorte', () => {
       padding: 0,
       markingInOutput: { x: 0, y: 0, width: PARENT.width, height: PARENT.height },
     });
-    expect(r.data.ref).toMatch(
-      /^mapping:\/\/imagens\/m\/[0-9a-f]{8} \(tela\.png › Formulário\)$/,
-    );
+    expect(r.data.ref).toMatch(/^mapping:\/\/imagens\/m\/[0-9a-f]{8}$/);
     expect(r.data.container.file).toBe(IMAGE_FILES.png);
     expect(r.data.container.background).toBeNull();
     expect([r.raster.width, r.raster.height]).toEqual([PARENT.width, PARENT.height]);
@@ -242,9 +240,7 @@ describe('get_marking_image: contexto e filhas', () => {
     expect(new Set(legend.map((l) => l.color)).size).toBe(2);
     for (const entry of legend) {
       expect(entry.color).toMatch(/^#[0-9A-F]{6}$/);
-      expect(entry.ref).toMatch(
-        /^mapping:\/\/imagens\/m\/[0-9a-f]{8} \(tela\.png › Formulário › Campo [AB]\)$/,
-      );
+      expect(entry.ref).toMatch(/^mapping:\/\/imagens\/m\/[0-9a-f]{8}$/);
     }
     const a = legend.find((l) => l.name === 'Campo A')!;
     const b = legend.find((l) => l.name === 'Campo B')!;

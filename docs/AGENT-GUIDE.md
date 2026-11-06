@@ -31,12 +31,12 @@ O Mapping marca **áreas retangulares** em imagens (ou em containers só com fun
 Cada item devolvido traz uma referência no formato
 
 ```
-mapping://<projeto>/<m|i|a>/<código> (<caminho legível>)
+mapping://<projeto>/<m|i|a|p>/<código>
 ```
 
-- `<projeto>` é o nome da pasta do projeto; `m` marcação, `i` container, `a` anotação, `p` **proposta** (ex: `mapping://cadastro/p/8c1f2d9e`). A letra `i` é o **container** (não mudou, para as referências já coladas continuarem valendo).
+- `<projeto>` é o nome da pasta do projeto, codificado como em uma URL (`A-Z a-z 0-9 - . _ ~` ficam como estão, o resto vira `%XX`: `Meu Projeto` aparece como `Meu%20Projeto`); `m` marcação, `i` container, `a` anotação, `p` **proposta** (ex: `mapping://cadastro/p/8c1f2d9e`). A letra `i` é o **container** (não mudou, para as referências já coladas continuarem valendo).
 - `<código>` são os 8 primeiros caracteres hexadecimais do id (cresce de 4 em 4 se houver colisão).
-- O caminho entre parênteses (ex: `cadastro.png › Formulário › Nome`) é só para leitura: o servidor o ignora.
+- A referência é **só a URL**: não traz caminho legível. O nome e o caminho (ex: `cadastro.png › Formulário › Nome`) vêm do `path` de `get_marking` (o `resolve` devolve a referência, o tipo e os campos de identificação, sem o caminho legível). Uma referência do formato antigo (com o caminho entre parênteses) ou com o projeto sem codificar dá `invalid-ref`: peça ao dev para copiá-la de novo na app.
 
 Toda tool que recebe um item (`ref`) aceita: a referência completa (a que o dev cola do app com Ctrl+C), só `m/3f2a9c1e` com `project` informado, ou o id completo. Sem projeto na referência nem em `project`, o servidor procura em todos os projetos das raízes. Se o código for ambíguo, o erro `ambiguous-ref` devolve as candidatas: escolha uma pela referência completa.
 
@@ -294,7 +294,7 @@ Exemplo: o `Button` do formulário na plataforma `android` (`get_code_hints("map
 
 ```json
 {
-  "marking": "mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário › Cadastrar)",
+  "marking": "mapping://cadastro/m/2f7c4a1d",
   "platform": { "id": "android", "name": "Android", "language": "kotlin" },
   "repos": {
     "android": {
@@ -327,7 +327,7 @@ Exemplo: o `Button` do formulário na plataforma `android` (`get_code_hints("map
     }
   },
   "tree": {
-    "ref": "mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário › Cadastrar)",
+    "ref": "mapping://cadastro/m/2f7c4a1d",
     "name": "Cadastrar",
     "rect": { "x": 40, "y": 900, "width": 300, "height": 80 },
     "annotations": [
@@ -432,11 +432,11 @@ A especialização `formatVersion` 9 pode declarar `variants` no `code` de uma p
       "annotationCount": 1,
       "annotations": [
         {
-          "annotation": "mapping://cadastro/a/5b2e91c0 (cadastro.png › Formulário › Cadastrar › Button btn_cadastrar)",
+          "annotation": "mapping://cadastro/a/5b2e91c0",
           "title": "Button btn_cadastrar",
-          "marking": "mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário › Cadastrar)",
+          "marking": "mapping://cadastro/m/2f7c4a1d",
           "markingName": "Cadastrar",
-          "container": "mapping://cadastro/i/9d0e3b77 (cadastro.png)"
+          "container": "mapping://cadastro/i/9d0e3b77"
         }
       ]
     }

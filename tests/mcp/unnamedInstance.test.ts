@@ -72,7 +72,7 @@ describe('nome da marcação sem nome no MCP', () => {
     const note = ok(await mcp.call<MarkingData>('get_marking', { project, ref: noteId }));
     expect(note.name).toBeNull();
     expect(note.path.at(-1)?.name).toMatch(/^Nota [0-9a-f]{8}$/);
-    expect(note.ref).toContain(`Nota ${note.path.at(-1)!.name.slice(5)}`);
+    expect(note.ref).toMatch(/^mapping:\/\/[^/]+\/m\/[0-9a-f]{8}$/);
     const plain = ok(
       await mcp.call<MarkingData>('get_marking', { project, ref: plainId }),
     );

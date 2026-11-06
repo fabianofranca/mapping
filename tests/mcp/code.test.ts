@@ -585,9 +585,7 @@ describe('find_by_code', () => {
     const [hit] = first.annotations;
     expect(hit!.markingName).toBe('Cadastrar');
     expect(hit!.title).toBe('Button btn_cadastrar');
-    expect(hit!.marking).toMatch(
-      /^mapping:\/\/cadastro\/m\/[0-9a-f]{8} \(cadastro\.png › Formulário › Cadastrar\)$/,
-    );
+    expect(hit!.marking).toMatch(/^mapping:\/\/cadastro\/m\/[0-9a-f]{8}$/);
     expect(hit!.annotation).toMatch(/^mapping:\/\/cadastro\/a\/[0-9a-f]{8}/);
     expect(hit!.container).toMatch(/^mapping:\/\/cadastro\/i\/[0-9a-f]{8}/);
   });

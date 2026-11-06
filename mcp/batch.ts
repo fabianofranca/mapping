@@ -117,7 +117,7 @@ import {
 import type { ReadPackage, SpecInput } from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
 import { prepareImage } from './imagePrepare';
-import { KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
+import { INVALID_REF_HINT, KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
 import { containersNamed } from './markingList';
 import {
   MODEL_ERROR_MESSAGES,
@@ -558,7 +558,9 @@ class Batch {
     }
     const parsed = parseRef(wanted);
     if (!parsed) {
-      throw new ToolError('invalid-ref', `referência inválida: ${text}`);
+      throw new ToolError('invalid-ref', `referência inválida: ${text}`, {
+        hint: INVALID_REF_HINT,
+      });
     }
     if (parsed.project !== null && parsed.project !== this.loaded.location.name) {
       throw new ToolError(

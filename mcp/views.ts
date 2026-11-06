@@ -93,7 +93,7 @@ export function markingRow(refs: Refs, marking: Marking): Json {
     container: refs.imageLabel(marking.containerId),
     space: marking.containerId === null ? 'canvas' : 'container',
     floating: marking.floating,
-    parent: marking.parentId === null ? null : refs.bare('m', marking.parentId),
+    parent: marking.parentId === null ? null : refs.ref('m', marking.parentId),
     rect: rectOf(marking),
     // Posição entre as irmãs (0 = primeira, desenhada por baixo).
     order: siblingPosition(refs.project, marking.id).index,
@@ -117,7 +117,7 @@ function issueView(issue: AnnotationIssue): Json {
 function refTarget(refs: Refs, target: ResolvedRef): Json {
   const base = {
     annotation: refs.ref('a', target.annotation.id),
-    marking: refs.bare('m', target.annotation.markingId),
+    marking: refs.ref('m', target.annotation.markingId),
   };
   switch (target.kind) {
     case 'entry':
@@ -156,11 +156,11 @@ export function annotationView(
   const backlinks = getBacklinks(p, annotation.id).map((link) => ({
     from: refs.ref('a', link.source.id),
     fromLabel: annotationShortLabel(p, link.source),
-    fromMarking: refs.bare('m', link.source.markingId),
+    fromMarking: refs.ref('m', link.source.markingId),
     field: refPathText(link),
     to: refLabel(p, link.ref),
   }));
-  const linked = getLinkedAnnotations(p, annotation.id).map((a) => refs.bare('a', a.id));
+  const linked = getLinkedAnnotations(p, annotation.id).map((a) => refs.ref('a', a.id));
   const byRole = linkedByRoleView(refs, annotation);
   const roleName = roleLabelOf(p, annotation);
   const code = annotation.type ? (options.code ?? null) : null;
@@ -175,7 +175,7 @@ export function annotationView(
     owner:
       annotation.parentAnnotationId === null
         ? null
-        : refs.bare('a', annotation.parentAnnotationId),
+        : refs.ref('a', annotation.parentAnnotationId),
     ...(annotation.parentRole === null
       ? {}
       : { parentRole: annotation.parentRole, roleName }),
@@ -206,15 +206,15 @@ export function annotationView(
 function linkedByRoleView(refs: Refs, owner: Annotation): Json | null {
   const grouped = linkedByRole(refs.project, owner);
   if (!grouped) return null;
-  const bare = (items: readonly Annotation[]) => items.map((a) => refs.bare('a', a.id));
+  const refsOf = (items: readonly Annotation[]) => items.map((a) => refs.ref('a', a.id));
   return {
     label: grouped.label,
     roles: grouped.rows.map((row) => ({
       id: row.role.id,
       name: row.role.name,
-      linked: bare(row.items),
+      linked: refsOf(row.items),
     })),
-    unassigned: bare(grouped.unassigned),
+    unassigned: refsOf(grouped.unassigned),
   };
 }
 
@@ -238,7 +238,7 @@ function linkTree(refs: Refs, own: readonly Annotation[]): LinkNode[] | null {
       .filter((c) => !seen.has(c.id))
       .map(node);
     return {
-      ref: refs.bare('a', a.id),
+      ref: refs.ref('a', a.id),
       title: annotationShortLabel(p, a),
       layer: index.layers.get(a.layerId)?.name ?? a.layerId,
       ...(a.parentRole === null ? {} : { parentRole: a.parentRole }),
@@ -290,11 +290,11 @@ export async function markingView(
     name: marking.name,
     path: [
       image
-        ? { ref: refs.bare('i', image.id), name: refs.imageLabel(image.id) }
+        ? { ref: refs.ref('i', image.id), name: refs.imageLabel(image.id) }
         : // Marcação do canvas: o segmento do espaço é "Canvas", sem referência.
           { ref: null, name: refs.imageLabel(null) },
       ...[...ancestors, marking].map((m) => ({
-        ref: refs.bare('m', m.id),
+        ref: refs.ref('m', m.id),
         name: refs.markingName(m.id),
       })),
     ],
@@ -354,7 +354,7 @@ export async function markingView(
 function arrowEnd(refs: Refs, markingId: string): Json {
   const exists = projectIndex(refs.project).markings.has(markingId);
   return {
-    ref: refs.bare('m', markingId),
+    ref: refs.ref('m', markingId),
     name: exists ? refs.markingName(markingId) : null,
     path: exists ? refs.markingPath(markingId) : [],
   };
@@ -410,7 +410,7 @@ export async function arrowView(
     ref: refs.ref('m', arrow.id),
     id: arrow.id,
     name: arrow.name,
-    path: [{ ref: refs.bare('m', arrow.id), name: refs.arrowName(arrow.id) }],
+    path: [{ ref: refs.ref('m', arrow.id), name: refs.arrowName(arrow.id) }],
     from: arrowEnd(refs, arrow.from),
     to: arrowEnd(refs, arrow.to),
     style: arrow.style,
@@ -433,7 +433,7 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     height: image.height,
     locked: image.locked,
     // Marcação do canvas que contém o container (derivado da geometria), ou `null`.
-    parent: image.parentId === null ? null : refs.bare('m', image.parentId),
+    parent: image.parentId === null ? null : refs.ref('m', image.parentId),
   };
 }
 
@@ -520,7 +520,7 @@ export function projectDetail(refs: Refs): Json {
     .slice(0, LIST_LIMIT)
     .map((a) => ({
       annotation: refs.ref('a', a.id),
-      marking: refs.bare('m', a.markingId),
+      marking: refs.ref('m', a.markingId),
       issues: (issues.get(a.id) ?? []).map(issueView),
     }));
 

@@ -1,5 +1,5 @@
 // "Copiar referência" e "Copiar recorte": o que o Ctrl+C, o Ctrl+Alt+C e os menus fazem.
-// A referência (`mapping://<pasta>/<m|i|a>/<código> (<caminho>)`) é o que o dev cola no chat
+// A referência (`mapping://<pasta>/<m|i|a>/<código>`, só a URL) é o que o dev cola no chat
 // para o agente (MCP) achar o item; só existe em projetos abertos de uma pasta.
 import { t } from '../i18n';
 import {
@@ -7,15 +7,13 @@ import {
   formatRef,
   isBackgroundContainer,
   itemClipboardData,
-  refImageLabel,
-  shortCode,
+  shortCodes,
   type ItemKind,
   type Project,
 } from '../model';
 import { cropToPng } from '../storage/imageCrop';
 import { resolveSelection, showToast, type Selection } from '../store/ui';
 import type { EditorContextValue } from '../ui/EditorContext';
-import { annotationLabel, markingPath } from '../ui/labels';
 import { writeClipboardPng, writeClipboardText } from '../utils/clipboard';
 import { reportError } from '../utils/report';
 
@@ -41,11 +39,6 @@ export function focusedAnnotationTarget(): CopyTarget | null {
   return id ? { kind: 'a', id } : null;
 }
 
-/** Nome da imagem na referência: o dado ou o do arquivo; container sem arquivo sem nome, o texto da interface. */
-function imageRefLabel(image: Parameters<typeof refImageLabel>[0]): string {
-  return refImageLabel(image) ?? t('image.containerUntitled');
-}
-
 /** "Copiar recorte" só existe para marcação de imagem com arquivo (não de container sem arquivo). */
 export function canCopyCrop(project: Project | null, markingId: string): boolean {
   const marking = project?.markings.find((m) => m.id === markingId);
@@ -55,51 +48,15 @@ export function canCopyCrop(project: Project | null, markingId: string): boolean
   return image !== undefined && !isBackgroundContainer(image);
 }
 
-/** Caminho legível da referência: `Imagem › Marcação › Anotação`. */
-function readablePath(project: Project, target: CopyTarget): string | null {
-  const separator = t('marking.pathSeparator');
-  const imageOf = (id: string) => project.containers.find((i) => i.id === id);
-  /** Container da marcação; `null` = canvas; `null` no retorno = container sumiu. */
-  const placeLabel = (containerId: string | null): string | null => {
-    if (containerId === null) return t('canvas.name');
-    const image = imageOf(containerId);
-    return image ? imageRefLabel(image) : null;
-  };
-  const markingOf = (id: string) => project.markings.find((m) => m.id === id);
-  if (target.kind === 'i') {
-    const image = imageOf(target.id);
-    return image ? imageRefLabel(image) : null;
-  }
-  if (target.kind === 'm') {
-    const marking = markingOf(target.id);
-    if (!marking) return null;
-    const place = placeLabel(marking.containerId);
-    if (place === null) return null;
-    return [place, markingPath(project, marking)].join(separator);
-  }
-  const annotation = project.annotations.find((a) => a.id === target.id);
-  const owner = annotation && markingOf(annotation.markingId);
-  const place = owner ? placeLabel(owner.containerId) : null;
-  if (!annotation || !owner || place === null) return null;
-  return [place, markingPath(project, owner), annotationLabel(annotation)].join(
-    separator,
-  );
-}
-
 /** Texto da referência e os dados do item no formato próprio da app; `null` se o item sumiu. */
 export function buildReference(
   project: Project,
   folderName: string,
   target: CopyTarget,
 ): { readonly text: string; readonly data: string } | null {
-  const label = readablePath(project, target);
-  if (label === null) return null;
-  const text = formatRef({
-    project: folderName,
-    kind: target.kind,
-    code: shortCode(project, target.kind, target.id),
-    label,
-  });
+  const code = shortCodes(project, target.kind).get(target.id);
+  if (code === undefined) return null;
+  const text = formatRef({ project: folderName, kind: target.kind, code });
   const data = itemClipboardData(project, target.kind, target.id, {
     project: folderName,
     ref: text,

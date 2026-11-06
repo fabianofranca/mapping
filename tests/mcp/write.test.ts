@@ -326,9 +326,7 @@ describe('roteiro 13.9 criado pelo MCP', () => {
       plan.created.filter((c) => c.alias).map((c) => [c.alias, c]),
     );
     expect(aliases.$form).toMatchObject({ kind: 'marking' });
-    expect(aliases.$form!.ref).toMatch(
-      /^mapping:\/\/cadastro-mcp\/m\/[0-9a-f]{8} \(cadastro\.webp › Formulário\)$/,
-    );
+    expect(aliases.$form!.ref).toMatch(/^mapping:\/\/cadastro-mcp\/m\/[0-9a-f]{8}$/);
     expect(aliases.$model).toMatchObject({ kind: 'layer', name: 'Model' });
 
     // Nada foi gravado.
@@ -350,9 +348,7 @@ describe('roteiro 13.9 criado pelo MCP', () => {
       baseRevision: 0,
       supersedes: null,
     });
-    expect(proposed.proposal.ref).toMatch(
-      /^mapping:\/\/cadastro-mcp\/p\/[0-9a-f]{8} \(Cadastro a partir do roteiro\)$/,
-    );
+    expect(proposed.proposal.ref).toMatch(/^mapping:\/\/cadastro-mcp\/p\/[0-9a-f]{8}$/);
     // Os itens criados trazem as referências definitivas (os ids mudam a cada cálculo, o resto não).
     const shape = (list: Plan['created']) => list.map((c) => [c.op, c.alias, c.kind]);
     expect(shape(proposed.created)).toEqual(shape(plan.created));
