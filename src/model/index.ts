@@ -69,6 +69,8 @@ export * from './proposalOrder';
 export * from './membership';
 export * from './proposalCompare';
 export * from './proposalView';
+export * from './proposalRevise';
+export * from './proposalRevisions';
 // Valor de um campo na forma de `from`/`to` (os marcadores dos Detalhes na revisão).
 export { annotationField, imageField, markingField } from './proposalValues';
 export * from './specWarnings';
