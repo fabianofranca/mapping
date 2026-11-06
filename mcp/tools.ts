@@ -471,7 +471,7 @@ export function registerTools(
     'resolve',
     {
       description:
-        'Descobre o que uma referência designa (marcação, container ou anotação; a letra `i` da referência é o container) e devolve a referência (só a URL), o tipo e o nome; para o caminho legível use get_marking, get_container ou get_annotation. Use antes de get_* quando não souber o tipo.',
+        'Descobre o que uma referência designa (marcação, container ou anotação; a letra `i` da referência é o container) e devolve a referência (só a URL), o tipo e os campos de identificação (id, project, name, container ou marking/layer, rect), sem o caminho legível; para o caminho legível use get_marking, get_container ou get_annotation. Use antes de get_* quando não souber o tipo.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },

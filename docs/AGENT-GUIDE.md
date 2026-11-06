@@ -36,7 +36,7 @@ mapping://<projeto>/<m|i|a|p>/<código>
 
 - `<projeto>` é o nome da pasta do projeto, codificado como em uma URL (`A-Z a-z 0-9 - . _ ~` ficam como estão, o resto vira `%XX`: `Meu Projeto` aparece como `Meu%20Projeto`); `m` marcação, `i` container, `a` anotação, `p` **proposta** (ex: `mapping://cadastro/p/8c1f2d9e`). A letra `i` é o **container** (não mudou, para as referências já coladas continuarem valendo).
 - `<código>` são os 8 primeiros caracteres hexadecimais do id (cresce de 4 em 4 se houver colisão).
-- A referência é **só a URL**: não traz caminho legível. O nome e o caminho (ex: `cadastro.png › Formulário › Nome`) vêm do `path` de `get_marking` (o `resolve` devolve só a referência, o tipo e o nome). Uma referência do formato antigo (com o caminho entre parênteses) ou com o projeto sem codificar dá `invalid-ref`: peça ao dev para copiá-la de novo na app.
+- A referência é **só a URL**: não traz caminho legível. O nome e o caminho (ex: `cadastro.png › Formulário › Nome`) vêm do `path` de `get_marking` (o `resolve` devolve a referência, o tipo e os campos de identificação, sem o caminho legível). Uma referência do formato antigo (com o caminho entre parênteses) ou com o projeto sem codificar dá `invalid-ref`: peça ao dev para copiá-la de novo na app.
 
 Toda tool que recebe um item (`ref`) aceita: a referência completa (a que o dev cola do app com Ctrl+C), só `m/3f2a9c1e` com `project` informado, ou o id completo. Sem projeto na referência nem em `project`, o servidor procura em todos os projetos das raízes. Se o código for ambíguo, o erro `ambiguous-ref` devolve as candidatas: escolha uma pela referência completa.
 
