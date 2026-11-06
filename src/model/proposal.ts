@@ -17,7 +17,7 @@ import { PLATFORM_ID_RE, formatSpecPath, specSchema, type SpecIssue } from './sp
 import type { JsonValue } from './types';
 
 // Formato da proposta de alteração (etapa 4): `proposals/<id>/proposal.json`,
-// `formatVersion` 4 (a 1, a 2 e a 3 continuam lidas). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
+// `formatVersion` 4 na criação, 5 com `revisions` (a 1 a 3 continuam lidas). Ver docs/PROPOSAL-FORMAT.md. O zod daqui é a fonte da verdade; a
 // leitura devolve os erros com o caminho exato (`changes[3].to.rect.width: …`).
 
 export const PROPOSAL_FORMAT = 'mapping-proposal';
@@ -29,7 +29,14 @@ export const PROPOSAL_FORMAT_VERSION = 4;
  * composta `space` e `floating`, e as mudanças `create-arrow` e `delete-arrow` (entidade `arrow`,
  * ME4); a 2 acrescenta `add_container` às `operations`; a 1 continua válida.
  */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4] as const;
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5] as const;
+
+/**
+ * Versão gravada pela revisão do agente (`reviseProposal`): a 4 com `revisions` na raiz. A
+ * criação continua gravando `PROPOSAL_FORMAT_VERSION` (4); quem regrava decisões e notas
+ * mantém a versão do arquivo. Ver docs/PROPOSAL-FORMAT.md, "Revisão pelo agente".
+ */
+export const PROPOSAL_REVISED_FORMAT_VERSION = 5;
 /** Pasta das propostas, relativa à raiz do projeto. */
 export const PROPOSALS_DIR = 'proposals';
 /** Nome do arquivo da proposta dentro de `proposals/<id>/`. */
@@ -192,6 +199,36 @@ export interface ProposalNote {
   readonly at: string;
 }
 
+/** Decisão de antes de uma revisão: rejeitada ou sem decisão (aceita fica congelada). */
+export type RevisedPriorState = 'rejected' | null;
+
+/** Uma mudança retirada numa revisão: como era, a decisão de antes e as notas que subiram. */
+export interface RevisionDropped {
+  readonly change: Change;
+  readonly state: RevisedPriorState;
+  /** Ids das notas da mudança que passaram ao nível da proposta. */
+  readonly notes: readonly string[];
+}
+
+/** Uma revisão do agente (formatVersion 5), em `revisions`, da mais antiga para a mais nova. */
+export interface ProposalRevision {
+  readonly at: string;
+  /** `revision` do `mapping.json` sobre a qual a revisão foi calculada. */
+  readonly baseRevision: number;
+  /** As operações do lote, só para referência (base64 trocado pelo marcador). */
+  readonly operations: readonly JsonValue[];
+  /** Mudanças trocadas: o `to` e a decisão de antes desta revisão. */
+  readonly changed: {
+    readonly [changeId: string]: {
+      readonly to: JsonValue;
+      readonly state: RevisedPriorState;
+    };
+  };
+  /** Ids das mudanças novas. */
+  readonly added: readonly string[];
+  readonly dropped: readonly RevisionDropped[];
+}
+
 export interface Proposal {
   readonly format: typeof PROPOSAL_FORMAT;
   readonly formatVersion: (typeof PROPOSAL_FORMAT_VERSIONS)[number];
@@ -215,6 +252,8 @@ export interface Proposal {
   readonly decisions: ProposalDecisions;
   readonly notes: readonly ProposalNote[];
   readonly applied: ProposalApplied;
+  /** Histórico das revisões do agente: obrigatório na formatVersion 5, ausente antes. */
+  readonly revisions?: readonly ProposalRevision[];
 }
 
 /** `proposals/<id>`. */
@@ -560,12 +599,80 @@ const targetSchema = z
     }
   });
 
+const revisionSchema = z.object({
+  at: isoDate,
+  baseRevision: z.number().int().min(0),
+  operations: z.array(jsonValue),
+  changed: z.record(
+    z.string(),
+    z.object({
+      to: jsonValue,
+      state: z.literal('rejected', { error: 'deve ser "rejected" ou null' }).nullable(),
+    }),
+  ),
+  added: z.array(id),
+  dropped: z.array(
+    z.object({
+      change: changeSchema,
+      state: z.literal('rejected', { error: 'deve ser "rejected" ou null' }).nullable(),
+      notes: z.array(id),
+    }),
+  ),
+});
+
+interface RevisionsToCheck {
+  readonly formatVersion: number;
+  readonly revisions?: readonly {
+    readonly added: readonly string[];
+    readonly dropped: readonly { readonly change: { readonly id: string } }[];
+  }[];
+}
+
+type AddIssue = (path: (string | number)[], message: string) => void;
+
+/**
+ * Regras do histórico de revisões (formatVersion 5): `revisions` é obrigatório na 5 e não existe
+ * antes; uma mudança retirada não está mais em `changes`; uma mudança nova entra uma só vez no
+ * histórico. Ids citados em `changed`, `added` e `notes` que já não existem são histórico.
+ */
+function checkRevisions(
+  p: RevisionsToCheck,
+  changeIds: ReadonlySet<string>,
+  add: AddIssue,
+): void {
+  if (p.revisions === undefined) {
+    if (p.formatVersion === 5) add(['revisions'], 'obrigatório na formatVersion 5');
+    return;
+  }
+  if (p.formatVersion !== 5) {
+    add(['revisions'], 'só na formatVersion 5');
+    return;
+  }
+  const added = new Set<string>();
+  p.revisions.forEach((revision, i) => {
+    revision.added.forEach((changeId, k) => {
+      if (added.has(changeId))
+        add(['revisions', i, 'added', k], `id "${changeId}" repetido`);
+      added.add(changeId);
+    });
+    revision.dropped.forEach((d, j) => {
+      if (changeIds.has(d.change.id)) {
+        add(
+          ['revisions', i, 'dropped', j, 'change', 'id'],
+          `id "${d.change.id}" ainda está em changes`,
+        );
+      }
+    });
+  });
+}
+
 export const proposalSchema = z
   .object({
     format: z.literal(PROPOSAL_FORMAT, { error: `deve ser "${PROPOSAL_FORMAT}"` }),
-    formatVersion: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)], {
-      error: 'deve ser 1, 2, 3 ou 4',
-    }),
+    formatVersion: z.union(
+      [z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)],
+      { error: 'deve ser 1, 2, 3, 4 ou 5' },
+    ),
     id: proposalId,
     title: z.string().trim().min(1, 'não pode ser vazio'),
     description: optionalText,
@@ -591,6 +698,7 @@ export const proposalSchema = z
     ),
     notes: z.array(z.object({ id, target: targetSchema, text: z.string(), at: isoDate })),
     applied: z.record(z.string(), z.object({ at: isoDate })),
+    revisions: z.array(revisionSchema).optional(),
   })
   .superRefine((p, ctx) => {
     const add = (path: (string | number)[], message: string) =>
@@ -618,6 +726,7 @@ export const proposalSchema = z
         add(['applied', changeId], 'só uma mudança aceita pode estar aplicada');
       }
     }
+    checkRevisions(p, changeIds, add);
     const noteIds = new Set<string>();
     p.notes.forEach((n, i) => {
       if (noteIds.has(n.id)) add(['notes', i, 'id'], `id "${n.id}" repetido`);
@@ -891,6 +1000,38 @@ export function parseProposalText(text: string): ProposalParseResult {
   return parseProposal(data);
 }
 
+function serializeChange(c: Change) {
+  return {
+    id: c.id,
+    kind: c.kind,
+    entity: c.entity,
+    entityId: c.entityId,
+    imageId: c.imageId,
+    markingId: c.markingId,
+    field: c.field,
+    from: c.from,
+    to: c.to,
+    ...(c.insertBefore === undefined ? {} : { insertBefore: c.insertBefore }),
+  };
+}
+
+function serializeRevision(r: ProposalRevision) {
+  return {
+    at: r.at,
+    baseRevision: r.baseRevision,
+    operations: r.operations,
+    changed: Object.fromEntries(
+      Object.entries(r.changed).map(([k, v]) => [k, { to: v.to, state: v.state }]),
+    ),
+    added: r.added,
+    dropped: r.dropped.map((d) => ({
+      change: serializeChange(d.change),
+      state: d.state,
+      notes: d.notes,
+    })),
+  };
+}
+
 /**
  * Texto do `proposal.json`: chaves de nível superior e das mudanças sempre na mesma
  * ordem, indentação de 2 espaços e quebra de linha no final.
@@ -910,18 +1051,7 @@ export function serializeProposal(p: Proposal): string {
     status: p.status,
     revision: p.revision,
     operations: p.operations,
-    changes: p.changes.map((c) => ({
-      id: c.id,
-      kind: c.kind,
-      entity: c.entity,
-      entityId: c.entityId,
-      imageId: c.imageId,
-      markingId: c.markingId,
-      field: c.field,
-      from: c.from,
-      to: c.to,
-      ...(c.insertBefore === undefined ? {} : { insertBefore: c.insertBefore }),
-    })),
+    changes: p.changes.map(serializeChange),
     decisions: Object.fromEntries(
       Object.entries(p.decisions).map(([k, d]) => [k, { state: d.state, at: d.at }]),
     ),
@@ -934,6 +1064,9 @@ export function serializeProposal(p: Proposal): string {
     applied: Object.fromEntries(
       Object.entries(p.applied).map(([k, a]) => [k, { at: a.at }]),
     ),
+    ...(p.revisions === undefined
+      ? {}
+      : { revisions: p.revisions.map(serializeRevision) }),
   };
   return `${JSON.stringify(canonical, null, 2)}\n`;
 }
