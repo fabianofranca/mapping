@@ -108,6 +108,7 @@ describe('media queries', () => {
 
   it('a largura mínima da app é a do token size-app-min', () => {
     expect(TOKENS['size-app-min']).toBe(`${BREAKPOINTS.appMin}px`);
+    expect(TOKENS['size-app-min-height']).toBe(`${BREAKPOINTS.appMinHeight}px`);
   });
 });
 

@@ -62,6 +62,13 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     }
   });
 
+  it('a especialização aplicada se chama "Material 3 (Compose)", como na biblioteca (R13.10)', async () => {
+    const { project } = await readExample();
+    expect(project.specializations.map((s) => [s.id, s.spec?.name])).toEqual([
+      ['material3-compose', 'Material 3 (Compose)'],
+    ]);
+  });
+
   it('o pacote specs/material3-compose/ do zip é uma biblioteca válida (sem erro no Diagnóstico)', async () => {
     const zip = await JSZip.loadAsync(readFileSync(EXAMPLE));
     const prefix = 'specs/material3-compose/';

@@ -33,6 +33,8 @@ import {
   HALO_WIDTH,
   OPAQUE,
   SELECTION_STROKE,
+  STRIKE_HEIGHT,
+  STRIKE_WIDTH,
   fontStyle,
   intersectRects,
 } from './metrics';
@@ -61,6 +63,7 @@ export type OverlayFrame = Pick<
   | 'arrows'
   | 'arrowDraft'
   | 'marquee'
+  | 'review'
   | 'viewport'
   | 'size'
 >;
@@ -95,6 +98,11 @@ export class OverlayRenderer {
   readonly nameTag = new Konva.Group({ visible: false });
   readonly nameTagBox = new KonvaRect();
   readonly nameTagText = new KonvaText({ wrap: 'none', ellipsis: true });
+  /** Risco do nome quando a marcação selecionada é a removida da revisão. */
+  private readonly nameTagStrike: KonvaLine = new KonvaLine({
+    name: 'name-tag-strike',
+    visible: false,
+  });
   /** Emblema do cadeado: um no item selecionado e outro no item trancado sob o mouse. */
   readonly selectionLock = new LockBadge();
   readonly hoverLockBadge = new LockBadge();
@@ -121,7 +129,7 @@ export class OverlayRenderer {
   constructor(layer: Konva.Layer, container: HTMLElement) {
     this.container = container;
     this.layer = layer;
-    this.nameTag.add(this.nameTagBox, this.nameTagText);
+    this.nameTag.add(this.nameTagBox, this.nameTagText, this.nameTagStrike);
     layer.add(
       this.selectionOutline,
       this.draftRect,
@@ -419,7 +427,14 @@ export class OverlayRenderer {
         : -Infinity;
       const { parentId } = selected.marking;
       const parentLabel = parentId === null ? undefined : headers.get(parentId);
-      this.renderNameTag(frame, rect, selected.marking.name, imageTop, parentLabel);
+      this.renderNameTag(
+        frame,
+        rect,
+        selected.marking.name,
+        imageTop,
+        parentLabel,
+        selected.marking.id,
+      );
       // A alça de ligação vale para uma marcação só (criar a seta não a altera: vale trancada).
       this.renderLinkHandle(frame, rect, handlesAllowed && frame.items.length <= 1);
     }
@@ -648,6 +663,7 @@ export class OverlayRenderer {
     name: string | null,
     imageTop: number,
     parentLabel?: Rect,
+    markingId: string | null = null,
   ): void {
     const { tokens, viewport } = frame;
     const zoom = viewport.scale;
@@ -681,6 +697,20 @@ export class OverlayRenderer {
       strokeWidth: HALO_WIDTH,
       cornerRadius: tokens.radius.sm,
     });
+    // Removida na revisão: o nome vai riscado também na etiqueta (que cobre o da revisão).
+    const struck = markingId !== null && isRemovedInReview(frame.review, markingId);
+    const strikeY = (height - size) / 2 + size * STRIKE_HEIGHT;
+    this.nameTagStrike.visible(struck);
+    this.nameTagStrike.setAttrs({
+      points: [
+        NAME_TAG_PADDING,
+        strikeY,
+        NAME_TAG_PADDING + this.nameTagText.measureSize(name).width,
+        strikeY,
+      ],
+      stroke: tokens.nameTagText,
+      strokeWidth: STRIKE_WIDTH,
+    });
     const view = visibleArea(frame.size, viewport);
     const step = (height + NAME_TAG_GAP) / zoom;
     // Faixa do título da imagem, logo acima dela: a etiqueta não a cobre.
@@ -705,6 +735,11 @@ export class OverlayRenderer {
       scaleY: 1 / zoom,
     });
   }
+}
+
+/** A marcação é a removida que a revisão mostra riscada (a chave da forma é `marking:<id>`). */
+function isRemovedInReview(review: OverlayFrame['review'], id: string): boolean {
+  return review?.removed.some((shape) => shape.key === `marking:${id}`) ?? false;
 }
 
 /**

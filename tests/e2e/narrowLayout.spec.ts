@@ -4,7 +4,7 @@ import { fixtureZip } from './proposalFixture';
 // Layout em janela estreita (1098 × 698, DPR 1,25, Árvore e Detalhes abertos): abas,
 // ações e linhas das listas não podem se sobrepor nem gerar rolagem horizontal.
 
-test.use({ viewport: { width: 1098, height: 698 }, deviceScaleFactor: 1.25 });
+test.use({ viewport: { width: 1098, height: 860 }, deviceScaleFactor: 1.25 });
 
 // Pasta das capturas (opcional, só para conferência manual).
 const SHOTS = process.env.LAYOUT_SHOTS ?? '';
@@ -84,7 +84,7 @@ test('abas da janela inferior não passam sob as ações', async ({ page }) => {
 test('janela inferior a 900 px: abas inteiras, ações sem cobrir nenhuma', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 900, height: 607 });
+  await page.setViewportSize({ width: 900, height: 860 });
   await open(page);
   await page.keyboard.press('Control+Shift+6');
   const win = page.locator('[data-window="diagnostics"]');
@@ -99,7 +99,7 @@ test('janela inferior a 900 px: abas inteiras, ações sem cobrir nenhuma', asyn
 test('aba escolhida continua visível quando a lista de abas é estreitada depois', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1400, height: 800 });
+  await page.setViewportSize({ width: 1400, height: 860 });
   await open(page);
   await page.keyboard.press('Control+Shift+6');
   // As abas pertencem à mesma janela inferior: a lista é a que tem a aba Diagnóstico.
@@ -209,13 +209,13 @@ test('janelas abertas largo e estreitando a janela: nada fica fora da tela', asy
       JSON.stringify({ open: ['tree', 'layers', 'details'], left: 271, right: 560 }),
     );
   });
-  await page.setViewportSize({ width: 1540, height: 800 });
+  await page.setViewportSize({ width: 1540, height: 860 });
   await open(page);
   await page.keyboard.press('Control+Shift+6');
   await expect(page.locator('[data-window="diagnostics"]')).toBeVisible();
   expect((await page.locator('[data-window="details"]').boundingBox())!.width).toBe(560);
   for (const width of [1100, 902, 900]) {
-    await page.setViewportSize({ width, height: 800 });
+    await page.setViewportSize({ width, height: 860 });
     await expect(page.locator('[data-window="details"]')).toBeVisible();
     await expect
       .poll(async () => {

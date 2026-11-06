@@ -4,7 +4,7 @@ Aplicação web para marcar **áreas retangulares** em imagens, organizá-las em
 
 O núcleo é **genérico** (imagens, marcações, camadas, anotações, componentes e telas): todo conceito de domínio (SDUI, plataformas, Figma, contratos) entra por _especializações_, para a mesma ferramenta servir a N aplicações.
 
-- **Só desktop**: feita para estação de trabalho (mouse, teclado, painéis lado a lado), com largura mínima de 900 px; numa janela mais estreita a app mostra "Abra numa janela maior" e volta ao normal ao alargar. Toque simples (num monitor de toque) funciona; não há layout de celular.
+- **Só desktop**: feita para estação de trabalho (mouse, teclado, painéis lado a lado), com janela mínima de 900×860 px; numa janela mais estreita ou mais baixa a app mostra "Abra numa janela maior" e volta ao normal ao alargar ou crescer. Toque simples (num monitor de toque) funciona; não há layout de celular.
 - **Um único arquivo**: o build gera `dist/index.html` autocontido; funciona aberto por `file://` (Chrome/Edge desktop) e hospedado no GitHub Pages, sem requisições de rede (ver [Privacidade](#privacidade-e-seus-dados)).
 - **Dois modos de armazenamento**: _pasta_ no disco (File System Access API, Chrome/Edge desktop) ou _projeto local_ no navegador (IndexedDB). Qualquer projeto pode ser exportado em `.zip`.
 - Tema claro/escuro, português (pt-BR) e inglês (en-US), instalável como PWA (só em `https:`).

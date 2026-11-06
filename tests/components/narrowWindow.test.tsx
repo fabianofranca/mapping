@@ -18,19 +18,27 @@ import { installFakeCanvas } from '../canvas/harness';
 import { sampleProject } from '../model/fixtures';
 import { createHarness } from './harness';
 
-// Fase 5.8: a app é só desktop. Abaixo da largura mínima (900px) o editor dá lugar a
+// Fase 5.8: a app é só desktop. Abaixo da largura mínima (900px) ou da altura mínima (860px) o editor dá lugar a
 // um aviso, sem desmontar nada: ao alargar a janela, a seleção, o viewport e o próprio
 // canvas continuam os mesmos.
 
-/** `matchMedia` com a largura da janela controlada pelo teste (o jsdom não tem). */
-function stubWindowWidth(initial: number) {
+/** `matchMedia` com a janela (largura e altura) controlada pelo teste (o jsdom não tem). */
+function stubWindowSize(initial: number, initialHeight = 1000) {
   let width = initial;
+  let height = initialHeight;
   const lists = new Set<{ query: string; listeners: Set<() => void> }>();
-  const matches = (query: string) => {
+  const one = (query: string) => {
     const min = /min-width:\s*(\d+)px/.exec(query);
     const max = /max-width:\s*(\d+)px/.exec(query);
-    return (!min || width >= Number(min[1])) && (!max || width <= Number(max[1]));
+    const maxH = /max-height:\s*(\d+)px/.exec(query);
+    return (
+      (!min || width >= Number(min[1])) &&
+      (!max || width <= Number(max[1])) &&
+      (!maxH || height <= Number(maxH[1]))
+    );
   };
+  // Uma lista separada por vírgula casa se qualquer parte casar.
+  const matches = (query: string) => query.split(',').some((part) => one(part.trim()));
   vi.stubGlobal('matchMedia', (query: string) => {
     const entry = { query, listeners: new Set<() => void>() };
     lists.add(entry);
@@ -43,10 +51,18 @@ function stubWindowWidth(initial: number) {
       removeEventListener: (_: string, fn: () => void) => entry.listeners.delete(fn),
     };
   });
-  return (next: number) => {
-    width = next;
+  const notify = () => {
     for (const entry of lists) for (const fn of entry.listeners) fn();
   };
+  const resize = (next: number) => {
+    width = next;
+    notify();
+  };
+  resize.height = (next: number) => {
+    height = next;
+    notify();
+  };
+  return resize;
 }
 
 describe('janela estreita', () => {
@@ -65,7 +81,7 @@ describe('janela estreita', () => {
   });
 
   function mount(width: number) {
-    const resize = stubWindowWidth(width);
+    const resize = stubWindowSize(width);
     const harness = createHarness(sampleProject());
     const view = render(
       <EditorContext.Provider value={harness.context}>
@@ -87,6 +103,17 @@ describe('janela estreita', () => {
     expect(screen.queryByText(t('narrow.title'))).toBeNull();
     const editor = view.container.querySelector<HTMLElement>('.editor');
     expect(editor?.hidden).toBe(false);
+  });
+
+  it('abaixo da altura mínima mostra o aviso, sem desmontar, e volta ao crescer', () => {
+    const { view, resize } = mount(1280);
+    const host = view.container.querySelector('.canvas-host');
+    act(() => resize.height(859));
+    expect(screen.getByText(t('narrow.title'))).toBeTruthy();
+    expect(view.container.querySelector<HTMLElement>('.editor')?.hidden).toBe(true);
+    act(() => resize.height(860));
+    expect(screen.queryByText(t('narrow.title'))).toBeNull();
+    expect(view.container.querySelector('.canvas-host')).toBe(host);
   });
 
   it('volta ao editor ao alargar sem perder seleção, viewport nem o canvas', () => {

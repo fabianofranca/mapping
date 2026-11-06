@@ -8,7 +8,7 @@ export const ptBR = {
   'app.loading': 'Carregando…',
   'narrow.title': 'Abra numa janela maior',
   'narrow.body':
-    'O Mapping precisa de pelo menos {width} px de largura. O projeto continua aberto e as alterações continuam sendo salvas.',
+    'O Mapping precisa de uma janela de pelo menos {width} × {height} px. O projeto continua aberto e as alterações continuam sendo salvas.',
   'settings.title': 'Configurações',
   'settings.language': 'Idioma',
   'settings.theme': 'Tema',
