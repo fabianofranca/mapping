@@ -23,7 +23,7 @@ describe('textos da revisão', () => {
       proposalNoticeMessage({ kind: 'revised', id: 'P1', title: 'X', at: 'A' }),
     ).toContain('X');
     expect(
-      t('review.revisedNotice.text', { title: 'X', changed: 1, added: 2, dropped: 0 }),
-    ).toBe('O agente revisou X: 1 trocada(s), 2 nova(s), 0 retirada(s).');
+      t('review.revisedNotice.text', { title: 'X', parts: '1 trocada(s), 2 nova(s)' }),
+    ).toBe('O agente revisou X: 1 trocada(s), 2 nova(s).');
   });
 });

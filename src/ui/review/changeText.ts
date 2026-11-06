@@ -307,6 +307,12 @@ export function entityName(names: ReviewNames, id: string): string | null {
   return null;
 }
 
+/** Rótulo de um campo de uma entidade (`marking` + `rect` → "Posição"); a chave quando não há rótulo. */
+export function entityFieldLabel(entity: Change['entity'], key: string): string {
+  const label = FIELD_KEYS[`${entity}.${key}`];
+  return label ? t(label) : key;
+}
+
 /** Nome do campo de uma tipada (o rótulo do campo na especialização, senão a chave). */
 function valueFieldLabel(names: ReviewNames, c: Change, key: string): string {
   const project = names.preview ?? names.current;

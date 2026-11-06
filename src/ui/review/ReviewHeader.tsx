@@ -30,6 +30,7 @@ import { Flag } from './Flag';
 import { formatFullDate } from './format';
 import { NoteField, useHasNote } from './NoteField';
 import { OpenNewer } from './ReviewLevels';
+import { RevisionLine } from './RevisedFlag';
 import { useDecide, useReviewNames } from './useReview';
 
 // Cabeçalho do que está selecionado nos Detalhes da revisão (HANDOFF-REVIEW-DETAILS 5.4, 5.5
@@ -548,6 +549,9 @@ export function ReviewHeader({ target, whole = null }: ReviewHeaderProps) {
   return (
     <section class="review-header" aria-label={t('review.details.decision')}>
       <ProposalStatusNotice names={names} />
+      <RevisionLine
+        summary={target.level === 'proposal' ? d.revisionSummary.value : null}
+      />
       <div class="review-header-state">
         <DecisionMark state={state} counts={summary ?? undefined} />
         <b>{t(`review.header.kind.${variant}`)}</b>

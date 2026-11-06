@@ -24,6 +24,7 @@ import { changeSummary, changeTitle, targetName, type ReviewNames } from './chan
 import { REVIEW_KEYS, type DecisionValue } from './DecisionControl';
 import { Flag } from './Flag';
 import { DecisionCounts } from './ProposalRow';
+import { changeBadge, levelBadge } from './RevisedFlag';
 import { ReviewRow } from './ReviewRow';
 import {
   allNodeKeys,
@@ -223,6 +224,13 @@ export function ReviewFilters({ names }: { readonly names: ReviewNames }) {
           label={t('review.filter.onlyConflicts', { count: counts.conflicts })}
           onChange={(e) => review.setFilters({ onlyConflicts: e.currentTarget.checked })}
         />
+        {(counts.revised > 0 || filters.onlyRevised) && (
+          <Choice
+            checked={filters.onlyRevised}
+            label={t('review.filter.onlyRevised', { count: counts.revised })}
+            onChange={(e) => review.setFilters({ onlyRevised: e.currentTarget.checked })}
+          />
+        )}
       </Popover>
       {active && (
         <>
@@ -386,6 +394,7 @@ export function ReviewLevels() {
   const levelTypes = d.levelTypes.value;
   const situation = d.situation.value;
   const conflicts = d.conflictIds.value;
+  const revisedIds = d.revisedIds.value;
   const invalid = d.invalid.value;
   const notes = d.notes.value;
   const fresh = review.newConflicts.value;
@@ -426,6 +435,7 @@ export function ReviewLevels() {
         expanded={false}
         selected={selectedKey === key}
         invalid={invalid.changeIds.has(c.id)}
+        revised={changeBadge(p, revisedIds, c.id)}
         conflict={conflict}
         decision={decision}
         decisionDisabled={!open || applied}
@@ -501,6 +511,7 @@ export function ReviewLevels() {
         expanded={row.expanded}
         selected={selectedKey === row.key}
         invalid={isInvalid}
+        revised={levelBadge(row.target.level, revisedIds, ids)}
         decision={levelValue(summary)}
         decisionDisabled={
           !open || (summary !== undefined && summary.applied === summary.total)

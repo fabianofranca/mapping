@@ -25,6 +25,7 @@ import { DiffValue, type DiffRow } from './DiffValue';
 import { Flag } from './Flag';
 import { formatFullDate } from './format';
 import { NoteField, useHasNote } from './NoteField';
+import { RevisedBefore } from './RevisedBefore';
 import { replaceChangeOf } from './ReviewCanvasControls';
 import { useDecide, useReviewNames } from './useReview';
 
@@ -549,6 +550,7 @@ export function ChangePopover({
         )}
       </div>
       <ChangeNotices change={c} field={subject.field} />
+      {!subject.part && <RevisedBefore change={c} />}
       {long && !all && (
         <Button size="sm" class="button-link" onClick={() => setAll(true)}>
           {t('review.pop.showAll')}

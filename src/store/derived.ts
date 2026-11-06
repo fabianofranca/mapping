@@ -653,6 +653,8 @@ export interface ProposalRow {
   readonly conflicts: number;
   /** Aberta e ainda sem decisões, notas nem abertura neste dispositivo: a que acabou de chegar. */
   readonly fresh: boolean;
+  /** Mudanças com a marca "Revisada" e sem decisão numa proposta aberta (etapa #644). */
+  readonly revised: number;
   /** Substituída: o que ficou para trás (`null` nas demais). */
   readonly leftBehind: LeftBehind | null;
   /**
@@ -913,6 +915,7 @@ export function createReviewDerived(
         Object.keys(p.decisions).length === 0 &&
         p.notes.length === 0 &&
         !seen.has(p.id),
+      revised: p.status === 'open' ? visibleRevisedChanges(p).length : 0,
       leftBehind: p.status === 'superseded' ? leftBehind(p) : null,
       supersededBy: successors.get(p.id) ?? null,
     }));

@@ -1689,3 +1689,17 @@ del.identity-name {
   flex-direction: column;
   gap: var(--space-1);
 }
+
+/* Antes da revisão: o que o agente tinha proposto na mudança que ele trocou (etapa #644). */
+.revised-before {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.revised-before-title {
+  font: var(--t-text-heading);
+}

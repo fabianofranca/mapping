@@ -472,16 +472,22 @@ export const reviewPtBR = {
   'review.revised.markHint': 'O agente revisou esta mudança. Confira antes de decidir.',
   'review.revised.markAdded': 'Nova na revisão',
   'review.filter.onlyRevised': 'Só revisadas ({count})',
-  'review.revised.header':
-    'Revisada pelo agente em {date}: {changed} trocada(s), {added} nova(s), {dropped} retirada(s)',
+  'review.revised.hintChanged':
+    'O agente trocou esta mudança em {date}. Confira antes de decidir.',
+  'review.revised.hintAdded':
+    'O agente acrescentou esta mudança em {date}. Confira antes de decidir.',
+  'review.revised.header': 'Revisada pelo agente em {date}: {parts}',
+  'review.revised.part.changed': '{count} trocada(s)',
+  'review.revised.part.added': '{count} nova(s)',
+  'review.revised.part.dropped': '{count} retirada(s)',
+  'review.revised.part.none': 'nenhuma mudança',
   'review.revised.before': 'Antes da revisão',
   'review.revised.beforeTo': 'O agente tinha proposto',
   'review.revised.beforeState.rejected': 'Você tinha rejeitado',
   'review.revised.beforeState.none': 'Sem decisão',
   'review.revised.droppedNote': 'Da mudança retirada: {summary}',
   'proposals.row.revised': 'Revisada · {count} para conferir',
-  'review.revisedNotice.text':
-    'O agente revisou {title}: {changed} trocada(s), {added} nova(s), {dropped} retirada(s).',
+  'review.revisedNotice.text': 'O agente revisou {title}: {parts}.',
   'review.revisedNotice.review': 'Revisar',
   'review.revisedNotice.reviewLabel': 'Revisar {title}, revisada pelo agente',
 } as const;
@@ -950,16 +956,22 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.revised.markHint': 'The agent revised this change. Check it before deciding.',
   'review.revised.markAdded': 'New in the revision',
   'review.filter.onlyRevised': 'Revised only ({count})',
-  'review.revised.header':
-    'Revised by the agent on {date}: {changed} replaced, {added} new, {dropped} withdrawn',
+  'review.revised.hintChanged':
+    'The agent replaced this change on {date}. Check it before deciding.',
+  'review.revised.hintAdded':
+    'The agent added this change on {date}. Check it before deciding.',
+  'review.revised.header': 'Revised by the agent on {date}: {parts}',
+  'review.revised.part.changed': '{count} replaced',
+  'review.revised.part.added': '{count} new',
+  'review.revised.part.dropped': '{count} withdrawn',
+  'review.revised.part.none': 'no changes',
   'review.revised.before': 'Before the revision',
   'review.revised.beforeTo': 'The agent had proposed',
   'review.revised.beforeState.rejected': 'You had rejected',
   'review.revised.beforeState.none': 'No decision',
   'review.revised.droppedNote': 'From the withdrawn change: {summary}',
   'proposals.row.revised': 'Revised · {count} to check',
-  'review.revisedNotice.text':
-    'The agent revised {title}: {changed} replaced, {added} new, {dropped} withdrawn.',
+  'review.revisedNotice.text': 'The agent revised {title}: {parts}.',
   'review.revisedNotice.review': 'Review',
   'review.revisedNotice.reviewLabel': 'Review {title}, revised by the agent',
 };
