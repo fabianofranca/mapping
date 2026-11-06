@@ -388,6 +388,7 @@ export function ReviewLevels() {
   const invalid = d.invalid.value;
   const notes = d.notes.value;
   const fresh = review.newConflicts.value;
+  const staleFresh = review.staleNotice.value;
   const undo = review.undoable.value;
   const together = new Set(undo?.cascaded ?? []);
   const comparison = d.supersession.value?.comparison ?? null;
@@ -594,43 +595,51 @@ export function ReviewLevels() {
   };
 
   const supersession = d.supersession.value;
+  // O X some com o aviso: o foco vai para a lista, nunca para o body.
+  const dismissNotice = (dismiss: () => void) => {
+    dismiss();
+    scroller.current?.focus();
+  };
   const allKeys = allNodeKeys(tree);
 
   return (
     <div class="review-levels">
       <ReviewFilters names={names} />
-      {fresh.size > 0 && !superseded && (
+      {staleFresh.size > 0 && !superseded && (
         <Notice
           tone="warning"
-          size="sm"
-          title={t('review.stale.title')}
+          size="line"
+          hint={`${t('review.stale.title')} ${t('review.stale.text', { count: staleFresh.size })}`}
           actions={
             <Button
               size="sm"
+              aria-label={t('review.stale.show', { count: staleFresh.size })}
               onClick={() => {
                 review.setFilters({ onlyConflicts: true });
                 if (review.step('conflict', 1)) canvas.current?.centerSelection();
               }}
             >
-              {t('review.stale.show', { count: fresh.size })}
+              {t('review.stale.showShort')}
             </Button>
           }
+          onDismiss={() => dismissNotice(review.dismissStaleNotice)}
         >
-          <span>{t('review.stale.text', { count: fresh.size })}</span>
+          {t('review.stale.short', { count: staleFresh.size })}
         </Notice>
       )}
-      {superseded && (
+      {superseded && !review.supersededDismissed.value && (
         <Notice
           tone="warning"
-          size="sm"
-          title={t('review.superseded.title')}
+          size="line"
+          hint={`${t('review.superseded.title')} ${t('review.superseded.text')}`}
           actions={
             supersession?.by && (
               <OpenNewer id={supersession.by.id} title={supersession.by.title} />
             )
           }
+          onDismiss={() => dismissNotice(review.dismissSupersededNotice)}
         >
-          <span>{t('review.superseded.text')}</span>
+          {t('review.superseded.short')}
         </Notice>
       )}
       <div class="review-levels-head" role="presentation">

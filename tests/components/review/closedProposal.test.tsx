@@ -4,7 +4,8 @@ import type { Proposal } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
 import { decided, propose } from '../../model/proposalFixtures';
 import { richScenario } from '../../store/proposalHarness';
-import { showReviewPanel } from './reviewHarness';
+import { ProposalsWindow } from '../../../src/ui/review/ProposalsWindow';
+import { openReviewHarness, renderInEditor, showReviewPanel } from './reviewHarness';
 
 // Proposta fechada e substituída (fase 9.6, HANDOFF-REVIEW-DETAILS 5.7): a aplicada é só
 // para ver (decisões desabilitadas com o motivo, popover sem botões); a substituída mostra
@@ -85,6 +86,33 @@ describe('proposta substituída', () => {
     expect(within(below).getByText('igual na nova')).toBeTruthy();
     fireEvent.click(open);
     expect(h.review.proposalId.value).toBe('P2');
+  });
+
+  it('na lista da revisão o aviso é uma linha: a frase completa só na dica e para o leitor de tela; o X o esconde e leva o foco à lista', async () => {
+    const { base, after } = richScenario();
+    const old: Proposal = { ...propose(base, after, { id: 'P1' }), status: 'superseded' };
+    const next = propose(base, after, {
+      id: 'P2',
+      title: 'Checkout v2',
+      supersedes: 'P1',
+    });
+    const h = await openReviewHarness({ proposals: [old, next] });
+    h.review.open('P1');
+    renderInEditor(h, <ProposalsWindow onHelp={() => {}} />);
+    const line = document.querySelector('.notice-box-line') as HTMLElement;
+    expect(line.querySelector('.notice-box-text')?.textContent).toBe(
+      'Proposta substituída',
+    );
+    expect(
+      within(line).getByRole('button', { name: 'Abrir a nova: Checkout v2' }),
+    ).toBeTruthy();
+    const phrase = within(line).getAllByText(/Esta proposta foi substituída por outra\./);
+    expect(phrase.some((n) => n.classList.contains('visually-hidden'))).toBe(true);
+    expect(phrase.some((n) => n.getAttribute('data-tooltip') !== null)).toBe(true);
+    fireEvent.click(within(line).getByRole('button', { name: 'Dispensar' }));
+    expect(document.querySelector('.notice-box-line')).toBeNull();
+    expect(h.review.supersededDismissed.value).toBe(true);
+    expect(document.activeElement).toBe(screen.getByRole('tree'));
   });
 
   it('o que ficou sem decisão não pode ser decidido aqui: botões desabilitados com o motivo', async () => {

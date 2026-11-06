@@ -165,6 +165,7 @@ export const reviewPtBR = {
   'review.superseded.title': 'Esta proposta foi substituída por outra.',
   'review.superseded.text':
     'O que não foi aplicado ficou para trás: as sem decisão não podem mais ser aplicadas; as aceitas ainda podem.',
+  'review.superseded.short': 'Proposta substituída',
   'review.superseded.openNew': 'Abrir a nova',
   'review.superseded.openNewNamed': 'Abrir a nova: {title}',
   'review.superseded.undecided': 'Sem decisão',
@@ -439,6 +440,8 @@ export const reviewPtBR = {
   'review.stale.text':
     '{count} mudança(s) passaram a ter conflito; as outras decisões foram mantidas.',
   'review.stale.show': 'Ver os conflitos novos ({count})',
+  'review.stale.short': '{count} conflito(s) novo(s)',
+  'review.stale.showShort': 'Ver conflitos',
   'shortcuts.group.review': 'Revisão de propostas',
   'shortcuts.review.accept': 'Aceitar o nível selecionado',
   'shortcuts.review.reject': 'Rejeitar o nível selecionado',
@@ -624,6 +627,7 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.superseded.title': 'This proposal was superseded by another one.',
   'review.superseded.text':
     'What was not applied was left behind: undecided changes can no longer be applied; accepted ones still can.',
+  'review.superseded.short': 'Proposal superseded',
   'review.superseded.openNew': 'Open the new one',
   'review.superseded.openNewNamed': 'Open the new one: {title}',
   'review.superseded.undecided': 'Undecided',
@@ -896,6 +900,8 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.stale.title': 'The project changed since your last session.',
   'review.stale.text': '{count} change(s) now conflict; the other decisions were kept.',
   'review.stale.show': 'Show the new conflicts ({count})',
+  'review.stale.short': '{count} new conflict(s)',
+  'review.stale.showShort': 'Show conflicts',
   'shortcuts.group.review': 'Proposal review',
   'shortcuts.review.accept': 'Accept the selected level',
   'shortcuts.review.reject': 'Reject the selected level',
