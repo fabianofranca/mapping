@@ -40,13 +40,13 @@ Segurança: o servidor só lê e grava dentro das raízes. Recusa `..`, caminhos
 O Ctrl+C (Cmd+C) na app, com uma marcação, container ou anotação selecionada, copia a referência:
 
 ```
-mapping://<projeto>/<m|i|a|p>/<código> (<caminho legível>)
+mapping://<projeto>/<m|i|a|p>/<código>
 ```
 
-- `<projeto>`: nome da pasta do projeto. Se houver duas pastas com o mesmo nome, o servidor devolve as candidatas e pede o caminho.
+- `<projeto>`: nome da pasta do projeto, codificado como em uma URL (`A-Z a-z 0-9 - . _ ~` ficam como estão; todo o resto vira `%XX`, em UTF-8: `Meu Projeto (v2)` é `Meu%20Projeto%20%28v2%29`). Se houver duas pastas com o mesmo nome, o servidor devolve as candidatas e pede o caminho.
 - `m` marcação, `i` **container** (a letra não mudou quando a imagem virou container, para as referências já coladas continuarem valendo), `a` anotação, `p` **proposta** (a que `propose_changes` e `list_proposals` devolvem).
 - `<código>`: os 8 primeiros caracteres hexadecimais do id (12, 16… se houver colisão).
-- `(<caminho legível>)`: só para leitura humana; o servidor o ignora.
+- A referência é **só a URL**: não leva caminho legível nem nada depois do código (o nome e o caminho vêm de `get_marking` e `resolve`). Qualquer coisa depois do código (o ` (caminho)` do formato antigo, `?`, `#`, espaço) ou um projeto sem codificar é `invalid-ref` (ver "Mudança da 0.21.0").
 
 Toda tool que recebe um item (`ref`) aceita a referência completa, só `m/3f2a9c1e` com `project` informado à parte, ou o id completo. Cole a referência no chat e o agente a resolve sem precisar do projeto. Nas tools de proposta, `ref` é `mapping://projeto/p/3f2a9c1e`, `p/3f2a9c1e` (com `project`) ou o id da proposta; o código é único entre as propostas do projeto. **Ctrl+Alt+C** copia o recorte da marcação como PNG.
 
@@ -116,12 +116,21 @@ Em `get_marking`, `get_annotation`, `find_by_code`, `get_component` (campo `code
 ### Setas e `near` (ME4)
 
 - **`create_arrow`** (`from`, `to`, `style?`, `name?`, `as?`), **`update_arrow`** (`arrow`, `name?`, `style?`, `locked?`) e **`delete_arrow`** (`arrow`), operações de `plan_changes` e `propose_changes`. A seta liga duas marcações (nunca outra seta nem um container: `arrow-endpoint`; a mesma ponta duas vezes: `arrow-self`), com `style` `straight`, `curve` (padrão) ou `elbow`. **Nunca `points`**: a rota é da pessoa, e `points` em `create_arrow` ou `update_arrow` falha com `invalid-arguments`. A proposta leva só a criação e a remoção da seta (`create-arrow`, `delete-arrow`); `update_arrow` numa seta que já existe vale na prévia (`plan_changes`) e avisa com `ignored-argument` que não entra na proposta.
-- **Referência da seta**: os ids das setas e os das marcações dividem o espaço, então a seta usa a letra `m` (`mapping://projeto/m/<código> (Seta › Origem → Destino)`). `get_marking` e `resolve` com ela devolvem `kind: "arrow"`, `from`, `to` (referência, nome e caminho), `style`, `lock` e as anotações por camada; `create_annotation` aceita a referência da seta em `marking`.
+- **Referência da seta**: os ids das setas e os das marcações dividem o espaço, então a seta usa a letra `m` (`mapping://projeto/m/<código>`). `get_marking` e `resolve` com ela devolvem `kind: "arrow"`, `from`, `to` (referência, nome e caminho), `style`, `lock` e as anotações por camada; `create_annotation` aceita a referência da seta em `marking`.
 - **`appliesTo` é imposto.** `create_annotation` com um tipo que não se aplica ao item (um tipo só de marcação numa seta, ou só de seta numa marcação) falha com `type-not-applicable` e uma `hint`; `update_marking` e `delete_marking` com o id de uma seta falham com `wrong-kind` e a `hint` aponta `update_arrow` ou `delete_arrow`. Uma anotação que deixou de se aplicar depois de uma atualização da especialização vira pendência (`type-not-applicable`), não erro; a prévia da atualização lista a mudança como `changed-applies-to` (aditiva).
 - **`get_marking`** de uma marcação traz `arrows: { outgoing, incoming }` (quando há): `ref`, `id`, a outra ponta (`to` nas que saem, `from` nas que chegam), `name`, `style` e `locked`.
 - **`get_marking_image`** recusa a seta com o erro `arrow` (e uma `hint`) e a marcação do canvas com `canvas-marking`.
 - **`near`** em `create_marking` (referência, id ou apelido de um container ou de uma marcação): só para um tipo de anotação flutuante (sem `container`); a marcação nasce num lugar livre da margem do alvo (à direita, empilhada de cima para baixo com vão de 24 unidades do canvas, sem sobrepor containers nem outras flutuantes; se não couber, esquerda, embaixo, em cima). O `rect`, se vier, dá só o tamanho (x e y são ignorados). Em tipo ou marcação não flutuante, `near` é ignorado com aviso `ignored-argument`.
 - `changes` de `plan_changes`/`propose_changes` ganha `arrows` (criadas, alteradas, excluídas) e `created` traz `kind: "arrow"`.
+
+### Mudança da 0.21.0 (Referência só como URL)
+
+Sem mudança no formato do `mapping.json` (schema v14), da especialização (`formatVersion` 11) nem da proposta (formato 4): nenhuma referência `mapping://` é gravada nesses arquivos.
+
+- **A referência é só a URL**: `mapping://<projeto>/<m|i|a|p>/<código>`, sem o caminho legível entre parênteses. Vale para o que a app copia (Ctrl+C e o botão da referência) e para toda resposta do MCP (`ref`, `annotation`, `marking`, `container`, `proposal.ref`, os `target` de `get_proposal` e `get_proposal_review`, os `created` do plano, o `detail` do `image-overlap`). Os campos que já traziam nome ou caminho à parte (`name`, `path`, `from` e `to` das setas, quando a tool os tem) continuam; nenhum campo novo foi criado. O nome e o caminho de um item vêm de `get_marking`, `get_container` e `resolve`.
+- **O projeto vai codificado** (conjunto _unreserved_ da RFC 3986): `A-Z a-z 0-9 - . _ ~` ficam como estão e todo o resto vira `%XX` em hexa maiúsculo, em UTF-8 (`!`, `'`, `(`, `)` e `*` também, porque `(` e `)` quebram link markdown). Uma pasta `Meu Projeto` aparece como `mapping://Meu%20Projeto/m/3f2a9c1e`; `projeção`, como `proje%C3%A7%C3%A3o`.
+- **Antigas recusadas**: a leitura é estrita. Uma referência com qualquer coisa depois do código (o ` (caminho)` antigo, `?`, `#`, espaço) ou com o projeto sem codificar (`mapping://Meu Projeto/m/…`), ou com `%` inválido ou que não decodifica como UTF-8, dá `invalid-ref`, nas tools de item e nas de proposta, com uma `hint` com o formato aceito e o pedido de copiar de novo na app. As referências já coladas no formato antigo precisam ser copiadas de novo. Seguem aceitas as formas curtas (`m/3f2a9c1e` com `project` à parte, só o código, o id completo) e a URL com espaços em volta.
+- Os links dos documentos da biblioteca (`mapping://<typeId>` e `mapping://<specId>/<typeId>`) não mudam.
 
 ### Mudança da 0.19.0 (Aviso de papel limpo)
 
@@ -210,7 +219,7 @@ Acompanha o schema v14 do `mapping.json` (`annotations[].parentRole` e `docRepos
 ### Mudança da 0.13.0 (Avisos que faltam)
 
 - **`rect-too-small`** (em `plan_changes` e `propose_changes`: `create_marking`, `update_marking` com `rect` e a troca de `container`) passa a trazer `detail` com o tamanho recebido e o mínimo que valeu (`recebido 5×3 px; mínimo 8×8 px`; o mínimo é o de qualquer marcação, 8 px, ou o `minSize` do componente, o maior, e o `detail` diz `(do componente)` neste caso) e uma `hint` para aumentar `width` e `height`. Com componente, o erro segue trazendo o `minSize`.
-- **`image-overlap`** (`update_container` com `x`, `y`, `scale`, `width` ou `height`, e mover container) passa a trazer `detail` com a referência do **outro** container (`sobrepõe o container mapping://…`) e uma `hint` para mudar `x`/`y`/`scale` ou o tamanho, ou mover o outro container antes. Ao mover vários itens juntos, o container citado é o que não se move (antes, o erro trazia o do movido).
+- **`image-overlap`** (`update_container` com `x`, `y`, `scale`, `width` ou `height`, e mover container) passa a trazer `detail` com a referência do **outro** container (`sobrepõe o container mapping://<projeto>/i/<código>`, só a URL) e uma `hint` para mudar `x`/`y`/`scale` ou o tamanho, ou mover o outro container antes. Ao mover vários itens juntos, o container citado é o que não se move (antes, o erro trazia o do movido).
 - **`detail` inteiro.** O detalhe dos erros do modelo não é mais cortado no segundo `: `.
 - Sem mudança no formato do `mapping.json` nem nas tools; as tools de leitura que falham por regra do modelo saem com o mesmo `detail` e `hint`.
 
