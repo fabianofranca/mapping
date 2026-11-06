@@ -18,10 +18,11 @@ import {
 import { emptyProject } from './fixtures';
 import { AT, decided, propose } from './proposalFixtures';
 
-// Proposta formatVersion 4: a marcação criada carrega `insertBefore` (a primeira marcação da
-// base depois dela no projeto proposto), e aplicar todas as mudanças dá a mesma ordem do
-// array `markings` e os mesmos pais do projeto proposto (docs/PROPOSAL-FORMAT.md), desde que o
-// lote não tenha reordenação; com ela, o limite está em proposalReorderLimit.test.ts (#549).
+// Proposta formatVersion 4: a marcação criada carrega `insertBefore` (a âncora no array da
+// base), e aplicar todas as mudanças dá os mesmos pais e a mesma ordem entre irmãs do projeto
+// proposto (docs/PROPOSAL-FORMAT.md, "Garantia"); sem reordenação no lote, também a mesma ordem
+// do array `markings`. Com reordenação e empate, ver proposalReorderLimit.test.ts e o fuzz
+// proposalFidelityFuzz.test.ts (#549).
 
 const rect = (x: number, y: number, width: number, height: number) => ({
   x,
