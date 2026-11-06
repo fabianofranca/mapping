@@ -44,6 +44,7 @@ import {
 } from './shortcuts';
 import { useApplyAccepted, useDecide } from '../ui/review/useReview';
 import { ADD_ANNOTATION_ACTION } from '../ui/AnnotationsPanel';
+import { toggleReviewLegend } from '../ui/review/ReviewCanvasControls';
 import { arrangeMarking, canArrangeMarking } from '../ui/arrange';
 import { canWrapNow, currentWrapItems, wrapItemsNow } from './wrapSelection';
 import {
@@ -347,7 +348,7 @@ export function useEditorShortcuts(
           review.setView(review.view.peek() === 'current' ? 'proposed' : 'current');
           return;
         case 'legend':
-          ui.reviewLegend.value = !ui.reviewLegend.peek();
+          toggleReviewLegend(ui);
           return;
         case 'apply':
           void reviewRef.current.apply();

@@ -13,6 +13,14 @@ import {
 const NOTE = 'O nome antigo do cabeçalho estava certo.';
 
 async function importFixture(page: Page): Promise<void> {
+  // A janela Propostas começa baixa (3 linhas, #598); estes fluxos precisam da lista toda.
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('mapping.toolWindows', JSON.stringify({ bottomReview: 420 }));
+    } catch {
+      // Sem armazenamento: vale o padrão.
+    }
+  });
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')

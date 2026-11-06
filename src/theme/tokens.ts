@@ -225,8 +225,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-tw-right': '360px',
   'size-tw-bottom': '208px',
   'size-tw-layers': '224px',
-  /** Altura inicial da janela inferior em modo revisão (filtros, ~9 linhas e o rodapé de atalhos). */
-  'size-tw-bottom-review': '344px',
+  /** Altura inicial da janela inferior em modo revisão (filtros recolhidos, 3 linhas inteiras da lista e o rodapé de atalhos a 900 px de largura). */
+  'size-tw-bottom-review': '240px',
   /**
    * Colunas de resumo da revisão (decisão 8 do HANDOFF-PROPOSALS): o resumo das linhas
    * dos níveis (`ReviewRow`) e as contagens da lista de propostas (`ProposalRow`). As

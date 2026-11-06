@@ -109,7 +109,7 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 
 ### `examples/specs/sdui.json`
 
-**O que é.** A especialização SDUI, `formatVersion` 11: componentes de uma interface descrita por servidor (Button, Input, Text, Image), eventos (Ação, Feedback e Validação) e telas. O gatilho do evento (Clique, Pressionar, Alteração) é o **papel** dele no componente, não um tipo.
+**O que é.** A especialização SDUI, `formatVersion` 12: componentes de uma interface descrita por servidor (Button, Input, Text, Image), eventos (Ação, Feedback e Validação) e telas. O gatilho do evento (Clique, Pressionar, Alteração) é o **papel** dele no componente, não um tipo.
 
 **O que dá para ver.**
 
@@ -117,12 +117,26 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 - Relações entre camadas: o Button aceita como filhos os eventos do grupo Interação, por **cláusula** (`allowedChildren: [{ "layer": "eventos", "groups": ["interacao"] }]`), e o Input os do grupo Dados; os eventos exigem um dono (`requiresOwner`) e a camada Eventos tem `groups`.
 - Papéis no vínculo: `childRoles` (Clique e Pressionar no Button, Alteração no Input) com `childRolesLabel: "Trigger"`; a anotação filha guarda o papel (`parentRole`) e o "+ Vincular…" do dono cria o evento já no papel.
 - Documento em repositório externo: `docRepos` e o `doc` do Button como objeto (`{ "repo", "path" }`).
-- Contrato de versão: a v4 troca `onClick`, `onHold` e `onChange` por `action`, `feedback` e `validation` (`migrations`, três `rename-type`); os vínculos migrados ficam sem papel (pendência) até alguém escolher o papel.
+- Contrato de versão: a v4 troca `onClick`, `onHold` e `onChange` por `action`, `feedback` e `validation` (`migrations`, três `rename-type`) e dá o papel aos vínculos que vinham sem ele (quatro `set-role` com `childType`: `click`, `hold` e `change`). Quem atualiza da v3 para a v4 recebe os vínculos com papel e sem pendência; quem já está na v4 fica com a pendência `missing-role`, corrigida à mão.
 - Referência forte: o campo `dado` do Input e do Text é um `ref` que aceita a etiqueta `data-field` ou uma anotação livre (`accepts`).
 - Os tipos de valor `string`, `number`, `enum` (com valor padrão) e `table` (os `parametros` da Ação), e campos obrigatórios.
 - Um arquivo sem biblioteca: não tem componente nem documento.
 
 **Roteiros.** R1.3, R1.16, R3 (R3.1 a R3.9), R8, R19 e R20.
+
+### `examples/specs/papeis-migracao.json`
+
+**O que é.** Uma especialização pequena, `formatVersion` 12, na versão 2, só para mostrar os passos de papel que o SDUI não usa: o que mudou dos `childRoles` da versão 1 para a 2 e como a migração cobre cada mudança. Dois componentes (Button e Slider) com o tipo de evento Interação como filho.
+
+**O que dá para ver.**
+
+- `rename-role`: o papel `tap` do Button passa a `click` (que já existia na versão 1, então os dois **juntam**).
+- `remove-role` com `mode` `clear`: o papel `hold` do Button sai e os filhos ficam vinculados, sem papel (perda `cleared-role` e pendência `missing-role`).
+- `remove-role` com `mode` `unlink`: o papel `drag` do Slider sai e os filhos são desvinculados (perda `unlinked` e pendência `missing-owner`).
+
+**Como abrir.** **Especializações** › **Atualizar versão…** num projeto que tenha a versão 1 (escrita no R19), ou `plan_library_update` pelo MCP.
+
+**Roteiros.** R19 (passos de atualização de papel).
 
 ### `examples/specs/modelo-de-dados.json`
 
@@ -245,7 +259,7 @@ Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executáv
 | `appliesTo`                                                  | Transição, só em seta (`analytics`); Endpoint, só em marcação (`sdui-backend`)                                                    |
 | `component`, `doc` e `examples` (pacote de biblioteca)       | Todas as pastas de `libraries/` e a `analytics`                                                                                   |
 | `origins`, `sources` e exemplo de tela de um sistema externo | `sdui-backend`                                                                                                                    |
-| `migrations`                                                 | `sdui-backend`                                                                                                                    |
+| `migrations`                                                 | `sdui-backend`; `sdui.json` e `papeis-migracao.json` (passos de papel)                                                            |
 | `formatVersion` 1                                            | `modelo-de-dados.json`                                                                                                            |
 | `formatVersion` 4 e 5                                        | `sdui-backend` (4); `sdui.json` (5)                                                                                               |
 | `formatVersion` 6 a 9                                        | `notas` e `analytics` (7); `kotlin` (8); `material3-compose` (9)                                                                  |

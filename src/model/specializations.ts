@@ -200,7 +200,7 @@ function planSpecializationUpdate(
 
 /**
  * Atualiza para uma versão maior: executa as `migrations` da versão nova (renomear e remover
- * campo, mapear valores, renomear e remover tipo, preencher campo obrigatório) sobre as
+ * campo, mapear valores, renomear e remover tipo, preencher campo obrigatório, renomear, remover e dar papel de vínculo) sobre as
  * anotações; substitui a cópia; camadas novas são criadas; as existentes mantêm cor e anotações
  * e seguem o nome novo; as que sumiram viram livres (com as anotações convertidas). Anotações
  * que ficarem inválidas não são alteradas: aparecem como pendências.
@@ -318,6 +318,8 @@ export interface SpecUpdateImpact {
   readonly converted: number;
   /** Anotações apagadas pelos passos `remove-type` com `delete` (com as vinculadas). */
   readonly deleted: number;
+  /** Filhos que saíram do vínculo com o dono pelos passos `remove-role` com `unlink`. */
+  readonly unlinked: number;
   /**
    * Pendências NOVAS depois da atualização (já descontadas as que existiam antes, por anotação,
    * código, campo, linha e coluna): das anotações tipadas desta especialização e das que as
@@ -388,6 +390,7 @@ export function specializationUpdateImpact(p: Project, spec: Spec): SpecUpdateIm
     losses: run.losses,
     converted: run.steps.reduce((n, s) => n + s.converted, 0),
     deleted: run.steps.reduce((n, s) => n + s.deleted, 0),
+    unlinked: run.steps.reduce((n, s) => n + s.unlinked, 0),
     pending: newIssues(p, after, spec.id),
   };
 }

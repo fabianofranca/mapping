@@ -476,7 +476,7 @@ test.describe('recentes de pasta', () => {
   test('a 900 px a tabela não quebra selo e botões, não rola e a borda é contínua', async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 900, height: 860 });
+    await page.setViewportSize({ width: 900, height: 720 });
     await stubFolderPicker(page);
     await createProject(page, 'Local');
     await closeProject(page);

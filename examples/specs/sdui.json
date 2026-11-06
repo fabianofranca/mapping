@@ -1,6 +1,6 @@
 {
   "format": "mapping-spec",
-  "formatVersion": 11,
+  "formatVersion": 12,
   "id": "sdui",
   "name": "SDUI",
   "version": 4,
@@ -610,6 +610,30 @@
       "from": 3,
       "to": 4,
       "steps": [
+        {
+          "op": "set-role",
+          "type": "button",
+          "childType": "onClick",
+          "role": "click"
+        },
+        {
+          "op": "set-role",
+          "type": "button",
+          "childType": "onHold",
+          "role": "hold"
+        },
+        {
+          "op": "set-role",
+          "type": "image",
+          "childType": "onClick",
+          "role": "click"
+        },
+        {
+          "op": "set-role",
+          "type": "input",
+          "childType": "onChange",
+          "role": "change"
+        },
         {
           "op": "rename-type",
           "from": "onClick",
