@@ -91,14 +91,28 @@ test('revisão do agente na app: selo, filtro, antes da revisão e nota da mudan
   // A janela Propostas avisa quantas mudanças conferir.
   await expect(page.getByText(/Revisada · \d+ para conferir/).first()).toBeVisible();
   await page
-    .getByRole('button', { name: /^Revisar/ })
+    .getByRole('button', { name: /^(Revisar|Continuar)/ })
     .first()
     .click();
   await expect(page.locator('.review-levels')).toBeVisible();
 
   // O selo na linha da mudança trocada.
-  const renamed = page.locator('.review-row', { hasText: 'Topo do checkout' }).first();
-  await expect(renamed.getByText('Revisada', { exact: true })).toBeVisible();
+  const renamed = page.getByRole('treeitem', { name: 'Nome, Revisada', exact: true });
+  await expect(renamed).toBeVisible();
+  await expect(renamed).toContainText('Topo do checkout');
+  await expect(renamed.locator('.flag', { hasText: /^Revisada/ })).toBeVisible();
+
+  // A nota da mudança retirada subiu para as notas da proposta (a linha raiz da árvore).
+  await page
+    .getByRole('treeitem', { name: /^Checkout a partir do Figma/ })
+    .first()
+    .click();
+  await expect(
+    page.getByText(/Da mudança retirada: .*Banner promoção/).first(),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('textbox', { name: 'Nota para o agente' }).first(),
+  ).toHaveValue('O banner fica.');
 
   // Filtros › Só revisadas (N): só as revisadas ficam.
   const total = await page.locator('.review-row').count();
@@ -107,22 +121,16 @@ test('revisão do agente na app: selo, filtro, antes da revisão e nota da mudan
   await only.check();
   await page.keyboard.press('Escape');
   const rows = page.locator('.review-row');
-  await expect(rows.filter({ hasText: 'Topo do checkout' }).first()).toBeVisible();
+  await expect(renamed).toBeVisible();
   await expect(rows.filter({ hasText: 'Botão Pagar' })).toHaveCount(0);
   expect(await rows.count()).toBeLessThan(total);
 
   // O bloco "Antes da revisão" nos detalhes da mudança trocada.
-  await rows.filter({ hasText: 'Topo do checkout' }).first().click();
+  await renamed.click();
   const before = page.locator('.revised-before').first();
   await expect(before).toBeVisible();
   await expect(before).toContainText('Antes da revisão');
   await expect(before).toContainText('O agente tinha proposto');
   await expect(before).toContainText('Cabeçalho do checkout');
   await expect(before).toContainText('Você tinha rejeitado');
-
-  // A nota da mudança retirada subiu para as notas da proposta.
-  await expect(
-    page.getByText(/Da mudança retirada: .*Banner promoção/).first(),
-  ).toBeVisible();
-  await expect(page.getByDisplayValue('O banner fica.').first()).toBeVisible();
 });
