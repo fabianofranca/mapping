@@ -25,7 +25,7 @@ import { emptyProject } from './fixtures';
 // um muda o aplicado). A exceção é o lote em que nenhuma âncora daria os pais do proposto (um
 // empate decidido por um passo do lote que a proposta não registra; "Garantia" em
 // docs/PROPOSAL-FORMAT.md): o teste prova isso por força bruta e fixa os lotes. Semente fixa: o
-// mesmo resultado em toda execução.
+// mesmo resultado em toda execução. Limite conhecido: issue #625.
 
 const BATCHES = 2000;
 const SEED = 549;
