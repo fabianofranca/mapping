@@ -2179,3 +2179,80 @@ describe('PointerInput: seleção por retângulo (SM2)', () => {
     s.cleanup();
   });
 });
+
+describe('PointerInput: gesto recomeça o ciclo do clique (CC1)', () => {
+  const CHILD = { kind: 'marking', id: 'M2' };
+  const SHIFT = { shift: true };
+  const AROUND: [[number, number], [number, number]] = [
+    [-50, -50],
+    [1700, 900],
+  ];
+
+  it('Shift+arrasto cancelado por Esc no meio: o clique seguinte no mesmo ponto fica no filho', () => {
+    const s = setup();
+    s.click(250, 250);
+    expect(s.ui.selection.value).toEqual(CHILD);
+    s.fire('pointerdown', ...AROUND[0], SHIFT);
+    s.fire('pointermove', ...AROUND[1], SHIFT);
+    expect(s.input.cancelInteraction()).toBe(true);
+    s.fire('pointerup', ...AROUND[1], SHIFT);
+    s.click(250, 250);
+    expect(s.ui.selection.value).toEqual(CHILD);
+    s.cleanup();
+  });
+
+  it('Shift+arrasto solto: o clique seguinte troca a seleção pelo filho', () => {
+    const s = setup();
+    s.click(250, 250);
+    s.fire('pointerdown', ...AROUND[0], SHIFT);
+    s.fire('pointermove', ...AROUND[1], SHIFT);
+    s.fire('pointerup', ...AROUND[1], SHIFT);
+    s.click(250, 250);
+    expect(s.ui.selection.value).toEqual(CHILD);
+    s.cleanup();
+  });
+
+  it('pan do fundo entre dois cliques: o segundo, no mesmo ponto do canvas, fica no filho', () => {
+    const s = setup();
+    s.click(250, 250);
+    s.drag([1050, 700], [1060, 710]);
+    s.viewport.panBy(-10, -10);
+    s.click(250, 250);
+    expect(s.ui.selection.value).toEqual(CHILD);
+    s.cleanup();
+  });
+
+  it('pointercancel de um toque pendente zera o ciclo', () => {
+    const s = setup();
+    s.click(250, 250);
+    s.fire('pointerdown', 250, 250, { id: 7, kind: 'touch' });
+    s.fire('pointercancel', 250, 250, { id: 7, kind: 'touch' });
+    s.click(250, 250);
+    expect(s.ui.selection.value).toEqual(CHILD);
+    s.cleanup();
+  });
+
+  it('pinça entre dois cliques zera o ciclo', () => {
+    const s = setup();
+    s.click(250, 250);
+    s.fire('pointerdown', 100, 100, { id: 1, kind: 'touch' });
+    s.fire('pointerdown', 200, 100, { id: 2, kind: 'touch' });
+    s.fire('pointerup', 100, 100, { id: 1, kind: 'touch' });
+    s.fire('pointerup', 200, 100, { id: 2, kind: 'touch' });
+    s.viewport.viewport.value = { x: 0, y: 0, scale: 1 };
+    s.click(250, 250);
+    expect(s.ui.selection.value).toEqual(CHILD);
+    s.cleanup();
+  });
+
+  it('regressão: cliques seguidos sobem para o pai e o terceiro continua o ciclo', () => {
+    const s = setup();
+    s.click(250, 250);
+    expect(s.ui.selection.value).toEqual(CHILD);
+    s.click(250, 250);
+    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    s.click(250, 250);
+    expect(s.ui.selection.value).not.toEqual(CHILD);
+    s.cleanup();
+  });
+});
