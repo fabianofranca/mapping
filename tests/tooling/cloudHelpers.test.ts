@@ -715,3 +715,43 @@ describe('lista de autocompletar do GTK com pastas irmãs (etapa #482, GT1)', ()
     }
   });
 });
+
+describe('janela da nuvem passa do mínimo da app (etapa #604, GN1, decisão 1)', () => {
+  const guide = read('docs/TESTING.md');
+  const appendixA = guide.slice(
+    guide.indexOf('## Apêndice A'),
+    guide.indexOf('## Apêndice B'),
+  );
+  const recipe2 = appendixA.slice(
+    appendixA.indexOf('Receita 2 (nuvem), `source` só na shell'),
+    appendixA.indexOf('Receita 3 (nuvem), reiniciar'),
+  );
+
+  /** Tamanhos do Xvfb (`-screen 0 LxAx24`) e do Chrome (`--window-size=L,A`) no texto. */
+  function sizes(text: string): { xvfb: string[]; chrome: string[] } {
+    const xvfb = [...text.matchAll(/-screen 0 (\d+x\d+)x24/g)].map((m) => m[1] ?? '');
+    const chrome = [...text.matchAll(/--window-size=(\d+),(\d+)/g)].map(
+      (m) => `${m[1]}x${m[2]}`,
+    );
+    return { xvfb, chrome };
+  }
+
+  it.each([
+    ['scripts/testing/cloud-up.sh', read(CLOUD_UP)],
+    ['receita 2 do apêndice A', recipe2],
+  ])(
+    '%s: Xvfb e Chrome têm o mesmo tamanho, com altura de pelo menos 1100',
+    (name, text) => {
+      const { xvfb, chrome } = sizes(text);
+      expect(xvfb, name).toHaveLength(1);
+      expect(chrome, name).toHaveLength(1);
+      expect(chrome[0], name).toBe(xvfb[0]);
+      const height = Number((xvfb[0] ?? '').split('x')[1]);
+      expect(height, name).toBeGreaterThanOrEqual(1100);
+    },
+  );
+
+  it('o cloud-up.sh e a receita 2 usam o mesmo tamanho', () => {
+    expect(sizes(read(CLOUD_UP)).xvfb).toEqual(sizes(recipe2).xvfb);
+  });
+});
