@@ -9,7 +9,7 @@ export const enUS: Dictionary = {
   'app.loading': 'Loading…',
   'narrow.title': 'Open in a larger window',
   'narrow.body':
-    'Mapping needs a window at least {width} px wide. The project stays open and your changes keep being saved.',
+    'Mapping needs a window of at least {width} × {height} px. The project stays open and your changes keep being saved.',
   'settings.title': 'Settings',
   'settings.language': 'Language',
   'settings.theme': 'Theme',

@@ -2,7 +2,7 @@ import { t } from '../i18n';
 import { BREAKPOINTS, NARROW_QUERY } from '../theme/breakpoints';
 import { useMediaQuery } from '../ui/useMediaQuery';
 
-/** `true` enquanto a janela estiver abaixo da largura mínima da app (só desktop). */
+/** `true` enquanto a janela estiver abaixo da largura ou da altura mínima da app (só desktop). */
 export function useNarrowWindow(): boolean {
   return useMediaQuery(NARROW_QUERY);
 }
@@ -16,7 +16,12 @@ export function NarrowWindowNotice() {
   return (
     <div class="narrow-window" role="status">
       <h1 class="narrow-window-title">{t('narrow.title')}</h1>
-      <p class="muted">{t('narrow.body', { width: BREAKPOINTS.appMin })}</p>
+      <p class="muted">
+        {t('narrow.body', {
+          width: BREAKPOINTS.appMin,
+          height: BREAKPOINTS.appMinHeight,
+        })}
+      </p>
     </div>
   );
 }

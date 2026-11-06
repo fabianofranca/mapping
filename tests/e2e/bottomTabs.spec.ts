@@ -32,7 +32,7 @@ for (const width of [900, 1280]) {
   test(`as quatro abas da janela inferior ficam à vista em ${width} px`, async ({
     page,
   }) => {
-    await page.setViewportSize({ width, height: 800 });
+    await page.setViewportSize({ width, height: 860 });
     await open(page);
     for (const active of TABS) {
       await page.keyboard.press(`Control+Shift+${KEYS[active]}`);

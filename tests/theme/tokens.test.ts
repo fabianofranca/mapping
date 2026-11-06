@@ -29,6 +29,7 @@ const FAMILIES: Record<string, readonly string[]> = {
     'size-handle',
     'size-tw-right',
     'size-app-min',
+    'size-app-min-height',
   ],
   breakpoint: ['bp-compact', 'bp-design'],
   opacidade: ['opacity-disabled', 'opacity-halo'],
@@ -80,6 +81,7 @@ describe('tokens', () => {
     expect(tokenValue('control-height', 'light')).toBe('var(--size-control-lg)');
     expect(tokenValue('control-icon', 'light')).toBe('var(--size-icon)');
     expect(tokenValue('size-app-min', 'light')).toBe('900px');
+    expect(tokenValue('size-app-min-height', 'light')).toBe('860px');
     // Sem troca de densidade por largura: o CSS dos tokens não tem media query de largura.
     expect(css).not.toMatch(/@media \((?:min|max)-width/);
   });

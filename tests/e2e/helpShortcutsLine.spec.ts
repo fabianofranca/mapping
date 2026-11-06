@@ -10,7 +10,7 @@ const CASES = [
 
 for (const { locale, text } of CASES) {
   test.describe(locale, () => {
-    test.use({ locale, viewport: { width: 900, height: 800 } });
+    test.use({ locale, viewport: { width: 900, height: 860 } });
 
     test(`a linha da Árvore cabe numa linha em ${locale}`, async ({ page }) => {
       await page.goto('/');
