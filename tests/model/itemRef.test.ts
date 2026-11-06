@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addContainer,
   createMarking,
+  encodeRefSegment,
   formatRef,
   matchShortCode,
   parseRef,
@@ -131,36 +132,36 @@ describe('matchShortCode', () => {
 });
 
 describe('formatRef', () => {
-  it('monta a referência com e sem o caminho legível', () => {
+  it('monta só a URL', () => {
     expect(formatRef({ project: 'carro', kind: 'm', code: '3f2a9c1e' })).toBe(
       'mapping://carro/m/3f2a9c1e',
     );
-    expect(
-      formatRef({
-        project: 'carro',
-        kind: 'm',
-        code: '3f2a9c1e',
-        label: 'Lateral › Porta dianteira',
-      }),
-    ).toBe('mapping://carro/m/3f2a9c1e (Lateral › Porta dianteira)');
   });
 
-  it('codifica o nome do projeto e ignora caminho vazio ou com quebras de linha', () => {
-    expect(formatRef({ project: 'meu app/v 2', kind: 'i', code: 'ab12cd34' })).toBe(
-      'mapping://meu%20app%2Fv%202/i/ab12cd34',
-    );
-    expect(formatRef({ project: 'p', kind: 'a', code: 'ab12cd34', label: '  ' })).toBe(
-      'mapping://p/a/ab12cd34',
-    );
-    expect(formatRef({ project: 'p', kind: 'a', code: 'ab12cd34', label: 'a\nb' })).toBe(
-      'mapping://p/a/ab12cd34 (a b)',
-    );
+  it('codifica o projeto pelo conjunto unreserved', () => {
+    const cases: [string, string][] = [
+      ['Meu Projeto (v2)', 'Meu%20Projeto%20%28v2%29'],
+      ['ç', '%C3%A7'],
+      ['a~b.c-d_e', 'a~b.c-d_e'],
+      ["a!b'c*d", 'a%21b%27c%2Ad'],
+      ['meu app/v 2', 'meu%20app%2Fv%202'],
+    ];
+    for (const [project, encoded] of cases) {
+      const ref = formatRef({ project, kind: 'i', code: 'ab12cd34' });
+      expect(ref).toBe(`mapping://${encoded}/i/ab12cd34`);
+      expect(ref).toMatch(/^[A-Za-z0-9\-._~%:/]+$/);
+      expect(new URL(ref).href).toBe(ref);
+    }
+  });
+
+  it('encodeRefSegment codifica tudo fora de unreserved', () => {
+    expect(encodeRefSegment('a b(c)')).toBe('a%20b%28c%29');
   });
 });
 
 describe('parseRef', () => {
-  it('lê a referência completa, ignorando o caminho legível', () => {
-    expect(parseRef('mapping://carro/m/3f2a9c1e (Lateral › Porta (esq.))')).toEqual({
+  it('lê a referência completa', () => {
+    expect(parseRef('mapping://carro/m/3f2a9c1e')).toEqual({
       project: 'carro',
       kind: 'm',
       code: '3f2a9c1e',
@@ -172,9 +173,10 @@ describe('parseRef', () => {
     });
   });
 
-  it('decodifica o nome do projeto (e tolera % inválido)', () => {
+  it('decodifica o projeto, com %xx maiúsculo ou minúsculo', () => {
     expect(parseRef('mapping://meu%20app/a/ab12cd34')?.project).toBe('meu app');
-    expect(parseRef('mapping://100%/a/ab12cd34')?.project).toBe('100%');
+    expect(parseRef('mapping://pro%c3%a7/a/ab12cd34')?.project).toBe('proç');
+    expect(parseRef('mapping://pro%C3%A7/a/ab12cd34')?.project).toBe('proç');
   });
 
   it('lê "m/código" sem projeto e o id completo ou código sozinho', () => {
@@ -208,18 +210,35 @@ describe('parseRef', () => {
     }
   });
 
+  it('recusa o formato antigo e o projeto mal codificado', () => {
+    for (const bad of [
+      'mapping://cadastro/m/2f7c4a1d (cadastro.png › Formulário)',
+      'mapping://Meu Projeto/m/2f7c4a1d',
+      'mapping://projeção/m/2f7c4a1d',
+      'mapping://p%ZZ/m/2f7c4a1d',
+      'mapping://p%C3/m/2f7c4a1d',
+      'mapping://p%/m/2f7c4a1d',
+      'mapping://p(1)/m/2f7c4a1d',
+      'mapping://p/m/2f7c4a1d?x=1',
+      'mapping://p/m/2f7c4a1d#x',
+    ]) {
+      expect(parseRef(bad), bad).toBeNull();
+    }
+  });
+
   it('é o inverso de formatRef', () => {
     const p = withMarkings([UUID_A, UUID_B]);
-    const text = formatRef({
-      project: 'meu app',
-      kind: 'm',
-      code: shortCode(p, 'm', UUID_A),
-      label: 'Imagem › Marcação',
-    });
-    const parsed = parseRef(text);
-    expect(parsed).toEqual({ project: 'meu app', kind: 'm', code: '3f2a9c1e' });
-    expect(matchShortCode(p, parsed!.kind, parsed!.code)).toEqual([
-      { kind: 'm', id: UUID_A },
-    ]);
+    for (const project of ['meu app', 'Meu Projeto (v2)', 'ç~.']) {
+      const text = formatRef({
+        project,
+        kind: 'm',
+        code: shortCode(p, 'm', UUID_A),
+      });
+      const parsed = parseRef(text);
+      expect(parsed).toEqual({ project, kind: 'm', code: '3f2a9c1e' });
+      expect(matchShortCode(p, parsed!.kind, parsed!.code)).toEqual([
+        { kind: 'm', id: UUID_A },
+      ]);
+    }
   });
 });

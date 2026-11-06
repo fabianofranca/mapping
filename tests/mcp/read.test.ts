@@ -101,7 +101,7 @@ afterAll(async () => {
   await mcp.close();
 });
 
-const REF = /^mapping:\/\/cadastro\/([mia])\/[0-9a-f]{8}( \(.+\))?$/;
+const REF = /^mapping:\/\/cadastro\/([mia])\/[0-9a-f]{8}$/;
 
 function ok<T>(result: Call<T>): T {
   expect(result.isError, JSON.stringify(result.data)).toBe(false);
@@ -113,17 +113,10 @@ function errorCode(result: Call): string {
   return (result.data as unknown as ErrorData).error.code;
 }
 
-/** Referência completa de uma marcação do `cadastroProject` (`MF`, `MN`…), pelo id original. */
-function markingRef(key: string, name: string): string {
-  const path = [
-    'cadastro.png',
-    ...(CHILDREN_OF_FORM.has(key) ? ['Formulário'] : []),
-    name,
-  ];
-  return `mapping://cadastro/m/${codeOf(ws.ids[key]!)} (${path.join(' › ')})`;
+/** Referência completa de uma marcação do `cadastroProject` (`MF`, `MN`…), pelo id original: só a URL. */
+function markingRef(key: string): string {
+  return `mapping://cadastro/m/${codeOf(ws.ids[key]!)}`;
 }
-
-const CHILDREN_OF_FORM: ReadonlySet<string> = new Set(['MN', 'MI', 'ME', 'MC']);
 
 async function listRows(args: Record<string, unknown> = {}): Promise<RowList> {
   return ok(await mcp.call<RowList>('list_markings', { project: 'cadastro', ...args }));
@@ -282,7 +275,7 @@ describe('list_markings', () => {
       'Cadastrar',
     ]);
     expect(list.markings[1]).toMatchObject({
-      ref: markingRef('MF', 'Formulário'),
+      ref: markingRef('MF'),
       container: 'cadastro.png',
       parent: null,
       rect: { x: 50, y: 200, width: 900, height: 1200 },
@@ -376,10 +369,10 @@ describe('list_markings', () => {
 describe('get_marking', () => {
   it('mostra o Cadastrar: anotações por camada, vínculos e referências', async () => {
     const data = ok(
-      await mcp.call<MarkingData>('get_marking', { ref: markingRef('MC', 'Cadastrar') }),
+      await mcp.call<MarkingData>('get_marking', { ref: markingRef('MC') }),
     );
     expect(data).toMatchObject({
-      ref: markingRef('MC', 'Cadastrar'),
+      ref: markingRef('MC'),
       name: 'Cadastrar',
       container: {
         name: null,
@@ -390,7 +383,7 @@ describe('get_marking', () => {
       },
       rect: { x: 100, y: 700, width: 800, height: 100 },
       lock: { locked: false, geometryLocked: true, source: 'inherited' },
-      parent: expect.stringContaining('Formulário'),
+      parent: markingRef('MF'),
       children: [],
       incompleteAnnotations: 0,
     });
@@ -426,7 +419,7 @@ describe('get_marking', () => {
       type: { typeId: 'onHold' },
       values: { duracaoMs: 500 },
     });
-    expect(onClick!.owner).toBe(button.ref.replace(/ \(.*\)$/, ''));
+    expect(onClick!.owner).toBe(button.ref);
 
     expect(data.linkTree).toEqual([
       expect.objectContaining({
@@ -442,7 +435,7 @@ describe('get_marking', () => {
 
   it('resolve as referências de saída do Nome e os backlinks da User', async () => {
     const nome = ok(
-      await mcp.call<MarkingData>('get_marking', { ref: markingRef('MN', 'Nome') }),
+      await mcp.call<MarkingData>('get_marking', { ref: markingRef('MN') }),
     );
     const input = nome.layers.find((l) => l.layer.name === 'Componentes')!
       .annotations[0]!;
@@ -451,7 +444,7 @@ describe('get_marking', () => {
         field: 'dado',
         to: 'User.name',
         target: expect.objectContaining({
-          annotation: expect.stringContaining('Formulário › User'),
+          annotation: expect.stringMatching(/^mapping:\/\/cadastro\/a\/[0-9a-f]{8}$/),
           marking: `mapping://cadastro/m/${codeOf(ws.ids.MF!)}`,
           kind: 'entry',
           entryId: ws.ids.EN,
@@ -461,7 +454,7 @@ describe('get_marking', () => {
     ]);
 
     const form = ok(
-      await mcp.call<MarkingData>('get_marking', { ref: markingRef('MF', 'Formulário') }),
+      await mcp.call<MarkingData>('get_marking', { ref: markingRef('MF') }),
     );
     const user = form.layers.find((l) => l.layer.name === 'Model')!.annotations[0]!;
     expect(user.backlinks).toEqual([
@@ -492,7 +485,7 @@ describe('get_marking', () => {
 
   it('mostra a pendência do Título', async () => {
     const data = ok(
-      await mcp.call<MarkingData>('get_marking', { ref: markingRef('MT', 'Título') }),
+      await mcp.call<MarkingData>('get_marking', { ref: markingRef('MT') }),
     );
     expect(data.incompleteAnnotations).toBe(1);
     expect(data.layers[0]!.annotations[0]).toMatchObject({
@@ -509,7 +502,7 @@ describe('get_annotation, get_container e resolve', () => {
     title: string,
   ): Promise<string> {
     const data = ok(
-      await mcp.call<MarkingData>('get_marking', { ref: markingRef(marking, name) }),
+      await mcp.call<MarkingData>('get_marking', { ref: markingRef(marking) }),
     );
     const found = data.layers
       .flatMap((l) => l.annotations)
@@ -523,7 +516,7 @@ describe('get_annotation, get_container e resolve', () => {
     expect(data).toMatchObject({
       ref,
       kind: 'typed',
-      marking: markingRef('ME', 'E-mail'),
+      marking: markingRef('ME'),
       layer: { name: 'Componentes' },
       values: expect.objectContaining({ tipo: 'email', obrigatorio: 'sim' }),
       refs: [
@@ -602,7 +595,7 @@ describe('get_annotation, get_container e resolve', () => {
     const marking = ok(await mcp.call('resolve', { ref: code, project: 'cadastro' }));
     expect(marking).toMatchObject({
       kind: 'marking',
-      ref: markingRef('MN', 'Nome'),
+      ref: markingRef('MN'),
       name: 'Nome',
       project: { name: 'cadastro', path: 'apps/cadastro' },
     });
@@ -618,7 +611,7 @@ describe('get_annotation, get_container e resolve', () => {
     expect(annotation).toMatchObject({
       kind: 'annotation',
       layer: 'Model',
-      marking: markingRef('MF', 'Formulário'),
+      marking: markingRef('MF'),
     });
   });
 });
@@ -628,7 +621,7 @@ describe('formatos de referência', () => {
 
   it('aceita a referência completa, m/código com project, o id completo e o id sem hífens', async () => {
     const forms: Record<string, unknown>[] = [
-      { ref: markingRef('MN', 'Nome') },
+      { ref: markingRef('MN') },
       { ref: `m/${codeOf(nome())}`, project: 'cadastro' },
       { ref: `m/${codeOf(nome()).toUpperCase()}`, project: 'cadastro' },
       { ref: nome(), project: 'cadastro' },
@@ -641,13 +634,21 @@ describe('formatos de referência', () => {
     }
   });
 
-  it('ignora o caminho legível da referência colada', async () => {
-    const data = ok(
-      await mcp.call<MarkingData>('get_marking', {
-        ref: `mapping://cadastro/m/${codeOf(nome())} (qualquer coisa › outra)`,
-      }),
-    );
-    expect(data.name).toBe('Nome');
+  it('recusa o formato antigo (caminho entre parênteses, projeto sem codificar) com a hint', async () => {
+    for (const ref of [
+      `mapping://cadastro/m/${codeOf(nome())} (qualquer coisa › outra)`,
+      `mapping://Meu Projeto/m/${codeOf(nome())}`,
+    ]) {
+      const result = await mcp.call('get_marking', { ref });
+      expect(errorCode(result), ref).toBe('invalid-ref');
+      const error = (result.data as unknown as ErrorData).error as ErrorData['error'] & {
+        hint: string;
+        accepted: string[];
+      };
+      expect(error.hint).toContain('copie de novo na app');
+      expect(error.accepted).toContain('mapping://projeto/m/3f2a9c1e');
+      expect(error.accepted.join()).not.toContain('caminho');
+    }
   });
 
   it('recusa referência inválida, de outro tipo ou de outro projeto', async () => {
@@ -693,7 +694,7 @@ describe('formatos de referência', () => {
       name: 'Nome',
       project: { name: 'unico' },
     });
-    expect(data.ref).toBe(`mapping://unico/m/${code} (cadastro.png › Formulário › Nome)`);
+    expect(data.ref).toBe(`mapping://unico/m/${code}`);
   });
 
   it('o mesmo código em mais de um projeto é ambíguo e lista as candidatas', async () => {
@@ -701,7 +702,7 @@ describe('formatos de referência', () => {
     expect(errorCode(result)).toBe('ambiguous-ref');
     const { error } = result.data as unknown as ErrorData;
     expect((error.candidates as { ref: string }[]).map((c) => c.ref)).toContain(
-      markingRef('MN', 'Nome'),
+      markingRef('MN'),
     );
   });
 

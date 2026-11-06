@@ -96,7 +96,7 @@ export class Refs {
     return `${markingTypeName(this.project, markingId) ?? 'Marcação'} ${code}`;
   }
 
-  /** `Container › Pai › Marcação` (`Canvas › Pai › Marcação` no canvas): o mesmo texto entre parênteses das referências copiadas. */
+  /** `Container › Pai › Marcação` (`Canvas › Pai › Marcação` no canvas). */
   markingPath(markingId: string): string[] {
     // A seta (ME4) divide o espaço de ids das marcações e não tem container nem pai.
     if (projectIndex(this.project).arrows.has(markingId)) {
@@ -123,18 +123,8 @@ export class Refs {
     ].join(PATH_SEPARATOR);
   }
 
-  /** Referência completa, com o caminho legível. */
+  /** Referência `mapping://<projeto>/<m|i|a>/<código>`: só a URL, sem caminho legível. */
   ref(kind: ItemKind, id: string): string {
-    return formatRef({
-      project: this.projectName,
-      kind,
-      code: shortCode(this.project, kind, id),
-      label: this.label(kind, id),
-    });
-  }
-
-  /** Referência sem o caminho legível (para referências cruzadas, mais curta). */
-  bare(kind: ItemKind, id: string): string {
     return formatRef({
       project: this.projectName,
       kind,
@@ -150,8 +140,12 @@ export interface ResolvedItem {
   readonly id: string;
 }
 
+/** Dica do `invalid-ref`: o formato estrito e o que fazer com o antigo. */
+export const INVALID_REF_HINT =
+  'use a referência mapping://<projeto>/<m|i|a|p>/<código>, só a URL, com o projeto codificado (ex: mapping://Meu%20Projeto/m/3f2a9c1e); referências com o caminho entre parênteses são do formato antigo: copie de novo na app';
+
 const ACCEPTED_FORMATS = [
-  'mapping://projeto/m/3f2a9c1e (caminho legível)',
+  'mapping://projeto/m/3f2a9c1e',
   'm/3f2a9c1e (com o projeto informado à parte)',
   'o id completo do item (com o projeto informado à parte)',
 ];
@@ -171,6 +165,7 @@ export async function resolveItem(
   if (!parsed) {
     throw new ToolError('invalid-ref', `referência inválida: ${refText}`, {
       accepted: ACCEPTED_FORMATS,
+      hint: INVALID_REF_HINT,
     });
   }
   if (expected && parsed.kind && parsed.kind !== expected) {

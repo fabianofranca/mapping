@@ -1,5 +1,6 @@
-import { REF_SCHEME, normalizeId, shortCodesFor } from '../src/model';
+import { REF_SCHEME, encodeRefSegment, normalizeId, shortCodesFor } from '../src/model';
 import { ToolError } from './errors';
+import { INVALID_REF_HINT } from './items';
 import { discoverProjects, findProject, type ProjectLocation } from './projects';
 import { listStored, type StoredProposal, type StoredProposals } from './proposalStore';
 import type { Roots } from './paths';
@@ -14,22 +15,26 @@ interface ParsedProposalRef {
   readonly code: string;
 }
 
-const FULL = /^mapping:\/\/([^/\s]+)\/p\/([0-9a-zA-Z._-]+)(?:\s+\([\s\S]*\))?$/;
+const FULL =
+  /^mapping:\/\/((?:[A-Za-z0-9\-._~]|%[0-9A-Fa-f]{2})+)\/p\/([0-9a-zA-Z._-]+)$/;
 const SHORT = /^p\/([0-9a-zA-Z._-]+)$/;
 const BARE = /^[0-9a-zA-Z][0-9a-zA-Z._-]*$/;
 
-function decodeSegment(segment: string): string {
+function decodeSegment(segment: string): string | null {
   try {
     return decodeURIComponent(segment);
   } catch {
-    return segment;
+    return null;
   }
 }
 
 export function parseProposalRef(text: string): ParsedProposalRef | null {
   const input = text.trim();
   const full = FULL.exec(input);
-  if (full) return { project: decodeSegment(full[1]!), code: full[2]! };
+  if (full) {
+    const project = decodeSegment(full[1]!);
+    return project === null ? null : { project, code: full[2]! };
+  }
   const short = SHORT.exec(input);
   if (short) return { project: null, code: short[1]! };
   if (BARE.test(input)) return { project: null, code: input };
@@ -41,21 +46,14 @@ export function proposalCodes(ids: readonly string[]): ReadonlyMap<string, strin
   return shortCodesFor(ids);
 }
 
-/** `mapping://<projeto>/p/<código>`, com o título entre parênteses (só para leitura). */
-export function formatProposalRef(
-  projectName: string,
-  code: string,
-  title?: string,
-): string {
-  const ref = `${REF_SCHEME}${encodeURIComponent(projectName)}/p/${code}`;
-  const readable = title?.replace(/\s+/g, ' ').trim();
-  return readable ? `${ref} (${readable})` : ref;
+/** `mapping://<projeto>/p/<código>`: só a URL, com o projeto codificado. */
+export function formatProposalRef(projectName: string, code: string): string {
+  return `${REF_SCHEME}${encodeRefSegment(projectName)}/p/${code}`;
 }
 
 /** Referências de todas as propostas legíveis do projeto, por id. */
 export class ProposalRefs {
   private readonly codes: ReadonlyMap<string, string>;
-  private readonly titles: ReadonlyMap<string, string>;
 
   constructor(
     readonly projectName: string,
@@ -63,14 +61,12 @@ export class ProposalRefs {
     extraIds: readonly string[] = [],
   ) {
     this.codes = proposalCodes([...all.proposals.map((p) => p.id), ...extraIds]);
-    this.titles = new Map(all.proposals.map((p) => [p.id, p.proposal.title]));
   }
 
-  /** Referência da proposta; o título entre parênteses vem da pasta ou de `title` (proposta nova). */
-  ref(id: string, title?: string): string {
+  /** Referência da proposta (`mapping://<projeto>/p/<código>`). */
+  ref(id: string): string {
     const code = this.codes.get(id) ?? normalizeId(id).slice(0, 8);
-    const known = title ?? this.titles.get(id);
-    return formatProposalRef(this.projectName, code, known);
+    return formatProposalRef(this.projectName, code);
   }
 }
 
@@ -110,6 +106,7 @@ export function lookupStored(
   if (!parsed) {
     throw new ToolError('invalid-ref', `referência de proposta inválida: ${refText}`, {
       accepted: ACCEPTED,
+      hint: INVALID_REF_HINT,
     });
   }
   if (parsed.project !== null && parsed.project !== location.name) {
@@ -165,6 +162,7 @@ export async function resolveProposal(
   if (!parsed) {
     throw new ToolError('invalid-ref', `referência de proposta inválida: ${refText}`, {
       accepted: ACCEPTED,
+      hint: INVALID_REF_HINT,
     });
   }
   let locations: ProjectLocation[];

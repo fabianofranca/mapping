@@ -1,8 +1,8 @@
 import { fail } from './errors';
 import type { Project } from './types';
 
-// Referência copiável de um item do projeto (etapa 3a): `mapping://<projeto>/<m|i|a>/<código>
-// (<caminho legível>)`. A app copia, o agente (MCP) cola. Funções puras, sem DOM nem Node.
+// Referência copiável de um item do projeto (etapa 3a): `mapping://<projeto>/<m|i|a>/<código>`,
+// só a URL (projeto codificado). A app copia, o agente (MCP) cola. Funções puras, sem DOM nem Node.
 // Não confundir com `refs.ts`, que trata das referências fortes entre anotações.
 
 /**
@@ -126,15 +126,23 @@ export interface FormatRefArgs {
   readonly kind: ItemKind;
   /** Resultado de `shortCode`. */
   readonly code: string;
-  /** Caminho legível (ex: `Lateral › Porta dianteira`), só para quem lê; o MCP o ignora. */
-  readonly label?: string;
 }
 
-/** `mapping://<projeto>/<m|i|a>/<código>` e, com `label`, ` (<caminho legível>)`. */
-export function formatRef({ project, kind, code, label }: FormatRefArgs): string {
-  const ref = `${REF_SCHEME}${encodeURIComponent(project)}/${kind}/${code}`;
-  const readable = label?.replace(/\s+/g, ' ').trim();
-  return readable ? `${ref} (${readable})` : ref;
+/**
+ * Segmento de URL só com o conjunto *unreserved* da RFC 3986 (`A-Z a-z 0-9 - . _ ~`): todo o
+ * resto vira `%XX` maiúsculo (UTF-8). É o `encodeURIComponent` com `! ' ( ) *` também
+ * codificados (`(` e `)` quebram link markdown).
+ */
+export function encodeRefSegment(segment: string): string {
+  return encodeURIComponent(segment).replace(
+    /[!'()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+/** `mapping://<projeto>/<m|i|a>/<código>`: só a URL, com o projeto codificado. */
+export function formatRef({ project, kind, code }: FormatRefArgs): string {
+  return `${REF_SCHEME}${encodeRefSegment(project)}/${kind}/${code}`;
 }
 
 export interface ParsedRef {
@@ -146,21 +154,23 @@ export interface ParsedRef {
   readonly code: string;
 }
 
-function decodeSegment(segment: string): string {
+/** Decodifica o segmento; `null` se o `%` for inválido ou não der UTF-8. */
+function decodeSegment(segment: string): string | null {
   try {
     return decodeURIComponent(segment);
   } catch {
-    return segment;
+    return null;
   }
 }
 
 const CODE = /^[0-9a-zA-Z-]+$/;
-const FULL_REF = /^mapping:\/\/([^/\s]+)\/([mia])\/([0-9a-zA-Z-]+)(?:\s+\([\s\S]*\))?$/;
+const FULL_REF =
+  /^mapping:\/\/((?:[A-Za-z0-9\-._~]|%[0-9A-Fa-f]{2})+)\/([mia])\/([0-9a-zA-Z-]+)$/;
 const SHORT_REF = /^([mia])\/([0-9a-zA-Z-]+)$/;
 
 /**
  * Interpreta o que o usuário ou o agente colou. Aceita:
- * - a referência completa `mapping://projeto/m/3f2a9c1e (caminho)`;
+ * - a URL estrita `mapping://projeto/m/3f2a9c1e` (projeto codificado, nada depois do código);
  * - `m/3f2a9c1e`, com o projeto informado à parte;
  * - só o código ou o id completo (com ou sem hífens).
  * Devolve `null` se o texto não tiver nenhum desses formatos.
@@ -169,11 +179,9 @@ export function parseRef(text: string): ParsedRef | null {
   const input = text.trim();
   const full = FULL_REF.exec(input);
   if (full) {
-    return {
-      project: decodeSegment(full[1]!),
-      kind: full[2] as ItemKind,
-      code: normalizeId(full[3]!),
-    };
+    const project = decodeSegment(full[1]!);
+    if (project === null) return null;
+    return { project, kind: full[2] as ItemKind, code: normalizeId(full[3]!) };
   }
   const short = SHORT_REF.exec(input);
   if (short) {

@@ -204,7 +204,7 @@ function hintAnnotation(
     annotation.annotationId,
   )?.parentRole;
   return {
-    ref: refs.bare('a', annotation.annotationId),
+    ref: refs.ref('a', annotation.annotationId),
     type: `${annotation.specId}/${annotation.typeId}`,
     label: annotation.label,
     layer: annotation.layer,
@@ -233,7 +233,7 @@ function hintNode(
   const annotations = node.annotations.map((a) => hintAnnotation(a, refs, codes));
   const children = node.children.map((c) => hintNode(c, refs, codes, false));
   return {
-    ref: root ? refs.ref('m', node.markingId) : refs.bare('m', node.markingId),
+    ref: root ? refs.ref('m', node.markingId) : refs.ref('m', node.markingId),
     name: node.name,
     rect: node.rect,
     ...(annotations.length > 0 ? { annotations } : {}),
