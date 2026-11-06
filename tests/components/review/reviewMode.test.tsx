@@ -94,6 +94,7 @@ describe('níveis da proposta', () => {
       </>,
     );
     expect(screen.getByRole('button', { name: /Aceitar tudo/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Filtros/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Movida/ }));
     expect(screen.queryByRole('treeitem', { name: 'images/nova.webp' })).toBeNull();
     expect(rowOf('Posição')).toBeTruthy();

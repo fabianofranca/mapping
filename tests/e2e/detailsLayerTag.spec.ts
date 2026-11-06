@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 // Selo da especialização no cabeçalho de camada dos Detalhes a 900 px (#371): o selo
 // encolhe com reticências e dica, o + não o cobre e o painel não ganha barra horizontal.
 
-test.use({ viewport: { width: 900, height: 860 } });
+test.use({ viewport: { width: 900, height: 720 } });
 
 async function openExample(page: Page): Promise<void> {
   await page.goto('/');

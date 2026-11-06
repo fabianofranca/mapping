@@ -183,7 +183,6 @@ describe('janela inferior em modo revisão (size-tw-bottom-review)', () => {
     const normal = toolWindowSizes.value.bottom;
     setReviewLayout(true);
     expect(toolWindowSizes.value.bottom).toBe(REVIEW_BOTTOM_DEFAULT);
-    expect(REVIEW_BOTTOM_DEFAULT).toBe(344);
     resizeToolWindow('bottom', 300, SPACE);
     expect(toolWindowSizes.value.bottom).toBe(300);
     setReviewLayout(false);
@@ -213,6 +212,39 @@ describe('layout guardado com o id antigo da Biblioteca', () => {
       localStorage.removeItem('mapping.toolWindows');
       vi.resetModules();
     }
+  });
+});
+
+describe('altura guardada da janela inferior na revisão', () => {
+  async function loadWith(bottomReview: number) {
+    localStorage.setItem('mapping.toolWindows', JSON.stringify({ bottomReview }));
+    vi.resetModules();
+    try {
+      const fresh = await import('../../src/store/toolWindows');
+      fresh.setReviewLayout(true);
+      return {
+        fallback: fresh.REVIEW_BOTTOM_DEFAULT,
+        bottom: fresh.toolWindowSizes.value.bottom,
+      };
+    } finally {
+      localStorage.removeItem('mapping.toolWindows');
+      vi.resetModules();
+    }
+  }
+
+  it('o padrão novo é mais baixo que os 344 antigos', () => {
+    expect(REVIEW_BOTTOM_DEFAULT).toBeLessThan(344);
+  });
+
+  it('quem tem 344 guardado (o padrão antigo) passa ao padrão novo', async () => {
+    const { fallback, bottom } = await loadWith(344);
+    expect(fallback).toBeLessThan(344);
+    expect(bottom).toBe(fallback);
+  });
+
+  it('qualquer outro valor guardado fica', async () => {
+    const { bottom } = await loadWith(300);
+    expect(bottom).toBe(300);
   });
 });
 

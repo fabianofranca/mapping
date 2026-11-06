@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 // cabeçalho de camada cabe no rótulo, o + fica à vista e os Detalhes não ganham barra
 // horizontal (#372, SN3).
 
-test.use({ viewport: { width: 900, height: 860 } });
+test.use({ viewport: { width: 900, height: 720 } });
 
 async function revealHiddenLayer(page: Page): Promise<Locator> {
   await page.goto('/');
