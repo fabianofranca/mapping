@@ -1,6 +1,7 @@
 import type {
   Spec,
   SpecAnnotationType,
+  SpecChildRole,
   SpecField,
   SpecFont,
   SpecMigration,
@@ -12,13 +13,19 @@ import type {
 // declaradas cobrem. Ver docs/SPEC-FORMAT.md. Puro e sem APIs de navegador (reutilizado pelo MCP).
 //
 // O que é quebra (e só isto): remover ou renomear tipo, campo ou opção de `enum`; tornar um campo
-// obrigatório (inclusive um campo novo que já nasce obrigatório); mudar o `type` de um campo.
-// Todo o resto é aditivo. Ficam FORA do contrato, de propósito: camadas, `labelField`,
-// `allowedChildren` (ids e cláusulas), `groups`, `childRoles`, `childRolesLabel`, `docRepos` e o
-// `doc` objeto (v11), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `sources`, `notices`
-// (e a troca de camada de um tipo; `appliesTo` gera só o aviso aditivo `changed-applies-to`), além de remover `component`/`doc`/exemplo/fonte: nada disso
-// gera `SpecChange`. Renome é indistinguível de remover + acrescentar; quem renomeia o declara
-// num passo `rename-*`, e é isso que o diferencia de uma remoção.
+// obrigatório (inclusive um campo novo que já nasce obrigatório); mudar o `type` de um campo;
+// tirar um papel (`id`) de `childRoles` de um tipo, inclusive o tipo que perde todos eles
+// (`removed-role`); e um tipo sem `childRoles` que passa a ter (`roles-required`, só ele: os papéis
+// do vínculo já existente precisam ser atribuídos). Papel novo em tipo que já tinha papéis é
+// aditivo (`added-role`). Todo o resto é aditivo. Ficam FORA do contrato, de propósito: camadas,
+// `labelField`, `allowedChildren` (ids e cláusulas), `groups`, `name`/`description` e a ordem dos
+// papéis, `childRolesLabel`, `docRepos` e o `doc` objeto (v11), `requiresOwner`, `description`,
+// `tags`, `code`, `platforms`, `sources`, `notices` (e a troca de camada de um tipo; `appliesTo`
+// gera só o aviso aditivo `changed-applies-to`), além de remover `component`/`doc`/exemplo/fonte:
+// nada disso gera `SpecChange`. Papéis de um tipo renomeado não são comparados: o tipo é o `id`, e
+// o dono antigo e o tipo novo são tipos diferentes (`removed-type` e `added-type`). Renome é
+// indistinguível de remover + acrescentar; quem renomeia o declara num passo `rename-*`, e é isso
+// que o diferencia de uma remoção.
 //
 // Identidade, nunca posição: o tipo é o `id` (único na especialização inteira, em qualquer
 // camada), o campo é a `key` dentro do tipo, a opção é o texto dentro do campo `enum`, o exemplo
@@ -34,9 +41,11 @@ import type {
 //   1. o que existe na versão NOVA, na ordem do arquivo novo (camadas e tipos em ordem): em cada
 //      tipo já existente, primeiro os campos (por campo: tipo trocado, passou a obrigatório e
 //      depois as opções novas ou as colunas, recursivamente), depois `component`, `doc` e os
-//      exemplos novos; um tipo novo gera só `added-type`; por fim as fontes novas;
+//      exemplos novos e, por último, os papéis (`roles-required` ou os `added-role`, na ordem do
+//      arquivo novo); um tipo novo gera só `added-type`; por fim as fontes novas;
 //   2. o que DESAPARECEU, na ordem do arquivo ANTERIOR: tipos removidos e, nos tipos que
-//      continuam, campos (e colunas) e opções removidos, na ordem em que apareciam.
+//      continuam, campos (e colunas) e opções removidos, na ordem em que apareciam, e depois os
+//      papéis removidos (`removed-role`).
 // O `path` vale para a versão nova e, nos `removed-*`, para a anterior.
 
 export type SpecChangeKind = 'additive' | 'breaking';
@@ -54,6 +63,9 @@ export type SpecChangeCode =
   | 'removed-type'
   | 'removed-field'
   | 'removed-option'
+  | 'removed-role'
+  | 'roles-required'
+  | 'added-role'
   | 'field-required'
   | 'field-type';
 
@@ -67,6 +79,8 @@ export interface SpecChange {
   readonly fieldKey?: string;
   /** A opção de `enum` (em `added-option` e `removed-option`). */
   readonly option?: string;
+  /** O `id` do papel (em `added-role` e `removed-role`). */
+  readonly role?: string;
   readonly message: string;
 }
 
@@ -230,6 +244,63 @@ function goneFields(
   });
 }
 
+const ROLES_STEPS = 'um passo "rename-role" ou "remove-role"';
+
+/** Papéis novos (`added-role`) ou, num tipo que não tinha nenhum, `roles-required`. */
+function forwardRoles(
+  previous: readonly SpecChildRole[] | undefined,
+  next: readonly SpecChildRole[] | undefined,
+  typeId: string,
+  path: string,
+  out: SpecChange[],
+): void {
+  if (next === undefined || next.length === 0) return;
+  if (previous === undefined || previous.length === 0) {
+    out.push({
+      kind: 'breaking',
+      code: 'roles-required',
+      path: `${path}.childRoles`,
+      typeId,
+      message: `o tipo "${typeId}" passou a ter papéis; declare um passo "set-role" em migrations (formatVersion 12)`,
+    });
+    return;
+  }
+  const had = new Set(previous.map((r) => r.id));
+  next.forEach((role, i) => {
+    if (had.has(role.id)) return;
+    out.push({
+      kind: 'additive',
+      code: 'added-role',
+      path: `${path}.childRoles[${i}]`,
+      typeId,
+      role: role.id,
+      message: `o tipo "${typeId}" ganhou o papel "${role.id}"`,
+    });
+  });
+}
+
+/** Papéis que existiam e não existem mais (`removed-role`), no caminho da versão anterior. */
+function goneRoles(
+  previous: readonly SpecChildRole[] | undefined,
+  next: readonly SpecChildRole[] | undefined,
+  typeId: string,
+  path: string,
+  out: SpecChange[],
+): void {
+  const kept = new Set((next ?? []).map((r) => r.id));
+  (previous ?? []).forEach((old, i) => {
+    if (kept.has(old.id)) return;
+    out.push({
+      kind: 'breaking',
+      code: 'removed-role',
+      path: `${path}.childRoles[${i}]`,
+      typeId,
+      role: old.id,
+      message: `o papel "${old.id}" do tipo "${typeId}" foi removido; declare ${ROLES_STEPS} em migrations (formatVersion 12)`,
+    });
+  });
+}
+
 interface TypeEntry {
   readonly type: SpecAnnotationType;
   readonly path: string;
@@ -327,6 +398,7 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
         message: `o tipo "${id}" ganhou o exemplo "${example.name}"`,
       });
     });
+    forwardRoles(old.type.childRoles, type.childRoles, id, path, out);
   }
   const hadFonts = new Set((previous.fonts ?? []).map(fontId));
   (next.fonts ?? []).forEach((font, i) => {
@@ -358,6 +430,7 @@ export function diffSpecs(previous: Spec, next: Spec): SpecChange[] {
       { typeId: id, listPath: `${path}.fields` },
       out,
     );
+    goneRoles(type.childRoles, now.type.childRoles, id, path, out);
   }
   return out;
 }
@@ -414,8 +487,22 @@ function covers(step: SpecMigrationStep, change: SpecChange): boolean {
     case 'field-type':
       return step.op === 'fill-field' && step.type === typeId && step.field === fieldKey;
     default:
-      return false;
+      return coversRole(step, change);
   }
+}
+
+/** `removed-role` e `roles-required` (os outros códigos não têm passo de papel). */
+function coversRole(step: SpecMigrationStep, change: SpecChange): boolean {
+  const { typeId, role } = change;
+  if (change.code === 'removed-role') {
+    return (
+      (step.op === 'rename-role' && step.type === typeId && step.from === role) ||
+      (step.op === 'remove-role' && step.type === typeId && step.role === role)
+    );
+  }
+  return (
+    change.code === 'roles-required' && step.op === 'set-role' && step.type === typeId
+  );
 }
 
 /**
@@ -427,6 +514,8 @@ function covers(step: SpecMigrationStep, change: SpecChange): boolean {
  * | `removed-field`              | `remove-field{type, field}` ou `rename-field{type, from: field}` |
  * | `removed-option`             | `map-values{type, field}` com a opção entre as chaves de `values` |
  * | `field-required`, `field-type` | `fill-field{type, field}`                                    |
+ * | `removed-role`               | `rename-role{type, from: role}` ou `remove-role{type, role}`   |
+ * | `roles-required`             | qualquer `set-role{type}`                                      |
  *
  * Mudança aditiva ou cadeia rompida: `undefined`.
  */

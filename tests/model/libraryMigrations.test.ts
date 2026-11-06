@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   runLibraryMigrations,
+  specializationUpdateImpact,
+  updateSpecialization,
   type Annotation,
   type JsonValue,
   type Project,
@@ -11,6 +13,7 @@ import {
   annotationOf,
   badgeType,
   buttonType,
+  chipType,
   libProject,
   libSpec,
   row,
@@ -680,5 +683,471 @@ describe('cadeia', () => {
       label: undefined,
       title: 'OK',
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Passos de papel do vínculo (`rename-role`, `remove-role`, `set-role`)
+
+const ROLES = [
+  { id: 'click', name: 'Clique' },
+  { id: 'tap', name: 'Toque' },
+  { id: 'hover', name: 'Foco' },
+];
+
+/** Especialização com o `button` oferecendo papéis; `chip` exige dono, `badge` não. */
+function roleSpec(version: number, roles = ROLES, over: Partial<Spec> = {}): Spec {
+  return libSpec(
+    version,
+    {
+      c: [
+        buttonType({ allowedChildren: ['chip', 'badge'], childRoles: roles }),
+        badgeType(),
+      ],
+      e: [chipType()],
+    },
+    over,
+  );
+}
+
+/** Anotação livre ou de outra especialização, ligada a `parent`, direto no projeto. */
+function rawChild(
+  p: Project,
+  id: string,
+  parent: string,
+  role: string | null,
+  type: Annotation['type'] = null,
+): Project {
+  const base = annotationOf(p, parent);
+  const child: Annotation = {
+    id,
+    markingId: base.markingId,
+    layerId: base.layerId,
+    name: null,
+    parentAnnotationId: parent,
+    parentRole: role,
+    type,
+    values: null,
+    entries: [],
+  };
+  return { ...p, annotations: [...p.annotations, child] };
+}
+
+/** `parentRole` não nulo exige `parentAnnotationId` não nulo. */
+function expectRoleInvariant(p: Project): void {
+  for (const a of p.annotations) {
+    if (a.parentRole !== null) {
+      expect(a.parentAnnotationId, `${a.id} tem papel sem dono`).not.toBeNull();
+    }
+  }
+}
+
+const roleOf = (p: Project, id: string) => annotationOf(p, id).parentRole;
+const ownerOf = (p: Project, id: string) => annotationOf(p, id).parentAnnotationId;
+
+/** B1 (button) com filhos de vários tipos e papéis; X1 é de outra especialização, F1 é livre. */
+function roleProject(): Project {
+  let p = libProject(roleSpec(1), [
+    { id: 'B1', type: 'button' },
+    { id: 'C1', type: 'chip', parent: 'B1', role: 'click' },
+    { id: 'C2', type: 'chip', parent: 'B1', role: 'hover' },
+    { id: 'C3', type: 'chip', parent: 'B1' },
+    { id: 'G1', type: 'badge', parent: 'B1', role: 'click' },
+    { id: 'G2', type: 'badge', parent: 'B1' },
+  ]);
+  p = rawChild(p, 'F1', 'B1', 'click');
+  p = rawChild(p, 'F2', 'B1', null);
+  p = rawChild(p, 'X1', 'B1', 'click', { specId: 'outra', typeId: 'z' });
+  p = rawChild(p, 'X2', 'B1', null, { specId: 'outra', typeId: 'z' });
+  return p;
+}
+
+describe('rename-role', () => {
+  it('troca o papel dos filhos de qualquer tipo; o resto fica como está', () => {
+    const p = roleProject();
+    const out = run(
+      p,
+      nextWith({ op: 'rename-role', type: 'button', from: 'click', to: 'tap' }),
+    );
+    for (const id of ['C1', 'G1', 'F1', 'X1']) {
+      expect(roleOf(out.project, id)).toBe('tap');
+      expect(ownerOf(out.project, id)).toBe('B1');
+    }
+    for (const id of ['C2', 'C3', 'G2', 'F2', 'X2', 'B1']) {
+      expect(annotationOf(out.project, id)).toBe(annotationOf(p, id));
+    }
+    expect(out.steps[0]).toMatchObject({ annotations: 4, unlinked: 0, values: 0 });
+    expect(out.losses).toEqual([]);
+    expectRoleInvariant(out.project);
+  });
+
+  it('junta os papéis quando o destino já era papel de outros filhos, sem perda', () => {
+    const p = roleProject();
+    const out = run(
+      p,
+      nextWith({ op: 'rename-role', type: 'button', from: 'hover', to: 'click' }),
+    );
+    expect(roleOf(out.project, 'C2')).toBe('click');
+    expect(roleOf(out.project, 'C1')).toBe('click');
+    expect(out.steps[0]).toMatchObject({ annotations: 1 });
+    expect(out.losses).toEqual([]);
+    expectRoleInvariant(out.project);
+  });
+
+  it('filho de dono de outro tipo ou de outra especialização não é tocado', () => {
+    let p = libProject(roleSpec(1), [
+      { id: 'B1', type: 'button' },
+      { id: 'G1', type: 'badge', marking: 'M2' },
+    ]);
+    p = rawChild(p, 'F1', 'G1', 'click');
+    const foreign: Annotation = {
+      ...annotationOf(p, 'B1'),
+      id: 'OB',
+      type: { specId: 'outra', typeId: 'button' },
+      values: null,
+    };
+    p = { ...p, annotations: [...p.annotations, foreign] };
+    p = rawChild(p, 'F2', 'OB', 'click');
+    const out = run(
+      p,
+      nextWith({ op: 'rename-role', type: 'button', from: 'click', to: 'tap' }),
+    );
+    expect(out.project).toBe(p);
+    expect(out.steps[0]).toMatchObject({ annotations: 0, unlinked: 0, losses: [] });
+  });
+});
+
+describe('remove-role', () => {
+  it('clear: o filho fica sem papel e continua vinculado; perda cleared-role', () => {
+    const p = roleProject();
+    const out = run(
+      p,
+      nextWith({ op: 'remove-role', type: 'button', role: 'click', mode: 'clear' }),
+    );
+    for (const id of ['C1', 'G1', 'F1', 'X1']) {
+      expect(roleOf(out.project, id)).toBeNull();
+      expect(ownerOf(out.project, id)).toBe('B1');
+    }
+    expect(roleOf(out.project, 'C2')).toBe('hover');
+    expect(out.steps[0]).toMatchObject({ annotations: 4, unlinked: 0 });
+    expect(out.losses).toEqual([
+      {
+        reason: 'cleared-role',
+        annotationId: 'C1',
+        markingId: 'M1',
+        typeId: 'chip',
+        role: 'click',
+      },
+      {
+        reason: 'cleared-role',
+        annotationId: 'G1',
+        markingId: 'M1',
+        typeId: 'badge',
+        role: 'click',
+      },
+      {
+        reason: 'cleared-role',
+        annotationId: 'F1',
+        markingId: 'M1',
+        typeId: '',
+        role: 'click',
+      },
+      {
+        reason: 'cleared-role',
+        annotationId: 'X1',
+        markingId: 'M1',
+        typeId: 'z',
+        role: 'click',
+      },
+    ]);
+    expectRoleInvariant(out.project);
+  });
+
+  it('unlink: o filho sai do vínculo, sem dono e sem papel; perda unlinked e contagem', () => {
+    const p = roleProject();
+    const out = run(
+      p,
+      nextWith({ op: 'remove-role', type: 'button', role: 'click', mode: 'unlink' }),
+    );
+    for (const id of ['C1', 'G1', 'F1', 'X1']) {
+      expect(ownerOf(out.project, id)).toBeNull();
+      expect(roleOf(out.project, id)).toBeNull();
+    }
+    expect(ownerOf(out.project, 'C2')).toBe('B1');
+    expect(roleOf(out.project, 'C2')).toBe('hover');
+    expect(out.steps[0]).toMatchObject({ annotations: 4, unlinked: 4 });
+    expect(out.losses.map((l) => [l.reason, l.annotationId, l.role])).toEqual([
+      ['unlinked', 'C1', 'click'],
+      ['unlinked', 'G1', 'click'],
+      ['unlinked', 'F1', 'click'],
+      ['unlinked', 'X1', 'click'],
+    ]);
+    expect(out.losses[0]).toMatchObject({ markingId: 'M1', typeId: 'chip' });
+    expect(out.losses[2]?.typeId).toBe('');
+    expectRoleInvariant(out.project);
+  });
+
+  it('filho sem esse papel (ou sem papel) não é tocado; sem filhos é no-op', () => {
+    const p = roleProject();
+    const out = run(
+      p,
+      nextWith({ op: 'remove-role', type: 'button', role: 'nada', mode: 'unlink' }),
+    );
+    expect(out.project).toBe(p);
+    expect(out.steps[0]).toMatchObject({ annotations: 0, unlinked: 0, losses: [] });
+  });
+});
+
+describe('set-role', () => {
+  it('sem childType: todo filho sem papel recebe o papel, de qualquer tipo; quem já tem fica', () => {
+    const p = roleProject();
+    const out = run(p, nextWith({ op: 'set-role', type: 'button', role: 'tap' }));
+    for (const id of ['C3', 'G2', 'F2', 'X2']) {
+      expect(roleOf(out.project, id)).toBe('tap');
+      expect(ownerOf(out.project, id)).toBe('B1');
+    }
+    for (const id of ['C1', 'C2', 'G1', 'F1', 'X1']) {
+      expect(annotationOf(out.project, id)).toBe(annotationOf(p, id));
+    }
+    expect(out.steps[0]).toMatchObject({ annotations: 4, unlinked: 0 });
+    expect(out.losses).toEqual([]);
+    expectRoleInvariant(out.project);
+  });
+
+  it('com childType: só os filhos desse tipo da especialização, sem papel', () => {
+    const p = roleProject();
+    const out = run(
+      p,
+      nextWith({ op: 'set-role', type: 'button', role: 'tap', childType: 'chip' }),
+    );
+    expect(roleOf(out.project, 'C3')).toBe('tap');
+    for (const id of ['C1', 'C2', 'G1', 'G2', 'F1', 'F2', 'X1', 'X2']) {
+      expect(annotationOf(out.project, id)).toBe(annotationOf(p, id));
+    }
+    expect(out.steps[0]).toMatchObject({ annotations: 1 });
+    expect(out.losses).toEqual([]);
+  });
+
+  it('filho que já tem papel não é tocado, nem o de papel diferente do passo', () => {
+    const p = libProject(roleSpec(1), [
+      { id: 'B1', type: 'button' },
+      { id: 'C1', type: 'chip', parent: 'B1', role: 'hover' },
+    ]);
+    const out = run(
+      p,
+      nextWith({ op: 'set-role', type: 'button', role: 'click', childType: 'chip' }),
+    );
+    expect(out.project).toBe(p);
+    expect(out.steps[0]).toMatchObject({ annotations: 0, losses: [] });
+  });
+});
+
+describe('passos de papel em sequência', () => {
+  it('passo depois de rename-type do dono identifica o dono pelo typeId novo', () => {
+    const p = roleProject();
+    const out = run(
+      p,
+      nextWith(
+        { op: 'rename-type', from: 'button', to: 'btn' },
+        { op: 'rename-role', type: 'btn', from: 'click', to: 'tap' },
+        { op: 'rename-role', type: 'button', from: 'hover', to: 'focus' },
+      ),
+    );
+    expect(roleOf(out.project, 'C1')).toBe('tap');
+    expect(out.steps[1]).toMatchObject({ annotations: 4 });
+    // O id antigo já não existe naquele ponto da cadeia.
+    expect(roleOf(out.project, 'C2')).toBe('hover');
+    expect(out.steps[2]).toMatchObject({ annotations: 0 });
+  });
+
+  it('set-role com childType antes do rename-type do filho usa o id antigo do filho', () => {
+    const p = roleProject();
+    const before = run(
+      p,
+      nextWith(
+        { op: 'set-role', type: 'button', role: 'tap', childType: 'chip' },
+        { op: 'rename-type', from: 'chip', to: 'pill' },
+      ),
+    );
+    expect(roleOf(before.project, 'C3')).toBe('tap');
+    expect(annotationOf(before.project, 'C3').type?.typeId).toBe('pill');
+    const after = run(
+      p,
+      nextWith(
+        { op: 'rename-type', from: 'chip', to: 'pill' },
+        { op: 'set-role', type: 'button', role: 'tap', childType: 'chip' },
+      ),
+    );
+    expect(roleOf(after.project, 'C3')).toBeNull();
+    expect(after.steps[1]).toMatchObject({ annotations: 0 });
+  });
+
+  it('rename-role seguido de remove-role do nome novo perde com o papel novo', () => {
+    const out = run(
+      roleProject(),
+      nextWith(
+        { op: 'rename-role', type: 'button', from: 'click', to: 'tap' },
+        { op: 'remove-role', type: 'button', role: 'tap', mode: 'clear' },
+      ),
+    );
+    expect(out.steps[0]?.losses).toEqual([]);
+    expect(out.losses.map((l) => [l.reason, l.role])).toEqual([
+      ['cleared-role', 'tap'],
+      ['cleared-role', 'tap'],
+      ['cleared-role', 'tap'],
+      ['cleared-role', 'tap'],
+    ]);
+    expectRoleInvariant(out.project);
+  });
+
+  it('o invariante parentRole → parentAnnotationId vale em toda combinação de passos', () => {
+    const combos: SpecMigrationStep[][] = [
+      [{ op: 'rename-role', type: 'button', from: 'click', to: 'tap' }],
+      [{ op: 'remove-role', type: 'button', role: 'click', mode: 'clear' }],
+      [{ op: 'remove-role', type: 'button', role: 'click', mode: 'unlink' }],
+      [{ op: 'remove-role', type: 'button', role: 'hover', mode: 'unlink' }],
+      [{ op: 'set-role', type: 'button', role: 'tap' }],
+      [{ op: 'set-role', type: 'button', role: 'tap', childType: 'badge' }],
+      [
+        { op: 'remove-role', type: 'button', role: 'click', mode: 'unlink' },
+        { op: 'set-role', type: 'button', role: 'click' },
+      ],
+      [
+        { op: 'set-role', type: 'button', role: 'tap' },
+        { op: 'remove-role', type: 'button', role: 'tap', mode: 'unlink' },
+        { op: 'rename-role', type: 'button', from: 'hover', to: 'click' },
+      ],
+    ];
+    for (const steps of combos) {
+      expectRoleInvariant(run(roleProject(), nextWith(...steps)).project);
+    }
+  });
+
+  it('não altera a entrada', () => {
+    const p = roleProject();
+    const before = JSON.stringify(p);
+    run(
+      p,
+      nextWith(
+        { op: 'remove-role', type: 'button', role: 'click', mode: 'unlink' },
+        { op: 'set-role', type: 'button', role: 'tap' },
+      ),
+    );
+    expect(JSON.stringify(p)).toBe(before);
+  });
+});
+
+describe('impacto e atualização com passos de papel', () => {
+  const v2Roles = [
+    { id: 'tap', name: 'Toque' },
+    { id: 'hover', name: 'Foco' },
+  ];
+
+  it('remove-role clear: perda cleared-role e missing-role enquanto o dono oferece papéis', () => {
+    const p = roleProject();
+    const next = roleSpec(2, v2Roles, {
+      migrations: [
+        {
+          from: 1,
+          to: 2,
+          steps: [{ op: 'remove-role', type: 'button', role: 'click', mode: 'clear' }],
+        },
+      ],
+    });
+    const impact = specializationUpdateImpact(p, next);
+    expect(impact.losses.map((l) => l.reason)).toEqual([
+      'cleared-role',
+      'cleared-role',
+      'cleared-role',
+      'cleared-role',
+    ]);
+    expect(impact.unlinked).toBe(0);
+    const missing = impact.pending
+      .filter((x) => x.issue.code === 'missing-role')
+      .map((x) => x.annotationId);
+    // C1 e G1 são da especialização; F1 (livre) e X1 (outra) não geram pendência de papel.
+    expect(missing).toContain('C1');
+    expect(missing).toContain('G1');
+    expect(missing).not.toContain('C2');
+  });
+
+  it('remove-role unlink: unlinked no relatório e missing-owner no tipo que exige dono', () => {
+    const p = roleProject();
+    const next = roleSpec(2, v2Roles, {
+      migrations: [
+        {
+          from: 1,
+          to: 2,
+          steps: [{ op: 'remove-role', type: 'button', role: 'click', mode: 'unlink' }],
+        },
+      ],
+    });
+    const impact = specializationUpdateImpact(p, next);
+    expect(impact.unlinked).toBe(4);
+    expect(impact.losses.every((l) => l.reason === 'unlinked')).toBe(true);
+    const codes = impact.pending.map((x) => [x.annotationId, x.issue.code]);
+    expect(codes).toContainEqual(['C1', 'missing-owner']);
+    expect(codes).not.toContainEqual(['G1', 'missing-owner']);
+  });
+
+  it('updateSpecialization aplica os passos de papel e grava a versão nova', () => {
+    const p = roleProject();
+    const next = roleSpec(2, v2Roles, {
+      migrations: [
+        {
+          from: 1,
+          to: 2,
+          steps: [
+            { op: 'rename-role', type: 'button', from: 'click', to: 'tap' },
+            { op: 'set-role', type: 'button', role: 'hover', childType: 'chip' },
+          ],
+        },
+      ],
+    });
+    const out = updateSpecialization(p, next, { newId: idGen('N') });
+    expect(roleOf(out, 'C1')).toBe('tap');
+    expect(roleOf(out, 'C3')).toBe('hover');
+    expect(out.specializations[0]?.version).toBe(2);
+    expectRoleInvariant(out);
+  });
+
+  it('sem o passo a atualização que tira um papel é recusada; com ele é aceita', () => {
+    const p = roleProject();
+    const without = roleSpec(2, v2Roles);
+    const refused = specializationUpdateImpact(p, without);
+    expect(refused.refused).toBe(true);
+    expect(refused.missingMigrations.map((c) => [c.code, c.role])).toEqual([
+      ['removed-role', 'click'],
+    ]);
+    expect(() => updateSpecialization(p, without, { newId: idGen('R') })).toThrow(
+      /spec-missing-migrations/,
+    );
+    const withSteps = roleSpec(2, v2Roles, {
+      migrations: [
+        {
+          from: 1,
+          to: 2,
+          steps: [{ op: 'rename-role', type: 'button', from: 'click', to: 'tap' }],
+        },
+      ],
+    });
+    expect(specializationUpdateImpact(p, withSteps).refused).toBe(false);
+  });
+
+  it('a atualização não altera o projeto de entrada (o desfazer devolve os papéis)', () => {
+    const p = roleProject();
+    const before = JSON.stringify(p);
+    const next = roleSpec(2, v2Roles, {
+      migrations: [
+        {
+          from: 1,
+          to: 2,
+          steps: [{ op: 'rename-role', type: 'button', from: 'click', to: 'tap' }],
+        },
+      ],
+    });
+    const out = updateSpecialization(p, next, { newId: idGen('U') });
+    expect(roleOf(out, 'C1')).toBe('tap');
+    expect(JSON.stringify(p)).toBe(before);
   });
 });

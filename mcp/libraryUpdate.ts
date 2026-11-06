@@ -250,6 +250,8 @@ const LOSS_TEXT: Record<MigrationLossReason, (field: string) => string> = {
   'replaced-value': (field) =>
     `o valor de "${field}" não vale mais no tipo do campo e é trocado pelo padrão`,
   'overwritten-value': (field) => `o campo "${field}" já tinha valor e é sobrescrito`,
+  'cleared-role': () => 'a anotação perde o papel no vínculo e continua vinculada',
+  unlinked: () => 'a anotação sai do vínculo com a dona',
 };
 
 function previewValue(value: JsonValue): JsonValue {
@@ -268,6 +270,7 @@ function lossView(refs: Refs, loss: MigrationLoss): Json {
     marking: refs.bare('m', loss.markingId),
     markingLabel: refs.label('m', loss.markingId),
     ...(loss.typeId === '' ? {} : { typeId: loss.typeId }),
+    ...(loss.role === undefined ? {} : { role: loss.role }),
     ...(loss.field === undefined ? {} : { field: loss.field }),
     ...(loss.rowId === undefined ? {} : { rowId: loss.rowId }),
     ...(loss.value === undefined ? {} : { value: previewValue(loss.value) }),
