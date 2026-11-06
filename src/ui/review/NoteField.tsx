@@ -9,8 +9,7 @@ import {
 } from '../../model';
 import { TextArea } from '../controls';
 import { useEditor } from '../EditorContext';
-import { changeSummary, changeTitle } from './changeText';
-import { joinParts } from './format';
+import { droppedChangeSummary } from './changeText';
 import { useReviewNames } from './useReview';
 import { useReviewCommands } from './useReviewCommands';
 
@@ -84,7 +83,7 @@ function DroppedOrigin({ noteId }: { readonly noteId: string }) {
   const names = useReviewNames();
   const origin = names ? droppedNoteOrigin(names.proposal, noteId) : null;
   if (!names || !origin) return null;
-  const summary = joinParts([changeTitle(names, origin), changeSummary(names, origin)]);
+  const summary = droppedChangeSummary(names, origin);
   return <p class="muted">{t('review.revised.droppedNote', { summary })}</p>;
 }
 
