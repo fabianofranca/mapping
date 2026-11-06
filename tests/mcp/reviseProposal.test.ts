@@ -594,6 +594,20 @@ describe('leituras depois da revisão', () => {
     ).toBeDefined();
   });
 
+  it('get_proposal só mostra revised em mudança sem decisão (a mesma regra da marca na app)', async () => {
+    const t = await open();
+    reviewDecide(dir(), t.id, { level: 'change', id: t.title }, 'rejected');
+    ok(await revise(t.ref, { operations: [rename('Título', 'Título certo')] }));
+
+    type Got = { changes: { id: string; revised?: unknown }[] };
+    const read = async () =>
+      ok(await mcp.call<Got>('get_proposal', { project: 'loja', ref: t.ref }));
+    expect((await read()).changes.find((c) => c.id === t.title)!.revised).toBeDefined();
+
+    reviewDecide(dir(), t.id, { level: 'change', id: t.title }, 'accepted');
+    expect((await read()).changes.find((c) => c.id === t.title)!.revised).toBeUndefined();
+  });
+
   it('com algo aplicado, a revisão não cabe: revisable false e a dica aponta supersedes', async () => {
     const t = await open([rename('Congelável', 'Aplicada')]);
     const applyId = changeOf(t.p, 'Congelável', 'name').id;

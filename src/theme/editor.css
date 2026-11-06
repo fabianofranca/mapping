@@ -599,6 +599,18 @@
   flex: none;
 }
 
+/* O texto de um item da esquerda é o que trunca com reticências (o item é flex). */
+.status-item-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tudo à direita do espaço (seleção, cursor, zoom, schema, canal, versão) nunca encolhe. */
+.statusbar-gap ~ * {
+  flex: none;
+}
+
 .status-item-mono {
   font-family: var(--font-mono);
 }

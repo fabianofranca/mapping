@@ -152,7 +152,8 @@ export function changeView(
   labels: ProposalLabels,
 ): Json {
   const conflict = conflictView(status);
-  const revised = revisedView(p, c);
+  // A marca só vale sem decisão (a mesma regra de `visibleRevisedChanges`).
+  const revised = p.decisions[c.id] === undefined ? revisedView(p, c) : null;
   return {
     id: c.id,
     state: stateOf(p, c.id),
