@@ -4,7 +4,7 @@ import { fixtureZip } from './proposalFixture';
 // Revisão de proposta a 900 px: o cabeçalho de decisão dos Detalhes e o rodapé de atalhos
 // mostram os botões e as dicas por inteiro, sem rolagem horizontal.
 
-test.use({ viewport: { width: 900, height: 850 } });
+test.use({ viewport: { width: 900, height: 860 } });
 
 test('revisão a 900 px: decisão inteira nos Detalhes e rodapé sem corte', async ({
   page,
@@ -49,10 +49,10 @@ test('revisão a 900 px: decisão inteira nos Detalhes e rodapé sem corte', asy
   }
 });
 
-// Altura: a 900×850 o rodapé inteiro cabe dentro da janela inferior (aba Propostas),
+// Altura: a 900×860 o rodapé inteiro cabe dentro da janela inferior (aba Propostas),
 // numa linha, com os 3 atalhos principais.
-test.describe('rodapé a 900×850', () => {
-  test.use({ viewport: { width: 900, height: 850 } });
+test.describe('rodapé a 900×860', () => {
+  test.use({ viewport: { width: 900, height: 860 } });
 
   test('o rodapé cabe inteiro na janela inferior, numa linha', async ({ page }) => {
     await page.goto('/');

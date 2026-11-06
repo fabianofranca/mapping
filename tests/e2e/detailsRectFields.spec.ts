@@ -17,7 +17,7 @@ import { blocksPng } from './png';
 // Posição e Tamanho dos Detalhes num painel estreito (900 px): X, Y, L e A mostram o valor
 // inteiro (4 dígitos na revisão, 3 dígitos fora dela), sem o campo cortar (#465, AC1).
 
-test.use({ viewport: { width: 900, height: 850 } });
+test.use({ viewport: { width: 900, height: 860 } });
 
 const NOW = '2026-11-05T12:00:00.000Z';
 

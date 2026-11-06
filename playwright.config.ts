@@ -28,7 +28,7 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
-      use: { viewport: { width: 1280, height: 850 } },
+      use: { viewport: { width: 1280, height: 860 } },
     },
   ],
   webServer: {

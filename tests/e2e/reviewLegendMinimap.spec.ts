@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
-// Legenda das marcas na revisão a 900×850 (#537): enquanto aberta, fica por cima do minimapa,
+// Legenda das marcas na revisão a 900×860 (#537): enquanto aberta, fica por cima do minimapa,
 // inteira à vista.
 
-test.use({ viewport: { width: 900, height: 850 } });
+test.use({ viewport: { width: 900, height: 860 } });
 
-test('a legenda das marcas fica por cima do minimapa a 900×850', async ({ page }) => {
+test('a legenda das marcas fica por cima do minimapa a 900×860', async ({ page }) => {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
@@ -40,7 +40,7 @@ test('a legenda das marcas fica por cima do minimapa a 900×850', async ({ page 
     const hit = document.elementFromPoint(x, y);
     return { onLegend: hit?.closest('.review-legend') !== null };
   });
-  // Os dois se sobrepõem a 900×850; no ponto em comum, quem aparece é a legenda.
+  // Os dois se sobrepõem a 900×860; no ponto em comum, quem aparece é a legenda.
   expect(overlap).not.toBeNull();
   expect(overlap?.onLegend).toBe(true);
 

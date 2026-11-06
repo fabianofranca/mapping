@@ -7,7 +7,7 @@ import { fixtureFiles, fixtureProject } from './proposalFixture';
 // O clique rola a página até a linha, e essa rolagem chega depois de o menu abrir; o menu
 // ignora a rolagem que a própria abertura provoca (janela de 300 ms em `openScrollGuard`).
 
-test.use({ viewport: { width: 1280, height: 850 } });
+test.use({ viewport: { width: 1280, height: 860 } });
 
 const PAIRS = 24;
 

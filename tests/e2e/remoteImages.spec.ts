@@ -453,7 +453,7 @@ test.describe('imagens remotas: Catálogo', () => {
     const context = await browser.newContext({
       baseURL: test.info().project.use.baseURL,
       locale: 'pt-BR',
-      viewport: { width: 1280, height: 850 },
+      viewport: { width: 1280, height: 860 },
     });
     try {
       const wait = (n: number) => async (s: Hits) => {

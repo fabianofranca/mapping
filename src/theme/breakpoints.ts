@@ -7,9 +7,9 @@ export const BREAKPOINTS = {
   appMin: 900,
   /**
    * Menor altura da app (só desktop): a legenda das marcas da revisão só cabe inteira com
-   * o canvas de pelo menos 360 px, que a 900 px de largura pede janela de ~842 px (#552).
+   * o canvas de pelo menos 374 px (358 de conteúdo + 16 de margem), que pede janela de ~858 px (#552).
    */
-  appMinHeight: 850,
+  appMinHeight: 860,
   /** Maior largura do desktop "compacto" (botões da barra só com ícone). */
   compact: 1199,
   /** Largura de referência dos mockups de desktop. */

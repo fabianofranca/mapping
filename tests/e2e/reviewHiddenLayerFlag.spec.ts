@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 // cabeçalho de camada cabe no rótulo, o + fica à vista e os Detalhes não ganham barra
 // horizontal (#372, SN3).
 
-test.use({ viewport: { width: 900, height: 850 } });
+test.use({ viewport: { width: 900, height: 860 } });
 
 async function revealHiddenLayer(page: Page): Promise<Locator> {
   await page.goto('/');
@@ -75,7 +75,7 @@ test('Flag da camada escondida cabe no rótulo e os Detalhes ficam sem barra hor
 // inteiro, porque é um estado da camada; o que é cortado (selo, depois o nome) tem a dica.
 for (const width of [900, 1280]) {
   test(`a flag "escondida" mantém o texto inteiro a ${width} px`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 850 });
+    await page.setViewportSize({ width, height: 860 });
     const head = await revealHiddenLayer(page);
     const text = head.locator('.flag .flag-text');
     const m = await text.evaluate((e) => ({
