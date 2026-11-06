@@ -109,6 +109,7 @@ export function activeFilterGroups(f: ReviewFiltersState): number {
     f.imageId !== null,
     f.layerId !== null,
     f.onlyConflicts,
+    f.onlyRevised,
   ].filter(Boolean).length;
 }
 

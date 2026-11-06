@@ -59,6 +59,8 @@ import {
   type ReviewFilters,
   type ReviewProgress,
   type ReviewTree,
+  latestRevisionSummary,
+  visibleRevisedChanges,
 } from '../model';
 import type { SceneNode } from '../model/components/scene';
 import type { ProjectStore } from './history';
@@ -628,6 +630,8 @@ export interface ReviewCounts {
   /** Aceitas aguardando aplicação ("5 aceitas aguardando aplicação"). */
   readonly acceptedPending: number;
   readonly conflicts: number;
+  /** Revisadas pelo agente e ainda sem decisão (a marca "Revisada"). */
+  readonly revised: number;
 }
 
 /** O que uma mudança é no projeto atual, sem a decisão (que muda a cada clique). */
@@ -761,6 +765,12 @@ export interface ReviewDerived {
   /** Conflito, valor atual e aviso de item trancado de cada mudança. */
   readonly situation: ReadonlySignal<ReadonlyMap<string, ChangeSituation>>;
   readonly conflictIds: ReadonlySignal<ReadonlySet<string>>;
+  /** Mudanças com a marca "Revisada" e sem decisão (`visibleRevisedChanges`). */
+  readonly revisedIds: ReadonlySignal<ReadonlySet<string>>;
+  /** A revisão mais nova da proposta aberta (para a faixa), ou `null`. */
+  readonly revisionSummary: ReadonlySignal<ReturnType<
+    typeof latestRevisionSummary
+  > | null>;
   /** Decisões de três estados com "parcial" e contagens, por nível (`reviewKey`, inclui `proposal:`). */
   readonly levels: ReadonlySignal<ReadonlyMap<string, LevelSummary>>;
   readonly progress: ReadonlySignal<ReviewProgress | null>;
@@ -835,6 +845,7 @@ const NO_COUNTS: ReviewCounts = {
   applied: 0,
   acceptedPending: 0,
   conflicts: 0,
+  revised: 0,
 };
 const NO_INVALID = { changeIds: NO_ID_SET, related: NO_ID_SET };
 const NO_DECISIONS: Proposal['decisions'] = {};
@@ -1013,6 +1024,15 @@ export function createReviewDerived(
     return p ? reviewProgress(p) : null;
   });
 
+  const revisedIds = computed((): ReadonlySet<string> => {
+    const p = proposal.value;
+    return p ? new Set(visibleRevisedChanges(p)) : NO_ID_SET;
+  });
+  const revisionSummary = computed(() => {
+    const p = proposal.value;
+    return p ? latestRevisionSummary(p) : null;
+  });
+
   const counts = computed((): ReviewCounts => {
     const p = progress.value;
     if (!p) return NO_COUNTS;
@@ -1024,6 +1044,7 @@ export function createReviewDerived(
       applied: p.applied,
       acceptedPending: p.acceptedPending,
       conflicts: conflictIds.value.size,
+      revised: revisedIds.value.size,
     };
   });
 
@@ -1123,9 +1144,13 @@ export function createReviewDerived(
     const p = proposal.value;
     const current = project.value;
     if (!p || !current) return NO_IDS;
-    return filterChanges(p, current, sources.filters.value, conflictIds.value).map(
-      (c) => c.id,
-    );
+    return filterChanges(
+      p,
+      current,
+      sources.filters.value,
+      conflictIds.value,
+      revisedIds.value,
+    ).map((c) => c.id);
   });
 
   const pendingIds = computed((): readonly string[] => {
@@ -1168,6 +1193,8 @@ export function createReviewDerived(
     levelTypes,
     situation,
     conflictIds,
+    revisedIds,
+    revisionSummary,
     levels,
     progress,
     counts,

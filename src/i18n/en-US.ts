@@ -835,6 +835,7 @@ export const enUS: Dictionary = {
   'proposal.notice.added': 'New proposal: {title}',
   'proposal.notice.changed': 'Proposal changed outside the app: {title}',
   'proposal.notice.removed': 'Proposal deleted outside the app: {title}',
+  'proposal.notice.revised': 'Proposal revised by the agent: {title}',
   'external.title': 'Project changed outside the app',
   'external.message':
     'mapping.json was changed by another program (the MCP server, a text editor, git…) since you opened it. "Reload" discards your changes that were not saved yet and opens the file as it is. "Keep mine" saves over it, with the new revision.',

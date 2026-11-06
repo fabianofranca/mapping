@@ -157,6 +157,7 @@ const PROPOSAL_ERRORS: Record<ProposalActionError, TranslationKey> = {
   reviewing: 'proposal.error.reviewing',
   'not-removable': 'proposal.error.notRemovable',
   'remove-failed': 'proposal.error.removeFailed',
+  revised: 'proposal.error.revised',
 };
 
 /** Mensagem de uma ação recusada na revisão (`path`: o arquivo ou a pasta de `image-missing`, `image-exists`, `package-missing` e `package-invalid`). */

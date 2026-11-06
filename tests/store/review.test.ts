@@ -734,6 +734,37 @@ describe('retomar por cópia e blob v2', () => {
     });
   });
 
+  it('retomada: blob sem `onlyRevised` vale desligado e com `true` volta ligado (etapa #644)', async () => {
+    const { proposal } = richScenario();
+    const seed = (onlyRevised?: boolean) =>
+      localStorage.setItem(
+        RESUME_KEY,
+        JSON.stringify({
+          v: 2,
+          seen: ['copia-r|P1'],
+          resume: {
+            'copia-r|P1': {
+              ...v1Entry,
+              filters: {
+                ...v1Entry.filters,
+                ...(onlyRevised === undefined ? {} : { onlyRevised }),
+              },
+            },
+          },
+        }),
+      );
+    seed();
+    const old = await openHarness({ proposals: [proposal], copyId: 'copia-r' });
+    expect(old.review.open('P1')).toMatchObject({ resumed: 'full' });
+    expect(old.review.filters.value.decision).toBe('undecided');
+    expect(old.review.filters.value.onlyRevised).toBe(false);
+    old.review.close();
+    seed(true);
+    const on = await openHarness({ proposals: [proposal], copyId: 'copia-r' });
+    expect(on.review.open('P1')).toMatchObject({ resumed: 'full' });
+    expect(on.review.filters.value.onlyRevised).toBe(true);
+  });
+
   it('sem copyId o escopo é vazio (chave `|P1`) e o Diagnóstico registra', async () => {
     const { proposal } = richScenario();
     const { review } = await openHarness({ proposals: [proposal], copyId: null });
