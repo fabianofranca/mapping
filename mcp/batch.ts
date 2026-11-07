@@ -26,6 +26,9 @@ import {
   componentMinSize,
   componentPlacement,
   componentTypes,
+  findSpecType,
+  loadSpecComponents,
+  type ComponentCatalog,
   approximateMeasurer,
   confirmMarkingReview,
   createMarking,
@@ -318,6 +321,64 @@ function sourceLabel(source: ExternalSource | null): string {
   return source === null ? 'sem origem' : `origem ${source.system}:${source.id}`;
 }
 
+/** Catálogo sem a especialização `specId`. */
+function withoutSpec(catalog: ComponentCatalog, specId: string): ComponentCatalog {
+  if (!catalog.has(specId)) return catalog;
+  const next = new Map(catalog);
+  next.delete(specId);
+  return next;
+}
+
+/**
+ * Catálogo depois de aplicar ou atualizar uma especialização no lote: a entrada dela é refeita
+ * com os arquivos do pacote que a operação levou (`packageFiles`, pelo caminho definitivo).
+ * Especialização sem pacote (v1 a v3) não tem componente: a entrada some.
+ */
+function catalogAfterSpecStep(
+  catalog: ComponentCatalog,
+  project: Project,
+  specId: string | undefined,
+  packageFiles: ReadonlyMap<string, Uint8Array>,
+): ComponentCatalog {
+  if (specId === undefined) return catalog;
+  const applied = getSpecialization(project, specId);
+  if (!applied?.spec || applied.spec.formatVersion < 4)
+    return withoutSpec(catalog, specId);
+  const decoder = new TextDecoder();
+  const files = applied.file;
+  const next = new Map(catalog);
+  next.set(
+    specId,
+    loadSpecComponents(applied.spec, files, applied.version, (path) => {
+      const data = packageFiles.get(path);
+      return data === undefined ? undefined : decoder.decode(data);
+    }),
+  );
+  return next;
+}
+
+/**
+ * Nota do passo quando o tipo declara componente na especialização aplicada e o catálogo do
+ * lote não o tem (arquivo ausente, ilegível ou com problema): a anotação nasce sem o preview
+ * e sem o tamanho mínimo. `null` se o tipo não declara componente.
+ */
+function missingComponentNote(
+  p: Project,
+  catalog: ComponentCatalog,
+  ref: AnnotationTypeRef,
+): string | null {
+  const found = findSpecType(p, ref);
+  if (found === null || found.type.component === undefined) return null;
+  const label = `${ref.specId}/${ref.typeId}`;
+  const components = catalog.get(ref.specId);
+  const problem = components?.problems.find((m) => m.startsWith(`${ref.typeId}: `));
+  const reason =
+    problem !== undefined
+      ? problem.slice(ref.typeId.length + 2)
+      : 'o lote não achou os arquivos de componente dessa especialização';
+  return `o tipo ${label} declara componente, mas ${reason}: a anotação foi criada sem o preview e sem o tamanho mínimo`;
+}
+
 class Batch {
   private p: Project;
   private readonly aliases = new Map<string, AliasTarget>();
@@ -336,12 +397,18 @@ class Batch {
   private readonly errors: OperationError[] = [];
   private readonly steps: { index: number; description: string }[] = [];
   private readonly created: CreatedItem[] = [];
+  /**
+   * Catálogo de componentes do lote: parte do lido ao carregar o projeto e acompanha as
+   * especializações que o próprio lote aplica, atualiza ou remove.
+   */
+  private catalog: ComponentCatalog;
 
   constructor(
     private readonly loaded: LoadedProject,
     private readonly io: BatchIo,
   ) {
     this.p = loaded.project;
+    this.catalog = loaded.catalog;
   }
 
   private refs(p: Project = this.p): Refs {
@@ -413,6 +480,7 @@ class Batch {
         }
         for (const [file, data] of step.imageFiles ?? []) this.imageFiles.set(file, data);
         this.takePackage(index, step);
+        this.refreshCatalog(op, step);
         for (const [name, target] of step.rowAliases ?? [])
           this.aliases.set(name, target);
         for (const [n, item] of (step.created ?? []).entries()) {
@@ -448,6 +516,23 @@ class Batch {
       rolesCleared: this.rolesCleared,
       invariantIssues,
     };
+  }
+
+  /**
+   * Refaz a entrada do catálogo da especialização que a operação mexeu, com o pacote que ela
+   * já leu (sem ler o disco de novo): as operações seguintes veem os componentes da versão nova.
+   */
+  private refreshCatalog(op: Operation, step: Step): void {
+    if (op.op === 'remove_specialization') {
+      this.catalog = withoutSpec(this.catalog, op.specId);
+    } else if (op.op === 'apply_specialization' || op.op === 'update_specialization') {
+      this.catalog = catalogAfterSpecStep(
+        this.catalog,
+        step.project,
+        step.specId,
+        this.packageFiles,
+      );
+    }
   }
 
   /**
@@ -1186,7 +1271,7 @@ class Batch {
           changes.push(`mover (${op.move.dx}, ${op.move.dy}) com as filhas`);
         }
         if (op.floating !== undefined) {
-          const minSize = componentMinSize(project, this.loaded.catalog, id);
+          const minSize = componentMinSize(project, this.catalog, id);
           project = setMarkingFloating(
             project,
             id,
@@ -1205,7 +1290,7 @@ class Batch {
           const target =
             op.container === null ? null : this.containerItem(op.container, project);
           const { rect } = op;
-          const minSize = componentMinSize(project, this.loaded.catalog, id);
+          const minSize = componentMinSize(project, this.catalog, id);
           project = this.checkMinSize(minSize, `"${label}"`, () =>
             setMarkingSpace(project, id, target, rect, minSize ? { minSize } : undefined),
           );
@@ -1214,7 +1299,7 @@ class Batch {
           );
         } else if (op.rect !== undefined) {
           const { rect } = op;
-          const minSize = componentMinSize(project, this.loaded.catalog, id);
+          const minSize = componentMinSize(project, this.catalog, id);
           project = this.checkMinSize(minSize, `"${label}"`, () =>
             setMarkingRect(project, id, rect, minSize ? { minSize } : undefined),
           );
@@ -1662,7 +1747,7 @@ class Batch {
 
   private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {
     const p = this.p;
-    const catalog = this.loaded.catalog;
+    const catalog = this.catalog;
     const annotation = op.annotation;
     if (annotation === undefined && op.annotationAs !== undefined) {
       throw new ToolError(
@@ -1716,6 +1801,10 @@ class Batch {
           '`near` só vale para um tipo de anotação flutuante, sem `container`: foi ignorado (para colocar a marcação num container, use `container` e `rect`)',
         );
       }
+    }
+    if (typeRef !== null && component === null) {
+      const missing = missingComponentNote(p, catalog, typeRef);
+      if (missing !== null) notes.push(missing);
     }
     const rowAliases: [string, AliasTarget][] = [];
     let project: Project;
