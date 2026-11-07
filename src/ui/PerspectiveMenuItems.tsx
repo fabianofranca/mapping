@@ -138,6 +138,8 @@ export function PerspectiveMenuItems({
   // Aberto pelo ponteiro: o foco fica onde está (abrir por hover não rouba o foco).
   const byPointer = useRef(false);
   const [flip, setFlip] = useState(false);
+  // Aberto só pelo hover: o primeiro clique no item pai confirma (não fecha).
+  const openedByHover = useRef(false);
 
   // Sem espaço à direita, o submenu abre à esquerda do item pai (e fica dentro da janela).
   useLayoutEffect(() => {
@@ -181,11 +183,20 @@ export function PerspectiveMenuItems({
   const hoverOpen = () => {
     if (locked || expanded) return;
     byPointer.current = true;
+    openedByHover.current = true;
     setExpanded(true);
+  };
+  const onParentClick = () => {
+    if (openedByHover.current) {
+      openedByHover.current = false;
+      return;
+    }
+    setExpanded((open) => !open);
   };
   const hoverClose = () => {
     if (!expanded) return;
     byPointer.current = true;
+    openedByHover.current = false;
     setExpanded(false);
   };
   const onKeyDown = (e: KeyboardEvent) => {
@@ -208,7 +219,7 @@ export function PerspectiveMenuItems({
           aria-haspopup="menu"
           aria-expanded={expanded}
           disabled={locked}
-          onClick={() => setExpanded((open) => !open)}
+          onClick={onParentClick}
         >
           {t('perspective.menu.send')}
           <Icon name="chevronRight" />

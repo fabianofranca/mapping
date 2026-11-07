@@ -98,6 +98,16 @@ describe('Enviar para perspectiva', () => {
     expect(document.activeElement).toBe(send);
   });
 
+  it('clicar no item depois de o ponteiro abri-lo mantém o submenu aberto', () => {
+    const { harness } = setup({ others: 1 });
+    openMenu(harness, 'i', 'I1');
+    const send = sendItem();
+    fireEvent.pointerEnter(send.parentElement as HTMLElement);
+    fireEvent.click(send);
+    expect(screen.getByRole('menu', { name: t('perspective.menu.send') })).toBeTruthy();
+    expect(send.getAttribute('aria-expanded')).toBe('true');
+  });
+
   it('perto da borda direita, o submenu abre à esquerda do item', () => {
     const { harness } = setup({ others: 1 });
     openMenu(harness, 'i', 'I1');
