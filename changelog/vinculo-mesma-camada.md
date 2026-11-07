@@ -7,6 +7,7 @@
 
 ## Alterado
 
+- App: a dica e o estado vazio do campo **Vinculada a** dizem que, na anotação tipada, a dona pode ser da mesma camada quando o tipo dela aceita o vínculo; na livre, continua só outra camada.
 - MCP: o texto do erro `invalid-annotation-parent` diz que a dona pode ser de outra camada ou, na anotação tipada, de um tipo que aceite o vínculo, inclusive na mesma camada.
 
 ## Corrigido

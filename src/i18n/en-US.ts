@@ -214,9 +214,9 @@ export const enUS: Dictionary = {
   'annotation.noOwner': 'None',
   'annotation.ownerOption': '{layer}: {name}',
   'annotation.ownerHelp':
-    'Only annotations of this same marking that are in other layers appear (and, for typed ones, of a type that accepts this one).',
+    'Only annotations of this same marking appear. For typed ones the owner can be in another layer or in the same one, when its type accepts this one; free ones only link to other layers.',
   'annotation.ownerEmpty':
-    'No options: create an annotation in another layer on this marking so you can link this one to it.',
+    'No options: create an annotation on this marking whose type accepts this one (for free ones, in another layer) so you can link this one to it.',
   'annotation.linkedTo': '↳ of {name}',
   'annotation.linkedToRole': '↳ of {name} ({role})',
   'annotation.linkedHeading': 'Linked',
