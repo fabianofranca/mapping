@@ -77,6 +77,7 @@ export * from './thread';
 export * from './threadOps';
 export * from './citations';
 export * from './composerDoc';
+export * from './citeTargets';
 export * from './threadUsers';
 export * from './threadView';
 export * from './threadFilters';
