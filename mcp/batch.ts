@@ -850,7 +850,7 @@ class Batch {
       const resolved = typeOfAnnotation(next, annotation);
       const field: SpecField | null = resolved ? fieldOf(resolved.type, key) : null;
       if (field?.type === 'table') {
-        next = this.setTable(next, annotationId, key, value, rowAliases);
+        next = this.setTable(next, annotationId, field, value, rowAliases);
       } else if (field?.type === 'ref') {
         next = setFieldValue(next, annotationId, key, this.refValue(value, key, next));
       } else {
@@ -865,10 +865,11 @@ class Batch {
   private setTable(
     p: Project,
     annotationId: string,
-    key: string,
+    tableField: Extract<SpecField, { type: 'table' }>,
     value: JsonValue,
     rowAliases: [string, AliasTarget][],
   ): Project {
+    const key = tableField.key;
     if (value !== null && !Array.isArray(value)) {
       throw new ToolError(
         'invalid-value',
@@ -907,7 +908,10 @@ class Batch {
       if (given === undefined) next = addTableRow(next, annotationId, key, rowId);
       for (const [column, cell] of Object.entries(row)) {
         if (column === '_id' || column === '_as') continue;
-        next = setTableCell(next, annotationId, key, rowId, column, cell);
+        const isRef = tableField.columns.find((c) => c.key === column)?.type === 'ref';
+        // Célula `ref`: o mesmo valor do campo `ref` (apelidos incluídos) ou o formato gravado.
+        const value = isRef ? this.refValue(cell, column, next) : cell;
+        next = setTableCell(next, annotationId, key, rowId, column, value);
       }
       next = moveTableRow(next, annotationId, key, rowId, position);
       const alias = row._as;
