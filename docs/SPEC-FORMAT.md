@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 14)
+# Formato da especialização (`formatVersion` 1 a 15)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo; na 12, os passos de migração dos papéis; na 13, os filhos da própria camada; na 14, a anotação inteira como alvo de um `ref`). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo; na 12, os passos de migração dos papéis; na 13, os filhos da própria camada; na 14, a anotação inteira como alvo de um `ref`; na 15, os tokens de design). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -13,7 +13,8 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - A `formatVersion` 12 é a 11 mais três **passos de migração dos papéis**, em `migrations`: `rename-role`, `remove-role` e `set-role` (ver "Contrato de versão" e "Papéis no vínculo (childRoles)"). Antes dela, tirar um papel de `childRoles` deixava `parentRole` das anotações apontando para um papel que não existe mais; a 12 trata essa troca como **quebra** e a cobre com um passo que renomeia, remove ou preenche o papel nas anotações do projeto. A 12 é aditiva: as versões 1 a 11 continuam aceitas sem mudança, e cada passo novo numa versão anterior é o erro `só é permitido com formatVersion 12`, no caminho exato. Só sobe para a 12 a especialização que declara algum desses passos. Uma v11 que remove ou torna obrigatório o papel de um tipo, sem o passo, é recusada na atualização até subir para a 12 com ele.
 - A `formatVersion` 13 é a 12 mais os **filhos da própria camada**: `allowedChildren` passa a aceitar a cláusula `{ layer }` com a camada do próprio dono e o id de um tipo da mesma camada, inclusive o do próprio tipo (ver "Filhos por camada e grupo"). Com isso um evento pode ser dono de outros eventos, cada filho no papel em que se liga (`childRoles`), e a anotação **tipada** pode ter dona da mesma camada no projeto (schema v15; a **livre** continua só com dona de outra camada, e o ciclo continua barrado). A 13 é aditiva: as versões 1 a 12 continuam aceitas sem mudança, e a camada ou o tipo da própria camada em `allowedChildren` numa versão anterior continua sendo o erro de sempre (`filhos devem estar em outra camada`). Só sobe para a 13 a especialização que declara um filho da própria camada.
 - A `formatVersion` 14 é a 13 mais a **anotação inteira como alvo**: o `accepts` de um campo ou coluna `ref` ganha `annotations`, uma lista de ids de tipo ou cláusulas `{ layer, groups? }` da **mesma especialização**, com a mesma sintaxe e o mesmo resolvedor do `allowedChildren` (ver "Referências e etiquetas"). A 14 é aditiva: as versões 1 a 13 continuam aceitas sem mudança, e `annotations` numa versão anterior é o erro `só é permitido com formatVersion 14`, no caminho `…accepts.annotations`. Só sobe para a 14 a especialização que declara `accepts.annotations`.
-- A `formatVersion` 2 é a 1 mais o código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 14; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 15 é a 14 mais os **tokens de design**: a chave `tokens` na raiz declara valores nomeados (cores, raios, espaçamentos, famílias de fonte), simples ou por modo (`light`/`dark`), que os componentes de formato 4 leem com `{ "$token": "nome" }` (ver "Tokens de design"). A 15 é aditiva: as versões 1 a 14 continuam aceitas sem mudança, e `tokens` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho `tokens`. Só sobe para a 15 a especialização que declara `tokens`.
+- A `formatVersion` 2 é a 1 mais o código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 15; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
@@ -77,7 +78,7 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `14`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `15`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais, e `tokens` (a partir da versão 15) também. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
@@ -942,6 +943,33 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Pacote de exemplo.** `libraries/material3-compose/` é o Material Design 3 (baseline, tema claro) para o Jetpack Compose, pronto para uso: a especialização v9 com cinquenta tipos, cada um com `component`, `doc` e de um a três exemplos, os componentes, os tamanhos de container e a Roboto em `fonts/`. A origem executável (`origins`, `sources`, `migrations` e a tela de exemplo `examples/settings.sdui.json`, uma tela de SDUI sem retângulos, traduzida pela `origins`) está em `examples/libraries/sdui-backend/`. Os testes usam uma cópia congelada de um pacote antigo de quinze tipos, em `tests/fixtures/material3/` (não é um exemplo distribuído).
 
+## Tokens de design
+
+`tokens` (`formatVersion` 15, opcional, na raiz) guarda os **valores de design** da biblioteca com nome: cores, raios, espaçamentos e famílias de fonte. Os componentes de formato 4 leem cada valor com `{ "$token": "nome" }` (ver `docs/COMPONENT-FORMAT.md`), em vez de repetir o literal em cada nó. Trocar o valor num lugar só muda o desenho inteiro.
+
+```json
+{
+  "formatVersion": 15,
+  "tokens": {
+    "modes": ["light", "dark"],
+    "values": {
+      "primary": { "light": "#6750A4", "dark": "#D0BCFF" },
+      "on-primary": { "light": "#FFFFFF", "dark": "#381E72" },
+      "radius-md": 12,
+      "space-4": 16,
+      "font-sans": "Roboto, sans-serif"
+    }
+  }
+}
+```
+
+- `modes`: lista **não vazia** de nomes distintos no formato `[a-z0-9][a-z0-9-]*`. A convenção é `["light", "dark"]`.
+- `values`: o nome do token (`[a-z0-9][a-z0-9-]*`) aponta para um valor, que é **texto** (cor `#rrggbb`, `rgba(…)`, ou família de fonte) ou **número** (raio, espaçamento, tamanho, peso).
+- Um valor **simples** vale em todos os modos (`"radius-md": 12`). Um valor **por modo** é um objeto com **todos** os modos de `modes` (e só eles) e todos do **mesmo tipo**: misturar cor num modo e número no outro é erro.
+- **Embutidos:** `font-sans` e `font-mono` (famílias de fonte) existem em toda biblioteca, mesmo sem `tokens`, e valem a fonte do hospedeiro (na app, o `--font-sans` e o `--font-mono` do tema; no visualizador, a pilha dos tokens da app ou a opção `fonts`; no MCP, `sans-serif`). A especialização pode redefini-los em `values`, e a definição dela vence a do hospedeiro. O texto sem `font.family` usa `font-sans`.
+- **Modo do desenho:** nesta versão o desenho usa sempre o **primeiro** modo de `modes`; um modo não declarado cai no primeiro, sem aviso. Ligar o modo ao projeto é trabalho da fase seguinte.
+- Erros de validação, com o caminho em `tokens`: `só é permitido com formatVersion 15`, nome fora do padrão, `modes` vazio ou com nome repetido, valor por modo sem algum modo (ou com modo que não existe em `modes`) e valores de tipos diferentes entre os modos. No `validate_library` (nível 2), `$token` com nome inexistente é `o token "x" não existe nos tokens da especialização` e com tipo errado é `o token "primary" é cor, mas aqui se espera número`.
+
 ## Contrato de versão
 
 `version` (inteiro ≥ 1) é a **versão do pacote**. Subir a versão de uma biblioteca é uma decisão que pode quebrar os projetos que a aplicaram; o contrato diz o que é seguro e o que exige uma migração declarada. Duas versões do mesmo pacote são comparadas por `diffSpecs(anterior, nova)` (em `src/model/specVersions.ts`, função pura) e cada diferença é **aditiva** ou **quebra**. Tipo, campo e opção são identificados pelo `id`, pela `key` e pelo texto, nunca pela posição; as colunas de uma `table` contam como campos do tipo.
@@ -1275,7 +1303,7 @@ Os pacotes `libraries/material3-compose/` e `examples/libraries/sdui-backend/` p
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 14), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 15), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada** (a partir da `formatVersion` 13, também na camada do próprio dono, inclusive o próprio tipo);
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo (na v11, no conjunto **resolvido** dos filhos de algum dono: por id, por camada inteira ou por grupo);
@@ -1284,6 +1312,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `labelField` aponta para um campo `string` do tipo;
 - `accepts` com pelo menos uma etiqueta, `free: true` ou `annotations`; etiquetas no formato `[a-z0-9-]+`;
 - **v14, `accepts.annotations`:** só a partir da `formatVersion` 14 (antes, `só é permitido com formatVersion 14`, no caminho `…accepts.annotations` do campo ou da coluna); lista não vazia de ids de tipo ou cláusulas `{ layer, groups }` da mesma especialização; camada, grupo e tipo inexistentes são os erros do `allowedChildren`;
+- **v15, `tokens`:** só a partir da `formatVersion` 15 (antes, `só é permitido com formatVersion 15`, no caminho `tokens`); `modes` lista não vazia de nomes distintos `[a-z0-9][a-z0-9-]*`; nome de token no mesmo padrão; cada valor é texto ou número, simples ou com todos os modos (e só eles) do mesmo tipo (ver "Tokens de design");
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
 - **v11, filhos por camada e grupo:** só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].allowedChildren[k]` para a cláusula, `layers[n].groups` e `…annotationTypes[m].groups`); cada item de `allowedChildren` é um id de tipo ou uma cláusula `{ layer, groups? }` estrita (outra propriedade é erro, e `groups: []` também); erros: `layer` que não é uma camada da especialização, `layer` que é a camada do próprio dono (`filhos devem estar em outra camada`) e grupo inexistente na camada da cláusula; `requiresOwner` é conferido no conjunto resolvido; `layers[n].groups`: `id` não vazio e único na camada, `name` não vazio; `annotationTypes[m].groups`: lista não vazia, sem repetição, só de grupos da própria camada (grupo inexistente na camada é erro); **avisos:** 20 ids ou mais em texto no mesmo `allowedChildren` (`N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos`; com 19, não) e grupo declarado que nenhum tipo usa (ver "Filhos por camada e grupo");

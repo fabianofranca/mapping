@@ -10,11 +10,14 @@
 - Texto rico (formato 4): o nó `text` aceita `runs` no lugar de `text`, uma lista de trechos com peso, itálico, cor, decoração, família e tamanho próprios, que quebram linha juntos como um texto só. Um trecho com `background`, `radius` e `padding` vira uma caixa em linha (o chip): inquebrável, vai inteira para a linha de baixo quando não cabe e acompanha o texto. A app desenha o texto rico; o MCP (`get_marking_image`) mostra por enquanto barras por pedaço e o fundo do chip.
 - Aviso `texto maior que a caixa: <nó>` (as linhas quebradas passam da altura do nó e nada as corta), que entra na pendência "o componente não cabe".
 - Aviso `texto medido com largura 0: <nó>` na prova de desenho do `validate_library` e no desenho do componente.
+- `tokens` na especialização (`formatVersion` 15): valores de design nomeados (cor, número, família de fonte), simples ou por modo (`light`/`dark`), e `{ "$token": "nome" }` no componente (formato 4), onde se aceita cor, número ou família de fonte, inclusive como resultado de `$switch` e `$if`. O `validate_library` recusa token inexistente ou de tipo errado, com o caminho do nó. Nesta etapa o desenho usa o primeiro modo.
+- Tokens embutidos `font-sans` e `font-mono` (famílias), que valem a fonte do tema do hospedeiro e podem ser redefinidos nos `tokens` da especialização.
 
 ## Alterado
 
 - O recorte da raiz do componente passa a incluir o traço `outside`/`center` e a sombra (em todas as versões do formato).
 - O raster do MCP (`get_marking_image`) passa a respeitar a ponta, o canto e os lados do traço.
+- A fonte padrão do texto sem `font.family` passa a ser a do tema (`font-sans`, e `font-mono` para código) em vez da `Inter` fixa. Bibliotecas cujos textos não declaram `family` mudam de largura de texto (o `hug`, a quebra de linha e o aviso `texto maior que a caixa` seguem a fonte do tema).
 
 ## Corrigido
 

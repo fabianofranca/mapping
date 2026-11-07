@@ -11,7 +11,7 @@
       "enum": ["mapping-spec", "mapeador-spec"]
     },
     "formatVersion": {
-      "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+      "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     },
     "id": {
       "type": "string",
@@ -71,9 +71,43 @@
       "items": {
         "$ref": "#/$defs/migration"
       }
+    },
+    "tokens": {
+      "$ref": "#/$defs/tokens"
     }
   },
   "$defs": {
+    "tokens": {
+      "description": "Tokens de design (formatVersion 15): valores nomeados por modo, lidos por { \"$token\": \"nome\" } nos componentes de formato 4. Cada token é um valor simples (vale em todos os modos) ou um valor por modo, com todos os modos de modes e do mesmo tipo (texto ou número). font-sans e font-mono são embutidos (valem a fonte do hospedeiro) e podem ser redefinidos aqui.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modes", "values"],
+      "properties": {
+        "modes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" }
+        },
+        "values": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[a-z0-9][a-z0-9-]*$" },
+          "additionalProperties": {
+            "oneOf": [
+              { "type": "string", "minLength": 1 },
+              { "type": "number" },
+              {
+                "type": "object",
+                "minProperties": 1,
+                "additionalProperties": {
+                  "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "number" }]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
     "color": {
       "type": "string",
       "pattern": "^#[0-9A-Fa-f]{6}$"
