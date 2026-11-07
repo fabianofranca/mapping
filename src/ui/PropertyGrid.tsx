@@ -33,6 +33,13 @@ interface PropertyProps {
   /** Alvo do link de uma pendência (`data-focus`). */
   readonly focusKey?: string;
   /**
+   * A chave do campo tipado de uma anotação (`data-field`): é por ela que o Ctrl+C acha a
+   * propriedade em foco e copia a referência `…/f/<campo>`.
+   */
+  readonly fieldKey?: string;
+  /** O menu ⋯ do campo, no fim da coluna do rótulo (Copiar referência, Citar, Comentar). */
+  readonly menu?: ComponentChildren;
+  /**
    * Peça no fim da coluna do rótulo (o marcador da revisão, pelo ponto de extensão dos
    * Detalhes). Com ela o rótulo fica numa célula própria: um botão não pode ir dentro do
    * `<label>`.
@@ -83,17 +90,19 @@ interface LabelProps {
   readonly hintName?: string;
   readonly descriptionId: string;
   readonly mark?: ComponentChildren;
+  readonly menu?: ComponentChildren;
+  readonly fieldKey?: string;
   readonly notices?: readonly SpecNotice[];
 }
 
 /** Há algo ao lado do rótulo (explicação, marcador da revisão ou aviso do campo)? */
 function hasLabelExtras(
   hint: string | undefined,
-  mark: ComponentChildren,
+  extras: readonly ComponentChildren[],
   notices: readonly SpecNotice[] | undefined,
 ): boolean {
-  const marked = mark !== undefined && mark !== null && mark !== false;
-  return Boolean(hint) || marked || (notices?.length ?? 0) > 0;
+  const present = extras.some((x) => x !== undefined && x !== null && x !== false);
+  return Boolean(hint) || present || (notices?.length ?? 0) > 0;
 }
 
 /** A célula do rótulo: o texto, o `HelpTip` da explicação e o marcador da revisão. */
@@ -105,6 +114,8 @@ function LabelCell({
   hintName,
   descriptionId,
   mark,
+  menu,
+  fieldKey,
   notices,
 }: LabelProps) {
   const text = (
@@ -128,9 +139,9 @@ function LabelCell({
   ) : (
     <span class="props-label">{text}</span>
   );
-  if (!hasLabelExtras(hint, mark, notices)) return labelCell;
+  if (!hasLabelExtras(hint, [mark, menu], notices)) return labelCell;
   return (
-    <div class="props-label-cell">
+    <div class="props-label-cell" data-field={fieldKey}>
       {labelCell}
       {hint && (
         <HelpTip
@@ -141,6 +152,7 @@ function LabelCell({
       )}
       <NoticeLabelIcon notices={notices} />
       {mark}
+      {menu}
     </div>
   );
 }
@@ -156,6 +168,8 @@ export function Property({
   issue,
   status,
   focusKey,
+  fieldKey,
+  menu,
   mark,
   below,
   notices,
@@ -180,9 +194,11 @@ export function Property({
         hintName={hintName}
         descriptionId={descriptionId}
         mark={mark}
+        menu={menu}
+        fieldKey={fieldKey}
         notices={notices}
       />
-      <div class="props-value" data-focus={focusKey} ref={valueRef}>
+      <div class="props-value" data-focus={focusKey} data-field={fieldKey} ref={valueRef}>
         {children}
         {error && (
           <p class="field-error" role="alert">

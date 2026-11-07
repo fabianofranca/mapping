@@ -14,6 +14,7 @@ import {
   type Project,
   type ProjectContainer,
   type Rect,
+  type ThreadAnchor,
 } from '../../model';
 import {
   resolveSelection,
@@ -381,6 +382,35 @@ export function tapSelection(
   const keyOf = (pick: HitItem) => `${pick.kind}:${pick.id}`;
   const next = nextInChain(chain.map(keyOf), selection ? keyOf(selection) : null, repeat);
   return chain.find((pick) => keyOf(pick) === next) ?? null;
+}
+
+/** A âncora `point` do clique em `c` (canvas): no container mais alto sob ele, ou no canvas. */
+export function pointAnchorAt(
+  project: Project,
+  c: Point,
+): Extract<ThreadAnchor, { kind: 'point' }> {
+  const image = imageAt(project.containers, c);
+  if (!image) return { kind: 'point', containerId: null, x: c.x, y: c.y };
+  const pixel = canvasToImagePixel(image.placement, c);
+  return { kind: 'point', containerId: image.id, x: pixel.x, y: pixel.y };
+}
+
+/**
+ * Onde o clique do botão Comentar abre a conversa (decisão 25): na marcação ou na seta sob `c`
+ * (a mais interna) ou, num lugar vazio do canvas ou de um container, num ponto (`pointAnchorAt`).
+ */
+export function commentAnchorAt(
+  project: Project,
+  visibility: ReadonlyMap<string, MarkingVisibility>,
+  c: Point,
+  arrows?: ArrowHit,
+  titles?: ReadonlyMap<string, Rect>,
+): ThreadAnchor {
+  const hit = hitChain(project, visibility, c, arrows, titles).find(
+    (item) => item.kind !== 'image',
+  );
+  if (hit) return { kind: hit.kind, id: hit.id };
+  return pointAnchorAt(project, c);
 }
 
 export function dragModeOf(intent: Intent): DragMode {

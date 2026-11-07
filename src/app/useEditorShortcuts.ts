@@ -22,6 +22,7 @@ import {
   setViewMode,
   type Selection,
 } from '../store/ui';
+import { cancelComment } from '../store/threadUi';
 import { useEditor } from '../ui/EditorContext';
 import {
   closeToolWindow,
@@ -49,8 +50,10 @@ import {
   canCopyItems,
   canCopyCrop,
   copyCrop,
+  copyKeyBelongsToProperty,
   copyReference,
   copyShortcutTarget,
+  focusedPropertyTarget,
   type CopyTarget,
 } from './itemClipboard';
 
@@ -66,6 +69,21 @@ function focusedWindow(): FocusedWindow | null {
   const name = el?.getAttribute('data-window');
   const id = TOOL_WINDOWS.find((candidate) => candidate === name);
   return el && id ? { id, side: WINDOW_SIDE[id], el } : null;
+}
+
+/**
+ * O teclado é do campo em foco, não do atalho? O Alt+H vale em caixas e opções; o Ctrl+C num
+ * campo de texto de uma propriedade, sem texto selecionado, copia a referência dela (com
+ * seleção, ou fora de uma propriedade, o copiar nativo continua).
+ */
+function fieldOwnsKey(shortcut: Shortcut, target: EventTarget | null): boolean {
+  if (shortcut.kind === 'view-mode') return isTypingField(target);
+  if (!isTextInput(target)) return false;
+  const property =
+    shortcut.kind === 'copy-reference' &&
+    copyKeyBelongsToProperty(target) &&
+    focusedPropertyTarget() !== null;
+  return !property;
 }
 
 /**
@@ -206,7 +224,7 @@ export function useEditorShortcuts(
         }
         case 'copy-crop': {
           const target = copyTarget(shortcut);
-          if (target) void copyCrop(editor, target.id);
+          if (target?.kind === 'm') void copyCrop(editor, target.id);
           return;
         }
         case 'arrange': {
@@ -228,6 +246,8 @@ export function useEditorShortcuts(
         case 'escape':
           // Gesto em andamento: cancela. Senão, com vários itens volta ao primário; por fim limpa.
           if (canvas.current?.cancelInteraction()) return;
+          // O Comentar armado: o Esc desarma e volta à ferramenta de antes.
+          if (cancelComment(ui)) return;
           // No modo visualização o Esc sai do modo (o painel aberto já consumiu o Esc dele).
           if (ui.viewMode.peek()) return setViewMode(ui, false);
           if (!collapseToPrimary(ui)) selectItems(ui, []);
@@ -368,11 +388,7 @@ export function useEditorShortcuts(
       const shortcut = shortcutFor(e, altNumbers);
       if (!shortcut) return;
       if (shortcut.kind === 'nudge') return onNudge(e, shortcut.dx, shortcut.dy);
-      if (
-        shortcut.kind === 'view-mode' ? isTypingField(e.target) : isTextInput(e.target)
-      ) {
-        return;
-      }
+      if (fieldOwnsKey(shortcut, e.target)) return;
       if (!applies(shortcut)) return;
       e.preventDefault();
       if (wrapIgnored(shortcut, e)) return;

@@ -16,6 +16,7 @@ import { Button, HelpTip, IconButton, TextField } from './controls';
 import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
+import { ThreadsSection } from './comments/ThreadsSection';
 import { Section } from './DetailsSection';
 import { Icon } from './icons';
 import { MarkingColorField } from './MarkingColorField';
@@ -33,6 +34,8 @@ interface SelectionPanelProps {
   readonly busy: boolean;
   readonly onReplace: (image: ProjectContainer) => void;
   readonly onDelete: (image: ProjectContainer) => void;
+  /** Abre as Configurações (o aviso de conversa sem identidade leva até lá). */
+  readonly onOpenSettings?: () => void;
 }
 
 /** Detalhes da imagem selecionada (ou o estado vazio, sem seleção). */
@@ -44,6 +47,7 @@ export function SelectionPanel({
   busy,
   onReplace,
   onDelete,
+  onOpenSettings,
 }: SelectionPanelProps) {
   const { actions, review } = useEditor();
   const shown = review.derived.shownProject.value;
@@ -180,6 +184,11 @@ export function SelectionPanel({
           below={ext?.below(image.id, 'markingColor')}
         />
       </Section>
+      <ThreadsSection
+        itemId={image.id}
+        anchor={{ kind: 'container', id: image.id }}
+        onOpenSettings={onOpenSettings}
+      />
       {ext?.others(image.id)}
       {own.length > 0 && (
         <div class="row">

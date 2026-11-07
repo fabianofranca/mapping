@@ -15,6 +15,8 @@ import { listMarkings } from './markingList';
 import { modelToolError } from './modelErrors';
 import { operationSchema } from './operations';
 import { Proposals } from './proposals';
+import { Threads, resolveExtended } from './threads';
+import { registerThreadTools } from './threadTools';
 import { findBySourceResult, findTypesBySourceResult } from './sourceTools';
 import { getComponent, listComponents } from './componentTools';
 import { listPackageFiles, validateLibraryTool } from './library';
@@ -471,12 +473,14 @@ export function registerTools(
     'resolve',
     {
       description:
-        'Descobre o que uma referência designa (marcação, container ou anotação; a letra `i` da referência é o container) e devolve a referência (só a URL), o tipo e os campos de identificação (id, project, name, container ou marking/layer, rect), sem o caminho legível; para o caminho legível use get_marking, get_container ou get_annotation. Use antes de get_* quando não souber o tipo.',
+        'Descobre o que uma referência designa (marcação, container ou anotação; a letra `i` da referência é o container; também camada `…/l/…`, conversa `…/c/…` e, dentro de uma anotação, campo `…/a/<código>/f/<campo>`, par `…/a/<código>/e/<código>` e linha `…/a/<código>/f/<campo>/r/<código>`) e devolve a referência (só a URL), o tipo (`marking`, `arrow`, `container`, `annotation`, `layer`, `thread`, `field`, `entry` ou `row`) e os campos de identificação (id, project, name, container ou marking/layer, rect; no campo, par e linha, `annotation`, `key` e `value`), sem o caminho legível; para o caminho legível use get_marking, get_container ou get_annotation. Use antes de get_* quando não souber o tipo.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
     ({ ref, project }) =>
       respond(async () => {
+        const extended = await resolveExtended(roots, ref, project, resolveItem);
+        if (extended) return extended;
         const item = await resolveItem(roots, ref, project);
         const index = projectIndex(item.refs.project);
         const { refs } = item;
@@ -671,11 +675,15 @@ export function registerTools(
       ),
   );
 
-  const proposals = new Proposals(
-    roots,
-    Date.now,
-    () => server.server.getClientVersion()?.name,
-  );
+  const clientName = () => server.server.getClientVersion()?.name;
+  const threads = new Threads(roots, Date.now, clientName);
+  const proposals = new Proposals(roots, Date.now, clientName, threads);
+  registerThreadTools(server, {
+    threads,
+    respond,
+    projectArg,
+    optionalProjectArg,
+  });
 
   server.registerTool(
     'propose_changes',
@@ -707,6 +715,12 @@ export function registerTools(
           .optional()
           .describe(
             'Proposta que esta substitui (referência `mapping://projeto/p/código`, `p/código` ou id). A anterior passa a `superseded` (decisões e notas continuam guardadas). Se a revisão dela não tinha terminado, a resposta traz um aviso.',
+          ),
+        thread: z
+          .string()
+          .optional()
+          .describe(
+            'Conversa à qual ligar a proposta (referência `mapping://projeto/c/código` de list_threads ou open_thread). A tool confere a conversa ANTES de gravar (inexistente ou resolvida: recusa e não grava nada) e, gravada a proposta, acrescenta à conversa uma mensagem sua com a proposta, que a app mostra como cartão com o botão Revisar. O formato da proposta não muda.',
           ),
         operations: operationsArg,
       },

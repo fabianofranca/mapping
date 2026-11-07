@@ -1,0 +1,70 @@
+import type { Thread, ThreadAnchor, ThreadAuthor, ThreadMessage } from '../../src/model';
+
+export const T0 = '2026-11-06T10:00:00.000Z';
+export const T1 = '2026-11-06T11:00:00.000Z';
+export const T2 = '2026-11-06T12:00:00.000Z';
+export const T3 = '2026-11-06T13:00:00.000Z';
+
+export const HUMAN: ThreadAuthor = {
+  kind: 'human',
+  name: 'Marina Alves',
+  email: 'marina@exemplo.com',
+};
+export const AGENT: ThreadAuthor = { kind: 'agent', name: 'Claude Code', email: null };
+
+export function message(
+  id: string,
+  at: string,
+  author: ThreadAuthor = HUMAN,
+  text = `texto ${id}`,
+): ThreadMessage {
+  return { id, author, at, text, proposal: null };
+}
+
+/** As nove formas de âncora da decisão 4. */
+export const ANCHORS: readonly ThreadAnchor[] = [
+  { kind: 'marking', id: 'M1' },
+  { kind: 'container', id: 'I1' },
+  { kind: 'annotation', id: 'A1' },
+  { kind: 'arrow', id: 'R1' },
+  { kind: 'layer', id: 'L1' },
+  { kind: 'field', annotationId: 'A1', key: 'variante' },
+  { kind: 'entry', annotationId: 'A1', entryId: 'E1' },
+  { kind: 'row', annotationId: 'A1', key: 'tabela', rowId: 'W1' },
+  { kind: 'point', containerId: 'I1', x: 10.5, y: -4 },
+  { kind: 'point', containerId: null, x: 0, y: 20 },
+];
+
+/** Conversa aberta com três mensagens (pessoa, agente, pessoa). */
+export function sampleThread(overrides: Partial<Thread> = {}): Thread {
+  return {
+    format: 'mapping-thread',
+    formatVersion: 1,
+    id: 'c1b2',
+    anchor: { kind: 'marking', id: 'M1' },
+    createdAt: T0,
+    revision: 3,
+    resolved: null,
+    messages: [
+      message('m1', T0),
+      message('m2', T1, AGENT, 'resposta'),
+      message('m3', T2),
+    ],
+    ...overrides,
+  };
+}
+
+/** Cópia profunda congelada: as operações não podem alterar a entrada. */
+export function deepFreeze<T>(value: T): T {
+  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const v of Object.values(value)) deepFreeze(v);
+  }
+  return value;
+}
+
+/** JSON "cru" (mutável) de uma conversa de exemplo, para quebrar um campo de cada vez. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function rawThread(): Record<string, any> {
+  return JSON.parse(JSON.stringify(sampleThread())) as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+}

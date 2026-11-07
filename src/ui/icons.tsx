@@ -316,6 +316,10 @@ const SHAPES = {
       'm10 2.5-1.8 2 1.8 2',
     ],
   },
+  // Conversa (etapa Comentários): balão com duas linhas de texto.
+  chat: { d: ['M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z', 'M5 6h6', 'M5 8h4'] },
+  // Comentar (colocar uma conversa): o balão com um mais.
+  chatAdd: { d: ['M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z', 'M8 5v4', 'M6 7h4'] },
   moved: { d: MOVED_PATHS },
   changed: { d: CHANGED_PATHS },
   replaced: { d: REPLACED_PATHS },

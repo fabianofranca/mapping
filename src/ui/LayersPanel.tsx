@@ -14,10 +14,13 @@ import {
   setMarkingDisplay,
 } from '../store/settings';
 import { showAllLayers, toggleLayerVisible } from '../store/ui';
+import { CiteItem, CopyReferenceItem } from './CiteMenuItems';
 import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import { Popover } from './Popover';
+import { openToolWindow } from './toolWindowLayout';
+import { startComposing } from '../store/threadUi';
 import { Button, IconButton, Select, Tooltip } from './controls';
 
 // Conteúdo das camadas: a lista (visibilidade, camada ativa, nome, cor, ordem e
@@ -106,7 +109,8 @@ interface LayerRowProps extends LayersProps {
 }
 
 function LayerRow({ project, readOnly, layer, index, hidden, onDelete }: LayerRowProps) {
-  const { ui, actions } = useEditor();
+  const { ui, actions, store } = useEditor();
+  const canComment = !readOnly && !store.reviewing.value;
   const last = project.layers.length - 1;
   const lockedBySpec = layer.spec !== null;
   const onlyLayer = project.layers.length === 1;
@@ -192,6 +196,19 @@ function LayerRow({ project, readOnly, layer, index, hidden, onDelete }: LayerRo
             >
               {t('layer.moveDown')}
             </Button>
+            <Button
+              role="menuitem"
+              disabled={!canComment}
+              onClick={() => {
+                close();
+                startComposing(ui, project, { kind: 'layer', id: layer.id });
+                openToolWindow('details');
+              }}
+            >
+              {t('comments.layer')}
+            </Button>
+            <CiteItem target={{ kind: 'layer', id: layer.id }} close={close} />
+            <CopyReferenceItem target={{ kind: 'layer', id: layer.id }} close={close} />
             <Button
               role="menuitem"
               variant="danger"

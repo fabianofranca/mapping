@@ -993,12 +993,14 @@ describe('recursos e instruções', () => {
     const { resources } = await mcp.client.listResources();
     expect(resources.map((r) => r.uri).sort()).toEqual([
       'mapping-docs://AGENT-GUIDE.md',
+      'mapping-docs://COMMENT-FORMAT.md',
       'mapping-docs://COMPONENT-FORMAT.md',
       'mapping-docs://FORMAT.md',
       'mapping-docs://SPEC-FORMAT.md',
     ]);
     for (const file of [
       'AGENT-GUIDE.md',
+      'COMMENT-FORMAT.md',
       'COMPONENT-FORMAT.md',
       'FORMAT.md',
       'SPEC-FORMAT.md',
@@ -1031,25 +1033,32 @@ describe('recursos e instruções', () => {
       'get_proposal',
       'get_proposal_review',
       'get_specialization',
+      'get_thread',
       'list_components',
       'list_markings',
       'list_projects',
       'list_proposals',
+      'list_threads',
+      'open_thread',
       'plan_changes',
       'plan_library_update',
+      'post_message',
       'propose_changes',
       'resolve',
       'revise_proposal',
       'validate_library',
       'validate_specialization',
+      'wait_for_comment',
       'withdraw_proposal',
     ]);
     const readOnly = tools.filter((t) => t.annotations?.readOnlyHint).map((t) => t.name);
     expect(readOnly).not.toContain('create_project');
-    // As únicas tools que gravam algo: o projeto vazio e as propostas (nunca o mapping.json).
+    // As únicas tools que gravam algo: o projeto vazio, as propostas e as conversas (nunca o mapping.json).
     const writers = tools.filter((t) => !t.annotations?.readOnlyHint).map((t) => t.name);
     expect(writers.sort()).toEqual([
       'create_project',
+      'open_thread',
+      'post_message',
       'propose_changes',
       'revise_proposal',
       'withdraw_proposal',

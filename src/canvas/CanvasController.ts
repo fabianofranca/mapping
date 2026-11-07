@@ -18,6 +18,7 @@ import type { ProjectActions } from '../store/project';
 import type { ReviewState } from '../store/review';
 import { locale, showArrows } from '../store/settings';
 import { textMeasurer } from '../store/textMeasure';
+import { composingAnchor, selectedThreadId } from '../store/threadUi';
 import {
   itemsOf,
   resolveSelection,
@@ -55,7 +56,9 @@ import { ArrowRenderer } from './renderers/arrows';
 import { ImageRenderer } from './renderers/images';
 import { MarkingRenderer } from './renderers/markings';
 import { OverlayRenderer } from './renderers/overlay';
+import { CommentPinRenderer } from './renderers/commentPins';
 import { ReviewRenderer } from './renderers/review';
+import { pinHit, pinPlaces, pointCanvas, type PinPlace } from './commentPins';
 import { proposedDisplay, reviewMarks, type ReviewCanvas } from './reviewMarks';
 import { readCanvasTokens, watchTheme, type CanvasTokens } from './theme';
 import { clampZoom, type Point } from './viewport';
@@ -113,7 +116,11 @@ interface Overlays {
   readonly review: Frame['review'];
   readonly arrowDraft: Frame['arrowDraft'];
   readonly marquee: Frame['marquee'];
+  readonly pins: Frame['pins'];
+  readonly pinSelected: Frame['pinSelected'];
+  readonly draftPin: Frame['draftPin'];
 }
+const NO_PINS: readonly PinPlace[] = [];
 const NO_OVERLAYS: Overlays = {
   draft: null,
   hoverLock: null,
@@ -122,6 +129,9 @@ const NO_OVERLAYS: Overlays = {
   review: null,
   arrowDraft: null,
   marquee: null,
+  pins: NO_PINS,
+  pinSelected: null,
+  draftPin: null,
 };
 
 /** O que move o rótulo de nome das marcações (a etiqueta da selecionada desvia do do pai). */
@@ -167,6 +177,7 @@ export class CanvasController {
   private readonly arrows: ArrowRenderer;
   private readonly overlay: OverlayRenderer;
   private readonly reviewLayer: ReviewRenderer;
+  private readonly pinLayer: CommentPinRenderer;
 
   /**
    * Projeto desenhado, derivado do projeto à vista (`review.derived.shownProject`, fase
@@ -277,6 +288,28 @@ export class CanvasController {
     );
   });
 
+  /**
+   * Os pinos das conversas (decisão 24): os grupos do estado derivado postos no projeto desenhado.
+   * Nenhum na revisão (a conversa fica só para leitura, decisão 26); o viewport não entra aqui.
+   */
+  private readonly pinPlaces = computed((): readonly PinPlace[] => {
+    if (this.review?.proposalId.value != null) return NO_PINS;
+    const project = this.drawnProject.value;
+    const groups = this.derived.threads.pins.value;
+    if (!project || groups.length === 0) return NO_PINS;
+    return pinPlaces(project, groups, this.derived.canvasVisibility.value);
+  });
+
+  /** O pino tracejado do rascunho de uma conversa nova num ponto. */
+  private readonly draftPin = computed((): Point | null => {
+    const anchor = composingAnchor(this.ui);
+    const project = this.drawnProject.value;
+    if (anchor?.kind !== 'point' || !project || this.review?.proposalId.value != null) {
+      return null;
+    }
+    return pointCanvas(project, anchor.containerId, anchor.x, anchor.y);
+  });
+
   /** O estado de interação do quadro; vazio no modo visualização (só para ver). */
   private readonly overlays = computed((): Overlays =>
     this.viewFrame.value !== null
@@ -289,6 +322,9 @@ export class CanvasController {
           review: this.reviewCanvas.value,
           arrowDraft: this.state.arrowDraft.value,
           marquee: this.state.marquee.value,
+          pins: this.pinPlaces.value,
+          pinSelected: selectedThreadId(this.ui),
+          draftPin: this.draftPin.value,
         },
   );
 
@@ -328,6 +364,9 @@ export class CanvasController {
       arrowDraft: over.arrowDraft,
       marquee: over.marquee,
       view,
+      pins: over.pins,
+      pinSelected: over.pinSelected,
+      draftPin: over.draftPin,
     };
   });
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
@@ -392,6 +431,9 @@ export class CanvasController {
     overlayLayer.add(reviewGroup);
     reviewGroup.moveToBottom();
     this.reviewLayer = new ReviewRenderer(reviewGroup);
+    const pinGroup = new Konva.Group({ listening: false });
+    overlayLayer.add(pinGroup);
+    this.pinLayer = new CommentPinRenderer(pinGroup);
 
     this.view = new ViewportController(container, () => this.drawnProject.peek());
     const space = watchSpaceKey(() => this.pointer.updateCursor(null));
@@ -406,6 +448,7 @@ export class CanvasController {
       spaceDown: space.down,
       project: () => this.drawnProject.peek(),
       reviewing: () => this.review?.proposalId.peek() != null,
+      pinAt: (c) => pinHit(this.frame.peek().pins, c, this.view.scale),
       containerTitles: () => this.images.titleRects(),
     });
 
@@ -711,6 +754,7 @@ export class CanvasController {
     }
     this.markings.render(frame, this.placements);
     this.reviewLayer.render(frame, this.placements);
+    this.pinLayer.render(frame);
     // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela;
     // e desvia do rótulo do pai, que muda com o zoom semântico e as camadas visíveis.
     const viewMoved =
@@ -728,7 +772,8 @@ export class CanvasController {
     const canvasMarkings = this.countCanvasMarkings(frame.project);
     const componentImages =
       this.componentLayer.imageCount + this.floatingLayer.imageCount;
-    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${componentImages}`;
+    const pins = this.pinLayer.size;
+    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${componentImages}:${pins}`;
     if (drawn !== this.published) {
       this.published = drawn;
       const host = this.stage.container();
@@ -738,6 +783,7 @@ export class CanvasController {
       host.dataset.canvasMarkings = String(canvasMarkings);
       host.dataset.arrows = String(this.drawnArrows);
       host.dataset.componentImages = String(componentImages);
+      host.dataset.pins = String(pins);
     }
   }
 

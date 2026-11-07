@@ -33,7 +33,7 @@ describe('quem grava no disco (mcp/**)', () => {
     expect(sources.map((s) => s.file)).toContain('image/codecs.ts');
   });
 
-  it('só paths.ts, createProject.ts e proposalStore.ts chamam funções que gravam, e só estas', () => {
+  it('só paths.ts, createProject.ts, proposalStore.ts e threadStore.ts chamam funções que gravam, e só estas', () => {
     const calls: Record<string, string[]> = {};
     for (const { file, code } of sources) {
       const names = [...new Set([...code.matchAll(WRITER_CALL)].map((m) => m[1]!))];
@@ -43,14 +43,15 @@ describe('quem grava no disco (mcp/**)', () => {
       'createProject.ts': ['mkdir'],
       'paths.ts': ['rename', 'rm', 'writeFile'],
       'proposalStore.ts': ['link', 'mkdir', 'rm', 'writeFile'],
+      'threadStore.ts': ['mkdir'],
     });
   });
 
-  it('writeFileAtomic só em createProject.ts e proposalStore.ts; sobre o mapping.json, só no create_project', () => {
+  it('writeFileAtomic só em createProject.ts, proposalStore.ts e threadStore.ts; sobre o mapping.json, só no create_project', () => {
     const callers = sources
       .filter(({ file, code }) => file !== 'paths.ts' && /writeFileAtomic\(/.test(code))
       .map((s) => s.file);
-    expect(callers).toEqual(['createProject.ts', 'proposalStore.ts']);
+    expect(callers).toEqual(['createProject.ts', 'proposalStore.ts', 'threadStore.ts']);
     const onMapping = sources.flatMap(({ file, code }) =>
       [...code.matchAll(/writeFileAtomic\(([^;]*?)\)\s*;/g)]
         .filter((m) => /MAPPING_FILE|mapping\.json/.test(m[1]!))

@@ -13,6 +13,7 @@ import { Icon } from '../icons';
 import { DecisionMark } from './DecisionMark';
 import { Flag, type FlagTone } from './Flag';
 import { formatFullDate, formatWhen, joinParts } from './format';
+import { ProposalThreadLink } from './ProposalThreadLink';
 
 // Linha da lista de propostas (HANDOFF-PROPOSALS 5.1 e componente ProposalRow): estado do
 // conjunto, título com o status, contexto (origem · autor · data), contagens e a linha
@@ -183,6 +184,7 @@ export function ProposalRow({
           <div class="proposal-row-meta" title={formatFullDate(p.createdAt, lang)}>
             {meta}
           </div>
+          <ProposalThreadLink proposalId={p.id} />
         </div>
       </div>
       <div class="proposal-row-counts">

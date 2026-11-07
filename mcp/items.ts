@@ -4,12 +4,15 @@ import {
   formatRef,
   markingTypeName,
   matchShortCode,
+  parseAnyRef,
   parseRef,
   projectIndex,
   refImageLabel,
+  resolveCitation,
   shortCode,
   type ItemKind,
   type Project,
+  type SubRef,
 } from '../src/model';
 import { ToolError } from './errors';
 import {
@@ -137,7 +140,10 @@ export interface ResolvedItem {
   readonly loaded: LoadedProject;
   readonly refs: Refs;
   readonly kind: ItemKind;
+  /** Com uma sub-referência (campo, par ou linha), o id é o da anotação que a contém. */
   readonly id: string;
+  /** A parte da anotação que a referência designa (`/f/`, `/e/` ou `/r/`); ausente na referência de item. */
+  readonly sub?: SubRef;
 }
 
 /** Dica do `invalid-ref`: o formato estrito e o que fazer com o antigo. */
@@ -151,9 +157,90 @@ const ACCEPTED_FORMATS = [
 ];
 
 /**
+ * Os projetos em que procurar: o da referência, o do argumento `project` (iguais, se os dois
+ * vierem) ou todos os das raízes. Projetos diferentes na referência e no argumento: `project-mismatch`.
+ */
+export async function candidateLocations(
+  roots: Roots,
+  refProject: string | null,
+  projectArg: string | undefined,
+): Promise<ProjectLocation[]> {
+  if (refProject !== null && projectArg !== undefined) {
+    const [fromRef, fromArg] = [
+      await findProject(roots, refProject),
+      await findProject(roots, projectArg),
+    ];
+    if (fromRef.dir !== fromArg.dir) {
+      throw new ToolError(
+        'project-mismatch',
+        `a referência é do projeto "${fromRef.name}", mas \`project\` indica "${fromArg.name}"`,
+      );
+    }
+    return [fromRef];
+  }
+  const named = refProject ?? projectArg;
+  if (named !== undefined) return [await findProject(roots, named)];
+  const all = await discoverProjects(roots);
+  if (all.length === 0) {
+    throw new ToolError('project-not-found', 'nenhum projeto nas raízes configuradas');
+  }
+  return all;
+}
+
+const WHAT_IS: Record<string, string> = {
+  l: 'uma camada',
+  c: 'uma conversa',
+  part: 'uma parte de anotação (campo, par ou linha)',
+};
+
+/**
+ * A gramática completa (decisão 27): campo, par e linha valem como a anotação que os contém
+ * (com a parte em `sub`); camada (`l`) e conversa (`c`) não são itens, e as tools de item as
+ * recusam com `wrong-kind`.
+ */
+function readExtended(
+  refText: string,
+  expected: ItemKind | undefined,
+): { project: string | null; code: string; sub: SubRef | null } | null {
+  const any = parseAnyRef(refText);
+  if (!any) return null;
+  const { ref } = any;
+  if (ref.type === 'item') {
+    if (ref.kind !== 'l' && ref.kind !== 'c') return null;
+    throw new ToolError(
+      'wrong-kind',
+      `a referência é de ${WHAT_IS[ref.kind]}, não de ${expected ? KIND_WITH_ARTICLE[expected] : 'um item'}`,
+      { kind: ref.kind },
+    );
+  }
+  if (expected && expected !== 'a') {
+    throw new ToolError(
+      'wrong-kind',
+      `a referência é de ${WHAT_IS.part}, não de ${KIND_WITH_ARTICLE[expected]}`,
+      { kind: 'a' },
+    );
+  }
+  return { project: any.project, code: ref.annotation, sub: ref };
+}
+
+/** A parte (campo, par ou linha) tem de existir na anotação; senão `not-found`. */
+function checkSub(project: Project, sub: SubRef, refText: string): void {
+  const resolution = resolveCitation({ project, threads: [], proposals: [] }, sub);
+  if (resolution.found) return;
+  throw new ToolError(
+    resolution.reason === 'ambiguous' ? 'ambiguous-ref' : 'not-found',
+    resolution.reason === 'ambiguous'
+      ? 'o código curto serve a mais de um par ou linha: use um código mais longo'
+      : `a anotação não tem o campo, par ou linha de ${refText}`,
+    { ref: refText },
+  );
+}
+
+/**
  * Interpreta o que o agente colou (`ref`) e acha o item. Aceita a referência completa, só
  * `m/código` com `project`, ou o id completo. Sem projeto na referência nem em `project`, procura
  * em todos os das raízes. Ambiguidade (código curto, projetos homônimos) devolve as candidatas.
+ * Campo, par e linha (`…/a/<código>/f/<campo>`, `/e/`, `/r/`) valem como a anotação que os contém.
  */
 export async function resolveItem(
   roots: Roots,
@@ -161,7 +248,11 @@ export async function resolveItem(
   projectArg?: string,
   expected?: ItemKind,
 ): Promise<ResolvedItem> {
-  const parsed = parseRef(refText);
+  const extended = readExtended(refText, expected);
+  const parsed = extended
+    ? { project: extended.project, kind: 'a' as const, code: extended.code }
+    : parseRef(refText);
+  const sub = extended?.sub ?? null;
   if (!parsed) {
     throw new ToolError('invalid-ref', `referência inválida: ${refText}`, {
       accepted: ACCEPTED_FORMATS,
@@ -177,28 +268,8 @@ export async function resolveItem(
   }
   const kind = parsed.kind ?? expected ?? null;
 
-  let locations: ProjectLocation[];
   const named = parsed.project ?? projectArg;
-  if (parsed.project !== null && projectArg !== undefined) {
-    const [fromRef, fromArg] = [
-      await findProject(roots, parsed.project),
-      await findProject(roots, projectArg),
-    ];
-    if (fromRef.dir !== fromArg.dir) {
-      throw new ToolError(
-        'project-mismatch',
-        `a referência é do projeto "${fromRef.name}", mas \`project\` indica "${fromArg.name}"`,
-      );
-    }
-    locations = [fromRef];
-  } else if (named !== undefined) {
-    locations = [await findProject(roots, named)];
-  } else {
-    locations = await discoverProjects(roots);
-    if (locations.length === 0) {
-      throw new ToolError('project-not-found', 'nenhum projeto nas raízes configuradas');
-    }
-  }
+  const locations = await candidateLocations(roots, parsed.project, projectArg);
 
   const searchingAll = named === undefined;
   const found: { loaded: LoadedProject; kind: ItemKind; id: string }[] = [];
@@ -219,7 +290,9 @@ export async function resolveItem(
 
   if (found.length === 1) {
     const [only] = found;
-    return { ...only!, refs: new Refs(only!.loaded) };
+    const refs = new Refs(only!.loaded);
+    if (sub) checkSub(refs.project, sub, refText);
+    return { ...only!, refs, ...(sub ? { sub } : {}) };
   }
   if (found.length === 0) {
     throw new ToolError('not-found', `nenhum item corresponde a ${refText}`, {

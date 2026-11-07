@@ -1,14 +1,22 @@
 import { useLayoutEffect, useRef } from 'preact/hooks';
 import { captureFocusOrigin, restoreFocusAfterRender, type FocusOrigin } from './focus';
 import { t } from '../i18n';
-import { canCopyItems, type CopyTarget } from '../app/itemClipboard';
+import { canCopyItems, type ItemCopyTarget } from '../app/itemClipboard';
 import { wrapAvailable } from '../app/wrapSelection';
-import { ARROW_STYLES, canEditArrow, projectIndex, type ArrowStyle } from '../model';
+import {
+  ARROW_STYLES,
+  canEditArrow,
+  projectIndex,
+  type ArrowStyle,
+  type ThreadAnchor,
+} from '../model';
 import { arrangeMarking, canArrangeMarking } from './arrange';
+import { CiteItem } from './CiteMenuItems';
 import { CopyMenuItems } from './CopyActions';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
+import { placeComment } from '../store/threadUi';
 
 /** Folga mínima entre o menu e a borda da janela do navegador. */
 const EDGE = 8;
@@ -58,6 +66,7 @@ function ArrowMenuItems({
           {t(ARROW_STYLE_LABELS[style])}
         </Button>
       ))}
+      <CiteItem target={{ kind: 'arrow', id: arrowId }} close={close} />
       <Button
         role="menuitem"
         variant="danger"
@@ -69,6 +78,47 @@ function ArrowMenuItems({
       >
         {t('arrow.canvasMenu.delete')}
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Comentar (item sob o cursor) e Comentar aqui (lugar vazio de um container ou do canvas), decisão
+ * 25: abrem o rascunho da conversa; nada é gravado antes do Enviar. Somente leitura: desabilitados.
+ */
+function CommentMenuItems({
+  comment,
+  here,
+  close,
+}: {
+  readonly comment: ThreadAnchor | null;
+  readonly here: ThreadAnchor | null;
+  readonly close: () => void;
+}) {
+  const { ui, store, review } = useEditor();
+  const project = review.derived.shownProject.value;
+  if (!project) return null;
+  const items: readonly (readonly [ThreadAnchor | null, string])[] = [
+    [comment, t('comments.comment')],
+    [here, t('comments.here')],
+  ];
+  return (
+    <div class="menu-items">
+      {items.map(([anchor, label]) =>
+        anchor === null ? null : (
+          <Button
+            key={label}
+            role="menuitem"
+            disabled={store.locked.value}
+            onClick={() => {
+              close();
+              placeComment(ui, project, anchor);
+            }}
+          >
+            {label}
+          </Button>
+        ),
+      )}
     </div>
   );
 }
@@ -143,7 +193,7 @@ export function CanvasContextMenu() {
   const copyable = canCopyItems(editor);
   const target = menu?.target;
   const arrowId = target?.kind === 'arrow' ? target.id : null;
-  const copyTarget: CopyTarget | null =
+  const copyTarget: ItemCopyTarget | null =
     target && target.kind !== 'arrow' ? { kind: target.kind, id: target.id } : null;
   const arrangeId =
     target?.kind === 'm' &&
@@ -155,9 +205,21 @@ export function CanvasContextMenu() {
   // Marcação e imagem (container) sempre têm o Envolver, com ou sem pasta (`WrapMenuItem` some
   // sozinho quando ele não existe: somente leitura, revisão).
   const wrappable = copyTarget !== null && wrapAvailable(editor);
+  const comment = menu?.comment ?? null;
+  const here = menu?.here ?? null;
+  const commentable = comment !== null || here !== null;
   if (
     !menu ||
-    !(copyable || arrangeId !== null || selectable || arrowId !== null || wrappable)
+    !(
+      // Citar na conversa vale para todo item, com ou sem pasta.
+      copyTarget !== null ||
+      copyable ||
+      arrangeId !== null ||
+      selectable ||
+      arrowId !== null ||
+      wrappable ||
+      commentable
+    )
   ) {
     return null;
   }
@@ -169,10 +231,16 @@ export function CanvasContextMenu() {
       ref={panel}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {copyTarget && (copyable || selectable || wrappable) && (
-        <CopyMenuItems target={copyTarget} close={close} copyable={copyable} />
+      {copyTarget && (
+        <CopyMenuItems
+          target={copyTarget}
+          close={close}
+          copyable={copyable}
+          commentable={false}
+        />
       )}
       {arrowId !== null && <ArrowMenuItems arrowId={arrowId} close={close} />}
+      {commentable && <CommentMenuItems comment={comment} here={here} close={close} />}
       {arrangeId !== null && (
         <div class="menu-items">
           <Button

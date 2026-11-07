@@ -1,6 +1,8 @@
-import type { ComponentChild, VNode } from 'preact';
+import { Fragment, type ComponentChild, type VNode } from 'preact';
 import { useId, useMemo, useRef } from 'preact/hooks';
 import {
+  inlinesToText,
+  isLibraryLink,
   parseMarkdown,
   type MarkdownBlock,
   type MarkdownInline,
@@ -11,6 +13,13 @@ export interface MarkdownProps {
   readonly text: string;
   /** Chamado ao clicar num link `mapping://…`; sem ele, o link vira só texto. */
   readonly onLink?: (href: string) => void;
+  /**
+   * Desenha a citação `[rótulo](mapping://projeto/letra/código…)` (não os links da biblioteca),
+   * antes de `onLink`: o chip vivo das conversas. `null` deixa valer o link de sempre.
+   */
+  readonly renderMapping?: (href: string, label: string) => ComponentChild | null;
+  /** Quebra simples de linha vira `<br/>` (mensagens das conversas); padrão: vira espaço. */
+  readonly lineBreaks?: boolean;
 }
 
 interface Ctx {
@@ -18,6 +27,7 @@ interface Ctx {
   readonly root: { readonly current: HTMLElement | null };
   readonly ids: ReadonlySet<string>;
   readonly onLink?: (href: string) => void;
+  readonly renderMapping?: (href: string, label: string) => ComponentChild | null;
 }
 
 function collectIds(blocks: readonly MarkdownBlock[]): Set<string> {
@@ -36,6 +46,56 @@ function goToAnchor(root: HTMLElement | null, prefix: string, id: string): void 
   if (typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'start' });
 }
 
+function renderLink(
+  n: Extract<MarkdownInline, { type: 'link' }>,
+  i: number,
+  ctx: Ctx,
+): ComponentChild {
+  const children = renderInlines(n.children, ctx);
+  if (n.kind === 'external') {
+    return (
+      <a key={i} href={n.href} target="_blank" rel="noopener noreferrer">
+        {children}
+      </a>
+    );
+  }
+  if (n.kind === 'mapping') {
+    const { onLink, renderMapping } = ctx;
+    const custom =
+      renderMapping && !isLibraryLink(n.href)
+        ? renderMapping(n.href, inlinesToText(n.children))
+        : null;
+    if (custom !== null) return <Fragment key={i}>{custom}</Fragment>;
+    if (!onLink) return children;
+    return (
+      <a
+        key={i}
+        href="#"
+        onClick={(e) => {
+          e.preventDefault();
+          onLink(n.href);
+        }}
+      >
+        {children}
+      </a>
+    );
+  }
+  const id = n.href.slice(1);
+  if (!ctx.ids.has(id)) return children;
+  return (
+    <a
+      key={i}
+      href={`#${ctx.prefix}${id}`}
+      onClick={(e) => {
+        e.preventDefault();
+        goToAnchor(ctx.root.current, ctx.prefix, id);
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
 function renderInlines(nodes: readonly MarkdownInline[], ctx: Ctx): ComponentChild[] {
   return nodes.map((n, i): ComponentChild => {
     switch (n.type) {
@@ -47,46 +107,10 @@ function renderInlines(nodes: readonly MarkdownInline[], ctx: Ctx): ComponentChi
         return <strong key={i}>{renderInlines(n.children, ctx)}</strong>;
       case 'em':
         return <em key={i}>{renderInlines(n.children, ctx)}</em>;
-      case 'link': {
-        const children = renderInlines(n.children, ctx);
-        if (n.kind === 'external') {
-          return (
-            <a key={i} href={n.href} target="_blank" rel="noopener noreferrer">
-              {children}
-            </a>
-          );
-        }
-        if (n.kind === 'mapping') {
-          const { onLink } = ctx;
-          if (!onLink) return children;
-          return (
-            <a
-              key={i}
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                onLink(n.href);
-              }}
-            >
-              {children}
-            </a>
-          );
-        }
-        const id = n.href.slice(1);
-        if (!ctx.ids.has(id)) return children;
-        return (
-          <a
-            key={i}
-            href={`#${ctx.prefix}${id}`}
-            onClick={(e) => {
-              e.preventDefault();
-              goToAnchor(ctx.root.current, ctx.prefix, id);
-            }}
-          >
-            {children}
-          </a>
-        );
-      }
+      case 'break':
+        return <br key={i} />;
+      case 'link':
+        return renderLink(n, i, ctx);
     }
   });
 }
@@ -159,12 +183,20 @@ function renderBlock(b: MarkdownBlock, key: number, ctx: Ctx): VNode {
 }
 
 /** Documento em markdown (subconjunto): nunca HTML cru nem imagens; links só `mapping://`, âncoras e `http(s)://` absoluto (nova aba). */
-export function Markdown({ text, onLink }: MarkdownProps): VNode {
+export function Markdown({
+  text,
+  onLink,
+  renderMapping,
+  lineBreaks,
+}: MarkdownProps): VNode {
   const uid = useId();
-  const blocks = useMemo(() => parseMarkdown(text), [text]);
+  const blocks = useMemo(
+    () => parseMarkdown(text, lineBreaks === true ? { lineBreaks: true } : undefined),
+    [text, lineBreaks],
+  );
   const ids = useMemo(() => collectIds(blocks), [blocks]);
   const root = useRef<HTMLDivElement>(null);
-  const ctx: Ctx = { prefix: `md-${uid}-`, root, ids, onLink };
+  const ctx: Ctx = { prefix: `md-${uid}-`, root, ids, onLink, renderMapping };
   return (
     <div class="markdown" ref={root}>
       {blocks.map((b, i) => renderBlock(b, i, ctx))}

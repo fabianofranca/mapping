@@ -14,7 +14,8 @@ import {
   type SpecSimpleColumn,
   type TableRow,
 } from '../model';
-import { ActionMenu } from './ActionMenu';
+import { ActionMenu, type ActionMenuItem } from './ActionMenu';
+import { useCiteMenuItems } from './CiteMenuItems';
 import { Button, HelpTip } from './controls';
 import { useDetailsExtension } from './DetailsExtension';
 import { Dialog } from './Dialog';
@@ -46,6 +47,7 @@ export function TableField({
   ...ctx
 }: FieldContext & { readonly field: TableFieldDef }) {
   const { actions } = useEditor();
+  const citeItems = useCiteMenuItems();
   const { project, annotation, readOnly } = ctx;
   const rows = tableRows(annotation.values?.[field.key]);
   const backlinks = getBacklinks(project, annotation.id);
@@ -88,6 +90,15 @@ export function TableField({
         );
       }}
       annotationId={annotation.id}
+      rowMenuItems={(row) => {
+        const target = {
+          kind: 'row',
+          annotationId: annotation.id,
+          key: field.key,
+          rowId: row._id,
+        } as const;
+        return citeItems(target, target);
+      }}
       linkedCell={(row, column) => {
         const linkedKey = column.type === 'string' ? column.linkedRef : undefined;
         if (linkedKey === undefined) return undefined;
@@ -172,6 +183,11 @@ export interface TableEditorProps {
     row: TableRow,
     column: SpecSimpleColumn,
   ) => SimpleEditorProps['linked'];
+  /**
+   * Itens a mais no menu ⋯ da linha (Copiar referência, Citar, Comentar), só nos Detalhes. Com
+   * eles o menu abre também no somente leitura (mover e remover ficam desabilitados).
+   */
+  readonly rowMenuItems?: (row: TableRow) => readonly ActionMenuItem[];
 }
 
 /**
@@ -192,6 +208,7 @@ export function TableEditor({
   annotationId,
   renderRefCell,
   linkedCell,
+  rowMenuItems,
 }: TableEditorProps) {
   const inherited = useDetailsExtension();
   const ext = annotationId !== undefined ? inherited : null;
@@ -259,6 +276,7 @@ export function TableEditor({
     <div
       class="props-wide table-field"
       data-focus={field.key}
+      data-field={annotationId === undefined ? undefined : field.key}
       onKeyDown={(e) => {
         if (!isNewRowKey(e)) return;
         e.preventDefault();
@@ -455,23 +473,25 @@ export function TableEditor({
                         if (el) menuButtons.current.set(row._id, el);
                         else menuButtons.current.delete(row._id);
                       }}
-                      disabled={readOnly}
+                      disabled={readOnly && rowMenuItems === undefined}
                       items={[
                         {
                           label: t('typed.moveRowUp'),
-                          disabled: index === 0,
+                          disabled: readOnly || index === 0,
                           onSelect: () => move(index, index - 1, true),
                         },
                         {
                           label: t('typed.moveRowDown'),
-                          disabled: index === rows.length - 1,
+                          disabled: readOnly || index === rows.length - 1,
                           onSelect: () => move(index, index + 1, true),
                         },
                         {
                           label: t('typed.removeRow'),
                           danger: true,
+                          disabled: readOnly,
                           onSelect: () => remove(row),
                         },
+                        ...(rowMenuItems?.(row) ?? []),
                       ]}
                     />
                   )}

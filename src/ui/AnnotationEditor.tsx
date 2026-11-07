@@ -18,7 +18,7 @@ import { isSectionCollapsed, toggleSection, type AnnotationLocation } from '../s
 import { IssueBadge } from './AnnotationSummary';
 import { CodeDefinitions } from './CodeDefinitions';
 import { CommitInput } from './CommitInput';
-import { CopyButtons } from './CopyActions';
+import { CopyButtons, ItemMenu } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { useSplitHeader } from './useSplitHeader';
 import { Dialog } from './Dialog';
@@ -282,6 +282,7 @@ export function AnnotationEditor({
         {ext?.decision(annotation.id)}
         <span class="annotation-header-actions">
           <CopyButtons target={{ kind: 'a', id: annotation.id }} />
+          <ItemMenu target={{ kind: 'a', id: annotation.id }} name={name(annotation)} />
           <IconButton
             icon="trash"
             label={t('annotation.delete')}

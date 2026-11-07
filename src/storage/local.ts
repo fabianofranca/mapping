@@ -2,13 +2,15 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { channelDbName } from '../utils/channel';
 import type { ReopenableDirectory } from './folder';
 import type { ProjectFiles } from './zip';
-import { PROPOSAL_ID_RE, proposalDir, proposalFilePath } from '../model';
+import { PROPOSAL_ID_RE, proposalDir, proposalFilePath, threadFilePath } from '../model';
 import {
   BACKUPS_DIR,
   assertSpecPath,
+  assertThreadId,
   backupTimestamp,
   isProposalFilePath,
   proposalIdOfPath,
+  threadLocationOfPath,
   type ProjectStorage,
 } from './types';
 import { reportError } from '../utils/report';
@@ -129,8 +131,8 @@ function createLibrary(db: Db): LocalLibrary {
         ...[...(files.specAssets ?? [])].map(([path, blob]) =>
           toStoredFile(id, path, blob),
         ),
-        ...[...files.specs, ...files.proposals].map(([path, text]) =>
-          toStoredFile(id, path, new Blob([text], { type: SPEC_TYPE })),
+        ...[...files.specs, ...files.proposals, ...(files.threads ?? [])].map(
+          ([path, text]) => toStoredFile(id, path, new Blob([text], { type: SPEC_TYPE })),
         ),
         ...[...files.proposalImages].map(([path, blob]) => toStoredFile(id, path, blob)),
       ]);
@@ -314,6 +316,52 @@ function createLibrary(db: Db): LocalLibrary {
             .map(([, path]) => path)
             .filter((path) => path.startsWith(prefix))
             .sort();
+        },
+        async listThreads(resolved) {
+          const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
+          const ids: string[] = [];
+          for (const [, path] of keys) {
+            const found = threadLocationOfPath(path);
+            if (found !== null && found.resolved === resolved) ids.push(found.id);
+          }
+          return ids.sort();
+        },
+        async readThread(threadId, resolved) {
+          assertThreadId(threadId);
+          const file = await db.get('files', [id, threadFilePath(threadId, resolved)]);
+          return file ? new Blob([file.data]).text() : null;
+        },
+        async writeThread(threadId, resolved, text) {
+          assertThreadId(threadId);
+          const blob = new Blob([text], { type: SPEC_TYPE });
+          const stored = await toStoredFile(id, threadFilePath(threadId, resolved), blob);
+          // Conversar é trabalho a exportar, como decidir numa proposta.
+          const tx = db.transaction(['projects', 'files'], 'readwrite');
+          const meta = await tx.objectStore('projects').get(id);
+          if (!meta) throw new Error(`local project not found: ${id}`);
+          await Promise.all([
+            tx.objectStore('projects').put({ ...meta, unexported: true }),
+            tx.objectStore('files').put(stored),
+            tx.done,
+          ]);
+        },
+        async removeThread(threadId, resolved) {
+          assertThreadId(threadId);
+          const key: [string, string] = [id, threadFilePath(threadId, resolved)];
+          const tx = db.transaction(['projects', 'files'], 'readwrite');
+          const meta = await tx.objectStore('projects').get(id);
+          if (!meta) throw new Error(`local project not found: ${id}`);
+          const files = tx.objectStore('files');
+          const exists = (await files.getKey(key)) !== undefined;
+          await Promise.all([
+            ...(exists
+              ? [
+                  tx.objectStore('projects').put({ ...meta, unexported: true }),
+                  files.delete(key),
+                ]
+              : []),
+            tx.done,
+          ]);
         },
         async writeBackup(name, text) {
           const blob = new Blob([text], { type: SPEC_TYPE });

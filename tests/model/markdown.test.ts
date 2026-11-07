@@ -283,3 +283,54 @@ describe('citação (> )', () => {
     expect(blocks[0]?.type).toBe('quote');
   });
 });
+
+describe('markdown: quebra de linha no parágrafo (opção)', () => {
+  it('sem a opção, a quebra simples continua um espaço (padrão do Catálogo)', () => {
+    expect(inlinesOf('a\nb')).toEqual([{ type: 'text', text: 'a b' }]);
+    expect(inlinesOf('a\nb')).toEqual(
+      (parseMarkdown('a\nb', { lineBreaks: false })[0] as { inlines: unknown }).inlines,
+    );
+  });
+
+  it('com a opção, vira um nó de quebra dentro do mesmo parágrafo', () => {
+    const blocks = parseMarkdown('a\nb', { lineBreaks: true });
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toEqual({
+      type: 'paragraph',
+      inlines: [
+        { type: 'text', text: 'a' },
+        { type: 'break' },
+        { type: 'text', text: 'b' },
+      ],
+    });
+  });
+
+  it('a linha em branco continua separando parágrafos e várias linhas dão várias quebras', () => {
+    const blocks = parseMarkdown('a\nb\nc\n\nd', { lineBreaks: true });
+    expect(blocks).toHaveLength(2);
+    const first = blocks[0];
+    if (first?.type !== 'paragraph') throw new Error('não é parágrafo');
+    expect(first.inlines.filter((i) => i.type === 'break')).toHaveLength(2);
+  });
+
+  it('a ênfase que atravessa a linha e o código em linha continuam inteiros', () => {
+    const blocks = parseMarkdown('um **forte\nnegrito** e `a\nb`', { lineBreaks: true });
+    const inl = (blocks[0] as { inlines: readonly MarkdownInline[] }).inlines;
+    expect(inl[1]).toMatchObject({ type: 'strong' });
+    const strong = inl[1] as Extract<MarkdownInline, { type: 'strong' }>;
+    expect(strong.children.map((c) => c.type)).toEqual(['text', 'break', 'text']);
+    expect(inl.at(-1)).toEqual({ type: 'code', text: 'a b' });
+  });
+
+  it('blocos que não são parágrafo não mudam (título, lista, tabela)', () => {
+    const src = '# T\n\n- a\n  b\n\n| x | y |\n| - | - |\n| 1 | 2 |';
+    expect(parseMarkdown(src, { lineBreaks: true })).toEqual(parseMarkdown(src));
+  });
+
+  it('inlinesToText devolve a quebra como \\n', () => {
+    const b = parseMarkdown('a\nb', { lineBreaks: true })[0] as {
+      inlines: readonly MarkdownInline[];
+    };
+    expect(inlinesToText(b.inlines)).toBe('a\nb');
+  });
+});

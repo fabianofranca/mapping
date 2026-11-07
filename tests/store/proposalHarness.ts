@@ -14,6 +14,7 @@ import {
 import { createFolderStorage } from '../../src/storage/folder';
 import { loadProject } from '../../src/storage/loadProject';
 import { loadProposals } from '../../src/storage/loadProposals';
+import { loadThreads } from '../../src/storage/loadThreads';
 import { createReviewState } from '../../src/store/review';
 import { openSession } from '../../src/store/session';
 import { sampleProject } from '../model/fixtures';
@@ -100,6 +101,7 @@ export async function openHarness(options: HarnessOptions = {}) {
     project: loaded.project,
     loadedText: loaded.text,
     ...(options.skipProposals ? {} : { proposals: await loadProposals(storage) }),
+    threads: await loadThreads(storage),
     prepareImage: () => Promise.reject(new Error('sem imagens aqui')),
     now: () => REVIEW_AT,
     newId: () => `id-${++n}`,

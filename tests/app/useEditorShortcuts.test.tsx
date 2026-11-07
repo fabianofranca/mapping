@@ -8,7 +8,12 @@ import type { EditorDialogs } from '../../src/app/useEditorDialogs';
 import type { ProjectCommands } from '../../src/app/useProjectCommands';
 import { useEditorShortcuts } from '../../src/app/useEditorShortcuts';
 import { t } from '../../src/i18n';
-import { ITEM_CLIPBOARD_MIME, parseRef } from '../../src/model';
+import {
+  ITEM_CLIPBOARD_MIME,
+  parseAnyRef,
+  parseRef,
+  type Project,
+} from '../../src/model';
 import * as imageCrop from '../../src/storage/imageCrop';
 import {
   RESIZE_STEP,
@@ -25,6 +30,7 @@ import { locale } from '../../src/store/settings';
 import { selectItems } from '../../src/store/ui';
 import { createHarness, type Harness } from '../components/harness';
 import { sampleProject } from '../model/fixtures';
+import { cadastroProject } from '../model/specFixtures';
 
 // Atalhos do editor ligados ao store, à UI e ao canvas: o que cada tecla faz de verdade
 // (a tradução tecla → atalho é testada à parte, em `shortcuts.test.ts`).
@@ -67,8 +73,12 @@ function Probe({
   return null;
 }
 
-function setup({ enabled = true, readOnly = false } = {}): Fake {
-  const harness = createHarness(sampleProject(), readOnly);
+function setup({
+  enabled = true,
+  readOnly = false,
+  project = sampleProject(),
+}: { enabled?: boolean; readOnly?: boolean; project?: Project } = {}): Fake {
+  const harness = createHarness(project, readOnly);
   const canvas = {
     cancelInteraction: vi.fn(() => false),
     isInteracting: vi.fn(() => false),
@@ -861,6 +871,128 @@ describe('useEditorShortcuts: copiar referência e recorte', () => {
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     const ref = parseRef(String(writeText.mock.calls[0]?.[0]));
     expect(ref).toMatchObject({ kind: 'a', code: 'a1' });
+  });
+
+  describe('com o foco numa propriedade (CM5, decisão 32)', () => {
+    /** Cartão `A1` com o campo `tipo`, o par `E1` e uma tabela `atributos` de uma linha `R1`. */
+    function propertyCard() {
+      const card = document.body.appendChild(document.createElement('div'));
+      card.setAttribute('data-annotation', 'AC');
+      const field = card.appendChild(document.createElement('div'));
+      field.setAttribute('data-field', 'nome');
+      const fieldButton = field.appendChild(document.createElement('button'));
+      // O par é de uma anotação livre (`AU`), em outro cartão.
+      const free = document.body.appendChild(document.createElement('div'));
+      free.setAttribute('data-annotation', 'AU');
+      const entry = free.appendChild(document.createElement('div'));
+      entry.setAttribute('data-entry', 'EN');
+      const entryButton = entry.appendChild(document.createElement('button'));
+      const table = card.appendChild(document.createElement('div'));
+      table.setAttribute('data-field', 'atributos');
+      const tableButton = table.appendChild(document.createElement('button'));
+      const row = table.appendChild(document.createElement('div'));
+      row.setAttribute('data-row-id', 'R1');
+      const rowInput = row.appendChild(document.createElement('input'));
+      return { card, fieldButton, entryButton, tableButton, rowInput };
+    }
+
+    const copiedRef = (writeText: { mock: { calls: unknown[][] } }) =>
+      String(writeText.mock.calls[0]?.[0]);
+
+    it('no campo copia ...//f/<campo>', async () => {
+      const { writeText } = mockClipboard();
+      const s = setup({ project: cadastroProject() });
+      s.harness.ui.selection.value = { kind: 'marking', id: 'MF' };
+      const { fieldButton } = propertyCard();
+      fieldButton.focus();
+      expect(pressOn(fieldButton, 'c', { ctrl: true }).defaultPrevented).toBe(true);
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+      expect(parseAnyRef(copiedRef(writeText))).toMatchObject({
+        project: 'projeto',
+        ref: { type: 'field', key: 'nome' },
+      });
+      expect(copiedRef(writeText)).toMatch(
+        /^mapping:\/\/projeto\/a\/[0-9a-z]+\/f\/nome$/,
+      );
+    });
+
+    it('no par copia .../e/<código>', async () => {
+      const { writeText } = mockClipboard();
+      const s = setup({ project: cadastroProject() });
+      const { entryButton } = propertyCard();
+      entryButton.focus();
+      expect(pressOn(entryButton, 'c', { ctrl: true }).defaultPrevented).toBe(true);
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+      expect(copiedRef(writeText)).toMatch(
+        /^mapping:\/\/projeto\/a\/[0-9a-z]+\/e\/[0-9a-z]+$/,
+      );
+      expect(s.harness.ui.toast.value).not.toBe(t('copy.failed'));
+    });
+
+    it('na linha da tabela copia .../f/<campo>/r/<código> (a linha vale mais que o campo)', async () => {
+      const { writeText } = mockClipboard();
+      setup({ project: cadastroProject() });
+      const { rowInput } = propertyCard();
+      rowInput.focus();
+      expect(pressOn(rowInput, 'c', { ctrl: true }).defaultPrevented).toBe(true);
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+      expect(copiedRef(writeText)).toMatch(
+        /^mapping:\/\/projeto\/a\/[0-9a-z]+\/f\/atributos\/r\/[0-9a-z]+$/,
+      );
+    });
+
+    it('no campo da tabela, fora das linhas, copia o campo', async () => {
+      const { writeText } = mockClipboard();
+      setup({ project: cadastroProject() });
+      const { tableButton } = propertyCard();
+      tableButton.focus();
+      pressOn(tableButton, 'c', { ctrl: true });
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+      expect(copiedRef(writeText)).toMatch(/\/f\/atributos$/);
+    });
+
+    it('num campo de texto sem seleção copia a propriedade; com texto selecionado, o copiar nativo continua', async () => {
+      const { writeText } = mockClipboard();
+      setup({ project: cadastroProject() });
+      const { rowInput } = propertyCard();
+      rowInput.value = 'ana@exemplo.com';
+      rowInput.focus();
+      rowInput.setSelectionRange(0, 3);
+      expect(pressOn(rowInput, 'c', { ctrl: true }).defaultPrevented).toBe(false);
+      expect(writeText).not.toHaveBeenCalled();
+      rowInput.setSelectionRange(3, 3);
+      expect(pressOn(rowInput, 'c', { ctrl: true }).defaultPrevented).toBe(true);
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    });
+
+    it('num editor de texto (contentEditable) o copiar nativo continua', () => {
+      const { writeText } = mockClipboard();
+      setup({ project: cadastroProject() });
+      const { field } = {
+        field: propertyCard().fieldButton.parentElement as HTMLElement,
+      };
+      const editor = field.appendChild(document.createElement('div'));
+      Object.defineProperty(editor, 'isContentEditable', { value: true });
+      editor.tabIndex = 0;
+      editor.focus();
+      expect(pressOn(editor, 'c', { ctrl: true }).defaultPrevented).toBe(false);
+      expect(writeText).not.toHaveBeenCalled();
+    });
+
+    it('no projeto local (fora de uma pasta) não copia', () => {
+      const { writeText } = mockClipboard();
+      const s = setup({ project: cadastroProject() });
+      Object.defineProperty(s.harness.context.session.storage, 'folderName', {
+        value: undefined,
+        configurable: true,
+      });
+      const { fieldButton, rowInput } = propertyCard();
+      fieldButton.focus();
+      expect(pressOn(fieldButton, 'c', { ctrl: true }).defaultPrevented).toBe(false);
+      rowInput.focus();
+      expect(pressOn(rowInput, 'c', { ctrl: true }).defaultPrevented).toBe(false);
+      expect(writeText).not.toHaveBeenCalled();
+    });
   });
 
   it('Ctrl+Alt+C copia o recorte da marcação selecionada como PNG', async () => {

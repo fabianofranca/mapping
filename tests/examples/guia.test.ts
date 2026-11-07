@@ -109,6 +109,7 @@ describe('guia interativo', () => {
       list: ptBR['view.list'],
       incomplete: ptBR['incomplete.title'],
       notices: ptBR['notices.title'],
+      comments: ptBR['comments.title'],
       diagnostics: ptBR['diagnostics.title'],
       proposals: ptBR['proposals.title'],
       catalog: ptBR['catalog.window.title'],
@@ -122,7 +123,7 @@ describe('guia interativo', () => {
     }
     byCombo.set(SHORTCUT_LABELS.arrange, ptBR['shortcuts.arrange']);
     const rows = [...html.matchAll(/<td><kbd>([^<]+)<\/kbd><\/td>\s*<td>([^<]+)<\/td>/g)];
-    const expected = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `Ctrl+Shift+${n}`);
+    const expected = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `Ctrl+Shift+${n}`);
     expect(rows.map((m) => m[1]).sort()).toEqual([...expected, 'Alt+Shift+A'].sort());
     for (const [, combo, label] of rows) {
       const title = byCombo.get(combo ?? '');

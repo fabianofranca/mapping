@@ -232,8 +232,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64). Só aqui. Subido para 1.703.936 (1,625 MiB) na etapa #559 (decisão do dono, 2026-11-05): o épico estava a 151 bytes do teto e a PD5 soma ~7,4 KB de código real.
-      INDEX_HTML_MAX_BYTES: 1703936
+      # Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64). Só aqui. Subido para 1.703.936 (1,625 MiB) na etapa #559 (decisão do dono, 2026-11-05): o épico estava a 151 bytes do teto e a PD5 soma ~7,4 KB de código real. Subido para 1.769.472 (1.728 KiB) na CM5 da etapa #645: o compositor com chips, o `@`, os menus de citação e o chip vivo somam ~38 KB de código real (1.738.403 bytes), com ~31 KB de folga.
+      INDEX_HTML_MAX_BYTES: 1769472
     steps:
       - uses: actions/checkout@v7
         with:
