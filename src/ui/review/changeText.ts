@@ -7,7 +7,9 @@ import {
   fieldOf,
   findSpecType,
   isRecord,
+  parseRefValue,
   projectIndex,
+  refLabel,
   roleNameOf,
   type Annotation,
   type Change,
@@ -315,7 +317,7 @@ export function entityFieldLabel(entity: Change['entity'], key: string): string 
 }
 
 /** Nome do campo de uma tipada (o rótulo do campo na especialização, senão a chave). */
-function valueFieldLabel(names: ReviewNames, c: Change, key: string): string {
+export function valueFieldLabel(names: ReviewNames, c: Change, key: string): string {
   const project = names.preview ?? names.current;
   const a =
     projectIndex(project).annotations.get(c.entityId) ??
@@ -428,6 +430,37 @@ function placementParts(
   return parts;
 }
 
+/** Texto de uma célula ou de um campo `ref`: o rótulo do alvo; senão o valor em texto. */
+function cellText(names: ReviewNames, value: JsonValue): string {
+  if (typeof value === 'string') return value;
+  const ref = parseRefValue(value);
+  if (ref) return refLabel(names.preview ?? names.current, ref);
+  return JSON.stringify(value);
+}
+
+/** As linhas de uma tabela (`values.<campo>` com lista de registros), em texto. */
+export function tableLines(
+  names: ReviewNames,
+  value: JsonValue | undefined,
+): { id: string; text: string }[] | null {
+  if (!Array.isArray(value)) return null;
+  return value.map((row, i) => {
+    if (!isRecord(row)) return { id: String(i), text: String(row) };
+    const id = typeof row._id === 'string' ? row._id : String(i);
+    const cells = Object.entries(row)
+      .filter(([k, v]) => k !== '_id' && v !== null && v !== '')
+      .map(([k, v]) => `${k}: ${cellText(names, v)}`);
+    return { id, text: cells.join(' · ') };
+  });
+}
+
+/** Valor de `values.<campo>`: tabela pelas linhas, `ref` pelo rótulo do alvo; senão `null`. */
+function typedValueParts(names: ReviewNames, value: JsonValue): ValuePart[] | null {
+  const lines = tableLines(names, value);
+  if (lines) return [{ text: lines.map((l) => l.text).join('\n') || compact(value) }];
+  return parseRefValue(value) ? [{ text: cellText(names, value) }] : null;
+}
+
 /** Texto compacto de qualquer valor JSON (o que não tem forma própria). */
 function compact(value: JsonValue): string {
   if (value === null) return t('review.value.empty');
@@ -499,6 +532,10 @@ export function valueParts(
   if (field === 'placement')
     return placementParts(value, other) ?? [{ text: compact(value) }];
   if (value === null) return [{ text: t('review.value.empty') }];
+  if (field.startsWith(VALUES_FIELD_PREFIX)) {
+    const typedParts = typedValueParts(names, value);
+    if (typedParts) return typedParts;
+  }
   if (field === 'markingId' && typeof value === 'string') {
     return [{ text: markingName(names, value) }];
   }

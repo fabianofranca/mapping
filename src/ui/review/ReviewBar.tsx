@@ -11,6 +11,7 @@ import { REVIEW_KEYS } from './DecisionControl';
 import { DecisionMark } from './DecisionMark';
 import { Flag } from './Flag';
 import { ProgressBar } from './ReviewLevels';
+import { reviewBarRef } from './reviewBarRef';
 import { useApplyAccepted, useDecideVisible, useShowProblem } from './useReview';
 
 // Faixa do modo revisão (HANDOFF-PROPOSALS 5.2, ReviewBar): selo REVISÃO, título,
@@ -128,7 +129,7 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
   );
 
   return (
-    <section class="review-bar" aria-label={t('review.region')}>
+    <section class="review-bar" ref={reviewBarRef} aria-label={t('review.region')}>
       <div class="review-bar-id">
         <span class="review-badge">
           <Icon name="proposal" />

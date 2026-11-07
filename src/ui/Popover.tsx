@@ -46,16 +46,55 @@ interface PopoverProps {
    * popover aberto pelo foco não fechar com a rolagem que leva o gatilho à vista.
    */
   readonly scroll?: 'close' | 'follow';
+  /** Limite lido a cada posicionamento (ex: a base da barra da revisão); `null`: sem limite. */
+  readonly limit?: () => PlaceLimit | null;
   /** Conteúdo; a função recebe `close` para fechar ao escolher algo. */
   readonly children: ComponentChildren | ((close: () => void) => ComponentChildren);
 }
 
-/** Posiciona o painel embaixo do botão, ou em cima se não couber, sempre dentro da janela. */
+/** Limite opcional do painel: o painel não sobe acima de `top` (coordenadas da janela). */
+export interface PlaceLimit {
+  readonly top: number;
+}
+
+/**
+ * Com limite: embaixo se couber; senão em cima, abaixo do limite; senão do lado com mais
+ * espaço, com altura máxima e rolagem interna.
+ */
+function placeLimited(
+  panel: HTMLElement,
+  anchor: DOMRect,
+  height: number,
+  floor: number,
+  viewportHeight: number,
+): number {
+  const ceiling = Math.max(EDGE, floor + GAP);
+  const below = anchor.bottom + GAP;
+  const spaceBelow = viewportHeight - EDGE - below;
+  const spaceAbove = anchor.top - GAP - ceiling;
+  if (height <= spaceBelow) return below;
+  if (height <= spaceAbove) return anchor.top - GAP - height;
+  const useBelow = spaceBelow >= spaceAbove;
+  const room = Math.max(0, useBelow ? spaceBelow : spaceAbove);
+  panel.style.maxHeight = `${room}px`;
+  panel.style.overflowY = 'auto';
+  return useBelow ? below : anchor.top - GAP - room;
+}
+
+/**
+ * Posiciona o painel embaixo do botão, ou em cima se não couber, sempre dentro da janela.
+ * `limit`: o painel também não invade a área acima dele (a barra da revisão).
+ */
 export function place(
   host: HTMLElement,
   panel: HTMLElement,
   align: 'start' | 'end',
+  limit?: PlaceLimit | null,
 ): void {
+  if (limit) {
+    panel.style.maxHeight = '';
+    panel.style.overflowY = '';
+  }
   const anchor = host.getBoundingClientRect();
   const width = panel.offsetWidth;
   const height = panel.offsetHeight;
@@ -66,8 +105,9 @@ export function place(
   const wanted = align === 'end' ? anchor.right - width : anchor.left;
   const left = Math.max(EDGE, Math.min(wanted, viewport.width - width - EDGE));
   const below = anchor.bottom + GAP;
-  const top =
-    below + height <= viewport.height - EDGE
+  const top = limit
+    ? placeLimited(panel, anchor, height, limit.top, viewport.height)
+    : below + height <= viewport.height - EDGE
       ? below
       : Math.max(EDGE, anchor.top - GAP - height);
   panel.style.left = `${left}px`;
@@ -106,6 +146,7 @@ export function Popover({
   id,
   panelClass,
   scroll = 'close',
+  limit,
   children,
 }: PopoverProps) {
   const [ownOpen, setOwnOpen] = useState(false);
@@ -128,7 +169,10 @@ export function Popover({
   };
 
   useLayoutEffect(() => {
-    if (open && host.current && panel.current) place(host.current, panel.current, align);
+    if (open && host.current && panel.current)
+      place(host.current, panel.current, align, limit?.());
+    // `limit` é lido a cada posicionamento, não é uma dependência.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, align]);
 
   const onKeyDown = usePopoverKeys(panel, open, role === 'menu', close);
@@ -145,7 +189,8 @@ export function Popover({
       if (panel.current?.contains(e.target as Node)) return;
       if (scroll === 'close') {
         if (scrollCounts(e)) close();
-      } else if (host.current && panel.current) place(host.current, panel.current, align);
+      } else if (host.current && panel.current)
+        place(host.current, panel.current, align, limit?.());
     };
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('scroll', onScroll, true);
