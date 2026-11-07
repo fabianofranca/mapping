@@ -22,6 +22,7 @@ import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { SelectionPanel } from '../../src/ui/SelectionPanel';
 import { sampleProject } from '../model/fixtures';
 import { AGENT, HUMAN, message, sampleThread } from '../model/threadFixtures';
+import { keyDown, typeIn } from './composerHelpers';
 import { createHarness, type Harness } from './harness';
 
 // Seção Conversas dos Detalhes (etapa Comentários, fase CM3, decisão 18).
@@ -97,20 +98,23 @@ describe('Conversas › estado A (nenhuma conversa)', () => {
       name: t('thread.send'),
     });
     expect(send.disabled).toBe(true);
-    await userEvent.type(field, '   ');
+    typeIn(field, '   ');
     expect(send.disabled).toBe(true);
-    await userEvent.type(field, 'oi');
+    typeIn(field, 'oi');
     expect(send.disabled).toBe(false);
   });
 
   it('Ctrl+Enter envia, abre a conversa e a mostra; Enter só quebra a linha', async () => {
     const harness = await setup();
     renderMarking(harness);
-    const field = composer() as HTMLTextAreaElement;
-    await userEvent.type(field, 'linha 1{Enter}linha 2');
-    expect(field.value).toBe('linha 1\nlinha 2');
+    const field = composer();
+    typeIn(field, 'linha 1');
+    keyDown(field, 'Enter');
+    typeIn(field, 'linha 2');
+    expect(harness.ui.threadDrafts.value.size).toBe(1);
+    expect([...harness.ui.threadDrafts.value.values()]).toEqual(['linha 1\nlinha 2']);
     expect(harness.context.session.threads.list.value).toHaveLength(0);
-    await userEvent.keyboard('{Control>}{Enter}{/Control}');
+    keyDown(field, 'Enter', { ctrlKey: true });
     await waitFor(() =>
       expect(harness.context.session.threads.list.value).toHaveLength(1),
     );
@@ -125,8 +129,8 @@ describe('Conversas › estado A (nenhuma conversa)', () => {
   it('o botão Enviar também envia; erro do servidor fica visível e mantém o texto', async () => {
     const harness = await setup();
     renderMarking(harness);
-    const field = composer() as HTMLTextAreaElement;
-    await userEvent.type(field, 'nota');
+    const field = composer();
+    typeIn(field, 'nota');
     vi.spyOn(harness.context.session.threadActions, 'open').mockResolvedValue({
       ok: false,
       error: 'read-only',
@@ -134,7 +138,7 @@ describe('Conversas › estado A (nenhuma conversa)', () => {
     await userEvent.click(screen.getByRole('button', { name: t('thread.send') }));
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe(t('thread.error.read-only'));
-    expect(field.value).toBe('nota');
+    expect(field.textContent).toBe('nota');
   });
 });
 
@@ -150,11 +154,9 @@ describe('Conversas › estado B (aguardando humano, aberta pelo agente)', () =>
     expect(section.getByRole('button', { name: t('thread.resolve') })).toBeTruthy();
     expect(section.getByRole('button', { name: t('thread.new') })).toBeTruthy();
     expect(section.queryByRole('list', { name: t('thread.list') })).toBeNull();
-    await userEvent.type(
-      screen.getByLabelText(t('thread.replyAs', { name: 'Marina Alves' })),
-      'respondo',
-    );
-    await userEvent.keyboard('{Control>}{Enter}{/Control}');
+    const reply = screen.getByLabelText(t('thread.replyAs', { name: 'Marina Alves' }));
+    typeIn(reply, 'respondo');
+    keyDown(reply, 'Enter', { ctrlKey: true });
     await waitFor(() =>
       expect(harness.context.session.threads.get('t1')?.messages).toHaveLength(2),
     );
@@ -244,12 +246,12 @@ describe('Conversas › lista e Nova', () => {
     const harness = await setup([humanThread('t1')]);
     renderMarking(harness);
     await userEvent.click(screen.getByRole('button', { name: t('thread.new') }));
-    const field = (await screen.findByLabelText(
+    const field = await screen.findByLabelText(
       t('thread.composeAs', { name: 'Marina Alves' }),
-    )) as HTMLTextAreaElement;
+    );
     expect(document.activeElement).toBe(field);
-    await userEvent.type(field, 'outro assunto');
-    await userEvent.keyboard('{Control>}{Enter}{/Control}');
+    typeIn(field, 'outro assunto');
+    keyDown(field, 'Enter', { ctrlKey: true });
     await waitFor(() =>
       expect(harness.context.session.threads.list.value).toHaveLength(2),
     );
@@ -261,10 +263,10 @@ describe('Conversas › lista e Nova', () => {
   it('o rascunho sobrevive à troca de seleção e volta', async () => {
     const harness = await setup();
     renderMarking(harness);
-    await userEvent.type(composer(), 'rascunho');
+    typeIn(composer(), 'rascunho');
     cleanup();
     renderMarking(harness);
-    expect((composer() as HTMLTextAreaElement).value).toBe('rascunho');
+    expect(composer().textContent).toBe('rascunho');
   });
 });
 
@@ -412,7 +414,7 @@ describe('Conversas › sem item (EditorPanel)', () => {
         name: t('thread.anchor.point', { where: t('canvas.name') }),
       }),
     ).toBeTruthy();
-    await userEvent.type(composer(), 'aqui');
+    typeIn(composer(), 'aqui');
     fireEvent.keyDown(composer(), { key: 'Enter', ctrlKey: true });
     await waitFor(() =>
       expect(harness.context.session.threads.list.value).toHaveLength(1),

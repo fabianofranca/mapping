@@ -38,7 +38,7 @@ export interface Citation {
  * segmentos depois do esquema. Não é citação (a gramática das referências exige ao menos
  * `<projeto>/<letra>/<código>`).
  */
-function isLibraryLink(href: string): boolean {
+export function isLibraryLink(href: string): boolean {
   return href.slice(REF_SCHEME.length).split('/').length <= 2;
 }
 
