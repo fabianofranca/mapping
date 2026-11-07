@@ -110,7 +110,7 @@ describe('menu da linha da Árvore', () => {
       within(imageMenu)
         .getAllByRole('menuitem')
         .map((i) => i.textContent),
-    ).toEqual([`${t('multi.wrap')}Ctrl+G`]);
+    ).toEqual([t('cite.insert'), t('comments.comment'), `${t('multi.wrap')}Ctrl+G`]);
     await userEvent.keyboard('{Escape}');
     await userEvent.click(
       screen.getByRole('button', { name: t('copy.itemActions', { name: 'Maçaneta' }) }),
@@ -260,12 +260,17 @@ describe('menu de contexto do canvas', () => {
     renderMenu(harness);
     harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'i', id: 'I1' } };
     const imageItems = await screen.findAllByRole('menuitem');
-    expect(imageItems.map((i) => i.textContent)).toEqual([`${t('multi.wrap')}Ctrl+G`]);
+    // Citar na conversa vale também fora de uma pasta (o Comentar é do menu de comentar do canvas).
+    expect(imageItems.map((i) => i.textContent)).toEqual([
+      t('cite.insert'),
+      `${t('multi.wrap')}Ctrl+G`,
+    ]);
     harness.ui.canvasMenu.value = null;
     await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
     harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'm', id: 'M1' } };
     const items = await screen.findAllByRole('menuitem');
     expect(items.map((i) => i.textContent)).toEqual([
+      t('cite.insert'),
       t('multi.selectWithContents'),
       // Envolver (EV1): a entrada nova do menu, com o atalho.
       `${t('multi.wrap')}Ctrl+G`,

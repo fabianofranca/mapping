@@ -402,7 +402,6 @@ describe('item (Árvore e cartão da anotação)', () => {
 
   it('o cartão da anotação tem o ⋯ com Citar e Comentar (âncora annotation)', async () => {
     const { user } = setupClipboard();
-    openComposer();
     const harness = createHarness(sampleProject());
     renderLive(harness, (p) => {
       const m = p.markings.find((x) => x.id === 'M1');
@@ -419,6 +418,8 @@ describe('item (Árvore e cartão da anotação)', () => {
         />
       );
     });
+    // O compositor do mock entra depois do da seção Conversas: é o mais recente.
+    openComposer();
     const card = document.querySelector('[data-annotation="A1"]') as HTMLElement;
     await user.click(
       within(card).getByRole('button', {
@@ -470,12 +471,17 @@ describe('menu do canvas', () => {
   });
 
   it('a seta também pode ser citada', async () => {
+    const { user } = setupClipboard();
     openComposer();
     const harness = createHarness(sampleProject());
+    const added = harness.actions.addArrow('M1', 'M4');
+    if (!added.ok) throw new Error('addArrow falhou');
+    const arrowId = harness.project().arrows[0]!.id;
     renderMenu(harness);
-    harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'arrow', id: 'X1' } };
+    harness.ui.canvasMenu.value = { x: 5, y: 5, target: { kind: 'arrow', id: arrowId } };
     const menu = await screen.findByRole('menu');
-    expect(within(menu).getByRole('menuitem', { name: t('cite.insert') })).toBeTruthy();
+    await user.click(within(menu).getByRole('menuitem', { name: t('cite.insert') }));
+    expect(insert).toHaveBeenCalledWith({ kind: 'arrow', id: arrowId });
   });
 
   it('sem compositor aberto, Citar fica desabilitado', async () => {
@@ -527,7 +533,6 @@ describe('camada', () => {
 describe('cabeçalho da conversa', () => {
   it('o ⋯ tem Citar na conversa e Copiar referência (c/)', async () => {
     const { user, writeText } = setupClipboard();
-    openComposer();
     const harness = createHarness(sampleProject());
     const thread = sampleThread({ id: 'v1' });
     await harness.context.session.threads.create(thread);
@@ -536,6 +541,8 @@ describe('cabeçalho da conversa', () => {
         <ThreadView thread={thread} />
       </EditorContext.Provider>,
     );
+    // O compositor de resposta da conversa também se registra: o do mock é o mais recente.
+    openComposer();
     await user.click(screen.getByRole('button', { name: t('thread.menu') }));
     const menu = screen.getByRole('menu');
     expect(names(menu)).toEqual(

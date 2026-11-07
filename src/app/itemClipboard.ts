@@ -77,6 +77,11 @@ export function focusedAnnotationTarget(): ItemCopyTarget | null {
   return id ? { kind: 'a', id } : null;
 }
 
+/** O valor do atributo no elemento ou no ancestral mais próximo que o tem. */
+function attributeAbove(el: Element | null, attribute: string): string | null {
+  return el?.closest(`[${attribute}]`)?.getAttribute(attribute) ?? null;
+}
+
 /**
  * Propriedade em foco, a mais específica: a linha de uma tabela (`data-row-id`) vale mais que o
  * campo (`data-field`) em que está, e o par (`data-entry`) tem a vez do campo. Tudo dentro do
@@ -84,16 +89,14 @@ export function focusedAnnotationTarget(): ItemCopyTarget | null {
  */
 export function focusedPropertyTarget(): PropertyCopyTarget | null {
   const active = document.activeElement;
-  const annotationId = active
-    ?.closest('[data-annotation]')
-    ?.getAttribute('data-annotation');
-  if (!active || !annotationId) return null;
-  const field = active.closest('[data-field]')?.getAttribute('data-field');
-  const rowId = active.closest('[data-row-id]')?.getAttribute('data-row-id');
-  if (field && rowId) return { kind: 'row', annotationId, key: field, rowId };
-  const entryId = active.closest('[data-entry]')?.getAttribute('data-entry');
+  const annotationId = attributeAbove(active, 'data-annotation');
+  if (!annotationId) return null;
+  const key = attributeAbove(active, 'data-field');
+  const rowId = attributeAbove(active, 'data-row-id');
+  if (key && rowId) return { kind: 'row', annotationId, key, rowId };
+  const entryId = attributeAbove(active, 'data-entry');
   if (entryId) return { kind: 'entry', annotationId, entryId };
-  return field ? { kind: 'field', annotationId, key: field } : null;
+  return key ? { kind: 'field', annotationId, key } : null;
 }
 
 /**
