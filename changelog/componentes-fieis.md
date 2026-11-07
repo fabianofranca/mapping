@@ -1,4 +1,4 @@
-# Componentes fiéis — [Não lançado] (épico `epic/componentes-fieis`, PR #TBD, MCP 0.28.0, schema v18)
+# Componentes fiéis — [Não lançado] (épico `epic/componentes-fieis`, PR #785, MCP 0.28.0, schema v18)
 
 ## Adicionado
 
