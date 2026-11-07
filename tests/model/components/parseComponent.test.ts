@@ -596,7 +596,7 @@ describe('validateComponent e parseComponent', () => {
 
   it('parseComponent devolve o componente quando válido', () => {
     const input = button();
-    expect(parseComponent(input)).toEqual({ ok: true, component: input });
+    expect(parseComponent(input)).toEqual({ ok: true, component: input, warnings: [] });
   });
 
   it('parseComponentText lê o texto JSON e trata JSON inválido como issue de caminho vazio', () => {
@@ -608,5 +608,37 @@ describe('validateComponent e parseComponent', () => {
     expect(bad.issues[0]?.path).toBe('');
     expect(bad.issues[0]?.message).toMatch(/^JSON inválido: /);
     expect(bad.errors[0]).toMatch(/^JSON inválido: /);
+  });
+});
+
+describe('aviso de font.family', () => {
+  const withFamily = (family: unknown): Record<string, unknown> => {
+    const c = button();
+    c.template = {
+      type: 'frame',
+      children: [{ type: 'text', text: 'x', font: { family, size: 14 } }],
+    };
+    return c;
+  };
+  const warningsOf = (family: unknown) => {
+    const result = parseComponent(withFamily(family));
+    if (!result.ok) throw new Error(result.errors.join('; '));
+    return result.warnings;
+  };
+
+  it('um family literal inválido é aviso, com o caminho do nó e o valor', () => {
+    expect(warningsOf('"Segoe UI, Roboto')).toEqual([
+      {
+        path: 'template.children[0].font.family',
+        message: expect.stringContaining('"Segoe UI, Roboto'),
+      },
+    ]);
+  });
+
+  it('pilha válida e expressão não geram aviso', () => {
+    expect(
+      warningsOf('system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'),
+    ).toEqual([]);
+    expect(warningsOf({ $field: 'fonte' })).toEqual([]);
   });
 });

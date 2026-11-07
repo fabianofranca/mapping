@@ -416,7 +416,7 @@ export const operationSchema = z.discriminatedUnion('op', [
       })
       .optional()
       .describe(
-        'Cria, junto da marcação, uma anotação tipada (uma instância do tipo). Quando o tipo tem componente, sem `values` os campos começam com o `preview` do componente (como a paleta da app); `values` sobrescreve só os campos informados.',
+        'Cria, junto da marcação, uma anotação tipada (uma instância do tipo). Quando o tipo tem componente, os campos começam com o `preview` do componente (como a paleta da app) e `values` sobrescreve só os campos informados, também depois de `apply_specialization` ou `update_specialization` no mesmo lote (o lote já vê os componentes da versão nova). Se o tipo declara componente e o lote não o acha, o passo avisa (`ignored-argument`) que a anotação nasceu sem o preview e sem o tamanho mínimo.',
       ),
   }),
   z.object({
@@ -513,7 +513,7 @@ export const operationSchema = z.discriminatedUnion('op', [
       .string()
       .optional()
       .describe(
-        'Tipo da anotação tipada: `specId/typeId`, `typeId` ou o nome do tipo. Omitido: anotação livre (pares chave-valor).',
+        'Tipo da anotação tipada: `specId/typeId`, `typeId` ou o nome do tipo. Omitido: anotação livre (pares chave-valor). Numa marcação que já existe os campos começam só com os `default` do tipo (sem o `preview` do componente, que é texto de exemplo); `values` sobrescreve os informados.',
       ),
     layer: layer
       .optional()

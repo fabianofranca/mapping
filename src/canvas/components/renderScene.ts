@@ -7,6 +7,7 @@
  * shape e todo contêiner levam o atributo `sceneId`, para o visualizador achar o nó da cena
  * a partir do alvo de um evento do Konva.
  */
+import { canvasFontFamily } from '../../model/components/fontFamily';
 import Konva from 'konva/lib/Core';
 import { Ellipse as KonvaEllipse } from 'konva/lib/shapes/Ellipse';
 import { Image as KonvaImage } from 'konva/lib/shapes/Image';
@@ -240,7 +241,7 @@ class Renderer {
         const { style } = node;
         const attrs: TextConfig = {
           text: node.text,
-          fontFamily: `"${style.fontFamily}", sans-serif`,
+          fontFamily: canvasFontFamily(style.fontFamily),
           fontSize: style.fontSize,
           fontStyle: fontStyle(style.fontWeight, style.italic),
           align: style.align,
