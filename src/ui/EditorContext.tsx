@@ -8,6 +8,7 @@ import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
 import { identity } from '../store/identity';
+import { createOpenPerspective } from '../store/perspectiveShown';
 import { createReviewState, type ReviewState } from '../store/review';
 import type { ProjectSession } from '../store/session';
 import { createEditorUi, type EditorUi } from '../store/ui';
@@ -42,6 +43,9 @@ export function createEditorContextValue(
   // A revisão vem antes do derivado do editor: ele lê o projeto à vista (`shownProject`),
   // para Camadas, Lista, Incompletas e o canvas seguirem a visão Atual/Proposto (fase 8.2).
   const review = createReviewState(session);
+  // A perspectiva aberta: o projeto à vista já vem recortado por ela, e as camadas escondidas
+  // do derivado passam a ser as dela.
+  const perspective = createOpenPerspective(store, session.perspective.id);
   return {
     open,
     session,
@@ -60,6 +64,7 @@ export function createEditorContextValue(
         identity,
         proposals: session.proposals.list,
       },
+      perspective,
     ),
     review,
     canvas: { current: null },

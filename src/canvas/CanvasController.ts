@@ -17,6 +17,8 @@ import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
 import type { ReviewState } from '../store/review';
 import { locale, showArrows } from '../store/settings';
+import type { PerspectiveState } from '../store/perspectives';
+import { projectInPerspective } from '../store/perspectiveShown';
 import { textMeasurer } from '../store/textMeasure';
 import { composingAnchor, selectedThreadId } from '../store/threadUi';
 import {
@@ -92,6 +94,11 @@ export interface CanvasControllerOptions {
    */
   readonly review?: ReviewState;
   /**
+   * Perspectiva aberta (etapa #659, PE2): o canvas desenha o projeto à vista dela (as raízes que
+   * ela mostra, onde ela as põe) e não começa o que é só da Principal. Sem ele, a Principal.
+   */
+  readonly perspective?: PerspectiveState;
+  /**
    * Imagens remotas dos componentes (RI3): as duas portas da app e o carregador. Padrão: a fonte
    * de produção; os testes passam uma falsa.
    */
@@ -144,6 +151,7 @@ export class CanvasController {
   private readonly derived: EditorDerived;
   private readonly viewState: CanvasViewState;
   private readonly review: ReviewState | null;
+  private readonly perspective: PerspectiveState | null;
   private readonly remoteImages: RemoteImageSource;
   /** URLs cujas imagens mudaram desde o último quadro (o quadro refaz só as marcações delas). */
   private readonly changedImageUrls = new Set<string>();
@@ -189,8 +197,17 @@ export class CanvasController {
    */
   private readonly drawnProject = computed(() => {
     const review = this.review;
-    const shown = review?.derived.shownProject.value ?? null;
-    if (!review || shown === null || shown === this.store.committed.value) {
+    // Fora da revisão: o projeto do store (com a prévia do gesto), recortado pela perspectiva
+    // aberta. A prévia muda `perspectives[].items`, então o recorte sai do projeto do store, e não
+    // do confirmado. Na revisão a perspectiva é a Principal (a troca fica travada).
+    if (!review || review.proposalId.value === null) {
+      return projectInPerspective(
+        this.store.project.value,
+        this.perspective?.id.value ?? null,
+      );
+    }
+    const shown = review.derived.shownProject.value;
+    if (shown === null || shown === this.store.committed.value) {
       return this.store.project.value;
     }
     const proposal = review.derived.proposal.value;
@@ -297,7 +314,9 @@ export class CanvasController {
     const project = this.drawnProject.value;
     const groups = this.derived.threads.pins.value;
     if (!project || groups.length === 0) return NO_PINS;
-    return pinPlaces(project, groups, this.derived.canvasVisibility.value);
+    // Conversa num ponto do canvas só aparece na Principal (decisão 15).
+    const principal = (this.perspective?.id.value ?? null) === null;
+    return pinPlaces(project, groups, this.derived.canvasVisibility.value, principal);
   });
 
   /** O pino tracejado do rascunho de uma conversa nova num ponto. */
@@ -392,6 +411,7 @@ export class CanvasController {
     this.derived = options.derived;
     this.viewState = options.view;
     this.review = options.review ?? null;
+    this.perspective = options.perspective ?? null;
     this.remoteImages = options.remoteImages ?? sharedRemoteImageSource();
 
     // Os desenhos medem texto com o Konva (o layout bate com o que é pintado) e se redesenham
@@ -448,6 +468,7 @@ export class CanvasController {
       spaceDown: space.down,
       project: () => this.drawnProject.peek(),
       reviewing: () => this.review?.proposalId.peek() != null,
+      perspectiveOpen: () => this.perspective?.openId() != null,
       pinAt: (c) => pinHit(this.frame.peek().pins, c, this.view.scale),
       containerTitles: () => this.images.titleRects(),
     });
@@ -485,7 +506,11 @@ export class CanvasController {
         // Projeto à vista, sem a prévia do gesto: um gesto em andamento não refaz o
         // minimapa a cada quadro; na visão Proposto, as imagens da prévia.
         const shown =
-          this.review?.derived.shownProject.value ?? this.store.committed.value;
+          this.review?.derived.shownProject.value ??
+          projectInPerspective(
+            this.store.committed.value,
+            this.perspective?.id.value ?? null,
+          );
         this.viewState.bounds.value = imagesBounds(
           shown?.containers ?? [],
           shown?.markings,

@@ -57,12 +57,27 @@ function topRight(rect: Rect): Point {
 
 type Host = PinGroup['host'];
 
+/**
+ * Onde o pino de um ponto fica. Um ponto do canvas não é de nenhuma raiz: só a Principal o tem
+ * (decisão 15). O de um container segue o container, que a vista já traz (ou não).
+ */
+function pointPlace(
+  project: Project,
+  host: Extract<Host, { kind: 'point' }>,
+  principal: boolean,
+): Pick<PinPlace, 'origin' | 'align'> | null {
+  if (host.containerId === null && !principal) return null;
+  const origin = pointCanvas(project, host.containerId, host.x, host.y);
+  return origin ? { origin, align: 'center' } : null;
+}
+
 /** Onde o pino de `host` fica: o ponto e o alinhamento; `null` se o item não está à vista. */
 function placeOf(
   project: Project,
   host: Host,
   visibility: ReadonlyMap<string, MarkingVisibility>,
   arrowLabels: ReadonlyMap<string, Point>,
+  principal: boolean,
 ): Pick<PinPlace, 'origin' | 'align'> | null {
   const index = projectIndex(project);
   switch (host.kind) {
@@ -83,21 +98,21 @@ function placeOf(
       const label = arrowLabels.get(host.id);
       return label ? { origin: label, align: 'center' } : null;
     }
-    case 'point': {
-      const origin = pointCanvas(project, host.containerId, host.x, host.y);
-      return origin ? { origin, align: 'center' } : null;
-    }
+    case 'point':
+      return pointPlace(project, host, principal);
   }
 }
 
 /**
  * Os pinos do quadro, na ordem dos grupos. Uma marcação escondida, uma seta sem as duas pontas à
- * vista e um item que sumiu não têm pino.
+ * vista e um item que sumiu não têm pino. `principal`: `false` com uma perspectiva aberta, onde a
+ * conversa num ponto do canvas (fora de container) não aparece; o padrão é a Principal.
  */
 export function pinPlaces(
   project: Project,
   groups: readonly PinGroup[],
   visibility: ReadonlyMap<string, MarkingVisibility>,
+  principal = true,
 ): readonly PinPlace[] {
   if (groups.length === 0) return [];
   const arrowLabels = new Map<string, Point>();
@@ -108,7 +123,7 @@ export function pinPlaces(
   }
   const places: PinPlace[] = [];
   for (const group of groups) {
-    const place = placeOf(project, group.host, visibility, arrowLabels);
+    const place = placeOf(project, group.host, visibility, arrowLabels, principal);
     if (place) places.push({ key: group.hostKey, group, ...place });
   }
   return places;

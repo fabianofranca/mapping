@@ -95,6 +95,8 @@ export interface PointerInputOptions {
   readonly project?: () => Project | null;
   /** Revisão aberta: tudo é somente leitura e o menu de contexto não abre. */
   readonly reviewing?: () => boolean;
+  /** Há uma perspectiva aberta: o que é "só na Principal" não começa (ver `IntentContext`). */
+  readonly perspectiveOpen?: () => boolean;
   /** Retângulos dos nomes acima dos containers (canvas), medidos pelo renderer. */
   readonly containerTitles?: () => ReadonlyMap<string, Rect>;
   /** O pino das conversas sob o ponto do canvas (ganha da marcação embaixo); `null` se nenhum. */
@@ -246,6 +248,7 @@ export class PointerInput {
       zoom: this.o.viewport.scale,
       spaceDown: this.o.spaceDown(),
       rectSelect,
+      perspectiveOpen: this.o.perspectiveOpen?.() ?? false,
     };
   }
 
@@ -389,7 +392,7 @@ export class PointerInput {
         return;
       }
       case 'resize-image': {
-        const project = this.o.store.project.peek();
+        const project = this.project();
         const image = project && projectIndex(project).containers.get(g.containerId);
         if (!image) return;
         const placement = resizeFromCorner(
@@ -524,7 +527,7 @@ export class PointerInput {
    */
   private moveArrowEnd(g: Extract<Gesture, { kind: 'arrow-end' }>, c: Point): void {
     const { actions, state } = this.o;
-    const project = this.o.store.project.peek();
+    const project = this.project();
     const target = this.markingUnder(c, g.fixed);
     const marking =
       target && project ? projectIndex(project).markings.get(target) : undefined;
@@ -552,7 +555,7 @@ export class PointerInput {
 
   /** A marcação no projeto atual do store (com a prévia do gesto). */
   private markingNow(id: string) {
-    const project = this.o.store.project.peek();
+    const project = this.project();
     return project ? projectIndex(project).markings.get(id) : undefined;
   }
 
@@ -564,10 +567,14 @@ export class PointerInput {
     readonly snap: SnapTarget | null;
     readonly origin: string | null;
   } {
-    const project = this.o.store.project.peek();
+    const project = this.project();
     const marking = this.markingNow(g.markingId);
     if (!project || !marking) return { snap: null, origin: null };
     if (marking.floating) return { snap: null, origin: marking.containerId };
+    // Numa perspectiva a raiz só anda: o encaixe em container é da Principal (decisão 5).
+    if (marking.containerId === null && this.o.perspectiveOpen?.()) {
+      return { snap: null, origin: null };
+    }
     const space = spaceOf(project, marking);
     const snap = snapTarget(
       toCanvasRect(space.placement, marking.rect),
@@ -613,9 +620,9 @@ export class PointerInput {
 
   /** Gesto do arrasto; se a intenção não se aplica mais, pan. */
   private startDrag(pointerId: number, start: Point, intent: Intent): Gesture {
-    const { store, actions, viewport, state } = this.o;
+    const { actions, viewport, state } = this.o;
     const started = startGesture(
-      store.project.peek(),
+      this.project(),
       pointerId,
       viewport.toCanvas(start),
       intent,
@@ -866,7 +873,8 @@ export class PointerInput {
     if (!ui.viewMode.peek() && ui.mode.peek() !== 'navigate') return;
     const index = projectIndex(project);
     if (target.kind === 'arrow') {
-      this.removeWaypointAt(e, project, target.id);
+      // A rota da seta (pontos de passagem) é só da Principal.
+      if (!this.o.perspectiveOpen?.()) this.removeWaypointAt(e, project, target.id);
       return;
     }
     if (target.kind === 'marking') {
