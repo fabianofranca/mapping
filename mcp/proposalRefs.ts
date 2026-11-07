@@ -1,4 +1,4 @@
-import { REF_SCHEME, encodeRefSegment, normalizeId, shortCodesFor } from '../src/model';
+import { formatAnyRef, normalizeId, parseAnyRef, shortCodesFor } from '../src/model';
 import { ToolError } from './errors';
 import { INVALID_REF_HINT } from './items';
 import { discoverProjects, findProject, type ProjectLocation } from './projects';
@@ -15,30 +15,19 @@ interface ParsedProposalRef {
   readonly code: string;
 }
 
-const FULL =
-  /^mapping:\/\/((?:[A-Za-z0-9\-._~]|%[0-9A-Fa-f]{2})+)\/p\/([0-9a-zA-Z._-]+)$/;
-const SHORT = /^p\/([0-9a-zA-Z._-]+)$/;
 const BARE = /^[0-9a-zA-Z][0-9a-zA-Z._-]*$/;
-
-function decodeSegment(segment: string): string | null {
-  try {
-    return decodeURIComponent(segment);
-  } catch {
-    return null;
-  }
-}
 
 export function parseProposalRef(text: string): ParsedProposalRef | null {
   const input = text.trim();
-  const full = FULL.exec(input);
-  if (full) {
-    const project = decodeSegment(full[1]!);
-    return project === null ? null : { project, code: full[2]! };
+  const parsed = parseAnyRef(input);
+  if (parsed) {
+    const { ref } = parsed;
+    // Só a letra `p` vale aqui; o resto da gramática é das tools de item (CM6).
+    return ref.type === 'item' && ref.kind === 'p'
+      ? { project: parsed.project, code: ref.code }
+      : null;
   }
-  const short = SHORT.exec(input);
-  if (short) return { project: null, code: short[1]! };
-  if (BARE.test(input)) return { project: null, code: input };
-  return null;
+  return BARE.test(input) ? { project: null, code: input } : null;
 }
 
 /** Códigos curtos das propostas do projeto (únicos entre elas). */
@@ -48,7 +37,7 @@ export function proposalCodes(ids: readonly string[]): ReadonlyMap<string, strin
 
 /** `mapping://<projeto>/p/<código>`: só a URL, com o projeto codificado. */
 export function formatProposalRef(projectName: string, code: string): string {
-  return `${REF_SCHEME}${encodeRefSegment(projectName)}/p/${code}`;
+  return formatAnyRef(projectName, { type: 'item', kind: 'p', code });
 }
 
 /** Referências de todas as propostas legíveis do projeto, por id. */
