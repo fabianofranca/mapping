@@ -269,20 +269,23 @@ function candidate(env: Env, target: CitationTarget, group: CiteGroup): CiteCand
 
 // ---- grupo "aqui": campos, pares e linhas das anotações do item da conversa
 
+function annotationById(env: Env, id: string): readonly Annotation[] {
+  const a = projectIndex(env.ctx.project).annotations.get(id);
+  return a ? [a] : [];
+}
+
 function hostAnnotations(env: Env, here: ThreadAnchor | null): readonly Annotation[] {
   if (here === null) return [];
-  const idx = projectIndex(env.ctx.project);
   switch (here.kind) {
     case 'marking':
     case 'arrow':
-      return idx.annotationsByMarking.get(here.id) ?? [];
+      return projectIndex(env.ctx.project).annotationsByMarking.get(here.id) ?? [];
     case 'annotation':
+      return annotationById(env, here.id);
     case 'field':
     case 'entry':
-    case 'row': {
-      const a = idx.annotations.get('id' in here ? here.id : here.annotationId);
-      return a ? [a] : [];
-    }
+    case 'row':
+      return annotationById(env, here.annotationId);
     default:
       return [];
   }

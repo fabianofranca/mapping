@@ -296,7 +296,7 @@ describe('citeCandidates', () => {
       ...THREADS,
       thread('c7aa', 'Resolvida', {
         resolved: {
-          by: { kind: 'human', name: 'Marina Alves', email: null },
+          by: { name: 'Marina Alves', email: 'marina@exemplo.com' },
           at: '2026-11-06T12:00:00.000Z',
         },
       }),
