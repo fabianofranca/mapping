@@ -19,7 +19,7 @@
         "email": null
       },
       "at": "2026-10-19T09:14:03.000Z",
-      "text": "A especialização não diz qual **estilo** usar aqui. O botão [Cadastrar](mapping://exemplo-completo/m/8f9464dd) está como `primary`, mas o [Entrar](mapping://exemplo-completo/m/fd80b227) da tela de login também é `primary`. Os dois devem ser o botão principal da tela?",
+      "text": "A especialização não diz qual **estilo** usar aqui. O botão [Cadastrar](mapping://exemplo-completo/m/8f9464dd) está como `primary`, mas o [Entrar](mapping://exemplo-completo/m/0ce8b079) da tela de login também é `primary`. Os dois devem ser o botão principal da tela?",
       "proposal": null
     }
   ]

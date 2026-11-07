@@ -4,6 +4,7 @@ import {
   awaiting,
   initials,
   lastMessage,
+  messagePlainText,
   userLabel,
   type Project,
   type Thread,
@@ -217,11 +218,6 @@ function StatusBadge({ thread }: { readonly thread: Thread }) {
   return <span class={`comments-badge comments-badge-${who ?? 'open'}`}>{t(key)}</span>;
 }
 
-/** Trecho do texto da última mensagem, numa linha. */
-function excerpt(text: string): string {
-  return text.replaceAll(/\s+/g, ' ').trim().slice(0, 200);
-}
-
 /** Quem abriu a conversa: iniciais e nome. */
 function OpenerCell({ thread }: { readonly thread: Thread }) {
   const opener = thread.messages[0];
@@ -312,7 +308,7 @@ function ThreadRow({
           unread={unread}
         />
       </td>
-      <td class="list-cell comments-last">{last ? excerpt(last.text) : ''}</td>
+      <td class="list-cell comments-last">{last ? messagePlainText(last.text) : ''}</td>
       <td class="list-cell comments-count">{thread.messages.length}</td>
       <td class="list-cell">
         <StatusBadge thread={thread} />

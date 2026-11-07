@@ -26,3 +26,8 @@
 - **`watch-comments.mjs`** (`examples/workspace/`): acorda o agente quando uma conversa passa a aguardá-lo. Observa `projetos/*/comments/`, espera 5 s sem mudança, roda o comando que você passa depois do `--` (um de cada vez; cada conversa e última mensagem é tratada uma vez) e entrega as conversas em `MAPPING_AWAITING`. O servidor MCP nunca dispara um agente; o `setup.sh` não atualiza o arquivo.
 - **Exemplo e guia com conversas.** O `examples/exemplo-completo/` (e o zip) ganha `comments/` com três conversas de exemplo (uma que aguarda você, no campo **estilo** do **Cadastrar**; uma que aguarda o agente, no **Salvar**; e uma resolvida), com nomes e e-mails inventados; o guia interativo ganha um passo de texto sobre as conversas e a janela **Comentários** (`Ctrl+Shift+0`), e passa a ter 13 passos.
 - **Roteiro R22 — Comentários** em `docs/TESTING.md`, para o testador da nuvem rodar sozinho: identidade, janela e filtros, pinos escondidos e os botões **Conversas** e **Comentar**, conversa no item, no campo e no ponto solto, as tools de conversa pelo cliente stdio, o cartão da proposta, resolver e reabrir, citação, órfã, apagar e o zip; entra no bloco 3 da rodada completa e a janela **Comentários** entra na passada visual.
+
+## Corrigido
+
+- **Exemplo com conversas:** a citação do **Entrar** na conversa do campo **estilo** apontava para o id de uma anotação e não resolvia; agora aponta para a marcação.
+- **Coluna Última mensagem** (janela **Comentários**): mostra texto simples (sem `**`, crases nem a sintaxe dos links; a citação aparece só com o rótulo), como o assunto da conversa.
