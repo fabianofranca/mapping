@@ -53,7 +53,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     const result = load(v6Text(sampleProject()), sampleProject());
     expect(result.migratedFrom).toBe(6);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(16);
+    expect(result.project.schemaVersion).toBe(17);
     expect(result.project.platformRepos).toEqual({});
     expect(result.project).toEqual(sampleProject());
   });
@@ -79,7 +79,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     const p = cadastroProject();
     const first = load(v6Text(p), p);
     const saved = serialize(first.project);
-    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 16, platformRepos: {} });
+    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 17, platformRepos: {} });
     const again = load(saved, p);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);

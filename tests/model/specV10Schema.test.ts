@@ -107,7 +107,7 @@ describe('formatVersion 10: notices', () => {
     expect(jsonValidator.safeParse(spec).success).toBe(false);
   });
 
-  it('o JSON Schema descreve notice e recusa formatVersion 14', () => {
+  it('o JSON Schema descreve notice e recusa formatVersion 15', () => {
     const defs = (jsonSchema as Json).$defs;
     expect(Object.keys(defs.notice.properties).sort()).toEqual([
       'kind',
@@ -122,7 +122,7 @@ describe('formatVersion 10: notices', () => {
       'removed',
     ]);
     expect(Object.keys(defs.annotationType.properties)).toContain('notices');
-    expect(jsonValidator.safeParse({ ...alert(), formatVersion: 14 }).success).toBe(
+    expect(jsonValidator.safeParse({ ...alert(), formatVersion: 15 }).success).toBe(
       false,
     );
   });

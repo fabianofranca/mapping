@@ -68,6 +68,10 @@ const PENDING_AFTER_REMOVAL: string[] = [];
  * (decisão 'Fora' da #486); o recurso é coberto por tests/model/specV10.test.ts e pelo roteiro R18.
  */
 const MISSING_TODAY: string[] = [
+  // `accepts.annotations` (formatVersion 14, etapa #679): os exemplos não ganham o recurso nesta
+  // etapa (o roteiro usa uma especialização inline); coberto por tests/model/specAcceptsAnnotations.
+  'spec:layers[].annotationTypes[].fields[].accepts.annotations',
+  'spec:layers[].annotationTypes[].fields[].columns[].accepts.annotations',
   'spec:layers[].annotationTypes[].notices',
   'spec:layers[].annotationTypes[].notices[].kind',
   'spec:layers[].annotationTypes[].notices[].kind=deprecated',

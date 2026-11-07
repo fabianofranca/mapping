@@ -126,6 +126,8 @@ function refTarget(refs: Refs, target: ResolvedRef): Json {
     marking: refs.ref('m', target.annotation.markingId),
   };
   switch (target.kind) {
+    case 'annotation':
+      return { ...base, kind: 'annotation' };
     case 'entry':
       return { ...base, kind: 'entry', entryId: target.entry.id, key: target.entry.key };
     case 'row':

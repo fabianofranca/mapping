@@ -1,5 +1,12 @@
 import type { FieldRow, FieldValue, FieldValues } from './components/componentFormat';
-import { isRecord, parseRefValue, resolveRef, tableRows, type ResolvedRef } from './refs';
+import {
+  annotationRefLabel,
+  isRecord,
+  parseRefValue,
+  resolveRef,
+  tableRows,
+  type ResolvedRef,
+} from './refs';
 import type { SpecAnnotationType, SpecColumn, SpecField } from './spec';
 import { isEmptyValue } from './typed';
 import type { Annotation, JsonValue, Project } from './types';
@@ -59,6 +66,8 @@ function refValue(
     return null;
   }
   switch (target.kind) {
+    case 'annotation':
+      return annotationRefLabel(p, target.annotation);
     case 'entry':
       return target.entry.value === '' ? null : target.entry.value;
     case 'row':

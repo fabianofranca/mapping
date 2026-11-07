@@ -308,6 +308,13 @@ export const migrateFrom15To16: Migration = (data) => {
   };
 };
 
+/**
+ * v16 → v17 (ref de anotação inteira): só a versão muda. O `ref` ganha o formato `{ annotationId }`
+ * para a anotação inteira; a versão nova existe para que uma app anterior abra o arquivo só para
+ * leitura, em vez de mostrar `ref` quebrados.
+ */
+export const migrateFrom16To17: Migration = (data) => data;
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -325,6 +332,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [13, migrateFrom13To14],
   [14, migrateFrom14To15],
   [15, migrateFrom15To16],
+  [16, migrateFrom16To17],
 ]);
 
 export type MigrationResult =

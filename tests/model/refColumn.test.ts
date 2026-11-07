@@ -59,7 +59,8 @@ describe('definir a célula', () => {
     const set = (value: JsonValue) => () =>
       setTableCell(p, 'AL', 'alvos', 'L1', 'alvo', value);
     expectCode(set('texto'), 'invalid-value');
-    expectCode(set({ annotationId: 'AM' }), 'invalid-value');
+    // `{ annotationId }` é o quarto formato (anotação inteira): válido, mas a coluna não a aceita.
+    expectCode(set({ annotationId: 'AM' }), 'ref-not-accepted');
     expectCode(set({ annotationId: 'NADA', key: 'x' }), 'ref-not-accepted');
     // A tabela inteira não é um alvo (só as linhas dela).
     expectCode(set({ annotationId: 'AM', key: 'campos' }), 'ref-not-accepted');

@@ -7,7 +7,7 @@ import { childSets } from './specChildren';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 13), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
+// Formato da especialização (`formatVersion` 1 a 14), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
 // biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
@@ -42,9 +42,11 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 13;
+export const SPEC_FORMAT_VERSION = 14;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
+export const SPEC_FORMAT_VERSIONS = [
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -198,6 +200,11 @@ export interface SpecMigration {
 export interface SpecRefAccepts {
   tags?: string[];
   free?: boolean;
+  /**
+   * Anotação inteira como alvo (só `formatVersion` 14): ids de tipo ou cláusulas de camada e
+   * grupos da mesma especialização, a mesma sintaxe e o mesmo resolvedor do `allowedChildren`.
+   */
+  annotations?: SpecAllowedChild[];
 }
 
 /** Tipos de aviso (v10), na ordem de exibição; a gravidade está em `notices.ts`. */
@@ -472,11 +479,23 @@ const fieldSourceShape = z
   .strict();
 
 const acceptsSchema = z
-  .object({ tags: tags.optional(), free: z.boolean().optional() })
+  .object({
+    tags: tags.optional(),
+    free: z.boolean().optional(),
+    // Só `formatVersion` 14; os itens usam a forma e o resolvedor do `allowedChildren`.
+    annotations: z
+      .array(z.lazy(() => allowedChildShape))
+      .refine(
+        (a) => a.length > 0,
+        'não pode ser vazio; tire a chave ou liste ao menos um item',
+      )
+      .optional(),
+  })
   .strict()
   .refine(
-    (a) => (a.tags?.length ?? 0) > 0 || a.free === true,
-    'precisa de pelo menos uma etiqueta ou "free": true',
+    (a) =>
+      (a.tags?.length ?? 0) > 0 || a.free === true || (a.annotations?.length ?? 0) > 0,
+    'precisa de pelo menos uma etiqueta, "free": true ou "annotations"',
   );
 
 const noticeShape = z
@@ -2020,6 +2039,14 @@ interface V11Type {
   readonly childRoles?: readonly unknown[] | undefined;
   readonly childRolesLabel?: string | undefined;
   readonly doc?: string | SpecDocRef | undefined;
+  readonly fields?: readonly V14Field[] | undefined;
+}
+
+/** Campo ou coluna `ref` com `accepts.annotations` (v14), na forma crua. */
+interface V14Field {
+  readonly accepts?:
+    { readonly annotations?: readonly unknown[] | undefined } | undefined;
+  readonly columns?: readonly unknown[] | undefined;
 }
 
 interface V11Layer {
@@ -2160,6 +2187,61 @@ function checkAllowedChildren(
   });
 }
 
+/** Primeira `formatVersion` em que `accepts.annotations` existe. */
+const ACCEPTS_ANNOTATIONS_VERSION = 14;
+
+/** Cada `accepts` de campo e de coluna `ref` do tipo, com o caminho dele. */
+function eachAccepts(
+  type: V11Type,
+  typePath: (string | number)[],
+  visit: (annotations: readonly unknown[], path: (string | number)[]) => void,
+): void {
+  (type.fields ?? []).forEach((field, fi) => {
+    const fieldPath = [...typePath, 'fields', fi];
+    const own = field.accepts?.annotations;
+    if (own !== undefined) visit(own, [...fieldPath, 'accepts', 'annotations']);
+    (field.columns ?? []).forEach((column, ci) => {
+      const inner =
+        isRecord(column) && isRecord(column.accepts) ? column.accepts : undefined;
+      const items = inner?.annotations;
+      if (Array.isArray(items)) {
+        visit(items, [...fieldPath, 'columns', ci, 'accepts', 'annotations']);
+      }
+    });
+  });
+}
+
+/**
+ * `accepts.annotations` (v14): antes dela é erro; depois, cada item aponta para o que existe,
+ * com os mesmos textos do `allowedChildren`.
+ */
+function checkAcceptsAnnotations(
+  spec: { formatVersion: number; layers: readonly V11Layer[] },
+  typeLayer: ReadonlyMap<string, number>,
+  ctx: z.RefinementCtx,
+): void {
+  const add = issueAdder(ctx);
+  const layers = layerGroupIndex(spec.layers);
+  const current = spec.formatVersion >= ACCEPTS_ANNOTATIONS_VERSION;
+  eachV11Type(spec.layers, (type, _layer, path, li) => {
+    eachAccepts(type, path, (items, itemsPath) => {
+      if (!current) {
+        add(itemsPath, `só é permitido com formatVersion ${ACCEPTS_ANNOTATIONS_VERSION}`);
+        return;
+      }
+      items.forEach((item, ii) => {
+        const itemPath = [...itemsPath, ii];
+        if (typeof item === 'string') {
+          checkChildId(item, li, typeLayer, itemPath, add, spec.formatVersion);
+        } else if (isRecord(item) && typeof item.layer === 'string') {
+          const clause: SpecChildClause = { ...item, layer: item.layer };
+          checkChildClause(clause, li, layers, itemPath, add, spec.formatVersion);
+        }
+      });
+    });
+  });
+}
+
 /** v11: ids de grupo únicos na camada e `groups` do tipo só com grupos da própria camada. */
 function checkLayerGroups(layers: readonly V11Layer[], ctx: z.RefinementCtx): void {
   const add = issueAdder(ctx);
@@ -2243,6 +2325,7 @@ export const specSchema = z
         z.literal(11),
         z.literal(12),
         z.literal(13),
+        z.literal(14),
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
@@ -2435,6 +2518,7 @@ export const specSchema = z
     });
 
     checkAllowedChildren(spec, typeLayer, ctx);
+    checkAcceptsAnnotations(spec, typeLayer, ctx);
     if (spec.formatVersion >= 11) {
       checkLayerGroups(spec.layers, ctx);
       checkDocRepos(spec, ctx);
