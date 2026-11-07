@@ -141,6 +141,7 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `SpecsDialog` | `src/ui/SpecsDialog.tsx` | Também `specPackageImport.ts`. |
 | `LibraryIssueList` | `src/ui/LibraryIssueList.tsx` |  |
 | `NoticesView` | `src/ui/NoticesView.tsx`, `src/ui/BottomTabs.tsx` | Janela Avisos (`Ctrl+Shift+8`): filtros, grupos por aviso e a aba com contagem. |
+| Janela Comentários | `src/ui/toolWindowMeta.ts`, `src/store/toolWindows.ts` | Aba da janela inferior, a última (`WINDOW_NUMBER.comments = 0`, atalho `Ctrl+Shift+0`, ícone `chat`). |
 | `SettingsDialog` | `src/ui/SettingsDialog.tsx` | Também `SettingsBar.tsx`, `PlatformRepos.tsx` e `PrivacySettings.tsx`. |
 
 ### Seções
