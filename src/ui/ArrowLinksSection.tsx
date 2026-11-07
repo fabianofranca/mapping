@@ -195,14 +195,18 @@ export function ArrowLinksSection({
   readonly project: Project;
   readonly marking: Marking;
 }) {
-  const { derived } = useEditor();
+  const { derived, session, store } = useEditor();
   const ext = useDetailsExtension();
-  const links = arrowLinksOf(project, marking.id);
+  // Com perspectiva aberta, `project` é o recorte dela, que descarta as setas cuja outra ponta
+  // está fora (decisão 16: elas aparecem como "Sai para…" com o selo): consulta o projeto inteiro.
+  const whole = session.perspective.id.value !== null ? store.project.value : null;
+  const source = whole ?? project;
+  const links = arrowLinksOf(source, marking.id);
   if (links.length === 0) return null;
   const layers = derived.visibleLayers.value;
   const items = links.map((link) => ({
     key: link.arrow.id,
-    node: <ArrowLinkRow project={project} link={link} layers={layers} />,
+    node: <ArrowLinkRow project={source} link={link} layers={layers} />,
   }));
   return (
     <Section

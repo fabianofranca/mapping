@@ -14,3 +14,12 @@
 - **Camadas por perspectiva**: a caixa de visibilidade da janela Camadas edita as camadas escondidas da perspectiva aberta. Revisar uma proposta abre a Principal (com o aviso "A revisão mostra a Principal") e trava o seletor.
 - Na seção **Ligado por seta**, a outra ponta fora da perspectiva aberta ganha o selo "fora desta perspectiva".
 - **O MCP lê as perspectivas** (MCP 0.26.0, só leitura): `get_project` traz `perspectives` (id, nome, quantas raízes, camadas escondidas) e `arrivals` (as marcas "Veio de…"); a tool nova `get_perspective` traz as raízes de uma perspectiva com a posição de cada uma e as camadas escondidas; `get_marking` e `get_container` dizem em que perspectivas o item aparece. O servidor nunca cria nem altera perspectivas, e as "Só eu" (do navegador) não aparecem para ele.
+
+## Corrigido
+
+- Dentro de uma perspectiva, a seção **Ligado por seta** dos Detalhes volta a mostrar a seta que sai para fora dela, com o selo "fora desta perspectiva".
+- Containers criados numa perspectiva não nascem mais um sobre o outro.
+- O aviso de chegada da primeira tela da fila volta a trazer "Sem referência; foi para a área de chegada.".
+- Na Principal, o selo "Veio de…" não cobre mais o nome do container nem o rótulo da faixa de chegada e fica sempre dentro da área visível; a barra de status mostra "Chegadas: N" (a frase inteira fica na dica).
+- O submenu **Enviar para perspectiva** abre também ao passar o ponteiro, não sai da tela perto da borda direita e anuncia a perspectiva marcada (`menuitemcheckbox` com `aria-checked`).
+- As posições gravadas ao mover, criar e enviar itens para perspectivas não levam mais ruído de ponto flutuante (como `225.00000000000006`).

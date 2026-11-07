@@ -113,6 +113,7 @@ export const perspectivesPtBR = {
 
   // Barra de status
   'perspective.status.name': 'Perspectiva {name}',
+  'perspective.status.arrivals': 'Chegadas: {count}',
   'perspective.status.arrivalsOne': '1 item veio de outra perspectiva',
   'perspective.status.arrivalsMany': '{count} itens vieram de outras perspectivas',
 } as const;
@@ -215,6 +216,7 @@ export const perspectivesEnUS: Record<keyof typeof perspectivesPtBR, string> = {
     'what came from other perspectives with no reference',
 
   'perspective.status.name': 'Perspective {name}',
+  'perspective.status.arrivals': 'Arrivals: {count}',
   'perspective.status.arrivalsOne': '1 item came from another perspective',
   'perspective.status.arrivalsMany': '{count} items came from other perspectives',
 };

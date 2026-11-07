@@ -95,6 +95,27 @@ async function savedLocals(): Promise<readonly Perspective[]> {
   return (await store?.load(PROJECT_ID)) ?? [];
 }
 
+describe('avisos de chegada', () => {
+  it('criar uma segunda raiz mantém o aviso da primeira', async () => {
+    const s = await open(folder());
+    const id = created(
+      s.perspectiveActions.createPerspective({
+        name: 'Mobile',
+        startFrom: null,
+        local: false,
+      }),
+    );
+    s.perspective.open(id);
+    const args = { name: null, width: 100, height: 100, background: '#FFFFFF' };
+    const first = s.actions.addBackgroundContainer(args);
+    const second = s.actions.addBackgroundContainer(args);
+    expect(first.ok && second.ok).toBe(true);
+    expect(s.perspective.arrivals.value.map((a) => a.root).sort()).toEqual(
+      [first.ok && first.value, second.ok && second.value].sort(),
+    );
+  });
+});
+
 describe('perspectiva aberta', () => {
   it('abrir uma perspectiva troca session.perspective.id; null volta à Principal', async () => {
     const s = await open(folder());

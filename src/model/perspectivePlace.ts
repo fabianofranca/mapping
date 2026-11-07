@@ -1,6 +1,13 @@
 import { IMAGE_GAP, nearestFreeSpot } from './containers';
 import { fail } from './errors';
-import { bottom, boundingBox, imageCanvasRect, rectsOverlap, right } from './geometry';
+import {
+  bottom,
+  boundingBox,
+  imageCanvasRect,
+  rectsOverlap,
+  right,
+  snapNearInteger,
+} from './geometry';
 import { markingCanvasRectOf, settleHierarchy } from './hierarchySettle';
 import { floatingSpotNear } from './markings';
 import {
@@ -183,7 +190,7 @@ function placeInArrivalArea(
   rootId: string,
   from: string | undefined,
 ): RootPlacement {
-  const snap = seek.whole ? Math.ceil : (v: number) => v;
+  const snap = seek.whole ? Math.ceil : (v: number) => snapNearInteger(v);
   const column = arrivalColumn(target, rootId, from);
   let rect: Rect = {
     x: snap(column.x),
@@ -258,9 +265,36 @@ function desiredNear(
   const there = rootPosition(source, ref.rootId);
   const here = rootPosition(target, ref.rootId);
   if (!own || !there || !here) return null;
-  const x = here.x + own.x - there.x;
-  const y = here.y + own.y - there.y;
+  const x = snapNearInteger(here.x + own.x - there.x);
+  const y = snapNearInteger(here.y + own.y - there.y);
   return whole ? { x: Math.round(x), y: Math.round(y) } : { x, y };
+}
+
+/**
+ * Onde a raiz recém-criada `rootId` (que está em `p` em alguma posição) fica na perspectiva
+ * `perspective`: a posição que tem em `p`, ou, se aí sobrepõe algo do que a perspectiva mostra, o
+ * lugar livre mais próximo dela. Containers e marcações do canvas de uma vista não se sobrepõem.
+ * A posição sai sem ruído de ponto flutuante; a de marcação é inteira.
+ */
+export function placeCreatedRoot(
+  p: Project,
+  perspective: Perspective,
+  rootId: string,
+): CanvasPosition {
+  const size = rootFootprint(p, rootId) ?? fail('not-found', rootId);
+  const own = rootPosition(p, rootId) ?? fail('not-found', rootId);
+  const others = {
+    ...perspective,
+    items: perspective.items.filter((item) => item.root !== rootId),
+  };
+  const obstacles = obstaclesOf(perspectiveView(p, others), new Set());
+  const whole = isMarkingRoot(p, rootId);
+  const clean = (v: number) => snapNearInteger(whole ? Math.round(v) : v);
+  const wanted = { x: clean(own.x), y: clean(own.y) };
+  const spot = { ...wanted, width: size.width, height: size.height };
+  if (!overlapsAny(spot, obstacles)) return wanted;
+  const free = nearestFreeSpot(obstacles, size.width, size.height, wanted);
+  return { x: clean(free.x), y: clean(free.y) };
 }
 
 /** Move só a raiz para `at` (container: `placement`; marcação: `rect`). */

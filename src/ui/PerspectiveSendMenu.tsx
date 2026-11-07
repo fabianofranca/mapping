@@ -88,7 +88,8 @@ export function PerspectiveSendMenu({
       {rows.map((row) => (
         <Button
           key={row.id ?? 'principal'}
-          role="menuitem"
+          role="menuitemcheckbox"
+          aria-checked={row.checked}
           disabled={row.locked}
           onClick={() => toggle(row)}
         >

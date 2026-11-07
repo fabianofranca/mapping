@@ -1087,6 +1087,12 @@ button.tree-toggle:hover {
   min-width: 200px;
 }
 
+/* Sem espaço à direita, o submenu abre à esquerda do item pai. */
+.menu-submenu-left {
+  right: 100%;
+  left: auto;
+}
+
 .menu-heading {
   padding: var(--space-1) var(--space-2);
   font: var(--t-small);

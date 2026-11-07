@@ -58,11 +58,18 @@ describe('barra de status: perspectiva', () => {
 
   it('na Principal com chegadas, conta quantos itens vieram', async () => {
     const { harness } = await setup();
-    expect(screen.queryByText(/veio de outra|vieram de outras/)).toBeNull();
+    expect(screen.queryByText(/Chegadas/)).toBeNull();
     addArrivals(harness, 1);
-    expect(await screen.findByText('1 item veio de outra perspectiva')).toBeTruthy();
+    // Texto curto na barra (não trunca a 900 px); a frase inteira vai no title.
+    const one = await screen.findByText('Chegadas: 1');
+    expect(one.closest('.status-item')?.getAttribute('title')).toBe(
+      '1 item veio de outra perspectiva',
+    );
     addArrivals(harness, 3);
-    expect(await screen.findByText('3 itens vieram de outras perspectivas')).toBeTruthy();
+    const many = await screen.findByText('Chegadas: 3');
+    expect(many.closest('.status-item')?.getAttribute('title')).toBe(
+      '3 itens vieram de outras perspectivas',
+    );
   });
 
   it('fora da Principal não mostra a contagem de chegadas', async () => {
@@ -70,7 +77,7 @@ describe('barra de status: perspectiva', () => {
     addArrivals(harness, 2);
     act(() => void session.perspective.open(id));
     await screen.findByText('Perspectiva Fluxo A');
-    expect(screen.queryByText(/vieram de outras/)).toBeNull();
+    expect(screen.queryByText(/Chegadas/)).toBeNull();
   });
 });
 

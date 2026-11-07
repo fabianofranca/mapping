@@ -76,22 +76,36 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
   const big = { x: 100, y: 200, width: 800, height: 600 };
   const small = { x: 100, y: 200, width: 40, height: 30 };
 
-  it('raiz grande: por dentro, no canto de cima à esquerda', () => {
+  it('raiz grande: por dentro, no canto de baixo à esquerda (o nome do container fica em cima)', () => {
     const spot = arrivalBadgeSpot(big, 1, 100);
     expect(spot.x).toBeGreaterThan(100);
-    expect(spot.y).toBeGreaterThan(200);
+    expect(spot.y).toBeGreaterThan(200 + 600 - 2 * ARRIVAL_BADGE_HEIGHT);
+    expect(spot.y + ARRIVAL_BADGE_HEIGHT).toBeLessThanOrEqual(200 + 600);
   });
 
-  it('raiz pequena: por fora, acima do canto de cima à esquerda', () => {
+  it('raiz pequena: por fora, abaixo do canto de baixo à esquerda (nunca sobre o nome nem a faixa)', () => {
     const spot = arrivalBadgeSpot(small, 1, 100);
     expect(spot.x).toBe(100);
-    expect(spot.y + ARRIVAL_BADGE_HEIGHT).toBeLessThanOrEqual(200);
+    expect(spot.y).toBeGreaterThanOrEqual(200 + 30);
   });
 
   it('o tamanho do selo na tela não muda com o zoom: o vão em unidades do canvas encolhe', () => {
     const at1 = arrivalBadgeSpot(small, 1, 100);
     const at2 = arrivalBadgeSpot(small, 2, 100);
-    expect(200 - at1.y).toBeCloseTo(2 * (200 - at2.y));
+    expect(at1.y - 230).toBeCloseTo(2 * (at2.y - 230));
+  });
+
+  it('o selo não sai da área visível: encosta na borda direita e na de baixo', () => {
+    const zoom = 0.16;
+    const width = 220;
+    const view = { x: 0, y: 0, width: 880 / zoom, height: 660 / zoom };
+    const edge = { x: 5300, y: 3900, width: 400, height: 300 };
+    const spot = arrivalBadgeSpot(edge, zoom, width, view);
+    expect(spot.x + width / zoom).toBeLessThanOrEqual(view.x + view.width);
+    expect(spot.y + ARRIVAL_BADGE_HEIGHT / zoom).toBeLessThanOrEqual(
+      view.y + view.height,
+    );
+    expect(spot.x).toBeGreaterThanOrEqual(view.x);
   });
 
   it('a largura cresce com o nome', () => {
