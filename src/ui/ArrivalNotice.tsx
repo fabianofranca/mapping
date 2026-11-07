@@ -21,7 +21,7 @@ function referenceLabel(project: Project, id: string | null): string {
 
 export function ArrivalNotice({ itemId }: { readonly itemId: string }) {
   const { session, store, ui, canvas } = useEditor();
-  const project = store.project.value;
+  const project = store.committed.value;
   const { perspective, perspectiveActions } = session;
   if (!project || perspective.id.value !== null) return null;
   const arrival = project.arrivals.find((a) => a.root === itemId);

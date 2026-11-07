@@ -97,6 +97,8 @@ describe('renderizações da interface durante um gesto', () => {
       expect(counts.get('EditorScreen') ?? 0).toBe(0);
       expect(counts.get('EditorPanel') ?? 0).toBe(0);
       expect(counts.get('EditorMainBar') ?? 0).toBe(0);
+      // Nem o painel da marcação selecionada (suas seções leem o projeto confirmado, não a prévia).
+      expect(counts.get('MarkingPanel') ?? 0).toBe(0);
       // A prévia mudou o projeto, mas não o confirmado.
       expect(store.project.value).not.toBe(before);
       expect(store.committed.value).toBe(before);

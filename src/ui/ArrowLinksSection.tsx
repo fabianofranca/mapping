@@ -22,7 +22,7 @@ import { arrowEndLabel, arrowText } from './labels';
 /** A outra ponta está fora da perspectiva aberta? (decisão 16; na Principal nunca) */
 function useOutsidePerspective(otherId: string): boolean {
   const { session, store } = useEditor();
-  const project = store.project.value;
+  const project = store.committed.value;
   const openId = session.perspective.id.value;
   const open = project?.perspectives.find((x) => x.id === openId);
   if (!project || !open) return false;
@@ -199,7 +199,7 @@ export function ArrowLinksSection({
   const ext = useDetailsExtension();
   // Com perspectiva aberta, `project` é o recorte dela, que descarta as setas cuja outra ponta
   // está fora (decisão 16: elas aparecem como "Sai para…" com o selo): consulta o projeto inteiro.
-  const whole = session.perspective.id.value !== null ? store.project.value : null;
+  const whole = session.perspective.id.value !== null ? store.committed.value : null;
   const source = whole ?? project;
   const links = arrowLinksOf(source, marking.id);
   if (links.length === 0) return null;

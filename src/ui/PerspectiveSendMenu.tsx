@@ -60,7 +60,7 @@ export function PerspectiveSendMenu({
   readonly disabled: boolean;
 }) {
   const { session, store, ui } = useEditor();
-  const project = store.project.value;
+  const project = store.committed.value;
   const label = t('perspective.section.send');
   if (disabled || !project) {
     return (

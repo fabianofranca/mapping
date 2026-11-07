@@ -249,7 +249,7 @@ export function CanvasContextMenu() {
         ? picked.map((item) => item.id)
         : [copyTarget.id];
   const openId = editor.session.perspective.id.value;
-  const real = editor.store.project.value;
+  const real = editor.store.committed.value;
   // Excluir de uma raiz só vale na Principal: fora dela aparece desabilitado, com a dica.
   const deleteBlocked =
     real !== null &&

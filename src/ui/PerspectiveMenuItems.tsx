@@ -131,7 +131,7 @@ export function PerspectiveMenuItems({
   const [expanded, setExpanded] = useState(false);
   const parent = useRef<HTMLButtonElement>(null);
   const sub = useRef<HTMLDivElement>(null);
-  const project = store.project.value;
+  const project = store.committed.value;
   const openId = session.perspective.id.value;
   const localIds = session.perspective.localIds.value;
   const wasExpanded = useRef(false);

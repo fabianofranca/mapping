@@ -15,7 +15,7 @@ export function usePrincipalOnly(
   targets: readonly string[] = [],
 ): boolean {
   const { session, store } = useEditor();
-  const project = store.project.value;
+  const project = store.committed.value;
   return (
     project !== null &&
     principalOnly(project, session.perspective.id.value, command, targets)
@@ -30,7 +30,7 @@ export function PerspectivesSection({
   readonly readOnly: boolean;
 }) {
   const { session, store } = useEditor();
-  const project = store.project.value;
+  const project = store.committed.value;
   const rootId = project ? perspectiveRootOf(project, itemId) : null;
   if (!project || rootId === null) return null;
   const localIds = session.perspective.localIds.value;
