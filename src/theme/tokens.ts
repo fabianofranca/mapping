@@ -115,6 +115,18 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
    */
   'cv-badge': 'rgba(10, 12, 16, 0.9)',
   /**
+   * Pino das conversas (etapa Comentários, CM4): um fundo por estado (aguardando humano, aguardando
+   * agente, resolvida), o texto, o contorno, o anel do selecionado e o ponto de não lida. Ficam
+   * sobre a foto: iguais nos dois temas, e o texto escuro passa de 4,5:1 sobre os três fundos.
+   */
+  'cv-pin-human': '#ffb020',
+  'cv-pin-agent': '#5eead4',
+  'cv-pin-resolved': '#b4bcc7',
+  'cv-pin-text': '#0b1220',
+  'cv-pin-halo': 'var(--cv-halo)',
+  'cv-pin-selected': 'var(--cv-select)',
+  'cv-pin-unread': 'var(--cv-invalid)',
+  /**
    * Desenho dos componentes (B3): reservado de imagem e seu contorno (cinza neutro, legível sobre
    * fundos claros e escuros) e a caixa de um nó que o desenho não conhece. Ficam sobre a tela
    * em branco ou a foto: iguais nos dois temas.

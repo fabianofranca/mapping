@@ -3,6 +3,7 @@ import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
 import { viewModeButton } from '../ui/ViewModePanel';
 import { IconButton, Segmented } from '../ui/controls';
+import { armComment, cancelComment } from '../store/threadUi';
 import { setViewMode } from '../store/ui';
 import { SHORTCUT_LABELS } from './shortcuts';
 
@@ -57,6 +58,56 @@ export function AddContainerButton({ onAdd }: { readonly onAdd: () => void }) {
       text={t('container.new')}
       disabled={store.locked.value}
       onClick={onAdd}
+    />
+  );
+}
+
+/**
+ * Comentar (decisão 25), ao lado de Novo container: liga os pinos e arma um clique no canvas (num
+ * item, a conversa fica no item; num lugar vazio, num ponto). Desabilitado no somente leitura, na
+ * revisão e no modo visualização.
+ */
+export function CommentButton() {
+  const { store, ui, review } = useEditor();
+  const armed = ui.commentArm.value !== null;
+  const blocked =
+    store.locked.value || review.proposalId.value !== null || ui.viewMode.value;
+  return (
+    <IconButton
+      icon="chatAdd"
+      label={t('comments.add')}
+      text={t('comments.add')}
+      tooltip={blocked ? t('comments.addDisabled') : t('comments.addTip')}
+      pressed={armed}
+      disabled={blocked}
+      onClick={() => (armed ? cancelComment(ui) : armComment(ui))}
+    />
+  );
+}
+
+/**
+ * Conversas (decisão 24), na barra do canvas ao lado do Visualizar: liga e desliga os pinos. Desligado,
+ * mostra a contagem das conversas que aguardam humano e um ponto se há mensagem não lida.
+ */
+export function PinsButton() {
+  const { ui, derived } = useEditor();
+  const on = ui.commentPins.value;
+  const waiting = derived.threads.awaitingHumanCount.value;
+  const unread = derived.threads.unreadIds.value.size > 0;
+  const showCount = !on && waiting > 0;
+  return (
+    <IconButton
+      icon="chat"
+      label={t('comments.pins')}
+      tooltip={
+        showCount
+          ? `${t('comments.pinsTip')} · ${t('comments.pinsAwaiting', { count: String(waiting) })}`
+          : t('comments.pinsTip')
+      }
+      pressed={on}
+      {...(showCount ? { badge: String(waiting) } : {})}
+      alert={!on && unread}
+      onClick={() => (ui.commentPins.value = !ui.commentPins.peek())}
     />
   );
 }

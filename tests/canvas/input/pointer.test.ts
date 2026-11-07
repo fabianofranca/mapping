@@ -437,6 +437,8 @@ describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
       x: 250,
       y: 250,
       target: { kind: 'm', id: 'M2' },
+      comment: { kind: 'marking', id: 'M2' },
+      here: null,
     });
   });
 
@@ -445,16 +447,28 @@ describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
     s.fire('pointerdown', 20, 20, { button: 2 });
     contextMenu(s, 20, 20);
     expect(s.ui.selection.value).toMatchObject({ kind: 'image' });
-    expect(s.ui.canvasMenu.value?.target.kind).toBe('i');
+    expect(s.ui.canvasMenu.value?.target?.kind).toBe('i');
+    // Dentro do container, a imagem aceita também o Comentar aqui (CM4).
+    expect(s.ui.canvasMenu.value?.comment).toEqual({ kind: 'container', id: 'I1' });
+    expect(s.ui.canvasMenu.value?.here).toMatchObject({
+      kind: 'point',
+      containerId: 'I1',
+    });
   });
 
-  it('fora das imagens não abre nada, mas o menu do navegador continua suprimido', () => {
+  it('fora das imagens só abre o Comentar aqui (ponto no canvas), e o menu do navegador continua suprimido', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'marking', id: 'M1' };
     s.fire('pointerdown', 1050, 50, { button: 2 });
     const event = contextMenu(s, 1050, 50);
     expect(event.defaultPrevented).toBe(true);
-    expect(s.ui.canvasMenu.value).toBeNull();
+    expect(s.ui.canvasMenu.value?.target).toBeNull();
+    expect(s.ui.canvasMenu.value?.here).toEqual({
+      kind: 'point',
+      containerId: null,
+      x: 1050,
+      y: 50,
+    });
     expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
   });
 

@@ -22,6 +22,7 @@ import {
   setViewMode,
   type Selection,
 } from '../store/ui';
+import { cancelComment } from '../store/threadUi';
 import { useEditor } from '../ui/EditorContext';
 import {
   closeToolWindow,
@@ -228,6 +229,8 @@ export function useEditorShortcuts(
         case 'escape':
           // Gesto em andamento: cancela. Senão, com vários itens volta ao primário; por fim limpa.
           if (canvas.current?.cancelInteraction()) return;
+          // O Comentar armado: o Esc desarma e volta à ferramenta de antes.
+          if (cancelComment(ui)) return;
           // No modo visualização o Esc sai do modo (o painel aberto já consumiu o Esc dele).
           if (ui.viewMode.peek()) return setViewMode(ui, false);
           if (!collapseToPrimary(ui)) selectItems(ui, []);
