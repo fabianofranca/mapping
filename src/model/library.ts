@@ -375,6 +375,8 @@ function readComponent(file: LibraryFile, pkg: Package, out: Collector): void {
     for (const issue of parsed.issues) out.error(file.path, issue.path, issue.message);
     return;
   }
+  for (const warning of parsed.warnings)
+    out.warning(file.path, warning.path, warning.message);
   pkg.components.set(file.path, parsed.component);
   pkg.componentJson.set(file.path, json);
 }
