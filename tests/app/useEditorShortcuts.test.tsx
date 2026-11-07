@@ -20,7 +20,6 @@ import {
   showToolWindow,
   toolWindowSizes,
 } from '../../src/store/toolWindows';
-import { ADD_ANNOTATION_ACTION } from '../../src/ui/AnnotationsPanel';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { locale } from '../../src/store/settings';
 import { selectItems } from '../../src/store/ui';
@@ -257,18 +256,66 @@ describe('useEditorShortcuts: excluir', () => {
   });
 });
 
-describe('useEditorShortcuts: Ver limpo (Alt+H)', () => {
+describe('useEditorShortcuts: modo visualização (Alt+H)', () => {
   it('liga e desliga, volta ao modo Navegar e mantém a seleção', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     s.harness.ui.mode.value = 'draw';
     expect(s.press('h', { alt: true }).defaultPrevented).toBe(true);
-    expect(s.harness.ui.cleanView.value).toBe(true);
+    expect(s.harness.ui.viewMode.value).toBe(true);
     expect(s.harness.ui.mode.value).toBe('navigate');
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
     s.press('h', { alt: true });
-    expect(s.harness.ui.cleanView.value).toBe(false);
+    expect(s.harness.ui.viewMode.value).toBe(false);
     expect(s.harness.ui.mode.value).toBe('navigate');
+  });
+});
+
+describe('useEditorShortcuts: Alt+H com o foco num controle do painel', () => {
+  it('desliga o modo com o foco numa caixa de seleção (Choice) do painel', () => {
+    const s = setup();
+    s.press('h', { alt: true });
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    document.body.appendChild(box);
+    box.focus();
+    expect(pressOn(box, 'h', { alt: true }).defaultPrevented).toBe(true);
+    expect(s.harness.ui.viewMode.value).toBe(false);
+    box.remove();
+  });
+
+  it('com campo de texto em foco, o Alt+H não age', () => {
+    const s = setup();
+    s.press('h', { alt: true });
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    expect(pressOn(input, 'h', { alt: true }).defaultPrevented).toBe(false);
+    expect(s.harness.ui.viewMode.value).toBe(true);
+    input.remove();
+  });
+});
+
+describe('useEditorShortcuts: sair do modo visualização (Esc)', () => {
+  it('o Esc sai do modo e não mexe na seleção', () => {
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
+    s.press('h', { alt: true });
+    expect(s.harness.ui.viewMode.value).toBe(true);
+    s.press('Escape');
+    expect(s.harness.ui.viewMode.value).toBe(false);
+    expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
+  });
+
+  it('com campo de texto em foco, o Esc não sai do modo', () => {
+    const s = setup();
+    s.press('h', { alt: true });
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(s.harness.ui.viewMode.value).toBe(true);
+    input.remove();
   });
 });
 
@@ -592,49 +639,21 @@ describe('useEditorShortcuts: janelas', () => {
   });
 });
 
-describe('useEditorShortcuts: Alt+N (nova anotação)', () => {
-  it('aciona o botão "+ Anotação", mesmo com o foco num campo de texto', () => {
+describe('useEditorShortcuts: Alt+N', () => {
+  it('não faz nada: nem aciona botão, nem abre Detalhes (a camada ativa saiu)', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     const button = document.createElement('button');
-    button.setAttribute('data-action', ADD_ANNOTATION_ACTION);
+    button.setAttribute('data-action', 'add-annotation');
     const click = vi.fn();
     button.addEventListener('click', click);
     const input = document.createElement('input');
     document.body.append(button, input);
-    const event = pressOn(input, 'n', { alt: true });
-    expect(event.defaultPrevented).toBe(true);
-    expect(click).toHaveBeenCalledOnce();
-  });
-
-  it('sem marcação selecionada e sem o botão, não faz nada', () => {
-    const s = setup();
-    s.harness.ui.selection.value = { kind: 'image', id: 'I1' };
     const details = isToolWindowOpen('details');
-    s.press('n', { alt: true });
+    const event = pressOn(input, 'n', { alt: true });
+    expect(event.defaultPrevented).toBe(false);
+    expect(click).not.toHaveBeenCalled();
     expect(isToolWindowOpen('details')).toBe(details);
-  });
-
-  it('com a marcação selecionada e Detalhes fechado: abre Detalhes e aciona o botão depois', () => {
-    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-      cb(0);
-      return 0;
-    });
-    const s = setup();
-    s.harness.ui.selection.value = { kind: 'marking', id: 'M1' };
-    const click = vi.fn();
-    // O botão só existe depois que Detalhes abre: ele "aparece" quando a janela é mostrada.
-    const button = document.createElement('button');
-    button.setAttribute('data-action', ADD_ANNOTATION_ACTION);
-    button.addEventListener('click', click);
-    raf.mockImplementation((cb) => {
-      document.body.append(button);
-      cb(0);
-      return 0;
-    });
-    s.press('n', { alt: true });
-    expect(isToolWindowOpen('details')).toBe(true);
-    expect(click).toHaveBeenCalledOnce();
   });
 });
 

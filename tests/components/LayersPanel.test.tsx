@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LAYER_PALETTE, type Project } from '../../src/model';
 import { locale, markingDisplay, setMarkingDisplay } from '../../src/store/settings';
-import { resolveActiveLayerId } from '../../src/store/ui';
 import { LayerActions, LayersPanel } from '../../src/ui/LayersPanel';
 import { cadastroProject } from '../model/specFixtures';
 import { createHarness, renderLive } from './harness';
@@ -242,39 +241,26 @@ describe('LayersPanel', () => {
     expect(await menuItem(user, name, 'Excluir camada')).toHaveProperty('disabled', true);
   });
 
-  it('camada ativa: tornar ativa e visibilidade', async () => {
+  it('visibilidade: não há "Tornar ativa" e qualquer camada, até a última visível, pode ser escondida', async () => {
     const { harness, user } = setup();
     const p = harness.project();
     const second = p.layers[1];
     const first = p.layers[0];
     if (!first || !second) throw new Error('precisa de duas camadas');
-    // SN2: cada camada tem um nome único; o nome não muda com o estado.
-    const makeActive = screen.getByRole('button', {
-      name: `Tornar ativa: ${second.name}`,
-    });
-    expect(makeActive.getAttribute('aria-pressed')).toBe('false');
-    await user.click(makeActive);
-    expect(resolveActiveLayerId(p, harness.ui.activeLayer.value)).toBe(second.id);
-    // A ativa fica pressionada, com o mesmo nome e dica, e a linha dela marcada.
-    const active = screen.getByRole('button', { name: `Tornar ativa: ${second.name}` });
-    expect(active.getAttribute('aria-pressed')).toBe('true');
-    expect(active.parentElement?.querySelector('[data-tooltip]')?.textContent).toBe(
-      `Tornar ativa: ${second.name}`,
-    );
-    expect(screen.queryByRole('button', { name: 'Ativa' })).toBeNull();
-    expect(
-      screen.getAllByRole('button', { pressed: true, name: /^Tornar ativa: / }),
-    ).toHaveLength(1);
-    expect(document.querySelectorAll('.layer-row-active')).toHaveLength(1);
-
-    // A ativa não pode ser escondida; as outras sim.
+    expect(screen.queryByRole('button', { name: /^Tornar ativa/ })).toBeNull();
+    expect(document.querySelectorAll('.layer-row-active')).toHaveLength(0);
     const box = screen.getByLabelText(`Mostrar a camada ${first.name}`);
     expect(box).toHaveProperty('checked', true);
+    expect(box).toHaveProperty('disabled', false);
     await user.click(box);
     expect(harness.ui.hiddenLayers.value.has(first.id)).toBe(true);
+    const last = screen.getByLabelText(`Mostrar a camada ${second.name}`);
+    expect(last).toHaveProperty('disabled', false);
+    await user.click(last);
+    expect(harness.ui.hiddenLayers.value.has(second.id)).toBe(true);
     expect(screen.getByLabelText(`Mostrar a camada ${second.name}`)).toHaveProperty(
-      'disabled',
-      true,
+      'checked',
+      false,
     );
     await user.click(screen.getByRole('button', { name: 'Mostrar todas' }));
     expect(harness.ui.hiddenLayers.value.size).toBe(0);

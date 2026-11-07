@@ -7,7 +7,6 @@ import {
   isTextInput,
   reviewShortcutFor,
   shortcutFor,
-  worksInTextInput,
 } from '../../src/app/shortcuts';
 import { REVIEW_KEYS } from '../../src/ui/review/DecisionControl';
 import { toolWindowShortcut } from '../../src/ui/toolWindowMeta';
@@ -38,14 +37,13 @@ describe('atalhos do editor', () => {
     expect(shortcutFor(key('l'))).toBeNull();
   });
 
-  // Canvas limpo: Alt+H liga ou desliga o Ver limpo.
-  it('Alt+H: Ver limpo (pela tecla física, por causa do Option no macOS)', () => {
-    expect(shortcutFor(key('h', { alt: true }))).toEqual({ kind: 'clean-view' });
-    expect(shortcutFor(key('˙', { alt: true }, 'KeyH'))).toEqual({ kind: 'clean-view' });
+  // Canvas limpo: Alt+H liga ou desliga o modo visualização.
+  it('Alt+H: modo visualização (pela tecla física, por causa do Option no macOS)', () => {
+    expect(shortcutFor(key('h', { alt: true }))).toEqual({ kind: 'view-mode' });
+    expect(shortcutFor(key('˙', { alt: true }, 'KeyH'))).toEqual({ kind: 'view-mode' });
     expect(shortcutFor(key('h', { alt: true, shift: true }))).toBeNull();
     expect(shortcutFor(key('h', { alt: true, ctrl: true }))).toBeNull();
     expect(shortcutFor(key('h'))).toBeNull();
-    expect(worksInTextInput({ kind: 'clean-view' })).toBe(false);
   });
 
   // B3/P7: Alt+Shift+A arruma o container selecionado.
@@ -58,23 +56,12 @@ describe('atalhos do editor', () => {
     });
     expect(shortcutFor(key('a', { alt: true }))).toBeNull();
     expect(shortcutFor(key('a', { alt: true, shift: true, ctrl: true }))).toBeNull();
-    expect(worksInTextInput({ kind: 'arrange' })).toBe(false);
   });
 
-  it('Alt+L não vale com o foco num campo de texto (o campo é do usuário)', () => {
-    expect(worksInTextInput({ kind: 'toggle-lock' })).toBe(false);
-  });
-
-  // R5: Alt+N cria uma anotação na camada ativa, também com o foco num campo.
-  it('Alt+N: nova anotação (pela tecla física, por causa do Option no macOS)', () => {
-    expect(shortcutFor(key('n', { alt: true }))).toEqual({ kind: 'new-annotation' });
-    expect(shortcutFor(key('˜', { alt: true }, 'KeyN'))).toEqual({
-      kind: 'new-annotation',
-    });
-    expect(shortcutFor(key('n', { alt: true, shift: true }))).toBeNull();
-    expect(shortcutFor(key('n', { alt: true, ctrl: true }))).toBeNull();
-    expect(worksInTextInput({ kind: 'new-annotation' })).toBe(true);
-    expect(worksInTextInput({ kind: 'undo' })).toBe(false);
+  // A camada ativa saiu: o Alt+N não é mais atalho.
+  it('Alt+N não faz nada (nem pela tecla física)', () => {
+    expect(shortcutFor(key('n', { alt: true }))).toBeNull();
+    expect(shortcutFor(key('˜', { alt: true }, 'KeyN'))).toBeNull();
   });
 
   it('desfazer e refazer', () => {
@@ -234,11 +221,6 @@ describe('atalhos de copiar (etapa 3a.2)', () => {
     expect(shortcutFor(key('c', { ctrl: true, shift: true }))).toBeNull();
     expect(shortcutFor(key('c', { ctrl: true, alt: true, shift: true }))).toBeNull();
   });
-
-  it('não valem como atalhos de campo: no campo de texto, o copiar é do navegador', () => {
-    expect(worksInTextInput({ kind: 'copy-reference' })).toBe(false);
-    expect(worksInTextInput({ kind: 'copy-crop' })).toBe(false);
-  });
 });
 
 // Etapa 4 (HANDOFF-PROPOSALS 6): atalhos da revisão de propostas.
@@ -346,9 +328,5 @@ describe('atalho Envolver (etapa Envolver, EV1)', () => {
     expect(shortcutFor(key('g', { ctrl: true, shift: true }))).toBeNull();
     expect(shortcutFor(key('g', { alt: true }))).toBeNull();
     expect(shortcutFor(key('g', { ctrl: true, alt: true }))).toBeNull();
-  });
-
-  it('não é atalho de campo: no campo de texto, o Ctrl+G é do navegador', () => {
-    expect(worksInTextInput({ kind: 'wrap' })).toBe(false);
   });
 });

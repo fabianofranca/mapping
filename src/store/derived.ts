@@ -19,6 +19,7 @@ import {
   levelType,
   markingLockStates,
   markingVisibility,
+  memoByProject,
   noticeCounts,
   noticedCount,
   previewProject,
@@ -53,6 +54,7 @@ import {
   type NoticeGroup,
   type PatchResult,
   type Project,
+  type ProjectContainer,
   type Proposal,
   type ProposalApplied,
   type ProposalNote,
@@ -67,17 +69,14 @@ import type { ProjectStore } from './history';
 import * as imagePermissions from './imagePermissions';
 import { markingDisplay, showComponentsOnPhotos } from './settings';
 import { textMeasurer } from './textMeasure';
-import { resolveActiveLayerId, visibleLayers, type EditorUi } from './ui';
+import { visibleLayers, type EditorUi } from './ui';
 
 // Estado derivado do editor (docs/ARCHITECTURE.md, "Desempenho"): calculado uma vez a partir do projeto
 // e da UI e lido por canvas, painel e lista. Nada aqui depende do viewport, então
 // pan e zoom não recalculam nada disto.
 
 export interface EditorDerived {
-  /** Camada ativa efetiva (`resolveActiveLayerId`). */
-  readonly activeLayerId: ReadonlySignal<string | null>;
-  readonly activeLayer: ReadonlySignal<Layer | null>;
-  /** Camadas visíveis, na ordem do projeto (a ativa sempre entre elas). */
+  /** Camadas visíveis, na ordem do projeto (podem ser nenhuma). */
   readonly visibleLayers: ReadonlySignal<readonly Layer[]>;
   /** Pendências por anotação (só as incompletas). */
   readonly issues: ReadonlySignal<ReadonlyMap<string, readonly AnnotationIssue[]>>;
@@ -87,8 +86,14 @@ export interface EditorDerived {
   >;
   /** Indicadores (bolinhas) de cada marcação nas camadas visíveis. */
   readonly layerDots: ReadonlySignal<ReadonlyMap<string, readonly LayerDot[]>>;
-  /** Visibilidade de cada marcação segundo o modo de exibição e a camada ativa. */
+  /** Visibilidade de cada marcação segundo o modo de exibição e as camadas visíveis. */
   readonly markingVisibility: ReadonlySignal<ReadonlyMap<string, MarkingVisibility>>;
+  /**
+   * A visibilidade que o canvas desenha. Fora do modo visualização é `markingVisibility`; no modo
+   * todas as marcações são inteiras (o filtro não vale e esconder o contorno não esconde a
+   * marcação para a seta): quem decide o que aparece é o painel.
+   */
+  readonly canvasVisibility: ReadonlySignal<ReadonlyMap<string, MarkingVisibility>>;
   /** Marcações com anotação incompleta numa camada visível (alerta no canvas). */
   readonly incompleteMarkings: ReadonlySignal<ReadonlySet<string>>;
   /** Marcações com a geometria travada (própria ou herdada do pai); as livres não aparecem. */
@@ -126,6 +131,11 @@ export interface EditorDerived {
    * ligou "desenhar sobre fotos", e a visibilidade delas não é `hidden`.
    */
   readonly drawnMarkings: ReadonlySignal<ReadonlySet<string>>;
+  /**
+   * Camadas do projeto que desenham: as que têm algum tipo com componente (`componentTypes`),
+   * na ordem do projeto. Livres e só de dados não entram. Lista do painel do modo visualização.
+   */
+  readonly drawingLayers: ReadonlySignal<readonly Layer[]>;
   /** Tamanho mínimo (`minSize`) do componente de cada marcação que tem desenho e mínimo. */
   readonly componentMinSizes: ReadonlySignal<
     ReadonlyMap<string, { readonly width: number; readonly height: number }>
@@ -187,6 +197,51 @@ const NO_VISIBILITY: ReadonlyMap<string, MarkingVisibility> = new Map();
 function hiddenVisibility(p: Project): ReadonlyMap<string, MarkingVisibility> {
   return new Map(p.markings.map((m) => [m.id, 'hidden' as const]));
 }
+
+/** Todas as marcações inteiras, uma vez por versão do projeto (o modo visualização). */
+const fullVisibility = memoByProject(
+  (p: Project): ReadonlyMap<string, MarkingVisibility> =>
+    new Map(p.markings.map((m) => [m.id, 'full' as const])),
+);
+const NO_LAYER_IDS: ReadonlySet<string> = new Set();
+
+/** As camadas do projeto de onde veio algum dos tipos com componente (na ordem do projeto). */
+function layersWithDrawing(
+  layers: readonly Layer[],
+  types: readonly ComponentType[],
+): readonly Layer[] {
+  const keys = new Set(types.map((t) => `${t.specId}\u0000${t.layerId}`));
+  return layers.filter(
+    (l) => l.spec !== null && keys.has(`${l.spec.specId}\u0000${l.spec.layerId}`),
+  );
+}
+
+/**
+ * Marcações cujo desenho pode aparecer: o do canvas (sem foto por baixo) sempre; o de um container
+ * sem arquivo sempre; o de uma foto só com a opção ligada. `hiddenLayers`: camadas com desenho
+ * desmarcadas no modo visualização.
+ */
+function drawnIds(
+  all: ComponentDrawings,
+  containers: ReadonlyMap<string, ProjectContainer>,
+  onPhotos: boolean,
+  hiddenLayers: ReadonlySet<string>,
+): ReadonlySet<string> {
+  const result = new Set<string>();
+  for (const [id, drawing] of all) {
+    if (hiddenLayers.has(drawing.layerId)) continue;
+    // Marcação do canvas (v13): sem foto por baixo do espaço dela, o desenho aparece sempre
+    // (a flutuante, em especial, "sobre tudo, inclusive sobre fotos").
+    if (drawing.containerId === null) {
+      result.add(id);
+      continue;
+    }
+    const image = containers.get(drawing.containerId);
+    if (image && (image.file === null || onPhotos)) result.add(id);
+  }
+  return result;
+}
+const NO_LAYERS: readonly Layer[] = [];
 const NO_MARKINGS: ReadonlySet<string> = new Set();
 const NO_LOCKS: ReadonlyMap<string, MarkingLockState> = new Map();
 const NO_DRAWN: ReadonlySet<string> = new Set();
@@ -271,19 +326,11 @@ export function createEditorDerived(
 ): EditorDerived {
   const project = shown;
 
-  const activeLayerId = computed(() =>
-    resolveActiveLayerId(project.value, ui.activeLayer.value),
-  );
-  const activeLayer = computed(() => {
-    const id = activeLayerId.value;
-    return id === null ? null : (project.value?.layers.find((l) => l.id === id) ?? null);
-  });
-
   // Devolve a lista anterior quando as camadas são as mesmas: quem depende dela
   // (indicadores, cartões do canvas) não recalcula a cada edição que não mexe nelas.
   let lastVisible: readonly Layer[] = [];
   const visible = computed(() => {
-    const next = visibleLayers(project.value, ui.hiddenLayers.value, activeLayerId.value);
+    const next = visibleLayers(project.value, ui.hiddenLayers.value);
     if (!sameItems(next, lastVisible)) lastVisible = next;
     return lastVisible;
   });
@@ -331,34 +378,26 @@ export function createEditorDerived(
     return p ? layerDotsByMarking(p, visible.value) : NO_DOTS;
   });
 
-  // "Sem anotação" (esmaecer/ocultar) é medido só pela camada ativa, própria ou herdada.
-  const activeDots = computed(() => {
-    const p = project.value;
-    const layer = activeLayer.value;
-    return p && layer ? layerDotsByMarking(p, [layer]) : NO_DOTS;
-  });
+  // Camadas com desenho desmarcadas no painel do modo visualização; vazio fora do modo. O mesmo
+  // conjunto enquanto a pessoa não marca camada: mudar contorno, nome ou setas não passa por aqui.
+  const hiddenDrawingLayers = computed(() =>
+    ui.viewMode.value ? ui.viewShow.value.hiddenDrawingLayers : NO_LAYER_IDS,
+  );
 
   // Marcações cujo desenho pode aparecer: container sem arquivo, ou foto com a opção ligada. Não depende
-  // da visibilidade: ao contrário, o filtro "sem anotação" não esconde o que desenha.
+  // da visibilidade: ao contrário, o filtro "sem anotação" não esconde o que desenha. No modo
+  // visualização, as camadas desmarcadas no painel tiram os desenhos delas (o cache não muda).
   const drawn = computed((): ReadonlySet<string> => {
     const all = scenes.value;
     const p = project.value;
+    const hiddenLayers = hiddenDrawingLayers.value;
     if (!p || all.size === 0) return NO_DRAWN;
-    const { containers: images } = projectIndex(p);
-    const onPhotos = showComponentsOnPhotos.value;
-    const result = new Set<string>();
-    for (const [id, drawing] of all) {
-      // Marcação do canvas (v13): sem foto por baixo do espaço dela, o desenho aparece sempre
-      // (a flutuante, em especial, "sobre tudo, inclusive sobre fotos").
-      if (drawing.containerId === null) {
-        result.add(id);
-        continue;
-      }
-      const image = images.get(drawing.containerId);
-      if (!image || (image.file !== null && !onPhotos)) continue;
-      result.add(id);
-    }
-    return result;
+    return drawnIds(
+      all,
+      projectIndex(p).containers,
+      showComponentsOnPhotos.value,
+      hiddenLayers,
+    );
   });
 
   let lastFloating: ReadonlySet<string> = NO_DRAWN;
@@ -388,16 +427,25 @@ export function createEditorDerived(
   const visibility = computed(() => {
     const p = project.value;
     if (!p) return NO_VISIBILITY;
-    // Ver limpo: nenhuma marcação aparece (os componentes desenhados seguem em `drawn`).
-    if (ui.cleanView.value) return hiddenVisibility(p);
+    // Modo visualização: nada se seleciona, então nenhuma marcação aparece ao toque (os
+    // componentes desenhados seguem em `drawn`; o que o canvas desenha é `canvasVisibility`).
+    if (ui.viewMode.value) return hiddenVisibility(p);
     const selection = ui.selection.value;
     return markingVisibility(
       p,
-      activeDots.value,
+      layerDots.value,
       markingDisplay.value,
       selection?.kind === 'marking' ? selection.id : null,
       drawnMarkings.value,
     );
+  });
+
+  // O que o canvas desenha: igual ao filtro fora do modo; no modo, todas inteiras (o filtro não
+  // vale, e esconder o contorno não esconde a marcação para a seta).
+  const canvasVisibility = computed(() => {
+    const p = project.value;
+    if (!ui.viewMode.value) return visibility.value;
+    return p ? fullVisibility(p) : NO_VISIBILITY;
   });
 
   const incompleteMarkings = computed(() => {
@@ -550,6 +598,18 @@ export function createEditorDerived(
     return lastTypes;
   });
 
+  // Camadas do projeto com algum tipo com componente (livres e só de dados ficam de fora). A
+  // lista anterior volta enquanto são as mesmas camadas: o painel do modo não redesenha à toa.
+  let lastDrawingLayers = NO_LAYERS;
+  const drawingLayers = computed((): readonly Layer[] => {
+    const p = project.value;
+    const next =
+      p && types.value.length > 0 ? layersWithDrawing(p.layers, types.value) : NO_LAYERS;
+    if (sameItems(next, lastDrawingLayers)) return lastDrawingLayers;
+    lastDrawingLayers = next.length === 0 ? NO_LAYERS : next;
+    return lastDrawingLayers;
+  });
+
   let lastComponentWarnings = NO_COMPONENT_WARNINGS;
   const componentWarnings = computed(() => {
     const next: { markingId: string; warnings: readonly string[] }[] = [];
@@ -570,13 +630,12 @@ export function createEditorDerived(
   });
 
   return {
-    activeLayerId,
-    activeLayer,
     visibleLayers: visible,
     issues,
     annotationsByMarking,
     layerDots,
     markingVisibility: visibility,
+    canvasVisibility,
     incompleteMarkings,
     markingLocks,
     hasLocks,
@@ -591,6 +650,7 @@ export function createEditorDerived(
     floatingMarkings,
     drawingsOf,
     drawnMarkings,
+    drawingLayers,
     componentMinSizes,
     remoteImageOrigins,
     pendingImageOrigins,

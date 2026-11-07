@@ -153,7 +153,6 @@ export function ArrowPanel({
         marking={arrow}
         ownerKind="arrow"
         layers={derived.visibleLayers.value}
-        activeLayer={derived.activeLayer.value}
         readOnly={readOnly}
         onShowLayer={(layerId) => showLayer(ui, layerId)}
         onGoToAnnotation={onGoToAnnotation}

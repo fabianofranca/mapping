@@ -37,6 +37,7 @@ import {
   type Frame,
   type HoverLock,
   type InteractionState,
+  type ViewFrame,
 } from './frame';
 import { arrowShape, visibleArrowShapes, type ArrowShape } from './arrowGeometry';
 import { ComponentLayerRenderer } from './components/componentLayer';
@@ -94,14 +95,37 @@ export interface CanvasControllerOptions {
   readonly remoteImages?: RemoteImageSource;
 }
 
-/** Sem setas à vista ("Mostrar setas" desligado, Ver limpo): sempre o mesmo array. */
+/** Sem setas à vista ("Mostrar setas" desligado, ou o item Setas do modo visualização): sempre o mesmo array. */
 const NO_ARROWS: readonly ArrowShape[] = [];
 
-/** Seleção vazia (Ver limpo): sempre o mesmo objeto, o quadro compara por referência. */
+/** Seleção vazia (modo visualização): sempre o mesmo objeto, o quadro compara por referência. */
 const NO_ITEMS: readonly SelectionItem[] = [];
 
+/**
+ * Estado de interação por cima da imagem (rascunho, trava, hover, seleção, marcas da revisão,
+ * seta e retângulo de seleção). No modo visualização nada disso aparece.
+ */
+interface Overlays {
+  readonly draft: Frame['draft'];
+  readonly hoverLock: Frame['hoverLock'];
+  readonly hoverMarking: Frame['hoverMarking'];
+  readonly selection: Frame['selection'];
+  readonly review: Frame['review'];
+  readonly arrowDraft: Frame['arrowDraft'];
+  readonly marquee: Frame['marquee'];
+}
+const NO_OVERLAYS: Overlays = {
+  draft: null,
+  hoverLock: null,
+  hoverMarking: null,
+  selection: null,
+  review: null,
+  arrowDraft: null,
+  marquee: null,
+};
+
 /** O que move o rótulo de nome das marcações (a etiqueta da selecionada desvia do do pai). */
-const LABEL_KEYS = ['visibility', 'dots', 'incomplete'] as const;
+const LABEL_KEYS = ['visibility', 'dots', 'incomplete', 'view'] as const;
 
 export class CanvasController {
   private readonly store: ProjectStore;
@@ -198,7 +222,7 @@ export class CanvasController {
    * refazer o quadro por causa de pan ou zoom não pode redesenhar a sobreposição à toa.
    */
   private readonly selectedItems = computed(() =>
-    this.ui.cleanView.value
+    this.ui.viewMode.value
       ? NO_ITEMS
       : itemsOf(this.ui.selection.value, this.ui.selectionGroup.value),
   );
@@ -216,52 +240,94 @@ export class CanvasController {
   });
 
   /**
-   * Setas desenhadas: as do projeto desenhado (com a prévia do gesto) cujas duas pontas aparecem,
-   * se "Mostrar setas" está ligado e fora do Ver limpo. As rotas são guardadas por seta e por
-   * projeto/visibilidade (`visibleArrowShapes`): pan e zoom não as recalculam.
+   * O que o modo visualização mostra, ou `null` fora dele. O mesmo objeto enquanto os cinco itens
+   * não mudam: marcar uma camada com desenho não refaz imagens, marcações nem setas.
    */
-  private readonly arrowShapes = computed((): readonly ArrowShape[] =>
-    this.ui.cleanView.value || !showArrows.value
-      ? NO_ARROWS
-      : visibleArrowShapes(this.drawnProject.value, this.derived.markingVisibility.value),
+  private lastView: ViewFrame | null = null;
+  private readonly viewFrame = computed((): ViewFrame | null => {
+    if (!this.ui.viewMode.value) return null;
+    const { containers, images, outline, names, arrows } = this.ui.viewShow.value;
+    const last = this.lastView;
+    if (
+      last?.containers === containers &&
+      last.images === images &&
+      last.outline === outline &&
+      last.names === names &&
+      last.arrows === arrows
+    ) {
+      return last;
+    }
+    this.lastView = { containers, images, outline, names, arrows };
+    return this.lastView;
+  });
+
+  /**
+   * Setas desenhadas: as do projeto desenhado (com a prévia do gesto) cujas duas pontas aparecem.
+   * Fora do modo visualização, só com "Mostrar setas" ligado; no modo, só com o item Setas do
+   * painel (as Configurações não valem) e sem o filtro "Marcações sem anotação". As rotas são
+   * guardadas por seta e por projeto/visibilidade (`visibleArrowShapes`): pan e zoom não as
+   * recalculam.
+   */
+  private readonly arrowShapes = computed((): readonly ArrowShape[] => {
+    const view = this.viewFrame.value;
+    if (!(view === null ? showArrows.value : view.arrows)) return NO_ARROWS;
+    return visibleArrowShapes(
+      this.drawnProject.value,
+      this.derived.canvasVisibility.value,
+    );
+  });
+
+  /** O estado de interação do quadro; vazio no modo visualização (só para ver). */
+  private readonly overlays = computed((): Overlays =>
+    this.viewFrame.value !== null
+      ? NO_OVERLAYS
+      : {
+          draft: this.state.draft.value,
+          hoverLock: this.state.hoverLock.value,
+          hoverMarking: this.state.hoverMarking.value,
+          selection: this.ui.selection.value,
+          review: this.reviewCanvas.value,
+          arrowDraft: this.state.arrowDraft.value,
+          marquee: this.state.marquee.value,
+        },
   );
 
   /** Entradas do quadro: projeto, UI, dados derivados e viewport. */
   private readonly frame = computed((): Frame => {
-    // Ver limpo: nada de seleção, trava, hover ou marcas da revisão por cima da imagem.
-    const clean = this.ui.cleanView.value;
+    const view = this.viewFrame.value;
+    const over = this.overlays.value;
     return {
       project: this.drawnProject.value,
       readOnly: this.store.locked.value,
       bitmaps: this.display.images.value,
       preview: this.state.preview.value,
-      draft: this.state.draft.value,
+      draft: over.draft,
       // O alvo de soltar um arquivo ou, ao arrastar uma marcação, o container que a receberia.
       dropTarget:
         this.dropTarget.value ??
         this.moveTargetFrame.value ??
         this.arrowTargetFrame.value,
       absorb: this.state.absorb.value,
-      hoverLock: clean ? null : this.state.hoverLock.value,
-      hoverMarking: clean ? null : this.state.hoverMarking.value,
+      hoverLock: over.hoverLock,
+      hoverMarking: over.hoverMarking,
       tokens: this.tokens.value,
       size: this.view.size.value,
       viewport: this.view.viewport.value,
-      selection: clean ? null : this.ui.selection.value,
+      selection: over.selection,
       items: this.selectedItems.value,
-      mode: this.ui.mode.value,
+      mode: view === null ? this.ui.mode.value : 'navigate',
       locale: locale.value,
-      shown: this.derived.visibleLayers.value,
       dots: this.derived.layerDots.value,
       incomplete: this.derived.incompleteMarkings.value,
-      visibility: this.derived.markingVisibility.value,
+      visibility: this.derived.canvasVisibility.value,
       drawings: this.drawings.value,
       drawn: this.derived.drawnMarkings.value,
       floating: this.derived.floatingMarkings.value,
-      review: clean ? null : this.reviewCanvas.value,
+      review: over.review,
       arrows: this.arrowShapes.value,
-      arrowDraft: clean ? null : this.state.arrowDraft.value,
-      marquee: this.state.marquee.value,
+      arrowDraft: over.arrowDraft,
+      marquee: over.marquee,
+      view,
     };
   });
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */

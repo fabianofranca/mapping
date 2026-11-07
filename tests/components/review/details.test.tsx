@@ -388,7 +388,6 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
       proposals: [propose(base, after)],
     });
     h.ui.hiddenLayers.value = new Set(['L2']);
-    h.ui.activeLayer.value = 'L1';
     expect(h.review.open('P1').ok).toBe(true);
     act(() => h.review.select({ level: 'item', id: 'M1' }));
     renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
@@ -401,6 +400,21 @@ describe('Detalhes na revisão: o painel normal com os marcadores', () => {
     expect(h.ui.hiddenLayers.value.has('L2')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Ocultar de novo' }));
     expect(document.querySelector('[data-layer="L2"]')).toBeNull();
+  });
+
+  it('camada escondida sem exceção: esconder a L1 (a primeira) também conta no aviso', async () => {
+    const base = sampleProject();
+    const after = updateEntry(base, 'A1', 'E1', { key: 'tipo', value: 'quebra' });
+    const h = await openReviewHarness({
+      project: base,
+      proposals: [propose(base, after)],
+    });
+    h.ui.hiddenLayers.value = new Set(['L1', 'L2']);
+    expect(h.review.open('P1').ok).toBe(true);
+    act(() => h.review.select({ level: 'item', id: 'M1' }));
+    renderInEditor(h, <ReviewPanel onGoToAnnotation={() => {}} />);
+    expect(screen.getByText(/em camada escondida: Lataria/)).toBeTruthy();
+    expect(document.querySelector('[data-layer="L1"]')).toBeNull();
   });
 
   it('item grande: camada com mais de 8 anotações começa recolhida, com as contagens', async () => {

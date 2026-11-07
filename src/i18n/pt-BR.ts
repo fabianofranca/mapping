@@ -168,7 +168,6 @@ export const ptBR = {
 
   'layer.newName': 'Camada {n}',
   'layer.title': 'Camadas',
-  'layer.chipLabel': 'Camadas (ativa: {name})',
   'layer.add': 'Nova camada',
   'layer.showAll': 'Mostrar todas',
   'layer.visible': 'Mostrar a camada {name}',
@@ -176,7 +175,6 @@ export const ptBR = {
   'layer.color': 'Cor da camada {name}',
   'layer.customColor': 'Outra cor',
   'layer.more': 'Mais ações da camada {name}',
-  'layer.makeActive': 'Tornar ativa: {name}',
   'layer.moveUp': 'Subir camada',
   'layer.moveDown': 'Descer camada',
   'layer.delete': 'Excluir camada',
@@ -191,10 +189,10 @@ export const ptBR = {
   'layer.display.dim': 'Esmaecer sem anotação',
   'layer.display.hide': 'Ocultar sem anotação',
   'layer.displayHint':
-    'Vale pela camada ativa: conta as anotações dela. A marcação selecionada sempre aparece.',
+    'Vale pelas camadas visíveis: conta as anotações delas. A marcação selecionada sempre aparece.',
 
   'annotation.heading': 'Anotações',
-  'annotation.add': '+ Anotação',
+  'annotation.allLayersHidden': 'Todas as camadas estão escondidas.',
   'annotation.addIn': 'Adicionar anotação na camada {layer}',
   'annotation.emptySection': 'Nenhuma anotação nesta camada.',
   'annotation.name': 'Nome da anotação',
@@ -260,9 +258,22 @@ export const ptBR = {
   'editor.appName': 'Mapping',
   'editor.fitAllShort': 'Enquadrar',
 
-  'view.cleanView': 'Ver limpo',
-  'view.cleanViewHint':
-    'Ver limpo: esconde marcações, nomes e seleção; só a imagem e os componentes',
+  'view.viewMode': 'Visualizar',
+  'view.viewModeHint': 'Modo visualização: o canvas só para ver, sem seleção nem edição',
+  'view.panelOpen': 'Mostrar no canvas',
+  'view.panelTitle': 'Mostrar no canvas',
+  'view.panelHint': 'Só para ver: nada se seleciona nem se edita.',
+  'view.groupElements': 'Elementos',
+  'view.groupLayers': 'Camadas com desenho',
+  'view.containers': 'Containers',
+  'view.images': 'Imagens',
+  'view.outline': 'Contorno das marcações',
+  'view.names': 'Nome das marcações',
+  'view.panelArrows': 'Setas',
+  'view.panelArrowsHint': 'continuam ligando os mesmos pontos',
+  'view.showAll': 'Mostrar tudo',
+  'view.onlyScreens': 'Só as telas',
+  'status.viewMode': 'Modo visualização: só para ver. Esc ou Alt+H sai.',
   'view.list': 'Lista',
 
   'list.title': 'Lista de anotações',
@@ -753,7 +764,6 @@ export const ptBR = {
   'image.section': 'Imagem',
   'image.file': 'Arquivo',
   'image.size': 'Tamanho',
-  'layerGroup.active': 'ativa',
   'details.summary': '{name} — {values}',
   'details.summarySeparator': ' · ',
   'annotation.expand': 'Mostrar {name}',
@@ -807,7 +817,7 @@ export const ptBR = {
   'image.replaceLocked':
     'A imagem ou uma marcação dela está trancada: só dá para trocar por um arquivo do mesmo tamanho.',
   'marking.error.locked': 'A marcação está trancada. Destranque para alterar.',
-  'shortcuts.cleanView': 'Ver limpo (só a imagem e os componentes)',
+  'shortcuts.viewMode': 'Visualizar',
   'shortcuts.toggleLock': 'Trancar ou destrancar o item selecionado',
   'editor.externalUpdated': 'Projeto atualizado por fora.',
   'review.readOnly':

@@ -20,12 +20,10 @@ export type Shortcut =
   | { readonly kind: 'layers' }
   | { readonly kind: 'help' }
   | { readonly kind: 'settings' }
-  /** Alt+N: nova anotação na camada ativa (vale também com o foco num campo). */
-  | { readonly kind: 'new-annotation' }
   /** Alt+L: tranca ou destranca o item selecionado. */
   | { readonly kind: 'toggle-lock' }
-  /** Alt+H: liga ou desliga o Ver limpo do canvas. */
-  | { readonly kind: 'clean-view' }
+  /** Alt+H: liga ou desliga o modo visualização do canvas. */
+  | { readonly kind: 'view-mode' }
   /** Ctrl/Cmd+C: copia a referência do item (fora de campos de texto e sem texto selecionado). */
   | { readonly kind: 'copy-reference' }
   /** Ctrl+Alt+C: copia como PNG o recorte da marcação selecionada. */
@@ -48,9 +46,8 @@ export const SHORTCUT_LABELS = {
   layers: 'Ctrl+L',
   help: 'F1',
   settings: 'Ctrl+,',
-  newAnnotation: 'Alt+N',
   toggleLock: 'Alt+L',
-  cleanView: 'Alt+H',
+  viewMode: 'Alt+H',
   newRow: 'Alt+Enter',
   pickRef: 'Ctrl+B',
   copyReference: 'Ctrl+C',
@@ -177,7 +174,7 @@ function modShortcut(e: KeyInfo, key: string): Shortcut | null {
  * janela em foco. Ctrl+Shift+número abre e fecha as janelas (Alt+número é o extra,
  * ligado por `altNumbers`), Ctrl+Shift+setas as redimensiona, Alt+↑/↓ anda na
  * seleção, Alt+N cria uma anotação na camada ativa, Alt+L tranca/destranca o item
- * selecionado, Alt+H liga o Ver limpo, Ctrl/Cmd+C copia a referência do item, Ctrl/Cmd+G envolve a seleção, Ctrl+Alt+C copia o recorte da
+ * selecionado, Alt+H liga o modo visualização, Ctrl/Cmd+C copia a referência do item, Ctrl/Cmd+G envolve a seleção, Ctrl+Alt+C copia o recorte da
  * marcação e Ctrl+=/−/0 controlam o zoom.
  */
 export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
@@ -194,10 +191,8 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
     }
     // Com Alt (Option no macOS) o `key` vira outro caractere: a tecla física manda.
     if (e.shiftKey && (e.code === 'KeyA' || key === 'a')) return { kind: 'arrange' };
-    if (!e.shiftKey && (e.code === 'KeyN' || key === 'n'))
-      return { kind: 'new-annotation' };
     if (!e.shiftKey && (e.code === 'KeyL' || key === 'l')) return { kind: 'toggle-lock' };
-    if (!e.shiftKey && (e.code === 'KeyH' || key === 'h')) return { kind: 'clean-view' };
+    if (!e.shiftKey && (e.code === 'KeyH' || key === 'h')) return { kind: 'view-mode' };
     if (key === 'arrowup') return { kind: 'select-parent' };
     if (key === 'arrowdown') return { kind: 'select-child' };
     const n = altNumbers ? numberOf(e) : null;
@@ -253,11 +248,6 @@ export function arrowsBelongToEditor(target: EventTarget | null): boolean {
   return target.closest(OWN_ARROWS) === null;
 }
 
-/** Atalhos que valem também com o foco num campo de texto (os "de campo"). */
-export function worksInTextInput(shortcut: Shortcut): boolean {
-  return shortcut.kind === 'new-annotation';
-}
-
 /**
  * Atalhos da revisão de propostas (HANDOFF-PROPOSALS 6): valem só com a revisão aberta e
  * o foco fora de um campo de texto. O projeto está somente leitura, então as letras ficam
@@ -304,4 +294,16 @@ export function isTextInput(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   return /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
+}
+
+/** Tipos de `<input>` que não recebem texto: caixa, opção, botão, controle deslizante etc. */
+const NON_TEXT_INPUTS = /^(checkbox|radio|button|submit|reset|range|color|file|image)$/;
+
+/**
+ * Atalho que vale também com o foco numa caixa ou opção (o Alt+H do modo visualização, com o
+ * foco no painel "Mostrar no canvas"): só o campo em que se digita fica de fora.
+ */
+export function isTypingField(target: EventTarget | null): boolean {
+  if (!isTextInput(target)) return false;
+  return !(target instanceof HTMLInputElement && NON_TEXT_INPUTS.test(target.type));
 }

@@ -1,7 +1,9 @@
+import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
+import { viewModeButton } from '../ui/ViewModePanel';
 import { IconButton, Segmented } from '../ui/controls';
-import { setCleanView } from '../store/ui';
+import { setViewMode } from '../store/ui';
 import { SHORTCUT_LABELS } from './shortcuts';
 
 // Botões de ferramenta da barra principal e da barra dos breadcrumbs.
@@ -17,7 +19,7 @@ export function ModeButtons() {
           id: 'draw',
           label: t('editor.modeDraw'),
           icon: 'draw',
-          disabled: store.locked.value || ui.cleanView.value,
+          disabled: store.locked.value || ui.viewMode.value,
         },
       ]}
       value={ui.mode.value}
@@ -94,17 +96,35 @@ export function FitButton() {
   );
 }
 
-/** Ver limpo: o canvas mostra só as imagens e os componentes (Alt+H). */
-export function CleanViewButton() {
+/** Visualizar: liga o modo visualização, o canvas só para ver (Alt+H). */
+export function ViewModeButton() {
   const { ui } = useEditor();
+  const button = viewModeButton;
+  const on = ui.viewMode.value;
+  const wasOn = useRef(on);
+  // Ao sair do modo o botão "Mostrar no canvas" fica desabilitado e o painel some: se o foco
+  // estava neles (ou se perdeu no body), vai ao Visualizar.
+  useEffect(() => {
+    if (wasOn.current && !on) {
+      const active = document.activeElement;
+      const lost =
+        !active ||
+        active === document.body ||
+        (active instanceof HTMLButtonElement && active.disabled);
+      if (lost) button.current?.focus();
+    }
+    wasOn.current = on;
+  }, [on, button]);
   return (
     <IconButton
-      icon="eyeOff"
-      label={t('view.cleanView')}
-      shortcut={SHORTCUT_LABELS.cleanView}
-      tooltip={t('view.cleanViewHint')}
-      pressed={ui.cleanView.value}
-      onClick={() => setCleanView(ui, !ui.cleanView.peek())}
+      icon="eye"
+      label={t('view.viewMode')}
+      shortcut={SHORTCUT_LABELS.viewMode}
+      tooltip={t('view.viewModeHint')}
+      tooltipSuppressed={ui.viewPanel.value}
+      pressed={on}
+      buttonRef={button}
+      onClick={() => setViewMode(ui, !ui.viewMode.peek())}
     />
   );
 }

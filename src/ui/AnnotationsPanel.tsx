@@ -14,10 +14,10 @@ import {
   type Project,
   type SpecAnnotationType,
 } from '../model';
-import { ariaKeys, SHORTCUT_LABELS } from '../app/shortcuts';
 import {
   goToAnnotation,
   isSectionCollapsed,
+  showAllLayers,
   toggleSection,
   type AnnotationLocation,
 } from '../store/ui';
@@ -48,8 +48,6 @@ interface AnnotationsPanelProps {
   readonly ownerKind?: AnnotationOwnerKind;
   /** Camadas visíveis (uma seção para cada). */
   readonly layers: readonly Layer[];
-  /** Destino do botão principal "+ Anotação". */
-  readonly activeLayer: Layer | null;
   readonly readOnly: boolean;
   /** Torna a camada visível (para ir até uma anotação vinculada numa camada oculta). */
   readonly onShowLayer: (layerId: string) => void;
@@ -76,9 +74,6 @@ type CreateStep =
       readonly owners: string;
     };
 
-/** Atributo do botão "+ Anotação" (o Alt+N o aciona). */
-export const ADD_ANNOTATION_ACTION = 'add-annotation';
-
 /**
  * Anotações da marcação: pendências com links para o campo e um LayerGroup por camada
  * visível (cabeçalho na cor da camada, recolhível).
@@ -88,7 +83,6 @@ export function AnnotationsPanel({
   marking,
   ownerKind = 'marking',
   layers: visible,
-  activeLayer,
   readOnly,
   onShowLayer,
   onGoToAnnotation,
@@ -188,30 +182,29 @@ export function AnnotationsPanel({
   };
 
   return (
-    <div class="annotations" ref={root}>
+    <div class="annotations" ref={root} tabIndex={-1}>
       <IssuesNotice project={project} groups={byLayer} />
       <Section
         section={{ kind: 'annotations' }}
         title={t('annotation.heading')}
         count={count}
-        actions={
-          activeLayer && (
-            <Button
-              variant="primary"
-              size="sm"
-              data-action={ADD_ANNOTATION_ACTION}
-              aria-label={t('annotation.addIn', { layer: activeLayer.name })}
-              aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.newAnnotation)}
-              title={`${t('annotation.addIn', { layer: activeLayer.name })}  ${SHORTCUT_LABELS.newAnnotation}`}
-              disabled={readOnly}
-              onClick={() => add(activeLayer)}
-            >
-              {t('annotation.add')}
-            </Button>
-          )
-        }
       >
         {ext?.annotationsNotice(marking.id)}
+        {layers.length === 0 && project.layers.length > 0 && (
+          <div class="annotations-all-hidden">
+            <span>{t('annotation.allLayersHidden')}</span>
+            <Button
+              size="sm"
+              onClick={() => {
+                // O botão some quando as camadas voltam: o foco fica na seção, não vai ao body.
+                root.current?.focus();
+                showAllLayers(ui);
+              }}
+            >
+              {t('layer.showAll')}
+            </Button>
+          </div>
+        )}
         {byLayer.map(({ layer, annotations, removed }) => {
           const items: { readonly key: string; readonly node: ComponentChildren }[] =
             annotations.map((annotation) => ({
@@ -237,7 +230,6 @@ export function AnnotationsPanel({
               hasBody={items.length > 0}
               project={project}
               layer={layer}
-              active={layer.id === activeLayer?.id}
               annotations={annotations}
               readOnly={readOnly}
               onAdd={() => add(layer)}
@@ -308,7 +300,6 @@ export function AnnotationsPanel({
 interface LayerGroupProps {
   readonly project: Project;
   readonly layer: Layer;
-  readonly active: boolean;
   readonly annotations: readonly Annotation[];
   readonly readOnly: boolean;
   readonly onAdd: () => void;
@@ -357,7 +348,6 @@ function PagedList({
 function LayerGroup({
   project,
   layer,
-  active,
   annotations,
   readOnly,
   onAdd,
@@ -376,10 +366,9 @@ function LayerGroup({
     : undefined;
   const specName = spec ? (spec.spec?.name ?? spec.id) : '';
   const first = annotations[0];
-  const meta = [
-    active ? t('layerGroup.active') : null,
-    annotations.length > 1 ? String(annotations.length) : null,
-  ].filter((s) => s !== null);
+  const meta = [annotations.length > 1 ? String(annotations.length) : null].filter(
+    (s) => s !== null,
+  );
 
   // O resumo corta com reticências na janela estreita: o `title` mostra o texto inteiro.
   const summary = empty

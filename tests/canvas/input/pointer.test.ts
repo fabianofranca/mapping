@@ -19,11 +19,12 @@ import { setShowArrows } from '../../../src/store/settings';
 import {
   peekSelectedItems,
   selectItems,
+  setViewMode,
   type Selection,
   type SelectionItem,
 } from '../../../src/store/ui';
 import { arrowProject, withArrow } from '../../model/arrowFixtures';
-import { canvasProject, editorFor } from '../harness';
+import { canvasProject, editorFor, setOnlyScreens } from '../harness';
 
 // Viewport 1:1 em (0, 0) e container em (0, 0) na página: tela = canvas.
 function setup(
@@ -1534,13 +1535,23 @@ describe('PointerInput: setas (ME4)', () => {
       s.cleanup();
     });
 
-    it('"Mostrar setas" desligado ou Ver limpo: o traço não recebe o toque', () => {
+    it('"Mostrar setas" desligado ou modo visualização: o traço não recebe o toque', () => {
       const s = setup(false, straightProject());
       setShowArrows(false);
       s.click(500, 475);
       expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'A' });
       setShowArrows(true);
-      s.ui.cleanView.value = true;
+      setOnlyScreens(s.ui, true);
+      s.click(500, 475);
+      expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'A' });
+      s.cleanup();
+    });
+
+    it('no modo visualização, mesmo com as setas à vista, o traço não recebe o toque nem o modo vira Desenhar', () => {
+      const s = setup(false, straightProject());
+      s.ui.mode.value = 'draw';
+      setViewMode(s.ui, true);
+      expect(s.ui.mode.value).toBe('navigate');
       s.click(500, 475);
       expect(s.ui.selection.value).toEqual({ kind: 'image', id: 'A' });
       s.cleanup();

@@ -4,7 +4,6 @@ import { useEditor } from '../ui/EditorContext';
 import { Icon } from '../ui/icons';
 import { MenuPopover } from '../ui/MenuPopover';
 import { PreviewBadge } from '../ui/PreviewBanner';
-import { showAndFocusToolWindow } from '../ui/toolWindowLayout';
 import { Button, IconButton } from '../ui/controls';
 import {
   AddContainerButton,
@@ -30,9 +29,8 @@ interface EditorMainBarProps {
 }
 
 export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarProps) {
-  const { store, derived, review } = useEditor();
+  const { store, review } = useEditor();
   const projectName = useComputed(() => store.committed.value?.project.name ?? '');
-  const activeLayer = derived.activeLayer.value;
   return (
     <header class="main-bar" aria-label={t('editor.appName')}>
       <span class="main-bar-logo" aria-hidden="true">
@@ -68,19 +66,6 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
         <AddContainerButton onAdd={() => dialogs.show({ kind: 'container' })} />
         <HistoryButtons />
       </div>
-
-      {activeLayer && (
-        <Button
-          class="layer-chip"
-          style={{ '--layer-color': activeLayer.color }}
-          aria-label={t('layer.chipLabel', { name: activeLayer.name })}
-          title={t('layer.chipLabel', { name: activeLayer.name })}
-          onClick={() => showAndFocusToolWindow('layers')}
-        >
-          <span class="layer-dot" aria-hidden="true" />
-          <span class="layer-chip-name">{activeLayer.name}</span>
-        </Button>
-      )}
 
       <div class="toolbar main-bar-end">
         <IconButton

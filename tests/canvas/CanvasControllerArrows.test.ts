@@ -7,12 +7,12 @@ import { createArrow } from '../../src/model';
 import { createEditorDerived } from '../../src/store/derived';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { setMarkingDisplay, setShowArrows } from '../../src/store/settings';
-import { createEditorUi, selectItems, setCleanView } from '../../src/store/ui';
+import { createEditorUi, selectItems } from '../../src/store/ui';
 import { changeOf, propose } from '../model/proposalFixtures';
 import { arrowProject, withArrow } from '../model/arrowFixtures';
 import { sampleProject } from '../model/fixtures';
 import { openHarness } from '../store/proposalHarness';
-import { editorFor, installFakeCanvas } from './harness';
+import { editorFor, installFakeCanvas, setOnlyScreens } from './harness';
 
 // Setas no CanvasController (ME4): a camada, a visibilidade ("Mostrar setas", Ver limpo e as
 // pontas), o `data-arrows`, o enquadrar da seta e a visão Proposto da revisão.
@@ -70,7 +70,7 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
-  it('"Mostrar setas" desligado e Ver limpo escondem todas', () => {
+  it('"Mostrar setas" desligado e o modo com Só as telas escondem todas', () => {
     const { container, controller, ui } = setup();
     setShowArrows(false);
     flush();
@@ -78,17 +78,17 @@ describe('CanvasController: setas', () => {
     setShowArrows(true);
     flush();
     expect(container.dataset.arrows).toBe('1');
-    setCleanView(ui, true);
+    setOnlyScreens(ui, true);
     flush();
     expect(container.dataset.arrows).toBe('0');
-    setCleanView(ui, false);
+    setOnlyScreens(ui, false);
     flush();
     expect(container.dataset.arrows).toBe('1');
     controller.destroy();
   });
 
   it('a seta some quando uma das pontas está oculta pelo modo de exibição', () => {
-    // "Ocultar": sem anotação na camada ativa a marcação some, e a seta com ela. As setas
+    // "Ocultar": sem anotação em nenhuma camada visível a marcação some, e a seta com ela. As setas
     // têm anotações (ra1), mas as pontas a1 e a3 não.
     const { container, controller, ui } = setup();
     setMarkingDisplay('hide');
@@ -131,7 +131,7 @@ describe('CanvasController: setas', () => {
     controller.destroy();
   });
 
-  it('a seta selecionada tem realce e alças; no Ver limpo, nada', () => {
+  it('a seta selecionada tem realce e alças; no modo visualização, nada', () => {
     const { controller, internals, ui } = setup();
     controller.zoomTo(1); // O meio do trecho só ganha alça com folga na tela.
     ui.selection.value = { kind: 'arrow', id: 'r1' };
@@ -142,7 +142,7 @@ describe('CanvasController: setas', () => {
     expect(
       internals.overlay.arrowHandleCircles().filter((c) => c.visible()),
     ).toHaveLength(3);
-    setCleanView(ui, true);
+    setOnlyScreens(ui, true);
     flush();
     expect(
       internals.overlay.arrowHighlightNodes().filter((h) => h.line.visible()),

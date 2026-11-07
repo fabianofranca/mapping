@@ -414,13 +414,11 @@ describe('useExternalChanges', () => {
     });
   });
 
-  it('camadas visíveis e ativa continuam como estavam', () => {
+  it('as camadas escondidas continuam como estavam', () => {
     const harness = createHarness(sampleProject());
     mount(harness);
     harness.ui.hiddenLayers.value = new Set(['L2']);
-    harness.ui.activeLayer.value = 'L1';
     reloadsOf(harness).value++;
     expect([...harness.ui.hiddenLayers.value]).toEqual(['L2']);
-    expect(harness.ui.activeLayer.value).toBe('L1');
   });
 });

@@ -36,7 +36,8 @@ import { createDisplayImages } from '../../src/store/displayImages';
 import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { textMeasurer } from '../../src/store/textMeasure';
-import { createEditorUi } from '../../src/store/ui';
+import { createEditorUi, setViewMode } from '../../src/store/ui';
+import { setViewShow } from '../../src/store/viewMode';
 import { M3_SCREEN } from '../../viewer/samples/samplesMaterial3';
 import { SPEC_ID, SPEC_JSON, testCatalog } from '../model/componentFixtures';
 import { emptyProject } from '../model/fixtures';
@@ -162,6 +163,43 @@ describe('renderização do canvas com o projeto grande', () => {
       expect(median(samples.map((r) => r.pan)), 'pan').toBeLessThan(RENDER_BUDGET_MS);
       expect(median(samples.map((r) => r.zoom)), 'zoom').toBeLessThan(RENDER_BUDGET_MS);
       expect(median(samples.map((r) => r.edit)), 'edição').toBeLessThan(RENDER_BUDGET_MS);
+      controller.destroy();
+    },
+  );
+
+  budgetIt(
+    `modo visualização: trocar uma escolha do painel, pan e zoom desenham em menos de ${RENDER_BUDGET_MS} ms`,
+    BUDGET_OPTIONS,
+    () => {
+      const { ui, controller, container } = setup();
+      setViewMode(ui, true);
+      flush();
+      const round = (i: number): { choice: number; pan: number; zoom: number } => {
+        // Uma escolha por rodada: contorno e nome alternam, as setas e os containers também.
+        setViewShow(ui, { outline: i % 2 === 0, names: i % 3 !== 0 });
+        const choice = flush();
+        setViewShow(ui, { arrows: i % 2 === 0, containers: i % 4 !== 0 });
+        const arrows = flush();
+        controller.centerOnPoint({ x: 400 + 50 * (i % 5), y: 300 });
+        const pan = flush();
+        container.dispatchEvent(
+          new WheelEvent('wheel', {
+            deltaY: i % 2 ? 40 : -40,
+            clientX: 190,
+            clientY: 350,
+          }),
+        );
+        return { choice: Math.max(choice, arrows), pan, zoom: flush() };
+      };
+      for (let i = 0; i < 3; i++) round(i);
+      const samples = Array.from({ length: 15 }, (_, i) => round(i));
+      const median = (xs: number[]) =>
+        [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? Number.NaN;
+      expect(median(samples.map((r) => r.choice)), 'escolha').toBeLessThan(
+        RENDER_BUDGET_MS,
+      );
+      expect(median(samples.map((r) => r.pan)), 'pan').toBeLessThan(RENDER_BUDGET_MS);
+      expect(median(samples.map((r) => r.zoom)), 'zoom').toBeLessThan(RENDER_BUDGET_MS);
       controller.destroy();
     },
   );

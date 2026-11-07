@@ -89,7 +89,7 @@ describe('modos de exibição', () => {
 describe('marcações que desenham um componente', () => {
   it('alwaysShown fica por inteiro em ocultar e esmaecer, e o pai não vira borda', () => {
     const base = sampleProject();
-    // Camada ativa sem nenhuma anotação: sem `alwaysShown`, tudo some.
+    // Nenhuma camada visível com anotação: sem `alwaysShown`, tudo some.
     const none = new Map<string, readonly never[]>();
     expect(markingVisibility(base, none, 'hide', null).get('M3')).toBe('hidden');
     const always = new Set(['M2', 'M3']);
@@ -113,15 +113,21 @@ describe('marcações que desenham um componente', () => {
   });
 });
 
-describe('modos de exibição pela camada ativa', () => {
-  it('só a camada ativa decide: anotação em outra camada visível não mantém a marcação', () => {
+describe('modos de exibição pelas camadas visíveis', () => {
+  it('a anotação em qualquer camada visível mantém a marcação; sem nenhuma, ela some', () => {
     const base = sampleProject();
-    // Ativa = L2 (Vidros): M1 (A2) e M4 (A4) têm; M2 só tem L1 e some.
-    const active = layerDotsByMarking(base, [l2 as NonNullable<typeof l2>]);
-    const v = markingVisibility(base, active, 'hide', null);
-    expect(v.get('M1')).toBe('full');
-    expect(v.get('M4')).toBe('full');
-    expect(v.get('M2')).toBe('hidden');
-    expect(markingVisibility(base, active, 'dim', null).get('M2')).toBe('dim');
+    // Visíveis = L1 e L2: as marcações com anotação em qualquer uma continuam.
+    const both = layerDotsByMarking(base, base.layers);
+    const withAny = new Set(both.keys());
+    expect(withAny.has('M1') && withAny.has('M2') && withAny.has('M4')).toBe(true);
+    const v = markingVisibility(base, both, 'hide', null);
+    expect(v.get('M2')).toBe('full');
+    // Só a L2 visível: M2 (só tem a L1) some, M1 e M4 ficam.
+    const onlyL2 = layerDotsByMarking(base, [l2 as NonNullable<typeof l2>]);
+    const hide = markingVisibility(base, onlyL2, 'hide', null);
+    expect(hide.get('M1')).toBe('full');
+    expect(hide.get('M4')).toBe('full');
+    expect(hide.get('M2')).toBe('hidden');
+    expect(markingVisibility(base, onlyL2, 'dim', null).get('M2')).toBe('dim');
   });
 });

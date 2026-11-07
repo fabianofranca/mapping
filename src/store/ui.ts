@@ -11,6 +11,7 @@ import {
   type Space,
   type SpecNoticeKind,
 } from '../model';
+import { VIEW_SHOW_START, type ViewShow } from './viewMode';
 
 /**
  * Item **primário** da seleção (o último clicado): o que Detalhes, a trilha, as alças e os
@@ -51,17 +52,19 @@ export interface EditorUi {
   readonly selectionGroup: Signal<SelectionGroup | null>;
   readonly mode: Signal<EditorMode>;
   /**
-   * Ver limpo (Alt+H): o canvas mostra só as imagens e os componentes. Não é preferência:
-   * nasce desligado com o editor de cada projeto e não é gravado.
+   * Modo visualização (Alt+H): o canvas é só para ver e mostra o que `viewShow` escolhe. Não é
+   * preferência: nasce desligado com o editor de cada projeto e não é gravado.
    */
-  readonly cleanView: Signal<boolean>;
+  readonly viewMode: Signal<boolean>;
+  /** O que o modo visualização mostra (`store/viewMode.ts`); guardado por cópia do projeto. */
+  readonly viewShow: Signal<ViewShow>;
+  /** O painel "Mostrar no canvas" está aberto (abre ao entrar no modo, fecha ao sair). */
+  readonly viewPanel: Signal<boolean>;
   /**
    * Camadas escondidas. Guardar as escondidas (e não as visíveis) faz camadas
    * novas, ou restauradas pelo desfazer, aparecerem visíveis por padrão.
    */
   readonly hiddenLayers: Signal<ReadonlySet<string>>;
-  /** Camada ativa escolhida (use `resolveActiveLayerId`: ela pode não existir mais). */
-  readonly activeLayer: Signal<string | null>;
   /** Visão de Lista: mostrar também marcações sem anotação nas camadas visíveis. */
   readonly listShowEmpty: Signal<boolean>;
   /** Visão de Lista: só anotações incompletas (docs/ARCHITECTURE.md, "Especializações no projeto e anotações tipadas"). */
@@ -112,9 +115,10 @@ export function createEditorUi(): EditorUi {
     selection: signal<Selection>(null),
     selectionGroup: signal<SelectionGroup | null>(null),
     mode: signal<EditorMode>('navigate'),
-    cleanView: signal<boolean>(false),
+    viewMode: signal<boolean>(false),
+    viewShow: signal<ViewShow>(VIEW_SHOW_START),
+    viewPanel: signal<boolean>(false),
     hiddenLayers: signal<ReadonlySet<string>>(new Set()),
-    activeLayer: signal<string | null>(null),
     listShowEmpty: signal<boolean>(false),
     listIncompleteOnly: signal<boolean>(false),
     incompleteVisibleOnly: signal<boolean>(false),
@@ -248,10 +252,14 @@ export function existingItems(
   );
 }
 
-/** Liga ou desliga o Ver limpo. Ligar volta ao modo Navegar; desligar não mexe no modo. */
-export function setCleanView(ui: EditorUi, on: boolean): void {
+/**
+ * Liga ou desliga o modo visualização. Ligar volta ao Navegar e abre o painel "Mostrar no
+ * canvas"; desligar o fecha e não mexe no modo.
+ */
+export function setViewMode(ui: EditorUi, on: boolean): void {
   if (on && ui.mode.peek() === 'draw') ui.mode.value = 'navigate';
-  ui.cleanView.value = on;
+  ui.viewMode.value = on;
+  ui.viewPanel.value = on;
 }
 
 /** Quanto tempo o aviso curto fica na tela. */
@@ -319,50 +327,22 @@ export function collapseSections(
   ui.collapsed.value = next;
 }
 
-/** Camada ativa efetiva: a escolhida, se ainda existir; senão a primeira do projeto. */
-export function resolveActiveLayerId(
-  project: Project | null,
-  activeLayer: string | null,
-): string | null {
-  if (!project) return null;
-  const chosen = project.layers.find((l) => l.id === activeLayer);
-  return (chosen ?? project.layers[0])?.id ?? null;
-}
-
-/** Camadas visíveis, na ordem do projeto. A ativa está sempre visível. */
+/** Camadas visíveis, na ordem do projeto. Qualquer uma pode estar escondida, até todas. */
 export function visibleLayers(
   project: Project | null,
   hidden: ReadonlySet<string>,
-  activeLayerId: string | null,
 ): Layer[] {
-  return (project?.layers ?? []).filter(
-    (l) => l.id === activeLayerId || !hidden.has(l.id),
-  );
+  return (project?.layers ?? []).filter((l) => !hidden.has(l.id));
 }
 
-/** Torna a camada ativa (e, com isso, visível). */
-export function setActiveLayer(ui: EditorUi, layerId: string): void {
-  ui.activeLayer.value = layerId;
-  if (ui.hiddenLayers.peek().has(layerId)) {
-    const hidden = new Set(ui.hiddenLayers.peek());
-    hidden.delete(layerId);
-    ui.hiddenLayers.value = hidden;
-  }
-}
-
-/** Liga/desliga a visibilidade. A camada ativa não pode ser escondida. */
-export function toggleLayerVisible(
-  ui: EditorUi,
-  project: Project | null,
-  layerId: string,
-): void {
-  if (layerId === resolveActiveLayerId(project, ui.activeLayer.peek())) return;
+/** Liga/desliga a visibilidade de uma camada. */
+export function toggleLayerVisible(ui: EditorUi, layerId: string): void {
   const hidden = new Set(ui.hiddenLayers.peek());
   if (!hidden.delete(layerId)) hidden.add(layerId);
   ui.hiddenLayers.value = hidden;
 }
 
-/** Torna a camada visível (sem mudar a ativa). */
+/** Torna a camada visível. */
 export function showLayer(ui: EditorUi, layerId: string): void {
   if (!ui.hiddenLayers.peek().has(layerId)) return;
   const hidden = new Set(ui.hiddenLayers.peek());

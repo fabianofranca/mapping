@@ -61,6 +61,7 @@ describe('dicionários', () => {
       'help.specs.downloads',
       'zoom.value',
       'status.empty',
+      'view.containers',
       'status.schema',
       'pwa.previewBadge',
       'shortcuts.group.view',

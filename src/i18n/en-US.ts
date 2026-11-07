@@ -169,7 +169,6 @@ export const enUS: Dictionary = {
 
   'layer.newName': 'Layer {n}',
   'layer.title': 'Layers',
-  'layer.chipLabel': 'Layers (active: {name})',
   'layer.add': 'New layer',
   'layer.showAll': 'Show all',
   'layer.visible': 'Show layer {name}',
@@ -177,7 +176,6 @@ export const enUS: Dictionary = {
   'layer.color': 'Color of layer {name}',
   'layer.customColor': 'Other color',
   'layer.more': 'More actions for layer {name}',
-  'layer.makeActive': 'Make active: {name}',
   'layer.moveUp': 'Move layer up',
   'layer.moveDown': 'Move layer down',
   'layer.delete': 'Delete layer',
@@ -192,10 +190,10 @@ export const enUS: Dictionary = {
   'layer.display.dim': 'Dim without annotations',
   'layer.display.hide': 'Hide without annotations',
   'layer.displayHint':
-    'Based on the active layer: counts its annotations. The selected marking always shows.',
+    'Based on the visible layers: counts their annotations. The selected marking always shows.',
 
   'annotation.heading': 'Annotations',
-  'annotation.add': '+ Annotation',
+  'annotation.allLayersHidden': 'All layers are hidden.',
   'annotation.addIn': 'Add annotation to layer {layer}',
   'annotation.emptySection': 'No annotations in this layer.',
   'annotation.name': 'Annotation name',
@@ -261,9 +259,23 @@ export const enUS: Dictionary = {
   'editor.appName': 'Mapping',
   'editor.fitAllShort': 'Fit',
 
-  'view.cleanView': 'Clean view',
-  'view.cleanViewHint':
-    'Clean view: hides markings, names and selection; only the image and components',
+  'view.viewMode': 'View',
+  'view.viewModeHint':
+    'View mode: the canvas for viewing only, with no selection or editing',
+  'view.panelOpen': 'Show on canvas',
+  'view.panelTitle': 'Show on canvas',
+  'view.panelHint': 'View only: nothing is selected or edited.',
+  'view.groupElements': 'Elements',
+  'view.groupLayers': 'Layers with drawings',
+  'view.containers': 'Containers',
+  'view.images': 'Images',
+  'view.outline': 'Marking outlines',
+  'view.names': 'Marking names',
+  'view.panelArrows': 'Arrows',
+  'view.panelArrowsHint': 'still connect the same points',
+  'view.showAll': 'Show all',
+  'view.onlyScreens': 'Screens only',
+  'status.viewMode': 'View mode: view only. Esc or Alt+H exits.',
   'view.list': 'List',
 
   'list.title': 'Annotation list',
@@ -750,7 +762,6 @@ export const enUS: Dictionary = {
   'image.section': 'Image',
   'image.file': 'File',
   'image.size': 'Size',
-  'layerGroup.active': 'active',
   'details.summary': '{name} — {values}',
   'details.summarySeparator': ' · ',
   'annotation.expand': 'Show {name}',
@@ -803,7 +814,7 @@ export const enUS: Dictionary = {
   'image.replaceLocked':
     'The image or one of its markings is locked: it can only be replaced by a file of the same size.',
   'marking.error.locked': 'The marking is locked. Unlock it to change it.',
-  'shortcuts.cleanView': 'Clean view (only the image and components)',
+  'shortcuts.viewMode': 'View',
   'shortcuts.toggleLock': 'Lock or unlock the selected item',
   'editor.externalUpdated': 'Project updated from outside.',
   'review.readOnly': 'Read-only during review. Leave the review to edit the project.',
