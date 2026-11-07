@@ -12,7 +12,7 @@ import {
   type Rect,
 } from '../../model';
 import type { DisplayImage } from '../../store/displayImages';
-import type { Frame } from '../frame';
+import type { Frame, ViewFrame } from '../frame';
 import type { CanvasTokens } from '../theme';
 import { fontStyle } from './metrics';
 
@@ -31,7 +31,7 @@ export interface ImageNode {
 
 export type ImageFrame = Pick<
   Frame,
-  'project' | 'preview' | 'bitmaps' | 'tokens' | 'viewport'
+  'project' | 'preview' | 'bitmaps' | 'tokens' | 'viewport' | 'view'
 >;
 
 /** Nós das imagens, reaproveitados entre quadros (um grupo por imagem). */
@@ -62,7 +62,7 @@ export class ImageRenderer {
    * (com a prévia do gesto em andamento aplicada).
    */
   render(frame: ImageFrame): ReadonlyMap<string, Placement> {
-    const { project, preview, bitmaps, tokens } = frame;
+    const { project, preview, bitmaps, tokens, view } = frame;
     const zoom = frame.viewport.scale;
     const images = project?.containers ?? [];
     const placements = new Map<string, Placement>();
@@ -81,6 +81,7 @@ export class ImageRenderer {
         image.file === null ? undefined : bitmaps.get(image.file),
         tokens,
         zoom,
+        view,
       );
       if (node.group.zIndex() !== index) node.group.zIndex(index);
       if (node.title.visible()) {
@@ -132,29 +133,61 @@ function updateNode(
   state: DisplayImage<ImageBitmap> | undefined,
   tokens: CanvasTokens,
   zoom: number,
+  view: ViewFrame | null,
 ): void {
   const rect = imageCanvasRect(image, placement);
   node.group.position({ x: rect.x, y: rect.y });
   const box = { width: rect.width, height: rect.height };
-
-  // Container sem arquivo (sem arquivo): um retângulo cheio com a cor de fundo, sempre pronto. Nunca o
-  // reservado de "carregando": não há bitmap para esperar.
+  // Modo visualização: Containers liga o nome e o contorno do container; Imagens, o bitmap.
+  const containers = view?.containers ?? true;
   if (isBackgroundContainer(image)) {
-    node.bitmap.setAttrs({ ...box, visible: false, image: undefined });
-    node.placeholder.setAttrs({
-      ...box,
-      visible: true,
-      fill: image.background ?? tokens.surface,
-      stroke: tokens.border,
-      strokeWidth: 1 / zoom,
-      dash: [],
-    });
-    node.label.visible(false);
-    updateTitle(node, image, rect.width, tokens, zoom);
-    return;
+    updateBackground(node, image, box, tokens, zoom, containers);
+  } else {
+    updatePhoto(node, image, box, state, tokens, zoom, view?.images ?? true);
   }
+  updateTitle(node, image, rect.width, tokens, zoom, containers);
+}
 
-  const ready = state?.status === 'ready' && !isClosed(state.bitmap);
+/**
+ * Container sem arquivo: um retângulo cheio com a cor de fundo, sempre pronto. Nunca o reservado
+ * de "carregando": não há bitmap para esperar. Sem Containers (modo visualização) o contorno some
+ * e o fundo continua: ele é a tela.
+ */
+function updateBackground(
+  node: ImageNode,
+  image: ProjectContainer,
+  box: { readonly width: number; readonly height: number },
+  tokens: CanvasTokens,
+  zoom: number,
+  outline: boolean,
+): void {
+  node.bitmap.setAttrs({ ...box, visible: false, image: undefined });
+  node.placeholder.setAttrs({
+    ...box,
+    visible: true,
+    fill: image.background ?? tokens.surface,
+    stroke: tokens.border,
+    strokeEnabled: outline,
+    strokeWidth: 1 / zoom,
+    dash: [],
+  });
+  node.label.visible(false);
+}
+
+/**
+ * Foto: o bitmap, ou o espaço reservado com o aviso de "carregando" ou de arquivo que falta. Sem
+ * Imagens (modo visualização) a foto não aparece, nem o reservado.
+ */
+function updatePhoto(
+  node: ImageNode,
+  image: ProjectContainer,
+  box: { readonly width: number; readonly height: number },
+  state: DisplayImage<ImageBitmap> | undefined,
+  tokens: CanvasTokens,
+  zoom: number,
+  shown: boolean,
+): void {
+  const ready = shown && state?.status === 'ready' && !isClosed(state.bitmap);
   node.bitmap.setAttrs({
     ...box,
     visible: ready,
@@ -164,14 +197,13 @@ function updateNode(
   const broken = state?.status === 'missing' || state?.status === 'error';
   node.placeholder.setAttrs({
     ...box,
-    visible: !ready,
+    visible: shown && !ready,
     fill: tokens.surface,
     stroke: broken ? tokens.warningText : tokens.border,
+    strokeEnabled: true,
     strokeWidth: (broken ? 2 : 1) / zoom,
     dash: broken ? [8 / zoom, 6 / zoom] : [],
   });
-
-  updateTitle(node, image, rect.width, tokens, zoom);
 
   const message =
     state?.status === 'missing'
@@ -179,8 +211,8 @@ function updateNode(
       : state?.status === 'error'
         ? t('canvas.imageError')
         : null;
-  const padding = Math.min(rect.width, rect.height) * 0.05;
-  if (message === null) {
+  const padding = Math.min(box.width, box.height) * 0.05;
+  if (!shown || message === null) {
     node.label.visible(false);
     return;
   }
@@ -189,10 +221,10 @@ function updateNode(
     text: `⚠ ${message}\n${image.file ?? ''}`,
     x: padding,
     y: padding,
-    width: Math.max(0, rect.width - 2 * padding),
-    height: Math.max(0, rect.height - 2 * padding),
+    width: Math.max(0, box.width - 2 * padding),
+    height: Math.max(0, box.height - 2 * padding),
     fontSize: Math.max(
-      Math.min(rect.width, rect.height) * 0.06,
+      Math.min(box.width, box.height) * 0.06,
       tokens.type.image.size / zoom,
     ),
     fontFamily: tokens.fontFamily,
@@ -207,9 +239,10 @@ function updateTitle(
   width: number,
   tokens: CanvasTokens,
   zoom: number,
+  shown: boolean,
 ): void {
-  // Tela pequena demais para caber um rótulo legível: esconde.
-  if (width * zoom < IMAGE_TITLE_MIN_WIDTH) {
+  // Tela pequena demais para caber um rótulo legível (ou sem Containers no modo visualização): esconde.
+  if (!shown || width * zoom < IMAGE_TITLE_MIN_WIDTH) {
     node.title.visible(false);
     return;
   }

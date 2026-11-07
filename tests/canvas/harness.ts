@@ -23,7 +23,8 @@ import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { locale } from '../../src/store/settings';
 import { textMeasurer } from '../../src/store/textMeasure';
-import { createEditorUi, itemsOf } from '../../src/store/ui';
+import { createEditorUi, itemsOf, setViewMode, type EditorUi } from '../../src/store/ui';
+import { onlyScreens } from '../../src/store/viewMode';
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
 
 /** Contexto 2D que aceita qualquer chamada; `measureText` estima pela quantidade de letras. */
@@ -203,12 +204,13 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     locale: locale.peek(),
     dots: derived.layerDots.peek(),
     incomplete: derived.incompleteMarkings.peek(),
-    visibility: derived.markingVisibility.peek(),
+    visibility: derived.canvasVisibility.peek(),
     drawings: derived.drawingsOf(store.project.peek()),
     drawn: derived.drawnMarkings.peek(),
     floating: derived.floatingMarkings.peek(),
     review: null,
-    arrows: visibleArrowShapes(store.project.peek(), derived.markingVisibility.peek()),
+    view: null,
+    arrows: visibleArrowShapes(store.project.peek(), derived.canvasVisibility.peek()),
     arrowDraft: null,
     marquee: null,
     ...overrides,
@@ -259,4 +261,13 @@ export function componentCanvasProject(): Project {
 export function componentEditor() {
   const sources = componentSources();
   return { ...editorFor(componentCanvasProject(), false, sources), sources };
+}
+
+/**
+ * Liga ou desliga o modo visualização com **Só as telas** (containers, imagens e desenhos; sem
+ * contorno, nome nem setas): o canvas que o antigo Ver limpo dava.
+ */
+export function setOnlyScreens(ui: EditorUi, on: boolean): void {
+  if (on) onlyScreens(ui);
+  setViewMode(ui, on);
 }

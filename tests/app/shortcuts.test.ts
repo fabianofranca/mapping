@@ -37,10 +37,10 @@ describe('atalhos do editor', () => {
     expect(shortcutFor(key('l'))).toBeNull();
   });
 
-  // Canvas limpo: Alt+H liga ou desliga o Ver limpo.
-  it('Alt+H: Ver limpo (pela tecla física, por causa do Option no macOS)', () => {
-    expect(shortcutFor(key('h', { alt: true }))).toEqual({ kind: 'clean-view' });
-    expect(shortcutFor(key('˙', { alt: true }, 'KeyH'))).toEqual({ kind: 'clean-view' });
+  // Canvas limpo: Alt+H liga ou desliga o modo visualização.
+  it('Alt+H: modo visualização (pela tecla física, por causa do Option no macOS)', () => {
+    expect(shortcutFor(key('h', { alt: true }))).toEqual({ kind: 'view-mode' });
+    expect(shortcutFor(key('˙', { alt: true }, 'KeyH'))).toEqual({ kind: 'view-mode' });
     expect(shortcutFor(key('h', { alt: true, shift: true }))).toBeNull();
     expect(shortcutFor(key('h', { alt: true, ctrl: true }))).toBeNull();
     expect(shortcutFor(key('h'))).toBeNull();

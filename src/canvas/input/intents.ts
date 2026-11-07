@@ -118,7 +118,7 @@ export interface IntentContext {
    */
   readonly visibility?: ReadonlyMap<string, MarkingVisibility>;
   /**
-   * Setas desenhadas (as duas pontas à vista, "Mostrar setas" ligado, fora do Ver limpo): o que o
+   * Setas desenhadas (as duas pontas à vista, "Mostrar setas" ligado, fora do modo visualização): o que o
    * toque alcança e onde ficam as alças da seta selecionada. Sem o campo, não há seta no toque.
    */
   readonly arrows?: readonly ArrowShape[];

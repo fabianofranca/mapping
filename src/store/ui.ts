@@ -11,6 +11,7 @@ import {
   type Space,
   type SpecNoticeKind,
 } from '../model';
+import { VIEW_SHOW_START, type ViewShow } from './viewMode';
 
 /**
  * Item **primário** da seleção (o último clicado): o que Detalhes, a trilha, as alças e os
@@ -51,10 +52,12 @@ export interface EditorUi {
   readonly selectionGroup: Signal<SelectionGroup | null>;
   readonly mode: Signal<EditorMode>;
   /**
-   * Ver limpo (Alt+H): o canvas mostra só as imagens e os componentes. Não é preferência:
-   * nasce desligado com o editor de cada projeto e não é gravado.
+   * Modo visualização (Alt+H): o canvas é só para ver e mostra o que `viewShow` escolhe. Não é
+   * preferência: nasce desligado com o editor de cada projeto e não é gravado.
    */
-  readonly cleanView: Signal<boolean>;
+  readonly viewMode: Signal<boolean>;
+  /** O que o modo visualização mostra (`store/viewMode.ts`); guardado por cópia do projeto. */
+  readonly viewShow: Signal<ViewShow>;
   /**
    * Camadas escondidas. Guardar as escondidas (e não as visíveis) faz camadas
    * novas, ou restauradas pelo desfazer, aparecerem visíveis por padrão.
@@ -110,7 +113,8 @@ export function createEditorUi(): EditorUi {
     selection: signal<Selection>(null),
     selectionGroup: signal<SelectionGroup | null>(null),
     mode: signal<EditorMode>('navigate'),
-    cleanView: signal<boolean>(false),
+    viewMode: signal<boolean>(false),
+    viewShow: signal<ViewShow>(VIEW_SHOW_START),
     hiddenLayers: signal<ReadonlySet<string>>(new Set()),
     listShowEmpty: signal<boolean>(false),
     listIncompleteOnly: signal<boolean>(false),
@@ -245,10 +249,10 @@ export function existingItems(
   );
 }
 
-/** Liga ou desliga o Ver limpo. Ligar volta ao modo Navegar; desligar não mexe no modo. */
-export function setCleanView(ui: EditorUi, on: boolean): void {
+/** Liga ou desliga o modo visualização. Ligar volta ao Navegar; desligar não mexe no modo. */
+export function setViewMode(ui: EditorUi, on: boolean): void {
   if (on && ui.mode.peek() === 'draw') ui.mode.value = 'navigate';
-  ui.cleanView.value = on;
+  ui.viewMode.value = on;
 }
 
 /** Quanto tempo o aviso curto fica na tela. */

@@ -232,8 +232,8 @@ export class PointerInput {
     return {
       project,
       readOnly: store.readOnly.peek() || (this.o.reviewing?.() ?? false),
-      // Ver limpo nunca desenha, mesmo que o modo ainda seja Desenhar.
-      mode: ui.cleanView.peek() ? 'navigate' : ui.mode.peek(),
+      // O modo visualização nunca desenha, mesmo que o modo ainda seja Desenhar.
+      mode: ui.viewMode.peek() ? 'navigate' : ui.mode.peek(),
       selection: ui.selection.peek(),
       items: existingItems(project, peekSelectedItems(ui)),
       visibility: derived.markingVisibility.peek(),
@@ -245,9 +245,9 @@ export class PointerInput {
     };
   }
 
-  /** As setas que o toque alcança: as desenhadas ("Mostrar setas" ligado, fora do Ver limpo). */
+  /** As setas que o toque alcança: as desenhadas ("Mostrar setas" ligado, fora do modo visualização). */
   private arrowShapes(project: Project | null): readonly ArrowShape[] {
-    if (this.o.ui.cleanView.peek() || !showArrows.peek()) return [];
+    if (this.o.ui.viewMode.peek() || !showArrows.peek()) return [];
     return visibleArrowShapes(project, this.o.derived.markingVisibility.peek());
   }
 
@@ -822,7 +822,7 @@ export class PointerInput {
     if (isMultiSelectClick(e) || this.lastPointerType === 'touch' || !project || !target)
       return;
     if (this.o.reviewing?.()) return;
-    if (!ui.cleanView.peek() && ui.mode.peek() !== 'navigate') return;
+    if (!ui.viewMode.peek() && ui.mode.peek() !== 'navigate') return;
     const index = projectIndex(project);
     if (target.kind === 'arrow') {
       this.removeWaypointAt(e, project, target.id);

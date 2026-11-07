@@ -259,9 +259,9 @@ export const enUS: Dictionary = {
   'editor.appName': 'Mapping',
   'editor.fitAllShort': 'Fit',
 
-  'view.cleanView': 'Clean view',
-  'view.cleanViewHint':
-    'Clean view: hides markings, names and selection; only the image and components',
+  'view.viewMode': 'View',
+  'view.viewModeHint':
+    'View mode: the canvas for viewing only, with no selection or editing',
   'view.list': 'List',
 
   'list.title': 'Annotation list',
@@ -800,7 +800,7 @@ export const enUS: Dictionary = {
   'image.replaceLocked':
     'The image or one of its markings is locked: it can only be replaced by a file of the same size.',
   'marking.error.locked': 'The marking is locked. Unlock it to change it.',
-  'shortcuts.cleanView': 'Clean view (only the image and components)',
+  'shortcuts.viewMode': 'View (view mode)',
   'shortcuts.toggleLock': 'Lock or unlock the selected item',
   'editor.externalUpdated': 'Project updated from outside.',
   'review.readOnly': 'Read-only during review. Leave the review to edit the project.',
