@@ -2,9 +2,11 @@
 // As contas ficam em `viewport.ts` (puras); aqui ficam os signals e o DOM.
 import { signal } from '@preact/signals';
 import type { Project, Rect } from '../model';
+import { ARRIVAL_FIT_EXTRA } from './arrivals';
 import { imagesBounds } from './imageGeometry';
 import {
   EMPTY_CANVAS_RECT,
+  FIT_PADDING,
   centerOn,
   fitRect,
   panBy,
@@ -22,7 +24,9 @@ export class ViewportController {
   readonly size = signal<Size>({ width: 0, height: 0 });
   private readonly container: HTMLElement;
   /** O que enquadrar: as imagens e as marcações do canvas do projeto (lido sem assinar). */
-  private readonly content: () => Pick<Project, 'containers' | 'markings'> | null;
+  private readonly content: () =>
+    | (Pick<Project, 'containers' | 'markings'> & Partial<Pick<Project, 'arrivals'>>)
+    | null;
   /** Já enquadrou na primeira vez que o container teve tamanho. */
   private fitted = false;
   /** Quantas vezes enquadrou; o canvas publica no container para os testes e2e. */
@@ -30,7 +34,9 @@ export class ViewportController {
 
   constructor(
     container: HTMLElement,
-    content: () => Pick<Project, 'containers' | 'markings'> | null,
+    content: () =>
+      | (Pick<Project, 'containers' | 'markings'> & Partial<Pick<Project, 'arrivals'>>)
+      | null,
   ) {
     this.container = container;
     this.content = content;
@@ -71,6 +77,7 @@ export class ViewportController {
     this.viewport.value = fitRect(
       imagesBounds(content?.containers ?? [], content?.markings) ?? EMPTY_CANVAS_RECT,
       size,
+      content?.arrivals?.length ? FIT_PADDING + ARRIVAL_FIT_EXTRA : FIT_PADDING,
     );
   }
 

@@ -34,6 +34,8 @@ type MappingWithPerspectives = MappingJson & {
 
 /** Margem, em px de tela, que o enquadramento deixa em volta de tudo (`FIT_PADDING`). */
 const FIT_PADDING = 24;
+/** Folga a mais com marca de chegada (`ARRIVAL_FIT_EXTRA`). */
+const ARRIVAL_FIT_EXTRA = 48;
 
 test.use({ viewport: { width: 900, height: 720 } });
 
@@ -80,6 +82,7 @@ async function fitAll(page: Page, host: Locator): Promise<void> {
 async function toScreen(
   host: Locator,
   boxes: readonly (Rect & { readonly id: string })[],
+  padding = FIT_PADDING,
 ): Promise<Map<string, Rect>> {
   const box = await host.boundingBox();
   if (!box) throw new Error('canvas sem tamanho');
@@ -88,8 +91,8 @@ async function toScreen(
   const x1 = Math.max(...boxes.map((c) => c.x + c.width));
   const y1 = Math.max(...boxes.map((c) => c.y + c.height));
   const scale = Math.min(
-    (box.width - 2 * FIT_PADDING) / (x1 - x0),
-    (box.height - 2 * FIT_PADDING) / (y1 - y0),
+    (box.width - 2 * padding) / (x1 - x0),
+    (box.height - 2 * padding) / (y1 - y0),
   );
   const offsetX = box.x + box.width / 2 - ((x0 + x1) / 2) * scale;
   const offsetY = box.y + box.height / 2 - ((y0 + y1) / 2) * scale;
@@ -245,6 +248,8 @@ test('perspectivas: criar, enviar, mover dentro dela, chegada na Principal, apag
       width: c.width * c.placement.scale,
       height: c.height * c.placement.scale,
     })),
+    // Com marca de chegada, Enquadrar tudo deixa folga para o rótulo da faixa.
+    FIT_PADDING + ARRIVAL_FIT_EXTRA,
   );
   const d = principalScreens.get(idD)!;
   await page.mouse.click(centerOf(d).x, centerOf(d).y);

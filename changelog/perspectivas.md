@@ -21,5 +21,6 @@
 - Containers criados numa perspectiva não nascem mais um sobre o outro.
 - O aviso de chegada da primeira tela da fila volta a trazer "Sem referência; foi para a área de chegada.".
 - Na Principal, o selo "Veio de…" não cobre mais o nome do container nem o rótulo da faixa de chegada e fica sempre dentro da área visível; a barra de status mostra "Chegadas: N" (a frase inteira fica na dica).
+- Na Principal enquadrada com a área de chegada, o rótulo "Área de chegada" não fica mais sobre o nome dos containers nem sai da tela (sobe acima da linha do nome ou, sem espaço, vai para baixo da faixa), Enquadrar tudo deixa folga para ele e o selo "Veio de…" não fica sob o minimapa.
 - O submenu **Enviar para perspectiva** abre também ao passar o ponteiro, não sai da tela perto da borda direita e anuncia a perspectiva marcada (`menuitemcheckbox` com `aria-checked`).
 - As posições gravadas ao mover, criar e enviar itens para perspectivas não levam mais ruído de ponto flutuante (como `225.00000000000006`).
