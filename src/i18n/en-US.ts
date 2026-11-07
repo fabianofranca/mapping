@@ -901,6 +901,8 @@ export const enUS: Dictionary = {
   'ref.deleteTitle': 'References will break',
   'ref.deleteAnnotation':
     '"{name}" is a reference target: {count} reference(s) will break. You can undo.',
+  'ref.deleteMarking':
+    'Its annotations are reference targets: {count} reference(s) will break. You can undo.',
   'ref.deleteLinked': '{count} linked annotation(s) will be deleted too.',
   'ref.deleteEntry':
     'The tuple "{name}" is the target of {count} reference(s), which will break. You can undo.',

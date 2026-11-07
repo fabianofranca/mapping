@@ -905,6 +905,8 @@ export const ptBR = {
   'ref.deleteTitle': 'Referências vão quebrar',
   'ref.deleteAnnotation':
     '"{name}" é alvo de referências: {count} referência(s) vão ficar quebradas. Dá para desfazer.',
+  'ref.deleteMarking':
+    'Anotações dela são alvo de referências: {count} referência(s) vão ficar quebradas. Dá para desfazer.',
   'ref.deleteLinked': 'Saem junto {count} anotação(ões) vinculada(s).',
   'ref.deleteEntry':
     'A tupla "{name}" é alvo de {count} referência(s), que vão ficar quebradas. Dá para desfazer.',

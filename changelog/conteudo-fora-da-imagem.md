@@ -15,4 +15,5 @@
 
 ## Corrigido
 
-- Nenhum defeito encontrado durante a etapa.
+- Excluir uma marcação cujas anotações são alvo de `ref` (anotação inteira) de outra anotação agora avisa, no diálogo "Excluir marcação?", quantas referências vão ficar quebradas (e que dá para desfazer), como já fazia a exclusão de anotação e de linha de tabela.
+- O roteiro R24 (R24.12 e R24.13) lê a pendência `referência quebrada` em **Incompletas**, onde ela aparece; o Diagnóstico só lista erros tratados.
