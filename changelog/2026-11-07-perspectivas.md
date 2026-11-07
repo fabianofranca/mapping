@@ -1,4 +1,4 @@
-# Perspectivas — [Não lançado] (épico `epic/perspectivas`, PR #739, MCP 0.26.0, schema v16)
+# Perspectivas — 2026-11-07 (épico `epic/perspectivas`, PR #739, MCP 0.26.0, schema v16)
 
 ## Alterado
 
