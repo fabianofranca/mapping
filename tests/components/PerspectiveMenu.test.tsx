@@ -132,8 +132,8 @@ describe('Enviar para perspectiva', () => {
     const { harness, ids } = setup({ others: 1 });
     act(() => {
       selectItems(harness.ui, [
-        { kind: 'i', id: 'I1' },
-        { kind: 'i', id: 'I2' },
+        { kind: 'image', id: 'I1' },
+        { kind: 'image', id: 'I2' },
       ]);
     });
     openMenu(harness, 'i', 'I1');

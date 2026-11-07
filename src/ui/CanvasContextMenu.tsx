@@ -32,11 +32,11 @@ import {
 function moveFocus(e: KeyboardEvent) {
   if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
   const current = e.target as HTMLElement;
-  const submenu = current.closest<HTMLElement>('.menu-submenu');
+  const submenu = current.closest<HTMLElement>('[data-submenu]');
   const scope = submenu ?? (e.currentTarget as HTMLElement);
   const items = [
     ...scope.querySelectorAll<HTMLButtonElement>('button[role^="menuitem"]'),
-  ].filter((b) => !b.disabled && (submenu !== null || !b.closest('.menu-submenu')));
+  ].filter((b) => !b.disabled && (submenu !== null || !b.closest('[data-submenu]')));
   const at = items.indexOf(current as HTMLButtonElement);
   if (at < 0) return;
   e.preventDefault();
@@ -242,7 +242,10 @@ export function CanvasContextMenu() {
   const perspectiveIds: readonly string[] =
     copyTarget === null
       ? []
-      : isItemSelected(picked, copyTarget)
+      : isItemSelected(picked, {
+            kind: copyTarget.kind === 'i' ? 'image' : 'marking',
+            id: copyTarget.id,
+          })
         ? picked.map((item) => item.id)
         : [copyTarget.id];
   const openId = editor.session.perspective.id.value;

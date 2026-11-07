@@ -235,7 +235,7 @@ describe('Detalhes — Ligado por seta fora da perspectiva', () => {
 
 describe('Detalhes — só na Principal', () => {
   /** Uma coluna com dois botões na I1 (Arrumar existe) e a perspectiva V mostrando a I1. */
-  async function arrangeable() {
+  async function arrangeable(openId: string | null = null) {
     const h = await libraryHarness();
     const add = (typeId: string, parentId: string | null) => {
       const result = h.actions.addComponent({
@@ -254,6 +254,7 @@ describe('Detalhes — só na Principal', () => {
       perspectives: [viewOf(p, { id: 'V', root: 'I1', at: { x: 0, y: 0 } })],
     }));
     expect(applied).toEqual({ ok: true, value: undefined });
+    if (openId) open(h, openId);
     renderLive(h, (project) => {
       const marking = project.markings.find((m) => m.id === column)!;
       return (
@@ -277,8 +278,7 @@ describe('Detalhes — só na Principal', () => {
   });
 
   it('numa perspectiva, Arrumar fica desabilitado com a dica', async () => {
-    const h = await arrangeable();
-    open(h, 'V');
+    await arrangeable('V');
     const arrange = screen.getByRole('button', { name: t('arrange.action') });
     expect((arrange as HTMLButtonElement).disabled).toBe(true);
     expect(document.body.textContent).toContain(t('perspective.principalOnly'));

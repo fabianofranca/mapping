@@ -32,7 +32,8 @@ async function setup() {
     </>
   ));
   const hiddenOf = () =>
-    harness.project().perspectives.find((x) => x.id === created.value)?.hiddenLayers ?? [];
+    harness.project().perspectives.find((x) => x.id === created.value)?.hiddenLayers ??
+    [];
   return { harness, session, id: created.value, hiddenOf, user: userEvent.setup() };
 }
 
@@ -42,7 +43,9 @@ describe('Camadas com perspectiva aberta', () => {
     const layer = harness.project().layers[0];
     if (!layer) throw new Error('sem camada');
     act(() => void session.perspective.open(id));
-    const box = await screen.findByRole('checkbox', { name: `Mostrar a camada ${layer.name}` });
+    const box = await screen.findByRole('checkbox', {
+      name: `Mostrar a camada ${layer.name}`,
+    });
     await user.click(box);
     expect(hiddenOf()).toEqual([layer.id]);
     expect(harness.ui.hiddenLayers.value.size).toBe(0);
@@ -56,7 +59,9 @@ describe('Camadas com perspectiva aberta', () => {
     const layer = harness.project().layers[0];
     if (!layer) throw new Error('sem camada');
     act(() => void session.perspective.open(id));
-    await user.click(await screen.findByRole('checkbox', { name: `Mostrar a camada ${layer.name}` }));
+    await user.click(
+      await screen.findByRole('checkbox', { name: `Mostrar a camada ${layer.name}` }),
+    );
     expect(hiddenOf()).toEqual([layer.id]);
     act(() => void harness.store.undo());
     expect(hiddenOf()).toEqual([]);
@@ -76,7 +81,9 @@ describe('Camadas com perspectiva aberta', () => {
     const { harness, hiddenOf, user } = await setup();
     const layer = harness.project().layers[0];
     if (!layer) throw new Error('sem camada');
-    await user.click(screen.getByRole('checkbox', { name: `Mostrar a camada ${layer.name}` }));
+    await user.click(
+      screen.getByRole('checkbox', { name: `Mostrar a camada ${layer.name}` }),
+    );
     expect([...harness.ui.hiddenLayers.value]).toEqual([layer.id]);
     expect(hiddenOf()).toEqual([]);
   });

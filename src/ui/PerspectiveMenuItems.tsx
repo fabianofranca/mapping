@@ -190,6 +190,7 @@ export function PerspectiveMenuItems({
         {expanded && !locked && (
           <div
             class="popover menu-submenu"
+            data-submenu
             role="menu"
             aria-label={t('perspective.menu.send')}
             ref={sub}

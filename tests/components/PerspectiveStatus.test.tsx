@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
-import { act, cleanup, screen } from '@testing-library/preact';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { act, cleanup, screen, waitFor } from '@testing-library/preact';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { locale } from '../../src/store/settings';
 import { StatusBar } from '../../src/ui/StatusBar';
 import { PerspectiveNotices } from '../../src/ui/PerspectiveNotices';
@@ -13,7 +13,10 @@ import { createLocalHarness } from './perspectiveUiHarness';
 beforeEach(() => {
   locale.value = 'pt-BR';
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 async function setup() {
   const harness = await createLocalHarness(cadastroProject());
@@ -73,20 +76,24 @@ describe('barra de status: perspectiva', () => {
 
 describe('avisos de troca forçada', () => {
   it('"removed" mostra o texto com o nome e limpa o signal', async () => {
-    const { session } = await setup();
+    const { harness, session } = await setup();
     act(() => {
       session.perspective.notice.value = { kind: 'removed', name: 'Fluxo A' };
     });
-    expect(await screen.findByText('A perspectiva Fluxo A foi apagada.')).toBeTruthy();
+    await waitFor(() =>
+      expect(harness.ui.toast.value).toBe('A perspectiva Fluxo A foi apagada.'),
+    );
     expect(session.perspective.notice.value).toBeNull();
   });
 
   it('"review" mostra o texto e limpa o signal', async () => {
-    const { session } = await setup();
+    const { harness, session } = await setup();
     act(() => {
       session.perspective.notice.value = { kind: 'review' };
     });
-    expect(await screen.findByText('A revisão mostra a Principal.')).toBeTruthy();
+    await waitFor(() =>
+      expect(harness.ui.toast.value).toBe('A revisão mostra a Principal.'),
+    );
     expect(session.perspective.notice.value).toBeNull();
   });
 });

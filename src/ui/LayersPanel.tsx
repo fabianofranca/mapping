@@ -37,8 +37,8 @@ interface LayersProps {
  * são as dela e mudam no projeto (com desfazer); na Principal, as da interface (`ui.hiddenLayers`).
  */
 function useLayerVisibility() {
-  const { ui, session, review } = useEditor();
-  const open = review.derived.perspective.value;
+  const { ui, session, derived } = useEditor();
+  const open = derived.perspective.value;
   const hidden: ReadonlySet<string> = open
     ? new Set(open.hiddenLayers)
     : ui.hiddenLayers.value;
