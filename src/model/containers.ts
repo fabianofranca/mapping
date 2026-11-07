@@ -10,7 +10,7 @@ import {
   rectsOverlap,
   right,
 } from './geometry';
-import { settleIf, type SettleOptions } from './hierarchySettle';
+import { settleFrom, type SettleOptions } from './hierarchySettle';
 import {
   canDeleteImage,
   canEditImagePlacement,
@@ -19,7 +19,7 @@ import {
 } from './locks';
 import { findById, normalizeOptionalName, updateById } from './project';
 import { countBrokenRefs } from './refs';
-import type { Marking, Placement, Project, ProjectContainer } from './types';
+import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
 /** Lado maior de uma imagem recém-adicionada, em unidades do canvas. */
 export const INITIAL_IMAGE_SIZE = 1000;
@@ -86,6 +86,45 @@ function placementAtRight(p: Project, scale: number, excludeId?: string): Placem
 }
 
 /**
+ * O lugar livre mais próximo de `wanted` (canto de cima à esquerda) para um retângulo de
+ * `width` × `height` que não sobreponha nenhum dos `obstacles`. Testa o ponto pedido e os
+ * encaixes junto às bordas dos obstáculos (com o vão `gap`); o de menor distância vence e o
+ * primeiro empata. Sempre há um (à direita de todos os obstáculos). Vale para qualquer espaço do
+ * canvas: serve a `placementNear` e à chegada das perspectivas.
+ */
+export function nearestFreeSpot(
+  obstacles: readonly Rect[],
+  width: number,
+  height: number,
+  wanted: { readonly x: number; readonly y: number },
+  gap: number = IMAGE_GAP,
+): { x: number; y: number } {
+  const xs = [wanted.x];
+  const ys = [wanted.y];
+  for (const o of obstacles) {
+    xs.push(right(o) + gap, o.x - gap - width);
+    ys.push(o.y + o.height + gap, o.y - gap - height);
+  }
+  let best: { x: number; y: number } | null = null;
+  let bestDistance = Infinity;
+  for (const x of xs) {
+    for (const y of ys) {
+      const rect = { x, y, width, height };
+      if (obstacles.some((o) => rectsOverlap(rect, o))) continue;
+      const distance = Math.hypot(x - wanted.x, y - wanted.y);
+      if (distance < bestDistance) {
+        best = { x, y };
+        bestDistance = distance;
+      }
+    }
+  }
+  if (best) return best;
+  if (obstacles.length === 0) return { x: wanted.x, y: wanted.y };
+  const rightmost = obstacles.reduce((a, b) => (right(b) > right(a) ? b : a));
+  return { x: right(rightmost) + gap, y: rightmost.y };
+}
+
+/**
  * Posição livre mais próxima de `center` (ponto do canvas onde o centro da
  * imagem deveria ficar). Testa o ponto pedido e os encaixes junto às bordas
  * das outras imagens; sempre existe um (à direita de todas).
@@ -103,26 +142,7 @@ export function placementNear(
   const others = p.containers
     .filter((i) => i.id !== excludeId)
     .map((i) => imageCanvasRect(i, i.placement));
-  const xs = [wanted.x];
-  const ys = [wanted.y];
-  for (const o of others) {
-    xs.push(right(o) + IMAGE_GAP, o.x - IMAGE_GAP - w);
-    ys.push(o.y + o.height + IMAGE_GAP, o.y - IMAGE_GAP - h);
-  }
-  let best: { x: number; y: number } | null = null;
-  let bestDistance = Infinity;
-  for (const x of xs) {
-    for (const y of ys) {
-      const rect = { x, y, width: w, height: h };
-      if (others.some((o) => rectsOverlap(rect, o))) continue;
-      const distance = Math.hypot(x - wanted.x, y - wanted.y);
-      if (distance < bestDistance) {
-        best = { x, y };
-        bestDistance = distance;
-      }
-    }
-  }
-  return { ...(best ?? placementAtRight(p, scale)), scale };
+  return { ...nearestFreeSpot(others, w, h, wanted), scale };
 }
 
 /**
@@ -228,7 +248,7 @@ export function addContainer(
       ? placementNear(p, args, scale, args.center)
       : placementAtRight(p, scale),
   };
-  return settleIf({ ...p, containers: [...p.containers, image] }, options);
+  return settleFrom(p, { ...p, containers: [...p.containers, image] }, options);
 }
 
 /**
@@ -269,7 +289,7 @@ export function addBackgroundContainer(
       ? placementNear(p, args, scale, args.center)
       : placementAtRight(p, scale),
   };
-  return settleIf({ ...p, containers: [...p.containers, image] }, options);
+  return settleFrom(p, { ...p, containers: [...p.containers, image] }, options);
 }
 
 export interface BackgroundContainerChanges {
@@ -323,7 +343,8 @@ export function setBackgroundContainer(
     if (overlap) failOverlap(overlap);
   }
   if (!resized && background === image.background) return p;
-  return settleIf(
+  return settleFrom(
+    p,
     {
       ...p,
       containers: updateById(p.containers, containerId, (i) => ({
@@ -399,7 +420,8 @@ export function setContainerPlacement(
   const overlap = overlappingContainer(p, containerId, placement);
   if (overlap) failOverlap(overlap);
   const copy: Placement = { x: placement.x, y: placement.y, scale: placement.scale };
-  return settleIf(
+  return settleFrom(
+    p,
     {
       ...p,
       containers: updateById(p.containers, containerId, (i) => ({
@@ -472,7 +494,7 @@ export function removeContainer(
 ): Project {
   findById(p.containers, containerId);
   requireUnlocked(canDeleteImage(p, containerId));
-  return settleIf(cascadeRemoveImage(p, containerId), options);
+  return settleFrom(p, cascadeRemoveImage(p, containerId), options);
 }
 
 /** A exclusão em si, sem a trava: também serve para contar o impacto. */
@@ -639,7 +661,8 @@ export function replaceContainer(
     height: next.height,
     placement,
   };
-  return settleIf(
+  return settleFrom(
+    p,
     {
       ...p,
       containers: p.containers.map((i) => (i.id === containerId ? updated : i)),

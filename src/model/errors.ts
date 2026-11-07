@@ -61,7 +61,11 @@ export type ModelErrorCode =
   // Propostas de alteração (etapa 4)
   | 'invalid-source'
   // Componentes (etapa Biblioteca)
-  | 'not-arrangeable';
+  | 'not-arrangeable'
+  // Perspectivas (v16): o nome é vazio ou repetido; o id não é de uma raiz
+  | 'perspective-name-empty'
+  | 'perspective-name-taken'
+  | 'not-root';
 
 /**
  * Fatos estruturados que alguns erros carregam (objeto simples e serializável). O modelo guarda

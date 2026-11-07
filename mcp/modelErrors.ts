@@ -69,6 +69,11 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'invalid-source': 'source inválido: informe system e id não vazios (url é opcional)',
   'not-arrangeable':
     'a marcação não é um container com layout em linha ou coluna e filhas para arrumar',
+  'perspective-name-empty': 'o nome da perspectiva está vazio',
+  'perspective-name-taken':
+    'já existe uma perspectiva com esse nome (sem diferença de maiúsculas)',
+  'not-root':
+    'o item não é uma raiz: só container sem pai, marcação do canvas sem pai ou flutuante entra numa perspectiva',
 };
 
 /** Dica do próximo passo para os erros do modelo que a têm. */
