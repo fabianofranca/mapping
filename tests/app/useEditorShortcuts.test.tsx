@@ -271,6 +271,29 @@ describe('useEditorShortcuts: modo visualização (Alt+H)', () => {
   });
 });
 
+describe('useEditorShortcuts: sair do modo visualização (Esc)', () => {
+  it('o Esc sai do modo e não mexe na seleção', () => {
+    const s = setup();
+    s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
+    s.press('h', { alt: true });
+    expect(s.harness.ui.viewMode.value).toBe(true);
+    s.press('Escape');
+    expect(s.harness.ui.viewMode.value).toBe(false);
+    expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
+  });
+
+  it('com campo de texto em foco, o Esc não sai do modo', () => {
+    const s = setup();
+    s.press('h', { alt: true });
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(s.harness.ui.viewMode.value).toBe(true);
+    input.remove();
+  });
+});
+
 describe('useEditorShortcuts: trava (Alt+L)', () => {
   it('tranca e destranca a marcação selecionada, com uma entrada de desfazer cada', () => {
     const s = setup();

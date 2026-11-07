@@ -260,6 +260,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
    * 3.1): cabe na janela Detalhes na largura inicial e dá para as três linhas do conflito.
    */
   'size-change-popover': '320px',
+  /** Painel "Mostrar no canvas" do modo visualização (`ViewModePanel`). */
+  'size-view-panel': '280px',
   // Opacidades
   'opacity-disabled': '0.45',
   'opacity-dimmed': '0.35',

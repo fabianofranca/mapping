@@ -99,7 +99,7 @@ export function ViewModeButton() {
   const { ui } = useEditor();
   return (
     <IconButton
-      icon="eyeOff"
+      icon="eye"
       label={t('view.viewMode')}
       shortcut={SHORTCUT_LABELS.viewMode}
       tooltip={t('view.viewModeHint')}

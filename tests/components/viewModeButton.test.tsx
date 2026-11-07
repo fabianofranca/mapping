@@ -3,20 +3,27 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { ViewModeButton, ModeButtons } from '../../src/app/EditorTools';
 import { t } from '../../src/i18n';
 import { EditorContext } from '../../src/ui/EditorContext';
+import { ViewModePanel } from '../../src/ui/ViewModePanel';
 import { sampleProject } from '../model/fixtures';
 import { createHarness, renderLive } from './harness';
 
 afterEach(cleanup);
 
+function setup() {
+  const h = createHarness(sampleProject());
+  renderLive(h, () => (
+    <EditorContext.Provider value={h.context}>
+      <ViewModeButton />
+      <ViewModePanel />
+      <ModeButtons />
+    </EditorContext.Provider>
+  ));
+  return h;
+}
+
 describe('Modo visualização: botão', () => {
   it('liga e desliga o modo visualização, com aria-pressed, e desabilita Desenhar enquanto ligado', () => {
-    const h = createHarness(sampleProject());
-    renderLive(h, () => (
-      <EditorContext.Provider value={h.context}>
-        <ViewModeButton />
-        <ModeButtons />
-      </EditorContext.Provider>
-    ));
+    const h = setup();
     const button = screen.getByRole('button', { name: t('view.viewMode') });
     const draw = screen.getByRole('button', { name: t('editor.modeDraw') });
     expect(button.getAttribute('aria-pressed')).toBe('false');
@@ -30,5 +37,31 @@ describe('Modo visualização: botão', () => {
     fireEvent.click(button);
     expect(h.ui.viewMode.value).toBe(false);
     expect(button.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('entrar no modo abre o painel Mostrar no canvas; sair o fecha', () => {
+    setup();
+    const button = screen.getByRole('button', { name: t('view.viewMode') });
+    expect(screen.queryByRole('dialog', { name: t('view.panelTitle') })).toBeNull();
+    fireEvent.click(button);
+    expect(screen.getByRole('dialog', { name: t('view.panelTitle') })).toBeTruthy();
+    fireEvent.click(button);
+    expect(screen.queryByRole('dialog', { name: t('view.panelTitle') })).toBeNull();
+  });
+
+  it('Mostrar no canvas só fica habilitado no modo e reabre o painel', () => {
+    const h = setup();
+    const open = screen.getByRole('button', { name: t('view.panelOpen') });
+    expect(open.hasAttribute('disabled')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: t('view.viewMode') }));
+    expect(open.hasAttribute('disabled')).toBe(false);
+    // Esc fecha o painel e o modo continua.
+    fireEvent.keyDown(screen.getByRole('dialog', { name: t('view.panelTitle') }), {
+      key: 'Escape',
+    });
+    expect(screen.queryByRole('dialog', { name: t('view.panelTitle') })).toBeNull();
+    expect(h.ui.viewMode.value).toBe(true);
+    fireEvent.click(open);
+    expect(screen.getByRole('dialog', { name: t('view.panelTitle') })).toBeTruthy();
   });
 });

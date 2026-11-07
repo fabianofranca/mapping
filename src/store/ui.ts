@@ -58,6 +58,8 @@ export interface EditorUi {
   readonly viewMode: Signal<boolean>;
   /** O que o modo visualização mostra (`store/viewMode.ts`); guardado por cópia do projeto. */
   readonly viewShow: Signal<ViewShow>;
+  /** O painel "Mostrar no canvas" está aberto (abre ao entrar no modo, fecha ao sair). */
+  readonly viewPanel: Signal<boolean>;
   /**
    * Camadas escondidas. Guardar as escondidas (e não as visíveis) faz camadas
    * novas, ou restauradas pelo desfazer, aparecerem visíveis por padrão.
@@ -115,6 +117,7 @@ export function createEditorUi(): EditorUi {
     mode: signal<EditorMode>('navigate'),
     viewMode: signal<boolean>(false),
     viewShow: signal<ViewShow>(VIEW_SHOW_START),
+    viewPanel: signal<boolean>(false),
     hiddenLayers: signal<ReadonlySet<string>>(new Set()),
     listShowEmpty: signal<boolean>(false),
     listIncompleteOnly: signal<boolean>(false),
@@ -249,10 +252,14 @@ export function existingItems(
   );
 }
 
-/** Liga ou desliga o modo visualização. Ligar volta ao Navegar; desligar não mexe no modo. */
+/**
+ * Liga ou desliga o modo visualização. Ligar volta ao Navegar e abre o painel "Mostrar no
+ * canvas"; desligar o fecha e não mexe no modo.
+ */
 export function setViewMode(ui: EditorUi, on: boolean): void {
   if (on && ui.mode.peek() === 'draw') ui.mode.value = 'navigate';
   ui.viewMode.value = on;
+  ui.viewPanel.value = on;
 }
 
 /** Quanto tempo o aviso curto fica na tela. */

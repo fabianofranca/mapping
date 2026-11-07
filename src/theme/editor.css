@@ -667,3 +667,50 @@
   background: var(--color-selection);
   opacity: var(--opacity-grabbed);
 }
+
+/* Painel "Mostrar no canvas" do modo visualização (ViewModePanel) */
+.view-panel-popover {
+  width: var(--size-view-panel);
+  max-width: calc(100vw - 2 * var(--space-2));
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.view-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.view-panel-title {
+  margin: 0;
+  font: var(--t-text-heading);
+}
+
+.view-panel-hint {
+  margin: 0;
+}
+
+.view-panel-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.view-panel-heading {
+  margin: 0;
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+}
+
+.view-panel-layer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.view-panel-footer {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
