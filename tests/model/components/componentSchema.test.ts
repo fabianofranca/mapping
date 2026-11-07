@@ -251,4 +251,39 @@ describe('component.schema.json', () => {
         ).toBeGreaterThan(0);
     });
   });
+  describe('expressões de wrap e maxLines em $if e $switch (formatVersion 4)', () => {
+    const v4 = (font: Record<string, unknown>): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'texto',
+      name: 'Texto',
+      size: { width: 100, height: 40 },
+      template: { type: 'frame', children: [{ type: 'text', text: 'oi', font }] },
+    });
+
+    it('aceita $if e $switch com ramos do tipo do campo (o parser também)', () => {
+      for (const font of [
+        { maxLines: { $if: { $field: 'curto' }, then: 2, else: 3 } },
+        { maxLines: { $switch: 'modo', cases: { a: 2 }, default: 3 } },
+        { wrap: { $if: { $field: 'curto' }, then: 'none', else: 'word' } },
+        { wrap: { $switch: 'modo', cases: { a: 'none' }, default: 'word' } },
+      ]) {
+        const c = v4(font);
+        expect(checkSchema(schema, c), JSON.stringify(font)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(font)).toBe(true);
+      }
+    });
+
+    it('recusa ramo fora do tipo (maxLines 0 ou texto, wrap sublinhado)', () => {
+      for (const font of [
+        { maxLines: { $if: { $field: 'curto' }, then: 0, else: 3 } },
+        { maxLines: { $switch: 'modo', cases: { a: 'underline' }, default: 3 } },
+        { wrap: { $if: { $field: 'curto' }, then: 'underline', else: 'word' } },
+      ])
+        expect(
+          checkSchema(schema, v4(font)).length,
+          JSON.stringify(font),
+        ).toBeGreaterThan(0);
+    });
+  });
 });

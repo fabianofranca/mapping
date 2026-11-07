@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { approximateMeasurer } from '../../src/model';
 import { instantiate } from '../../src/model/components/instantiate';
 import { parseComponent } from '../../src/model/components/parseComponent';
+import { layoutRuns } from '../../src/model/components/richText';
 import {
   baseNode,
   translate,
@@ -425,6 +426,114 @@ describe('texto em barras', () => {
     expect(pixel(raster, 30, 10)).toEqual([0x11, 0x22, 0x33, 255]);
     expect(pixel(raster, 30, 18)).toEqual(WHITE);
     expect(pixel(raster, 80, 10)).toEqual(WHITE);
+  });
+});
+
+describe('texto rico em barras (runs)', () => {
+  const rich = (verticalAlign: 'top' | 'middle' | 'bottom' = 'top'): TextNode => {
+    const font = {
+      family: 'Roboto',
+      size: 10,
+      weight: 400,
+      italic: false,
+      lineHeight: 12,
+      letterSpacing: 0,
+    };
+    const runs = [
+      { text: 'Vence em ', font },
+      { text: 'ok', font, chip: { padding: [2, 4] as const } },
+    ];
+    const base = { size: 10, lineHeight: 12 };
+    return {
+      ...baseNode({
+        id: 't',
+        name: 't',
+        width: 100,
+        height: 40,
+        fills: [solid('#000000')],
+      }),
+      type: 'text',
+      text: 'Vence em ok',
+      style: {
+        fontFamily: 'Roboto',
+        fontSize: 10,
+        fontWeight: 400,
+        italic: false,
+        lineHeight: 12,
+        align: 'left',
+        verticalAlign,
+      },
+      runs: [
+        {
+          text: 'Vence em ',
+          fontFamily: 'Roboto',
+          fontSize: 10,
+          fontWeight: 400,
+          italic: false,
+          color: '#112233',
+        },
+        {
+          text: 'ok',
+          fontFamily: 'Roboto',
+          fontSize: 10,
+          fontWeight: 400,
+          italic: false,
+          color: '#ff0000',
+          background: '#00ff00',
+          radius: 3,
+          padding: [2, 4],
+        },
+      ],
+      runLayout: layoutRuns(runs, base, approximateMeasurer, 100),
+    };
+  };
+
+  it('uma barra por pedaço de texto na cor do trecho e o fundo do chip como retângulo', () => {
+    const bars = textBars(rich(), approximateMeasurer);
+    expect(bars).toHaveLength(3);
+    // "Vence em " (9 × 5,5) numa linha de 16 (a do chip): centrado, a barra tem 60% de 12.
+    expect(bars[0]).toMatchObject({ x: 0, width: 49.5, color: '#112233' });
+    expect(bars[0]!.height).toBeCloseTo(7.2, 5);
+    expect(bars[0]!.y).toBeCloseTo(2 + 2.4, 5);
+    // O fundo do chip é a caixa inteira (11 + 2·4 de largura, 12 + 2·2 de altura).
+    expect(bars[1]).toMatchObject({
+      x: 49.5,
+      y: 0,
+      width: 19,
+      height: 16,
+      color: '#00ff00',
+    });
+    // O texto do chip fica 4 para dentro e 2 para baixo, na cor do trecho.
+    expect(bars[2]).toMatchObject({ x: 53.5, width: 11, color: '#ff0000' });
+    expect(bars[2]!.height).toBeCloseTo(7.2, 5);
+    expect(bars[2]!.y).toBeCloseTo(2 + 2.4, 5);
+  });
+
+  it('o verticalAlign desloca todas as barras pela folga da caixa', () => {
+    const top = textBars(rich(), approximateMeasurer);
+    const middle = textBars(rich('middle'), approximateMeasurer);
+    const bottom = textBars(rich('bottom'), approximateMeasurer);
+    top.forEach((bar, i) => {
+      expect(middle[i]!.y).toBeCloseTo(bar.y + (40 - 16) / 2, 5);
+      expect(bottom[i]!.y).toBeCloseTo(bar.y + (40 - 16), 5);
+    });
+  });
+
+  it('pinta o fundo do chip e a barra do trecho, cada um na sua cor', () => {
+    const raster = canvas(100, 40);
+    paint(raster, rich());
+    expect(pixel(raster, 20, 5)).toEqual([0x11, 0x22, 0x33, 255]);
+    // No chip: o fundo verde aparece fora da barra do texto; a barra é vermelha.
+    expect(pixel(raster, 51, 1)).toEqual([0, 255, 0, 255]);
+    expect(pixel(raster, 58, 5)).toEqual([255, 0, 0, 255]);
+    expect(pixel(raster, 90, 5)).toEqual(WHITE);
+  });
+
+  it('sem runLayout nada muda: o texto de um estilo só', () => {
+    const plain = { ...rich(), runs: undefined, runLayout: undefined } as TextNode;
+    const bars = textBars(plain, approximateMeasurer);
+    expect(bars).toHaveLength(1);
+    expect(bars[0]!.color).toBeUndefined();
   });
 });
 
