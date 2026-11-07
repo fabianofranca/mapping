@@ -55,7 +55,7 @@ function hasDrawingMode(value: JsonValue): boolean {
     typeof value === 'object' &&
     value !== null &&
     !Array.isArray(value) &&
-    typeof value.drawingMode === 'string'
+    typeof (value as { readonly drawingMode?: JsonValue }).drawingMode === 'string'
   );
 }
 
@@ -403,7 +403,9 @@ const annotationValueSchema = z.preprocess(
   annotationSchema,
 );
 
-const drawingModeName = z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'use [a-z0-9][a-z0-9-]*');
+const drawingModeName = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9-]*$/, 'use [a-z0-9][a-z0-9-]*');
 
 /** A entidade `project` (formatVersion 6): o que do projeto é proposto; hoje só o modo do desenho. */
 const projectValueSchema = z.object({ drawingMode: drawingModeName.nullable() });
@@ -714,7 +716,14 @@ export const proposalSchema = z
   .object({
     format: z.literal(PROPOSAL_FORMAT, { error: `deve ser "${PROPOSAL_FORMAT}"` }),
     formatVersion: z.union(
-      [z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)],
+      [
+        z.literal(1),
+        z.literal(2),
+        z.literal(3),
+        z.literal(4),
+        z.literal(5),
+        z.literal(6),
+      ],
       { error: 'deve ser 1, 2, 3, 4, 5 ou 6' },
     ),
     id: proposalId,

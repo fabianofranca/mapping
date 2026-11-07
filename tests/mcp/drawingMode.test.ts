@@ -2,10 +2,12 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { PROPOSAL_FORMAT_VERSION } from '../../src/model';
+import {
+  PROPOSAL_DRAWING_MODE_FORMAT_VERSION,
+  PROPOSAL_FORMAT_VERSION,
+} from '../../src/model';
 import {
   acceptAllAndApply,
-  errorOf,
   ok,
   propose,
   readProject,
@@ -44,7 +46,13 @@ async function apply(name: string, dir: string, operations: unknown[]) {
   return { proposed, saved: acceptAllAndApply(dir, proposed.proposal.id) };
 }
 
-const box = { op: 'add_container', as: '$c', width: 100, height: 80, background: '#FFFFFF' };
+const box = {
+  op: 'add_container',
+  as: '$c',
+  width: 100,
+  height: 80,
+  background: '#FFFFFF',
+};
 
 describe('update_project: modo do desenho do projeto', () => {
   it('grava o modo, aparece no proposal.json e em get_project; null remove', async () => {
@@ -74,18 +82,29 @@ describe('update_project: modo do desenho do projeto', () => {
     expect(plan.valid).toBe(true);
     expect(readProject(dir).drawingMode).toBe('dark');
 
-    const wrong = await mcp.call('plan_changes', {
-      project: name,
-      operations: [{ op: 'update_project', drawingMode: 3 }],
-    });
-    expect(JSON.stringify(wrong.data)).toContain('invalid-arguments');
+    // Tipo errado: o schema da operação recusa (como nas demais operações).
+    const wrong = await mcp.client
+      .callTool({
+        name: 'plan_changes',
+        arguments: {
+          project: name,
+          operations: [{ op: 'update_project', drawingMode: 3 }],
+        },
+      })
+      .then(
+        (r) => JSON.stringify(r),
+        (e: unknown) => String(e),
+      );
+    expect(wrong).toMatch(/drawingMode/);
 
-    const bad = await mcp.call('plan_changes', {
-      project: name,
-      operations: [{ op: 'update_project', drawingMode: 'Dark Mode' }],
-    });
-    expect(JSON.stringify(bad.data)).toContain('invalid-name');
-    expect(errorOf).toBeDefined();
+    const bad = ok(
+      await mcp.call<{ valid: boolean; errors: { code: string }[] }>('plan_changes', {
+        project: name,
+        operations: [{ op: 'update_project', drawingMode: 'Dark Mode' }],
+      }),
+    );
+    expect(bad.valid).toBe(false);
+    expect(bad.errors.map((e) => e.code)).toEqual(['invalid-name']);
   });
 });
 
@@ -124,14 +143,18 @@ describe('modo do container', () => {
     const { proposed } = await apply(name, dir, [
       { op: 'update_project', drawingMode: 'light' },
       { ...box, drawingMode: 'dark' },
-      { op: 'create_marking', container: '$c', name: 'A', rect: { x: 0, y: 0, width: 10, height: 10 } },
+      {
+        op: 'create_marking',
+        container: '$c',
+        name: 'A',
+        rect: { x: 0, y: 0, width: 10, height: 10 },
+      },
     ]);
     expect(proposed.valid).toBe(true);
     const list = ok(
-      await mcp.call<{ markings: { name: string; effectiveDrawingMode: string | null }[] }>(
-        'list_markings',
-        { project: name },
-      ),
+      await mcp.call<{
+        markings: { name: string; effectiveDrawingMode: string | null }[];
+      }>('list_markings', { project: name }),
     );
     expect(list.markings.map((m) => [m.name, m.effectiveDrawingMode])).toEqual([
       ['A', 'dark'],
@@ -139,12 +162,21 @@ describe('modo do container', () => {
   });
 });
 
-describe('formato da proposta', () => {
-  it('a versão gravada com update_project é a PROPOSAL_FORMAT_VERSION', async () => {
+describe('formato da proposta (conclusão: sobe para 6 só quando usa o modo)', () => {
+  it('update_project grava a formatVersion 6; sem modo a proposta continua na 4', async () => {
     const { name, dir } = await newProject();
-    const proposed = await propose(mcp, name, [{ op: 'update_project', drawingMode: 'dark' }]);
-    expect(readProposal(dir, proposed.proposal.id).formatVersion).toBe(
+    const withMode = await propose(mcp, name, [
+      { op: 'update_project', drawingMode: 'dark' },
+    ]);
+    expect(readProposal(dir, withMode.proposal.id).formatVersion).toBe(
+      PROPOSAL_DRAWING_MODE_FORMAT_VERSION,
+    );
+    const plain = await propose(mcp, name, [{ ...box }]);
+    expect(readProposal(dir, plain.proposal.id).formatVersion).toBe(
       PROPOSAL_FORMAT_VERSION,
     );
+    // Container criado com modo também carrega o valor novo: 6.
+    const container = await propose(mcp, name, [{ ...box, drawingMode: 'dark' }]);
+    expect(readProposal(dir, container.proposal.id).formatVersion).toBe(6);
   });
 });

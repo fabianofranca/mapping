@@ -1,5 +1,7 @@
 import {
+  PROPOSAL_DRAWING_MODE_FORMAT_VERSION,
   PROPOSAL_REVISED_FORMAT_VERSION,
+  usesDrawingMode,
   type Change,
   type Proposal,
   type ProposalDecisions,
@@ -495,7 +497,11 @@ function finish(
     ok: true,
     proposal: {
       ...proposal,
-      formatVersion: PROPOSAL_REVISED_FORMAT_VERSION,
+      formatVersion:
+        proposal.formatVersion === PROPOSAL_DRAWING_MODE_FORMAT_VERSION ||
+        usesDrawingMode(changes)
+          ? PROPOSAL_DRAWING_MODE_FORMAT_VERSION
+          : PROPOSAL_REVISED_FORMAT_VERSION,
       changes,
       decisions,
       notes: liftNotes(proposal.notes, retiredIds),

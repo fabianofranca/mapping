@@ -1,4 +1,6 @@
 import {
+  drawingModesOf,
+  effectiveDrawingMode,
   arrowsOf,
   markingComponent,
   siblingPosition,
@@ -87,6 +89,16 @@ function componentInfo(refs: Refs, marking: Marking): Json {
   };
 }
 
+/**
+ * Modo do desenho que vale num espaço (`containerId` nulo = o canvas): o do container, senão o
+ * do projeto, senão o primeiro modo que as especializações aplicadas declaram; `null` sem modo.
+ */
+export function effectiveModeOf(p: Project, containerId: string | null): string | null {
+  const fixed = effectiveDrawingMode(p, containerId);
+  if (fixed !== undefined) return fixed;
+  return drawingModesOf(p.specializations.map((s) => s.spec?.tokens))[0] ?? null;
+}
+
 /** Marcação numa linha compacta (listas e filhas). */
 export function markingRow(refs: Refs, marking: Marking): Json {
   const index = projectIndex(refs.project);
@@ -98,6 +110,7 @@ export function markingRow(refs: Refs, marking: Marking): Json {
     name: marking.name,
     container: refs.imageLabel(marking.containerId),
     space: marking.containerId === null ? 'canvas' : 'container',
+    effectiveDrawingMode: effectiveModeOf(refs.project, marking.containerId),
     floating: marking.floating,
     parent: marking.parentId === null ? null : refs.ref('m', marking.parentId),
     rect: rectOf(marking),
@@ -442,6 +455,9 @@ function containerSummary(refs: Refs, image: ProjectContainer): Json {
     width: image.width,
     height: image.height,
     locked: image.locked,
+    // Modo do desenho que o container fixa (`null` = segue o projeto) e o que vale nele.
+    drawingMode: image.drawingMode ?? null,
+    effectiveDrawingMode: effectiveModeOf(refs.project, image.id),
     // Marcação do canvas que contém o container (derivado da geometria), ou `null`.
     parent: image.parentId === null ? null : refs.ref('m', image.parentId),
   };
@@ -570,6 +586,8 @@ export function projectDetail(refs: Refs): Json {
   return {
     ...projectSummary(loaded),
     createdAt: p.project.createdAt,
+    // Modo do desenho do projeto (`null` = o primeiro modo de cada especialização).
+    drawingMode: p.drawingMode ?? null,
     ...(loaded.migratedFrom !== null ? { migratedFrom: loaded.migratedFrom } : {}),
     containers: p.containers.map((image) => ({
       ...containerSummary(refs, image),

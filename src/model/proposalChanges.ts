@@ -1,8 +1,10 @@
 import {
   ENTRIES_FIELD_PREFIX,
   PROPOSAL_FORMAT,
+  PROPOSAL_DRAWING_MODE_FORMAT_VERSION,
   PROPOSAL_FORMAT_VERSION,
   VALUES_FIELD_PREFIX,
+  usesDrawingMode,
   type Change,
   type ChangeEntity,
   type Proposal,
@@ -21,6 +23,7 @@ import {
   markingFieldsFor,
   markingValue,
   docRepoValue,
+  projectValue,
   platformRepoValue,
   specializationValue,
   toJson,
@@ -329,6 +332,21 @@ export function computeChanges(base: Project, after: Project): Change[] {
     }
   }
 
+  // Modo do desenho do projeto (formatVersion 6): a entidade `project`, só alterada.
+  const modeFrom = projectValue(base);
+  const modeTo = projectValue(after);
+  if (!jsonEqual(modeFrom, modeTo)) {
+    diff.push({
+      entity: 'project',
+      entityId: 'project',
+      ...projectLevel,
+      kind: 'update',
+      field: null,
+      from: modeFrom,
+      to: modeTo,
+    });
+  }
+
   // Camadas: criação, campos, remoção e, por último, a ordem.
   const baseLayers = byId(base.layers);
   const afterLayers = byId(after.layers);
@@ -479,9 +497,12 @@ export function buildProposal(
     const trimmed = text?.trim() ?? '';
     return trimmed === '' ? null : trimmed;
   };
+  const changes = computeChanges(base, after);
   return {
     format: PROPOSAL_FORMAT,
-    formatVersion: PROPOSAL_FORMAT_VERSION,
+    formatVersion: usesDrawingMode(changes)
+      ? PROPOSAL_DRAWING_MODE_FORMAT_VERSION
+      : PROPOSAL_FORMAT_VERSION,
     id: args.id ?? crypto.randomUUID(),
     title: args.title.trim(),
     description: clean(args.description),
@@ -493,7 +514,7 @@ export function buildProposal(
     status: 'open',
     revision: 0,
     operations: (args.operations ?? []).map(toJson),
-    changes: computeChanges(base, after),
+    changes,
     decisions: {},
     notes: [],
     applied: {},
