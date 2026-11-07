@@ -141,6 +141,8 @@ O método completo para escrever uma especialização (leitura do formato, inven
 
 ### Escrevendo uma biblioteca (pacote `formatVersion` 4)
 
+A versão atual do formato é a 12 (o que cada versão acrescenta está em `mapping-docs://SPEC-FORMAT.md`).
+
 Uma **biblioteca** é uma especialização v4 e a **pasta** dela: a especialização na raiz, um arquivo por componente em `components/`, um documento `.md` por componente em `docs/`, exemplos nomeados (`examples` no tipo, e o JSON de um nó de sistema externo em `examples/`) e a lista de fontes em `fonts` (com os arquivos em `fonts/` ou, se não puderem ir, um `LEIA-ME.txt` dizendo quais são). Os formatos estão em `mapping-docs://SPEC-FORMAT.md` ("Biblioteca: o pacote") e `mapping-docs://COMPONENT-FORMAT.md`; o método completo, na skill `spec-author`. Regras que o agente precisa ter na cabeça:
 
 - **Todo caminho citado fica dentro da pasta**, relativo ao arquivo da especialização, sem `..`. O que não é citado e é `.json` ou `.md` vira aviso ("arquivo não referenciado").

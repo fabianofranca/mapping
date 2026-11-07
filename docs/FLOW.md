@@ -34,7 +34,7 @@ O orquestrador cria a sessão com `create_session`: `model` da tabela, `source_u
 Você é o agente da fase <código> — <título> da etapa #<etapa> do repositório `fabianofranca/mapping`, no fluxo automatizado (CLAUDE.md, "Fluxo automatizado"). Ninguém está olhando esta sessão: não pergunte nada ao dono.
 
 1. Leia o `CLAUDE.md`, a issue #<etapa> com os comentários e a sub-issue #<fase>, que é o seu plano. Siga-a; não reabra decisões já tomadas.
-2. Branch `<branch curto>`, saído do `epic/<nome>` atualizado. PR com base `epic/<nome>`, título "<código> — <título>", corpo começando com "Parte de #<fase>" e as seções de sempre (Resumo, Como testar, Decisões tomadas, Impacto no DS).
+2. Branch `<branch curto>`, saído do `epic/<nome>` atualizado. PR com base `epic/<nome>`, título "<código> — <título>", corpo começando com "Parte de #<fase>" e as seções de sempre (Resumo, Como testar, Decisões tomadas, Impacto no DS, Impacto nos agentes).
 3. Subagentes e esforço: <da sub-issue, ex.: Sonnet medium; mecânicos Haiku low>.
 4. Todo briefing de mudança de comportamento ou correção segue a regra "teste primeiro" do `CLAUDE.md` ("Uso de modelos"): teste visto falhando antes do código, e o subagente devolve o nome dele e a falha.
 5. Antes do PR: `npm run lint && npm run typecheck && npm test && npm run build`.
