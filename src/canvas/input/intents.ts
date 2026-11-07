@@ -137,6 +137,12 @@ export interface IntentContext {
    * desenharia vira `select-rect`, mesmo em somente leitura. Só o toque do ponteiro o liga.
    */
   readonly rectSelect?: boolean;
+  /**
+   * Há uma perspectiva aberta (etapa #659, decisão 5): o que só vale na Principal não começa.
+   * Não desenha no vazio do canvas (marcação do canvas) e não mexe nos pontos de passagem da
+   * seta; desenhar dentro de um container e as pontas da seta continuam.
+   */
+  readonly perspectiveOpen?: boolean;
 }
 
 /**
@@ -159,6 +165,8 @@ function baseIntentAt(ctx: IntentContext, c: Point): Intent {
   if (ctx.spaceDown || !project || ctx.readOnly) return PAN;
   if (ctx.mode === 'draw') {
     const image = imageAt(project.containers, c);
+    // Numa perspectiva, a marcação do canvas (fora de container) é só da Principal.
+    if (!image && ctx.perspectiveOpen) return PAN;
     return { kind: 'draw', containerId: image?.id ?? null };
   }
   if (ctx.items.length >= 2) return multiIntentAt(ctx, project, c);
@@ -268,6 +276,8 @@ function arrowIntentAt(
     return arrowsAt([shape], c, ctx.zoom).length > 0 ? LOCKED : null;
   }
   const handle = arrowHandleAt(shape, c, ctx.zoom);
+  // Numa perspectiva, só as pontas da seta se mexem: a rota (pontos de passagem) é da Principal.
+  if (handle && ctx.perspectiveOpen && handle.kind !== 'end') return null;
   return handle ? { kind: 'arrow-handle', arrowId, handle } : null;
 }
 

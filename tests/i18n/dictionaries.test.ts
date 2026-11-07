@@ -47,6 +47,7 @@ describe('dicionários', () => {
     // Iguais nos dois idiomas só por serem nomes próprios, unidades ou palavras idênticas.
     const allowed = new Set<string>([
       'language.pt-BR',
+      'perspective.count.containers',
       'language.en-US',
       'image.dimensions',
       'marking.pathSeparator',

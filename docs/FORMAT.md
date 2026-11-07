@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v15)
+# Formato do `mapping.json` (schema v16)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` (os arquivos de imagem dos containers) e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
@@ -34,11 +34,11 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 15,
+  "schemaVersion": 16,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
-  "project": { "name": "Carro", "createdAt": "…", "updatedAt": "…" },
+  "project": { "id": "6f1c…", "name": "Carro", "createdAt": "…", "updatedAt": "…" },
   "specializations": [],
   "platformRepos": {},
   "docRepos": {},
@@ -71,6 +71,8 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
       "source": { "system": "figma", "id": "12:34", "url": null }
     }
   ],
+  "perspectives": [],
+  "arrivals": [],
   "annotations": [
     {
       "id": "A1",
@@ -96,11 +98,11 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo    | Descrição                                                                    |
 | ------------------ | ------- | ---------------------------------------------------------------------------- |
-| `schemaVersion`    | `14`    | Versão do schema.                                                            |
+| `schemaVersion`    | `16`    | Versão do schema.                                                            |
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                      |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).           |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.      |
-| `project`          | objeto  | `name` (texto), `createdAt` e `updatedAt` (ISO 8601; fuso vira UTC).         |
+| `project`          | objeto  | `id` (v16), `name`, `createdAt` e `updatedAt` (ISO 8601; fuso vira UTC).     |
 | `specializations`  | array   | Especializações aplicadas (ver v4).                                          |
 | `platformRepos`    | objeto  | Clone local de cada plataforma (v7; só `localPath` desde a v11, ver abaixo). |
 | `docRepos`         | objeto  | Clone local de cada repositório de documentos (v14, ver "Campos da v14").    |
@@ -108,6 +110,8 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 | `containers`       | array   | Containers do projeto (v12; antes `images`).                                 |
 | `markings`         | array   | Marcações retangulares (de um container ou do canvas, v13).                  |
 | `arrows`           | array   | Setas (v13): marcações que apontam, ligam duas marcações.                    |
+| `perspectives`     | array   | Perspectivas "Para todos" (v16, ver "Campos da v16").                        |
+| `arrivals`         | array   | Marcas "Veio de…" da Principal (v16, ver "Campos da v16").                   |
 | `annotations`      | array   | Anotações (livres ou tipadas).                                               |
 
 **`layers[]`**: `id`; `name` (não vazio); `color`; `spec` (`null` ou `{ specId, layerId }`).
@@ -129,6 +133,9 @@ calculado pela app desde a v13); `name` (`string` ou `null`);
 **`arrows[]`** (v13): `id` (no mesmo espaço dos ids das marcações); `from` e `to` (ids de marcações, diferentes); `fromSide` e `toSide`
 (`top`, `right`, `bottom`, `left` ou `null`); `points` (pontos de passagem da rota); `style` (`straight`, `curve` ou `elbow`);
 `name` (`string` ou `null`); `locked` (booleano). Ver "Campos da v13 (setas)".
+
+**`perspectives[]`** (v16): `id`; `name`; `hiddenLayers` (ids de camadas); `items` (`{ root, x, y }`). **`arrivals[]`** (v16): `{ root, from, fromName }`.
+Ver "Campos da v16 (perspectivas)".
 
 **`annotations[]`**: `id`; `markingId` (o id de uma marcação **ou de uma seta**, v13); `layerId`; `name` (`string` ou `null`);
 `parentAnnotationId`; `parentRole` (v14: o papel no dono, `string` ou `null`; ver "Campos da v14"); `type`, `values` e `entries` (ver v4). Livre: `type` e `values` são `null`.
@@ -152,6 +159,7 @@ arquivo ao ler.
 - Seta (v13): `from` e `to` são marcações existentes (nem outra seta, nem um container) e diferentes
   (`arrow-endpoint-missing`, `arrow-self`); o id dela não repete o de uma marcação nem o de outra seta
   (`duplicate-id`). Nada mais é invariante: duas setas iguais são permitidas.
+- Perspectiva e chegada (v16): ver "Campos da v16 (perspectivas)" (`perspective-*`, `arrival-*` e o `duplicate-id` entre perspectivas).
 - Pares (`entries`): chave não vazia (após `trim`) e única dentro da anotação; ids de par únicos no projeto.
 - Linhas de `table`: `_id` único dentro da lista.
 - `source` (v8): `null` ou `{ system, id, url }`, com `system` e `id` textos não vazios e `url` texto ou
@@ -180,17 +188,21 @@ mostra a **lista exata** dos problemas (regra, tipo do item, id e nome), com **C
 Quando todos os problemas têm reparo mecânico e inequívoco (`repairProject` em `src/model/repair.ts`), o
 diálogo oferece **Reparar e abrir**:
 
-| Problema                                                                                               | Reparo                                                                     |
-| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| Par com `id` já usado (em outra anotação ou na mesma)                                                  | O primeiro fica com o id; os outros ganham um id novo.                     |
-| `rect` fora da imagem                                                                                  | Recortado aos limites da imagem; se não sobra área, a marcação é removida. |
-| Marcação de imagem inexistente                                                                         | Removida.                                                                  |
-| Seta com ponta inexistente (ou que é outra seta) ou ligada a ela mesma (v13)                           | Removida, com as anotações dela (na rodada seguinte).                      |
-| Anotação de marcação ou camada inexistente                                                             | Removida, com as anotações que ela possui (`parentAnnotationId`).          |
-| `parentId` inexistente ou ciclo na hierarquia de marcações                                             | A marcação (no ciclo, cada uma do ciclo) vira raiz do espaço dela.         |
-| Marcação flutuante dentro de um container ou com pai (v13)                                             | Vai para o canvas, com o `rect` convertido, e fica sem pai.                |
-| Pai de marcação flutuante; pai de container inexistente, que não é do canvas ou que não o contém (v13) | O `parentId` vira `null`.                                                  |
-| Imagens sobrepostas                                                                                    | A de maior índice vai para a direita da caixa das anteriores.              |
+| Problema                                                                                                 | Reparo                                                                     |
+| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Par com `id` já usado (em outra anotação ou na mesma)                                                    | O primeiro fica com o id; os outros ganham um id novo.                     |
+| `rect` fora da imagem                                                                                    | Recortado aos limites da imagem; se não sobra área, a marcação é removida. |
+| Marcação de imagem inexistente                                                                           | Removida.                                                                  |
+| Seta com ponta inexistente (ou que é outra seta) ou ligada a ela mesma (v13)                             | Removida, com as anotações dela (na rodada seguinte).                      |
+| Anotação de marcação ou camada inexistente                                                               | Removida, com as anotações que ela possui (`parentAnnotationId`).          |
+| `parentId` inexistente ou ciclo na hierarquia de marcações                                               | A marcação (no ciclo, cada uma do ciclo) vira raiz do espaço dela.         |
+| Marcação flutuante dentro de um container ou com pai (v13)                                               | Vai para o canvas, com o `rect` convertido, e fica sem pai.                |
+| Pai de marcação flutuante; pai de container inexistente, que não é do canvas ou que não o contém (v13)   | O `parentId` vira `null`.                                                  |
+| Imagens sobrepostas                                                                                      | A de maior índice vai para a direita da caixa das anteriores.              |
+| Perspectiva com item de raiz inexistente, que não é raiz ou repetida; camada escondida inexistente (v16) | O item (o segundo, se repetido) ou a camada sai da perspectiva.            |
+| Perspectiva com `id` repetido (v16)                                                                      | A primeira fica com o id; as outras ganham um id novo.                     |
+| Perspectiva com nome repetido (v16)                                                                      | A primeira fica com o nome; as outras ganham " (2)", " (3)"…               |
+| Chegada de raiz inexistente, que não é raiz ou repetida (v16)                                            | Removida (a segunda, se repetida).                                         |
 
 Um reparo pode expor outro (a marcação removida deixa as anotações dela sem marcação e os filhos sem pai):
 cada rodada resolve o que a anterior expôs. Qualquer outro problema (id repetido de imagem, marcação,
@@ -636,6 +648,7 @@ com ou sem arquivo de imagem). Só o vocabulário do `mapping.json` muda; os dad
 | v13    | Sem herança de anotações (`annotations[].inherit` saiu); marcação do canvas (`containerId` nulo), `floating`, `containers[].parentId` e a coleção `arrows` |
 | v14    | `annotations[].parentRole` (o papel no dono) e `docRepos` (o clone local dos repositórios de documentos)                                                   |
 | v15    | A dona pode ser da mesma camada na anotação tipada (sem campo novo, dados inalterados)                                                                     |
+| v16    | `project.id` e as coleções `perspectives` e `arrivals` (as perspectivas "Para todos" e as marcas "Veio de…")                                               |
 
 ## Campos da v13 (sem herança)
 
@@ -892,6 +905,80 @@ somente para leitura.
 Só `schemaVersion` muda para 15; nenhum dado é alterado. Como em toda migração, o original vai para
 `backups/` antes da primeira gravação e a faixa da migração aparece no topo.
 
+## Campos da v16 (perspectivas)
+
+Uma **perspectiva** é um recorte do projeto: quais raízes aparecem, onde ficam no canvas e quais camadas ficam
+escondidas. O conteúdo é o do projeto; **só a posição das raízes** muda de uma perspectiva para outra. A
+**Principal** é implícita (mostra tudo, na posição de sempre) e não está no arquivo. O `mapping.json` guarda só as
+perspectivas **"Para todos"**; as "Só eu" ficam no navegador de quem as criou, no mesmo formato.
+
+```json
+"project": { "id": "6f1c…", "name": "…", "createdAt": "…", "updatedAt": "…" },
+"perspectives": [
+  {
+    "id": "P1",
+    "name": "Analytics",
+    "hiddenLayers": ["L3"],
+    "items": [{ "root": "C2", "x": 1200, "y": 40 }]
+  }
+],
+"arrivals": [{ "root": "M21", "from": "P1", "fromName": "Analytics" }]
+```
+
+- **`project.id`**: um UUID (texto não vazio) criado na migração e na criação do projeto, que nunca muda. Ele
+  chaveia o que fica no navegador (a perspectiva aberta, as "Só eu"). Um arquivo sem ele é recusado
+  (`invalid-schema`); a migração v15 → v16 o cria.
+- **Raiz**: o **container sem pai** (`parentId` nulo), a **marcação do canvas sem pai** (`containerId` e `parentId`
+  nulos) e a **marcação flutuante**. São os únicos itens que uma perspectiva posiciona; o que está dentro de uma
+  raiz acompanha a raiz.
+- **`perspectives[]`**: `id` (único entre as perspectivas); `name` (único entre as perspectivas, sem diferença de
+  caixa e sem contar espaços nas pontas); `hiddenLayers` (ids de camadas existentes escondidas nesta perspectiva;
+  a camada nova nasce visível em todas); `items` (uma entrada por raiz, sem repetir).
+- **`items[].x` e `items[].y`**: números finitos, o **canto de cima à esquerda da raiz** em unidades do canvas.
+  É o mesmo que o `placement.x`/`placement.y` do container e o `rect.x`/`rect.y` da marcação do canvas ou da
+  flutuante na Principal. Uma raiz que não está em `items` não aparece na perspectiva.
+- **`arrivals[]`**: marca "Veio de…" de uma raiz **criada fora da Principal** que chegou a ela. `root` é a raiz;
+  `from` é o id da perspectiva de origem (pode não existir mais); `fromName` é o nome dela, guardado para a marca
+  sobreviver à perspectiva.
+
+### Regras de validade (v16)
+
+Cada código abaixo recusa a abertura (e tem reparo mecânico, ver "Arquivos inconsistentes"):
+
+| Código                       | Quando                                                                       |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `perspective-root-missing`   | `items[].root` não é um container nem uma marcação existente.                |
+| `perspective-root-not-root`  | `items[].root` existe, mas não é raiz (tem pai, ou é marcação de container). |
+| `perspective-root-duplicate` | A mesma raiz aparece duas vezes na mesma perspectiva.                        |
+| `perspective-layer-missing`  | `hiddenLayers` cita uma camada que não existe.                               |
+| `perspective-duplicate-name` | Duas perspectivas com o mesmo nome (sem diferença de caixa, com `trim`).     |
+| `duplicate-id`               | Duas perspectivas com o mesmo `id`.                                          |
+| `arrival-root-missing`       | `arrivals[].root` não existe.                                                |
+| `arrival-root-not-root`      | `arrivals[].root` existe, mas não é raiz.                                    |
+| `arrival-duplicate`          | A mesma raiz tem duas chegadas.                                              |
+
+`x` e `y` precisam ser números finitos e `name` e `fromName`, textos (o schema); o nome vazio ou repetido de uma
+perspectiva criada na app é recusado pelo modelo antes de chegar ao arquivo. `perspectives` e `arrivals` ausentes
+valem `[]`.
+
+### Como um leitor usa as perspectivas
+
+- **Agrupe por `parentId` como sempre**: o pertencimento é o do projeto, igual em toda perspectiva. A posição de
+  uma perspectiva é **só de interface**: ela não muda `parentId`, `rect`, `placement` nem nenhuma anotação, e
+  nenhuma perspectiva altera o que as marcações significam.
+- Um leitor que não desenha o canvas pode **ignorar** `perspectives` e `arrivals`. Quem escreve o arquivo à mão não
+  precisa declará-las.
+- Ordem das chaves: `project.id` primeiro dentro de `project`; `perspectives` e `arrivals` logo depois de `arrows`
+  (antes de `annotations`); em cada item, as chaves na ordem acima (`id`, `name`, `hiddenLayers`, `items`;
+  `root`, `x`, `y`; `root`, `from`, `fromName`).
+
+### Migração v15 → v16
+
+O projeto ganha `project.id` (um UUID novo; um `id` já presente é preservado), `perspectives: []` e
+`arrivals: []` (valores já presentes são preservados). A migração nunca cria perspectiva: a Principal continua
+mostrando tudo, como antes. Como em toda migração, o original vai para `backups/` antes da primeira gravação e a
+faixa da migração aparece no topo. Um arquivo v16 abre em um app anterior somente para leitura.
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
@@ -902,7 +989,7 @@ imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 rece
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
 recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
-cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Ao salvar, o
-arquivo passa a ser v15 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Arquivos v15 ganham `project.id` (um UUID novo), `perspectives: []` e `arrivals: []` (ver "Campos da v16"). Ao salvar, o
+arquivo passa a ser v16 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

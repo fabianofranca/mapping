@@ -33,8 +33,11 @@ export function simulateApplied(
   });
   const created = after.markings.filter((m) => !baseIds.has(m.id));
   const baseContainers = new Map(base.containers.map((c) => [c.id, c]));
+  // Só o pertencimento e a ordem importam aqui: sem perspectivas, não há o que reconciliar.
   return settleHierarchy({
     ...after,
+    perspectives: [],
+    arrivals: [],
     containers: after.containers.map((c) => ({
       ...c,
       parentId: baseContainers.get(c.id)?.parentId ?? null,

@@ -53,7 +53,7 @@ describe('migração v6 → v7 (referências de código)', () => {
     const result = load(v6Text(sampleProject()), sampleProject());
     expect(result.migratedFrom).toBe(6);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(15);
+    expect(result.project.schemaVersion).toBe(16);
     expect(result.project.platformRepos).toEqual({});
     expect(result.project).toEqual(sampleProject());
   });
@@ -75,11 +75,11 @@ describe('migração v6 → v7 (referências de código)', () => {
     expect(result.project.containers[0]?.locked).toBe(true);
   });
 
-  it('o v6 migrado salva como v15 estável (round-trip)', () => {
+  it('o v6 migrado salva como v16 estável (round-trip)', () => {
     const p = cadastroProject();
     const first = load(v6Text(p), p);
     const saved = serialize(first.project);
-    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 15, platformRepos: {} });
+    expect(JSON.parse(saved)).toMatchObject({ schemaVersion: 16, platformRepos: {} });
     const again = load(saved, p);
     expect(again.migratedFrom).toBeNull();
     expect(serialize(again.project)).toBe(saved);

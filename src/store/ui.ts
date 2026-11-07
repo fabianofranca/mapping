@@ -349,6 +349,7 @@ export type DetailsSection =
         | 'image'
         | 'arrow'
         | 'arrowLinks'
+        | 'perspectives'
         | 'annotations'
         | 'others'
         | 'images'

@@ -479,8 +479,8 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(r16).toContain('OutlinedButton');
     });
 
-    it('o prompt da nuvem lista os roteiros até o R22', () => {
-      expect(prompt).toContain('R0 a R22');
+    it('o prompt da nuvem lista os roteiros até o R23', () => {
+      expect(prompt).toContain('R0 a R23');
     });
   });
 
@@ -548,8 +548,8 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(r17).toContain('Aplicar zip…');
     });
 
-    it('o prompt da nuvem lista os roteiros até o R22', () => {
-      expect(prompt).toContain('R0 a R22');
+    it('o prompt da nuvem lista os roteiros até o R23', () => {
+      expect(prompt).toContain('R0 a R23');
     });
   });
 
@@ -586,8 +586,8 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(kinds).toEqual(new Set(['removed', 'deprecated', 'diverges', 'pending']));
     });
 
-    it('o prompt da nuvem lista os roteiros até o R22', () => {
-      expect(prompt).toContain('R0 a R22');
+    it('o prompt da nuvem lista os roteiros até o R23', () => {
+      expect(prompt).toContain('R0 a R23');
     });
   });
 });

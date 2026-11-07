@@ -37,7 +37,11 @@ export type EditorDialog =
   | { readonly kind: 'export'; readonly file: File; readonly saved: boolean }
   | { readonly kind: 'confirmClose' }
   /** Sair da revisão com aceitas ainda não aplicadas (etapa 4). */
-  | { readonly kind: 'exitReview' };
+  | { readonly kind: 'exitReview' }
+  /** Perspectivas (etapa #659, PE3). */
+  | { readonly kind: 'newPerspective' }
+  | { readonly kind: 'managePerspectives' }
+  | { readonly kind: 'deletePerspective'; readonly id: string };
 
 export interface EditorDialogs {
   readonly current: EditorDialog | null;

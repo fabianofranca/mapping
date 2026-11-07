@@ -165,6 +165,36 @@ function CommentsItem() {
   );
 }
 
+/** A frase inteira das chegadas (o title do item curto da barra). */
+const arrivalsTitle = (count: number) =>
+  count === 1
+    ? t('perspective.status.arrivalsOne')
+    : t('perspective.status.arrivalsMany', { count });
+
+/**
+ * Perspectiva aberta (etapa #659): o nome dela (ou a Principal) e, na Principal, quantos itens
+ * vieram de outras perspectivas.
+ */
+function PerspectiveItem() {
+  const { derived, review } = useEditor();
+  const open = derived.perspective.value;
+  const name = open?.name ?? t('perspective.principal');
+  const arrivals = open ? 0 : (review.derived.shownProject.value?.arrivals.length ?? 0);
+  return (
+    <>
+      <span class="status-item" title={t('perspective.status.name', { name })}>
+        <Icon name="perspective" />
+        <span class="status-item-text">{t('perspective.status.name', { name })}</span>
+      </span>
+      {arrivals > 0 && (
+        <span class="status-item" title={arrivalsTitle(arrivals)}>
+          {t('perspective.status.arrivals', { count: arrivals })}
+        </span>
+      )}
+    </>
+  );
+}
+
 /** Modo visualização: lembra que o canvas é só para ver e como sair. */
 function ViewModeItem() {
   const { ui } = useEditor();
@@ -198,6 +228,7 @@ export function StatusBar() {
       {unexported && (
         <span class="status-item status-item-warn">{t('status.unexported')}</span>
       )}
+      <PerspectiveItem />
       <ProposalsItem />
       <NoticesItem />
       <CommentsItem />

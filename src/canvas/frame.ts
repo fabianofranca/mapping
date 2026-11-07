@@ -13,6 +13,7 @@ import type { DisplayImage } from '../store/displayImages';
 import type { Locale } from '../store/settings';
 import type { EditorMode, Selection, SelectionItem } from '../store/ui';
 import type { ArrowShape } from './arrowGeometry';
+import type { ArrivalMarks } from './arrivals';
 import type { PinPlace } from './commentPins';
 import type { ReviewCanvas } from './reviewMarks';
 import type { CanvasTokens } from './theme';
@@ -176,6 +177,12 @@ export interface Frame {
   readonly pinSelected: string | null;
   /** Onde fica o pino tracejado do rascunho de uma conversa nova num ponto (canvas); `null` fora dele. */
   readonly draftPin: Point | null;
+  /**
+   * Marcas de chegada (PE3, decisão 8): o selo "Veio de <nome>" e a faixa "Área de chegada", só na
+   * Principal; `null` com uma perspectiva ou uma proposta aberta, no modo visualização ou sem marca.
+   * O mesmo objeto enquanto o projeto não muda: pan e zoom não o recalculam.
+   */
+  readonly arrivals?: ArrivalMarks | null;
 }
 
 /** `true` se `a` e `b` têm os mesmos valores (por referência) nas chaves dadas. */

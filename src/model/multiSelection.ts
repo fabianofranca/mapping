@@ -16,7 +16,7 @@ import { ancestorsOf, descendantsOf } from './hierarchy';
 import {
   enclosingAmong,
   markingCanvasRectOf,
-  settleIf,
+  settleFrom,
   spaceOf,
   type SettleOptions,
 } from './hierarchySettle';
@@ -252,7 +252,7 @@ function applyMoves(
             return rect ? { ...m, rect } : m;
           }),
   };
-  return settleIf(next, options);
+  return settleFrom(p, next, options);
 }
 
 /**
@@ -550,7 +550,7 @@ export function removeItems(
   const selected = resolveItems(p, items);
   if (selected.list.length === 0) return p;
   requireUnlocked(canDeleteItems(p, items));
-  return settleIf(cascadeRemoveItems(p, selected), options);
+  return settleFrom(p, cascadeRemoveItems(p, selected), options);
 }
 
 // ---------------------------------------------------------------------------
@@ -793,5 +793,5 @@ export function wrapItems(
   };
   const list = [...p.markings];
   list.splice(position, 0, marking);
-  return settleIf({ ...p, markings: list }, options);
+  return settleFrom(p, { ...p, markings: list }, options);
 }

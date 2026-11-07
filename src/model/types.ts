@@ -1,9 +1,9 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v15). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
+// Tipos do `mapping.json` (schema v16). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 15;
+export const SCHEMA_VERSION = 16;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -268,9 +268,46 @@ export interface ProjectSpecialization extends SpecializationRef {
 }
 
 export interface ProjectInfo {
+  /**
+   * Identidade do projeto (v16): um UUID criado na migração e na criação do projeto, que nunca
+   * muda. Chaveia o que fica no navegador (a perspectiva aberta, as perspectivas "Só eu").
+   */
+  readonly id: string;
   readonly name: string;
   readonly createdAt: string;
   readonly updatedAt: string;
+}
+
+/** Posição de uma raiz numa perspectiva (v16): o canto de cima à esquerda, em unidades do canvas. */
+export interface PerspectiveItem {
+  /** Id de uma raiz: container sem pai, marcação do canvas sem pai ou flutuante. */
+  readonly root: string;
+  readonly x: number;
+  readonly y: number;
+}
+
+/**
+ * Perspectiva (v16): um recorte do projeto. Quais raízes aparecem (`items`), onde ficam no canvas
+ * e quais camadas ficam escondidas. O conteúdo é o do projeto; só a posição das raízes muda. O
+ * `mapping.json` guarda só as "Para todos"; as "Só eu" ficam no navegador, no mesmo formato.
+ */
+export interface Perspective {
+  readonly id: string;
+  /** Único entre as perspectivas, sem diferença de caixa. */
+  readonly name: string;
+  /** Camadas escondidas nesta perspectiva (camada nova nasce visível). */
+  readonly hiddenLayers: readonly string[];
+  /** Uma entrada por raiz, sem repetir. */
+  readonly items: readonly PerspectiveItem[];
+}
+
+/** Marca "Veio de…" (v16): uma raiz criada fora da Principal que chegou a ela. */
+export interface Arrival {
+  readonly root: string;
+  /** Id da perspectiva de origem (pode não existir mais). */
+  readonly from: string;
+  /** Nome da perspectiva de origem, guardado para a marca sobreviver a ela. */
+  readonly fromName: string;
 }
 
 export interface Project {
@@ -301,6 +338,10 @@ export interface Project {
   readonly markings: readonly Marking[];
   /** Setas (v13, ME4): marcações que apontam. */
   readonly arrows: readonly Arrow[];
+  /** Perspectivas "Para todos" (v16). A Principal é implícita e não está aqui. */
+  readonly perspectives: readonly Perspective[];
+  /** Marcas "Veio de…" da Principal (v16). */
+  readonly arrivals: readonly Arrival[];
   readonly annotations: readonly Annotation[];
 }
 

@@ -11,6 +11,7 @@ import {
 } from './geometry';
 import { IMAGE_GAP } from './containers';
 import {
+  perspectiveNameKey,
   validateProject,
   type InvariantCode,
   type InvariantEntity,
@@ -18,15 +19,18 @@ import {
 } from './invariants';
 import type {
   Annotation,
+  Arrival,
   Arrow,
   Marking,
+  Perspective,
   Project,
   ProjectContainer,
   Rect,
 } from './types';
 
 /** O que o reparo fez com o item. */
-export type RepairAction = 'new-id' | 'clipped' | 'removed' | 'made-root' | 'moved';
+export type RepairAction =
+  'new-id' | 'clipped' | 'removed' | 'made-root' | 'moved' | 'renamed';
 
 export interface RepairRecord {
   readonly action: RepairAction;
@@ -64,7 +68,25 @@ const REPAIRABLE: ReadonlySet<InvariantCode> = new Set<InvariantCode>([
   'parent-floating',
   'arrow-endpoint-missing',
   'arrow-self',
+  'duplicate-id', // só o de perspectiva (ver `isRepairable`)
+  'perspective-root-missing',
+  'perspective-root-not-root',
+  'perspective-root-duplicate',
+  'perspective-layer-missing',
+  'perspective-duplicate-name',
+  'arrival-root-missing',
+  'arrival-root-not-root',
+  'arrival-duplicate',
 ]);
+
+/**
+ * O `duplicate-id` só tem reparo na perspectiva (nada aponta para ela por id além da chegada,
+ * que guarda o nome); nas outras entidades a referência seria ambígua.
+ */
+function isRepairable(issue: InvariantIssue): boolean {
+  if (issue.code === 'duplicate-id') return issue.entity === 'perspective';
+  return REPAIRABLE.has(issue.code);
+}
 
 /**
  * Um reparo pode deixar outro à mostra (ex.: a marcação removida deixa as anotações dela
@@ -81,7 +103,10 @@ const MAX_ROUNDS = 8;
  * sem pai; flutuante com container ou pai → vai para o canvas, com o `rect` convertido;
  * imagens sobrepostas → a de maior índice vai para a direita das anteriores; seta com ponta
  * inexistente (ou que não é uma marcação) ou ligada a ela mesma → removida, e as anotações dela
- * saem na rodada seguinte (a dona deixou de existir). Só torna o
+ * saem na rodada seguinte (a dona deixou de existir); perspectiva (v16): item de raiz inexistente,
+ * que não é raiz ou repetido → removido, camada escondida inexistente → tirada da lista, id
+ * repetido → a repetida ganha id novo, nome repetido → a repetida ganha " (2)", " (3)"…; chegada
+ * de raiz inexistente, que não é raiz ou repetida → removida. Só torna o
  * projeto válido: não assenta (quem assenta é a próxima operação de geometria). O que sobra
  * depois dos reparos (`validateProject` de novo) é `unrepaired`.
  */
@@ -94,7 +119,7 @@ export function repairProject(
   let p = project;
   let current = issues;
   for (let round = 0; round < MAX_ROUNDS; round++) {
-    if (!current.some((i) => REPAIRABLE.has(i.code))) break;
+    if (!current.some(isRepairable)) break;
     p = repairRound(p, current, newId, repaired);
     current = validateProject(p);
   }
@@ -288,5 +313,127 @@ function repairRound(
     return { ...image, parentId: null };
   });
 
-  return { ...p, containers: projectImages, markings, arrows, annotations: kept };
+  return {
+    ...p,
+    containers: projectImages,
+    markings,
+    arrows,
+    ...repairPerspectives(p, issues, newId, out),
+    annotations: kept,
+  };
 }
+
+/** Nome livre entre os já usados (comparação sem caixa): `Nome (2)`, `Nome (3)`… */
+function numberedName(name: string, taken: ReadonlySet<string>): string {
+  const base = name.trim();
+  for (let n = 2; ; n++) {
+    const candidate = `${base} (${n})`;
+    if (!taken.has(perspectiveNameKey(candidate))) return candidate;
+  }
+}
+
+/** Sem as camadas escondidas inexistentes e sem os itens de raiz inválida ou repetida. */
+function cleanPerspective(
+  x: Perspective,
+  badRoots: ReadonlySet<string>,
+  badLayers: ReadonlySet<string>,
+): Perspective {
+  const seen = new Set<string>();
+  return {
+    ...x,
+    hiddenLayers: x.hiddenLayers.filter((layer) => !badLayers.has(layer)),
+    items: x.items.filter(({ root }) => {
+      if (badRoots.has(root) || seen.has(root)) return false;
+      seen.add(root);
+      return true;
+    }),
+  };
+}
+
+/** `id` e nome únicos: a primeira perspectiva fica com os dela; a repetida muda (nada some). */
+function uniquePerspectives(
+  list: readonly Perspective[],
+  newId: () => string,
+): Perspective[] {
+  const takenIds = new Set(list.map((x) => x.id));
+  const takenNames = new Set(list.map((x) => perspectiveNameKey(x.name)));
+  const usedIds = new Set<string>();
+  const usedNames = new Set<string>();
+  return list.map((x) => {
+    let next = x;
+    if (usedIds.has(x.id)) {
+      let id = newId();
+      while (takenIds.has(id)) id = newId();
+      takenIds.add(id);
+      next = { ...next, id };
+    }
+    usedIds.add(next.id);
+    if (usedNames.has(perspectiveNameKey(x.name))) {
+      const name = numberedName(x.name, takenNames);
+      takenNames.add(perspectiveNameKey(name));
+      next = { ...next, name };
+    }
+    usedNames.add(perspectiveNameKey(next.name));
+    return next;
+  });
+}
+
+/**
+ * Reparo das perspectivas e chegadas (v16). A raiz ou a camada inválida vem no `otherId` do
+ * problema (a da chegada, no `id`). Cada problema vira um registro; sem problema de perspectiva
+ * ou chegada, devolve as listas como estão.
+ */
+function repairPerspectives(
+  p: Project,
+  issues: readonly InvariantIssue[],
+  newId: () => string,
+  out: RepairRecord[],
+): { perspectives: readonly Perspective[]; arrivals: readonly Arrival[] } {
+  const badRoots = new Set<string>();
+  const badLayers = new Set<string>();
+  const badArrivals = new Set<string>();
+  // O que cada código manda tirar (a raiz repetida e o id e nome repetidos não entram: não há
+  // valor inválido, só o segundo uso).
+  const drop: Partial<Record<InvariantCode, Set<string>>> = {
+    'perspective-root-missing': badRoots,
+    'perspective-root-not-root': badRoots,
+    'perspective-layer-missing': badLayers,
+    'arrival-root-missing': badArrivals,
+    'arrival-root-not-root': badArrivals,
+  };
+  let touched = false;
+  for (const i of issues) {
+    if (!isPerspectiveIssue(i)) continue;
+    touched = true;
+    record(out, PERSPECTIVE_ACTIONS[i.code] ?? 'removed', i.code, i.entity, {
+      id: i.id,
+      name: i.name ?? null,
+    });
+    drop[i.code]?.add(i.entity === 'arrival' ? i.id : (i.otherId ?? ''));
+  }
+  if (!touched) return { perspectives: p.perspectives, arrivals: p.arrivals };
+  const seen = new Set<string>();
+  return {
+    perspectives: uniquePerspectives(
+      p.perspectives.map((x) => cleanPerspective(x, badRoots, badLayers)),
+      newId,
+    ),
+    // A chegada repetida (mesma raiz) perde a segunda.
+    arrivals: p.arrivals.filter(({ root }) => {
+      if (badArrivals.has(root) || seen.has(root)) return false;
+      seen.add(root);
+      return true;
+    }),
+  };
+}
+
+/** Problema de perspectiva ou de chegada, com reparo (o `duplicate-id` só vale na perspectiva). */
+function isPerspectiveIssue(i: InvariantIssue): boolean {
+  return (i.entity === 'perspective' || i.entity === 'arrival') && isRepairable(i);
+}
+
+/** Ação de cada código; o que não está aqui remove o item. */
+const PERSPECTIVE_ACTIONS: Partial<Record<InvariantCode, RepairAction>> = {
+  'duplicate-id': 'new-id',
+  'perspective-duplicate-name': 'renamed',
+};

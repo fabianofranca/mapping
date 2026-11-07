@@ -1,6 +1,6 @@
 /** Versão do servidor MCP (a tag de release é `mcp-v<versão>`). Uma versão por épico. */
 export const SERVER_NAME = 'mapping';
-export const SERVER_VERSION = '0.25.1';
+export const SERVER_VERSION = '0.26.0';
 
 declare const __MCP_BUILD_SUFFIX__: string | undefined;
 

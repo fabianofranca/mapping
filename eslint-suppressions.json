@@ -371,7 +371,7 @@
   },
   "src/model/markings.ts": {
     "complexity": {
-      "count": 2
+      "count": 1
     }
   },
   "src/model/migrations.ts": {

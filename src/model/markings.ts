@@ -20,7 +20,7 @@ import { descendantIds, descendantsOf } from './hierarchy';
 import {
   clearArrowRoutes,
   markingCanvasRectOf,
-  settleIf,
+  settleFrom,
   spaceOf,
   type SettleOptions,
 } from './hierarchySettle';
@@ -52,11 +52,16 @@ function checkRectShape(rect: Rect, options?: RectOptions): void {
  * marcação da operação; com `minSizeOf`, o `minSize` ainda vale para ela e o `minSizeOf` para
  * as demais.
  */
-function settled(p: Project, markingId: string, options?: RectOptions): Project {
+function settled(
+  before: Project,
+  next: Project,
+  markingId: string,
+  options?: RectOptions,
+): Project {
   const min = options?.minSize;
-  if (min === undefined) return settleIf(p, options);
+  if (min === undefined) return settleFrom(before, next, options);
   const minSizeOf = options?.minSizeOf;
-  return settleIf(p, {
+  return settleFrom(before, next, {
     ...options,
     minSizeOf: (id) => (id === markingId ? min : (minSizeOf?.(id) ?? null)),
   });
@@ -122,7 +127,7 @@ export function createMarking(
     floating,
     source: null,
   };
-  return settled({ ...p, markings: [...p.markings, marking] }, args.id, options);
+  return settled(p, { ...p, markings: [...p.markings, marking] }, args.id, options);
 }
 
 export function renameMarking(
@@ -162,6 +167,7 @@ export function setMarkingRect(
   if (bounds && !containsRect(bounds, rect)) fail('rect-out-of-image');
   const copy: Rect = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
   return settled(
+    p,
     {
       ...p,
       markings: updateById(p.markings, markingId, (m) => ({ ...m, rect: copy })),
@@ -205,6 +211,7 @@ export function setMarkingSpace(
     })),
   };
   return settled(
+    p,
     marking.containerId !== containerId
       ? clearArrowRoutes(base, new Set([markingId]))
       : base,
@@ -236,6 +243,7 @@ export function moveMarking(
     marking.containerId === null ? new Set<string>() : descendantIds(p, markingId);
   affected.add(markingId);
   return settled(
+    p,
     {
       ...p,
       markings: p.markings.map((m) =>
@@ -329,6 +337,7 @@ export function setMarkingFloating(
   const moved = floating && marking.containerId !== null;
   const base = { ...p, markings: updateById(p.markings, markingId, () => next) };
   return settled(
+    p,
     moved ? clearArrowRoutes(base, new Set([markingId])) : base,
     markingId,
     options,
@@ -392,7 +401,7 @@ export function removeMarking(
 ): Project {
   findById(p.markings, markingId);
   requireUnlocked(canDeleteMarking(p, markingId));
-  return settleIf(cascadeRemove(p, markingId), options);
+  return settleFrom(p, cascadeRemove(p, markingId), options);
 }
 
 /** A exclusão em si, sem a trava nem o assentar: também serve para contar o impacto. */
@@ -510,6 +519,22 @@ export function placeFloatingNear(
       obstacles.push(markingCanvasRectOf(p, m));
     }
   }
+  return floatingSpotNear(obstacles, anchor, start, size);
+}
+
+/**
+ * O lugar de `placeFloatingNear` para qualquer conjunto de obstáculos (retângulos no canvas):
+ * uma flutuante de `size` ao lado de `anchor` (o container, ou a marcação do canvas), começando
+ * na altura de `start`. Tenta a direita, a esquerda, embaixo e em cima, empilhando com
+ * `FLOATING_GAP` sem sobrepor nenhum obstáculo; se nenhum lado couber, fica na direita, empilhada
+ * até achar vão. Inteiro, como em `placeFloatingNear`. Serve também à chegada das perspectivas.
+ */
+export function floatingSpotNear(
+  obstacles: readonly Rect[],
+  anchor: Rect,
+  start: Rect,
+  size: Size,
+): Rect {
   const width = Math.ceil(size.width);
   const height = Math.ceil(size.height);
   const hit = (rect: Rect): Rect | undefined =>

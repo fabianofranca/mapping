@@ -1,0 +1,26 @@
+# Perspectivas — 2026-11-07 (épico `epic/perspectivas`, PR #739, MCP 0.26.0, schema v16)
+
+## Alterado
+
+- O `mapping.json` passa à v16: ganha `project.id` (a identidade do projeto, que nunca muda), `perspectives` e `arrivals` (vazias até a primeira perspectiva). Um projeto v15 abre e migra sozinho, e a primeira gravação guarda o backup da v15 em `backups/`.
+
+## Adicionado
+
+- **Perspectivas**: recortes do projeto para públicos diferentes (dev mobile, backend, analytics). Cada perspectiva escolhe quais itens aparecem, onde ficam no canvas e quais camadas se veem; o conteúdo continua o mesmo em todas. A **Principal** sempre existe, mostra tudo e é onde as propostas são aceitas.
+- **Seletor de perspectiva** na barra principal, ao lado do nome do projeto, com os grupos **Para todos** e **Só minhas**, **Nova perspectiva…** e **Gerenciar perspectivas…**. A escolha fica guardada neste navegador por projeto.
+- **Nova perspectiva** (nome único, começar de outra perspectiva, da Principal ou vazia, quem vê e as camadas) e **Gerenciar perspectivas** (trocar quem vê, renomear, duplicar e apagar). Apagar uma perspectiva não apaga nada do projeto e dá para desfazer.
+- **Enviar para perspectiva** e **Tirar desta perspectiva**, no menu do botão direito e na seção **Perspectivas** dos Detalhes. Dentro de uma perspectiva, arrastar um item muda só a posição dele ali; Arrumar, Excluir e desenhar marcação do canvas ficam para a Principal (com a dica "só na Principal").
+- **Chegada na Principal**: o que nasce numa perspectiva chega à Principal perto da referência ou na **Área de chegada**, com o selo **"Veio de…"** no canvas e um aviso nos Detalhes com **Dispensar** e **Próximo que veio (N)**. A barra de status conta os itens que vieram de outras perspectivas.
+- **Camadas por perspectiva**: a caixa de visibilidade da janela Camadas edita as camadas escondidas da perspectiva aberta. Revisar uma proposta abre a Principal (com o aviso "A revisão mostra a Principal") e trava o seletor.
+- Na seção **Ligado por seta**, a outra ponta fora da perspectiva aberta ganha o selo "fora desta perspectiva".
+- **O MCP lê as perspectivas** (MCP 0.26.0, só leitura): `get_project` traz `perspectives` (id, nome, quantas raízes, camadas escondidas) e `arrivals` (as marcas "Veio de…"); a tool nova `get_perspective` traz as raízes de uma perspectiva com a posição de cada uma e as camadas escondidas; `get_marking` e `get_container` dizem em que perspectivas o item aparece. O servidor nunca cria nem altera perspectivas, e as "Só eu" (do navegador) não aparecem para ele.
+
+## Corrigido
+
+- Dentro de uma perspectiva, a seção **Ligado por seta** dos Detalhes volta a mostrar a seta que sai para fora dela, com o selo "fora desta perspectiva".
+- Containers criados numa perspectiva não nascem mais um sobre o outro.
+- O aviso de chegada da primeira tela da fila volta a trazer "Sem referência; foi para a área de chegada.".
+- Na Principal, o selo "Veio de…" não cobre mais o nome do container nem o rótulo da faixa de chegada e fica sempre dentro da área visível; a barra de status mostra "Chegadas: N" (a frase inteira fica na dica).
+- Na Principal enquadrada com a área de chegada, o rótulo "Área de chegada" não fica mais sobre o nome dos containers nem sai da tela (sobe acima da linha do nome ou, sem espaço, vai para baixo da faixa), Enquadrar tudo deixa folga para ele e o selo "Veio de…" não fica sob o minimapa.
+- O submenu **Enviar para perspectiva** abre também ao passar o ponteiro, não sai da tela perto da borda direita e anuncia a perspectiva marcada (`menuitemcheckbox` com `aria-checked`).
+- As posições gravadas ao mover, criar e enviar itens para perspectivas não levam mais ruído de ponto flutuante (como `225.00000000000006`).

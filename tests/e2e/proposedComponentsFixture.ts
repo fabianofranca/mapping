@@ -127,6 +127,7 @@ export const PROPOSAL_ID = 'telas-novas';
 /** O projeto "Telas" (Material 3 aplicado, tela em branco 360 × 800). */
 function baseProject(counter: { n: number }): Project {
   let base = createProject({
+    id: '00000000-0000-4000-8000-000000000e2e',
     name: 'Telas',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Componentes', color: '#1e88e5' },

@@ -1,9 +1,11 @@
 import type { Dictionary } from './pt-BR';
 import { catalogEnUS } from './catalog';
 import { reviewEnUS } from './review';
+import { perspectivesEnUS } from './perspectives';
 
 export const enUS: Dictionary = {
   ...reviewEnUS,
+  ...perspectivesEnUS,
   ...catalogEnUS,
   'app.title': 'Mapping',
   'app.loading': 'Loading…',
@@ -351,6 +353,8 @@ export const enUS: Dictionary = {
   'inconsistent.entity.annotation': 'Annotation',
   'inconsistent.entity.layer': 'Layer',
   'inconsistent.entity.spec': 'Specialization',
+  'inconsistent.entity.perspective': 'Perspective',
+  'inconsistent.entity.arrival': 'Arrival',
   'invariant.duplicate-id': 'duplicate id',
   'invariant.duplicate-file': 'duplicate file',
   'invariant.container-content': 'background color and file together (or neither)',
@@ -384,11 +388,21 @@ export const enUS: Dictionary = {
   'invariant.duplicate-spec-file': 'duplicate specialization file',
   'invariant.duplicate-entry-id': 'duplicate entry id',
   'invariant.duplicate-row-id': 'duplicate row id',
+  'invariant.perspective-root-missing': 'perspective root does not exist',
+  'invariant.perspective-root-not-root':
+    'perspective item is not a root (container without parent, canvas marking or floating)',
+  'invariant.perspective-root-duplicate': 'root repeated in the perspective',
+  'invariant.perspective-layer-missing': 'hidden layer does not exist',
+  'invariant.perspective-duplicate-name': 'duplicate perspective name',
+  'invariant.arrival-root-missing': 'arrival root does not exist',
+  'invariant.arrival-root-not-root': 'the arrival does not point to a root',
+  'invariant.arrival-duplicate': 'repeated arrival for the same root',
   'repair.new-id': 'the duplicate entry gets a new id',
   'repair.clipped': 'clipped to the image bounds',
   'repair.removed': 'removed',
   'repair.made-root': 'becomes a root of the image',
   'repair.moved': 'moved to the right of the previous ones',
+  'repair.renamed': 'renamed with a number',
   'error.invalid-zip': 'The file is not a valid zip.',
   'error.missing-mapping': 'The zip has no mapping.json.',
   'error.not-found': 'Project not found.',
@@ -1188,6 +1202,12 @@ export const enUS: Dictionary = {
     '"{name}" will be deleted with {annotations} annotation(s). You can undo this.',
   'arrow.error.locked': 'The arrow is locked.',
   'arrow.error.generic': 'The arrow could not be changed.',
+  // Perspectives (stage #659): errors from the model operations
+  'perspective.error.name-empty': 'Give the perspective a name.',
+  'perspective.error.name-taken': 'A perspective with that name already exists.',
+  'perspective.error.not-root':
+    'Only items loose on the canvas can be part of a perspective.',
+  'perspective.error.generic': 'The perspective could not be changed.',
   // "Linked by arrow" section of the marking Details (stage #658)
   'arrowLinks.section': 'Linked by arrow',
   'arrowLinks.out': 'Goes to',

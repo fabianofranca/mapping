@@ -1,4 +1,4 @@
-import { effect, signal, type ReadonlySignal } from '@preact/signals';
+import { batch, effect, signal, type ReadonlySignal } from '@preact/signals';
 import {
   canReplaceImage,
   imageFileNames,
@@ -11,6 +11,7 @@ import {
   specFiles,
   toLibraryFiles,
   uniqueImageFile,
+  type Perspective,
   type Project,
 } from '../model';
 import {
@@ -20,6 +21,7 @@ import {
   type SaveStatus,
 } from '../storage/autosave';
 import type { PreparedImage } from '../storage/imageImport';
+import type { LocalPerspectiveStore } from '../storage/localPerspectives';
 import { loadProject, type LoadProjectResult } from '../storage/loadProject';
 import {
   loadLibraryIssues,
@@ -34,7 +36,18 @@ import { reportError } from '../utils/report';
 import { createComponentLibrary, type ComponentLibrary } from './componentLibrary';
 import { libraryInputFiles } from './packageValidation';
 import { createProjectCatalogs, type ProjectCatalogs } from './projectCatalogs';
-import { createProjectStore, type ProjectStore } from './history';
+import { createProjectStore, type ActionResult, type ProjectStore } from './history';
+import {
+  attachLocalSync,
+  carryLocalPerspectives,
+  mergeLocalPerspectives,
+} from './localPerspectiveSync';
+import { createPerspectiveActions, type PerspectiveActions } from './perspectiveActions';
+import {
+  createPerspectiveState,
+  fileProject,
+  type PerspectiveState,
+} from './perspectives';
 import {
   createProjectActions,
   type ProjectActions,
@@ -101,6 +114,15 @@ export interface SessionOptions {
    * abre lendo só `comments/` passa `false`: as resolvidas vêm sob pedido (`threads.loadResolved`).
    */
   readonly threadsResolvedLoaded?: boolean;
+  /**
+   * As perspectivas "Só eu" (etapa #659): `store` é o IndexedDB deste navegador (`null` sem ele:
+   * a opção fica indisponível) e `initial` o que ele tinha para este `project.id`. Entram no
+   * projeto em memória ao abrir, reconciliadas; o `mapping.json` nunca as leva.
+   */
+  readonly localPerspectives?: {
+    readonly store: LocalPerspectiveStore | null;
+    readonly initial: readonly Perspective[];
+  };
   /** Problemas da biblioteca lidos ao abrir (ver `loadProject`); sem eles, nenhum. */
   readonly libraryIssues?: LibraryIssues;
   /**
@@ -204,6 +226,13 @@ export interface ProjectSession {
   readonly threads: ThreadStore;
   /** Abrir, acrescentar, resolver, reabrir e apagar: as únicas ações que mudam uma conversa. */
   readonly threadActions: ThreadActions;
+  /**
+   * A perspectiva aberta e o resto do estado das perspectivas (etapa #659): estado da UI, guardado
+   * neste navegador por `project.id`; trocar de perspectiva não entra no desfazer.
+   */
+  readonly perspective: PerspectiveState;
+  /** Criar, renomear, duplicar, apagar, enviar raízes, camadas escondidas e o Quem vê. */
+  readonly perspectiveActions: PerspectiveActions;
   readonly saveStatus: ReadonlySignal<SaveStatus>;
   /**
    * Problemas (níveis 1 e 2 do validador) do pacote de cada especialização aplicada em pasta,
@@ -344,8 +373,40 @@ export function openSession(options: SessionOptions): ProjectSession {
   const baseActions = createProjectActions(store, {
     newId: options.newId,
     components: () => components.catalog.peek(),
+    perspective: () => perspective.openId(),
+    onArrival: (infos) => {
+      // Acumula: o aviso da primeira raiz da fila continua depois de criar a segunda.
+      const roots = new Set(infos.map((info) => info.root));
+      perspective.arrivals.value = [
+        ...perspective.arrivals.peek().filter((info) => !roots.has(info.root)),
+        ...infos,
+      ];
+    },
   });
-  store.load(options.project, { readOnly: options.readOnly });
+  // As "Só eu" moram na memória junto com as "Para todos" (`localIds` as distingue); o
+  // `mapping.json` é sempre `fileOf(projeto)`, sem elas.
+  const localOption = options.localPerspectives;
+  const localStore = localOption?.store ?? null;
+  const joined = mergeLocalPerspectives(
+    options.project,
+    localOption?.initial ?? [],
+    options.project,
+  );
+  store.load(joined.project, { readOnly: options.readOnly });
+  const perspective = createPerspectiveState({
+    store,
+    projectId: options.project.project.id,
+    localAvailable: localStore !== null,
+    localIds: joined.ids,
+  });
+  const localSync = attachLocalSync({
+    store,
+    state: perspective,
+    localStore,
+    projectId: options.project.project.id,
+    initial: localOption?.initial ?? [],
+  });
+  const fileOf = (p: Project): Project => fileProject(p, perspective.localIds.peek());
   const now = options.now ?? (() => new Date().toISOString());
   const proposals = createProposalStore({
     storage,
@@ -622,7 +683,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     // As gravações acima levam tempo: confere de novo antes de sobrescrever o arquivo.
     if (wrote) await assertWritable();
     const revision = disk.revision + 1;
-    const text = serialize({ ...p, revision });
+    const text = serialize({ ...fileOf(p), revision });
     await storage.saveMapping(text);
     disk = { revision, text, lastModified: await statMapping() };
     written = p;
@@ -647,7 +708,7 @@ export function openSession(options: SessionOptions): ProjectSession {
     if (written === null || disk.text === null) return false;
     return (
       serialize({
-        ...p,
+        ...fileOf(p),
         revision: disk.revision,
         project: { ...p.project, updatedAt: written.project.updatedAt },
       }) === disk.text
@@ -795,6 +856,63 @@ export function openSession(options: SessionOptions): ProjectSession {
     stagePackage: cachePackage,
     flush: () => saver.flush(),
   });
+
+  /** O Quem vê não muda com o projeto travado, em revisão ou com um gesto em andamento. */
+  const localChangeBlocked = (): ActionResult | null => {
+    if (store.readOnly.peek()) return { ok: false, error: 'read-only' };
+    if (store.reviewing.peek()) return { ok: false, error: 'reviewing' };
+    if (store.gestureActive.peek()) return { ok: false, error: 'gesture-active' };
+    return null;
+  };
+  /** O arquivo muda sem o projeto mudar (a perspectiva trocou de lugar): força a regravação. */
+  const rewriteFile = () => {
+    written = null;
+    saver.schedule();
+  };
+  /** Só eu: grava no navegador primeiro; o arquivo é regravado depois, sem ela. */
+  const makeLocal = async (id: string): Promise<ActionResult> => {
+    if (!perspective.localAvailable) return { ok: false, error: 'local-unavailable' };
+    if (!(await localSync.persistIncluding(id))) {
+      return { ok: false, error: 'local-unavailable' };
+    }
+    perspective.setLocal(id, true);
+    rewriteFile();
+    return { ok: true, value: undefined };
+  };
+  /** Para todos: o arquivo grava com ela e só então o navegador a esquece. */
+  const makeShared = async (id: string): Promise<ActionResult> => {
+    localSync.hold(id);
+    perspective.setLocal(id, false);
+    rewriteFile();
+    const saved = await saver.flush();
+    if (!saved.ok) perspective.setLocal(id, true);
+    localSync.release(id);
+    return saved.ok
+      ? { ok: true, value: undefined }
+      : { ok: false, error: 'save-failed' };
+  };
+  const setPerspectiveLocal = async (
+    id: string,
+    local: boolean,
+  ): Promise<ActionResult> => {
+    const blocked = localChangeBlocked();
+    if (blocked) return blocked;
+    const current = store.committed.peek();
+    if (!current) return { ok: false, error: 'no-project' };
+    if (!current.perspectives.some((x) => x.id === id)) {
+      return { ok: false, error: 'not-found' };
+    }
+    if (perspective.localIds.peek().has(id) === local)
+      return { ok: true, value: undefined };
+    return local ? makeLocal(id) : makeShared(id);
+  };
+  const perspectiveActions = createPerspectiveActions({
+    store,
+    state: perspective,
+    newId: options.newId ?? (() => crypto.randomUUID()),
+    setPerspectiveLocal,
+  });
+
   let lastRevision = store.revision.peek();
   const stopWatching = effect(() => {
     const revision = store.revision.value;
@@ -820,7 +938,17 @@ export function openSession(options: SessionOptions): ProjectSession {
     modified: number | null,
   ) => {
     const { project } = loaded;
-    store.load(project, { readOnly: loaded.readOnly });
+    // As "Só eu" da memória seguem com o projeto do disco, reconciliadas com a mudança.
+    const carried = carryLocalPerspectives(
+      store.committed.peek(),
+      project,
+      perspective.localIds.peek(),
+    );
+    batch(() => {
+      perspective.setLocalIds(carried.ids);
+      perspective.arrivals.value = [];
+      store.load(carried.project, { readOnly: loaded.readOnly });
+    });
     // O `load` zera o contador de revisão do store, o que agendaria uma gravação: descarta.
     lastRevision = store.revision.peek();
     saver.reset();
@@ -1020,6 +1148,8 @@ export function openSession(options: SessionOptions): ProjectSession {
     proposalActions,
     threads,
     threadActions,
+    perspective,
+    perspectiveActions,
     libraryIssues,
     components,
     catalogs,
@@ -1152,7 +1282,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       const withProposals = await proposals.collect();
       const withThreads = await threads.collect();
       return {
-        mapping: serialize({ ...p, revision: disk.revision }),
+        mapping: serialize({ ...fileOf(p), revision: disk.revision }),
         images,
         specs,
         ...(specAssets.size > 0 ? { specAssets } : {}),
@@ -1177,6 +1307,8 @@ export function openSession(options: SessionOptions): ProjectSession {
       // Na fila: espera a conferência ou a recarga em curso e grava o pendente.
       await saver.flush();
       saver.dispose();
+      await localSync.dispose();
+      perspective.dispose();
       components.dispose();
       catalogs.dispose();
       store.close();

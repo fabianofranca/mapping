@@ -6,6 +6,7 @@ import type {
   Entry,
   Layer,
   Marking,
+  Perspective,
   Project,
   ProjectContainer,
   ProjectSpecialization,
@@ -15,6 +16,12 @@ import type {
 // por versão do projeto. Como o projeto é imutável, a versão é o próprio objeto:
 // o `WeakMap` devolve o mesmo índice enquanto ele existir e o libera junto com
 // ele. Funciona igual no navegador e no Node.
+
+/** O grupo de uma raiz (v16): ela e tudo o que tem o pertencimento terminando nela. */
+export interface RootMembers {
+  readonly markings: readonly Marking[];
+  readonly containers: readonly ProjectContainer[];
+}
 
 export interface ProjectIndex {
   readonly layers: ReadonlyMap<string, Layer>;
@@ -39,6 +46,23 @@ export interface ProjectIndex {
   readonly containersByParent: ReadonlyMap<string | null, readonly ProjectContainer[]>;
   /** Marcações do canvas sem pai (flutuantes inclusive), na ordem do array. */
   readonly canvasRoots: readonly Marking[];
+  /**
+   * Raiz de cada container e marcação (v16, perspectivas): o container ou a marcação do canvas
+   * sem pai (flutuante inclusive) em que a cadeia de pertencimento termina. Container sem pai,
+   * flutuante e marcação do canvas sem pai são a própria raiz. Ids de containers e de marcações
+   * dividem o mapa. Num ciclo (projeto inválido) todos os da cadeia ficam com o nó em que ela
+   * fecha.
+   */
+  readonly rootOf: ReadonlyMap<string, string>;
+  /**
+   * Tudo o que tem uma raiz (ela inclusive), por id da raiz, na ordem dos arrays. Toda raiz
+   * tem entrada, mesmo sem mais ninguém.
+   */
+  readonly rootMembers: ReadonlyMap<string, RootMembers>;
+  /** Ids das raízes: containers sem pai (ordem do array), depois `canvasRoots`. */
+  readonly roots: readonly string[];
+  /** Perspectivas "Para todos" que têm cada raiz, na ordem de `perspectives`. */
+  readonly perspectivesByRoot: ReadonlyMap<string, readonly Perspective[]>;
   /** Anotações de cada marcação, na ordem do projeto. */
   readonly annotationsByMarking: ReadonlyMap<string, readonly Annotation[]>;
   /** Anotações vinculadas diretamente a cada dona, na ordem do projeto. */
@@ -85,6 +109,87 @@ function indexSpec(
   }
 }
 
+/**
+ * O nó acima de `id` na cadeia de pertencimento, ou `null` se `id` é raiz (container sem pai,
+ * marcação do canvas sem pai, flutuante) ou o nó de cima não existe (projeto inválido). Acima de
+ * uma marcação de container está o container; acima de um container, a marcação pai dele.
+ */
+function upperNode(
+  id: string,
+  containers: ReadonlyMap<string, ProjectContainer>,
+  markings: ReadonlyMap<string, Marking>,
+): string | null {
+  const c = containers.get(id);
+  const m = c ? undefined : markings.get(id);
+  const up = c ? c.parentId : m && !m.floating ? (m.containerId ?? m.parentId) : null;
+  if (up === null) return null;
+  return containers.has(up) || markings.has(up) ? up : null;
+}
+
+/** Raiz de cada nó, sem recursão (cadeias fundas) e sem travar em ciclo. */
+function computeRootOf(
+  ids: Iterable<string>,
+  upper: (id: string) => string | null,
+): Map<string, string> {
+  const rootOf = new Map<string, string>();
+  for (const start of ids) {
+    if (rootOf.has(start)) continue;
+    const path = new Set<string>();
+    let current = start;
+    let root: string | undefined;
+    while (root === undefined) {
+      const known = rootOf.get(current);
+      if (known !== undefined || path.has(current)) {
+        root = known ?? current;
+        continue;
+      }
+      path.add(current);
+      const up = upper(current);
+      if (up === null) root = current;
+      else current = up;
+    }
+    for (const id of path) rootOf.set(id, root);
+  }
+  return rootOf;
+}
+
+function rootGroups(
+  p: Project,
+  containers: ReadonlyMap<string, ProjectContainer>,
+  markings: ReadonlyMap<string, Marking>,
+  canvasRoots: readonly Marking[],
+): Pick<ProjectIndex, 'rootOf' | 'rootMembers' | 'roots' | 'perspectivesByRoot'> {
+  const upper = (id: string) => upperNode(id, containers, markings);
+  const rootOf = computeRootOf(
+    [...p.containers.map((c) => c.id), ...p.markings.map((m) => m.id)],
+    upper,
+  );
+  const groups = new Map<
+    string,
+    { markings: Marking[]; containers: ProjectContainer[] }
+  >();
+  const groupOf = (id: string) => {
+    const root = rootOf.get(id) as string;
+    let group = groups.get(root);
+    if (!group) groups.set(root, (group = { markings: [], containers: [] }));
+    return group;
+  };
+  for (const c of p.containers) groupOf(c.id).containers.push(c);
+  for (const m of p.markings) groupOf(m.id).markings.push(m);
+
+  const roots = [
+    ...p.containers.filter((c) => c.parentId === null).map((c) => c.id),
+    ...canvasRoots.map((m) => m.id),
+  ];
+  const perspectivesByRoot = new Map<string, Perspective[]>();
+  for (const perspective of p.perspectives) {
+    for (const root of new Set(perspective.items.map((item) => item.root))) {
+      push(perspectivesByRoot, root, perspective);
+    }
+  }
+  return { rootOf, rootMembers: groups, roots, perspectivesByRoot };
+}
+
 function buildIndex(p: Project): ProjectIndex {
   const entries = new Map<string, ReadonlyMap<string, Entry>>();
   const children = new Map<string | null, Marking[]>();
@@ -95,6 +200,8 @@ function buildIndex(p: Project): ProjectIndex {
   const annotationsByOwner = new Map<string, Annotation[]>();
   const types = new Map<string, ResolvedType>();
   const specLayers = new Map<string, SpecLayer>();
+  const containersById = byId(p.containers);
+  const markingsById = byId(p.markings);
 
   for (const m of p.markings) {
     push(children, m.parentId, m);
@@ -116,8 +223,8 @@ function buildIndex(p: Project): ProjectIndex {
   }
   return {
     layers: byId(p.layers),
-    containers: byId(p.containers),
-    markings: byId(p.markings),
+    containers: containersById,
+    markings: markingsById,
     arrows: byId(p.arrows),
     arrowsByMarking,
     annotations: byId(p.annotations),
@@ -125,6 +232,7 @@ function buildIndex(p: Project): ProjectIndex {
     children,
     containersByParent,
     canvasRoots,
+    ...rootGroups(p, containersById, markingsById, canvasRoots),
     annotationsByMarking,
     annotationsByOwner,
     specializations: byId(p.specializations),

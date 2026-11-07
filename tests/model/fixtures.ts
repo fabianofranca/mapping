@@ -9,9 +9,12 @@ import {
 } from '../../src/model';
 
 export const NOW = '2026-09-30T12:00:00.000Z';
+/** Identidade fixa dos projetos dos testes (os arquivos gerados precisam ser estáveis). */
+export const PROJECT_ID = '00000000-0000-4000-8000-000000000001';
 
 export function emptyProject(): Project {
   return createProject({
+    id: PROJECT_ID,
     name: 'Teste',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Lataria', color: '#D32F2F' },

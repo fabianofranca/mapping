@@ -9,6 +9,7 @@ import {
 import { countBrokenRefs, type LabelTexts } from './refs';
 import type { Spec, SpecLayer, SpecMigrationStep } from './spec';
 import { isPackageFile } from './libraryPackage';
+import { pruneHiddenLayers } from './perspectiveReconcile';
 import { findTypeInSpec, getSpecialization } from './specLookup';
 import {
   diffSpecs,
@@ -236,12 +237,12 @@ export function removeSpecialization(
     const doomed = annotationsOfSpec(p, specId);
     const layers = p.layers.filter((l) => l.spec?.specId !== specId);
     if (layers.length === 0) fail('last-layer');
-    return {
+    return pruneHiddenLayers({
       ...p,
       specializations,
       layers,
       annotations: p.annotations.filter((a) => !doomed.has(a.id)),
-    };
+    });
   }
   const typed = new Set(
     p.annotations.filter((a) => a.type?.specId === specId).map((a) => a.id),

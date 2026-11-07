@@ -35,13 +35,13 @@ function load(text: string): Project {
 }
 
 describe('migração v1 → v2', () => {
-  it('abre um v1 real como v15 sem perder nada', () => {
+  it('abre um v1 real como v16 sem perder nada', () => {
     const result = deserialize(v1Text);
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(1);
     expect(result.readOnly).toBe(false);
     const p = result.project;
-    expect(p.schemaVersion).toBe(15);
+    expect(p.schemaVersion).toBe(16);
     expect(p.containers.every((i) => i.name === null)).toBe(true);
     expect(p.annotations.every((a) => a.parentAnnotationId === null)).toBe(true);
     // Os dados originais continuam idênticos.
@@ -58,7 +58,9 @@ describe('migração v1 → v2', () => {
         return { ...rest, imageId: containerId };
       }),
     ).toEqual(original.markings);
-    expect(p.project).toEqual(original.project);
+    // O v1 não tinha a identidade do projeto (v16): a migração cria um UUID.
+    expect(p.project).toEqual({ ...(original.project as object), id: p.project.id });
+    expect(p.project.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(
       p.containers.map((i) =>
         omit(i, ['name', 'parentId', 'markingColor', 'locked', 'source', 'background']),
@@ -72,9 +74,9 @@ describe('migração v1 → v2', () => {
     ).toEqual(original.annotations);
   });
 
-  it('salvar o v1 migrado gera v15 estável (round-trip)', () => {
+  it('salvar o v1 migrado gera v16 estável (round-trip)', () => {
     const saved = serialize(load(v1Text));
-    expect(JSON.parse(saved).schemaVersion).toBe(15);
+    expect(JSON.parse(saved).schemaVersion).toBe(16);
     expect(serialize(load(saved))).toBe(saved);
   });
 

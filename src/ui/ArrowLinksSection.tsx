@@ -1,6 +1,8 @@
 import { t } from '../i18n';
 import {
   arrowLinksOf,
+  perspectiveRootOf,
+  perspectiveRootSet,
   projectIndex,
   type Annotation,
   type ArrowLink,
@@ -16,6 +18,17 @@ import { Section } from './DetailsSection';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { arrowEndLabel, arrowText } from './labels';
+
+/** A outra ponta está fora da perspectiva aberta? (decisão 16; na Principal nunca) */
+function useOutsidePerspective(otherId: string): boolean {
+  const { session, store } = useEditor();
+  const project = store.committed.value;
+  const openId = session.perspective.id.value;
+  const open = project?.perspectives.find((x) => x.id === openId);
+  if (!project || !open) return false;
+  const root = perspectiveRootOf(project, otherId);
+  return root !== null && !perspectiveRootSet(open).has(root);
+}
 
 // Seção "Ligado por seta" dos Detalhes da marcação (etapa #658): uma linha por seta que sai ou
 // chega, com a outra ponta e as anotações dela (e as da própria seta) nas camadas visíveis. É só
@@ -127,6 +140,7 @@ function ArrowLinkRow({ project, link, layers }: ArrowLinkRowProps) {
   const other = projectIndex(project).markings.get(otherId);
   const direct = other ? annotationGroups(project, otherId, layers) : [];
   const onArrow = annotationGroups(project, arrow.id, layers);
+  const outside = useOutsidePerspective(otherId);
   const directionLabel = t(direction === 'out' ? 'arrowLinks.out' : 'arrowLinks.in');
   return (
     <li class="arrow-link" data-arrow={arrow.id}>
@@ -140,6 +154,9 @@ function ArrowLinkRow({ project, link, layers }: ArrowLinkRowProps) {
           <Icon name={direction === 'out' ? 'arrowRight' : 'arrowLeft'} />
         </span>
         <OtherEnd project={project} other={other} />
+        {outside && (
+          <span class="arrow-link-outside muted">{t('perspective.arrow.outside')}</span>
+        )}
         {arrow.name !== null && (
           <span class="arrow-link-name muted" title={arrow.name}>
             {arrow.name}
@@ -178,14 +195,18 @@ export function ArrowLinksSection({
   readonly project: Project;
   readonly marking: Marking;
 }) {
-  const { derived } = useEditor();
+  const { derived, session, store } = useEditor();
   const ext = useDetailsExtension();
-  const links = arrowLinksOf(project, marking.id);
+  // Com perspectiva aberta, `project` é o recorte dela, que descarta as setas cuja outra ponta
+  // está fora (decisão 16: elas aparecem como "Sai para…" com o selo): consulta o projeto inteiro.
+  const whole = session.perspective.id.value !== null ? store.committed.value : null;
+  const source = whole ?? project;
+  const links = arrowLinksOf(source, marking.id);
   if (links.length === 0) return null;
   const layers = derived.visibleLayers.value;
   const items = links.map((link) => ({
     key: link.arrow.id,
-    node: <ArrowLinkRow project={project} link={link} layers={layers} />,
+    node: <ArrowLinkRow project={source} link={link} layers={layers} />,
   }));
   return (
     <Section

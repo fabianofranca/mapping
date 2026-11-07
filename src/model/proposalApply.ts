@@ -1,4 +1,5 @@
 import { clearArrowRoutes, settleHierarchy } from './hierarchySettle';
+import { reconcilePerspectives } from './perspectiveReconcile';
 import { anchorsOfChanges, placeCreatedMarkings } from './proposalOrder';
 import { validateProject, type InvariantCode } from './invariants';
 import { packageDirOf } from './libraryPackage';
@@ -371,7 +372,15 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   let containers = [...maps.image.values()] as ProjectContainer[];
   let arrows = [...maps.arrow.values()] as Arrow[];
   if (changes.some((c) => c.entity === 'marking' || c.entity === 'image')) {
-    const settled = settleHierarchy({ ...p, containers, markings, arrows });
+    // As perspectivas se reconciliam uma vez só, no fim, com o projeto final (abaixo).
+    const settled = settleHierarchy({
+      ...p,
+      perspectives: [],
+      arrivals: [],
+      containers,
+      markings,
+      arrows,
+    });
     markings = [...settled.markings];
     containers = [...settled.containers];
     arrows = [...settled.arrows];
@@ -387,23 +396,18 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   }
   placeAmongSiblings(markings, markingPositions);
 
-  return {
-    project: {
-      ...p,
-      specializations: [...maps.specialization.values()] as ProjectSpecialization[],
-      platformRepos: Object.fromEntries(maps.platformRepo) as Record<
-        string,
-        PlatformRepo
-      >,
-      docRepos: Object.fromEntries(maps.docRepo) as Record<string, DocRepo>,
-      layers,
-      containers,
-      markings,
-      arrows,
-      annotations: [...maps.annotation.values()] as Annotation[],
-    },
-    problems,
+  const project: Project = {
+    ...p,
+    specializations: [...maps.specialization.values()] as ProjectSpecialization[],
+    platformRepos: Object.fromEntries(maps.platformRepo) as Record<string, PlatformRepo>,
+    docRepos: Object.fromEntries(maps.docRepo) as Record<string, DocRepo>,
+    layers,
+    containers,
+    markings,
+    arrows,
+    annotations: [...maps.annotation.values()] as Annotation[],
   };
+  return { project: reconcilePerspectives(p, project), problems };
 }
 
 // ---------------------------------------------------------------------------

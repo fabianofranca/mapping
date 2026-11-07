@@ -14,6 +14,7 @@ import {
 import type { ActionResult } from '../store/history';
 import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
+import { ArrivalNotice } from './ArrivalNotice';
 import { ArrowLinksSection } from './ArrowLinksSection';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { Button, Choice, HelpTip, IconButton, TextField } from './controls';
@@ -26,6 +27,7 @@ import { arrangeMarking, canArrangeMarking } from './arrange';
 import { useEditor } from './EditorContext';
 import { imageLabel, markingErrorMessage, markingLabel } from './labels';
 import { MarkingPicker } from './MarkingPicker';
+import { PerspectivesSection, usePrincipalOnly } from './PerspectivesSection';
 import { Property, PropertyGrid } from './PropertyGrid';
 
 interface MarkingPanelProps {
@@ -128,6 +130,8 @@ export function MarkingPanel({
   const identity = ext?.identity(marking.id) ?? null;
   const order = siblingPosition(project, marking.id);
   const arrangeable = canArrangeMarking(editor, marking.id);
+  const arrangeBlocked = usePrincipalOnly('arrange');
+  const deleteBlocked = usePrincipalOnly('delete', [marking.id]);
   // Posição e tamanho são uma mudança só (`rect`): com um marcador, as duas linhas viram
   // uma, com o rótulo de duas linhas e um colchete (HANDOFF-REVIEW-DETAILS 2.2).
   const spaceHint = t(image ? 'marking.pixelsHint' : 'marking.canvasUnitsHint');
@@ -183,6 +187,8 @@ export function MarkingPanel({
       />
 
       {ext?.header(marking.id)}
+
+      <ArrivalNotice itemId={marking.id} />
 
       {marking.needsReview && (
         <div class="notice" role="status">
@@ -326,6 +332,8 @@ export function MarkingPanel({
 
       <ArrowLinksSection project={project} marking={marking} />
 
+      <PerspectivesSection itemId={marking.id} readOnly={readOnly} />
+
       {ext?.others(marking.id)}
 
       <div class="row">
@@ -334,9 +342,9 @@ export function MarkingPanel({
             icon="arrange"
             label={t('arrange.action')}
             text={t('arrange.action')}
-            tooltip={t('arrange.hint')}
+            tooltip={t(arrangeBlocked ? 'perspective.principalOnly' : 'arrange.hint')}
             shortcut={SHORTCUT_LABELS.arrange}
-            disabled={readOnly}
+            disabled={readOnly || arrangeBlocked}
             onClick={() => arrangeMarking(editor, marking.id)}
           />
         )}
@@ -350,8 +358,14 @@ export function MarkingPanel({
         </Button>
         <Button
           variant="danger"
-          disabled={readOnly || !deletable}
-          title={deletable ? undefined : t('lock.deleteBlocked')}
+          disabled={readOnly || !deletable || deleteBlocked}
+          title={
+            deleteBlocked
+              ? t('perspective.principalOnly')
+              : deletable
+                ? undefined
+                : t('lock.deleteBlocked')
+          }
           onClick={() => onDelete(marking)}
         >
           {t('marking.delete')}

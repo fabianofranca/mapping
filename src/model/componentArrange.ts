@@ -15,7 +15,7 @@ import { markingComponent, type ComponentCatalog } from './componentCatalog';
 import { drawingValues } from './componentValues';
 import { fail } from './errors';
 import { MIN_MARKING_SIZE, bottom, clamp, imagePixelRect, right } from './geometry';
-import { settleIf, type SettleOptions } from './hierarchySettle';
+import { settleFrom, type SettleOptions } from './hierarchySettle';
 import { isMarkingGeometryLocked } from './locks';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
@@ -324,7 +324,8 @@ export function arrangeMarking(
   if (changed.some((id) => isMarkingGeometryLocked(p, id))) fail('locked');
   const next = new Set(changed);
   return {
-    project: settleIf(
+    project: settleFrom(
+      p,
       {
         ...p,
         markings: p.markings.map((m) =>

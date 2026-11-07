@@ -6,6 +6,7 @@ import { EditorScreen } from '../../src/app/Editor';
 import type { OpenProject } from '../../src/app/controller';
 import { createFolderStorage } from '../../src/storage/folder';
 import { createDisplayImages } from '../../src/store/displayImages';
+import { addPerspective, buildPerspective } from '../../src/model';
 import { openSession } from '../../src/store/session';
 import { EditorContext, createEditorContextValue } from '../../src/ui/EditorContext';
 import { installFakeCanvas } from '../canvas/harness';
@@ -40,8 +41,13 @@ describe('renderizações da interface durante um gesto', () => {
     vi.unstubAllGlobals();
   });
 
-  function mountEditor() {
-    const project = buildLargeTypedProject();
+  function mountEditor(withPerspective = false) {
+    let project = buildLargeTypedProject();
+    if (withPerspective) {
+      // Uma perspectiva com todas as raízes nas posições da Principal.
+      const view = buildPerspective(project, { id: 'V', name: 'Vista', startFrom: null });
+      project = addPerspective(project, view);
+    }
     const session = openSession({
       storage: createFolderStorage(new MemoryDirectory('grande'), { copyId: 'grande' }),
       project,
@@ -62,7 +68,7 @@ describe('renderizações da interface durante um gesto', () => {
         <EditorScreen />
       </EditorContext.Provider>,
     );
-    return { project, session, ui: context.ui };
+    return { project, session, ui: context.ui, context };
   }
 
   it(`${MOVES} movimentos renderizam EditorScreen, EditorPanel e EditorMainBar no máximo ${MAX_RENDERS} vezes`, async () => {
@@ -91,6 +97,8 @@ describe('renderizações da interface durante um gesto', () => {
       expect(counts.get('EditorScreen') ?? 0).toBe(0);
       expect(counts.get('EditorPanel') ?? 0).toBe(0);
       expect(counts.get('EditorMainBar') ?? 0).toBe(0);
+      // Nem o painel da marcação selecionada (suas seções leem o projeto confirmado, não a prévia).
+      expect(counts.get('MarkingPanel') ?? 0).toBe(0);
       // A prévia mudou o projeto, mas não o confirmado.
       expect(store.project.value).not.toBe(before);
       expect(store.committed.value).toBe(before);
@@ -102,5 +110,28 @@ describe('renderizações da interface durante um gesto', () => {
     for (const name of WATCHED) {
       expect(counts.get(name) ?? 0, name).toBeLessThanOrEqual(MAX_RENDERS);
     }
+  });
+
+  it('pan e zoom com uma perspectiva aberta não renderizam a interface nem refazem o projeto à vista', async () => {
+    const { session, context } = mountEditor(true);
+    expect(session.perspective.open('V')).toBe(true);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const shown = context.review.derived.shownProject.value;
+    const visible = context.derived.visibleLayers.value;
+    const controller = context.canvas.current;
+    if (!controller) throw new Error('canvas não montado');
+
+    counts.clear();
+    const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+    for (let i = 0; i < MOVES; i++) {
+      controller.zoomBy(i % 2 === 0 ? 1.1 : 1 / 1.1);
+      controller.centerOnPoint({ x: i * 10, y: i * 10 });
+      await settle();
+    }
+    expect(context.review.derived.shownProject.value).toBe(shown);
+    expect(context.derived.visibleLayers.value).toBe(visible);
+    for (const name of WATCHED) expect(counts.get(name) ?? 0, name).toBe(0);
   });
 });

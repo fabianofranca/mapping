@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { EMPTY_CANVAS_RECT, fitRect } from '../../src/canvas/viewport';
+import { EMPTY_CANVAS_RECT, FIT_PADDING, fitRect } from '../../src/canvas/viewport';
 import { ViewportController } from '../../src/canvas/viewportController';
+import { ARRIVAL_FIT_EXTRA } from '../../src/canvas/arrivals';
 import { createMarking, type Project } from '../../src/model';
 import { canvasProject } from './harness';
 
@@ -87,5 +88,23 @@ describe('ViewportController', () => {
     expect(view.toCanvas({ x: 100, y: 200 })).toEqual(before);
     view.pinch({ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 0, y: 0 }, { x: 50, y: 0 });
     expect(view.scale).toBeCloseTo(1);
+  });
+
+  // PC2: a faixa "Área de chegada" tem um rótulo em cima dela; Enquadrar tudo deixa o espaço dele.
+  it('com marcas de chegada, enquadrar tudo deixa folga extra para o rótulo da faixa', () => {
+    const root = canvasProject().containers[0]!.id;
+    const marked: Project = {
+      ...canvasProject(),
+      arrivals: [{ root, from: 'V', fromName: 'Frente' }],
+    };
+    const view = new ViewportController(container(380, 700), () => marked);
+    view.measure();
+    expect(view.viewport.value).toEqual(
+      fitRect(
+        { x: 0, y: 0, width: 1600, height: 800 },
+        SIZE,
+        FIT_PADDING + ARRIVAL_FIT_EXTRA,
+      ),
+    );
   });
 });

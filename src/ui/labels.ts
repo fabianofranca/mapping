@@ -115,6 +115,18 @@ export function containerErrorMessage(code: StoreErrorCode): string {
   });
 }
 
+const PERSPECTIVE_ERRORS: Partial<Record<StoreErrorCode, TranslationKey>> = {
+  'perspective-name-empty': 'perspective.error.name-empty',
+  'perspective-name-taken': 'perspective.error.name-taken',
+  'not-root': 'perspective.error.not-root',
+  reviewing: 'review.readOnly',
+};
+
+/** Erro de criar, renomear ou mexer numa perspectiva. */
+export function perspectiveErrorMessage(code: StoreErrorCode): string {
+  return t(PERSPECTIVE_ERRORS[code] ?? 'perspective.error.generic');
+}
+
 export function markingErrorMessage(code: StoreErrorCode): string {
   return t(MARKING_ERRORS[code] ?? 'marking.error.generic', { min: MIN_MARKING_SIZE });
 }
