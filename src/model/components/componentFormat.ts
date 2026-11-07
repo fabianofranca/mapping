@@ -230,9 +230,37 @@ export interface EllipseTemplate extends TemplateNodeBase {
   readonly type: 'ellipse';
 }
 
+/**
+ * Um trecho de um texto rico (`runs`, `formatVersion` 4). Os trechos de um nó quebram linha como
+ * UM texto só, pela palavra; cada chave aceita expressão e o `text` é avaliado como o `text` do
+ * nó. `weight`, `italic`, `family`, `size` e `decoration` sobrepõem os do `font` do nó, e
+ * `color` o `color` do nó; `lineHeight`, `letterSpacing`, `align`, `verticalAlign`, `wrap`,
+ * `ellipsis` e `maxLines` continuam só do nó. Com `background`, o trecho vira uma caixa em linha
+ * (o "chip"): um bloco inquebrável de `padding` (número para os dois eixos ou `[vertical,
+ * horizontal]`) e `radius` de canto. `padding` e `radius` sem `background` não têm efeito.
+ */
+export interface TextRunTemplate {
+  readonly text: Expr<string | number>;
+  readonly weight?: Expr<number>;
+  readonly italic?: BoolExpr;
+  readonly color?: Expr<Color>;
+  readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
+  readonly family?: Expr<string>;
+  readonly size?: Expr<number>;
+  /** Cor de fundo da caixa em linha (`none` = sem caixa). */
+  readonly background?: Expr<Color>;
+  readonly radius?: Expr<number>;
+  readonly padding?: Expr<number | readonly [number, number]>;
+}
+
+/**
+ * Texto do nó: `text` (um estilo só) **ou** `runs` (trechos com estilo próprio, só na
+ * `formatVersion` 4); os dois juntos não valem, e um deles é obrigatório.
+ */
 export interface TextTemplate extends TemplateNodeBase {
   readonly type: 'text';
-  readonly text: Expr<string | number>;
+  readonly text?: Expr<string | number>;
+  readonly runs?: readonly TextRunTemplate[];
   readonly font?: FontSpec;
   /** Cor do texto (`fill` do nó). Padrão: `#000000`. */
   readonly color?: Expr<Color>;

@@ -58,6 +58,7 @@ import type {
   StrokeSide,
   StrokeSpec,
   TemplateNode,
+  TextRunTemplate,
   TextTemplate,
 } from './componentFormat';
 import { STROKE_SIDES } from './componentFormat';
@@ -73,13 +74,22 @@ import {
 } from './layoutValues';
 import { expandRepeats } from './repeat';
 import {
+  layoutRuns,
+  measureRichText,
+  type RichBase,
+  type RichRun,
+  type RunLayout,
+} from './richText';
+import {
   type CornerRadius,
   type FrameNode,
   type Matrix,
   type Paint,
   type SceneNode,
+  type SceneTextRun,
   type Shadow,
   type Stroke,
+  type TextNode,
   type TextStyle,
   baseNode,
   translate,
@@ -429,10 +439,92 @@ function createEngine(
     };
   };
 
-  const measureText = (node: TextTemplate, maxWidth?: number) => {
+  // --- texto rico (runs) ------------------------------------------------------------------
+
+  /** `[vertical, horizontal]` do respiro de um chip (número = os dois eixos). */
+  const runPadding = (run: TextRunTemplate): readonly [number, number] => {
+    const value = ev<unknown>(run.padding as Expr<unknown> | undefined, 0);
+    const clean = (n: unknown): number => (typeof n === 'number' && n > 0 ? n : 0);
+    if (Array.isArray(value)) return [clean(value[0]), clean(value[1])];
+    return [clean(value), clean(value)];
+  };
+
+  /** O estilo resolvido de um trecho: o que ele declara sobre o `font` e o `color` do nó. */
+  const resolveRun = (
+    run: TextRunTemplate,
+    node: TextTemplate,
+    font: MeasureFont,
+  ): SceneTextRun => {
+    const decoration = oneOf(
+      run.decoration ?? node.font?.decoration,
+      ['none', 'underline', 'line-through'],
+      'none',
+    );
+    const background = str(run.background, 'none');
+    return {
+      text: evaluateText(run.text, values, ''),
+      fontFamily: str(run.family, font.family),
+      fontSize: Math.max(0, num(run.size, font.size)),
+      fontWeight: num(run.weight, font.weight),
+      italic: bool(run.italic, font.italic),
+      color: str(run.color, str(node.color, '#000000')),
+      ...(decoration === 'none' ? {} : { decoration }),
+      ...(isNone(background)
+        ? {}
+        : {
+            background,
+            radius: Math.max(0, num(run.radius, 0)),
+            padding: runPadding(run),
+          }),
+    };
+  };
+
+  /** Os trechos do nó, na forma da cena e na do layout (a mesma lista, índice por índice). */
+  const richRuns = (
+    node: TextTemplate,
+    font: MeasureFont,
+  ): { scene: SceneTextRun[]; runs: RichRun[] } => {
+    const scene = (node.runs ?? []).map((run) => resolveRun(run, node, font));
+    const runs = scene.map((run): RichRun => ({
+      text: run.text,
+      font: {
+        family: run.fontFamily,
+        size: run.fontSize,
+        weight: run.fontWeight,
+        italic: run.italic,
+        lineHeight: font.lineHeight,
+        letterSpacing: font.letterSpacing,
+      },
+      ...(run.padding ? { chip: { padding: run.padding } } : {}),
+    }));
+    return { scene, runs };
+  };
+
+  /** O que é do nó (e não dos trechos) no layout do texto rico. */
+  const richBase = (node: TextTemplate, font: MeasureFont): RichBase => ({
+    size: font.size,
+    lineHeight: font.lineHeight,
+    align: oneOf<'left' | 'center' | 'right'>(
+      node.font?.align,
+      ['left', 'center', 'right'],
+      'left',
+    ),
+    ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
+    ...(font.ellipsis === true ? { ellipsis: true } : {}),
+    ...(font.maxLines !== undefined ? { maxLines: font.maxLines } : {}),
+  });
+
+  /** O texto do nó sem `runs`. */
+  const plainText = (node: TextTemplate): string =>
+    node.text === undefined ? '' : evaluateText(node.text, values, '');
+
+  const measureText = (node: TextTemplate, maxWidth?: number): TextMetrics => {
     if (maxWidth !== undefined && maxWidth <= EPS)
       warn(`texto medido com largura 0: ${nodeName(node)}`);
-    return options.measure(evaluateText(node.text, values, ''), textFont(node), maxWidth);
+    const font = textFont(node);
+    if (node.runs === undefined) return options.measure(plainText(node), font, maxWidth);
+    const rich = richRuns(node, font);
+    return measureRichText(rich.runs, richBase(node, font), options.measure, maxWidth);
   };
 
   // --- valores conferidos (tamanho e layout) ----------------------------------------------
@@ -1075,17 +1167,40 @@ function createEngine(
     };
   };
 
+  /** Vale conferir se o texto passa da altura? Não, se `maxLines`/`ellipsis` o cortam de propósito. */
+  const checksOverflow = (font: MeasureFont, w: number): boolean =>
+    font.maxLines === undefined && font.ellipsis !== true && w > EPS;
+
   /** As linhas quebradas passam da altura do nó e nada as corta (`maxLines`/`ellipsis`)? */
   const warnTextTooTall = (
     node: TextTemplate,
-    text: string,
+    height: (() => number) | number,
     font: MeasureFont,
     w: number,
     h: number,
   ): void => {
-    if (font.maxLines !== undefined || font.ellipsis === true || w <= EPS) return;
-    if (options.measure(text, font, w).height > h + TEXT_TOLERANCE)
-      warn(`texto maior que a caixa: ${nodeName(node)}`);
+    if (!checksOverflow(font, w)) return;
+    const measured = typeof height === 'number' ? height : height();
+    if (measured > h + TEXT_TOLERANCE) warn(`texto maior que a caixa: ${nodeName(node)}`);
+  };
+
+  /** O texto da cena e, com `runs`, os trechos resolvidos e o layout deles na caixa. */
+  const textContent = (
+    node: TextTemplate,
+    font: MeasureFont,
+    w: number,
+    h: number,
+  ): { text: string; extra: { runs?: SceneTextRun[]; runLayout?: RunLayout } } => {
+    if (node.runs === undefined) {
+      const text = plainText(node);
+      warnTextTooTall(node, () => options.measure(text, font, w).height, font, w, h);
+      return { text, extra: {} };
+    }
+    const rich = richRuns(node, font);
+    const runLayout = layoutRuns(rich.runs, richBase(node, font), options.measure, w);
+    warnTextTooTall(node, runLayout.height, font, w, h);
+    const text = rich.scene.map((run) => run.text).join('');
+    return { text, extra: { runs: rich.scene, runLayout } };
   };
 
   const buildText = (
@@ -1117,18 +1232,19 @@ function createEngine(
       ...(font.ellipsis === true ? { ellipsis: true } : {}),
       ...(font.maxLines !== undefined ? { maxLines: font.maxLines } : {}),
     };
-    const text = evaluateText(node.text, values, '');
-    warnTextTooTall(node, text, font, w, h);
+    const { text, extra } = textContent(node, font, w, h);
     const color = str(node.color, '#000000');
     const stroke = strokeOf(node.stroke, 'inside', 1);
-    return {
+    const result: TextNode = {
       ...common(node, id, x, y, w, h),
       fills: isNone(color) ? [] : [{ type: 'solid', color }],
       ...(stroke ? { stroke } : {}),
       type: 'text',
       text,
       style,
+      ...extra,
     };
+    return result;
   };
 
   /**

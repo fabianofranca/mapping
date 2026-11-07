@@ -306,7 +306,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   frame: ['clip', 'layout', 'children'],
   rect: [],
   ellipse: [],
-  text: ['text', 'font', 'color'],
+  text: ['text', 'runs', 'font', 'color'],
   path: ['d', 'viewBox', 'fillRule'],
   slot: ['label', 'layout'],
   repeat: ['field', 'direction', 'gap', 'distribute', 'template'],
@@ -343,6 +343,19 @@ const FONT_KEYS = [
   'wrap',
   'ellipsis',
   'maxLines',
+] as const;
+/** Chaves de um trecho de texto rico (`runs[]`, formatVersion 4). */
+const RUN_KEYS = [
+  'text',
+  'weight',
+  'italic',
+  'color',
+  'decoration',
+  'family',
+  'size',
+  'background',
+  'radius',
+  'padding',
 ] as const;
 const ENUM_VALUES = {
   'layout.type': ['none', 'row', 'column'],
@@ -397,6 +410,7 @@ export function componentFeatureList(): string[] {
   for (const key of STROKE_KEYS) out.add(`stroke.${key}`);
   for (const key of SHADOW_KEYS) out.add(`shadow.${key}`);
   for (const key of FONT_KEYS) out.add(`font.${key}`);
+  for (const key of RUN_KEYS) out.add(`run.${key}`);
   for (const [group, values] of Object.entries(ENUM_VALUES)) {
     for (const value of values) out.add(`${group}=${value}`);
   }
@@ -516,6 +530,8 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
   recordKeys('stroke', node.stroke, STROKE_KEYS, out);
   recordKeys('shadow', node.shadow, SHADOW_KEYS, out);
   recordKeys('font', node.font, FONT_KEYS, out);
+  if (Array.isArray(node.runs))
+    for (const run of node.runs) recordKeys('run', run, RUN_KEYS, out);
   if (isRec(node.stroke)) {
     for (const leaf of leaves(node.stroke.align)) out.add(`stroke.align=${String(leaf)}`);
   }

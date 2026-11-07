@@ -498,6 +498,71 @@ function checkViewBox(value: unknown, path: string, out: ComponentIssue[]): void
     add(out, path, 'esperava [largura, altura] com números positivos');
 }
 
+/** Chaves de um trecho de texto rico (`runs[i]`). */
+const RUN_KEYS = [
+  'text',
+  'weight',
+  'italic',
+  'color',
+  'decoration',
+  'family',
+  'size',
+  'background',
+  'radius',
+  'padding',
+];
+
+/** `runs[i].padding`: número (os dois eixos) ou `[vertical, horizontal]`, não negativos. */
+const checkRunPadding: Check = (v, p, out) => {
+  const ok = (n: unknown): boolean => isFiniteNumber(n) && n >= 0;
+  if (ok(v)) return;
+  if (Array.isArray(v) && v.length === 2 && v.every(ok)) return;
+  add(
+    out,
+    p,
+    'esperava número ou lista [vertical, horizontal] de números (maiores ou iguais a 0)',
+  );
+};
+
+/** Um trecho de `runs`: `text` obrigatório e o estilo, cada chave com literal ou expressão. */
+function checkRun(value: unknown, path: string, out: ComponentIssue[]): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto (trecho)');
+  checkKeys(value, RUN_KEYS, path, out);
+  if (!('text' in value)) add(out, join(path, 'text'), 'campo obrigatório');
+  const specs: Record<string, Check> = {
+    text: checkTextOrNumber,
+    weight: checkWeight,
+    color: checkColor,
+    decoration: oneOf(['none', 'underline', 'line-through']),
+    family: checkString,
+    size: checkNumber,
+    background: checkColor,
+    radius: checkNonNegative,
+    padding: checkRunPadding,
+  };
+  for (const [key, check] of Object.entries(specs))
+    if (key in value) checkExpr(value[key], join(path, key), check, out);
+  if ('italic' in value) checkBoolExpr(value.italic, join(path, 'italic'), out);
+}
+
+function checkRuns(value: unknown, path: string, out: ComponentIssue[]): void {
+  if (!Array.isArray(value) || value.length === 0)
+    return add(out, path, 'esperava lista não vazia de trechos');
+  value.forEach((run: unknown, i) => checkRun(run, `${path}[${i}]`, out));
+}
+
+/** Nó `text`: `text` ou `runs` (um dos dois), mais `font` e `color`. */
+function checkTextNode(value: Rec, path: string, out: ComponentIssue[]): void {
+  const hasText = 'text' in value;
+  const hasRuns = 'runs' in value;
+  if (hasText && hasRuns) add(out, path, 'text e runs juntos: use um ou outro');
+  else if (!hasText && !hasRuns) add(out, join(path, 'text'), 'campo obrigatório');
+  if (hasText) checkExpr(value.text, join(path, 'text'), checkTextOrNumber, out);
+  if (hasRuns) checkRuns(value.runs, join(path, 'runs'), out);
+  if ('font' in value) checkFont(value.font, join(path, 'font'), out);
+  if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
+}
+
 function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto (nó)');
   const type = value.type;
@@ -514,7 +579,7 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
     frame: ['clip', 'layout', 'children'],
     rect: [],
     ellipse: [],
-    text: ['text', 'font', 'color'],
+    text: ['text', 'runs', 'font', 'color'],
     path: ['d', 'viewBox', 'fillRule'],
     slot: ['label', 'layout'],
     repeat: ['field', 'direction', 'gap', 'distribute', 'template'],
@@ -563,10 +628,7 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
       return;
     }
     case 'text':
-      if (!('text' in value)) add(out, join(path, 'text'), 'campo obrigatório');
-      else checkExpr(value.text, join(path, 'text'), checkTextOrNumber, out);
-      if ('font' in value) checkFont(value.font, join(path, 'font'), out);
-      if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
+      checkTextNode(value, path, out);
       return;
     case 'path':
       if (!('d' in value)) add(out, join(path, 'd'), 'campo obrigatório');
@@ -650,6 +712,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['font', 'wrap'],
   ['font', 'ellipsis'],
   ['font', 'maxLines'],
+  ['runs'],
 ];
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
@@ -878,19 +941,30 @@ export function parseComponent(input: unknown): ComponentParseResult {
   };
 }
 
+/** Aviso de um `family` literal (no `font` do nó ou num trecho) que o CSS não aceita. */
+function familyWarning(holder: unknown, path: string): ComponentIssue[] {
+  const family = isRecord(holder) ? holder.family : undefined;
+  if (typeof family !== 'string' || isValidFontFamily(family)) return [];
+  return [
+    {
+      path: join(path, 'family'),
+      message: `família de fonte inválida para o CSS (${JSON.stringify(family)}): o texto cai em sans-serif`,
+    },
+  ];
+}
+
 /**
- * Avisos (não erros): hoje, um `font.family` literal que o CSS não aceita (o desenho cai em
- * `sans-serif`). Expressões não são conferidas aqui.
+ * Avisos (não erros): hoje, um `font.family` (ou `runs[i].family`) literal que o CSS não aceita
+ * (o desenho cai em `sans-serif`). Expressões não são conferidas aqui.
  */
 function collectWarnings(node: unknown, path: string): ComponentIssue[] {
   if (!isRecord(node)) return [];
   const out: ComponentIssue[] = [];
-  const family = isRecord(node.font) ? node.font.family : undefined;
-  if (typeof family === 'string' && !isValidFontFamily(family))
-    out.push({
-      path: join(join(path, 'font'), 'family'),
-      message: `família de fonte inválida para o CSS (${JSON.stringify(family)}): o texto cai em sans-serif`,
-    });
+  out.push(...familyWarning(node.font, join(path, 'font')));
+  if (Array.isArray(node.runs))
+    node.runs.forEach((run: unknown, i) =>
+      out.push(...familyWarning(run, `${join(path, 'runs')}[${i}]`)),
+    );
   const children = Array.isArray(node.children) ? node.children : [];
   children.forEach((child: unknown, i) =>
     out.push(...collectWarnings(child, `${join(path, 'children')}[${i}]`)),
