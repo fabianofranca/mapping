@@ -1703,3 +1703,8 @@ del.identity-name {
 .revised-before-title {
   font: var(--t-text-heading);
 }
+
+/* Uma tabela vira uma linha de texto por registro. */
+.revised-before .diff-value-value {
+  white-space: pre-line;
+}
