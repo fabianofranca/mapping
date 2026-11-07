@@ -2,7 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ZhqcUhJI8UyvcSN+OrZouHicQBSP07o5Jbz1ZjGbPWs=' 'sha256-UoxVbO+wFCgfVk4/2YqIB0SmAScrt9wZVuRwKXa5eGo='; style-src 'sha256-SGx6RRZjjG4qi5LSPbK80Tpqobmw5UeiWvZpf1NFSEI='; img-src 'self' data: blob:; connect-src 'none'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ZhqcUhJI8UyvcSN+OrZouHicQBSP07o5Jbz1ZjGbPWs=' 'sha256-HqTXq7oTumU4zJO4p2wu/5cV+sA3SNXhyPqn5LTcews='; style-src 'sha256-SGx6RRZjjG4qi5LSPbK80Tpqobmw5UeiWvZpf1NFSEI='; img-src 'self' data: blob:; connect-src 'none'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Guia do Mapping</title>
     <link rel="icon" type="image/svg+xml" href="../icons/icon.svg" />
@@ -1334,6 +1334,13 @@
           sel: ['Cadastro', 'Cadastrar'],
           p: 'A camada <b>Dúvidas</b> não tem especialização: serve para dúvidas e decisões, com os campos que você criar. O Cadastrar tem uma anotação “Dúvida”. Já a camada <b>Notas</b>, da biblioteca de notas que a app aplica em todo projeto novo, tem o post-it flutuante: ele fica solto no canvas, ao lado das telas (no projeto de exemplo, uma nota sobre o Cadastro, que este guia não desenha).',
           try: 'Ache a anotação “Dúvida” no painel de Cadastrar.',
+        },
+        {
+          t: 'Conversas com os agentes',
+          img: 'Cadastro',
+          sel: ['Cadastro', 'Cadastrar'],
+          p: 'Quando uma dúvida não cabe numa anotação, abra uma <b>conversa</b> ancorada no item: pessoas e agentes trocam mensagens ali, e ela fica aberta até uma pessoa resolver. A janela <b>Comentários</b> (<kbd>Ctrl+Shift+0</kbd>) lista todas; os botões <b>Conversas</b> e <b>Comentar</b> mostram os pinos no canvas. O projeto de exemplo traz três, na pasta <code>comments/</code>: uma que aguarda você, uma que aguarda o agente e uma resolvida. Este guia não desenha os pinos.',
+          try: 'Abra o zip do exemplo na app e veja a janela Comentários.',
         },
         {
           t: 'Um segundo container',

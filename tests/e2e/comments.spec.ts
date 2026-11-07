@@ -140,7 +140,11 @@ async function readThreads(page: Page): Promise<readonly Record<string, unknown>
     for await (const [name, handle] of comments.entries()) {
       if (handle.kind !== 'file' || !name.endsWith('.json')) continue;
       const file = await (handle as FileSystemFileHandle).getFile();
-      out.push(JSON.parse(await file.text()));
+      try {
+        out.push(JSON.parse(await file.text()));
+      } catch {
+        // gravação em andamento (arquivo ainda incompleto): a próxima leitura do poll pega
+      }
     }
     return out;
   }, FOLDER);

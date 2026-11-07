@@ -179,7 +179,7 @@ test('GitHub Pages e preview: service worker instala, faz cache e avisa da vers√
   // O guia interativo (guia/) tamb√©m vem do cache, sem rede.
   await page.goto(`${origin}/guia/`);
   await expect(page).toHaveTitle('Guia do Mapping');
-  await expect(page.locator('#steps button')).toHaveCount(12);
+  await expect(page.locator('#steps button')).toHaveCount(13);
   await context.setOffline(false);
 
   // Preview em /preview/: outro build, outro service worker, mesma pol√≠tica.
@@ -209,7 +209,7 @@ test('GitHub Pages e preview: service worker instala, faz cache e avisa da vers√
   await context.setOffline(true);
   await page.goto(`${origin}/preview/guia/`);
   await expect(page).toHaveTitle('Guia do Mapping');
-  await expect(page.locator('#steps button')).toHaveCount(12);
+  await expect(page.locator('#steps button')).toHaveCount(13);
   await context.setOffline(false);
 
   expect(violations()).toEqual([]);

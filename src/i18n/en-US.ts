@@ -536,7 +536,7 @@ export const enUS: Dictionary = {
   'help.search': 'Search help',
   'help.guide.title': 'Interactive guide',
   'help.guide.intro':
-    'A 12-step tour of the example project: screens, markings, layers, typed annotations, containers with Material 3 and reviewing a proposal. It works offline and opens in a new tab. The guide is in Portuguese only.',
+    'A 13-step tour of the example project: screens, markings, layers, typed annotations, containers with Material 3 and reviewing a proposal. It works offline and opens in a new tab. The guide is in Portuguese only.',
   'help.guide.example':
     'To see the same project in the app, download examples/exemplo-completo.zip from the repository (github.com/fabianofranca/mapping) and use Open zip on the home screen (it creates a copy on this device and does not touch any folder).',
   'help.guide.fileProtocol':
