@@ -42,9 +42,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 13;
+export const SPEC_FORMAT_VERSION = 14;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -198,6 +198,11 @@ export interface SpecMigration {
 export interface SpecRefAccepts {
   tags?: string[];
   free?: boolean;
+  /**
+   * Anotação inteira como alvo (só `formatVersion` 14): ids de tipo ou cláusulas de camada e
+   * grupos da mesma especialização, a mesma sintaxe e o mesmo resolvedor do `allowedChildren`.
+   */
+  annotations?: SpecAllowedChild[];
 }
 
 /** Tipos de aviso (v10), na ordem de exibição; a gravidade está em `notices.ts`. */
