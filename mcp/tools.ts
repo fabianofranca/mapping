@@ -13,6 +13,7 @@ import { findByCodeResult } from './findByCode';
 import { Refs, resolveItem } from './items';
 import { listMarkings } from './markingList';
 import { modelToolError } from './modelErrors';
+import { findPerspective, perspectiveDetail } from './perspectives';
 import { operationSchema } from './operations';
 import { Proposals } from './proposals';
 import { Threads, resolveExtended } from './threads';
@@ -266,6 +267,25 @@ export function registerTools(
       respond(async () => {
         const loaded = await loadProject(roots, await findProject(roots, project));
         return projectDetail(new Refs(loaded));
+      }),
+  );
+
+  server.registerTool(
+    'get_perspective',
+    {
+      description:
+        'Uma perspectiva do projeto (um recorte por público: quais raízes aparecem, onde ficam no canvas e quais camadas ficam escondidas): `roots` (raiz do canvas = container sem pai, marcação do canvas ou flutuante, com `ref`, `kind`, `name` e a posição `x`/`y` do canto de cima à esquerda, em unidades do canvas) e `hiddenLayers`. `id` aceita o id (veja `perspectives` em get_project) ou o nome. Só leitura: o servidor não cria nem altera perspectivas (propor sempre na Principal). A Principal (o projeto inteiro) não é uma perspectiva gravada, e as "Só eu" ficam no navegador.',
+      inputSchema: {
+        project: projectArg,
+        id: z.string().min(1).describe('Id ou nome da perspectiva; veja get_project.'),
+      },
+      annotations: READ_ONLY,
+    },
+    ({ project, id }) =>
+      respond(async () => {
+        const loaded = await loadProject(roots, await findProject(roots, project));
+        const refs = new Refs(loaded);
+        return perspectiveDetail(refs, findPerspective(refs.project, id));
       }),
   );
 

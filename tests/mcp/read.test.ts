@@ -1029,6 +1029,7 @@ describe('recursos e instruções', () => {
       'get_image_file',
       'get_marking',
       'get_marking_image',
+      'get_perspective',
       'get_project',
       'get_proposal',
       'get_proposal_review',

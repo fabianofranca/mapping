@@ -35,6 +35,12 @@ import {
 import { annotationCode, assertPlatform, CODE_HINT, type CodeContext } from './codeViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
+import {
+  arrivalsView,
+  perspectivesOfArrow,
+  perspectiveSummaries,
+  rootInfo,
+} from './perspectives';
 import { resolveProjectFile, type Roots } from './paths';
 import type { LoadedProject } from './projects';
 
@@ -301,6 +307,7 @@ export async function markingView(
     container: image ? containerSummary(refs, image) : null,
     space: marking.containerId === null ? 'canvas' : 'container',
     floating: marking.floating,
+    ...rootInfo(refs, marking.id),
     rect: rectOf(marking),
     // Ordem entre as irmãs (mesmo container e mesmo pai): 0 = primeira, desenhada por baixo.
     order: siblingPosition(p, marking.id),
@@ -415,6 +422,7 @@ export async function arrowView(
     to: arrowEnd(refs, arrow.to),
     style: arrow.style,
     lock: { locked: arrow.locked },
+    perspectives: perspectivesOfArrow(p, arrow.id),
     ...(platform !== undefined ? { platform } : {}),
     layers,
     ...(tree ? { linkTree: tree } : {}),
@@ -458,6 +466,7 @@ export async function containerView(
     exists: image.file === null ? true : absolute !== null,
     path: absolute,
     placement: image.placement,
+    ...rootInfo(refs, image.id),
     markingColor: image.markingColor,
     markings: p.markings.filter((m) => m.containerId === image.id).length,
     topLevelMarkings: topLevel.slice(0, LIST_LIMIT).map((m) => markingRow(refs, m)),
@@ -589,6 +598,8 @@ export function projectDetail(refs: Refs): Json {
       repos: r.repos.map((x) => ({ specId: x.specId, ...x.repo })),
       localPath: docRepoOf(p, r.id)?.localPath ?? null,
     })),
+    perspectives: perspectiveSummaries(refs),
+    arrivals: arrivalsView(refs),
     lockedMarkings: p.markings.filter((m) => m.locked).length,
     needsReview: p.markings.filter((m) => m.needsReview).length,
     issues: {
