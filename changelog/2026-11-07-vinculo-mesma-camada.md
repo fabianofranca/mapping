@@ -1,4 +1,4 @@
-# Vínculo na mesma camada — [Não lançado] (épico `epic/vinculo-mesma-camada`, PR #703, MCP 0.24.0, schema v15)
+# Vínculo na mesma camada — 2026-11-07 (épico `epic/vinculo-mesma-camada`, PR #703, MCP 0.24.0, schema v15)
 
 ## Adicionado
 
@@ -7,7 +7,7 @@
 
 ## Alterado
 
-- App: a dica e o estado vazio do campo **Vinculada a** dizem que, na anotação tipada, a dona pode ser da mesma camada quando o tipo dela aceita o vínculo; na livre, continua só outra camada.
+- App: a dica e o estado vazio do campo **Vinculada a** dizem que, na anotação tipada, a dona pode ser da mesma camada quando o tipo dela aceita o vínculo; na livre, continua só outra camada. O campo mostra o valor escolhido por inteiro (`Camada: Nome`) ao passar o mouse, porque o texto visível pode cortar quando os candidatos começam igual.
 - MCP: o texto do erro `invalid-annotation-parent` diz que a dona pode ser de outra camada ou, na anotação tipada, de um tipo que aceite o vínculo, inclusive na mesma camada.
 
 ## Corrigido
