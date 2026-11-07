@@ -1,4 +1,4 @@
-# Visualização — [Não lançado] (épico `epic/visualizacao`, PR #0, MCP 0.24.1, schema v15)
+# Visualização — [Não lançado] (épico `epic/visualizacao`, PR #714, MCP 0.24.1, schema v15)
 
 ## Alterado
 
