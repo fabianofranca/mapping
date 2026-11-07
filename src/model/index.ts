@@ -33,6 +33,7 @@ export { approximateMeasurer, type TextMeasurer } from './components/instantiate
 export type { ComponentFile, FieldValues } from './components/componentFormat';
 export type { FrameNode } from './components/scene';
 export * from './componentCatalog';
+export * from './structural';
 export * from './componentValues';
 export * from './componentDrawings';
 export * from './componentMarkings';

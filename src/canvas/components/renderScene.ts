@@ -488,6 +488,8 @@ class Renderer {
       this.warnings.add('traço por dentro/por fora em caminho ou linha foi centralizado');
     }
     shape.strokeWidth(stroke.width);
+    // `scale: false`: a largura é em pixels de tela, em qualquer zoom.
+    if (stroke.scale === false) shape.strokeScaleEnabled(false);
     shape.lineCap(stroke.cap ?? 'butt');
     shape.lineJoin(stroke.join ?? 'miter');
     if (stroke.dash && stroke.dash.length > 0) shape.dash([...stroke.dash]);

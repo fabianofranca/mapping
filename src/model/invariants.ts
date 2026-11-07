@@ -1,5 +1,5 @@
 import {
-  MIN_MARKING_SIZE,
+  MIN_STORED_MARKING_SIZE,
   containsRect,
   containsRectApprox,
   imageCanvasRect,
@@ -296,7 +296,10 @@ export function validateProject(p: Project): InvariantIssue[] {
     const image = m.containerId === null ? undefined : containers.get(m.containerId);
     if (m.containerId !== null && !image) marking('missing-image', m, m.containerId);
     if (!isIntegerRect(m.rect)) marking('rect-not-integer', m);
-    if (m.rect.width < MIN_MARKING_SIZE || m.rect.height < MIN_MARKING_SIZE) {
+    if (
+      m.rect.width < MIN_STORED_MARKING_SIZE ||
+      m.rect.height < MIN_STORED_MARKING_SIZE
+    ) {
       marking('rect-too-small', m);
     }
     if (image && !containsRect(imagePixelRect(image), m.rect)) {

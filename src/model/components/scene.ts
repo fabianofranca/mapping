@@ -91,6 +91,8 @@ export interface Stroke {
   readonly dash?: readonly number[];
   readonly cap?: 'butt' | 'round' | 'square';
   readonly join?: 'miter' | 'round' | 'bevel';
+  /** `false`: a largura é em pixels de tela, em qualquer zoom; ausente = escala com o zoom. */
+  readonly scale?: boolean;
   /** Só estes lados da caixa têm traço (`frame` e `rect`); ausente = os quatro, em contorno. */
   readonly sides?: readonly ('top' | 'right' | 'bottom' | 'left')[];
 }

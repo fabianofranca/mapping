@@ -73,6 +73,7 @@ Um componente é o **desenho genérico** de um tipo de anotação: uma árvore d
 | `size`          | sim         | `{ width, height }`, números positivos (px). Tamanho **inicial** da instância e, sem `sizing`, o tamanho dos dois eixos na arrumação por tamanhos.                                                                                                                                                                                                                                                                                                                                                                           |
 | `minSize`       | não         | `{ width, height }`, positivos e **não maiores** que `size`. Piso do redimensionamento e de todo tamanho calculado.                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `sizing`        | não         | `{ width?, height? }`: dimensionamento de uma instância **sem retângulo** (ver "Dimensionamento").                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `screen`        | não         | Só na `formatVersion` 4: desenha o componente em pixels de tela (ver "Pixels de tela: `screen` e `stroke.scale`").                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `preview`       | não         | Valores de exemplo dos campos (`chave` → texto, número ou `null`; num campo `table`, a lista das linhas), usados ao criar uma instância, no Catálogo e na prova de desenho. Os campos vêm do tipo, não daqui.                                                                                                                                                                                                                                                                                                                |
 | `template`      | sim         | A raiz do desenho. Precisa ser um nó `frame`; ocupa o retângulo inteiro da instância.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
@@ -287,6 +288,18 @@ Na `formatVersion` 4 o `stroke` ganha três chaves. Todas aceitam expressão e s
   "stroke": { "color": "#CAC4D0", "width": 1, "sides": ["bottom"] }
 }
 ```
+
+### Pixels de tela: `screen` e `stroke.scale` (`formatVersion` 4)
+
+`screen` é uma chave **da raiz do arquivo** (não de nó): `"screen": { "anchor": "top-left" }`. Com ela, o template é desenhado no `size` do componente em **pixels de tela**, em qualquer zoom (não escala com a imagem nem com o zoom), ancorado no ponto `anchor` do retângulo da marcação. A marcação continua em pixels da imagem; só o desenho tem tamanho fixo na tela, como os pinos de comentário.
+
+- `anchor`: `center` (padrão), `top-left`, `top`, `top-right`, `left`, `right`, `bottom-left`, `bottom` ou `bottom-right`. O ponto do desenho e o ponto do retângulo com o mesmo nome coincidem (no `center`, os centros).
+- O desenho pode passar do retângulo da marcação; por isso a pendência "não cabe" não é gerada em componente com `screen`.
+- O tamanho do desenho é sempre o `size` (o retângulo da marcação só diz **onde**); `sizing`, `minSize` e o redimensionar da marcação não mudam o tamanho do desenho.
+- Limite: o desenho em pixels de tela não é um nó de layout; as filhas de um `slot` continuam nos retângulos delas e não são arrumadas dentro dele.
+- `screen` com chave desconhecida ou `anchor` fora do conjunto é erro com caminho (`screen.anchor: esperava um de: …`). Numa `formatVersion` menor que 4: `screen: só é permitido com formatVersion 4`. Em nó filho, `screen` é chave desconhecida.
+
+`stroke.scale` (literal booleano, `formatVersion` 4): `true` (padrão) escala a largura do traço com o zoom, como o resto do desenho; `false` mantém a largura em **pixels de tela**, em qualquer zoom (um traço de 2 é 2 pixels a 50% e a 400%). Numa versão menor: `…stroke.scale: só é permitido com formatVersion 4`.
 
 ### Recorte da raiz
 

@@ -1069,7 +1069,9 @@ function createEngine(
   };
 
   /** `cap`, `join` e `sides` (formato 4): só entram na cena quando a chave existe e é válida. */
-  const strokeStyleOf = (spec: StrokeSpec): Pick<Stroke, 'cap' | 'join' | 'sides'> => {
+  const strokeStyleOf = (
+    spec: StrokeSpec,
+  ): Pick<Stroke, 'cap' | 'join' | 'sides' | 'scale'> => {
     const cap = pick(spec.cap, STROKE_CAPS);
     const join = pick(spec.join, STROKE_JOINS);
     const sides = sidesOf(spec.sides);
@@ -1077,6 +1079,7 @@ function createEngine(
       ...(cap ? { cap } : {}),
       ...(join ? { join } : {}),
       ...(sides ? { sides } : {}),
+      ...(spec.scale === false ? { scale: false } : {}),
     };
   };
 

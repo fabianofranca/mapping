@@ -66,6 +66,8 @@ export interface CanvasTokens {
   };
   /** Lado visível da alça (px de tela): `size-handle`. */
   readonly handleSize: number;
+  /** Lado (px de tela) abaixo do qual a marcação com componente esconde as bolinhas de camada e o "+N": `size-indicator-min-marking`. */
+  readonly indicatorMinMarking: number;
   /** Raios (px de tela): `sm` na etiqueta do nome, `md` nos demais cantos arredondados. */
   readonly radius: { readonly sm: number; readonly md: number };
   /** Seta (v13): cores do traço, da seleção e do rótulo; espessuras e ponta (px de tela). */
@@ -149,6 +151,7 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
       image: textStyle(read, 't-cv-image'),
     },
     handleSize: number(read, '--size-handle'),
+    indicatorMinMarking: number(read, '--size-indicator-min-marking'),
     radius: { sm: number(read, '--radius-sm'), md: number(read, '--radius-md') },
     arrow: {
       stroke: read('--cv-arrow'),

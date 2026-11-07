@@ -2,7 +2,8 @@
 // Konva imperativo (como os outros renderers de `src/canvas/`); o desenho em si vem pronto
 // do modelo (cena instanciada na caixa da marcação, em pixels da imagem).
 import Konva from 'konva/lib/Core';
-import { IDENTITY_PLACEMENT, type Placement } from '../../model';
+import { IDENTITY_PLACEMENT, type Placement, type Rect } from '../../model';
+import type { ScreenAnchor } from '../../model/components/componentFormat';
 import type { FrameNode } from '../../model/components/scene';
 import { type RemoteImageResult, type RenderPalette, renderScene } from './renderScene';
 
@@ -13,7 +14,25 @@ export interface LayerDrawing {
   readonly containerId: string | null;
   /** Cena instanciada no retângulo da marcação, em pixels da imagem. */
   readonly root: FrameNode;
+  /**
+   * Desenho em pixels de tela: `root` mede o `size` do componente na origem e é ancorado em
+   * `anchor` no `rect` da marcação (pixels do espaço), com tamanho fixo em qualquer zoom.
+   */
+  readonly screen?: { readonly anchor: ScreenAnchor; readonly rect: Rect };
 }
+
+/** Fração (da largura e da altura) do ponto de cada âncora. */
+const ANCHOR_FRACTION: Record<ScreenAnchor, readonly [number, number]> = {
+  'top-left': [0, 0],
+  top: [0.5, 0],
+  'top-right': [1, 0],
+  left: [0, 0.5],
+  center: [0.5, 0.5],
+  right: [1, 0.5],
+  'bottom-left': [0, 1],
+  bottom: [0.5, 1],
+  'bottom-right': [1, 1],
+};
 
 export interface ComponentLayerOptions {
   /** Cores do reservado de imagem e do nó desconhecido (vêm dos tokens do tema). */
@@ -44,6 +63,9 @@ type Parent = Konva.Group | Konva.Layer;
 export class ComponentLayerRenderer {
   private readonly imageGroups = new Map<string | null, Konva.Group>();
   private readonly mounted = new Map<string, Mounted>();
+  /** Zoom do stage: o desenho em pixels de tela se contrai por ele (e pela escala da imagem). */
+  private zoom = 1;
+  private placements: ReadonlyMap<string, Placement> = new Map();
 
   constructor(
     private readonly parent: Parent,
@@ -67,13 +89,17 @@ export class ComponentLayerRenderer {
    * que passam em `visible` e cuja imagem tem `placement`. Diff por identidade: só o desenho
    * cujo objeto mudou é refeito (`renderScene`); o que sumiu é destruído; a ordem é refeita só
    * quando muda. Devolve `true` se algo mudou (criado, refeito, removido, movido ou reordenado).
+   * `zoom` (padrão: o último) é a escala do stage, para os desenhos em pixels de tela.
    */
   render(
     drawings: ReadonlyMap<string, LayerDrawing>,
     visible: (drawing: LayerDrawing) => boolean,
     placements: ReadonlyMap<string, Placement>,
+    zoom: number = this.zoom,
   ): boolean {
     let changed = false;
+    this.zoom = zoom;
+    this.placements = placements;
     // Ordem de desenho por espaço, só do que aparece.
     const wanted = new Map<string | null, LayerDrawing[]>();
     for (const drawing of drawings.values()) {
@@ -125,7 +151,28 @@ export class ComponentLayerRenderer {
         this.mounted.set(drawing.markingId, { drawing, node, imageUrls, images });
         changed = true;
       }
+      for (const drawing of list) {
+        const node = this.mounted.get(drawing.markingId)?.node;
+        if (node && placeScreen(node, drawing, placement.scale, zoom)) changed = true;
+      }
       if (sortChildren(group, list, this.mounted)) changed = true;
+    }
+    return changed;
+  }
+
+  /**
+   * O zoom do stage mudou: refaz só a posição e a escala dos desenhos em pixels de tela (nada é
+   * redesenhado). Devolve `true` se algum nó mudou.
+   */
+  setZoom(zoom: number): boolean {
+    if (zoom === this.zoom) return false;
+    this.zoom = zoom;
+    let changed = false;
+    for (const entry of this.mounted.values()) {
+      const placement = placementOf(this.placements, entry.drawing.containerId);
+      if (placement && placeScreen(entry.node, entry.drawing, placement.scale, zoom)) {
+        changed = true;
+      }
     }
     return changed;
   }
@@ -148,6 +195,8 @@ export class ComponentLayerRenderer {
       if (parent) {
         parent.add(node);
         node.zIndex(index);
+        const placement = placementOf(this.placements, entry.drawing.containerId);
+        if (placement) placeScreen(node, entry.drawing, placement.scale, this.zoom);
       }
       this.mounted.set(markingId, { drawing: entry.drawing, node, imageUrls, images });
       changed = true;
@@ -200,6 +249,29 @@ function placementOf(
   containerId: string | null,
 ): Placement | undefined {
   return containerId === null ? IDENTITY_PLACEMENT : placements.get(containerId);
+}
+
+/**
+ * Desenho em pixels de tela: contrai o nó pela escala da imagem e pelo zoom (tamanho fixo na
+ * tela) e o põe de modo que o ponto da âncora do desenho caia no mesmo ponto do retângulo da
+ * marcação. Devolve `true` se algo mudou; desenho sem `screen` não é tocado.
+ */
+function placeScreen(
+  node: Konva.Group,
+  { screen, root }: LayerDrawing,
+  imageScale: number,
+  zoom: number,
+): boolean {
+  if (!screen) return false;
+  const k = 1 / (zoom * imageScale);
+  const [fx, fy] = ANCHOR_FRACTION[screen.anchor];
+  const x = screen.rect.x + fx * (screen.rect.width - root.width * k);
+  const y = screen.rect.y + fy * (screen.rect.height - root.height * k);
+  if (node.x() === x && node.y() === y && node.scaleX() === k && node.scaleY() === k) {
+    return false;
+  }
+  node.setAttrs({ x, y, scaleX: k, scaleY: k });
+  return true;
 }
 
 /** Posiciona o grupo da imagem; `true` se algo mudou. */

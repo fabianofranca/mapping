@@ -4,6 +4,7 @@ import { parseIconsText, type IconSet } from './components/icons';
 import { resolvePath } from './components/library';
 import { parseComponentText } from './components/parseComponent';
 import { resolveTokens, type HostFonts, type ResolvedTokens } from './components/tokens';
+import { MIN_STORED_MARKING_SIZE } from './geometry';
 import { projectIndex } from './projectIndex';
 import type { Spec, SpecAnnotationType } from './spec';
 import { findSpecType } from './specLookup';
@@ -199,12 +200,21 @@ export function hasSlotComponent(component: ComponentFile): boolean {
   return findSlot(component) !== undefined;
 }
 
-/** `minSize` do componente que desenha a marcação, ou `null` (marcação comum ou componente sem mínimo). */
+/**
+ * Mínimo do componente que desenha a marcação: o `minSize` dele ou, sem `minSize`, 1×1 (a
+ * marcação com componente aceita a partir de 1 px); `null` na marcação comum (vale o mínimo
+ * de 8 px dos gestos).
+ */
 export function componentMinSize(
   p: Project,
   catalog: ComponentCatalog,
   markingId: string,
 ): { width: number; height: number } | null {
-  const minSize = markingComponent(p, catalog, markingId)?.component.minSize;
-  return minSize === undefined ? null : { width: minSize.width, height: minSize.height };
+  const drawn = markingComponent(p, catalog, markingId);
+  if (drawn === null) return null;
+  const { minSize } = drawn.component;
+  return {
+    width: minSize?.width ?? MIN_STORED_MARKING_SIZE,
+    height: minSize?.height ?? MIN_STORED_MARKING_SIZE,
+  };
 }

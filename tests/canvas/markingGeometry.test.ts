@@ -188,6 +188,21 @@ describe('geometria das marcações no canvas', () => {
     });
   });
 
+  it('redimensionar com o mínimo de uma marcação com componente (1 px ou o minSize)', () => {
+    const limits = { outer: { x: 0, y: 0, width: 1000, height: 1000 } };
+    const start = { x: 100, y: 100, width: 200, height: 100 };
+    const to = { x: 0, y: 900 };
+    expect(resizeMarkingRect(start, 'ne', to, limits, { width: 1, height: 1 })).toEqual({
+      x: 100,
+      y: 199,
+      width: 1,
+      height: 1,
+    });
+    expect(resizeMarkingRect(start, 'ne', to, limits, { width: 20, height: 10 })).toEqual(
+      { x: 100, y: 190, width: 20, height: 10 },
+    );
+  });
+
   it('redimensionar: só o container limita; as filhas e o pai não', () => {
     const p = sampleProject();
     const m3 = marking(p, 'M3'); // dentro de M2 e M1, em I1 (4000×3000)

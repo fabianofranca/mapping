@@ -418,7 +418,13 @@ export class PointerInput {
         const pixel = canvasToImagePixel(g.placement, viewport.toCanvas(p));
         actions.previewMarkingRect(
           g.markingId,
-          resizeMarkingRect(g.startRect, g.corner, pixel, g.limits),
+          resizeMarkingRect(
+            g.startRect,
+            g.corner,
+            pixel,
+            g.limits,
+            this.o.derived.componentMinSizes.peek().get(g.markingId),
+          ),
         );
         const marking = this.markingNow(g.markingId);
         if (marking) {

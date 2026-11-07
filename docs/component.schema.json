@@ -33,6 +33,26 @@
     "sizing": {
       "$ref": "#/$defs/sizing"
     },
+    "screen": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "enum": [
+            "center",
+            "top-left",
+            "top",
+            "top-right",
+            "left",
+            "right",
+            "bottom-left",
+            "bottom",
+            "bottom-right"
+          ]
+        }
+      },
+      "description": "formatVersion 4, só na raiz. O template é desenhado no size do componente em pixels de tela, em qualquer zoom, ancorado no ponto anchor (padrão center) do retângulo da marcação; o desenho pode passar do retângulo (sem a pendência 'não cabe'). Numa formatVersion menor o parseComponent recusa com 'só é permitido com formatVersion 4'."
+    },
     "preview": {
       "type": "object",
       "additionalProperties": {
@@ -1696,9 +1716,13 @@
         },
         "sides": {
           "$ref": "#/$defs/expr_sides"
+        },
+        "scale": {
+          "type": "boolean",
+          "description": "true (padrão): a largura escala com o zoom; false: a largura é em pixels de tela, em qualquer zoom."
         }
       },
-      "description": "cap, join e sides só existem na formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4'). sides só vale em frame e rect (em ellipse e path é erro do parseComponent, que o schema não confere)."
+      "description": "cap, join, sides e scale só existem na formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4'). sides só vale em frame e rect (em ellipse e path é erro do parseComponent, que o schema não confere)."
     },
     "shadow": {
       "type": "object",

@@ -24,6 +24,7 @@ import {
   noticedCount,
   previewProject,
   projectIndex,
+  structuralMarkingIds,
   projectIssues,
   reviewKey,
   reviewProgress,
@@ -151,7 +152,7 @@ export interface EditorDerived {
    * na ordem do projeto. Livres e só de dados não entram. Lista do painel do modo visualização.
    */
   readonly drawingLayers: ReadonlySignal<readonly Layer[]>;
-  /** Tamanho mínimo (`minSize`) do componente de cada marcação que tem desenho e mínimo. */
+  /** Tamanho mínimo de cada marcação que desenha componente: o `minSize` dele ou 1×1. */
   readonly componentMinSizes: ReadonlySignal<
     ReadonlyMap<string, { readonly width: number; readonly height: number }>
   >;
@@ -412,13 +413,21 @@ export function createEditorDerived(
     const all = scenes.value;
     const p = project.value;
     const hiddenLayers = hiddenDrawingLayers.value;
-    if (!p || all.size === 0) return NO_DRAWN;
-    return drawnIds(
+    if (!p) return NO_DRAWN;
+    // Marcação de tipo estrutural (v15): não desenha, mas conta como desenhada para o contorno
+    // (só com mouse ou seleção) e para o nome (sem cabeçalho); o resto do canvas não muda.
+    const structural = structuralMarkingIds(p);
+    if (all.size === 0 && structural.size === 0) return NO_DRAWN;
+    const ids = drawnIds(
       all,
       projectIndex(p).containers,
       showComponentsOnPhotos.value,
       hiddenLayers,
     );
+    if (structural.size === 0) return ids;
+    const withStructural = new Set(ids);
+    for (const id of structural) withStructural.add(id);
+    return withStructural;
   });
 
   let lastFloating: ReadonlySet<string> = NO_DRAWN;

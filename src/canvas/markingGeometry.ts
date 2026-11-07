@@ -10,6 +10,7 @@ import {
   type Marking,
   type Placement,
   type Rect,
+  type Size,
 } from '../model';
 import { pointInRect, type Corner } from './imageGeometry';
 import type { Point } from './viewport';
@@ -135,6 +136,9 @@ export function nextInChain(
   return first;
 }
 
+/** Mínimo de uma marcação comum nos gestos (a que desenha componente passa o dela, de 1 px ou mais). */
+const DEFAULT_MIN_SIZE: Size = { width: MIN_MARKING_SIZE, height: MIN_MARKING_SIZE };
+
 export interface RectLimits {
   /**
    * Área em que a marcação precisa ficar: o container dela (pixels dele); `null` na marcação do
@@ -153,7 +157,7 @@ export function resizeMarkingRect(
   corner: Corner,
   pointer: Point,
   limits: RectLimits,
-  min = MIN_MARKING_SIZE,
+  min: Size = DEFAULT_MIN_SIZE,
 ): Rect {
   const { outer } = limits;
   const lowX = outer ? outer.x : -Infinity;
@@ -167,14 +171,14 @@ export function resizeMarkingRect(
   let y0 = start.y;
   let y1 = bottom(start);
   if (corner === 'ne' || corner === 'se') {
-    x1 = clamp(px, x0 + min, highX);
+    x1 = clamp(px, x0 + min.width, highX);
   } else {
-    x0 = clamp(px, lowX, x1 - min);
+    x0 = clamp(px, lowX, x1 - min.width);
   }
   if (corner === 'sw' || corner === 'se') {
-    y1 = clamp(py, y0 + min, highY);
+    y1 = clamp(py, y0 + min.height, highY);
   } else {
-    y0 = clamp(py, lowY, y1 - min);
+    y0 = clamp(py, lowY, y1 - min.height);
   }
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }

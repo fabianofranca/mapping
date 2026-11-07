@@ -17,6 +17,7 @@ import {
 } from '../../model';
 import { visibleArea, type Frame } from '../frame';
 import { semanticMode } from '../semanticText';
+import { showLayerIndicators } from './indicatorVisibility';
 import type { MarkingReviewMark } from '../reviewMarks';
 import { markingCanvasRect, placementOfSpace } from '../markingGeometry';
 import type { CanvasTokens } from '../theme';
@@ -169,6 +170,13 @@ export class MarkingRenderer {
       // Marcação com o desenho à vista: a borda só aparece sob o mouse ou selecionada (a
       // revisão de propostas, que marca a mudança na própria borda, a mantém).
       const withDrawing = drawn.has(marking.id);
+      const compact = !showLayerIndicators({
+        drawsComponent: withDrawing,
+        emphasized: selected || frame.hoverMarking === marking.id,
+        screenWidth: marking.rect.width * placement.scale * zoom,
+        screenHeight: marking.rect.height * placement.scale * zoom,
+        minScreenSize: tokens.indicatorMinMarking,
+      });
       const showBorder = mode
         ? mode.outline && !withDrawing
         : !withDrawing ||
@@ -189,6 +197,7 @@ export class MarkingRenderer {
         lineColor,
         zoom,
         mode === null,
+        compact,
       ];
       if (!sameInputs(node.drawn, inputs)) {
         node.drawn = inputs;
@@ -207,6 +216,7 @@ export class MarkingRenderer {
           reviewMark,
           canvasMarking,
           mode === null,
+          compact,
         );
       }
       // Ancestral de contexto (modo Ocultar): só a borda, sem nome. O desenho ocupa o
@@ -307,6 +317,7 @@ function updateMarkingNode(
   review: MarkingReviewMark | null = null,
   canvasMarking = false,
   indicators = true,
+  compact = false,
 ): void {
   const rect = markingCanvasRect(placement, marking.rect);
   // Sem anotação (própria ou herdada) nas camadas visíveis: esmaecida (a selecionada, nunca).
@@ -389,11 +400,19 @@ function updateMarkingNode(
     node,
     marking,
     rect,
-    outline ? [] : dots,
+    outline || compact ? [] : dots,
     incomplete && !outline,
     tokens,
     zoom,
+    compact,
   );
+}
+
+/** Esconde cada bolinha e o "+N" (o grupo dos indicadores já está escondido). */
+function hideDotsAndMore(node: MarkingNode): void {
+  for (const dot of node.dots) dot.visible(false);
+  node.more.visible(false);
+  node.alert.visible(false);
 }
 
 /**
@@ -408,9 +427,12 @@ function updateIndicators(
   incomplete: boolean,
   tokens: CanvasTokens,
   zoom: number,
+  compact = false,
 ): void {
-  if (layers.length === 0) {
+  // Compacta (marcação pequena na tela): sem bolinhas nem "+N", mas o alerta continua.
+  if (layers.length === 0 && !(compact && incomplete)) {
     node.indicators.visible(false);
+    if (compact) hideDotsAndMore(node);
     return;
   }
   node.indicators.setAttrs({

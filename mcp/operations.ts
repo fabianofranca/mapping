@@ -410,7 +410,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     rect: rect
       .optional()
       .describe(
-        'Retângulo em pixels do container (sem `container`: unidades do canvas, podendo ser negativo). Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (no centro do container). Um retângulo menor que o `minSize` do componente falha com `rect-too-small`.',
+        'Retângulo em pixels do container (sem `container`: unidades do canvas, podendo ser negativo). Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (no centro do container). O mínimo de cada lado é 8 px numa marcação comum e 1 px numa marcação com anotação de um tipo com componente (se o componente declara `minSize`, esse mínimo vale); abaixo dele falha com `rect-too-small`.',
       ),
     name: name.optional(),
     source: externalSource.optional(),
@@ -473,7 +473,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     rect: rect
       .optional()
       .describe(
-        'Novo retângulo (as filhas não se movem e precisam continuar dentro; numa marcação que desenha um componente, respeita o `minSize` dele). Sem `container`, vale no espaço atual da marcação; com `container`, nos pixels do container novo (no canvas, em unidades do canvas).',
+        'Novo retângulo (as filhas não se movem e precisam continuar dentro; o mínimo de cada lado é 8 px, ou 1 px numa marcação que desenha um componente, que também respeita o `minSize` dele). Sem `container`, vale no espaço atual da marcação; com `container`, nos pixels do container novo (no canvas, em unidades do canvas).',
       ),
     container: item('Container novo')
       .nullable()
