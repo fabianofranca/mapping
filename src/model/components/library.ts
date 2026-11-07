@@ -17,6 +17,7 @@ import {
   parsePath,
   parseTypeSources,
 } from './origin';
+import { parseIconsFile, type IconSet } from './icons';
 import { parseComponent } from './parseComponent';
 import { resolveTokens, type HostFonts, type SpecTokens } from './tokens';
 
@@ -89,6 +90,8 @@ export interface Library {
   readonly origins: readonly Origin[];
   /** `tokens` da especialização (lidos sem validar; o validador da biblioteca confere). */
   readonly tokens?: SpecTokens;
+  /** Conjunto de ícones da especialização (`icons`), quando o arquivo existe e é válido. */
+  readonly icons?: IconSet;
   /** O que não carregou: arquivo ausente, componente inválido, tipo sem componente. */
   readonly problems: readonly string[];
 }
@@ -300,10 +303,32 @@ export function loadLibrary(files: readonly TextFile[]): Library {
       fonts,
       origins,
       tokens: readTokens(spec.tokens),
+      icons: readIcons(spec.icons, specPath, parsed, problems),
       problems,
     },
     {},
   );
+}
+
+/** O conjunto de ícones apontado por `icons` (arquivo ausente ou inválido vira problema). */
+function readIcons(
+  raw: unknown,
+  specPath: string,
+  parsed: ReadonlyMap<string, unknown>,
+  problems: string[],
+): IconSet | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const path = resolvePath(specPath, raw);
+  const json = parsed.get(path);
+  if (json === undefined) {
+    problems.push(`arquivo de ícones não encontrado: ${path}`);
+    return undefined;
+  }
+  const result = parseIconsFile(json);
+  if (result.ok) return result.set;
+  for (const issue of result.issues)
+    problems.push(`${path}: ${issue.path ? `${issue.path}: ` : ''}${issue.message}`);
+  return undefined;
 }
 
 /** `tokens` do JSON da especialização, na forma mínima (modos texto e valores texto, número ou por modo). */
@@ -326,12 +351,20 @@ export function withHostTokens(
   mode?: string,
 ): Library {
   const resolvedTokens = resolveTokens(library.tokens, fonts, mode);
+  const resolvedIcons = library.icons;
   return {
     ...library,
     types: library.types.map((type) =>
       type.component === undefined
         ? type
-        : { ...type, component: { ...type.component, resolvedTokens } },
+        : {
+            ...type,
+            component: {
+              ...type.component,
+              resolvedTokens,
+              ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
+            },
+          },
     ),
   };
 }

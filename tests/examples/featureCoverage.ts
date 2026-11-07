@@ -269,6 +269,7 @@ export const NODE_TYPES = [
   'slot',
   'repeat',
   'image',
+  'icon',
 ] as const;
 export const EXPR_OPS = ['$field', '$if', '$switch', '$concat', '$token'] as const;
 export const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
@@ -311,6 +312,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   slot: ['label', 'layout'],
   repeat: ['field', 'direction', 'gap', 'distribute', 'template'],
   image: ['src', 'fit'],
+  icon: ['name', 'color', 'strokeWidth'],
 };
 /** O `repeat` só aceita estas chaves comuns: o desenho é do `template` de cada linha. */
 export const REPEAT_BASE_KEYS = [

@@ -15,6 +15,7 @@
 - Modo do desenho do projeto e do container (schema v18): o controle **Modo do desenho** em **Configurações** escolhe o modo dos `tokens` (`light`, `dark`…) com que os componentes são desenhados, e o campo **Modo do desenho** nos Detalhes do container fixa outro modo para ele (ou segue o projeto). Sem modo, vale o primeiro de cada especialização. O Diagnóstico avisa o modo gravado que nenhuma especialização declara.
 - MCP: a op `update_project` do lote troca o modo do desenho do projeto; `add_container` e `update_container` aceitam `drawingMode`.
 - Visualizador embutido: a opção `drawingMode` (e a prop do `<MappingViewer/>`) escolhe o modo dos tokens; mudá-la em tempo de execução (`update({ drawingMode })`) redesenha sem recarregar a biblioteca nem a tela.
+- Conjunto de ícones da biblioteca (`formatVersion` 15 da especialização): `icons` na raiz aponta para um arquivo `.json` do pacote (`mapping-icons`: `viewBox` e ícones por nome, cada um com seus caminhos, traço, cor e ponta) e o nó `icon` do componente (formato 4) o lê por `name` (literal ou campo), com `color` e `strokeWidth`; `hug` mede o `viewBox`. Um nome que não está no conjunto desenha o reservado tracejado com o aviso `ícone desconhecido: <nome>`. O `validate_library` confere o arquivo, recusa nome literal fora do conjunto e avisa a opção de `enum` fora dele, na app e no MCP.
 
 ## Alterado
 

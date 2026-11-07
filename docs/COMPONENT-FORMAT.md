@@ -80,7 +80,7 @@ Qualquer outra chave na raiz é problema (o formato é estrito).
 
 ## Nós do template
 
-Cada nó tem `type` (`frame`, `rect`, `ellipse`, `text`, `path`, `slot`, na `formatVersion` 2, `repeat` ou, na 3, `image`) e as chaves comuns abaixo. As chaves de cada tipo vêm depois. **Chave desconhecida é problema**, para que erro de digitação apareça.
+Cada nó tem `type` (`frame`, `rect`, `ellipse`, `text`, `path`, `slot`, na `formatVersion` 2, `repeat`, na 3, `image` ou, na 4, `icon`) e as chaves comuns abaixo. As chaves de cada tipo vêm depois. **Chave desconhecida é problema**, para que erro de digitação apareça.
 
 | Chave                                            | Descrição                                                                                                                                                                                                                                                                                                                     |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -168,6 +168,32 @@ Mostra uma imagem de uma URL `https://` (avatar, foto, logo cuja URL vem do dado
 | `fillRule` | `nonzero` (padrão) ou `evenodd`.                                                                                       |
 
 Escala diferente nos dois eixos (caixa do nó com outra proporção que o `viewBox`) estica o ícone e gera um aviso.
+
+### `icon` (ícone do conjunto da biblioteca, `formatVersion` 4)
+
+Desenha um ícone do conjunto declarado em `icons` na especialização (`formatVersion` 15; ver `docs/SPEC-FORMAT.md`, "Conjunto de ícones"), no lugar de um `$switch` com todos os caminhos dentro do componente.
+
+```json
+{
+  "type": "icon",
+  "name": { "$field": "icone" },
+  "color": { "$token": "primary" },
+  "width": 24,
+  "height": 24
+}
+```
+
+| Chave         | Descrição                                                                                                                                    |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | Obrigatória. O nome do ícone no conjunto: texto ou expressão (`$field`, `$switch`…). É o nome do **ícone**: o nó `icon` não tem nome de nó.  |
+| `color`       | Cor do nó (expressão); padrão `#000000`. Pinta os caminhos sem cor própria e os que pedem a cor do nó (`fill` ou `stroke` `true`).           |
+| `strokeWidth` | Largura dos traços, em unidades do `viewBox` do ícone (expressão); troca a `width` de todos os caminhos com traço.                           |
+| comuns        | `visible`, `opacity`, `width`, `height` (`hug` = o `viewBox` do ícone), `minWidth`…, `anchors`, `fill`, `stroke`, `shadow` e `cornerRadius`. |
+
+- **Escala.** Os caminhos são desenhados no `viewBox` do ícone (o dele, senão o do conjunto) e escalados para a caixa do nó; proporção diferente estica e gera o aviso `ícone esticado: escala diferente nos dois eixos`. A largura do traço escala junto.
+- **Cor.** `color` pinta só o que não tem cor própria: `fill` ou `stroke` `true` e o caminho sem `fill` nem `stroke` usam a cor do nó; `fill`/`stroke` com uma cor própria a mantêm.
+- **Nome fora do conjunto.** No desenho (nome vindo de um campo, ou sem conjunto carregado) o nó vira o **reservado** e o aviso `ícone desconhecido: <nome>` acompanha. Um nome **literal** fora do conjunto é erro do `validate_library` (nível 2), e um campo `enum` ligado ao `name` com opção fora do conjunto é aviso (nível 3).
+- Numa `formatVersion` do componente menor que 4: `template.children[0].type: só é permitido com formatVersion 4`.
 
 ### `slot`
 
@@ -481,7 +507,8 @@ O motor **avisa**, não recorta nem recusa: conteúdo maior que o slot ou que a 
 | `valor inválido em <chave>: <valor>`              | Uma expressão de `layout.type`, `layout.align`, `layout.justify`, `width` ou `height` (`formatVersion` 4) resolveu fora do conjunto; vale o padrão.                                             |
 | `texto maior que a caixa: <nó>`                   | Um texto com largura e altura definidas quebra em mais linhas do que a altura comporta (tolerância de 1 px) e não tem `maxLines` nem `ellipsis` que o corte (`formatVersion` 4 ou não).         |
 | `conteúdo maior que a caixa: <quadro>`            | Os filhos (tamanhos fixos mais `gap`s) passam do conteúdo do quadro no eixo principal, ou um filho fixo passa do conteúdo no eixo cruzado (tolerância de 1 px quando entre os filhos há texto). |
-| `ícone esticado: escala diferente nos dois eixos` | A caixa de um `path` tem outra proporção que o `viewBox`.                                                                                                                                       |
+| `ícone esticado: escala diferente nos dois eixos` | A caixa de um `path` ou `icon` tem outra proporção que o `viewBox`.                                                                                                                             |
+| `ícone desconhecido: <nome>`                      | O `name` de um nó `icon` não está no conjunto de ícones da especialização (ou ela não declara `icons`): o nó vira o reservado (`formatVersion` 4).                                              |
 
 **Ao arrumar uma tela sem geometria** (`layoutScreen`; o texto leva o id da instância na frente):
 
@@ -594,7 +621,7 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 ```
 
 - `errors[i]` é `"caminho: mensagem"` (ou só a mensagem quando o caminho é vazio), com o caminho JSON do problema: `template.children[1].text: esperava texto ou número`.
-- O formato é **estrito**: chave desconhecida em qualquer nó, expressão, estilo ou na raiz é problema (`chave desconhecida: <chave>`). Outros problemas: `format`/`formatVersion` errados (`esperava 1, 2, 3 ou 4`), `image` numa `formatVersion` menor que 3 (`o nó image só existe na formatVersion 3`), `src` fora da regra do nó `image`, `width`/`height` `hug` no `image`, `repeat` numa `formatVersion` 1 (`o nó repeat só existe na formatVersion 2`, no caminho do nó), `runs`, `stroke.cap`, `stroke.join` ou `stroke.sides`, `font.wrap`, `font.ellipsis` ou `font.maxLines` (`font.maxLines` que não é inteiro maior ou igual a 1: `esperava inteiro maior ou igual a 1`), `minWidth`, `maxWidth`, `minHeight`, `maxHeight`, `repeat.distribute` ou expressão em `layout.type`, `layout.align`, `layout.justify`, `width` ou `height` numa `formatVersion` menor que 4 (`só é permitido com formatVersion 4`, no caminho da chave), `text` e `runs` juntos no mesmo nó (`text e runs juntos: use um ou outro`, no caminho do nó), `runs` vazio ou que não é lista (`esperava lista não vazia de trechos`), trecho sem `text` ou com chave desconhecida, `padding` ou `radius` do trecho negativo, `min` literal maior que o `max` do mesmo eixo (`<nó>.minWidth: não pode ser maior que maxWidth`), `minWidth`, `maxWidth`, `minHeight` ou `maxHeight` negativo ou que não é número (`esperava número maior ou igual a 0`), `distribute` fora de `none`/`fill`, `sides` vazio, repetido ou fora de `top`/`right`/`bottom`/`left`, `sides` em `ellipse` ou `path`, `repeat` sem `field` ou sem `template`, `repeat` ou `slot` dentro de um `repeat`, `id` fora do padrão, `size`/`minSize` inválidos, `minSize` maior que `size`, raiz do template que não é `frame`, `children` ou `layout` num nó que não é quadro (o `slot` aceita `layout`), tamanho de nó fora de `número`/`fill`/`hug`/`NN%`, expressão com mais de um operador, condição sem operador, peso de fonte fora de 100 a 900, cor vazia.
+- O formato é **estrito**: chave desconhecida em qualquer nó, expressão, estilo ou na raiz é problema (`chave desconhecida: <chave>`). Outros problemas: `format`/`formatVersion` errados (`esperava 1, 2, 3 ou 4`), `image` numa `formatVersion` menor que 3 (`o nó image só existe na formatVersion 3`), `src` fora da regra do nó `image`, `width`/`height` `hug` no `image`, `repeat` numa `formatVersion` 1 (`o nó repeat só existe na formatVersion 2`, no caminho do nó), o nó `icon`, `runs`, `stroke.cap`, `stroke.join` ou `stroke.sides`, `font.wrap`, `font.ellipsis` ou `font.maxLines` (`font.maxLines` que não é inteiro maior ou igual a 1: `esperava inteiro maior ou igual a 1`), `minWidth`, `maxWidth`, `minHeight`, `maxHeight`, `repeat.distribute` ou expressão em `layout.type`, `layout.align`, `layout.justify`, `width` ou `height` numa `formatVersion` menor que 4 (`só é permitido com formatVersion 4`, no caminho da chave), `text` e `runs` juntos no mesmo nó (`text e runs juntos: use um ou outro`, no caminho do nó), `runs` vazio ou que não é lista (`esperava lista não vazia de trechos`), trecho sem `text` ou com chave desconhecida, `padding` ou `radius` do trecho negativo, `min` literal maior que o `max` do mesmo eixo (`<nó>.minWidth: não pode ser maior que maxWidth`), `minWidth`, `maxWidth`, `minHeight` ou `maxHeight` negativo ou que não é número (`esperava número maior ou igual a 0`), `distribute` fora de `none`/`fill`, `sides` vazio, repetido ou fora de `top`/`right`/`bottom`/`left`, `sides` em `ellipse` ou `path`, `repeat` sem `field` ou sem `template`, `repeat` ou `slot` dentro de um `repeat`, `id` fora do padrão, `size`/`minSize` inválidos, `minSize` maior que `size`, raiz do template que não é `frame`, `children` ou `layout` num nó que não é quadro (o `slot` aceita `layout`), tamanho de nó fora de `número`/`fill`/`hug`/`NN%`, expressão com mais de um operador, condição sem operador, peso de fonte fora de 100 a 900, cor vazia.
 - `parseComponentText(texto)` lê o texto JSON (JSON inválido vira um problema de caminho vazio) e `validateComponent(json)` devolve só a lista `string[]`.
 - `docs/component.schema.json` espelha a estrutura (para editores e geradores); ele **não** substitui o parser, e o código é a fonte da verdade.
 - O **validador da biblioteca** (`src/model/library.ts`, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Validação da biblioteca") roda o `parseComponent` em cada componente do pacote e confere o que depende de mais de um arquivo (o campo citado pelo desenho existe no tipo, o `slot` declarado existe no template; num `repeat`, o `field` é uma `table` do tipo e cada chave citada no `template` é coluna dela ou campo do tipo; o `preview` de uma `table` é uma lista de linhas com colunas que existem).
@@ -603,7 +630,7 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 
 - **Um slot por componente.** Os filhos de uma instância vão sempre para o primeiro slot do template (busca em profundidade). Vários slots ficam para depois.
 - **Imagem só remota e só no nó `image`.** O arquivo do componente não carrega bitmap; a imagem vem de uma URL `https://` (um campo `string`) e não é gravada no projeto. Imagem local no pacote fica para depois (por isso o caminho relativo é recusado no `src`). Elipse e caminho não aceitam imagem como preenchimento.
-- **`formatVersion` 1, 2, 3 e 4.** A 2 acrescenta só o `repeat`, a 3 só o `image`, a 4 só `stroke.cap`, `stroke.join` e `stroke.sides`, `font.wrap`, `font.ellipsis` e `font.maxLines`, a expressão no layout e no tamanho, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `repeat.distribute`, `runs` (o texto rico) e `$token` (os tokens de design) (a medição em duas passagens vale em todas), e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
+- **`formatVersion` 1, 2, 3 e 4.** A 2 acrescenta só o `repeat`, a 3 só o `image`, a 4 só `stroke.cap`, `stroke.join` e `stroke.sides`, `font.wrap`, `font.ellipsis` e `font.maxLines`, a expressão no layout e no tamanho, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `repeat.distribute`, `runs` (o texto rico), `$token` (os tokens de design) e o nó `icon` (o conjunto de ícones) (a medição em duas passagens vale em todas), e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
 - Gradiente só `linear`; sombra só uma por nó; borda uma por nó.
 - Listas que viram campos numerados (`label1`, `label2`…) são frágeis: para um dado em forma de tabela (os eventos de uma tela, as propriedades de uma chamada), declare um campo `table` e desenhe-o com `repeat`. Os componentes do Material 3 (a barra de navegação, a folha com N itens) ainda usam campos numerados.
 - O `repeat` não aninha (uma `table` não tem `table` dentro) e não mede a tabela para crescer a marcação: a caixa é da marcação. Um desenho de linha com colunas de largura alinhada entre linhas (uma grade) precisa de larguras fixas ou em `%`; `hug` mede cada linha à parte. Para linhas de alturas iguais que ocupam o espaço do pai, use `distribute: "fill"` (`formatVersion` 4).

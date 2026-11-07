@@ -99,6 +99,14 @@ const MISSING_TODAY: string[] = [
   // pelo roteiro R25.
   'component:expr.$token',
   'spec:tokens',
+  // Ícones (formatVersion 15, etapa #747, CF7): as bibliotecas distribuídas não migram; coberto por
+  // tests/model/components/icons.test.ts, libraryIcons.test.ts, tests/mcp/libraryIcons.test.ts e
+  // pelo roteiro R25.
+  'spec:icons',
+  'component:node.icon',
+  'component:node.icon.name',
+  'component:node.icon.color',
+  'component:node.icon.strokeWidth',
   // `accepts.annotations` (formatVersion 14, etapa #679): os exemplos não ganham o recurso nesta
   // etapa (o roteiro usa uma especialização inline); coberto por tests/model/specAcceptsAnnotations.
   'spec:layers[].annotationTypes[].fields[].accepts.annotations',

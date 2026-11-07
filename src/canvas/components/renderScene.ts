@@ -298,7 +298,10 @@ class Renderer {
         // contorno discreto e sem aviso.
         const slot = node.sourceType === 'slot';
         if (slot && this.options.showSlots === false) return shapes;
-        if (!slot) this.warnings.add(`nó não desenhado (${node.sourceType}): só a caixa`);
+        // O ícone desconhecido já levou o aviso do motor (`ícone desconhecido: <nome>`).
+        if (!slot && node.sourceType !== 'icon') {
+          this.warnings.add(`nó não desenhado (${node.sourceType}): só a caixa`);
+        }
         shapes.push(
           new KonvaRect({
             width: node.width,

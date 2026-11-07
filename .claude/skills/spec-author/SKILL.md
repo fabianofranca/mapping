@@ -128,7 +128,34 @@ Só quando o prompt pede uma biblioteca (componentes que a app desenha). Faça o
    - Nesta versão o desenho usa sempre o **primeiro** modo de `modes` (modo não declarado cai no primeiro, sem aviso): ponha `light` primeiro.
    - `tokens` só com `formatVersion` 15 (antes: `só é permitido com formatVersion 15`) e `$token` só no componente de formato 4 (`só é permitido com formatVersion 4`). O `validate_library` recusa token inexistente (`o token "x" não existe nos tokens da especialização`) e de tipo errado (`o token "primary" é cor, mas aqui se espera número`), com o caminho do nó. Detalhes em `docs/SPEC-FORMAT.md` ("Tokens de design") e `docs/COMPONENT-FORMAT.md`.
 
-7. **Atualização de biblioteca já aplicada:** preserve ids de tipo e `key` de campo, suba a `version`. **Aditivo** (não precisa de `migrations`): tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, mudar só o desenho. **Quebra** (exige entrada em `migrations`, com `from`, `to` e `steps`; `to` ≤ `version`, `from` único, `steps` não vazia; a cadeia precisa ligar a versão aplicada à nova, senão toda quebra fica sem cobertura): remover ou renomear tipo, campo ou opção de `enum` (passos `rename-type {from,to}`, `remove-type {type,mode: convert|delete}` (`delete` apaga também as anotações), `rename-field {type,from,to}`, `remove-field {type,field}` e `map-values {type,field,values}`; a chave de campo pode ser `tabela.coluna`), tornar um campo obrigatório (inclusive um campo novo que já nasce obrigatório: cubra com `fill-field {type,field,default}`), mudar o `type` de um campo, tirar um papel de `childRoles` ou dar `childRoles` a um tipo que não tinha (passos `rename-role`, `remove-role` e `set-role`, da `formatVersion` 12: ver a seção 12). Passe a versão anterior à validação (`previous`).
+7. **Conjunto de ícones (`formatVersion` 15 na especialização; nó `icon` no componente de formato 4).** Quando mais de um componente mostra ícone, ou um campo `enum` escolhe o ícone, **não repita os caminhos num `$switch`** dentro do componente: ponha os ícones num arquivo do pacote (`icons/icons.json`, `"format": "mapping-icons"`, `"formatVersion": 1`, `viewBox` padrão `[24, 24]` e `icons` por nome `^[a-z0-9][a-z0-9-_]*$`) e aponte `"icons": "icons/icons.json"` na raiz da especialização:
+
+   ```json
+   {
+     "format": "mapping-icons",
+     "formatVersion": 1,
+     "viewBox": [24, 24],
+     "icons": {
+       "check": {
+         "paths": [
+           {
+             "d": "M5 12l5 5L20 7",
+             "stroke": true,
+             "width": 2,
+             "cap": "round",
+             "join": "round"
+           }
+         ]
+       }
+     }
+   }
+   ```
+   - Cada ícone tem `paths` (lista **não vazia** de `{ d, fill?, stroke?, width?, cap?, join? }`) e, se precisar, o próprio `viewBox`. `fill`/`stroke` `true` usam a cor do nó `icon`; um texto é cor própria; caminho sem `fill` nem `stroke` é preenchido com a cor do nó. A largura (`width`) é em unidades do `viewBox`. Use os `d` do SVG da origem (Figma, Material Symbols, o `icons.tsx` do app), nunca de memória.
+   - No componente: `{ "type": "icon", "name": { "$field": "icone" }, "color": { "$token": "on-surface" }, "width": 24, "height": 24 }` (`strokeWidth` troca a largura dos traços; `hug` mede o `viewBox`). O `name` do nó `icon` é o do **ícone**, não um nome de nó. Ligue o `name` a um campo `enum` cujas `options` são os nomes do conjunto.
+   - O `validate_library` confere o arquivo (nível 1), recusa nome **literal** fora do conjunto (`o ícone "nuvem" não existe no conjunto de ícones (icons/set.json)`, com o caminho do `name`) e avisa, no nível 3, a `option` de `enum` que não está no conjunto. Nome vindo de campo que não existe no conjunto desenha o reservado com o aviso `ícone desconhecido: <nome>`.
+   - `icons` só com `formatVersion` 15 (antes: `só é permitido com formatVersion 15`) e o nó `icon` só no componente de formato 4 (`só é permitido com formatVersion 4`). Detalhes em `docs/SPEC-FORMAT.md` ("Conjunto de ícones") e `docs/COMPONENT-FORMAT.md`.
+
+8. **Atualização de biblioteca já aplicada:** preserve ids de tipo e `key` de campo, suba a `version`. **Aditivo** (não precisa de `migrations`): tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, mudar só o desenho. **Quebra** (exige entrada em `migrations`, com `from`, `to` e `steps`; `to` ≤ `version`, `from` único, `steps` não vazia; a cadeia precisa ligar a versão aplicada à nova, senão toda quebra fica sem cobertura): remover ou renomear tipo, campo ou opção de `enum` (passos `rename-type {from,to}`, `remove-type {type,mode: convert|delete}` (`delete` apaga também as anotações), `rename-field {type,from,to}`, `remove-field {type,field}` e `map-values {type,field,values}`; a chave de campo pode ser `tabela.coluna`), tornar um campo obrigatório (inclusive um campo novo que já nasce obrigatório: cubra com `fill-field {type,field,default}`), mudar o `type` de um campo, tirar um papel de `childRoles` ou dar `childRoles` a um tipo que não tinha (passos `rename-role`, `remove-role` e `set-role`, da `formatVersion` 12: ver a seção 12). Passe a versão anterior à validação (`previous`).
 
 ### 9. Containers (`formatVersion` 6)
 
@@ -356,9 +383,9 @@ O `id` do papel é dado que as anotações guardam (`parentRole` no vínculo do 
 - `formatVersion` 12: `rename-role`, `remove-role` ou `set-role` em `migrations`.
 - `formatVersion` 13: a cláusula `{ layer }` da camada do próprio tipo, ou o id de um tipo da mesma camada (inclusive o do próprio tipo), em `allowedChildren`.
 - `formatVersion` 14: `accepts.annotations` em campo ou coluna `ref` (a anotação inteira como alvo).
-- `formatVersion` 15: `tokens` na raiz (tokens de design por modo, lidos por `{ "$token": … }` nos componentes de formato 4).
+- `formatVersion` 15: `tokens` na raiz (tokens de design por modo, lidos por `{ "$token": … }` nos componentes de formato 4) ou `icons` na raiz (o conjunto de ícones lido pelo nó `icon`).
 
-A versão atual do formato é a 15. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta) para a 12 só se declara um passo de papel para a 13 só se um tipo aceita filhos da própria camada para a 14 só se um `ref` usa `accepts.annotations` e para a 15 só se declara `tokens`**: o resto da biblioteca fica na versão que o conteúdo pede (a de notas fica na 7, a Kotlin na 8 e a Material 3 na 9). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+A versão atual do formato é a 15. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta) para a 12 só se declara um passo de papel para a 13 só se um tipo aceita filhos da própria camada para a 14 só se um `ref` usa `accepts.annotations` e para a 15 só se declara `tokens` ou `icons`**: o resto da biblioteca fica na versão que o conteúdo pede (a de notas fica na 7, a Kotlin na 8 e a Material 3 na 9). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 

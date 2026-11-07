@@ -192,6 +192,7 @@ export function libraryCounts(spec: Spec): Json {
     fonts: (spec.fonts ?? []).length,
     origins: (spec.origins ?? []).length,
     migrations: (spec.migrations ?? []).length,
+    ...(spec.icons === undefined ? {} : { icons: spec.icons }),
   };
 }
 
@@ -413,7 +414,7 @@ export function packageOfProject(
 /**
  * O que um pedido de `apply_specialization`/`update_specialization`/`plan_library_update` aponta:
  * um arquivo de especialização que não cita arquivos do pacote (v1 a v3, ou v4 e v5 sem
- * `component`, `doc`, `examples`, `fonts` nem `origins`: só o arquivo vai para `specs/<id>.json`) ou um pacote
+ * `component`, `doc`, `examples`, `fonts`, `origins` nem `icons`: só o arquivo vai para `specs/<id>.json`) ou um pacote
  * v4 (a pasta inteira, com o conteúdo cru dos arquivos).
  */
 export type SpecInput =
