@@ -13,12 +13,7 @@ import {
   markingDisplay,
   setMarkingDisplay,
 } from '../store/settings';
-import {
-  resolveActiveLayerId,
-  setActiveLayer,
-  showAllLayers,
-  toggleLayerVisible,
-} from '../store/ui';
+import { showAllLayers, toggleLayerVisible } from '../store/ui';
 import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
@@ -106,20 +101,11 @@ function Palette({
 interface LayerRowProps extends LayersProps {
   readonly layer: Layer;
   readonly index: number;
-  readonly active: boolean;
   readonly hidden: boolean;
   readonly onDelete: (layer: Layer) => void;
 }
 
-function LayerRow({
-  project,
-  readOnly,
-  layer,
-  index,
-  active,
-  hidden,
-  onDelete,
-}: LayerRowProps) {
+function LayerRow({ project, readOnly, layer, index, hidden, onDelete }: LayerRowProps) {
   const { ui, actions } = useEditor();
   const last = project.layers.length - 1;
   const lockedBySpec = layer.spec !== null;
@@ -130,18 +116,13 @@ function LayerRow({
       ? t('layer.lastLayer')
       : undefined;
   return (
-    <li
-      class={active ? 'layer-row layer-row-active' : 'layer-row'}
-      style={{ '--layer-color': layer.color }}
-      aria-current={active || undefined}
-    >
+    <li class="layer-row" style={{ '--layer-color': layer.color }}>
       <label class="layer-visible" title={t('layer.visible', { name: layer.name })}>
         <input
           type="checkbox"
-          checked={active || !hidden}
-          disabled={active}
+          checked={!hidden}
           aria-label={t('layer.visible', { name: layer.name })}
-          onChange={() => toggleLayerVisible(ui, project, layer.id)}
+          onChange={() => toggleLayerVisible(ui, layer.id)}
         />
       </label>
 
@@ -172,13 +153,6 @@ function LayerRow({
         disabled={readOnly || lockedBySpec}
         title={lockedBySpec ? t('layer.specLocked') : undefined}
         onCommit={(text) => actions.renameLayer(layer.id, text).ok}
-      />
-
-      <IconButton
-        icon="check"
-        label={t('layer.makeActive', { name: layer.name })}
-        pressed={active}
-        onClick={() => setActiveLayer(ui, layer.id)}
       />
 
       <Popover
@@ -247,7 +221,6 @@ function LayerRow({
 export function LayersPanel({ project, readOnly }: LayersProps) {
   const { ui } = useEditor();
   const [deleting, setDeleting] = useState<Layer | null>(null);
-  const activeId = resolveActiveLayerId(project, ui.activeLayer.value);
   const hidden = ui.hiddenLayers.value;
 
   return (
@@ -260,7 +233,6 @@ export function LayersPanel({ project, readOnly }: LayersProps) {
             readOnly={readOnly}
             layer={layer}
             index={index}
-            active={layer.id === activeId}
             hidden={hidden.has(layer.id)}
             onDelete={setDeleting}
           />

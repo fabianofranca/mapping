@@ -3,7 +3,6 @@
 import { signal, type Signal } from '@preact/signals';
 import type {
   ComponentDrawings,
-  Layer,
   LayerDot,
   MarkingVisibility,
   Placement,
@@ -124,7 +123,6 @@ export interface Frame {
   readonly items: readonly SelectionItem[];
   readonly mode: EditorMode;
   readonly locale: Locale;
-  readonly shown: readonly Layer[];
   readonly dots: ReadonlyMap<string, readonly LayerDot[]>;
   readonly incomplete: ReadonlySet<string>;
   readonly visibility: ReadonlyMap<string, MarkingVisibility>;

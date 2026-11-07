@@ -169,7 +169,6 @@ export const enUS: Dictionary = {
 
   'layer.newName': 'Layer {n}',
   'layer.title': 'Layers',
-  'layer.chipLabel': 'Layers (active: {name})',
   'layer.add': 'New layer',
   'layer.showAll': 'Show all',
   'layer.visible': 'Show layer {name}',
@@ -177,7 +176,6 @@ export const enUS: Dictionary = {
   'layer.color': 'Color of layer {name}',
   'layer.customColor': 'Other color',
   'layer.more': 'More actions for layer {name}',
-  'layer.makeActive': 'Make active: {name}',
   'layer.moveUp': 'Move layer up',
   'layer.moveDown': 'Move layer down',
   'layer.delete': 'Delete layer',
@@ -192,10 +190,10 @@ export const enUS: Dictionary = {
   'layer.display.dim': 'Dim without annotations',
   'layer.display.hide': 'Hide without annotations',
   'layer.displayHint':
-    'Based on the active layer: counts its annotations. The selected marking always shows.',
+    'Based on the visible layers: counts their annotations. The selected marking always shows.',
 
   'annotation.heading': 'Annotations',
-  'annotation.add': '+ Annotation',
+  'annotation.allLayersHidden': 'All layers are hidden.',
   'annotation.addIn': 'Add annotation to layer {layer}',
   'annotation.emptySection': 'No annotations in this layer.',
   'annotation.name': 'Annotation name',
@@ -750,7 +748,6 @@ export const enUS: Dictionary = {
   'image.section': 'Image',
   'image.file': 'File',
   'image.size': 'Size',
-  'layerGroup.active': 'active',
   'details.summary': '{name} — {values}',
   'details.summarySeparator': ' · ',
   'annotation.expand': 'Show {name}',

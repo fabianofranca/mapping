@@ -1,6 +1,7 @@
-import { act, cleanup, within } from '@testing-library/preact';
+import { act, cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { goToAnnotation } from '../../src/store/ui';
 import { MarkingPanel } from '../../src/ui/MarkingPanel';
@@ -38,14 +39,11 @@ async function openOwnerStep(edit: (s: Json) => void) {
     );
   });
   const user = userEvent.setup();
-  act(() => {
-    harness.ui.activeLayer.value = layerOf(harness.project(), 's', 'eventos');
-  });
+  const eventos = layerOf(harness.project(), 's', 'eventos');
+  const layerName = harness.project().layers.find((l) => l.id === eventos)?.name ?? '';
   await user.click(
-    await vi.waitFor(() => {
-      const el = document.querySelector<HTMLElement>('[data-action="add-annotation"]');
-      if (!el) throw new Error('sem o "+ Anotação"');
-      return el;
+    await screen.findByRole('button', {
+      name: t('annotation.addIn', { layer: layerName }),
     }),
   );
   const dialog = await vi.waitFor(() => {

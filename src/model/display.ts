@@ -55,8 +55,8 @@ export type MarkingVisibility = 'full' | 'dim' | 'outline' | 'hidden';
 
 /**
  * Visibilidade de cada marcação segundo o modo. "Sem anotação" = sem anotação
- * própria nem herdada na camada ativa: `dots` vem de `layerDotsByMarking` com
- * só a camada ativa (as demais camadas visíveis não contam). A selecionada
+ * própria nem herdada em nenhuma camada visível: `dots` vem de `layerDotsByMarking` com
+ * as camadas visíveis. A selecionada
  * sempre aparece por inteiro. No modo Ocultar, o ancestral sem anotação de uma
  * marcação que aparece fica só com a borda, para manter o contexto. `alwaysShown`: marcações
  * que desenham um componente são conteúdo da tela, não "sem anotação": o filtro não as

@@ -212,7 +212,7 @@ function FollowTarget({
   readonly reveal: Signal<string | null>;
   readonly onReveal: (revealed: boolean) => void;
 }) {
-  const { review, ui, store, derived } = useEditor();
+  const { review, ui, store } = useEditor();
   const { kind, id, project } = item;
   const selected = review.selected.value;
   const targetId = selected?.level === 'change' ? selected.id : null;
@@ -223,13 +223,12 @@ function FollowTarget({
       : null;
   const current = store.committed.peek();
   const hidden = ui.hiddenLayers.peek();
-  const activeLayerId = derived.activeLayerId.peek();
   useLayoutEffect(() => {
     reveal.value = change?.entity === 'annotation' ? change.entityId : null;
     if (!current || !change) return;
     const args = { kind, id, project, current };
     expandSections(ui, sectionsForChange(change, args));
-    if (isChangeLayerHidden(change, { ...args, hiddenLayers: hidden, activeLayerId })) {
+    if (isChangeLayerHidden(change, { ...args, hiddenLayers: hidden })) {
       onReveal(true);
     }
     // Só ao mudar a mudança selecionada.
@@ -243,14 +242,13 @@ function ReviewItemPanel({
   item,
   onGoToAnnotation,
 }: ReviewPanelProps & { readonly item: ShownItem }) {
-  const { review, ui, store, display, derived } = useEditor();
+  const { review, ui, store, display } = useEditor();
   const d = review.derived;
   const index = d.fieldIndex.value;
   const tree = d.tree.value;
   const current = store.committed.value;
   const view = review.view.value;
   const hidden = ui.hiddenLayers.value;
-  const activeLayerId = derived.activeLayerId.value;
   // "Mostrar aqui" das camadas escondidas: só no painel, até trocar de item (decisão 4).
   const [revealed, setRevealed] = useState(false);
   const openMark = useMemo(createOpenMark, []);
@@ -271,7 +269,6 @@ function ReviewItemPanel({
             index,
             view,
             hiddenLayers: hidden,
-            activeLayerId,
             revealed,
             onReveal: setRevealed,
             onShowCurrent: () => review.setView('current'),
@@ -289,7 +286,6 @@ function ReviewItemPanel({
       index,
       view,
       hidden,
-      activeLayerId,
       revealed,
       review,
       d.proposal,

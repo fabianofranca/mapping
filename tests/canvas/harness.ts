@@ -201,7 +201,6 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     items: itemsOf(ui.selection.peek(), ui.selectionGroup.peek()),
     mode: ui.mode.peek(),
     locale: locale.peek(),
-    shown: derived.visibleLayers.peek(),
     dots: derived.layerDots.peek(),
     incomplete: derived.incompleteMarkings.peek(),
     visibility: derived.markingVisibility.peek(),

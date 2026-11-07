@@ -251,7 +251,6 @@ export class CanvasController {
       items: this.selectedItems.value,
       mode: this.ui.mode.value,
       locale: locale.value,
-      shown: this.derived.visibleLayers.value,
       dots: this.derived.layerDots.value,
       incomplete: this.derived.incompleteMarkings.value,
       visibility: this.derived.markingVisibility.value,

@@ -88,7 +88,7 @@ describe('CanvasController: setas', () => {
   });
 
   it('a seta some quando uma das pontas está oculta pelo modo de exibição', () => {
-    // "Ocultar": sem anotação na camada ativa a marcação some, e a seta com ela. As setas
+    // "Ocultar": sem anotação em nenhuma camada visível a marcação some, e a seta com ela. As setas
     // têm anotações (ra1), mas as pontas a1 e a3 não.
     const { container, controller, ui } = setup();
     setMarkingDisplay('hide');

@@ -168,7 +168,6 @@ export const ptBR = {
 
   'layer.newName': 'Camada {n}',
   'layer.title': 'Camadas',
-  'layer.chipLabel': 'Camadas (ativa: {name})',
   'layer.add': 'Nova camada',
   'layer.showAll': 'Mostrar todas',
   'layer.visible': 'Mostrar a camada {name}',
@@ -176,7 +175,6 @@ export const ptBR = {
   'layer.color': 'Cor da camada {name}',
   'layer.customColor': 'Outra cor',
   'layer.more': 'Mais ações da camada {name}',
-  'layer.makeActive': 'Tornar ativa: {name}',
   'layer.moveUp': 'Subir camada',
   'layer.moveDown': 'Descer camada',
   'layer.delete': 'Excluir camada',
@@ -191,10 +189,10 @@ export const ptBR = {
   'layer.display.dim': 'Esmaecer sem anotação',
   'layer.display.hide': 'Ocultar sem anotação',
   'layer.displayHint':
-    'Vale pela camada ativa: conta as anotações dela. A marcação selecionada sempre aparece.',
+    'Vale pelas camadas visíveis: conta as anotações delas. A marcação selecionada sempre aparece.',
 
   'annotation.heading': 'Anotações',
-  'annotation.add': '+ Anotação',
+  'annotation.allLayersHidden': 'Todas as camadas estão escondidas.',
   'annotation.addIn': 'Adicionar anotação na camada {layer}',
   'annotation.emptySection': 'Nenhuma anotação nesta camada.',
   'annotation.name': 'Nome da anotação',
@@ -753,7 +751,6 @@ export const ptBR = {
   'image.section': 'Imagem',
   'image.file': 'Arquivo',
   'image.size': 'Tamanho',
-  'layerGroup.active': 'ativa',
   'details.summary': '{name} — {values}',
   'details.summarySeparator': ' · ',
   'annotation.expand': 'Mostrar {name}',

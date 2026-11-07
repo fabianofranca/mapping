@@ -94,7 +94,6 @@ export function ListView({ onSelect }: ListViewProps) {
   const incompleteOnly = ui.listIncompleteOnly.value;
   const layers = derived.visibleLayers.value;
   const listing = derived.listing.value;
-  const activeId = derived.activeLayerId.value;
   // A seta selecionada destaca a linha dela (os ids de setas e marcações não se repetem).
   const selectedId =
     selection?.kind === 'marking' || selection?.kind === 'arrow' ? selection.id : null;
@@ -121,10 +120,9 @@ export function ListView({ onSelect }: ListViewProps) {
             <Choice
               key={layer.id}
               checked={shownIds.has(layer.id)}
-              disabled={layer.id === activeId}
               aria-label={t('layer.visible', { name: layer.name })}
               label={<LayerCell layer={layer} />}
-              onChange={() => toggleLayerVisible(ui, project, layer.id)}
+              onChange={() => toggleLayerVisible(ui, layer.id)}
             />
           ))}
         </div>

@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/preact
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Project } from '../../src/model';
+import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { goToAnnotation } from '../../src/store/ui';
 import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
@@ -37,6 +38,24 @@ function renderMarking(markingId: string, project: Project = cadastroProject()) 
   });
   return { harness, user: userEvent.setup() };
 }
+
+describe('Detalhes — todas as camadas escondidas', () => {
+  it('a seção Anotações diz que estão escondidas e "Mostrar todas" as volta', async () => {
+    const { harness, user } = renderMarking('MN');
+    expect(screen.queryByText('Todas as camadas estão escondidas.')).toBeNull();
+    act(() => {
+      harness.ui.hiddenLayers.value = new Set(harness.project().layers.map((l) => l.id));
+    });
+    expect(screen.getByText('Todas as camadas estão escondidas.')).toBeTruthy();
+    expect(
+      screen.queryByRole('button', { name: /^Adicionar anotação na camada/ }),
+    ).toBeNull();
+    expect(screen.queryByRole('button', { name: '+ Anotação' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Mostrar todas' }));
+    expect(harness.ui.hiddenLayers.value.size).toBe(0);
+    expect(screen.queryByText('Todas as camadas estão escondidas.')).toBeNull();
+  });
+});
 
 describe('Detalhes — marcação', () => {
   it('identidade: nome, onde está e o ID com copiar', async () => {
@@ -307,16 +326,13 @@ describe('Detalhes — DataGrid', () => {
 // Etapa 8 (8.3), achado F3: o passo "tipo" troca pelo passo "dono" no mesmo slot; o diálogo
 // novo guardava como "quem abriu" o botão do tipo, que já tinha saído, e o foco se perdia.
 describe('Detalhes — nova anotação tipada com dono (F3)', () => {
-  it('tipo › dono › Cancelar volta ao "+ Anotação"', async () => {
+  it('tipo › dono › Cancelar volta ao + da camada', async () => {
     const { harness, user } = renderMarking('MC');
-    act(() => {
-      harness.ui.activeLayer.value = layerOf(harness.project(), 'sdui', 'eventos');
-    });
-    // O "+ Anotação" do cabeçalho (o que o Alt+N aciona), não o de cada camada.
-    const add = await vi.waitFor(() => {
-      const el = document.querySelector<HTMLElement>('[data-action="add-annotation"]');
-      if (!el) throw new Error('sem o "+ Anotação"');
-      return el;
+    // O + da camada Eventos (o único jeito de adicionar anotação: não há botão no topo).
+    const eventos = layerOf(harness.project(), 'sdui', 'eventos');
+    const layerName = harness.project().layers.find((l) => l.id === eventos)?.name ?? '';
+    const add = await screen.findByRole('button', {
+      name: t('annotation.addIn', { layer: layerName }),
     });
     await user.click(add);
     const types = await vi.waitFor(() => {

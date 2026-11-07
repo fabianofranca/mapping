@@ -26,11 +26,10 @@ async function revealHiddenLayer(page: Page): Promise<Locator> {
     .click();
   await expect(page.getByText('Somente leitura').first()).toBeVisible();
 
-  // Esconde todas as camadas que o editor deixa esconder (a ativa não deixa).
+  // Esconde todas as camadas.
   const toggles = page.getByRole('checkbox', { name: /^Mostrar a camada / });
   for (const box of await toggles.all()) {
-    if ((await box.isChecked()) && (await box.isEnabled()))
-      await box.uncheck({ force: true });
+    if (await box.isChecked()) await box.uncheck({ force: true });
   }
 
   await page

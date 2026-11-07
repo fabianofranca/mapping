@@ -15,7 +15,7 @@ import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { setMarkingDisplay, setShowComponentsOnPhotos } from '../../src/store/settings';
 import { textMeasurer } from '../../src/store/textMeasure';
-import { createEditorUi, setActiveLayer } from '../../src/store/ui';
+import { createEditorUi, type EditorUi } from '../../src/store/ui';
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
 import { NOTES_SPEC_ID, notesCatalog, notesProject } from '../model/notesFixtures';
 
@@ -58,6 +58,13 @@ function screen(): Project {
   p = add(p, 'T1', 'text', box(100, 100, 100, 40));
   p = add(p, 'T2', 'text', box(300, 100, 100, 40));
   return p;
+}
+
+/** Deixa só uma camada visível (o filtro "sem anotação" vale pelas visíveis). */
+function showOnly(ui: EditorUi, project: Project | null, layerId: string): void {
+  ui.hiddenLayers.value = new Set(
+    (project?.layers ?? []).filter((l) => l.id !== layerId).map((l) => l.id),
+  );
 }
 
 function setup(
@@ -247,13 +254,13 @@ describe('derivado: marcações desenhadas', () => {
     const drawable = ['T1', 'T2', 'C', 'K'];
     for (const mode of ['hide', 'dim'] as const) {
       setMarkingDisplay(mode);
-      // Camada ativa sem as anotações dos componentes: eles seguem por inteiro e desenhados.
-      setActiveLayer(ui, other.id);
+      // Só uma camada sem as anotações dos componentes visível: eles seguem por inteiro e desenhados.
+      showOnly(ui, store.project.value, other.id);
       const marks = derived.markingVisibility.value;
       for (const id of drawable) expect(marks.get(id)).toBe('full');
       expect(marks.get('P')).toBe(mode === 'hide' ? 'hidden' : 'dim');
       expect([...derived.drawnMarkings.value].sort()).toEqual([...drawable].sort());
-      setActiveLayer(ui, typed.id);
+      showOnly(ui, store.project.value, typed.id);
       expect(derived.markingVisibility.value.get('C')).toBe('full');
     }
     // Ver limpo: nenhuma marcação aparece, nem a selecionada, mas o desenho segue à vista.
@@ -270,7 +277,7 @@ describe('derivado: marcações desenhadas', () => {
     // Sem a opção, na foto nada desenha; o filtro volta a valer para o que não desenha.
     setShowComponentsOnPhotos(false);
     setMarkingDisplay('hide');
-    setActiveLayer(ui, other.id);
+    showOnly(ui, store.project.value, other.id);
     expect(derived.drawnMarkings.value.size).toBe(0);
     expect(derived.markingVisibility.value.get('T1')).toBe('hidden');
   });
@@ -294,7 +301,7 @@ describe('derivado: marcações desenhadas', () => {
     const other = store.project.value?.layers.find((l) => l.spec === null);
     if (!other) throw new Error('camada');
     setMarkingDisplay('hide');
-    setActiveLayer(ui, other.id);
+    showOnly(ui, store.project.value, other.id);
     expect(derived.markingVisibility.value.get(created.value)).toBe('full');
     expect([...derived.drawnMarkings.value]).toEqual([created.value]);
   });
@@ -385,9 +392,9 @@ describe('derivado: pendência "componente não cabe"', () => {
   });
 
   it('soma ao que o modelo já aponta na mesma anotação', () => {
-    const { derived, actions } = withWide();
+    const { derived, actions, store } = withWide();
     // Um valor inválido numa anotação que também transborda: as duas pendências aparecem.
-    actions.addAnnotation('W', derived.activeLayerId.value as string);
+    actions.addAnnotation('W', store.project.value?.layers[0]?.id as string);
     const issues = derived.issues.value.get('A_W') ?? [];
     expect(issues.map((i) => i.code)).toContain('component-overflow');
   });
