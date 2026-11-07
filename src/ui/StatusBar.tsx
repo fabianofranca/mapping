@@ -11,6 +11,7 @@ import { arrowText, imageLabel, markingLabel } from './labels';
 import { ZoomField } from './ZoomField';
 import { showAndFocusToolWindow } from './toolWindowLayout';
 import { awaitingText } from './review/ProposalRow';
+import { statusBarText } from './comments/commentsText';
 
 // Barra de status (B8): salvamento, destino e "não exportado" à esquerda;
 // seleção, cursor, zoom, schema, canal e build à direita. O cursor vem do canvas num signal
@@ -146,6 +147,24 @@ function NoticesItem() {
   );
 }
 
+/** Conversas abertas (etapa Comentários): quantas e quantas aguardam o agente; abre a janela. */
+function CommentsItem() {
+  const { derived } = useEditor();
+  const open = derived.threads.openCount.value;
+  if (open === 0) return null;
+  return (
+    <button
+      type="button"
+      class="status-item status-item-button"
+      title={t('comments.statusBar.tip')}
+      onClick={() => showAndFocusToolWindow('comments')}
+    >
+      <Icon name="chat" />
+      {statusBarText(open, derived.threads.awaitingAgentCount.value)}
+    </button>
+  );
+}
+
 /** Modo visualização: lembra que o canvas é só para ver e como sair. */
 function ViewModeItem() {
   const { ui } = useEditor();
@@ -181,6 +200,7 @@ export function StatusBar() {
       )}
       <ProposalsItem />
       <NoticesItem />
+      <CommentsItem />
       <ViewModeItem />
       <span class="statusbar-gap" />
       <SelectionItem />

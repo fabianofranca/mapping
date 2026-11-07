@@ -5,6 +5,7 @@ import { SHORTCUT_LABELS } from '../app/shortcuts';
 import type { ActionResult } from '../store/history';
 import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
+import { ThreadsSection } from './comments/ThreadsSection';
 import { Button, HelpTip, IconButton, Segmented, TextField } from './controls';
 import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
@@ -19,6 +20,8 @@ interface ArrowPanelProps {
   readonly readOnly: boolean;
   readonly onDelete: (arrow: Arrow) => void;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
+  /** Abre as Configurações (o aviso de conversa sem identidade leva até lá). */
+  readonly onOpenSettings?: () => void;
 }
 
 /** Mensagem de uma edição recusada da seta. */
@@ -37,6 +40,7 @@ export function ArrowPanel({
   readOnly,
   onDelete,
   onGoToAnnotation,
+  onOpenSettings,
 }: ArrowPanelProps) {
   const { actions, ui, derived } = useEditor();
   const ext = useDetailsExtension();
@@ -158,6 +162,12 @@ export function ArrowPanel({
         onGoToAnnotation={onGoToAnnotation}
         focusAnnotation={ui.focusAnnotation.value}
         onFocusDone={() => (ui.focusAnnotation.value = null)}
+      />
+
+      <ThreadsSection
+        itemId={arrow.id}
+        anchor={{ kind: 'arrow', id: arrow.id }}
+        onOpenSettings={onOpenSettings}
       />
 
       {ext?.others(arrow.id)}

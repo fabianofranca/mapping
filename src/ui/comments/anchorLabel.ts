@@ -27,52 +27,59 @@ const MISSING: Record<ThreadMissingKind, TranslationKey> = {
   row: 'thread.anchor.missing.row',
 };
 
+type ItemAnchor = Extract<ThreadAnchor, { id: string }>;
+
 function annotationText(project: Project, annotation: Annotation): string {
   return annotationTitle(project, annotation) ?? annotationLabel(annotation);
 }
 
-function partLabel(project: Project, anchor: ThreadAnchor): string {
-  const idx = projectIndex(project);
-  if (anchor.kind !== 'field' && anchor.kind !== 'entry' && anchor.kind !== 'row') {
-    return '';
-  }
-  const annotation = idx.annotations.get(anchor.annotationId);
-  if (!annotation) return '';
-  const owner = annotationText(project, annotation);
-  const sep = t('marking.pathSeparator');
-  if (anchor.kind === 'entry') {
-    const entry = idx.entries.get(annotation.id)?.get(anchor.entryId);
-    return `${owner}${sep}${entry?.key ?? ''}`;
-  }
-  const type = typeOfAnnotation(project, annotation)?.type;
-  const field = type ? fieldOf(type, anchor.key) : null;
-  return `${owner}${sep}${field ? fieldLabel(field) : anchor.key}`;
+function entryKey(project: Project, annotation: Annotation, entryId: string): string {
+  return projectIndex(project).entries.get(annotation.id)?.get(entryId)?.key ?? '';
 }
 
-function itemLabel(project: Project, anchor: ThreadAnchor): string {
+function fieldText(project: Project, annotation: Annotation, key: string): string {
+  const type = typeOfAnnotation(project, annotation)?.type;
+  const field = type ? fieldOf(type, key) : null;
+  return field ? fieldLabel(field) : key;
+}
+
+/** "Anotação › campo" (campo e linha) ou "Anotação › chave do par". */
+function partLabel(
+  project: Project,
+  anchor: Extract<ThreadAnchor, { annotationId: string }>,
+): string {
+  const annotation = projectIndex(project).annotations.get(anchor.annotationId);
+  if (!annotation) return '';
+  const part =
+    anchor.kind === 'entry'
+      ? entryKey(project, annotation, anchor.entryId)
+      : fieldText(project, annotation, anchor.key);
+  return [annotationText(project, annotation), part].join(t('marking.pathSeparator'));
+}
+
+function itemLabel(project: Project, anchor: ItemAnchor): string {
   const idx = projectIndex(project);
-  switch (anchor.kind) {
-    case 'marking': {
+  const found = {
+    marking: () => {
       const m = idx.markings.get(anchor.id);
       return m ? markingLabel(project, m) : '';
-    }
-    case 'container': {
+    },
+    container: () => {
       const c = idx.containers.get(anchor.id);
       return c ? imageLabel(c) : '';
-    }
-    case 'arrow': {
+    },
+    arrow: () => {
       const a = idx.arrows.get(anchor.id);
       return a ? arrowText(project, a) : '';
-    }
-    case 'layer':
-      return t('thread.anchor.layer', { name: idx.layers.get(anchor.id)?.name ?? '' });
-    case 'annotation': {
+    },
+    layer: () =>
+      t('thread.anchor.layer', { name: idx.layers.get(anchor.id)?.name ?? '' }),
+    annotation: () => {
       const a = idx.annotations.get(anchor.id);
       return a ? annotationText(project, a) : '';
-    }
-    default:
-      return partLabel(project, anchor);
-  }
+    },
+  };
+  return found[anchor.kind]();
 }
 
 /** Onde a conversa mora, em texto; a órfã diz o que sumiu. */
@@ -88,5 +95,7 @@ export function anchorLabel(project: Project, anchor: ThreadAnchor): string {
       where: container ? imageLabel(container) : t('canvas.name'),
     });
   }
-  return itemLabel(project, anchor);
+  return 'annotationId' in anchor
+    ? partLabel(project, anchor)
+    : itemLabel(project, anchor);
 }

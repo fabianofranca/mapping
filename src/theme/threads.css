@@ -1,0 +1,196 @@
+/* Conversas (etapa Comentários): seção dos Detalhes, vista da conversa, mensagens e compositor. */
+
+.thread-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thread-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font: var(--t-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.thread-row:hover {
+  background: var(--color-hover);
+}
+
+.thread-row[aria-current='true'] {
+  background: var(--color-selection);
+}
+
+.thread-row-unread {
+  font-weight: 600;
+}
+
+.thread-row-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.thread-row-subject {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-row-meta {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font: var(--t-text-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thread-row-count {
+  color: var(--color-text-muted);
+  font: var(--t-text-small);
+}
+
+.thread-avatar {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-control);
+  height: var(--size-control);
+  border-radius: var(--radius-full);
+  background: var(--color-selection-muted);
+  color: var(--color-text);
+  font: var(--t-micro);
+}
+
+.thread-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.thread-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.thread-head-spacer {
+  flex: 1;
+}
+
+.thread-state {
+  padding: var(--space-0-5) var(--space-2);
+  border-radius: var(--radius-full);
+  font: var(--t-micro);
+}
+
+.thread-state-agent {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.thread-state-human {
+  background: var(--color-selection);
+  color: var(--color-accent);
+}
+
+.thread-state-resolved {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.thread-resolved-by {
+  margin: 0;
+  color: var(--color-text-muted);
+  font: var(--t-text-small);
+}
+
+.thread-messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.thread-message {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.thread-message-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.thread-message-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.thread-message-author {
+  font: var(--t-body-strong);
+}
+
+.thread-message-agent {
+  padding: 0 var(--space-1-5);
+  border-radius: var(--radius-full);
+  background: var(--color-selection-muted);
+  color: var(--color-text-muted);
+  font: var(--t-micro);
+}
+
+.thread-message-time {
+  color: var(--color-text-muted);
+  font: var(--t-text-small);
+}
+
+.thread-composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.thread-composer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.thread-no-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-text-muted);
+  font: var(--t-text-small);
+}
+
+.thread-standalone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.thread-standalone-title {
+  margin: 0;
+  font: var(--t-text-heading);
+}

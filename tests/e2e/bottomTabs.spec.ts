@@ -1,17 +1,18 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fixtureZip } from './proposalFixture';
 
-// Janela inferior: as quatro abas ficam visíveis e clicáveis em 900 e 1280 px, com
+// Janela inferior: as seis abas ficam visíveis e clicáveis em 900 e 1280 px, com
 // qualquer uma ativa; as ações do cabeçalho nunca cobrem outra aba.
 
 const SHOTS = process.env.LAYOUT_SHOTS ?? '';
-const TABS = ['Lista', 'Incompletas', 'Diagnóstico', 'Propostas'] as const;
+const TABS = ['Lista', 'Incompletas', 'Diagnóstico', 'Propostas', 'Comentários'] as const;
 // Atalho de cada aba (Ctrl+Shift+N).
 const KEYS: Record<(typeof TABS)[number], string> = {
   Lista: '4',
   Incompletas: '5',
   Diagnóstico: '6',
   Propostas: '7',
+  Comentários: '0',
 };
 
 async function open(page: Page): Promise<void> {
@@ -29,7 +30,7 @@ async function open(page: Page): Promise<void> {
 }
 
 for (const width of [900, 1280]) {
-  test(`as quatro abas da janela inferior ficam à vista em ${width} px`, async ({
+  test(`as seis abas da janela inferior ficam à vista em ${width} px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 860 });
