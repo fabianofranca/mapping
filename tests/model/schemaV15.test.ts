@@ -28,8 +28,7 @@ const v14Text = (): string => {
 };
 
 describe('schema v15', () => {
-  it('a versão atual é 15 e o registro tem a migração v14 → v15', () => {
-    expect(SCHEMA_VERSION).toBe(15);
+  it('o registro tem a migração v14 → v15', () => {
     expect(migrations.get(14)).toBe(migrateFrom14To15);
   });
 
@@ -42,20 +41,20 @@ describe('schema v15', () => {
     const result = load(v14Text());
     expect(result.migratedFrom).toBe(14);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(15);
+    expect(result.project.schemaVersion).toBe(SCHEMA_VERSION);
     expect(serialize(result.project)).toBe(serialize(sampleProject()));
     const saved = JSON.parse(serialize(result.project)) as Raw;
-    expect(saved.schemaVersion).toBe(15);
+    expect(saved.schemaVersion).toBe(SCHEMA_VERSION);
     expect(serialize(load(serialize(result.project)).project)).toBe(
       serialize(result.project),
     );
   });
 
-  it('um v15 abre sem migrar; o v16 abre só para leitura ("versão mais nova")', () => {
+  it('o atual abre sem migrar; o v17 abre só para leitura ("versão mais nova")', () => {
     const p = add(add(sameLayerProject(), 'R1', 'request'), 'N1', 'navigate', 'R1');
     const text = serialize(p);
     expect(load(text, specFiles(p)).migratedFrom).toBeNull();
-    const newer = JSON.stringify({ ...JSON.parse(text), schemaVersion: 16 });
+    const newer = JSON.stringify({ ...JSON.parse(text), schemaVersion: 17 });
     const loaded = load(newer, specFiles(p));
     expect(loaded.readOnly).toBe(true);
     expect(loaded.project.annotations.map((a) => a.id)).toEqual(['R1', 'N1']);

@@ -24,6 +24,7 @@ export async function avisosZip(): Promise<Buffer> {
   );
   if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
   let p = createProject({
+    id: '00000000-0000-4000-8000-000000000e2e',
     name: 'Avisos',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Livre', color: '#1e88e5' },

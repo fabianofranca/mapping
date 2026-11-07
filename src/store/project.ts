@@ -89,9 +89,13 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
   /** Mínimo do componente de cada marcação de `p`: vale ao converter o `rect` para outro espaço. */
   const minSizeOf = (p: Project) => (id: string) =>
     model.componentMinSize(p, catalog(), id);
-  /** Opções do assentar das operações de geometria que não são prévia de gesto. */
+  /**
+   * Opções do assentar das operações de geometria que não são prévia de gesto. `before` é o projeto
+   * de antes (o do início do gesto): as perspectivas se reconciliam com a diferença até ele.
+   */
   const settleOptions = (p: Project): model.SettleOptions => ({
     settle: true,
+    before: p,
     minSizeOf: minSizeOf(p),
   });
   /**

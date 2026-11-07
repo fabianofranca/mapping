@@ -1,5 +1,6 @@
 import { fail } from './errors';
 import { annotationWithLinked } from './links';
+import { pruneHiddenLayers } from './perspectiveReconcile';
 import { findById, moveItem, updateById } from './project';
 import { countBrokenRefs } from './refs';
 import type { Layer, Project } from './types';
@@ -124,9 +125,9 @@ export function removeLayer(p: Project, layerId: string): Project {
   checkFreeLayer(p, layerId);
   if (p.layers.length === 1) fail('last-layer');
   const doomed = doomedByLayer(p, layerId);
-  return {
+  return pruneHiddenLayers({
     ...p,
     layers: p.layers.filter((l) => l.id !== layerId),
     annotations: p.annotations.filter((a) => !doomed.has(a.id)),
-  };
+  });
 }

@@ -9,6 +9,7 @@ import {
   toCanvasRect,
   type Size,
 } from './geometry';
+import { reconcilePerspectives } from './perspectiveReconcile';
 import { projectIndex } from './projectIndex';
 import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
@@ -21,11 +22,14 @@ import type { Marking, Placement, Project, ProjectContainer, Rect } from './type
  * Opções das operações que mexem na geometria. `settle: false` só nas prévias de gesto
  * (pertencimento congelado enquanto o ponteiro se move); toda outra chamada assenta.
  * `minSizeOf` dá o tamanho mínimo do componente que desenha a marcação (o modelo não conhece
- * componentes): vale ao converter o `rect` para outro espaço.
+ * componentes): vale ao converter o `rect` para outro espaço. `before` é o projeto de antes da
+ * operação: as perspectivas e as marcas de chegada são reconciliadas comparando os dois
+ * (`reconcilePerspectives`); sem ele vale o projeto que entra no assentar.
  */
 export interface SettleOptions {
   readonly settle?: boolean;
   readonly minSizeOf?: (markingId: string) => Size | null;
+  readonly before?: Project;
 }
 
 /** Espaço de coordenadas de uma marcação: o container dela ou o canvas. */
@@ -247,10 +251,16 @@ function settleSpace(
  * O resultado depende do `parentId` atual só nesses empates.
  *
  * Não muda a ordem dos arrays. As setas não entram na relação; só perdem os `points` quando uma
- * das pontas troca de espaço. Determinística e idempotente: nada a mudar devolve `p` como está
- * (o mesmo objeto).
+ * das pontas troca de espaço. No fim reconcilia as perspectivas e as marcas de chegada com o
+ * resultado (`options.before` ?? `p` é o projeto de antes). Determinística e idempotente: nada a
+ * mudar devolve `p` como está (o mesmo objeto).
  */
 export function settleHierarchy(p: Project, options?: SettleOptions): Project {
+  return reconcilePerspectives(options?.before ?? p, settleGeometry(p, options));
+}
+
+/** O assentar da geometria e do pertencimento, sem as perspectivas. */
+function settleGeometry(p: Project, options?: SettleOptions): Project {
   let changed = false;
   // Marcações que trocaram de espaço: a seta presa a elas perde os pontos de passagem.
   const movedSpace = new Set<string>();
@@ -324,6 +334,19 @@ export function clearArrowRoutes(p: Project, markingIds: ReadonlySet<string>): P
 /** Assenta, a menos que a operação seja uma prévia de gesto (`settle: false`). */
 export function settleIf(p: Project, options?: SettleOptions): Project {
   return options?.settle === false ? p : settleHierarchy(p, options);
+}
+
+/**
+ * Assenta o resultado `next` de uma operação que partiu de `before` (salvo `settle: false`):
+ * as perspectivas são reconciliadas com a diferença entre os dois. Um `options.before` explícito
+ * (a operação chamada por outra, ou o fim de um gesto) vale mais que o `before` daqui.
+ */
+export function settleFrom(
+  before: Project,
+  next: Project,
+  options?: SettleOptions,
+): Project {
+  return settleIf(next, { before, ...options });
 }
 
 /** Membros de uma marcação: as marcações e os containers cujo pai é ela, na ordem dos arrays. */

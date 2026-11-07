@@ -40,6 +40,7 @@ export function serialize(p: Project): string {
     app: p.app,
     coordinateSystem: p.coordinateSystem,
     project: {
+      id: p.project.id,
       name: p.project.name,
       createdAt: p.project.createdAt,
       updatedAt: p.project.updatedAt,
@@ -101,6 +102,17 @@ export function serialize(p: Project): string {
       style: a.style,
       name: a.name,
       locked: a.locked,
+    })),
+    perspectives: p.perspectives.map((x) => ({
+      id: x.id,
+      name: x.name,
+      hiddenLayers: [...x.hiddenLayers],
+      items: x.items.map((item) => ({ root: item.root, x: item.x, y: item.y })),
+    })),
+    arrivals: p.arrivals.map((a) => ({
+      root: a.root,
+      from: a.from,
+      fromName: a.fromName,
     })),
     annotations: p.annotations.map((a) => ({
       id: a.id,

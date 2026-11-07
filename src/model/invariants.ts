@@ -8,7 +8,7 @@ import {
   rectsOverlap,
 } from './geometry';
 import { tableRows } from './refs';
-import type { Entry, Project } from './types';
+import type { Entry, Perspective, Project } from './types';
 
 export type InvariantCode =
   | 'duplicate-id'
@@ -42,11 +42,26 @@ export type InvariantCode =
   | 'duplicate-key'
   | 'duplicate-spec-file'
   | 'duplicate-entry-id'
-  | 'duplicate-row-id';
+  | 'duplicate-row-id'
+  | 'perspective-root-missing'
+  | 'perspective-root-not-root'
+  | 'perspective-root-duplicate'
+  | 'perspective-layer-missing'
+  | 'perspective-duplicate-name'
+  | 'arrival-root-missing'
+  | 'arrival-root-not-root'
+  | 'arrival-duplicate';
 
 /** Tipo do item com problema. */
 export type InvariantEntity =
-  'image' | 'marking' | 'arrow' | 'annotation' | 'layer' | 'spec';
+  | 'image'
+  | 'marking'
+  | 'arrow'
+  | 'annotation'
+  | 'layer'
+  | 'spec'
+  | 'perspective'
+  | 'arrival';
 
 export interface InvariantIssue {
   readonly code: InvariantCode;
@@ -89,6 +104,97 @@ export function validateEntries<T extends Pick<Entry, 'key'>>(
   });
 }
 
+/** Nome de perspectiva para comparar: sem espaços nas pontas e sem diferença de caixa. */
+export function perspectiveNameKey(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+/**
+ * Raízes do projeto (v16): o container sem pai e a marcação flutuante ou do canvas sem pai.
+ * Só estas aparecem numa perspectiva (`items`) ou numa chegada (`arrivals`).
+ */
+function rootIds(p: Project): { all: ReadonlySet<string>; roots: ReadonlySet<string> } {
+  const all = new Set<string>();
+  const roots = new Set<string>();
+  for (const c of p.containers) {
+    all.add(c.id);
+    if (c.parentId === null) roots.add(c.id);
+  }
+  for (const m of p.markings) {
+    all.add(m.id);
+    if (m.floating || (m.containerId === null && m.parentId === null)) roots.add(m.id);
+  }
+  return { all, roots };
+}
+
+/** Código da raiz inválida (inexistente ou que não é raiz), ou `null` se a raiz serve. */
+function rootProblem(
+  root: string,
+  ids: ReturnType<typeof rootIds>,
+): 'missing' | 'not-root' | null {
+  if (!ids.all.has(root)) return 'missing';
+  return ids.roots.has(root) ? null : 'not-root';
+}
+
+type Report = (code: InvariantCode, item: Named, otherId?: string) => void;
+
+/** Camadas escondidas e itens (raiz existente, que é raiz e sem repetir) de uma perspectiva. */
+function validatePerspectiveContent(
+  x: Perspective,
+  layerIds: ReadonlySet<string>,
+  ids: ReturnType<typeof rootIds>,
+  report: Report,
+): void {
+  for (const layerId of x.hiddenLayers) {
+    if (!layerIds.has(layerId)) report('perspective-layer-missing', x, layerId);
+  }
+  const seen = new Set<string>();
+  for (const { root } of x.items) {
+    const problem = rootProblem(root, ids);
+    if (problem !== null) report(`perspective-root-${problem}`, x, root);
+    else if (seen.has(root)) report('perspective-root-duplicate', x, root);
+    seen.add(root);
+  }
+}
+
+/** A chegada aponta para uma raiz existente, e cada raiz tem no máximo uma. */
+function validateArrivals(
+  p: Project,
+  ids: ReturnType<typeof rootIds>,
+  report: Report,
+): void {
+  const arrived = new Set<string>();
+  for (const a of p.arrivals) {
+    const named = { id: a.root, name: a.fromName };
+    const problem = rootProblem(a.root, ids);
+    if (problem !== null) report(`arrival-root-${problem}`, named);
+    else if (arrived.has(a.root)) report('arrival-duplicate', named);
+    arrived.add(a.root);
+  }
+}
+
+/**
+ * Invariantes das perspectivas e das chegadas (v16). O item com problema é a perspectiva (id e
+ * nome dela) com a raiz ou a camada em `otherId`; a chegada se identifica pela raiz (`id`).
+ * Mapas e conjuntos: nada de busca em laço.
+ */
+function validatePerspectives(p: Project, perspective: Report, arrival: Report): void {
+  const ids = rootIds(p);
+  const layerIds = new Set(p.layers.map((l) => l.id));
+  const perspectiveIds = new Set<string>();
+  const names = new Map<string, string>();
+  for (const x of p.perspectives) {
+    if (perspectiveIds.has(x.id)) perspective('duplicate-id', x);
+    perspectiveIds.add(x.id);
+    const key = perspectiveNameKey(x.name);
+    const first = names.get(key);
+    if (first !== undefined) perspective('perspective-duplicate-name', x, first);
+    else names.set(key, x.id);
+    validatePerspectiveContent(x, layerIds, ids, perspective);
+  }
+  validateArrivals(p, ids, arrival);
+}
+
 /**
  * Checa os invariantes que o schema zod não expressa. Lista vazia = projeto válido.
  * Ver docs/FORMAT.md, "Regras de validade". A seta (v13) tem as suas:
@@ -116,6 +222,8 @@ export function validateProject(p: Project): InvariantIssue[] {
   const marking = issue('marking');
   const arrow = issue('arrow');
   const annotation = issue('annotation');
+
+  validatePerspectives(p, issue('perspective'), issue('arrival'));
 
   const lists = [
     [p.specializations, spec],

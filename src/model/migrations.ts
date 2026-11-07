@@ -292,6 +292,22 @@ export const migrateFrom13To14: Migration = (data) => ({
  */
 export const migrateFrom14To15: Migration = (data) => data;
 
+/**
+ * v15 → v16 (perspectivas): o projeto ganha `project.id` (um UUID novo; a identidade chaveia o
+ * que fica no navegador, como a perspectiva aberta e as "Só eu"), `perspectives: []` e
+ * `arrivals: []`. A migração nunca cria perspectiva: a Principal é implícita e mostra tudo, como
+ * antes. Valores já presentes são preservados (um id já gravado nunca é trocado).
+ */
+export const migrateFrom15To16: Migration = (data) => {
+  const project = isObject(data.project) ? data.project : {};
+  return {
+    ...data,
+    project: { id: crypto.randomUUID(), ...project },
+    perspectives: data.perspectives ?? [],
+    arrivals: data.arrivals ?? [],
+  };
+};
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -308,6 +324,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [12, migrateFrom12To13],
   [13, migrateFrom13To14],
   [14, migrateFrom14To15],
+  [15, migrateFrom15To16],
 ]);
 
 export type MigrationResult =

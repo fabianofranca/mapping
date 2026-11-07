@@ -1,9 +1,10 @@
 {
-  "schemaVersion": 15,
+  "schemaVersion": 16,
   "revision": 1,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
   "project": {
+    "id": "6c1f0e52-3b7a-4f6e-9d1a-2e8f5a7c4b10",
     "name": "exemplo-completo",
     "createdAt": "2026-10-18T23:03:32.000Z",
     "updatedAt": "2026-10-18T23:03:32.000Z"
@@ -702,6 +703,9 @@
       "source": null
     }
   ],
+  "arrows": [],
+  "perspectives": [],
+  "arrivals": [],
   "annotations": [
     {
       "id": "4c8e4bb5-2c9b-40e2-a514-3951d7e62c8b",
