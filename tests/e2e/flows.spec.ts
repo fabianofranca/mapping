@@ -143,7 +143,7 @@ test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', as
   await createProject(page, 'Janelas');
 
   // Barra de status e breadcrumbs sem seleção.
-  await expect(page.getByText('schema v14')).toBeVisible();
+  await expect(page.getByText('schema v15')).toBeVisible();
   await expect(page.locator('.crumbs')).toContainText('Nada selecionado');
 
   // Árvore e Detalhes abrem por padrão; a Lista abre pela faixa.
