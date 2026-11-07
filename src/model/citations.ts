@@ -1,5 +1,4 @@
-import { fieldLabel } from './typedDisplay';
-import { normalizeId, refImageLabel } from './itemRef';
+import { REF_SCHEME, normalizeId, refImageLabel } from './itemRef';
 import {
   parseAnyRef,
   type AnyRef,
@@ -12,10 +11,9 @@ import type { MarkdownBlock, MarkdownInline } from './markdown';
 import { memoByProject, projectIndex } from './projectIndex';
 import { instanceLabel, tableRows } from './refs';
 import { fieldOf, typeOfAnnotation } from './specLookup';
-import { typeName } from './typedDisplay';
+import { fieldLabel, typeName } from './typedDisplay';
 import type { Thread } from './thread';
 import type { Annotation, JsonValue, Project } from './types';
-import { REF_SCHEME } from './itemRef';
 
 // Citações das conversas (etapa Comentários, decisões 28, 29 e 33). A citação é um link
 // markdown comum, `[<rótulo>](mapping://<projeto>/<letra>/<código>…)`, sem sintaxe nova. Aqui:
