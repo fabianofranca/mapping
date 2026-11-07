@@ -12,7 +12,7 @@ Este arquivo é o registro dele no repositório. Ele diz o que o DS é, **quando
 - **Não é gerado do código.** A skill `/design-sync` do Claude Code **não se aplica** a este DS: ela espera o `dist/` de uma biblioteca de componentes publicada e transformaria o DS curado num espelho do build. Não a use aqui.
 - **O código é a fonte da verdade; o DS descreve.** Onde os dois divergirem, corrija o DS. Divergência que pareça defeito da app não se resolve aqui: registre em "Pendências" e leve ao dono.
 - **Nome.** O índice do artefato se chama **Mapping**. Se aparecer o nome antigo "Mapeador de Imagens 2.0", é o mesmo artefato.
-- **Tamanho hoje:** 67 componentes com guia e preview (mais a capa `Cover`), 6 seções, 147 tokens e 86 ícones.
+- **Tamanho hoje:** 70 componentes com guia (mais a capa `Cover`), 6 seções, 147 tokens e 89 ícones.
 
 ## Quando verificar
 
@@ -82,6 +82,9 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `Tags` | `src/ui/controls/Chip.tsx` | Etiqueta de camada em `src/ui/ListView.tsx`. |
 | `Breadcrumbs` | `src/ui/Breadcrumbs.tsx` | Controles à direita da barra em `src/app/EditorTools.tsx` e `src/ui/ZoomField.tsx`. |
 | `StatusBar` | `src/ui/StatusBar.tsx` |  |
+| `PerspectivePicker` | `src/ui/PerspectivePicker.tsx` | só guia, sem preview |
+| `PerspectiveDialogs` | `src/ui/NewPerspectiveDialog.tsx`, `ManagePerspectivesDialog.tsx`, `DeletePerspectiveDialog.tsx` | só guia, sem preview |
+| `PerspectivesSection` | `src/ui/PerspectivesSection.tsx`, `ArrivalNotice.tsx` | só guia, sem preview |
 | `ToolWindow` | `src/ui/ToolWindow.tsx` | Tamanhos em `src/ui/toolWindowLayout.ts`; montagem em `src/app/EditorWindows.tsx`. |
 | `ToolStripButton` | `src/ui/ToolStrip.tsx` | É o `StripButton`, não exportado; metadados em `src/ui/toolWindowMeta.ts`. |
 | `NarrowWindow` | `src/app/NarrowWindow.tsx` | Exporta `NarrowWindowNotice` e `useNarrowWindow`; limite em `src/theme/breakpoints.ts`. |
