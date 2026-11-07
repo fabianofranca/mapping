@@ -27,6 +27,7 @@ import {
 } from './ChangePopover';
 import { entityName, type ReviewNames } from './changeText';
 import { DecisionMark } from './DecisionMark';
+import { belowReviewBar } from './reviewBarRef';
 import { useReviewNames } from './useReview';
 
 // Marcador do campo alterado (HANDOFF-REVIEW-DETAILS 2.1 e 4, fase 9.5): uma peça de 18 px
@@ -213,6 +214,7 @@ export function ChangeMark(subject: MarkSubject) {
         id={panelId}
         panelClass="change-popover"
         scroll="follow"
+        limit={belowReviewBar}
         label={popoverTitle(names, subject)}
         trigger={() => (
           <button

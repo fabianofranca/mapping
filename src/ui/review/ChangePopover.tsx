@@ -5,7 +5,6 @@ import {
   ENTRIES_FIELD_PREFIX,
   VALUES_FIELD_PREFIX,
   changeType,
-  isRecord,
   type Change,
   type ChangeType,
   type JsonValue,
@@ -17,7 +16,13 @@ import { useEditor } from '../EditorContext';
 import { Icon, type IconName } from '../icons';
 import { ChangeKind } from './ChangeKind';
 import { ChangeNotices } from './ChangeNotices';
-import { changeTitle, valueParts, type ReviewNames, type ValuePart } from './changeText';
+import {
+  changeTitle,
+  tableLines,
+  valueParts,
+  type ReviewNames,
+  type ValuePart,
+} from './changeText';
 import { useClickSource } from './clickSource';
 import { REVIEW_KEYS, type DecisionValue } from './DecisionControl';
 import { DecisionMark } from './DecisionMark';
@@ -157,19 +162,6 @@ export function markSides(
         ? [{ text: t('review.pop.notThere') }]
         : valueParts(names, c, c.to, c.from),
   };
-}
-
-/** As linhas de uma tabela (`values.<campo>` com lista de registros), em texto. */
-function tableLines(value: JsonValue | undefined): { id: string; text: string }[] | null {
-  if (!Array.isArray(value)) return null;
-  return value.map((row, i) => {
-    if (!isRecord(row)) return { id: String(i), text: String(row) };
-    const id = typeof row._id === 'string' ? row._id : String(i);
-    const cells = Object.entries(row)
-      .filter(([k, v]) => k !== '_id' && v !== null && v !== '')
-      .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`);
-    return { id, text: cells.join(' · ') };
-  });
 }
 
 /** Tabela dos dois lados: as linhas que saem riscadas no atual, as novas em negrito. */
@@ -479,8 +471,8 @@ export function ChangePopover({
 
   // Tabela: as linhas dos dois lados (uma tabela é um campo só, decidido inteiro).
   const tableValue = c.kind === 'update' && c.field?.startsWith(VALUES_FIELD_PREFIX);
-  const fromRows = !subject.part && tableValue ? tableLines(c.from) : null;
-  const toRows = !subject.part && tableValue ? tableLines(c.to) : null;
+  const fromRows = !subject.part && tableValue ? tableLines(names, c.from) : null;
+  const toRows = !subject.part && tableValue ? tableLines(names, c.to) : null;
   const table = fromRows !== null && toRows !== null;
 
   const sides = markSides(names, subject, situation);
