@@ -153,6 +153,9 @@ function renderDialog(
           {impact.arrows > 0 && (
             <p>{t('marking.deleteArrows', { arrows: impact.arrows })}</p>
           )}
+          {impact.brokenRefs > 0 && (
+            <p>{t('ref.deleteMarking', { count: impact.brokenRefs })}</p>
+          )}
           {impact.lockedDescendants > 0 && (
             <p role="alert">
               <strong>

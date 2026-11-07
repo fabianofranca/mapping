@@ -263,6 +263,7 @@ describe('codeBlueprint', () => {
       notes: null,
       values: { nome: 'Cadastro', rota: '/cadastro' },
       linked: [],
+      targets: [],
     });
     // Classe (especialização v1, sem plataformas): sem code, com os valores do mapping.
     const classe = root.annotations.find((a) => a.typeId === 'classe');

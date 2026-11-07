@@ -220,6 +220,8 @@ export const enUS: Dictionary = {
   'annotation.linkedTo': '↳ of {name}',
   'annotation.linkedToRole': '↳ of {name} ({role})',
   'annotation.linkedHeading': 'Linked',
+  'annotation.referencedByHeading': 'Referenced by',
+  'annotation.referencedByItem': '{source} (in {marking})',
   'annotation.goToAnnotation': 'Go to annotation {name}',
   'annotation.showLayer': 'Show layer {layer}',
 
@@ -889,6 +891,8 @@ export const enUS: Dictionary = {
     'No tuple with the {tags} tag. Apply a data model specialization or create a free annotation.',
   'ref.noTargetsTags':
     'No tuple with the {tags} tag. Apply a specialization that uses this tag.',
+  'ref.noTargetsAnnotations':
+    'No annotation of the {types} types. Create an annotation of one of these types.',
   'ref.noTargetsFree':
     'No free annotation tuple. Create a free annotation with key-value pairs.',
   'ref.backlinks': 'Incoming references',
@@ -897,6 +901,8 @@ export const enUS: Dictionary = {
   'ref.deleteTitle': 'References will break',
   'ref.deleteAnnotation':
     '"{name}" is a reference target: {count} reference(s) will break. You can undo.',
+  'ref.deleteMarking':
+    'Its annotations are reference targets: {count} reference(s) will break. You can undo.',
   'ref.deleteLinked': '{count} linked annotation(s) will be deleted too.',
   'ref.deleteEntry':
     'The tuple "{name}" is the target of {count} reference(s), which will break. You can undo.',

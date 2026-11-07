@@ -636,6 +636,7 @@ const ptBR: readonly HelpSection[] = [
           'A especialização aplicada é copiada para specs/<id>.json dentro do projeto, que fica autocontido.',
           'A formatVersion 12 acrescenta três passos de migração dos papéis em migrations: rename-role, remove-role e set-role (seções "Contrato de versão" e "Papéis no vínculo (childRoles)"). Tirar um papel de childRoles passa a ser quebra, e só sobe para a 12 quem declara um desses passos. As versões 1 a 11 continuam aceitas.',
           'A formatVersion 13 deixa allowedChildren listar tipos da camada do próprio dono: a cláusula { layer } da própria camada e o id de um tipo da mesma camada, inclusive o do próprio tipo (seção "Filhos por camada e grupo"). Assim um evento pode ser dono de outros eventos, cada filho no papel em que se liga. Só sobe para a 13 quem usa isso; as versões 1 a 12 continuam aceitas, e a cláusula da própria camada numa versão anterior é o erro de sempre: filhos devem estar em outra camada.',
+          'A formatVersion 14 deixa o accepts de um campo ou coluna ref listar anotações inteiras como alvo, em accepts.annotations: ids de tipo ou cláusulas { layer, groups } da mesma especialização, com a sintaxe de allowedChildren (seção "Referências e etiquetas"). Só sobe para a 14 quem usa isso; as versões 1 a 13 continuam aceitas, e a chave numa versão anterior é o erro só é permitido com formatVersion 14.',
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
           'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
@@ -654,7 +655,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 13), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 14), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -750,7 +751,7 @@ const ptBR: readonly HelpSection[] = [
           },
           {
             term: 'accepts',
-            text: 'Só ref: { "tags": [...], "free": true|false }. Precisa de pelo menos uma etiqueta ou free: true.',
+            text: 'Só ref: { "tags": [...], "free": true|false, "annotations": [...] }. Precisa de pelo menos uma etiqueta, free: true ou annotations (a partir da formatVersion 14).',
           },
           { term: 'description', text: 'Texto de ajuda exibido no editor.' },
         ],
@@ -910,7 +911,8 @@ const ptBR: readonly HelpSection[] = [
         kind: 'list',
         items: [
           'tuplas de anotações livres, se accepts.free for true;',
-          'campos de anotações tipadas (de qualquer especialização aplicada) cujas tags contenham alguma etiqueta de accepts.tags. Numa table com tags, cada linha é um alvo, nomeada pela coluna rowLabel.',
+          'campos de anotações tipadas (de qualquer especialização aplicada) cujas tags contenham alguma etiqueta de accepts.tags. Numa table com tags, cada linha é um alvo, nomeada pela coluna rowLabel;',
+          'a anotação inteira de um dos tipos de accepts.annotations (formatVersion 14): ids de tipo ou cláusulas { layer, groups } da mesma especialização, como em allowedChildren. Com annotations, o ref aponta para a anotação, e não para um campo dela.',
         ],
       },
       {
@@ -1370,7 +1372,8 @@ const ptBR: readonly HelpSection[] = [
           'default compatível com o tipo (e presente em options no enum); ref sem default;',
           'columns só com tipos simples ou, na formatVersion 7, ref (com accepts; table dentro de table não existe); rowLabel obrigatório em table com tags e apontando para uma coluna string;',
           'labelField aponta para um campo string do tipo;',
-          'accepts com pelo menos uma etiqueta ou free: true; etiquetas no formato [a-z0-9-]+;',
+          'accepts com pelo menos uma etiqueta, free: true ou annotations; etiquetas no formato [a-z0-9-]+;',
+          'formatVersion 14, accepts.annotations: só na versão 14 (antes dela o erro é só é permitido com formatVersion 14, no caminho …accepts.annotations do campo ou da coluna); lista não vazia de ids de tipo ou cláusulas { layer, groups } da mesma especialização; erros iguais aos de allowedChildren: camada, grupo ou tipo inexistente;',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
           'formatVersion 11, filhos por camada e grupo: só na versão 11 (antes dela o erro é só é permitido com formatVersion 11, no caminho exato); cada item de allowedChildren é um id de tipo ou uma cláusula { layer, groups } estrita (outra propriedade é erro, e groups vazio também); erros: layer que não é camada da especialização ou é a do próprio dono antes da formatVersion 13 (filhos devem estar em outra camada) e grupo inexistente na camada da cláusula; requiresOwner conferido no conjunto resolvido; groups da camada com id não vazio e único na camada e name não vazio; groups do tipo não vazio, sem repetição e só da própria camada; avisos: 20 ids ou mais em texto no mesmo allowedChildren e grupo que nenhum tipo usa;',
           'formatVersion 12, passos de papel em migrations: rename-role, remove-role e set-role só na versão 12 (de 4 a 11 o erro é só é permitido com formatVersion 12, no caminho migrations[i].steps[j].op); chaves estritas; rename-role: type é tipo desta versão com childRoles, to é papel dele e from não é; remove-role: type é tipo desta versão, role não é papel dele e mode é clear ou unlink; set-role: type tem childRoles, role é papel dele e childType só confere o formato de id; aviso: rename-role.from ou remove-role.role que não era papel do tipo na versão anterior;',
@@ -1428,6 +1431,7 @@ const enUS: readonly HelpSection[] = [
           'The applied specialization is copied to specs/<id>.json inside the project, which stays self-contained.',
           'formatVersion 12 adds three role migration steps to migrations: rename-role, remove-role and set-role (sections "Version contract" and "Roles on the link (childRoles)"). Removing a role from childRoles is now a breaking change, and only a specialization that declares one of these steps goes up to 12. Versions 1 to 11 are still accepted.',
           'formatVersion 13 lets allowedChildren list types of the owner’s own layer: the { layer } clause of its own layer and the id of a type in the same layer, including the owner’s own type (section "Children by layer and group"). So an event can own other events, each child in the role it attaches in. Only a specialization that uses this goes up to 13; versions 1 to 12 are still accepted, and the own-layer clause in an earlier version is the usual error: children must be in another layer.',
+          'formatVersion 14 lets the accepts of a ref field or column list whole annotations as targets, in accepts.annotations: type ids or { layer, groups } clauses of the same specialization, with the allowedChildren syntax (section "References and tags"). Only a specialization that uses this goes up to 14; versions 1 to 13 are still accepted, and the key in an earlier version is the error only allowed with formatVersion 14.',
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
           'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
@@ -1446,7 +1450,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 13), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 14), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -1545,7 +1549,7 @@ const enUS: readonly HelpSection[] = [
           },
           {
             term: 'accepts',
-            text: 'ref only: { "tags": [...], "free": true|false }. Needs at least one tag or free: true.',
+            text: 'ref only: { "tags": [...], "free": true|false, "annotations": [...] }. Needs at least one tag, free: true or annotations (from formatVersion 14).',
           },
           { term: 'description', text: 'Help text shown in the editor.' },
         ],
@@ -1705,7 +1709,8 @@ const enUS: readonly HelpSection[] = [
         kind: 'list',
         items: [
           'tuples of free-form annotations, if accepts.free is true;',
-          'fields of typed annotations (from any applied specialization) whose tags contain one of the accepts.tags. In a table with tags, each row is a target, named by the rowLabel column.',
+          'fields of typed annotations (from any applied specialization) whose tags contain one of the accepts.tags. In a table with tags, each row is a target, named by the rowLabel column;',
+          'the whole annotation of one of the types in accepts.annotations (formatVersion 14): type ids or { layer, groups } clauses of the same specialization, as in allowedChildren. With annotations, the ref points to the annotation, not to a field of it.',
         ],
       },
       {
@@ -2165,7 +2170,8 @@ const enUS: readonly HelpSection[] = [
           'default compatible with the type (and present in options for enum); ref without default;',
           'columns with simple types only or, in formatVersion 7, ref (with accepts; a table inside a table does not exist); rowLabel required on a table with tags and pointing to a string column;',
           'labelField points to a string field of the type;',
-          'accepts with at least one tag or free: true; tags in the [a-z0-9-]+ format;',
+          'accepts with at least one tag, free: true or annotations; tags in the [a-z0-9-]+ format;',
+          'formatVersion 14, accepts.annotations: version 14 only (before it the error is only allowed with formatVersion 14, at the …accepts.annotations path of the field or column); a non-empty list of type ids or { layer, groups } clauses of the same specialization; the errors are those of allowedChildren: a layer, group or type that does not exist;',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
           'formatVersion 11, children by layer and group: version 11 only (before it the error is only allowed with formatVersion 11, at the exact path); each allowedChildren item is a type id or a strict { layer, groups } clause (any other property is an error, and so is an empty groups); errors: a layer that is not a layer of the specialization or is the owner’s own before formatVersion 13 (children must be in another layer) and a group that does not exist in the clause’s layer; requiresOwner is checked against the resolved set; layer groups with a non-empty id unique in the layer and a non-empty name; type groups non-empty, without repetition and only from its own layer; warnings: 20 ids or more in text in the same allowedChildren and a group no type uses;',
           'formatVersion 12, role steps in migrations: rename-role, remove-role and set-role in version 12 only (from 4 to 11 the error is only allowed with formatVersion 12, at migrations[i].steps[j].op); strict keys; rename-role: type is a type of this version with childRoles, to is one of its roles and from is not; remove-role: type is a type of this version, role is not one of its roles and mode is clear or unlink; set-role: type has childRoles, role is one of its roles and childType only checks the id format; warning: a rename-role.from or remove-role.role that was not a role of the type in the previous version;',

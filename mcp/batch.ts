@@ -876,10 +876,13 @@ class Batch {
       ref = { annotationId, key: field, rowId: this.rowId(annotation, field, row, key) };
     } else if (typeof field === 'string') {
       ref = { annotationId, key: field };
+    } else if (field === undefined && row === undefined) {
+      // Sem `entry`, `key` nem `row`: a anotação inteira (quarto formato).
+      ref = { annotationId };
     } else {
       throw new ToolError(
         'invalid-ref-value',
-        `campo ${key}: informe "entry" (par), "key" + "row" (linha) ou "key" (campo)`,
+        `campo ${key}: "row" exige "key" (a tabela); sem "entry", "key" nem "row", a referência é a anotação inteira`,
       );
     }
     return { ...ref };

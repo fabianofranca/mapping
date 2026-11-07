@@ -54,7 +54,7 @@ describe('schema v15', () => {
     const p = add(add(sameLayerProject(), 'R1', 'request'), 'N1', 'navigate', 'R1');
     const text = serialize(p);
     expect(load(text, specFiles(p)).migratedFrom).toBeNull();
-    const newer = JSON.stringify({ ...JSON.parse(text), schemaVersion: 17 });
+    const newer = JSON.stringify({ ...JSON.parse(text), schemaVersion: 18 });
     const loaded = load(newer, specFiles(p));
     expect(loaded.readOnly).toBe(true);
     expect(loaded.project.annotations.map((a) => a.id)).toEqual(['R1', 'N1']);

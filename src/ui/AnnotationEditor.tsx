@@ -23,6 +23,7 @@ import { useDetailsExtension } from './DetailsExtension';
 import { useSplitHeader } from './useSplitHeader';
 import { Dialog } from './Dialog';
 import { LinkedRow } from './LinkedAnnotations';
+import { ReferencedByRow } from './ReferencedBy';
 import { OwnerRoleField } from './OwnerRoleField';
 import { useEditor } from './EditorContext';
 import { Button, HelpTip, IconButton, Select } from './controls';
@@ -377,6 +378,11 @@ export function AnnotationEditor({
             onGoToAnnotation={onGoToAnnotation}
             onShowLayer={onShowLayer}
             onAddChild={addChild}
+          />
+          <ReferencedByRow
+            project={project}
+            annotation={annotation}
+            onGoToAnnotation={onGoToAnnotation}
           />
           {hiddenChild && (
             <p class="notice notice-info" role="status">

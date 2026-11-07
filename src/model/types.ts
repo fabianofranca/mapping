@@ -1,9 +1,9 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v16). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
+// Tipos do `mapping.json` (schema v17). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 16;
+export const SCHEMA_VERSION = 17;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -201,8 +201,16 @@ export interface FieldRef {
   readonly key: string;
 }
 
-/** Valor de um campo `ref`: um dos três formatos da 13.3. */
-export type RefValue = EntryRef | RowRef | FieldRef;
+/**
+ * Referência à anotação inteira (v17): só o `annotationId`, sem `key`, `entryId` nem `rowId`.
+ * (`AnnotationRef` já é a referência de saída de `refs.ts`.)
+ */
+export interface WholeRef {
+  readonly annotationId: string;
+}
+
+/** Valor de um campo `ref`: um dos quatro formatos (docs/FORMAT.md, "Referências (`ref`)"). */
+export type RefValue = EntryRef | RowRef | FieldRef | WholeRef;
 
 /**
  * Sobreposição local do repositório de uma plataforma (v11), no nível do projeto: onde está

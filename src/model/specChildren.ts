@@ -67,17 +67,18 @@ function inAnyGroup(type: ChildTypeLike, wanted: ReadonlySet<string>): boolean {
   return false;
 }
 
-/** O conjunto de filhos de um dono: a união dos itens, na ordem, sem repetir. */
-function ownerChildren(
-  type: ChildTypeLike,
+/**
+ * Ids de tipo cobertos por uma lista de itens `id | { layer, groups? }`, na ordem dos itens e sem
+ * repetir. É o resolvedor do `allowedChildren` e do `accepts.annotations`. O que não se resolve
+ * (id ou camada inexistente, item malformado) é ignorado: quem aponta o erro é o validador.
+ */
+function resolveItems(
+  items: unknown,
   known: ReadonlySet<string>,
   layers: ReadonlyMap<string, readonly ChildTypeLike[]>,
 ): Set<string> {
   const ids = new Set<string>();
-  const items: readonly unknown[] = Array.isArray(type.allowedChildren)
-    ? type.allowedChildren
-    : [];
-  for (const item of items) {
+  for (const item of Array.isArray(items) ? (items as readonly unknown[]) : []) {
     if (typeof item === 'string') {
       if (known.has(item)) ids.add(item);
     } else if (typeof item === 'object' && item !== null) {
@@ -85,6 +86,15 @@ function ownerChildren(
     }
   }
   return ids;
+}
+
+/** O conjunto de filhos de um dono: a união dos itens, na ordem, sem repetir. */
+function ownerChildren(
+  type: ChildTypeLike,
+  known: ReadonlySet<string>,
+  layers: ReadonlyMap<string, readonly ChildTypeLike[]>,
+): Set<string> {
+  return resolveItems(type.allowedChildren, known, layers);
 }
 
 function buildChildSets(source: ChildSourceLike): ChildSets {
@@ -148,4 +158,22 @@ export function isChildTypeAllowed(
   childTypeId: string,
 ): boolean {
   return childSets(source).allowed.get(ownerTypeId)?.has(childTypeId) ?? false;
+}
+
+/**
+ * Ids dos tipos da especialização `source` cobertos por `items` (cada item é um id de tipo ou uma
+ * cláusula `{ layer, groups? }`), na ordem dos itens e sem repetir. É o resolvedor do
+ * `accepts.annotations`, o mesmo do `allowedChildren`.
+ */
+export function resolveTypeItems(
+  source: ChildSourceLike,
+  items: readonly (string | ChildClauseLike)[] | undefined,
+): readonly string[] {
+  const known = new Set<string>();
+  const layers = new Map<string, readonly ChildTypeLike[]>();
+  for (const layer of source.layers) {
+    if (!layers.has(layer.id)) layers.set(layer.id, layer.annotationTypes);
+    for (const type of layer.annotationTypes) known.add(type.id);
+  }
+  return [...resolveItems(items, known, layers)];
 }

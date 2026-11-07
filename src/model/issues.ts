@@ -1,6 +1,12 @@
 import { findById } from './project';
 import { memoByProject, projectIndex } from './projectIndex';
-import { isTargetAccepted, parseRefValue, resolveRef, tableRows } from './refs';
+import {
+  acceptContextOf,
+  isTargetAccepted,
+  parseRefValue,
+  resolveRef,
+  tableRows,
+} from './refs';
 import {
   fieldOf,
   isAllowedOwner,
@@ -69,7 +75,8 @@ function refProblem(
   if (!ref) return 'invalid-value';
   const target = resolveRef(p, ref);
   if (!target) return 'broken-ref';
-  return ref.annotationId === a.id || !isTargetAccepted(target, accepts)
+  return ref.annotationId === a.id ||
+    !isTargetAccepted(target, accepts, acceptContextOf(p, a.id))
     ? 'ref-not-accepted'
     : null;
 }

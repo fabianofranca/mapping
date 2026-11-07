@@ -9,7 +9,7 @@ import {
   type ProjectFile,
 } from './types';
 
-// Schema zod do mapping.json v16. Valida a forma; os invariantes entre coleções
+// Schema zod do mapping.json v17. Valida a forma; os invariantes entre coleções
 // (referências, contenção, sobreposição) ficam em `invariants.ts`. Os valores das
 // anotações tipadas são JSON livre aqui: a conferência contra o tipo vira pendência
 // (`issues.ts`).

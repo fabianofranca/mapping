@@ -81,6 +81,7 @@ function normalize(p: Project) {
     if (ref) {
       const target = resolveRef(p, ref);
       if (!target) return 'quebrada';
+      if (target.kind === 'annotation') return label(ref.annotationId);
       if (target.kind === 'entry')
         return `${label(ref.annotationId)}#${target.entry.key}`;
       if (target.kind === 'row')
@@ -758,7 +759,7 @@ describe('projeto de schema antigo', () => {
     expect(readProposal(dir, proposed.proposal.id).baseRevision).toBe(0);
 
     const saved = acceptAllAndApply(dir, proposed.proposal.id);
-    expect(saved.schemaVersion).toBe(16);
+    expect(saved.schemaVersion).toBe(17);
     expect(saved.platformRepos).toEqual({});
     expect(saved.layers.at(-1)!.name).toBe('Notas');
   });

@@ -219,6 +219,8 @@ export const ptBR = {
   'annotation.linkedTo': '↳ de {name}',
   'annotation.linkedToRole': '↳ de {name} ({role})',
   'annotation.linkedHeading': 'Vinculadas',
+  'annotation.referencedByHeading': 'Referenciada por',
+  'annotation.referencedByItem': '{source} (em {marking})',
   'annotation.goToAnnotation': 'Ir para a anotação {name}',
   'annotation.showLayer': 'Mostrar a camada {layer}',
 
@@ -893,6 +895,8 @@ export const ptBR = {
     'Nenhuma tupla com a etiqueta {tags}. Aplique uma especialização de modelo de dados ou crie uma anotação livre.',
   'ref.noTargetsTags':
     'Nenhuma tupla com a etiqueta {tags}. Aplique uma especialização que use essa etiqueta.',
+  'ref.noTargetsAnnotations':
+    'Nenhuma anotação dos tipos {types}. Crie uma anotação de um desses tipos.',
   'ref.noTargetsFree':
     'Nenhuma tupla de anotação livre. Crie uma anotação livre com pares chave-valor.',
   'ref.backlinks': 'Referências recebidas',
@@ -901,6 +905,8 @@ export const ptBR = {
   'ref.deleteTitle': 'Referências vão quebrar',
   'ref.deleteAnnotation':
     '"{name}" é alvo de referências: {count} referência(s) vão ficar quebradas. Dá para desfazer.',
+  'ref.deleteMarking':
+    'Anotações dela são alvo de referências: {count} referência(s) vão ficar quebradas. Dá para desfazer.',
   'ref.deleteLinked': 'Saem junto {count} anotação(ões) vinculada(s).',
   'ref.deleteEntry':
     'A tupla "{name}" é alvo de {count} referência(s), que vão ficar quebradas. Dá para desfazer.',
