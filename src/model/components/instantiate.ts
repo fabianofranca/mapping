@@ -9,13 +9,30 @@
  * Regras de tamanho (documentadas aqui para os testes e para quem escreve templates):
  * - Padrão de `width`/`height` omitidos: `'hug'` para texto, `'fill'` para todo o resto, nos
  *   dois eixos. Num pai `none`, um filho sem tamanho e sem âncoras ocupa o pai inteiro.
+ * - `width`/`height` aceitam expressão; o valor avaliado precisa ser número finito ≥ 0, texto
+ *   numérico puro (`"120"`), `fill`, `hug` ou `"N%"`. Outro valor cai no padrão do tipo, com o
+ *   aviso `valor inválido em width: <valor>` (ou `height`). O mesmo vale para `layout.type`,
+ *   `layout.align` e `layout.justify` (padrões `none`, `start`, `start`).
  * - px fixos; `"N%"` é fração da área de conteúdo do pai; `'hug'` vem do conteúdo (texto
  *   medido, quadro que abraça os filhos, caminho = `viewBox`, retângulo/elipse/slot = 0; `image` não aceita `hug`).
  * - `'fill'` no eixo principal de `row`/`column` divide o que sobra entre os `fill`; no eixo
  *   cruzado e em `none` é a área de conteúdo toda (menos as âncoras, se houver).
- * - Quadro `hug`: primeiro mede-se o conteúdo (com `fill` e `%` valendo 0); depois o resultado
- *   vira o tamanho do quadro e `fill`/`%` são resolvidos contra ele. Só o `fill` no eixo
- *   principal de um `hug` avisa ("fill dentro de hug vira 0"), porque ali o resultado é mesmo 0.
+ * - `minWidth`/`maxWidth`/`minHeight`/`maxHeight` (px, aceitam expressão; valor não finito ou
+ *   negativo = ausente) valem em qualquer nó, depois de resolvido o tamanho do filho (px, `%`,
+ *   `hug`, `fill`). Os `fill` do eixo principal dividem o que sobra como o flexbox: quem bate no
+ *   `min` ou no `max` congela e a diferença é repartida entre os outros `fill`. `min` > `max`
+ *   vale o `min`. Texto `hug` cortado pelo `maxWidth` mede a altura quebrando na largura cortada.
+ *   Os limites da raiz só valem em `measureComponent` num eixo `hug` (com caixa dada a raiz ocupa
+ *   a caixa); o `minSize` da instância (`layout.ts`) é aplicado depois deles.
+ * - Quadro `hug`, medição em duas passagens (shrink-to-fit do flexbox): primeiro mede-se o
+ *   conteúdo dentro do limite disponível (o conteúdo do pai, ou o limite que o próprio pai
+ *   recebeu; a raiz usa o `max` dela): um filho `fill` no eixo cruzado (ou em `none`) contribui
+ *   com o menor entre o limite e o que ele abraçaria dentro dele (texto quebrado no limite,
+ *   quadro medido com o limite, caminho = `viewBox`, o resto 0) e `"N%"` com o limite × N / 100;
+ *   sem limite conhecido valem 0. Depois o resultado vira o tamanho do quadro e `fill`/`%` são
+ *   resolvidos contra ele (o texto é medido nessa largura). Só o `fill` no eixo principal de um
+ *   `hug` avisa ("fill dentro de hug vira 0"), porque ali o resultado é mesmo 0. Texto medido com
+ *   largura máxima 0 avisa `texto medido com largura 0: <nome>`. Texto `hug` não quebra.
  * - Âncoras (pai `none`): `left`+`right` (ou `top`+`bottom`) esticam o filho entre elas,
  *   mesmo que ele tenha tamanho fixo (como as constraints do Figma).
  * - `lineHeight` entregue ao `TextMeasurer` já em px.
@@ -46,6 +63,14 @@ import type {
 import { STROKE_SIDES } from './componentFormat';
 import { clipBoxOf } from './clipBox';
 import { evaluate, evaluateBoolean, evaluateText, referencedFields } from './expressions';
+import {
+  LAYOUT_ALIGNS,
+  LAYOUT_JUSTIFIES,
+  LAYOUT_TYPES,
+  allowedValue,
+  describeValue,
+  parseSizeSpec,
+} from './layoutValues';
 import { expandRepeats } from './repeat';
 import {
   type CornerRadius,
@@ -199,6 +224,25 @@ interface Placement {
   readonly h: number;
 }
 
+/** Espaço de um eixo ao dimensionar os filhos: `content` nulo = o pai está sendo medido (hug). */
+interface AxisSpace {
+  /** Área de conteúdo do pai, quando já conhecida. */
+  readonly content: number | null;
+  /** Limite disponível durante a medição (`content` nulo); nulo = sem limite conhecido. */
+  readonly bound: number | null;
+}
+
+/** Limite disponível por eixo para medir um quadro `hug` (nulo = desconhecido). */
+interface Limits {
+  readonly w: number | null;
+  readonly h: number | null;
+}
+
+interface SizeLimit {
+  readonly min: number;
+  readonly max: number;
+}
+
 interface Plan {
   readonly w: number;
   readonly h: number;
@@ -206,11 +250,32 @@ interface Plan {
 }
 
 const EPS = 0.001;
+const FLEX_EPS = 1e-9;
+const NO_SIZE_LIMIT: SizeLimit = { min: 0, max: Infinity };
+const NO_LIMITS: Limits = { w: null, h: null };
+const NONE_LAYOUT: FrameLayout = {
+  kind: 'none',
+  main: null,
+  gap: 0,
+  pad: { top: 0, right: 0, bottom: 0, left: 0 },
+  align: 'start',
+  justify: 'start',
+};
 const FALLBACK_FONT_FAMILY = 'Inter';
 
 function isNone(color: string): boolean {
   const c = color.trim().toLowerCase();
   return c === '' || c === 'none';
+}
+
+/** O limite só conta num eixo hug (`null`); com o tamanho conhecido não há o que limitar. */
+function effectiveBounds(w: number | null, h: number | null, limits: Limits): Limits {
+  return { w: w === null ? limits.w : null, h: h === null ? limits.h : null };
+}
+
+function planKey(w: number | null, h: number | null, bounds: Limits): string {
+  const part = (n: number | null) => n ?? 'n';
+  return `${part(w)}x${part(h)}|${part(bounds.w)}x${part(bounds.h)}`;
 }
 
 function nodeName(node: TemplateNode): string {
@@ -301,32 +366,101 @@ function createEngine(
     };
   };
 
-  const measureText = (node: TextTemplate, maxWidth?: number) =>
-    options.measure(evaluateText(node.text, values, ''), textFont(node), maxWidth);
+  const measureText = (node: TextTemplate, maxWidth?: number) => {
+    if (maxWidth !== undefined && maxWidth <= EPS)
+      warn(`texto medido com largura 0: ${nodeName(node)}`);
+    return options.measure(evaluateText(node.text, values, ''), textFont(node), maxWidth);
+  };
+
+  // --- valores conferidos (tamanho e layout) ----------------------------------------------
+
+  const invalidValue = (label: string, value: unknown) =>
+    warn(`valor inválido em ${label}: ${describeValue(value)}`);
+
+  /** Valor de um conjunto fechado; sem valor = padrão; fora do conjunto = padrão com aviso. */
+  const checked = <T extends string>(
+    expr: Expr<T> | undefined,
+    allowed: readonly T[],
+    fallback: T,
+    label: string,
+  ): T => {
+    const value =
+      expr === undefined ? undefined : ev<unknown>(expr as Expr<unknown>, undefined);
+    if (value === undefined || value === null) return fallback;
+    const valid = allowedValue(value, allowed);
+    if (valid === undefined) invalidValue(label, value);
+    return valid ?? fallback;
+  };
 
   // --- tamanhos -------------------------------------------------------------------------
 
-  const specOf = (node: TemplateNode, axis: Axis): SizeSpec =>
-    (axis === 'w' ? node.width : node.height) ?? (node.type === 'text' ? 'hug' : 'fill');
+  const sizeMemo = new Map<TemplateNode, Partial<Record<Axis, SizeSpec>>>();
+
+  const resolveSpec = (node: TemplateNode, axis: Axis): SizeSpec => {
+    const fallback: SizeSpec = node.type === 'text' ? 'hug' : 'fill';
+    const expr = axis === 'w' ? node.width : node.height;
+    const value =
+      expr === undefined ? undefined : ev<unknown>(expr as Expr<unknown>, undefined);
+    if (value === undefined || value === null) return fallback;
+    const spec = parseSizeSpec(value);
+    if (spec === undefined) invalidValue(axis === 'w' ? 'width' : 'height', value);
+    return spec ?? fallback;
+  };
+
+  const specOf = (node: TemplateNode, axis: Axis): SizeSpec => {
+    let perNode = sizeMemo.get(node);
+    if (!perNode) {
+      perNode = {};
+      sizeMemo.set(node, perNode);
+    }
+    return (perNode[axis] ??= resolveSpec(node, axis));
+  };
+
+  /** Limite em px; não finito ou negativo = ausente. */
+  const limitValue = (expr: Expr<number> | undefined): number | undefined => {
+    if (expr === undefined) return undefined;
+    const n = num(expr, Number.NaN);
+    return Number.isFinite(n) && n >= 0 ? n : undefined;
+  };
+
+  const limitMemo = new Map<TemplateNode, Partial<Record<Axis, SizeLimit>>>();
+
+  const limitOf = (node: TemplateNode, axis: Axis): SizeLimit => {
+    let perNode = limitMemo.get(node);
+    if (!perNode) {
+      perNode = {};
+      limitMemo.set(node, perNode);
+    }
+    return (perNode[axis] ??=
+      axis === 'w'
+        ? {
+            min: limitValue(node.minWidth) ?? 0,
+            max: limitValue(node.maxWidth) ?? Infinity,
+          }
+        : {
+            min: limitValue(node.minHeight) ?? 0,
+            max: limitValue(node.maxHeight) ?? Infinity,
+          });
+  };
+
+  /** Aplica `min`/`max`; `min` > `max` vale o `min`. */
+  const clampTo = (limit: SizeLimit, size: number): number =>
+    Math.max(limit.min, Math.min(size, limit.max));
+
+  const clampSize = (node: TemplateNode, axis: Axis, size: number): number =>
+    clampTo(limitOf(node, axis), size);
 
   const layoutOf = (frame: FrameTemplate): FrameLayout => {
-    const layout = frame.layout;
-    if (!layout || layout.type === 'none')
-      return {
-        kind: 'none',
-        main: null,
-        gap: 0,
-        pad: normalizePadding(undefined),
-        align: 'start',
-        justify: 'start',
-      };
+    const spec = frame.layout;
+    const kind = checked(spec?.type, LAYOUT_TYPES, 'none', 'layout.type');
+    if (!spec || kind === 'none') return NONE_LAYOUT;
     return {
-      kind: layout.type,
-      main: layout.type === 'row' ? 'w' : 'h',
-      gap: Math.max(0, num(layout.gap, 0)),
-      pad: normalizePadding(evaluate(layout.padding, values, 0)),
-      align: layout.align ?? 'start',
-      justify: layout.justify ?? 'start',
+      kind,
+      main: kind === 'row' ? 'w' : 'h',
+      gap: Math.max(0, num(spec.gap, 0)),
+      pad: normalizePadding(evaluate(spec.padding, values, 0)),
+      align: checked(spec.align, LAYOUT_ALIGNS, 'start', 'layout.align'),
+      justify: checked(spec.justify, LAYOUT_JUSTIFIES, 'start', 'layout.justify'),
     };
   };
 
@@ -337,22 +471,44 @@ function createEngine(
 
   const planCache = new Map<FrameTemplate, Map<string, Plan>>();
 
-  /** Tamanho do conteúdo de um nó num eixo (`otherSize`: a largura já resolvida, para a altura). */
+  /** O texto `hug` tem `maxWidth` menor que a largura natural (a largura será cortada)? */
+  const isCutByMax = (node: TextTemplate): boolean => {
+    const { max } = limitOf(node, 'w');
+    return Number.isFinite(max) && measureText(node).width > max + EPS;
+  };
+
+  const textHeight = (node: TextTemplate, otherSize: number | undefined): number => {
+    const hug = specOf(node, 'w') === 'hug';
+    const wrap =
+      hug && !(otherSize !== undefined && isCutByMax(node)) ? undefined : otherSize;
+    return measureText(node, wrap).height;
+  };
+
+  const frameHug = (
+    node: FrameTemplate,
+    axis: Axis,
+    otherSize: number | undefined,
+    bound: number | null,
+  ): number =>
+    axis === 'w'
+      ? planFrame(node, null, null, { w: bound, h: null }).w
+      : planFrame(node, otherSize ?? null, null, { w: null, h: bound }).h;
+
+  /**
+   * Tamanho do conteúdo de um nó num eixo (`otherSize`: a largura já resolvida, para a altura;
+   * `bound`: o limite disponível no eixo, para medir quadros com filhos `fill`).
+   */
   const hugSize = (
     node: TemplateNode,
     axis: Axis,
     otherSize: number | undefined,
+    bound: number | null,
   ): number => {
     switch (node.type) {
-      case 'text': {
-        if (axis === 'w') return measureText(node).width;
-        const wrap = specOf(node, 'w') === 'hug' ? undefined : otherSize;
-        return measureText(node, wrap).height;
-      }
-      case 'frame': {
-        if (axis === 'w') return planFrame(node, null, null).w;
-        return planFrame(node, otherSize ?? null, null).h;
-      }
+      case 'text':
+        return axis === 'w' ? measureText(node).width : textHeight(node, otherSize);
+      case 'frame':
+        return frameHug(node, axis, otherSize, bound);
       case 'path':
         return node.viewBox[axis === 'w' ? 0 : 1];
       default:
@@ -360,82 +516,188 @@ function createEngine(
     }
   };
 
+  /** Quanto um filho `fill` pede ao pai que está sendo medido: o que abraçaria, até o limite. */
+  const fillContribution = (
+    node: TemplateNode,
+    axis: Axis,
+    bound: number,
+    otherSize: number | undefined,
+  ): number => {
+    const natural =
+      node.type === 'text' && axis === 'w'
+        ? measureText(node, bound).width
+        : hugSize(node, axis, otherSize, bound);
+    return Math.min(bound, Math.max(0, natural));
+  };
+
+  const isStretchAnchored = (
+    anchors: ReturnType<typeof anchorsOf> | undefined,
+  ): boolean =>
+    anchors !== undefined &&
+    !anchors.center &&
+    anchors.start !== undefined &&
+    anchors.end !== undefined;
+
+  /** Âncoras nos dois lados esticam o filho entre elas (com o pai já medido). */
+  const anchoredSize = (
+    anchors: ReturnType<typeof anchorsOf> | undefined,
+    content: number | null,
+  ): number | undefined =>
+    isStretchAnchored(anchors) && content !== null
+      ? Math.max(0, content - (anchors?.start ?? 0) - (anchors?.end ?? 0))
+      : undefined;
+
+  /** Nó `slot` com `slotContent`: o tamanho dos filhos arrumados (ver o topo do arquivo). */
+  const slotSize = (
+    node: TemplateNode,
+    spec: SizeSpec,
+    axis: Axis,
+    content: number | null,
+    anchors: ReturnType<typeof anchorsOf> | undefined,
+  ): number | undefined => {
+    if (node.type !== 'slot' || !options.slotContent) return undefined;
+    const inner = options.slotContent[axis === 'w' ? 'width' : 'height'];
+    const takesContent =
+      spec === 'hug' ||
+      (content === null && (spec === 'fill' || isStretchAnchored(anchors)));
+    return takesContent ? Math.max(0, inner) : undefined;
+  };
+
+  const hugKid = (
+    node: TemplateNode,
+    axis: Axis,
+    space: AxisSpace,
+    otherSize: number | undefined,
+    layout: FrameLayout,
+  ): number => {
+    const stretched =
+      layout.main !== axis && layout.kind !== 'none' && layout.align === 'stretch';
+    if (stretched && space.content !== null) return space.content;
+    return Math.max(0, hugSize(node, axis, otherSize, space.content ?? space.bound));
+  };
+
+  const fillKid = (
+    node: TemplateNode,
+    axis: Axis,
+    space: AxisSpace,
+    otherSize: number | undefined,
+    anchors: ReturnType<typeof anchorsOf> | undefined,
+  ): number => {
+    const edge = (anchors?.start ?? 0) + (anchors?.end ?? 0);
+    if (space.content !== null) return Math.max(0, space.content - edge);
+    if (space.bound === null) return 0;
+    return fillContribution(node, axis, Math.max(0, space.bound - edge), otherSize);
+  };
+
+  const percentKid = (spec: SizeSpec, space: AxisSpace): number => {
+    const percent = parseFloat(String(spec));
+    const base = space.content ?? space.bound;
+    return base === null || !Number.isFinite(percent) ? 0 : (base * percent) / 100;
+  };
+
   const kidSize = (
     kid: Kid,
     axis: Axis,
-    content: number | null,
+    space: AxisSpace,
     otherSize: number | undefined,
     layout: FrameLayout,
   ): number | 'fill' => {
     const { node } = kid;
     const spec = specOf(node, axis);
-    const isMain = layout.main === axis;
     const anchors = layout.kind === 'none' ? anchorsOf(node, axis) : undefined;
-    if (
-      anchors &&
-      !anchors.center &&
-      anchors.start !== undefined &&
-      anchors.end !== undefined &&
-      content !== null
-    )
-      return Math.max(0, content - anchors.start - anchors.end);
-    if (typeof spec === 'number') return Math.max(0, spec);
-    if (node.type === 'slot' && options.slotContent) {
-      const inner = options.slotContent[axis === 'w' ? 'width' : 'height'];
-      const anchored =
-        anchors !== undefined &&
-        !anchors.center &&
-        anchors.start !== undefined &&
-        anchors.end !== undefined;
-      if (spec === 'hug' || (content === null && (spec === 'fill' || anchored)))
-        return Math.max(0, inner);
-    }
-    if (spec === 'hug') {
-      if (
-        !isMain &&
-        layout.kind !== 'none' &&
-        layout.align === 'stretch' &&
-        content !== null
-      )
-        return content;
-      return Math.max(0, hugSize(node, axis, otherSize));
-    }
-    if (spec === 'fill') {
-      if (isMain) return 'fill';
-      if (content === null) return 0;
-      return Math.max(0, content - (anchors?.start ?? 0) - (anchors?.end ?? 0));
-    }
-    const percent = parseFloat(spec);
-    return content === null || !Number.isFinite(percent) ? 0 : (content * percent) / 100;
+    const early =
+      anchoredSize(anchors, space.content) ??
+      (typeof spec === 'number' ? spec : undefined) ??
+      slotSize(node, spec, axis, space.content, anchors);
+    if (early !== undefined) return early;
+    if (spec === 'hug') return hugKid(node, axis, space, otherSize, layout);
+    if (spec === 'fill')
+      return layout.main === axis
+        ? 'fill'
+        : fillKid(node, axis, space, otherSize, anchors);
+    return percentKid(spec, space);
   };
 
-  /** Tamanhos dos filhos num eixo; `content` nulo = o pai está sendo medido (hug). */
+  /**
+   * Reparte `free` entre os `fill` (um `SizeLimit` cada) como o flexbox: calcula a violação
+   * total dos limites; sem violação, está pronto; com violação positiva congela quem bateu no
+   * `min`, com negativa quem bateu no `max`, e repete com o resto.
+   */
+  const distributeFill = (limits: readonly SizeLimit[], free: number): number[] => {
+    const sizes = limits.map(() => 0);
+    let active = limits.map((_, i) => i);
+    let space = free;
+    while (active.length > 0) {
+      const share = space / active.length;
+      const clamped = active.map((i) => clampTo(limits[i] ?? NO_SIZE_LIMIT, share));
+      const violation = clamped.reduce((sum, c) => sum + c - share, 0);
+      const frozen = active.filter((_, k) =>
+        violation > 0 ? (clamped[k] ?? share) > share : (clamped[k] ?? share) < share,
+      );
+      if (Math.abs(violation) < FLEX_EPS || frozen.length === 0) {
+        active.forEach((i, k) => (sizes[i] = clamped[k] ?? share));
+        break;
+      }
+      active.forEach((i, k) => {
+        if (frozen.includes(i)) {
+          sizes[i] = clamped[k] ?? share;
+          space -= clamped[k] ?? share;
+        }
+      });
+      active = active.filter((i) => !frozen.includes(i));
+    }
+    return sizes;
+  };
+
+  /** Tamanhos no eixo principal: os fixos já vêm prontos e os `fill` dividem o que sobra. */
+  const resolveMain = (
+    frame: FrameTemplate,
+    layout: FrameLayout,
+    sizes: readonly (number | 'fill')[],
+    limits: readonly SizeLimit[],
+    content: number | null,
+  ): number[] => {
+    const fills = sizes.filter((s) => s === 'fill').length;
+    const fixed = sizes.reduce<number>((sum, s) => sum + (s === 'fill' ? 0 : s), 0);
+    let free = 0;
+    if (content === null) {
+      if (fills > 0) warn('fill dentro de hug vira 0');
+    } else {
+      const remaining = content - fixed - layout.gap * Math.max(0, sizes.length - 1);
+      if (remaining < -EPS) warn(`conteúdo maior que a caixa: ${nodeName(frame)}`);
+      free = Math.max(0, remaining);
+    }
+    const shares = distributeFill(
+      limits.filter((_, i) => sizes[i] === 'fill'),
+      free,
+    );
+    let next = 0;
+    return sizes.map((s) => (s === 'fill' ? (shares[next++] ?? 0) : s));
+  };
+
+  /** Tamanhos dos filhos num eixo; `space.content` nulo = o pai está sendo medido (hug). */
   const resolveAxis = (
     frame: FrameTemplate,
     layout: FrameLayout,
     kids: readonly Kid[],
     axis: Axis,
-    content: number | null,
+    space: AxisSpace,
     others: readonly number[] | null,
   ): number[] => {
-    const raw = kids.map((kid, i) => kidSize(kid, axis, content, others?.[i], layout));
-    if (layout.kind === 'none') return raw.map((s) => (s === 'fill' ? 0 : s));
-    const fills = raw.filter((s) => s === 'fill').length;
-    const fixed = raw.reduce<number>((sum, s) => sum + (s === 'fill' ? 0 : s), 0);
-    let share = 0;
-    if (layout.main === axis) {
-      if (content === null) {
-        if (fills > 0) warn('fill dentro de hug vira 0');
-      } else {
-        const remaining = content - fixed - layout.gap * Math.max(0, kids.length - 1);
-        if (remaining < -EPS) warn(`conteúdo maior que a caixa: ${nodeName(frame)}`);
-        share = fills > 0 ? Math.max(0, remaining) / fills : 0;
-      }
-    } else if (content !== null && fixed > 0) {
-      if (raw.some((s) => s !== 'fill' && s > content + EPS))
+    const limits = kids.map((kid) => limitOf(kid.node, axis));
+    const sizes = kids.map((kid, i): number | 'fill' => {
+      const size = kidSize(kid, axis, space, others?.[i], layout);
+      return size === 'fill' ? size : clampTo(limits[i] ?? NO_SIZE_LIMIT, size);
+    });
+    if (layout.main === axis)
+      return resolveMain(frame, layout, sizes, limits, space.content);
+    const numbers = sizes.map((s) => (s === 'fill' ? 0 : s));
+    if (layout.kind !== 'none' && space.content !== null) {
+      const content = space.content;
+      if (numbers.some((s) => s > content + EPS))
         warn(`conteúdo maior que a caixa: ${nodeName(frame)}`);
     }
-    return raw.map((s) => (s === 'fill' ? share : s));
+    return numbers;
   };
 
   /** Tamanho do quadro num eixo a partir dos filhos (`hug`), com o padding. */
@@ -508,9 +770,18 @@ function createEngine(
     });
   };
 
-  /** Plano de um quadro: `null` num eixo = `hug` (o quadro abraça os filhos). */
-  const planFrame = (frame: FrameTemplate, w: number | null, h: number | null): Plan => {
-    const key = `${w ?? 'n'}x${h ?? 'n'}`;
+  /**
+   * Plano de um quadro: `null` num eixo = `hug` (o quadro abraça os filhos). `limits` é o
+   * limite disponível por eixo hug, para os filhos `fill`/`%` contribuírem na medição.
+   */
+  const planFrame = (
+    frame: FrameTemplate,
+    w: number | null,
+    h: number | null,
+    limits: Limits = NO_LIMITS,
+  ): Plan => {
+    const bounds = effectiveBounds(w, h, limits);
+    const key = planKey(w, h, bounds);
     const cached = planCache.get(frame)?.get(key);
     if (cached) return cached;
 
@@ -527,13 +798,16 @@ function createEngine(
       const pad = axis === 'w' ? padW : padH;
       let total = known;
       if (total === null) {
-        const preliminary = resolveAxis(frame, layout, kids, axis, null, others);
+        const limit = bounds[axis];
+        const space: AxisSpace = {
+          content: null,
+          bound: limit === null ? null : Math.max(0, limit - pad),
+        };
+        const preliminary = resolveAxis(frame, layout, kids, axis, space, others);
         total = hugTotal(layout, kids, axis, preliminary, pad);
       }
-      return {
-        total,
-        sizes: resolveAxis(frame, layout, kids, axis, Math.max(0, total - pad), others),
-      };
+      const space: AxisSpace = { content: Math.max(0, total - pad), bound: null };
+      return { total, sizes: resolveAxis(frame, layout, kids, axis, space, others) };
     };
 
     const horizontal = solve('w', w, null);
@@ -856,7 +1130,14 @@ function createEngine(
   const buildRoot = (box: Box): FrameNode =>
     buildFrame(component.template, 'root', box.x, box.y, box.width, box.height, true);
 
-  return { warnings, planFrame, buildRoot, template: component.template };
+  return {
+    warnings,
+    planFrame,
+    buildRoot,
+    template: component.template,
+    limitOf,
+    clampSize,
+  };
 }
 
 export function instantiate(
@@ -881,6 +1162,21 @@ export function measureComponent(
   options: InstantiateOptions,
 ): { width: number; height: number; warnings: readonly string[] } {
   const engine = createEngine(component, values, options);
-  const plan = engine.planFrame(engine.template, size.width, size.height);
-  return { width: plan.w, height: plan.h, warnings: [...engine.warnings] };
+  const { template } = engine;
+  // Num eixo hug o `max` da raiz é o limite disponível; depois do plano, o min/max da raiz
+  // se aplica (a largura primeiro: a altura é medida já na largura limitada).
+  const finiteMax = (axis: Axis) => {
+    const { max } = engine.limitOf(template, axis);
+    return Number.isFinite(max) ? max : null;
+  };
+  const limits: Limits = {
+    w: size.width === null ? finiteMax('w') : null,
+    h: size.height === null ? finiteMax('h') : null,
+  };
+  const first = engine.planFrame(template, size.width, size.height, limits);
+  const width = size.width ?? engine.clampSize(template, 'w', first.w);
+  const plan =
+    width === first.w ? first : engine.planFrame(template, width, size.height, limits);
+  const height = size.height ?? engine.clampSize(template, 'h', plan.h);
+  return { width, height, warnings: [...engine.warnings] };
 }

@@ -281,7 +281,7 @@
   },
   "src/model/components/instantiate.ts": {
     "complexity": {
-      "count": 2
+      "count": 1
     }
   },
   "src/model/components/library.ts": {
@@ -301,7 +301,7 @@
   },
   "src/model/components/repeat.ts": {
     "complexity": {
-      "count": 2
+      "count": 1
     }
   },
   "src/model/components/screen.ts": {

@@ -7,6 +7,13 @@
  * expressões que citam uma coluna (`$field`, `$has`, `$eq`, `$switch`) passam a citar esse campo
  * extra, o que faz a coluna **sombrear** o campo do tipo de mesmo nome sem o motor saber de
  * escopo. Função pura: o resultado só tem nós que o motor já conhece.
+ *
+ * Tamanho no eixo das linhas (`height` em `column`, `width` em `row`):
+ * - sem `distribute` (ou `"none"`): o quadro gerado é `hug` nesse eixo e cada linha também, salvo
+ *   o que o `repeat` e o `template` dizem; um `fill` no `template` vale 0 (aviso do motor);
+ * - `distribute: "fill"` (formatVersion 4): o quadro gerado é `fill` nesse eixo (ocupa o do pai) e
+ *   cada linha é `fill`, de modo que as linhas dividem o eixo igualmente menos os `gap`s. Valor
+ *   explícito (px, `hug`, `%`, ou o próprio `fill`) no `repeat`/`template` vale como escrito.
  */
 import type {
   ComponentFile,
@@ -17,6 +24,45 @@ import type {
   RepeatTemplate,
   TemplateNode,
 } from './componentFormat';
+
+const INHERITED_KEYS = [
+  'visible',
+  'opacity',
+  'anchors',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
+] as const;
+
+/** O que o quadro gerado herda do `repeat` (só as chaves presentes). */
+function inheritedKeys(node: RepeatTemplate): Partial<FrameTemplate> {
+  const out: Record<string, unknown> = {};
+  for (const key of INHERITED_KEYS) if (node[key] !== undefined) out[key] = node[key];
+  return out;
+}
+
+/** Tamanhos do quadro gerado: `width`/`height` do `repeat`, ou o padrão do eixo (ver o topo). */
+function wrapperSize(
+  node: RepeatTemplate,
+  column: boolean,
+): Pick<FrameTemplate, 'width' | 'height'> {
+  const rowsAxis = node.distribute === 'fill' ? 'fill' : 'hug';
+  return {
+    width: node.width ?? (column ? 'fill' : rowsAxis),
+    height: node.height ?? (column ? rowsAxis : 'fill'),
+  };
+}
+
+/** Tamanho de uma linha no eixo das linhas: o do `template`, ou `hug` (`fill` com `distribute`). */
+function rowSize(
+  copy: FrameTemplate,
+  column: boolean,
+  distribute: boolean,
+): Pick<FrameTemplate, 'width' | 'height'> {
+  const fallback = distribute ? 'fill' : 'hug';
+  return column ? { height: copy.height ?? fallback } : { width: copy.width ?? fallback };
+}
 
 /** O template tem algum nó `repeat`? */
 export function hasRepeat(node: TemplateNode): boolean {
@@ -95,19 +141,13 @@ export function expandRepeats(
       const scope = `$r${n}_${i}`;
       for (const name of columns) extra[`${scope}:${name}`] = row[name] ?? null;
       const copy = scoped(node.template, columns, scope) as FrameTemplate;
-      const hugged = column
-        ? { height: copy.height ?? 'hug' }
-        : { width: copy.width ?? 'hug' };
-      return { ...copy, ...hugged };
+      return { ...copy, ...rowSize(copy, column, node.distribute === 'fill') };
     });
     return {
       type: 'frame',
       name: node.name ?? 'repeat',
-      ...(node.visible === undefined ? {} : { visible: node.visible }),
-      ...(node.opacity === undefined ? {} : { opacity: node.opacity }),
-      ...(node.anchors === undefined ? {} : { anchors: node.anchors }),
-      width: node.width ?? (column ? 'fill' : 'hug'),
-      height: node.height ?? (column ? 'hug' : 'fill'),
+      ...inheritedKeys(node),
+      ...wrapperSize(node, column),
       layout: { type: node.direction ?? 'column', gap: node.gap ?? 0 },
       children,
     };
