@@ -213,9 +213,9 @@ export const ptBR = {
   'annotation.noOwner': 'Nenhuma',
   'annotation.ownerOption': '{layer}: {name}',
   'annotation.ownerHelp':
-    'Só aparecem anotações desta mesma marcação que estão em outras camadas (e, nas tipadas, de um tipo que aceite esta).',
+    'Só aparecem anotações desta mesma marcação. Nas tipadas, a dona pode ser de outra camada ou da mesma, quando o tipo dela aceita este; nas livres, só de outras camadas.',
   'annotation.ownerEmpty':
-    'Nenhuma opção: crie, nesta marcação, uma anotação em outra camada para poder vincular esta a ela.',
+    'Nenhuma opção: crie, nesta marcação, uma anotação cujo tipo aceite esta (nas livres, em outra camada) para poder vincular esta a ela.',
   'annotation.linkedTo': '↳ de {name}',
   'annotation.linkedToRole': '↳ de {name} ({role})',
   'annotation.linkedHeading': 'Vinculadas',
