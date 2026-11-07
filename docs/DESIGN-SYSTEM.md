@@ -12,7 +12,7 @@ Este arquivo é o registro dele no repositório. Ele diz o que o DS é, **quando
 - **Não é gerado do código.** A skill `/design-sync` do Claude Code **não se aplica** a este DS: ela espera o `dist/` de uma biblioteca de componentes publicada e transformaria o DS curado num espelho do build. Não a use aqui.
 - **O código é a fonte da verdade; o DS descreve.** Onde os dois divergirem, corrija o DS. Divergência que pareça defeito da app não se resolve aqui: registre em "Pendências" e leve ao dono.
 - **Nome.** O índice do artefato se chama **Mapping**. Se aparecer o nome antigo "Mapeador de Imagens 2.0", é o mesmo artefato.
-- **Tamanho hoje:** 66 componentes com guia e preview (mais a capa `Cover`), 6 seções, 146 tokens e 86 ícones.
+- **Tamanho hoje:** 67 componentes com guia e preview (mais a capa `Cover`), 6 seções, 147 tokens e 86 ícones.
 
 ## Quando verificar
 
@@ -101,6 +101,7 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `ComponentDrawing` | `src/canvas/components/componentLayer.ts`, `src/canvas/components/renderScene.ts`, `src/canvas/components/screenRenderer.ts` | Desenhado no Konva; nó `image` via `imageLoader.ts` e `remoteImages.ts`. |
 | `Minimap` | `src/ui/Minimap.tsx`, `src/canvas/minimap.ts` | DOM, não Konva; contas de layout no canvas. |
 | `ZoomField` | `src/ui/ZoomField.tsx` | Usado em `src/ui/StatusBar.tsx` e `src/ui/Breadcrumbs.tsx`. |
+| `ViewModePanel` | `src/ui/ViewModePanel.tsx` | Painel "Mostrar no canvas" do modo visualização e o botão que o reabre; o botão **Visualizar** (`ViewModeButton`) mora em `src/app/EditorTools.tsx`. O item do modo na barra de status é `ViewModeItem`, em `src/ui/StatusBar.tsx` (guia do `StatusBar`). |
 | `MarkingPanel` | `src/ui/MarkingPanel.tsx` |  |
 | `MarkingPicker` | `src/ui/MarkingPicker.tsx` |  |
 | `MultiSelectionPanel` | `src/ui/MultiSelectionPanel.tsx` |  |
@@ -169,7 +170,7 @@ Na mesma data entraram no DS os sete que faltavam: `size-grid-col-min` (`96px`) 
 | `spacing`                          | 8     | 8              |
 | `radius`                           | 7     | 7              |
 | `shadow`                           | 1     | 1              |
-| `size`                             | 43    | 43             |
+| `size`                             | 44    | 44             |
 | `opacity`                          | 8     | 8              |
 | `duration`                         | 6     | 6              |
 | `zIndex`                           | 8     | 8              |

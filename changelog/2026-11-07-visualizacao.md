@@ -1,4 +1,4 @@
-# Visualização — [Não lançado] (épico `epic/visualizacao`, PR #714, MCP 0.24.1, schema v15)
+# Visualização — 2026-11-07 (épico `epic/visualizacao`, PR #714, MCP 0.24.1, schema v15)
 
 ## Adicionado
 
