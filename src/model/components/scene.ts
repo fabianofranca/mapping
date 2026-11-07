@@ -15,6 +15,8 @@
  *   separada da do nó.
  */
 
+import type { RunLayout } from './richText';
+
 export interface Point {
   readonly x: number;
   readonly y: number;
@@ -191,10 +193,33 @@ export interface PathNode extends NodeBase {
   readonly fillRule: 'nonzero' | 'evenodd';
 }
 
+/** Estilo resolvido de um trecho de texto rico (o texto e o que o desenho precisa dele). */
+export interface SceneTextRun {
+  readonly text: string;
+  readonly fontFamily: string;
+  readonly fontSize: number;
+  readonly fontWeight: number;
+  readonly italic: boolean;
+  readonly color: string;
+  readonly decoration?: 'underline' | 'line-through';
+  /** Cor de fundo da caixa em linha; com ela o trecho é um bloco inquebrável. */
+  readonly background?: string;
+  readonly radius?: number;
+  /** Respiro da caixa em linha: [vertical, horizontal]. */
+  readonly padding?: readonly [number, number];
+}
+
 export interface TextNode extends NodeBase {
   readonly type: 'text';
   readonly text: string;
   readonly style: TextStyle;
+  /**
+   * Texto rico (`runs` do componente v4): o estilo resolvido de cada trecho; `text` é a
+   * concatenação deles. Ausente = texto de um estilo só (`style`).
+   */
+  readonly runs?: readonly SceneTextRun[];
+  /** As linhas dos trechos na largura do nó (posições antes do `verticalAlign`); com `runs`. */
+  readonly runLayout?: RunLayout;
 }
 
 /** Nó que o conversor reconheceu, mas não sabe desenhar: vira só a caixa (e um aviso). */

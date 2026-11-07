@@ -154,9 +154,37 @@ Uma **biblioteca** é uma especialização v4 e a **pasta** dela: a especializa�
 
 - **Todo caminho citado fica dentro da pasta**, relativo ao arquivo da especialização, sem `..`. O que não é citado e é `.json` ou `.md` vira aviso ("arquivo não referenciado").
 - **O que é aditivo e o que é quebra** (contrato de versão). _Aditivo_: tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, trocar só o desenho (template). _Quebra_: remover ou renomear tipo, campo ou opção de `enum`; tornar um campo obrigatório (inclusive um campo novo que já nasce obrigatório); mudar o `type` de um campo; remover ou renomear um papel (`childRoles`) e dar papéis a um dono que não tinha (formatVersion 12). Atualizar uma biblioteca já aplicada: mantenha o `id`, suba a `version`, preserve ids de tipo e `key` de campo e **só declare `migrations`** (`from`, `to`, passos `rename-type`, `remove-type`, `rename-field`, `remove-field`, `map-values`, `fill-field` e, na formatVersion 12, `rename-role`, `remove-role`, `set-role`) quando houver quebra; sem a migração o validador recusa o pacote quando você passa a versão anterior em `previous`.
-- **Gerar, validar, corrigir:** escreva o pacote, rode `validate_library({ path })` (com `previous` quando é uma atualização), corrija cada erro pelo `file` e `path` dele e valide de novo, até `valid: true`. **Erro impede usar; aviso deixa usar** (fonte ausente do pacote, conteúdo maior que a caixa, arquivo sem uso): explique na entrega o que ficou. Use `level: 1` ou `2` para iterar rápido e feche com o nível 3 (padrão), que instancia cada componente e passa os exemplos de sistema externo pela declaração. Os avisos do desenho vêm da prova do nível 3, com o texto medido pela aproximação: `conteúdo maior que a caixa: <quadro>`, `fill dentro de hug vira 0` (um filho `fill` no eixo principal de um quadro `hug`), `texto medido com largura 0: <nó>` (um texto `fill` ou `%` sem largura de onde sair: dê largura ao pai) `texto maior que a caixa: <nó>` (um texto de altura definida quebra em mais linhas do que cabe, sem `maxLines` nem `ellipsis` que o corte; dê altura ou use `font.maxLines`/`font.ellipsis`) e, na `formatVersion` 4 do componente, `valor inválido em <chave>: <valor>` (uma expressão de `layout.type`, `layout.align`, `layout.justify`, `width` ou `height` resolveu fora do conjunto e valeu o padrão). Um texto `fill` numa coluna `hug` quebra em linhas de palavras (medição em duas passagens); `distribute: "fill"` no `repeat`, `minWidth`/`maxWidth`/`minHeight`/`maxHeight` e expressão nas chaves de layout e `font.wrap` (`"none"` = uma linha só), `font.ellipsis` (`…` no que não cabe) e `font.maxLines` (inteiro ≥ 1) só valem a partir da `formatVersion` 4 do componente (antes: `só é permitido com formatVersion 4`; `min` literal maior que o `max`: `<nó>.minWidth: não pode ser maior que maxWidth`).
+- **Gerar, validar, corrigir:** escreva o pacote, rode `validate_library({ path })` (com `previous` quando é uma atualização), corrija cada erro pelo `file` e `path` dele e valide de novo, até `valid: true`. **Erro impede usar; aviso deixa usar** (fonte ausente do pacote, conteúdo maior que a caixa, arquivo sem uso): explique na entrega o que ficou. Use `level: 1` ou `2` para iterar rápido e feche com o nível 3 (padrão), que instancia cada componente e passa os exemplos de sistema externo pela declaração. Os avisos do desenho vêm da prova do nível 3, com o texto medido pela aproximação: `conteúdo maior que a caixa: <quadro>`, `fill dentro de hug vira 0` (um filho `fill` no eixo principal de um quadro `hug`), `texto medido com largura 0: <nó>` (um texto `fill` ou `%` sem largura de onde sair: dê largura ao pai) `texto maior que a caixa: <nó>` (um texto de altura definida quebra em mais linhas do que cabe, sem `maxLines` nem `ellipsis` que o corte; dê altura ou use `font.maxLines`/`font.ellipsis`) e, na `formatVersion` 4 do componente, `valor inválido em <chave>: <valor>` (uma expressão de `layout.type`, `layout.align`, `layout.justify`, `width` ou `height` resolveu fora do conjunto e valeu o padrão). Um texto `fill` numa coluna `hug` quebra em linhas de palavras (medição em duas passagens); `distribute: "fill"` no `repeat`, `minWidth`/`maxWidth`/`minHeight`/`maxHeight` e expressão nas chaves de layout e `font.wrap` (`"none"` = uma linha só), `font.ellipsis` (`…` no que não cabe) e `font.maxLines` (inteiro ≥ 1) e `runs` (texto rico) só valem a partir da `formatVersion` 4 do componente (antes: `só é permitido com formatVersion 4`; `min` literal maior que o `max`: `<nó>.minWidth: não pode ser maior que maxWidth`).
 - **Aplicar e atualizar vão pela proposta.** `apply_specialization` (primeira vez) e `update_specialization` (versão maior de uma já aplicada) aceitam em `file` a **pasta** do pacote, ou o arquivo da especialização dentro dela (arquivos v1 a v3 continuam indo só pelo arquivo). O servidor valida o pacote com os mesmos níveis de `validate_library` (com a cópia aplicada como `previous` na atualização): **erro** recusa a operação com `invalid-library` (a resposta traz os primeiros erros, com `file` e `path`); **aviso** deixa seguir e volta em `warnings` (`code: "library-warning"`). Os arquivos do pacote, inclusive as fontes, esperam em `proposals/<id>/specs/<pasta>/…`; quando a pessoa aceita e aplica, a app copia a pasta para `specs/<pasta>/`. O servidor nunca grava `specs/` nem o `mapping.json`. Depois de aplicada, `list_components` e `get_component` com `project` + `specId` leem a cópia (`specs/<id>/`), e `get_specialization` lista os arquivos dela em `package`.
 - **Ler antes de montar:** para saber como usar um componente, `get_component` devolve o documento, os campos, os exemplos, o `code` e as `sources` do tipo de uma vez.
+
+### Negrito e chip no meio da linha (texto rico)
+
+Para um destaque dentro de uma frase (palavra em negrito, cor diferente, um rótulo com fundo como `vencida`), o nó `text` do componente usa `runs` no lugar de `text`, a partir da `formatVersion` 4 do componente (a especialização não muda). Um trecho com `background` é o **chip**: uma caixa em linha, inquebrável, com `radius` e `padding` (número ou `[vertical, horizontal]`).
+
+```json
+{
+  "type": "text",
+  "width": "fill",
+  "font": { "size": 14, "lineHeight": 20 },
+  "runs": [
+    { "text": "Fatura de " },
+    { "text": { "$field": "mes" }, "weight": 700 },
+    { "text": " " },
+    {
+      "text": "vencida",
+      "color": "#FFFFFF",
+      "background": "#B3261E",
+      "radius": 8,
+      "padding": [2, 6]
+    }
+  ]
+}
+```
+
+- O nó dá a base (`font`, `color`); o trecho sobrepõe `weight`, `italic`, `family`, `size`, `decoration` e `color`. `lineHeight`, `align`, `wrap`, `ellipsis` e `maxLines` ficam no nó e valem para todos os trechos. Todas as chaves aceitam expressão, e o `text` do trecho aceita `$field`.
+- A quebra é pela palavra, como um texto só; o chip que não cabe no resto da linha vai inteiro para a de baixo. **Não troque o rótulo por espaços nem desenhe o chip por cima com outro nó:** ele não acompanharia o texto.
+- Erros: `text` e `runs` juntos (`text e runs juntos: use um ou outro`), `runs` vazio (`esperava lista não vazia de trechos`) e, numa `formatVersion` do componente menor que 4, `runs: só é permitido com formatVersion 4`. `get_marking_image` ainda desenha o texto rico como barras por pedaço e o fundo do chip, sem as letras.
 
 ### Evoluindo uma biblioteca já aplicada
 

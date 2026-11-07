@@ -1,4 +1,5 @@
 import type { TextMeasurer } from '../../src/model/components/instantiate';
+import type { RunPiece, RunLayout } from '../../src/model/components/richText';
 import { sideSegments } from '../../src/model/components/strokeSides';
 import {
   multiply,
@@ -7,6 +8,7 @@ import {
   type Paint,
   type Point,
   type SceneNode,
+  type SceneTextRun,
   type TextNode,
 } from '../../src/model/components/scene';
 import type { PixelRect, Raster } from './raster';
@@ -770,25 +772,41 @@ class Painter {
     );
   }
 
-  /** Texto como barras: uma por linha, na cor do texto. */
+  /** Texto como barras: uma por linha, na cor do texto (no texto rico, cada barra na sua cor). */
   private text(node: TextNode, matrix: Matrix, opacity: number, clip: PixelRect): void {
+    if (node.text === '') return;
+    if (node.runLayout) {
+      this.richText(node, matrix, opacity, clip);
+      return;
+    }
     const color = firstColor(node.fills);
-    if (color === null || node.text === '') return;
+    if (color === null) return;
     const bars = textBars(node, this.measure);
-    this.fill(
-      bars.map((b) => [
-        { x: b.x, y: b.y },
-        { x: b.x + b.width, y: b.y },
-        { x: b.x + b.width, y: b.y + b.height },
-        { x: b.x, y: b.y + b.height },
-      ]),
-      matrix,
-      'nonzero',
-      color,
-      opacity,
-      clip,
-    );
+    this.fill(bars.map(barPolygon), matrix, 'nonzero', color, opacity, clip);
   }
+
+  /** Texto rico: o fundo de cada chip e uma barra por pedaço de texto, em ordem, cada um na sua cor. */
+  private richText(
+    node: TextNode,
+    matrix: Matrix,
+    opacity: number,
+    clip: PixelRect,
+  ): void {
+    for (const bar of textBars(node, this.measure)) {
+      const color = bar.color === undefined ? null : parseColor(bar.color);
+      if (color !== null)
+        this.fill([barPolygon(bar)], matrix, 'nonzero', color, opacity, clip);
+    }
+  }
+}
+
+function barPolygon(b: PixelRect): Polygon {
+  return [
+    { x: b.x, y: b.y },
+    { x: b.x + b.width, y: b.y },
+    { x: b.x + b.width, y: b.y + b.height },
+    { x: b.x, y: b.y + b.height },
+  ];
 }
 
 function firstColor(paints: readonly Paint[]): Color | null {
@@ -868,8 +886,58 @@ function customLines(
   return lines === undefined ? undefined : [...lines];
 }
 
-/** Barras do texto no espaço local do nó: uma por linha medida. */
-export function textBars(node: TextNode, measure: TextMeasurer): PixelRect[] {
+/** Uma barra do texto; `color` só no texto rico, onde cada barra tem a sua. */
+export interface TextBar extends PixelRect {
+  readonly color?: string;
+}
+
+/** Deslocamento vertical do texto rico na caixa do nó (`verticalAlign`). */
+function richShift(node: TextNode, contentHeight: number): number {
+  if (node.height <= 0) return 0;
+  const free = node.height - contentHeight;
+  if (node.style.verticalAlign === 'middle') return free / 2;
+  return node.style.verticalAlign === 'bottom' ? free : 0;
+}
+
+/** O fundo (se for chip) e a barra do texto de um pedaço, com o topo do pedaço em `top`. */
+function pieceBars(piece: RunPiece, run: SceneTextRun, top: number): TextBar[] {
+  const [padV, padH] = piece.chip ? (run.padding ?? [0, 0]) : [0, 0];
+  const textHeight = piece.height - 2 * (padV ?? 0);
+  const barHeight = textHeight * BAR_RATIO;
+  const text: TextBar = {
+    x: piece.x + (padH ?? 0),
+    y: top + (padV ?? 0) + (textHeight - barHeight) / 2,
+    width: piece.width - 2 * (padH ?? 0),
+    height: barHeight,
+    color: run.color,
+  };
+  if (!piece.chip || run.background === undefined) return [text];
+  const box = { x: piece.x, y: top, width: piece.width, height: piece.height };
+  return [{ ...box, color: run.background }, text];
+}
+
+/**
+ * Barras do texto rico (`runLayout`): para cada pedaço, o fundo do chip (a caixa inteira, na cor do
+ * `background`) e uma barra do texto na cor do trecho, com o `verticalAlign` do nó aplicado.
+ */
+function richBars(
+  node: TextNode,
+  layout: RunLayout,
+  runs: readonly SceneTextRun[],
+): TextBar[] {
+  const shift = richShift(node, layout.height);
+  return layout.lines.flatMap((line) =>
+    line.pieces.flatMap((piece) => {
+      const run = runs[piece.run];
+      const top = line.y + (line.height - piece.height) / 2 + shift;
+      return run ? pieceBars(piece, run, top) : [];
+    }),
+  );
+}
+
+/** Barras do texto no espaço local do nó: uma por linha medida (uma por pedaço, no texto rico). */
+export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
+  if (node.runLayout && node.runs) return richBars(node, node.runLayout, node.runs);
   const { style } = node;
   const lineHeight = style.lineHeight ?? style.fontSize * 1.2;
   const font = {
@@ -890,7 +958,7 @@ export function textBars(node: TextNode, measure: TextMeasurer): PixelRect[] {
         ? node.height - total
         : 0;
   const barHeight = lineHeight * BAR_RATIO;
-  const bars: PixelRect[] = [];
+  const bars: TextBar[] = [];
   lines.forEach((line, i) => {
     if (line === '') return;
     const justified = style.align === 'justify' && i < lines.length - 1;

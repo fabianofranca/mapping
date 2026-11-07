@@ -146,6 +146,23 @@
         }
       ]
     },
+    "lit_runPadding": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      ]
+    },
     "lit_layoutAlign": {
       "enum": ["start", "center", "end", "stretch"]
     },
@@ -923,6 +940,75 @@
         }
       ]
     },
+    "expr_runPadding": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_runPadding"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_runPadding"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_runPadding"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_runPadding"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_runPadding"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_runPadding"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
     "expr_layoutAlign": {
       "description": "Literal ou expressão ($field, $if, $switch, $concat).",
       "anyOf": [
@@ -1579,6 +1665,46 @@
         }
       }
     },
+    "run": {
+      "description": "formatVersion 4. Um trecho do texto rico (runs): quebra linha junto com os outros como um texto só. weight, italic, family, size e decoration sobrepõem o font do nó; color sobrepõe o color do nó. Com background o trecho é uma caixa em linha (chip) inquebrável, com radius e padding.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": {
+          "$ref": "#/$defs/expr_textOrNumber"
+        },
+        "weight": {
+          "$ref": "#/$defs/expr_weight"
+        },
+        "italic": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "color": {
+          "$ref": "#/$defs/expr_color"
+        },
+        "decoration": {
+          "$ref": "#/$defs/expr_decoration"
+        },
+        "family": {
+          "$ref": "#/$defs/expr_string"
+        },
+        "size": {
+          "$ref": "#/$defs/expr_number"
+        },
+        "background": {
+          "description": "Cor de fundo da caixa em linha; none = sem caixa.",
+          "$ref": "#/$defs/expr_color"
+        },
+        "radius": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "padding": {
+          "description": "Número (os dois eixos) ou [vertical, horizontal].",
+          "$ref": "#/$defs/expr_runPadding"
+        }
+      }
+    },
     "layout": {
       "description": "Distribuição dos filhos: none (âncoras), row ou column. Na formatVersion 4, type, align e justify aceitam expressão; com type literal \"none\" só type vale.",
       "anyOf": [
@@ -1785,9 +1911,18 @@
       }
     },
     "node_text": {
+      "description": "Exatamente um de text e runs (runs só na formatVersion 4).",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "text"],
+      "required": ["type"],
+      "oneOf": [
+        {
+          "required": ["text"]
+        },
+        {
+          "required": ["runs"]
+        }
+      ],
       "properties": {
         "type": {
           "const": "text"
@@ -1836,6 +1971,14 @@
         },
         "text": {
           "$ref": "#/$defs/expr_textOrNumber"
+        },
+        "runs": {
+          "description": "formatVersion 4. Lista não vazia de trechos com estilo próprio (no lugar de text).",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/run"
+          }
         },
         "font": {
           "$ref": "#/$defs/font"
@@ -2655,10 +2798,10 @@
               "$ref": "#/$defs/condition"
             },
             "then": {
-              "$ref": "#/$defs/expr_decoration"
+              "$ref": "#/$defs/expr_wrap"
             },
             "else": {
-              "$ref": "#/$defs/expr_decoration"
+              "$ref": "#/$defs/expr_wrap"
             }
           }
         },
@@ -2673,11 +2816,11 @@
             "cases": {
               "type": "object",
               "additionalProperties": {
-                "$ref": "#/$defs/expr_decoration"
+                "$ref": "#/$defs/expr_wrap"
               }
             },
             "default": {
-              "$ref": "#/$defs/expr_decoration"
+              "$ref": "#/$defs/expr_wrap"
             }
           }
         },
@@ -2724,10 +2867,10 @@
               "$ref": "#/$defs/condition"
             },
             "then": {
-              "$ref": "#/$defs/expr_decoration"
+              "$ref": "#/$defs/expr_positiveInteger"
             },
             "else": {
-              "$ref": "#/$defs/expr_decoration"
+              "$ref": "#/$defs/expr_positiveInteger"
             }
           }
         },
@@ -2742,11 +2885,11 @@
             "cases": {
               "type": "object",
               "additionalProperties": {
-                "$ref": "#/$defs/expr_decoration"
+                "$ref": "#/$defs/expr_positiveInteger"
               }
             },
             "default": {
-              "$ref": "#/$defs/expr_decoration"
+              "$ref": "#/$defs/expr_positiveInteger"
             }
           }
         },

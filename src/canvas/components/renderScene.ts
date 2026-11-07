@@ -22,12 +22,14 @@ import {
   type Paint,
   type Scene,
   type SceneNode,
+  type SceneTextRun,
   type Shadow,
   type Stroke,
   type TextNode,
   type TextStyle,
   hasChildren,
 } from '../../model/components/scene';
+import type { RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
 import {
   type RemoteImageView,
@@ -249,6 +251,7 @@ class Renderer {
         return shapes;
       }
       case 'text': {
+        if (node.runs && node.runLayout) return this.richTextShapes(node, node.runs);
         const { style } = node;
         const attrs: TextConfig = {
           text: node.text,
@@ -310,6 +313,30 @@ class Renderer {
         return shapes;
       }
     }
+  }
+
+  /**
+   * Texto rico (`runs`): um fundo (`KonvaRect`) por caixa em linha e um `KonvaText` por pedaço de
+   * texto, nas posições do `runLayout` da cena, deslocadas pelo `verticalAlign` do nó. O fundo
+   * vem antes do texto do chip; o traço do nó vale para cada pedaço de texto.
+   */
+  private richTextShapes(node: TextNode, runs: readonly SceneTextRun[]): Konva.Shape[] {
+    const shapes: Konva.Shape[] = [];
+    const layout = node.runLayout;
+    if (!layout) return shapes;
+    const shift = verticalShift(node, layout.height);
+    for (const line of layout.lines) {
+      for (const piece of line.pieces) {
+        const run = runs[piece.run];
+        if (!run) continue;
+        const top = line.y + (line.height - piece.height) / 2 + shift;
+        if (piece.chip) shapes.push(chipShape(piece, run, top));
+        const text = runTextShape(node, run, piece, top);
+        if (node.stroke) this.applyStroke(text, node.stroke, 'path');
+        shapes.push(text);
+      }
+    }
+    return shapes;
   }
 
   /** Aplica um preenchimento a uma forma; uma imagem vira a própria forma (`KonvaImage`). */
@@ -484,6 +511,65 @@ class Renderer {
         return;
     }
   }
+}
+
+/** Deslocamento vertical do texto rico na caixa do nó: folga × 0, ½ ou 1 (`verticalAlign`). */
+function verticalShift(node: TextNode, contentHeight: number): number {
+  if (node.height <= 0) return 0;
+  const free = node.height - contentHeight;
+  switch (node.style.verticalAlign) {
+    case 'middle':
+      return free / 2;
+    case 'bottom':
+      return free;
+    default:
+      return 0;
+  }
+}
+
+/** A cor do trecho como preenchimento do Konva (`none` = sem preenchimento). */
+function runFill(color: string): string | undefined {
+  return /^(none|transparent)$/i.test(color.trim()) ? undefined : color;
+}
+
+/** O fundo de uma caixa em linha: a caixa inteira do pedaço, com o raio do trecho. */
+function chipShape(piece: RunPiece, run: SceneTextRun, top: number): KonvaRect {
+  return new KonvaRect({
+    x: piece.x,
+    y: top,
+    width: piece.width,
+    height: piece.height,
+    cornerRadius: run.radius ?? 0,
+    fill: run.background,
+  });
+}
+
+/**
+ * O texto de um pedaço: uma linha só, sem largura (o espaço inicial do chip fica) e na fonte do
+ * trecho. No chip o texto fica `padding` para dentro da caixa; a altura de linha vem da altura do
+ * pedaço (a do trecho, sem o respiro vertical do chip).
+ */
+function runTextShape(
+  node: TextNode,
+  run: SceneTextRun,
+  piece: RunPiece,
+  top: number,
+): KonvaText {
+  const [padV, padH] = piece.chip ? (run.padding ?? [0, 0]) : [0, 0];
+  const lineHeight = piece.height - 2 * (padV ?? 0);
+  return new KonvaText({
+    x: piece.x + (padH ?? 0),
+    y: top + (padV ?? 0),
+    text: piece.text,
+    fontFamily: canvasFontFamily(run.fontFamily),
+    fontSize: run.fontSize,
+    fontStyle: fontStyle(run.fontWeight, run.italic),
+    lineHeight: run.fontSize > 0 ? lineHeight / run.fontSize : 1.2,
+    letterSpacing: node.style.letterSpacing ?? 0,
+    textDecoration: run.decoration ?? '',
+    wrap: 'none',
+    fill: runFill(run.color),
+  });
 }
 
 /** Largura e altura da fonte de uma imagem pronta; `null` se não houver como saber. */
