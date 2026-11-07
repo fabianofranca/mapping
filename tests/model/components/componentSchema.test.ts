@@ -172,4 +172,83 @@ describe('component.schema.json', () => {
       );
     });
   });
+
+  describe('limites, expressão de tamanho e layout, distribute (formatVersion 4)', () => {
+    const v4 = (template: Record<string, unknown>): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'layout',
+      name: 'Layout',
+      size: { width: 200, height: 100 },
+      template,
+    });
+
+    it('aceita as chaves novas, e o parseComponent também', () => {
+      for (const template of [
+        { type: 'frame', minWidth: 10, maxWidth: { $field: 'm', default: 90 } },
+        { type: 'frame', width: { $field: 'w', default: 'fill' }, height: '50%' },
+        {
+          type: 'frame',
+          layout: {
+            type: { $switch: 'dir', cases: { h: 'row' }, default: 'none' },
+            gap: 4,
+            align: { $field: 'a', default: 'center' },
+            justify: { $field: 'j', default: 'space-between' },
+          },
+        },
+        {
+          type: 'frame',
+          children: [
+            { type: 'slot', layout: { type: { $field: 'd', default: 'column' } } },
+            {
+              type: 'repeat',
+              field: 'rows',
+              distribute: 'fill',
+              minHeight: 20,
+              template: { type: 'frame' },
+            },
+            { type: 'image', src: { $field: 'f' }, width: { $field: 'w', default: 8 } },
+          ],
+        },
+      ]) {
+        const c = v4(template);
+        expect(checkSchema(schema, c), JSON.stringify(template)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(template)).toBe(true);
+      }
+    });
+
+    it('recusa valores inválidos', () => {
+      for (const template of [
+        { type: 'frame', minWidth: -1 },
+        { type: 'frame', width: { $field: 'w', default: 'enorme' } },
+        {
+          type: 'frame',
+          layout: { type: 'row', align: { $field: 'a', default: 'meio' } },
+        },
+        { type: 'frame', layout: { type: 'none', gap: 4 } },
+        { type: 'frame', layout: { type: { $field: 'd', default: 'grade' } } },
+        { type: 'frame', children: [{ type: 'rect', distribute: 'fill' }] },
+        {
+          type: 'frame',
+          children: [
+            { type: 'repeat', field: 'r', distribute: 'x', template: { type: 'frame' } },
+          ],
+        },
+        {
+          type: 'frame',
+          children: [
+            {
+              type: 'image',
+              src: { $field: 'f' },
+              width: { $field: 'w', default: 'hug' },
+            },
+          ],
+        },
+      ])
+        expect(
+          checkSchema(schema, v4(template)).length,
+          JSON.stringify(template),
+        ).toBeGreaterThan(0);
+    });
+  });
 });
