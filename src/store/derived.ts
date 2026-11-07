@@ -45,6 +45,7 @@ import {
   type IncompleteImage,
   type Layer,
   type LayerDot,
+  type Perspective,
   type LeftBehind,
   type LevelSummary,
   type ListedImage,
@@ -67,6 +68,7 @@ import {
 import type { SceneNode } from '../model/components/scene';
 import type { ProjectStore } from './history';
 import * as imagePermissions from './imagePermissions';
+import { NO_PERSPECTIVE, projectInPerspective } from './perspectiveShown';
 import { markingDisplay, showComponentsOnPhotos } from './settings';
 import { textMeasurer } from './textMeasure';
 import {
@@ -82,7 +84,12 @@ import { visibleLayers, type EditorUi } from './ui';
 // pan e zoom não recalculam nada disto.
 
 export interface EditorDerived {
-  /** Camadas visíveis, na ordem do projeto (podem ser nenhuma). */
+  /** A perspectiva aberta (`null` = a Principal): a interface lê o nome e as camadas dela. */
+  readonly perspective: ReadonlySignal<Perspective | null>;
+  /**
+   * Camadas visíveis, na ordem do projeto (podem ser nenhuma). Com perspectiva aberta, as
+   * escondidas são as dela; na Principal, as da interface (`ui.hiddenLayers`).
+   */
   readonly visibleLayers: ReadonlySignal<readonly Layer[]>;
   /** Pendências por anotação (só as incompletas). */
   readonly issues: ReadonlySignal<ReadonlyMap<string, readonly AnnotationIssue[]>>;
@@ -324,7 +331,9 @@ function sameItems<T>(a: readonly T[], b: readonly T[]): boolean {
  * confirmado. Nunca o projeto com a prévia do gesto: nada daqui depende de geometria,
  * então arrastar/redimensionar não recalcula nada (`drawingsOf` é a exceção: o canvas pede os
  * desenhos do projeto com a prévia do gesto). `components`: catálogo e época das fontes da
- * sessão; sem ele, o catálogo é vazio e nenhuma marcação tem desenho.
+ * sessão; sem ele, o catálogo é vazio e nenhuma marcação tem desenho. `perspective`: a perspectiva
+ * aberta (`null` = a Principal); sem ela, a Principal. O projeto à vista (`shown`) já vem recortado
+ * por ela (`review.derived.shownProject`); aqui ela decide as camadas escondidas.
  */
 export function createEditorDerived(
   store: ProjectStore,
@@ -332,6 +341,7 @@ export function createEditorDerived(
   shown: ReadonlySignal<Project | null> = store.committed,
   components: ComponentSources = NO_COMPONENTS,
   threadSources: ThreadSources = NO_THREAD_SOURCES,
+  perspective: ReadonlySignal<Perspective | null> = NO_PERSPECTIVE,
 ): EditorDerived {
   const project = shown;
 
@@ -339,7 +349,9 @@ export function createEditorDerived(
   // (indicadores, cartões do canvas) não recalcula a cada edição que não mexe nelas.
   let lastVisible: readonly Layer[] = [];
   const visible = computed(() => {
-    const next = visibleLayers(project.value, ui.hiddenLayers.value);
+    const open = perspective.value;
+    const hidden = open ? new Set(open.hiddenLayers) : ui.hiddenLayers.value;
+    const next = visibleLayers(project.value, hidden);
     if (!sameItems(next, lastVisible)) lastVisible = next;
     return lastVisible;
   });
@@ -639,6 +651,7 @@ export function createEditorDerived(
   });
 
   return {
+    perspective,
     visibleLayers: visible,
     issues,
     annotationsByMarking,
@@ -686,6 +699,11 @@ export interface ReviewSources {
   readonly filters: ReadonlySignal<ReviewFilters>;
   /** Propostas já abertas neste dispositivo (ids), para a marca "Nova". */
   readonly seen: ReadonlySignal<ReadonlySet<string>>;
+  /**
+   * Id da perspectiva aberta (`session.perspective.id`; `null` = a Principal). Sem ele, a
+   * Principal. A revisão trava a Principal, então ele é `null` enquanto há proposta aberta.
+   */
+  readonly perspectiveId?: ReadonlySignal<string | null>;
 }
 
 /** Contagens da proposta aberta (a faixa de revisão e a janela Propostas). */
@@ -1192,11 +1210,15 @@ export function createReviewDerived(
     return p && current ? previewProject(current, p) : null;
   });
 
+  // O projeto à vista: o confirmado ou o "como ficaria" da proposta, recortado pela perspectiva
+  // aberta (decisão 3). `projectInPerspective` é memoizado por projeto e perspectiva, e nada
+  // aqui lê o viewport: pan e zoom não recalculam.
   const shownProject = computed((): Project | null => {
-    if (sources.proposalId.value === null || sources.view.value === 'current') {
-      return project.value;
-    }
-    return preview.value?.project ?? project.value;
+    const base =
+      sources.proposalId.value === null || sources.view.value === 'current'
+        ? project.value
+        : (preview.value?.project ?? project.value);
+    return projectInPerspective(base, sources.perspectiveId?.value ?? null);
   });
 
   const fullPreview = computed((): Project | null => {

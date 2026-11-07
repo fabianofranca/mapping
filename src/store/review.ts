@@ -345,7 +345,7 @@ function sameTarget(a: ReviewTarget | null, b: ReviewTarget | null): boolean {
 }
 
 export function createReviewState(session: ProjectSession): ReviewState {
-  const { store, proposals, proposalActions } = session;
+  const { store, proposals, proposalActions, perspective } = session;
   const scope = resumeScope(session.storage);
   const proposalId = signal<string | null>(null);
   const selected = signal<ReviewTarget | null>(null);
@@ -389,6 +389,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
     view,
     filters,
     seen,
+    perspectiveId: perspective.id,
   });
 
   const components = createProposedComponents({
@@ -496,6 +497,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
       view.value = START_VIEW;
       filters.value = NO_FILTERS;
       store.setReviewing(false);
+      // A troca volta; a perspectiva de antes não reabre sozinha.
+      perspective.setLocked(false);
     });
   }
 
@@ -553,6 +556,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
       const blob = readBlob();
       const entry = blob.resume[keyOf(scope, id)];
       batch(() => {
+        // A revisão mostra só a Principal (decisão 12): abre-a e trava a troca.
+        perspective.setLocked(true);
         proposalId.value = id;
         store.setReviewing(true);
         undoable.value = null;

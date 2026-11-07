@@ -10,6 +10,7 @@ import type {
   JsonValue,
   LabelTexts,
   Layer,
+  Perspective,
   Placement,
   PlatformRepoInput,
   Project,
@@ -18,7 +19,9 @@ import type {
   SpecRemovalMode,
   TextMeasurer,
 } from '../model';
-import type { ActionResult, ProjectStore } from './history';
+import type { ActionResult, Operation, ProjectStore } from './history';
+import * as view from './perspectiveGestures';
+import { openPerspectiveIn, type ArrivalInfo } from './perspectives';
 import { textMeasurer } from './textMeasure';
 
 /** Ponto em pixels (da imagem ou do canvas, conforme a action). */
@@ -33,6 +36,15 @@ export interface ActionDeps {
   readonly components?: () => ComponentCatalog;
   /** Medidor de texto de agora (padrão: o de `textMeasurer`, que o canvas troca pelo real). */
   readonly measure?: () => TextMeasurer;
+  /**
+   * A perspectiva aberta (`null` = a Principal; sem esta função, sempre a Principal). Com uma
+   * aberta, o canvas chama as actions com coordenadas da vista e elas viram o que muda de fato
+   * (`perspectiveGestures.ts`): arrastar uma raiz muda só a posição dela na perspectiva, e os
+   * comandos "só na Principal" recusam com `principal-only`.
+   */
+  readonly perspective?: () => string | null;
+  /** Chamada com as chegadas à Principal de uma operação que criou raízes numa perspectiva. */
+  readonly onArrival?: (infos: readonly ArrivalInfo[]) => void;
 }
 
 /**
@@ -86,6 +98,20 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
   const newId = deps.newId ?? (() => crypto.randomUUID());
   const catalog = deps.components ?? (() => model.EMPTY_CATALOG);
   const measure = deps.measure ?? (() => textMeasurer.peek());
+  /** A perspectiva aberta em `p` (`null` = a Principal). */
+  const viewFor = (p: Project): Perspective | null =>
+    openPerspectiveIn(p, deps.perspective?.() ?? null);
+  /** Devolve `principal-only` quando a operação é recusada fora da Principal. */
+  const guarded = <T>(run: () => ActionResult<T>): ActionResult<T> => {
+    try {
+      return run();
+    } catch (e) {
+      if (e instanceof view.PrincipalOnlyError) {
+        return { ok: false, error: 'principal-only' };
+      }
+      throw e;
+    }
+  };
   /** Mínimo do componente de cada marcação de `p`: vale ao converter o `rect` para outro espaço. */
   const minSizeOf = (p: Project) => (id: string) =>
     model.componentMinSize(p, catalog(), id);
@@ -111,8 +137,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
   /** O retângulo pedido preso ao tamanho mínimo do componente (o gesto não trava no meio). */
   const wantedRect = (p: Project, markingId: string, rect: Rect): Rect => {
     const min = model.componentMinSize(p, catalog(), markingId);
-    const base = p.markings.find((m) => m.id === markingId);
-    return min && base ? clampToMinSize(rect, base.rect, min) : rect;
+    const base = view.shownRect(p, viewFor(p), markingId);
+    return min && base ? clampToMinSize(rect, base, min) : rect;
   };
   /**
    * Operação final de um gesto: repete a operação com os valores finais e `settle: true` sobre o
@@ -129,9 +155,30 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     return result;
   };
 
+  /**
+   * Aplica uma operação que cria (containers, marcações, componentes). Com uma perspectiva aberta
+   * (decisão 8): a marcação do canvas nova que não é flutuante recusa a operação inteira
+   * (`principal-only`); cada raiz nova entra na perspectiva onde foi criada e chega à Principal, e
+   * as chegadas vão para `deps.onArrival`. Na Principal é `store.apply`.
+   */
+  const applyCreating = (op: Operation): ActionResult =>
+    guarded(() => {
+      const arrivals: ArrivalInfo[] = [];
+      const result = store.apply((p) => {
+        const next = op(p);
+        const open = viewFor(p);
+        if (open === null || next === p) return next;
+        const created = view.creationInPerspective(p, next, open.id);
+        arrivals.push(...created.arrivals);
+        return created.project;
+      });
+      if (result.ok && arrivals.length > 0) deps.onArrival?.(arrivals);
+      return result;
+    });
+
   const create = (op: (id: string) => (p: Project) => Project): ActionResult<string> => {
     const id = newId();
-    const result = store.apply(op(id));
+    const result = applyCreating(op(id));
     return result.ok ? { ok: true, value: id } : result;
   };
 
@@ -141,6 +188,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         model.createProject({ name, now, firstLayer: { ...firstLayer, id: newId() } }),
       );
     },
+    /** Aplica uma operação que cria raízes (ver `applyCreating`): a sessão usa nas que criam containers. */
+    applyCreating,
     renameProject: (name: string) => store.apply((p) => model.renameProject(p, name)),
     setContainerMarkingColor: (containerId: string, color: string | null) =>
       store.apply((p) => model.setContainerMarkingColor(p, containerId, color)),
@@ -175,8 +224,17 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
         (id) => (p) => model.addContainer(p, { ...file, id, center }, settleOptions(p)),
       ),
     setContainerPlacement: (containerId: string, placement: Placement) =>
-      store.apply((p) =>
-        model.setContainerPlacement(p, containerId, placement, settleOptions(p)),
+      guarded(() =>
+        store.apply(
+          (p) =>
+            view.placementInView(
+              p,
+              viewFor(p),
+              containerId,
+              placement,
+              settleOptions(p),
+            ) ?? model.setContainerPlacement(p, containerId, placement, settleOptions(p)),
+        ),
       ),
     replaceContainer: (
       containerId: string,
@@ -186,8 +244,14 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) =>
         model.replaceContainer(p, containerId, file, { ...options, ...settleOptions(p) }),
       ),
+    /** Numa perspectiva, excluir uma raiz recusa (`principal-only`). */
     removeContainer: (containerId: string) =>
-      store.apply((p) => model.removeContainer(p, containerId, settleOptions(p))),
+      guarded(() =>
+        store.apply((p) => {
+          view.refuseRootDeletion(p, viewFor(p), [containerId]);
+          return model.removeContainer(p, containerId, settleOptions(p));
+        }),
+      ),
     /** Container sem arquivo: imagem sem arquivo, com tamanho e cor de fundo. */
     addBackgroundContainer: (args: {
       readonly name: string | null;
@@ -213,35 +277,61 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     // finais (encaixe e absorção já aplicados) e `settle: true`, dentro do MESMO gesto, e só
     // então `commitGesture`: uma entrada de desfazer com geometria, espaço e pertencimento.
     beginGesture: () => store.beginGesture(),
-    /** Prévia de mover/redimensionar. Se sobrepuser, fica na última posição válida. */
+    /**
+     * Prévia de mover/redimensionar. Se sobrepuser, fica na última posição válida. Numa
+     * perspectiva, `placement` é DA VISTA e mover anda só a raiz na perspectiva.
+     */
     previewImagePlacement: (containerId: string, placement: Placement) =>
-      store.updateGesture((p) =>
-        model.setContainerPlacement(p, containerId, placement, { settle: false }),
+      guarded(() =>
+        store.updateGesture(
+          (p) =>
+            view.placementInView(p, viewFor(p), containerId, placement, {
+              settle: false,
+            }) ??
+            model.setContainerPlacement(p, containerId, placement, { settle: false }),
+        ),
       ),
     /**
      * Final de mover/redimensionar o container: repete a operação com a posição da última
      * prévia válida e assenta (ele entra ou sai de uma marcação do canvas). Nunca falha.
      */
     finishImagePlacement: (containerId: string): ActionResult =>
-      finishGesture((base, last) => {
-        const placement = last.containers.find((c) => c.id === containerId)?.placement;
-        return placement === undefined
-          ? last
-          : model.setContainerPlacement(
-              base,
-              containerId,
-              placement,
-              settleOptions(base),
-            );
-      }),
+      guarded(() =>
+        finishGesture((base, last) => {
+          const open = viewFor(base);
+          const placement =
+            open === null
+              ? last.containers.find((c) => c.id === containerId)?.placement
+              : view.viewPlacement(last, open.id, containerId);
+          return placement === undefined
+            ? last
+            : (view.placementInView(
+                base,
+                open,
+                containerId,
+                placement,
+                settleOptions(base),
+              ) ??
+                model.setContainerPlacement(
+                  base,
+                  containerId,
+                  placement,
+                  settleOptions(base),
+                ));
+        }),
+      ),
     /**
      * Prévia de mover a marcação pelo deslocamento `dx`, `dy` (inteiros, no espaço da marcação).
      * Nada prende a marcação ao container: ela pode sair dele; o espaço novo é decidido ao soltar.
      */
     previewMarkingMove: (markingId: string, dx: number, dy: number) =>
-      store.updateGesture((p) =>
-        model.moveMarking(p, markingId, Math.round(dx), Math.round(dy), {
-          settle: false,
+      guarded(() =>
+        store.updateGesture((p) => {
+          const [x, y] = [Math.round(dx), Math.round(dy)];
+          return (
+            view.markingMoveInView(p, viewFor(p), markingId, x, y) ??
+            model.moveMarking(p, markingId, x, y, { settle: false })
+          );
         }),
       ),
     /**
@@ -250,21 +340,25 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
      * `rect` dela e o das descendentes, com o `minSize` dos componentes) e o pertencimento.
      */
     finishMarkingMove: (markingId: string, dx: number, dy: number): ActionResult =>
-      finishGesture((base) =>
-        model.moveMarking(
-          base,
-          markingId,
-          Math.round(dx),
-          Math.round(dy),
-          rectOptions(base, markingId),
-        ),
+      guarded(() =>
+        finishGesture((base) => {
+          const [x, y] = [Math.round(dx), Math.round(dy)];
+          return (
+            view.markingMoveInView(base, viewFor(base), markingId, x, y) ??
+            model.moveMarking(base, markingId, x, y, rectOptions(base, markingId))
+          );
+        }),
       ),
     /** Prévia de redimensionar a marcação. */
     previewMarkingRect: (markingId: string, rect: Rect) =>
-      store.updateGesture((p) =>
-        model.setMarkingRect(p, markingId, wantedRect(p, markingId, rect), {
-          ...rectOptions(p, markingId),
-          settle: false,
+      guarded(() =>
+        store.updateGesture((p) => {
+          const wanted = wantedRect(p, markingId, rect);
+          const options = { ...rectOptions(p, markingId), settle: false };
+          return (
+            view.markingRectInView(p, viewFor(p), markingId, wanted, options) ??
+            model.setMarkingRect(p, markingId, wanted, options)
+          );
         }),
       ),
     /**
@@ -273,13 +367,15 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
      * entra.
      */
     finishMarkingRect: (markingId: string, rect: Rect): ActionResult =>
-      finishGesture((base) =>
-        model.setMarkingRect(
-          base,
-          markingId,
-          wantedRect(base, markingId, rect),
-          rectOptions(base, markingId),
-        ),
+      guarded(() =>
+        finishGesture((base) => {
+          const wanted = wantedRect(base, markingId, rect);
+          const options = rectOptions(base, markingId);
+          return (
+            view.markingRectInView(base, viewFor(base), markingId, wanted, options) ??
+            model.setMarkingRect(base, markingId, wanted, options)
+          );
+        }),
       ),
     /**
      * Prévia do arrasto conjunto: todos os itens pelo deslocamento `dx`, `dy` em unidades do
@@ -288,7 +384,14 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
      * prévia inteira fica na última posição válida.
      */
     previewItemsMove: (items: readonly model.ItemRef[], dx: number, dy: number) =>
-      store.updateGesture((p) => model.moveItems(p, items, dx, dy, { settle: false })),
+      guarded(() =>
+        store.updateGesture(
+          (p) =>
+            view.itemsMoveInView(p, viewFor(p), items, { dx, dy }, 'move', {
+              settle: false,
+            }) ?? model.moveItems(p, items, dx, dy, { settle: false }),
+        ),
+      ),
     /**
      * Final do arrasto conjunto: repete a operação com o último deslocamento válido (`dx`, `dy`,
      * guardado pelo canvas) e assenta uma vez sobre o resultado inteiro. Nunca falha.
@@ -298,20 +401,51 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       dx: number,
       dy: number,
     ): ActionResult =>
-      finishGesture((base) => model.moveItems(base, items, dx, dy, settleOptions(base))),
+      guarded(() =>
+        finishGesture(
+          (base) =>
+            view.itemsMoveInView(
+              base,
+              viewFor(base),
+              items,
+              { dx, dy },
+              'move',
+              settleOptions(base),
+            ) ?? model.moveItems(base, items, dx, dy, settleOptions(base)),
+        ),
+      ),
     /**
      * Prévia do passo das setas (`nudgeItems`): `dx`, `dy` somados desde o começo do gesto, cada
      * item no próprio espaço. Tudo ou nada, como o arrasto conjunto.
      */
     previewItemsNudge: (items: readonly model.ItemRef[], dx: number, dy: number) =>
-      store.updateGesture((p) => model.nudgeItems(p, items, dx, dy, { settle: false })),
+      guarded(() =>
+        store.updateGesture(
+          (p) =>
+            view.itemsMoveInView(p, viewFor(p), items, { dx, dy }, 'nudge', {
+              settle: false,
+            }) ?? model.nudgeItems(p, items, dx, dy, { settle: false }),
+        ),
+      ),
     /** Final do passo das setas: repete a operação com o último deslocamento válido e assenta. */
     finishItemsNudge: (
       items: readonly model.ItemRef[],
       dx: number,
       dy: number,
     ): ActionResult =>
-      finishGesture((base) => model.nudgeItems(base, items, dx, dy, settleOptions(base))),
+      guarded(() =>
+        finishGesture(
+          (base) =>
+            view.itemsMoveInView(
+              base,
+              viewFor(base),
+              items,
+              { dx, dy },
+              'nudge',
+              settleOptions(base),
+            ) ?? model.nudgeItems(base, items, dx, dy, settleOptions(base)),
+        ),
+      ),
     commitGesture: () => store.commitGesture(),
     cancelGesture: () => store.cancelGesture(),
 
@@ -329,17 +463,47 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     renameMarking: (markingId: string, name: string | null) =>
       store.apply((p) => model.renameMarking(p, markingId, name)),
     setMarkingRect: (markingId: string, rect: Rect) =>
-      store.apply((p) =>
-        model.setMarkingRect(p, markingId, rect, rectOptions(p, markingId)),
+      guarded(() =>
+        store.apply(
+          (p) =>
+            view.markingRectInView(
+              p,
+              viewFor(p),
+              markingId,
+              rect,
+              rectOptions(p, markingId),
+            ) ?? model.setMarkingRect(p, markingId, rect, rectOptions(p, markingId)),
+        ),
       ),
     /** Ajuste fino pelo painel: o valor é limitado às regras (ver `adjustMarkingRect`). */
     adjustMarkingRect: (markingId: string, field: keyof Rect, value: number) =>
-      store.apply((p) =>
-        model.adjustMarkingRect(p, markingId, field, value, rectOptions(p, markingId)),
+      guarded(() =>
+        store.apply(
+          (p) =>
+            view.markingAdjustInView(
+              p,
+              viewFor(p),
+              markingId,
+              field,
+              value,
+              rectOptions(p, markingId),
+            ) ??
+            model.adjustMarkingRect(
+              p,
+              markingId,
+              field,
+              value,
+              rectOptions(p, markingId),
+            ),
+        ),
       ),
     moveMarking: (markingId: string, dx: number, dy: number) =>
-      store.apply((p) =>
-        model.moveMarking(p, markingId, dx, dy, rectOptions(p, markingId)),
+      guarded(() =>
+        store.apply(
+          (p) =>
+            view.markingMoveInView(p, viewFor(p), markingId, dx, dy) ??
+            model.moveMarking(p, markingId, dx, dy, rectOptions(p, markingId)),
+        ),
       ),
     /**
      * Liga ou desliga a marcação flutuante (comentário sobre o canvas, fora do pertencimento).
@@ -353,7 +517,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     confirmMarkingReview: (markingId: string) =>
       store.apply((p) => model.confirmMarkingReview(p, markingId)),
     removeMarking: (markingId: string) =>
-      store.apply((p) => model.removeMarking(p, markingId, settleOptions(p))),
+      guarded(() =>
+        store.apply((p) => {
+          view.refuseRootDeletion(p, viewFor(p), [markingId]);
+          return model.removeMarking(p, markingId, settleOptions(p));
+        }),
+      ),
     /** Posição entre as irmãs (0 = por baixo). Não é geometria: a trava não impede. */
     reorderMarking: (markingId: string, index: number) =>
       store.apply((p) => model.reorderMarking(p, markingId, index)),
@@ -378,7 +547,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     ) => store.apply((p) => model.setArrowEndpoint(p, arrowId, end, markingId, side)),
     /** Pontos de passagem (no espaço das pontas, `arrowPointsSpace`); `[]` volta à rota padrão. */
     setArrowRoute: (arrowId: string, points: readonly ArrowPoint[]) =>
-      store.apply((p) => model.setArrowRoute(p, arrowId, points)),
+      guarded(() =>
+        store.apply((p) => {
+          view.requirePrincipal(viewFor(p));
+          return model.setArrowRoute(p, arrowId, points);
+        }),
+      ),
     setArrowStyle: (arrowId: string, style: ArrowStyle) =>
       store.apply((p) => model.setArrowStyle(p, arrowId, style)),
     setArrowName: (arrowId: string, name: string | null) =>
@@ -387,7 +561,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       store.apply((p) => model.setArrowLocked(p, arrowId, locked)),
     /** Prévia do gesto de arrastar pontos de passagem; se falhar, fica na última prévia válida. */
     previewArrowRoute: (arrowId: string, points: readonly ArrowPoint[]) =>
-      store.updateGesture((p) => model.setArrowRoute(p, arrowId, points)),
+      guarded(() =>
+        store.updateGesture((p) => {
+          view.requirePrincipal(viewFor(p));
+          return model.setArrowRoute(p, arrowId, points);
+        }),
+      ),
     /** Prévia do gesto de arrastar uma ponta até outra marcação ou outro lado. */
     previewArrowEndpoint: (
       arrowId: string,
@@ -402,7 +581,13 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     // Seleção múltipla (ME2): a seleção inteira numa operação, uma entrada de desfazer.
     /** Exclui os itens (marcações com o que cobrem, containers com as marcações). */
     removeItems: (items: readonly model.ItemRef[]) =>
-      store.apply((p) => model.removeItems(p, items, settleOptions(p))),
+      guarded(() =>
+        store.apply((p) => {
+          const ids = items.filter((i) => i.kind !== 'arrow').map((i) => i.id);
+          view.refuseRootDeletion(p, viewFor(p), ids);
+          return model.removeItems(p, items, settleOptions(p));
+        }),
+      ),
     /** Tranca ou destranca todos os itens. */
     setItemsLocked: (items: readonly model.ItemRef[], locked: boolean) =>
       store.apply((p) => model.setItemsLocked(p, items, locked)),
@@ -425,7 +610,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     }): ActionResult<string> => {
       const markingId = newId();
       const annotationId = newId();
-      const result = store.apply((p) =>
+      const result = applyCreating((p) =>
         model.addComponentMarking(
           p,
           catalog(),
@@ -438,17 +623,20 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     /** Arruma as filhas do container pelo layout do slot; devolve os avisos. Sem mudança, não há entrada. */
     arrange: (markingId: string): ActionResult<readonly string[]> => {
       let warnings: readonly string[] = [];
-      const result = store.apply((p) => {
-        const arranged = model.arrangeMarking(
-          p,
-          catalog(),
-          markingId,
-          measure(),
-          settleOptions(p),
-        );
-        warnings = arranged.warnings;
-        return arranged.project;
-      });
+      const result = guarded(() =>
+        store.apply((p) => {
+          view.requirePrincipal(viewFor(p));
+          const arranged = model.arrangeMarking(
+            p,
+            catalog(),
+            markingId,
+            measure(),
+            settleOptions(p),
+          );
+          warnings = arranged.warnings;
+          return arranged.project;
+        }),
+      );
       return result.ok ? { ok: true, value: warnings } : result;
     },
 

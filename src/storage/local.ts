@@ -443,8 +443,13 @@ export async function openLocalLibrary(): Promise<LocalLibrary | null> {
   }
 }
 
+/** O navegador tem IndexedDB? (O acesso ao global fica neste arquivo: regra de lint da fase 8.4.) */
+export function hasIndexedDb(): boolean {
+  return typeof indexedDB !== 'undefined';
+}
+
 /** A abertura do banco, ou `null` se demorar mais que `OPEN_TIMEOUT_MS`. */
-async function withTimeout<T extends { close(): void }>(
+export async function withTimeout<T extends { close(): void }>(
   open: Promise<T>,
 ): Promise<T | null> {
   let timer: ReturnType<typeof setTimeout> | undefined;
