@@ -48,6 +48,7 @@ import {
   visibleArrowShapes,
   type ArrowShape,
 } from '../arrowGeometry';
+import type { PinPlace } from '../commentPins';
 import type { InteractionState } from '../frame';
 import { IDLE, stepGesture, type GestureState } from '../gestureMachine';
 import { resizeFromCorner } from '../imageGeometry';
@@ -66,6 +67,7 @@ import {
   type Gesture,
   type StoreGesture,
 } from './gestures';
+import { canvasMenuAt, pinTitle, tapComment } from './commentPointer';
 import { marqueeItems, rectFromCorners } from './marquee';
 import {
   cursorFor,
@@ -95,6 +97,8 @@ export interface PointerInputOptions {
   readonly reviewing?: () => boolean;
   /** Retângulos dos nomes acima dos containers (canvas), medidos pelo renderer. */
   readonly containerTitles?: () => ReadonlyMap<string, Rect>;
+  /** O pino das conversas sob o ponto do canvas (ganha da marcação embaixo); `null` se nenhum. */
+  readonly pinAt?: (c: Point) => PinPlace | null;
 }
 
 /** Gestos que arrastam itens: o cursor é o de mover. */
@@ -216,13 +220,13 @@ export class PointerInput {
   /** Cursor do mouse: o do gesto em andamento ou o da intenção sob `p` (tela). */
   updateCursor(p: Point | null): void {
     const g = this.gesture;
-    let cursor = '';
+    let cursor: string;
     if (g?.kind === 'pan') cursor = 'grabbing';
     else if (g && MOVE_GESTURES.has(g.kind)) cursor = 'move';
     else if (g?.kind === 'draw' || (g && AIM_GESTURES.has(g.kind))) cursor = 'crosshair';
     else if (g?.kind === 'blocked') cursor = 'not-allowed';
     else if (this.o.spaceDown()) cursor = 'grab';
-    else if (p) cursor = cursorFor(this.intentAt(p));
+    else cursor = this.commentCursor(p) ?? (p ? cursorFor(this.intentAt(p)) : '');
     this.o.container.style.cursor = cursor;
   }
 
@@ -274,6 +278,8 @@ export class PointerInput {
   /** O que o arrasto que começa com `e` (em `p`, tela) faria. */
   private pressIntent(e: PointerEvent, p: Point): Intent {
     if (e.button === 1) return { kind: 'pan' };
+    // O pino ganha da marcação embaixo, e o clique do Comentar não começa gesto: arrastar faz pan.
+    if (this.o.ui.commentArm.peek() !== null || this.pinUnder(p)) return { kind: 'pan' };
     const intent = this.intentAt(p, this.wantsRectSelect(e));
     // Numa tela de toque, arrastar sobre um item (livre ou trancado) faz pan, como rolar a
     // página; alças (resize) e o modo Desenhar continuam diretos, e o mouse não muda.
@@ -763,6 +769,40 @@ export class PointerInput {
     if (result.ok) this.o.ui.selection.value = { kind: 'marking', id: result.value };
   }
 
+  /** O pino das conversas sob `p` (tela). */
+  private pinUnder(p: Point): PinPlace | null {
+    return this.o.pinAt?.(this.o.viewport.toCanvas(p)) ?? null;
+  }
+
+  /** O cursor e a dica dos pinos e do Comentar armado; `null` se nenhum se aplica a `p`. */
+  private commentCursor(p: Point | null): string | null {
+    if (this.o.ui.commentArm.peek() !== null) return 'crosshair';
+    const pin = p && this.pinUnder(p);
+    this.o.container.title = pin ? pinTitle(this.o.derived, pin) : '';
+    return pin ? 'pointer' : null;
+  }
+
+  /** O clique em `c` (canvas) no Comentar armado ou num pino; `true` se o consumiu. */
+  private tapComment(c: Point): boolean {
+    const { store } = this.o;
+    const project = this.project();
+    const consumed = tapComment(
+      {
+        ui: this.o.ui,
+        derived: this.o.derived,
+        project,
+        blocked: store.readOnly.peek() || (this.o.reviewing?.() ?? false),
+        visibility: this.o.derived.markingVisibility.peek(),
+        arrows: this.arrowHit(project),
+        titles: this.o.containerTitles?.(),
+        pin: this.o.pinAt?.(c) ?? null,
+      },
+      c,
+    );
+    if (consumed) this.lastTap = null;
+    return consumed;
+  }
+
   /**
    * Seleciona pelo clique em `p` (tela); clicar de novo no mesmo ponto sobe para o pai. Com o modificador
    * da seleção múltipla (`shift`: Shift, Ctrl ou Cmd), alterna o primeiro item sob o ponto na seleção (sem o ciclo de subir para o pai);
@@ -772,6 +812,7 @@ export class PointerInput {
     const { ui, derived, viewport } = this.o;
     const c = viewport.toCanvas(p);
     this.selectionBeforeTap = ui.selection.peek();
+    if (this.tapComment(c)) return;
     // Um clique numa alça (de ligação ou da seta selecionada) não troca a seleção: o clique
     // duplo num ponto de passagem o remove, e o primeiro clique não pode tirar a seta da seleção.
     // Com Shift o clique é da seleção múltipla, mesmo sobre uma alça.
@@ -883,16 +924,12 @@ export class PointerInput {
       this.arrowHit(this.project()),
       this.o.containerTitles?.(),
     );
-    if (!picked) return;
-    if (!isItemSelected(peekSelectedItems(ui), picked)) ui.selection.value = picked;
-    ui.canvasMenu.value = {
-      x: e.clientX,
-      y: e.clientY,
-      target: {
-        kind: picked.kind === 'image' ? 'i' : picked.kind === 'arrow' ? 'arrow' : 'm',
-        id: picked.id,
-      },
-    };
+    if (picked && !isItemSelected(peekSelectedItems(ui), picked)) {
+      ui.selection.value = picked;
+    }
+    const c = viewport.toCanvas(viewport.screenPoint(e));
+    const menu = canvasMenuAt(this.project(), picked, c, { x: e.clientX, y: e.clientY });
+    if (menu) ui.canvasMenu.value = menu;
   }
 
   private onWheel(e: WheelEvent): void {

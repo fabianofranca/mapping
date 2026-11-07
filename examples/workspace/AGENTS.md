@@ -49,4 +49,26 @@ Para escrever, revisar ou atualizar uma especialização, use a skill `spec-auth
 3. Monte o lote, confira com `plan_changes` (leia o `membership` da resposta, que lista quem muda de pai ou de espaço; não calcule interseções), envie com `propose_changes`, avise a pessoa.
 4. Quando a revisão terminar, leia `get_proposal_review` e, se preciso, corrija a mesma proposta com `revise_proposal` (enquanto nada foi aplicado; depois, envie outra com `supersedes`).
 
+## Conversas
+
+Pessoas e agentes conversam em **conversas ancoradas** num item do mapeamento (marcação, campo, camada, ponto do canvas…), guardadas em `projetos/<projeto>/comments/`. As regras de uso (tools, `after`, citações, propostas ligadas) estão na seção "Conversas" do guia `mapping-docs://AGENT-GUIDE.md`; leia-a antes de abrir ou responder uma. O resumo:
+
+- **Quem acorda você.** Se o `watch-comments.mjs` (na raiz desta pasta, ver o `README.md`) está rodando, ele chama você com um prompt como este: "Há conversas aguardando você em projetos/. Leia com `list_threads` (por padrão: as abertas que aguardam o agente), responda cada uma com `post_message` e siga o resto do trabalho." A variável `MAPPING_AWAITING` traz as conversas que motivaram a execução. O servidor nunca acorda agente.
+- **Abra conversa** (`open_thread`) diante de uma ambiguidade que a especialização não decide, em vez de adivinhar ou largar o trabalho; depois siga com o resto.
+- **Responda onde foi perguntado**, sempre com o `after` (o id da última mensagem que você leu). Se der `stale-thread`, leia as mensagens novas e responda de novo.
+- **Cite, não repita.** Se outra conversa aberta trata do mesmo assunto, cite-a com `[assunto](mapping://<projeto>/c/<código>)` em vez de refazer o trabalho.
+- **Proposta ligada:** em `propose_changes`, passe `thread` para a proposta aparecer na conversa.
+- **Responda só ao que lhe é pedido.** Conversa que aguarda o agente porque a última mensagem é de pessoa não quer dizer que haja pergunta para você; e não responda conversa só entre pessoas sem ser chamado.
+- **Nunca assine como pessoa e nunca resolva uma conversa** (não existe tool para isso): quem resolve é uma pessoa, na app.
+
+Referências aceitas em textos e citações (só a URL; projeto codificado como em `Meu%20Projeto`):
+
+| Referência                                            | Aponta para                   |
+| ----------------------------------------------------- | ----------------------------- |
+| `mapping://<projeto>/l/<código>`                      | camada                        |
+| `mapping://<projeto>/c/<código>`                      | conversa                      |
+| `mapping://<projeto>/a/<código>/f/<campo>`            | campo de uma anotação         |
+| `mapping://<projeto>/a/<código>/e/<código>`           | par (entrada) de uma anotação |
+| `mapping://<projeto>/a/<código>/f/<campo>/r/<código>` | linha de um campo de tabela   |
+
 <!-- mapping:end -->

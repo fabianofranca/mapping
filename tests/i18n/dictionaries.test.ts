@@ -62,6 +62,8 @@ describe('dicionários', () => {
       'zoom.value',
       'status.empty',
       'view.containers',
+      // CM5-B: "Container" é a mesma palavra nos dois idiomas.
+      'citation.group.container',
       'status.schema',
       'pwa.previewBadge',
       'shortcuts.group.view',
@@ -103,6 +105,11 @@ describe('dicionários', () => {
       // Formatos "<texto>: <alvo>" iguais nos dois idiomas (nome acessível, SA1).
       'review.decide.named',
       'library.addType',
+      // Palavras e formatos iguais nos dois idiomas (janela Comentários).
+      'comments.col.messages',
+      'comments.col.status',
+      'comments.filter.status',
+      'comments.filter.userOption',
       // O nome do produto é "Mapping" nos dois idiomas.
       'app.title',
       'editor.appName',

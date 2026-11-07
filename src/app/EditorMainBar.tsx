@@ -8,6 +8,7 @@ import { Button, IconButton } from '../ui/controls';
 import {
   AddContainerButton,
   AddImagesButton,
+  CommentButton,
   HistoryButtons,
   ModeButtons,
 } from './EditorTools';
@@ -64,6 +65,7 @@ export function EditorMainBar({ busy, onAdd, dialogs, commands }: EditorMainBarP
         <ModeButtons />
         <AddImagesButton busy={busy} onAdd={onAdd} />
         <AddContainerButton onAdd={() => dialogs.show({ kind: 'container' })} />
+        <CommentButton />
         <HistoryButtons />
       </div>
 

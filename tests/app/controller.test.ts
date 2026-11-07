@@ -7,6 +7,7 @@ import {
   parseProposalText,
   serialize,
   serializeProposal,
+  serializeThread,
   specFiles,
 } from '../../src/model';
 import { createFolderStorage, type DirectoryHandleLike } from '../../src/storage/folder';
@@ -16,6 +17,7 @@ import { writeProjectZip } from '../../src/storage/zip';
 import { clearReportedErrors } from '../../src/utils/report';
 import { cadastroProject } from '../model/specFixtures';
 import { emptyProject, sampleProject } from '../model/fixtures';
+import { T3, sampleThread } from '../model/threadFixtures';
 import { readInvalidFixture } from '../model/invalidFixtures';
 import { legacyJson } from '../model/legacyShape';
 import {
@@ -744,6 +746,96 @@ describe('propostas de alteração (etapa 4)', () => {
     });
     expect(await root.read('images/nova.webp')).toBe('WEBP');
     expect(session.store.project.value?.containers.some((i) => i.id === 'I3')).toBe(true);
+  });
+});
+
+describe('conversas ancoradas (etapa Comentários)', () => {
+  const ME = { name: 'Marina Alves', email: 'marina@exemplo.com' };
+  const open = sampleThread({ id: 'T1' });
+  const resolved = sampleThread({ id: 'T2', resolved: { by: ME, at: T3 } });
+  const threadZip = async (extra: Record<string, string> = {}) => {
+    const zip = new JSZip();
+    zip.file('mapping.json', serialize(sampleProject()));
+    zip.file('comments/T1.json', serializeThread(open));
+    zip.file('comments/resolved/T2.json', serializeThread(resolved));
+    for (const [path, text] of Object.entries(extra)) zip.file(path, text);
+    return new Blob([await zip.generateAsync({ type: 'arraybuffer' })]);
+  };
+  const withIdentity = async () => {
+    const identity = await import('../../src/store/identity');
+    expect(identity.setIdentity(ME.name, ME.email)).toBe('ok');
+  };
+
+  it('o zip importado vai para o IndexedDB e a sessão mostra as abertas e as resolvidas', async () => {
+    expect((await app.importZip(await threadZip())).ok).toBe(true);
+    const current = await openedOf(app);
+    expect(current.session.threads.list.value.map((t) => t.id).sort()).toEqual([
+      'T1',
+      'T2',
+    ]);
+    const library = await local.openLocalLibrary();
+    const storage = library?.open(current.localId ?? '');
+    expect(await storage?.listThreads(false)).toEqual(['T1']);
+    expect(await storage?.listThreads(true)).toEqual(['T2']);
+    library?.close();
+  });
+
+  it('conversar marca não exportado; exportar e reimportar leva e traz comments/ (texto inválido idêntico)', async () => {
+    await withIdentity();
+    expect(
+      (await app.importZip(await threadZip({ 'comments/quebrada.json': '{ não é json' })))
+        .ok,
+    ).toBe(true);
+    const first = await openedOf(app);
+    expect(first.unexported.value).toBe(false);
+    const posted = await first.session.threadActions.post('T1', 'uma resposta');
+    expect(posted.ok).toBe(true);
+    expect(first.unexported.value).toBe(true);
+    const resolvedNow = await first.session.threadActions.resolve('T1');
+    expect(resolvedNow.ok).toBe(true);
+
+    const exported = await app.buildExport();
+    if (!exported.ok) throw new Error(exported.error);
+    const zip = await JSZip.loadAsync(await exported.value.file.arrayBuffer());
+    const paths = Object.keys(zip.files).filter(
+      (p) => p.startsWith('comments/') && !zip.files[p]?.dir,
+    );
+    expect(paths.sort()).toEqual([
+      'comments/quebrada.json',
+      'comments/resolved/T1.json',
+      'comments/resolved/T2.json',
+    ]);
+    expect(await zip.file('comments/quebrada.json')?.async('string')).toBe(
+      '{ não é json',
+    );
+
+    await app.closeProject();
+    expect((await app.importZip(exported.value.file)).ok).toBe(true);
+    const second = await openedOf(app);
+    expect(second.session.threads.get('T1')?.messages.at(-1)?.text).toBe('uma resposta');
+    expect(second.session.threads.get('T1')?.resolved?.by.email).toBe(ME.email);
+    expect(second.session.threads.problems.value.map((p) => p.id)).toEqual(['quebrada']);
+  });
+
+  it('projeto em pasta abre com as conversas da pasta e grava onde o arquivo está', async () => {
+    await withIdentity();
+    const root = folderWith({ 'mapping.json': serialize(sampleProject()) });
+    root.put('comments/T1.json', serializeThread(open));
+    pickDirectory.mockResolvedValue(root);
+    expect(await app.openFolder()).toEqual({ ok: true, value: { kind: 'opened' } });
+    const { session } = await openedOf(app);
+    expect(session.threads.list.value.map((t) => t.id)).toEqual(['T1']);
+    expect((await session.threadActions.resolve('T1')).ok).toBe(true);
+    expect(await root.read('comments/resolved/T1.json')).not.toBeNull();
+    expect(await root.read('comments/T1.json')).toBeNull();
+  });
+
+  it('um projeto novo exporta sem comments/', async () => {
+    await app.createLocalProject('Novo');
+    const exported = await app.buildExport();
+    if (!exported.ok) throw new Error(exported.error);
+    const zip = await JSZip.loadAsync(await exported.value.file.arrayBuffer());
+    expect(Object.keys(zip.files).some((p) => p.startsWith('comments'))).toBe(false);
   });
 });
 

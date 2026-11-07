@@ -29,7 +29,7 @@ Quem já tem um `setup.sh` antigo roda esta linha **uma vez**, na pasta do works
 curl -fsSL https://github.com/fabianofranca/mapping/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh
 ```
 
-Ela só funciona depois da primeira release estável que traz o `setup.sh`; antes disso, use a release candidate: troque `latest/download` por `download/<tag>` e passe a mesma tag ao `./setup.sh` (ex: `…/releases/download/mcp-v0.24.1-rc.1/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh mcp-v0.24.1-rc.1`).
+Ela só funciona depois da primeira release estável que traz o `setup.sh`; antes disso, use a release candidate: troque `latest/download` por `download/<tag>` e passe a mesma tag ao `./setup.sh` (ex: `…/releases/download/mcp-v0.25.0-rc.1/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh mcp-v0.25.0-rc.1`).
 
 ### O `AGENTS.md` e os marcadores
 
@@ -61,6 +61,19 @@ O `setup.sh` precisa de um shell POSIX. No Windows sem WSL, faça os passos à m
 2. Baixe `SKILL.md` para `.agents/skills/spec-author/` e copie essa pasta para `.claude/skills/spec-author/`.
 3. Baixe `AGENTS.mapping.md` e cole o conteúdo dele (as linhas de `<!-- mapping:begin … -->` a `<!-- mapping:end -->`) no seu `AGENTS.md`, no lugar do bloco que já estiver lá (ou no fim do arquivo, se for o primeiro).
 4. O `setup.sh` da release não é preciso; baixe-o só se for rodá-lo depois no WSL.
+
+## Conversas: acordar o agente (`watch-comments.mjs`)
+
+As conversas ancoradas ficam em `projetos/<projeto>/comments/` (formato em `docs/COMMENT-FORMAT.md` do Mapping). O servidor MCP **nunca dispara um agente**: ele só lê e escreve conversas quando o agente já está de pé. Para o agente acordar sozinho quando alguém pergunta algo, deixe o `watch-comments.mjs` (um arquivo desta pasta, que o `setup.sh` não atualiza) rodando num terminal (Node ≥ 20, sem dependências), passando o comando que abre o seu agente depois do `--`:
+
+```bash
+node watch-comments.mjs -- claude -p "Há conversas aguardando você em projetos/. Siga a seção Conversas do AGENTS.md."
+```
+
+- Observa `projetos/*/comments/` e espera **5 s sem nenhuma mudança** (`--quiet <segundos>` ajusta) antes de agir.
+- Só roda o comando se houver conversa **aberta** cuja última mensagem é de pessoa (aguarda o agente). Conversa resolvida, ou que aguarda pessoa, não dispara nada.
+- Roda **um comando de cada vez**: mudança durante a execução espera o fim dele e é reavaliada. Cada par conversa e última mensagem é tratado uma vez, então uma conversa que o agente deixou sem resposta não vira laço.
+- O comando recebe `MAPPING_AWAITING`, um JSON com `[{ "project", "thread", "path" }]` das conversas que motivaram a execução. `--root <pasta>` troca a pasta observada (padrão: `projetos/` ao lado do script). Ctrl+C encerra.
 
 ## Onde cada ferramenta lê a configuração
 

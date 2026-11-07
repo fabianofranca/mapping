@@ -7,6 +7,7 @@ import { writeClipboardText } from '../utils/clipboard';
 import { formatBuildInfo } from '../utils/report';
 import { allowedOrigins } from '../store/imagePermissions';
 import { Dialog } from './Dialog';
+import { IdentitySettings } from './IdentitySettings';
 import { PrivacySettings } from './PrivacySettings';
 import { PlatformRepos, hasRepos } from './PlatformRepos';
 import { SettingsBar } from './SettingsBar';
@@ -86,7 +87,8 @@ function About() {
 
 /**
  * Configurações: idioma, tema e opções do canvas, com atalho para a lista de teclas; no
- * editor, também os repositórios de código por plataforma; no fim, o Sobre.
+ * editor, também os repositórios de código por plataforma; depois a Identidade (nome e e-mail
+ * das conversas), a Privacidade e, no fim, o Sobre.
  */
 export function SettingsDialog({
   onClose,
@@ -107,6 +109,7 @@ export function SettingsDialog({
         {t('settings.shortcuts')}
       </Button>
       {repos && <PlatformRepos project={project} readOnly={readOnly} />}
+      <IdentitySettings />
       <PrivacySettings />
       <About />
     </Dialog>

@@ -134,3 +134,17 @@ describe('Markdown', () => {
     expect(quote?.textContent).not.toContain('>');
   });
 });
+
+describe('Markdown › lineBreaks', () => {
+  it('sem a opção, a quebra simples vira espaço', () => {
+    const { container } = render(<Markdown text={'linha 1\nlinha 2'} />);
+    expect(container.querySelectorAll('br').length).toBe(0);
+    expect(container.querySelector('p')?.textContent).toBe('linha 1 linha 2');
+  });
+
+  it('com lineBreaks, a quebra simples vira <br/>', () => {
+    const { container } = render(<Markdown text={'linha 1\nlinha 2'} lineBreaks />);
+    expect(container.querySelectorAll('p br').length).toBe(1);
+    expect(container.querySelector('p')?.textContent).toBe('linha 1linha 2');
+  });
+});

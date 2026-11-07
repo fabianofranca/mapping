@@ -15,6 +15,7 @@ import {
   DiagnosticsView,
   useCopyErrors,
 } from '../ui/DiagnosticsView';
+import { CommentsHeaderActions, CommentsWindow } from '../ui/comments/CommentsWindow';
 import { IncompleteView } from '../ui/IncompleteView';
 import { NoticesView } from '../ui/NoticesView';
 import { ListView } from '../ui/ListView';
@@ -27,7 +28,7 @@ import { ZoomField } from '../ui/ZoomField';
 import { HELP_PROPOSALS } from '../ui/HelpDialog';
 import { ProposalsHeaderActions, ProposalsWindow } from '../ui/review/ProposalsWindow';
 import { ReviewCanvasControls } from '../ui/review/ReviewCanvasControls';
-import { FitButton, ViewModeButton } from './EditorTools';
+import { FitButton, PinsButton, ViewModeButton } from './EditorTools';
 import { ViewModePanel } from '../ui/ViewModePanel';
 import { EditorPanel, type EditorPanelProps } from './EditorPanel';
 
@@ -87,6 +88,20 @@ function Window({
         </ToolWindow>
       );
     }
+    default:
+      return <MoreWindow id={id} panel={panel} />;
+  }
+}
+
+/** As janelas inferiores que não são a Lista nem a Incompletas (a `Window` delega a elas). */
+function MoreWindow({
+  id,
+  panel,
+}: {
+  readonly id: 'notices' | 'diagnostics' | 'proposals' | 'comments';
+  readonly panel: EditorPanelProps;
+}) {
+  switch (id) {
     case 'notices': {
       // Ir até a anotação precisa do painel de Detalhes à vista (como em Incompletas).
       const goTo: EditorPanelProps['onGoToAnnotation'] = (annotation) => {
@@ -103,6 +118,12 @@ function Window({
       return (
         <ToolWindow id={id} actions={<DiagnosticsHeaderActions />}>
           <DiagnosticsView />
+        </ToolWindow>
+      );
+    case 'comments':
+      return (
+        <ToolWindow id={id} actions={<CommentsHeaderActions />}>
+          <CommentsWindow />
         </ToolWindow>
       );
     case 'proposals':
@@ -161,6 +182,7 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
             <Breadcrumbs onSelect={onSelect} />
             <div class="canvas-bar-end">
               <ReviewCanvasControls />
+              <PinsButton />
               <ViewModeButton />
               <ViewModePanel />
               <FitButton />

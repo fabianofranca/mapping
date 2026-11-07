@@ -7,6 +7,8 @@ export interface TabItem<T extends string> {
   readonly label: string;
   /** Ícone antes do rótulo. */
   readonly icon?: IconName;
+  /** Nome acessível quando o rótulo é vazio (aba só com ícone e contador). */
+  readonly ariaLabel?: string;
   /** Dica nativa (`title`). */
   readonly title?: string;
   readonly disabled?: boolean;
@@ -80,7 +82,10 @@ export function Tabs<T extends string>({
   return (
     <div ref={listRef} class="tabs" role="tablist" aria-label={label}>
       {tabs.map(
-        ({ id, label: text, icon, title, disabled, badge, badgeTone, alert }, i) => (
+        (
+          { id, label: text, icon, title, ariaLabel, disabled, badge, badgeTone, alert },
+          i,
+        ) => (
           <button
             key={id}
             type="button"
@@ -89,6 +94,7 @@ export function Tabs<T extends string>({
             aria-selected={value === id}
             tabIndex={value === id ? 0 : -1}
             title={title}
+            aria-label={ariaLabel}
             disabled={disabled}
             onKeyDown={(e) => move(e, i)}
             onClick={() => onChange(id)}

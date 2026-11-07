@@ -14,7 +14,9 @@ export type MarkdownInline =
       readonly href: string;
       readonly kind: 'mapping' | 'anchor' | 'external';
       readonly children: readonly MarkdownInline[];
-    };
+    }
+  /** Quebra de linha dentro do parágrafo; só existe com a opção `lineBreaks`. */
+  | { readonly type: 'break' };
 
 export interface MarkdownListItem {
   readonly inlines: readonly MarkdownInline[];
@@ -43,6 +45,14 @@ export type MarkdownBlock =
       readonly align: readonly MarkdownAlign[];
       readonly rows: readonly (readonly (readonly MarkdownInline[])[])[];
     };
+
+export interface MarkdownOptions {
+  /**
+   * Quebra simples de linha dentro do parágrafo vira um nó `break` (mensagens das conversas).
+   * Padrão `false`: vira espaço, como nos documentos do Catálogo.
+   */
+  readonly lineBreaks?: boolean;
+}
 
 /** Profundidade máxima de inlines aninhados e de listas aninhadas. */
 const MAX_INLINE_DEPTH = 6;
@@ -85,7 +95,9 @@ export function slugifyHeading(text: string): string {
 export function inlinesToText(inlines: readonly MarkdownInline[]): string {
   let out = '';
   for (const n of inlines) {
-    out += n.type === 'text' || n.type === 'code' ? n.text : inlinesToText(n.children);
+    if (n.type === 'break') out += '\n';
+    else
+      out += n.type === 'text' || n.type === 'code' ? n.text : inlinesToText(n.children);
   }
   return out;
 }
@@ -457,9 +469,37 @@ function takeQuote(lines: readonly string[], start: number): [string[], number] 
   return [body, i];
 }
 
-export function parseMarkdown(text: string): MarkdownBlock[] {
+/** Parágrafo a partir das linhas: espaço entre elas ou, com `lineBreaks`, nós de quebra. */
+function paragraphInlines(
+  para: readonly string[],
+  lineBreaks: boolean,
+): MarkdownInline[] {
+  if (!lineBreaks) return parseInlines(para.join(' '));
+  return withBreaks(parseInlines(para.join('\n')));
+}
+
+/** Troca o `\n` dos textos por nós `break` (e o dos códigos em linha por espaço). */
+function withBreaks(nodes: readonly MarkdownInline[]): MarkdownInline[] {
+  const out: MarkdownInline[] = [];
+  for (const n of nodes) {
+    if (n.type === 'code') out.push({ type: 'code', text: n.text.replaceAll('\n', ' ') });
+    else if (n.type === 'text') {
+      n.text.split('\n').forEach((part, k) => {
+        if (k > 0) out.push({ type: 'break' });
+        pushText(out, part);
+      });
+    } else if (n.type === 'break') out.push(n);
+    else out.push({ ...n, children: withBreaks(n.children) });
+  }
+  return out;
+}
+
+export function parseMarkdown(
+  text: string,
+  options: MarkdownOptions = {},
+): MarkdownBlock[] {
   try {
-    return parseBlocks(String(text));
+    return parseBlocks(String(text), 0, options.lineBreaks === true);
   } catch {
     return [
       {
@@ -470,7 +510,11 @@ export function parseMarkdown(text: string): MarkdownBlock[] {
   }
 }
 
-function parseBlocks(text: string, quoteDepth = 0): MarkdownBlock[] {
+function parseBlocks(
+  text: string,
+  quoteDepth: number,
+  lineBreaks: boolean,
+): MarkdownBlock[] {
   const lines = text.replace(/\r\n?/g, '\n').split('\n').map(expandTabs);
   const blocks: MarkdownBlock[] = [];
   const used = new Set<string>();
@@ -530,7 +574,7 @@ function parseBlocks(text: string, quoteDepth = 0): MarkdownBlock[] {
       const [body, next] = takeQuote(lines, i);
       blocks.push({
         type: 'quote',
-        children: parseBlocks(body.join('\n'), quoteDepth + 1),
+        children: parseBlocks(body.join('\n'), quoteDepth + 1, lineBreaks),
       });
       i = next;
       continue;
@@ -575,7 +619,7 @@ function parseBlocks(text: string, quoteDepth = 0): MarkdownBlock[] {
       para.push((lines[i] as string).trim());
       i++;
     }
-    blocks.push({ type: 'paragraph', inlines: parseInlines(para.join(' ')) });
+    blocks.push({ type: 'paragraph', inlines: paragraphInlines(para, lineBreaks) });
   }
   return blocks;
 }

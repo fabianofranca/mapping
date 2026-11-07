@@ -205,12 +205,14 @@ describe('janela inferior: abas e faixa', () => {
       </ToolWindow>,
     );
     const tabs = screen.getAllByRole('tab');
-    expect(tabs.map((tab) => tab.textContent)).toEqual([
+    // Comentários é só ícone e contagem: o nome vem do `aria-label`.
+    expect(tabs.map((tab) => tab.getAttribute('aria-label') ?? tab.textContent)).toEqual([
       t('view.list'),
       t('incomplete.title'),
       t('notices.title'),
       t('diagnostics.title'),
       t('proposals.title'),
+      t('comments.title'),
     ]);
     expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
     await userEvent.click(tabs[1]!);

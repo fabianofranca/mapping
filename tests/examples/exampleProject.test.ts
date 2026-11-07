@@ -7,6 +7,12 @@ import {
   isTextPackageFile,
   parseSpecText,
   parseProposalText,
+  parseThreadText,
+  serializeThread,
+  awaiting,
+  resolveAnchor,
+  extractCitations,
+  resolveCitation,
   toLibraryFiles,
   validateAccepted,
   type Project,
@@ -119,6 +125,65 @@ describe('zip do projeto de exemplo', () => {
     });
     expect(report.errors).toEqual([]);
     expect(report.ok).toBe(true);
+  });
+});
+
+describe('conversas de exemplo (comments/)', () => {
+  async function readThreads() {
+    const { files, project } = await readExample();
+    const threads = [...(files.threads ?? [])].map(([path, text]) => {
+      const parsed = parseThreadText(text);
+      if (!parsed.ok) throw new Error(`${path}: ${parsed.errors.join('; ')}`);
+      return { path, text, thread: parsed.thread };
+    });
+    return { threads, project };
+  }
+
+  it('o zip leva três conversas válidas, canônicas e nos caminhos certos', async () => {
+    const { threads } = await readThreads();
+    expect(threads).toHaveLength(3);
+    for (const { path, text, thread } of threads) {
+      const folder = thread.resolved === null ? 'comments' : 'comments/resolved';
+      expect(path).toBe(`${folder}/${thread.id}.json`);
+      expect(serializeThread(thread), path).toBe(text);
+    }
+  });
+
+  it('uma aguarda humano (agente, com citação de campo), uma aguarda agente e uma está resolvida', async () => {
+    const { threads } = await readThreads();
+    const states = threads.map(({ thread }) => awaiting(thread));
+    expect(states.filter((s) => s === 'human')).toHaveLength(1);
+    expect(states.filter((s) => s === 'agent')).toHaveLength(1);
+    expect(states.filter((s) => s === null)).toHaveLength(1);
+    const byAgent = threads.find(({ thread }) => awaiting(thread) === 'human')!.thread;
+    expect(byAgent.anchor.kind).toBe('field');
+    expect(byAgent.messages[0]!.author.kind).toBe('agent');
+    expect(byAgent.messages[0]!.text).toContain('mapping://exemplo-completo/m/');
+    const resolved = threads.find(({ thread }) => thread.resolved !== null)!.thread;
+    expect(resolved.resolved?.by.email).toBe('marina@exemplo.com');
+  });
+
+  it('toda citação mapping:// das conversas resolve no projeto (sem broken)', async () => {
+    const { threads, project } = await readThreads();
+    const all = threads.map(({ thread }) => thread);
+    for (const thread of all) {
+      for (const m of thread.messages) {
+        for (const c of extractCitations(m.text)) {
+          expect(c.ref, `${thread.id}: ${c.url}`).not.toBeNull();
+          const r = resolveCitation({ project, threads: all, proposals: [] }, c.ref!.ref);
+          expect(r.found, `${thread.id}: ${c.url}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('todas as âncoras existem no projeto e nenhum e-mail é real', async () => {
+    const { threads, project } = await readThreads();
+    for (const { thread } of threads) {
+      expect(resolveAnchor(project, thread.anchor).orphan, thread.id).toBe(false);
+      for (const m of thread.messages)
+        if (m.author.email !== null) expect(m.author.email).toMatch(/@exemplo\.com$/);
+    }
   });
 });
 

@@ -326,7 +326,7 @@ test.describe('CSP do index.html', () => {
     const violations = await watchViolations(page);
     await page.goto('/guia/');
     await expect(page).toHaveTitle('Guia do Mapping');
-    await expect(page.locator('#steps button')).toHaveCount(12);
+    await expect(page.locator('#steps button')).toHaveCount(13);
     const policy = await page
       .locator('meta[http-equiv="Content-Security-Policy"]')
       .getAttribute('content');

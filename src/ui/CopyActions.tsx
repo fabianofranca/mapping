@@ -1,5 +1,5 @@
 import { t } from '../i18n';
-import { selectionWithContents, type ItemRef } from '../model';
+import { selectionWithContents, type ItemRef, type ThreadAnchor } from '../model';
 import { selectItems } from '../store/ui';
 import { SHORTCUT_LABELS, ariaKeys } from '../app/shortcuts';
 import {
@@ -13,8 +13,9 @@ import {
   canCopyItems,
   copyCrop,
   copyReference,
-  type CopyTarget,
+  type ItemCopyTarget,
 } from '../app/itemClipboard';
+import { CiteItem, CommentItem } from './CiteMenuItems';
 import { useEditor } from './EditorContext';
 import { Button, IconButton } from './controls';
 import { Popover } from './Popover';
@@ -24,7 +25,7 @@ import { Popover } from './Popover';
 // (`CanvasContextMenu`). Só aparecem em projetos abertos de uma pasta, o que o MCP alcança.
 
 /** Botões ao lado do ID: copiar a referência e, em marcações, o recorte. */
-export function CopyButtons({ target }: { readonly target: CopyTarget }) {
+export function CopyButtons({ target }: { readonly target: ItemCopyTarget }) {
   const editor = useEditor();
   if (!canCopyItems(editor)) return null;
   return (
@@ -82,7 +83,7 @@ export function WrapMenuItem({
   target,
   close,
 }: {
-  readonly target: CopyTarget;
+  readonly target: ItemCopyTarget;
   readonly close: () => void;
 }) {
   const editor = useEditor();
@@ -108,16 +109,29 @@ export function WrapMenuItem({
   );
 }
 
-/** Itens do menu (botões) de um item da imagem ou da marcação; `close` fecha o menu. */
+/** A âncora da conversa de um item (marcação, container ou anotação). */
+function anchorOf(target: ItemCopyTarget): ThreadAnchor {
+  const kind =
+    target.kind === 'm' ? 'marking' : target.kind === 'i' ? 'container' : 'annotation';
+  return { kind, id: target.id };
+}
+
+/**
+ * Itens do menu (botões) de um item da imagem, da marcação ou da anotação: copiar, Citar na
+ * conversa, Comentar, selecionar e Envolver. `close` fecha o menu.
+ */
 export function CopyMenuItems({
   target,
   close,
   copyable = true,
+  commentable = true,
 }: {
-  readonly target: CopyTarget;
+  readonly target: ItemCopyTarget;
   readonly close: () => void;
   /** Falso quando não há o que copiar (projeto fora de uma pasta): só as outras entradas. */
   readonly copyable?: boolean;
+  /** Falso quando o menu já tem o próprio Comentar (o do canvas, que sabe o ponto do clique). */
+  readonly commentable?: boolean;
 }) {
   const editor = useEditor();
   const selectable = target.kind === 'm';
@@ -148,6 +162,8 @@ export function CopyMenuItems({
             )}
         </>
       )}
+      <CiteItem target={target} close={close} />
+      {commentable && <CommentItem anchor={anchorOf(target)} close={close} />}
       {selectable && <SelectContentsItem markingId={target.id} close={close} />}
       <WrapMenuItem target={target} close={close} />
     </div>
@@ -159,13 +175,11 @@ export function ItemMenu({
   target,
   name,
 }: {
-  readonly target: CopyTarget;
+  readonly target: ItemCopyTarget;
   readonly name: string;
 }) {
   const editor = useEditor();
   const copyable = canCopyItems(editor);
-  // Fora de uma pasta não há o que copiar, mas o Envolver vale para marcação e container.
-  if (!copyable && target.kind === 'a') return null;
   const label = t('copy.itemActions', { name });
   return (
     <Popover

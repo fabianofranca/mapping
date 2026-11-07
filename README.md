@@ -111,6 +111,7 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 - [`docs/GUIDE.md`](docs/GUIDE.md): guia interativo e projeto de exemplo (como são gerados, o que abrir o exemplo grava, como mudá-los).
 - [`docs/FORMAT.md`](docs/FORMAT.md): referência do `mapping.json` (schema v13).
 - [`docs/PROPOSAL-FORMAT.md`](docs/PROPOSAL-FORMAT.md): formato da proposta de alteração e regras da revisão.
+- [`docs/COMMENT-FORMAT.md`](docs/COMMENT-FORMAT.md): formato da conversa ancorada (`mapping-thread`), a gramática das referências e citações e a API do modelo.
 - [`docs/MCP.md`](docs/MCP.md): servidor MCP (instalação, `.mcp.json`, raízes, tools, referências e solução de problemas); [`docs/AGENT-GUIDE.md`](docs/AGENT-GUIDE.md) é o guia do agente.
 - [`docs/SPEC-FORMAT.md`](docs/SPEC-FORMAT.md): formato do arquivo de especialização (e [`docs/spec.schema.json`](docs/spec.schema.json)); exemplos em [`examples/specs/`](examples/specs/).
 - [`.claude/skills/spec-author/SKILL.md`](.claude/skills/spec-author/SKILL.md): skill do Claude Code que escreve e valida uma especialização a partir de um código ou design system (copie a pasta para o repositório mapeado ou para `~/.claude/skills/`).

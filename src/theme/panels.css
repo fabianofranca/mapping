@@ -926,3 +926,135 @@ button.tree-toggle:hover {
 .notices-unused-row {
   border-bottom: 1px solid var(--color-border);
 }
+
+/* Janela Comentários (etapa Comentários, CM3): tabela de conversas, filtros e selos de status */
+.comments-filters {
+  gap: var(--space-1) var(--space-3);
+}
+
+.comments-summary {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  font: var(--t-text-small);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.comments-notice {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  font: var(--t-text-small);
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.comments-col-by {
+  width: 16%;
+}
+
+.comments-col-anchor {
+  width: 24%;
+}
+
+.comments-col-count {
+  width: 7%;
+}
+
+.comments-col-status {
+  width: 14%;
+}
+
+.comments-col-when {
+  width: 9%;
+}
+
+.comments-col-menu {
+  width: var(--size-target-min);
+}
+
+.comments-by {
+  white-space: nowrap;
+}
+
+.comments-by-name,
+.comments-last,
+.comments-anchor-button {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comments-by-name {
+  display: inline-block;
+  max-width: calc(100% - var(--space-6));
+  vertical-align: middle;
+}
+
+.comments-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-4);
+  height: var(--space-4);
+  margin-right: var(--space-1);
+  font: var(--t-micro);
+  color: var(--color-text-muted);
+  background: var(--color-selection-muted);
+  border-radius: var(--radius-full);
+  vertical-align: middle;
+}
+
+.comments-anchor-button {
+  max-width: 100%;
+  padding: 0;
+  text-align: left;
+}
+
+.comments-count {
+  text-align: right;
+}
+
+.comments-badge {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  font: var(--t-micro);
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  background: var(--color-selection-muted);
+  border-radius: var(--radius-full);
+}
+
+.comments-badge-agent {
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+}
+
+.comments-badge-resolved {
+  color: var(--color-success);
+}
+
+.comments-unread-dot {
+  display: inline-block;
+  width: var(--space-1-5);
+  height: var(--space-1-5);
+  margin-left: var(--space-1);
+  background: var(--color-accent);
+  border-radius: var(--radius-full);
+}
+
+/* Não lida: negrito. Resolvida: âncora riscada e em cinza. Órfã: cor de aviso. */
+.comments-row[data-unread] {
+  font-weight: 600;
+}
+
+.comments-row[data-resolved] {
+  color: var(--color-text-muted);
+}
+
+.comments-row[data-resolved] .comments-anchor {
+  text-decoration: line-through;
+}
+
+.comments-row[data-orphan] .comments-anchor,
+.comments-row[data-orphan] .comments-anchor-button {
+  color: var(--color-warning);
+}

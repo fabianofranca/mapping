@@ -3,6 +3,7 @@ import { diagnosticsUnseen } from '../store/diagnostics';
 import { isToolWindowOpen, type ToolWindowId } from '../store/toolWindows';
 import { IconButton } from './controls';
 import { useEditor } from './EditorContext';
+import { openCountText } from './comments/commentsText';
 import { toggleToolWindowFocus } from './toolWindowLayout';
 import { toolWindowMeta, toolWindowShortcut, windowsOfSide } from './toolWindowMeta';
 
@@ -10,8 +11,15 @@ import { toolWindowMeta, toolWindowShortcut, windowsOfSide } from './toolWindowM
 // dica. Na esquerda, as janelas laterais ficam em cima e as da janela inferior
 // embaixo (seção Layouts do DS 2.0).
 
+/** Texto acessível a mais do botão: erro novo, propostas novas ou conversas abertas. */
+function stripExtra(alert: boolean, fresh: number, openThreads: number): string {
+  if (alert) return ` (${t('diagnostics.unseen')})`;
+  if (fresh > 0) return ` (${t('proposals.newCount', { count: fresh })})`;
+  return openThreads > 0 ? ` (${openCountText(openThreads)})` : '';
+}
+
 function StripButton({ id }: { readonly id: ToolWindowId }) {
-  const { review } = useEditor();
+  const { review, derived } = useEditor();
   const { icon, title } = toolWindowMeta(id);
   const name = title();
   const open = isToolWindowOpen(id);
@@ -20,17 +28,16 @@ function StripButton({ id }: { readonly id: ToolWindowId }) {
   const label = t(open ? 'window.hide' : 'window.show', { name });
   // Propostas novas: selo numérico informativo (`mp-sb__badge--info`).
   const fresh = id === 'proposals' ? review.derived.freshIds.value.length : 0;
-  const extra = alert
-    ? ` (${t('diagnostics.unseen')})`
-    : fresh > 0
-      ? ` (${t('proposals.newCount', { count: fresh })})`
-      : '';
+  // Conversas abertas: selo numérico na janela Comentários.
+  const openThreads = id === 'comments' ? derived.threads.openCount.value : 0;
+  const extra = stripExtra(alert, fresh, openThreads);
+  const badge = fresh > 0 ? fresh : openThreads;
   return (
     <IconButton
       icon={icon}
       label={`${label}${extra}`}
       alert={alert}
-      badge={fresh > 0 ? String(fresh) : undefined}
+      badge={badge > 0 ? String(badge) : undefined}
       tooltip={name}
       tooltipPlacement="end"
       shortcut={toolWindowShortcut(id)}

@@ -1,0 +1,26 @@
+{
+  "format": "mapping-thread",
+  "formatVersion": 1,
+  "id": "5d0e8a41-2c7b-4f1e-9a63-b8c1d4e7f902",
+  "anchor": {
+    "kind": "field",
+    "annotationId": "2db84c4b-ac59-40d1-9163-1e73d85aeda3",
+    "key": "estilo"
+  },
+  "createdAt": "2026-10-19T09:14:03.000Z",
+  "revision": 0,
+  "resolved": null,
+  "messages": [
+    {
+      "id": "0b6f31c2-5e8a-4d97-a1c4-72e9d03b8f15",
+      "author": {
+        "kind": "agent",
+        "name": "Claude Code",
+        "email": null
+      },
+      "at": "2026-10-19T09:14:03.000Z",
+      "text": "A especialização não diz qual **estilo** usar aqui. O botão [Cadastrar](mapping://exemplo-completo/m/8f9464dd) está como `primary`, mas o [Entrar](mapping://exemplo-completo/m/0ce8b079) da tela de login também é `primary`. Os dois devem ser o botão principal da tela?",
+      "proposal": null
+    }
+  ]
+}

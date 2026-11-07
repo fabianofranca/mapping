@@ -5,6 +5,10 @@ import {
   selectedItems,
   type AnnotationLocation,
 } from '../store/ui';
+import {
+  StandaloneThreadPanel,
+  hasStandaloneThread,
+} from '../ui/comments/StandaloneThreadPanel';
 import { useEditor } from '../ui/EditorContext';
 import { ArrowPanel } from '../ui/ArrowPanel';
 import { MarkingPanel } from '../ui/MarkingPanel';
@@ -27,7 +31,7 @@ export function EditorPanel({
   onReplace,
   onGoToAnnotation,
 }: EditorPanelProps) {
-  const { store, ui, display, review } = useEditor();
+  const { store, ui, display, review, derived } = useEditor();
   // O projeto à vista: fora da revisão, o confirmado (os campos do painel atualizam ao
   // soltar o gesto, não durante); na revisão, o que a visão Atual/Proposto mostra.
   const project = review.derived.shownProject.value;
@@ -39,6 +43,15 @@ export function EditorPanel({
     return (
       <div class="tab-panel">
         <ReviewPanel onGoToAnnotation={onGoToAnnotation} />
+      </div>
+    );
+  }
+  const openSettings = () => dialogs.show({ kind: 'settings' });
+  // Conversa sem item (camada, ponto solto, órfã): abre sozinha, no lugar do painel de seleção.
+  if (hasStandaloneThread(ui, project, derived.threads.entries.value)) {
+    return (
+      <div class="tab-panel">
+        <StandaloneThreadPanel onOpenSettings={openSettings} />
       </div>
     );
   }
@@ -70,6 +83,7 @@ export function EditorPanel({
           readOnly={readOnly || busy}
           onDelete={dialogs.requestDeleteMarking}
           onGoToAnnotation={onGoToAnnotation}
+          onOpenSettings={openSettings}
         />
       ) : selected?.kind === 'arrow' ? (
         <ArrowPanel
@@ -79,6 +93,7 @@ export function EditorPanel({
           readOnly={readOnly || busy}
           onDelete={dialogs.requestDeleteArrow}
           onGoToAnnotation={onGoToAnnotation}
+          onOpenSettings={openSettings}
         />
       ) : (
         <SelectionPanel
@@ -91,6 +106,7 @@ export function EditorPanel({
           busy={busy}
           onReplace={onReplace}
           onDelete={dialogs.requestDeleteImage}
+          onOpenSettings={openSettings}
         />
       )}
     </div>

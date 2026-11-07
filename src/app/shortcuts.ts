@@ -137,14 +137,15 @@ export function altNumbersAvailable(userAgent: string, standalone: boolean): boo
 }
 
 /**
- * Número de 1 a 9 da tecla. Com Shift, `key` vira o símbolo do teclado (Ctrl+Shift+4
+ * Número de 0 a 9 da tecla. Com Shift, `key` vira o símbolo do teclado (Ctrl+Shift+4
  * chega como `$` no layout americano), então a tecla física (`code`) é quem manda.
  */
 function numberOf(e: KeyInfo): number | null {
-  const physical = /^(?:Digit|Numpad)([1-9])$/.exec(e.code ?? '');
+  const physical = /^(?:Digit|Numpad)([0-9])$/.exec(e.code ?? '');
   if (physical) return Number(physical[1]);
+  if (e.key.length !== 1) return null;
   const n = Number(e.key);
-  return Number.isInteger(n) && n >= 1 && n <= 9 ? n : null;
+  return Number.isInteger(n) && n >= 0 && n <= 9 ? n : null;
 }
 
 /** Teclas de Ctrl/Cmd (sem Shift nem Alt) que sempre dão o mesmo atalho. */
