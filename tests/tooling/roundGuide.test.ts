@@ -63,7 +63,7 @@ describe('round-guide.mjs (TS1, decisão 7)', () => {
     }
   });
 
-  it('all mantém R0 a R22, na ordem do guia, ainda sem a seção 9', async () => {
+  it('all mantém R0 a R23, na ordem do guia, ainda sem a seção 9', async () => {
     const out = await build(['all']);
     const ids = [...GUIDE.matchAll(/^### (R\d+) /gm)].map((m) => m[1]);
     expect([...out.matchAll(/^### (R\d+) /gm)].map((m) => m[1])).toEqual(ids);
