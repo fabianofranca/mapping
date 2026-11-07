@@ -10,4 +10,9 @@
 
 ## Alterado
 
+- O `get_code_hints` passa a incluir, em cada anotação, os `targets` dos campos e das células `ref` para a anotação inteira; os `values` e os `args` continuam com o rótulo, por compatibilidade, e os `types` incluem os tipos dos alvos.
+- O roteiro de teste novo **R24 — Conteúdo fora da imagem** (`docs/TESTING.md`) entra na rodada completa, no bloco 2.
+
 ## Corrigido
+
+- Nenhum defeito encontrado durante a etapa.

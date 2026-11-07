@@ -35,12 +35,13 @@ O Mapping é uma app web para marcar áreas retangulares em imagens, organizá-l
 | 23 | R21 — Workspace atualizado pela release | a shell, o Node, o `curl` com rede para `github.com` e o MCP por stdio (sem a app); a tag da release da mensagem | 25 min |
 | 24 | R22 — Comentários: conversas ancoradas no mapeamento | uma pasta `conversas` (o `examples/exemplo-completo.zip` descompactado em `design/mapeamentos/`), a shell, o MCP por stdio (seção 6) e a app | 50 min |
 | 25 | R23 — Perspectivas: recortes do projeto por público | uma pasta `perspectivas` (um `mapping.json` schema 15 que a shell escreve), a shell, o MCP por stdio (seção 6) e a app | 55 min |
+| 26 | R24 — Conteúdo fora da imagem | uma especialização `formatVersion` 14 pequena e o projeto, escritos no próprio roteiro, a shell e o MCP por stdio (seção 6) e a app | 45 min |
 | sob demanda | RP — App instalado (PWA), nos **roteiros sob demanda (manuais)** | versão principal ou preview (`https:`) e o app instalável; só quando o dono pedir | 15 min |
 | sob demanda | RF — `index.html` por `file://` (antes R0.5), nos **roteiros sob demanda (manuais)** | shell com acesso ao GitHub Pages e o Chrome do computador; só quando o dono pedir | 10 min |
 | sob demanda | RA — Fechar a aba no meio da gravação (antes R6.2), nos **roteiros sob demanda (manuais)** | a pasta `principal` e um `tela2.png`; só quando o dono pedir | 10 min |
 | sob demanda | RB — Esc no meio de um arraste logo depois de renomear (antes R6.1), nos **roteiros sob demanda (manuais)** | a pasta `principal`; só quando o dono pedir | 5 min |
 
-Os tempos são aproximados (pelo número de passos); registre o tempo real no relato. Sem o MCP, faça da linha 4 só o passo 2 da seção 6 (o repositório de teste e as pastas, sem o `mapping-mcp.js`), rode o R3.1 a R3.5 e pule o R3.6 e o R5, marcando-os como "não executado (sem MCP)". Os roteiros principais (R0 a R23) são feitos para o agente da nuvem executar **sozinho**. Os **roteiros sob demanda (manuais)**, hoje o RP, o RF, o RA e o RB, não fazem parte da rodada completa nem da dirigida: rodam à parte, numa sessão sob demanda, só quando o dono pedir (fim da seção 8). As dependências entre os roteiros estão no começo da seção 8. A seção 9 (teste manual avançado) é um roteiro à parte, depois de uma rodada completa sem achados altos ou médios.
+Os tempos são aproximados (pelo número de passos); registre o tempo real no relato. Sem o MCP, faça da linha 4 só o passo 2 da seção 6 (o repositório de teste e as pastas, sem o `mapping-mcp.js`), rode o R3.1 a R3.5 e pule o R3.6 e o R5, marcando-os como "não executado (sem MCP)". Os roteiros principais (R0 a R24) são feitos para o agente da nuvem executar **sozinho**. Os **roteiros sob demanda (manuais)**, hoje o RP, o RF, o RA e o RB, não fazem parte da rodada completa nem da dirigida: rodam à parte, numa sessão sob demanda, só quando o dono pedir (fim da seção 8). As dependências entre os roteiros estão no começo da seção 8. A seção 9 (teste manual avançado) é um roteiro à parte, depois de uma rodada completa sem achados altos ou médios.
 
 O que este guia **não** testa: se um painel é fácil de achar ou se um texto é claro para quem não leu a documentação. Isso fica com pessoas, no uso real.
 
@@ -234,7 +235,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - Como criar marcações e anotações, como adicionar imagem e a notação "**Marcação** › **Tipo** · campo = valor" estão na seção 5; "desenhe" é sempre no modo **Desenhar**.
 - _Itálico no fim do Esperado_ marca uma **regressão conhecida**: algo que já quebrou numa rodada anterior e é conferido de novo, não o objetivo do passo.
 - **[pessoa]** marca os passos que o agente da nuvem não faz sozinho (apêndice A); quem testa à mão pode ignorar a marca. O "ou `ação`" nomeia a receita que substitui a pessoa nos diálogos nativos (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`; cada nome é uma receita do apêndice A, "Diálogos nativos na nuvem (Xvfb)") e o cliente MCP por stdio nos pedidos ao Claude Code. Nos roteiros principais nenhum passo fica sem substituto (um teste confere).
-- **Regra para quem altera os roteiros (agentes e pessoas).** Os roteiros principais (R0 a R23) são feitos para o agente da nuvem executar **sozinho**: todo passo novo ou alterado precisa ter um jeito de o agente da nuvem fazê-lo (receita da nuvem do apêndice A, Playwright por CDP, shell ou cliente MCP por stdio) e dizê-lo na Ação.
+- **Regra para quem altera os roteiros (agentes e pessoas).** Os roteiros principais (R0 a R24) são feitos para o agente da nuvem executar **sozinho**: todo passo novo ou alterado precisa ter um jeito de o agente da nuvem fazê-lo (receita da nuvem do apêndice A, Playwright por CDP, shell ou cliente MCP por stdio) e dizê-lo na Ação.
 - **Teste que precisa do dono.** Se um teste precisa de interação do dono (nenhuma receita da nuvem o faz) e **não é muito relevante**, ele vai para os **roteiros sob demanda (manuais)** (fim desta seção), que o dono faz à mão.
 - **Teste que precisa do dono e é muito relevante.** Se precisa de interação do dono e **é muito relevante** (risco de perda de dados, integridade do `mapping.json`, segurança), o agente **não decide sozinho**: avisa o dono, na conversa e na descrição do PR, para decidirem juntos; enquanto não decidirem, o passo fica onde está, marcado como **pendente de decisão**.
 
@@ -265,6 +266,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - R21 usa a pasta própria `release-ws` (`W21`) e a **release real** no GitHub, a da tag da mensagem (numa completa na `main`, a última estável), só com shell e o MCP por stdio, sem a app. R21.1 a R21.5 e R21.8 seguem em sequência sobre a `ws-novo` e a `ws-antigo`; R21.3, R21.6 e R21.7 copiam delas. Sem rede para a release, marque todos "não executado (sem rede para a release)".
 - R22 usa a pasta própria `conversas` (o `examples/exemplo-completo.zip` descompactado em `design/mapeamentos/`, que o MCP lê), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. Sem identidade (perfil novo) no R22.2; o R22.3 a preenche. Sem o MCP, marque os passos de MCP "não executado (sem MCP)".
 - R23 usa a pasta própria `perspectivas` (um `mapping.json` schema 15 que a shell escreve em `design/mapeamentos/` do repositório de teste, que o MCP lê), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. O R23.12 e o R23.13 são a passada visual própria das perspectivas. Sem o MCP, marque o R23.21 e o R23.24 "não executado (sem MCP)".
+- R24 usa a pasta própria `fora` (criada pelo `create_project` do R24.3, com a especialização `fora-demo.json` que a shell grava em `design/mapeamentos/`), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. O R24.14 e o R24.15 são a passada visual própria do roteiro. Sem o MCP, marque o R24.1 a R24.3, o R24.10 e o R24.11 "não executado (sem MCP)" e pule o resto (o projeto `fora` nasce do R24.3).
 - R11 não precisa de arquivo nem de MCP: o guia vem no build e o exemplo é o `examples/exemplo-completo.zip` do repositório; abri-lo cria uma cópia nova **Neste dispositivo** a cada vez, e o R11.8 a apaga.
 - R10 usa o pacote `libraries/material3-compose/` (R10.1 a R10.6, sem projeto, e uma cópia `mat-link` no R10.5); R10.7 usa o projeto `telas` do R9 (com o Material 3 (Compose) aplicado); R10.8 cria o projeto próprio `vazio`; nenhum passo precisa do MCP.
 - R9 usa o projeto próprio `telas` (pasta nova, sem imagem) e o pacote `libraries/material3-compose/`; R9.1 a R9.12, R9.21 e R9.22 não precisam do MCP (o R9.22 usa o `validate_library` do cliente stdio, na parte do agente); R9.13 a R9.15, R9.18 a R9.20 e R9.23 usam a seção 6 e o MCP (o `add_container` existe a partir do épico Container), em `design/mapeamentos/telas` (mova a pasta `telas` para lá com o projeto fechado).
@@ -1630,9 +1632,116 @@ idb() { node "$W23/idb.mjs"; }
 | R23.23 | **Desfazer.** Dê o foco ao `.canvas-host` e aperte `Ctrl+Z` uma vez. Espere **Salvo**; rode `estado`; abra o seletor. | **Tela:** a Analytics volta à lista do seletor, em **Para todos** (registre qual perspectiva ficou aberta). **Disco:** `perspectives` tem Dev mobile e Analytics de novo, esta com 4 itens e `escondidas ['L2']`; as contagens do projeto seguem as de antes. |
 | R23.24 | **O MCP lê as perspectivas.** `snap > "$W23/antes.txt"`. Pelo cliente stdio, com `project` `perspectivas`: `get_project`; `get_perspective` com `id` `Analytics`; `get_perspective` com `id` `analytics`; `get_marking` de `mapping://perspectivas/m/m2`; `get_container` de `mapping://perspectivas/i/c3`; `get_perspective` com `id` `Rascunho`. Depois `snap`. | **Resposta:** `get_project` traz `schemaVersion` `16` (sem `migratedFrom`), `arrivals` vazio e `perspectives` com **Dev mobile** (2 raízes) e **Analytics** (4 raízes, `hiddenLayers` com **Dados**), sem a Rascunho (a "Só eu" fica no navegador). `get_perspective` traz `roots` (`ref`, `kind` `container`, `name`, `x` e `y`: Tela A em 0, 0 e Tela B em 500, 0, mais Relatório e Funil) e `hiddenLayers`; `analytics` devolve a mesma. O `get_marking` da Lista traz `root` (a Tela B) e `perspectives` com Dev mobile e Analytics e a posição em cada; o `get_container` da Tela C, `perspectives` vazio. A Rascunho: `not-found` com um `hint` que cita `get_project`. **Disco:** `snap` igual ao `antes.txt`: ler não grava. |
 
+### R24 — Conteúdo fora da imagem
+
+**O que cobre:** a etapa Conteúdo fora da imagem (CF1 a CF4, `formatVersion` 14, schema v17, MCP 0.27.0): o `ref` para a anotação inteira (`accepts.annotations`); o lote do guia do agente ("Conteúdo fora da imagem") com o container "depois", o evento com a tabela de alvos em ordem e a seta; na app, o canvas, os Detalhes do evento, a linha **Referenciada por** do item, o seletor da célula (só os tipos aceitos, com o filtro por tipo); o `get_code_hints` com `targets`; e a referência quebrada ao apagar um alvo, com **Desfazer**.
+
+**Preparo.** Seção 6 pronta (o repositório de teste e o `mapping-mcp.js`); os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6); o `create_project` leva `root` `design/mapeamentos`. A especialização é pequena e vai inline: a shell a grava em `RAIZ/fora-demo.json` no R24.1. A camada **Componentes** tem o **Button** (papel **Clique**) e o **List-item**; a **Eventos**, o **Replace-plugins** (campo `containerId`, a tabela `plugins` com a coluna `item`, uma `ref` que aceita só o `list-item`, e o campo `qualquer`, uma `ref` que aceita a camada **Componentes** inteira) e o **Open-deeplink**.
+
+```json
+{
+  "format": "mapping-spec",
+  "formatVersion": 14,
+  "id": "fora-demo",
+  "name": "Fora Demo",
+  "version": 1,
+  "platforms": [{ "id": "web", "name": "Web", "language": "typescript" }],
+  "layers": [
+    {
+      "id": "componentes",
+      "name": "Componentes",
+      "color": "#1E88E5",
+      "annotationTypes": [
+        {
+          "id": "button",
+          "name": "Button",
+          "labelField": "titulo",
+          "allowedChildren": [{ "layer": "eventos" }],
+          "childRoles": [{ "id": "click", "name": "Clique" }],
+          "code": { "web": { "symbol": "Button", "params": { "titulo": "title" } } },
+          "fields": [{ "key": "titulo", "type": "string" }]
+        },
+        {
+          "id": "list-item",
+          "name": "List-item",
+          "labelField": "titulo",
+          "allowedChildren": [{ "layer": "eventos" }],
+          "childRoles": [{ "id": "click", "name": "Clique" }],
+          "code": { "web": { "symbol": "ListItem", "params": { "titulo": "title" } } },
+          "fields": [{ "key": "titulo", "type": "string" }]
+        }
+      ]
+    },
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#E53935",
+      "annotationTypes": [
+        {
+          "id": "replace-plugins",
+          "name": "Replace-plugins",
+          "labelField": "titulo",
+          "requiresOwner": true,
+          "code": {
+            "web": { "symbol": "replacePlugins", "params": { "plugins": "plugins" } }
+          },
+          "fields": [
+            { "key": "titulo", "type": "string" },
+            { "key": "containerId", "type": "string" },
+            {
+              "key": "plugins",
+              "type": "table",
+              "columns": [
+                { "key": "nota", "type": "string" },
+                {
+                  "key": "item",
+                  "type": "ref",
+                  "accepts": { "annotations": ["list-item"] }
+                }
+              ]
+            },
+            {
+              "key": "qualquer",
+              "type": "ref",
+              "accepts": { "annotations": [{ "layer": "componentes" }] }
+            }
+          ]
+        },
+        {
+          "id": "open-deeplink",
+          "name": "Open-deeplink",
+          "labelField": "url",
+          "requiresOwner": true,
+          "code": { "web": { "symbol": "openDeeplink", "params": { "url": "url" } } },
+          "fields": [{ "key": "url", "type": "string" }]
+        }
+      ]
+    }
+  ]
+}
+```
+
+| Passo | Ação | Esperado |
+| --- | --- | --- |
+| R24.1 | **Gravar e validar a especialização.** Pela shell, grave o JSON acima em `RAIZ/fora-demo.json`. Pelo cliente stdio, `validate_specialization` com `path` `fora-demo.json` (a `text`, se o `path` não for aceito). | **Resposta:** `valid` `true`, sem erros; a `formatVersion` lida é 14, com 2 camadas e 4 tipos. |
+| R24.2 | **A versão anterior recusa.** Pelo cliente stdio, `validate_specialization` com `text` igual ao JSON, trocando só `formatVersion` para `13`. | **Resposta:** inválida, com um erro `só é permitido com formatVersion 14` em cada um destes dois caminhos (a ordem não importa): `layers[1].annotationTypes[0].fields[2].columns[1].accepts.annotations` (a coluna `item`) e `layers[1].annotationTypes[0].fields[3].accepts.annotations` (o campo `qualquer`). |
+| R24.3 | **O lote do guia.** Pelo cliente stdio, `create_project` com `path` `fora`, `name` `Fora` e `root` `design/mapeamentos`; depois **um** `propose_changes` nesse projeto (título "Conteúdo fora da imagem") cujas `operations` são `apply_specialization` (`file` `fora-demo.json`) seguido do lote de "Conteúdo fora da imagem" do `docs/AGENT-GUIDE.md`, **copiado de lá**, com estas trocas de tipo e sem mais nenhuma: `sdui/item` do `$botao` vira `fora-demo/button`; os dois `sdui/item` dos `$m1` e `$m2` viram `fora-demo/list-item`; `sdui/replace-plugins` vira `fora-demo/replace-plugins`; e, no fim, um `create_annotation` com `marking` `$m1`, `type` `fora-demo/open-deeplink`, `owner` `$p1`, `role` `click` e `values` `{ "url": "app://detalhe" }`. | **Resposta:** o projeto é criado (`schemaVersion` 17) e a proposta volta com id, `valid` `true`, sem erro, e `issues.new` vazio. **Disco:** o `mapping.json` de `fora` ainda sem container nem anotação (a proposta não grava). |
+| R24.4 | **Revisar e aplicar na app.** Abra a pasta `fora` (**Abrir pasta** **[pessoa]** ou `select_folder`), **Propostas** (`Ctrl+Shift+7`) › **Revisar** a proposta, **Aceitar tudo**, **Aplicar aceitas** e **Sair da revisão**. Espere **Salvo**. | **Tela:** aplica sem erro; **Diagnóstico** (`Ctrl+Shift+6`) sem erro nem pendência. **Disco:** o `mapping.json` tem `schemaVersion` 17, 2 containers (o **Pedido** e o **Pedido (depois de Trocar plugins)**, ambos sem arquivo, `background` `#FFFFFF`), 4 marcações (o botão na tela; os dois itens no "depois" e a marcação **Plugins** que os envolve), 1 seta e 5 anotações; `specs/fora-demo.json` existe com `formatVersion` 14. |
+| R24.5 | **O canvas.** Clique em **Enquadrar tudo**, leia `data-images` e `data-arrows` do `.canvas-host` e capture. | **Tela:** `data-images` `2` e `data-arrows` `1`; o container "depois" fica à direita da tela **Pedido**, na mesma altura ou perto dela (não por cima), com os dois itens e o grupo **Plugins**; a seta sai do botão da tela e chega ao grupo **Plugins**, no container "depois". |
+| R24.6 | **Detalhes do evento.** Na **Árvore** (`Ctrl+Shift+1`) selecione o botão da tela; em **Detalhes** (`Ctrl+Shift+3`) leia a linha **Vinculadas** e abra o **Replace-plugins · Trocar plugins** (botão do cartão do botão); leia a tabela **plugins**. | **Tela:** o botão tem, em **Clique**, o **Replace-plugins · Trocar plugins**. A tabela tem **duas linhas, nesta ordem**: nota `primeiro` com o alvo **Plugin A** e nota `segundo` com o alvo **Plugin B**, cada alvo pelo rótulo (o `titulo`), sem o texto "referência quebrada"; Ctrl+clique no alvo leva ao item (a seleção vai para o **Plugin A**). **Disco:** `plugins` do evento tem 2 linhas, cada `item` é `{ "annotationId": "<id do item>" }`, na ordem; o `revision` do `mapping.json` não muda por ler. |
+| R24.7 | **Referenciada por.** Selecione o **Plugin A** e leia o cartão dele em **Detalhes**: a linha **Referenciada por**. Clique no botão dessa linha. Repita no **Plugin B**. | **Tela:** o cartão do **Plugin A** traz **Referenciada por** com uma entrada, "Trocar plugins (em …)" (o evento, com o nome da marcação do botão); o clique seleciona o evento. O **Plugin B** mostra o mesmo evento. O **Open-deeplink**, sob o **Plugin A** no papel **Clique**, aparece em **Vinculadas** do Plugin A e não em **Referenciada por**. O botão da tela não tem a linha **Referenciada por**. |
+| R24.8 | **O seletor da célula.** Selecione o evento; na tabela **plugins**, clique no botão da célula `item` da primeira linha (o que mostra **Plugin A**). Leia a janela, digite `plugin` na busca, apague, e **Esc**. | **Tela:** a janela se chama **Escolher alvo de "item"**; oferece o **Plugin A** e o **Plugin B**, com a etiqueta do tipo (**List-item**), e **não** oferece o botão **Trocar plugins** (o tipo Button não é aceito pela coluna); como a coluna aceita um tipo só, não há abas de filtro. A busca `plugin` mantém os dois itens; sem texto, voltam os dois. **Esc** fecha sem alterar nada. **Disco:** o `revision` não muda. |
+| R24.9 | **Filtro por tipo e escolha.** No mesmo evento, clique no botão do campo `qualquer` (**Escolher: qualquer**). Leia as abas **Filtrar alvos**, escolha a aba **Button**, depois a **List-item**, depois **Todos**, e escolha o **Plugin B**. Espere **Salvo**. | **Tela:** a janela oferece as abas **Todos**, **Button** e **List-item**; **Button** deixa só o botão (**Trocar plugins**), **List-item** deixa os dois itens e **Todos** deixa os três. Ao escolher o **Plugin B**, o campo passa a mostrar **Plugin B**. **Disco:** `values.qualquer` do evento é `{ "annotationId": "<id do Plugin B>" }`. Em **Referenciada por** do **Plugin B** o evento aparece **uma vez** (a mesma anotação apontada por duas células). |
+| R24.10 | **O MCP lê de volta.** Pelo cliente stdio, com `project` `fora`: `get_annotation` do evento (a referência vem de `get_marking` do botão); `get_marking` dos itens **Plugin A** e **Plugin B**. | **Resposta:** o `get_annotation` do evento mostra os `refs` da tabela com `target.kind` `annotation` e o rótulo do alvo (**Plugin A**, **Plugin B**, em ordem) e o de `qualquer` para o **Plugin B**; o `get_marking` de cada item traz o `backlink` do evento. |
+| R24.11 | **`get_code_hints` do botão.** Pelo cliente stdio, `get_code_hints` do botão da tela, `project` `fora`, `platform` `web`. | **Resposta:** o evento está em `linked` do botão, com `parentRole` `click`, e traz `targets` com **três** itens na ordem dos campos e das linhas: `plugins` linha 0 coluna `item` (**Plugin A**), `plugins` linha 1 coluna `item` (**Plugin B**) e `qualquer` (`row` e `column` nulos, **Plugin B**); cada `annotation` está expandido (`type` `fora-demo/list-item`, com os `args` do `code`). O `open-deeplink` aparece em `linked` **sob o primeiro item** (dentro de `targets[0].annotation`), com `parentRole` `click` e o valor `app://detalhe`. `types` inclui `fora-demo/list-item`. |
+| R24.12 | **Apagar o alvo.** `snap` do `mapping.json`. Na **Árvore** selecione a marcação do **Plugin A**; em **Detalhes**, **Excluir marcação** e leia o diálogo; confirme. Selecione o evento e leia a tabela **plugins**; abra **Incompletas** (`Ctrl+Shift+5`) e **Diagnóstico** (`Ctrl+Shift+6`). Espere **Salvo**. | **Tela:** o diálogo **Excluir marcação?** avisa das referências que vão quebrar (menção ao evento e a "Dá para desfazer"). Depois de confirmar, a primeira linha da tabela mostra **(referência quebrada)** no lugar do **Plugin A** (a segunda linha segue com o **Plugin B**); **Diagnóstico** traz a pendência `referência quebrada` do evento. **Disco:** o `item` da primeira linha ainda guarda o id do **Plugin A** (que não existe mais em `annotations`); as outras linhas e o `qualquer` não mudam. |
+| R24.13 | **Desfazer.** Dê o foco ao `.canvas-host` e aperte `Ctrl+Z` uma vez. Espere **Salvo**; leia a tabela do evento e o **Diagnóstico**. | **Tela:** o **Plugin A** volta, a primeira linha mostra **Plugin A** de novo (sem **(referência quebrada)**) e a pendência some. **Disco:** o `mapping.json` volta ao conteúdo do `snap` de antes de apagar (exceto `revision` e `updatedAt`). |
+| R24.14 | **Passada visual, 1280×720.** `page.setViewportSize({ width: 1280, height: 720 })`. Capture cada tela abaixo, uma linha do relato cada ("Visual: <nome>"): o canvas enquadrado com a tela, o container "depois" e a seta; **Detalhes** do evento com a tabela de alvos; **Detalhes** do **Plugin A** com **Referenciada por**; o seletor da célula aberto (e o do campo `qualquer`, com as abas); o evento com a célula quebrada (apague o **Plugin A** de novo para a captura e desfaça no fim). | **Tela:** nada cortado nem sobreposto: os rótulos dos alvos e a linha **Referenciada por** cabem sem barra horizontal; o seletor mostra a etiqueta do tipo em cada opção; a célula quebrada mostra **(referência quebrada)** legível. |
+| R24.15 | **Passada visual, 900×720.** `page.setViewportSize({ width: 900, height: 720 })` e repita as capturas e as conferências do passo anterior, com as mesmas linhas "Visual: <nome>" mais o sufixo "900". Volte a 1280×720 ao fim. | **Tela:** o mesmo do passo anterior na janela mínima, sem barra horizontal. **Disco:** o `mapping.json` volta ao conteúdo do R24.13. |
+
 ### Roteiros sob demanda (manuais)
 
-**Critério de entrada.** Os roteiros principais (R0 a R23) são feitos para o agente da nuvem executar sozinho. Um teste vai para cá quando precisa de interação do dono e **não é muito relevante** (a regra está nas convenções do começo desta seção). Estes roteiros **só rodam quando o dono pedir**, numa sessão sob demanda: nunca entram na rodada completa nem na dirigida, e fora da sessão pedida nem aparecem no relato. Os códigos e o conteúdo não mudam. O R0.5 e o R6.2 já migraram para cá (RF e RA), por decisão do dono, depois de não funcionarem sozinhos numa rodada sem interação.
+**Critério de entrada.** Os roteiros principais (R0 a R24) são feitos para o agente da nuvem executar sozinho. Um teste vai para cá quando precisa de interação do dono e **não é muito relevante** (a regra está nas convenções do começo desta seção). Estes roteiros **só rodam quando o dono pedir**, numa sessão sob demanda: nunca entram na rodada completa nem na dirigida, e fora da sessão pedida nem aparecem no relato. Os códigos e o conteúdo não mudam. O R0.5 e o R6.2 já migraram para cá (RF e RA), por decisão do dono, depois de não funcionarem sozinhos numa rodada sem interação.
 
 #### RP — App instalado (PWA)
 
@@ -1799,7 +1908,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 
 **Passos [pessoa].**
 
-- **O que é:** o passo usa um diálogo do sistema ou do navegador que a página não opera: o seletor de pasta ou de arquivo, a permissão da pasta ("Permitir que o site veja/edite os arquivos?"), o "Salvar como" da exportação, a confirmação de instalar o app e o "Sair da página?". Nos roteiros principais (R0 a R23), todo passo [pessoa] tem um substituto para o agente (receita da nuvem abaixo, shell ou cliente por stdio), e um teste do repositório impede passo "sem substituto" ali. A marca **[pessoa]** fica no guia para quem testa à mão.
+- **O que é:** o passo usa um diálogo do sistema ou do navegador que a página não opera: o seletor de pasta ou de arquivo, a permissão da pasta ("Permitir que o site veja/edite os arquivos?"), o "Salvar como" da exportação, a confirmação de instalar o app e o "Sair da página?". Nos roteiros principais (R0 a R24), todo passo [pessoa] tem um substituto para o agente (receita da nuvem abaixo, shell ou cliente por stdio), e um teste do repositório impede passo "sem substituto" ali. A marca **[pessoa]** fica no guia para quem testa à mão.
 - **Nome da ação nos roteiros:** o "ou `select_folder`", "ou `open_file`", "ou `save_file`", "ou `accept_permission_prompt`" e "ou `cancel_dialog`" que acompanham a marca [pessoa] nomeiam a receita da nuvem que faz o papel da pessoa (tabela em "Diálogos nativos na nuvem (Xvfb)", mais abaixo).
 - **Nenhum passo dos roteiros principais é inteiro da pessoa.** O R0.5 (`index.html` por `file://`) e o R6.2 (fechar a aba no meio da gravação) não funcionaram sozinhos e foram para os roteiros sob demanda RF e RA, por decisão do dono. O R6.2 ganhou o e2e `tests/e2e/folder.spec.ts` no lugar.
 - **Se um passo novo não funcionar sozinho** (o endereço não abre; o diálogo nativo não aparece), marque "não executado (vai para os roteiros sob demanda)", registre o que falhou e proponha mover o passo. Se o teste for relevante (perda de dados, integridade do `mapping.json`, segurança), **avise o dono** no relato, pela regra das convenções da seção 8; não decida sozinho.
