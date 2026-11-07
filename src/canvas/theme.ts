@@ -82,6 +82,16 @@ export interface CanvasTokens {
     readonly glyph: string;
     readonly size: number;
   };
+  /** Pino das conversas (`cv-pin-*`): fundo por estado, texto, contorno, anel e ponto de não lida. */
+  readonly pin: {
+    readonly human: string;
+    readonly agent: string;
+    readonly resolved: string;
+    readonly text: string;
+    readonly halo: string;
+    readonly selected: string;
+    readonly unread: string;
+  };
 }
 
 /** Lê o valor de um token pelo nome com `--` (ex: `--cv-line`). */
@@ -151,6 +161,15 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
       fill: read('--cv-lock'),
       glyph: read('--cv-lock-glyph'),
       size: number(read, '--size-lock-badge'),
+    },
+    pin: {
+      human: read('--cv-pin-human'),
+      agent: read('--cv-pin-agent'),
+      resolved: read('--cv-pin-resolved'),
+      text: read('--cv-pin-text'),
+      halo: read('--cv-pin-halo'),
+      selected: read('--cv-pin-selected'),
+      unread: read('--cv-pin-unread'),
     },
   };
 }

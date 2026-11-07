@@ -4,15 +4,18 @@ import {
   filterThreads,
   hostOf,
   isUnread,
+  pinGroups,
   resolveAnchor,
   threadUsers,
   type AnchorResolution,
+  type PinGroup,
   type Project,
   type Thread,
   type ThreadUser,
 } from '../model';
 import type { Identity } from './identity';
 import { lastReadAt, threadReads } from './threadReads';
+import { selectedThreadId } from './threadUi';
 import type { EditorUi } from './ui';
 
 // Estado derivado das conversas (etapa Comentários): a janela Comentários, a seção Conversas dos
@@ -43,6 +46,12 @@ export interface ThreadDerived {
   readonly resolvedCount: ReadonlySignal<number>;
   /** Ids das conversas com mensagem não lida (decisão 16). */
   readonly unreadIds: ReadonlySignal<ReadonlySet<string>>;
+  /**
+   * Grupos dos pinos do canvas (decisão 24), um por item que hospeda a âncora: com os pinos
+   * ligados, as conversas abertas e a resolvida selecionada; desligados, só a selecionada. Não
+   * depende do viewport (pan e zoom não os recalculam).
+   */
+  readonly pins: ReadonlySignal<readonly PinGroup[]>;
   /** Usuários das conversas (filtro Usuário). */
   readonly users: ReadonlySignal<readonly ThreadUser[]>;
   /** As linhas da janela: as conversas depois dos filtros de status, usuário e busca. */
@@ -56,6 +65,8 @@ const NO_SOURCES: ThreadSources = {
 };
 
 export const NO_THREAD_SOURCES = NO_SOURCES;
+
+const NO_PINS: readonly PinGroup[] = [];
 
 /** O item (marcação, container ou seta) onde a conversa mora, se houver. */
 export function itemHostId(entry: ThreadEntry, project: Project): string | null {
@@ -107,6 +118,20 @@ export function createThreadDerived(
 
   const users = computed(() => threadUsers(sources.threads.value));
 
+  const pins = computed((): readonly PinGroup[] => {
+    const p = project.value;
+    if (!p) return NO_PINS;
+    const selected = selectedThreadId(ui);
+    const all = sources.threads.value;
+    const threads = ui.commentPins.value ? all : all.filter((t) => t.id === selected);
+    if (threads.length === 0) return NO_PINS;
+    const unread = unreadIds.value;
+    return pinGroups(p, threads, {
+      selectedThreadId: selected,
+      unread: (t) => unread.has(t.id),
+    });
+  });
+
   const rows = computed((): readonly ThreadEntry[] => {
     const p = project.value;
     if (!p) return [];
@@ -132,6 +157,7 @@ export function createThreadDerived(
     awaitingHumanCount: count((t) => awaiting(t) === 'human'),
     resolvedCount: count((t) => t.resolved !== null),
     unreadIds,
+    pins,
     users,
     rows,
   };

@@ -84,6 +84,65 @@ export function startComposing(
     ui.thread.value = null;
     ui.selection.value = target;
     ui.composing.value = { anchor, selection: ui.selection.peek() };
+    // Nova conversa liga os pinos (decisão 24): o rascunho no ponto mostra o pino tracejado.
+    ui.commentPins.value = true;
+    expandSections(ui, [{ kind: 'comments' }]);
+  });
+}
+
+/**
+ * Arma o botão Comentar (decisão 25): liga os pinos, volta ao Navegar guardando a ferramenta de
+ * antes e espera um clique no canvas.
+ */
+export function armComment(ui: EditorUi): void {
+  batch(() => {
+    if (ui.commentArm.peek() === null) {
+      ui.commentArm.value = { mode: ui.mode.peek() };
+    }
+    ui.mode.value = 'navigate';
+    ui.commentPins.value = true;
+  });
+}
+
+/** Desarma o Comentar e volta à ferramenta de antes; `false` se não estava armado. */
+export function cancelComment(ui: EditorUi): boolean {
+  const armed = ui.commentArm.peek();
+  if (armed === null) return false;
+  batch(() => {
+    ui.commentArm.value = null;
+    ui.mode.value = armed.mode;
+  });
+  return true;
+}
+
+/** O clique do Comentar: abre o rascunho em `anchor` e volta à ferramenta de antes. */
+export function placeComment(ui: EditorUi, project: Project, anchor: ThreadAnchor): void {
+  batch(() => {
+    cancelComment(ui);
+    startComposing(ui, project, anchor);
+  });
+}
+
+/**
+ * Clique num pino (decisão 24): com uma conversa, seleciona-a (item e conversa nos Detalhes; no
+ * ponto, só a conversa); com várias no mesmo item, seleciona o item e abre a lista.
+ */
+export function activatePin(
+  ui: EditorUi,
+  project: Project,
+  threads: readonly Thread[],
+): void {
+  const [first] = threads;
+  if (first === undefined) return;
+  if (threads.length === 1) {
+    selectThread(ui, project, first);
+    return;
+  }
+  const target = selectionFor(project, first.anchor);
+  batch(() => {
+    ui.composing.value = null;
+    ui.selection.value = target;
+    ui.thread.value = null;
     expandSections(ui, [{ kind: 'comments' }]);
   });
 }

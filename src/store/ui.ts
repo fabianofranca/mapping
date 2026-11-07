@@ -116,6 +116,21 @@ export interface EditorUi {
   readonly commentsStatus: Signal<ThreadStatusFilter>;
   readonly commentsUser: Signal<string>;
   readonly commentsText: Signal<string>;
+  /**
+   * Pinos das conversas no canvas (decisão 24): nasce desligado a cada abertura do editor e nunca
+   * é gravado. Só o botão Conversas o desliga; Comentar, Comentar aqui e Nova conversa o ligam.
+   */
+  readonly commentPins: Signal<boolean>;
+  /**
+   * Botão Comentar armado (decisão 25): o próximo clique no canvas abre o rascunho. Guarda a
+   * ferramenta de antes, para voltar a ela depois do clique ou do Esc.
+   */
+  readonly commentArm: Signal<ArmedComment | null>;
+}
+
+/** A colocação de um clique do botão Comentar e a ferramenta que volta depois dela. */
+export interface ArmedComment {
+  readonly mode: EditorMode;
 }
 
 /** O rascunho de conversa nova e a seleção em que ele vale. */
@@ -134,8 +149,12 @@ export interface CanvasMenu {
   /** Posição do cursor na janela (`clientX`/`clientY`). */
   readonly x: number;
   readonly y: number;
-  /** `i` = container, `m` = marcação, `arrow` = seta (v13). */
-  readonly target: { readonly kind: 'i' | 'm' | 'arrow'; readonly id: string };
+  /** `i` = container, `m` = marcação, `arrow` = seta (v13); `null` num lugar vazio. */
+  readonly target: { readonly kind: 'i' | 'm' | 'arrow'; readonly id: string } | null;
+  /** Âncora do item sob o cursor, para o Comentar do menu (decisão 25); `null` no vazio. */
+  readonly comment?: ThreadAnchor | null;
+  /** O ponto sob o cursor, para o Comentar aqui (container ou canvas); `null` sobre marcação ou seta. */
+  readonly here?: Extract<ThreadAnchor, { kind: 'point' }> | null;
 }
 
 export function createEditorUi(): EditorUi {
@@ -167,6 +186,8 @@ export function createEditorUi(): EditorUi {
     commentsStatus: signal<ThreadStatusFilter>('open'),
     commentsUser: signal<string>(''),
     commentsText: signal<string>(''),
+    commentPins: signal<boolean>(false),
+    commentArm: signal<ArmedComment | null>(null),
   };
 }
 

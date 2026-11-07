@@ -13,6 +13,7 @@ import type { DisplayImage } from '../store/displayImages';
 import type { Locale } from '../store/settings';
 import type { EditorMode, Selection, SelectionItem } from '../store/ui';
 import type { ArrowShape } from './arrowGeometry';
+import type { PinPlace } from './commentPins';
 import type { ReviewCanvas } from './reviewMarks';
 import type { CanvasTokens } from './theme';
 import type { Point, Size, Viewport } from './viewport';
@@ -165,6 +166,16 @@ export interface Frame {
    * enquanto os cinco itens não mudam.
    */
   readonly view: ViewFrame | null;
+  /**
+   * Pinos das conversas (decisão 24): vazio com os pinos desligados (fora o da conversa selecionada),
+   * no modo visualização e na revisão. O mesmo array enquanto o projeto, as conversas e a
+   * visibilidade não mudam: pan e zoom não o recalculam.
+   */
+  readonly pins: readonly PinPlace[];
+  /** A conversa selecionada: o pino dela ganha o anel de selecionado. */
+  readonly pinSelected: string | null;
+  /** Onde fica o pino tracejado do rascunho de uma conversa nova num ponto (canvas); `null` fora dele. */
+  readonly draftPin: Point | null;
 }
 
 /** `true` se `a` e `b` têm os mesmos valores (por referência) nas chaves dadas. */

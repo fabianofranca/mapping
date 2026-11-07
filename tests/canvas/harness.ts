@@ -108,6 +108,15 @@ export const TOKENS: CanvasTokens = {
     head: 10,
   },
   lock: { fill: '#0057ba', glyph: '#010204', size: 20 },
+  pin: {
+    human: '#ffb020',
+    agent: '#5eead4',
+    resolved: '#b4bcc7',
+    text: '#0b1220',
+    halo: 'rgba(10, 12, 16, 0.72)',
+    selected: '#0057bb',
+    unread: '#ff6b6b',
+  },
   radius: { sm: 4, md: 6 },
 };
 
@@ -213,6 +222,9 @@ export function frameOf(editor: Editor, overrides: Partial<Frame> = {}): Frame {
     arrows: visibleArrowShapes(store.project.peek(), derived.canvasVisibility.peek()),
     arrowDraft: null,
     marquee: null,
+    pins: [],
+    pinSelected: null,
+    draftPin: null,
     ...overrides,
   };
 }
