@@ -2,6 +2,8 @@
 
 ## Pendências
 
+- CF1: nenhuma (sem interface).
+
 ## Sincronização
 
 ## Ficou sem gravar
