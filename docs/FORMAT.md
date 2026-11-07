@@ -20,6 +20,7 @@ meu-projeto/
 │   └── 8c1f…/
 │       ├── proposal.json
 │       └── images/   # imagens novas ou trocadas, até serem aceitas
+├── comments/         # conversas ancoradas, uma por arquivo; as resolvidas em comments/resolved/ (ver COMMENT-FORMAT.md)
 └── backups/          # só no modo pasta: originais guardados antes de migrar o schema
     └── mapping.v1.20260930-143015.json
 ```
