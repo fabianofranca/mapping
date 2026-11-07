@@ -11,7 +11,17 @@ export const HISTORY_LIMIT = 100;
 export type Operation = (p: Project) => Project;
 
 export type StoreErrorCode =
-  ModelErrorCode | 'no-project' | 'read-only' | 'gesture-active' | 'reviewing';
+  | ModelErrorCode
+  | 'no-project'
+  | 'read-only'
+  | 'gesture-active'
+  | 'reviewing'
+  // Perspectivas "Só eu" (#659): sem IndexedDB, ou a gravação nele falhou.
+  | 'local-unavailable'
+  // Perspectivas: levar uma "Só eu" ao arquivo não gravou o `mapping.json`.
+  | 'save-failed'
+  // Perspectivas: comando que só vale na Principal (desenhar no canvas, rota de seta, arrumar, excluir raiz).
+  | 'principal-only';
 
 /**
  * Efeito fora do projeto ligado a uma entrada do histórico: aplicar as aceitas
