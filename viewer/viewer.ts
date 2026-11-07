@@ -52,6 +52,12 @@ export interface ViewerInput {
   readonly source: unknown;
   /** Origem da especialização usada em `source` (ausente = a primeira). */
   readonly sourceSystem: string | undefined;
+  /**
+   * Modo dos tokens do desenho (`light`, `dark`…, os `modes` da especialização). Ausente, ou um
+   * modo que a especialização não declara, vale o primeiro modo. Trocá-lo redesenha sem
+   * recarregar a biblioteca nem a tela.
+   */
+  readonly drawingMode: string | undefined;
 }
 
 export interface ViewerOptions {
@@ -60,6 +66,8 @@ export interface ViewerOptions {
   /** JSON externo (ver `ViewerInput.source`); vence `screen`. */
   readonly source?: unknown;
   readonly sourceSystem?: string;
+  /** Modo inicial dos tokens do desenho (ver `ViewerInput.drawingMode`); muda por `update`. */
+  readonly drawingMode?: string;
   /** Resultado de cada cálculo da tela a partir de `source` (tela, avisos e `error`). */
   readonly onSource?: (result: SourceResult) => void;
   /** O ponteiro entrou/saiu de uma instância (`undefined` = nenhuma). */
@@ -183,11 +191,15 @@ export function createViewer(
     mono: tokenValue('font-mono', 'light'),
   };
   /** A biblioteca recebida, com os tokens do modo e a fonte do hospedeiro nos componentes. */
-  const baked = new WeakMap<Library, Library>();
+  const baked = new WeakMap<Library, Map<string, Library>>();
+  let drawingMode: string | undefined = options.drawingMode;
   const withFonts = (lib: Library | undefined): Library | undefined => {
     if (lib === undefined) return undefined;
-    const hit = baked.get(lib) ?? withHostTokens(lib, fonts);
-    baked.set(lib, hit);
+    const byMode = baked.get(lib) ?? new Map<string, Library>();
+    baked.set(lib, byMode);
+    const key = drawingMode ?? '';
+    const hit = byMode.get(key) ?? withHostTokens(lib, fonts, drawingMode);
+    byMode.set(key, hit);
     return hit;
   };
   // `pixelSafe` sempre: o `toDataURL` abaixo lê pixels, então nenhuma imagem `opaque` é desenhada.
@@ -399,6 +411,11 @@ export function createViewer(
       if ('sourceSystem' in input && input.sourceSystem !== sourceSystem) {
         sourceSystem = input.sourceSystem;
         recompute = true;
+      }
+      if ('drawingMode' in input && input.drawingMode !== drawingMode) {
+        drawingMode = input.drawingMode;
+        // com `source`, a tela sai da biblioteca já com os tokens do modo
+        if (source !== undefined) recompute = true;
       }
       if ('screen' in input && input.screen !== passedScreen) {
         passedScreen = input.screen;

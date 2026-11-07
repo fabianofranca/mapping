@@ -76,6 +76,8 @@ export const containerSchema = z.object({
   locked: z.boolean(),
   source: sourceSchema.nullable(),
   background: hexColor.nullable(),
+  /** Modo do desenho que o container fixa (v18); ausente ou `null` = segue o projeto. */
+  drawingMode: z.string().min(1).nullable().optional(),
 });
 
 export const markingSchema = z.object({
@@ -216,6 +218,8 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   specializations: z.array(specializationSchema),
   platformRepos: z.record(z.string().regex(PLATFORM_ID_RE), platformRepoSchema),
   docRepos: docReposSchema,
+  /** Modo do desenho do projeto (v18); ausente = o primeiro modo de cada especialização. */
+  drawingMode: z.string().min(1).optional(),
   layers: z.array(layerSchema),
   containers: z.array(containerSchema),
   markings: z.array(markingSchema),

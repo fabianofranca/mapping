@@ -87,8 +87,8 @@ describe('formato da proposta', () => {
     ],
     [
       'formatVersion errado',
-      (p) => (p.formatVersion = 6),
-      'formatVersion: deve ser 1, 2, 3, 4 ou 5',
+      (p) => (p.formatVersion = 7),
+      'formatVersion: deve ser 1, 2, 3, 4, 5 ou 6',
     ],
     ['id com barra', (p) => (p.id = '../fora'), 'id: id inválido'],
     ['título vazio', (p) => (p.title = '  '), 'title: não pode ser vazio'],

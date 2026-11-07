@@ -315,6 +315,13 @@ export const migrateFrom15To16: Migration = (data) => {
  */
 export const migrateFrom16To17: Migration = (data) => data;
 
+/**
+ * v17 → v18 (modo do desenho): só a versão muda. O `drawingMode` do projeto e do container é
+ * opcional e ausente significa o primeiro modo de cada especialização; a versão nova existe para
+ * que uma app anterior abra o arquivo só para leitura, em vez de descartar o modo ao gravar.
+ */
+export const migrateFrom17To18: Migration = (data) => data;
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -333,6 +340,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [14, migrateFrom14To15],
   [15, migrateFrom15To16],
   [16, migrateFrom16To17],
+  [17, migrateFrom17To18],
 ]);
 
 export type MigrationResult =

@@ -22,6 +22,7 @@ export {
 } from './project';
 export * from './layers';
 export * from './containers';
+export * from './drawingMode';
 export * from './imageOptimization';
 export * from './exif';
 export * from './markings';

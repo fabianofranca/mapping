@@ -10,11 +10,15 @@
 - Texto rico (formato 4): o nó `text` aceita `runs` no lugar de `text`, uma lista de trechos com peso, itálico, cor, decoração, família e tamanho próprios, que quebram linha juntos como um texto só. Um trecho com `background`, `radius` e `padding` vira uma caixa em linha (o chip): inquebrável, vai inteira para a linha de baixo quando não cabe e acompanha o texto. A app desenha o texto rico; o MCP (`get_marking_image`) mostra por enquanto barras por pedaço e o fundo do chip.
 - Aviso `texto maior que a caixa: <nó>` (as linhas quebradas passam da altura do nó e nada as corta), que entra na pendência "o componente não cabe".
 - Aviso `texto medido com largura 0: <nó>` na prova de desenho do `validate_library` e no desenho do componente.
-- `tokens` na especialização (`formatVersion` 15): valores de design nomeados (cor, número, família de fonte), simples ou por modo (`light`/`dark`), e `{ "$token": "nome" }` no componente (formato 4), onde se aceita cor, número ou família de fonte, inclusive como resultado de `$switch` e `$if`. O `validate_library` recusa token inexistente ou de tipo errado, com o caminho do nó. Nesta etapa o desenho usa o primeiro modo.
+- `tokens` na especialização (`formatVersion` 15): valores de design nomeados (cor, número, família de fonte), simples ou por modo (`light`/`dark`), e `{ "$token": "nome" }` no componente (formato 4), onde se aceita cor, número ou família de fonte, inclusive como resultado de `$switch` e `$if`. O `validate_library` recusa token inexistente ou de tipo errado, com o caminho do nó. O modo do desenho escolhe o modo (ver abaixo); sem escolha, vale o primeiro.
 - Tokens embutidos `font-sans` e `font-mono` (famílias), que valem a fonte do tema do hospedeiro e podem ser redefinidos nos `tokens` da especialização.
+- Modo do desenho do projeto e do container (schema v18): o controle **Modo do desenho** em **Configurações** escolhe o modo dos `tokens` (`light`, `dark`…) com que os componentes são desenhados, e o campo **Modo do desenho** nos Detalhes do container fixa outro modo para ele (ou segue o projeto). Sem modo, vale o primeiro de cada especialização. O Diagnóstico avisa o modo gravado que nenhuma especialização declara.
+- MCP: a op `update_project` do lote troca o modo do desenho do projeto; `add_container` e `update_container` aceitam `drawingMode`.
+- Visualizador embutido: a opção `drawingMode` (e a prop do `<MappingViewer/>`) escolhe o modo dos tokens; mudá-la em tempo de execução (`update({ drawingMode })`) redesenha sem recarregar a biblioteca nem a tela.
 
 ## Alterado
 
+- Schema v18: `drawingMode` opcional na raiz e em cada container. A migração v17 → v18 só sobe o número; um app anterior abre o arquivo v18 somente para leitura.
 - O recorte da raiz do componente passa a incluir o traço `outside`/`center` e a sombra (em todas as versões do formato).
 - O raster do MCP (`get_marking_image`) passa a respeitar a ponta, o canto e os lados do traço.
 - A fonte padrão do texto sem `font.family` passa a ser a do tema (`font-sans`, e `font-mono` para código) em vez da `Inter` fixa. Bibliotecas cujos textos não declaram `family` mudam de largura de texto (o `hug`, a quebra de linha e o aviso `texto maior que a caixa` seguem a fonte do tema).

@@ -630,3 +630,82 @@ describe('fonte padrão do visualizador (CF5)', () => {
     expect(seen.has(tokenValue('font-sans', 'light'))).toBe(false);
   });
 });
+
+describe('drawingMode (modo dos tokens)', () => {
+  const spec = {
+    format: 'mapping-spec',
+    formatVersion: 15,
+    id: 'tk',
+    name: 'Tk',
+    version: 1,
+    tokens: {
+      modes: ['light', 'dark'],
+      values: { primary: { light: '#1a73e8', dark: '#8ab4f8' } },
+    },
+    layers: [
+      {
+        id: 'l',
+        name: 'L',
+        color: '#112233',
+        annotationTypes: [
+          { id: 't', name: 'T', component: 'components/tk.json', fields: [] },
+        ],
+      },
+    ],
+  };
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'tk',
+    name: 'Tk',
+    size: { width: 100, height: 50 },
+    template: { type: 'frame', fill: { $token: 'primary' } },
+  };
+  const tokenLibrary = loadLibrary([
+    { path: 'tk.spec.json', text: JSON.stringify(spec) },
+    { path: 'components/tk.json', text: JSON.stringify(component) },
+  ]);
+  const tokenScreen: Screen = {
+    id: 's',
+    name: 'S',
+    width: 100,
+    height: 50,
+    background: '#FFFFFF',
+    instances: [
+      { id: 'i1', typeId: 't', box: { x: 0, y: 0, width: 100, height: 50 }, values: {} },
+    ],
+  };
+
+  /** Os preenchimentos dos retângulos da instância (o fundo da tela fica de fora). */
+  function fills(el: HTMLElement): unknown[] {
+    return instanceNode(stageOf(el), 'i1')
+      .find<Konva.Rect>('Rect')
+      .map((r) => r.fill());
+  }
+
+  it('sem a opção usa o primeiro modo; drawingMode "dark" desenha com os tokens do modo dark', () => {
+    expect(tokenLibrary.problems).toEqual([]);
+    const light = container();
+    make(light, { library: tokenLibrary, screen: tokenScreen });
+    expect(fills(light)).toContain('#1a73e8');
+
+    const dark = container();
+    make(dark, { library: tokenLibrary, screen: tokenScreen, drawingMode: 'dark' });
+    expect(fills(dark)).toContain('#8ab4f8');
+    expect(fills(dark)).not.toContain('#1a73e8');
+  });
+
+  it('trocar o modo em tempo de execução redesenha sem recarregar o projeto', () => {
+    const el = container();
+    const viewer = make(el, { library: tokenLibrary, screen: tokenScreen });
+    expect(fills(el)).toContain('#1a73e8');
+
+    viewer.update({ drawingMode: 'dark' });
+    expect(fills(el)).toContain('#8ab4f8');
+    expect(fills(el)).not.toContain('#1a73e8');
+    expect(viewer.screen()).toBe(tokenScreen); // a tela e a biblioteca não foram recarregadas
+
+    viewer.update({ drawingMode: undefined });
+    expect(fills(el)).toContain('#1a73e8');
+  });
+});

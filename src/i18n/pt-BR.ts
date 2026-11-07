@@ -1164,6 +1164,18 @@ export const ptBR = {
   'view.componentsOnPhotos': 'Mostrar componentes sobre fotos',
   'view.componentsOnPhotosHint':
     'Desenha o componente por cima da foto. Nos containers sem arquivo ele sempre aparece.',
+  'drawingMode.title': 'Modo do desenho',
+  'drawingMode.intro':
+    'Escolhe o modo (claro, escuro…) dos tokens das especializações com que os componentes são desenhados. Não muda o tema da interface.',
+  'drawingMode.label': 'Modo do desenho',
+  'drawingMode.followProject': 'Seguir o projeto',
+  'drawingMode.undeclared': '{mode} (não declarado)',
+  'drawingMode.containerHint':
+    'Fixa o modo dos componentes deste container; "Seguir o projeto" usa o modo do projeto.',
+  'diagnostics.drawingMode': 'Modo do desenho',
+  'diagnostics.drawingModeHint':
+    'O modo continua gravado; sem uma especialização que o declare, o desenho usa o primeiro modo dela.',
+  'diagnostics.modeUndeclared': 'modo {mode} não declarado',
   'diagnostics.components': 'Componentes',
   'diagnostics.componentsHint':
     'Fontes que não carregaram, componentes que não puderam ser lidos e avisos do desenho.',

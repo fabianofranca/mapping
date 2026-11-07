@@ -389,6 +389,13 @@ export interface ComponentFile {
    * nunca vêm do arquivo (o parser recusa a chave). Ver `tokens.ts`.
    */
   readonly resolvedTokens?: Readonly<Record<string, string | number>>;
+  /**
+   * Os tokens de cada modo declarado (`tokens.modes`), postos pelo catálogo: o desenho escolhe a
+   * tabela do modo efetivo da marcação sem recarregar o componente. Ausente = só `resolvedTokens`.
+   */
+  readonly resolvedTokensByMode?: Readonly<
+    Record<string, Readonly<Record<string, string | number>>>
+  >;
 }
 
 /** Como o tipo da especialização referencia o componente (chave nova, formatVersion 4 do spec). */

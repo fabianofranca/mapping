@@ -1159,6 +1159,18 @@ export const enUS: Dictionary = {
   'view.componentsOnPhotos': 'Show components over photos',
   'view.componentsOnPhotosHint':
     'Draws the component over the photo. On containers without a file it always shows.',
+  'drawingMode.title': 'Drawing mode',
+  'drawingMode.intro':
+    'Picks the mode (light, dark…) of the specializations tokens the components are drawn with. It does not change the interface theme.',
+  'drawingMode.label': 'Drawing mode',
+  'drawingMode.followProject': 'Follow the project',
+  'drawingMode.undeclared': '{mode} (not declared)',
+  'drawingMode.containerHint':
+    'Pins the mode of the components in this container; "Follow the project" uses the project mode.',
+  'diagnostics.drawingMode': 'Drawing mode',
+  'diagnostics.drawingModeHint':
+    'The mode stays saved; without a specialization that declares it, the drawing uses that specialization first mode.',
+  'diagnostics.modeUndeclared': 'mode {mode} not declared',
   'diagnostics.components': 'Components',
   'diagnostics.componentsHint':
     'Fonts that did not load, components that could not be read and drawing warnings.',

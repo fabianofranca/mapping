@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n';
-import { SCHEMA_VERSION } from '../model';
+import { SCHEMA_VERSION, undeclaredDrawingMode } from '../model';
 import { markDiagnosticsSeen, remoteImageIssues } from '../store/diagnostics';
 import { allowedOrigins } from '../store/imagePermissions';
 import { locale, theme } from '../store/settings';
@@ -14,6 +14,7 @@ import {
 } from '../utils/report';
 import { Button } from './controls';
 import { EditorContext, type EditorContextValue } from './EditorContext';
+import { declaredDrawingModes } from './drawingModes';
 import { LibraryIssueList } from './LibraryIssueList';
 import { markingLabel } from './labels';
 
@@ -283,6 +284,28 @@ export function DiagnosticsComponents() {
   );
 }
 
+/**
+ * Modos do desenho gravados (no projeto ou nos containers) que nenhuma especialização declara:
+ * o modo continua gravado, o desenho usa o primeiro modo de cada especialização.
+ */
+export function DiagnosticsDrawingMode() {
+  const project = useContext(EditorContext)?.store.project.value;
+  if (!project) return null;
+  const modes = undeclaredDrawingMode(project, declaredDrawingModes(project));
+  if (modes.length === 0) return null;
+  return (
+    <section class="diagnostics-modes" aria-label={t('diagnostics.drawingMode')}>
+      <h3>{t('diagnostics.drawingMode')}</h3>
+      <p class="muted">{t('diagnostics.drawingModeHint')}</p>
+      <ul>
+        {modes.map((mode) => (
+          <li key={mode}>{t('diagnostics.modeUndeclared', { mode })}</li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /** Falhas e bloqueios de imagem remota da sessão (URL encurtada e motivo). */
 export function DiagnosticsRemoteImages() {
   const issues = remoteImageIssues.value;
@@ -315,6 +338,7 @@ export function DiagnosticsView() {
     <div class="diagnostics-view">
       <DiagnosticsLibrary />
       <DiagnosticsComponents />
+      <DiagnosticsDrawingMode />
       <DiagnosticsRemoteImages />
       <DiagnosticsTable />
     </div>

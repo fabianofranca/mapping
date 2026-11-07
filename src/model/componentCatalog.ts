@@ -2,7 +2,7 @@ import { findSlot } from './components/arrange';
 import type { ComponentFile } from './components/componentFormat';
 import { resolvePath } from './components/library';
 import { parseComponentText } from './components/parseComponent';
-import { resolveTokens, type HostFonts } from './components/tokens';
+import { resolveTokens, type HostFonts, type ResolvedTokens } from './components/tokens';
 import { projectIndex } from './projectIndex';
 import type { Spec, SpecAnnotationType } from './spec';
 import { findSpecType } from './specLookup';
@@ -64,6 +64,17 @@ export interface LoadOptions {
   readonly mode?: string;
 }
 
+/** A tabela de tokens de cada modo declarado (sem `tokens`: nenhuma). */
+function tokensByMode(
+  spec: Spec,
+  fonts: HostFonts,
+): Readonly<Record<string, ResolvedTokens>> | undefined {
+  if (spec.tokens === undefined) return undefined;
+  return Object.fromEntries(
+    spec.tokens.modes.map((mode) => [mode, resolveTokens(spec.tokens, fonts, mode)]),
+  );
+}
+
 /**
  * Lê e valida os componentes da especialização. `readText` devolve o texto de um caminho da
  * raiz do projeto, ou `undefined` se o arquivo não existe. Um componente ruim vira um
@@ -79,7 +90,9 @@ export function loadSpecComponents(
 ): SpecComponents {
   const byType = new Map<string, ComponentFile>();
   const problems: string[] = [];
-  const resolvedTokens = resolveTokens(spec.tokens, options.fonts ?? {}, options.mode);
+  const fonts = options.fonts ?? {};
+  const resolvedTokens = resolveTokens(spec.tokens, fonts, options.mode);
+  const resolvedTokensByMode = tokensByMode(spec, fonts);
   if (spec.formatVersion >= 4) {
     for (const type of typesWithComponent(spec)) {
       const path = resolvePath(specFile, type.component);
@@ -93,7 +106,7 @@ export function loadSpecComponents(
         problems.push(`${type.id}: ${parsed.errors[0] ?? 'componente inválido'}`);
         continue;
       }
-      byType.set(type.id, { ...parsed.component, resolvedTokens });
+      byType.set(type.id, { ...parsed.component, resolvedTokens, resolvedTokensByMode });
     }
   }
   return { specId: spec.id, version, byType, problems };

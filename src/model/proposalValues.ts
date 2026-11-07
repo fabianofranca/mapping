@@ -54,6 +54,8 @@ export function imageValue(i: ProjectContainer): JsonValue {
     markingColor: i.markingColor,
     locked: i.locked,
     source: i.source,
+    // Só quando fixa (formatVersion 6): sem ele o valor é o de antes do modo do desenho.
+    ...(i.drawingMode == null ? {} : { drawingMode: i.drawingMode }),
   });
 }
 
@@ -114,6 +116,11 @@ export function docRepoValue(r: DocRepo): JsonValue {
   return toJson({ localPath: r.localPath });
 }
 
+/** O que do projeto a proposta carrega (entidade `project`, formatVersion 6): o modo do desenho. */
+export function projectValue(p: Pick<Project, 'drawingMode'>): JsonValue {
+  return { drawingMode: p.drawingMode ?? null };
+}
+
 export function platformRepoValue(r: PlatformRepo): JsonValue {
   return toJson({ localPath: r.localPath });
 }
@@ -133,6 +140,7 @@ export const COMPARED_FIELDS = {
     'markingColor',
     'locked',
     'source',
+    'drawingMode',
   ],
   marking: ['name', 'space', 'rect', 'floating', 'locked', 'source'],
   // A seta só se cria e se remove: nenhum campo dela é comparado (ver `ARROW_FIELDS`).
@@ -174,6 +182,8 @@ export function imageField(i: ProjectContainer, field: string): JsonValue | unde
       return i.locked;
     case 'source':
       return toJson(i.source);
+    case 'drawingMode':
+      return i.drawingMode ?? null;
     default:
       return undefined;
   }
@@ -281,6 +291,8 @@ export function currentValue(p: Project, c: Change): JsonValue | undefined {
         : undefined;
       return r ? docRepoValue(r) : undefined;
     }
+    case 'project':
+      return projectValue(p);
     case 'layer': {
       const l = index.layers.get(c.entityId);
       if (!l) return undefined;

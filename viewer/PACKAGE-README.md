@@ -96,6 +96,10 @@ O núcleo não carrega fonte. Duas formas:
 - **CSS:** declare as famílias com `@font-face` no seu site;
 - **Pela biblioteca:** `await registerLibraryFonts(library)` registra, via `FontFace`, as fontes que a especialização declara (com os bytes carregados) e devolve o status de cada uma (`loaded`, `missing`, `failed`).
 
+### Modo dos tokens
+
+Uma especialização com `tokens` (`light`, `dark`…) desenha no primeiro modo. Para outro, passe `drawingMode: 'dark'` no `createViewer` (ou a prop `drawingMode` do `<MappingViewer/>`). Trocar depois, com `viewer.update({ drawingMode: 'light' })`, redesenha sem recarregar a biblioteca nem a tela; um modo que a especialização não declara vale o primeiro. `font-sans` e `font-mono` (embutidos) valem a fonte do hospedeiro em qualquer modo.
+
 Quando as fontes carregarem, remeça os textos: `viewer.redraw()` no núcleo, ou mude o valor de `fontsVersion` no `<MappingViewer/>`.
 
 ## Imagens remotas

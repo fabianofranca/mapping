@@ -8,6 +8,7 @@ import {
   type MarkingComponent,
 } from './componentCatalog';
 import { drawingValues } from './componentValues';
+import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
 import type { Project, Rect } from './types';
@@ -59,6 +60,8 @@ interface Entry {
   readonly valueWarnings: readonly string[];
   readonly measure: TextMeasurer;
   readonly epoch: number;
+  /** Modo do desenho efetivo da marcação (`undefined` = o primeiro modo). */
+  readonly mode: string | undefined;
   /** Retângulos das filhas diretas (só containers). */
   readonly childRects: readonly Rect[];
   readonly drawing: ComponentDrawing;
@@ -116,10 +119,14 @@ function draw(
   valueWarnings: readonly string[],
   childRects: readonly Rect[],
   measure: TextMeasurer,
+  mode: string | undefined,
 ): ComponentDrawing {
+  const tokens =
+    mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
   const { root, warnings } = instantiate(mc.component, values, rect, {
     measure,
     idPrefix: markingId,
+    ...(tokens === undefined ? {} : { tokens }),
   });
   const overflow =
     warnings.some((w) => OVERFLOW_WARNINGS.some((o) => w.startsWith(o))) ||
@@ -183,6 +190,7 @@ export function createDrawingCache(): DrawingCache {
         findSlot(mc.component) === undefined
           ? []
           : (children.get(marking.id) ?? []).map((c) => c.rect);
+      const mode = effectiveDrawingMode(p, marking.containerId);
       const before = entries.get(marking.id);
       if (
         before !== undefined &&
@@ -193,6 +201,7 @@ export function createDrawingCache(): DrawingCache {
         before.component === mc.component &&
         before.measure === measure &&
         before.epoch === epoch &&
+        before.mode === mode &&
         shallowEqual(before.values, values) &&
         before.valueWarnings.length === valueWarnings.length &&
         before.valueWarnings.every((w, i) => w === valueWarnings[i]) &&
@@ -211,6 +220,7 @@ export function createDrawingCache(): DrawingCache {
         valueWarnings,
         childRects,
         measure,
+        mode,
       );
       next.set(marking.id, {
         markingId: marking.id,
@@ -222,6 +232,7 @@ export function createDrawingCache(): DrawingCache {
         valueWarnings,
         measure,
         epoch,
+        mode,
         childRects,
         drawing,
       });

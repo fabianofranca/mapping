@@ -22,7 +22,7 @@ const v16Raw = (): Raw => {
 
 describe('schema v17', () => {
   it('a versão atual é 17 e o registro tem a migração v16 → v17', () => {
-    expect(SCHEMA_VERSION).toBe(17);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(17);
     expect(migrations.get(16)).toBe(migrateFrom16To17);
   });
 
@@ -31,20 +31,20 @@ describe('schema v17', () => {
     expect(migrateFrom16To17(data)).toEqual(data);
   });
 
-  it('um projeto v16 abre, migra para v17 com backup e não muda dados', () => {
+  it('um projeto v16 abre, migra até a versão atual com backup e não muda dados', () => {
     const text = JSON.stringify(v16Raw(), null, 2);
     const result = deserialize(text, migrations);
     if (!result.ok) throw new Error(JSON.stringify(result.error));
     expect(result.migratedFrom).toBe(16);
     expect(result.readOnly).toBe(false);
     const project: Project = result.project;
-    expect(project.schemaVersion).toBe(17);
-    // Nada além da versão muda: o projeto migrado grava igual ao original, com v17.
+    expect(project.schemaVersion).toBe(18);
+    // Nada além da versão muda: o projeto migrado grava igual ao original, com a versão atual.
     const original = sampleProject();
     expect(serialize(project)).toBe(
       serialize({ ...original, schemaVersion: SCHEMA_VERSION }),
     );
     const saved = JSON.parse(serialize(project)) as Raw;
-    expect(saved.schemaVersion).toBe(17);
+    expect(saved.schemaVersion).toBe(18);
   });
 });
