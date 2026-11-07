@@ -6,7 +6,14 @@ import {
   parseComponent,
   type TokenRef,
 } from './components/parseComponent';
+import {
+  iconNodes,
+  parseIconsText,
+  type IconNodeRef,
+  type IconSet,
+} from './components/icons';
 import { TOKEN_KIND_NAMES, knownTokenKinds } from './components/tokens';
+import { iconLiteralIssues, iconOptionIssues } from './libraryIcons';
 import {
   parseSpecText,
   type Spec,
@@ -285,6 +292,10 @@ interface Package {
   readonly componentJson: Map<string, unknown>;
   /** Os `$token` de cada componente válido, pelo caminho resolvido. */
   readonly tokenRefs: Map<string, readonly TokenRef[]>;
+  /** O conjunto de ícones (`icons`), quando o arquivo existe e é válido. */
+  icons?: IconSet;
+  /** Caminho resolvido do arquivo de ícones declarado (`icons`). */
+  iconsPath?: string;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -355,6 +366,11 @@ function level1(
   for (const origin of spec.origins ?? []) {
     for (const example of origin.examples ?? []) referenced.add(resolve(example.file));
   }
+  if (spec.icons !== undefined) {
+    pkg.iconsPath = resolve(spec.icons);
+    referenced.add(pkg.iconsPath);
+    readIcons(pkg, out);
+  }
 
   for (const file of files) {
     const lower = file.path.toLowerCase();
@@ -364,6 +380,24 @@ function level1(
     }
   }
   return pkg;
+}
+
+/** Nível 1: o arquivo `icons` existe e é um `mapping-icons` válido. */
+function readIcons(pkg: Package, out: Collector): void {
+  const path = pkg.iconsPath;
+  if (path === undefined) return;
+  const file = pkg.byPath.get(path);
+  if (file === undefined) {
+    out.error(pkg.specPath, 'icons', `arquivo não encontrado: ${path}`);
+    return;
+  }
+  if (file.text === undefined) return void out.error(path, '', NOT_READ);
+  const parsed = parseIconsText(file.text);
+  if (!parsed.ok) {
+    for (const issue of parsed.issues) out.error(path, issue.path, issue.message);
+    return;
+  }
+  pkg.icons = parsed.set;
 }
 
 function readComponent(file: LibraryFile, pkg: Package, out: Collector): void {
@@ -839,6 +873,13 @@ function level2(
     });
   });
 
+  for (const [path, json] of pkg.componentJson) {
+    const template = isRecord(json) ? json.template : undefined;
+    out.issues.push(
+      ...iconLiteralIssues(path, iconNodes(template), pkg.icons, pkg.iconsPath),
+    );
+  }
+
   (spec.fonts ?? []).forEach((font, index) => {
     const path = pkg.resolve(font.file);
     if (pkg.byPath.has(path)) return;
@@ -875,6 +916,21 @@ function level2(
 
   if (previous !== undefined) versionContract(previous, spec, specPath, out);
   return jsons;
+}
+
+// ---------------------------------------------------------------------------------------
+// Nível 3: opções de enum fora do conjunto de ícones
+// ---------------------------------------------------------------------------------------
+
+function iconOptionChecks(pkg: Package): LibraryIssue[] {
+  const out: LibraryIssue[] = [];
+  eachType(pkg.spec, (type, base) => {
+    if (type.component === undefined) return;
+    const json = pkg.componentJson.get(pkg.resolve(type.component));
+    const nodes: IconNodeRef[] = iconNodes(isRecord(json) ? json.template : undefined);
+    out.push(...iconOptionIssues(pkg.specPath, type, base, nodes, pkg.icons));
+  });
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -972,7 +1028,9 @@ export function validateLibrary(input: LibraryInput): LibraryReport {
           components: pkg.components,
           jsonOf: (path) => jsons.get(path),
           textFiles,
+          icons: pkg.icons,
         }),
+        ...iconOptionChecks(pkg),
       );
     }
   }

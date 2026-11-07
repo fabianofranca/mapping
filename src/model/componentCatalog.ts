@@ -1,5 +1,6 @@
 import { findSlot } from './components/arrange';
 import type { ComponentFile } from './components/componentFormat';
+import { parseIconsText, type IconSet } from './components/icons';
 import { resolvePath } from './components/library';
 import { parseComponentText } from './components/parseComponent';
 import { resolveTokens, type HostFonts, type ResolvedTokens } from './components/tokens';
@@ -53,7 +54,29 @@ export function componentPaths(spec: Spec, specFile: string): string[] {
   for (const type of typesWithComponent(spec)) {
     paths.add(resolvePath(specFile, type.component));
   }
+  // O conjunto de ícones (`icons`) é lido junto: os componentes dependem dele para desenhar.
+  if (spec.icons !== undefined) paths.add(resolvePath(specFile, spec.icons));
   return [...paths];
+}
+
+/** O conjunto de ícones da especialização; arquivo ausente ou inválido vira um problema `icons: …`. */
+function loadIcons(
+  spec: Spec,
+  specFile: string,
+  readText: (projectPath: string) => string | undefined,
+  problems: string[],
+): IconSet | undefined {
+  if (spec.icons === undefined) return undefined;
+  const path = resolvePath(specFile, spec.icons);
+  const text = readText(path);
+  if (text === undefined) {
+    problems.push(`icons: arquivo ausente (${path})`);
+    return undefined;
+  }
+  const parsed = parseIconsText(text);
+  if (parsed.ok) return parsed.set;
+  problems.push(`icons: ${parsed.errors[0] ?? 'conjunto de ícones inválido'}`);
+  return undefined;
 }
 
 /** O que vem de fora do modelo ao carregar: a fonte do hospedeiro e o modo do desenho. */
@@ -94,6 +117,7 @@ export function loadSpecComponents(
   const resolvedTokens = resolveTokens(spec.tokens, fonts, options.mode);
   const resolvedTokensByMode = tokensByMode(spec, fonts);
   if (spec.formatVersion >= 4) {
+    const resolvedIcons = loadIcons(spec, specFile, readText, problems);
     for (const type of typesWithComponent(spec)) {
       const path = resolvePath(specFile, type.component);
       const text = readText(path);
@@ -106,7 +130,12 @@ export function loadSpecComponents(
         problems.push(`${type.id}: ${parsed.errors[0] ?? 'componente inválido'}`);
         continue;
       }
-      byType.set(type.id, { ...parsed.component, resolvedTokens, resolvedTokensByMode });
+      byType.set(type.id, {
+        ...parsed.component,
+        resolvedTokens,
+        resolvedTokensByMode,
+        ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
+      });
     }
   }
   return { specId: spec.id, version, byType, problems };

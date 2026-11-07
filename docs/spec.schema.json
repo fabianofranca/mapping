@@ -74,6 +74,10 @@
     },
     "tokens": {
       "$ref": "#/$defs/tokens"
+    },
+    "icons": {
+      "description": "Conjunto de ícones da biblioteca (formatVersion 15): o caminho de UM arquivo .json do pacote (format mapping-icons), relativo ao arquivo da especialização, lido pelo nó icon dos componentes de formato 4.",
+      "$ref": "#/$defs/jsonFile"
     }
   },
   "$defs": {

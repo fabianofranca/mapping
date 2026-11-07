@@ -32,7 +32,7 @@ export function isPackageFile(file: string): boolean {
 /**
  * A especialização cita arquivos do pacote? Só então ela precisa da pasta inteira. Cita quando
  * é `formatVersion` 4 ou mais e tem algum tipo com `component`, `doc` em texto ou `examples`,
- * ou `fonts` ou `origins` na raiz. `migrations` não conta (é só o contrato de versão), nem o
+ * ou `fonts`, `origins` ou `icons` na raiz. `migrations` não conta (é só o contrato de versão), nem o
  * `doc` objeto (`{ repo, path }`, o documento vive em outro repositório). As v1 a v3 nunca
  * citam. Quem não cita vale como arquivo isolado (`specs/<id>.json`), como a v1 a v3.
  */
@@ -40,6 +40,7 @@ export function usesPackageFiles(spec: Spec): boolean {
   if (spec.formatVersion < 4) return false;
   if (spec.fonts !== undefined && spec.fonts.length > 0) return true;
   if (spec.origins !== undefined && spec.origins.length > 0) return true;
+  if (spec.icons !== undefined) return true;
   return spec.layers.some((layer) =>
     layer.annotationTypes.some(
       (type) =>

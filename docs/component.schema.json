@@ -2239,8 +2239,70 @@
         },
         {
           "$ref": "#/$defs/node_image"
+        },
+        {
+          "$ref": "#/$defs/node_icon"
         }
       ]
+    },
+    "node_icon": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "formatVersion 4. Ícone do conjunto da biblioteca (icons da especialização, formatVersion 15). O name é o nome do ícone no conjunto (literal ou expressão; aqui não há nome de nó). color pinta os caminhos sem cor própria e os que pedem a cor do nó (fill/stroke true); strokeWidth (unidades do viewBox) troca a largura dos traços. hug mede o viewBox do ícone. Nome fora do conjunto: reservado com o aviso ícone desconhecido; literal fora do conjunto é erro do validador da biblioteca.",
+      "required": ["type", "name"],
+      "properties": {
+        "type": {
+          "const": "icon"
+        },
+        "name": {
+          "$ref": "#/$defs/expr_string"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "width": {
+          "$ref": "#/$defs/expr_size"
+        },
+        "height": {
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
+        },
+        "fill": {
+          "$ref": "#/$defs/expr_fill"
+        },
+        "stroke": {
+          "$ref": "#/$defs/stroke"
+        },
+        "shadow": {
+          "$ref": "#/$defs/shadow"
+        },
+        "cornerRadius": {
+          "$ref": "#/$defs/expr_cornerRadius"
+        },
+        "color": {
+          "$ref": "#/$defs/expr_color"
+        },
+        "strokeWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        }
+      }
     },
     "node_image": {
       "type": "object",

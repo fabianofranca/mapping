@@ -53,6 +53,7 @@ import type {
   FontSpec,
   FrameTemplate,
   GradientSpec,
+  IconTemplate,
   ImageTemplate,
   PathTemplate,
   SizeSpec,
@@ -64,6 +65,7 @@ import type {
 } from './componentFormat';
 import { STROKE_SIDES } from './componentFormat';
 import { clipBoxOf } from './clipBox';
+import { DEFAULT_ICON_VIEWBOX, resolveIcon, type IconPath, type IconSet } from './icons';
 import { evaluate, evaluateBoolean, evaluateText, referencedFields } from './expressions';
 import {
   LAYOUT_ALIGNS,
@@ -92,6 +94,7 @@ import {
   type FrameNode,
   type Matrix,
   type Paint,
+  type PathNode,
   type SceneNode,
   type SceneTextRun,
   type Shadow,
@@ -156,6 +159,11 @@ export interface InstantiateOptions {
    * texto. Ausente = os do componente (`resolvedTokens`, postos pelo catálogo) ou os embutidos.
    */
   readonly tokens?: ResolvedTokens;
+  /**
+   * Conjunto de ícones (`icons` da especialização) lido pelo nó `icon`. Ausente = o do componente
+   * (`resolvedIcons`, posto pelo catálogo); sem nenhum, todo ícone é desconhecido.
+   */
+  readonly icons?: IconSet;
 }
 
 export interface Instantiated {
@@ -352,6 +360,7 @@ function planKey(w: number | null, h: number | null, bounds: Limits): string {
 }
 
 function nodeName(node: TemplateNode): string {
+  if (node.type === 'icon') return typeof node.name === 'string' ? node.name : 'icon';
   return node.name ?? node.type;
 }
 
@@ -681,6 +690,8 @@ function createEngine(
         return frameHug(node, axis, otherSize, bound);
       case 'path':
         return node.viewBox[axis === 'w' ? 0 : 1];
+      case 'icon':
+        return iconBox(node)[axis === 'w' ? 0 : 1];
       default:
         return 0;
     }
@@ -1185,6 +1196,100 @@ function createEngine(
     };
   };
 
+  const icons = options.icons ?? original.resolvedIcons;
+
+  /** O nome do ícone do nó, já avaliado. */
+  const iconName = (node: IconTemplate): string => str(node.name, '');
+
+  /** A caixa do `viewBox` do ícone do nó (a do conjunto quando o nome é desconhecido); sem avisar. */
+  const iconBox = (node: IconTemplate): readonly [number, number] =>
+    resolveIcon(icons, iconName(node))?.viewBox ?? icons?.viewBox ?? DEFAULT_ICON_VIEWBOX;
+
+  /** Cor do traço ou do preenchimento de um caminho: `true` e ausente valem a cor do nó. */
+  const iconPaint = (
+    value: boolean | string | undefined,
+    nodeColor: string,
+  ): string | undefined => {
+    if (value === false) return undefined;
+    return typeof value === 'string' ? value : nodeColor;
+  };
+
+  /** Preenchimento do caminho: `fill` explícito, senão a cor do nó, a menos que ele só tenha traço. */
+  const iconFills = (iconPath: IconPath, nodeColor: string): Paint[] => {
+    const wanted = iconPath.fill ?? iconPath.stroke === undefined;
+    const color = iconPaint(wanted, nodeColor);
+    return color === undefined || isNone(color) ? [] : [{ type: 'solid', color }];
+  };
+
+  /** Traço do caminho (`stroke`), com a largura do nó quando ele a troca. */
+  const iconStroke = (
+    iconPath: IconPath,
+    nodeColor: string,
+    strokeWidth: number | undefined,
+  ): Stroke | undefined => {
+    if (iconPath.stroke === undefined) return undefined;
+    const color = iconPaint(iconPath.stroke, nodeColor);
+    if (color === undefined || isNone(color)) return undefined;
+    return {
+      paints: [{ type: 'solid', color }],
+      width: strokeWidth ?? iconPath.width ?? 1,
+      align: 'center',
+      ...(iconPath.cap ? { cap: iconPath.cap } : {}),
+      ...(iconPath.join ? { join: iconPath.join } : {}),
+    };
+  };
+
+  const iconPathNode = (
+    iconPath: IconPath,
+    id: string,
+    box: readonly [number, number],
+    nodeColor: string,
+    strokeWidth: number | undefined,
+  ): PathNode => {
+    const stroke = iconStroke(iconPath, nodeColor, strokeWidth);
+    return {
+      ...baseNode({ id, name: 'icon-path' }),
+      width: box[0],
+      height: box[1],
+      fills: iconFills(iconPath, nodeColor),
+      ...(stroke ? { stroke } : {}),
+      type: 'path',
+      d: iconPath.d,
+      fillRule: 'nonzero',
+    };
+  };
+
+  /** O ícone vira um grupo com um caminho por traçado, escalado do `viewBox` para a caixa do nó. */
+  const buildIcon = (
+    node: IconTemplate,
+    id: string,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ): SceneNode => {
+    const name = iconName(node);
+    const found = resolveIcon(icons, name);
+    const base = { ...common(node, id, x, y, w, h), name: name || 'icon' };
+    if (found === undefined) {
+      warn(`ícone desconhecido: ${name}`);
+      return { ...base, type: 'unknown', sourceType: 'icon' };
+    }
+    const [vbW, vbH] = found.viewBox;
+    const sx = vbW > 0 ? w / vbW : 1;
+    const sy = vbH > 0 ? h / vbH : 1;
+    if (Math.abs(sx - sy) > 1e-6 * Math.max(1, Math.abs(sx), Math.abs(sy)))
+      warn('ícone esticado: escala diferente nos dois eixos');
+    const color = str(node.color, '#000000');
+    const strokeWidth =
+      node.strokeWidth === undefined ? undefined : Math.max(0, num(node.strokeWidth, 1));
+    const children = found.def.paths.map((iconPath, i) => ({
+      ...iconPathNode(iconPath, `${id}/${i}`, found.viewBox, color, strokeWidth),
+      transform: [sx, 0, 0, sy, 0, 0] as Matrix,
+    }));
+    return { ...base, type: 'group', children };
+  };
+
   /** Vale conferir se o texto passa da altura? Não, se `maxLines`/`ellipsis` o cortam de propósito. */
   const checksOverflow = (font: MeasureFont, w: number): boolean =>
     font.maxLines === undefined && font.ellipsis !== true && w > EPS;
@@ -1308,6 +1413,8 @@ function createEngine(
         return buildFrame(node, path, x, y, w, h, false);
       case 'path':
         return buildPath(node, id, x, y, w, h);
+      case 'icon':
+        return buildIcon(node, id, x, y, w, h);
       case 'text':
         return buildText(node, id, x, y, w, h);
       case 'slot': {

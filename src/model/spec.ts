@@ -405,6 +405,8 @@ export interface Spec {
   migrations?: SpecMigration[];
   /** Tokens de design (cor, número, família) por modo, lidos por `$token` nos componentes (só `formatVersion` 15). */
   tokens?: SpecTokens;
+  /** Arquivo `.json` do pacote com o conjunto de ícones (`mapping-icons`; só `formatVersion` 15). */
+  icons?: string;
 }
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
@@ -2390,6 +2392,22 @@ function checkTokens(
   }
 }
 
+/** `icons` (só `formatVersion` 15): o caminho de um `.json` do pacote. */
+function checkIcons(
+  spec: { formatVersion: number; icons?: unknown },
+  ctx: z.RefinementCtx,
+): void {
+  if (spec.icons === undefined) return;
+  const add = issueAdder(ctx);
+  if (spec.formatVersion < 15)
+    return add(['icons'], 'só é permitido com formatVersion 15');
+  if (typeof spec.icons !== 'string') {
+    return add(['icons'], 'deve ser o caminho de um arquivo .json do pacote');
+  }
+  const problem = packagePathProblem(spec.icons, '.json');
+  if (problem !== undefined) add(['icons'], problem);
+}
+
 export const specSchema = z
   .object({
     format: z.union([z.literal(SPEC_FORMAT), z.literal(LEGACY_SPEC_FORMAT)], {
@@ -2431,6 +2449,8 @@ export const specSchema = z
     migrations: z.array(migrationShape).optional(),
     // Validado por `checkTokens` (caminhos e mensagens próprios), no superRefine.
     tokens: z.unknown().optional(),
+    // O caminho é conferido por `checkIcons` (a versão primeiro); o arquivo, pelo validador da biblioteca.
+    icons: z.unknown().optional(),
   })
   .strict()
   .superRefine((spec, ctx) => {
@@ -2638,6 +2658,7 @@ export const specSchema = z
 
     checkRequiresOwner(spec, ctx);
     checkTokens(spec, ctx);
+    checkIcons(spec, ctx);
   });
 
 export type SpecIssue = { path: string; message: string };

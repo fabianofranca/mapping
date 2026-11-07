@@ -47,6 +47,7 @@ const NODE_TYPES = [
   'slot',
   'repeat',
   'image',
+  'icon',
 ] as const;
 const EXPR_OPS = ['$field', '$if', '$switch', '$concat', '$token'] as const;
 const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
@@ -637,6 +638,7 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
     slot: ['label', 'layout'],
     repeat: ['field', 'direction', 'gap', 'distribute', 'template'],
     image: ['src', 'fit'],
+    icon: ['name', 'color', 'strokeWidth'],
   };
   // children/layout em nó que não é quadro têm mensagem própria, em vez de "chave desconhecida"
   for (const key of ['children', 'layout']) {
@@ -655,7 +657,8 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
       add(out, join(path, key), `chave desconhecida: ${key}`);
   }
 
-  if ('name' in value) checkString(value.name, join(path, 'name'), out);
+  if ('name' in value && type !== 'icon')
+    checkString(value.name, join(path, 'name'), out);
   if ('visible' in value) checkBoolExpr(value.visible, join(path, 'visible'), out);
   if ('opacity' in value) checkExpr(value.opacity, join(path, 'opacity'), checkUnit, out);
   checkNodeSizes(value, path, type, out);
@@ -701,7 +704,19 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
     case 'image':
       checkImage(value, path, out);
       return;
+    case 'icon':
+      checkIconNode(value, path, out);
+      return;
   }
+}
+
+/** `icon` (formatVersion 4): `name` obrigatório (texto ou expressão), `color` e `strokeWidth`. */
+function checkIconNode(value: Rec, path: string, out: ComponentIssue[]): void {
+  if (!('name' in value)) add(out, join(path, 'name'), 'campo obrigatório');
+  else checkExpr(value.name, join(path, 'name'), checkString, out);
+  if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
+  if ('strokeWidth' in value)
+    checkExpr(value.strokeWidth, join(path, 'strokeWidth'), checkNonNegative, out);
 }
 
 /**
@@ -797,6 +812,16 @@ function tokenVersionIssues(version: unknown, template: unknown): ComponentIssue
   };
   walk(template, 'template');
   return out;
+}
+
+/** O nó `icon` numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho do `type`. */
+function iconVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return [];
+  return nodesOfTypes(template, 'template', ['icon']).map((node) => ({
+    path: node.path,
+    message: V4_ONLY_MESSAGE,
+  }));
 }
 
 export function v4OnlyKeyIssues(
@@ -973,6 +998,7 @@ function collectIssues(input: unknown): ComponentIssue[] {
         add(out, node.path, 'o nó image só existe na formatVersion 3');
       }
     }
+    out.push(...iconVersionIssues(version, input.template));
   }
   return out;
 }

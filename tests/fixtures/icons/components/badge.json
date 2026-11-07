@@ -1,0 +1,21 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "badge",
+  "name": "Selo",
+  "size": { "width": 48, "height": 48 },
+  "preview": { "icon": "check", "tint": "#0a7" },
+  "template": {
+    "type": "frame",
+    "layout": { "type": "row", "align": "center", "justify": "center" },
+    "children": [
+      {
+        "type": "icon",
+        "name": { "$field": "icon" },
+        "color": { "$field": "tint", "default": "#000000" },
+        "width": 24,
+        "height": 24
+      }
+    ]
+  }
+}

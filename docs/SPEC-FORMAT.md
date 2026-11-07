@@ -13,7 +13,7 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - A `formatVersion` 12 é a 11 mais três **passos de migração dos papéis**, em `migrations`: `rename-role`, `remove-role` e `set-role` (ver "Contrato de versão" e "Papéis no vínculo (childRoles)"). Antes dela, tirar um papel de `childRoles` deixava `parentRole` das anotações apontando para um papel que não existe mais; a 12 trata essa troca como **quebra** e a cobre com um passo que renomeia, remove ou preenche o papel nas anotações do projeto. A 12 é aditiva: as versões 1 a 11 continuam aceitas sem mudança, e cada passo novo numa versão anterior é o erro `só é permitido com formatVersion 12`, no caminho exato. Só sobe para a 12 a especialização que declara algum desses passos. Uma v11 que remove ou torna obrigatório o papel de um tipo, sem o passo, é recusada na atualização até subir para a 12 com ele.
 - A `formatVersion` 13 é a 12 mais os **filhos da própria camada**: `allowedChildren` passa a aceitar a cláusula `{ layer }` com a camada do próprio dono e o id de um tipo da mesma camada, inclusive o do próprio tipo (ver "Filhos por camada e grupo"). Com isso um evento pode ser dono de outros eventos, cada filho no papel em que se liga (`childRoles`), e a anotação **tipada** pode ter dona da mesma camada no projeto (schema v15; a **livre** continua só com dona de outra camada, e o ciclo continua barrado). A 13 é aditiva: as versões 1 a 12 continuam aceitas sem mudança, e a camada ou o tipo da própria camada em `allowedChildren` numa versão anterior continua sendo o erro de sempre (`filhos devem estar em outra camada`). Só sobe para a 13 a especialização que declara um filho da própria camada.
 - A `formatVersion` 14 é a 13 mais a **anotação inteira como alvo**: o `accepts` de um campo ou coluna `ref` ganha `annotations`, uma lista de ids de tipo ou cláusulas `{ layer, groups? }` da **mesma especialização**, com a mesma sintaxe e o mesmo resolvedor do `allowedChildren` (ver "Referências e etiquetas"). A 14 é aditiva: as versões 1 a 13 continuam aceitas sem mudança, e `annotations` numa versão anterior é o erro `só é permitido com formatVersion 14`, no caminho `…accepts.annotations`. Só sobe para a 14 a especialização que declara `accepts.annotations`.
-- A `formatVersion` 15 é a 14 mais os **tokens de design**: a chave `tokens` na raiz declara valores nomeados (cores, raios, espaçamentos, famílias de fonte), simples ou por modo (`light`/`dark`), que os componentes de formato 4 leem com `{ "$token": "nome" }` (ver "Tokens de design"). A 15 é aditiva: as versões 1 a 14 continuam aceitas sem mudança, e `tokens` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho `tokens`. Só sobe para a 15 a especialização que declara `tokens`.
+- A `formatVersion` 15 é a 14 mais os **tokens de design**: a chave `tokens` na raiz declara valores nomeados (cores, raios, espaçamentos, famílias de fonte), simples ou por modo (`light`/`dark`), que os componentes de formato 4 leem com `{ "$token": "nome" }` (ver "Tokens de design"). A 15 também traz o **conjunto de ícones**: a chave `icons` na raiz aponta para um arquivo `.json` do pacote com os ícones, que o nó `icon` dos componentes de formato 4 lê (ver "Conjunto de ícones"). A 15 é aditiva: as versões 1 a 14 continuam aceitas sem mudança, e `tokens` ou `icons` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho da chave. Só sobe para a 15 a especialização que declara `tokens` ou `icons`.
 - A `formatVersion` 2 é a 1 mais o código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 15; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
@@ -937,7 +937,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Fontes.** O arquivo de uma fonte declarada pode não estar no pacote (as fontes têm licença e peso; o pacote de exemplo não leva os `.ttf`). A fonte ausente **avisa** e o desenho cai na fonte do sistema; o pacote continua válido.
 
-**Aplicar a um projeto.** Aplicar uma biblioteca **copia a pasta inteira** para `specs/<id>/` (a cópia de uma especialização v1 a v3 continua sendo o arquivo `specs/<id>.json`). Na app, **Especializações** aceita a pasta (`showDirectoryPicker`, Chrome/Edge) ou um zip do pacote (com ou sem uma pasta-raiz única), confere os três níveis e mostra erros (bloqueiam) e avisos (deixam aplicar); **Atualizar de pasta…/zip…** passa a versão aplicada como `previous` ao contrato de versão (quebra sem migração é erro) e regrava a pasta, e **Remover** a apaga. Uma especialização v4 ou v5 que **não cita nenhum arquivo do pacote** (nenhum tipo com `component`, `doc` em texto ou `examples`, e sem `fonts` nem `origins` na raiz; `migrations` não conta, e o `doc` objeto da v11, que é um documento em repositório externo, também não) vale como arquivo isolado, como a v1 a v3: a app a aplica e atualiza com o `.json` e a cópia é `specs/<id>.json`. Um `.json` v4 ou v5 que cita arquivos do pacote é **recusado** na app: ele pede a pasta (ou o zip). Ao abrir o projeto, o Diagnóstico mostra os problemas dos níveis 1 e 2 da cópia. As tools do servidor MCP e a skill que escreve o pacote são da B2 também.
+**Aplicar a um projeto.** Aplicar uma biblioteca **copia a pasta inteira** para `specs/<id>/` (a cópia de uma especialização v1 a v3 continua sendo o arquivo `specs/<id>.json`). Na app, **Especializações** aceita a pasta (`showDirectoryPicker`, Chrome/Edge) ou um zip do pacote (com ou sem uma pasta-raiz única), confere os três níveis e mostra erros (bloqueiam) e avisos (deixam aplicar); **Atualizar de pasta…/zip…** passa a versão aplicada como `previous` ao contrato de versão (quebra sem migração é erro) e regrava a pasta, e **Remover** a apaga. Uma especialização v4 ou v5 que **não cita nenhum arquivo do pacote** (nenhum tipo com `component`, `doc` em texto ou `examples`, e sem `fonts`, `origins` nem `icons` na raiz; `migrations` não conta, e o `doc` objeto da v11, que é um documento em repositório externo, também não) vale como arquivo isolado, como a v1 a v3: a app a aplica e atualiza com o `.json` e a cópia é `specs/<id>.json`. Um `.json` v4 ou v5 que cita arquivos do pacote é **recusado** na app: ele pede a pasta (ou o zip). Ao abrir o projeto, o Diagnóstico mostra os problemas dos níveis 1 e 2 da cópia. As tools do servidor MCP e a skill que escreve o pacote são da B2 também.
 
 **Pacote embutido.** `libraries/notas/` (especialização v7: a camada Notas, o tipo flutuante `nota` e o componente post-it) é um pacote comum que a app traz dentro do build e **aplica por padrão** em projeto novo e em projeto aberto de um schema anterior ao 13 (ver "Tipo flutuante"). Para o resto do ciclo ele é uma biblioteca como as outras: a cópia vai para `specs/notas/` e a pessoa pode removê-la.
 
@@ -969,6 +969,40 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 - **Embutidos:** `font-sans` e `font-mono` (famílias de fonte) existem em toda biblioteca, mesmo sem `tokens`, e valem a fonte do hospedeiro (na app, o `--font-sans` e o `--font-mono` do tema; no visualizador, a pilha dos tokens da app ou a opção `fonts`; no MCP, `sans-serif`). A especialização pode redefini-los em `values`, e a definição dela vence a do hospedeiro. O texto sem `font.family` usa `font-sans`.
 - **Modo do desenho:** nesta versão o desenho usa sempre o **primeiro** modo de `modes`; um modo não declarado cai no primeiro, sem aviso. Ligar o modo ao projeto é trabalho da fase seguinte.
 - Erros de validação, com o caminho em `tokens`: `só é permitido com formatVersion 15`, nome fora do padrão, `modes` vazio ou com nome repetido, valor por modo sem algum modo (ou com modo que não existe em `modes`) e valores de tipos diferentes entre os modos. No `validate_library` (nível 2), `$token` com nome inexistente é `o token "x" não existe nos tokens da especialização` e com tipo errado é `o token "primary" é cor, mas aqui se espera número`.
+
+## Conjunto de ícones
+
+`icons` (`formatVersion` 15, opcional, na raiz) é o caminho de **um** arquivo `.json` do pacote, relativo ao arquivo da especialização (como `component`, `doc` e `fonts[].file`: sem `.`, `..` nem unidade, com `/`). O arquivo guarda os ícones da biblioteca; o nó `icon` dos componentes de formato 4 (`docs/COMPONENT-FORMAT.md`) escolhe um pelo nome. Isso substitui o `$switch` que repetia todos os caminhos dentro de cada componente que mostra um ícone escolhido pela pessoa.
+
+```json
+{
+  "format": "mapping-icons",
+  "formatVersion": 1,
+  "viewBox": [24, 24],
+  "icons": {
+    "check": {
+      "paths": [
+        {
+          "d": "M5 12l5 5L20 7",
+          "stroke": true,
+          "width": 2,
+          "cap": "round",
+          "join": "round"
+        }
+      ]
+    },
+    "dot": {
+      "viewBox": [10, 10],
+      "paths": [{ "d": "M5 1a4 4 0 1 0 0 8a4 4 0 1 0 0-8z", "fill": true }]
+    }
+  }
+}
+```
+
+- `format` é `mapping-icons` e `formatVersion` é `1` (a única versão do arquivo; outra é o erro `formatVersion: deve ser 1`). `viewBox` (`[largura, altura]` positivos) é obrigatório e vale para todos os ícones que não trazem o seu.
+- `icons`: o nome do ícone (`^[a-z0-9][a-z0-9-_]*$`; `Check` é erro) aponta para `{ viewBox?, paths }`. `paths` é uma lista **não vazia** de `{ d, fill?, stroke?, width?, cap?, join? }`: `d` são os dados SVG; `fill` e `stroke` são `true` (a cor do nó `icon`), `false` (nada) ou uma cor própria; `width` é a largura do traço em unidades do `viewBox` (padrão 1); `cap` (`butt`, `round`, `square`) e `join` (`miter`, `round`, `bevel`) como em `stroke` do componente. Um caminho sem `fill` nem `stroke` é preenchido com a cor do nó; com `stroke` e sem `fill`, só o traço aparece.
+- O arquivo faz parte do pacote: a app o copia com a pasta (`specs/<id>/`), a especialização que declara `icons` não vale como arquivo isolado, e o arquivo apontado não é "arquivo não referenciado".
+- **Validação da biblioteca.** Nível 1: o arquivo existe (`arquivo não encontrado: <caminho>`, no caminho `icons` da especialização) e é um `mapping-icons` válido (cada erro com o caminho dentro do arquivo, ex.: `icons.Check: nome inválido; use [a-z0-9][a-z0-9-_]*`). Nível 2: todo nome **literal** de um nó `icon` existe no conjunto (`o ícone "nuvem" não existe no conjunto de ícones (icons/set.json)`, no caminho do `name`); sem `icons` declarado o literal é erro (`o ícone "check" não pode ser conferido: a especialização não declara icons`). Nível 3: um campo `enum` lido pelo `name` de um nó `icon` com uma `option` que não está no conjunto gera aviso (`a opção "nuvem" do campo "icon" não está no conjunto de ícones; o desenho cai no reservado`), e a prova de desenho avisa `ícone desconhecido: <nome>`.
 
 ## Contrato de versão
 

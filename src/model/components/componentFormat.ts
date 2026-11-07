@@ -13,6 +13,7 @@
  * `layout` que diz como os filhos se distribuem (`none` com âncoras, `row` ou `column`), para o
  * desenho se adaptar ao tamanho do retângulo.
  */
+import type { IconSet } from './icons';
 
 export const COMPONENT_FORMAT = 'mapping-component';
 /** Versão em que os componentes sem `repeat` são escritos (os geradores do repositório a gravam). */
@@ -337,6 +338,20 @@ export interface ImageTemplate extends TemplateNodeBase {
   readonly fit?: 'cover' | 'contain' | 'fill';
 }
 
+/**
+ * Ícone do conjunto da biblioteca (`formatVersion` 4; `icons` da especialização). `name` é o
+ * nome no conjunto (literal ou expressão); `color` pinta os caminhos sem cor própria e os que
+ * pedem a cor do nó (`fill`/`stroke` `true`); `strokeWidth` (unidades do `viewBox`) troca a
+ * largura de todos os traços. O `name` é o do ícone (não há nome de nó). `hug` mede o `viewBox` do ícone. Nome fora do conjunto: reservado
+ * com o aviso `ícone desconhecido: <nome>`; um nome literal fora do conjunto é erro da biblioteca.
+ */
+export interface IconTemplate extends Omit<TemplateNodeBase, 'name'> {
+  readonly type: 'icon';
+  readonly name: Expr<string>;
+  readonly color?: Expr<Color>;
+  readonly strokeWidth?: Expr<number>;
+}
+
 export type TemplateNode =
   | FrameTemplate
   | RectTemplate
@@ -345,7 +360,8 @@ export type TemplateNode =
   | PathTemplate
   | SlotTemplate
   | RepeatTemplate
-  | ImageTemplate;
+  | ImageTemplate
+  | IconTemplate;
 
 // ---------------------------------------------------------------------------------------
 // Arquivo
@@ -396,6 +412,8 @@ export interface ComponentFile {
   readonly resolvedTokensByMode?: Readonly<
     Record<string, Readonly<Record<string, string | number>>>
   >;
+  /** Conjunto de ícones da especialização (`icons`), posto pelo catálogo; nunca vem do arquivo. */
+  readonly resolvedIcons?: IconSet;
 }
 
 /** Como o tipo da especialização referencia o componente (chave nova, formatVersion 4 do spec). */
