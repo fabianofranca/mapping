@@ -71,4 +71,13 @@ describe('ajuda: especializações', () => {
     }
     expect(JSON.parse(HELP_ASSETS[2]!.text)).toHaveProperty('$schema');
   });
+
+  it('a ajuda não diz que a validação compartilhada ainda vai chegar', () => {
+    for (const locale of ['pt-BR', 'en-US'] as const) {
+      const text = JSON.stringify(specHelpSections(locale));
+      expect(text).not.toMatch(
+        /fase seguinte da etapa Biblioteca|later phase of the Library stage/,
+      );
+    }
+  });
 });

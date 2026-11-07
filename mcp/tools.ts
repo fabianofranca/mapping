@@ -856,7 +856,7 @@ export function registerTools(
     'validate_specialization',
     {
       description:
-        'Valida um arquivo de especialização (`path`, dentro das raízes) ou um texto JSON (`text`), sem aplicar a nenhum projeto (a formatVersion 12 aceita os passos de papel `rename-role`, `remove-role` e `set-role` em `migrations`). Aceita qualquer formatVersion de 1 a 12, mas valida só o ARQUIVO (para o pacote inteiro use validate_library). Devolve os MESMOS erros que a importação da app, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), e avisos que não impedem a importação (plataforma declarada e não usada, tipo sem `code`). É o ciclo gerar, validar, corrigir.',
+        'Valida um arquivo de especialização (`path`, dentro das raízes) ou um texto JSON (`text`), sem aplicar a nenhum projeto (a formatVersion 12 aceita os passos de papel `rename-role`, `remove-role` e `set-role` em `migrations`). Aceita qualquer formatVersion de 1 a 12, mas valida só o ARQUIVO (para o pacote inteiro use validate_library). Devolve os MESMOS erros que a importação da app, cada um com o caminho exato (ex: `layers[0].annotationTypes[2].fields[1].sources[0].values.Primary: …`), e avisos que não impedem a importação (`unused-platform`: plataforma declarada e não usada; `type-without-code`: tipo sem `code`; `path-without-repo`: `path` numa plataforma sem `repo`; `legacy-format`: `format` antigo; `ignored-field`: campo que saiu do formato; `many-children-ids`: `allowedChildren` com muitos ids em texto; `unused-group`: grupo que nenhum tipo da camada usa; `unused-doc-repo`: repositório de `docRepos` que nenhum `doc` usa). É o ciclo gerar, validar, corrigir.',
       inputSchema: {
         path: z
           .string()
