@@ -1,4 +1,4 @@
-# Impacto nos agentes — [Não lançado] (épico `epic/impacto-nos-agentes`, PR #686, MCP 0.23.1, schema v14)
+# Impacto nos agentes — [Não lançado] (épico `epic/impacto-nos-agentes`, PR #696, MCP 0.23.1, schema v14)
 
 ## Alterado
 
