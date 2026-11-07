@@ -59,8 +59,8 @@ function parsed(data: Json): Spec {
 }
 
 describe('especialização formatVersion 3 (sources)', () => {
-  it('a versão atual do formato é a 12', () => {
-    expect(SPEC_FORMAT_VERSION).toBe(12);
+  it('a versão atual do formato é a 13', () => {
+    expect(SPEC_FORMAT_VERSION).toBe(13);
   });
 
   it('aceita sources em tipos, campos e colunas de table, no zod e no JSON Schema', () => {

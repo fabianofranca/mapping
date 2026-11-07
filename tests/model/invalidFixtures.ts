@@ -268,7 +268,12 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     code: 'annotation-parent-same-layer',
     repairable: false,
     build: (p) =>
-      annotations(p, (a) => (a.id === 'AOC' ? { ...a, parentAnnotationId: 'AOH' } : a)),
+      // Só a anotação livre viola o invariante (a tipada vira a pendência `owner-not-allowed`).
+      annotations(p, (a) =>
+        a.id === 'AOC'
+          ? { ...a, parentAnnotationId: 'AOH', type: null, values: null }
+          : a,
+      ),
   },
   {
     name: 'annotation-cycle',

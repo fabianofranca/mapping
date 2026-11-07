@@ -32,7 +32,7 @@ export const MODEL_ERROR_MESSAGES: Readonly<Record<ModelErrorCode, string>> = {
   'invalid-parent':
     'pai inválido: precisa ser do mesmo container, conter o retângulo e não ser descendente',
   'invalid-annotation-parent':
-    'dona inválida: precisa ser da mesma marcação, de outra camada, sem ciclo e (na tipada) de um tipo que aceite este vínculo',
+    'dona inválida: precisa ser da mesma marcação, sem ciclo e de outra camada ou, na tipada, de um tipo que aceite este vínculo, inclusive na mesma camada',
   'arrow-endpoint':
     'ponta de seta inválida: precisa ser uma marcação (nem outra seta, nem um container)',
   'arrow-self': 'a seta precisa ligar duas marcações diferentes',

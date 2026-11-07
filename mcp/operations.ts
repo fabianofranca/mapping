@@ -95,7 +95,9 @@ const values = z
       'Uma chave que não é campo do tipo falha com `unknown-field`.',
   );
 
-const owner = item('Anotação dona (mesma marcação, outra camada)')
+const owner = item(
+  'Anotação dona (mesma marcação; outra camada, ou a mesma na tipada cujo tipo aceita)',
+)
   .nullable()
   .optional()
   .describe(

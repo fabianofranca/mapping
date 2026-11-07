@@ -28,7 +28,7 @@ function reload(p: Project): Project {
 
 describe('schema v14: leitura e gravação', () => {
   it('a versão atual é 14 e o projeto novo tem docRepos vazio', () => {
-    expect(SCHEMA_VERSION).toBe(14);
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(14);
     expect(emptyProject().docRepos).toEqual({});
   });
 
@@ -158,7 +158,7 @@ describe('migração v13 → v14', () => {
     const result = load(JSON.stringify(raw));
     expect(result.migratedFrom).toBe(13);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(14);
+    expect(result.project.schemaVersion).toBe(SCHEMA_VERSION);
     expect(result.project.docRepos).toEqual({});
     expect(result.project.annotations.length).toBe(raw.annotations.length);
     expect(result.project.annotations.every((a) => a.parentRole === null)).toBe(true);
