@@ -50,6 +50,31 @@ export function arrowsOf(
   };
 }
 
+/** Uma seta presa à marcação, com o lado em que ela está e a marcação da outra ponta. */
+export interface ArrowLink {
+  readonly arrow: Arrow;
+  /** `out`: a marcação é a origem (a seta sai dela); `in`: é o destino (a seta chega nela). */
+  readonly direction: 'out' | 'in';
+  /** A marcação da outra ponta. */
+  readonly otherId: string;
+}
+
+/**
+ * As setas presas à marcação, para a seção "Ligado por seta": primeiro as que saem, depois as que
+ * chegam, cada grupo na ordem de `arrows` do projeto.
+ */
+export function arrowLinksOf(p: Project, markingId: string): ArrowLink[] {
+  const { outgoing, incoming } = arrowsOf(p, markingId);
+  return [
+    ...outgoing.map((arrow) => ({ arrow, direction: 'out' as const, otherId: arrow.to })),
+    ...incoming.map((arrow) => ({
+      arrow,
+      direction: 'in' as const,
+      otherId: arrow.from,
+    })),
+  ];
+}
+
 /**
  * Os dados do rótulo de uma seta, para a interface montar o texto traduzido: o `name` dela e as
  * marcações das pontas ("Origem → Destino" quando não há `name`). Ponta inexistente (projeto

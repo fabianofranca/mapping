@@ -283,7 +283,14 @@ export function showToast(ui: EditorUi, text: string, duration = TOAST_MS): void
 /** Seções recolhíveis de Detalhes. */
 export type DetailsSection =
   | {
-      readonly kind: 'marking' | 'image' | 'arrow' | 'annotations' | 'others' | 'images';
+      readonly kind:
+        | 'marking'
+        | 'image'
+        | 'arrow'
+        | 'arrowLinks'
+        | 'annotations'
+        | 'others'
+        | 'images';
     }
   | { readonly kind: 'layer' | 'annotation'; readonly id: string };
 

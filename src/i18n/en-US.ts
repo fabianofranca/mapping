@@ -1029,6 +1029,13 @@ export const enUS: Dictionary = {
     '"{name}" will be deleted with {annotations} annotation(s). You can undo this.',
   'arrow.error.locked': 'The arrow is locked.',
   'arrow.error.generic': 'The arrow could not be changed.',
+  // "Linked by arrow" section of the marking Details (stage #658)
+  'arrowLinks.section': 'Linked by arrow',
+  'arrowLinks.out': 'Goes to',
+  'arrowLinks.in': 'Comes from',
+  'arrowLinks.selectArrow': 'Select the arrow',
+  'arrowLinks.onArrow': 'On the arrow',
+  'arrowLinks.empty': 'No annotations in the visible layers.',
   'arrow.linkTo': 'Link to…',
   'arrow.linkToHint': 'Creates an arrow from this marking to another one',
   'arrow.pickerTitle': 'Link {name} to…',

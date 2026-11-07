@@ -312,7 +312,7 @@ interface LayerGroupProps {
  * As anotações de um grupo; com `page` (grupos grandes na revisão), as primeiras e um
  * botão que mostra mais de `step` em `step`. Estado de UI do grupo, até ele desmontar.
  */
-function PagedList({
+export function PagedList({
   items,
   page,
 }: {

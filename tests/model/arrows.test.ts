@@ -4,6 +4,7 @@ import {
   addTypedAnnotation,
   arrowDeletionImpact,
   arrowLabel,
+  arrowLinksOf,
   arrowPointsSpace,
   arrowRoute,
   arrowsOf,
@@ -654,5 +655,23 @@ describe('arrowRoute: a polilinha em unidades do canvas', () => {
     const broken: Arrow = { ...arrow(p, 'r1'), to: 'zz' };
     expect(arrowRoute(p, broken)).toBeNull();
     expect(arrowRoute(p, { ...broken, to: 'a3', from: 'zz' })).toBeNull();
+  });
+});
+
+describe('arrowLinksOf (seção "Ligado por seta")', () => {
+  it('lista primeiro as que saem, depois as que chegam, cada grupo na ordem do projeto', () => {
+    let p = withArrow(arrowBase(), 'x1', 'a1', 'a3');
+    p = withArrow(p, 'x2', 'a3', 'a1');
+    p = withArrow(p, 'x3', 'a1', 'b2');
+    const links = arrowLinksOf(p, 'a1');
+    expect(links.map((l) => [l.arrow.id, l.direction, l.otherId])).toEqual([
+      ['x1', 'out', 'a3'],
+      ['x3', 'out', 'b2'],
+      ['x2', 'in', 'a3'],
+    ]);
+  });
+
+  it('marcação sem seta devolve lista vazia', () => {
+    expect(arrowLinksOf(arrowBase(), 'a1')).toEqual([]);
   });
 });

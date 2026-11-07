@@ -1243,3 +1243,115 @@ button.layer-group-label:hover {
 .catalog-entry .notice-badge {
   flex: none;
 }
+
+/* Seção "Ligado por seta": uma linha por seta, só leitura (etapa #658). */
+.arrow-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.arrow-link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.arrow-link-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.arrow-link-direction {
+  display: inline-flex;
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+/* O nome da ponta e o da seta encolhem com reticências, sem criar barra horizontal. */
+.arrow-link-end {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arrow-link-name {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  font: var(--t-text-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arrow-link-head > .icon-button {
+  flex: none;
+  margin-left: auto;
+}
+
+.arrow-link-layer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
+}
+
+.arrow-link-layer-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  min-width: 0;
+}
+
+.arrow-link-layer-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arrow-link-annotation {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-left: var(--space-3);
+  overflow-wrap: anywhere;
+}
+
+.arrow-link-line {
+  display: block;
+  font: var(--t-text-small);
+}
+
+.arrow-link-key {
+  color: var(--color-text-muted);
+}
+
+.arrow-link-on-arrow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.arrow-link-on-arrow-label {
+  color: var(--color-text-muted);
+  font: var(--t-text-small);
+  font-weight: 600;
+}
+
+.arrow-link-empty {
+  margin: 0;
+  font: var(--t-text-small);
+}

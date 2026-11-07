@@ -1032,6 +1032,13 @@ export const ptBR = {
     '"{name}" será excluída com {annotations} anotação(ões). Dá para desfazer.',
   'arrow.error.locked': 'A seta está trancada.',
   'arrow.error.generic': 'Não foi possível alterar a seta.',
+  // Seção "Ligado por seta" dos Detalhes da marcação (etapa #658)
+  'arrowLinks.section': 'Ligado por seta',
+  'arrowLinks.out': 'Sai para',
+  'arrowLinks.in': 'Chega de',
+  'arrowLinks.selectArrow': 'Selecionar a seta',
+  'arrowLinks.onArrow': 'Na seta',
+  'arrowLinks.empty': 'Sem anotações nas camadas visíveis.',
   'arrow.linkTo': 'Ligar a…',
   'arrow.linkToHint': 'Cria uma seta desta marcação até outra',
   'arrow.pickerTitle': 'Ligar {name} a…',
