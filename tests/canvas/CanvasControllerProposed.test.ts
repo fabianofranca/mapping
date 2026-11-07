@@ -268,9 +268,10 @@ describe('CanvasController: visão Proposto com componentes', () => {
     t.controller.destroy();
   });
 
+  // Inválida (`rect-out-of-image`): com o mínimo de 1 px (decisão 24) a criação com 3×3 px vale;
+  // a adulteração é um retângulo fora dos limites do container.
   it('inválida: desenhada, com a linha e o selo de inválida', async () => {
     const { base, catalog, proposal } = scenario();
-    // A criação adulterada é pequeno demais: aceita, ela entra no conjunto inválido.
     const create = changeOf(proposal, 'marking', 'N1');
     const tampered: Proposal = {
       ...proposal,
@@ -279,7 +280,10 @@ describe('CanvasController: visão Proposto com componentes', () => {
         typeof c.to === 'object' &&
         c.to !== null &&
         !Array.isArray(c.to)
-          ? { ...c, to: { ...c.to, rect: { x: 20, y: 100, width: 3, height: 3 } } }
+          ? {
+              ...c,
+              to: { ...c.to, rect: { x: 20.5, y: 100, width: 100, height: 40 } },
+            }
           : c,
       ),
     };

@@ -198,9 +198,9 @@ describe('geometria das marcações no canvas', () => {
       width: 1,
       height: 1,
     });
-    expect(
-      resizeMarkingRect(start, 'ne', to, limits, { width: 20, height: 10 }),
-    ).toEqual({ x: 100, y: 190, width: 20, height: 10 });
+    expect(resizeMarkingRect(start, 'ne', to, limits, { width: 20, height: 10 })).toEqual(
+      { x: 100, y: 190, width: 20, height: 10 },
+    );
   });
 
   it('redimensionar: só o container limita; as filhas e o pai não', () => {

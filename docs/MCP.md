@@ -329,7 +329,7 @@ Acompanha o schema v14 do `mapping.json` (`annotations[].parentRole` e `docRepos
 
 ### Mudança da 0.13.0 (Avisos que faltam)
 
-- **`rect-too-small`** (em `plan_changes` e `propose_changes`: `create_marking`, `update_marking` com `rect` e a troca de `container`) passa a trazer `detail` com o tamanho recebido e o mínimo que valeu (`recebido 5×3 px; mínimo 8×8 px`; o mínimo é o de qualquer marcação, 8 px, ou o `minSize` do componente, o maior, e o `detail` diz `(do componente)` neste caso) e uma `hint` para aumentar `width` e `height`. Com componente, o erro segue trazendo o `minSize`.
+- **`rect-too-small`** (em `plan_changes` e `propose_changes`: `create_marking`, `update_marking` com `rect` e a troca de `container`) passa a trazer `detail` com o tamanho recebido e o mínimo que valeu (`recebido 5×3 px; mínimo 8×8 px`; o mínimo é 8 px numa marcação comum e 1 px numa marcação com anotação de um tipo com componente, ou o `minSize` do componente, se maior, e o `detail` diz `(do componente)` neste caso) e uma `hint` para aumentar `width` e `height`. Com componente, o erro segue trazendo o `minSize`.
 - **`image-overlap`** (`update_container` com `x`, `y`, `scale`, `width` ou `height`, e mover container) passa a trazer `detail` com a referência do **outro** container (`sobrepõe o container mapping://<projeto>/i/<código>`, só a URL) e uma `hint` para mudar `x`/`y`/`scale` ou o tamanho, ou mover o outro container antes. Ao mover vários itens juntos, o container citado é o que não se move (antes, o erro trazia o do movido).
 - **`detail` inteiro.** O detalhe dos erros do modelo não é mais cortado no segundo `: `.
 - Sem mudança no formato do `mapping.json` nem nas tools; as tools de leitura que falham por regra do modelo saem com o mesmo `detail` e `hint`.

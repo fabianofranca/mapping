@@ -16,6 +16,9 @@
 - MCP: a op `update_project` do lote troca o modo do desenho do projeto; `add_container` e `update_container` aceitam `drawingMode`.
 - Visualizador embutido: a opção `drawingMode` (e a prop do `<MappingViewer/>`) escolhe o modo dos tokens; mudá-la em tempo de execução (`update({ drawingMode })`) redesenha sem recarregar a biblioteca nem a tela.
 - Conjunto de ícones da biblioteca (`formatVersion` 15 da especialização): `icons` na raiz aponta para um arquivo `.json` do pacote (`mapping-icons`: `viewBox` e ícones por nome, cada um com seus caminhos, traço, cor e ponta) e o nó `icon` do componente (formato 4) o lê por `name` (literal ou campo), com `color` e `strokeWidth`; `hug` mede o `viewBox`. Um nome que não está no conjunto desenha o reservado tracejado com o aviso `ícone desconhecido: <nome>`. O `validate_library` confere o arquivo, recusa nome literal fora do conjunto e avisa a opção de `enum` fora dele, na app e no MCP.
+- Desenho em tamanho de tela (formato 4): `screen: { anchor }` na raiz do componente (nove âncoras) desenha o template no `size` em pixels de tela, em qualquer zoom, ancorado no retângulo da marcação, e `stroke.scale: false` mantém a largura do traço em pixels de tela.
+- Tipo estrutural (`formatVersion` 15 da especialização): `"structural": true` no tipo de anotação agrupa sem desenhar; a marcação não mostra o nome no canvas, não conta como "sem componente" e `structural` junto de `component` é erro de validação.
+- Marcações de tipo com componente a partir de 1 px, no app, no `create_marking`/`update_marking` do MCP e ao abrir o projeto (o `minSize` do componente continua valendo).
 
 ## Alterado
 
@@ -23,6 +26,7 @@
 - O recorte da raiz do componente passa a incluir o traço `outside`/`center` e a sombra (em todas as versões do formato).
 - O raster do MCP (`get_marking_image`) passa a respeitar a ponta, o canto e os lados do traço.
 - A fonte padrão do texto sem `font.family` passa a ser a do tema (`font-sans`, e `font-mono` para código) em vez da `Inter` fixa. Bibliotecas cujos textos não declaram `family` mudam de largura de texto (o `hug`, a quebra de linha e o aviso `texto maior que a caixa` seguem a fonte do tema).
+- No modo Editar, as bolinhas de camada e o "+N" somem em marcações pequenas que desenham componente (menores que 24 px de tela em largura ou altura); selecionada ou sob o mouse mostra tudo e o alerta ⚠ continua sempre. Marcação sem componente não muda.
 
 ## Corrigido
 

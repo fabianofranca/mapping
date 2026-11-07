@@ -282,6 +282,7 @@ export const ROOT_KEYS = [
   'size',
   'minSize',
   'sizing',
+  'screen',
   'preview',
   'template',
 ] as const;
@@ -330,7 +331,7 @@ export const REPEAT_BASE_KEYS = [
 
 const ANCHOR_KEYS = ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'] as const;
 const LAYOUT_KEYS = ['gap', 'padding', 'align', 'justify'] as const;
-const STROKE_KEYS = ['color', 'width', 'align', 'dash'] as const;
+const STROKE_KEYS = ['color', 'width', 'align', 'dash', 'scale'] as const;
 const SHADOW_KEYS = ['color', 'x', 'y', 'blur'] as const;
 const FONT_KEYS = [
   'family',

@@ -229,6 +229,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-handle': '10px',
   /** Emblema do cadeado no canvas (px de tela). */
   'size-lock-badge': '20px',
+  /** Marcação com componente menor que isto na tela (largura ou altura) esconde as bolinhas de camada e o "+N" (3× o diâmetro da bolinha, 8px). */
+  'size-indicator-min-marking': '24px',
   /** Seta no canvas (px de tela, constantes com o zoom): traço, traço selecionado e ponta. */
   'size-arrow-stroke': '2px',
   'size-arrow-stroke-selected': '3px',

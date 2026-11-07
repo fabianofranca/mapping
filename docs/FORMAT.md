@@ -152,7 +152,7 @@ arquivo ao ler.
 - Ids únicos em cada coleção; `file` único entre as imagens que têm arquivo; `file` das especializações único.
 - Container (v12): `file` é `null` se, e somente se, `background` é uma cor (`container-content`).
 - Toda marcação tem `containerId` nulo (marcação do canvas, v13) ou de um container existente; `parentId`, se houver, é uma marcação existente.
-- `rect`: inteiros, largura e altura **≥ 8 px**; na marcação de container, **inteiramente dentro** da imagem (`0 ≤ x`,
+- `rect`: inteiros, largura e altura **≥ 1 px** (ao abrir, qualquer marcação vale a partir de 1 px; abaixo disso é `rect-too-small`; os gestos e o MCP exigem 8 px numa marcação comum, ver "Campos da v18"); na marcação de container, **inteiramente dentro** da imagem (`0 ≤ x`,
   `x + width ≤ width da imagem`; idem para `y`); na marcação do canvas, sem limite de posição.
 - A marcação-pai está **no mesmo espaço** (o mesmo container, ou o canvas) e **contém** o `rect` da filha. Não há ciclos.
 - Pertencimento (v13): ver "Campos da v13 (pertencimento)"; o `parentId` do container e a marcação flutuante têm regras próprias.
@@ -1033,6 +1033,11 @@ depende do tema claro/escuro da interface.
 - **Modo não declarado:** um modo que nenhuma especialização do projeto declara em `tokens.modes` continua
   gravado, e o desenho cai no primeiro modo daquela especialização; o **Diagnóstico** avisa. O arquivo não é
   recusado.
+
+- **Tamanho mínimo da marcação:** a marcação com anotação de um tipo **com componente** vale a partir de **1 px** por lado
+  (o `minSize` do componente, se houver, continua mandando nos gestos e no MCP); a marcação comum mantém **8 px** nos
+  gestos e no MCP. A **leitura do arquivo** aceita qualquer marcação de 1 px ou mais, com ou sem componente: a invariante
+  `rect-too-small` só vale abaixo de 1 px. Nenhum campo novo e nenhuma migração.
 
 Um app anterior recusa o arquivo v18 como "versão mais nova", em vez de ignorar o modo e desenhar errado.
 

@@ -111,3 +111,11 @@ describe('tokens do cadeado', () => {
     expect(canvasTokensFrom(reader('light')).lock.size).toBe(20);
   });
 });
+
+describe('limite dos indicadores de camada', () => {
+  it('vem do token size-indicator-min-marking (3× o diâmetro da bolinha) nos dois temas', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      expect(canvasTokensFrom(reader(theme)).indicatorMinMarking).toBe(24);
+    }
+  });
+});
