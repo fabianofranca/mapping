@@ -35,6 +35,7 @@ import {
   altNumbersAvailable,
   arrowsBelongToEditor,
   isTextInput,
+  isTypingField,
   reviewShortcutFor,
   shortcutFor,
   type ReviewShortcut,
@@ -367,7 +368,11 @@ export function useEditorShortcuts(
       const shortcut = shortcutFor(e, altNumbers);
       if (!shortcut) return;
       if (shortcut.kind === 'nudge') return onNudge(e, shortcut.dx, shortcut.dy);
-      if (isTextInput(e.target)) return;
+      if (
+        shortcut.kind === 'view-mode' ? isTypingField(e.target) : isTextInput(e.target)
+      ) {
+        return;
+      }
       if (!applies(shortcut)) return;
       e.preventDefault();
       if (wrapIgnored(shortcut, e)) return;

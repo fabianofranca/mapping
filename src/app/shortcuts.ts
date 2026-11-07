@@ -295,3 +295,15 @@ export function isTextInput(target: EventTarget | null): boolean {
   if (target.isContentEditable) return true;
   return /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
 }
+
+/** Tipos de `<input>` que não recebem texto: caixa, opção, botão, controle deslizante etc. */
+const NON_TEXT_INPUTS = /^(checkbox|radio|button|submit|reset|range|color|file|image)$/;
+
+/**
+ * Atalho que vale também com o foco numa caixa ou opção (o Alt+H do modo visualização, com o
+ * foco no painel "Mostrar no canvas"): só o campo em que se digita fica de fora.
+ */
+export function isTypingField(target: EventTarget | null): boolean {
+  if (!isTextInput(target)) return false;
+  return !(target instanceof HTMLInputElement && NON_TEXT_INPUTS.test(target.type));
+}

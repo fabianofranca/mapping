@@ -29,6 +29,8 @@ interface IconButtonProps extends NativeButton {
   readonly alert?: boolean;
   /** Selo numérico informativo no canto (ex.: propostas novas na faixa lateral). */
   readonly badge?: string;
+  /** Esconde a dica (o painel que o botão abriu já está aberto). */
+  readonly tooltipSuppressed?: boolean;
   /** Onde a dica abre (`end`: ao lado, na faixa lateral); padrão: embaixo. */
   readonly tooltipPlacement?: TooltipPlacement;
   /** O `<button>` (para devolver o foco a ele), como o `inputRef` do `TextField`. */
@@ -49,6 +51,7 @@ export function IconButton({
   label,
   tooltip,
   tooltipPlacement,
+  tooltipSuppressed,
   variant = 'default',
   text,
   shortcut,
@@ -61,7 +64,12 @@ export function IconButton({
   ...rest
 }: IconButtonProps) {
   return (
-    <Tooltip label={tooltip ?? label} shortcut={shortcut} placement={tooltipPlacement}>
+    <Tooltip
+      label={tooltip ?? label}
+      shortcut={shortcut}
+      placement={tooltipPlacement}
+      suppressed={tooltipSuppressed}
+    >
       <button
         {...rest}
         ref={buttonRef}

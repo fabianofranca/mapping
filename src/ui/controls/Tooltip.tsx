@@ -24,6 +24,8 @@ interface TooltipProps {
   readonly placement?: TooltipPlacement;
   /** Dica fixada aberta (o clique do `HelpTip`), mesmo sem hover nem foco visível. */
   readonly open?: boolean;
+  /** Dica suprimida (ex.: o painel que o controle abre já está na tela e a dica o cobriria). */
+  readonly suppressed?: boolean;
   /** Chamado quando o Esc fecha a dica visível; com ele, o Esc é consumido (não propaga). */
   readonly onDismiss?: () => void;
   readonly children: ComponentChildren;
@@ -96,6 +98,7 @@ export function Tooltip({
   shortcut,
   placement = 'bottom',
   open = false,
+  suppressed = false,
   onDismiss,
   children,
 }: TooltipProps) {
@@ -116,7 +119,7 @@ export function Tooltip({
       class={classes(
         'tooltip-anchor',
         `tooltip-${placement}`,
-        dismissed && 'tooltip-dismissed',
+        (dismissed || suppressed) && 'tooltip-dismissed',
         open && 'tooltip-open',
       )}
       onKeyDown={(e) => {

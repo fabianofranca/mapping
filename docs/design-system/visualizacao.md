@@ -19,6 +19,11 @@
 - Barra de status: item do modo (ícone `eye` + "Modo visualização: só para ver. Esc ou Alt+H sai.").
 - Token novo: `size-view-panel` (280px, largura do painel). Ícones novos: nenhum.
 
+### VZ4 — correção dos achados do testador
+
+- `Tooltip`/`IconButton`: prop nova `suppressed`/`tooltipSuppressed` (a dica fica escondida, como após o Esc); o Visualizar a usa com o painel aberto, para a dica não cobrir o painel.
+- `ViewModePanel`: ao fechar, o foco volta ao Visualizar (painel aberto ao ligar o modo) ou ao **Mostrar no canvas** (painel aberto por ele). `AnnotationsPanel` (`.annotations`) ganha `tabindex="-1"` para receber o foco depois de **Mostrar todas**. Tokens e ícones: nenhum.
+
 ## Sincronização
 
 ## Ficou sem gravar
