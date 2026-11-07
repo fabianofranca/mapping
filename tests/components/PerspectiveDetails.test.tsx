@@ -1,9 +1,11 @@
-import { cleanup, screen, within } from '@testing-library/preact';
+import { cleanup, render, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { t } from '../../src/i18n';
 import { createArrow, type Arrival, type Project } from '../../src/model';
+import { projectInPerspective } from '../../src/store/perspectiveShown';
 import { locale } from '../../src/store/settings';
+import { EditorContext } from '../../src/ui/EditorContext';
 import { MarkingPanel } from '../../src/ui/MarkingPanel';
 import { SelectionPanel } from '../../src/ui/SelectionPanel';
 import { sampleProject } from '../model/fixtures';
@@ -94,7 +96,7 @@ describe('Detalhes — seção Perspectivas', () => {
     await user.click(
       within(section()!).getByRole('button', { name: t('perspective.section.send') }),
     );
-    await user.click(screen.getByRole('menuitem', { name: /Outra/ }));
+    await user.click(screen.getByRole('menuitemcheckbox', { name: /Outra/ }));
     expect(
       h
         .project()
@@ -104,13 +106,34 @@ describe('Detalhes — seção Perspectivas', () => {
     await user.click(
       within(section()!).getByRole('button', { name: t('perspective.section.send') }),
     );
-    await user.click(screen.getByRole('menuitem', { name: /Vista/ }));
+    await user.click(screen.getByRole('menuitemcheckbox', { name: /Vista/ }));
     expect(
       h
         .project()
         .perspectives.find((x) => x.id === 'V')
         ?.items.some((i) => i.root === 'I1'),
     ).toBe(false);
+  });
+
+  it('as linhas do menu são caixas (menuitemcheckbox) com aria-checked', async () => {
+    const h = createHarness(world());
+    open(h, 'V');
+    const user = panels(h, { image: 'I1' });
+    await user.click(
+      within(section()!).getByRole('button', { name: t('perspective.section.send') }),
+    );
+    expect(screen.queryAllByRole('menuitem')).toHaveLength(0);
+    const boxes = screen.getAllByRole('menuitemcheckbox');
+    expect(boxes).toHaveLength(3);
+    expect(boxes.map((b) => b.getAttribute('aria-checked'))).toEqual([
+      'true',
+      'true',
+      'false',
+    ]);
+    // ↓ continua andando entre os itens habilitados (só a "Outra").
+    expect(document.activeElement).toBe(
+      screen.getByRole('menuitemcheckbox', { name: /Outra/ }),
+    );
   });
 
   it('a Principal e a perspectiva aberta ficam travadas no menu', async () => {
@@ -120,12 +143,13 @@ describe('Detalhes — seção Perspectivas', () => {
     await user.click(
       within(section()!).getByRole('button', { name: t('perspective.section.send') }),
     );
-    const principal = screen.getByRole('menuitem', {
+    const principal = screen.getByRole('menuitemcheckbox', {
       name: new RegExp(t('perspective.principal')),
     });
     expect((principal as HTMLButtonElement).disabled).toBe(true);
     expect(
-      (screen.getByRole('menuitem', { name: /Vista/ }) as HTMLButtonElement).disabled,
+      (screen.getByRole('menuitemcheckbox', { name: /Vista/ }) as HTMLButtonElement)
+        .disabled,
     ).toBe(true);
   });
 
@@ -230,6 +254,28 @@ describe('Detalhes — Ligado por seta fora da perspectiva', () => {
     panels(h, { marking: 'M1' });
     // Só a seta para M4 (fora de V) leva o selo; a para M2 (mesma raiz) não.
     expect(screen.getAllByText(outside())).toHaveLength(1);
+  });
+});
+
+describe('Detalhes — Ligado por seta com o projeto à vista da perspectiva', () => {
+  it('a seta que sai para fora da perspectiva aparece, com o selo (caminho real do painel)', () => {
+    const h = createHarness(world());
+    open(h, 'V');
+    const shown = projectInPerspective(h.store.project.value!, 'V');
+    const marking = shown.markings.find((m) => m.id === 'M1')!;
+    render(
+      <EditorContext.Provider value={h.context}>
+        <MarkingPanel
+          project={shown}
+          marking={marking}
+          image={shown.containers.find((c) => c.id === marking.containerId) ?? null}
+          readOnly={false}
+          onDelete={() => undefined}
+          onGoToAnnotation={() => undefined}
+        />
+      </EditorContext.Provider>,
+    );
+    expect(screen.getByText(t('perspective.arrow.outside'))).toBeTruthy();
   });
 });
 

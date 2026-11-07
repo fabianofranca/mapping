@@ -13,7 +13,7 @@ import {
   arrivalBadgeWidth,
   type ArrivalBadge,
 } from '../arrivals';
-import type { Frame } from '../frame';
+import { visibleArea, type Frame } from '../frame';
 import type { CanvasTokens } from '../theme';
 import { HALO_WIDTH, fontStyle } from './metrics';
 
@@ -23,7 +23,10 @@ const BAND_STROKE = 1.5;
 const TITLE_GAP = 4;
 const BADGE_RADIUS = 4;
 
-export type ArrivalFrame = Pick<Frame, 'arrivals' | 'tokens' | 'viewport' | 'locale'>;
+export type ArrivalFrame = Pick<
+  Frame,
+  'arrivals' | 'tokens' | 'viewport' | 'locale' | 'size'
+>;
 
 export interface ArrivalBadgeNode {
   readonly group: Konva.Group;
@@ -82,10 +85,11 @@ export class ArrivalRenderer {
   render(frame: ArrivalFrame): void {
     const { arrivals, tokens } = frame;
     const zoom = frame.viewport.scale;
+    const view = visibleArea(frame.size, frame.viewport);
     const seen = new Set<string>();
     for (const badge of arrivals?.badges ?? []) {
       seen.add(badge.root);
-      this.drawBadge(badge, zoom, tokens);
+      this.drawBadge(badge, zoom, tokens, view);
     }
     for (const [root, node] of this.badges) {
       if (seen.has(root)) continue;
@@ -113,11 +117,16 @@ export class ArrivalRenderer {
     return node;
   }
 
-  private drawBadge(badge: ArrivalBadge, zoom: number, tokens: CanvasTokens): void {
+  private drawBadge(
+    badge: ArrivalBadge,
+    zoom: number,
+    tokens: CanvasTokens,
+    view: Rect,
+  ): void {
     const node = this.badgeFor(badge.root);
     const text = t('perspective.canvas.cameFrom', { name: badge.name });
     const width = arrivalBadgeWidth(text);
-    const at = arrivalBadgeSpot(badge.rect, zoom, width);
+    const at = arrivalBadgeSpot(badge.rect, zoom, width, view);
     node.group.setAttrs({ x: at.x, y: at.y, scaleX: 1 / zoom, scaleY: 1 / zoom });
     node.box.setAttrs({
       width,

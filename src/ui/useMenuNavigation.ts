@@ -5,7 +5,7 @@ import { useLayoutEffect } from 'preact/hooks';
 // ao primeiro item habilitado; ↑/↓ andam em círculo entre os habilitados; Esc fecha. O
 // foco volta ao gatilho em `close` de quem usa (`returnFocusToTrigger`).
 
-const ITEMS = '[role="menuitem"]:not(:disabled)';
+const ITEMS = '[role^="menuitem"]:not(:disabled)';
 
 /** Foca o primeiro item habilitado do menu dentro de `root`, ao abrir. */
 export function useFocusFirstItem(root: RefObject<HTMLElement>, open: boolean): void {

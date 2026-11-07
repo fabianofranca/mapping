@@ -165,6 +165,12 @@ function CommentsItem() {
   );
 }
 
+/** A frase inteira das chegadas (o title do item curto da barra). */
+const arrivalsTitle = (count: number) =>
+  count === 1
+    ? t('perspective.status.arrivalsOne')
+    : t('perspective.status.arrivalsMany', { count });
+
 /**
  * Perspectiva aberta (etapa #659): o nome dela (ou a Principal) e, na Principal, quantos itens
  * vieram de outras perspectivas.
@@ -181,10 +187,8 @@ function PerspectiveItem() {
         <span class="status-item-text">{t('perspective.status.name', { name })}</span>
       </span>
       {arrivals > 0 && (
-        <span class="status-item">
-          {arrivals === 1
-            ? t('perspective.status.arrivalsOne')
-            : t('perspective.status.arrivalsMany', { count: arrivals })}
+        <span class="status-item" title={arrivalsTitle(arrivals)}>
+          {t('perspective.status.arrivals', { count: arrivals })}
         </span>
       )}
     </>

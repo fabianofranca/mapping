@@ -1,6 +1,6 @@
 import type { Signal } from '@preact/signals';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/preact';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
 import { addPerspective, buildPerspective } from '../../src/model';
 import { locale } from '../../src/store/settings';
@@ -84,6 +84,44 @@ describe('Enviar para perspectiva', () => {
     expect(boxes[2]?.getAttribute('aria-checked')).toBe('false');
     expect((boxes[2] as HTMLButtonElement).disabled).toBe(false);
     expect(ids).toHaveLength(2);
+  });
+
+  it('passar o ponteiro sobre o item abre o submenu, sem roubar o foco', () => {
+    const { harness } = setup({ others: 1 });
+    openMenu(harness, 'i', 'I1');
+    expect(screen.queryByRole('menu', { name: t('perspective.menu.send') })).toBeNull();
+    const send = sendItem();
+    send.focus();
+    fireEvent.pointerEnter(send.parentElement as HTMLElement);
+    expect(screen.getByRole('menu', { name: t('perspective.menu.send') })).toBeTruthy();
+    expect(send.getAttribute('aria-expanded')).toBe('true');
+    expect(document.activeElement).toBe(send);
+  });
+
+  it('perto da borda direita, o submenu abre à esquerda do item', () => {
+    const { harness } = setup({ others: 1 });
+    openMenu(harness, 'i', 'I1');
+    const spy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const right =
+          this.dataset.submenu !== undefined ? globalThis.innerWidth + 50 : 100;
+        return {
+          left: right - 200,
+          right,
+          top: 0,
+          bottom: 0,
+          width: 200,
+          height: 0,
+        } as DOMRect;
+      });
+    try {
+      fireEvent.click(sendItem());
+      const sub = screen.getByRole('menu', { name: t('perspective.menu.send') });
+      expect(sub.classList.contains('menu-submenu-left')).toBe(true);
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('na Principal, com uma outra perspectiva, a caixa dela começa desmarcada', () => {

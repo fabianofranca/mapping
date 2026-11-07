@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'preact/hooks';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { projectIndex, type Perspective, type Project } from '../model';
 import { principalOnly, type PrincipalOnlyCommand } from '../store/perspectiveGestures';
@@ -135,10 +135,26 @@ export function PerspectiveMenuItems({
   const openId = session.perspective.id.value;
   const localIds = session.perspective.localIds.value;
   const wasExpanded = useRef(false);
+  // Aberto pelo ponteiro: o foco fica onde está (abrir por hover não rouba o foco).
+  const byPointer = useRef(false);
+  const [flip, setFlip] = useState(false);
+
+  // Sem espaço à direita, o submenu abre à esquerda do item pai (e fica dentro da janela).
+  useLayoutEffect(() => {
+    if (!expanded) {
+      setFlip(false);
+      return;
+    }
+    const box = sub.current?.getBoundingClientRect();
+    const width = globalThis.innerWidth || document.documentElement.clientWidth;
+    if (box && box.right > width) setFlip(true);
+  }, [expanded]);
 
   // Abrir leva o foco à primeira caixa habilitada; fechar devolve-o ao item pai.
   useEffect(() => {
-    if (expanded) {
+    if (byPointer.current) {
+      byPointer.current = false;
+    } else if (expanded) {
       sub.current
         ?.querySelector<HTMLElement>('button:not(:disabled)')
         ?.focus({ preventScroll: true });
@@ -162,6 +178,16 @@ export function PerspectiveMenuItems({
       : actions.sendRootsToPerspective(row.perspective.id, roots);
     if (!result.ok) fail();
   };
+  const hoverOpen = () => {
+    if (locked || expanded) return;
+    byPointer.current = true;
+    setExpanded(true);
+  };
+  const hoverClose = () => {
+    if (!expanded) return;
+    byPointer.current = true;
+    setExpanded(false);
+  };
   const onKeyDown = (e: KeyboardEvent) => {
     const inSub = sub.current?.contains(e.target as Node) ?? false;
     if (e.key === 'ArrowRight' && e.target === parent.current && !locked) {
@@ -175,7 +201,7 @@ export function PerspectiveMenuItems({
 
   return (
     <div class="menu-items menu-items-group" onKeyDown={onKeyDown}>
-      <div class="menu-sub-host">
+      <div class="menu-sub-host" onPointerEnter={hoverOpen}>
         <Button
           role="menuitem"
           buttonRef={parent}
@@ -189,7 +215,9 @@ export function PerspectiveMenuItems({
         </Button>
         {expanded && !locked && (
           <div
-            class="popover menu-submenu"
+            class={
+              flip ? 'popover menu-submenu menu-submenu-left' : 'popover menu-submenu'
+            }
             data-submenu
             role="menu"
             aria-label={t('perspective.menu.send')}
@@ -218,6 +246,7 @@ export function PerspectiveMenuItems({
         <Button
           role="menuitem"
           disabled={locked}
+          onPointerEnter={hoverClose}
           onClick={() => {
             close();
             if (!actions.removeRootsFromPerspective(openId, roots).ok) fail();

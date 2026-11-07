@@ -103,14 +103,34 @@ export function arrivalBadgeWidth(text: string): number {
 }
 
 /**
- * Onde o selo fica (canto de cima à esquerda dele, em unidades do canvas). Raiz grande: por dentro
- * do canto de cima à esquerda; pequena na tela: por fora, acima do canto. Tamanho e vão em px de tela.
+ * Onde o selo fica (canto de cima à esquerda dele, em unidades do canvas). Nunca no topo da raiz,
+ * onde ficam o nome do container e o título da faixa: raiz grande, por dentro do canto de baixo à
+ * esquerda; pequena na tela, por fora, abaixo do canto. Tamanho e vão em px de tela. Com `view` (a
+ * área visível, em unidades do canvas) o selo é puxado para dentro dela.
  */
-export function arrivalBadgeSpot(rect: Rect, zoom: number, width: number): Point {
+export function arrivalBadgeSpot(
+  rect: Rect,
+  zoom: number,
+  width: number,
+  view?: Rect,
+): Point {
   const gap = BADGE_GAP / zoom;
+  const height = ARRIVAL_BADGE_HEIGHT / zoom;
   const small =
     rect.width * zoom < 2 * width || rect.height * zoom < 2 * ARRIVAL_BADGE_HEIGHT;
-  return small
-    ? { x: rect.x, y: rect.y - ARRIVAL_BADGE_HEIGHT / zoom - gap }
-    : { x: rect.x + gap, y: rect.y + gap };
+  const at = small
+    ? { x: rect.x, y: bottom(rect) + gap }
+    : { x: rect.x + gap, y: bottom(rect) - gap - height };
+  return view ? keepInside(at, width / zoom, height, view) : at;
+}
+
+function clampAxis(at: number, size: number, start: number, length: number): number {
+  return Math.max(start, Math.min(at, start + length - size));
+}
+
+function keepInside(at: Point, w: number, h: number, view: Rect): Point {
+  return {
+    x: clampAxis(at.x, w, view.x, view.width),
+    y: clampAxis(at.y, h, view.y, view.height),
+  };
 }
