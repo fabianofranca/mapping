@@ -76,6 +76,11 @@ const MISSING_TODAY: string[] = [
   'component:node.minHeight',
   'component:node.maxHeight',
   'component:node.repeat.distribute',
+  // Texto do componente v4 (etapa #747, CF3): as bibliotecas distribuídas não migram; coberto por
+  // tests/model/components/textWrap.test.ts, tests/e2e/textMetrics.spec.ts e pelo roteiro R25.
+  'component:font.wrap',
+  'component:font.ellipsis',
+  'component:font.maxLines',
   // `accepts.annotations` (formatVersion 14, etapa #679): os exemplos não ganham o recurso nesta
   // etapa (o roteiro usa uma especialização inline); coberto por tests/model/specAcceptsAnnotations.
   'spec:layers[].annotationTypes[].fields[].accepts.annotations',

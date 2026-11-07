@@ -162,6 +162,36 @@ describe('renderScene', () => {
     expect(familyOf('system-ui')).toBe('system-ui');
   });
 
+  it('texto: wrap none, ellipsis e maxLines chegam ao Konva', () => {
+    const textOf = (style: Record<string, unknown>, height = 60): Konva.Text => {
+      const root: FrameNode = {
+        ...card,
+        children: card.children.map((c) =>
+          c.type === 'text'
+            ? {
+                ...c,
+                width: 40,
+                height,
+                text: 'aaaa bbbb cccc dddd eeee',
+                style: { ...c.style, align: 'left', verticalAlign: 'middle', ...style },
+              }
+            : c,
+        ),
+      };
+      const { byId } = renderScene(scene(root));
+      return byId.get('title')?.getChildren()[0] as Konva.Text;
+    };
+    expect(textOf({}).wrap()).toBe('word');
+    expect(textOf({}).ellipsis()).toBe(false);
+    const single = textOf({ wrap: 'none', ellipsis: true });
+    expect(single.wrap()).toBe('none');
+    expect(single.ellipsis()).toBe(true);
+    // maxLines: a caixa do Konva encolhe para as linhas permitidas e desce no centro da do nó.
+    const two = textOf({ maxLines: 2, ellipsis: true, fontSize: 10, lineHeight: 12 });
+    expect(two.height()).toBe(24);
+    expect(two.y()).toBe(18);
+  });
+
   it('texto centrado sem largura fica ancorado no x; gradiente, caminho e imagem sem pixels', () => {
     const { byId, warnings } = renderScene(scene(card));
     const text = byId.get('title')?.getChildren()[0] as Konva.Text;

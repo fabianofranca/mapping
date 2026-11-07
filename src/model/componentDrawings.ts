@@ -39,7 +39,8 @@ export const NO_DRAWINGS: ComponentDrawings = new Map();
 /** Tolerância (px) entre a caixa do slot (decimal) e o retângulo inteiro de uma filha. */
 const SLOT_TOLERANCE = 1;
 
-const OVERFLOW_WARNING = 'conteúdo maior que a caixa';
+/** Avisos do motor que são a pendência "o componente não cabe". */
+const OVERFLOW_WARNINGS = ['conteúdo maior que a caixa', 'texto maior que a caixa'];
 
 export type DrawingCache = (
   p: Project | null,
@@ -121,7 +122,7 @@ function draw(
     idPrefix: markingId,
   });
   const overflow =
-    warnings.some((w) => w.startsWith(OVERFLOW_WARNING)) ||
+    warnings.some((w) => OVERFLOW_WARNINGS.some((o) => w.startsWith(o))) ||
     (childRects.length > 0 && childOutsideSlot(root, childRects));
   return {
     markingId,

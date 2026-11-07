@@ -24,8 +24,11 @@ import {
   type SceneNode,
   type Shadow,
   type Stroke,
+  type TextNode,
+  type TextStyle,
   hasChildren,
 } from '../../model/components/scene';
+import { textBoxLimits } from './textLimits';
 import {
   type RemoteImageView,
   type RemoteImageViewState,
@@ -257,10 +260,16 @@ class Renderer {
           lineHeight: style.lineHeight ? style.lineHeight / style.fontSize : 1.2,
           letterSpacing: style.letterSpacing ?? 0,
           textDecoration: style.decoration ?? '',
-          wrap: 'word',
+          wrap: style.wrap === 'none' ? 'none' : 'word',
+          ellipsis: style.ellipsis === true,
         };
         if (node.width > 0) attrs.width = node.width;
         if (node.height > 0) attrs.height = node.height;
+        const clipped = maxLinesBox(attrs, node, style);
+        if (clipped) {
+          attrs.height = clipped.height;
+          attrs.y = clipped.offsetY;
+        }
         // Texto do SVG sem largura: o x é a âncora (`text-anchor`), então o texto centrado
         // ou à direita cresce para a esquerda a partir dela.
         const anchor = (shape: KonvaText): KonvaText => {
@@ -567,6 +576,33 @@ export function isInvisibleShadow(shadow: Shadow): boolean {
   const hex4 = /^#([0-9a-f]{4})$/.exec(color);
   if (hex4) return (hex4[1] ?? '').endsWith('0');
   return false;
+}
+
+/**
+ * `maxLines`: se o texto tem mais linhas que o limite, a caixa do Konva encolhe para `maxLines`
+ * linhas (ele corta, e põe o … com `ellipsis`) e desce `offsetY` para manter o alinhamento
+ * vertical da caixa do nó. `null` = a caixa do nó serve.
+ */
+function maxLinesBox(
+  attrs: TextConfig,
+  node: TextNode,
+  style: TextStyle,
+): { height: number; offsetY: number } | null {
+  if (style.maxLines === undefined || node.height <= 0) return null;
+  const lineHeight = (attrs.lineHeight ?? 1.2) * style.fontSize;
+  const probe = new KonvaText({ ...attrs, height: undefined });
+  const natural = probe.height();
+  probe.destroy();
+  const { height, cut } = textBoxLimits(natural, style.maxLines, lineHeight);
+  if (!cut || height >= node.height) return null;
+  const free = node.height - height;
+  const offsetY =
+    style.verticalAlign === 'middle'
+      ? free / 2
+      : style.verticalAlign === 'bottom'
+        ? free
+        : 0;
+  return { height, offsetY };
 }
 
 function applyShadow(shape: Konva.Shape, shadow: Shadow): void {

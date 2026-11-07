@@ -340,6 +340,9 @@ const FONT_KEYS = [
   'align',
   'verticalAlign',
   'decoration',
+  'wrap',
+  'ellipsis',
+  'maxLines',
 ] as const;
 const ENUM_VALUES = {
   'layout.type': ['none', 'row', 'column'],

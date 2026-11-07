@@ -1564,6 +1564,18 @@
         },
         "decoration": {
           "$ref": "#/$defs/expr_decoration"
+        },
+        "wrap": {
+          "description": "formatVersion 4. word (padrão) quebra por palavra; none é uma linha por parágrafo.",
+          "$ref": "#/$defs/expr_wrap"
+        },
+        "ellipsis": {
+          "description": "formatVersion 4. O texto que não cabe (na largura com wrap none, ou além de maxLines) termina em …",
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "maxLines": {
+          "description": "formatVersion 4. Inteiro maior ou igual a 1; a última linha permitida leva o … (com ellipsis) ou é cortada.",
+          "$ref": "#/$defs/expr_positiveInteger"
         }
       }
     },
@@ -2590,6 +2602,151 @@
             },
             "default": {
               "$ref": "#/$defs/expr_sizeNoHug"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "lit_wrap": {
+      "enum": ["word", "none"]
+    },
+    "lit_positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "expr_wrap": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_wrap"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_wrap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_decoration"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_decoration"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_decoration"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_decoration"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_positiveInteger": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_positiveInteger"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_positiveInteger"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_decoration"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_decoration"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_decoration"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_decoration"
             }
           }
         },

@@ -133,6 +133,12 @@ export interface FontSpec {
   readonly align?: Expr<'left' | 'center' | 'right'>;
   readonly verticalAlign?: Expr<'top' | 'middle' | 'bottom'>;
   readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
+  /** `word` (padrão) quebra por palavra; `none` é uma linha por parágrafo. Só formatVersion 4. */
+  readonly wrap?: Expr<'word' | 'none'>;
+  /** Texto que não cabe termina em `…` (largura com `wrap: none`; altura com `maxLines`). Só v4. */
+  readonly ellipsis?: BoolExpr;
+  /** Máximo de linhas (inteiro ≥ 1); a última leva o `…` (com `ellipsis`) ou é cortada. Só v4. */
+  readonly maxLines?: Expr<number>;
 }
 
 // ---------------------------------------------------------------------------------------

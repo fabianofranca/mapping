@@ -6,6 +6,8 @@
 - `repeat.distribute` (formato 4): com `"fill"`, a lista ocupa o espaço do pai e as linhas dividem a altura (ou a largura) por igual, menos os `gap`s.
 - Expressão em `layout.type`, `layout.align`, `layout.justify`, `width` e `height` (formato 4), em quadro e em slot; um valor fora do conjunto vale o padrão e o desenho avisa `valor inválido em <chave>: <valor>`.
 - `minWidth`, `maxWidth`, `minHeight` e `maxHeight` em qualquer nó (formato 4): o `fill` que bate no limite congela e a sobra vai para os outros `fill`, como no flexbox; `min` maior que `max` é erro de validação.
+- `font.wrap` (`"word"` ou `"none"`, uma linha só), `font.ellipsis` (`…` no texto que não cabe) e `font.maxLines` (formato 4); o raster do MCP e a medida aproximada respeitam as três.
+- Aviso `texto maior que a caixa: <nó>` (as linhas quebradas passam da altura do nó e nada as corta), que entra na pendência "o componente não cabe".
 - Aviso `texto medido com largura 0: <nó>` na prova de desenho do `validate_library` e no desenho do componente.
 
 ## Alterado
@@ -15,5 +17,7 @@
 
 ## Corrigido
 
+- A verificação "o componente não cabe" ganha tolerância de 1 px por nó de texto: um excesso de fração de pixel entre o DOM e o canvas já não vira pendência.
+- Altura de linha do canvas igual à do DOM (conferida no Chromium): `lineHeight` em px não arredonda e o múltiplo não arredonda antes de multiplicar pelas linhas.
 - O anel `outside` do traço na raiz do componente, que não aparecia.
 - Um texto `fill` numa coluna `hug` quebrava palavra por palavra (letra a letra, com largura 0). Agora o conteúdo é medido em duas passagens, como o flexbox (em todas as versões do formato): o texto quebra em linhas de palavras e o quadro tem a altura delas.

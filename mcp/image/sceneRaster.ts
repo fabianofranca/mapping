@@ -815,19 +815,8 @@ function intersect(a: PixelRect, b: PixelRect): PixelRect {
   return { x: x0, y: y0, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) };
 }
 
-/** Barras do texto no espaço local do nó: uma por linha medida. */
-export function textBars(node: TextNode, measure: TextMeasurer): PixelRect[] {
-  const { style } = node;
-  const lineHeight = style.lineHeight ?? style.fontSize * 1.2;
-  const font = {
-    family: style.fontFamily,
-    size: style.fontSize,
-    weight: style.fontWeight,
-    italic: style.italic,
-    lineHeight,
-    letterSpacing: style.letterSpacing ?? 0,
-  };
-  const widthOf = (text: string) => measure(text, font).width;
+/** Quebra por palavras no `node.width` (o padrão, sem `wrap`/`ellipsis`/`maxLines`). */
+function breakLines(node: TextNode, widthOf: (text: string) => number): string[] {
   const lines: string[] = [];
   for (const paragraph of node.text.split('\n')) {
     const words = paragraph.split(' ').filter((word) => word !== '');
@@ -847,6 +836,52 @@ export function textBars(node: TextNode, measure: TextMeasurer): PixelRect[] {
     }
     lines.push(line);
   }
+  return lines;
+}
+
+/**
+ * Com `wrap`, `ellipsis` ou `maxLines`, as linhas vêm do medidor (que já corta e põe o `…`);
+ * `undefined` = quebra de sempre.
+ */
+function customLines(
+  node: TextNode,
+  measure: TextMeasurer,
+  font: Parameters<TextMeasurer>[1],
+): string[] | undefined {
+  const { style } = node;
+  if (
+    style.wrap === undefined &&
+    style.ellipsis === undefined &&
+    style.maxLines === undefined
+  )
+    return undefined;
+  const lines = measure(
+    node.text,
+    {
+      ...font,
+      ...(style.wrap ? { wrap: style.wrap } : {}),
+      ...(style.ellipsis ? { ellipsis: true } : {}),
+      ...(style.maxLines !== undefined ? { maxLines: style.maxLines } : {}),
+    },
+    node.width > 0 ? node.width : undefined,
+  ).lines;
+  return lines === undefined ? undefined : [...lines];
+}
+
+/** Barras do texto no espaço local do nó: uma por linha medida. */
+export function textBars(node: TextNode, measure: TextMeasurer): PixelRect[] {
+  const { style } = node;
+  const lineHeight = style.lineHeight ?? style.fontSize * 1.2;
+  const font = {
+    family: style.fontFamily,
+    size: style.fontSize,
+    weight: style.fontWeight,
+    italic: style.italic,
+    lineHeight,
+    letterSpacing: style.letterSpacing ?? 0,
+  };
+  const widthOf = (text: string) => measure(text, font).width;
+  const lines = customLines(node, measure, font) ?? breakLines(node, widthOf);
   const total = lines.length * lineHeight;
   const top =
     style.verticalAlign === 'middle'

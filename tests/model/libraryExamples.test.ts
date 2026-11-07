@@ -118,10 +118,9 @@ describe('o pacote do repositório passa pelo validador da biblioteca', () => {
     expect(
       approximate.every((w) => w.message.includes('conteúdo maior que a caixa')),
     ).toBe(true);
-    // Só o chip "Selecionado" avisa, no tamanho inicial; o mínimo não é desenhado.
-    expect(approximate.map((w) => w.path)).toEqual([
-      'layers[0].annotationTypes[6].examples[1]',
-    ]);
+    // O chip "Selecionado" passava da caixa por menos de 1 px de texto: com a tolerância de
+    // 1 px por nó de texto (decisão 10 da etapa #747) já não avisa.
+    expect(approximate.map((w) => w.path)).toEqual([]);
     expect(approximate.every((w) => w.message.includes('tamanho inicial'))).toBe(true);
     const others = report.warnings.filter(
       (w) => !w.path.startsWith('fonts[') && !w.message.endsWith('(aproximado)'),

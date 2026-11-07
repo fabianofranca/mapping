@@ -16,7 +16,7 @@ import {
   type Project,
   type TextMeasurer,
 } from '../../src/model';
-import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
+import { COMPONENTS, SPEC_ID, componentProject, testCatalog } from './componentFixtures';
 
 const catalog = testCatalog();
 
@@ -231,6 +231,49 @@ describe('createDrawingCache: memoização', () => {
 });
 
 describe('overflow', () => {
+  it('o aviso "texto maior que a caixa" também marca overflow (a pendência "não cabe")', () => {
+    const tall = testCatalog({
+      ...COMPONENTS,
+      text: {
+        format: 'mapping-component',
+        formatVersion: 1,
+        id: 'text',
+        name: 'text',
+        size: { width: 100, height: 40 },
+        template: {
+          type: 'frame',
+          layout: { type: 'none' },
+          children: [
+            {
+              type: 'text',
+              name: 'rotulo',
+              text: 'aaaa bbbb cccc dddd',
+              width: 30,
+              height: 12,
+              font: { size: 10, lineHeight: 12 },
+            },
+          ],
+        },
+      },
+    });
+    const p = addComponentMarking(
+      componentProject(),
+      tall,
+      {
+        markingId: 'T1',
+        annotationId: 'A_T1',
+        containerId: 'I1',
+        parentId: null,
+        specId: SPEC_ID,
+        typeId: 'text',
+      },
+      approximateMeasurer,
+    );
+    const drawing = createDrawingCache()(p, tall, approximateMeasurer, 0).get('T1')!;
+    expect(drawing.warnings).toContain('texto maior que a caixa: rotulo');
+    expect(drawing.overflow).toBe(true);
+  });
+
   it('folha que cabe não estoura; o aviso do motor marca overflow', () => {
     let p = add(componentProject(), 'T1', 'text');
     p = add(p, 'W', 'wide', { center: { x: 600, y: 600 } });
