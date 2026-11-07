@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
   "title": "Mapping — componente (mapping-component, formatVersion 1, 2, 3 e 4)",
-  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta stroke.cap, stroke.join e stroke.sides (numa versão menor é erro do parseComponent).",
+  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -1568,7 +1568,7 @@
       }
     },
     "layout": {
-      "description": "Distribuição dos filhos: none (âncoras), row ou column.",
+      "description": "Distribuição dos filhos: none (âncoras), row ou column. Na formatVersion 4, type, align e justify aceitam expressão; com type literal \"none\" só type vale.",
       "anyOf": [
         {
           "type": "object",
@@ -1586,7 +1586,7 @@
           "required": ["type"],
           "properties": {
             "type": {
-              "enum": ["row", "column"]
+              "$ref": "#/$defs/expr_layoutFlow"
             },
             "gap": {
               "$ref": "#/$defs/expr_nonNegative"
@@ -1622,10 +1622,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1674,10 +1686,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1714,10 +1738,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1754,10 +1790,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1803,10 +1851,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1858,10 +1918,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1934,10 +2006,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size_noHug"
+          "$ref": "#/$defs/expr_sizeNoHug"
         },
         "height": {
-          "$ref": "#/$defs/size_noHug"
+          "$ref": "#/$defs/expr_sizeNoHug"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1996,10 +2080,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -2012,6 +2108,10 @@
         },
         "gap": {
           "$ref": "#/$defs/expr_nonNegative"
+        },
+        "distribute": {
+          "enum": ["none", "fill"],
+          "description": "formatVersion 4: \"fill\" faz o repeat ocupar o eixo do pai e dividir o eixo das linhas igualmente (menos os gaps); \"none\" (padrão) é hug no eixo das linhas. Só literal."
         },
         "template": {
           "$ref": "#/$defs/node_frame"
@@ -2221,6 +2321,288 @@
             },
             "default": {
               "$ref": "#/$defs/expr_sides"
+            }
+          }
+        }
+      ]
+    },
+    "lit_layoutType": {
+      "enum": ["none", "row", "column"]
+    },
+    "lit_layoutFlow": {
+      "enum": ["row", "column"]
+    },
+    "expr_layoutType": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_layoutType"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_layoutType"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_layoutType"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_layoutFlow": {
+      "description": "Tipo do layout de um quadro ou slot que não é o literal \"none\": row ou column, ou uma expressão cujos ramos são none, row ou column (formatVersion 4).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_layoutFlow"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_layoutType"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_layoutType"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_size": {
+      "description": "Tamanho de nó: literal (px, \"fill\", \"hug\" ou \"NN%\") ou expressão ($field, $if, $switch, $concat). A expressão vale a partir da formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4').",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/size"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/size"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_size"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_size"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_size"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_size"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_sizeNoHug": {
+      "description": "Tamanho do nó image: literal (px, \"fill\" ou \"NN%\", sem hug) ou expressão, formatVersion 4.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/size_noHug"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/size_noHug"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_sizeNoHug"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_sizeNoHug"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_sizeNoHug"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_sizeNoHug"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
             }
           }
         }

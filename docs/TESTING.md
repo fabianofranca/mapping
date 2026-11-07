@@ -36,7 +36,7 @@ O Mapping é uma app web para marcar áreas retangulares em imagens, organizá-l
 | 24 | R22 — Comentários: conversas ancoradas no mapeamento | uma pasta `conversas` (o `examples/exemplo-completo.zip` descompactado em `design/mapeamentos/`), a shell, o MCP por stdio (seção 6) e a app | 50 min |
 | 25 | R23 — Perspectivas: recortes do projeto por público | uma pasta `perspectivas` (um `mapping.json` schema 15 que a shell escreve), a shell, o MCP por stdio (seção 6) e a app | 55 min |
 | 26 | R24 — Conteúdo fora da imagem | uma especialização `formatVersion` 14 pequena e o projeto, escritos no próprio roteiro, a shell e o MCP por stdio (seção 6) e a app | 45 min |
-| 27 | R25 — Componentes fiéis | uma biblioteca `m3-fiel` (cópia de `libraries/material3-compose/` com três componentes `formatVersion` 4, que a shell monta), a shell, o ImageMagick, o MCP por stdio (seção 6) e a app | 40 min |
+| 27 | R25 — Componentes fiéis | uma biblioteca `m3-fiel` (cópia de `libraries/material3-compose/` com seis componentes `formatVersion` 4, que a shell monta), a shell, o ImageMagick, o MCP por stdio (seção 6) e a app | 50 min |
 | sob demanda | RP — App instalado (PWA), nos **roteiros sob demanda (manuais)** | versão principal ou preview (`https:`) e o app instalável; só quando o dono pedir | 15 min |
 | sob demanda | RF — `index.html` por `file://` (antes R0.5), nos **roteiros sob demanda (manuais)** | shell com acesso ao GitHub Pages e o Chrome do computador; só quando o dono pedir | 10 min |
 | sob demanda | RA — Fechar a aba no meio da gravação (antes R6.2), nos **roteiros sob demanda (manuais)** | a pasta `principal` e um `tela2.png`; só quando o dono pedir | 10 min |
@@ -1743,9 +1743,9 @@ idb() { node "$W23/idb.mjs"; }
 
 ### R25 — Componentes fiéis
 
-**O que cobre:** a etapa Componentes fiéis (CF1, `formatVersion` 4 do **componente**, MCP 0.28.0): as chaves novas do traço (`stroke.cap`, `stroke.join` e `stroke.sides`) e o recorte da raiz do componente, que agora inclui o traço `outside` (e metade do `center`) e a sombra. Os passos conferem, pelo `validate_library`, que a biblioteca de teste é válida e que a regra de versão recusa as chaves novas numa versão anterior; e, na app, por recorte PNG do canvas, que a ponta e o canto do traço (`butt`, `round`, `square`; `miter`, `round`, `bevel`), o campo com só a linha de baixo (`sides`) e o anel `outside` da raiz aparecem desenhados. **Regra a conferir no fim:** o `mapping.json` não guarda nada do desenho. O `get_marking_image` do MCP desenha o traço sempre centrado no contorno, sem o `align`; por isso o anel `outside` é conferido só na app.
+**O que cobre:** a etapa Componentes fiéis (CF1 e CF2, `formatVersion` 4 do **componente**, MCP 0.28.0): as chaves novas do traço (`stroke.cap`, `stroke.join` e `stroke.sides`), o recorte da raiz do componente, que agora inclui o traço `outside` (e metade do `center`) e a sombra, e o layout fiel (CF2): a medição em duas passagens (um texto `fill` numa coluna `hug` quebra em linhas de palavras), `repeat.distribute: "fill"` (linhas de alturas iguais) e `maxWidth` (o `fill` que bate no limite devolve a sobra ao outro). Os passos conferem, pelo `validate_library`, que a biblioteca de teste é válida e que a regra de versão recusa as chaves novas numa versão anterior; e, na app, por recorte PNG do canvas, que a ponta e o canto do traço (`butt`, `round`, `square`; `miter`, `round`, `bevel`), o campo com só a linha de baixo (`sides`), o anel `outside` da raiz e as três medidas de layout aparecem desenhados. **Regra a conferir no fim:** o `mapping.json` não guarda nada do desenho. O `get_marking_image` do MCP desenha o traço sempre centrado no contorno, sem o `align`; por isso o anel `outside` é conferido só na app.
 
-**Preparo.** Seção 6 pronta (o repositório de teste e o `mapping-mcp.js`); os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6) e `REPO` é o clone do repositório do Mapping, onde está `libraries/material3-compose/`. A biblioteca de teste `m3-fiel` é uma cópia do pacote do Material 3 (Compose) em que a shell troca três componentes (o `divider`, o `text-field` e o `card`) por versões mínimas da `formatVersion` 4; o `fiel.mjs` abaixo as escreve, e o segundo argumento é a `formatVersion` (`4` ou `3`):
+**Preparo.** Seção 6 pronta (o repositório de teste e o `mapping-mcp.js`); os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6) e `REPO` é o clone do repositório do Mapping, onde está `libraries/material3-compose/`. A biblioteca de teste `m3-fiel` é uma cópia do pacote do Material 3 (Compose) em que a shell troca seis componentes (o `divider`, o `text-field`, o `card`, o `list-item`, o `navigation-bar` e o `checkbox`) por versões mínimas da `formatVersion` 4; o `fiel.mjs` abaixo as escreve, e o segundo argumento é a `formatVersion` (`4` ou `3`):
 
 ```js
 // fiel.mjs: node fiel.mjs <pasta da biblioteca> [formatVersion]
@@ -1773,11 +1773,19 @@ const corner = (name, left, join) => ({
   height: 40,
   stroke: { color: INK, width: 16, align: 'center', join },
 });
-const write = (id, name, size, template) =>
+const write = (id, name, size, template, extra = {}) =>
   fs.writeFileSync(
     dir + id + '.json',
     JSON.stringify(
-      { format: 'mapping-component', formatVersion: version, id, name, size, template },
+      {
+        format: 'mapping-component',
+        formatVersion: version,
+        id,
+        name,
+        size,
+        ...extra,
+        template,
+      },
       null,
       2,
     ),
@@ -1837,30 +1845,123 @@ write(
     stroke: { color: '#1B5E20', width: 8, align: 'outside' },
   },
 );
+write(
+  'list-item',
+  'List item',
+  { width: 240, height: 120 },
+  {
+    type: 'frame',
+    name: 'cartao-de-texto',
+    width: 240,
+    height: 120,
+    fill: '#FFFFFF',
+    layout: { type: 'column', gap: 8, padding: 20 },
+    children: [
+      { type: 'rect', name: 'régua', width: 'fill', height: 6, fill: '#6D4C41' },
+      {
+        type: 'frame',
+        name: 'cartao',
+        width: 'hug',
+        height: 'hug',
+        fill: '#4FC3F7',
+        layout: { type: 'column', padding: 8 },
+        children: [
+          {
+            type: 'text',
+            name: 'texto',
+            text: 'Quando o cartão abraça o texto longo',
+            width: 'fill',
+            color: '#000000',
+            font: { size: 14, lineHeight: 20 },
+          },
+        ],
+      },
+    ],
+  },
+);
+write(
+  'navigation-bar',
+  'Navigation bar',
+  { width: 240, height: 180 },
+  {
+    type: 'frame',
+    name: 'lista',
+    width: 240,
+    height: 180,
+    fill: '#FFFFFF',
+    layout: { type: 'column', padding: 10 },
+    children: [
+      {
+        type: 'repeat',
+        name: 'linhas',
+        field: 'items',
+        direction: 'column',
+        gap: 10,
+        distribute: 'fill',
+        template: {
+          type: 'frame',
+          name: 'linha',
+          layout: { type: 'row', padding: [0, 12], align: 'center' },
+          fill: {
+            $switch: 'label',
+            cases: { A: '#D81B60', B: '#F9A825', C: '#00897B' },
+            default: '#9E9E9E',
+          },
+          children: [
+            { type: 'text', name: 'rótulo', text: { $field: 'label' }, color: '#000000' },
+          ],
+        },
+      },
+    ],
+  },
+  { preview: { items: [{ label: 'A' }, { label: 'B' }, { label: 'C' }] } },
+);
+write(
+  'checkbox',
+  'Checkbox',
+  { width: 240, height: 60 },
+  {
+    type: 'frame',
+    name: 'limite',
+    width: 240,
+    height: 60,
+    fill: '#FFFFFF',
+    layout: { type: 'row', gap: 10, padding: 10 },
+    children: [
+      { type: 'rect', name: 'com-limite', width: 'fill', maxWidth: 60, fill: '#8E24AA' },
+      { type: 'rect', name: 'sem-limite', width: 'fill', fill: '#FB8C00' },
+    ],
+  },
+);
 ```
 
-O Divider (140 × 140, fundo branco) traz três barras horizontais de traço vermelho `#B3261E` (largura 12, a linha vai de x 12 a x 88 e o centro de cada barra fica em y 10, 40 e 70), com `cap` `butt`, `round` e `square`; e, embaixo, três cantos em L (largura 16, o vértice em x 14, y 14 do quadro de 40 × 40, em x 5, 50 e 95 e y 90 do Divider), com `join` `miter`, `round` e `bevel`. O Text field (240 × 56) é um retângulo `#E6E0E9` com um traço roxo `#6750A4` de 3, por dentro, só embaixo (`sides` `["bottom"]`). O Card (200 × 100) é branco com um anel verde `#1B5E20` de 8 **por fora** (`align` `outside`) na raiz do componente. Os **auxiliares de medida** (ImageMagick, na shell; os recortes são PNG de `deviceScaleFactor` 1): `tinta <png> <cor>` imprime a caixa da tinta da cor como `LxA+X+Y` (em pixels de tela), e `sonda <png> <X0> <Y0> <s> <u> <v>` imprime a cor (hexadecimal; compare os 6 primeiros dígitos) do pixel que fica em (X0 + u·s, Y0 + v·s), onde `u` e `v` são **unidades do componente** e `s` é pixels de tela por unidade:
+O Divider (140 × 140, fundo branco) traz três barras horizontais de traço vermelho `#B3261E` (largura 12, a linha vai de x 12 a x 88 e o centro de cada barra fica em y 10, 40 e 70), com `cap` `butt`, `round` e `square`; e, embaixo, três cantos em L (largura 16, o vértice em x 14, y 14 do quadro de 40 × 40, em x 5, 50 e 95 e y 90 do Divider), com `join` `miter`, `round` e `bevel`. O Text field (240 × 56) é um retângulo `#E6E0E9` com um traço roxo `#6750A4` de 3, por dentro, só embaixo (`sides` `["bottom"]`). O Card (200 × 100) é branco com um anel verde `#1B5E20` de 8 **por fora** (`align` `outside`) na raiz do componente. As três peças de layout (CF2), todas num fundo branco: o **List item** (240 × 120) tem uma régua marrom `#6D4C41` de 200 × 6 e, abaixo, um cartão azul-claro `#4FC3F7` **`hug` nos dois eixos** (`padding` 8) com um texto `fill` ("Quando o cartão abraça o texto longo", fonte 14, altura de linha 20): o texto cabe em **duas linhas** no cartão, que tem então 56 de altura e uma largura de 150 a 202; antes da CF2 o texto era medido com largura 0 e quebrava letra a letra (o cartão saía com 16 de largura e a altura inteira até o fim da peça). O **Navigation bar** (240 × 180) tem um `repeat` do campo `items` com `distribute` `"fill"` e `gap` 10 numa coluna de `padding` 10: cada linha tem a cor da coluna `label` (`A` rosa `#D81B60`, `B` amarela `#F9A825`, `C` verde-azulada `#00897B`), e as linhas dividem a altura (160) por igual, 46,67 cada, sem o `distribute` teriam só a altura do rótulo; o campo `items` é uma tabela e nasce **vazia** na app (o `preview` do componente não preenche tabela), então o passo R25.8 acrescenta as três linhas. O **Checkbox** (240 × 60) tem uma linha com `gap` 10 e `padding` 10 e dois retângulos `fill` lado a lado, o da esquerda roxo `#8E24AA` com `maxWidth` 60 e o da direita laranja `#FB8C00`: o roxo congela em 60 de largura e o laranja ocupa **todo o resto**, 150 (sem o `maxWidth` seriam 105 cada), os dois com 40 de altura. Os **auxiliares de medida** (ImageMagick, na shell; os recortes são PNG de `deviceScaleFactor` 1): `tinta <png> <cor>` imprime a caixa da tinta da cor como `LxA+X+Y` (em pixels de tela), e `sonda <png> <X0> <Y0> <s> <u> <v>` imprime a cor (hexadecimal; compare os 6 primeiros dígitos) do pixel que fica em (X0 + u·s, Y0 + v·s), onde `u` e `v` são **unidades do componente** e `s` é pixels de tela por unidade:
 
 ```bash
 tinta() { convert "$1" -fuzz 6% -fill white +opaque "$2" -trim -format '%wx%h%O\n' info:; }
 sonda() { convert "$1" -format "%[hex:p{$(awk "BEGIN{printf \"%d,%d\", $2+$4*$5, $3+$4*$6}")}]\n" info:; }
 medir() { read W H X Y < <(tinta "$1" "$2" | tr 'x+' '  '); s=$(awk "BEGIN{print $W/$3}"); X0=$(awk "BEGIN{print $X-$4*$s}"); Y0=$(awk "BEGIN{print $Y-$5*$s}"); echo "H/W=$(awk "BEGIN{print $H/$W}") s=$s"; }
+unid() { tinta "$1" "$2" | tr 'x+' '  ' | awk -v s="$s" '{printf "L=%.1f A=%.1f\n", $1/s, $2/s}'; }
 ```
 
-`medir <png> <cor> <largura> <u> <v>` acha a tinta da cor, calcula `s` (a largura da tinta em pixels dividida por `<largura>`, a largura esperada dela em unidades) e a origem do componente em pixels (`X0`, `Y0`), sabendo que o canto de cima à esquerda da tinta fica em (`<u>`, `<v>`) unidades do componente, e imprime a razão `H/W` da tinta e o `s`.
+`medir <png> <cor> <largura> <u> <v>` acha a tinta da cor, calcula `s` (a largura da tinta em pixels dividida por `<largura>`, a largura esperada dela em unidades) e a origem do componente em pixels (`X0`, `Y0`), sabendo que o canto de cima à esquerda da tinta fica em (`<u>`, `<v>`) unidades do componente, e imprime a razão `H/W` da tinta e o `s`. `unid <png> <cor>` imprime a largura `L` e a altura `A` da tinta da cor **em unidades do componente**, com o `s` que o último `medir` deixou.
 
 Para cada recorte, o agente tira por Playwright/CDP, a 1280×720 e `deviceScaleFactor` 1, `page.screenshot({ path, clip })` com o `clip` igual à caixa do `.canvas-host` (`boundingBox()`), depois de **Esc** (nenhuma marcação selecionada) e com o mouse fora do canvas. O resultado é sempre também olhado a olho (a captura é lida como imagem), e a medida só confirma.
 
 | Passo | Ação | Esperado |
 | --- | --- | --- |
-| R25.1 | **Montar e validar a biblioteca.** Pela shell, `cp -r REPO/libraries/material3-compose RAIZ/m3-fiel`, grave o `fiel.mjs` acima e rode `node fiel.mjs RAIZ/m3-fiel 4`. Pelo cliente stdio, `validate_library` com `path` `m3-fiel`. | **Resposta:** `valid` `true`; `errors` e `warnings` vazios; `summary` com 50 tipos e 50 componentes (os três trocados contam como os de antes). **Disco:** `RAIZ/m3-fiel/components/divider.json`, `text-field.json` e `card.json` com `"formatVersion": 4`; os outros 47 componentes seguem na versão que tinham. |
-| R25.2 | **A versão anterior recusa.** Pela shell, `cp -r RAIZ/m3-fiel RAIZ/m3-fiel-v3` e `node fiel.mjs RAIZ/m3-fiel-v3 3` (as mesmas três peças, agora com `"formatVersion": 3`). Pelo cliente stdio, `validate_library` com `path` `m3-fiel-v3`. | **Resposta:** `valid` `false`, com **sete** erros, todos com a mensagem `só é permitido com formatVersion 4`, nestes arquivos e caminhos (a ordem não importa): `components/divider.json`: `template.children[0].stroke.cap`, `template.children[1].stroke.cap`, `template.children[2].stroke.cap`, `template.children[3].stroke.join`, `template.children[4].stroke.join` e `template.children[5].stroke.join`; `components/text-field.json`: `template.children[0].stroke.sides`. O `card.json` (sem chave da versão 4) não gera erro. `warnings` vazio. **Disco:** nada muda. |
-| R25.3 | **Projeto, biblioteca e container na app.** Crie a pasta `fiel` (fora do repositório de teste) e **Abrir pasta** **[pessoa]** (ou `select_folder`); **Especializações** › **Aplicar pasta…** com `RAIZ/m3-fiel` **[pessoa]** (ou `select_folder`); **Aplicar**; feche a janela. **Novo container** › **Tamanho predefinido** › **Personalizado**, nome `Telas`, **Largura** `320`, **Altura** `420`, **Cor de fundo** `#DDEEFF`; **Criar container**. Espere **Salvo**. | **Tela:** a janela do pacote sem erro nem aviso (50 tipos); o container azul-claro `Telas`, vazio, selecionado. **Disco:** `schemaVersion` 17; `specs/material3-compose/` com `components/divider.json` em `"formatVersion": 4`; um container sem arquivo, `"background": "#DDEEFF"`, 320 × 420. |
+| R25.1 | **Montar e validar a biblioteca.** Pela shell, `cp -r REPO/libraries/material3-compose RAIZ/m3-fiel`, grave o `fiel.mjs` acima e rode `node fiel.mjs RAIZ/m3-fiel 4`. Pelo cliente stdio, `validate_library` com `path` `m3-fiel`. | **Resposta:** `valid` `true`; `errors` e `warnings` vazios; `summary` com 50 tipos e 50 componentes (os seis trocados contam como os de antes). **Disco:** `RAIZ/m3-fiel/components/divider.json`, `text-field.json`, `card.json`, `list-item.json`, `navigation-bar.json` e `checkbox.json` com `"formatVersion": 4`; os outros 44 componentes seguem na versão que tinham. |
+| R25.2 | **A versão anterior recusa.** Pela shell, `cp -r RAIZ/m3-fiel RAIZ/m3-fiel-v3` e `node fiel.mjs RAIZ/m3-fiel-v3 3` (as mesmas seis peças, agora com `"formatVersion": 3`). Pelo cliente stdio, `validate_library` com `path` `m3-fiel-v3`. | **Resposta:** `valid` `false`, com **nove** erros, todos com a mensagem `só é permitido com formatVersion 4`, nestes arquivos e caminhos (a ordem não importa): `components/divider.json`: `template.children[0].stroke.cap`, `template.children[1].stroke.cap`, `template.children[2].stroke.cap`, `template.children[3].stroke.join`, `template.children[4].stroke.join` e `template.children[5].stroke.join`; `components/text-field.json`: `template.children[0].stroke.sides`; `components/navigation-bar.json`: `template.children[0].distribute`; `components/checkbox.json`: `template.children[0].maxWidth`. O `card.json` e o `list-item.json` (sem chave da versão 4: o texto `fill` numa coluna `hug` vale em todas as versões) não geram erro. `warnings` vazio. **Disco:** nada muda. |
+| R25.3 | **Projeto, biblioteca e container na app.** Crie a pasta `fiel` (fora do repositório de teste) e **Abrir pasta** **[pessoa]** (ou `select_folder`); **Especializações** › **Aplicar pasta…** com `RAIZ/m3-fiel` **[pessoa]** (ou `select_folder`); **Aplicar**; feche a janela. **Novo container** › **Tamanho predefinido** › **Personalizado**, nome `Telas`, **Largura** `560`, **Altura** `420`, **Cor de fundo** `#DDEEFF`; **Criar container**. Espere **Salvo**. | **Tela:** a janela do pacote sem erro nem aviso (50 tipos); o container azul-claro `Telas`, vazio, selecionado. **Disco:** `schemaVersion` 17; `specs/material3-compose/` com `components/divider.json` em `"formatVersion": 4`; um container sem arquivo, `"background": "#DDEEFF"`, 560 × 420. |
 | R25.4 | **Os três componentes.** Na **Paleta** do Catálogo (`Ctrl+Shift+9`), nesta ordem, **Adicionar na tela Telas** o **Card** (nos Detalhes, **Posição** X `30`, Y `290`), o **Text field** (X `20`, Y `180`) e o **Divider** (X `20`, Y `20`); confira **Largura** × **Altura** de cada um (200 × 100, 240 × 56 e 140 × 140; se estiver diferente, digite). Espere **Salvo**. | **Tela:** os três componentes desenhados, nenhum sobre o outro: o Divider (barras e cantos vermelhos sobre um quadrado branco), o Text field (um retângulo lilás) e o Card (um retângulo branco com uma linha verde em volta). O **Diagnóstico** (`Ctrl+Shift+6`), na seção **Componentes**, sem erro de componente (o Card e o Text field podem trazer pendência de campo obrigatório vazio; não é defeito). **Disco:** 3 marcações, cada uma com a anotação do tipo `material3-compose/card`, `material3-compose/text-field` e `material3-compose/divider`. |
 | R25.5 | **`cap` e `join` no recorte PNG.** Com o Divider à vista (R25.4), dê zoom (`Ctrl+=` no canvas) até a tinta vermelha dele passar de 300 px de largura de tela, inteiro dentro do canvas, e tire o recorte `a.png`. Pela shell, `medir a.png '#B3261E' 120 11 4` e `sonda a.png $X0 $Y0 $s <u> <v>` nos pontos da coluna Esperado. | **Recorte:** `H/W` ≈ 122/120 (de 0,99 a 1,05). A olho: a barra de cima termina reta e mais curta que as outras duas; a do meio termina arredondada; a de baixo termina reta e cobre o canto (do mesmo comprimento que a do meio); dos três cantos em L, o primeiro tem o vértice de fora reto, o segundo arredondado e o terceiro cortado na diagonal. **Sondas** (u, v em unidades do Divider; `B3261E` é tinta, `FFFFFF` é fundo): barra **butt** (centro em y 10) (18, 10) e (17, 5.2) `FFFFFF`; **round** (centro em y 40) (18, 40) `B3261E` e (17, 35.2) `FFFFFF`; **square** (centro em y 70) (18, 70) e (17, 65.2) `B3261E`; (30, 10), (30, 40) e (30, 70) `B3261E`. Cantos, com L = 5 (**miter**), 50 (**round**) e 95 (**bevel**), o ponto fundo (L + 7.1, 97.1) e o raso (L + 9.2, 99.2): miter `B3261E` e `B3261E`; round `FFFFFF` e `B3261E`; bevel `FFFFFF` e `FFFFFF`. **Disco:** o `mapping.json` não muda. |
 | R25.6 | **`sides`: só a linha de baixo, no recorte PNG.** Leve o Text field ao centro do canvas, com zoom até a largura dele passar de 480 px de tela, e tire o recorte `b.png`. Pela shell, `medir b.png '#6750A4' 240 0 53` e `sonda b.png $X0 $Y0 $s <u> <v>` nos pontos da coluna Esperado. | **Tela e recorte:** a tinta roxa é **só uma faixa**: `H/W` ≈ 3/240 = 0,0125 (aceite de 0,010 a 0,015: o traço de 3, por dentro, na borda de baixo); se os quatro lados fossem desenhados, a razão seria 56/240 ≈ 0,23. A olho: o campo lilás tem uma linha roxa embaixo e mais nenhuma. **Sondas** (unidades do Text field): (120, 54.5) `6750A4`; (1.5, 28), (120, 1.5) e (238.5, 28) `E6E0E9` (os lados de cima, esquerdo e direito sem traço). **Disco:** o `mapping.json` não muda. |
 | R25.7 | **O anel `outside` da raiz, no recorte PNG.** Leve o Card ao centro do canvas, com zoom até o anel verde passar de 432 px de largura de tela, e tire o recorte `c.png`. Pela shell, `medir c.png '#1B5E20' 216 -8 -8` e `sonda c.png $X0 $Y0 $s <u> <v>` nos pontos da coluna Esperado. | **Tela e recorte:** o anel verde aparece **inteiro, em volta da caixa do Card**: a caixa da tinta verde tem a razão **H/W = 116/216** (≈ 0,537; aceite de 0,52 a 0,55: 200 × 100 mais 8 de cada lado); antes da CF1 o anel da raiz sumia (o recorte cortava na caixa) e `tinta` não achava nenhuma tinta verde (`1x1-1-1` ou erro de geometria). A olho: um retângulo branco com uma moldura verde contínua por fora, sem o fundo azul-claro entre as duas. **Sondas** (unidades do Card, origem no canto de cima à esquerda da caixa): (-4, 50), (100, -4) e (100, 104) `1B5E20` (anel à esquerda, em cima e embaixo); (4, 50) e (100, 50) `FFFFFF` (por dentro nada de traço); (-12, 50) `DDEEFF` (fora do anel, o fundo do container). **Disco:** o `mapping.json` não muda. |
-| R25.8 | **Nada do desenho no disco.** Espere **Salvo**, feche o projeto e reabra `fiel` (**Projetos recentes** › **Abrir**; aceite a permissão da pasta se vier); leia o `data-components` do `.canvas-host` e confira que o desenho continua, com o recorte do passo R25.7 repetido (`c2.png`) e as mesmas sondas do anel. Pela shell, leia o `mapping.json` da pasta `fiel`: `grep -c -E '"(cap | join | sides | stroke)" | B3261E | 1B5E20' mapping.json`. | **Tela:** `data-components` `3`; o anel verde do Card volta igual (a razão H/W da tinta verde volta a ser ≈ 0,537). **Disco:** `grep -c` imprime `0` (o `mapping.json` não guarda traço, cor nem cena); `schemaVersion` 17; a especialização aplicada está em `specs/material3-compose/` com `components/divider.json` em `"formatVersion": 4`. |
+| R25.8 | **Os três componentes de layout (CF2).** Na **Paleta** do Catálogo (`Ctrl+Shift+9`), nesta ordem, **Adicionar na tela Telas** o **Navigation bar** (nos Detalhes, **Posição** X `300`, Y `20`), o **List item** (X `300`, Y `220`) e o **Checkbox** (X `300`, Y `350`); confira **Largura** × **Altura** (240 × 180, 240 × 120 e 240 × 60; senão, digite). Com o Navigation bar selecionado, nos Detalhes, em **Itens**, clique **+ Linha** três vezes e digite `A`, `B` e `C` na coluna `label` de cada linha (Enter em cada; a tabela nasce vazia). Espere **Salvo**. | **Tela:** os três novos à direita dos três primeiros, sem sobreposição: o Navigation bar (um quadro branco com **três faixas** de cores diferentes, rosa, amarela e verde-azulada, uma sob a outra), o List item (uma régua marrom e, abaixo, um cartão azul-claro com um texto) e o Checkbox (duas faixas lado a lado, roxa e laranja). O **Diagnóstico** (`Ctrl+Shift+6`), na seção **Componentes**, sem erro nem aviso de componente (o List item pode trazer pendência de campo obrigatório vazio; não é defeito). **Disco:** 6 marcações no total; as três novas com a anotação do tipo `material3-compose/navigation-bar`, `list-item` e `checkbox`; no `navigation-bar`, o campo `items` com 3 linhas (`label` `A`, `B` e `C`). |
+| R25.9 | **Texto `fill` numa coluna `hug` (CF2, medição em duas passagens).** Leve o List item ao centro do canvas, com zoom até a régua marrom dele passar de 400 px de tela, e tire o recorte `d.png`. Pela shell, `medir d.png '#6D4C41' 200 20 20` (a régua tem 200 de largura e o canto de cima à esquerda dela fica em 20, 20) e `unid d.png '#4FC3F7'` (o cartão azul-claro). | **Recorte:** o cartão azul-claro tem **L entre 150 e 202** e **A = 56** (aceite de 54 a 58: duas linhas de 20 mais 8 de `padding` em cima e embaixo). Com o defeito antigo o cartão sai com **L = 16** (só o `padding`) e a altura vai até o fim da peça (A = 86). A olho: o texto "Quando o cartão abraça o texto longo" ocupa **duas linhas, com palavras inteiras** (nenhuma letra sozinha numa linha, nenhuma palavra quebrada no meio), o cartão abraça o texto sem folga grande à direita e a régua marrom fica acima dele, com 8 de distância. **Disco:** o `mapping.json` não muda. |
+| R25.10 | **`distribute: "fill"`: linhas de alturas iguais (CF2).** Leve o Navigation bar ao centro do canvas, com zoom até as faixas dele passarem de 440 px de tela de largura, e tire o recorte `e.png`. Pela shell, `medir e.png '#D81B60' 220 10 10` (a faixa rosa tem 220 de largura e começa em 10, 10) e `unid e.png '#D81B60'`, `unid e.png '#F9A825'` e `unid e.png '#00897B'`. | **Recorte:** as três faixas têm **A = 46,7** cada uma (aceite de 45,5 a 48; as três alturas diferem em no máximo 1 unidade) e a amarela e a verde-azulada têm **L = 220** (a rosa serviu de régua no `medir`). A olho: três faixas de cores diferentes, rosa em cima, amarela no meio e verde-azulada embaixo, com um vão igual de 10 entre elas e de 10 até a borda branca do quadro, preenchendo a altura toda do quadro (sem o `distribute` seriam três faixas finas de 20 de altura, coladas no topo). Cada faixa leva a letra do `label` (`A`, `B`, `C`) em preto. **Disco:** o `mapping.json` não muda. |
+| R25.11 | **`maxWidth` devolve a sobra (CF2).** Leve o Checkbox ao centro do canvas, com zoom até a faixa laranja passar de 360 px de tela de largura, e tire o recorte `f.png`. Pela shell, `tinta f.png '#8E24AA'` e `tinta f.png '#FB8C00'` (a caixa `LxA+X+Y` de cada cor, em pixels de tela). | **Recorte:** a razão da largura da faixa laranja pela da roxa é **150 / 60 = 2,5** (aceite de 2,4 a 2,6; sem o `maxWidth` seria 1,0); a razão A/L da roxa é 40 / 60 ≈ **0,67** (de 0,64 a 0,70) e a da laranja 40 / 150 ≈ **0,27** (de 0,25 a 0,29); as duas têm a mesma altura em pixels (diferença de até 2 px). A olho: duas faixas lado a lado, a roxa curta e a laranja comprida, com um vão de 10 entre elas. **Disco:** o `mapping.json` não muda. |
+| R25.12 | **Nada do desenho no disco.** Espere **Salvo**, feche o projeto e reabra `fiel` (**Projetos recentes** › **Abrir**; aceite a permissão da pasta se vier); leia o `data-components` do `.canvas-host` e confira que o desenho continua, com o recorte do passo R25.7 repetido (`c2.png`) e as mesmas sondas do anel, e o do passo R25.9 (`d2.png`, com o mesmo `medir` e `unid`). Pela shell, leia o `mapping.json` da pasta `fiel`: `grep -c -e '"cap"' -e '"join"' -e '"sides"' -e '"stroke"' -e '"maxWidth"' -e '"distribute"' -e B3261E -e 1B5E20 -e 4FC3F7 -e D81B60 -e 8E24AA mapping.json`. | **Tela:** `data-components` `6`; o anel verde do Card volta igual (a razão H/W da tinta verde volta a ser ≈ 0,537) e o cartão do List item volta com a mesma largura e altura em unidades (R25.9), as três faixas do Navigation bar e as duas do Checkbox continuam lá. **Disco:** `grep -c` imprime `0` (o `mapping.json` não guarda traço, limite de tamanho, cor nem cena; as linhas `A`, `B` e `C` do Navigation bar são dado, não desenho); `schemaVersion` 17; a especialização aplicada está em `specs/material3-compose/` com `components/divider.json` em `"formatVersion": 4`. |
 
 ### Roteiros sob demanda (manuais)
 

@@ -55,6 +55,10 @@ const BASE_KEYS = [
   'opacity',
   'width',
   'height',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
   'anchors',
   'fill',
   'stroke',
@@ -64,6 +68,11 @@ const BASE_KEYS = [
 
 function isRecord(value: unknown): value is Rec {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Um objeto com algum operador `$…`: uma expressão, não um literal. */
+function isExprObject(value: unknown): value is Rec {
+  return isRecord(value) && Object.keys(value).some((k) => k.startsWith('$'));
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -222,9 +231,7 @@ function checkExpr(
   check: Check,
   out: ComponentIssue[],
 ): void {
-  if (!isRecord(value) || !Object.keys(value).some((k) => k.startsWith('$'))) {
-    return check(value, path, out);
-  }
+  if (!isExprObject(value)) return check(value, path, out);
   const ops = Object.keys(value).filter((k) =>
     (EXPR_OPS as readonly string[]).includes(k),
   );
@@ -287,6 +294,39 @@ function checkSize(value: unknown, path: string, out: ComponentIssue[]): void {
   if (value === 'fill' || value === 'hug') return;
   if (typeof value === 'string' && PERCENT_PATTERN.test(value)) return;
   add(out, path, 'esperava número maior ou igual a 0, "fill", "hug" ou "<número>%"');
+}
+
+/** Como `checkSize`, mas sem `hug`: o nó `image` não depende da imagem baixada. */
+const checkSizeNoHug: Check = (v, p, out) => {
+  if (v === 'hug')
+    add(out, p, 'o nó image não aceita hug: a arrumação não depende da imagem baixada');
+  else checkSize(v, p, out);
+};
+
+const SIZE_LIMIT_AXES = [
+  ['minWidth', 'maxWidth'],
+  ['minHeight', 'maxHeight'],
+] as const;
+
+/** `width`/`height` (literal ou expressão), `min*`/`max*` e a ordem entre `min` e `max`. */
+function checkNodeSizes(
+  value: Rec,
+  path: string,
+  nodeType: string,
+  out: ComponentIssue[],
+): void {
+  const check = nodeType === 'image' ? checkSizeNoHug : checkSize;
+  for (const key of ['width', 'height']) {
+    if (key in value) checkExpr(value[key], join(path, key), check, out);
+  }
+  for (const [min, max] of SIZE_LIMIT_AXES) {
+    if (min in value) checkExpr(value[min], join(path, min), checkNonNegative, out);
+    if (max in value) checkExpr(value[max], join(path, max), checkNonNegative, out);
+    const lo = value[min];
+    const hi = value[max];
+    if (isFiniteNumber(lo) && isFiniteNumber(hi) && lo > hi)
+      add(out, join(path, min), `não pode ser maior que ${max}`);
+  }
 }
 
 function checkAnchors(value: unknown, path: string, out: ComponentIssue[]): void {
@@ -405,25 +445,41 @@ function checkPadding(value: unknown, path: string, out: ComponentIssue[]): void
   );
 }
 
-function checkLayout(value: unknown, path: string, out: ComponentIssue[]): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
-  if (value.type === 'none') return checkKeys(value, ['type'], path, out);
-  if (value.type !== 'row' && value.type !== 'column') {
-    add(out, join(path, 'type'), 'esperava "none", "row" ou "column"');
-    return;
-  }
+const checkLayoutType: Check = (v, p, out) => {
+  if (v !== 'none' && v !== 'row' && v !== 'column')
+    add(out, p, 'esperava "none", "row" ou "column"');
+};
+
+/** As chaves de um layout `row`/`column` (ou de `type` por expressão), na v4 também por expressão. */
+function checkLayoutFlow(value: Rec, path: string, out: ComponentIssue[]): void {
   checkKeys(value, ['type', 'gap', 'padding', 'align', 'justify'], path, out);
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
   if ('padding' in value)
     checkExpr(value.padding, join(path, 'padding'), checkPadding, out);
   if ('align' in value)
-    oneOf(['start', 'center', 'end', 'stretch'])(value.align, join(path, 'align'), out);
-  if ('justify' in value)
-    oneOf(['start', 'center', 'end', 'space-between'])(
-      value.justify,
-      join(path, 'justify'),
+    checkExpr(
+      value.align,
+      join(path, 'align'),
+      oneOf(['start', 'center', 'end', 'stretch']),
       out,
     );
+  if ('justify' in value)
+    checkExpr(
+      value.justify,
+      join(path, 'justify'),
+      oneOf(['start', 'center', 'end', 'space-between']),
+      out,
+    );
+}
+
+function checkLayout(value: unknown, path: string, out: ComponentIssue[]): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (value.type === 'none') return checkKeys(value, ['type'], path, out);
+  const at = join(path, 'type');
+  if (isExprObject(value.type)) checkExpr(value.type, at, checkLayoutType, out);
+  else if (value.type !== 'row' && value.type !== 'column')
+    return add(out, at, 'esperava "none", "row" ou "column"');
+  checkLayoutFlow(value, path, out);
 }
 
 function checkViewBox(value: unknown, path: string, out: ComponentIssue[]): void {
@@ -451,7 +507,7 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
     text: ['text', 'font', 'color'],
     path: ['d', 'viewBox', 'fillRule'],
     slot: ['label', 'layout'],
-    repeat: ['field', 'direction', 'gap', 'template'],
+    repeat: ['field', 'direction', 'gap', 'distribute', 'template'],
     image: ['src', 'fit'],
   };
   // children/layout em nó que não é quadro têm mensagem própria, em vez de "chave desconhecida"
@@ -474,8 +530,7 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
   if ('name' in value) checkString(value.name, join(path, 'name'), out);
   if ('visible' in value) checkBoolExpr(value.visible, join(path, 'visible'), out);
   if ('opacity' in value) checkExpr(value.opacity, join(path, 'opacity'), checkUnit, out);
-  if ('width' in value) checkSize(value.width, join(path, 'width'), out);
-  if ('height' in value) checkSize(value.height, join(path, 'height'), out);
+  checkNodeSizes(value, path, type, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
   if ('fill' in value) checkExpr(value.fill, join(path, 'fill'), checkFill, out);
   if ('stroke' in value) checkStroke(value.stroke, join(path, 'stroke'), out, type);
@@ -526,7 +581,8 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
 
 /**
  * `image` (formatVersion 3): `src` obrigatório e restrito (URL `https://` literal ou exatamente
- * `{ "$field": "<campo>" }`), `fit` e nenhum `hug` (a arrumação não depende da imagem baixada).
+ * `{ "$field": "<campo>" }`), `fit` e nenhum `hug` (conferido em `checkNodeSizes`: a arrumação não
+ * depende da imagem baixada).
  * O host local não é erro de formato aqui: a política da app decide em tempo de execução.
  */
 function checkImage(value: Rec, path: string, out: ComponentIssue[]): void {
@@ -548,14 +604,6 @@ function checkImage(value: Rec, path: string, out: ComponentIssue[]): void {
   }
   if ('fit' in value)
     oneOf(['cover', 'contain', 'fill'])(value.fit, join(path, 'fit'), out);
-  for (const key of ['width', 'height']) {
-    if (value[key] === 'hug')
-      add(
-        out,
-        join(path, key),
-        'o nó image não aceita hug: a arrumação não depende da imagem baixada',
-      );
-  }
 }
 
 /** `repeat`: o campo `table`, a direção, o espaço e o `template` (um quadro, sem `repeat` nem `slot`). */
@@ -565,6 +613,8 @@ function checkRepeat(value: Rec, path: string, out: ComponentIssue[]): void {
   if ('direction' in value)
     oneOf(['column', 'row'])(value.direction, join(path, 'direction'), out);
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
+  if ('distribute' in value)
+    oneOf(['none', 'fill'])(value.distribute, join(path, 'distribute'), out);
   const at = join(path, 'template');
   if (!('template' in value)) return add(out, at, 'campo obrigatório');
   const template = value.template;
@@ -582,31 +632,49 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['stroke', 'cap'],
   ['stroke', 'join'],
   ['stroke', 'sides'],
+  ['minWidth'],
+  ['maxWidth'],
+  ['minHeight'],
+  ['maxHeight'],
+  ['distribute'],
+];
+
+/** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
+const V4_EXPR_KEYS: readonly (readonly string[])[] = [
+  ['width'],
+  ['height'],
+  ['layout', 'type'],
+  ['layout', 'align'],
+  ['layout', 'justify'],
 ];
 
 /**
  * A regra genérica da v4: para cada nó da árvore (`children` e `template` do repeat) que traz uma
  * das chaves de `keys` (cadeias como `['stroke', 'cap']`), numa versão anterior à 4, devolve
  * `só é permitido com formatVersion 4` no caminho da chave. As fases seguintes só acrescentam
- * cadeias a `V4_NODE_KEYS`.
+ * cadeias a `V4_NODE_KEYS`. As cadeias de `exprKeys` só contam quando o valor é uma expressão
+ * (objeto com operador `$…`): o literal continua valendo em todas as versões.
  */
 export function v4OnlyKeyIssues(
   version: unknown,
   node: unknown,
   path: string,
   keys: readonly (readonly string[])[],
+  exprKeys: readonly (readonly string[])[] = [],
 ): ComponentIssue[] {
   const out: ComponentIssue[] = [];
   if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
     return out;
   const walk = (n: unknown, at: string): void => {
     if (!isRecord(n)) return;
-    for (const chain of keys) {
+    const flag = (chain: readonly string[], exprOnly: boolean): void => {
       let cursor: unknown = n;
       for (const key of chain) cursor = isRecord(cursor) ? cursor[key] : undefined;
-      if (cursor !== undefined)
+      if (cursor !== undefined && (!exprOnly || isExprObject(cursor)))
         add(out, [at, ...chain].filter((x) => x !== '').join('.'), V4_ONLY_MESSAGE);
-    }
+    };
+    keys.forEach((chain) => flag(chain, false));
+    exprKeys.forEach((chain) => flag(chain, true));
     if (Array.isArray(n.children))
       n.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
     if (n.type === 'repeat') walk(n.template, join(at, 'template'));
@@ -752,7 +820,9 @@ function collectIssues(input: unknown): ComponentIssue[] {
         add(out, node.path, 'o nó repeat só existe na formatVersion 2');
       }
     }
-    out.push(...v4OnlyKeyIssues(version, input.template, 'template', V4_NODE_KEYS));
+    out.push(
+      ...v4OnlyKeyIssues(version, input.template, 'template', V4_NODE_KEYS, V4_EXPR_KEYS),
+    );
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(input.template, 'template', ['image'])) {
         add(out, node.path, 'o nó image só existe na formatVersion 3');

@@ -157,20 +157,28 @@ export interface Anchors {
   readonly centerY?: boolean;
 }
 
-export type LayoutSpec =
-  | { readonly type: 'none' }
-  | {
-      readonly type: 'row' | 'column';
-      readonly gap?: Expr<number>;
-      /** Um valor, [vertical, horizontal] ou [cima, direita, baixo, esquerda]. */
-      readonly padding?: Expr<
-        number | readonly [number, number] | readonly [number, number, number, number]
-      >;
-      /** No eixo cruzado. */
-      readonly align?: 'start' | 'center' | 'end' | 'stretch';
-      /** No eixo principal. */
-      readonly justify?: 'start' | 'center' | 'end' | 'space-between';
-    };
+/** Tipo de layout de um quadro ou slot. */
+export type LayoutType = 'none' | 'row' | 'column';
+export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch';
+export type LayoutJustify = 'start' | 'center' | 'end' | 'space-between';
+
+/**
+ * Layout dos filhos. Na `formatVersion` 4, `type`, `align` e `justify` aceitam expressão (o valor
+ * resolvido é conferido no desenho: fora do conjunto, cai no padrão com o aviso
+ * `valor inválido em layout.<chave>: <valor>`); com `type` literal `"none"`, só `type` vale.
+ */
+export interface LayoutSpec {
+  readonly type: Expr<LayoutType>;
+  readonly gap?: Expr<number>;
+  /** Um valor, [vertical, horizontal] ou [cima, direita, baixo, esquerda]. */
+  readonly padding?: Expr<
+    number | readonly [number, number] | readonly [number, number, number, number]
+  >;
+  /** No eixo cruzado. */
+  readonly align?: Expr<LayoutAlign>;
+  /** No eixo principal. */
+  readonly justify?: Expr<LayoutJustify>;
+}
 
 // ---------------------------------------------------------------------------------------
 // Nós do template
@@ -181,8 +189,18 @@ interface TemplateNodeBase {
   readonly name?: string;
   readonly visible?: BoolExpr;
   readonly opacity?: Expr<number>;
-  readonly width?: SizeSpec;
-  readonly height?: SizeSpec;
+  /** Tamanho no eixo; aceita expressão na `formatVersion` 4 (valor inválido cai no padrão, com aviso). */
+  readonly width?: Expr<SizeSpec>;
+  readonly height?: Expr<SizeSpec>;
+  /**
+   * Limites do tamanho (px, `formatVersion` 4; aceitam expressão), aplicados depois do
+   * `fill`/`hug`/`%` e antes do `minSize` da instância. Um `fill` que bate no `max` devolve a
+   * sobra aos outros `fill` do mesmo pai, como o flexbox.
+   */
+  readonly minWidth?: Expr<number>;
+  readonly maxWidth?: Expr<number>;
+  readonly minHeight?: Expr<number>;
+  readonly maxHeight?: Expr<number>;
   /** Só com pai `layout: none`. */
   readonly anchors?: Anchors;
   readonly fill?: Expr<FillSpec>;
@@ -256,6 +274,13 @@ export interface RepeatTemplate extends TemplateNodeBase {
   readonly direction?: 'column' | 'row';
   /** Espaço entre as linhas (px). */
   readonly gap?: Expr<number>;
+  /**
+   * `formatVersion` 4: `"fill"` faz o `repeat` ocupar o eixo do pai (como um filho `fill`) e
+   * dividir o eixo das linhas igualmente entre elas, menos os `gap`s; o tamanho `fill` (ou
+   * omitido) do `template` no eixo das linhas vale a fração. `"none"` (padrão): o `repeat` é
+   * `hug` no eixo das linhas.
+   */
+  readonly distribute?: 'none' | 'fill';
   /** O desenho de uma linha. */
   readonly template: FrameTemplate;
 }
