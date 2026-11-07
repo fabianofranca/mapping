@@ -1,4 +1,4 @@
-# Conteúdo fora da imagem — [Não lançado] (épico `epic/conteudo-fora-da-imagem`, PR #766, MCP 0.27.0, schema v17)
+# Conteúdo fora da imagem — 2026-11-07 (épico `epic/conteudo-fora-da-imagem`, PR #766, MCP 0.27.0, schema v17)
 
 ## Adicionado
 

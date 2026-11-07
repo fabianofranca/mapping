@@ -1,4 +1,4 @@
-# Conteúdo fora da imagem — [Não lançado] (épico `epic/conteudo-fora-da-imagem`)
+# Conteúdo fora da imagem — 2026-11-07 (épico `epic/conteudo-fora-da-imagem`)
 
 ## Pendências
 
@@ -8,4 +8,8 @@
 
 ## Sincronização
 
+Versões 58 (conteúdo) e 59 (índice) do artefato, de 2026-11-07. **Componente novo (só guia `README.md`, sem `preview.html`):** `ReferencedByRow` (a linha Referenciada por). **Guias alterados:** `ReferenceField` (alvo de anotação inteira, aba por tipo, "Livres" sem anotação inteira) e `RefCell` (anotações aceitas e abas por tipo). **Tokens, ícones e `bundle.css`:** nenhum novo. Nada foi apagado.
+
 ## Ficou sem gravar
+
+- Os `preview.html` do novo `ReferencedByRow` e os estados novos nos previews de `ReferenceField` e `RefCell` (seletor com alvo de anotação, aba de tipo ativa, vazio "Nenhuma anotação dos tipos …"); só descritos em texto nos guias.
