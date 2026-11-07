@@ -7,6 +7,7 @@ import {
   isUnread,
   resolveAnchor,
   threadSubject,
+  messagePlainText,
   SUBJECT_MAX,
   type ThreadAnchor,
 } from '../../src/model';
@@ -290,5 +291,25 @@ describe('isUnread', () => {
   it('sem identidade, toda mensagem de pessoa é de outra pessoa', () => {
     const t = sampleThread({ messages: [message('m1', T2, HUMAN)] });
     expect(isUnread(t, T1, null)).toBe(true);
+  });
+});
+
+describe('messagePlainText (coluna Última mensagem)', () => {
+  it('tira a marcação do markdown e deixa o rótulo das citações', () => {
+    const text =
+      'Use **estilo** e `primary` no [Cadastrar](mapping://x/m/8f9464dd).\n\n- um item\n> citado';
+    expect(messagePlainText(text)).toBe(
+      'Use estilo e primary no Cadastrar. um item citado',
+    );
+  });
+
+  it('corta em 200 caracteres com reticências', () => {
+    const out = messagePlainText('a'.repeat(300));
+    expect(Array.from(out)).toHaveLength(200);
+    expect(out.endsWith('…')).toBe(true);
+  });
+
+  it('texto vazio dá vazio', () => {
+    expect(messagePlainText('  \n ')).toBe('');
   });
 });

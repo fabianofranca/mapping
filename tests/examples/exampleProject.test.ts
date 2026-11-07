@@ -11,6 +11,8 @@ import {
   serializeThread,
   awaiting,
   resolveAnchor,
+  extractCitations,
+  resolveCitation,
   toLibraryFiles,
   validateAccepted,
   type Project,
@@ -159,6 +161,20 @@ describe('conversas de exemplo (comments/)', () => {
     expect(byAgent.messages[0]!.text).toContain('mapping://exemplo-completo/m/');
     const resolved = threads.find(({ thread }) => thread.resolved !== null)!.thread;
     expect(resolved.resolved?.by.email).toBe('marina@exemplo.com');
+  });
+
+  it('toda citação mapping:// das conversas resolve no projeto (sem broken)', async () => {
+    const { threads, project } = await readThreads();
+    const all = threads.map(({ thread }) => thread);
+    for (const thread of all) {
+      for (const m of thread.messages) {
+        for (const c of extractCitations(m.text)) {
+          expect(c.ref, `${thread.id}: ${c.url}`).not.toBeNull();
+          const r = resolveCitation({ project, threads: all, proposals: [] }, c.ref!.ref);
+          expect(r.found, `${thread.id}: ${c.url}`).toBe(true);
+        }
+      }
+    }
   });
 
   it('todas as âncoras existem no projeto e nenhum e-mail é real', async () => {

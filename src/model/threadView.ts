@@ -224,13 +224,28 @@ export function threadSubject(
   return '';
 }
 
-function clip(text: string): string {
+function clip(text: string, max: number = SUBJECT_MAX): string {
   const chars = Array.from(text);
-  if (chars.length <= SUBJECT_MAX) return text;
+  if (chars.length <= max) return text;
   return `${chars
-    .slice(0, SUBJECT_MAX - 1)
+    .slice(0, max - 1)
     .join('')
     .trimEnd()}…`;
+}
+
+/** Tamanho máximo do texto simples da coluna "Última mensagem". */
+export const MESSAGE_PLAIN_MAX = 200;
+
+/**
+ * O texto da mensagem numa linha, sem a marcação do markdown (como o assunto, decisão 17):
+ * as linhas com texto são juntas por espaço, e o link vira o rótulo.
+ */
+export function messagePlainText(text: string): string {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => plainLine(line))
+    .filter((line) => line !== '');
+  return clip(lines.join(' '), MESSAGE_PLAIN_MAX);
 }
 
 // ---------------------------------------------------------------------------
