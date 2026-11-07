@@ -67,17 +67,14 @@ import type { ProjectStore } from './history';
 import * as imagePermissions from './imagePermissions';
 import { markingDisplay, showComponentsOnPhotos } from './settings';
 import { textMeasurer } from './textMeasure';
-import { resolveActiveLayerId, visibleLayers, type EditorUi } from './ui';
+import { visibleLayers, type EditorUi } from './ui';
 
 // Estado derivado do editor (docs/ARCHITECTURE.md, "Desempenho"): calculado uma vez a partir do projeto
 // e da UI e lido por canvas, painel e lista. Nada aqui depende do viewport, então
 // pan e zoom não recalculam nada disto.
 
 export interface EditorDerived {
-  /** Camada ativa efetiva (`resolveActiveLayerId`). */
-  readonly activeLayerId: ReadonlySignal<string | null>;
-  readonly activeLayer: ReadonlySignal<Layer | null>;
-  /** Camadas visíveis, na ordem do projeto (a ativa sempre entre elas). */
+  /** Camadas visíveis, na ordem do projeto (podem ser nenhuma). */
   readonly visibleLayers: ReadonlySignal<readonly Layer[]>;
   /** Pendências por anotação (só as incompletas). */
   readonly issues: ReadonlySignal<ReadonlyMap<string, readonly AnnotationIssue[]>>;
@@ -87,7 +84,7 @@ export interface EditorDerived {
   >;
   /** Indicadores (bolinhas) de cada marcação nas camadas visíveis. */
   readonly layerDots: ReadonlySignal<ReadonlyMap<string, readonly LayerDot[]>>;
-  /** Visibilidade de cada marcação segundo o modo de exibição e a camada ativa. */
+  /** Visibilidade de cada marcação segundo o modo de exibição e as camadas visíveis. */
   readonly markingVisibility: ReadonlySignal<ReadonlyMap<string, MarkingVisibility>>;
   /** Marcações com anotação incompleta numa camada visível (alerta no canvas). */
   readonly incompleteMarkings: ReadonlySignal<ReadonlySet<string>>;
@@ -271,19 +268,11 @@ export function createEditorDerived(
 ): EditorDerived {
   const project = shown;
 
-  const activeLayerId = computed(() =>
-    resolveActiveLayerId(project.value, ui.activeLayer.value),
-  );
-  const activeLayer = computed(() => {
-    const id = activeLayerId.value;
-    return id === null ? null : (project.value?.layers.find((l) => l.id === id) ?? null);
-  });
-
   // Devolve a lista anterior quando as camadas são as mesmas: quem depende dela
   // (indicadores, cartões do canvas) não recalcula a cada edição que não mexe nelas.
   let lastVisible: readonly Layer[] = [];
   const visible = computed(() => {
-    const next = visibleLayers(project.value, ui.hiddenLayers.value, activeLayerId.value);
+    const next = visibleLayers(project.value, ui.hiddenLayers.value);
     if (!sameItems(next, lastVisible)) lastVisible = next;
     return lastVisible;
   });
@@ -329,13 +318,6 @@ export function createEditorDerived(
   const layerDots = computed(() => {
     const p = project.value;
     return p ? layerDotsByMarking(p, visible.value) : NO_DOTS;
-  });
-
-  // "Sem anotação" (esmaecer/ocultar) é medido só pela camada ativa, própria ou herdada.
-  const activeDots = computed(() => {
-    const p = project.value;
-    const layer = activeLayer.value;
-    return p && layer ? layerDotsByMarking(p, [layer]) : NO_DOTS;
   });
 
   // Marcações cujo desenho pode aparecer: container sem arquivo, ou foto com a opção ligada. Não depende
@@ -393,7 +375,7 @@ export function createEditorDerived(
     const selection = ui.selection.value;
     return markingVisibility(
       p,
-      activeDots.value,
+      layerDots.value,
       markingDisplay.value,
       selection?.kind === 'marking' ? selection.id : null,
       drawnMarkings.value,
@@ -570,8 +552,6 @@ export function createEditorDerived(
   });
 
   return {
-    activeLayerId,
-    activeLayer,
     visibleLayers: visible,
     issues,
     annotationsByMarking,

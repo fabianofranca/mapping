@@ -219,11 +219,13 @@ test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page })
   await palette.getByRole('button', { name: '#1E88E5' }).click();
   await expect(palette).toBeHidden();
 
-  // A camada ativa muda pelo botão da linha; o chip da barra acompanha.
-  await layers.getByRole('button', { name: 'Tornar ativa: Pintura' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Camadas (ativa: Pintura)' }),
-  ).toBeVisible();
+  // Não há camada ativa: sem "Tornar ativa" nem chip, e qualquer camada se esconde.
+  await expect(layers.getByRole('button', { name: /^Tornar ativa/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Camadas \(ativa/ })).toHaveCount(0);
+  const paintingBox = layers.getByRole('checkbox', { name: 'Mostrar a camada Pintura' });
+  await paintingBox.uncheck();
+  await expect(paintingBox).not.toBeChecked();
+  await paintingBox.check();
 
   // Excluir fica no menu da linha e pede confirmação.
   await layers.getByRole('button', { name: 'Mais ações da camada Pintura' }).click();
@@ -243,10 +245,6 @@ test('desktop: Árvore e Camadas dividem a coluna da esquerda', async ({ page })
   await expect(tree).toBeVisible();
   await page.keyboard.press('Control+Shift+Digit2');
   await expect(layers).toBeVisible();
-  await expect(layers).toBeFocused();
-  // O chip da barra leva o foco de volta para a janela.
-  await tree.focus();
-  await page.getByRole('button', { name: /^Camadas \(ativa/ }).click();
   await expect(layers).toBeFocused();
 });
 
@@ -287,8 +285,13 @@ test('desktop: Detalhes com atalhos, arrasto de pares e seções recolhíveis', 
   await drawMarking(page, await canvasPoint(page));
   const details = page.getByRole('region', { name: 'Detalhes' });
 
-  // Alt+N: nova anotação na camada ativa, com o foco no nome.
+  // O + da camada cria a anotação, com o foco no nome (o Alt+N não faz nada).
   await page.keyboard.press('Alt+KeyN');
+  await expect(details.getByLabel('Nome da anotação')).toHaveCount(0);
+  await details
+    .getByRole('button', { name: /Adicionar anotação na camada/ })
+    .first()
+    .click();
   const name = details.getByLabel('Nome da anotação');
   await expect(name).toBeFocused();
   await name.fill('Botão');

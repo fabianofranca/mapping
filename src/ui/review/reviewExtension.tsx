@@ -107,17 +107,12 @@ export function sectionsForChange(
 /** A camada da mudança de anotação está escondida no editor (só o "Mostrar aqui" a traz)? */
 export function isChangeLayerHidden(
   c: Change,
-  args: Pick<
-    ReviewExtensionArgs,
-    'project' | 'current' | 'hiddenLayers' | 'activeLayerId'
-  >,
+  args: Pick<ReviewExtensionArgs, 'project' | 'current' | 'hiddenLayers'>,
 ): boolean {
   if (c.entity !== 'annotation') return false;
   const layer = changeLayerId(c, args.project) ?? changeLayerId(c, args.current);
   if (layer === null) return false;
-  return !visibleLayers(args.project, args.hiddenLayers, args.activeLayerId).some(
-    (l) => l.id === layer,
-  );
+  return !visibleLayers(args.project, args.hiddenLayers).some((l) => l.id === layer);
 }
 
 /** Quantas mudanças a entidade tem (a criação ou remoção conta uma). */
@@ -140,7 +135,6 @@ export interface ReviewExtensionArgs {
   readonly index: FieldChangeIndex;
   readonly view: ReviewView;
   readonly hiddenLayers: ReadonlySet<string>;
-  readonly activeLayerId: string | null;
   /** "Mostrar aqui" das camadas escondidas com mudanças (estado de UI, até trocar de item). */
   readonly revealed: boolean;
   readonly onReveal: (revealed: boolean) => void;
@@ -249,9 +243,7 @@ export function reviewExtension(args: ReviewExtensionArgs): DetailsExtension {
   const shownIndex = projectIndex(project);
   const currentIndex = projectIndex(current);
   const byLayer = changesByLayer(args);
-  const baseLayers = new Set(
-    visibleLayers(project, args.hiddenLayers, args.activeLayerId).map((l) => l.id),
-  );
+  const baseLayers = new Set(visibleLayers(project, args.hiddenLayers).map((l) => l.id));
   // Camadas escondidas (pela pessoa) com mudanças nesta marcação.
   const hiddenWithChanges = project.layers.filter(
     (l) => !baseLayers.has(l.id) && (byLayer.get(l.id)?.length ?? 0) > 0,

@@ -25,7 +25,6 @@ import {
 import { useEditor } from '../ui/EditorContext';
 import {
   closeToolWindow,
-  openToolWindow,
   showAndFocusToolWindow,
   spaceFor,
 } from '../ui/toolWindowLayout';
@@ -38,12 +37,10 @@ import {
   isTextInput,
   reviewShortcutFor,
   shortcutFor,
-  worksInTextInput,
   type ReviewShortcut,
   type Shortcut,
 } from './shortcuts';
 import { useApplyAccepted, useDecide } from '../ui/review/useReview';
-import { ADD_ANNOTATION_ACTION } from '../ui/AnnotationsPanel';
 import { toggleReviewLegend } from '../ui/review/ReviewCanvasControls';
 import { arrangeMarking, canArrangeMarking } from '../ui/arrange';
 import { canWrapNow, currentWrapItems, wrapItemsNow } from './wrapSelection';
@@ -311,23 +308,6 @@ export function useEditorShortcuts(
           return dialogsRef.current.show({ kind: 'help' });
         case 'settings':
           return dialogsRef.current.show({ kind: 'settings' });
-        case 'new-annotation': {
-          // O botão "+ Anotação" de Detalhes sabe a camada ativa, o tipo e o modo
-          // somente leitura: o atalho só o aciona (abrindo Detalhes, se recolhido).
-          const button = () =>
-            // Exceção nominal (etapa 8, 8.3): o atalho aciona o "+ Anotação" de Detalhes, que
-            // sabe a camada, o tipo e o somente leitura; trocar por um comando fica para depois.
-            // eslint-disable-next-line no-restricted-syntax
-            document.querySelector<HTMLButtonElement>(
-              `[data-action="${ADD_ANNOTATION_ACTION}"]`,
-            );
-          if (button()) return button()?.click();
-          if (resolveSelection(shown.peek(), ui.selection.peek())?.kind !== 'marking')
-            return;
-          openToolWindow('details');
-          requestAnimationFrame(() => button()?.click());
-          return;
-        }
       }
     };
 
@@ -385,7 +365,7 @@ export function useEditorShortcuts(
       const shortcut = shortcutFor(e, altNumbers);
       if (!shortcut) return;
       if (shortcut.kind === 'nudge') return onNudge(e, shortcut.dx, shortcut.dy);
-      if (isTextInput(e.target) && !worksInTextInput(shortcut)) return;
+      if (isTextInput(e.target)) return;
       if (!applies(shortcut)) return;
       e.preventDefault();
       if (wrapIgnored(shortcut, e)) return;

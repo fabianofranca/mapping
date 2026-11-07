@@ -20,8 +20,6 @@ export type Shortcut =
   | { readonly kind: 'layers' }
   | { readonly kind: 'help' }
   | { readonly kind: 'settings' }
-  /** Alt+N: nova anotação na camada ativa (vale também com o foco num campo). */
-  | { readonly kind: 'new-annotation' }
   /** Alt+L: tranca ou destranca o item selecionado. */
   | { readonly kind: 'toggle-lock' }
   /** Alt+H: liga ou desliga o Ver limpo do canvas. */
@@ -48,7 +46,6 @@ export const SHORTCUT_LABELS = {
   layers: 'Ctrl+L',
   help: 'F1',
   settings: 'Ctrl+,',
-  newAnnotation: 'Alt+N',
   toggleLock: 'Alt+L',
   cleanView: 'Alt+H',
   newRow: 'Alt+Enter',
@@ -194,8 +191,6 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
     }
     // Com Alt (Option no macOS) o `key` vira outro caractere: a tecla física manda.
     if (e.shiftKey && (e.code === 'KeyA' || key === 'a')) return { kind: 'arrange' };
-    if (!e.shiftKey && (e.code === 'KeyN' || key === 'n'))
-      return { kind: 'new-annotation' };
     if (!e.shiftKey && (e.code === 'KeyL' || key === 'l')) return { kind: 'toggle-lock' };
     if (!e.shiftKey && (e.code === 'KeyH' || key === 'h')) return { kind: 'clean-view' };
     if (key === 'arrowup') return { kind: 'select-parent' };
@@ -251,11 +246,6 @@ export function arrowsBelongToEditor(target: EventTarget | null): boolean {
   if (target === document.body || target === document.documentElement) return true;
   if (!target.closest('[data-canvas-area]')) return false;
   return target.closest(OWN_ARROWS) === null;
-}
-
-/** Atalhos que valem também com o foco num campo de texto (os "de campo"). */
-export function worksInTextInput(shortcut: Shortcut): boolean {
-  return shortcut.kind === 'new-annotation';
 }
 
 /**

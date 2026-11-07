@@ -652,25 +652,19 @@ describe('barras do editor', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('barra principal: o chip da camada ativa abre a janela Camadas (sem diálogo)', async () => {
+  it('barra principal: não há chip de camada', () => {
     const harness = createHarness(sampleProject());
-    const dialogs = fakeDialogs();
-    hideToolWindow('layers');
     withContext(
       harness,
       <EditorMainBar
         busy={false}
         onAdd={vi.fn()}
-        dialogs={dialogs}
+        dialogs={fakeDialogs()}
         commands={{ exportProject: vi.fn(), closeProject: vi.fn() } as ProjectCommands}
       />,
     );
-    const name = harness.project().layers[0]?.name ?? '';
-    await userEvent.click(
-      screen.getByRole('button', { name: t('layer.chipLabel', { name }) }),
-    );
-    expect(isToolWindowOpen('layers')).toBe(true);
-    expect(dialogs.show).not.toHaveBeenCalled();
+    expect(document.querySelector('.layer-chip')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Camadas \(ativa/ })).toBeNull();
   });
 
   it('principal: somente leitura ou ocupado desabilita desenhar e adicionar', () => {

@@ -200,13 +200,6 @@ button.tree-toggle:hover {
   border-radius: var(--radius-full);
 }
 
-.layer-chip-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .layer-dot {
   flex: none;
   width: var(--space-3);
@@ -250,12 +243,6 @@ button.tree-toggle:hover {
 
 .layer-row:hover {
   background: var(--color-hover);
-}
-
-/* Camada ativa: seleção fraca (color-selection-muted). */
-.layer-row-active,
-.layer-row-active:hover {
-  background: var(--color-selection-muted);
 }
 
 .layer-visible {
@@ -383,6 +370,14 @@ button.tree-toggle:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.annotations-all-hidden {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
 }
 
 .annotation {

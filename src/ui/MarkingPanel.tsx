@@ -306,7 +306,6 @@ export function MarkingPanel({
         project={project}
         marking={marking}
         layers={derived.visibleLayers.value}
-        activeLayer={derived.activeLayer.value}
         readOnly={readOnly}
         onShowLayer={(layerId) => showLayer(ui, layerId)}
         onGoToAnnotation={onGoToAnnotation}

@@ -79,7 +79,7 @@ Cada componente do DS e a origem dele no código. Um nome do DS pode cobrir vár
 | `Banner` | `src/ui/Banner.tsx`, `src/ui/PreviewBanner.tsx`, `src/ui/UpdateBanner.tsx` |  |
 | `Notice` | `src/ui/Notice.tsx` | O `.notice` de parágrafo também está em `src/ui/InstallHint.tsx`. |
 | `NoticeBadge` | `src/ui/NoticeBadge.tsx` | Selo, bloco e linha dos quatro `kind` de aviso da especialização (`NoticeBadge`, `TypeNoticeBadge`, `NoticeBlock`, `NoticeLines`); cor sempre com ícone e texto. |
-| `Tags` | `src/ui/controls/Chip.tsx` | Chip da camada ativa em `src/app/EditorMainBar.tsx`; etiqueta de camada em `src/ui/ListView.tsx`. |
+| `Tags` | `src/ui/controls/Chip.tsx` | Etiqueta de camada em `src/ui/ListView.tsx`. |
 | `Breadcrumbs` | `src/ui/Breadcrumbs.tsx` | Controles à direita da barra em `src/app/EditorTools.tsx` e `src/ui/ZoomField.tsx`. |
 | `StatusBar` | `src/ui/StatusBar.tsx` |  |
 | `ToolWindow` | `src/ui/ToolWindow.tsx` | Tamanhos em `src/ui/toolWindowLayout.ts`; montagem em `src/app/EditorWindows.tsx`. |
