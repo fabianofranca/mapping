@@ -12,13 +12,14 @@ import {
   type ComponentFile,
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
+import { isValidFontFamily } from './fontFamily';
 import { referencedFields } from './expressions';
 
 /** Um problema do arquivo: caminho JSON (vazio = arquivo inteiro) e mensagem. */
 export type ComponentIssue = { path: string; message: string };
 
 export type ComponentParseResult =
-  | { ok: true; component: ComponentFile }
+  | { ok: true; component: ComponentFile; warnings: ComponentIssue[] }
   | { ok: false; issues: ComponentIssue[]; errors: string[] };
 
 type Rec = Record<string, unknown>;
@@ -701,7 +702,34 @@ export function validateComponent(input: unknown): string[] {
 export function parseComponent(input: unknown): ComponentParseResult {
   const issues = collectIssues(input);
   if (issues.length > 0) return { ok: false, issues, errors: issues.map(formatIssue) };
-  return { ok: true, component: input as ComponentFile };
+  const component = input as ComponentFile;
+  return {
+    ok: true,
+    component,
+    warnings: collectWarnings(component.template, 'template'),
+  };
+}
+
+/**
+ * Avisos (não erros): hoje, um `font.family` literal que o CSS não aceita (o desenho cai em
+ * `sans-serif`). Expressões não são conferidas aqui.
+ */
+function collectWarnings(node: unknown, path: string): ComponentIssue[] {
+  if (!isRecord(node)) return [];
+  const out: ComponentIssue[] = [];
+  const family = isRecord(node.font) ? node.font.family : undefined;
+  if (typeof family === 'string' && !isValidFontFamily(family))
+    out.push({
+      path: join(join(path, 'font'), 'family'),
+      message: `família de fonte inválida para o CSS (${JSON.stringify(family)}): o texto cai em sans-serif`,
+    });
+  const children = Array.isArray(node.children) ? node.children : [];
+  children.forEach((child: unknown, i) =>
+    out.push(...collectWarnings(child, `${join(path, 'children')}[${i}]`)),
+  );
+  if (node.template !== undefined)
+    out.push(...collectWarnings(node.template, join(path, 'template')));
+  return out;
 }
 
 /** Lê o texto JSON de um arquivo de componente (JSON inválido vira issue de caminho vazio). */

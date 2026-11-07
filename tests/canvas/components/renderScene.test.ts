@@ -145,6 +145,23 @@ describe('renderScene', () => {
     expect(root.clipFunc()).toBeTypeOf('function');
   });
 
+  it('texto com pilha de fonte entrega a pilha ao Konva, sem aspas em volta', () => {
+    const stack = 'system-ui, "Segoe UI", Roboto, sans-serif';
+    const withFamily = (family: string): FrameNode => ({
+      ...card,
+      children: card.children.map((c) =>
+        c.type === 'text' ? { ...c, style: { ...c.style, fontFamily: family } } : c,
+      ),
+    });
+    const familyOf = (family: string): string => {
+      const { byId } = renderScene(scene(withFamily(family)));
+      return (byId.get('title')?.getChildren()[0] as Konva.Text).fontFamily();
+    };
+    expect(familyOf(stack)).toBe(stack);
+    expect(familyOf('Inter')).toBe('"Inter", sans-serif');
+    expect(familyOf('system-ui')).toBe('system-ui');
+  });
+
   it('texto centrado sem largura fica ancorado no x; gradiente, caminho e imagem sem pixels', () => {
     const { byId, warnings } = renderScene(scene(card));
     const text = byId.get('title')?.getChildren()[0] as Konva.Text;

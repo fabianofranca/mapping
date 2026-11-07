@@ -96,7 +96,10 @@ export interface NewComponentArgs {
    * marcação; `placeFloatingNear`) com o tamanho do componente. `rect` explícito vence.
    */
   readonly near?: FloatingNearTarget;
-  /** Valores iniciais; ausente = `preview` do componente sobre os `default` dos campos. */
+  /**
+   * Valores iniciais por cima do `preview` do componente (que já está sobre os `default`):
+   * os campos que não vêm aqui começam com o `preview`; ausente = só o `preview`.
+   */
   readonly values?: TypedValues;
   readonly name?: string | null;
 }
@@ -244,13 +247,51 @@ export function componentPlacement(
   };
 }
 
+/** O `preview` do campo se ele é um valor simples; `undefined` para `table`, `ref`, ausente ou composto. */
+function simplePreview(
+  field: SpecAnnotationType['fields'][number],
+  component: ComponentFile,
+): string | number | null | undefined {
+  if (field.type === 'table' || field.type === 'ref') return undefined;
+  const preview = component.preview?.[field.key];
+  // As linhas de uma tabela não passam por aqui (o campo `table` já foi pulado).
+  const simple =
+    typeof preview === 'string' || typeof preview === 'number' || preview === null;
+  return simple ? preview : undefined;
+}
+
+/**
+ * Põe o `preview` do componente nos campos da anotação que `given` não informa (os campos
+ * `table` e `ref` ficam no `default`). Um `preview` que o campo não aceita fica no `default`.
+ */
+function applyPreview(
+  p: Project,
+  annotationId: string,
+  type: SpecAnnotationType,
+  component: ComponentFile,
+  given: TypedValues | undefined,
+): Project {
+  let next = p;
+  for (const field of type.fields) {
+    if (given !== undefined && field.key in given) continue;
+    const preview = simplePreview(field, component);
+    if (preview === undefined) continue;
+    try {
+      next = setFieldValue(next, annotationId, field.key, preview);
+    } catch (error) {
+      if (!(error instanceof ModelError)) throw error;
+    }
+  }
+  return next;
+}
+
 /**
  * Cria a marcação e a anotação tipada que a desenha, numa operação só (o store faz uma
  * entrada de desfazer). `parentId` é o componente com slot alvo onde a instância é posicionada;
  * o pai gravado é o que o assentar decide pela geometria (`createMarking` assenta), nunca o
  * pedido. A anotação vai na camada do projeto que veio da camada da
- * especialização do tipo, com os valores de `args.values` sobre os `default`, ou, sem eles,
- * o `preview` do componente (campos `table` e `ref` ficam no `default`). O tamanho mínimo do
+ * especialização do tipo, com o `preview` do componente nos campos que `args.values` não
+ * informa e os valores de `args.values` por cima (campos `table` e `ref` ficam no `default`). O tamanho mínimo do
  * componente vale desde a criação.
  */
 export function addComponentMarking(
@@ -314,26 +355,9 @@ export function addComponentMarking(
     type: { specId: args.specId, typeId: args.typeId },
   });
 
-  if (args.values !== undefined) {
-    for (const [key, value] of Object.entries(args.values)) {
-      next = setFieldValue(next, args.annotationId, key, value);
-    }
-    return next;
-  }
-  for (const field of type.fields) {
-    if (field.type === 'table' || field.type === 'ref') continue;
-    const preview = component.preview?.[field.key];
-    if (preview === undefined) continue;
-    // As linhas de uma tabela não passam por aqui (o campo `table` já foi pulado).
-    if (typeof preview !== 'string' && typeof preview !== 'number' && preview !== null) {
-      continue;
-    }
-    try {
-      next = setFieldValue(next, args.annotationId, field.key, preview);
-    } catch (error) {
-      // Um `preview` que o campo não aceita fica no `default`: a criação não falha por isso.
-      if (!(error instanceof ModelError)) throw error;
-    }
+  next = applyPreview(next, args.annotationId, type, component, args.values);
+  for (const [key, value] of Object.entries(args.values ?? {})) {
+    next = setFieldValue(next, args.annotationId, key, value);
   }
   return next;
 }

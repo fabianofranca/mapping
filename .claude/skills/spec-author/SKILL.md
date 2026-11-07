@@ -395,6 +395,7 @@ Não aplique a especialização a um projeto nem crie proposta, a menos que o pr
 
 ## Armadilhas frequentes
 
+- `font.family` do componente com aspas sem fechar, item vazio numa pilha (`Roboto, , serif`) ou aspas no meio do nome: é **aviso** na validação e o texto cai em `sans-serif`. A família aceita uma pilha CSS (`system-ui, "Segoe UI", Roboto, sans-serif`) ou um nome genérico sozinho (`system-ui`); não ponha aspas em volta da pilha inteira.
 - Camada por módulo do código em vez de por natureza: os eventos acabam na mesma camada dos componentes e `allowedChildren` não valida.
 - `id` de tipo repetido em camadas diferentes (`button` em Componentes e `button` em Telas): o id é único na especialização inteira.
 - Booleano como `string` com `default: "true"`: use `enum`.

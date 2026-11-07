@@ -4,13 +4,14 @@
  * sem canvas use `approximateMeasurer`.
  */
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
+import { canvasFontFamily } from '../../model/components/fontFamily';
 import type { TextMeasurer } from '../../model/components/instantiate';
 
 /** Mede texto com o próprio Konva, para o layout bater com o desenho. */
 export const konvaMeasurer: TextMeasurer = (text, font, maxWidth) => {
   const probe = new KonvaText({
     text,
-    fontFamily: `"${font.family}", sans-serif`,
+    fontFamily: canvasFontFamily(font.family),
     fontSize: font.size,
     fontStyle: `${font.italic ? 'italic ' : ''}${font.weight === 400 ? 'normal' : String(font.weight)}`,
     lineHeight: font.lineHeight / font.size,

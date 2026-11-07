@@ -284,7 +284,7 @@ export function showcase(): Showcase {
     ['N2', SHOWCASE_NAMES.accepted, 'material3-compose', 220, { label: 'Aceito' }],
     ['N3', SHOWCASE_NAMES.rejected, 'material3-compose', 300, { label: 'Rejeitado' }],
     ['N4', SHOWCASE_NAMES.invalid, 'material3-compose', 380, { label: 'Inválido' }],
-    ['N5', SHOWCASE_NAMES.noLabel, 'material3-compose', 460, {}],
+    ['N5', SHOWCASE_NAMES.noLabel, 'material3-compose', 460, { label: '' }],
     ['N6', SHOWCASE_NAMES.package, 'm3novo', 540, { label: 'Do pacote' }],
   ];
   for (const [id, name, specId, y, values] of creations) {
