@@ -1,4 +1,4 @@
-# Fonte e preview — [Não lançado] (épico `epic/fonte-e-preview`, PR #0, MCP 0.25.1, schema v15)
+# Fonte e preview — [Não lançado] (épico `epic/fonte-e-preview`, PR #755, MCP 0.25.1, schema v15)
 
 ## Adicionado
 
