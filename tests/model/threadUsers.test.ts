@@ -33,7 +33,7 @@ describe('userKey / userLabel / initials', () => {
 });
 
 describe('threadUsers', () => {
-  it('lista distinta com a contagem de conversas de cada usuário', () => {
+  it('lista distinta (pessoas por nome, depois agentes) com a contagem de conversas de cada usuário', () => {
     const other = { ...HUMAN, name: 'João', email: 'joao@exemplo.com' };
     const t1 = sampleThread({
       id: 't1',
@@ -46,8 +46,20 @@ describe('threadUsers', () => {
     });
     const users = threadUsers([t1, t2, t3]);
     expect(users).toEqual([
-      { key: userKey(HUMAN), label: 'Marina Alves', kind: 'human', email: 'marina@exemplo.com', count: 2 },
-      { key: userKey(other), label: 'João', kind: 'human', email: 'joao@exemplo.com', count: 1 },
+      {
+        key: userKey(other),
+        label: 'João',
+        kind: 'human',
+        email: 'joao@exemplo.com',
+        count: 1,
+      },
+      {
+        key: userKey(HUMAN),
+        label: 'Marina Alves',
+        kind: 'human',
+        email: 'marina@exemplo.com',
+        count: 2,
+      },
       { key: userKey(AGENT), label: 'Claude Code', kind: 'agent', email: null, count: 1 },
     ]);
   });

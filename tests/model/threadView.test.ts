@@ -24,14 +24,22 @@ describe('resolveAnchor / hostOf / isOrphan', () => {
     ['annotation de seta', { kind: 'annotation', id: 'ra1' }, 'arrow:r1'],
     ['field', { kind: 'field', annotationId: 't1', key: 'variante' }, 'marking:a2'],
     ['entry', { kind: 'entry', annotationId: 'n1', entryId: 'e1' }, 'marking:a1'],
-    ['row', { kind: 'row', annotationId: 't1', key: 'tabela', rowId: 'w1' }, 'marking:a2'],
+    [
+      'row',
+      { kind: 'row', annotationId: 't1', key: 'tabela', rowId: 'w1' },
+      'marking:a2',
+    ],
     ['layer', { kind: 'layer', id: 'L1' }, null],
     [
       'point no container',
       { kind: 'point', containerId: 'A', x: 10, y: 20 },
       'point:A:10:20',
     ],
-    ['point no canvas', { kind: 'point', containerId: null, x: 1.5, y: -2 }, 'point::1.5:-2'],
+    [
+      'point no canvas',
+      { kind: 'point', containerId: null, x: 1.5, y: -2 },
+      'point::1.5:-2',
+    ],
   ];
 
   it.each(cases)('%s: não é órfã e o hospedeiro é %s', (_name, anchor, key) => {
@@ -64,23 +72,52 @@ describe('resolveAnchor / hostOf / isOrphan', () => {
     ['annotation', { kind: 'annotation', id: 'zz' }, 'annotation'],
     ['layer', { kind: 'layer', id: 'zz' }, 'layer'],
     ['field sem anotação', { kind: 'field', annotationId: 'zz', key: 'k' }, 'annotation'],
-    ['entry sem anotação', { kind: 'entry', annotationId: 'zz', entryId: 'e1' }, 'annotation'],
+    [
+      'entry sem anotação',
+      { kind: 'entry', annotationId: 'zz', entryId: 'e1' },
+      'annotation',
+    ],
     ['entry sem o par', { kind: 'entry', annotationId: 'n1', entryId: 'zz' }, 'entry'],
-    ['row sem anotação', { kind: 'row', annotationId: 'zz', key: 'tabela', rowId: 'w1' }, 'annotation'],
-    ['row sem a linha', { kind: 'row', annotationId: 't1', key: 'tabela', rowId: 'zz' }, 'row'],
-    ['row sem a tabela', { kind: 'row', annotationId: 't1', key: 'zz', rowId: 'w1' }, 'row'],
-    ['row em anotação livre', { kind: 'row', annotationId: 'n1', key: 'tabela', rowId: 'w1' }, 'row'],
-    ['point com container apagado', { kind: 'point', containerId: 'zz', x: 0, y: 0 }, 'container'],
+    [
+      'row sem anotação',
+      { kind: 'row', annotationId: 'zz', key: 'tabela', rowId: 'w1' },
+      'annotation',
+    ],
+    [
+      'row sem a linha',
+      { kind: 'row', annotationId: 't1', key: 'tabela', rowId: 'zz' },
+      'row',
+    ],
+    [
+      'row sem a tabela',
+      { kind: 'row', annotationId: 't1', key: 'zz', rowId: 'w1' },
+      'row',
+    ],
+    [
+      'row em anotação livre',
+      { kind: 'row', annotationId: 'n1', key: 'tabela', rowId: 'w1' },
+      'row',
+    ],
+    [
+      'point com container apagado',
+      { kind: 'point', containerId: 'zz', x: 0, y: 0 },
+      'container',
+    ],
   ];
 
-  it.each(orphans)('%s: órfã, com o tipo do alvo apagado (%s)', (_name, anchor, missing) => {
-    expect(isOrphan(p, anchor)).toBe(true);
-    expect(hostOf(p, anchor)).toBeNull();
-    expect(resolveAnchor(p, anchor)).toEqual({ orphan: true, anchor, missing });
-  });
+  it.each(orphans)(
+    '%s: órfã, com o tipo do alvo apagado (%s)',
+    (_name, anchor, missing) => {
+      expect(isOrphan(p, anchor)).toBe(true);
+      expect(hostOf(p, anchor)).toBeNull();
+      expect(resolveAnchor(p, anchor)).toEqual({ orphan: true, anchor, missing });
+    },
+  );
 
   it('o campo existe enquanto a anotação existe (a chave vazia no valor não o apaga)', () => {
-    expect(isOrphan(p, { kind: 'field', annotationId: 't1', key: 'ausente' })).toBe(false);
+    expect(isOrphan(p, { kind: 'field', annotationId: 't1', key: 'ausente' })).toBe(
+      false,
+    );
   });
 
   it('uma anotação cuja dona não existe mais não tem hospedeiro', () => {
@@ -93,7 +130,10 @@ describe('resolveAnchor / hostOf / isOrphan', () => {
       ...p,
       markings: p.markings.map((m) => (m.id === 'a2' ? { ...m, parentId: null } : m)),
     };
-    expect(hostOf(moved, { kind: 'marking', id: 'a2' })).toEqual({ kind: 'marking', id: 'a2' });
+    expect(hostOf(moved, { kind: 'marking', id: 'a2' })).toEqual({
+      kind: 'marking',
+      id: 'a2',
+    });
   });
 });
 
@@ -103,7 +143,9 @@ describe('awaiting', () => {
   });
 
   it('a última mensagem de agente deixa a conversa aguardando o humano', () => {
-    expect(awaiting(sampleThread({ messages: [message('m1', T0, AGENT)] }))).toBe('human');
+    expect(awaiting(sampleThread({ messages: [message('m1', T0, AGENT)] }))).toBe(
+      'human',
+    );
   });
 
   it('vale a ordem por instante, não a do array', () => {
@@ -130,7 +172,10 @@ describe('awaiting', () => {
 
 describe('threadSubject', () => {
   const subject = (text: string, resolveLabel?: (label: string, url: string) => string) =>
-    threadSubject(sampleThread({ messages: [message('m1', T0, HUMAN, text)] }), resolveLabel);
+    threadSubject(
+      sampleThread({ messages: [message('m1', T0, HUMAN, text)] }),
+      resolveLabel,
+    );
 
   it('é a primeira linha da primeira mensagem', () => {
     expect(subject('Primeira linha\nsegunda linha')).toBe('Primeira linha');
@@ -215,22 +260,30 @@ describe('isUnread', () => {
   });
 
   it('mensagem de outra pessoa depois do lastReadAt é não lida', () => {
-    const t = sampleThread({ messages: [message('m1', T0, HUMAN), message('m2', T2, other)] });
+    const t = sampleThread({
+      messages: [message('m1', T0, HUMAN), message('m2', T2, other)],
+    });
     expect(isUnread(t, T1, me)).toBe(true);
   });
 
   it('mensagem de agente depois do lastReadAt é não lida', () => {
-    const t = sampleThread({ messages: [message('m1', T0, HUMAN), message('m2', T2, AGENT)] });
+    const t = sampleThread({
+      messages: [message('m1', T0, HUMAN), message('m2', T2, AGENT)],
+    });
     expect(isUnread(t, T1, me)).toBe(true);
   });
 
   it('mensagem de outra pessoa até o lastReadAt já foi lida (inclusive o igual)', () => {
-    const t = sampleThread({ messages: [message('m1', T0, other), message('m2', T1, AGENT)] });
+    const t = sampleThread({
+      messages: [message('m1', T0, other), message('m2', T1, AGENT)],
+    });
     expect(isUnread(t, T1, me)).toBe(false);
   });
 
   it('depois do lastReadAt só a minha mensagem: lida', () => {
-    const t = sampleThread({ messages: [message('m1', T0, AGENT), message('m2', T2, HUMAN)] });
+    const t = sampleThread({
+      messages: [message('m1', T0, AGENT), message('m2', T2, HUMAN)],
+    });
     expect(isUnread(t, T1, me)).toBe(false);
   });
 

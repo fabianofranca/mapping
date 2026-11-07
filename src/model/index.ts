@@ -75,6 +75,12 @@ export * from './proposalRevisions';
 // Conversas ancoradas (formato mapping-thread 1): formato e operações puras.
 export * from './thread';
 export * from './threadOps';
+export * from './citations';
+export * from './threadUsers';
+export * from './threadView';
+export * from './threadFilters';
+export * from './threadPins';
+export * from './threadDelete';
 // Valor de um campo na forma de `from`/`to` (os marcadores dos Detalhes na revisão).
 export { annotationField, imageField, markingField } from './proposalValues';
 export * from './specWarnings';
