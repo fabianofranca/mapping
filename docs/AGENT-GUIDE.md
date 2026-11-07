@@ -237,9 +237,42 @@ Onde uma operação pede um item (`container`, `marking`, `parent`, `annotation`
 
 **Valores tipados** (`values`): por `key` do campo (veja `get_specialization`); `null` limpa.
 
-- Campo `table`: a lista de linhas, que **substitui** a tabela. `{"_id": "…"}` mantém uma linha existente (com as células informadas alteradas); `"_as": "$linha"` dá um apelido à linha, para uma referência no mesmo lote.
+- Campo `table`: a lista de linhas, que **substitui** a tabela. `{"_id": "…"}` mantém uma linha existente (com as células informadas alteradas); `"_as": "$linha"` dá um apelido à linha, para uma referência no mesmo lote. A célula de uma coluna `ref` leva o mesmo valor de um campo `ref` (veja abaixo), com os apelidos do lote; o formato gravado (`{"annotationId": "…", "key": "…"}`) também é aceito.
 - Chave que não é campo do tipo: falha com `unknown-field` (veja os campos em `get_specialization`).
-- Campo `ref`: `{"annotation": "$user", "entry": "name"}` (par de anotação livre, pela chave ou id), `{"annotation": "$contato", "key": "atributos", "row": "$linha"}` (linha de tabela, pelo id, apelido ou índice) ou `{"annotation": "…", "key": "id"}` (campo).
+- Campo `ref`: `{"annotation": "$user", "entry": "name"}` (par de anotação livre, pela chave ou id), `{"annotation": "$contato", "key": "atributos", "row": "$linha"}` (linha de tabela, pelo id, apelido ou índice) ou `{"annotation": "…", "key": "id"}` (campo). Numa coluna `ref` de `table` vale o mesmo valor, célula a célula, e o alvo pode nascer no mesmo lote. Exemplo (o tipo `modelo` tem a tabela `campos`; o tipo `lista` tem a tabela `alvos` com a coluna `ref` `alvo`; a linha `$cpf` é criada num passo e apontada no seguinte):
+
+```json
+[
+  {
+    "op": "create_marking",
+    "as": "$m1",
+    "rect": { "x": 0, "y": 0, "width": 100, "height": 50 },
+    "annotationAs": "$cliente",
+    "annotation": {
+      "type": "rc/modelo",
+      "values": { "titulo": "Cliente", "campos": [{ "_as": "$cpf", "nome": "cpf" }] }
+    }
+  },
+  {
+    "op": "create_marking",
+    "as": "$m2",
+    "rect": { "x": 200, "y": 0, "width": 100, "height": 50 },
+    "annotationAs": "$tela",
+    "annotation": {
+      "type": "rc/lista",
+      "values": {
+        "titulo": "Tela",
+        "alvos": [
+          {
+            "nota": "documento",
+            "alvo": { "annotation": "$cliente", "key": "campos", "row": "$cpf" }
+          }
+        ]
+      }
+    }
+  }
+]
+```
 
 **Imagens.** Como na app: a orientação EXIF é aplicada, o lado maior fica em no máximo 2560 px e o arquivo é recodificado em WebP (sem perdas para PNG; com perdas, qualidade 0,85, para fotos), sem metadados. Sem redução nem rotação, o original é mantido se o WebP não ficar menor. `width` e `height` do container com arquivo (e as coordenadas das marcações) são os do arquivo gravado. O nome em `images/` nunca sobrescreve um arquivo existente (`foto-2.webp`…). `file` é relativo à pasta do projeto ou a uma raiz, ou absoluto dentro das raízes.
 
