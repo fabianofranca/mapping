@@ -23,6 +23,7 @@ import {
   annotationShortLabel,
   applySpecialization,
   checkSpecApply,
+  MIN_STORED_MARKING_SIZE,
   componentMinSize,
   componentPlacement,
   componentTypes,
@@ -1827,7 +1828,14 @@ class Batch {
         '`rect` é obrigatório (só um tipo de anotação com componente dispensa o retângulo: veja list_components)',
       );
     }
-    const minSize = component?.component.minSize ?? null;
+    // Com componente o mínimo é o `minSize` dele ou 1×1; sem componente, o de qualquer marcação (8).
+    const minSize =
+      component === null
+        ? null
+        : (component.component.minSize ?? {
+            width: MIN_STORED_MARKING_SIZE,
+            height: MIN_STORED_MARKING_SIZE,
+          });
     // `near` (ME4): só um tipo flutuante; o lugar sai de `placeFloatingNear` e o `rect`, se vier,
     // dá só o tamanho. Nos outros casos o argumento é ignorado, com aviso.
     const notes: string[] = [];

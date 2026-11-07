@@ -189,6 +189,9 @@ export function libraryCounts(spec: Spec): Json {
     examples:
       types.reduce((sum, t) => sum + (t.examples ?? []).length, 0) +
       (spec.origins ?? []).reduce((sum, o) => sum + (o.examples ?? []).length, 0),
+    ...(types.some((t) => t.structural === true)
+      ? { structural: types.filter((t) => t.structural === true).length }
+      : {}),
     fonts: (spec.fonts ?? []).length,
     origins: (spec.origins ?? []).length,
     migrations: (spec.migrations ?? []).length,

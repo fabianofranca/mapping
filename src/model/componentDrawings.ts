@@ -1,5 +1,9 @@
 import { findSlot, slotBoxOfScene } from './components/arrange';
-import type { ComponentFile, FieldValues } from './components/componentFormat';
+import type {
+  ComponentFile,
+  FieldValues,
+  ScreenAnchor,
+} from './components/componentFormat';
 import { instantiate, type TextMeasurer } from './components/instantiate';
 import type { FrameNode } from './components/scene';
 import {
@@ -30,6 +34,11 @@ export interface ComponentDrawing {
   readonly warnings: readonly string[];
   /** Não cabe: aviso "conteúdo maior que a caixa" do motor ou filha fora da caixa do slot. */
   readonly overflow: boolean;
+  /**
+   * Componente com `screen`: `root` mede o `size` do componente na origem, em pixels de tela, e o
+   * canvas o ancora em `anchor` no `rect` (retângulo da marcação, nos pixels da imagem).
+   */
+  readonly screen?: { readonly anchor: ScreenAnchor; readonly rect: Rect };
 }
 
 /** Por id de marcação, inserido em ordem de desenho (pais antes das filhas; irmãs na ordem do array). */
@@ -123,14 +132,19 @@ function draw(
 ): ComponentDrawing {
   const tokens =
     mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
-  const { root, warnings } = instantiate(mc.component, values, rect, {
+  const screen = mc.component.screen;
+  // Em pixels de tela o desenho mede o `size` do componente, na origem (o canvas o ancora).
+  const box: Rect = screen === undefined ? rect : { x: 0, y: 0, ...mc.component.size };
+  const { root, warnings } = instantiate(mc.component, values, box, {
     measure,
     idPrefix: markingId,
     ...(tokens === undefined ? {} : { tokens }),
   });
+  // Com `screen` o desenho pode passar do retângulo da marcação: não há pendência "não cabe".
   const overflow =
-    warnings.some((w) => OVERFLOW_WARNINGS.some((o) => w.startsWith(o))) ||
-    (childRects.length > 0 && childOutsideSlot(root, childRects));
+    screen === undefined &&
+    (warnings.some((w) => OVERFLOW_WARNINGS.some((o) => w.startsWith(o))) ||
+      (childRects.length > 0 && childOutsideSlot(root, childRects)));
   return {
     markingId,
     containerId,
@@ -139,6 +153,9 @@ function draw(
     root,
     warnings: [...warnings, ...valueWarnings],
     overflow,
+    ...(screen === undefined
+      ? {}
+      : { screen: { anchor: screen.anchor ?? 'center', rect } }),
   };
 }
 

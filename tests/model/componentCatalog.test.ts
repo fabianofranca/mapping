@@ -165,7 +165,7 @@ describe('markingComponent e componentMinSize', () => {
     expect(componentMinSize(p, testCatalog(), 'M1')).toEqual({ width: 50, height: 30 });
   });
 
-  it('componente sem minSize devolve null', () => {
+  it('componente sem minSize devolve 1×1 (o mínimo de quem tem componente)', () => {
     let p = withMarking();
     p = addTypedAnnotation(p, {
       id: 'A1',
@@ -174,7 +174,7 @@ describe('markingComponent e componentMinSize', () => {
       type: { specId: SPEC_ID, typeId: 'box' },
     });
     expect(markingComponent(p, testCatalog(), 'M1')?.typeId).toBe('box');
-    expect(componentMinSize(p, testCatalog(), 'M1')).toBeNull();
+    expect(componentMinSize(p, testCatalog(), 'M1')).toEqual({ width: 1, height: 1 });
   });
 
   it('pula a anotação cujo tipo não tem componente e usa a seguinte', () => {

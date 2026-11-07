@@ -346,6 +346,11 @@ export interface SpecAnnotationType {
   appliesTo?: SpecAppliesTo[];
   /** Avisos do tipo (só `formatVersion` 10). */
   notices?: SpecNotice[];
+  /**
+   * O tipo agrupa e não desenha (só `formatVersion` 15): sem `component`; a marcação não mostra o
+   * cabeçalho com o nome e o contorno só aparece com o mouse ou selecionada. Ausente = `false`.
+   */
+  structural?: boolean;
 }
 
 /** Itens a que um tipo de anotação se aplica (ME4, decisão 14). */
@@ -1218,9 +1223,17 @@ const annotationTypeShape = z
       )
       .optional(),
     notices: noticesShape.optional(),
+    structural: z.boolean({ error: 'deve ser true ou false' }).optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
+    if (type.structural === true && type.component !== undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['structural'],
+        message: 'um tipo estrutural não desenha: não pode ter component',
+      });
+    }
     checkNotices(type.notices, ctx, []);
     checkFields(type.fields, ctx, ['fields']);
     checkAppliesTo(type, ctx);
@@ -1239,6 +1252,23 @@ const annotationTypeShape = z
       }
     }
   });
+
+/** Antes da v15, `structural` no tipo é erro no caminho exato. */
+function checkNoStructural(
+  layers: readonly { annotationTypes: readonly { structural?: unknown }[] }[],
+  ctx: z.RefinementCtx,
+): void {
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      if (type.structural === undefined) return;
+      ctx.addIssue({
+        code: 'custom',
+        path: ['layers', li, 'annotationTypes', ti, 'structural'],
+        message: 'só é permitido com formatVersion 15',
+      });
+    });
+  });
+}
 
 /** Antes da v10, `notices` (no tipo, no campo e na coluna) é erro no caminho exato. */
 function checkNoNotices(
@@ -2550,6 +2580,8 @@ export const specSchema = z
     }
     // v10: `notices` no tipo, no campo e na coluna. Antes dela, é erro no caminho exato.
     if (spec.formatVersion < 10) checkNoNotices(spec.layers, ctx);
+    // v15: `structural` no tipo. Antes dela, é erro no caminho exato.
+    if (spec.formatVersion < 15) checkNoStructural(spec.layers, ctx);
     // v11: cláusulas, `groups`, papéis e documento externo. Antes dela, é erro no caminho exato.
     if (spec.formatVersion < 11) checkNoV11Keys(spec, ctx);
     // v6: `containers`. Antes dela, é erro no caminho exato.

@@ -112,6 +112,11 @@ export interface StrokeSpec {
   readonly join?: Expr<'miter' | 'round' | 'bevel'>;
   /** Só estes lados têm traço (v4, em `frame` e `rect`); ausente = os quatro. */
   readonly sides?: Expr<readonly StrokeSide[]>;
+  /**
+   * Largura do traço (v4, literal): `true` (padrão) escala com o zoom; `false` mantém a largura
+   * em pixels de tela, em qualquer zoom.
+   */
+  readonly scale?: boolean;
 }
 
 export type StrokeSide = 'top' | 'right' | 'bottom' | 'left';
@@ -380,6 +385,29 @@ export interface ComponentSizing {
   readonly height?: InstanceSizeSpec;
 }
 
+/** Pontos de ancoragem do desenho em pixels de tela (`screen.anchor`). */
+export const SCREEN_ANCHORS = [
+  'center',
+  'top-left',
+  'top',
+  'top-right',
+  'left',
+  'right',
+  'bottom-left',
+  'bottom',
+  'bottom-right',
+] as const;
+export type ScreenAnchor = (typeof SCREEN_ANCHORS)[number];
+
+/**
+ * Desenho em pixels de tela (v4, só na raiz do arquivo): o template é desenhado no `size` do
+ * componente em pixels de tela, em qualquer zoom, ancorado no ponto `anchor` do retângulo da
+ * marcação (que continua em pixels da imagem). O desenho pode passar do retângulo.
+ */
+export interface ScreenSpec {
+  readonly anchor?: ScreenAnchor;
+}
+
 export interface ComponentFile {
   readonly format: typeof COMPONENT_FORMAT;
   readonly formatVersion: ComponentFormatVersion;
@@ -393,6 +421,8 @@ export interface ComponentFile {
   readonly minSize?: { readonly width: number; readonly height: number };
   /** Dimensionamento sem retângulo (ver `ComponentSizing`); ausente = `size` nos dois eixos. */
   readonly sizing?: ComponentSizing;
+  /** Desenho em pixels de tela ancorado no retângulo da marcação (v4); ver `ScreenSpec`. */
+  readonly screen?: ScreenSpec;
   /**
    * Valores de pré-visualização dos campos (biblioteca e instância nova): os campos vêm do
    * tipo da especialização; aqui só os valores de exemplo.

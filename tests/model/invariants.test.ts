@@ -138,7 +138,14 @@ describe('validador de invariantes', () => {
     expect(codes(withRect('M4', { x: 0.5, y: 0, width: 10, height: 10 }))).toContain(
       'rect-not-integer:M4',
     );
-    expect(codes(withRect('M4', { x: 0, y: 0, width: 7, height: 10 }))).toContain(
+    // O mínimo de leitura é 1 px (decisão 24): 7 px é aceito, abaixo de 1 px não.
+    expect(codes(withRect('M4', { x: 0, y: 0, width: 7, height: 10 }))).not.toContain(
+      'rect-too-small:M4',
+    );
+    expect(codes(withRect('M4', { x: 0, y: 0, width: 1, height: 1 }))).not.toContain(
+      'rect-too-small:M4',
+    );
+    expect(codes(withRect('M4', { x: 0, y: 0, width: 0, height: 10 }))).toContain(
       'rect-too-small:M4',
     );
     expect(codes(withRect('M4', { x: 950, y: 0, width: 100, height: 10 }))).toContain(
@@ -279,7 +286,7 @@ describe('validador de invariantes: canvas e pertencimento', () => {
     expect(codes(patchMarking(p, 'K', { rect: rect(0.5, 0, 1200, 1000) }))).toContain(
       'rect-not-integer:K',
     );
-    expect(codes(patchMarking(p, 'K', { rect: rect(0, 0, 7, 1000) }))).toContain(
+    expect(codes(patchMarking(p, 'K', { rect: rect(0, 0, 0, 1000) }))).toContain(
       'rect-too-small:K',
     );
   });

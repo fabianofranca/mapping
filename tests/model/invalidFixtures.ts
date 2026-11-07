@@ -224,13 +224,6 @@ export const INVALID_CASES: readonly InvalidCase[] = [
     },
   },
   {
-    name: 'rect-too-small',
-    code: 'rect-too-small',
-    repairable: false,
-    build: (p) =>
-      markings(p, (m) => (m.id === 'MT' ? { ...m, rect: { ...m.rect, height: 4 } } : m)),
-  },
-  {
     name: 'parent-other-image',
     code: 'parent-other-image',
     repairable: false,

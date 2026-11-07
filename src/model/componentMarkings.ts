@@ -9,7 +9,7 @@ import {
 import { drawingValues } from './componentValues';
 import { fail, ModelError } from './errors';
 import {
-  MIN_MARKING_SIZE,
+  MIN_STORED_MARKING_SIZE,
   clamp,
   containsRect,
   imagePixelRect,
@@ -206,7 +206,7 @@ export function componentPlacement(
     const value = Math.max(
       Math.min(Math.round(size), available),
       minimum,
-      MIN_MARKING_SIZE,
+      MIN_STORED_MARKING_SIZE,
     );
     if (value > available)
       fail(parent === null ? 'rect-out-of-image' : 'rect-outside-parent');
@@ -346,7 +346,12 @@ export function addComponentMarking(
       ...(args.name !== undefined ? { name: args.name } : {}),
       ...(floating ? { floating: true } : {}),
     },
-    component.minSize ? { minSize: component.minSize } : undefined,
+    {
+      minSize: component.minSize ?? {
+        width: MIN_STORED_MARKING_SIZE,
+        height: MIN_STORED_MARKING_SIZE,
+      },
+    },
   );
   next = addTypedAnnotation(next, {
     id: args.annotationId,

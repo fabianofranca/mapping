@@ -14,7 +14,13 @@ import {
 import { markingComponent, type ComponentCatalog } from './componentCatalog';
 import { drawingValues } from './componentValues';
 import { fail } from './errors';
-import { MIN_MARKING_SIZE, bottom, clamp, imagePixelRect, right } from './geometry';
+import {
+  MIN_STORED_MARKING_SIZE,
+  bottom,
+  clamp,
+  imagePixelRect,
+  right,
+} from './geometry';
 import { settleFrom, type SettleOptions } from './hierarchySettle';
 import { isMarkingGeometryLocked } from './locks';
 import { projectIndex } from './projectIndex';
@@ -206,10 +212,10 @@ export function arrangeMarking(
       rects.set(kid.id, {
         ...rect,
         width: hugW
-          ? Math.max(ceilFit(measured.width), min?.width ?? 0, MIN_MARKING_SIZE)
+          ? Math.max(ceilFit(measured.width), min?.width ?? 0, MIN_STORED_MARKING_SIZE)
           : rect.width,
         height: hugH
-          ? Math.max(ceilFit(measured.height), min?.height ?? 0, MIN_MARKING_SIZE)
+          ? Math.max(ceilFit(measured.height), min?.height ?? 0, MIN_STORED_MARKING_SIZE)
           : rect.height,
       });
     }
@@ -244,10 +250,10 @@ export function arrangeMarking(
       );
       const min = component.minSize;
       const width = hugW
-        ? Math.max(ceilFit(measured.width), min?.width ?? 0, MIN_MARKING_SIZE)
+        ? Math.max(ceilFit(measured.width), min?.width ?? 0, MIN_STORED_MARKING_SIZE)
         : rect.width;
       const height = hugH
-        ? Math.max(ceilFit(measured.height), min?.height ?? 0, MIN_MARKING_SIZE)
+        ? Math.max(ceilFit(measured.height), min?.height ?? 0, MIN_STORED_MARKING_SIZE)
         : rect.height;
       rect = { ...rect, width, height };
       rects.set(id, rect);

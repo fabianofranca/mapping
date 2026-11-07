@@ -10,6 +10,7 @@ import {
   COMPONENT_FORMAT,
   COMPONENT_FORMAT_VERSIONS,
   COMPONENT_FORMAT_VERSION_FIDELITY,
+  SCREEN_ANCHORS,
   STROKE_SIDES,
   type ComponentFile,
 } from './componentFormat';
@@ -418,6 +419,7 @@ function checkStrokeV4(
     checkExpr(value.cap, join(path, 'cap'), oneOf(['butt', 'round', 'square']), out);
   if ('join' in value)
     checkExpr(value.join, join(path, 'join'), oneOf(['miter', 'round', 'bevel']), out);
+  if ('scale' in value) checkBoolean(value.scale, join(path, 'scale'), out);
   if (!('sides' in value)) return;
   const at = join(path, 'sides');
   if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
@@ -434,7 +436,7 @@ function checkStroke(
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(
     value,
-    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides'],
+    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale'],
     path,
     out,
   );
@@ -772,6 +774,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['stroke', 'cap'],
   ['stroke', 'join'],
   ['stroke', 'sides'],
+  ['stroke', 'scale'],
   ['minWidth'],
   ['maxWidth'],
   ['minHeight'],
@@ -910,6 +913,7 @@ const ROOT_KEYS = [
   'size',
   'minSize',
   'sizing',
+  'screen',
   'preview',
   'template',
 ];
@@ -924,6 +928,13 @@ function checkSizing(value: unknown, path: string, out: ComponentIssue[]): void 
     if (v === 'fill' || v === 'hug' || (isFiniteNumber(v) && v >= 0)) continue;
     add(out, join(path, key), 'esperava número maior ou igual a 0, "fill" ou "hug"');
   }
+}
+
+/** `screen` (só v4, só na raiz): objeto com `anchor` opcional, de `SCREEN_ANCHORS`. */
+function checkScreen(value: unknown, path: string, out: ComponentIssue[]): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  checkKeys(value, ['anchor'], path, out);
+  if ('anchor' in value) oneOf(SCREEN_ANCHORS)(value.anchor, join(path, 'anchor'), out);
 }
 
 /** Todos os problemas do arquivo, com caminho e mensagem separados; lista vazia = válido. */
@@ -962,6 +973,12 @@ function collectIssues(input: unknown): ComponentIssue[] {
   }
 
   if ('sizing' in input) checkSizing(input.sizing, 'sizing', out);
+
+  if ('screen' in input) {
+    checkScreen(input.screen, 'screen', out);
+    if (typeof version === 'number' && version < COMPONENT_FORMAT_VERSION_FIDELITY)
+      add(out, 'screen', V4_ONLY_MESSAGE);
+  }
 
   if ('preview' in input) {
     if (!isRecord(input.preview)) add(out, 'preview', 'esperava objeto');

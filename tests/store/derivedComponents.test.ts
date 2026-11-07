@@ -401,13 +401,14 @@ describe('derivado: pendência "componente não cabe"', () => {
 });
 
 describe('derivado: tamanho mínimo, paleta e avisos', () => {
-  it('componentMinSizes traz o mínimo dos componentes que têm', () => {
+  it('componentMinSizes traz o mínimo dos componentes (1×1 sem minSize)', () => {
     const { derived, actions } = setup(
       add(screen(), 'W', 'wide', box(500, 100, 100, 40)),
     );
     const sizes = derived.componentMinSizes.value;
     expect(sizes.get('T1')).toEqual({ width: 60, height: 24 });
-    expect(sizes.has('W')).toBe(false);
+    // Sem minSize no componente, vale o mínimo de 1 px de quem desenha um componente.
+    expect(sizes.get('W')).toEqual({ width: 1, height: 1 });
     const before = sizes;
     actions.renameMarking('T1', 'Outro');
     expect(derived.componentMinSizes.value).toBe(before);
