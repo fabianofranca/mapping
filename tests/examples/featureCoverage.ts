@@ -296,6 +296,10 @@ export const BASE_KEYS = [
   'stroke',
   'shadow',
   'cornerRadius',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
 ] as const;
 /** Chaves de cada tipo de nó, além das comuns. */
 export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> = {
@@ -305,7 +309,7 @@ export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> 
   text: ['text', 'font', 'color'],
   path: ['d', 'viewBox', 'fillRule'],
   slot: ['label', 'layout'],
-  repeat: ['field', 'direction', 'gap', 'template'],
+  repeat: ['field', 'direction', 'gap', 'distribute', 'template'],
   image: ['src', 'fit'],
 };
 /** O `repeat` só aceita estas chaves comuns: o desenho é do `template` de cada linha. */
@@ -316,6 +320,10 @@ export const REPEAT_BASE_KEYS = [
   'width',
   'height',
   'anchors',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
 ];
 
 const ANCHOR_KEYS = ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'] as const;
