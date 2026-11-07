@@ -7,7 +7,7 @@ A sessão é criada pelo **orquestrador** do fluxo automatizado (`CLAUDE.md`, "F
 - **Dirigido por lista de roteiros ou de passos:** "Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: R0 e R2. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (vale também "R0, R4.1 a R4.5 e R6.8a a R6.11")
 - **Dirigido pelos achados de um relato anterior:** "… no modo dirigido: os achados 2 a 5 do relato em <link do comentário>. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o relato é um comentário de issue; vale número de achado ou código, como "A1 a A3")
 - **Dirigido pelas fases de uma etapa:** "… no modo dirigido: as fases X e Y da etapa #301. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o plano está na issue da etapa e nas sub-issues `step`)
-- **Completo:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (R0 a R20, sem os roteiros sob demanda; a ordem está em "O que executar")
+- **Completo:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (R0 a R21, sem os roteiros sob demanda; a ordem está em "O que executar")
 - **Completo, em bloco:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco k de 3. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (só os roteiros do bloco k da tabela de "Rodada completa em blocos"; o coordenador cria os três blocos ao mesmo tempo)
 - **Só um link de PR do Mapping** ("Teste <link>"): trate como dirigida pelos roteiros que o PR toca; leia o corpo e os arquivos do PR, monte a lista e siga o modo comum.
 
@@ -77,7 +77,9 @@ Siga o apêndice A do guia: a página pelo Playwright por CDP (receita 4), os di
 
 ## O que executar
 
-**Rodada completa (padrão).** Todos os roteiros, **R0 a R20** (sem o RP, o RF, o RA e o RB), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8, R9, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19 e R20. A seção 9 do guia (teste manual avançado) não entra, é do dono. Os roteiros principais são feitos para você executar **sozinho**; nenhum passo deles fica com o dono. Com "bloco k de 3" na mensagem, você roda só o bloco k (ver "Rodada completa em blocos"); sem bloco, uma sessão roda tudo.
+**Rodada completa (padrão).** Todos os roteiros, **R0 a R21** (sem o RP, o RF, o RA e o RB), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8, R9, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19, R20 e R21. A seção 9 do guia (teste manual avançado) não entra, é do dono. Os roteiros principais são feitos para você executar **sozinho**; nenhum passo deles fica com o dono. Com "bloco k de 3" na mensagem, você roda só o bloco k (ver "Rodada completa em blocos"); sem bloco, uma sessão roda tudo.
+
+**R21 e a tag da release.** O R21 testa a **release real** no GitHub, não o build do commit: use a tag que a mensagem traz ("Tag da release: `mcp-v…-rc.n`", a rc do épico, numa rodada dirigida); numa rodada completa na `main`, sem tag na mensagem, use a última estável (`releases/latest`, como o Preparo do R21 mostra). Sem tag na mensagem de uma dirigida que pede o R21, marque o R21 "não executado (a mensagem não trouxe a tag da release)". O R21 não usa a app nem o Chrome.
 
 **Rodada dirigida.** A mensagem aponta o alvo de um destes três jeitos:
 
@@ -104,15 +106,15 @@ Procure texto cortado ou sobreposto, barra de rolagem horizontal, dica cobrindo 
 
 ## Rodada completa em blocos
 
-A rodada completa (R0 a R20) roda em **3 sessões ao mesmo tempo**, uma por bloco, com a divisão fixa abaixo. Cada sessão faz o ambiente, o R0 inteiro e os roteiros do seu bloco, e entrega o relato dela; um coordenador (o orquestrador da etapa ou um chat avulso do dono, ver [`docs/FLOW.md`](FLOW.md)) cria as três e resume.
+A rodada completa (R0 a R21) roda em **3 sessões ao mesmo tempo**, uma por bloco, com a divisão fixa abaixo. Cada sessão faz o ambiente, o R0 inteiro e os roteiros do seu bloco, e entrega o relato dela; um coordenador (o orquestrador da etapa ou um chat avulso do dono, ver [`docs/FLOW.md`](FLOW.md)) cria as três e resume.
 
 | Bloco | Roteiros, na ordem do guia                                                    | Passos |
 | ----- | ----------------------------------------------------------------------------- | ------ |
 | 1     | R0, R1, seção 6, R3, R6.3 a R6.7, R7, R5, R8, R18 e R20                       | 122    |
 | 2     | R0, R2, seção 6, R4, R6.8a a R6.11, R9, R10, R11, R13, R19 e a passada visual | 134    |
-| 3     | R0, seção 6, R12, R14, R15, R16 e R17                                         | 98     |
+| 3     | R0, seção 6, R12, R14, R15, R16, R17 e R21                                    | 106    |
 
-Por quê: as dependências da seção 8 do guia e a contagem de passos (a coluna **Passos** conta o R0, que está nos três; no total são 342 passos distintos, e nenhum bloco passa de 40%). R1, R3, R5, R6.3 a R6.7, R7 e R8 usam o `principal` e o repositório de teste; R6.8a a R6.11 usam a pasta `loja` do R4.11; o R10.7 usa o projeto `telas` do R9; o resto usa pastas próprias. A passada visual fica no bloco 2 (decisão 7 da etapa #482): o bloco 1 é a cadeia do `principal`, que não se divide e é o mais lento (47:18 na #424, com a passada de 1:55), e o bloco 2 tem o que a lista padrão abre: **Pasta indisponível** pelo R0.7 (nos três blocos), **Sair da revisão?** pelo R4 e as propostas e a revisão do R4, e **Especializações**, **Exportar** e **Configurações** com qualquer projeto. A seção 6 (repositório de teste e MCP) está nos três blocos, porque todos têm R3, R5, R9, R12, R16 ou R17. O teste `tests/tooling/roundBlocks.test.ts` confere a tabela contra os passos do guia: um roteiro novo (R19) o faz falhar até ser posto num bloco, e ele confere que a passada visual está em exatamente um bloco, o da tabela.
+Por quê: as dependências da seção 8 do guia e a contagem de passos (a coluna **Passos** conta o R0, que está nos três; no total são 350 passos distintos, e nenhum bloco passa de 40%). R1, R3, R5, R6.3 a R6.7, R7 e R8 usam o `principal` e o repositório de teste; R6.8a a R6.11 usam a pasta `loja` do R4.11; o R10.7 usa o projeto `telas` do R9; o resto usa pastas próprias. A passada visual fica no bloco 2 (decisão 7 da etapa #482): o bloco 1 é a cadeia do `principal`, que não se divide e é o mais lento (47:18 na #424, com a passada de 1:55), e o bloco 2 tem o que a lista padrão abre: **Pasta indisponível** pelo R0.7 (nos três blocos), **Sair da revisão?** pelo R4 e as propostas e a revisão do R4, e **Especializações**, **Exportar** e **Configurações** com qualquer projeto. A seção 6 (repositório de teste e MCP) está nos três blocos, porque todos têm R3, R5, R9, R12, R16 ou R17. O teste `tests/tooling/roundBlocks.test.ts` confere a tabela contra os passos do guia: um roteiro novo (R21) o faz falhar até ser posto num bloco, e ele confere que a passada visual está em exatamente um bloco, o da tabela.
 
 **Linha de base (tempo medido por bloco, etapa #482, commit `159f46d`):** bloco 1 43:44, bloco 2 36:33 (com a passada visual) e bloco 3 33:52 ([resumo](https://github.com/fabianofranca/mapping/issues/485#issuecomment-6643772361)); a da etapa #424 era 47:18, 35:13 e 38:11 ([resumo](https://github.com/fabianofranca/mapping/issues/424)). Meta indicativa de 45 min, sem ser critério de falha.
 

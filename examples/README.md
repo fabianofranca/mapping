@@ -220,11 +220,11 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 
 **O que é.** O esqueleto de uma pasta central de mapeamentos para trabalhar com um agente de IA: o servidor MCP, as raízes, a skill `spec-author` e as instruções (`AGENTS.md`) para qualquer cliente MCP.
 
-**Como abrir.** Copie a pasta para onde quiser, rode `./setup.sh` e abra a pasta no agente (Claude Code, Cursor, Gemini CLI, Copilot ou Codex). Os projetos ficam em `projetos/` e as especializações em `especializacoes/`.
+**Como abrir.** Copie a pasta para onde quiser, rode `./setup.sh` (para atualizar um workspace antigo, a linha da transição está no `README.md` da pasta) e abra a pasta no agente (Claude Code, Cursor, Gemini CLI, Copilot ou Codex). Os projetos ficam em `projetos/` e as especializações em `especializacoes/`.
 
 **O que dá para ver.**
 
-- O `setup.sh`, que baixa o `tools/mapping-mcp.js` da última versão do servidor, confere o `sha256` e traz a skill.
+- O `setup.sh`, que baixa da última release o `tools/mapping-mcp.js`, a skill `spec-author` e o bloco de regras do `AGENTS.md` (entre os marcadores `mapping:begin` e `mapping:end`), confere o `sha256` de tudo antes de trocar qualquer arquivo e se atualiza sozinho (`--no-self-update` desliga). Rodar de novo atualiza, sem tocar `projetos/`, `especializacoes/` nem o que você escreveu fora do bloco.
 - Um arquivo de configuração por ferramenta (`.mcp.json`, `.cursor/mcp.json` e os outros), todos apontando para o mesmo comando com as duas raízes.
 - O `AGENTS.md` com a seção "Para que servem estes mapeamentos" para a pessoa preencher, e o `CLAUDE.md` que o importa.
 - Como trabalhar a partir do repositório do código (`get_code_hints`, `find_by_code`).
