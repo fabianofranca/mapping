@@ -291,7 +291,23 @@ O `id` do papel é dado que as anotações guardam (`parentRole` no vínculo do 
 
 ### 13. Versão
 
-- `formatVersion` é a **mínima** para o que a especialização usa: 1 sem plataformas e sem `code`; 2 com qualquer deles; 3 com `sources`; 4 com `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`; 5 com `repo` em alguma plataforma; 6 com `containers`; 7 com `floating` ou `appliesTo` em algum tipo ou com uma coluna `ref` numa `table`; 8 com `suggestions` ou `linkedRef` em algum campo ou coluna `string`; 9 com `variants` no `code` de algum tipo; 10 com `notices` em algum tipo, campo ou coluna; 11 com cláusula em `allowedChildren`, `groups` (na camada ou no tipo), `childRoles`, `childRolesLabel`, `docRepos` ou `doc` como objeto; 12 com `rename-role`, `remove-role` ou `set-role` em `migrations`. A versão atual do formato é a 12. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta) e para a 12 só se declara um passo de papel**: o resto da biblioteca fica na versão que o conteúdo pede (a Kotlin e a de notas ficam na 8). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+`formatVersion` é a **mínima** para o que a especialização usa. O que cada versão acrescenta:
+
+- `formatVersion` 1: o básico, sem plataformas e sem `code`.
+- `formatVersion` 2: plataformas e `code` (como se cria uma instância de cada tipo).
+- `formatVersion` 3: `sources`, a ligação com elementos de um sistema externo.
+- `formatVersion` 4: a biblioteca (pasta): `component`, `doc`, `examples`, `fonts`, `origins` ou `migrations`.
+- `formatVersion` 5: `repo` em alguma plataforma.
+- `formatVersion` 6: `containers`, os tamanhos prontos de container.
+- `formatVersion` 7: `floating` ou `appliesTo` em algum tipo, ou uma coluna `ref` numa `table`.
+- `formatVersion` 8: `suggestions` ou `linkedRef` em algum campo ou coluna `string`.
+- `formatVersion` 9: `variants` no `code` de algum tipo.
+- `formatVersion` 10: `notices` em algum tipo, campo ou coluna.
+- `formatVersion` 11: cláusula em `allowedChildren`, `groups` (na camada ou no tipo), `childRoles`, `childRolesLabel`, `docRepos` ou `doc` como objeto.
+- `formatVersion` 12: `rename-role`, `remove-role` ou `set-role` em `migrations`.
+
+A versão atual do formato é a 12. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta) e para a 12 só se declara um passo de papel**: o resto da biblioteca fica na versão que o conteúdo pede (a Kotlin e a de notas ficam na 8). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
 ## Validar antes de entregar
