@@ -91,7 +91,7 @@ const values = z
     'Valores dos campos da anotação tipada, por `key` (veja get_specialization). `null` limpa. ' +
       'Campo `table`: a lista de linhas, que substitui a tabela (`{"_id": "…"}` mantém uma linha existente; `"_as": "$linha"` dá um apelido à linha). ' +
       'Campo `ref`: `{"annotation": <anotação>, "entry": <chave ou id do par>}` (par de anotação livre), ' +
-      '`{"annotation": <anotação>, "key": <campo table>, "row": <id, apelido ou índice da linha>}` ou `{"annotation": <anotação>, "key": <campo>}`. ' +
+      '`{"annotation": <anotação>, "key": <campo table>, "row": <id, apelido ou índice da linha>}` ou `{"annotation": <anotação>, "key": <campo>}` ou só `{"annotation": <anotação>}` (a anotação inteira; o campo precisa de `accepts.annotations`). ' +
       'Uma chave que não é campo do tipo falha com `unknown-field`.',
   );
 

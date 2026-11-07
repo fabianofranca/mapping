@@ -22,6 +22,7 @@ O Mapping marca **áreas retangulares** em imagens (ou em containers só com fun
 - **Vínculos.** Uma anotação pode ter uma **dona** (`owner`), sempre na mesma marcação (ex: uma Ação vinculada ao `Button` no papel Clique). A anotação livre só tem dona de **outra camada**; a tipada pode ter dona da **mesma camada** quando o tipo da dona aceita (`allowedChildren` do tipo, a partir da `formatVersion` 13), e nunca há ciclo. `linked` lista as vinculadas e `linkTree` mostra a árvore.
 - **Referências fortes.** Campos do tipo `ref` apontam para uma tupla, uma linha de tabela ou um campo de outra anotação. Em `refs` você vê para onde cada campo aponta; em `backlinks`, quem aponta para a anotação.
 - **Pendências.** Anotação incompleta (`issues`): campo obrigatório vazio, valor inválido, referência quebrada, tipo inexistente etc. São calculadas na leitura, não gravadas.
+- **Conteúdo fora da imagem.** Componentes que vão aparecer mas não estão na tela capturada (os que um evento introduz) ficam num container sem imagem ao lado da tela, o container "depois", e o evento aponta para eles por `ref` para a anotação inteira. Veja "Conteúdo fora da imagem".
 - **Plataformas e código de instanciação.** O `code` de um tipo diz como se cria uma instância dele em cada plataforma: `symbol` é o que se chama, `path` é o arquivo que o define (relativo à raiz do `repo` da plataforma), `params` e `values` dizem como passar os campos, `notes` orienta. O repositório (`repo`) é da biblioteca, logo da **especialização**; o projeto só sobrepõe o clone local (`platformRepos[x].localPath`). Você lê o arquivo para saber a assinatura e escreve a chamada na solução; o mapeamento não guarda nada sobre a solução. `get_specialization` e `get_project` repetem isso em `codeHint` quando há plataformas. Veja "Do mapeamento ao código de instanciação".
 - **Container com arquivo ou só com fundo.** Todo container tem `file` (o arquivo de imagem em `images/`, ou `null`) e `background` (cor `#RRGGBB`, ou `null`): um tem o arquivo, o outro tem a cor, nunca os dois nem nenhum. O container só com fundo (`file: null`) é onde se monta, por exemplo, uma tela de app, um painel ou um cartão com componentes. `get_container_file` nele falha com `container-without-file`; use `get_marking_image`. Um container com arquivo não tem `background` nem tamanho editáveis (`container-has-file`). No `mapping.json` o container está em `containers` e a marcação aponta para ele por `containerId`.
 - **Ordem entre irmãs.** As irmãs (mesmo container e mesmo `parent`) são desenhadas na ordem da lista: `order` 0 fica por baixo. `move_marking` muda a posição.
@@ -244,7 +245,7 @@ Onde uma operação pede um item (`container`, `marking`, `parent`, `annotation`
 
 - Campo `table`: a lista de linhas, que **substitui** a tabela. `{"_id": "…"}` mantém uma linha existente (com as células informadas alteradas); `"_as": "$linha"` dá um apelido à linha, para uma referência no mesmo lote. A célula de uma coluna `ref` leva o mesmo valor de um campo `ref` (veja abaixo), com os apelidos do lote; o formato gravado (`{"annotationId": "…", "key": "…"}`) também é aceito.
 - Chave que não é campo do tipo: falha com `unknown-field` (veja os campos em `get_specialization`).
-- Campo `ref`: `{"annotation": "$user", "entry": "name"}` (par de anotação livre, pela chave ou id), `{"annotation": "$contato", "key": "atributos", "row": "$linha"}` (linha de tabela, pelo id, apelido ou índice) ou `{"annotation": "…", "key": "id"}` (campo). Numa coluna `ref` de `table` vale o mesmo valor, célula a célula, e o alvo pode nascer no mesmo lote. Exemplo (o tipo `modelo` tem a tabela `campos`; o tipo `lista` tem a tabela `alvos` com a coluna `ref` `alvo`; a linha `$cpf` é criada num passo e apontada no seguinte):
+- Campo `ref`: `{"annotation": "$user", "entry": "name"}` (par de anotação livre, pela chave ou id), `{"annotation": "$contato", "key": "atributos", "row": "$linha"}` (linha de tabela, pelo id, apelido ou índice) ou `{"annotation": "…", "key": "id"}` (campo) ou **só** `{"annotation": "$p1"}` (a **anotação inteira**, 0.27.0; o campo precisa de `accepts.annotations`, e o alvo, de um tipo coberto por ele: `ref-not-accepted` se não). Numa coluna `ref` de `table` vale o mesmo valor, célula a célula, e o alvo pode nascer no mesmo lote. Exemplo (o tipo `modelo` tem a tabela `campos`; o tipo `lista` tem a tabela `alvos` com a coluna `ref` `alvo`; a linha `$cpf` é criada num passo e apontada no seguinte):
 
 ```json
 [
@@ -311,6 +312,85 @@ Um componente `formatVersion` 3 pode ter um nó `image` (avatar, foto, logo). A 
 - **Vira requisição do navegador de quem abre o projeto**, e só depois que a pessoa consente aquela origem na app (nunca automático). O servidor MCP **nunca baixa a imagem**: `get_marking_image` desenha o **reservado** (caixa cinza com um X) no lugar dela, e a URL volta como texto nos valores.
 - **Grave só uma URL que veio da origem do trabalho** (o design, o código, o documento) **ou do dono**. Nunca invente uma, nem monte uma com dados do projeto (nomes, anotações, ids): abrir o projeto mandaria esses dados ao servidor da imagem. Só `https://`, sem usuário e senha, até 2048 caracteres.
 - Sem URL, o campo fica vazio e o desenho mostra o reservado.
+
+### Conteúdo fora da imagem
+
+Quando um evento ou campo descreve componentes que vão aparecer mas **não estão na tela capturada** (o `replace-plugins` que troca os plugins de um contêiner, por exemplo):
+
+1. crie um container sem imagem ao lado da tela, chamado `<tela> (depois de <evento>)`;
+2. marque nele os componentes, com as anotações e os eventos deles por papel;
+3. aponte para eles a partir do campo do evento: uma `table` com coluna `ref` (que aceite `annotations`), **uma linha por componente, na ordem**, cada célula `{ "annotation": "$p1" }`;
+4. ligue o componente que dispara o evento ao container por seta (`create_arrow`; a seta liga marcações, então o destino é uma marcação que envolve os itens, `wrap_items`).
+
+**Nunca:** um retângulo inventado na tela original, nem a estrutura escrita num campo `string` ou `json`. O "quando" continua sendo o papel (`role`) do evento no componente. O container "depois" é documentação como qualquer outro: aparece no canvas e na árvore, conta nas contagens e entra no `find_by_code`; quem não quer vê-lo usa uma perspectiva (`get_perspective`).
+
+O lote completo, do zero (a tela, o botão e os tipos `sdui/item` e `sdui/replace-plugins` são os da especialização de exemplo: o evento é filho do item no papel `click` e tem a tabela `plugins` com a coluna `item`, uma `ref` com `accepts.annotations`). `add_container` não tem `near`: o container "depois" nasce à direita dos outros, ao lado da tela; com `center` você escolhe o ponto.
+
+```json
+[
+  {
+    "op": "add_container",
+    "as": "$tela",
+    "name": "Pedido",
+    "width": 390,
+    "height": 844,
+    "background": "#FFFFFF"
+  },
+  {
+    "op": "create_marking",
+    "as": "$botao",
+    "container": "$tela",
+    "rect": { "x": 20, "y": 700, "width": 350, "height": 60 },
+    "annotationAs": "$b",
+    "annotation": { "type": "sdui/item", "values": { "titulo": "Trocar plugins" } }
+  },
+  {
+    "op": "add_container",
+    "as": "$depois",
+    "name": "Pedido (depois de Trocar plugins)",
+    "width": 390,
+    "height": 300,
+    "background": "#FFFFFF"
+  },
+  {
+    "op": "create_marking",
+    "as": "$m1",
+    "container": "$depois",
+    "rect": { "x": 20, "y": 20, "width": 350, "height": 100 },
+    "annotationAs": "$p1",
+    "annotation": { "type": "sdui/item", "values": { "titulo": "Plugin A" } }
+  },
+  {
+    "op": "create_marking",
+    "as": "$m2",
+    "container": "$depois",
+    "rect": { "x": 20, "y": 140, "width": 350, "height": 100 },
+    "annotationAs": "$p2",
+    "annotation": { "type": "sdui/item", "values": { "titulo": "Plugin B" } }
+  },
+  { "op": "wrap_items", "items": ["$m1", "$m2"], "name": "Plugins", "as": "$grupo" },
+  {
+    "op": "create_annotation",
+    "as": "$evento",
+    "marking": "$botao",
+    "type": "sdui/replace-plugins",
+    "owner": "$b",
+    "role": "click",
+    "values": {
+      "titulo": "Trocar plugins",
+      "plugins": [
+        { "nota": "primeiro", "item": { "annotation": "$p1" } },
+        { "nota": "segundo", "item": { "annotation": "$p2" } }
+      ]
+    }
+  },
+  { "op": "create_arrow", "from": "$botao", "to": "$grupo" }
+]
+```
+
+- **A seta liga marcações, não containers.** Por isso o lote envolve os itens com `wrap_items` (não calcule o retângulo à mão) e a seta vai do componente que dispara o evento ao `$grupo`; com um item só, ligue a seta a ele.
+- **Ler de volta.** `get_annotation` do evento mostra `refs` com `target.kind: "annotation"` e o rótulo do alvo; `get_marking` de cada item mostra o `backlink` do evento.
+- **Para o código.** `get_code_hints` do botão traz, no evento, `targets` com cada componente expandido (ver "Do mapeamento ao código de instanciação").
 
 ## Conversas
 
@@ -399,6 +479,7 @@ Quando o projeto aplica uma especialização com **plataformas** (veja `platform
    - `types`: o código de instanciação de cada tipo usado na árvore, **uma vez só**, por `specId/typeId`: `name`, `symbol`, `definition`, `params`, `values` e `notes`. `symbol: null` não aparece aqui: o tipo **não tem `code`** nessa plataforma e vai para `unmappedTypes`;
    - `repos`: por plataforma, o `url` e a `ref` do repositório (da especialização) e o `localPath` do clone local (do projeto); vazio se não houver nenhum dos dois;
    - `tree`: a árvore que espelha a marcação e as descendentes. Cada anotação traz `type` (a chave de `types`), `label`, `layer`, `args`, `values` e `linked`; nos tipos que têm `variants` (especialização 9), traz também `code`, o código **resolvido** da variante dela (`symbol`, `definition`, `params`, `values`, `notes`, sem `variants`). **Quando a anotação tem `code`, use-o no lugar do de `types`** (o de `types` é o da base, e pode trazer `variants`); sem `code` na anotação, vale o de `types`.
+   - `targets` (em qualquer anotação da árvore, 0.27.0): um item por `ref` para a **anotação inteira** nos campos e nas células, na ordem dos campos e das linhas, com `field`, `row` (índice de 0, ou `null`), `column` (ou `null`) e `label`. `annotation` é o alvo **na forma da árvore** (`type`, `args`, `values`, `linked` com os eventos dele, e seus próprios `targets`), e `children` são as marcações filhas da marcação do alvo, para o componente que contém outros. Escreva a chamada do alvo no lugar do parâmetro que recebe a lista (a ordem das linhas é a ordem dos componentes). `values` e `args` continuam com o rótulo, por compatibilidade, e `types` inclui os tipos dos alvos. Um alvo que já apareceu no caminho vem só com o rótulo e `repeated: true`, sem laço. Os `ref` de campo, de linha e de par livre **não** se expandem: continuam pelo rótulo (ex.: `User.name`).
 3. **Abra a `definition` de cada tipo** que você vai usar. Se `exists` é `true`, leia o arquivo em `localFile` (relativo ao diretório de trabalho do cliente); senão, abra a `url` (o arquivo no repositório da especialização, na `ref` dela). Leia a assinatura do `symbol` antes de chamá-lo.
 4. **Escreva as chamadas** na solução, uma por anotação da árvore: `args` é `{ field, name, value }`, com o **nome do parâmetro** no código e o valor **já traduzido** (o enum `primary` vira o `ButtonStyle.Primary`). Campo que não está em `args` não é passado. Respeite as `notes` do tipo (elas costumam dizer detalhes como "use o valor do campo id") e o `linked`: as anotações vinculadas ficam sob a dona (a `Action` sob o `Button`, no papel Clique) e entram na chamada dela do jeito que as `notes` mandarem. `values` são os valores como estão no mapeamento (sem traduzir), com os `ref` resolvidos pelo rótulo do alvo (ex.: `dado: "User.name"`).
 5. O servidor **não lê nem grava código**. Se você tem o clone do repositório da plataforma fora do caminho esperado, proponha um `set_platform_repo` com `localPath` (ver "Repositórios por plataforma"); sem clone, a `url` basta.
@@ -474,6 +555,48 @@ Exemplo: o `Button` do formulário na plataforma `android` (`get_code_hints("map
       }
     ]
   }
+}
+```
+
+Exemplo do `targets`: o evento `replace-plugins` do botão (o lote de "Conteúdo fora da imagem"), dentro de `linked` do botão:
+
+```json
+{
+  "ref": "mapping://pedido/a/9c1d02aa",
+  "type": "sdui/replace-plugins",
+  "label": "Trocar plugins",
+  "parentRole": "click",
+  "values": {
+    "plugins": [
+      { "nota": "primeiro", "item": "Plugin A" },
+      { "nota": "segundo", "item": "Plugin B" }
+    ]
+  },
+  "targets": [
+    {
+      "field": "plugins",
+      "row": 0,
+      "column": "item",
+      "label": "Plugin A",
+      "annotation": {
+        "ref": "mapping://pedido/a/3be8f410",
+        "type": "sdui/item",
+        "label": "Plugin A",
+        "args": [{ "field": "titulo", "name": "title", "value": "Plugin A" }]
+      }
+    },
+    {
+      "field": "plugins",
+      "row": 1,
+      "column": "item",
+      "label": "Plugin B",
+      "annotation": {
+        "ref": "mapping://pedido/a/52a7c9d3",
+        "type": "sdui/item",
+        "label": "Plugin B"
+      }
+    }
+  ]
 }
 ```
 
@@ -679,6 +802,10 @@ Uma especialização `formatVersion` 11 pode dizer **em que ponto da dona** uma 
 3. `get_component { project, specId, type }` devolve o texto em `doc` e, em `docExternal`, `url`, `localFile` e `exists: true`. Sem clone, sem o arquivo ou com o clone fora do diretório de trabalho, `doc` é `null`: **abra o link `docExternal.url`** (quando há `urlTemplate`) ou siga a `hint`. O servidor lê só `.md` de documento, dentro do diretório de trabalho, até 1 MiB; o código nunca.
 
 **Validar uma biblioteca com documentos externos.** `validate_library { path }` sem clone dá um aviso por repositório ("N documentos de <repo> não conferidos (sem clone)"). Com `docClones: { "<repo>": "<pasta dentro das raízes>" }`, cada documento é conferido no clone e o ausente é aviso ("documento não encontrado em <repo>: <path>"), nunca erro. Um `doc` cujo `repo` não está em `docRepos` é erro do nível 1. `plan_library_update` usa o `localPath` do projeto, sem `docClones`.
+
+### Mudança na versão 0.27.0 (Conteúdo fora da imagem)
+
+O lote aceita `{ "annotation": "<ref|id|$apelido>" }` sozinho, sem `entry`, `key` nem `row`, como o `ref` para a anotação inteira (campo e célula); o formato gravado `{ "annotationId" }` continua aceito. `get_annotation` e `get_marking` mostram o `ref` (`target.kind: "annotation"`) e os backlinks de quem aponta para a anotação inteira. `get_code_hints` ganha `targets` e o `types` inclui os tipos dos alvos. Veja "Conteúdo fora da imagem".
 
 ### Mudança na versão 0.18.0 (Papéis e documentos externos)
 
