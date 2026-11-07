@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
-  "title": "Mapping — componente (mapping-component, formatVersion 1, 2 e 3)",
-  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres).",
+  "title": "Mapping — componente (mapping-component, formatVersion 1, 2, 3 e 4)",
+  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta stroke.cap, stroke.join e stroke.sides (numa versão menor é erro do parseComponent).",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -11,7 +11,7 @@
       "const": "mapping-component"
     },
     "formatVersion": {
-      "enum": [1, 2, 3]
+      "enum": [1, 2, 3, 4]
     },
     "id": {
       "type": "string",
@@ -1501,8 +1501,18 @@
             "type": "number",
             "minimum": 0
           }
+        },
+        "cap": {
+          "$ref": "#/$defs/expr_cap"
+        },
+        "join": {
+          "$ref": "#/$defs/expr_join"
+        },
+        "sides": {
+          "$ref": "#/$defs/expr_sides"
         }
-      }
+      },
+      "description": "cap, join e sides só existem na formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4'). sides só vale em frame e rect (em ellipse e path é erro do parseComponent, que o schema não confere)."
     },
     "shadow": {
       "type": "object",
@@ -2007,6 +2017,214 @@
           "$ref": "#/$defs/node_frame"
         }
       }
+    },
+    "lit_cap": {
+      "enum": ["butt", "round", "square"]
+    },
+    "lit_join": {
+      "enum": ["miter", "round", "bevel"]
+    },
+    "lit_sides": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": ["top", "right", "bottom", "left"]
+      },
+      "description": "Lista não vazia de lados. A ausência de repetição é conferida pelo parseComponent, não pelo schema."
+    },
+    "expr_cap": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_cap"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_cap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_cap"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_cap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_cap"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_cap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_join": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_join"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_join"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_join"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_join"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_join"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_join"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_sides": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_sides"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_sides"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_sides"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_sides"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_sides"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_sides"
+            }
+          }
+        }
+      ]
     }
   }
 }

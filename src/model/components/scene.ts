@@ -89,6 +89,16 @@ export interface Stroke {
   readonly dash?: readonly number[];
   readonly cap?: 'butt' | 'round' | 'square';
   readonly join?: 'miter' | 'round' | 'bevel';
+  /** Só estes lados da caixa têm traço (`frame` e `rect`); ausente = os quatro, em contorno. */
+  readonly sides?: readonly ('top' | 'right' | 'bottom' | 'left')[];
+}
+
+/** Retângulo no espaço local do nó (px): o recorte ampliado de um quadro. */
+export interface ClipBox {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
 }
 
 export interface Shadow {
@@ -134,6 +144,12 @@ export interface FrameNode extends NodeBase {
   readonly type: 'frame';
   /** Recorta os filhos na própria caixa (Figma: `clipsContent`). */
   readonly clip: boolean;
+  /**
+   * Recorte maior que a caixa, quando o traço `outside`/`center` ou a sombra do quadro (ou de um
+   * filho que passa da caixa só por eles) sai dela; ausente = o recorte é a própria caixa. Só
+   * vale com `clip`. O conteúdo (formas e texto) segue recortado na caixa.
+   */
+  readonly clipBox?: ClipBox;
   readonly cornerRadius: CornerRadius;
   readonly children: readonly SceneNode[];
 }

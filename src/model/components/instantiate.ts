@@ -38,10 +38,13 @@ import type {
   ImageTemplate,
   PathTemplate,
   SizeSpec,
+  StrokeSide,
   StrokeSpec,
   TemplateNode,
   TextTemplate,
 } from './componentFormat';
+import { STROKE_SIDES } from './componentFormat';
+import { clipBoxOf } from './clipBox';
 import { evaluate, evaluateBoolean, evaluateText, referencedFields } from './expressions';
 import { expandRepeats } from './repeat';
 import {
@@ -56,6 +59,9 @@ import {
   baseNode,
   translate,
 } from './scene';
+
+const STROKE_CAPS = ['butt', 'round', 'square'] as const;
+const STROKE_JOINS = ['miter', 'round', 'bevel'] as const;
 
 export interface Box {
   readonly x: number;
@@ -598,7 +604,39 @@ function createEngine(
       width: width / scale,
       align: spec.align ?? defaultAlign,
       ...(spec.dash ? { dash: spec.dash } : {}),
+      ...strokeStyleOf(spec),
     };
+  };
+
+  /** `cap`, `join` e `sides` (formato 4): só entram na cena quando a chave existe e é válida. */
+  const strokeStyleOf = (spec: StrokeSpec): Pick<Stroke, 'cap' | 'join' | 'sides'> => {
+    const cap = pick(spec.cap, STROKE_CAPS);
+    const join = pick(spec.join, STROKE_JOINS);
+    const sides = sidesOf(spec.sides);
+    return {
+      ...(cap ? { cap } : {}),
+      ...(join ? { join } : {}),
+      ...(sides ? { sides } : {}),
+    };
+  };
+
+  const pick = <T extends string>(
+    expr: Expr<T> | undefined,
+    allowed: readonly T[],
+  ): T | undefined => {
+    if (expr === undefined) return undefined;
+    const value = str(expr as Expr<string>, '');
+    return (allowed as readonly string[]).includes(value) ? (value as T) : undefined;
+  };
+
+  const sidesOf = (
+    expr: Expr<readonly StrokeSide[]> | undefined,
+  ): StrokeSide[] | undefined => {
+    if (expr === undefined) return undefined;
+    const value = ev<unknown>(expr as Expr<unknown>, undefined);
+    if (!Array.isArray(value)) return undefined;
+    const sides = STROKE_SIDES.filter((side) => value.includes(side));
+    return sides.length > 0 ? sides : undefined;
   };
 
   const effectsOf = (node: TemplateNode, scale: number): Shadow[] => {
@@ -655,16 +693,19 @@ function createEngine(
   ): FrameNode => {
     const plan = planFrame(frame, w, h);
     const stroke = strokeOf(frame.stroke, 'inside', 1);
-    return {
+    const children = plan.placements.map((p) =>
+      buildNode(p.kid.node, `${path}.${p.kid.index}`, p.x, p.y, p.w, p.h),
+    );
+    const base = {
       ...common(frame, `${prefix}/${path}`, x, y, w, h),
       ...(stroke ? { stroke } : {}),
-      type: 'frame',
+      type: 'frame' as const,
       clip: frame.clip ?? isRoot,
       cornerRadius: radiusOf(frame),
-      children: plan.placements.map((p) =>
-        buildNode(p.kid.node, `${path}.${p.kid.index}`, p.x, p.y, p.w, p.h),
-      ),
+      children,
     };
+    const clipBox = base.clip ? clipBoxOf(base) : undefined;
+    return clipBox ? { ...base, clipBox } : base;
   };
 
   const buildPath = (

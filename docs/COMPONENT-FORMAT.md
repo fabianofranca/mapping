@@ -1,4 +1,4 @@
-# Formato do componente (`mapping-component`, `formatVersion` 1, 2 e 3)
+# Formato do componente (`mapping-component`, `formatVersion` 1, 2, 3 e 4)
 
 O formato do arquivo que desenha um tipo de anotação: um **componente**. É para quem escreve um à mão ou gera um (a skill `spec-author` e os agentes). O componente vive dentro do pacote de uma biblioteca (ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Biblioteca: o pacote"); este documento descreve só o arquivo dele.
 
@@ -10,7 +10,7 @@ Arquivos de apoio:
 
 ## O que é um componente
 
-Um componente é o **desenho genérico** de um tipo de anotação: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto, caminho, slot, na `formatVersion` 2, `repeat` e, na 3, `image`) cujos atributos podem ser **ligados aos campos** do tipo por expressões. Trocar o valor de um campo redesenha o componente.
+Um componente é o **desenho genérico** de um tipo de anotação: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto, caminho, slot, na `formatVersion` 2, `repeat`, na 3, `image` e, na 4, o traço com ponta, canto e lados) cujos atributos podem ser **ligados aos campos** do tipo por expressões. Trocar o valor de um campo redesenha o componente.
 
 - **Um arquivo por componente.** O tipo da especialização só o referencia, com a chave `component` (`"component": "components/button.json"`).
 - O caminho é **relativo ao arquivo da especialização**, com `/`, sem `..`, sem `/` no começo e sem unidade de disco, e termina em `.json`.
@@ -63,18 +63,18 @@ Um componente é o **desenho genérico** de um tipo de anotação: uma árvore d
 }
 ```
 
-| Propriedade     | Obrigatória | Descrição                                                                                                                                                                                                     |
-| --------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `format`        | sim         | Sempre `"mapping-component"`.                                                                                                                                                                                 |
-| `formatVersion` | sim         | `1`, `2` ou `3`. A `2` é a `1` mais o nó `repeat` (a tabela desenhada); a `3` é a `2` mais o nó `image`. `repeat` numa `1` e `image` numa `1` ou `2` são erro. As três são aceitas.                           |
-| `id`            | sim         | Texto no padrão `^[a-z0-9][a-z0-9-_]*$`.                                                                                                                                                                      |
-| `name`          | sim         | Nome exibido, não vazio.                                                                                                                                                                                      |
-| `description`   | não         | Texto de ajuda.                                                                                                                                                                                               |
-| `size`          | sim         | `{ width, height }`, números positivos (px). Tamanho **inicial** da instância e, sem `sizing`, o tamanho dos dois eixos na arrumação por tamanhos.                                                            |
-| `minSize`       | não         | `{ width, height }`, positivos e **não maiores** que `size`. Piso do redimensionamento e de todo tamanho calculado.                                                                                           |
-| `sizing`        | não         | `{ width?, height? }`: dimensionamento de uma instância **sem retângulo** (ver "Dimensionamento").                                                                                                            |
-| `preview`       | não         | Valores de exemplo dos campos (`chave` → texto, número ou `null`; num campo `table`, a lista das linhas), usados ao criar uma instância, no Catálogo e na prova de desenho. Os campos vêm do tipo, não daqui. |
-| `template`      | sim         | A raiz do desenho. Precisa ser um nó `frame`; ocupa o retângulo inteiro da instância.                                                                                                                         |
+| Propriedade     | Obrigatória | Descrição                                                                                                                                                                                                                                                                                |
+| --------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `format`        | sim         | Sempre `"mapping-component"`.                                                                                                                                                                                                                                                            |
+| `formatVersion` | sim         | `1`, `2`, `3` ou `4`. A `2` é a `1` mais o nó `repeat` (a tabela desenhada); a `3` é a `2` mais o nó `image`; a `4` é a `3` mais `stroke.cap`, `stroke.join` e `stroke.sides`. `repeat` numa `1`, `image` numa `1` ou `2` e as chaves da `4` numa menor são erro. As quatro são aceitas. |
+| `id`            | sim         | Texto no padrão `^[a-z0-9][a-z0-9-_]*$`.                                                                                                                                                                                                                                                 |
+| `name`          | sim         | Nome exibido, não vazio.                                                                                                                                                                                                                                                                 |
+| `description`   | não         | Texto de ajuda.                                                                                                                                                                                                                                                                          |
+| `size`          | sim         | `{ width, height }`, números positivos (px). Tamanho **inicial** da instância e, sem `sizing`, o tamanho dos dois eixos na arrumação por tamanhos.                                                                                                                                       |
+| `minSize`       | não         | `{ width, height }`, positivos e **não maiores** que `size`. Piso do redimensionamento e de todo tamanho calculado.                                                                                                                                                                      |
+| `sizing`        | não         | `{ width?, height? }`: dimensionamento de uma instância **sem retângulo** (ver "Dimensionamento").                                                                                                                                                                                       |
+| `preview`       | não         | Valores de exemplo dos campos (`chave` → texto, número ou `null`; num campo `table`, a lista das linhas), usados ao criar uma instância, no Catálogo e na prova de desenho. Os campos vêm do tipo, não daqui.                                                                            |
+| `template`      | sim         | A raiz do desenho. Precisa ser um nó `frame`; ocupa o retângulo inteiro da instância.                                                                                                                                                                                                    |
 
 Qualquer outra chave na raiz é problema (o formato é estrito).
 
@@ -82,27 +82,27 @@ Qualquer outra chave na raiz é problema (o formato é estrito).
 
 Cada nó tem `type` (`frame`, `rect`, `ellipse`, `text`, `path`, `slot`, na `formatVersion` 2, `repeat` ou, na 3, `image`) e as chaves comuns abaixo. As chaves de cada tipo vêm depois. **Chave desconhecida é problema**, para que erro de digitação apareça.
 
-| Chave             | Descrição                                                                                                                                                                                                                                                                       |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`            | Nome do nó (aparece nos avisos e na árvore). Opcional.                                                                                                                                                                                                                          |
-| `visible`         | Expressão booleana (ver "Expressões e condições"). Nó invisível não ocupa lugar nem entra na arrumação. Padrão: visível.                                                                                                                                                        |
-| `opacity`         | Número de 0 a 1 (aceita expressão). Padrão 1.                                                                                                                                                                                                                                   |
-| `width`, `height` | Tamanho do nó (ver "Dimensionamento"): px, `"fill"`, `"hug"` ou `"NN%"`.                                                                                                                                                                                                        |
-| `anchors`         | `{ left?, right?, top?, bottom?, centerX?, centerY? }`. Só tem efeito quando o pai é um quadro com `layout: none`.                                                                                                                                                              |
-| `fill`            | Cor CSS (`#rrggbb`, `#rrggbbaa`, `rgba(...)`), `"none"` ou gradiente `{ "type": "linear", "angle": 90, "stops": [{ "offset": 0, "color": "#fff" }, …] }` (ao menos 2 paradas, `offset` de 0 a 1; 0° vai da esquerda para a direita e 90° de cima para baixo). Aceita expressão. |
-| `stroke`          | `{ color, width?, align?, dash? }`. `color` é obrigatório e aceita expressão; `width` padrão 1; `align` `inside` (padrão; `center` no `path`), `center` ou `outside`; `dash` é a lista de comprimentos. Cor `"none"` desliga.                                                   |
-| `shadow`          | `{ color, x?, y?, blur? }`. `color` é obrigatório (`"none"` desliga); `x` e `y` em px; `blur` maior ou igual a 0.                                                                                                                                                               |
-| `cornerRadius`    | Número maior ou igual a 0 ou lista de 4 (superior-esquerdo, superior-direito, inferior-direito, inferior-esquerdo). Aceita expressão. Vale em `frame` e `rect`.                                                                                                                 |
+| Chave             | Descrição                                                                                                                                                                                                                                                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`            | Nome do nó (aparece nos avisos e na árvore). Opcional.                                                                                                                                                                                                                                                                        |
+| `visible`         | Expressão booleana (ver "Expressões e condições"). Nó invisível não ocupa lugar nem entra na arrumação. Padrão: visível.                                                                                                                                                                                                      |
+| `opacity`         | Número de 0 a 1 (aceita expressão). Padrão 1.                                                                                                                                                                                                                                                                                 |
+| `width`, `height` | Tamanho do nó (ver "Dimensionamento"): px, `"fill"`, `"hug"` ou `"NN%"`.                                                                                                                                                                                                                                                      |
+| `anchors`         | `{ left?, right?, top?, bottom?, centerX?, centerY? }`. Só tem efeito quando o pai é um quadro com `layout: none`.                                                                                                                                                                                                            |
+| `fill`            | Cor CSS (`#rrggbb`, `#rrggbbaa`, `rgba(...)`), `"none"` ou gradiente `{ "type": "linear", "angle": 90, "stops": [{ "offset": 0, "color": "#fff" }, …] }` (ao menos 2 paradas, `offset` de 0 a 1; 0° vai da esquerda para a direita e 90° de cima para baixo). Aceita expressão.                                               |
+| `stroke`          | `{ color, width?, align?, dash? }`. `color` é obrigatório e aceita expressão; `width` padrão 1; `align` `inside` (padrão; `center` no `path`), `center` ou `outside`; `dash` é a lista de comprimentos. Cor `"none"` desliga. Na `formatVersion` 4 aceita também `cap`, `join` e `sides` (ver "Traço: ponta, canto e lados"). |
+| `shadow`          | `{ color, x?, y?, blur? }`. `color` é obrigatório (`"none"` desliga); `x` e `y` em px; `blur` maior ou igual a 0.                                                                                                                                                                                                             |
+| `cornerRadius`    | Número maior ou igual a 0 ou lista de 4 (superior-esquerdo, superior-direito, inferior-direito, inferior-esquerdo). Aceita expressão. Vale em `frame` e `rect`.                                                                                                                                                               |
 
 ### `frame`
 
 O nó que agrupa. Os filhos ficam em `children` e se distribuem conforme o `layout`.
 
-| Chave      | Descrição                                                                                             |
-| ---------- | ----------------------------------------------------------------------------------------------------- |
-| `layout`   | `{ "type": "none" }` (padrão), `row` ou `column` (ver "Dimensionamento").                             |
-| `children` | Lista de nós.                                                                                         |
-| `clip`     | Recorta os filhos na caixa do quadro. Padrão `true` na raiz do template e `false` nos demais quadros. |
+| Chave      | Descrição                                                                                                                                                |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout`   | `{ "type": "none" }` (padrão), `row` ou `column` (ver "Dimensionamento").                                                                                |
+| `children` | Lista de nós.                                                                                                                                            |
+| `clip`     | Recorta os filhos na caixa do quadro (e o traço e a sombra dele, ver "Recorte da raiz"). Padrão `true` na raiz do template e `false` nos demais quadros. |
 
 ### `rect` e `ellipse`
 
@@ -216,6 +216,39 @@ Como o `template` lê a linha:
 - A tabela sem linhas (ou nula) desenha um quadro vazio. A ordem das linhas é a do campo.
 
 Como o `repeat` se dimensiona (é um quadro por baixo): `hug` no **eixo das linhas** (a altura em `column`, a largura em `row`) e `fill` no outro, a menos que `width` ou `height` digam outra coisa; e o `template` também é `hug` no eixo das linhas se não disser o contrário. Por isso a altura do componente acompanha o número de linhas **medido**, mas a caixa da marcação não cresce sozinha: linhas demais para a caixa saem cortadas (a raiz recorta) e o desenho avisa `conteúdo maior que a caixa` (a marcação ganha a pendência de que o componente não cabe). O `preview` do componente traz algumas linhas de exemplo, que o Catálogo e a prova de desenho usam.
+
+### Traço: ponta, canto e lados (`formatVersion` 4)
+
+Na `formatVersion` 4 o `stroke` ganha três chaves. Todas aceitam expressão e só valem a partir da 4: numa versão menor o parser recusa com `<caminho da chave>: só é permitido com formatVersion 4` (ex.: `template.children[0].stroke.cap: só é permitido com formatVersion 4`).
+
+| Chave   | Descrição                                                                                                                                                                                                                |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cap`   | A ponta do traço (onde ele começa e termina, nas pontas das linhas tracejadas e dos lados de `sides`): `butt` (padrão), `round` ou `square`.                                                                             |
+| `join`  | O canto entre dois segmentos do traço: `miter` (padrão, ponta viva), `round` ou `bevel`.                                                                                                                                 |
+| `sides` | Lista não vazia, sem repetição, de `top`, `right`, `bottom` e `left`: só esses lados são traçados. Ausente, os quatro. Só em `frame` e `rect`; em `ellipse` e `path` é erro (`só vale em frame e rect (este é <tipo>)`). |
+
+- `sides` pode vir de uma expressão que devolve a lista (um `$switch` com uma lista por caso, por exemplo).
+- Com `cornerRadius` e lados parciais, o traço é **reto**: não há arco no canto.
+- Os lados pedidos têm a **mesma** cor, largura, `align` e `dash`. Cor ou largura diferentes por lado pedem **dois nós** (ver "Limites conhecidos").
+- O raster do servidor MCP (`get_marking_image`) respeita `cap`, `join` e `sides`.
+
+```json
+{
+  "type": "frame",
+  "name": "divisória",
+  "height": 48,
+  "stroke": { "color": "#CAC4D0", "width": 1, "sides": ["bottom"] }
+}
+```
+
+### Recorte da raiz
+
+A raiz do template (e um quadro interno com `clip: true`) recorta os filhos na caixa da instância. Em **todas** as versões, o recorte inclui também a extensão do traço e da sombra do próprio quadro e dos filhos que passam da caixa **só** por traço ou sombra:
+
+- traço `outside` entra inteiro e `center`, pela metade (o `inside` já cabe na caixa);
+- sombra entra com o `blur` e o deslocamento (`x`, `y`), por lado.
+
+O **conteúdo** (formas e texto) continua recortado no retângulo da instância. Na cena, o recorte ampliado é `FrameNode.clipBox`, um retângulo local presente só quando maior que a caixa. O anel de um traço `outside` na raiz, que antes sumia, agora aparece.
 
 ## Dimensionamento
 
@@ -409,7 +442,7 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 ```
 
 - `errors[i]` é `"caminho: mensagem"` (ou só a mensagem quando o caminho é vazio), com o caminho JSON do problema: `template.children[1].text: esperava texto ou número`.
-- O formato é **estrito**: chave desconhecida em qualquer nó, expressão, estilo ou na raiz é problema (`chave desconhecida: <chave>`). Outros problemas: `format`/`formatVersion` errados (`esperava 1, 2 ou 3`), `image` numa `formatVersion` menor que 3 (`o nó image só existe na formatVersion 3`), `src` fora da regra do nó `image`, `width`/`height` `hug` no `image`, `repeat` numa `formatVersion` 1 (`o nó repeat só existe na formatVersion 2`, no caminho do nó), `repeat` sem `field` ou sem `template`, `repeat` ou `slot` dentro de um `repeat`, `id` fora do padrão, `size`/`minSize` inválidos, `minSize` maior que `size`, raiz do template que não é `frame`, `children` ou `layout` num nó que não é quadro (o `slot` aceita `layout`), tamanho de nó fora de `número`/`fill`/`hug`/`NN%`, expressão com mais de um operador, condição sem operador, peso de fonte fora de 100 a 900, cor vazia.
+- O formato é **estrito**: chave desconhecida em qualquer nó, expressão, estilo ou na raiz é problema (`chave desconhecida: <chave>`). Outros problemas: `format`/`formatVersion` errados (`esperava 1, 2, 3 ou 4`), `image` numa `formatVersion` menor que 3 (`o nó image só existe na formatVersion 3`), `src` fora da regra do nó `image`, `width`/`height` `hug` no `image`, `repeat` numa `formatVersion` 1 (`o nó repeat só existe na formatVersion 2`, no caminho do nó), `stroke.cap`, `stroke.join` ou `stroke.sides` numa `formatVersion` menor que 4 (`só é permitido com formatVersion 4`, no caminho da chave), `sides` vazio, repetido ou fora de `top`/`right`/`bottom`/`left`, `sides` em `ellipse` ou `path`, `repeat` sem `field` ou sem `template`, `repeat` ou `slot` dentro de um `repeat`, `id` fora do padrão, `size`/`minSize` inválidos, `minSize` maior que `size`, raiz do template que não é `frame`, `children` ou `layout` num nó que não é quadro (o `slot` aceita `layout`), tamanho de nó fora de `número`/`fill`/`hug`/`NN%`, expressão com mais de um operador, condição sem operador, peso de fonte fora de 100 a 900, cor vazia.
 - `parseComponentText(texto)` lê o texto JSON (JSON inválido vira um problema de caminho vazio) e `validateComponent(json)` devolve só a lista `string[]`.
 - `docs/component.schema.json` espelha a estrutura (para editores e geradores); ele **não** substitui o parser, e o código é a fonte da verdade.
 - O **validador da biblioteca** (`src/model/library.ts`, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Validação da biblioteca") roda o `parseComponent` em cada componente do pacote e confere o que depende de mais de um arquivo (o campo citado pelo desenho existe no tipo, o `slot` declarado existe no template; num `repeat`, o `field` é uma `table` do tipo e cada chave citada no `template` é coluna dela ou campo do tipo; o `preview` de uma `table` é uma lista de linhas com colunas que existem).
@@ -418,8 +451,10 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 
 - **Um slot por componente.** Os filhos de uma instância vão sempre para o primeiro slot do template (busca em profundidade). Vários slots ficam para depois.
 - **Imagem só remota e só no nó `image`.** O arquivo do componente não carrega bitmap; a imagem vem de uma URL `https://` (um campo `string`) e não é gravada no projeto. Imagem local no pacote fica para depois (por isso o caminho relativo é recusado no `src`). Elipse e caminho não aceitam imagem como preenchimento.
-- **`formatVersion` 1, 2 e 3.** A 2 acrescenta só o `repeat`, a 3 só o `image`, e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
+- **`formatVersion` 1, 2, 3 e 4.** A 2 acrescenta só o `repeat`, a 3 só o `image`, a 4 só `stroke.cap`, `stroke.join` e `stroke.sides`, e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
 - Gradiente só `linear`; sombra só uma por nó; borda uma por nó.
 - Listas que viram campos numerados (`label1`, `label2`…) são frágeis: para um dado em forma de tabela (os eventos de uma tela, as propriedades de uma chamada), declare um campo `table` e desenhe-o com `repeat`. Os componentes do Material 3 (a barra de navegação, a folha com N itens) ainda usam campos numerados.
 - O `repeat` não aninha (uma `table` não tem `table` dentro) e não mede a tabela para crescer a marcação: a caixa é da marcação. Um desenho de linha com colunas de largura alinhada entre linhas (uma grade) precisa de larguras fixas ou em `%`; `hug` mede cada linha à parte.
 - A medida do texto no Node é aproximada (ver acima).
+- **Sombra interna não existe.** `shadow` é sempre externa; para um efeito de fundo afundado, desenhe um nó a mais.
+- **`stroke.sides` com cor ou largura por lado.** Os lados pedidos compartilham cor, largura, `align` e `dash`; para valores diferentes por lado, use dois nós (cada um com os seus `sides`).

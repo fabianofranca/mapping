@@ -9,6 +9,8 @@
 import {
   COMPONENT_FORMAT,
   COMPONENT_FORMAT_VERSIONS,
+  COMPONENT_FORMAT_VERSION_FIDELITY,
+  STROKE_SIDES,
   type ComponentFile,
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
@@ -298,9 +300,50 @@ function checkAnchors(value: unknown, path: string, out: ComponentIssue[]): void
   }
 }
 
-function checkStroke(value: unknown, path: string, out: ComponentIssue[]): void {
+/** `stroke.sides`: lista não vazia de lados, sem repetição. */
+const checkSides: Check = (v, p, out) => {
+  if (!Array.isArray(v)) return add(out, p, 'esperava lista de lados');
+  if (v.length === 0) return add(out, p, 'esperava ao menos um lado');
+  const seen = new Set<unknown>();
+  v.forEach((side: unknown, i) => {
+    const at = `${p}[${i}]`;
+    oneOf(STROKE_SIDES)(side, at, out);
+    if (seen.has(side)) add(out, at, `lado repetido: ${String(side)}`);
+    seen.add(side);
+  });
+};
+
+/** As chaves da v4 do traço (`cap`, `join`, `sides`); o `sides` só vale em `frame` e `rect`. */
+function checkStrokeV4(
+  value: Rec,
+  path: string,
+  nodeType: string | undefined,
+  out: ComponentIssue[],
+): void {
+  if ('cap' in value)
+    checkExpr(value.cap, join(path, 'cap'), oneOf(['butt', 'round', 'square']), out);
+  if ('join' in value)
+    checkExpr(value.join, join(path, 'join'), oneOf(['miter', 'round', 'bevel']), out);
+  if (!('sides' in value)) return;
+  const at = join(path, 'sides');
+  if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
+    add(out, at, `só vale em frame e rect (este é ${nodeType})`);
+  else checkExpr(value.sides, at, checkSides, out);
+}
+
+function checkStroke(
+  value: unknown,
+  path: string,
+  out: ComponentIssue[],
+  nodeType?: string,
+): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
-  checkKeys(value, ['color', 'width', 'align', 'dash'], path, out);
+  checkKeys(
+    value,
+    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides'],
+    path,
+    out,
+  );
   if (!('color' in value)) add(out, join(path, 'color'), 'campo obrigatório');
   else checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('width' in value)
@@ -312,6 +355,7 @@ function checkStroke(value: unknown, path: string, out: ComponentIssue[]): void 
     if (!Array.isArray(value.dash)) add(out, dash, 'esperava lista de números');
     else value.dash.forEach((n: unknown, i) => checkNonNegative(n, `${dash}[${i}]`, out));
   }
+  checkStrokeV4(value, path, nodeType, out);
 }
 
 function checkShadow(value: unknown, path: string, out: ComponentIssue[]): void {
@@ -434,7 +478,7 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
   if ('height' in value) checkSize(value.height, join(path, 'height'), out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
   if ('fill' in value) checkExpr(value.fill, join(path, 'fill'), checkFill, out);
-  if ('stroke' in value) checkStroke(value.stroke, join(path, 'stroke'), out);
+  if ('stroke' in value) checkStroke(value.stroke, join(path, 'stroke'), out, type);
   if ('shadow' in value) checkShadow(value.shadow, join(path, 'shadow'), out);
   if ('cornerRadius' in value)
     checkExpr(value.cornerRadius, join(path, 'cornerRadius'), checkCornerRadius, out);
@@ -532,6 +576,46 @@ function checkRepeat(value: Rec, path: string, out: ComponentIssue[]): void {
     add(out, nested.path, `${nested.type} não é permitido dentro de um repeat`);
   }
 }
+
+/** Caminhos (cadeias de chaves) das chaves que só existem na formatVersion 4, em qualquer nó. */
+const V4_NODE_KEYS: readonly (readonly string[])[] = [
+  ['stroke', 'cap'],
+  ['stroke', 'join'],
+  ['stroke', 'sides'],
+];
+
+/**
+ * A regra genérica da v4: para cada nó da árvore (`children` e `template` do repeat) que traz uma
+ * das chaves de `keys` (cadeias como `['stroke', 'cap']`), numa versão anterior à 4, devolve
+ * `só é permitido com formatVersion 4` no caminho da chave. As fases seguintes só acrescentam
+ * cadeias a `V4_NODE_KEYS`.
+ */
+export function v4OnlyKeyIssues(
+  version: unknown,
+  node: unknown,
+  path: string,
+  keys: readonly (readonly string[])[],
+): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (n: unknown, at: string): void => {
+    if (!isRecord(n)) return;
+    for (const chain of keys) {
+      let cursor: unknown = n;
+      for (const key of chain) cursor = isRecord(cursor) ? cursor[key] : undefined;
+      if (cursor !== undefined)
+        add(out, [at, ...chain].filter((x) => x !== '').join('.'), V4_ONLY_MESSAGE);
+    }
+    if (Array.isArray(n.children))
+      n.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (n.type === 'repeat') walk(n.template, join(at, 'template'));
+  };
+  walk(node, path);
+  return out;
+}
+
+const V4_ONLY_MESSAGE = 'só é permitido com formatVersion 4';
 
 /** Caminhos dos nós dos tipos dados na árvore (pelos `children` dos quadros e `template` dos repeat). */
 function nodesOfTypes(
@@ -668,6 +752,7 @@ function collectIssues(input: unknown): ComponentIssue[] {
         add(out, node.path, 'o nó repeat só existe na formatVersion 2');
       }
     }
+    out.push(...v4OnlyKeyIssues(version, input.template, 'template', V4_NODE_KEYS));
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(input.template, 'template', ['image'])) {
         add(out, node.path, 'o nó image só existe na formatVersion 3');

@@ -7,6 +7,7 @@
  * shape e todo contêiner levam o atributo `sceneId`, para o visualizador achar o nó da cena
  * a partir do alvo de um evento do Konva.
  */
+import { sideSegments } from '../../model/components/strokeSides';
 import { canvasFontFamily } from '../../model/components/fontFamily';
 import Konva from 'konva/lib/Core';
 import { Ellipse as KonvaEllipse } from 'konva/lib/shapes/Ellipse';
@@ -120,9 +121,14 @@ class Renderer {
     const shadow = this.pickShadow(shadows);
 
     if (node.type === 'frame' && node.clip) {
-      const { width, height, cornerRadius } = node;
+      const { width, height, cornerRadius, clipBox } = node;
       container.clipFunc((ctx) => {
-        roundedRectPath(ctx, width, height, cornerRadius);
+        if (clipBox) {
+          // Recorte ampliado (traço fora da caixa, sombra): retângulo reto, sem os cantos.
+          ctx.beginPath();
+          ctx.rect(clipBox.x, clipBox.y, clipBox.width, clipBox.height);
+          ctx.closePath();
+        } else roundedRectPath(ctx, width, height, cornerRadius);
       });
     }
 
@@ -176,8 +182,10 @@ class Renderer {
           });
           shapes.push(...this.fillShape(shape, paint, box));
         }
-        if (node.stroke)
-          shapes.push(this.rectStroke(node.stroke, box, node.cornerRadius));
+        if (node.stroke) {
+          if (node.stroke.sides) shapes.push(...this.sideStrokes(node.stroke, box));
+          else shapes.push(this.rectStroke(node.stroke, box, node.cornerRadius));
+        }
         if (node.fills.length === 0 && !node.stroke && node.type === 'frame') {
           // Quadro transparente: uma área clicável invisível, para o hover achar o quadro.
           shapes.push(
@@ -406,6 +414,15 @@ class Renderer {
     }
   }
 
+  /** `stroke.sides`: uma linha reta por lado pedido (sem arco no canto, mesmo com raio). */
+  private sideStrokes(stroke: Stroke, box: Box): Konva.Shape[] {
+    return sideSegments(stroke, box.width, box.height).map((seg) => {
+      const line = new KonvaLine({ points: [seg.x1, seg.y1, seg.x2, seg.y2] });
+      this.applyStroke(line, stroke, 'line', true);
+      return line;
+    });
+  }
+
   private rectStroke(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape {
     const inset = strokeInset(stroke);
     const shape = new KonvaRect({
@@ -423,11 +440,12 @@ class Renderer {
     shape: Konva.Shape,
     stroke: Stroke,
     kind: 'box' | 'line' | 'path' = 'box',
+    sideLine = false,
   ): void {
     const [paint, ...rest] = stroke.paints;
     if (rest.length > 0)
       this.warnings.add('só o primeiro preenchimento do traço foi usado');
-    if (kind !== 'box' && stroke.align !== 'center') {
+    if (kind !== 'box' && !sideLine && stroke.align !== 'center') {
       this.warnings.add('traço por dentro/por fora em caminho ou linha foi centralizado');
     }
     shape.strokeWidth(stroke.width);

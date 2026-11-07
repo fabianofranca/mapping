@@ -1,4 +1,5 @@
 import type { TextMeasurer } from '../../src/model/components/instantiate';
+import { sideSegments } from '../../src/model/components/strokeSides';
 import {
   multiply,
   type CornerRadius,
@@ -376,41 +377,144 @@ function quadTo(lineTo: LineTo, p0: Point, c: Point, p1: Point): void {
 // ---------------------------------------------------------------------------
 // Traço: união de retângulos por segmento e círculos nos vértices (pontas e junções redondas)
 
-function strokePolygons(subpaths: readonly Subpath[], width: number): Polygon[] {
-  const half = width / 2;
+interface StrokeStyle {
+  readonly cap: 'butt' | 'round' | 'square';
+  readonly join: 'miter' | 'round' | 'bevel';
+}
+
+/** Limite do canto `miter` (como o padrão do canvas 2D): acima dele o canto vira `bevel`. */
+const MITER_LIMIT = 10;
+
+function circlePolygon(center: Point, radius: number): Polygon {
+  return Array.from({ length: CIRCLE_STEPS }, (_, i) => {
+    const angle = (Math.PI * 2 * i) / CIRCLE_STEPS;
+    return {
+      x: center.x + radius * Math.cos(angle),
+      y: center.y + radius * Math.sin(angle),
+    };
+  });
+}
+
+/** O retângulo de um segmento, com a ponta `square` empurrada para fora quando pedida. */
+function segmentPolygon(
+  a: Point,
+  b: Point,
+  half: number,
+  extendA: boolean,
+  extendB: boolean,
+) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = Math.hypot(dx, dy);
+  if (length === 0) return null;
+  const ux = dx / length;
+  const uy = dy / length;
+  const nx = -uy * half;
+  const ny = ux * half;
+  const from = extendA ? { x: a.x - ux * half, y: a.y - uy * half } : a;
+  const to = extendB ? { x: b.x + ux * half, y: b.y + uy * half } : b;
+  return oriented([
+    { x: from.x + nx, y: from.y + ny },
+    { x: to.x + nx, y: to.y + ny },
+    { x: to.x - nx, y: to.y - ny },
+    { x: from.x - nx, y: from.y - ny },
+  ]);
+}
+
+/** O canto entre dois segmentos consecutivos (a→b, b→c): círculo, chanfro ou ponta de esquadro. */
+function joinPolygon(
+  a: Point,
+  b: Point,
+  c: Point,
+  half: number,
+  join: StrokeStyle['join'],
+): Polygon | null {
+  const l1 = Math.hypot(b.x - a.x, b.y - a.y);
+  const l2 = Math.hypot(c.x - b.x, c.y - b.y);
+  if (l1 === 0 || l2 === 0) return null;
+  const d1 = { x: (b.x - a.x) / l1, y: (b.y - a.y) / l1 };
+  const d2 = { x: (c.x - b.x) / l2, y: (c.y - b.y) / l2 };
+  const cross = d1.x * d2.y - d1.y * d2.x;
+  const dot = d1.x * d2.x + d1.y * d2.y;
+  if (Math.abs(cross) < 1e-9 && dot > 0) return null;
+  if (join === 'round') return circlePolygon(b, half);
+  // A volta aponta para o lado da normal esquerda quando `cross` > 0; o canto de fora é o oposto.
+  const side = cross > 0 ? -1 : 1;
+  const p1 = { x: b.x + side * -d1.y * half, y: b.y + side * d1.x * half };
+  const p2 = { x: b.x + side * -d2.y * half, y: b.y + side * d2.x * half };
+  const ratio = Math.sqrt(2 / Math.max(1e-9, 1 + dot));
+  if (join === 'miter' && ratio <= MITER_LIMIT) {
+    const k = 1 / (1 + dot);
+    const m = {
+      x: b.x + side * (-d1.y - d2.y) * half * k,
+      y: b.y + side * (d1.x + d2.x) * half * k,
+    };
+    return oriented([b, p1, m, p2]);
+  }
+  return oriented([b, p1, p2]);
+}
+
+function segmentPolygons(sub: Subpath, half: number, cap: StrokeStyle['cap']): Polygon[] {
+  const { points, closed } = sub;
+  const count = points.length;
+  const segments = closed ? count : count - 1;
   const out: Polygon[] = [];
-  const circle = (center: Point): Polygon =>
-    Array.from({ length: CIRCLE_STEPS }, (_, i) => {
-      const angle = (Math.PI * 2 * i) / CIRCLE_STEPS;
-      return {
-        x: center.x + half * Math.cos(angle),
-        y: center.y + half * Math.sin(angle),
-      };
-    });
-  for (const { points, closed } of subpaths) {
-    const count = points.length;
-    const segments = closed ? count : count - 1;
-    for (let i = 0; i < segments; i++) {
-      const a = points[i]!;
-      const b = points[(i + 1) % count]!;
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const length = Math.hypot(dx, dy);
-      if (length === 0) continue;
-      const nx = (-dy / length) * half;
-      const ny = (dx / length) * half;
-      out.push(
-        oriented([
-          { x: a.x + nx, y: a.y + ny },
-          { x: b.x + nx, y: b.y + ny },
-          { x: b.x - nx, y: b.y - ny },
-          { x: a.x - nx, y: a.y - ny },
-        ]),
-      );
-    }
-    for (const point of points) out.push(oriented(circle(point)));
+  for (let i = 0; i < segments; i++) {
+    const square = !closed && cap === 'square';
+    const poly = segmentPolygon(
+      points[i]!,
+      points[(i + 1) % count]!,
+      half,
+      square && i === 0,
+      square && i === segments - 1,
+    );
+    if (poly) out.push(poly);
   }
   return out;
+}
+
+function cornerPolygons(
+  sub: Subpath,
+  half: number,
+  join: StrokeStyle['join'],
+): Polygon[] {
+  const { points, closed } = sub;
+  const count = points.length;
+  const corners = closed ? count : count - 2;
+  const out: Polygon[] = [];
+  for (let i = 0; i < corners; i++) {
+    const at = closed ? i : i + 1;
+    const poly = joinPolygon(
+      points[(at + count - 1) % count]!,
+      points[at]!,
+      points[(at + 1) % count]!,
+      half,
+      join,
+    );
+    if (poly) out.push(poly);
+  }
+  return out;
+}
+
+function capPolygons(sub: Subpath, half: number, cap: StrokeStyle['cap']): Polygon[] {
+  const { points, closed } = sub;
+  if (closed || cap !== 'round' || points.length < 2) return [];
+  return [points[0]!, points[points.length - 1]!].map((p) =>
+    oriented(circlePolygon(p, half)),
+  );
+}
+
+function strokePolygons(
+  subpaths: readonly Subpath[],
+  width: number,
+  style: StrokeStyle = { cap: 'butt', join: 'miter' },
+): Polygon[] {
+  const half = width / 2;
+  return subpaths.flatMap((sub) => [
+    ...segmentPolygons(sub, half, style.cap),
+    ...cornerPolygons(sub, half, style.join),
+    ...capPolygons(sub, half, style.cap),
+  ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -569,7 +673,19 @@ class Painter {
       const color = firstColor(node.stroke.paints);
       if (color !== null) {
         const width = Math.max(node.stroke.width, 1 / this.scale);
-        this.fill(strokePolygons(shapes, width), matrix, 'nonzero', color, alpha, clip);
+        const style: StrokeStyle = {
+          cap: node.stroke.cap ?? 'butt',
+          join: node.stroke.join ?? 'miter',
+        };
+        const lines = this.sideLines(node);
+        this.fill(
+          strokePolygons(lines ?? shapes, width, style),
+          matrix,
+          'nonzero',
+          color,
+          alpha,
+          clip,
+        );
       }
     }
     if (node.type === 'text') this.text(node, matrix, alpha, clip);
@@ -577,13 +693,32 @@ class Painter {
     if (node.type === 'frame' || node.type === 'group') {
       let childClip = clip;
       if (node.type === 'frame' && node.clip) {
-        childClip = intersect(
-          clip,
-          bounds(this.toRaster(roundedRect(node.width, node.height, 0), matrix)),
-        );
+        const box = node.clipBox;
+        const rect = box
+          ? [
+              { x: box.x, y: box.y },
+              { x: box.x + box.width, y: box.y },
+              { x: box.x + box.width, y: box.y + box.height },
+              { x: box.x, y: box.y + box.height },
+            ]
+          : roundedRect(node.width, node.height, 0);
+        childClip = intersect(clip, bounds(this.toRaster(rect, matrix)));
       }
       for (const child of node.children) this.paint(child, matrix, alpha, childClip);
     }
+  }
+
+  /** `stroke.sides` num `frame`/`rect`: os lados pedidos como linhas retas (sem os cantos). */
+  private sideLines(node: SceneNode): Subpath[] | null {
+    if ((node.type !== 'frame' && node.type !== 'rect') || !node.stroke?.sides)
+      return null;
+    return sideSegments(node.stroke, node.width, node.height).map((seg) => ({
+      points: [
+        { x: seg.x1, y: seg.y1 },
+        { x: seg.x2, y: seg.y2 },
+      ],
+      closed: false,
+    }));
   }
 
   private toRaster(points: Polygon, matrix: Matrix): Point[] {

@@ -460,3 +460,106 @@ describe('imagem remota de um componente', () => {
     fetchSpy.mockRestore();
   });
 });
+
+describe('traço com cap, join e sides (formato 4)', () => {
+  const INK = '#FF00FF';
+
+  function openLine(
+    points: { x: number; y: number }[],
+    extra: Partial<NonNullable<SceneNode['stroke']>> = {},
+  ): SceneNode {
+    return {
+      ...baseNode({ id: 'l', name: 'l', width: 40, height: 40 }),
+      type: 'line',
+      points,
+      closed: false,
+      stroke: { paints: [solid(INK)], width: 4, align: 'center', ...extra },
+    };
+  }
+
+  const isInk = (p: number[]): boolean => p[0] === 255 && p[1] === 0 && p[2] === 255;
+
+  it('cap square pinta 2 px a mais em cada ponta; butt não pinta; round pinta a ponta redonda', () => {
+    const points = [
+      { x: 10, y: 10 },
+      { x: 30, y: 10 },
+    ];
+    const square = canvas(40, 20);
+    paint(square, openLine(points, { cap: 'square' }));
+    expect(isInk(pixel(square, 8, 10))).toBe(true);
+    expect(isInk(pixel(square, 31, 10))).toBe(true);
+    expect(pixel(square, 7, 10)).toEqual(WHITE);
+
+    const butt = canvas(40, 20);
+    paint(butt, openLine(points, { cap: 'butt' }));
+    expect(pixel(butt, 8, 10)).toEqual(WHITE);
+    expect(pixel(butt, 31, 10)).toEqual(WHITE);
+    expect(isInk(pixel(butt, 10, 10))).toBe(true);
+
+    const none = canvas(40, 20);
+    paint(none, openLine(points));
+    expect(pixel(none, 8, 10)).toEqual(WHITE);
+
+    const round = canvas(40, 20);
+    paint(round, openLine(points, { cap: 'round' }));
+    expect(pixel(round, 8, 10)).not.toEqual(WHITE);
+    expect(pixel(round, 8, 7)).toEqual(WHITE);
+  });
+
+  it('join miter pinta o canto de fora; bevel o corta; round o arredonda', () => {
+    const corner = [
+      { x: 5, y: 10 },
+      { x: 20, y: 10 },
+      { x: 20, y: 25 },
+    ];
+    const miter = canvas(40, 40);
+    paint(miter, openLine(corner, { join: 'miter' }));
+    expect(isInk(pixel(miter, 21, 8))).toBe(true);
+
+    const bevel = canvas(40, 40);
+    paint(bevel, openLine(corner, { join: 'bevel' }));
+    expect(pixel(bevel, 21, 8)).toEqual(WHITE);
+    expect(isInk(pixel(bevel, 20, 10))).toBe(true);
+
+    const round = canvas(40, 40);
+    paint(round, openLine(corner, { join: 'round' }));
+    expect(isInk(pixel(round, 21, 8))).toBe(false);
+    expect(pixel(round, 21, 9)).not.toEqual(WHITE);
+  });
+
+  it('sides ["bottom"] pinta só a borda de baixo do retângulo', () => {
+    const rect: SceneNode = {
+      ...baseNode({ id: 'r', name: 'r', width: 30, height: 20 }),
+      type: 'rect',
+      cornerRadius: 0,
+      stroke: { paints: [solid(INK)], width: 2, align: 'inside', sides: ['bottom'] },
+    };
+    const raster = canvas(30, 20);
+    paint(raster, rect);
+    expect(isInk(pixel(raster, 15, 19))).toBe(true);
+    expect(pixel(raster, 15, 0)).toEqual(WHITE);
+    expect(pixel(raster, 0, 10)).toEqual(WHITE);
+    expect(pixel(raster, 29, 10)).toEqual(WHITE);
+  });
+
+  it('o recorte ampliado (clipBox) deixa o traço que sai da caixa aparecer', () => {
+    const child: SceneNode = {
+      ...baseNode({ id: 'c', name: 'c', width: 20, height: 20 }),
+      type: 'rect',
+      cornerRadius: 0,
+      stroke: { paints: [solid(INK)], width: 4, align: 'center' },
+    };
+    const make = (clipBox?: { x: number; y: number; width: number; height: number }) =>
+      frame(
+        [child],
+        { width: 20, height: 20 },
+        { clip: true, ...(clipBox ? { clipBox } : {}), transform: translate(6, 6) },
+      );
+    const widened = canvas(40, 40);
+    paint(widened, make({ x: -4, y: -4, width: 28, height: 28 }));
+    expect(isInk(pixel(widened, 5, 16))).toBe(true);
+    const clipped = canvas(40, 40);
+    paint(clipped, make());
+    expect(pixel(clipped, 5, 16)).toEqual(WHITE);
+  });
+});

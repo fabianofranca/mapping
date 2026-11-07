@@ -36,12 +36,13 @@ O Mapping é uma app web para marcar áreas retangulares em imagens, organizá-l
 | 24 | R22 — Comentários: conversas ancoradas no mapeamento | uma pasta `conversas` (o `examples/exemplo-completo.zip` descompactado em `design/mapeamentos/`), a shell, o MCP por stdio (seção 6) e a app | 50 min |
 | 25 | R23 — Perspectivas: recortes do projeto por público | uma pasta `perspectivas` (um `mapping.json` schema 15 que a shell escreve), a shell, o MCP por stdio (seção 6) e a app | 55 min |
 | 26 | R24 — Conteúdo fora da imagem | uma especialização `formatVersion` 14 pequena e o projeto, escritos no próprio roteiro, a shell e o MCP por stdio (seção 6) e a app | 45 min |
+| 27 | R25 — Componentes fiéis | uma biblioteca `m3-fiel` (cópia de `libraries/material3-compose/` com três componentes `formatVersion` 4, que a shell monta), a shell, o ImageMagick, o MCP por stdio (seção 6) e a app | 40 min |
 | sob demanda | RP — App instalado (PWA), nos **roteiros sob demanda (manuais)** | versão principal ou preview (`https:`) e o app instalável; só quando o dono pedir | 15 min |
 | sob demanda | RF — `index.html` por `file://` (antes R0.5), nos **roteiros sob demanda (manuais)** | shell com acesso ao GitHub Pages e o Chrome do computador; só quando o dono pedir | 10 min |
 | sob demanda | RA — Fechar a aba no meio da gravação (antes R6.2), nos **roteiros sob demanda (manuais)** | a pasta `principal` e um `tela2.png`; só quando o dono pedir | 10 min |
 | sob demanda | RB — Esc no meio de um arraste logo depois de renomear (antes R6.1), nos **roteiros sob demanda (manuais)** | a pasta `principal`; só quando o dono pedir | 5 min |
 
-Os tempos são aproximados (pelo número de passos); registre o tempo real no relato. Sem o MCP, faça da linha 4 só o passo 2 da seção 6 (o repositório de teste e as pastas, sem o `mapping-mcp.js`), rode o R3.1 a R3.5 e pule o R3.6 e o R5, marcando-os como "não executado (sem MCP)". Os roteiros principais (R0 a R24) são feitos para o agente da nuvem executar **sozinho**. Os **roteiros sob demanda (manuais)**, hoje o RP, o RF, o RA e o RB, não fazem parte da rodada completa nem da dirigida: rodam à parte, numa sessão sob demanda, só quando o dono pedir (fim da seção 8). As dependências entre os roteiros estão no começo da seção 8. A seção 9 (teste manual avançado) é um roteiro à parte, depois de uma rodada completa sem achados altos ou médios.
+Os tempos são aproximados (pelo número de passos); registre o tempo real no relato. Sem o MCP, faça da linha 4 só o passo 2 da seção 6 (o repositório de teste e as pastas, sem o `mapping-mcp.js`), rode o R3.1 a R3.5 e pule o R3.6 e o R5, marcando-os como "não executado (sem MCP)". Os roteiros principais (R0 a R25) são feitos para o agente da nuvem executar **sozinho**. Os **roteiros sob demanda (manuais)**, hoje o RP, o RF, o RA e o RB, não fazem parte da rodada completa nem da dirigida: rodam à parte, numa sessão sob demanda, só quando o dono pedir (fim da seção 8). As dependências entre os roteiros estão no começo da seção 8. A seção 9 (teste manual avançado) é um roteiro à parte, depois de uma rodada completa sem achados altos ou médios.
 
 O que este guia **não** testa: se um painel é fácil de achar ou se um texto é claro para quem não leu a documentação. Isso fica com pessoas, no uso real.
 
@@ -235,7 +236,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - Como criar marcações e anotações, como adicionar imagem e a notação "**Marcação** › **Tipo** · campo = valor" estão na seção 5; "desenhe" é sempre no modo **Desenhar**.
 - _Itálico no fim do Esperado_ marca uma **regressão conhecida**: algo que já quebrou numa rodada anterior e é conferido de novo, não o objetivo do passo.
 - **[pessoa]** marca os passos que o agente da nuvem não faz sozinho (apêndice A); quem testa à mão pode ignorar a marca. O "ou `ação`" nomeia a receita que substitui a pessoa nos diálogos nativos (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`; cada nome é uma receita do apêndice A, "Diálogos nativos na nuvem (Xvfb)") e o cliente MCP por stdio nos pedidos ao Claude Code. Nos roteiros principais nenhum passo fica sem substituto (um teste confere).
-- **Regra para quem altera os roteiros (agentes e pessoas).** Os roteiros principais (R0 a R24) são feitos para o agente da nuvem executar **sozinho**: todo passo novo ou alterado precisa ter um jeito de o agente da nuvem fazê-lo (receita da nuvem do apêndice A, Playwright por CDP, shell ou cliente MCP por stdio) e dizê-lo na Ação.
+- **Regra para quem altera os roteiros (agentes e pessoas).** Os roteiros principais (R0 a R25) são feitos para o agente da nuvem executar **sozinho**: todo passo novo ou alterado precisa ter um jeito de o agente da nuvem fazê-lo (receita da nuvem do apêndice A, Playwright por CDP, shell ou cliente MCP por stdio) e dizê-lo na Ação.
 - **Teste que precisa do dono.** Se um teste precisa de interação do dono (nenhuma receita da nuvem o faz) e **não é muito relevante**, ele vai para os **roteiros sob demanda (manuais)** (fim desta seção), que o dono faz à mão.
 - **Teste que precisa do dono e é muito relevante.** Se precisa de interação do dono e **é muito relevante** (risco de perda de dados, integridade do `mapping.json`, segurança), o agente **não decide sozinho**: avisa o dono, na conversa e na descrição do PR, para decidirem juntos; enquanto não decidirem, o passo fica onde está, marcado como **pendente de decisão**.
 
@@ -267,6 +268,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - R22 usa a pasta própria `conversas` (o `examples/exemplo-completo.zip` descompactado em `design/mapeamentos/`, que o MCP lê), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. Sem identidade (perfil novo) no R22.2; o R22.3 a preenche. Sem o MCP, marque os passos de MCP "não executado (sem MCP)".
 - R23 usa a pasta própria `perspectivas` (um `mapping.json` schema 15 que a shell escreve em `design/mapeamentos/` do repositório de teste, que o MCP lê), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. O R23.12 e o R23.13 são a passada visual própria das perspectivas. Sem o MCP, marque o R23.21 e o R23.24 "não executado (sem MCP)".
 - R24 usa a pasta própria `fora` (criada pelo `create_project` do R24.3, com a especialização `fora-demo.json` que a shell grava em `design/mapeamentos/`), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. O R24.14 e o R24.15 são a passada visual própria do roteiro. Sem o MCP, marque o R24.1 a R24.3, o R24.10 e o R24.11 "não executado (sem MCP)" e pule o resto (o projeto `fora` nasce do R24.3).
+- R25 usa a pasta própria `fiel` (projeto em pasta, criado pela app no R25.3) e as bibliotecas `m3-fiel` e `m3-fiel-v3` que a shell monta no R25.1 e no R25.2 a partir de `libraries/material3-compose/` (o `fiel.mjs` do preparo do roteiro), a shell com o ImageMagick, o cliente MCP por stdio (só no R25.1 e no R25.2) e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. Sem o MCP, marque o R25.1 e o R25.2 "não executado (sem MCP)" e monte a `m3-fiel` pela shell (o `node fiel.mjs RAIZ/m3-fiel 4`) para seguir do R25.3.
 - R11 não precisa de arquivo nem de MCP: o guia vem no build e o exemplo é o `examples/exemplo-completo.zip` do repositório; abri-lo cria uma cópia nova **Neste dispositivo** a cada vez, e o R11.8 a apaga.
 - R10 usa o pacote `libraries/material3-compose/` (R10.1 a R10.6, sem projeto, e uma cópia `mat-link` no R10.5); R10.7 usa o projeto `telas` do R9 (com o Material 3 (Compose) aplicado); R10.8 cria o projeto próprio `vazio`; nenhum passo precisa do MCP.
 - R9 usa o projeto próprio `telas` (pasta nova, sem imagem) e o pacote `libraries/material3-compose/`; R9.1 a R9.12, R9.21 e R9.22 não precisam do MCP (o R9.22 usa o `validate_library` do cliente stdio, na parte do agente); R9.13 a R9.15, R9.18 a R9.20 e R9.23 usam a seção 6 e o MCP (o `add_container` existe a partir do épico Container), em `design/mapeamentos/telas` (mova a pasta `telas` para lá com o projeto fechado).
@@ -1739,9 +1741,130 @@ idb() { node "$W23/idb.mjs"; }
 | R24.14 | **Passada visual, 1280×720.** `page.setViewportSize({ width: 1280, height: 720 })`. Capture cada tela abaixo, uma linha do relato cada ("Visual: <nome>"): o canvas enquadrado com a tela, o container "depois" e a seta; **Detalhes** do evento com a tabela de alvos; **Detalhes** do **Plugin A** com **Referenciada por**; o seletor da célula aberto (e o do campo `qualquer`, com as abas); o evento com a célula quebrada (apague o **Plugin A** de novo para a captura e desfaça no fim). | **Tela:** nada cortado nem sobreposto: os rótulos dos alvos e a linha **Referenciada por** cabem sem barra horizontal; o seletor mostra a etiqueta do tipo em cada opção; a célula quebrada mostra **(referência quebrada)** legível. |
 | R24.15 | **Passada visual, 900×720.** `page.setViewportSize({ width: 900, height: 720 })` e repita as capturas e as conferências do passo anterior, com as mesmas linhas "Visual: <nome>" mais o sufixo "900". Volte a 1280×720 ao fim. | **Tela:** o mesmo do passo anterior na janela mínima, sem barra horizontal. **Disco:** o `mapping.json` volta ao conteúdo do R24.13. |
 
+### R25 — Componentes fiéis
+
+**O que cobre:** a etapa Componentes fiéis (CF1, `formatVersion` 4 do **componente**, MCP 0.28.0): as chaves novas do traço (`stroke.cap`, `stroke.join` e `stroke.sides`) e o recorte da raiz do componente, que agora inclui o traço `outside` (e metade do `center`) e a sombra. Os passos conferem, pelo `validate_library`, que a biblioteca de teste é válida e que a regra de versão recusa as chaves novas numa versão anterior; e, na app, por recorte PNG do canvas, que a ponta e o canto do traço (`butt`, `round`, `square`; `miter`, `round`, `bevel`), o campo com só a linha de baixo (`sides`) e o anel `outside` da raiz aparecem desenhados. **Regra a conferir no fim:** o `mapping.json` não guarda nada do desenho. O `get_marking_image` do MCP desenha o traço sempre centrado no contorno, sem o `align`; por isso o anel `outside` é conferido só na app.
+
+**Preparo.** Seção 6 pronta (o repositório de teste e o `mapping-mcp.js`); os pedidos ao MCP são feitos pelo cliente stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`, com os argumentos de cada tool tirados de `[{"list":true}]`). `RAIZ` é a raiz de projetos do servidor (`design/mapeamentos` na seção 6) e `REPO` é o clone do repositório do Mapping, onde está `libraries/material3-compose/`. A biblioteca de teste `m3-fiel` é uma cópia do pacote do Material 3 (Compose) em que a shell troca três componentes (o `divider`, o `text-field` e o `card`) por versões mínimas da `formatVersion` 4; o `fiel.mjs` abaixo as escreve, e o segundo argumento é a `formatVersion` (`4` ou `3`):
+
+```js
+// fiel.mjs: node fiel.mjs <pasta da biblioteca> [formatVersion]
+import fs from 'node:fs';
+const dir = process.argv[2] + '/components/';
+const version = Number(process.argv[3] ?? 4);
+const INK = '#B3261E';
+const bar = (name, top, cap) => ({
+  type: 'path',
+  name,
+  d: 'M 12 10 L 88 10',
+  viewBox: [100, 20],
+  anchors: { left: 10, top },
+  width: 100,
+  height: 20,
+  stroke: { color: INK, width: 12, align: 'center', cap },
+});
+const corner = (name, left, join) => ({
+  type: 'path',
+  name,
+  d: 'M 14 36 L 14 14 L 36 14',
+  viewBox: [40, 40],
+  anchors: { left, top: 90 },
+  width: 40,
+  height: 40,
+  stroke: { color: INK, width: 16, align: 'center', join },
+});
+const write = (id, name, size, template) =>
+  fs.writeFileSync(
+    dir + id + '.json',
+    JSON.stringify(
+      { format: 'mapping-component', formatVersion: version, id, name, size, template },
+      null,
+      2,
+    ),
+  );
+write(
+  'divider',
+  'Divider',
+  { width: 140, height: 140 },
+  {
+    type: 'frame',
+    name: 'tracos',
+    width: 140,
+    height: 140,
+    layout: { type: 'none' },
+    fill: '#FFFFFF',
+    children: [
+      bar('butt', 0, 'butt'),
+      bar('round', 30, 'round'),
+      bar('square', 60, 'square'),
+      corner('miter', 5, 'miter'),
+      corner('round', 50, 'round'),
+      corner('bevel', 95, 'bevel'),
+    ],
+  },
+);
+write(
+  'text-field',
+  'Text field',
+  { width: 240, height: 56 },
+  {
+    type: 'frame',
+    name: 'campo',
+    width: 240,
+    height: 56,
+    layout: { type: 'none' },
+    children: [
+      {
+        type: 'rect',
+        name: 'fundo',
+        anchors: { left: 0, right: 0, top: 0, bottom: 0 },
+        fill: '#E6E0E9',
+        stroke: { color: '#6750A4', width: 3, align: 'inside', sides: ['bottom'] },
+      },
+    ],
+  },
+);
+write(
+  'card',
+  'Card',
+  { width: 200, height: 100 },
+  {
+    type: 'frame',
+    name: 'cartao',
+    width: 200,
+    height: 100,
+    fill: '#FFFFFF',
+    stroke: { color: '#1B5E20', width: 8, align: 'outside' },
+  },
+);
+```
+
+O Divider (140 × 140, fundo branco) traz três barras horizontais de traço vermelho `#B3261E` (largura 12, a linha vai de x 12 a x 88 e o centro de cada barra fica em y 10, 40 e 70), com `cap` `butt`, `round` e `square`; e, embaixo, três cantos em L (largura 16, o vértice em x 14, y 14 do quadro de 40 × 40, em x 5, 50 e 95 e y 90 do Divider), com `join` `miter`, `round` e `bevel`. O Text field (240 × 56) é um retângulo `#E6E0E9` com um traço roxo `#6750A4` de 3, por dentro, só embaixo (`sides` `["bottom"]`). O Card (200 × 100) é branco com um anel verde `#1B5E20` de 8 **por fora** (`align` `outside`) na raiz do componente. Os **auxiliares de medida** (ImageMagick, na shell; os recortes são PNG de `deviceScaleFactor` 1): `tinta <png> <cor>` imprime a caixa da tinta da cor como `LxA+X+Y` (em pixels de tela), e `sonda <png> <X0> <Y0> <s> <u> <v>` imprime a cor (hexadecimal; compare os 6 primeiros dígitos) do pixel que fica em (X0 + u·s, Y0 + v·s), onde `u` e `v` são **unidades do componente** e `s` é pixels de tela por unidade:
+
+```bash
+tinta() { convert "$1" -fuzz 6% -fill white +opaque "$2" -trim -format '%wx%h%O\n' info:; }
+sonda() { convert "$1" -format "%[hex:p{$(awk "BEGIN{printf \"%d,%d\", $2+$4*$5, $3+$4*$6}")}]\n" info:; }
+medir() { read W H X Y < <(tinta "$1" "$2" | tr 'x+' '  '); s=$(awk "BEGIN{print $W/$3}"); X0=$(awk "BEGIN{print $X-$4*$s}"); Y0=$(awk "BEGIN{print $Y-$5*$s}"); echo "H/W=$(awk "BEGIN{print $H/$W}") s=$s"; }
+```
+
+`medir <png> <cor> <largura> <u> <v>` acha a tinta da cor, calcula `s` (a largura da tinta em pixels dividida por `<largura>`, a largura esperada dela em unidades) e a origem do componente em pixels (`X0`, `Y0`), sabendo que o canto de cima à esquerda da tinta fica em (`<u>`, `<v>`) unidades do componente, e imprime a razão `H/W` da tinta e o `s`.
+
+Para cada recorte, o agente tira por Playwright/CDP, a 1280×720 e `deviceScaleFactor` 1, `page.screenshot({ path, clip })` com o `clip` igual à caixa do `.canvas-host` (`boundingBox()`), depois de **Esc** (nenhuma marcação selecionada) e com o mouse fora do canvas. O resultado é sempre também olhado a olho (a captura é lida como imagem), e a medida só confirma.
+
+| Passo | Ação | Esperado |
+| --- | --- | --- |
+| R25.1 | **Montar e validar a biblioteca.** Pela shell, `cp -r REPO/libraries/material3-compose RAIZ/m3-fiel`, grave o `fiel.mjs` acima e rode `node fiel.mjs RAIZ/m3-fiel 4`. Pelo cliente stdio, `validate_library` com `path` `m3-fiel`. | **Resposta:** `valid` `true`; `errors` e `warnings` vazios; `summary` com 50 tipos e 50 componentes (os três trocados contam como os de antes). **Disco:** `RAIZ/m3-fiel/components/divider.json`, `text-field.json` e `card.json` com `"formatVersion": 4`; os outros 47 componentes seguem na versão que tinham. |
+| R25.2 | **A versão anterior recusa.** Pela shell, `cp -r RAIZ/m3-fiel RAIZ/m3-fiel-v3` e `node fiel.mjs RAIZ/m3-fiel-v3 3` (as mesmas três peças, agora com `"formatVersion": 3`). Pelo cliente stdio, `validate_library` com `path` `m3-fiel-v3`. | **Resposta:** `valid` `false`, com **sete** erros, todos com a mensagem `só é permitido com formatVersion 4`, nestes arquivos e caminhos (a ordem não importa): `components/divider.json`: `template.children[0].stroke.cap`, `template.children[1].stroke.cap`, `template.children[2].stroke.cap`, `template.children[3].stroke.join`, `template.children[4].stroke.join` e `template.children[5].stroke.join`; `components/text-field.json`: `template.children[0].stroke.sides`. O `card.json` (sem chave da versão 4) não gera erro. `warnings` vazio. **Disco:** nada muda. |
+| R25.3 | **Projeto, biblioteca e container na app.** Crie a pasta `fiel` (fora do repositório de teste) e **Abrir pasta** **[pessoa]** (ou `select_folder`); **Especializações** › **Aplicar pasta…** com `RAIZ/m3-fiel` **[pessoa]** (ou `select_folder`); **Aplicar**; feche a janela. **Novo container** › **Tamanho predefinido** › **Personalizado**, nome `Telas`, **Largura** `320`, **Altura** `420`, **Cor de fundo** `#DDEEFF`; **Criar container**. Espere **Salvo**. | **Tela:** a janela do pacote sem erro nem aviso (50 tipos); o container azul-claro `Telas`, vazio, selecionado. **Disco:** `schemaVersion` 17; `specs/material3-compose/` com `components/divider.json` em `"formatVersion": 4`; um container sem arquivo, `"background": "#DDEEFF"`, 320 × 420. |
+| R25.4 | **Os três componentes.** Na **Paleta** do Catálogo (`Ctrl+Shift+9`), nesta ordem, **Adicionar na tela Telas** o **Card** (nos Detalhes, **Posição** X `30`, Y `290`), o **Text field** (X `20`, Y `180`) e o **Divider** (X `20`, Y `20`); confira **Largura** × **Altura** de cada um (200 × 100, 240 × 56 e 140 × 140; se estiver diferente, digite). Espere **Salvo**. | **Tela:** os três componentes desenhados, nenhum sobre o outro: o Divider (barras e cantos vermelhos sobre um quadrado branco), o Text field (um retângulo lilás) e o Card (um retângulo branco com uma linha verde em volta). O **Diagnóstico** (`Ctrl+Shift+6`), na seção **Componentes**, sem erro de componente (o Card e o Text field podem trazer pendência de campo obrigatório vazio; não é defeito). **Disco:** 3 marcações, cada uma com a anotação do tipo `material3-compose/card`, `material3-compose/text-field` e `material3-compose/divider`. |
+| R25.5 | **`cap` e `join` no recorte PNG.** Com o Divider à vista (R25.4), dê zoom (`Ctrl+=` no canvas) até a tinta vermelha dele passar de 300 px de largura de tela, inteiro dentro do canvas, e tire o recorte `a.png`. Pela shell, `medir a.png '#B3261E' 120 11 4` e `sonda a.png $X0 $Y0 $s <u> <v>` nos pontos da coluna Esperado. | **Recorte:** `H/W` ≈ 122/120 (de 0,99 a 1,05). A olho: a barra de cima termina reta e mais curta que as outras duas; a do meio termina arredondada; a de baixo termina reta e cobre o canto (do mesmo comprimento que a do meio); dos três cantos em L, o primeiro tem o vértice de fora reto, o segundo arredondado e o terceiro cortado na diagonal. **Sondas** (u, v em unidades do Divider; `B3261E` é tinta, `FFFFFF` é fundo): barra **butt** (centro em y 10) (18, 10) e (17, 5.2) `FFFFFF`; **round** (centro em y 40) (18, 40) `B3261E` e (17, 35.2) `FFFFFF`; **square** (centro em y 70) (18, 70) e (17, 65.2) `B3261E`; (30, 10), (30, 40) e (30, 70) `B3261E`. Cantos, com L = 5 (**miter**), 50 (**round**) e 95 (**bevel**), o ponto fundo (L + 7.1, 97.1) e o raso (L + 9.2, 99.2): miter `B3261E` e `B3261E`; round `FFFFFF` e `B3261E`; bevel `FFFFFF` e `FFFFFF`. **Disco:** o `mapping.json` não muda. |
+| R25.6 | **`sides`: só a linha de baixo, no recorte PNG.** Leve o Text field ao centro do canvas, com zoom até a largura dele passar de 480 px de tela, e tire o recorte `b.png`. Pela shell, `medir b.png '#6750A4' 240 0 53` e `sonda b.png $X0 $Y0 $s <u> <v>` nos pontos da coluna Esperado. | **Tela e recorte:** a tinta roxa é **só uma faixa**: `H/W` ≈ 3/240 = 0,0125 (aceite de 0,010 a 0,015: o traço de 3, por dentro, na borda de baixo); se os quatro lados fossem desenhados, a razão seria 56/240 ≈ 0,23. A olho: o campo lilás tem uma linha roxa embaixo e mais nenhuma. **Sondas** (unidades do Text field): (120, 54.5) `6750A4`; (1.5, 28), (120, 1.5) e (238.5, 28) `E6E0E9` (os lados de cima, esquerdo e direito sem traço). **Disco:** o `mapping.json` não muda. |
+| R25.7 | **O anel `outside` da raiz, no recorte PNG.** Leve o Card ao centro do canvas, com zoom até o anel verde passar de 432 px de largura de tela, e tire o recorte `c.png`. Pela shell, `medir c.png '#1B5E20' 216 -8 -8` e `sonda c.png $X0 $Y0 $s <u> <v>` nos pontos da coluna Esperado. | **Tela e recorte:** o anel verde aparece **inteiro, em volta da caixa do Card**: a caixa da tinta verde tem a razão **H/W = 116/216** (≈ 0,537; aceite de 0,52 a 0,55: 200 × 100 mais 8 de cada lado); antes da CF1 o anel da raiz sumia (o recorte cortava na caixa) e `tinta` não achava nenhuma tinta verde (`1x1-1-1` ou erro de geometria). A olho: um retângulo branco com uma moldura verde contínua por fora, sem o fundo azul-claro entre as duas. **Sondas** (unidades do Card, origem no canto de cima à esquerda da caixa): (-4, 50), (100, -4) e (100, 104) `1B5E20` (anel à esquerda, em cima e embaixo); (4, 50) e (100, 50) `FFFFFF` (por dentro nada de traço); (-12, 50) `DDEEFF` (fora do anel, o fundo do container). **Disco:** o `mapping.json` não muda. |
+| R25.8 | **Nada do desenho no disco.** Espere **Salvo**, feche o projeto e reabra `fiel` (**Projetos recentes** › **Abrir**; aceite a permissão da pasta se vier); leia o `data-components` do `.canvas-host` e confira que o desenho continua, com o recorte do passo R25.7 repetido (`c2.png`) e as mesmas sondas do anel. Pela shell, leia o `mapping.json` da pasta `fiel`: `grep -c -E '"(cap | join | sides | stroke)" | B3261E | 1B5E20' mapping.json`. | **Tela:** `data-components` `3`; o anel verde do Card volta igual (a razão H/W da tinta verde volta a ser ≈ 0,537). **Disco:** `grep -c` imprime `0` (o `mapping.json` não guarda traço, cor nem cena); `schemaVersion` 17; a especialização aplicada está em `specs/material3-compose/` com `components/divider.json` em `"formatVersion": 4`. |
+
 ### Roteiros sob demanda (manuais)
 
-**Critério de entrada.** Os roteiros principais (R0 a R24) são feitos para o agente da nuvem executar sozinho. Um teste vai para cá quando precisa de interação do dono e **não é muito relevante** (a regra está nas convenções do começo desta seção). Estes roteiros **só rodam quando o dono pedir**, numa sessão sob demanda: nunca entram na rodada completa nem na dirigida, e fora da sessão pedida nem aparecem no relato. Os códigos e o conteúdo não mudam. O R0.5 e o R6.2 já migraram para cá (RF e RA), por decisão do dono, depois de não funcionarem sozinhos numa rodada sem interação.
+**Critério de entrada.** Os roteiros principais (R0 a R25) são feitos para o agente da nuvem executar sozinho. Um teste vai para cá quando precisa de interação do dono e **não é muito relevante** (a regra está nas convenções do começo desta seção). Estes roteiros **só rodam quando o dono pedir**, numa sessão sob demanda: nunca entram na rodada completa nem na dirigida, e fora da sessão pedida nem aparecem no relato. Os códigos e o conteúdo não mudam. O R0.5 e o R6.2 já migraram para cá (RF e RA), por decisão do dono, depois de não funcionarem sozinhos numa rodada sem interação.
 
 #### RP — App instalado (PWA)
 
@@ -1908,7 +2031,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 
 **Passos [pessoa].**
 
-- **O que é:** o passo usa um diálogo do sistema ou do navegador que a página não opera: o seletor de pasta ou de arquivo, a permissão da pasta ("Permitir que o site veja/edite os arquivos?"), o "Salvar como" da exportação, a confirmação de instalar o app e o "Sair da página?". Nos roteiros principais (R0 a R24), todo passo [pessoa] tem um substituto para o agente (receita da nuvem abaixo, shell ou cliente por stdio), e um teste do repositório impede passo "sem substituto" ali. A marca **[pessoa]** fica no guia para quem testa à mão.
+- **O que é:** o passo usa um diálogo do sistema ou do navegador que a página não opera: o seletor de pasta ou de arquivo, a permissão da pasta ("Permitir que o site veja/edite os arquivos?"), o "Salvar como" da exportação, a confirmação de instalar o app e o "Sair da página?". Nos roteiros principais (R0 a R25), todo passo [pessoa] tem um substituto para o agente (receita da nuvem abaixo, shell ou cliente por stdio), e um teste do repositório impede passo "sem substituto" ali. A marca **[pessoa]** fica no guia para quem testa à mão.
 - **Nome da ação nos roteiros:** o "ou `select_folder`", "ou `open_file`", "ou `save_file`", "ou `accept_permission_prompt`" e "ou `cancel_dialog`" que acompanham a marca [pessoa] nomeiam a receita da nuvem que faz o papel da pessoa (tabela em "Diálogos nativos na nuvem (Xvfb)", mais abaixo).
 - **Nenhum passo dos roteiros principais é inteiro da pessoa.** O R0.5 (`index.html` por `file://`) e o R6.2 (fechar a aba no meio da gravação) não funcionaram sozinhos e foram para os roteiros sob demanda RF e RA, por decisão do dono. O R6.2 ganhou o e2e `tests/e2e/folder.spec.ts` no lugar.
 - **Se um passo novo não funcionar sozinho** (o endereço não abre; o diálogo nativo não aparece), marque "não executado (vai para os roteiros sob demanda)", registre o que falhou e proponha mover o passo. Se o teste for relevante (perda de dados, integridade do `mapping.json`, segurança), **avise o dono** no relato, pela regra das convenções da seção 8; não decida sozinho.

@@ -66,7 +66,7 @@ describe('library', () => {
     ).toBe(true);
     expect(
       lib.problems.some((p) =>
-        p.endsWith('card.json: formatVersion: esperava 1, 2 ou 3'),
+        p.endsWith('card.json: formatVersion: esperava 1, 2, 3 ou 4'),
       ),
     ).toBe(true);
     // um problema por issue, cada um com o caminho do arquivo
