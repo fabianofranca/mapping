@@ -159,6 +159,13 @@ export function AnnotationEditor({
   const ownerIssue = issuesOf(project, annotation.id).find(
     (i) => i.code === 'missing-owner' || i.code === 'owner-not-allowed',
   );
+  // O valor escolhido inteiro: a coluna estreita corta o texto, e os candidatos começam iguais.
+  const ownerTitle = owner
+    ? t('annotation.ownerOption', {
+        layer: layerOf(owner.layerId)?.name ?? '',
+        name: name(owner),
+      })
+    : undefined;
   const ownerMark = ext?.mark(annotation.id, 'parentAnnotationId');
   const ownerBelow = ext?.below(annotation.id, 'parentAnnotationId');
   const hasContent = (c: unknown) => c !== undefined && c !== null && c !== false;
@@ -327,6 +334,7 @@ export function AnnotationEditor({
                 <Select
                   id={ownerId}
                   size="sm"
+                  title={ownerTitle}
                   invalid={ownerIssue !== undefined}
                   value={annotation.parentAnnotationId ?? ''}
                   disabled={readOnly || noOwnerOptions}

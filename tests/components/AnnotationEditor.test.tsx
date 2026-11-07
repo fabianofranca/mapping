@@ -268,6 +268,13 @@ describe('AnnotationEditor — descrição do tipo', () => {
 describe('AnnotationEditor — "Vinculada a"', () => {
   const owner = () => screen.getByLabelText('Vinculada a') as HTMLSelectElement;
 
+  it('o select leva o valor inteiro no title, para o corte ser desfeito ao passar o mouse', async () => {
+    const { user } = setup('A1', sampleProject());
+    expect(owner().title).toBe('');
+    await user.selectOptions(owner(), 'A2');
+    expect(owner().title).toBe('Vidros: tipo: trinca');
+  });
+
   it('explica que só aparecem anotações da mesma marcação em outras camadas', () => {
     // A1 (M1, camada L1) pode pertencer a A2 (M1, camada L2).
     setup('A1', sampleProject());
