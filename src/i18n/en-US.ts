@@ -588,6 +588,14 @@ export const enUS: Dictionary = {
   'identity.clear': 'Forget',
   'identity.missing':
     'Without an identity you can only read conversations: writing, resolving, reopening and deleting need a name and email.',
+  'comments.title': 'Comments',
+  'comments.delete.title': 'Delete the conversation?',
+  'comments.delete.confirm': 'Delete',
+  'comments.delete.goes': '{count} messages will be gone: {authors}.',
+  'comments.delete.goesOne': '1 message will be gone: {authors}.',
+  'comments.delete.author': '{count} from {name}',
+  'comments.delete.agent': '{name} (agent)',
+  'comments.delete.noUndo': 'This cannot be undone.',
   'privacy.title': 'Privacy',
   'privacy.intro':
     'Images from other sites only show after you allow their origin. The permission applies to this browser only and is never saved in the project or the zip.',

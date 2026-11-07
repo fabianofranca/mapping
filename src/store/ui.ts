@@ -10,6 +10,8 @@ import {
   type ProjectContainer,
   type Space,
   type SpecNoticeKind,
+  type ThreadAnchor,
+  type ThreadStatusFilter,
 } from '../model';
 import { VIEW_SHOW_START, type ViewShow } from './viewMode';
 
@@ -100,6 +102,32 @@ export interface EditorUi {
   readonly reviewLegend: Signal<boolean>;
   /** Revisão: comparação antes/depois da imagem trocada aberta (id da imagem). */
   readonly compareImage: Signal<string | null>;
+  /**
+   * Conversa selecionada (etapa Comentários, decisão 19), presa à seleção em que foi escolhida:
+   * vale só enquanto `selection` é o mesmo objeto (`selectedThreadId`), como o grupo da seleção
+   * múltipla. Nunca é gravada.
+   */
+  readonly thread: Signal<SelectedThread | null>;
+  /** Rascunhos de mensagem por chave (`threadDraftKey`), em memória: sobrevivem à troca de seleção. */
+  readonly threadDrafts: Signal<ReadonlyMap<string, string>>;
+  /** Conversa nova em rascunho (nada gravado até o primeiro Enviar) e onde ela ficará. */
+  readonly composing: Signal<ComposingThread | null>;
+  /** Janela Comentários: filtros de status, usuário e busca (decisão 21). */
+  readonly commentsStatus: Signal<ThreadStatusFilter>;
+  readonly commentsUser: Signal<string>;
+  readonly commentsText: Signal<string>;
+}
+
+/** O rascunho de conversa nova e a seleção em que ele vale. */
+export interface ComposingThread {
+  readonly anchor: ThreadAnchor;
+  readonly selection: Selection;
+}
+
+/** A conversa escolhida e a seleção em que ela vale. */
+export interface SelectedThread {
+  readonly id: string;
+  readonly selection: Selection;
 }
 
 export interface CanvasMenu {
@@ -133,6 +161,12 @@ export function createEditorUi(): EditorUi {
     canvasMenu: signal<CanvasMenu | null>(null),
     reviewLegend: signal<boolean>(false),
     compareImage: signal<string | null>(null),
+    thread: signal<SelectedThread | null>(null),
+    threadDrafts: signal<ReadonlyMap<string, string>>(new Map()),
+    composing: signal<ComposingThread | null>(null),
+    commentsStatus: signal<ThreadStatusFilter>('open'),
+    commentsUser: signal<string>(''),
+    commentsText: signal<string>(''),
   };
 }
 
@@ -290,7 +324,8 @@ export type DetailsSection =
         | 'arrowLinks'
         | 'annotations'
         | 'others'
-        | 'images';
+        | 'images'
+        | 'comments';
     }
   | { readonly kind: 'layer' | 'annotation'; readonly id: string };
 

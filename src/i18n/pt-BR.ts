@@ -588,6 +588,14 @@ export const ptBR = {
   'identity.clear': 'Esquecer',
   'identity.missing':
     'Sem identidade você só lê as conversas: escrever, resolver, reabrir e apagar pedem nome e e-mail.',
+  'comments.title': 'Comentários',
+  'comments.delete.title': 'Apagar a conversa?',
+  'comments.delete.confirm': 'Apagar',
+  'comments.delete.goes': 'Vão embora {count} mensagens: {authors}.',
+  'comments.delete.goesOne': 'Vai embora 1 mensagem: {authors}.',
+  'comments.delete.author': '{count} de {name}',
+  'comments.delete.agent': '{name} (agente)',
+  'comments.delete.noUndo': 'Não dá para desfazer.',
   'privacy.title': 'Privacidade',
   'privacy.intro':
     'Imagens de outros sites só aparecem depois que você permite a origem. A permissão vale só neste navegador e não vai no projeto nem no zip.',

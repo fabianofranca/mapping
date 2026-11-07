@@ -69,6 +69,12 @@ import type { ProjectStore } from './history';
 import * as imagePermissions from './imagePermissions';
 import { markingDisplay, showComponentsOnPhotos } from './settings';
 import { textMeasurer } from './textMeasure';
+import {
+  NO_THREAD_SOURCES,
+  createThreadDerived,
+  type ThreadDerived,
+  type ThreadSources,
+} from './threadDerived';
 import { visibleLayers, type EditorUi } from './ui';
 
 // Estado derivado do editor (docs/ARCHITECTURE.md, "Desempenho"): calculado uma vez a partir do projeto
@@ -112,6 +118,8 @@ export interface EditorDerived {
   readonly noticeCounts: ReadonlySignal<NoticeCounts>;
   /** Quantas anotações têm algum aviso (aba da janela e barra de status; sem filtros). */
   readonly noticedCount: ReadonlySignal<number>;
+  /** Conversas ancoradas (etapa Comentários): linhas da janela, contagens e conversas por item. */
+  readonly threads: ThreadDerived;
   /** Componentes das especializações aplicadas ao projeto (vazio enquanto não carregam). */
   readonly catalog: ReadonlySignal<ComponentCatalog>;
   /**
@@ -323,6 +331,7 @@ export function createEditorDerived(
   ui: EditorUi,
   shown: ReadonlySignal<Project | null> = store.committed,
   components: ComponentSources = NO_COMPONENTS,
+  threadSources: ThreadSources = NO_THREAD_SOURCES,
 ): EditorDerived {
   const project = shown;
 
@@ -645,6 +654,7 @@ export function createEditorDerived(
     noticeList,
     noticeCounts: noticeCountsSignal,
     noticedCount: noticedCountSignal,
+    threads: createThreadDerived(project, ui, threadSources),
     catalog: components.catalog,
     componentScenes: scenes,
     floatingMarkings,

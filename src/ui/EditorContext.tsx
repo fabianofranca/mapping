@@ -7,6 +7,7 @@ import { createEditorDerived, type EditorDerived } from '../store/derived';
 import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
+import { identity } from '../store/identity';
 import { createReviewState, type ReviewState } from '../store/review';
 import type { ProjectSession } from '../store/session';
 import { createEditorUi, type EditorUi } from '../store/ui';
@@ -53,6 +54,7 @@ export function createEditorContextValue(
       ui,
       review.derived.shownProject,
       review.components,
+      { threads: session.threads.list, copyId: session.storage.copyId ?? null, identity },
     ),
     review,
     canvas: { current: null },

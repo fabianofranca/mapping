@@ -28,6 +28,7 @@ const META: Readonly<Record<ToolWindowId, ToolWindowMeta>> = {
   notices: { icon: 'warning', title: () => t('notices.title') },
   diagnostics: { icon: 'diagnostics', title: () => t('diagnostics.title') },
   proposals: { icon: 'proposal', title: () => t('proposals.title') },
+  comments: { icon: 'chat', title: () => t('comments.title') },
   catalog: { icon: 'library', title: () => t('catalog.window.title') },
 };
 
@@ -57,9 +58,11 @@ export function windowBadge(
   incomplete: number,
   freshProposals: number,
   noticed = 0,
+  openThreads = 0,
 ): { readonly badge?: string; readonly badgeTone?: 'muted' | 'info' } {
   if (id === 'incomplete' && incomplete > 0) return { badge: String(incomplete) };
   if (id === 'notices' && noticed > 0) return { badge: String(noticed) };
+  if (id === 'comments' && openThreads > 0) return { badge: String(openThreads) };
   if (id === 'proposals' && freshProposals > 0) {
     return { badge: String(freshProposals), badgeTone: 'info' };
   }
