@@ -13,6 +13,8 @@ export interface ActionMenuItem {
   readonly label: string;
   readonly onSelect: () => void;
   readonly disabled?: boolean;
+  /** Dica do item, em especial a de por que ele está desabilitado. */
+  readonly title?: string;
   readonly danger?: boolean;
 }
 
@@ -105,6 +107,7 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
               role="menuitem"
               class={item.danger ? 'action-menu-item danger' : 'action-menu-item'}
               disabled={item.disabled}
+              title={item.title}
               onClick={() => {
                 close();
                 item.onSelect();

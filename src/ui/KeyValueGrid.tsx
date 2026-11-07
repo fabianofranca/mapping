@@ -5,6 +5,7 @@ import { t } from '../i18n';
 import { getBacklinks, type Annotation, type Entry, type Project } from '../model';
 import type { AnnotationLocation } from '../store/ui';
 import { ActionMenu } from './ActionMenu';
+import { useCiteMenuItems } from './CiteMenuItems';
 import { Button, IconButton, TextField } from './controls';
 import { useDetailsExtension } from './DetailsExtension';
 import { useEditor } from './EditorContext';
@@ -82,6 +83,7 @@ function EntryRow({
   children,
 }: EntryRowProps) {
   const { actions } = useEditor();
+  const citeItems = useCiteMenuItems();
   const base = entry ? `${entry.key}\u0000${entry.value}` : '';
   const [draft, setDraft] = useState({
     base,
@@ -175,6 +177,7 @@ function EntryRow({
       role="row"
       data-drag-row={entry ? '' : undefined}
       data-new-row={entry ? undefined : ''}
+      data-entry={entry?.id}
       data-drop={entry ? drag.drop(index, count) : undefined}
       aria-invalid={error !== null || undefined}
       onKeyDown={onRowKeyDown}
@@ -237,19 +240,27 @@ function EntryRow({
         ) : entry ? (
           <ActionMenu
             label={t('annotation.entryActions', { key: entry.key })}
-            disabled={readOnly}
             items={[
               {
                 label: t('annotation.moveEntryUp'),
-                disabled: index === 0,
+                disabled: readOnly || index === 0,
                 onSelect: () => onMove(index - 1),
               },
               {
                 label: t('annotation.moveEntryDown'),
-                disabled: index === count - 1,
+                disabled: readOnly || index === count - 1,
                 onSelect: () => onMove(index + 1),
               },
-              { label: t('annotation.removeEntry'), danger: true, onSelect: onRemove },
+              {
+                label: t('annotation.removeEntry'),
+                danger: true,
+                disabled: readOnly,
+                onSelect: onRemove,
+              },
+              ...citeItems(
+                { kind: 'entry', annotationId, entryId: entry.id },
+                { kind: 'entry', annotationId, entryId: entry.id },
+              ),
             ]}
           />
         ) : (

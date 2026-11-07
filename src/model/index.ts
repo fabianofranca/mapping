@@ -81,6 +81,7 @@ export * from './citeTargets';
 export * from './threadUsers';
 export * from './threadView';
 export * from './threadFilters';
+export * from './threadCites';
 export * from './threadPins';
 export * from './threadDelete';
 // Valor de um campo na forma de `from`/`to` (os marcadores dos Detalhes na revisão).

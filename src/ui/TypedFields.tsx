@@ -17,6 +17,8 @@ import {
   StringEditor,
   type FieldContext,
 } from './FieldEditors';
+import { ActionMenu } from './ActionMenu';
+import { useCiteMenuItems } from './CiteMenuItems';
 import { IconButton } from './controls';
 import { classes } from './controls/classes';
 import { useDetailsExtension } from './DetailsExtension';
@@ -41,6 +43,7 @@ export function TypedField({
   const { actions } = useEditor();
   const ext = useDetailsExtension();
   const id = useId();
+  const citeItems = useCiteMenuItems();
   const { project, annotation, readOnly } = ctx;
 
   if (field.type === 'table') return <TableField field={field} {...ctx} />;
@@ -82,6 +85,19 @@ export function TypedField({
       required={field.required}
       hint={field.description}
       focusKey={field.key}
+      fieldKey={field.key}
+      menu={
+        // Na revisão a coluna do rótulo é do marcador da mudança: sem o menu.
+        ext ? undefined : (
+          <ActionMenu
+            label={t('cite.fieldActions', { name: label })}
+            items={citeItems(
+              { kind: 'field', annotationId: annotation.id, key: field.key },
+              { kind: 'field', annotationId: annotation.id, key: field.key },
+            )}
+          />
+        )
+      }
       issue={issue ? issueReason(project, annotation, issue) : null}
       mark={ext?.mark(annotation.id, `values.${field.key}`)}
       below={ext?.below(annotation.id, `values.${field.key}`)}

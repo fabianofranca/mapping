@@ -238,3 +238,51 @@
   color: var(--color-text-muted);
   font: var(--t-micro);
 }
+
+/* Citada em (CM5): uma linha de chips abaixo das mensagens */
+.thread-cited-in {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-1-5);
+  font: var(--t-text-small);
+}
+
+.thread-cited-in-label {
+  color: var(--color-text-muted);
+}
+
+/* Cartão da proposta numa mensagem da conversa (decisão 36) */
+.proposal-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  padding: var(--space-1-5) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font: var(--t-text-small);
+}
+
+.proposal-card-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.proposal-card-title {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "da conversa <chip>" na linha da proposta (janela Propostas) */
+.proposal-row-thread {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  font: var(--t-text-small);
+}

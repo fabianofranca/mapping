@@ -2,6 +2,7 @@ import { t } from '../../i18n';
 import { initials, userLabel, type ThreadMessage as Message } from '../../model';
 import { Markdown } from '../markdown/Markdown';
 import { CitationChip } from './CitationChip';
+import { ProposalCard } from './ProposalCard';
 import { relativeTime } from './relativeTime';
 
 const renderCitation = (href: string, label: string) => (
@@ -24,6 +25,7 @@ export function ThreadMessage({ message }: { readonly message: Message }) {
             {relativeTime(message.at)}
           </time>
         </div>
+        {message.proposal !== null && <ProposalCard proposalId={message.proposal} />}
         <Markdown text={message.text} lineBreaks renderMapping={renderCitation} />
       </div>
     </li>

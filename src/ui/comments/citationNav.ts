@@ -51,7 +51,11 @@ function goToItem(
 
 function goToThread(editor: EditorContextValue, project: Project, id: string): void {
   const thread = editor.session.threads.list.peek().find((th) => th.id === id);
-  if (thread) selectThread(editor.ui, project, thread);
+  if (!thread) return;
+  selectThread(editor.ui, project, thread);
+  // Do chip de uma janela que não é a dos Detalhes (ex: "da conversa" em Propostas), a
+  // conversa só aparece se os Detalhes estiverem à vista.
+  openToolWindow('details');
 }
 
 /**

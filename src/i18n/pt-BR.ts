@@ -720,7 +720,23 @@ export const ptBR = {
   'citation.group.annotation': 'Anotações',
   'citation.group.layer': 'Camadas',
   'citation.group.thread': 'Conversas',
+  // CM5-D: Citada em, filtro da seleção e proposta na conversa
+  'thread.citedIn': 'Citada em',
+  'comments.filter.citesSelection': 'Citam a seleção',
+  'comments.filter.citesSelectionHint':
+    'Só as conversas ancoradas no item selecionado ou que citam o item, as anotações ou os campos dele',
+  'comments.filter.citesSelectionNone': 'Selecione um item para usar este filtro',
+  'thread.proposal.cardLabel': 'Proposta: {title}',
+  'thread.proposal.changesOne': '1 mudança para revisar',
+  'thread.proposal.changesMany': '{count} mudanças para revisar',
+  'thread.proposal.allDecided': 'Todas as mudanças com decisão',
+  'thread.proposal.removed': 'Proposta removida',
+  'proposals.fromThread': 'da conversa',
   'thread.editorHint': 'Enter quebra a linha, Ctrl+Enter envia e @ cita um item.',
+  // CM5-C: citar e copiar referência nos menus
+  'cite.insert': 'Citar na conversa',
+  'cite.needComposer': 'Abra uma conversa para citar',
+  'cite.fieldActions': 'Ações do campo {name}',
   'privacy.title': 'Privacidade',
   'privacy.intro':
     'Imagens de outros sites só aparecem depois que você permite a origem. A permissão vale só neste navegador e não vai no projeto nem no zip.',
@@ -1015,7 +1031,8 @@ export const ptBR = {
   'arrow.canvasMenu.curve': 'Curva',
   'arrow.canvasMenu.elbow': 'Canto',
   'arrow.canvasMenu.delete': 'Excluir seta',
-  'shortcuts.copyReference': 'Copiar a referência do item selecionado',
+  'shortcuts.copyReference':
+    'Copiar a referência do item selecionado ou da propriedade em foco',
   'shortcuts.copyCrop': 'Copiar o recorte da marcação selecionada',
   'code.definition': 'Definição',
   'code.definitionHint':
