@@ -221,7 +221,7 @@ export const enUS: Dictionary = {
   'annotation.linkedToRole': '↳ of {name} ({role})',
   'annotation.linkedHeading': 'Linked',
   'annotation.referencedByHeading': 'Referenced by',
-  'annotation.referencedByItem': '{source} ({marking})',
+  'annotation.referencedByItem': '{source} (in {marking})',
   'annotation.goToAnnotation': 'Go to annotation {name}',
   'annotation.showLayer': 'Show layer {layer}',
 

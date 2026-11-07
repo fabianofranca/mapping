@@ -220,7 +220,7 @@ export const ptBR = {
   'annotation.linkedToRole': '↳ de {name} ({role})',
   'annotation.linkedHeading': 'Vinculadas',
   'annotation.referencedByHeading': 'Referenciada por',
-  'annotation.referencedByItem': '{source} ({marking})',
+  'annotation.referencedByItem': '{source} (em {marking})',
   'annotation.goToAnnotation': 'Ir para a anotação {name}',
   'annotation.showLayer': 'Mostrar a camada {layer}',
 
