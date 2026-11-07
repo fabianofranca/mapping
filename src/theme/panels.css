@@ -639,6 +639,14 @@ button.tree-toggle:hover {
   padding-top: 0;
 }
 
+/* "Referenciada por": os botões quebram de linha e o texto longo quebra dentro do botão. */
+.annotation-referenced .referenced-item {
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  overflow-wrap: anywhere;
+}
+
 .linked-group {
   display: flex;
   flex-wrap: wrap;

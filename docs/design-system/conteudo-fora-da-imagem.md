@@ -3,6 +3,8 @@
 ## Pendências
 
 - CF1: nenhuma (sem interface).
+- CF3, `ReferenceField` e `RefCell` (`src/ui/RefPicker.tsx`): o seletor ganha o alvo do tipo anotação inteira (`{ annotationId }`), mostrado com o rótulo e, na etiqueta da linha, o nome do tipo (no lugar de "livre"); quando o campo aceita anotações, as abas de filtro ganham uma por tipo (depois das etiquetas e antes de "Livres"), e a linha "aceita: …" lista os tipos. Estados novos para os previews: seletor com alvo de anotação, aba de tipo ativa e o vazio "Nenhuma anotação dos tipos …".
+- CF3, painel Detalhes (`src/ui/ReferencedBy.tsx`, novo): a linha **Referenciada por** no cartão da anotação tipada, no molde de "Vinculadas" (`annotation-linked-summary`, só leitura): o rótulo e um botão `link-button` por origem ("tipo · rótulo (marcação)"), em grupo com nome acessível. Componente novo sem guia: `ReferencedByRow`, junto do que cobre o `LinkedRow` (sem token, ícone nem seção novos).
 
 ## Sincronização
 

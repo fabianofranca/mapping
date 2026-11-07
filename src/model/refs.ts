@@ -239,6 +239,23 @@ function annotationMatcher(
 }
 
 /**
+ * Tipos cobertos por `accepts.annotations`, na ordem da especialização da anotação de origem
+ * (vazio se `accepts` não aceita anotações ou a origem é livre).
+ */
+export function acceptedAnnotationTypes(
+  p: Project,
+  sourceAnnotationId: string,
+  accepts: SpecRefAccepts,
+): SpecAnnotationType[] {
+  const context = acceptContextOf(p, sourceAnnotationId);
+  if (!context || !accepts.annotations) return [];
+  const covered = new Set(resolveTypeItems(context.spec, accepts.annotations));
+  return context.spec.layers
+    .flatMap((layer) => layer.annotationTypes)
+    .filter((type) => covered.has(type.id));
+}
+
+/**
  * `true` se o alvo existe e é aceito por `accepts`: tupla livre com `free`, linha
  * de `table` ou campo simples com alguma das etiquetas, ou a anotação inteira de um tipo de
  * `accepts.annotations`. Nunca a própria anotação.
