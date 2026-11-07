@@ -8,6 +8,8 @@ import {
 } from './types';
 
 export interface NewProjectArgs {
+  /** Identidade do projeto (UUID). Padrão: um novo; gerador determinístico passa um fixo. */
+  readonly id?: string;
   readonly name: string;
   /** Data ISO 8601 usada em `createdAt` e `updatedAt`. */
   readonly now: string;
@@ -15,13 +17,18 @@ export interface NewProjectArgs {
   readonly firstLayer: Omit<Layer, 'spec'>;
 }
 
-export function createProject({ name, now, firstLayer }: NewProjectArgs): Project {
+export function createProject({
+  id = crypto.randomUUID(),
+  name,
+  now,
+  firstLayer,
+}: NewProjectArgs): Project {
   return {
     schemaVersion: SCHEMA_VERSION,
     revision: 0,
     app: APP_ID,
     coordinateSystem: COORDINATE_SYSTEM,
-    project: { name: name.trim(), createdAt: now, updatedAt: now },
+    project: { id, name: name.trim(), createdAt: now, updatedAt: now },
     specializations: [],
     platformRepos: {},
     docRepos: {},
@@ -29,6 +36,8 @@ export function createProject({ name, now, firstLayer }: NewProjectArgs): Projec
     containers: [],
     markings: [],
     arrows: [],
+    perspectives: [],
+    arrivals: [],
     annotations: [],
   };
 }

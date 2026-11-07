@@ -149,7 +149,7 @@ describe('list_projects e descoberta', () => {
     expect(cadastro).toMatchObject({
       name: 'cadastro',
       projectName: 'Teste',
-      schemaVersion: 15,
+      schemaVersion: 16,
       revision: 0,
       counts: { containers: 1, markings: 6, annotations: 11, layers: 7 },
       specializations: [
@@ -240,7 +240,7 @@ describe('get_project', () => {
       }),
     ]);
     const legado = ok(await mcp.call('get_project', { project: 'legado' }));
-    expect(legado).toMatchObject({ schemaVersion: 15, revision: 0, migratedFrom: 5 });
+    expect(legado).toMatchObject({ schemaVersion: 16, revision: 0, migratedFrom: 5 });
   });
 
   it('ler nunca regrava o mapping.json (nem o de schema antigo)', () => {
@@ -827,7 +827,7 @@ describe('create_project', () => {
       name: 'loja',
       path: 'novos/loja',
       projectName: 'Loja',
-      schemaVersion: 15,
+      schemaVersion: 16,
       revision: 0,
       // A "Camada 1" e a camada Notas da biblioteca embutida (aplicada por padrão).
       counts: { containers: 0, markings: 0, annotations: 0, layers: 2 },

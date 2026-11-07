@@ -77,6 +77,7 @@ export const FIXTURE_IMAGES = {
 /** O projeto como está: duas telas, marcações (o Botão Pagar trancado) e anotações. */
 export function fixtureProject(): Project {
   let p = createProject({
+    id: '00000000-0000-4000-8000-000000000e2e',
     name: 'Loja',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Componentes', color: '#1e88e5' },

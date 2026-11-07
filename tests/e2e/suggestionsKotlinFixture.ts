@@ -83,6 +83,7 @@ export function project(): Project {
   const texts = packageTexts();
   let n = 0;
   let p = createProject({
+    id: '00000000-0000-4000-8000-000000000e2e',
     name: 'Sugestões Kotlin',
     now: NOW,
     firstLayer: { id: 'L1', name: 'Notas', color: '#1e88e5' },

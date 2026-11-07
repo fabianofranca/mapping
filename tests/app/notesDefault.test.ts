@@ -168,7 +168,7 @@ describe('projeto novo', () => {
 });
 
 describe('abrir projeto existente', () => {
-  it('v12 sem notas: abre com a biblioteca em memória, sem desfazer; a primeira gravação escreve specs/notas/, o backup e um mapping v15', async () => {
+  it('v12 sem notas: abre com a biblioteca em memória, sem desfazer; a primeira gravação escreve specs/notas/, o backup e um mapping v16', async () => {
     const original = v12Text(sampleProject());
     const root = folderOf(original);
     pickDirectory.mockResolvedValue(root);
@@ -199,7 +199,7 @@ describe('abrir projeto existente', () => {
     }
     const saved = deserialize((await root.read('mapping.json')) ?? '');
     if (!saved.ok) throw new Error('mapping inválido');
-    expect(saved.project.schemaVersion).toBe(15);
+    expect(saved.project.schemaVersion).toBe(16);
     expect(saved.project.project.name).toBe('Renomeado');
     expect(saved.project.specializations).toEqual([
       expect.objectContaining({ id: 'notas', file: SPEC_FILE }),

@@ -1,9 +1,10 @@
 {
-  "schemaVersion": 15,
+  "schemaVersion": 16,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
   "project": {
+    "id": "00000000-0000-4000-8000-000000000001",
     "name": "Teste",
     "createdAt": "2026-09-30T12:00:00.000Z",
     "updatedAt": "2026-09-30T12:00:00.000Z"
@@ -199,6 +200,8 @@
     }
   ],
   "arrows": [],
+  "perspectives": [],
+  "arrivals": [],
   "annotations": [
     {
       "id": "AU",

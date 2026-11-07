@@ -9,7 +9,7 @@ import {
   type ProjectFile,
 } from './types';
 
-// Schema zod do mapping.json v13. Valida a forma; os invariantes entre coleções
+// Schema zod do mapping.json v16. Valida a forma; os invariantes entre coleções
 // (referências, contenção, sobreposição) ficam em `invariants.ts`. Os valores das
 // anotações tipadas são JSON livre aqui: a conferência contra o tipo vira pendência
 // (`issues.ts`).
@@ -110,6 +110,20 @@ export const arrowSchema = z.object({
   locked: z.boolean().default(false),
 });
 
+/** Posição de uma raiz numa perspectiva (v16). */
+export const perspectiveItemSchema = z.object({ root: id, x: finite, y: finite });
+
+/** Perspectiva "Para todos" (v16). A unicidade do nome e a validade das raízes são invariantes. */
+export const perspectiveSchema = z.object({
+  id,
+  name: z.string(),
+  hiddenLayers: z.array(id),
+  items: z.array(perspectiveItemSchema),
+});
+
+/** Marca "Veio de…" (v16). */
+export const arrivalSchema = z.object({ root: id, from: id, fromName: z.string() });
+
 export const entrySchema = z.object({ id, key: z.string(), value: z.string() });
 
 /** Qualquer valor JSON. A conferência contra o tipo vira pendência (`issues.ts`), não erro. */
@@ -193,6 +207,8 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
     .transform((): typeof APP_ID => APP_ID),
   coordinateSystem: z.literal(COORDINATE_SYSTEM),
   project: z.object({
+    /** Identidade do projeto (v16): UUID criado na migração e na criação. */
+    id,
     name: z.string(),
     createdAt: isoDateTime,
     updatedAt: isoDateTime,
@@ -205,5 +221,8 @@ export const projectSchema: z.ZodType<ProjectFile> = z.object({
   markings: z.array(markingSchema),
   /** Ausente num v13 anterior às setas (previews da ME0 a ME3): `[]`. */
   arrows: z.array(arrowSchema).default([]),
+  /** Ausentes: `[]` (o arquivo escrito à mão não precisa declará-las). */
+  perspectives: z.array(perspectiveSchema).default([]),
+  arrivals: z.array(arrivalSchema).default([]),
   annotations: z.array(annotationSchema),
 });
