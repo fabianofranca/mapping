@@ -282,12 +282,23 @@ describe('addComponentMarking', () => {
     });
   });
 
-  it('values explícitos substituem o preview (sobre os default)', () => {
+  it('values parciais: os campos ausentes começam com o preview, os informados vencem', () => {
     const p = add(componentProject(), 'M1', 'text', {
       values: { label: 'Dado', count: 5 },
     });
     const values = p.annotations.find((a) => a.id === 'A_M1')?.values;
-    expect(values).toMatchObject({ label: 'Dado', count: 5, kind: 'a' });
+    // preview {label: 'Preview', count: 3, kind: 'b'}: o `kind` ausente vem do preview, não do default 'a'.
+    expect(values).toMatchObject({ label: 'Dado', count: 5, kind: 'b' });
+  });
+
+  it('values parciais: table e ref continuam no default', () => {
+    const p = add(componentProject(), 'M1', 'text', { values: { count: 5 } });
+    expect(p.annotations.find((a) => a.id === 'A_M1')?.values).toMatchObject({
+      label: 'Preview',
+      count: 5,
+      target: null,
+      items: [],
+    });
   });
 
   it('values inválidos são recusados com o erro do campo', () => {
