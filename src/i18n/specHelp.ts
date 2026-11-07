@@ -1346,7 +1346,7 @@ const ptBR: readonly HelpSection[] = [
       { kind: 'code', code: ISSUE_EXCERPT },
       {
         kind: 'p',
-        text: 'A biblioteca material3-compose do repositório passa com zero erros e zero avisos. O app, o servidor MCP e a skill vão chamar a mesma validação; isso chega em uma fase seguinte da etapa Biblioteca.',
+        text: 'A biblioteca material3-compose do repositório passa com zero erros e zero avisos. O app, o servidor MCP (validate_library) e a skill chamam a mesma validação.',
       },
     ],
   },
@@ -2139,7 +2139,7 @@ const enUS: readonly HelpSection[] = [
       { kind: 'code', code: ISSUE_EXCERPT },
       {
         kind: 'p',
-        text: 'The repository’s material3-compose library passes with zero errors and zero warnings. The app, the MCP server and the skill will call the same validation; that arrives in a later phase of the Library stage.',
+        text: 'The repository’s material3-compose library passes with zero errors and zero warnings. The app, the MCP server (validate_library) and the skill call the same validation.',
       },
     ],
   },
