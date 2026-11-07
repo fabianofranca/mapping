@@ -438,3 +438,94 @@
   background: var(--color-bg);
   font: var(--t-body-strong);
 }
+
+/* Perspectivas (etapa #659, PE3): Nova, Gerenciar e Apagar. */
+.perspective-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.perspective-form > p {
+  margin: 0;
+}
+
+.perspective-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.perspective-row-label {
+  padding-top: var(--space-1);
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+}
+
+.perspective-row-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.perspective-hint {
+  font: var(--t-text-small);
+}
+
+.perspective-layers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.perspective-manage-bar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.perspective-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--t-text-small);
+}
+
+.perspective-table th,
+.perspective-table td {
+  padding: var(--space-2);
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.perspective-table thead th {
+  color: var(--color-text-muted);
+  font: var(--t-small);
+}
+
+.perspective-name {
+  font: var(--t-body-strong);
+  overflow-wrap: anywhere;
+}
+
+.perspective-actions {
+  white-space: nowrap;
+}
+
+.perspective-rename {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.perspective-rename .field-error {
+  flex-basis: 100%;
+}
+
+.perspective-delete-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}

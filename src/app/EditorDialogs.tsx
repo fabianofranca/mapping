@@ -7,6 +7,9 @@ import {
   markingDeletionImpact,
 } from '../model';
 import { ContainerDialog } from '../ui/ContainerDialog';
+import { DeletePerspectiveDialog } from '../ui/DeletePerspectiveDialog';
+import { ManagePerspectivesDialog } from '../ui/ManagePerspectivesDialog';
+import { NewPerspectiveDialog } from '../ui/NewPerspectiveDialog';
 import { Dialog } from '../ui/Dialog';
 import { DialogSlotContext } from '../ui/focus';
 import { useEditor, type EditorContextValue } from '../ui/EditorContext';
@@ -249,6 +252,18 @@ function renderDialog(
       );
     case 'exitReview':
       return <ExitReviewDialog onClose={close} />;
+    case 'newPerspective':
+      return <NewPerspectiveDialog onClose={close} />;
+    case 'managePerspectives':
+      return (
+        <ManagePerspectivesDialog
+          onClose={close}
+          onNew={() => dialogs.show({ kind: 'newPerspective' })}
+          onDelete={(id) => dialogs.show({ kind: 'deletePerspective', id })}
+        />
+      );
+    case 'deletePerspective':
+      return <DeletePerspectiveDialog id={dialog.id} onClose={close} />;
     case 'confirmClose':
       return (
         <ConfirmDialog

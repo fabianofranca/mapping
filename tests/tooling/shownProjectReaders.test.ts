@@ -59,6 +59,19 @@ const ALLOWLIST = [
   // Detalhes na revisão (fase 9.5): o painel lê o projeto à vista; o atual é o outro lado
   // de um item que não existe na visão Proposto (removido) e a origem dos fantasmas
   // (anotações e pares que saem, desenhados no lugar onde estavam).
+  // Perspectivas (etapa #659, PE3): a lista de perspectivas, as chegadas e as raízes de cada uma são do
+  // projeto real; o projeto à vista de uma perspectiva só tem as raízes dela. Recusado na revisão
+  // (a revisão abre a Principal e trava o seletor).
+  'src/ui/ArrivalNotice.tsx',
+  'src/ui/ArrowLinksSection.tsx',
+  'src/ui/CanvasContextMenu.tsx',
+  'src/ui/DeletePerspectiveDialog.tsx',
+  'src/ui/ManagePerspectivesDialog.tsx',
+  'src/ui/NewPerspectiveDialog.tsx',
+  'src/ui/PerspectiveMenuItems.tsx',
+  'src/ui/PerspectivePicker.tsx',
+  'src/ui/PerspectiveSendMenu.tsx',
+  'src/ui/PerspectivesSection.tsx',
   'src/ui/review/ReviewPanel.tsx',
   // `CompareDialog`: a imagem "antes" é a do confirmado por definição.
   'src/ui/review/ReviewCanvasControls.tsx',

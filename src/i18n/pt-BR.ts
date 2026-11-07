@@ -1,8 +1,10 @@
 import { catalogPtBR } from './catalog';
 import { reviewPtBR } from './review';
+import { perspectivesPtBR } from './perspectives';
 
 export const ptBR = {
   ...reviewPtBR,
+  ...perspectivesPtBR,
   ...catalogPtBR,
   'app.title': 'Mapping',
   'app.loading': 'Carregando…',

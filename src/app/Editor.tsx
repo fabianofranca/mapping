@@ -9,6 +9,7 @@ import type { AnnotationLocation } from '../store/ui';
 import { EditorProvider, useEditor } from '../ui/EditorContext';
 import { CanvasContextMenu } from '../ui/CanvasContextMenu';
 import { Minimap } from '../ui/Minimap';
+import { PerspectiveNotices } from '../ui/PerspectiveNotices';
 import { StatusBar } from '../ui/StatusBar';
 import { useMediaQuery } from '../ui/useMediaQuery';
 import type { OpenProject } from './controller';
@@ -169,6 +170,7 @@ export function EditorScreen() {
             </main>
           }
         />
+        <PerspectiveNotices />
         <StatusBar />
         <CompareDialog />
         <ImageInputs intake={intake} />

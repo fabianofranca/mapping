@@ -716,3 +716,109 @@
   gap: var(--space-2);
   justify-content: flex-end;
 }
+
+/* Seletor de perspectivas (etapa #659, PE3): botão ao lado do projeto e a lista em popover */
+.perspective-picker {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.perspective-trigger {
+  gap: var(--space-1-5);
+}
+
+.perspective-trigger-name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perspective-trigger-who {
+  flex: none;
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+}
+
+.perspective-picker .popover {
+  min-width: 280px;
+  max-width: 360px;
+  padding: var(--space-1);
+}
+
+.perspective-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.perspective-group {
+  padding: var(--space-1) var(--space-2);
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+}
+
+.perspective-list [role='group'] + [role='group'],
+.perspective-actions {
+  border-top: 1px solid var(--color-border);
+}
+
+.perspective-row {
+  display: grid;
+  grid-template-columns: var(--control-icon) 1fr;
+  column-gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-2);
+  font: var(--t-text);
+  color: var(--color-text);
+  text-align: start;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  cursor: pointer;
+}
+
+.perspective-row:hover {
+  background: var(--color-hover);
+}
+
+.perspective-row:active {
+  background: var(--color-pressed);
+}
+
+.perspective-row-check {
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  color: var(--color-accent);
+}
+
+.perspective-row-name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perspective-row-note {
+  grid-column: 2;
+  overflow: hidden;
+  font: var(--t-text-small);
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perspective-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-top: var(--space-1);
+}
+
+.perspective-actions .button {
+  justify-content: flex-start;
+  border-color: transparent;
+}

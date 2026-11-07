@@ -1,9 +1,11 @@
 import type { Dictionary } from './pt-BR';
 import { catalogEnUS } from './catalog';
 import { reviewEnUS } from './review';
+import { perspectivesEnUS } from './perspectives';
 
 export const enUS: Dictionary = {
   ...reviewEnUS,
+  ...perspectivesEnUS,
   ...catalogEnUS,
   'app.title': 'Mapping',
   'app.loading': 'Loading…',

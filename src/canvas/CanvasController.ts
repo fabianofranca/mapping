@@ -59,6 +59,8 @@ import { ImageRenderer } from './renderers/images';
 import { MarkingRenderer } from './renderers/markings';
 import { OverlayRenderer } from './renderers/overlay';
 import { CommentPinRenderer } from './renderers/commentPins';
+import { ArrivalRenderer } from './renderers/arrivals';
+import { arrivalMarks } from './arrivals';
 import { ReviewRenderer } from './renderers/review';
 import { pinHit, pinPlaces, pointCanvas, type PinPlace } from './commentPins';
 import { proposedDisplay, reviewMarks, type ReviewCanvas } from './reviewMarks';
@@ -126,6 +128,7 @@ interface Overlays {
   readonly pins: Frame['pins'];
   readonly pinSelected: Frame['pinSelected'];
   readonly draftPin: Frame['draftPin'];
+  readonly arrivals: Frame['arrivals'];
 }
 const NO_PINS: readonly PinPlace[] = [];
 const NO_OVERLAYS: Overlays = {
@@ -139,6 +142,7 @@ const NO_OVERLAYS: Overlays = {
   pins: NO_PINS,
   pinSelected: null,
   draftPin: null,
+  arrivals: null,
 };
 
 /** O que move o rótulo de nome das marcações (a etiqueta da selecionada desvia do do pai). */
@@ -186,6 +190,7 @@ export class CanvasController {
   private readonly overlay: OverlayRenderer;
   private readonly reviewLayer: ReviewRenderer;
   private readonly pinLayer: CommentPinRenderer;
+  private readonly arrivalLayer: ArrivalRenderer;
 
   /**
    * Projeto desenhado, derivado do projeto à vista (`review.derived.shownProject`, fase
@@ -319,6 +324,17 @@ export class CanvasController {
     return pinPlaces(project, groups, this.derived.canvasVisibility.value, principal);
   });
 
+  /**
+   * As marcas de chegada (PE3, decisão 8): o selo "Veio de <nome>" e a faixa, só na Principal.
+   * Nenhuma com uma perspectiva ou uma proposta aberta; memoizadas pelo projeto (pan e zoom não
+   * entram aqui).
+   */
+  private readonly arrivalMarks = computed(() => {
+    if (this.review?.proposalId.value != null) return null;
+    if ((this.perspective?.id.value ?? null) !== null) return null;
+    return arrivalMarks(this.drawnProject.value);
+  });
+
   /** O pino tracejado do rascunho de uma conversa nova num ponto. */
   private readonly draftPin = computed((): Point | null => {
     const anchor = composingAnchor(this.ui);
@@ -344,6 +360,7 @@ export class CanvasController {
           pins: this.pinPlaces.value,
           pinSelected: selectedThreadId(this.ui),
           draftPin: this.draftPin.value,
+          arrivals: this.arrivalMarks.value,
         },
   );
 
@@ -386,6 +403,7 @@ export class CanvasController {
       pins: over.pins,
       pinSelected: over.pinSelected,
       draftPin: over.draftPin,
+      arrivals: over.arrivals,
     };
   });
   /** Último quadro desenhado: o que não mudou desde ele não é redesenhado. */
@@ -454,6 +472,11 @@ export class CanvasController {
     const pinGroup = new Konva.Group({ listening: false });
     overlayLayer.add(pinGroup);
     this.pinLayer = new CommentPinRenderer(pinGroup);
+    // A faixa e os selos de chegada ficam por baixo das sobreposições, acima das marcas da revisão.
+    const arrivalGroup = new Konva.Group({ listening: false });
+    overlayLayer.add(arrivalGroup);
+    arrivalGroup.moveToBottom();
+    this.arrivalLayer = new ArrivalRenderer(arrivalGroup);
 
     this.view = new ViewportController(container, () => this.drawnProject.peek());
     const space = watchSpaceKey(() => this.pointer.updateCursor(null));
@@ -780,6 +803,7 @@ export class CanvasController {
     this.markings.render(frame, this.placements);
     this.reviewLayer.render(frame, this.placements);
     this.pinLayer.render(frame);
+    this.arrivalLayer.render(frame);
     // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela;
     // e desvia do rótulo do pai, que muda com o zoom semântico e as camadas visíveis.
     const viewMoved =

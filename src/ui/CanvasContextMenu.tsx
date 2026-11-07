@@ -17,6 +17,32 @@ import { Button } from './controls';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { placeComment } from '../store/threadUi';
+import { peekSelectedItems, isItemSelected } from '../store/ui';
+import {
+  blockedOutsideMain,
+  PerspectiveMenuItems,
+  PrincipalOnlyItem,
+  rootsOf,
+} from './PerspectiveMenuItems';
+
+/**
+ * ↓/↑ movem o foco entre os itens habilitados do menu (ou do submenu, se o foco está nele), em
+ * círculo. → e ← do submenu ficam com `PerspectiveMenuItems`.
+ */
+function moveFocus(e: KeyboardEvent) {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  const current = e.target as HTMLElement;
+  const submenu = current.closest<HTMLElement>('[data-submenu]');
+  const scope = submenu ?? (e.currentTarget as HTMLElement);
+  const items = [
+    ...scope.querySelectorAll<HTMLButtonElement>('button[role^="menuitem"]'),
+  ].filter((b) => !b.disabled && (submenu !== null || !b.closest('[data-submenu]')));
+  const at = items.indexOf(current as HTMLButtonElement);
+  if (at < 0) return;
+  e.preventDefault();
+  const step = e.key === 'ArrowDown' ? 1 : -1;
+  items[(at + step + items.length) % items.length]?.focus();
+}
 
 /** Folga mínima entre o menu e a borda da janela do navegador. */
 const EDGE = 8;
@@ -95,9 +121,10 @@ function CommentMenuItems({
   readonly here: ThreadAnchor | null;
   readonly close: () => void;
 }) {
-  const { ui, store, review } = useEditor();
+  const { ui, store, review, session } = useEditor();
   const project = review.derived.shownProject.value;
   if (!project) return null;
+  const openId = session.perspective.id.value;
   const items: readonly (readonly [ThreadAnchor | null, string])[] = [
     [comment, t('comments.comment')],
     [here, t('comments.here')],
@@ -106,9 +133,14 @@ function CommentMenuItems({
     <div class="menu-items">
       {items.map(([anchor, label]) =>
         anchor === null ? null : (
-          <Button
+          <PrincipalOnlyItem
             key={label}
-            role="menuitem"
+            // O rascunho de um ponto do canvas aparece fora da Principal, mas o pino final não.
+            blocked={
+              anchor.kind === 'point' &&
+              anchor.containerId === null &&
+              blockedOutsideMain(project, openId, 'draw-canvas')
+            }
             disabled={store.locked.value}
             onClick={() => {
               close();
@@ -116,7 +148,7 @@ function CommentMenuItems({
             }}
           >
             {label}
-          </Button>
+          </PrincipalOnlyItem>
         ),
       )}
     </div>
@@ -205,6 +237,24 @@ export function CanvasContextMenu() {
   // Marcação e imagem (container) sempre têm o Envolver, com ou sem pasta (`WrapMenuItem` some
   // sozinho quando ele não existe: somente leitura, revisão).
   const wrappable = copyTarget !== null && wrapAvailable(editor);
+  // Os itens do alvo (a seleção, se o item sob o cursor está nela): o Enviar usa a raiz de cada um.
+  const picked = peekSelectedItems(ui);
+  const perspectiveIds: readonly string[] =
+    copyTarget === null
+      ? []
+      : isItemSelected(picked, {
+            kind: copyTarget.kind === 'i' ? 'image' : 'marking',
+            id: copyTarget.id,
+          })
+        ? picked.map((item) => item.id)
+        : [copyTarget.id];
+  const openId = editor.session.perspective.id.value;
+  const real = editor.store.project.value;
+  // Excluir de uma raiz só vale na Principal: fora dela aparece desabilitado, com a dica.
+  const deleteBlocked =
+    real !== null &&
+    perspectiveIds.length > 0 &&
+    blockedOutsideMain(real, openId, 'delete', rootsOf(real, perspectiveIds));
   const comment = menu?.comment ?? null;
   const here = menu?.here ?? null;
   const commentable = comment !== null || here !== null;
@@ -229,6 +279,7 @@ export function CanvasContextMenu() {
       role="menu"
       aria-label={t('copy.canvasMenu')}
       ref={panel}
+      onKeyDown={moveFocus}
       onContextMenu={(e) => e.preventDefault()}
     >
       {copyTarget && (
@@ -241,17 +292,27 @@ export function CanvasContextMenu() {
       )}
       {arrowId !== null && <ArrowMenuItems arrowId={arrowId} close={close} />}
       {commentable && <CommentMenuItems comment={comment} here={here} close={close} />}
+      {perspectiveIds.length > 0 && (
+        <PerspectiveMenuItems ids={perspectiveIds} close={close} />
+      )}
       {arrangeId !== null && (
         <div class="menu-items">
-          <Button
-            role="menuitem"
+          <PrincipalOnlyItem
+            blocked={real !== null && blockedOutsideMain(real, openId, 'arrange')}
             onClick={() => {
               close();
               arrangeMarking(editor, arrangeId);
             }}
           >
             {t('arrange.action')}
-          </Button>
+          </PrincipalOnlyItem>
+        </div>
+      )}
+      {deleteBlocked && (
+        <div class="menu-items menu-items-group">
+          <PrincipalOnlyItem blocked variant="danger" onClick={close}>
+            {t('common.delete')}
+          </PrincipalOnlyItem>
         </div>
       )}
     </div>
