@@ -101,6 +101,17 @@ describe('placeRootIn: perto da referência', () => {
     expect(place).toEqual({ x: 600, y: 700, kind: 'near', referenceId: 'S2' });
   });
 
+  it('sem ruído de ponto flutuante na posição calculada', () => {
+    // 3000.1 + 2000.3 - 2000.4 = 2999.9999999999995 em ponto flutuante: o lugar sai limpo.
+    const far = setContainerPlacement(base, 'S2', { x: 3000.1, y: 0, scale: 1 });
+    const noisy = perspective([
+      ['S2', 2000.4, 1000],
+      ['X', 2000.3, 1700],
+    ]);
+    const place = placeRootIn(far, perspectiveView(far, noisy), 'X');
+    expect(place).toEqual({ x: 3000, y: 700, kind: 'near', referenceId: 'S2' });
+  });
+
   it('ocupado: vai ao livre mais próximo, sem sobrepor nada', () => {
     const busy = container(base, 'B', 550, 650);
     const place = placeRootIn(busy, perspectiveView(busy, from), 'X');

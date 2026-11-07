@@ -22,6 +22,9 @@ import { multiProjectAnnotated, rect } from '../model/multiSelectionFixtures';
 //
 // (na Principal: G em (-100,-100), D em (7000,0), E em (9000,0), H em (400,1300), N em (100,1300)).
 
+const perspectiveOf = (store: ReturnType<typeof createProjectStore>): Perspective =>
+  project(store).perspectives.find((x) => x.id === 'P')!;
+
 const img = (id: string): ItemRef => ({ kind: 'image', id });
 const mark = (id: string): ItemRef => ({ kind: 'marking', id });
 
@@ -405,6 +408,24 @@ describe('criar numa perspectiva', () => {
     store.undo();
     expect(project(store).arrivals).toEqual([]);
     expect(item(store, 'X')).toBeUndefined();
+  });
+
+  it('dois containers criados seguidos na perspectiva não se sobrepõem na vista dela', () => {
+    const { store, actions } = setup();
+    const args = {
+      name: null,
+      width: 360,
+      height: 800,
+      background: '#FFFFFF',
+      center: { x: 20000, y: 20000 },
+    };
+    expect(actions.addBackgroundContainer(args).ok).toBe(true);
+    expect(actions.addBackgroundContainer(args).ok).toBe(true);
+    const shown = model.perspectiveView(project(store), perspectiveOf(store));
+    const rects = shown.containers.map((c) => model.imageCanvasRect(c, c.placement));
+    for (const [i, a] of rects.entries()) {
+      for (const b of rects.slice(i + 1)) expect(model.rectsOverlap(a, b)).toBe(false);
+    }
   });
 
   it('a flutuante nova com seta para uma raiz da perspectiva chega perto dela', () => {

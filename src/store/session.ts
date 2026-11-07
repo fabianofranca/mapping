@@ -375,7 +375,12 @@ export function openSession(options: SessionOptions): ProjectSession {
     components: () => components.catalog.peek(),
     perspective: () => perspective.openId(),
     onArrival: (infos) => {
-      perspective.arrivals.value = infos;
+      // Acumula: o aviso da primeira raiz da fila continua depois de criar a segunda.
+      const roots = new Set(infos.map((info) => info.root));
+      perspective.arrivals.value = [
+        ...perspective.arrivals.peek().filter((info) => !roots.has(info.root)),
+        ...infos,
+      ];
     },
   });
   // As "Só eu" moram na memória junto com as "Para todos" (`localIds` as distingue); o

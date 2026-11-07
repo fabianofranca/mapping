@@ -1,3 +1,4 @@
+import { snapNearInteger } from './geometry';
 import { rootPosition } from './perspective';
 import { projectIndex } from './projectIndex';
 import type { Arrival, Perspective, PerspectiveItem, Project } from './types';
@@ -42,7 +43,11 @@ function shiftedItem(
   const at = rootPosition(p, id);
   const base = rootPosition(p, anchorId);
   if (!at || !base) return null;
-  return { root: id, x: item.x + at.x - base.x, y: item.y + at.y - base.y };
+  return {
+    root: id,
+    x: snapNearInteger(item.x + at.x - base.x),
+    y: snapNearInteger(item.y + at.y - base.y),
+  };
 }
 
 /** O item que substitui `item` em `after`, ou `null` se ele sai. */

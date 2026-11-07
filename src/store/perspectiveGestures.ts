@@ -195,8 +195,8 @@ export function placementInView(
       ? own.placement
       : {
           ...own.placement,
-          x: placement.x - (shown.x - own.placement.x),
-          y: placement.y - (shown.y - own.placement.y),
+          x: model.snapNearInteger(placement.x - (shown.x - own.placement.x)),
+          y: model.snapNearInteger(placement.y - (shown.y - own.placement.y)),
         };
     next = model.setContainerPlacement(
       p,
@@ -443,7 +443,8 @@ export function creationInPerspective(
 
 /** Acrescenta a raiz na perspectiva, na posição que ela tem no projeto. */
 function enterPerspective(p: Project, perspectiveId: string, root: string): Project {
-  const at = model.rootPosition(p, root) ?? model.fail('not-found', root);
+  const open = perspectiveIn(p, perspectiveId);
+  const at = model.placeCreatedRoot(p, open, root);
   return {
     ...p,
     perspectives: p.perspectives.map((x) =>
