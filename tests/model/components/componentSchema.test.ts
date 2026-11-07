@@ -133,4 +133,43 @@ describe('component.schema.json', () => {
       ).toEqual([]);
     });
   });
+
+  describe('stroke.cap, join e sides (formatVersion 4)', () => {
+    const v4 = (stroke: Record<string, unknown>): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'borda',
+      name: 'Borda',
+      size: { width: 100, height: 40 },
+      template: { type: 'frame', stroke: { color: '#000', ...stroke } },
+    });
+
+    it('aceita cap, join e sides, literais ou por expressão', () => {
+      for (const stroke of [
+        { cap: 'round', join: 'bevel', sides: ['top', 'bottom'] },
+        { cap: { $field: 'ponta', default: 'square' } },
+        { sides: { $switch: 'modo', cases: { a: ['left'] }, default: ['top', 'right'] } },
+      ]) {
+        const c = v4(stroke);
+        expect(checkSchema(schema, c), JSON.stringify(stroke)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(stroke)).toBe(true);
+      }
+    });
+
+    it('recusa valores inválidos e formatVersion 5', () => {
+      for (const stroke of [
+        { cap: 'pontudo' },
+        { join: 'redondo' },
+        { sides: [] },
+        { sides: ['meio'] },
+      ])
+        expect(
+          checkSchema(schema, v4(stroke)).length,
+          JSON.stringify(stroke),
+        ).toBeGreaterThan(0);
+      expect(checkSchema(schema, { ...v4({}), formatVersion: 5 }).length).toBeGreaterThan(
+        0,
+      );
+    });
+  });
 });

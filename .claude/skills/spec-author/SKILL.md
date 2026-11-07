@@ -147,6 +147,10 @@ Use `image` quando o desenho mostra uma foto cuja URL vem do dado (avatar, foto,
 - `fit`: `cover` (padrão), `contain` ou `fill`. Dê tamanho fixo, `fill` ou `%`; **nunca `hug`** (é erro). `fill` (cor) serve de fundo atrás da imagem e `cornerRadius` faz avatar redondo.
 - Um componente com nó `image` usa a `formatVersion` 3 do componente. A especialização não muda (nada de declarar origem) e o `preview` traz uma URL `https://` só se você a viu na origem.
 
+#### Traço com ponta, canto e lados (componente `formatVersion` 4)
+
+O `stroke` do desenho aceita, só na `formatVersion` 4 do **componente**, `cap` (`butt` padrão, `round`, `square`), `join` (`miter` padrão, `round`, `bevel`) e `sides` (lista não vazia, sem repetição, de `top`, `right`, `bottom`, `left`; ausente = os quatro). Todos aceitam expressão (`sides` por um `$switch` que devolve a lista). Use `sides` para divisória só embaixo ou borda parcial: o traço fica reto, sem arco no canto, mesmo com `cornerRadius`, e os lados pedidos têm a mesma cor, largura, `align` e `dash` (valores diferentes por lado pedem dois nós). `sides` só vale em `frame` e `rect` (em `ellipse` e `path`: `só vale em frame e rect (este é <tipo>)`). Numa `formatVersion` do componente menor que 4, as três chaves são erro: `template.children[0].stroke.cap: só é permitido com formatVersion 4`. A especialização não muda. Não existe sombra interna.
+
 ### 11. Avisos (`formatVersion` 10)
 
 `notices` (lista, opcional) no tipo, no campo ou na coluna de `table` registra um **aviso curto** para quem usa a especialização. Escreva um quando **duas fontes que você leu discordam** (o contrato diz uma coisa e o código outra) ou quando o que você viu pede cuidado: nunca invente aviso sem ter visto a diferença nas fontes.

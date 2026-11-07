@@ -24,8 +24,14 @@ export const COMPONENT_FORMAT_VERSION_REPEAT = 2;
  * aceitas sem mudança (e o `repeat` vale na 2 e na 3).
  */
 export const COMPONENT_FORMAT_VERSION_IMAGE = 3;
+/**
+ * A versão 4 (etapa "componentes fiéis") reúne as chaves novas do arquivo: `stroke.cap`,
+ * `stroke.join` e `stroke.sides` já aqui. Toda chave da v4 numa versão anterior é o erro
+ * `só é permitido com formatVersion 4`, no caminho da chave.
+ */
+export const COMPONENT_FORMAT_VERSION_FIDELITY = 4;
 /** Versões aceitas. */
-export const COMPONENT_FORMAT_VERSIONS = [1, 2, 3] as const;
+export const COMPONENT_FORMAT_VERSIONS = [1, 2, 3, 4] as const;
 export type ComponentFormatVersion = (typeof COMPONENT_FORMAT_VERSIONS)[number];
 
 // ---------------------------------------------------------------------------------------
@@ -97,7 +103,16 @@ export interface StrokeSpec {
   readonly width?: Expr<number>;
   readonly align?: 'inside' | 'center' | 'outside';
   readonly dash?: readonly number[];
+  /** Ponta do traço (v4); o padrão é `butt`. */
+  readonly cap?: Expr<'butt' | 'round' | 'square'>;
+  /** Canto do traço (v4); o padrão é `miter`. */
+  readonly join?: Expr<'miter' | 'round' | 'bevel'>;
+  /** Só estes lados têm traço (v4, em `frame` e `rect`); ausente = os quatro. */
+  readonly sides?: Expr<readonly StrokeSide[]>;
 }
+
+export type StrokeSide = 'top' | 'right' | 'bottom' | 'left';
+export const STROKE_SIDES: readonly StrokeSide[] = ['top', 'right', 'bottom', 'left'];
 
 export interface ShadowSpec {
   readonly color: Expr<Color>;
