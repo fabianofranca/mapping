@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v14)
+# Formato do `mapping.json` (schema v15)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` (os arquivos de imagem dos containers) e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
@@ -33,7 +33,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 14,
+  "schemaVersion": 15,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -164,8 +164,9 @@ arquivo ao ler.
 - Papel do vínculo (v14): `parentRole` não nulo é texto não vazio (`empty-role`) e exige `parentAnnotationId`
   não nulo (`role-without-owner`). Papel que o dono não oferece, ou faltando num dono com `childRoles`, **não**
   impede a abertura: vira pendência (`unknown-role`, `missing-role`).
-- Anotação "dona" (`parentAnnotationId`): existe, está na **mesma marcação** e em **outra camada**, e a
-  cadeia não tem ciclos.
+- Anotação "dona" (`parentAnnotationId`): existe, está na **mesma marcação**, e a cadeia não tem ciclos. A
+  **livre** só tem dona de **outra camada**; a **tipada** pode ter dona da **mesma camada** quando o tipo da dona
+  aceita (v15, ver "Campos da v15").
 
 Regras das especializações (campo obrigatório vazio, tipo incompatível, referência quebrada,
 `allowedChildren`…) **não** impedem a abertura: viram **pendências** (ver abaixo).
@@ -215,7 +216,7 @@ O campo `annotations[].inherit` (v2) saiu na v13 (ver "Campos da v13"); abaixo, 
 - `containers[].markingColor` (v3): cor `#RRGGBB` da borda das marcações da imagem, ou `null` (cor neutra do tema). Só afeta a interface, não o recorte.
 - `annotations[].inherit` (v2, **removido na v13**): marcava a anotação como válida para os descendentes da marcação.
 - `annotations[].parentAnnotationId`: anotação "dona" (ou `null`).
-  - a dona está na **mesma marcação** e em **outra camada**;
+  - a dona está na **mesma marcação**; até a v14 era sempre em **outra camada** (a v15 libera a mesma camada para a anotação tipada, ver "Campos da v15");
   - não há ciclos (a cadeia pode atravessar várias camadas).
 - `placement` e `needsReview` só importam para a interface; `placement` não afeta o recorte.
 
@@ -633,6 +634,7 @@ com ou sem arquivo de imagem). Só o vocabulário do `mapping.json` muda; os dad
 | v12    | `images` → `containers`, `imageId` → `containerId` (só os nomes)                                                                                           |
 | v13    | Sem herança de anotações (`annotations[].inherit` saiu); marcação do canvas (`containerId` nulo), `floating`, `containers[].parentId` e a coleção `arrows` |
 | v14    | `annotations[].parentRole` (o papel no dono) e `docRepos` (o clone local dos repositórios de documentos)                                                   |
+| v15    | A dona pode ser da mesma camada na anotação tipada (sem campo novo, dados inalterados)                                                                     |
 
 ## Campos da v13 (sem herança)
 
@@ -864,6 +866,31 @@ Toda anotação ganha `parentRole: null` e o projeto ganha `docRepos: {}`. Os v�
 em toda migração, o original vai para `backups/` antes da primeira gravação e a faixa da migração aparece no
 topo. Um valor já presente é preservado.
 
+## Campos da v15 (vínculo na mesma camada)
+
+A v15 não acrescenta nem muda campos: ela só **alarga a regra da dona** (`parentAnnotationId`), ligada à
+`formatVersion` 13 das especializações ([`SPEC-FORMAT.md`](SPEC-FORMAT.md): `allowedChildren` com tipos da
+camada do próprio dono). Um arquivo v14 só precisa subir o número, e um arquivo v15 abre em um app anterior
+somente para leitura.
+
+- **A dona está na mesma marcação**, sempre. Em que camada ela pode estar depende de quem é a anotação:
+  - a anotação **livre** continua só com dona de **outra camada**;
+  - a anotação **tipada** pode ter dona da **mesma camada** (inclusive do mesmo tipo) quando o tipo da dona
+    aceita o tipo dela em `allowedChildren` (a especialização decide; a cláusula `{ layer }` da própria camada e o id
+    do próprio tipo valem a partir da `formatVersion` 13). Dona de outra camada continua como antes;
+  - **sem ciclo**: a cadeia de donas nunca volta a uma anotação já visitada (uma anotação nunca é dona de si
+    mesma nem de uma ancestral).
+- O papel (`parentRole`) funciona igual: o `id` de um `childRoles` do tipo da dona, também quando a dona e a
+  filha são da mesma camada (o evento dono de outros eventos nos papéis Sucesso e Falha).
+- **Invariante de abertura:** a dona existe, está na mesma marcação, não forma ciclo, e a anotação **livre** não
+  tem dona da própria camada (`annotation-parent-same-layer`). Na **tipada**, a dona da mesma camada cujo tipo
+  não aceita o vínculo **não** impede a abertura: vira a pendência `owner-not-allowed`.
+
+### Migração v14 → v15
+
+Só `schemaVersion` muda para 15; nenhum dado é alterado. Como em toda migração, o original vai para
+`backups/` antes da primeira gravação e a faixa da migração aparece no topo.
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
@@ -874,7 +901,7 @@ imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 rece
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
 recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
-cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Ao salvar, o
-arquivo passa a ser v14 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Ao salvar, o
+arquivo passa a ser v15 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

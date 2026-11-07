@@ -265,7 +265,8 @@ export function validateProject(p: Project): InvariantIssue[] {
     if (owner.markingId !== a.markingId) {
       annotation('annotation-parent-other-marking', a, owner.id);
     }
-    if (owner.layerId === a.layerId)
+    // Só a livre: a tipada com dona da mesma camada que o tipo não aceita é a pendência `owner-not-allowed`.
+    if (owner.layerId === a.layerId && a.type === null)
       annotation('annotation-parent-same-layer', a, owner.id);
   }
 

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 14,
+  "schemaVersion": 15,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -368,21 +368,8 @@
       "name": null,
       "parentAnnotationId": "AOH",
       "parentRole": null,
-      "type": {
-        "specId": "sdui",
-        "typeId": "onClick"
-      },
-      "values": {
-        "acao": "submit",
-        "destino": "/usuarios",
-        "parametros": [
-          {
-            "_id": "RP1",
-            "nome": "origem",
-            "valor": "cadastro"
-          }
-        ]
-      },
+      "type": null,
+      "values": null,
       "entries": []
     },
     {

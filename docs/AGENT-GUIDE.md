@@ -18,7 +18,7 @@ O Mapping marca **áreas retangulares** em imagens (ou em containers só com fun
 - **O padrão "flutuante que aponta".** Uma tabela de analytics (ou qualquer nota estruturada) é uma marcação flutuante ligada ao elemento por uma seta; o dado está na anotação **dela**, não na do botão. Para achar: `get_marking` do botão, leia `arrows.outgoing` e `arrows.incoming` (cada uma traz a outra ponta em `to`/`from`), siga a ponta que é flutuante (`floating: true`) e leia as anotações dela. Para criar: `create_marking` com o tipo flutuante e `near` o botão, e `create_arrow` do botão para ela (ou ao contrário), tudo no mesmo lote, com apelidos `$nome`. Tipos com `appliesTo: ["arrow"]` anotam a seta em si; `appliesTo: ["marking"]` só marcações.
 - **Camadas.** Cada anotação pertence a uma camada. Camadas **livres** guardam anotações livres; camadas **de especialização** (com `spec`) guardam as anotações tipadas daquele domínio.
 - **Alcance da anotação.** Uma anotação vale só para a própria marcação; o contexto vem do `path` e do pai que `get_marking` devolve.
-- **Vínculos.** Uma anotação pode ter uma **dona** (`owner`), na mesma marcação e em outra camada (ex: uma Ação vinculada ao `Button` no papel Clique). `linked` lista as vinculadas e `linkTree` mostra a árvore.
+- **Vínculos.** Uma anotação pode ter uma **dona** (`owner`), sempre na mesma marcação (ex: uma Ação vinculada ao `Button` no papel Clique). A anotação livre só tem dona de **outra camada**; a tipada pode ter dona da **mesma camada** quando o tipo da dona aceita (`allowedChildren` do tipo, a partir da `formatVersion` 13), e nunca há ciclo. `linked` lista as vinculadas e `linkTree` mostra a árvore.
 - **Referências fortes.** Campos do tipo `ref` apontam para uma tupla, uma linha de tabela ou um campo de outra anotação. Em `refs` você vê para onde cada campo aponta; em `backlinks`, quem aponta para a anotação.
 - **Pendências.** Anotação incompleta (`issues`): campo obrigatório vazio, valor inválido, referência quebrada, tipo inexistente etc. São calculadas na leitura, não gravadas.
 - **Plataformas e código de instanciação.** O `code` de um tipo diz como se cria uma instância dele em cada plataforma: `symbol` é o que se chama, `path` é o arquivo que o define (relativo à raiz do `repo` da plataforma), `params` e `values` dizem como passar os campos, `notes` orienta. O repositório (`repo`) é da biblioteca, logo da **especialização**; o projeto só sobrepõe o clone local (`platformRepos[x].localPath`). Você lê o arquivo para saber a assinatura e escreve a chamada na solução; o mapeamento não guarda nada sobre a solução. `get_specialization` e `get_project` repetem isso em `codeHint` quando há plataformas. Veja "Do mapeamento ao código de instanciação".
@@ -142,7 +142,7 @@ O método completo para escrever uma especialização (leitura do formato, inven
 
 ### Escrevendo uma biblioteca (pacote `formatVersion` 4)
 
-A versão atual do formato é a 12 (o que cada versão acrescenta está em `mapping-docs://SPEC-FORMAT.md`).
+A versão atual do formato é a 13 (o que cada versão acrescenta está em `mapping-docs://SPEC-FORMAT.md`).
 
 Uma **biblioteca** é uma especialização v4 e a **pasta** dela: a especialização na raiz, um arquivo por componente em `components/`, um documento `.md` por componente em `docs/`, exemplos nomeados (`examples` no tipo, e o JSON de um nó de sistema externo em `examples/`) e a lista de fontes em `fonts` (com os arquivos em `fonts/` ou, se não puderem ir, um `LEIA-ME.txt` dizendo quais são). Os formatos estão em `mapping-docs://SPEC-FORMAT.md` ("Biblioteca: o pacote") e `mapping-docs://COMPONENT-FORMAT.md`; o método completo, na skill `spec-author`. Regras que o agente precisa ter na cabeça:
 
@@ -542,6 +542,56 @@ Uma especialização `formatVersion` 11 pode dizer **em que ponto da dona** uma 
     "type": "app/action",
     "owner": "a/5d2c8e10",
     "role": "click"
+  }
+]
+```
+
+**O "quando" é papel, também entre eventos.** Um evento que dispara outro (Sucesso e Falha de uma chamada) não ganha campo `chainedAfter` nem `trigger` no tipo, nem um tipo por gatilho: o evento seguinte é **filho** do anterior, no papel em que se liga, mesmo na mesma camada (o tipo do evento declara `childRoles` e aceita a si mesmo em `allowedChildren`, `formatVersion` 13). Antes de montar a cadeia, leia `childRoles` e `allowedChildren` no `get_specialization`; se o tipo não aceita o vínculo, o lote falha com `invalid-annotation-parent`. Exemplo de encadeamento por papel (o botão `Salvar`, o evento dono no Clique dele e os filhos em Sucesso e Falha; `add_container`, `create_marking` e `create_annotation` no mesmo lote, com apelidos):
+
+```json
+[
+  {
+    "op": "add_container",
+    "as": "$tela",
+    "name": "Tela",
+    "width": 390,
+    "height": 844,
+    "background": "#FFFFFF"
+  },
+  {
+    "op": "create_marking",
+    "as": "$m1",
+    "container": "$tela",
+    "rect": { "x": 40, "y": 700, "width": 300, "height": 80 },
+    "name": "Salvar",
+    "annotationAs": "$botao",
+    "annotation": { "type": "app/button", "values": { "texto": "Salvar" } }
+  },
+  {
+    "op": "create_annotation",
+    "as": "$clique",
+    "marking": "$m1",
+    "type": "app/event",
+    "owner": "$botao",
+    "role": "click",
+    "values": { "nome": "Ao clicar" }
+  },
+  {
+    "op": "create_annotation",
+    "as": "$sucesso",
+    "marking": "$m1",
+    "type": "app/event",
+    "owner": "$clique",
+    "role": "success",
+    "values": { "nome": "Salvou" }
+  },
+  {
+    "op": "create_annotation",
+    "marking": "$m1",
+    "type": "app/event",
+    "owner": "$clique",
+    "role": "failure",
+    "values": { "nome": "Falhou" }
   }
 ]
 ```

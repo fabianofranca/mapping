@@ -46,9 +46,9 @@ export function annotationWithLinked(p: Project, annotationId: string): Set<stri
 }
 
 /**
- * Donas possíveis para a anotação: mesma marcação, outra camada e sem ciclo
- * (a anotação e suas vinculadas ficam de fora). Anotação tipada: só donas cujo
- * tipo a liste em `allowedChildren`.
+ * Donas possíveis para a anotação: mesma marcação e sem ciclo (a anotação e suas vinculadas ficam
+ * de fora). Anotação livre: só donas de outra camada. Anotação tipada: só donas cujo tipo a liste
+ * em `allowedChildren`, de qualquer camada (a da própria, desde a `formatVersion` 13).
  */
 export function validAnnotationOwners(p: Project, annotationId: string): Annotation[] {
   const annotation = findById(p.annotations, annotationId);
@@ -56,9 +56,8 @@ export function validAnnotationOwners(p: Project, annotationId: string): Annotat
   const type = annotation.type;
   return (projectIndex(p).annotationsByMarking.get(annotation.markingId) ?? []).filter(
     (a) =>
-      a.layerId !== annotation.layerId &&
       !descendants.has(a.id) &&
-      (type === null || isAllowedOwner(p, type, a)),
+      (type === null ? a.layerId !== annotation.layerId : isAllowedOwner(p, type, a)),
   );
 }
 

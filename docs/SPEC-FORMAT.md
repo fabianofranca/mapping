@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 12)
+# Formato da especialização (`formatVersion` 1 a 13)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo; na 12, os passos de migração dos papéis). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo; na 12, os passos de migração dos papéis; na 13, os filhos da própria camada). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -11,7 +11,8 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - Camadas da especialização só aceitam anotações **tipadas**, sem chaves extras. Camadas criadas pelo usuário continuam livres.
 - A especialização aplicada é **copiada** para `specs/<id>.json` dentro do projeto, que fica autocontido. A cópia mantém a `formatVersion` com que foi aplicada.
 - A `formatVersion` 12 é a 11 mais três **passos de migração dos papéis**, em `migrations`: `rename-role`, `remove-role` e `set-role` (ver "Contrato de versão" e "Papéis no vínculo (childRoles)"). Antes dela, tirar um papel de `childRoles` deixava `parentRole` das anotações apontando para um papel que não existe mais; a 12 trata essa troca como **quebra** e a cobre com um passo que renomeia, remove ou preenche o papel nas anotações do projeto. A 12 é aditiva: as versões 1 a 11 continuam aceitas sem mudança, e cada passo novo numa versão anterior é o erro `só é permitido com formatVersion 12`, no caminho exato. Só sobe para a 12 a especialização que declara algum desses passos. Uma v11 que remove ou torna obrigatório o papel de um tipo, sem o passo, é recusada na atualização até subir para a 12 com ele.
-- A `formatVersion` 2 é a 1 mais o código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 12; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 13 é a 12 mais os **filhos da própria camada**: `allowedChildren` passa a aceitar a cláusula `{ layer }` com a camada do próprio dono e o id de um tipo da mesma camada, inclusive o do próprio tipo (ver "Filhos por camada e grupo"). Com isso um evento pode ser dono de outros eventos, cada filho no papel em que se liga (`childRoles`), e a anotação **tipada** pode ter dona da mesma camada no projeto (schema v15; a **livre** continua só com dona de outra camada, e o ciclo continua barrado). A 13 é aditiva: as versões 1 a 12 continuam aceitas sem mudança, e a camada ou o tipo da própria camada em `allowedChildren` numa versão anterior continua sendo o erro de sempre (`filhos devem estar em outra camada`). Só sobe para a 13 a especialização que declara um filho da própria camada.
+- A `formatVersion` 2 é a 1 mais o código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 13; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
@@ -75,7 +76,7 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `12`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `13`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
@@ -86,7 +87,7 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `12`), `id`,
 | `description`     | não         | Texto de ajuda.                                                                                                                                                                                                          |
 | `labelField`      | não         | Chave de um campo `string` cujo valor é o **rótulo da instância** quando o `name` da anotação está vazio.                                                                                                                |
 | `requiresOwner`   | não         | Padrão `false`. A anotação precisa ter exatamente um dono (ver "Relações").                                                                                                                                              |
-| `allowedChildren` | não         | Os tipos que podem ser **vinculados** a este: ids de tipo e, a partir da `formatVersion` 11, cláusulas `{ layer, groups? }` (ver "Filhos por camada e grupo").                                                           |
+| `allowedChildren` | não         | Os tipos que podem ser **vinculados** a este: ids de tipo e, a partir da `formatVersion` 11, cláusulas `{ layer, groups? }`; a partir da 13, também da camada do próprio dono (ver "Filhos por camada e grupo").         |
 | `groups`          | não         | A partir da `formatVersion` 11. Ids dos grupos da **própria camada** a que o tipo pertence (ver "Filhos por camada e grupo").                                                                                            |
 | `childRoles`      | não         | A partir da `formatVersion` 11. Os papéis em que um filho se liga a este tipo (ver "Papéis no vínculo (childRoles)").                                                                                                    |
 | `childRolesLabel` | não         | A partir da `formatVersion` 11. O nome do seletor de papel, com `childRoles` (padrão "Papel").                                                                                                                           |
@@ -175,7 +176,7 @@ Também na `formatVersion` 8, um campo `string` (ou coluna `string` de `table`) 
 
 Sempre dentro da mesma especialização.
 
-- `allowedChildren`: tipos que podem ser vinculados (via `parentAnnotationId`) a este. Um dono pode ter N filhos, inclusive do mesmo tipo. Os filhos devem estar em **outra camada**. Cada item é o id de um tipo ou, a partir da `formatVersion` 11, uma cláusula `{ layer, groups? }` que cobre uma camada ou os grupos dela (ver "Filhos por camada e grupo").
+- `allowedChildren`: tipos que podem ser vinculados (via `parentAnnotationId`) a este. Um dono pode ter N filhos, inclusive do mesmo tipo. Os filhos devem estar em **outra camada** (a partir da `formatVersion` 13, também na **mesma camada** do dono: ver "Filhos por camada e grupo"). Cada item é o id de um tipo ou, a partir da `formatVersion` 11, uma cláusula `{ layer, groups? }` que cobre uma camada ou os grupos dela (ver "Filhos por camada e grupo").
 - `requiresOwner: true`: a anotação precisa de exatamente um dono, de um tipo que a liste em `allowedChildren` (por id ou pela cláusula que a cobre).
 - `childRoles` (`formatVersion` 11): os papéis em que um filho se liga ao dono (ver "Papéis no vínculo (childRoles)").
 
@@ -249,11 +250,63 @@ Até a v10, `allowedChildren` lista os filhos **um a um**, por id. Uma camada de
 - **A cláusula.** Sem `groups`, cobre **todos os tipos da camada** (o Button acima aceita todo evento, inclusive os que forem acrescentados depois). Com `groups`, cobre os tipos da camada que estão em **algum** dos grupos listados (o Card aceita `navigate` e `back`, mais o `submit` citado por id). A cláusula só tem `layer` e `groups`; qualquer outra propriedade é erro, e `groups: []` também (para a camada inteira, omita `groups`).
 - **O conjunto resolvido.** Os tipos que um dono aceita como filhos são a **união dos itens, na ordem deles**; dentro de uma cláusula, os tipos vêm na ordem da camada; um tipo que aparece mais de uma vez fica na **primeira** posição. Um id de texto continua sendo um tipo só, em outra camada, como antes. Toda leitura de "quem pode ser filho de quem" (o editor do dono, a validação do vínculo, `requiresOwner`) usa esse mesmo conjunto.
 - **Os grupos.** `layers[].groups` é uma lista de `{ id, name, description? }`: `id` não vazio e único **dentro da camada**, `name` não vazio, `description` opcional. A ordem da lista é a ordem dos cabeçalhos com que a app apresenta os tipos. `annotationTypes[].groups` é a lista, não vazia e sem repetição, dos ids de grupo da **própria camada** a que o tipo pertence; um tipo pode estar em vários grupos, e um tipo sem `groups` só entra por uma cláusula da camada inteira ou pelo próprio id. Um grupo é só um agrupamento: não muda o que o tipo é nem onde ele vive.
-- **Outra camada, como sempre.** A `layer` da cláusula precisa existir e **não pode ser a camada do próprio dono** (o erro é o de hoje: `filhos devem estar em outra camada`); um `group` precisa existir **na camada da cláusula**.
+- **Outra camada, como sempre (até a 12).** A `layer` da cláusula precisa existir e, até a `formatVersion` 12, **não pode ser a camada do próprio dono** (o erro é o de sempre: `filhos devem estar em outra camada`); um `group` precisa existir **na camada da cláusula**. A 13 muda só essa regra (ver abaixo).
 - **`requiresOwner`** é conferido no conjunto resolvido: o tipo precisa estar no conjunto de algum dono, seja por id, por camada inteira ou por grupo.
 - **Avisos** (`specWarnings`; não bloqueiam): `allowedChildren` com 20 ids ou mais **em texto** avisa `N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos` (com 19, não); grupo declarado que nenhum tipo usa também avisa.
 - **Fora do contrato de versão:** incluir, mudar ou tirar `groups`, e trocar uma lista de ids por uma cláusula, é compatível e nunca pede migração (ver "Contrato de versão"). `diffSpecs` não gera diferença para `allowedChildren`, como hoje, nem para `groups`.
 - Só a partir da `formatVersion` 11: a cláusula, `layers[n].groups` e `annotationTypes[m].groups` numa versão anterior são o erro `só é permitido com formatVersion 11`, no caminho exato (`layers[0].annotationTypes[0].allowedChildren[0]`, `layers[1].groups`, `layers[1].annotationTypes[0].groups`).
+
+### Filhos da própria camada (`formatVersion` 13)
+
+Alguns tipos se encadeiam **na mesma camada**: um evento que dispara outro (a chamada `send-http-request` tem o resultado Sucesso e o resultado Falha, e cada um dispara um próximo evento da mesma camada de eventos). Até a 12, isso obrigava a duplicar a camada ou a criar campos no tipo (`chainedAfter`, `trigger`). A `formatVersion` 13 deixa `allowedChildren` aceitar a camada do próprio dono: a **cláusula** `{ "layer": "<a camada do próprio tipo>" }` (com ou sem `groups`) e o **id de um tipo da mesma camada**, **inclusive o do próprio tipo**.
+
+```json
+{
+  "formatVersion": 13,
+  "layers": [
+    {
+      "id": "eventos",
+      "name": "Eventos",
+      "color": "#E53935",
+      "annotationTypes": [
+        {
+          "id": "click",
+          "name": "Clique",
+          "allowedChildren": ["send-http-request"],
+          "fields": []
+        },
+        {
+          "id": "send-http-request",
+          "name": "Enviar requisição HTTP",
+          "requiresOwner": true,
+          "allowedChildren": [{ "layer": "eventos" }],
+          "childRoles": [
+            { "id": "success", "name": "Sucesso" },
+            { "id": "failure", "name": "Falha" }
+          ],
+          "fields": [{ "key": "url", "type": "string", "required": true }]
+        }
+      ]
+    }
+  ]
+}
+```
+
+No projeto, a árvore de vínculos fica assim (o evento `e1` é dono de três filhos, cada um no seu papel, na mesma camada de `Clique`):
+
+```text
+Clique
+└── e1  send-http-request          (role: click, no Clique do botão)
+    ├── e2  send-http-request      (role: success)
+    ├── e4  send-http-request      (role: success)
+    └── e3  send-http-request      (role: failure)
+```
+
+- **O que muda no projeto.** A anotação **tipada** pode ter dona da **mesma camada** quando o tipo da dona aceita o tipo dela (por id ou pela cláusula da própria camada); a anotação **livre** continua só com dona de **outra camada** (o schema v15 do `mapping.json` descreve a regra). Um dono de outra camada continua valendo como antes.
+- **Sem ciclo.** A cadeia de donas nunca volta a uma anotação já visitada: um tipo que aceita a si mesmo permite `e1` dono de `e2`, mas `e2` não pode ser dona de `e1` nem uma anotação ser dona de si mesma (`invalid-annotation-parent`).
+- **`requiresOwner`** é conferido no conjunto resolvido, também com a camada do próprio dono: o `send-http-request` acima só existe ligado a um `Clique` ou a outro `send-http-request`.
+- **O "quando" é papel.** Para encadear, o filho se liga ao evento anterior num `childRoles` do tipo dono (Sucesso, Falha), em vez de um campo `chainedAfter` ou `trigger` no filho (ver "Papéis no vínculo (childRoles)").
+- Só a partir da `formatVersion` 13: numa versão anterior, a cláusula da própria camada é o erro `camada "eventos" é a do próprio tipo; filhos devem estar em outra camada` (no caminho `….allowedChildren[k].layer`) e o id de um tipo da mesma camada é `tipo "x" está na mesma camada; filhos devem estar em outra camada`.
 
 ## Papéis no vínculo (childRoles)
 
@@ -896,7 +949,7 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 Uma v11 que remove um papel é recusada até subir para a `formatVersion` 12 com o passo que o cobre. **Dono renomeado:** quando o tipo foi renomeado (`rename-type`), os papéis **não** são comparados entre o tipo antigo e o novo; um papel que as anotações usam e que não existe no tipo novo vira `unknown-role` ao migrar, e o autor pode declarar `rename-role` com o `id` novo, **depois** do `rename-type`.
 
-**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren` (inclusive a cláusula `{ layer, groups }`), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `groups` (da camada e do tipo), o `name` e a `description` de um papel, a ordem dos `childRoles`, `childRolesLabel` e `docRepos`, trocar o `doc` entre texto e objeto, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
+**Fora do contrato**, de propósito: camadas, `labelField`, `allowedChildren` (inclusive a cláusula `{ layer, groups }` e, na 13, os filhos da própria camada), `requiresOwner`, `description`, `tags`, `code`, `platforms`, `containers`, `sources`, `suggestions`, `linkedRef`, `notices`, `groups` (da camada e do tipo), o `name` e a `description` de um papel, a ordem dos `childRoles`, `childRolesLabel` e `docRepos`, trocar o `doc` entre texto e objeto, e remover um `component`, um `doc`, um exemplo ou uma fonte. Nada disso gera diferença. Um renome é indistinguível de remover + acrescentar; quem renomeia **declara** isso num passo `rename-*`, e é isso que o diferencia de uma remoção.
 
 ### `migrations`
 
@@ -1209,9 +1262,9 @@ Os pacotes `libraries/material3-compose/` e `examples/libraries/sdui-backend/` p
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 12), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 13), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
-- `allowedChildren` só referencia tipos existentes **em outra camada**;
+- `allowedChildren` só referencia tipos existentes **em outra camada** (a partir da `formatVersion` 13, também na camada do próprio dono, inclusive o próprio tipo);
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo (na v11, no conjunto **resolvido** dos filhos de algum dono: por id, por camada inteira ou por grupo);
 - `default` compatível com o tipo (e presente em `options` no `enum`); `ref` sem `default`;
 - `columns` só com tipos simples ou, na `formatVersion` 7, `ref` (com `accepts`); `table` dentro de `table` é recusado; `rowLabel` obrigatório em `table` com `tags` e apontando para uma coluna `string`;
@@ -1220,6 +1273,7 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
 - **v11, filhos por camada e grupo:** só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].allowedChildren[k]` para a cláusula, `layers[n].groups` e `…annotationTypes[m].groups`); cada item de `allowedChildren` é um id de tipo ou uma cláusula `{ layer, groups? }` estrita (outra propriedade é erro, e `groups: []` também); erros: `layer` que não é uma camada da especialização, `layer` que é a camada do próprio dono (`filhos devem estar em outra camada`) e grupo inexistente na camada da cláusula; `requiresOwner` é conferido no conjunto resolvido; `layers[n].groups`: `id` não vazio e único na camada, `name` não vazio; `annotationTypes[m].groups`: lista não vazia, sem repetição, só de grupos da própria camada (grupo inexistente na camada é erro); **avisos:** 20 ids ou mais em texto no mesmo `allowedChildren` (`N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos`; com 19, não) e grupo declarado que nenhum tipo usa (ver "Filhos por camada e grupo");
+- **v13, filhos da própria camada:** a cláusula `{ layer }` da camada do próprio tipo e o id de um tipo da mesma camada (inclusive o do próprio tipo) só são aceitos a partir da `formatVersion` 13; numa versão anterior os erros são `camada "x" é a do próprio tipo; filhos devem estar em outra camada` (no caminho `…allowedChildren[k].layer`) e `tipo "x" está na mesma camada; filhos devem estar em outra camada`; o resto das regras de `allowedChildren` (camada e grupos inexistentes, `requiresOwner` no conjunto resolvido) não muda (ver "Filhos por camada e grupo");
 - **v12, passos de papel em `migrations`:** `rename-role`, `remove-role` e `set-role` só a partir da `formatVersion` 12 (numa versão de 4 a 11 o erro é `só é permitido com formatVersion 12`, no caminho `migrations[i].steps[j].op`); a mensagem de um `op` inválido lista os nove passos; chaves estritas (`rename-role`: `type`, `from`, `to`; `remove-role`: `type`, `role`, `mode`; `set-role`: `type`, `role`, `childType` opcional); `rename-role`: `type` é um tipo desta versão com `childRoles`, `to` é um papel dele e `from` não é; `remove-role`: `type` é um tipo desta versão (pode não ter mais `childRoles`), `role` não é papel dele e `mode` é `clear` ou `unlink`; `set-role`: `type` tem `childRoles`, `role` é um papel dele e `childType`, se vier, só confere o formato de id (tipo inexistente é um no-op); **aviso** (nível 2, com a versão anterior): `rename-role.from` ou `remove-role.role` que não era papel do tipo naquela versão, considerando o `rename-type` do dono; contrato: `removed-role`, `roles-required` e `added-role` (ver "Contrato de versão");
 - **v11, `childRoles` e `childRolesLabel`:** só a partir da `formatVersion` 11 (`só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].childRoles` ou `….childRolesLabel`); `childRoles` não vazia, de `{ id, name, description? }` estritos, com `id` não vazio e único no tipo e `name` não vazio; só em tipo com `allowedChildren` (senão é erro); `childRolesLabel` texto não vazio e só com `childRoles` (senão é erro); sem ele a app usa "Papel" / "Role" (ver "Papéis no vínculo (childRoles)");
 - **v11, `docRepos` e `doc` objeto:** só a partir da `formatVersion` 11 (`só é permitido com formatVersion 11`, no caminho `docRepos` ou `…annotationTypes[n].doc`); `docRepos[n]` com as regras do `repo` de plataforma (`url` obrigatória `http(s)://` sem espaços, `urlTemplate` opcional com `{path}`, `ref` opcional não vazio, nenhuma outra propriedade), `id` no formato `[a-z0-9-]+` e único na lista (id repetido e `urlTemplate` sem `{path}` são erro); `doc` objeto `{ repo, path }` estrito: `repo` precisa estar em `docRepos`, `path` relativo (sem `.`, `..` nem `/` no começo), terminando em `.md` e sem `#`; o `doc` texto continua valendo da v4 em diante; **aviso:** repositório de `docRepos` que nenhum `doc` usa (ver "Documento em repositório externo (docRepos)");
