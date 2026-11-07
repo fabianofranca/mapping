@@ -677,7 +677,8 @@ export const ptBR = {
   'thread.noIdentity': 'Preencha seu nome e e-mail nas Configurações para comentar.',
   'thread.openSettings': 'Preencher nas Configurações',
   'thread.error.generic': 'Não foi possível enviar. Tente de novo.',
-  'thread.error.no-identity': 'Preencha seu nome e e-mail nas Configurações para comentar.',
+  'thread.error.no-identity':
+    'Preencha seu nome e e-mail nas Configurações para comentar.',
   'thread.error.read-only': 'Esta cópia está somente para leitura.',
   'thread.error.reviewing': 'Saia da revisão da proposta para comentar.',
   'thread.error.empty-message': 'Escreva algo antes de enviar.',
