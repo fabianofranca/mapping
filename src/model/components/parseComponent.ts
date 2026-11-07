@@ -16,13 +16,23 @@ import {
 import { checkRemoteImageUrl } from '../remoteImages';
 import { isValidFontFamily } from './fontFamily';
 import { referencedFields } from './expressions';
+import { TOKEN_NAME_PATTERN, type TokenKind } from './tokens';
 
 /** Um problema do arquivo: caminho JSON (vazio = arquivo inteiro) e mensagem. */
 export type ComponentIssue = { path: string; message: string };
 
 export type ComponentParseResult =
-  | { ok: true; component: ComponentFile; warnings: ComponentIssue[] }
+  | {
+      ok: true;
+      component: ComponentFile;
+      warnings: ComponentIssue[];
+      /** Cada `$token` do arquivo, para a biblioteca conferir contra os `tokens` da especialização. */
+      tokenRefs: TokenRef[];
+    }
   | { ok: false; issues: ComponentIssue[]; errors: string[] };
+
+/** Um `{ "$token": … }` do arquivo: onde está, o nome e o tipo de valor que a posição espera. */
+export type TokenRef = { path: string; name: string; kind: TokenKind };
 
 type Rec = Record<string, unknown>;
 /** Confere um literal (valor que não é expressão) e acrescenta os problemas a `out`. */
@@ -38,7 +48,7 @@ const NODE_TYPES = [
   'repeat',
   'image',
 ] as const;
-const EXPR_OPS = ['$field', '$if', '$switch', '$concat'] as const;
+const EXPR_OPS = ['$field', '$if', '$switch', '$concat', '$token'] as const;
 const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
 /** Operadores que só existem em condição (`$field` é ambíguo e fica como expressão). */
 const DIRECT_CONDITION_OPS: readonly string[] = ['$eq', '$has', '$not', '$and', '$or'];
@@ -128,6 +138,9 @@ const checkString: Check = (v, p, out) => {
   if (typeof v !== 'string') add(out, p, 'esperava texto');
 };
 
+/** `font.family` (e `family` de um trecho): texto; aceita `$token` de família. */
+const checkFamily: Check = (v, p, out) => checkString(v, p, out);
+
 const checkTextOrNumber: Check = (v, p, out) => {
   if (typeof v !== 'string' && !isFiniteNumber(v))
     add(out, p, 'esperava texto ou número');
@@ -166,7 +179,7 @@ const checkFill: Check = (v, p, out) => {
     if (!isRecord(stop)) return add(out, sp, 'esperava objeto');
     checkKeys(stop, ['offset', 'color'], sp, out);
     checkUnit(stop.offset, join(sp, 'offset'), out);
-    checkColor(stop.color, join(sp, 'color'), out);
+    checkExpr(stop.color, join(sp, 'color'), checkColor, out);
   });
 };
 
@@ -224,6 +237,44 @@ function checkFieldKey(value: unknown, path: string, out: ComponentIssue[]): voi
     add(out, path, 'esperava chave de campo (texto não vazio)');
 }
 
+/** Onde `$token` coleta as referências durante uma validação (ver `collectIssues`). */
+let tokenSink: TokenRef[] | null = null;
+
+/** O tipo de valor que o `check` aceita como `$token`; nenhum = a posição não aceita token. */
+function tokenKindOf(check: Check): TokenKind | undefined {
+  if (check === checkColor || check === checkFill) return 'color';
+  if (check === checkFamily) return 'family';
+  const numeric: readonly Check[] = [
+    checkNumber,
+    checkNonNegative,
+    checkUnit,
+    checkWeight,
+    checkPositiveInteger,
+    checkSize,
+    checkSizeNoHug,
+    checkCornerRadius,
+    checkPadding,
+  ];
+  return numeric.includes(check) ? 'number' : undefined;
+}
+
+function checkTokenExpr(
+  value: Rec,
+  path: string,
+  check: Check,
+  out: ComponentIssue[],
+): void {
+  checkKeys(value, ['$token'], path, out);
+  const at = join(path, '$token');
+  const kind = tokenKindOf(check);
+  if (kind === undefined)
+    add(out, path, '$token só vale onde se espera cor, número ou família de fonte');
+  const name = value.$token;
+  if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name))
+    add(out, at, 'esperava nome de token ([a-z0-9][a-z0-9-]*)');
+  else if (kind !== undefined) tokenSink?.push({ path, name, kind });
+}
+
 /** Confere uma expressão: operador (`$field`, `$if`…) ou o literal conferido por `check`. */
 function checkExpr(
   value: unknown,
@@ -269,6 +320,8 @@ function checkExpr(
       if ('default' in value) checkExpr(value.default, join(path, 'default'), check, out);
       return;
     }
+    case '$token':
+      return checkTokenExpr(value, path, check, out);
     case '$concat':
       checkKeys(value, ['$concat'], path, out);
       if (!Array.isArray(value.$concat)) return add(out, at, 'esperava lista de partes');
@@ -417,7 +470,7 @@ const checkPositiveInteger: Check = (v, p, out) => {
 function checkFont(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   const specs: Record<string, Check> = {
-    family: checkString,
+    family: checkFamily,
     size: checkNumber,
     weight: checkWeight,
     italic: checkBoolean,
@@ -534,7 +587,7 @@ function checkRun(value: unknown, path: string, out: ComponentIssue[]): void {
     weight: checkWeight,
     color: checkColor,
     decoration: oneOf(['none', 'underline', 'line-through']),
-    family: checkString,
+    family: checkFamily,
     size: checkNumber,
     background: checkColor,
     radius: checkNonNegative,
@@ -731,6 +784,21 @@ const V4_EXPR_KEYS: readonly (readonly string[])[] = [
  * cadeias a `V4_NODE_KEYS`. As cadeias de `exprKeys` só contam quando o valor é uma expressão
  * (objeto com operador `$…`): o literal continua valendo em todas as versões.
  */
+/** `$token` em qualquer ponto do template, numa versão anterior à 4: `só é permitido com formatVersion 4`. */
+function tokenVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (node: unknown, at: string): void => {
+    if (Array.isArray(node)) return node.forEach((n, i) => walk(n, `${at}[${i}]`));
+    if (!isRecord(node)) return;
+    if ('$token' in node) add(out, at, V4_ONLY_MESSAGE);
+    for (const [key, value] of Object.entries(node)) walk(value, join(at, key));
+  };
+  walk(template, 'template');
+  return out;
+}
+
 export function v4OnlyKeyIssues(
   version: unknown,
   node: unknown,
@@ -899,6 +967,7 @@ function collectIssues(input: unknown): ComponentIssue[] {
     out.push(
       ...v4OnlyKeyIssues(version, input.template, 'template', V4_NODE_KEYS, V4_EXPR_KEYS),
     );
+    out.push(...tokenVersionIssues(version, input.template));
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(input.template, 'template', ['image'])) {
         add(out, node.path, 'o nó image só existe na formatVersion 3');
@@ -929,15 +998,27 @@ export function validateComponent(input: unknown): string[] {
   return collectIssues(input).map(formatIssue);
 }
 
+/** Os problemas do arquivo e os `$token` que ele cita (a coleta é local a esta chamada). */
+function collectWithRefs(input: unknown): { issues: ComponentIssue[]; refs: TokenRef[] } {
+  const refs: TokenRef[] = [];
+  tokenSink = refs;
+  try {
+    return { issues: collectIssues(input), refs };
+  } finally {
+    tokenSink = null;
+  }
+}
+
 /** Valida um JSON já lido (não lança). */
 export function parseComponent(input: unknown): ComponentParseResult {
-  const issues = collectIssues(input);
+  const { issues, refs } = collectWithRefs(input);
   if (issues.length > 0) return { ok: false, issues, errors: issues.map(formatIssue) };
   const component = input as ComponentFile;
   return {
     ok: true,
     component,
     warnings: collectWarnings(component.template, 'template'),
+    tokenRefs: refs,
   };
 }
 

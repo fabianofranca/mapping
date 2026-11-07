@@ -94,6 +94,11 @@ const MISSING_TODAY: string[] = [
   'component:run.background',
   'component:run.radius',
   'component:run.padding',
+  // Tokens (formatVersion 15, etapa #747, CF5): as bibliotecas distribuídas não migram; coberto por
+  // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts e
+  // pelo roteiro R25.
+  'component:expr.$token',
+  'spec:tokens',
   // `accepts.annotations` (formatVersion 14, etapa #679): os exemplos não ganham o recurso nesta
   // etapa (o roteiro usa uma especialização inline); coberto por tests/model/specAcceptsAnnotations.
   'spec:layers[].annotationTypes[].fields[].accepts.annotations',

@@ -1,7 +1,12 @@
 import type { ComponentFile } from './components/componentFormat';
 import { findSlot } from './components/arrange';
 import { resolvePath, type TextFile } from './components/library';
-import { collectFieldKeys, parseComponent } from './components/parseComponent';
+import {
+  collectFieldKeys,
+  parseComponent,
+  type TokenRef,
+} from './components/parseComponent';
+import { TOKEN_KIND_NAMES, knownTokenKinds } from './components/tokens';
 import {
   parseSpecText,
   type Spec,
@@ -278,6 +283,8 @@ interface Package {
   readonly components: Map<string, ComponentFile>;
   /** JSON do componente pelo caminho resolvido (para localizar as citações de campos). */
   readonly componentJson: Map<string, unknown>;
+  /** Os `$token` de cada componente válido, pelo caminho resolvido. */
+  readonly tokenRefs: Map<string, readonly TokenRef[]>;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -313,6 +320,7 @@ function level1(
     byPath,
     components: new Map(),
     componentJson: new Map(),
+    tokenRefs: new Map(),
   };
   const referenced = new Set<string>([specPath]);
   const readComponents = new Set<string>();
@@ -379,6 +387,7 @@ function readComponent(file: LibraryFile, pkg: Package, out: Collector): void {
     out.warning(file.path, warning.path, warning.message);
   pkg.components.set(file.path, parsed.component);
   pkg.componentJson.set(file.path, json);
+  pkg.tokenRefs.set(file.path, parsed.tokenRefs);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -410,6 +419,27 @@ function readJsonFile(
     cache.set(full, JSON.parse(file.text));
   } catch (error) {
     out.error(full, '', `JSON inválido: ${messageOf(error)}`);
+  }
+}
+
+/** Cada `$token` do componente existe nos `tokens` da especialização (ou é embutido) e tem o tipo da posição. */
+function tokenChecks(pkg: Package, path: string, out: Collector): void {
+  const known = knownTokenKinds(pkg.spec.tokens);
+  for (const ref of pkg.tokenRefs.get(path) ?? []) {
+    const kind = known.get(ref.name);
+    if (kind === undefined) {
+      out.error(
+        path,
+        ref.path,
+        `o token "${ref.name}" não existe nos tokens da especialização`,
+      );
+    } else if (kind !== ref.kind) {
+      out.error(
+        path,
+        ref.path,
+        `o token "${ref.name}" é ${TOKEN_KIND_NAMES[kind]}, mas aqui se espera ${TOKEN_KIND_NAMES[ref.kind]}`,
+      );
+    }
   }
 }
 
@@ -463,6 +493,7 @@ function typeCoherence(
       `o desenho usa o campo "${key}", que o tipo "${type.id}" não declara`,
     );
   }
+  tokenChecks(pkg, path, out);
   const innerUsed = repeatChecks(type, path, rawTemplate, out);
   imageChecks(type, path, rawTemplate, out);
   for (const [key, value] of Object.entries(component.preview ?? {})) {

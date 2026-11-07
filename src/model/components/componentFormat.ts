@@ -80,7 +80,9 @@ export type Expr<T> =
       readonly default?: Expr<T>;
     }
   /** Só para texto: concatena as partes (números viram texto). */
-  | { readonly $concat: readonly Expr<string | number>[] };
+  | { readonly $concat: readonly Expr<string | number>[] }
+  /** Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). */
+  | { readonly $token: string };
 
 // ---------------------------------------------------------------------------------------
 // Estilo
@@ -93,7 +95,7 @@ export interface GradientSpec {
   readonly type: 'linear';
   /** Ângulo em graus (0 = da esquerda para a direita, 90 = de cima para baixo). */
   readonly angle: number;
-  readonly stops: readonly { readonly offset: number; readonly color: Color }[];
+  readonly stops: readonly { readonly offset: number; readonly color: Expr<Color> }[];
 }
 
 export type FillSpec = Color | GradientSpec;
@@ -382,6 +384,11 @@ export interface ComponentFile {
   readonly preview?: FieldValues;
   /** Raiz do desenho: ocupa o retângulo inteiro da instância. */
   readonly template: FrameTemplate;
+  /**
+   * Tokens do modo de desenho (nome → valor), postos pelo catálogo ao carregar a especialização;
+   * nunca vêm do arquivo (o parser recusa a chave). Ver `tokens.ts`.
+   */
+  readonly resolvedTokens?: Readonly<Record<string, string | number>>;
 }
 
 /** Como o tipo da especialização referencia o componente (chave nova, formatVersion 4 do spec). */

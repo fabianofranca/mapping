@@ -18,6 +18,7 @@ import {
   parseTypeSources,
 } from './origin';
 import { parseComponent } from './parseComponent';
+import { resolveTokens, type HostFonts, type SpecTokens } from './tokens';
 
 export interface TextFile {
   /** Caminho relativo à raiz escolhida, com `/`. */
@@ -86,6 +87,8 @@ export interface Library {
   readonly fonts: readonly LoadedFont[];
   /** Origens executáveis declaradas (`origins`): como ler um JSON externo como tela. */
   readonly origins: readonly Origin[];
+  /** `tokens` da especialização (lidos sem validar; o validador da biblioteca confere). */
+  readonly tokens?: SpecTokens;
   /** O que não carregou: arquivo ausente, componente inválido, tipo sem componente. */
   readonly problems: readonly string[];
 }
@@ -288,14 +291,48 @@ export function loadLibrary(files: readonly TextFile[]): Library {
     });
   });
   const fonts = readFonts(spec.fonts, specPath, files, problems);
+  return withHostTokens(
+    {
+      specId: typeof spec.id === 'string' ? spec.id : 'spec',
+      specName: typeof spec.name === 'string' ? spec.name : 'Especialização',
+      specPath,
+      types,
+      fonts,
+      origins,
+      tokens: readTokens(spec.tokens),
+      problems,
+    },
+    {},
+  );
+}
+
+/** `tokens` do JSON da especialização, na forma mínima (modos texto e valores texto, número ou por modo). */
+function readTokens(raw: unknown): SpecTokens | undefined {
+  if (!isRecord(raw) || !Array.isArray(raw.modes) || !isRecord(raw.values))
+    return undefined;
+  const modes = raw.modes.filter((m): m is string => typeof m === 'string');
+  return modes.length === 0
+    ? undefined
+    : { modes, values: raw.values as SpecTokens['values'] };
+}
+
+/**
+ * A biblioteca com os componentes levando os tokens do modo (`resolvedTokens`): `font-sans` e
+ * `font-mono` valem a fonte do hospedeiro, a menos que a especialização os redefina.
+ */
+export function withHostTokens(
+  library: Library,
+  fonts: HostFonts,
+  mode?: string,
+): Library {
+  const resolvedTokens = resolveTokens(library.tokens, fonts, mode);
   return {
-    specId: typeof spec.id === 'string' ? spec.id : 'spec',
-    specName: typeof spec.name === 'string' ? spec.name : 'Especialização',
-    specPath,
-    types,
-    fonts,
-    origins,
-    problems,
+    ...library,
+    types: library.types.map((type) =>
+      type.component === undefined
+        ? type
+        : { ...type, component: { ...type.component, resolvedTokens } },
+    ),
   };
 }
 

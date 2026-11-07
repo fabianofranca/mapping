@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
   "title": "Mapping — componente (mapping-component, formatVersion 1, 2, 3 e 4)",
-  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth.",
+  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth. A formatVersion 4 também aceita { \"$token\": \"nome\" } onde se espera cor, número ou família de fonte (o schema deixa a expressão nas chaves de tipo compatível, mas não confere a posição nem que o token existe nos tokens da especialização: isso é do parseComponent e do validate_library).",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -179,7 +179,7 @@
       "enum": ["none", "underline", "line-through"]
     },
     "expr_number": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_number"
@@ -244,11 +244,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_nonNegative": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_nonNegative"
@@ -313,11 +323,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_unit": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_unit"
@@ -382,11 +402,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_weight": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_weight"
@@ -451,11 +481,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_string": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_string"
@@ -518,6 +558,16 @@
               "items": {
                 "$ref": "#/$defs/expr_textOrNumber"
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
             }
           }
         }
@@ -593,7 +643,7 @@
       ]
     },
     "expr_color": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_color"
@@ -656,6 +706,16 @@
               "items": {
                 "$ref": "#/$defs/expr_textOrNumber"
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
             }
           }
         }
@@ -734,7 +794,7 @@
       ]
     },
     "expr_fill": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_fill"
@@ -799,11 +859,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_cornerRadius": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_cornerRadius"
@@ -868,11 +938,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_padding": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_padding"
@@ -937,11 +1017,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_runPadding": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_runPadding"
@@ -1004,6 +1094,16 @@
               "items": {
                 "$ref": "#/$defs/expr_textOrNumber"
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
             }
           }
         }
@@ -2626,7 +2726,7 @@
       ]
     },
     "expr_size": {
-      "description": "Tamanho de nó: literal (px, \"fill\", \"hug\" ou \"NN%\") ou expressão ($field, $if, $switch, $concat). A expressão vale a partir da formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4').",
+      "description": "Tamanho de nó: literal (px, \"fill\", \"hug\" ou \"NN%\") ou expressão ($field, $if, $switch, $concat, $token). A expressão vale a partir da formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4').",
       "anyOf": [
         {
           "$ref": "#/$defs/size"
@@ -2689,6 +2789,16 @@
               "items": {
                 "$ref": "#/$defs/expr_textOrNumber"
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
             }
           }
         }
@@ -2758,6 +2868,16 @@
               "items": {
                 "$ref": "#/$defs/expr_textOrNumber"
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
             }
           }
         }
@@ -2840,7 +2960,7 @@
       ]
     },
     "expr_positiveInteger": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_positiveInteger"
@@ -2905,8 +3025,23 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
+    },
+    "tokenName": {
+      "description": "Nome de um token da especialização (formatVersion 15 da especialização; formatVersion 4 do componente).",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
     }
   }
 }

@@ -108,7 +108,27 @@ Só quando o prompt pede uma biblioteca (componentes que a app desenha). Faça o
 3. **Um documento por componente** (`doc`, `docs/<tipo>.md`): quando usar, variantes, o que não confundir; markdown simples (títulos, parágrafos, listas, tabelas, código). É o que o agente lê em `get_component`.
 4. **Exemplos nomeados** (`examples` no tipo): `values` (chaves de campos do próprio tipo, valores válidos) com `name` único; para uma origem de sistema externo (`origins`), `system` + `file` (o JSON de **um nó** em `examples/`) e, na origem, telas inteiras em `examples[]`.
 5. **Fontes:** `fonts` na raiz (`family`, `file`, `weight`, `style`). Os arquivos têm licença e peso: se não puder incluí-los, deixe `fonts/LEIA-ME.txt` dizendo quais arquivos faltam e de onde obtê-los (fonte ausente é **aviso**, não erro).
-6. **Atualização de biblioteca já aplicada:** preserve ids de tipo e `key` de campo, suba a `version`. **Aditivo** (não precisa de `migrations`): tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, mudar só o desenho. **Quebra** (exige entrada em `migrations`, com `from`, `to` e `steps`; `to` ≤ `version`, `from` único, `steps` não vazia; a cadeia precisa ligar a versão aplicada à nova, senão toda quebra fica sem cobertura): remover ou renomear tipo, campo ou opção de `enum` (passos `rename-type {from,to}`, `remove-type {type,mode: convert|delete}` (`delete` apaga também as anotações), `rename-field {type,from,to}`, `remove-field {type,field}` e `map-values {type,field,values}`; a chave de campo pode ser `tabela.coluna`), tornar um campo obrigatório (inclusive um campo novo que já nasce obrigatório: cubra com `fill-field {type,field,default}`), mudar o `type` de um campo, tirar um papel de `childRoles` ou dar `childRoles` a um tipo que não tinha (passos `rename-role`, `remove-role` e `set-role`, da `formatVersion` 12: ver a seção 12). Passe a versão anterior à validação (`previous`).
+6. **Tokens de design (`formatVersion` 15 na especialização; `{ "$token": … }` no componente de formato 4).** Quando a origem tem um design system (tokens do tema, variáveis do Figma, tabela de cores), declare-o em `tokens` na raiz **em vez de repetir literais** em cada nó. O padrão é `light`/`dark`:
+
+   ```json
+   "tokens": {
+     "modes": ["light", "dark"],
+     "values": {
+       "primary": { "light": "#6750A4", "dark": "#D0BCFF" },
+       "on-primary": { "light": "#FFFFFF", "dark": "#381E72" },
+       "radius-md": 12,
+       "space-4": 16
+     }
+   }
+   ```
+
+   - `modes` é lista não vazia de nomes distintos `[a-z0-9][a-z0-9-]*`; o nome do token segue o mesmo padrão. **Cor vai por modo** (objeto com todos os modos e só eles, todos do mesmo tipo); **raio, espaçamento e tamanho** que não mudam com o tema são valores **simples** (valem em todos os modos). Um valor é texto (cor `#rrggbb`/`rgba()` ou família de fonte) ou número.
+   - No componente, `{ "$token": "primary" }` vale onde se espera cor (`fill`, `color`, `stroke.color`, `shadow.color`, stops do gradiente, `run.color`/`background`), número (`gap`, `padding`, `font.size`, `cornerRadius`, `width`, `opacity`…) ou família (`font.family`), inclusive como resultado de `$switch` e `$if`. Não vale em enum, booleano nem texto.
+   - **Embutidos:** `font-sans` e `font-mono` existem em toda biblioteca (a fonte do tema do hospedeiro) e `{ "$token": "font-mono" }` serve em `font.family`. O texto sem `font.family` usa `font-sans`, **não mais a `Inter`**: não escreva `Inter` por padrão e não conte com a largura dela. Redefinir `font-sans`/`font-mono` em `tokens.values` vence o hospedeiro.
+   - Nesta versão o desenho usa sempre o **primeiro** modo de `modes` (modo não declarado cai no primeiro, sem aviso): ponha `light` primeiro.
+   - `tokens` só com `formatVersion` 15 (antes: `só é permitido com formatVersion 15`) e `$token` só no componente de formato 4 (`só é permitido com formatVersion 4`). O `validate_library` recusa token inexistente (`o token "x" não existe nos tokens da especialização`) e de tipo errado (`o token "primary" é cor, mas aqui se espera número`), com o caminho do nó. Detalhes em `docs/SPEC-FORMAT.md` ("Tokens de design") e `docs/COMPONENT-FORMAT.md`.
+
+7. **Atualização de biblioteca já aplicada:** preserve ids de tipo e `key` de campo, suba a `version`. **Aditivo** (não precisa de `migrations`): tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, mudar só o desenho. **Quebra** (exige entrada em `migrations`, com `from`, `to` e `steps`; `to` ≤ `version`, `from` único, `steps` não vazia; a cadeia precisa ligar a versão aplicada à nova, senão toda quebra fica sem cobertura): remover ou renomear tipo, campo ou opção de `enum` (passos `rename-type {from,to}`, `remove-type {type,mode: convert|delete}` (`delete` apaga também as anotações), `rename-field {type,from,to}`, `remove-field {type,field}` e `map-values {type,field,values}`; a chave de campo pode ser `tabela.coluna`), tornar um campo obrigatório (inclusive um campo novo que já nasce obrigatório: cubra com `fill-field {type,field,default}`), mudar o `type` de um campo, tirar um papel de `childRoles` ou dar `childRoles` a um tipo que não tinha (passos `rename-role`, `remove-role` e `set-role`, da `formatVersion` 12: ver a seção 12). Passe a versão anterior à validação (`previous`).
 
 ### 9. Containers (`formatVersion` 6)
 
@@ -336,8 +356,9 @@ O `id` do papel é dado que as anotações guardam (`parentRole` no vínculo do 
 - `formatVersion` 12: `rename-role`, `remove-role` ou `set-role` em `migrations`.
 - `formatVersion` 13: a cláusula `{ layer }` da camada do próprio tipo, ou o id de um tipo da mesma camada (inclusive o do próprio tipo), em `allowedChildren`.
 - `formatVersion` 14: `accepts.annotations` em campo ou coluna `ref` (a anotação inteira como alvo).
+- `formatVersion` 15: `tokens` na raiz (tokens de design por modo, lidos por `{ "$token": … }` nos componentes de formato 4).
 
-A versão atual do formato é a 14. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta) para a 12 só se declara um passo de papel para a 13 só se um tipo aceita filhos da própria camada e para a 14 só se um `ref` usa `accepts.annotations`**: o resto da biblioteca fica na versão que o conteúdo pede (a de notas fica na 7, a Kotlin na 8 e a Material 3 na 9). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+A versão atual do formato é a 15. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta) para a 12 só se declara um passo de papel para a 13 só se um tipo aceita filhos da própria camada para a 14 só se um `ref` usa `accepts.annotations` e para a 15 só se declara `tokens`**: o resto da biblioteca fica na versão que o conteúdo pede (a de notas fica na 7, a Kotlin na 8 e a Material 3 na 9). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 

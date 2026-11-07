@@ -2,6 +2,7 @@ import { findSlot } from './components/arrange';
 import type { ComponentFile } from './components/componentFormat';
 import { resolvePath } from './components/library';
 import { parseComponentText } from './components/parseComponent';
+import { resolveTokens, type HostFonts } from './components/tokens';
 import { projectIndex } from './projectIndex';
 import type { Spec, SpecAnnotationType } from './spec';
 import { findSpecType } from './specLookup';
@@ -55,6 +56,14 @@ export function componentPaths(spec: Spec, specFile: string): string[] {
   return [...paths];
 }
 
+/** O que vem de fora do modelo ao carregar: a fonte do hospedeiro e o modo do desenho. */
+export interface LoadOptions {
+  /** A pilha `--font-sans`/`--font-mono` do tema (ou o que o hospedeiro usa); ausente = genéricas. */
+  readonly fonts?: HostFonts;
+  /** Modo dos `tokens` da especialização; ausente ou não declarado = o primeiro. */
+  readonly mode?: string;
+}
+
 /**
  * Lê e valida os componentes da especialização. `readText` devolve o texto de um caminho da
  * raiz do projeto, ou `undefined` se o arquivo não existe. Um componente ruim vira um
@@ -66,9 +75,11 @@ export function loadSpecComponents(
   specFile: string,
   version: number,
   readText: (projectPath: string) => string | undefined,
+  options: LoadOptions = {},
 ): SpecComponents {
   const byType = new Map<string, ComponentFile>();
   const problems: string[] = [];
+  const resolvedTokens = resolveTokens(spec.tokens, options.fonts ?? {}, options.mode);
   if (spec.formatVersion >= 4) {
     for (const type of typesWithComponent(spec)) {
       const path = resolvePath(specFile, type.component);
@@ -82,7 +93,7 @@ export function loadSpecComponents(
         problems.push(`${type.id}: ${parsed.errors[0] ?? 'componente inválido'}`);
         continue;
       }
-      byType.set(type.id, parsed.component);
+      byType.set(type.id, { ...parsed.component, resolvedTokens });
     }
   }
   return { specId: spec.id, version, byType, problems };
