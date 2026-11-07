@@ -11,6 +11,7 @@ import {
   ARRIVAL_BADGE_HEIGHT,
   arrivalBadgeSpot,
   arrivalBadgeWidth,
+  arrivalBandLabelSpot,
   type ArrivalBadge,
 } from '../arrivals';
 import { visibleArea, type Frame } from '../frame';
@@ -22,6 +23,7 @@ const BAND_DASH = [6, 4];
 const BAND_STROKE = 1.5;
 const TITLE_GAP = 4;
 const BADGE_RADIUS = 4;
+const BADGE_PAD = 8;
 
 export type ArrivalFrame = Pick<
   Frame,
@@ -48,6 +50,21 @@ function textAttrs(tokens: CanvasTokens, fill: string, weight: number) {
     fontFamily: tokens.fontFamily,
     fontStyle: fontStyle(weight),
     fill,
+  };
+}
+
+/** `box` (tela) em unidades do canvas, dado o canto `origin` do canvas na tela; `undefined` se vazio. */
+function screenToCanvasRect(
+  box: DOMRect,
+  origin: DOMRect,
+  { x, y, scale }: Frame['viewport'],
+): Rect | undefined {
+  if (box.width === 0 || box.height === 0) return undefined;
+  return {
+    x: (box.left - origin.left - x) / scale,
+    y: (box.top - origin.top - y) / scale,
+    width: box.width / scale,
+    height: box.height / scale,
   };
 }
 
@@ -86,17 +103,31 @@ export class ArrivalRenderer {
     const { arrivals, tokens } = frame;
     const zoom = frame.viewport.scale;
     const view = visibleArea(frame.size, frame.viewport);
+    const avoid = this.minimapArea(frame);
     const seen = new Set<string>();
     for (const badge of arrivals?.badges ?? []) {
       seen.add(badge.root);
-      this.drawBadge(badge, zoom, tokens, view);
+      this.drawBadge(badge, zoom, tokens, view, avoid);
     }
     for (const [root, node] of this.badges) {
       if (seen.has(root)) continue;
       node.group.destroy();
       this.badges.delete(root);
     }
-    this.drawBand(arrivals?.band ?? null, zoom, tokens);
+    this.drawBand(arrivals?.band ?? null, zoom, tokens, view);
+  }
+
+  /** O minimapa (HTML sobre o canvas) em unidades do canvas, ou `undefined` sem ele. */
+  private minimapArea(frame: ArrivalFrame): Rect | undefined {
+    if (!frame.arrivals?.badges.length) return undefined;
+    const host = this.layer.getStage()?.container();
+    const map = host?.parentElement?.querySelector('.minimap');
+    if (!host || !map) return undefined;
+    return screenToCanvasRect(
+      map.getBoundingClientRect(),
+      host.getBoundingClientRect(),
+      frame.viewport,
+    );
   }
 
   private badgeFor(root: string): ArrivalBadgeNode {
@@ -122,11 +153,17 @@ export class ArrivalRenderer {
     zoom: number,
     tokens: CanvasTokens,
     view: Rect,
+    avoid: Rect | undefined,
   ): void {
     const node = this.badgeFor(badge.root);
     const text = t('perspective.canvas.cameFrom', { name: badge.name });
-    const width = arrivalBadgeWidth(text);
-    const at = arrivalBadgeSpot(badge.rect, zoom, width, view);
+    node.label.setAttrs({ text });
+    // O texto medido pode passar da estimativa (letras largas): o selo cresce com ele.
+    const width = Math.max(
+      arrivalBadgeWidth(text),
+      node.label.getTextWidth() + 2 * BADGE_PAD,
+    );
+    const at = arrivalBadgeSpot(badge.rect, zoom, width, view, avoid);
     node.group.setAttrs({ x: at.x, y: at.y, scaleX: 1 / zoom, scaleY: 1 / zoom });
     node.box.setAttrs({
       width,
@@ -144,7 +181,12 @@ export class ArrivalRenderer {
     });
   }
 
-  private drawBand(band: Rect | null, zoom: number, tokens: CanvasTokens): void {
+  private drawBand(
+    band: Rect | null,
+    zoom: number,
+    tokens: CanvasTokens,
+    view: Rect,
+  ): void {
     const node = this.band;
     node.group.visible(band !== null);
     if (!band) return;
@@ -158,23 +200,30 @@ export class ArrivalRenderer {
       strokeWidth: BAND_STROKE / zoom,
       dash: BAND_DASH.map((d) => d / zoom),
     });
-    // Título e subtítulo ficam acima da faixa, em px de tela.
-    const lift = (2 * line + TITLE_GAP) / zoom;
+    // Título e subtítulo (px de tela) ficam acima da faixa e da linha do nome dos containers; sem
+    // espaço, abaixo dela; sempre dentro da área visível.
     node.title.setAttrs({
       ...textAttrs(tokens, tokens.text, tokens.type.name.weight),
       text: t('perspective.canvas.arrivalArea'),
       x: 0,
-      y: -lift,
-      scaleX: 1 / zoom,
-      scaleY: 1 / zoom,
+      y: 0,
     });
     node.hint.setAttrs({
       ...textAttrs(tokens, tokens.textMuted, 400),
       text: t('perspective.canvas.arrivalAreaHint'),
       x: 0,
-      y: -lift + line / zoom,
-      scaleX: 1 / zoom,
-      scaleY: 1 / zoom,
+      y: line,
     });
+    const size = {
+      width: Math.max(node.title.getTextWidth(), node.hint.getTextWidth()),
+      height: 2 * line,
+    };
+    const at = arrivalBandLabelSpot(band, zoom, size, view, line + TITLE_GAP);
+    node.title.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom });
+    node.hint.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom });
+    node.title.x(at.x - band.x);
+    node.title.y(at.y - band.y);
+    node.hint.x(at.x - band.x);
+    node.hint.y(at.y - band.y + line / zoom);
   }
 }

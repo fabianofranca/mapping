@@ -3,6 +3,7 @@ import {
   ARRIVAL_BADGE_HEIGHT,
   ARRIVAL_BAND_PAD,
   arrivalBadgeSpot,
+  arrivalBandLabelSpot,
   arrivalBadgeWidth,
   arrivalMarks,
 } from '../../src/canvas/arrivals';
@@ -111,6 +112,81 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
   it('a largura cresce com o nome', () => {
     expect(arrivalBadgeWidth('Veio de Frente longa')).toBeGreaterThan(
       arrivalBadgeWidth('Veio de A'),
+    );
+  });
+});
+
+describe('arrivalBandLabelSpot: o lugar do rótulo da faixa', () => {
+  const view = { x: 0, y: 0, width: 900, height: 600 };
+  const size = { width: 160, height: 40 };
+
+  it('com espaço em cima: acima da faixa, sem encostar nela', () => {
+    const band = { x: 300, y: 300, width: 200, height: 200 };
+    const spot = arrivalBandLabelSpot(band, 1, size, view, 20);
+    expect(spot.x).toBe(300);
+    expect(spot.y + size.height).toBeLessThanOrEqual(300);
+  });
+
+  it('zoom baixo: a folga da faixa encolhe e o rótulo sobe acima da linha do nome do container', () => {
+    const zoom = 0.16;
+    const band = { x: 3000, y: 2000, width: 800, height: 3000 };
+    const spot = arrivalBadgeSpotless(band, zoom);
+    // O nome do container ocupa os 20 px de tela logo acima do conteúdo, que está
+    // ARRIVAL_BAND_PAD abaixo do topo da faixa.
+    const contentTop = band.y + ARRIVAL_BAND_PAD;
+    const nameTop = contentTop - 20 / zoom;
+    expect(spot.y + size.height / zoom).toBeLessThanOrEqual(nameTop);
+
+    function arrivalBadgeSpotless(b: typeof band, z: number) {
+      const v = { x: 0, y: 0, width: 6000, height: 6000 };
+      return arrivalBandLabelSpot(b, z, size, v, 20);
+    }
+  });
+
+  it('sem espaço em cima: vai para baixo da faixa, dentro da área visível', () => {
+    const band = { x: 100, y: 5, width: 200, height: 300 };
+    const spot = arrivalBandLabelSpot(band, 1, size, view, 20);
+    expect(spot.y).toBeGreaterThanOrEqual(305);
+    expect(spot.y + size.height).toBeLessThanOrEqual(view.y + view.height);
+  });
+
+  it('não sai pela direita nem pela esquerda da área visível', () => {
+    const band = { x: 820, y: 300, width: 60, height: 100 };
+    const spot = arrivalBandLabelSpot(band, 1, size, view, 20);
+    expect(spot.x + size.width).toBeLessThanOrEqual(view.x + view.width);
+    expect(spot.x).toBeGreaterThanOrEqual(view.x);
+  });
+});
+
+describe('arrivalBadgeSpot: sem cair sob o minimapa', () => {
+  const view = { x: 0, y: 0, width: 600, height: 400 };
+  const width = 135;
+  const minimap = { x: 500, y: 300, width: 90, height: 90 };
+
+  it('selo que cairia sob o minimapa vai para a esquerda dele', () => {
+    const rect = { x: 480, y: 250, width: 60, height: 40 };
+    const spot = arrivalBadgeSpot(rect, 1, width, view, minimap);
+    const overlaps =
+      spot.x < minimap.x + minimap.width &&
+      spot.x + width > minimap.x &&
+      spot.y < minimap.y + minimap.height &&
+      spot.y + ARRIVAL_BADGE_HEIGHT > minimap.y;
+    expect(overlaps).toBe(false);
+    expect(spot.x).toBeGreaterThanOrEqual(view.x);
+  });
+
+  it('sem espaço à esquerda dele, sobe para cima do minimapa', () => {
+    const narrow = { x: 0, y: 0, width: 600, height: 400 };
+    const mini = { x: 20, y: 300, width: 570, height: 90 };
+    const rect = { x: 480, y: 250, width: 60, height: 40 };
+    const spot = arrivalBadgeSpot(rect, 1, width, narrow, mini);
+    expect(spot.y + ARRIVAL_BADGE_HEIGHT).toBeLessThanOrEqual(mini.y);
+  });
+
+  it('longe do minimapa, nada muda', () => {
+    const rect = { x: 100, y: 100, width: 60, height: 40 };
+    expect(arrivalBadgeSpot(rect, 1, width, view, minimap)).toEqual(
+      arrivalBadgeSpot(rect, 1, width, view),
     );
   });
 });
