@@ -103,7 +103,7 @@ describe.each(['pt-BR', 'en-US'] as const)(
       );
       const tab = screen
         .getAllByRole('tab')
-        .find((el) => el.textContent?.includes(t('comments.title')));
+        .find((el) => el.getAttribute('aria-label') === t('comments.title'));
       expect(tab?.textContent).toContain('2');
     });
 

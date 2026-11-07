@@ -21,9 +21,13 @@ export function BottomTabs({ active }: { readonly active: ToolWindowId }) {
   const tabs: TabItem<ToolWindowId>[] = windowsOfSide('bottom').map((id) => {
     const meta = toolWindowMeta(id);
     const title = meta.title();
+    // Comentários é a sexta aba: só o ícone e a contagem, para as seis caberem na largura
+    // mínima do canvas; o nome acessível e a dica continuam sendo o título.
+    const iconOnly = id === 'comments';
     return {
       id,
-      label: meta.tab?.() ?? title,
+      label: iconOnly ? '' : (meta.tab?.() ?? title),
+      ...(iconOnly ? { icon: meta.icon, ariaLabel: title } : {}),
       title,
       ...windowBadge(id, incomplete, fresh, noticed, openThreads),
       alert: id === 'diagnostics' && unseen,
