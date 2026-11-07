@@ -57,6 +57,31 @@ describe('confirmar exclusão da marcação', () => {
     expect(dialog.queryByRole('alert', { hidden: true })).toBeNull();
   });
 
+  it('avisa as referências que vão quebrar quando uma anotação da marcação é alvo', () => {
+    const base = sampleProject();
+    const project = {
+      ...base,
+      annotations: base.annotations.map((a) =>
+        a.id === 'A4' ? { ...a, values: { alvo: { annotationId: 'A3' } } } : a,
+      ),
+    };
+    const harness = createHarness(project);
+    const { dialog } = open(harness, {
+      kind: 'deleteMarking',
+      marking: marking(harness, 'M1'),
+    });
+    expect(dialog.getByText(t('ref.deleteMarking', { count: 1 }))).toBeTruthy();
+  });
+
+  it('sem referências para as anotações da marcação, não há aviso de referências', () => {
+    const harness = createHarness(sampleProject());
+    const { dialog } = open(harness, {
+      kind: 'deleteMarking',
+      marking: marking(harness, 'M1'),
+    });
+    expect(dialog.queryByText(/referência/)).toBeNull();
+  });
+
   it('com descendentes trancados, avisa quantos serão excluídos junto', () => {
     const harness = createHarness(sampleProject());
     harness.actions.setMarkingLocked('M2', true);
