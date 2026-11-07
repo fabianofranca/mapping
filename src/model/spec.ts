@@ -7,7 +7,7 @@ import { childSets } from './specChildren';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 12), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
+// Formato da especialização (`formatVersion` 1 a 13), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
 // biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
@@ -28,7 +28,8 @@ export { isPackagePath };
 // `{ layer, groups? }` e a camada e o tipo têm `groups`; o resolvedor é `specChildren.ts`), os
 // papéis no vínculo (`childRoles` e `childRolesLabel`) e o documento em repositório externo
 // (`docRepos` na raiz e `doc` como objeto `{ repo, path }`); a versão 12 é a 11 mais os passos
-// de papel em `migrations` (`rename-role`, `remove-role` e `set-role`).
+// de papel em `migrations` (`rename-role`, `remove-role` e `set-role`); a versão 13 é a 12 mais
+// `allowedChildren` com tipos da camada do próprio dono (vínculo entre anotações da mesma camada).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -41,9 +42,9 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 12;
+export const SPEC_FORMAT_VERSION = 13;
 /** Versões aceitas na importação. */
-export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+export const SPEC_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
 export type SimpleFieldType = 'string' | 'number' | 'date' | 'enum';
@@ -2082,6 +2083,9 @@ function layerGroupIndex(
   return byId;
 }
 
+/** A partir desta `formatVersion`, `allowedChildren` aceita tipos da camada do próprio dono. */
+const SAME_LAYER_VERSION = 13;
+
 /** Uma cláusula de `allowedChildren` (v11): a camada existe, é outra e os grupos são dela. */
 function checkChildClause(
   clause: SpecChildClause,
@@ -2089,13 +2093,14 @@ function checkChildClause(
   layers: ReadonlyMap<string, { index: number; groups: ReadonlySet<string> }>,
   path: (string | number)[],
   add: IssueAdder,
+  formatVersion: number,
 ): void {
   const target = layers.get(clause.layer);
   if (target === undefined) {
     add([...path, 'layer'], `camada "${clause.layer}" não existe na especialização`);
     return;
   }
-  if (target.index === li) {
+  if (target.index === li && formatVersion < SAME_LAYER_VERSION) {
     add(
       [...path, 'layer'],
       `camada "${clause.layer}" é a do próprio tipo; filhos devem estar em outra camada`,
@@ -2111,18 +2116,19 @@ function checkChildClause(
   });
 }
 
-/** Um id de tipo de `allowedChildren`: existe e está em outra camada. */
+/** Um id de tipo de `allowedChildren`: existe e, antes da v13, está em outra camada. */
 function checkChildId(
   childId: string,
   li: number,
   typeLayer: ReadonlyMap<string, number>,
   path: (string | number)[],
   add: IssueAdder,
+  formatVersion: number,
 ): void {
   const childLayer = typeLayer.get(childId);
   if (childLayer === undefined) {
     add(path, `tipo "${childId}" não existe na especialização`);
-  } else if (childLayer === li) {
+  } else if (childLayer === li && formatVersion < SAME_LAYER_VERSION) {
     add(
       path,
       `tipo "${childId}" está na mesma camada; filhos devem estar em outra camada`,
@@ -2141,13 +2147,14 @@ function checkAllowedChildren(
   eachV11Type(spec.layers, (type, _layer, path, li) => {
     (type.allowedChildren ?? []).forEach((item, ci) => {
       const itemPath = [...path, 'allowedChildren', ci];
-      if (typeof item === 'string') checkChildId(item, li, typeLayer, itemPath, add);
+      if (typeof item === 'string')
+        checkChildId(item, li, typeLayer, itemPath, add, spec.formatVersion);
       else if (
         spec.formatVersion >= 11 &&
         isRecord(item) &&
         typeof item.layer === 'string'
       ) {
-        checkChildClause(item, li, layers, itemPath, add);
+        checkChildClause(item, li, layers, itemPath, add, spec.formatVersion);
       }
     });
   });
@@ -2235,6 +2242,7 @@ export const specSchema = z
         z.literal(10),
         z.literal(11),
         z.literal(12),
+        z.literal(13),
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,

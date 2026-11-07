@@ -226,7 +226,7 @@ interface LinkNode {
   readonly linked?: LinkNode[];
 }
 
-/** Árvore de vínculos das anotações da marcação: dona → vinculadas (podem estar em outras camadas). */
+/** Árvore de vínculos das anotações da marcação: dona → vinculadas (da mesma camada ou de outras). */
 function linkTree(refs: Refs, own: readonly Annotation[]): LinkNode[] | null {
   const p = refs.project;
   const index = projectIndex(p);

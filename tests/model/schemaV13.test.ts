@@ -65,7 +65,7 @@ function v13Me0Raw(): Raw {
 
 describe('migração v12 → v13 (sem herança)', () => {
   it('o registro tem a migração v12 → v13', () => {
-    expect(SCHEMA_VERSION).toBe(14);
+    expect(SCHEMA_VERSION).toBe(15);
     expect(migrations.get(12)).toBe(migrateFrom12To13);
   });
 
@@ -74,7 +74,7 @@ describe('migração v12 → v13 (sem herança)', () => {
     const result = load(JSON.stringify(raw));
     expect(result.migratedFrom).toBe(12);
     expect(result.readOnly).toBe(false);
-    expect(result.project.schemaVersion).toBe(14);
+    expect(result.project.schemaVersion).toBe(15);
     expect(result.project.annotations.map((a) => a.id)).toEqual(
       raw.annotations.map((a: Raw) => a.id),
     );
@@ -86,7 +86,7 @@ describe('migração v12 → v13 (sem herança)', () => {
     const result = load(JSON.stringify(v12Raw()));
     const saved = serialize(result.project);
     const data = JSON.parse(saved) as Raw;
-    expect(data.schemaVersion).toBe(14);
+    expect(data.schemaVersion).toBe(15);
     for (const a of data.annotations) expect(a).not.toHaveProperty('inherit');
     expect(saved).not.toContain('"inherit"');
     const again = load(saved);
@@ -162,7 +162,7 @@ describe('migração v12 → v13 (sem herança)', () => {
 });
 
 describe('abertura de um v13 (anterior aos campos de pertencimento)', () => {
-  it('sem `floating` nem `parentId` de container (v13 da ME0): abre com os padrões (migra só v13 → v14)', () => {
+  it('sem `floating` nem `parentId` de container (v13 da ME0): abre com os padrões (migra só v13 → v15)', () => {
     const result = load(JSON.stringify(v13Me0Raw()));
     expect(result.migratedFrom).toBe(13);
     expect(result.project).toEqual(sampleProject());

@@ -1,6 +1,6 @@
 // @vitest-environment node
 // Migração v13 → v14 pelo caminho das anteriores (etapa #559, PD2): o original vai para
-// `backups/mapping.v13.…`, o salvamento grava v14 e a faixa (`backupSaved`) mostra a versão.
+// `backups/mapping.v13.…`, o salvamento grava v15 e a faixa (`backupSaved`) mostra a versão.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { deserialize, serialize, specFiles } from '../../src/model';
 import { createFolderStorage } from '../../src/storage/folder';
@@ -24,7 +24,7 @@ describe('sessão: projeto v13', () => {
     session = null;
   });
 
-  it('o original vai para backups/mapping.v13.… e o salvamento grava v14 com os vínculos sem papel', async () => {
+  it('o original vai para backups/mapping.v13.… e o salvamento grava v15 com os vínculos sem papel', async () => {
     const root = new MemoryDirectory('p');
     const project = cadastroProject();
     const raw = JSON.parse(serialize(project)) as Record<string, unknown> & {
@@ -65,7 +65,7 @@ describe('sessão: projeto v13', () => {
       docRepos: unknown;
       annotations: { parentRole: unknown }[];
     };
-    expect(saved.schemaVersion).toBe(14);
+    expect(saved.schemaVersion).toBe(15);
     expect(saved.docRepos).toEqual({});
     expect(saved.annotations.every((a) => a.parentRole === null)).toBe(true);
     expect(session.backupSaved.value).toBe(13);

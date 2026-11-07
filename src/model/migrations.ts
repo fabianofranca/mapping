@@ -285,6 +285,13 @@ export const migrateFrom13To14: Migration = (data) => ({
   annotations: mapItems(data.annotations, (a) => ({ parentRole: null, ...a })),
 });
 
+/**
+ * v14 → v15 (vínculo entre anotações da mesma camada): só a versão muda. O formato do arquivo é o
+ * mesmo; a versão nova existe para que um app anterior (que recusaria o vínculo na mesma camada)
+ * abra o arquivo só para leitura.
+ */
+export const migrateFrom14To15: Migration = (data) => data;
+
 /** Registro de migrações: a chave é a versão de origem. */
 export const migrations: ReadonlyMap<number, Migration> = new Map([
   [1, migrateFrom1To2],
@@ -300,6 +307,7 @@ export const migrations: ReadonlyMap<number, Migration> = new Map([
   [11, migrateFrom11To12],
   [12, migrateFrom12To13],
   [13, migrateFrom13To14],
+  [14, migrateFrom14To15],
 ]);
 
 export type MigrationResult =

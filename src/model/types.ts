@@ -1,9 +1,9 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v13). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
+// Tipos do `mapping.json` (schema v15). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
