@@ -408,6 +408,12 @@ function checkShadow(value: unknown, path: string, out: ComponentIssue[]): void 
   if ('blur' in value) checkNonNegative(value.blur, join(path, 'blur'), out);
 }
 
+/** `font.maxLines`: inteiro maior ou igual a 1. */
+const checkPositiveInteger: Check = (v, p, out) => {
+  if (!Number.isInteger(v) || (v as number) < 1)
+    add(out, p, 'esperava inteiro maior ou igual a 1');
+};
+
 function checkFont(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   const specs: Record<string, Check> = {
@@ -420,11 +426,15 @@ function checkFont(value: unknown, path: string, out: ComponentIssue[]): void {
     align: oneOf(['left', 'center', 'right']),
     verticalAlign: oneOf(['top', 'middle', 'bottom']),
     decoration: oneOf(['none', 'underline', 'line-through']),
+    wrap: oneOf(['word', 'none']),
+    ellipsis: checkBoolean,
+    maxLines: checkPositiveInteger,
   };
   checkKeys(value, Object.keys(specs), path, out);
   for (const [key, check] of Object.entries(specs)) {
     if (!(key in value)) continue;
-    if (key === 'italic') checkBoolExpr(value[key], join(path, key), out);
+    if (key === 'italic' || key === 'ellipsis')
+      checkBoolExpr(value[key], join(path, key), out);
     else checkExpr(value[key], join(path, key), check, out);
   }
 }
@@ -637,6 +647,9 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['minHeight'],
   ['maxHeight'],
   ['distribute'],
+  ['font', 'wrap'],
+  ['font', 'ellipsis'],
+  ['font', 'maxLines'],
 ];
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */

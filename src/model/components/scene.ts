@@ -123,6 +123,12 @@ export interface TextStyle {
   readonly align: 'left' | 'center' | 'right' | 'justify';
   readonly verticalAlign: 'top' | 'middle' | 'bottom';
   readonly decoration?: 'underline' | 'line-through';
+  /** `none` = uma linha por parágrafo (ausente = quebra por palavra). */
+  readonly wrap?: 'none';
+  /** O texto que não cabe termina em `…`. */
+  readonly ellipsis?: true;
+  /** Máximo de linhas desenhadas. */
+  readonly maxLines?: number;
 }
 
 interface NodeBase {

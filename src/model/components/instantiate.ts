@@ -98,19 +98,30 @@ export interface Box {
 export interface TextMetrics {
   readonly width: number;
   readonly height: number;
+  /** As linhas como serão desenhadas (já com o `…`), quando o medidor sabe dizê-las. */
+  readonly lines?: readonly string[];
+}
+
+/** A fonte entregue ao medidor: tamanhos já em px; `wrap`/`ellipsis`/`maxLines` só na v4. */
+export interface MeasureFont {
+  family: string;
+  size: number;
+  weight: number;
+  italic: boolean;
+  lineHeight: number;
+  letterSpacing: number;
+  /** `none` = uma linha por parágrafo (ausente = `word`). */
+  wrap?: 'word' | 'none';
+  /** O texto que não cabe (na largura com `wrap: none`, ou além de `maxLines`) termina em `…`. */
+  ellipsis?: boolean;
+  /** Inteiro ≥ 1; as linhas além dele são cortadas. */
+  maxLines?: number;
 }
 
 /** Mede um texto com a fonte dada (largura máxima opcional, para quebra de linha). */
 export type TextMeasurer = (
   text: string,
-  font: {
-    family: string;
-    size: number;
-    weight: number;
-    italic: boolean;
-    lineHeight: number;
-    letterSpacing: number;
-  },
+  font: MeasureFont,
   maxWidth?: number,
 ) => TextMetrics;
 
@@ -134,42 +145,81 @@ export interface Instantiated {
 // Medidor aproximado
 // ---------------------------------------------------------------------------------------
 
+/** Quebra um parágrafo por palavras (uma palavra maior que a largura fica sozinha na linha). */
+function wrapWords(
+  paragraph: string,
+  widthOf: (text: string) => number,
+  maxWidth: number,
+): string[] {
+  const words = paragraph.split(' ').filter((word) => word !== '');
+  if (words.length === 0) return [''];
+  const lines: string[] = [];
+  let current = words[0] ?? '';
+  for (const word of words.slice(1)) {
+    const candidate = `${current} ${word}`;
+    if (widthOf(candidate) > maxWidth + 1e-9) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  lines.push(current);
+  return lines;
+}
+
+/** Tira letras do fim até `line` + `…` caber em `maxWidth` (sempre sobra ao menos o `…`). */
+function withEllipsis(
+  line: string,
+  widthOf: (text: string) => number,
+  maxWidth: number | undefined,
+): string {
+  let kept = line;
+  while (
+    maxWidth !== undefined &&
+    kept.length > 0 &&
+    widthOf(`${kept}…`) > maxWidth + 1e-9
+  )
+    kept = kept.slice(0, -1).trimEnd();
+  return `${kept}…`;
+}
+
+/** Aplica `maxLines` e `ellipsis` às linhas já quebradas. */
+function clipLines(
+  lines: readonly string[],
+  font: MeasureFont,
+  widthOf: (text: string) => number,
+  maxWidth: number | undefined,
+): string[] {
+  const limit = font.maxLines;
+  const cut = limit !== undefined && lines.length > limit;
+  const kept = cut ? lines.slice(0, limit) : [...lines];
+  if (font.ellipsis !== true) return kept;
+  const last = kept.length - 1;
+  return kept.map((line, i) => {
+    const tooWide = maxWidth !== undefined && widthOf(line) > maxWidth + 1e-9;
+    return (cut && i === last) || tooWide ? withEllipsis(line, widthOf, maxWidth) : line;
+  });
+}
+
 /**
  * Medidor aproximado sem canvas (testes e Node): largura ≈ 0,55·tamanho por caractere (0,6 se
  * o peso for ≥ 600) mais o espaçamento entre letras; altura = linhas × altura de linha. Com
- * `maxWidth`, quebra por palavras (uma palavra maior que a largura fica sozinha na linha).
+ * `maxWidth`, quebra por palavras (uma palavra maior que a largura fica sozinha na linha);
+ * `wrap: none` é uma linha por parágrafo, `maxLines` corta e `ellipsis` põe o `…`.
  */
 export const approximateMeasurer: TextMeasurer = (text, font, maxWidth) => {
   const charWidth = font.size * (font.weight >= 600 ? 0.6 : 0.55) + font.letterSpacing;
-  const textWidth = (chars: number) => Math.max(0, chars * charWidth);
-  let lines = 0;
-  let widest = 0;
-  for (const paragraph of text.split('\n')) {
-    if (maxWidth === undefined) {
-      lines += 1;
-      widest = Math.max(widest, textWidth(paragraph.length));
-      continue;
-    }
-    const words = paragraph.split(' ').filter((word) => word !== '');
-    if (words.length === 0) {
-      lines += 1;
-      continue;
-    }
-    let current = 0;
-    for (const word of words) {
-      const candidate = current === 0 ? word.length : current + 1 + word.length;
-      if (current > 0 && textWidth(candidate) > maxWidth + 1e-9) {
-        lines += 1;
-        widest = Math.max(widest, textWidth(current));
-        current = word.length;
-      } else {
-        current = candidate;
-      }
-    }
-    lines += 1;
-    widest = Math.max(widest, textWidth(current));
-  }
-  return { width: widest, height: Math.max(1, lines) * font.lineHeight };
+  const widthOf = (value: string) => Math.max(0, value.length * charWidth);
+  const breaks = maxWidth !== undefined && font.wrap !== 'none';
+  const raw = text
+    .split('\n')
+    .flatMap((paragraph) =>
+      breaks ? wrapWords(paragraph, widthOf, maxWidth) : [paragraph],
+    );
+  const lines = clipLines(raw, font, widthOf, maxWidth);
+  const widest = lines.reduce((max, line) => Math.max(max, widthOf(line)), 0);
+  return { width: widest, height: Math.max(1, lines.length) * font.lineHeight, lines };
 };
 
 // ---------------------------------------------------------------------------------------
@@ -250,6 +300,8 @@ interface Plan {
 }
 
 const EPS = 0.001;
+/** Tolerância (px) do excesso que vem de texto: o DOM e o canvas diferem em frações de pixel. */
+const TEXT_TOLERANCE = 1;
 const FLEX_EPS = 1e-9;
 const NO_SIZE_LIMIT: SizeLimit = { min: 0, max: Infinity };
 const NO_LIMITS: Limits = { w: null, h: null };
@@ -352,11 +404,22 @@ function createEngine(
 
   // --- texto ----------------------------------------------------------------------------
 
-  const textFont = (node: TextTemplate) => {
+  /** `wrap`, `ellipsis` e `maxLines` do nó; só entram quando diferem do padrão. */
+  const textWrapping = (font: FontSpec): Partial<MeasureFont> => {
+    const maxLines = Math.floor(num(font.maxLines, 0));
+    return {
+      ...(oneOf(font.wrap, ['word', 'none'], 'word') === 'none' ? { wrap: 'none' } : {}),
+      ...(bool(font.ellipsis, false) ? { ellipsis: true } : {}),
+      ...(maxLines >= 1 ? { maxLines } : {}),
+    };
+  };
+
+  const textFont = (node: TextTemplate): MeasureFont => {
     const font: FontSpec = node.font ?? {};
     const size = Math.max(0, num(font.size, 14));
     const lh = num(font.lineHeight, 1.2);
     return {
+      ...textWrapping(font),
       family: str(font.family, FALLBACK_FONT_FAMILY),
       size,
       weight: num(font.weight, 400),
@@ -656,6 +719,7 @@ function createEngine(
     sizes: readonly (number | 'fill')[],
     limits: readonly SizeLimit[],
     content: number | null,
+    tolerance: number,
   ): number[] => {
     const fills = sizes.filter((s) => s === 'fill').length;
     const fixed = sizes.reduce<number>((sum, s) => sum + (s === 'fill' ? 0 : s), 0);
@@ -664,7 +728,7 @@ function createEngine(
       if (fills > 0) warn('fill dentro de hug vira 0');
     } else {
       const remaining = content - fixed - layout.gap * Math.max(0, sizes.length - 1);
-      if (remaining < -EPS) warn(`conteúdo maior que a caixa: ${nodeName(frame)}`);
+      if (remaining < -tolerance) warn(`conteúdo maior que a caixa: ${nodeName(frame)}`);
       free = Math.max(0, remaining);
     }
     const shares = distributeFill(
@@ -689,12 +753,13 @@ function createEngine(
       const size = kidSize(kid, axis, space, others?.[i], layout);
       return size === 'fill' ? size : clampTo(limits[i] ?? NO_SIZE_LIMIT, size);
     });
+    const tolerance = kids.some((kid) => kid.node.type === 'text') ? TEXT_TOLERANCE : EPS;
     if (layout.main === axis)
-      return resolveMain(frame, layout, sizes, limits, space.content);
+      return resolveMain(frame, layout, sizes, limits, space.content, tolerance);
     const numbers = sizes.map((s) => (s === 'fill' ? 0 : s));
     if (layout.kind !== 'none' && space.content !== null) {
       const content = space.content;
-      if (numbers.some((s) => s > content + EPS))
+      if (numbers.some((s) => s > content + tolerance))
         warn(`conteúdo maior que a caixa: ${nodeName(frame)}`);
     }
     return numbers;
@@ -1010,6 +1075,19 @@ function createEngine(
     };
   };
 
+  /** As linhas quebradas passam da altura do nó e nada as corta (`maxLines`/`ellipsis`)? */
+  const warnTextTooTall = (
+    node: TextTemplate,
+    text: string,
+    font: MeasureFont,
+    w: number,
+    h: number,
+  ): void => {
+    if (font.maxLines !== undefined || font.ellipsis === true || w <= EPS) return;
+    if (options.measure(text, font, w).height > h + TEXT_TOLERANCE)
+      warn(`texto maior que a caixa: ${nodeName(node)}`);
+  };
+
   const buildText = (
     node: TextTemplate,
     id: string,
@@ -1035,7 +1113,12 @@ function createEngine(
       align: oneOf(font0.align, ['left', 'center', 'right'], 'left'),
       verticalAlign: oneOf(font0.verticalAlign, ['top', 'middle', 'bottom'], 'top'),
       ...(decoration === 'none' ? {} : { decoration }),
+      ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
+      ...(font.ellipsis === true ? { ellipsis: true } : {}),
+      ...(font.maxLines !== undefined ? { maxLines: font.maxLines } : {}),
     };
+    const text = evaluateText(node.text, values, '');
+    warnTextTooTall(node, text, font, w, h);
     const color = str(node.color, '#000000');
     const stroke = strokeOf(node.stroke, 'inside', 1);
     return {
@@ -1043,7 +1126,7 @@ function createEngine(
       fills: isNone(color) ? [] : [{ type: 'solid', color }],
       ...(stroke ? { stroke } : {}),
       type: 'text',
-      text: evaluateText(node.text, values, ''),
+      text,
       style,
     };
   };
