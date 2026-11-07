@@ -4,9 +4,11 @@ import {
   fieldLabel,
   findCellRefTargets,
   findRefTargets,
+  acceptedAnnotationTypes,
   parseRefValue,
   projectIndex,
   tableRows,
+  typeOfAnnotation,
   type Annotation,
   type Project,
   type RefTarget,
@@ -34,10 +36,11 @@ export interface RefCellTarget {
   readonly rowId: string;
 }
 
-/** Aba do filtro: todos, uma etiqueta aceita ou só as tuplas livres. */
+/** Aba do filtro: todos, uma etiqueta aceita, um tipo de anotação aceito ou só as tuplas livres. */
 type Filter =
   | { readonly kind: 'all' }
   | { readonly kind: 'tag'; readonly tag: string }
+  | { readonly kind: 'type'; readonly typeId: string; readonly name: string }
   | { readonly kind: 'free' };
 
 interface TargetGroup {
@@ -73,28 +76,63 @@ function groupTargets(project: Project, targets: readonly RefTarget[]): TargetGr
   return [...groups.values()];
 }
 
-function noTargetsMessage(field: RefFieldDef): string {
+function noTargetsMessage(field: RefFieldDef, typeNames: readonly string[]): string {
   const tags = (field.accepts.tags ?? []).join(', ');
+  if (tags === '' && !field.accepts.free && typeNames.length > 0) {
+    return t('ref.noTargetsAnnotations', { types: typeNames.join(', ') });
+  }
   if (tags !== '' && field.accepts.free) return t('ref.noTargetsTagsFree', { tags });
   if (tags !== '') return t('ref.noTargetsTags', { tags });
   return t('ref.noTargetsFree');
 }
 
-/** "aceita: data-field e livres". */
-function acceptsText(field: RefFieldDef): string {
-  const parts = [...(field.accepts.tags ?? [])];
+/** "aceita: data-field, Modelo e livres". */
+function acceptsText(field: RefFieldDef, typeNames: readonly string[]): string {
+  const parts = [...(field.accepts.tags ?? []), ...typeNames];
   if (field.accepts.free) parts.push(t('ref.free'));
   return t('ref.accepts', { what: parts.join(t('ref.acceptsJoin')) });
 }
 
-function matches(filter: Filter, target: RefTarget): boolean {
+/** Tipo do alvo quando ele é uma anotação inteira (`{ annotationId }`); `null` nos outros formatos. */
+function wholeAnnotationType(
+  project: Project,
+  target: RefTarget,
+): { readonly typeId: string; readonly name: string } | null {
+  if ('key' in target.ref || 'entryId' in target.ref) return null;
+  const type = typeOfAnnotation(project, target.annotation)?.type;
+  return type ? { typeId: type.id, name: type.name } : null;
+}
+
+function matches(project: Project, filter: Filter, target: RefTarget): boolean {
   if (filter.kind === 'all') return true;
-  if (filter.kind === 'free') return target.tags.length === 0;
+  const whole = wholeAnnotationType(project, target);
+  if (filter.kind === 'type') return whole?.typeId === filter.typeId;
+  if (filter.kind === 'free') return whole === null && target.tags.length === 0;
   return target.tags.includes(filter.tag);
 }
 
 const filterId = (filter: Filter) =>
-  filter.kind === 'tag' ? `tag:${filter.tag}` : filter.kind;
+  filter.kind === 'tag'
+    ? `tag:${filter.tag}`
+    : filter.kind === 'type'
+      ? `type:${filter.typeId}`
+      : filter.kind;
+
+const filterLabel = (filter: Filter) =>
+  filter.kind === 'all'
+    ? t('ref.filterAll')
+    : filter.kind === 'free'
+      ? t('ref.filterFree')
+      : filter.kind === 'type'
+        ? filter.name
+        : filter.tag;
+
+/** Texto da etiqueta do alvo: as etiquetas, o tipo (anotação inteira) ou "livre". */
+function optionTagText(project: Project, target: RefTarget): string {
+  const whole = wholeAnnotationType(project, target);
+  if (whole) return whole.name;
+  return target.tags.length > 0 ? target.tags.join(', ') : t('ref.freeTag');
+}
 
 /** Texto com o trecho buscado em `<mark>`. */
 function Highlight({ text, needle }: { readonly text: string; readonly needle: string }) {
@@ -161,27 +199,27 @@ export function RefPicker({
   const origin = useFocusOrigin();
   useModal(dialog, origin, returnFocus, () => input.current?.focus());
 
+  const acceptedTypes = acceptedAnnotationTypes(project, annotation.id, field.accepts);
+  const typeNames = acceptedTypes.map((type) => type.name);
   const filters: Filter[] = [
     ...(field.accepts.tags ?? []).map((tag) => ({ kind: 'tag', tag }) as const),
+    ...acceptedTypes.map(
+      (type) => ({ kind: 'type', typeId: type.id, name: type.name }) as const,
+    ),
     ...(field.accepts.free ? [{ kind: 'free' } as const] : []),
   ];
   const tabs: TabItem<string>[] =
     filters.length > 1
       ? [{ kind: 'all' } as const, ...filters].map((f) => ({
           id: filterId(f),
-          label:
-            f.kind === 'all'
-              ? t('ref.filterAll')
-              : f.kind === 'free'
-                ? t('ref.filterFree')
-                : f.tag,
+          label: filterLabel(f),
         }))
       : [];
 
   const needle = query.trim().toLocaleLowerCase();
   const groups = groupTargets(
     project,
-    targets.filter((target) => matches(filter, target)),
+    targets.filter((target) => matches(project, filter, target)),
   )
     .map((g) => ({
       ...g,
@@ -235,11 +273,13 @@ export function RefPicker({
       <div class="picker-body">
         <div class="picker-head">
           <h2 id={titleId}>{t('ref.pickerTitle', { field: fieldLabel(field) })}</h2>
-          <span class="picker-accepts">{acceptsText(field)}</span>
+          <span class="picker-accepts">{acceptsText(field, typeNames)}</span>
           <IconButton icon="close" label={t('common.close')} onClick={onClose} />
         </div>
         {targets.length === 0 ? (
-          <p class="notice notice-info picker-empty">{noTargetsMessage(field)}</p>
+          <p class="notice notice-info picker-empty">
+            {noTargetsMessage(field, typeNames)}
+          </p>
         ) : (
           <>
             <div class="picker-search">
@@ -317,7 +357,7 @@ export function RefPicker({
                           <span class="picker-current">{t('ref.current')}</span>
                         )}
                         <span class="picker-option-tag">
-                          {item.tags.length > 0 ? item.tags.join(', ') : t('ref.freeTag')}
+                          {optionTagText(project, item)}
                         </span>
                       </div>
                     );

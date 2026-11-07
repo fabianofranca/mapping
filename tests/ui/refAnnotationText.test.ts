@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { setFieldValue, setTableCell, addTableRow, type Proposal } from '../../src/model';
-import { tableLines } from '../../src/ui/review/changeText';
+import {
+  setFieldValue,
+  setTableCell,
+  addTableRow,
+  type Change,
+  type Proposal,
+} from '../../src/model';
+import { tableLines, valueParts } from '../../src/ui/review/changeText';
 import { world } from '../model/refAnnotationFixtures';
 
 // `ref` para a anotação inteira (etapa #679, CF1) na revisão da proposta: trocar o alvo de uma
@@ -22,5 +28,15 @@ describe('tableLines com a célula ref para a anotação inteira', () => {
     const after = rows(swapped);
     expect(after).toEqual([{ id: 'I1', text: 'alvo: Avulso' }]);
     expect(after).not.toEqual(before);
+  });
+});
+
+describe('valueParts com o campo ref para a anotação inteira', () => {
+  it('mostra o rótulo do alvo, não o JSON', () => {
+    const names = { current: world(), preview: null, proposal: {} as Proposal };
+    const change = { kind: 'update', field: 'values.item' } as unknown as Change;
+    expect(valueParts(names, change, { annotationId: 'AM' })).toEqual([
+      { text: 'Cliente' },
+    ]);
   });
 });
