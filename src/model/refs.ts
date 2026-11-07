@@ -1,8 +1,24 @@
 import { fail, ModelError } from './errors';
 import { memoByProject, projectIndex } from './projectIndex';
-import type { SpecField, SpecRefAccepts, SpecRefColumn } from './spec';
-import { fieldOf, sharesTag, typeOfAnnotation } from './specLookup';
-import type { Annotation, Entry, JsonValue, Project, RefValue, TableRow } from './types';
+import type {
+  Spec,
+  SpecAnnotationType,
+  SpecField,
+  SpecRefAccepts,
+  SpecRefColumn,
+} from './spec';
+import { resolveTypeItems } from './specChildren';
+import { fieldOf, getSpec, sharesTag, typeOfAnnotation } from './specLookup';
+import type {
+  Annotation,
+  Entry,
+  FieldRef,
+  JsonValue,
+  Project,
+  RefValue,
+  RowRef,
+  TableRow,
+} from './types';
 
 // Referências fortes (`ref`) entre anotações. Ver docs/FORMAT.md, "Referências (`ref`)".
 
@@ -35,26 +51,32 @@ function nonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value !== '';
 }
 
-/** Interpreta um valor como referência; `null` se não tiver um dos três formatos. */
+/** Chaves além de `annotationId` de cada formato de `ref` (as chaves ordenadas e unidas). */
+const REF_SHAPES: ReadonlyMap<string, readonly ('entryId' | 'key' | 'rowId')[]> = new Map(
+  [
+    ['annotationId', []],
+    ['annotationId,entryId', ['entryId']],
+    ['annotationId,key', ['key']],
+    ['annotationId,key,rowId', ['key', 'rowId']],
+  ],
+);
+
+/** Interpreta um valor como referência; `null` se não tiver um dos quatro formatos. */
 export function parseRefValue(value: JsonValue | undefined): RefValue | null {
   if (!isRecord(value) || !nonEmptyString(value.annotationId)) return null;
-  const keys = Object.keys(value).sort().join(',');
-  const { annotationId } = value;
-  if (keys === 'annotationId,entryId' && nonEmptyString(value.entryId)) {
-    return { annotationId, entryId: value.entryId };
+  const extra = REF_SHAPES.get(Object.keys(value).sort().join(','));
+  if (!extra) return null;
+  const parsed: { [key: string]: string } = { annotationId: value.annotationId };
+  for (const name of extra) {
+    const part = value[name];
+    if (!nonEmptyString(part)) return null;
+    parsed[name] = part;
   }
-  if (keys === 'annotationId,key,rowId' && nonEmptyString(value.key)) {
-    if (nonEmptyString(value.rowId)) {
-      return { annotationId, key: value.key, rowId: value.rowId };
-    }
-  }
-  if (keys === 'annotationId,key' && nonEmptyString(value.key)) {
-    return { annotationId, key: value.key };
-  }
-  return null;
+  return parsed as unknown as RefValue;
 }
 
 export type ResolvedRef =
+  | { readonly kind: 'annotation'; readonly annotation: Annotation }
   | { readonly kind: 'entry'; readonly annotation: Annotation; readonly entry: Entry }
   | {
       readonly kind: 'row';
@@ -86,6 +108,16 @@ export function resolveRef(p: Project, ref: RefValue): ResolvedRef | null {
       ? { kind: 'entry', annotation, entry }
       : null;
   }
+  if (!('key' in ref)) return { kind: 'annotation', annotation };
+  return resolveValueRef(p, annotation, ref);
+}
+
+/** Alvo de linha ou de campo (`key`, com ou sem `rowId`) numa anotação com valores. */
+function resolveValueRef(
+  p: Project,
+  annotation: Annotation,
+  ref: RowRef | FieldRef,
+): ResolvedRef | null {
   if (!annotation.values) return null;
   const type = typeOfAnnotation(p, annotation)?.type ?? null;
   const field = type ? fieldOf(type, ref.key) : null;
@@ -113,6 +145,10 @@ export function refTargetText(p: Project, ref: RefValue): string | null {
   const text = (value: JsonValue | undefined): string | null =>
     nonEmptyString(value) ? value : typeof value === 'number' ? String(value) : null;
   switch (target.kind) {
+    case 'annotation':
+      return target.annotation.type
+        ? annotationRefLabel(p, target.annotation)
+        : instanceLabel(p, target.annotation);
     case 'entry':
       return nonEmptyString(target.entry.key) ? target.entry.key : null;
     case 'row': {
@@ -154,6 +190,8 @@ export function refLabel(
   if (!target) return texts.broken;
   const owner = annotationRefLabel(p, target.annotation, texts);
   switch (target.kind) {
+    case 'annotation':
+      return owner;
     case 'entry':
       return `${owner}.${target.entry.key}`;
     case 'row': {
@@ -169,9 +207,41 @@ export function refLabel(
 
 const SIMPLE_TYPES: ReadonlySet<string> = new Set(['string', 'number', 'date', 'enum']);
 
+/** A especialização da anotação de origem de uma referência (resolve `accepts.annotations`). */
+export interface AcceptContext {
+  readonly specId: string;
+  readonly spec: Spec;
+}
+
+/** Contexto da anotação de origem; `null` se ela é livre ou a especialização não está aplicada. */
+export function acceptContextOf(
+  p: Project,
+  sourceAnnotationId: string,
+): AcceptContext | null {
+  const source = projectIndex(p).annotations.get(sourceAnnotationId);
+  if (!source?.type) return null;
+  const spec = getSpec(p, source.type.specId);
+  return spec ? { specId: source.type.specId, spec } : null;
+}
+
+/**
+ * Decide se uma anotação inteira é alvo aceito: tipada, da MESMA especialização da origem e de um
+ * tipo coberto por `accepts.annotations`. Os ids cobertos são resolvidos uma vez.
+ */
+function annotationMatcher(
+  accepts: SpecRefAccepts,
+  context: AcceptContext | null,
+): (a: Annotation) => boolean {
+  if (!context || !accepts.annotations) return () => false;
+  const covered = new Set(resolveTypeItems(context.spec, accepts.annotations));
+  return (a) =>
+    a.type !== null && a.type.specId === context.specId && covered.has(a.type.typeId);
+}
+
 /**
  * `true` se o alvo existe e é aceito por `accepts`: tupla livre com `free`, linha
- * de `table` ou campo simples com alguma das etiquetas. Nunca a própria anotação.
+ * de `table` ou campo simples com alguma das etiquetas, ou a anotação inteira de um tipo de
+ * `accepts.annotations`. Nunca a própria anotação.
  */
 export function isRefAccepted(
   p: Project,
@@ -181,12 +251,25 @@ export function isRefAccepted(
 ): boolean {
   if (ref.annotationId === sourceAnnotationId) return false;
   const target = resolveRef(p, ref);
-  return target !== null && isTargetAccepted(target, accepts);
+  return (
+    target !== null &&
+    isTargetAccepted(target, accepts, acceptContextOf(p, sourceAnnotationId))
+  );
 }
 
-/** `true` se o alvo já resolvido é aceito por `accepts` (ver `isRefAccepted`). */
-export function isTargetAccepted(target: ResolvedRef, accepts: SpecRefAccepts): boolean {
+/**
+ * `true` se o alvo já resolvido é aceito por `accepts` (ver `isRefAccepted`). `context` é a
+ * especialização da anotação de origem (`acceptContextOf`); sem ela, nenhuma anotação inteira
+ * é aceita.
+ */
+export function isTargetAccepted(
+  target: ResolvedRef,
+  accepts: SpecRefAccepts,
+  context: AcceptContext | null = null,
+): boolean {
   switch (target.kind) {
+    case 'annotation':
+      return annotationMatcher(accepts, context)(target.annotation);
     case 'entry':
       return accepts.free === true;
     case 'row':
@@ -236,12 +319,38 @@ export interface RefTarget {
   readonly label: string;
   /**
    * Por que o alvo é aceito: as etiquetas do campo que o campo `ref` aceita (linha de
-   * tabela ou campo simples); vazio na tupla livre. Serve ao filtro do seletor.
+   * tabela ou campo simples); vazio na tupla livre e na anotação inteira. Serve ao filtro do
+   * seletor.
    */
   readonly tags: readonly string[];
 }
 
-/** Alvos aceitos por `accepts`, na ordem do projeto, nunca a anotação de origem. */
+/** Alvos de campo e de linha de uma anotação tipada, pelas etiquetas de `accepts.tags`. */
+function fieldTargets(
+  a: Annotation,
+  type: SpecAnnotationType,
+  accepts: SpecRefAccepts,
+  push: (ref: RefValue, annotation: Annotation, tags?: readonly string[]) => void,
+): void {
+  if (!a.values) return;
+  for (const f of type.fields) {
+    if (!sharesTag(f.tags, accepts.tags)) continue;
+    const tags = (f.tags ?? []).filter((tag) => accepts.tags?.includes(tag));
+    if (f.type === 'table') {
+      for (const row of tableRows(a.values[f.key])) {
+        push({ annotationId: a.id, key: f.key, rowId: row._id }, a, tags);
+      }
+    } else if (SIMPLE_TYPES.has(f.type)) {
+      push({ annotationId: a.id, key: f.key }, a, tags);
+    }
+  }
+}
+
+/**
+ * Alvos aceitos por `accepts`, na ordem do projeto, nunca a anotação de origem: de cada
+ * anotação, ela inteira (se o tipo é coberto por `accepts.annotations`) e depois os campos e
+ * linhas com etiqueta aceita.
+ */
 function targetsAccepted(
   p: Project,
   sourceAnnotationId: string,
@@ -251,6 +360,10 @@ function targetsAccepted(
   const targets: RefTarget[] = [];
   const push = (ref: RefValue, annotation: Annotation, tags: readonly string[] = []) =>
     targets.push({ ref, annotation, label: refLabel(p, ref, texts), tags });
+  const wholeAccepted = annotationMatcher(
+    accepts,
+    acceptContextOf(p, sourceAnnotationId),
+  );
 
   for (const a of p.annotations) {
     if (a.id === sourceAnnotationId) continue;
@@ -259,19 +372,9 @@ function targetsAccepted(
       for (const entry of a.entries) push({ annotationId: a.id, entryId: entry.id }, a);
       continue;
     }
+    if (wholeAccepted(a)) push({ annotationId: a.id }, a);
     const type = typeOfAnnotation(p, a)?.type;
-    if (!type || !a.values) continue;
-    for (const f of type.fields) {
-      if (!sharesTag(f.tags, accepts.tags)) continue;
-      const tags = (f.tags ?? []).filter((tag) => accepts.tags?.includes(tag));
-      if (f.type === 'table') {
-        for (const row of tableRows(a.values[f.key])) {
-          push({ annotationId: a.id, key: f.key, rowId: row._id }, a, tags);
-        }
-      } else if (SIMPLE_TYPES.has(f.type)) {
-        push({ annotationId: a.id, key: f.key }, a, tags);
-      }
-    }
+    if (type) fieldTargets(a, type, accepts, push);
   }
   return targets;
 }

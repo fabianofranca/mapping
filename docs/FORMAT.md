@@ -34,7 +34,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 16,
+  "schemaVersion": 17,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -349,20 +349,28 @@ dentro da tabela.
 
 ### Referências (`ref`)
 
-O valor de um campo `ref` aponta para uma tupla de **outra** anotação, em qualquer marcação ou
-imagem do projeto. Há três formatos:
+O valor de um campo `ref` (ou de uma célula de coluna `ref`) aponta para uma tupla, linha, campo ou
+anotação de **outra** anotação, em qualquer marcação ou container do projeto. Há quatro formatos (o quarto
+é da v17):
 
 | Alvo                          | Valor                                | Rótulo          |
 | ----------------------------- | ------------------------------------ | --------------- |
 | Par de anotação livre         | `{ "annotationId", "entryId" }`      | `User.name`     |
 | Linha de `table` com etiqueta | `{ "annotationId", "key", "rowId" }` | `Contato.email` |
 | Campo simples com etiqueta    | `{ "annotationId", "key" }`          | `Contato.nome`  |
+| Anotação inteira (v17)        | `{ "annotationId" }`                 | `Pedido 4`      |
+
+O quarto formato é só o `annotationId`, sem `key`, `entryId` nem `rowId`; qualquer outra combinação de
+chaves não é uma referência.
 
 **Como resolver uma referência** (passo a passo):
 
 1. Ache em `annotations` a anotação de `id` igual a `annotationId`. Se não existir, a
    referência está **quebrada**.
-2. Se o valor tem `entryId`: procure em `entries` dessa anotação (livre) o par com esse `id`.
+2. Se o valor é só `annotationId` (anotação inteira, v17): o alvo é a própria anotação, que precisa ser
+   **tipada** para ser aceita; o rótulo é o da instância: `name`, senão o valor do `labelField` do tipo,
+   senão o nome do tipo.
+   Se o valor tem `entryId`: procure em `entries` dessa anotação (livre) o par com esse `id`.
    O alvo é o par; o rótulo é `<rótulo da anotação>.<key do par>`.
 3. Se tem `key` e `rowId`: em `values[key]` (um array), procure a linha com `_id` igual a
    `rowId`. O rótulo usa o valor da coluna indicada por `rowLabel` no campo da especialização.
@@ -370,12 +378,19 @@ imagem do projeto. Há três formatos:
    campo (ou a `key`).
 5. Para saber se o alvo é **aceito**, compare com `accepts` do campo de origem: um par livre só
    vale com `"free": true`; uma linha ou campo precisa ter, na especialização, alguma das
-   etiquetas (`tags`) de `accepts.tags`.
+   etiquetas (`tags`) de `accepts.tags`; uma anotação inteira precisa ser tipada, da **mesma
+   especialização** da anotação de origem, e de um tipo coberto por `accepts.annotations` (ids de tipo e
+   cláusulas `{ layer, groups? }`, resolvidos como o `allowedChildren`). Nunca a própria anotação de
+   origem. Os alvos aceitos de um campo são a união de `tags`, `free` e `annotations`.
 
 Excluir o alvo **não apaga** a referência: ela continua no arquivo e fica quebrada.
 
+Excluir o tipo do alvo (migração `remove-type`) apaga as anotações dele, e os `ref` que apontavam para
+elas contam como quebrados. O valor `{ "annotationId" }` não muda com `rename-type` nem `rename-field`.
+
 Em código TypeScript, `src/model/` oferece `resolveRef`, `refLabel`, `findRefTargets` (alvos aceitos
-por um campo) e `getBacklinks` (quem aponta para uma anotação).
+por um campo) e `getBacklinks` (quem aponta para uma anotação). Nos `backlinks`, a referência guarda o
+`ref` inteiro: o consumidor distingue a anotação inteira pela ausência de `key`, `entryId` e `rowId`.
 
 ### Pendências
 
@@ -419,8 +434,12 @@ novo de uma ferramenta de design) e proponha só o que mudou.
   devolve todas as imagens e marcações com a mesma origem, imagens primeiro.
 - Quem atribui a origem é quem importa (um agente, por uma proposta); a app a mostra e a preserva.
 
+Excluir o tipo do alvo (migração `remove-type`) apaga as anotações dele, e os `ref` que apontavam para
+elas contam como quebrados. O valor `{ "annotationId" }` não muda com `rename-type` nem `rename-field`.
+
 Em código TypeScript, `src/model/` oferece `resolveRef`, `refLabel`, `findRefTargets` (alvos aceitos
-por um campo) e `getBacklinks` (quem aponta para uma anotação).
+por um campo) e `getBacklinks` (quem aponta para uma anotação). Nos `backlinks`, a referência guarda o
+`ref` inteiro: o consumidor distingue a anotação inteira pela ausência de `key`, `entryId` e `rowId`.
 
 ### Pendências
 
@@ -978,6 +997,23 @@ O projeto ganha `project.id` (um UUID novo; um `id` já presente é preservado),
 `arrivals: []` (valores já presentes são preservados). A migração nunca cria perspectiva: a Principal continua
 mostrando tudo, como antes. Como em toda migração, o original vai para `backups/` antes da primeira gravação e a
 faixa da migração aparece no topo. Um arquivo v16 abre em um app anterior somente para leitura.
+
+## Campos da v17 (referência à anotação inteira)
+
+A v17 não acrescenta nem muda campos do arquivo: ela só admite um **valor novo** em campos e células `ref`,
+o quarto formato `{ "annotationId" }` (ver "Referências (`ref`)"), ligado à `formatVersion` 14 das
+especializações ([`SPEC-FORMAT.md`](SPEC-FORMAT.md): `accepts.annotations`). Um arquivo v16 só precisa subir
+o número. Um app anterior recusa o arquivo v17 como "versão mais nova", em vez de mostrar `ref` quebrados.
+
+- **Valor:** `{ "annotationId" }`, sem `key`, `entryId` nem `rowId`.
+- **Alvo:** uma anotação tipada de um tipo coberto por `accepts.annotations`, da mesma especialização da
+  origem, em qualquer marcação ou container, nunca a própria anotação de origem.
+- **Pendências:** alvo apagado → `broken-ref`; tipo que deixou de ser aceito → `ref-not-accepted`.
+
+### Migração v16 → v17
+
+Só `schemaVersion` muda para 17; nenhum dado é alterado. Como em toda migração, o original vai para
+`backups/` antes da primeira gravação e a faixa da migração aparece no topo.
 
 ## Migração
 
