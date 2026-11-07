@@ -54,7 +54,12 @@ export function createEditorContextValue(
       ui,
       review.derived.shownProject,
       review.components,
-      { threads: session.threads.list, copyId: session.storage.copyId ?? null, identity },
+      {
+        threads: session.threads.list,
+        copyId: session.storage.copyId ?? null,
+        identity,
+        proposals: session.proposals.list,
+      },
     ),
     review,
     canvas: { current: null },

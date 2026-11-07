@@ -186,18 +186,24 @@ describe('LayersPanel', () => {
       'Subir camada',
       'Descer camada',
       'Comentar',
+      'Citar na conversa',
+      'Copiar referência',
       'Excluir camada',
     ]);
-    // Na primeira camada "Subir" está desabilitado: o foco vai ao "Descer".
+    // Na primeira camada "Subir" está desabilitado: o foco vai ao "Descer". Sem compositor
+    // aberto, "Citar na conversa" também está desabilitado e as setas passam por ele.
+    expect(items[3]?.hasAttribute('disabled')).toBe(true);
     expect(document.activeElement).toBe(items[1]);
     await user.keyboard('{ArrowDown}');
     expect(document.activeElement).toBe(items[2]);
     await user.keyboard('{ArrowDown}');
-    expect(document.activeElement).toBe(items[3]);
+    expect(document.activeElement).toBe(items[4]);
+    await user.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(items[5]);
     await user.keyboard('{ArrowDown}');
     expect(document.activeElement).toBe(items[1]);
     await user.keyboard('{ArrowUp}');
-    expect(document.activeElement).toBe(items[3]);
+    expect(document.activeElement).toBe(items[5]);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(more);

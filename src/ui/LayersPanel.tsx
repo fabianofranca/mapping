@@ -14,6 +14,7 @@ import {
   setMarkingDisplay,
 } from '../store/settings';
 import { showAllLayers, toggleLayerVisible } from '../store/ui';
+import { CiteItem, CopyReferenceItem } from './CiteMenuItems';
 import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
@@ -206,6 +207,8 @@ function LayerRow({ project, readOnly, layer, index, hidden, onDelete }: LayerRo
             >
               {t('comments.layer')}
             </Button>
+            <CiteItem target={{ kind: 'layer', id: layer.id }} close={close} />
+            <CopyReferenceItem target={{ kind: 'layer', id: layer.id }} close={close} />
             <Button
               role="menuitem"
               variant="danger"

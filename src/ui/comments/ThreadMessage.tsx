@@ -1,7 +1,13 @@
 import { t } from '../../i18n';
 import { initials, userLabel, type ThreadMessage as Message } from '../../model';
 import { Markdown } from '../markdown/Markdown';
+import { CitationChip } from './CitationChip';
+import { ProposalCard } from './ProposalCard';
 import { relativeTime } from './relativeTime';
+
+const renderCitation = (href: string, label: string) => (
+  <CitationChip url={href} label={label} />
+);
 
 /** Uma mensagem da conversa: iniciais, nome, selo de agente, hora relativa e o texto em markdown. */
 export function ThreadMessage({ message }: { readonly message: Message }) {
@@ -19,7 +25,8 @@ export function ThreadMessage({ message }: { readonly message: Message }) {
             {relativeTime(message.at)}
           </time>
         </div>
-        <Markdown text={message.text} lineBreaks />
+        {message.proposal !== null && <ProposalCard proposalId={message.proposal} />}
+        <Markdown text={message.text} lineBreaks renderMapping={renderCitation} />
       </div>
     </li>
   );

@@ -1,13 +1,19 @@
 import { computed, signal, type ReadonlySignal } from '@preact/signals';
 import {
   awaiting,
+  backlinks,
+  citedItemIds,
+  citedTargets,
   filterThreads,
   hostOf,
   isUnread,
   pinGroups,
+  proposalThreads,
   resolveAnchor,
   threadUsers,
   type AnchorResolution,
+  type CitationContext,
+  type CitationProposal,
   type PinGroup,
   type Project,
   type Thread,
@@ -33,6 +39,8 @@ export interface ThreadSources {
   /** A cópia do projeto (onde o "lida" fica); `null` fora de uma sessão. */
   readonly copyId: string | null;
   readonly identity: ReadonlySignal<Identity | null>;
+  /** As propostas carregadas (id e título), para resolver as citações; sem elas, nenhuma. */
+  readonly proposals?: ReadonlySignal<readonly CitationProposal[]>;
 }
 
 export interface ThreadDerived {
@@ -54,8 +62,15 @@ export interface ThreadDerived {
   readonly pins: ReadonlySignal<readonly PinGroup[]>;
   /** Usuários das conversas (filtro Usuário). */
   readonly users: ReadonlySignal<readonly ThreadUser[]>;
-  /** As linhas da janela: as conversas depois dos filtros de status, usuário e busca. */
+  /** As linhas da janela: as conversas depois dos filtros de status, usuário, busca e seleção. */
   readonly rows: ReadonlySignal<readonly ThreadEntry[]>;
+  /**
+   * "Citada em" (decisão 33): para cada conversa citada por outra, os ids das que a citam
+   * (abertas e resolvidas).
+   */
+  readonly citedIn: ReadonlySignal<ReadonlyMap<string, readonly string[]>>;
+  /** Proposta → a primeira conversa que a ligou (decisão 36). */
+  readonly proposalThreads: ReadonlySignal<ReadonlyMap<string, string>>;
 }
 
 const NO_SOURCES: ThreadSources = {
@@ -67,6 +82,7 @@ const NO_SOURCES: ThreadSources = {
 export const NO_THREAD_SOURCES = NO_SOURCES;
 
 const NO_PINS: readonly PinGroup[] = [];
+const NO_PROPOSALS = signal<readonly CitationProposal[]>([]);
 
 /** O item (marcação, container ou seta) onde a conversa mora, se houver. */
 export function itemHostId(entry: ThreadEntry, project: Project): string | null {
@@ -132,10 +148,34 @@ export function createThreadDerived(
     });
   });
 
+  const citedIn = computed(() => backlinks(sources.threads.value));
+  const proposalThreadMap = computed(() => proposalThreads(sources.threads.value));
+
+  // Os itens que cada conversa cita (o filtro da seleção): só depende do projeto, das conversas
+  // e das propostas, então pan, zoom e troca de seleção não o recalculam. Lazy: só roda com o
+  // filtro ligado.
+  const citesByThread = computed((): ReadonlyMap<string, readonly string[]> => {
+    const p = project.value;
+    const map = new Map<string, readonly string[]>();
+    if (!p) return map;
+    const threads = sources.threads.value;
+    const ctx: CitationContext = {
+      project: p,
+      threads,
+      proposals: (sources.proposals ?? NO_PROPOSALS).value,
+    };
+    for (const thread of threads) {
+      const ids = citedItemIds(citedTargets(thread, ctx));
+      if (ids.length > 0) map.set(thread.id, ids);
+    }
+    return map;
+  });
+
   const rows = computed((): readonly ThreadEntry[] => {
     const p = project.value;
     if (!p) return [];
     const user = ui.commentsUser.value;
+    const selected = ui.commentsCiteSelection.value ? ui.selection.value : null;
     const kept = filterThreads(
       entries.value.map((e) => e.thread),
       p,
@@ -143,6 +183,9 @@ export function createThreadDerived(
         status: ui.commentsStatus.value,
         ...(user === '' ? {} : { user }),
         text: ui.commentsText.value,
+        ...(selected === null
+          ? {}
+          : { selection: { itemId: selected.id, cites: citesByThread.value } }),
       },
     );
     const keep = new Set(kept.map((t) => t.id));
@@ -160,5 +203,7 @@ export function createThreadDerived(
     pins,
     users,
     rows,
+    citedIn,
+    proposalThreads: proposalThreadMap,
   };
 }

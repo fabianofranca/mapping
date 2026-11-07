@@ -62,6 +62,8 @@ describe('dicionários', () => {
       'zoom.value',
       'status.empty',
       'view.containers',
+      // CM5-B: "Container" é a mesma palavra nos dois idiomas.
+      'citation.group.container',
       'status.schema',
       'pwa.previewBadge',
       'shortcuts.group.view',

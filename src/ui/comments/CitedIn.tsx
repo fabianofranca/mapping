@@ -1,0 +1,32 @@
+import { t } from '../../i18n';
+import { citationUrl, threadSubject, type Thread } from '../../model';
+import { useEditor } from '../EditorContext';
+import { CitationChip } from './CitationChip';
+import { useCitationContext } from './citationContext';
+
+/**
+ * "Citada em" (decisão 33): um chip por conversa, aberta ou resolvida, que cita a conversa
+ * mostrada. Some quando ninguém a cita.
+ */
+export function CitedIn({ thread }: { readonly thread: Thread }) {
+  const { derived } = useEditor();
+  const ctx = useCitationContext();
+  const ids = derived.threads.citedIn.value.get(thread.id);
+  if (ctx === null || ids === undefined) return null;
+  const chips = ids.flatMap((id) => {
+    const other = ctx.threads.find((th) => th.id === id);
+    const url = other
+      ? citationUrl(ctx.projectName, ctx.project, ctx.threads, { kind: 'thread', id })
+      : null;
+    return other && url !== null
+      ? [<CitationChip key={id} url={url} label={threadSubject(other)} />]
+      : [];
+  });
+  if (chips.length === 0) return null;
+  return (
+    <div class="thread-cited-in" data-cited-in="">
+      <span class="thread-cited-in-label">{t('thread.citedIn')}</span>
+      {chips}
+    </div>
+  );
+}

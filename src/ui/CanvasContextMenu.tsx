@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'preact/hooks';
 import { captureFocusOrigin, restoreFocusAfterRender, type FocusOrigin } from './focus';
 import { t } from '../i18n';
-import { canCopyItems, type CopyTarget } from '../app/itemClipboard';
+import { canCopyItems, type ItemCopyTarget } from '../app/itemClipboard';
 import { wrapAvailable } from '../app/wrapSelection';
 import {
   ARROW_STYLES,
@@ -11,6 +11,7 @@ import {
   type ThreadAnchor,
 } from '../model';
 import { arrangeMarking, canArrangeMarking } from './arrange';
+import { CiteItem } from './CiteMenuItems';
 import { CopyMenuItems } from './CopyActions';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
@@ -65,6 +66,7 @@ function ArrowMenuItems({
           {t(ARROW_STYLE_LABELS[style])}
         </Button>
       ))}
+      <CiteItem target={{ kind: 'arrow', id: arrowId }} close={close} />
       <Button
         role="menuitem"
         variant="danger"
@@ -191,7 +193,7 @@ export function CanvasContextMenu() {
   const copyable = canCopyItems(editor);
   const target = menu?.target;
   const arrowId = target?.kind === 'arrow' ? target.id : null;
-  const copyTarget: CopyTarget | null =
+  const copyTarget: ItemCopyTarget | null =
     target && target.kind !== 'arrow' ? { kind: target.kind, id: target.id } : null;
   const arrangeId =
     target?.kind === 'm' &&
@@ -209,6 +211,8 @@ export function CanvasContextMenu() {
   if (
     !menu ||
     !(
+      // Citar na conversa vale para todo item, com ou sem pasta.
+      copyTarget !== null ||
       copyable ||
       arrangeId !== null ||
       selectable ||
@@ -227,8 +231,13 @@ export function CanvasContextMenu() {
       ref={panel}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {copyTarget && (copyable || selectable || wrappable) && (
-        <CopyMenuItems target={copyTarget} close={close} copyable={copyable} />
+      {copyTarget && (
+        <CopyMenuItems
+          target={copyTarget}
+          close={close}
+          copyable={copyable}
+          commentable={false}
+        />
       )}
       {arrowId !== null && <ArrowMenuItems arrowId={arrowId} close={close} />}
       {commentable && <CommentMenuItems comment={comment} here={here} close={close} />}

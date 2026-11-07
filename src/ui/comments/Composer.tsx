@@ -8,8 +8,9 @@ import {
   selectThread,
   setDraft,
 } from '../../store/threadUi';
-import { Button, TextArea } from '../controls';
+import { Button } from '../controls';
 import { useEditor } from '../EditorContext';
+import { CitationEditor } from './CitationEditor';
 import { threadErrorText, useThreadAccess } from './threadAccess';
 
 export type ComposerTarget =
@@ -26,12 +27,19 @@ interface ComposerProps {
   readonly onCancel?: () => void;
 }
 
-const isSend = (e: KeyboardEvent) => e.key === 'Enter' && (e.ctrlKey || e.metaKey);
+/** A âncora da conversa a que o compositor pertence (rascunho novo ou resposta). */
+function useReplyAnchor(target: ComposerTarget): ThreadAnchor | null {
+  const { session } = useEditor();
+  const threads = session.threads.list.value;
+  if (target.kind === 'new') return target.anchor;
+  return threads.find((th) => th.id === target.threadId)?.anchor ?? null;
+}
 
 /**
- * Compositor das conversas: um campo de várias linhas com o rascunho guardado por conversa
- * (`ui.threadDrafts`), Enter quebra a linha e Ctrl/Cmd+Enter envia. Sem identidade mostra o
- * aviso com o atalho para as Configurações; só leitura e revisão não mostram nada.
+ * Compositor das conversas: o editor de citações (várias linhas, chips e `@`) com o rascunho
+ * guardado por conversa (`ui.threadDrafts`, sempre uma string markdown), Enter quebra a linha e
+ * Ctrl/Cmd+Enter envia. Sem identidade mostra o aviso com o atalho para as Configurações; só
+ * leitura e revisão não mostram nada.
  */
 export function Composer({ target, onOpenSettings, autoFocus, onCancel }: ComposerProps) {
   const { ui, session, review } = useEditor();
@@ -41,7 +49,9 @@ export function Composer({ target, onOpenSettings, autoFocus, onCancel }: Compos
   const text = draftOf(ui, key);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const field = useRef<HTMLTextAreaElement>(null);
+  const field = useRef<HTMLDivElement>(null);
+  // A âncora do `@` ("aqui"): a do rascunho ou a da conversa que se responde.
+  const replyAnchor = useReplyAnchor(target);
   useEffect(() => {
     if (autoFocus) field.current?.focus();
   }, [autoFocus]);
@@ -60,14 +70,16 @@ export function Composer({ target, onOpenSettings, autoFocus, onCancel }: Compos
 
   const send = async () => {
     const project = review.derived.shownProject.peek();
-    if (busy || text.trim() === '' || !project) return;
+    // O rascunho de agora (o atalho pode chegar antes da renderização da última tecla).
+    const draft = draftOf(ui, key);
+    if (busy || draft.trim() === '' || !project) return;
     setBusy(true);
     setError(null);
     const actions = session.threadActions;
     const result =
       target.kind === 'new'
-        ? await actions.open(target.anchor, text)
-        : await actions.post(target.threadId, text);
+        ? await actions.open(target.anchor, draft)
+        : await actions.post(target.threadId, draft);
     setBusy(false);
     if (!result.ok) return setError(result.error);
     setDraft(ui, key, '');
@@ -76,21 +88,19 @@ export function Composer({ target, onOpenSettings, autoFocus, onCancel }: Compos
 
   return (
     <div class="thread-composer">
-      <TextArea
+      <CitationEditor
         label={t(target.kind === 'new' ? 'thread.composeAs' : 'thread.replyAs', {
           name: me.name,
         })}
-        textAreaRef={field}
+        editorRef={field}
         value={text}
+        anchor={replyAnchor}
+        excludeThreadId={target.kind === 'reply' ? target.threadId : undefined}
         onInput={(value) => {
           setError(null);
           setDraft(ui, key, value);
         }}
-        onKeyDown={(e) => {
-          if (!isSend(e)) return;
-          e.preventDefault();
-          void send();
-        }}
+        onSubmit={() => void send()}
       />
       {error !== null && (
         <p class="field-error" role="alert">

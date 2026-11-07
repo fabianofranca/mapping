@@ -1,6 +1,8 @@
-import type { ComponentChild, VNode } from 'preact';
+import { Fragment, type ComponentChild, type VNode } from 'preact';
 import { useId, useMemo, useRef } from 'preact/hooks';
 import {
+  inlinesToText,
+  isLibraryLink,
   parseMarkdown,
   type MarkdownBlock,
   type MarkdownInline,
@@ -11,6 +13,11 @@ export interface MarkdownProps {
   readonly text: string;
   /** Chamado ao clicar num link `mapping://…`; sem ele, o link vira só texto. */
   readonly onLink?: (href: string) => void;
+  /**
+   * Desenha a citação `[rótulo](mapping://projeto/letra/código…)` (não os links da biblioteca),
+   * antes de `onLink`: o chip vivo das conversas. `null` deixa valer o link de sempre.
+   */
+  readonly renderMapping?: (href: string, label: string) => ComponentChild | null;
   /** Quebra simples de linha vira `<br/>` (mensagens das conversas); padrão: vira espaço. */
   readonly lineBreaks?: boolean;
 }
@@ -20,6 +27,7 @@ interface Ctx {
   readonly root: { readonly current: HTMLElement | null };
   readonly ids: ReadonlySet<string>;
   readonly onLink?: (href: string) => void;
+  readonly renderMapping?: (href: string, label: string) => ComponentChild | null;
 }
 
 function collectIds(blocks: readonly MarkdownBlock[]): Set<string> {
@@ -52,7 +60,12 @@ function renderLink(
     );
   }
   if (n.kind === 'mapping') {
-    const { onLink } = ctx;
+    const { onLink, renderMapping } = ctx;
+    const custom =
+      renderMapping && !isLibraryLink(n.href)
+        ? renderMapping(n.href, inlinesToText(n.children))
+        : null;
+    if (custom !== null) return <Fragment key={i}>{custom}</Fragment>;
     if (!onLink) return children;
     return (
       <a
@@ -170,7 +183,12 @@ function renderBlock(b: MarkdownBlock, key: number, ctx: Ctx): VNode {
 }
 
 /** Documento em markdown (subconjunto): nunca HTML cru nem imagens; links só `mapping://`, âncoras e `http(s)://` absoluto (nova aba). */
-export function Markdown({ text, onLink, lineBreaks }: MarkdownProps): VNode {
+export function Markdown({
+  text,
+  onLink,
+  renderMapping,
+  lineBreaks,
+}: MarkdownProps): VNode {
   const uid = useId();
   const blocks = useMemo(
     () => parseMarkdown(text, lineBreaks === true ? { lineBreaks: true } : undefined),
@@ -178,7 +196,7 @@ export function Markdown({ text, onLink, lineBreaks }: MarkdownProps): VNode {
   );
   const ids = useMemo(() => collectIds(blocks), [blocks]);
   const root = useRef<HTMLDivElement>(null);
-  const ctx: Ctx = { prefix: `md-${uid}-`, root, ids, onLink };
+  const ctx: Ctx = { prefix: `md-${uid}-`, root, ids, onLink, renderMapping };
   return (
     <div class="markdown" ref={root}>
       {blocks.map((b, i) => renderBlock(b, i, ctx))}

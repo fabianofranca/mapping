@@ -194,3 +194,95 @@
   margin: 0;
   font: var(--t-text-heading);
 }
+
+/* Citações (etapa Comentários, CM5): o chip vivo das mensagens e o do editor do compositor */
+.citation-chip {
+  display: inline;
+  padding: 0 var(--space-1-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  background: var(--color-selection);
+  color: var(--color-accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.citation-chip:hover {
+  background: var(--color-pressed);
+}
+
+/* Alvo apagado: riscado, com o rótulo de reserva */
+.citation-chip-broken,
+.citation-chip-broken:hover {
+  background: var(--color-selection-muted);
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  cursor: default;
+}
+
+/* No editor o chip é um bloco de texto só: seleciona e apaga de uma vez */
+.citation-chip-editor {
+  user-select: all;
+  cursor: default;
+}
+
+.citation-editor {
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  cursor: text;
+}
+
+.cite-picker-group {
+  padding: var(--space-1) var(--space-2) var(--space-0-5);
+  color: var(--color-text-muted);
+  font: var(--t-micro);
+}
+
+/* Citada em (CM5): uma linha de chips abaixo das mensagens */
+.thread-cited-in {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-1-5);
+  font: var(--t-text-small);
+}
+
+.thread-cited-in-label {
+  color: var(--color-text-muted);
+}
+
+/* Cartão da proposta numa mensagem da conversa (decisão 36) */
+.proposal-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  padding: var(--space-1-5) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font: var(--t-text-small);
+}
+
+.proposal-card-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.proposal-card-title {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "da conversa <chip>" na linha da proposta (janela Propostas) */
+.proposal-row-thread {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  font: var(--t-text-small);
+}

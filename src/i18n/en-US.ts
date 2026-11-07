@@ -706,6 +706,35 @@ export const enUS: Dictionary = {
   'thread.anchor.missing.annotation': 'Annotation deleted · orphan',
   'thread.anchor.missing.entry': 'Pair deleted · orphan',
   'thread.anchor.missing.row': 'Row deleted · orphan',
+  // CM5-B: citations in the composer and in messages
+  'citation.unnamed': '(unnamed)',
+  'citation.missing': 'The cited item no longer exists',
+  'citation.chipLabel': '{name}, citation',
+  'citation.picker': 'Items to cite',
+  'citation.group.here': 'On this item',
+  'citation.group.marking': 'Markings',
+  'citation.group.container': 'Containers',
+  'citation.group.arrow': 'Arrows',
+  'citation.group.annotation': 'Annotations',
+  'citation.group.layer': 'Layers',
+  'citation.group.thread': 'Conversations',
+  // CM5-D: Cited in, selection filter and proposal in the conversation
+  'thread.citedIn': 'Cited in',
+  'comments.filter.citesSelection': 'Citing selection',
+  'comments.filter.citesSelectionHint':
+    'Only conversations anchored to the selected item or that cite the item, its annotations or its fields',
+  'comments.filter.citesSelectionNone': 'Select an item to use this filter',
+  'thread.proposal.cardLabel': 'Proposal: {title}',
+  'thread.proposal.changesOne': '1 change to review',
+  'thread.proposal.changesMany': '{count} changes to review',
+  'thread.proposal.allDecided': 'All changes decided',
+  'thread.proposal.removed': 'Proposal removed',
+  'proposals.fromThread': 'from the conversation',
+  'thread.editorHint': 'Enter adds a line break, Ctrl+Enter sends and @ cites an item.',
+  // CM5-C: cite and copy reference in menus
+  'cite.insert': 'Cite in the conversation',
+  'cite.needComposer': 'Open a conversation to cite',
+  'cite.fieldActions': 'Actions for field {name}',
   'privacy.title': 'Privacy',
   'privacy.intro':
     'Images from other sites only show after you allow their origin. The permission applies to this browser only and is never saved in the project or the zip.',
@@ -995,7 +1024,8 @@ export const enUS: Dictionary = {
   'arrow.canvasMenu.curve': 'Curve',
   'arrow.canvasMenu.elbow': 'Elbow',
   'arrow.canvasMenu.delete': 'Delete arrow',
-  'shortcuts.copyReference': 'Copy the reference of the selected item',
+  'shortcuts.copyReference':
+    'Copy the reference of the selected item or the focused property',
   'shortcuts.copyCrop': 'Copy the crop of the selected marking',
   'code.definition': 'Definition',
   'code.definitionHint':

@@ -4,8 +4,10 @@ import { awaiting, lastMessage, type Thread } from '../../model';
 import { markThreadRead } from '../../store/threadReads';
 import { selectThread } from '../../store/threadUi';
 import { ActionMenu } from '../ActionMenu';
+import { useCiteMenuItems } from '../CiteMenuItems';
 import { Button } from '../controls';
 import { useEditor } from '../EditorContext';
+import { CitedIn } from './CitedIn';
 import { Composer } from './Composer';
 import { relativeTime } from './relativeTime';
 import { threadErrorText, useThreadAccess } from './threadAccess';
@@ -46,6 +48,7 @@ function useMarkRead(thread: Thread): void {
 function ThreadActions({ thread }: { readonly thread: Thread }) {
   const { session, ui, review } = useEditor();
   const del = useDeleteThread();
+  const citeItems = useCiteMenuItems();
   const [error, setError] = useState<string | null>(null);
   const resolved = thread.resolved !== null;
   const toggle = async () => {
@@ -66,6 +69,7 @@ function ThreadActions({ thread }: { readonly thread: Thread }) {
       <ActionMenu
         label={t('thread.menu')}
         items={[
+          ...citeItems({ kind: 'thread', id: thread.id }, null),
           {
             label: t('thread.delete'),
             danger: true,
@@ -113,6 +117,7 @@ export function ThreadView({ thread, where, onOpenSettings }: ThreadViewProps) {
           <ThreadMessage key={m.id} message={m} />
         ))}
       </ul>
+      <CitedIn thread={thread} />
       {writable && thread.resolved === null && (
         <Composer
           target={{ kind: 'reply', threadId: thread.id }}

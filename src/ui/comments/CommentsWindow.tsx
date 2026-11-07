@@ -16,7 +16,7 @@ import type { ThreadEntry } from '../../store/threadDerived';
 import { selectedThreadId, selectThread, startComposing } from '../../store/threadUi';
 import type { Selection } from '../../store/ui';
 import { ActionMenu } from '../ActionMenu';
-import { Button, Select, TextField } from '../controls';
+import { Button, Choice, Select, TextField } from '../controls';
 import { useEditor } from '../EditorContext';
 import { openToolWindow } from '../toolWindowLayout';
 import { anchorLabel } from './anchorLabel';
@@ -128,6 +128,25 @@ function userOptions(users: readonly ThreadUser[]) {
   });
 }
 
+/** "Só as que citam a seleção" (decisão 34): só vale com um item selecionado. */
+function CiteSelectionFilter() {
+  const { ui } = useEditor();
+  const hasSelection = anchorOfSelection(ui.selection.value) !== null;
+  return (
+    <Choice
+      label={t('comments.filter.citesSelection')}
+      title={t(
+        hasSelection
+          ? 'comments.filter.citesSelectionHint'
+          : 'comments.filter.citesSelectionNone',
+      )}
+      checked={ui.commentsCiteSelection.value}
+      disabled={!hasSelection}
+      onChange={(e) => (ui.commentsCiteSelection.value = e.currentTarget.checked)}
+    />
+  );
+}
+
 function Filters() {
   const { ui, derived } = useEditor();
   const users = derived.threads.users.value;
@@ -165,6 +184,7 @@ function Filters() {
         value={ui.commentsText.value}
         onInput={(e) => (ui.commentsText.value = e.currentTarget.value)}
       />
+      <CiteSelectionFilter />
     </div>
   );
 }

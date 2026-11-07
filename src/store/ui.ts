@@ -117,6 +117,11 @@ export interface EditorUi {
   readonly commentsUser: Signal<string>;
   readonly commentsText: Signal<string>;
   /**
+   * Filtro "Só as que citam a seleção" (decisão 34): com um item selecionado, a janela mostra as
+   * conversas ancoradas nele ou que o citam. Estado de UI: nasce desligado e não é gravado.
+   */
+  readonly commentsCiteSelection: Signal<boolean>;
+  /**
    * Pinos das conversas no canvas (decisão 24): nasce desligado a cada abertura do editor e nunca
    * é gravado. Só o botão Conversas o desliga; Comentar, Comentar aqui e Nova conversa o ligam.
    */
@@ -186,6 +191,7 @@ export function createEditorUi(): EditorUi {
     commentsStatus: signal<ThreadStatusFilter>('open'),
     commentsUser: signal<string>(''),
     commentsText: signal<string>(''),
+    commentsCiteSelection: signal<boolean>(false),
     commentPins: signal<boolean>(false),
     commentArm: signal<ArmedComment | null>(null),
   };
