@@ -14,6 +14,7 @@ import {
 import type { ActionResult } from '../store/history';
 import { showLayer, type AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
+import { ArrowLinksSection } from './ArrowLinksSection';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { Button, Choice, HelpTip, IconButton, TextField } from './controls';
 import { CopyButtons } from './CopyActions';
@@ -312,6 +313,8 @@ export function MarkingPanel({
         focusAnnotation={ui.focusAnnotation.value}
         onFocusDone={() => (ui.focusAnnotation.value = null)}
       />
+
+      <ArrowLinksSection project={project} marking={marking} />
 
       {ext?.others(marking.id)}
 
