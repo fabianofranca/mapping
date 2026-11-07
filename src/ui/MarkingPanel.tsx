@@ -17,6 +17,7 @@ import { AnnotationsPanel } from './AnnotationsPanel';
 import { ArrowLinksSection } from './ArrowLinksSection';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import { Button, Choice, HelpTip, IconButton, TextField } from './controls';
+import { ThreadsSection } from './comments/ThreadsSection';
 import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
@@ -35,6 +36,8 @@ interface MarkingPanelProps {
   readonly readOnly: boolean;
   readonly onDelete: (marking: Marking) => void;
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
+  /** Abre as Configurações (o aviso de conversa sem identidade leva até lá). */
+  readonly onOpenSettings?: () => void;
 }
 
 /** Resumo da seção Marcação recolhida: "X 112 · Y 236 · 346 × 84 px". */
@@ -58,6 +61,7 @@ export function MarkingPanel({
   readOnly,
   onDelete,
   onGoToAnnotation,
+  onOpenSettings,
 }: MarkingPanelProps) {
   const editor = useEditor();
   const { actions, ui, derived } = editor;
@@ -312,6 +316,12 @@ export function MarkingPanel({
         onGoToAnnotation={onGoToAnnotation}
         focusAnnotation={ui.focusAnnotation.value}
         onFocusDone={() => (ui.focusAnnotation.value = null)}
+      />
+
+      <ThreadsSection
+        itemId={marking.id}
+        anchor={{ kind: 'marking', id: marking.id }}
+        onOpenSettings={onOpenSettings}
       />
 
       <ArrowLinksSection project={project} marking={marking} />

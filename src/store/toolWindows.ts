@@ -20,6 +20,7 @@ export const TOOL_WINDOWS = [
   'notices',
   'diagnostics',
   'proposals',
+  'comments',
   'catalog',
 ] as const;
 
@@ -37,6 +38,7 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
   notices: 'bottom',
   diagnostics: 'bottom',
   proposals: 'bottom',
+  comments: 'bottom',
   catalog: 'left',
 };
 
@@ -45,7 +47,8 @@ export const WINDOW_SIDE: Readonly<Record<ToolWindowId, ToolWindowSide>> = {
  * A numeração é a da seção Atalhos do DS 2.0: Árvore 1, Camadas 2, Detalhes 3, e na
  * janela inferior Lista 4, Incompletas 5, Diagnóstico 6 e Propostas 7; o Catálogo
  * (etapa Biblioteca, B5, que guarda a paleta da B3 como aba) é o 9. O 8, vago desde a B3,
- * é a janela Avisos (etapa #486), que fica na aba entre Incompletas e Diagnóstico.
+ * é a janela Avisos (etapa #486), que fica na aba entre Incompletas e Diagnóstico. O 0 é a janela
+ * Comentários (etapa Comentários), a última aba da janela inferior.
  */
 export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   tree: 1,
@@ -56,6 +59,7 @@ export const WINDOW_NUMBER: Readonly<Record<ToolWindowId, number>> = {
   notices: 8,
   diagnostics: 6,
   proposals: 7,
+  comments: 0,
   catalog: 9,
 };
 

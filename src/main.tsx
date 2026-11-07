@@ -9,6 +9,7 @@ import './theme/layout.css';
 import './theme/editor.css';
 import './theme/panels.css';
 import './theme/details.css';
+import './theme/threads.css';
 import './theme/canvas.css';
 import './theme/forms.css';
 import './theme/dialogs.css';

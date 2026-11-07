@@ -185,6 +185,7 @@ describe('LayersPanel', () => {
     expect(items.map((i) => i.textContent)).toEqual([
       'Subir camada',
       'Descer camada',
+      'Comentar',
       'Excluir camada',
     ]);
     // Na primeira camada "Subir" está desabilitado: o foco vai ao "Descer".
@@ -192,9 +193,11 @@ describe('LayersPanel', () => {
     await user.keyboard('{ArrowDown}');
     expect(document.activeElement).toBe(items[2]);
     await user.keyboard('{ArrowDown}');
+    expect(document.activeElement).toBe(items[3]);
+    await user.keyboard('{ArrowDown}');
     expect(document.activeElement).toBe(items[1]);
     await user.keyboard('{ArrowUp}');
-    expect(document.activeElement).toBe(items[2]);
+    expect(document.activeElement).toBe(items[3]);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(more);

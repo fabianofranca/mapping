@@ -28,6 +28,7 @@ const META: Readonly<Record<ToolWindowId, ToolWindowMeta>> = {
   notices: { icon: 'warning', title: () => t('notices.title') },
   diagnostics: { icon: 'diagnostics', title: () => t('diagnostics.title') },
   proposals: { icon: 'proposal', title: () => t('proposals.title') },
+  comments: { icon: 'chat', title: () => t('comments.title') },
   catalog: { icon: 'library', title: () => t('catalog.window.title') },
 };
 
@@ -50,16 +51,22 @@ export function windowsOfSide(side: ToolWindowSide): readonly ToolWindowId[] {
 
 /**
  * Contador da aba de uma janela: as pendências na Incompletas, as anotações com aviso na
- * Avisos e as propostas novas (informativo, em destaque) na Propostas.
+ * Avisos e as propostas novas (informativo, em destaque) na Propostas e as conversas abertas na Comentários.
  */
 export function windowBadge(
   id: ToolWindowId,
   incomplete: number,
   freshProposals: number,
   noticed = 0,
+  openThreads = 0,
 ): { readonly badge?: string; readonly badgeTone?: 'muted' | 'info' } {
-  if (id === 'incomplete' && incomplete > 0) return { badge: String(incomplete) };
-  if (id === 'notices' && noticed > 0) return { badge: String(noticed) };
+  const counts: Partial<Record<ToolWindowId, number>> = {
+    incomplete,
+    notices: noticed,
+    comments: openThreads,
+  };
+  const count = counts[id] ?? 0;
+  if (count > 0) return { badge: String(count) };
   if (id === 'proposals' && freshProposals > 0) {
     return { badge: String(freshProposals), badgeTone: 'info' };
   }
