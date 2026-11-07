@@ -1,4 +1,4 @@
-# Antes da revisão legível — [Não lançado] (épico `epic/antes-da-revisao`)
+# Antes da revisão legível — 2026-11-07 (épico `epic/antes-da-revisao`)
 
 ## Pendências
 
@@ -7,8 +7,8 @@
 
 ## Sincronização
 
-A preencher no fechamento do épico.
+Nada a gravar no artefato **Mapping** neste fechamento: o bloco "Antes da revisão" (linhas por campo) e o comportamento de posição do `Popover` com limite estão registrados em Pendências e ficam para a próxima sincronização, sem token nem ícone novo. O artefato não foi aberto.
 
 ## Ficou sem gravar
 
-A preencher no fechamento do épico.
+As duas pendências acima (bloco "Antes da revisão" do popover da mudança e posição do `Popover` com limite).
