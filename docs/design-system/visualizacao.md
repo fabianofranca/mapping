@@ -11,6 +11,14 @@
 - `ListView`: a caixa de visibilidade de camada não fica mais desabilitada.
 - Ícone `check` continua (a revisão usa). Tokens: nenhum novo.
 
+### VZ3 — botão Visualizar e painel Mostrar no canvas
+
+- `Botão Visualizar` (`ViewModeButton`): `IconButton` com ícone `eye` e `aria-pressed`, no lugar do Ver limpo (`eyeOff`), na barra do canvas.
+- `IconButton` **Mostrar no canvas** (ícone `layers`, `aria-haspopup="dialog"`): só habilitado no modo; gatilho do popover.
+- Popover `ViewModePanel` (`.view-panel-popover`): título e frase, grupo **Elementos** com `Choice` (a dica de **Setas** em `choice-hint`), grupo **Camadas com desenho** com `Choice` e a bolinha da camada (`.layer-dot` com `--layer-color`), rodapé com dois `Button` `sm` (**Mostrar tudo**, **Só as telas**). Foco entra no primeiro controle e volta ao botão ao fechar.
+- Barra de status: item do modo (ícone `eye` + "Modo visualização: só para ver. Esc ou Alt+H sai.").
+- Token novo: `size-view-panel` (280px, largura do painel). Ícones novos: nenhum.
+
 ## Sincronização
 
 ## Ficou sem gravar

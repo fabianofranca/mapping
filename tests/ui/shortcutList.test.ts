@@ -35,6 +35,12 @@ describe('lista de atalhos da Ajuda (P10)', () => {
     }
   });
 
+  it('lista "Visualizar" com o Alt+H, e ele dispara de verdade', () => {
+    const rows = groups.flatMap((g) => g.rows);
+    const row = rows.find((r) => r.combos.some((c) => comboText(c) === 'Alt + H'));
+    expect(row?.label).toBe(t('shortcuts.viewMode'));
+  });
+
   it('lista o Alt+L de trancar na seção de edição, e ele dispara de verdade', () => {
     const edit = groups.find((g) => g.id === 'edit');
     const row = edit?.rows.find((r) => r.combos.some((c) => comboText(c) === 'Alt + L'));

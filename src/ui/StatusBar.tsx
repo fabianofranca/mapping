@@ -146,6 +146,18 @@ function NoticesItem() {
   );
 }
 
+/** Modo visualização: lembra que o canvas é só para ver e como sair. */
+function ViewModeItem() {
+  const { ui } = useEditor();
+  if (!ui.viewMode.value) return null;
+  return (
+    <span class="status-item" aria-live="polite">
+      <Icon name="eye" />
+      {t('status.viewMode')}
+    </span>
+  );
+}
+
 /** Destino do salvamento, "não exportado", schema e canal: comuns às duas barras. */
 function useStatusTexts() {
   const { open } = useEditor();
@@ -169,6 +181,7 @@ export function StatusBar() {
       )}
       <ProposalsItem />
       <NoticesItem />
+      <ViewModeItem />
       <span class="statusbar-gap" />
       <SelectionItem />
       <Separator />

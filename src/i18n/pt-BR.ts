@@ -260,6 +260,20 @@ export const ptBR = {
 
   'view.viewMode': 'Visualizar',
   'view.viewModeHint': 'Modo visualização: o canvas só para ver, sem seleção nem edição',
+  'view.panelOpen': 'Mostrar no canvas',
+  'view.panelTitle': 'Mostrar no canvas',
+  'view.panelHint': 'Só para ver: nada se seleciona nem se edita.',
+  'view.groupElements': 'Elementos',
+  'view.groupLayers': 'Camadas com desenho',
+  'view.containers': 'Containers',
+  'view.images': 'Imagens',
+  'view.outline': 'Contorno das marcações',
+  'view.names': 'Nome das marcações',
+  'view.panelArrows': 'Setas',
+  'view.panelArrowsHint': 'continuam ligando os mesmos pontos',
+  'view.showAll': 'Mostrar tudo',
+  'view.onlyScreens': 'Só as telas',
+  'status.viewMode': 'Modo visualização: só para ver. Esc ou Alt+H sai.',
   'view.list': 'Lista',
 
   'list.title': 'Lista de anotações',
@@ -803,7 +817,7 @@ export const ptBR = {
   'image.replaceLocked':
     'A imagem ou uma marcação dela está trancada: só dá para trocar por um arquivo do mesmo tamanho.',
   'marking.error.locked': 'A marcação está trancada. Destranque para alterar.',
-  'shortcuts.viewMode': 'Visualizar (modo visualização)',
+  'shortcuts.viewMode': 'Visualizar',
   'shortcuts.toggleLock': 'Trancar ou destrancar o item selecionado',
   'editor.externalUpdated': 'Projeto atualizado por fora.',
   'review.readOnly':
