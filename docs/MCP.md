@@ -27,7 +27,7 @@ Só projetos **em pasta** ficam ao alcance do MCP; projetos guardados no navegad
 
 Teste fora do cliente: `node tools/mapping-mcp.js --version` e `--help`.
 
-> **Pasta central de mapeamentos.** Para guardar vários projetos numa pasta só, pronta para qualquer cliente MCP (Claude Code, Cursor, Gemini CLI, Copilot, Codex), copie [`examples/workspace/`](../examples/workspace/): o `setup.sh` baixa o servidor da release, confere o `sha256` e traz a skill `spec-author`; o `AGENTS.md` explica a pasta ao agente.
+> **Pasta central de mapeamentos.** Para guardar vários projetos numa pasta só, pronta para qualquer cliente MCP (Claude Code, Cursor, Gemini CLI, Copilot, Codex), copie [`examples/workspace/`](../examples/workspace/): o `setup.sh` baixa da release o servidor, a skill `spec-author` e o bloco de regras do `AGENTS.md`, confere o `sha256` de todos antes de trocar qualquer arquivo e se atualiza sozinho (`--no-self-update` desliga); o `AGENTS.md` explica a pasta ao agente. A linha para atualizar um workspace antigo (rode uma vez) está no `README.md` da pasta e abaixo, em "Publicar uma versão".
 
 ## Raízes
 
@@ -446,7 +446,7 @@ A versão do servidor é **uma por épico**: `SERVER_VERSION` em `mcp/version.ts
 | `SKILL.md`          | A skill `spec-author` do mesmo commit da release (cópia de `.claude/skills/spec-author/SKILL.md`).                  |
 | `AGENTS.mapping.md` | O bloco gerenciado do `examples/workspace/AGENTS.md`, entre `mapping:begin` e `mapping:end` (marcadores inclusive). |
 
-Releases anteriores a esta não têm os três últimos. Os workspaces que ainda têm o `setup.sh` antigo se atualizam uma vez, com a linha da transição (depois da primeira estável com os arquivos novos; antes disso, troque `latest/download` por `download/<tag da rc>`), que também vai nas notas de cada release:
+Releases anteriores a esta não têm os três últimos. Os workspaces que ainda têm o `setup.sh` antigo se atualizam uma vez, com a linha da transição (depois da primeira estável com os arquivos novos; antes disso, troque `latest/download` por `download/<tag da rc>` e passe a tag ao `./setup.sh`), que também vai nas notas de cada release:
 
 ```bash
 curl -fsSL https://github.com/fabianofranca/mapping/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh

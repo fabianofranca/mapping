@@ -59,6 +59,8 @@ O orquestrador acha o ambiente "Mapping - testes" com `list_environments` e cria
 Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: <roteiros da sub-issue da última fase>. Passada visual: <lista da sub-issue, ou "nenhuma">. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do orquestrador>`.
 ```
 
+Se a lista traz o R21 (testa a release real), acrescente "Tag da release: `mcp-v<versão>-rc.<n>`" (a rc do épico) antes de "Coordenador".
+
 Reteste, depois da correção (R0 reduzido ao R0.1 e aos passos de que os achados dependem; passada visual só das janelas e dos diálogos dos achados). Os defeitos pendentes corrigidos entram pelos passos de roteiro que afetam; sem passo afetado, o teste automatizado da correção basta, e uma correção só de defeitos pendentes, sem passo de roteiro, dispensa o reteste:
 
 ```text

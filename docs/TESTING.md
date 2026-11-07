@@ -32,12 +32,13 @@ O Mapping é uma app web para marcar áreas retangulares em imagens, organizá-l
 | 20 | R18 — Avisos na especialização | uma especialização `formatVersion` 10 pequena (descrita no próprio roteiro), a shell e o MCP (seção 6) | 25 min |
 | 21 | R19 — Papéis nos vínculos | uma especialização `formatVersion` 11 pequena (e variantes 12) e o projeto, escritos no próprio roteiro, a shell e o MCP (seção 6) | 40 min |
 | 22 | R20 — Documentos externos | uma especialização com `docRepos` e um clone com `git init` e `.md`, escritos no próprio roteiro, a shell e o MCP (seção 6) | 30 min |
+| 23 | R21 — Workspace atualizado pela release | a shell, o Node, o `curl` com rede para `github.com` e o MCP por stdio (sem a app); a tag da release da mensagem | 25 min |
 | sob demanda | RP — App instalado (PWA), nos **roteiros sob demanda (manuais)** | versão principal ou preview (`https:`) e o app instalável; só quando o dono pedir | 15 min |
 | sob demanda | RF — `index.html` por `file://` (antes R0.5), nos **roteiros sob demanda (manuais)** | shell com acesso ao GitHub Pages e o Chrome do computador; só quando o dono pedir | 10 min |
 | sob demanda | RA — Fechar a aba no meio da gravação (antes R6.2), nos **roteiros sob demanda (manuais)** | a pasta `principal` e um `tela2.png`; só quando o dono pedir | 10 min |
 | sob demanda | RB — Esc no meio de um arraste logo depois de renomear (antes R6.1), nos **roteiros sob demanda (manuais)** | a pasta `principal`; só quando o dono pedir | 5 min |
 
-Os tempos são aproximados (pelo número de passos); registre o tempo real no relato. Sem o MCP, faça da linha 4 só o passo 2 da seção 6 (o repositório de teste e as pastas, sem o `mapping-mcp.js`), rode o R3.1 a R3.5 e pule o R3.6 e o R5, marcando-os como "não executado (sem MCP)". Os roteiros principais (R0 a R20) são feitos para o agente da nuvem executar **sozinho**. Os **roteiros sob demanda (manuais)**, hoje o RP, o RF, o RA e o RB, não fazem parte da rodada completa nem da dirigida: rodam à parte, numa sessão sob demanda, só quando o dono pedir (fim da seção 8). As dependências entre os roteiros estão no começo da seção 8. A seção 9 (teste manual avançado) é um roteiro à parte, depois de uma rodada completa sem achados altos ou médios.
+Os tempos são aproximados (pelo número de passos); registre o tempo real no relato. Sem o MCP, faça da linha 4 só o passo 2 da seção 6 (o repositório de teste e as pastas, sem o `mapping-mcp.js`), rode o R3.1 a R3.5 e pule o R3.6 e o R5, marcando-os como "não executado (sem MCP)". Os roteiros principais (R0 a R21) são feitos para o agente da nuvem executar **sozinho**. Os **roteiros sob demanda (manuais)**, hoje o RP, o RF, o RA e o RB, não fazem parte da rodada completa nem da dirigida: rodam à parte, numa sessão sob demanda, só quando o dono pedir (fim da seção 8). As dependências entre os roteiros estão no começo da seção 8. A seção 9 (teste manual avançado) é um roteiro à parte, depois de uma rodada completa sem achados altos ou médios.
 
 O que este guia **não** testa: se um painel é fácil de achar ou se um texto é claro para quem não leu a documentação. Isso fica com pessoas, no uso real.
 
@@ -232,7 +233,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - Como criar marcações e anotações, como adicionar imagem e a notação "**Marcação** › **Tipo** · campo = valor" estão na seção 5; "desenhe" é sempre no modo **Desenhar**.
 - _Itálico no fim do Esperado_ marca uma **regressão conhecida**: algo que já quebrou numa rodada anterior e é conferido de novo, não o objetivo do passo.
 - **[pessoa]** marca os passos que o agente da nuvem não faz sozinho (apêndice A); quem testa à mão pode ignorar a marca. O "ou `ação`" nomeia a receita que substitui a pessoa nos diálogos nativos (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`; cada nome é uma receita do apêndice A, "Diálogos nativos na nuvem (Xvfb)") e o cliente MCP por stdio nos pedidos ao Claude Code. Nos roteiros principais nenhum passo fica sem substituto (um teste confere).
-- **Regra para quem altera os roteiros (agentes e pessoas).** Os roteiros principais (R0 a R20) são feitos para o agente da nuvem executar **sozinho**: todo passo novo ou alterado precisa ter um jeito de o agente da nuvem fazê-lo (receita da nuvem do apêndice A, Playwright por CDP, shell ou cliente MCP por stdio) e dizê-lo na Ação.
+- **Regra para quem altera os roteiros (agentes e pessoas).** Os roteiros principais (R0 a R21) são feitos para o agente da nuvem executar **sozinho**: todo passo novo ou alterado precisa ter um jeito de o agente da nuvem fazê-lo (receita da nuvem do apêndice A, Playwright por CDP, shell ou cliente MCP por stdio) e dizê-lo na Ação.
 - **Teste que precisa do dono.** Se um teste precisa de interação do dono (nenhuma receita da nuvem o faz) e **não é muito relevante**, ele vai para os **roteiros sob demanda (manuais)** (fim desta seção), que o dono faz à mão.
 - **Teste que precisa do dono e é muito relevante.** Se precisa de interação do dono e **é muito relevante** (risco de perda de dados, integridade do `mapping.json`, segurança), o agente **não decide sozinho**: avisa o dono, na conversa e na descrição do PR, para decidirem juntos; enquanto não decidirem, o passo fica onde está, marcado como **pendente de decisão**.
 
@@ -260,6 +261,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - R18 usa a pasta própria `avisos` (criada pelo MCP no R18.3), a pasta `avisos-pacote` do R18.7, a especialização `avisos.json` que a shell escreve no R18.1, o MCP por stdio e, nos passos R18.4 a R18.10 e R18.12, a app; R18.1 a R18.12 seguem em sequência, não dependem de nenhum outro roteiro. Sem o MCP, marque todos "não executado (sem MCP)".
 - R19 usa as pastas próprias `papeis`, `juntar` e `encadeia` (e as especializações `formatVersion` 11, 12 e 13 que o roteiro escreve), a shell, o MCP por stdio e a app; os passos seguem em sequência. Na rodada dirigida, o R19.19 precisa antes do R19.1, R19.5, R19.6 e R19.13; o R19.20 a R19.21a, do R19.1 ao R19.19 (Home e Ajuda em `click`, Tap e Perfil em `hold`), em ordem (R19.20, R19.20b, R19.20a, R19.20c, R19.21, R19.21a); o R19.22 a R19.29, só do R19.1, em ordem. Sem o MCP, marque os passos de MCP "não executado (sem MCP)".
 - R20 usa a pasta própria `docext` (a especialização com `docRepos` e o clone com `git init` e `.md` que o roteiro escreve), a shell, o MCP por stdio e a app; não depende de nenhum outro roteiro. Sem o MCP, marque os passos de MCP "não executado (sem MCP)".
+- R21 usa a pasta própria `release-ws` (`W21`) e a **release real** no GitHub, a da tag da mensagem (numa completa na `main`, a última estável), só com shell e o MCP por stdio, sem a app. R21.1 a R21.5 e R21.8 seguem em sequência sobre a `ws-novo` e a `ws-antigo`; R21.3, R21.6 e R21.7 copiam delas. Sem rede para a release, marque todos "não executado (sem rede para a release)".
 - R11 não precisa de arquivo nem de MCP: o guia vem no build e o exemplo é o `examples/exemplo-completo.zip` do repositório; abri-lo cria uma cópia nova **Neste dispositivo** a cada vez, e o R11.8 a apaga.
 - R10 usa o pacote `libraries/material3-compose/` (R10.1 a R10.6, sem projeto, e uma cópia `mat-link` no R10.5); R10.7 usa o projeto `telas` do R9 (com o Material 3 (Compose) aplicado); R10.8 cria o projeto próprio `vazio`; nenhum passo precisa do MCP.
 - R9 usa o projeto próprio `telas` (pasta nova, sem imagem) e o pacote `libraries/material3-compose/`; R9.1 a R9.12 não precisam do MCP; R9.13 a R9.15 e R9.18 a R9.20 usam a seção 6 e o MCP (o `add_container` existe a partir do épico Container), em `design/mapeamentos/telas` (mova a pasta `telas` para lá com o projeto fechado).
@@ -1342,9 +1344,142 @@ printf '# Badge\n\nDocumento do Badge, dentro do pacote.\n' > assets/docs-extern
 | R20.18 | **`set_doc_repo` por proposta.** Pelo cliente stdio, `plan_changes` em `docsext` com: **(a)** `set_doc_repo` com `repo` `nao-existe` e `localPath` `../x`; **(b)** `set_doc_repo` com `repo` `design-docs` e `localPath` `/abs`; **(c)** `set_doc_repo` com `repo` `design-docs` e **sem** `localPath`. Depois `propose_changes` (título "Clone do notas-internas") com `set_doc_repo` `notas-internas` e `localPath` `../../../assets/notas-internas`. | **Resposta:** **(a)** `valid` `false`, erro `unknown-doc-repo` (`detail` `nao-existe`); **(b)** erro `invalid-local-path`; **(c)** erro `nothing-to-change`. A proposta volta `valid` `true`, com `changes.docRepos` `{ created: 0, updated: 1, deleted: 0 }`. |
 | R20.18a | **Aplicação da proposta e conferência.** Com a proposta do R20.18, na app, **Propostas** › **Revisar**, **Aceitar tudo**, **Aplicar aceitas** e **Sair da revisão**; reabra **Configurações**. Pelo cliente stdio, `get_component` do `popover`. Por fim, pela shell, `git -C assets/design-docs status --short`. | **Tela:** a lista da revisão traz uma mudança de título `Repositório de documentos notas-internas atualizado`; depois de aplicar, o campo de `notas-internas` em **Configurações** mostra `../../../assets/notas-internas`. **Disco:** o `mapping.json` com os dois `localPath`. **Resposta** do `get_component`: `doc` é o texto do `popover.md`, `docExternal.exists` `true` e `localFile` `assets/notas-internas/docs/popover.md`. **Disco:** o `status` do clone `design-docs` não imprime nada (a rodada não alterou o clone). |
 
+### R21 — Workspace atualizado pela release
+
+**O que cobre:** a etapa Workspace atualizado (WA1 e WA2): o `setup.sh` do `examples/workspace/` que cada release do MCP publica junto com o `mapping-mcp.js`, a skill `SKILL.md` e o bloco `AGENTS.mapping.md` (cada arquivo com o `.sha256`). Os passos conferem, contra a **release real no GitHub**, o workspace novo pela linha única, a migração do workspace antigo pela linha da transição (o `AGENTS.md` do esqueleto antigo vira o bloco entre `mapping:begin` e `mapping:end`, com backup e a seção "Para que servem" intacta), a autoatualização do `setup.sh` e o `--no-self-update`, a repetição sem mudança, a cópia da skill em `.claude/skills/` atualizada, a conferência do `sha256` de todos os arquivos antes de trocar qualquer um e o servidor do workspace respondendo pelo cliente stdio. Não usa a app nem o navegador.
+
+**Preparo.** Só shell e o cliente MCP por stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`). `REPO` é o clone do Mapping (receita 1 do apêndice A). Cada passo trabalha numa subpasta própria de `W21`. A tag `TAG` vem da mensagem do testador (a release candidate do épico); numa rodada completa na `main`, é a última estável. O R21 baixa da release **real**, não do build local: sem rede para `github.com`, marque todos "não executado (sem rede para a release)"; se a release da `TAG` não tiver o `setup.sh`, marque todos "não executado (a release não traz o setup.sh)". O resumo do `setup.sh` tem as linhas `Servidor:`, `Skill:` e `AGENTS.md:` (esta diz `criado`, `atualizado`, `migrado`, `sem mudança` ou `não reconhecido…`); os avisos saem pelo stderr, por isso a saída é gravada com `2>&1`.
+
+```bash
+export W21=<pasta de trabalho>/release-ws && mkdir -p "$W21" && cd "$W21"
+# Rodada dirigida: TAG vem da mensagem. Rodada completa na main: a última estável.
+TAG=$(basename "$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/fabianofranca/mapping/releases/latest)")
+export TAG BASE="https://github.com/fabianofranca/mapping/releases/download/$TAG"
+curl -fsSI "$BASE/setup.sh" > /dev/null && echo "release com setup.sh"
+mkdir baixados
+for f in mapping-mcp.js setup.sh SKILL.md AGENTS.mapping.md; do
+  curl -fsSL "$BASE/$f" -o "baixados/$f" && curl -fsSL "$BASE/$f.sha256" -o "baixados/$f.sha256"
+done
+(cd baixados && sha256sum -c *.sha256)
+# hash de todos os arquivos de uma pasta (menos .git), em ordem
+snap() { (cd "$1" && find . -path ./.git -prune -o -type f -print0 | sort -z | xargs -0 sha256sum); }
+```
+
+O R21.1 roda o `setup.sh` da release numa pasta vazia e confere o resultado:
+
+```bash
+cd "$W21" && mkdir ws-novo && cd ws-novo
+curl -fsSL "$BASE/setup.sh" -o setup.sh && chmod +x setup.sh
+./setup.sh "$TAG" > ../saida-novo.txt 2>&1; echo "exit=$?"; cat ../saida-novo.txt
+(cd tools && sha256sum -c mapping-mcp.js.sha256)
+node tools/mapping-mcp.js --version; node ../baixados/mapping-mcp.js --version
+cmp .agents/skills/spec-author/SKILL.md ../baixados/SKILL.md
+test -L .claude/skills/spec-author && echo link
+grep -c 'mapping:begin' AGENTS.md; grep -c 'mapping:end' AGENTS.md
+grep -n '^# Mapeamentos\|^## Para que servem estes mapeamentos' AGENTS.md
+```
+
+O R21.2 monta o workspace antigo a partir do histórico do repositório do Mapping (o `setup.sh` e o `AGENTS.md` de antes do bloco gerenciado) e roda a linha da transição, com `latest/download` trocado por `download/$TAG` e a tag passada ao script:
+
+```bash
+cd "$W21" && mkdir ws-antigo && cd ws-antigo
+git -C "$REPO" show 05c1793:examples/workspace/AGENTS.md > AGENTS.md
+git -C "$REPO" show 05c1793:examples/workspace/setup.sh > setup.sh && chmod +x setup.sh
+mkdir -p projetos/demo && echo 'dado do dono' > projetos/demo/nota.txt && echo '@AGENTS.md' > CLAUDE.md
+python3 -I - <<'EOF'
+import re
+s = open('AGENTS.md', encoding='utf-8').read()
+s = re.sub(r'<!--.*?-->', 'Documentar as telas do app X.', s, count=1, flags=re.S)
+open('AGENTS.md', 'w', encoding='utf-8').write(s)
+EOF
+cp AGENTS.md ../AGENTS-antes.md && sha256sum projetos/demo/nota.txt CLAUDE.md > ../dono.sha256
+curl -fsSL "$BASE/setup.sh" -o setup.sh && chmod +x setup.sh && ./setup.sh "$TAG" > ../saida-antigo.txt 2>&1
+echo "exit=$?"; cat ../saida-antigo.txt
+```
+
+A conferência do R21.2, na `ws-antigo`:
+
+```bash
+cmp setup.sh ../baixados/setup.sh; ls AGENTS.md.bak-*; cmp AGENTS.md.bak-* ../AGENTS-antes.md
+grep -c 'mapping:begin' AGENTS.md
+[ "$(sed -n '/<!-- mapping:begin/,/<!-- mapping:end -->/p' AGENTS.md)" = "$(cat ../baixados/AGENTS.mapping.md)" ] && echo bloco-igual
+secao() { awk '/^## Para que servem/{f=1;next} /^## |<!-- mapping:begin/{f=0} f' "$1"; }
+secao ../AGENTS-antes.md > ../secao-antes.txt; secao AGENTS.md > ../secao-nova.txt
+cmp ../secao-antes.txt ../secao-nova.txt; grep -c 'Documentar as telas do app X.' ../secao-nova.txt
+grep -c '^## Estrutura' AGENTS.md
+awk '/mapping:begin/{f=1} /mapping:end/{f=0} !f && /^## (Estrutura|Regras|Fluxo típico)/' AGENTS.md
+sha256sum -c ../dono.sha256
+```
+
+O R21.3 parte de uma cópia da `ws-novo` com um `setup.sh` velho (o da release com uma linha a mais):
+
+```bash
+cd "$W21" && cp -a ws-novo ws-velho && cd ws-velho
+cp ../baixados/setup.sh setup.sh && printf '\n# versão antiga (R21)\n' >> setup.sh && cp setup.sh ../setup-velho.sh
+./setup.sh "$TAG" > ../saida-velho.txt 2>&1; echo "exit=$?"; cat ../saida-velho.txt
+cmp setup.sh ../baixados/setup.sh
+grep -c 'setup.sh atualizado' ../saida-velho.txt; grep -c '^Servidor:' ../saida-velho.txt
+```
+
+O R21.4 e o R21.5 repetem o `setup.sh` na `ws-antigo`:
+
+```bash
+# R21.4
+cd "$W21" && snap ws-antigo > antes.txt
+(cd ws-antigo && ./setup.sh "$TAG" > ../saida-igual.txt 2>&1; echo "exit=$?"; cat ../saida-igual.txt)
+snap ws-antigo > depois.txt && diff antes.txt depois.txt && echo igual
+ls ws-antigo/AGENTS.md.bak-*; grep -c 'setup.sh atualizado' saida-igual.txt
+# R21.5
+cd "$W21/ws-antigo"
+rm .claude/skills/spec-author && mkdir -p .claude/skills/spec-author && echo velho > .claude/skills/spec-author/SKILL.md
+./setup.sh "$TAG" > ../saida-copia.txt 2>&1; echo "exit=$?"
+test -L .claude/skills/spec-author && echo link || echo pasta-real
+cmp .claude/skills/spec-author/SKILL.md ../baixados/SKILL.md; cmp .agents/skills/spec-author/SKILL.md ../baixados/SKILL.md
+```
+
+O R21.6 e o R21.7 (depois do R21.5, que deixa a `ws-antigo` com a cópia da skill):
+
+```bash
+# R21.6: o setup.sh velho do R21.3, sem tools/
+cd "$W21" && cp -a ws-novo ws-trava && cd ws-trava && rm -rf tools
+cp ../setup-velho.sh setup.sh && sha256sum setup.sh > ../trava-antes.sha256
+./setup.sh "$TAG" --no-self-update > ../saida-trava.txt 2>&1; echo "exit=$?"; cat ../saida-trava.txt
+sha256sum -c ../trava-antes.sha256; grep -c 'setup.sh atualizado' ../saida-trava.txt
+(cd tools && sha256sum -c mapping-mcp.js.sha256)
+# R21.7: a release com um byte do servidor estragado
+cd "$W21" && cp -a baixados release-falsa
+python3 -I -c "p='release-falsa/mapping-mcp.js'; d=bytearray(open(p,'rb').read()); d[len(d)//2]^=1; open(p,'wb').write(d)"
+cp -a ws-antigo ws-adulterado && snap ws-adulterado > antes-adulterado.txt
+(cd ws-adulterado && MAPPING_RELEASE_BASE="file://$W21/release-falsa" ./setup.sh > ../saida-adulterado.txt 2>&1; echo "exit=$?"; cat ../saida-adulterado.txt)
+snap ws-adulterado > depois-adulterado.txt && diff antes-adulterado.txt depois-adulterado.txt && echo igual
+ls ws-adulterado/AGENTS.md.bak-*
+```
+
+O R21.8, na `ws-novo` (o cliente usa o comando padrão do esqueleto, `tools/mapping-mcp.js --root projetos --root especializacoes`, então não precisa de `.mcp.json`, que o `setup.sh` não cria):
+
+```bash
+cd "$W21/ws-novo"
+cat > calls.json <<'EOF'
+[{"name":"create_project","args":{"path":"demo","name":"Demo","root":"projetos"}},{"name":"list_projects","args":{}}]
+EOF
+WS="$W21/ws-novo" node "$REPO/scripts/testing/mcp-stdio-client.mjs" calls.json
+node tools/mapping-mcp.js --version; ls projetos/demo/mapping.json
+```
+
+| Passo | Ação | Esperado |
+| --- | --- | --- |
+| R21.1 | **Workspace novo pela linha única.** Rode a shell do R21.1 (pasta vazia `ws-novo`, o `setup.sh` baixado da release e executado com a tag). | **Disco:** `exit=0`; `mapping-mcp.js: OK`; as duas `--version` iguais e começando pelo número da tag; `cmp` sem saída; `link`; as duas contagens `1`; o `grep` acha `# Mapeamentos` e `## Para que servem estes mapeamentos`. **Resposta:** o resumo tem `Servidor:` (a mesma versão), `Skill:` citando a release e `AGENTS.md: criado`. |
+| R21.2 | **Workspace antigo migrado pela linha da transição.** Rode a shell do R21.2 (monta a `ws-antigo` do histórico, com o texto do dono em "Para que servem", e roda a linha da transição) e a conferência dela. | **Disco:** `exit=0`; o `setup.sh` é o da release (`cmp` sem saída; o download da linha já o trocou, então **não** há "setup.sh atualizado"); **um** `AGENTS.md.bak-AAAAMMDD-HHMMSS`, igual à cópia; `1` marcador `mapping:begin`; `bloco-igual`; a seção do dono idêntica byte a byte (`cmp` sem saída) e com o texto (`1`); `## Estrutura` uma vez (dentro do bloco) e nada fora dele; `nota.txt: OK` e `CLAUDE.md: OK`. **Resposta:** o resumo diz `AGENTS.md: migrado`. |
+| R21.3 | **Autoatualização do `setup.sh`.** Rode a shell do R21.3 (cópia da `ws-novo` com o `setup.sh` velho, executada com a tag). | **Disco:** `exit=0`; `setup.sh` igual ao da release (`cmp` sem saída). **Resposta:** "setup.sh atualizado" aparece **uma** vez e o resumo (`Servidor:`) também **uma**: o script rodou de novo só uma vez; `AGENTS.md: sem mudança`. |
+| R21.4 | **Rodar de novo sem mudança.** Rode a primeira parte da shell do R21.4/R21.5 (`snap` da `ws-antigo`, `./setup.sh "$TAG"` e `snap` de novo). | **Disco:** `exit=0`; `igual` (nenhum arquivo mudou nem surgiu; se o script deixar um diretório temporário na pasta, cite qual no relato); `ls` mostra o mesmo único backup do R21.2; `0` ocorrências de "setup.sh atualizado". **Resposta:** `AGENTS.md: sem mudança`. |
+| R21.5 | **`.claude/skills/` como cópia, atualizada.** Rode a segunda parte da shell do R21.4/R21.5 (troca o link por uma pasta real com um `SKILL.md` velho e roda o `setup.sh`). | **Disco:** `exit=0`; `pasta-real` (continua pasta, não virou link); os dois `cmp` sem saída (a cópia velha foi trocada pela da release). |
+| R21.6 | **`--no-self-update`.** Rode a primeira parte da shell do R21.6/R21.7 (cópia da `ws-novo` sem `tools/`, com o `setup.sh` velho, executada com `--no-self-update`). | **Disco:** `exit=0`; `setup.sh: OK` (continua o velho); `0` ocorrências de "setup.sh atualizado"; `tools/mapping-mcp.js` voltou e `mapping-mcp.js: OK` (o resto foi atualizado). |
+| R21.7 | **Arquivo adulterado para tudo.** Rode a segunda parte da shell do R21.6/R21.7 (`release-falsa` com um byte do `mapping-mcp.js` estragado, `ws-adulterado` copiada da `ws-antigo`, e o `setup.sh` com `MAPPING_RELEASE_BASE` apontando para ela). | **Resposta:** `exit` diferente de `0`, e a saída cita o `sha256` de `mapping-mcp.js` que não confere e que nada foi alterado. **Disco:** `igual` (nenhum arquivo mudou: `setup.sh`, `tools/`, `.agents/`, `.claude/`, `AGENTS.md`); `ls` mostra só o backup do R21.2, nenhum novo. |
+| R21.8 | **O servidor do workspace responde pelo cliente stdio.** Rode a shell do R21.8 (cria o projeto `Demo` na `ws-novo` e pede `list_projects` pelo cliente). | **Resposta:** o `create_project` devolve `created` `true`; o `list_projects` traz o `Demo` (em `projetos/demo`), `roots` com as duas raízes (`projetos` e `especializacoes`, caminhos reais do workspace) e `missingRoots` vazio. A `--version` é a do R21.1 (a da tag). **Disco:** `projetos/demo/mapping.json` existe. |
+
 ### Roteiros sob demanda (manuais)
 
-**Critério de entrada.** Os roteiros principais (R0 a R20) são feitos para o agente da nuvem executar sozinho. Um teste vai para cá quando precisa de interação do dono e **não é muito relevante** (a regra está nas convenções do começo desta seção). Estes roteiros **só rodam quando o dono pedir**, numa sessão sob demanda: nunca entram na rodada completa nem na dirigida, e fora da sessão pedida nem aparecem no relato. Os códigos e o conteúdo não mudam. O R0.5 e o R6.2 já migraram para cá (RF e RA), por decisão do dono, depois de não funcionarem sozinhos numa rodada sem interação.
+**Critério de entrada.** Os roteiros principais (R0 a R21) são feitos para o agente da nuvem executar sozinho. Um teste vai para cá quando precisa de interação do dono e **não é muito relevante** (a regra está nas convenções do começo desta seção). Estes roteiros **só rodam quando o dono pedir**, numa sessão sob demanda: nunca entram na rodada completa nem na dirigida, e fora da sessão pedida nem aparecem no relato. Os códigos e o conteúdo não mudam. O R0.5 e o R6.2 já migraram para cá (RF e RA), por decisão do dono, depois de não funcionarem sozinhos numa rodada sem interação.
 
 #### RP — App instalado (PWA)
 
@@ -1511,7 +1646,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 
 **Passos [pessoa].**
 
-- **O que é:** o passo usa um diálogo do sistema ou do navegador que a página não opera: o seletor de pasta ou de arquivo, a permissão da pasta ("Permitir que o site veja/edite os arquivos?"), o "Salvar como" da exportação, a confirmação de instalar o app e o "Sair da página?". Nos roteiros principais (R0 a R20), todo passo [pessoa] tem um substituto para o agente (receita da nuvem abaixo, shell ou cliente por stdio), e um teste do repositório impede passo "sem substituto" ali. A marca **[pessoa]** fica no guia para quem testa à mão.
+- **O que é:** o passo usa um diálogo do sistema ou do navegador que a página não opera: o seletor de pasta ou de arquivo, a permissão da pasta ("Permitir que o site veja/edite os arquivos?"), o "Salvar como" da exportação, a confirmação de instalar o app e o "Sair da página?". Nos roteiros principais (R0 a R21), todo passo [pessoa] tem um substituto para o agente (receita da nuvem abaixo, shell ou cliente por stdio), e um teste do repositório impede passo "sem substituto" ali. A marca **[pessoa]** fica no guia para quem testa à mão.
 - **Nome da ação nos roteiros:** o "ou `select_folder`", "ou `open_file`", "ou `save_file`", "ou `accept_permission_prompt`" e "ou `cancel_dialog`" que acompanham a marca [pessoa] nomeiam a receita da nuvem que faz o papel da pessoa (tabela em "Diálogos nativos na nuvem (Xvfb)", mais abaixo).
 - **Nenhum passo dos roteiros principais é inteiro da pessoa.** O R0.5 (`index.html` por `file://`) e o R6.2 (fechar a aba no meio da gravação) não funcionaram sozinhos e foram para os roteiros sob demanda RF e RA, por decisão do dono. O R6.2 ganhou o e2e `tests/e2e/folder.spec.ts` no lugar.
 - **Se um passo novo não funcionar sozinho** (o endereço não abre; o diálogo nativo não aparece), marque "não executado (vai para os roteiros sob demanda)", registre o que falhou e proponha mover o passo. Se o teste for relevante (perda de dados, integridade do `mapping.json`, segurança), **avise o dono** no relato, pela regra das convenções da seção 8; não decida sozinho.
