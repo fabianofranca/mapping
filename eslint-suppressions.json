@@ -241,7 +241,7 @@
   },
   "src/model/codeBlueprint.ts": {
     "complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "src/model/codeLocations.ts": {

@@ -12,6 +12,7 @@ import {
   type Annotation,
   type BlueprintAnnotation,
   type BlueprintNode,
+  type BlueprintTarget,
   type Spec,
   type SpecCode,
   type SpecRepo,
@@ -193,12 +194,34 @@ export async function packageCodeView(
 // ---------------------------------------------------------------------------
 // get_code_hints
 
+/** Alvo de um `ref` para a anotação inteira: a posição, o rótulo e o alvo expandido. */
+function hintTarget(
+  target: BlueprintTarget,
+  refs: Refs,
+  codes: ReadonlyMap<string, Json>,
+): Json {
+  const base = {
+    field: target.field,
+    row: target.row,
+    column: target.column,
+    label: target.label,
+  };
+  if (target.annotation === null) return { ...base, repeated: true };
+  const children = target.children.map((c) => hintNode(c, refs, codes));
+  return {
+    ...base,
+    annotation: hintAnnotation(target.annotation, refs, codes),
+    ...(children.length > 0 ? { children } : {}),
+  };
+}
+
 function hintAnnotation(
   annotation: BlueprintAnnotation,
   refs: Refs,
   codes: ReadonlyMap<string, Json>,
 ): Json {
   const linked = annotation.linked.map((a) => hintAnnotation(a, refs, codes));
+  const targets = annotation.targets.map((t) => hintTarget(t, refs, codes));
   const code = codes.get(annotation.annotationId);
   const parentRole = projectIndex(refs.project).annotations.get(
     annotation.annotationId,
@@ -221,6 +244,7 @@ function hintAnnotation(
       : {}),
     ...(Object.keys(annotation.values).length > 0 ? { values: annotation.values } : {}),
     ...(linked.length > 0 ? { linked } : {}),
+    ...(targets.length > 0 ? { targets } : {}),
   };
 }
 
@@ -240,17 +264,21 @@ function hintNode(
   };
 }
 
-/** Anotações da árvore, com as vinculadas. */
+/** Anotações da árvore, com as vinculadas e as dos alvos expandidos (e das filhas deles). */
 function allAnnotations(node: BlueprintNode): BlueprintAnnotation[] {
   const out: BlueprintAnnotation[] = [];
   const visitAnnotation = (a: BlueprintAnnotation) => {
     out.push(a);
     a.linked.forEach(visitAnnotation);
+    for (const target of a.targets) {
+      if (target.annotation) visitAnnotation(target.annotation);
+      target.children.forEach(visit);
+    }
   };
-  const visit = (n: BlueprintNode) => {
+  function visit(n: BlueprintNode): void {
     n.annotations.forEach(visitAnnotation);
     n.children.forEach(visit);
-  };
+  }
   visit(node);
   return out;
 }
