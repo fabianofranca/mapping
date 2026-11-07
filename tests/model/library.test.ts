@@ -233,6 +233,34 @@ const brief = (issue: LibraryIssue): [string, string, string, string] => [
 // Pacote válido
 // ---------------------------------------------------------------------------------------
 
+describe('validateLibrary: família de fonte do componente', () => {
+  const family = (value: string): LibraryIssue[] =>
+    validate(
+      patch(
+        miniPackage(),
+        'components/mini-button.json',
+        ['template', 'children', 0, 'font', 'family'],
+        value,
+      ),
+    ).warnings.slice();
+
+  it('uma família que o CSS não aceita é aviso, com o caminho do nó e o valor', () => {
+    const warnings = family('"Segoe UI, Roboto');
+    expect(warnings.map(brief)).toEqual([
+      [
+        'warning',
+        'components/mini-button.json',
+        'template.children[0].font.family',
+        expect.stringContaining('"Segoe UI, Roboto'),
+      ],
+    ]);
+  });
+
+  it('uma pilha válida não avisa', () => {
+    expect(family('system-ui, "Segoe UI", sans-serif')).toEqual([]);
+  });
+});
+
 describe('validateLibrary: pacote válido', () => {
   it('não tem erro nem aviso, e o resumo conta o pacote', () => {
     const report = validate(miniPackage());
