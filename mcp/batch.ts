@@ -72,7 +72,9 @@ import {
   setEntries,
   setFieldValue,
   setImageLocked,
+  setContainerDrawingMode,
   setContainerMarkingColor,
+  setProjectDrawingMode,
   setImageMarkingsLocked,
   setContainerPlacement,
   setImageSource,
@@ -1212,10 +1214,10 @@ class Batch {
               : `Remover a especialização "${op.specId}": ${layers} camada(s) e ${impact.annotations} anotação(ões) viram livres${broken}`,
         };
       }
+      case 'update_project':
+        return this.updateProjectOp(op, p);
       case 'add_container':
-        return op.file !== undefined || op.base64 !== undefined
-          ? this.addContainerFromFile(op, p)
-          : this.addContainerWithBackground(op, p);
+        return this.addContainerOp(op, p);
       case 'add_image':
         return this.addContainerFromFile(op, p);
       case 'add_blank_image':
@@ -1401,6 +1403,41 @@ class Batch {
    * componente) e vale o `minSize`; a anotação nasce como na paleta da app (`preview`), com os
    * `values` por cima. O servidor nunca arruma: os retângulos são os que o agente informou.
    */
+  /** `update_project`: hoje só o modo do desenho. */
+  private updateProjectOp(
+    op: Extract<Operation, { op: 'update_project' }>,
+    p: Project,
+  ): Step {
+    if (op.drawingMode === undefined) {
+      return { project: p, description: 'Alterar o projeto: nada' };
+    }
+    return {
+      project: setProjectDrawingMode(p, op.drawingMode),
+      description:
+        op.drawingMode === null
+          ? 'Alterar o projeto: modo do desenho removido'
+          : `Alterar o projeto: modo do desenho ${quoted(op.drawingMode)}`,
+    };
+  }
+
+  /** `add_container` (com arquivo ou só com fundo) e o modo do desenho que ele fixa. */
+  private async addContainerOp(
+    op: Extract<Operation, { op: 'add_container' }>,
+    p: Project,
+  ): Promise<Step> {
+    const step =
+      op.file !== undefined || op.base64 !== undefined
+        ? await this.addContainerFromFile(op, p)
+        : this.addContainerWithBackground(op, p);
+    const id = step.created?.find((c) => c.kind === 'i')?.id;
+    if (op.drawingMode == null || id === undefined) return step;
+    return {
+      ...step,
+      project: setContainerDrawingMode(step.project, id, op.drawingMode),
+      description: `${step.description}, modo do desenho ${quoted(op.drawingMode)}`,
+    };
+  }
+
   /** Container com arquivo de imagem: `add_container` com `file`/`base64` e a antiga `add_image`. */
   private async addContainerFromFile(
     op: Extract<Operation, { op: 'add_container' | 'add_image' }>,
@@ -1532,6 +1569,14 @@ class Batch {
       const container = projectIndex(project).containers.get(id)!;
       changes.push(
         `tamanho ${container.width}×${container.height} px, fundo ${container.background}`,
+      );
+    }
+    if (op.drawingMode !== undefined) {
+      project = setContainerDrawingMode(project, id, op.drawingMode);
+      changes.push(
+        op.drawingMode === null
+          ? 'modo do desenho do projeto'
+          : `modo do desenho ${quoted(op.drawingMode)}`,
       );
     }
     if (op.locked === true) {

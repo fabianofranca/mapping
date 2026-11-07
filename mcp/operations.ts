@@ -113,6 +113,14 @@ const noPoints = z
   .optional()
   .describe('Não use: a rota é da pessoa (recusado com `invalid-arguments`).');
 
+const drawingModeField = z
+  .string()
+  .nullable()
+  .optional()
+  .describe(
+    'Modo do desenho (`[a-z0-9][a-z0-9-]*`, ex: `dark`): escolhe os valores dos `tokens` das especializações. `null` volta a seguir o do projeto; ausente não muda.',
+  );
+
 /** Campos de `update_container` (e da antiga `update_image`). */
 const updateContainerFields = {
   name: name.optional(),
@@ -129,6 +137,7 @@ const updateContainerFields = {
     .optional()
     .describe('Cor da borda das marcações (#RRGGBB) ou `null` (cor do tema).'),
   locked: z.boolean().optional().describe('Trancar ou destrancar o container.'),
+  drawingMode: drawingModeField,
   markingsLocked: z
     .boolean()
     .optional()
@@ -170,6 +179,17 @@ const replaceContainerFields = {
 };
 
 export const operationSchema = z.discriminatedUnion('op', [
+  // Projeto
+  z.object({
+    op: z.literal('update_project'),
+    drawingMode: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        'Modo do desenho do projeto (`[a-z0-9][a-z0-9-]*`, ex: `dark`): escolhe os valores dos `tokens` das especializações (não é o tema claro/escuro da app). `null` remove (volta ao primeiro modo de cada especialização); ausente não muda.',
+      ),
+  }),
   // Repositórios por plataforma
   z.object({
     op: z.literal('set_platform_repo'),
@@ -265,6 +285,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     op: z.literal('add_container'),
     as: alias,
     ...imageSource,
+    drawingMode: drawingModeField,
     name: z
       .string()
       .optional()

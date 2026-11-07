@@ -9,6 +9,7 @@ import { allowedOrigins } from '../store/imagePermissions';
 import { Dialog } from './Dialog';
 import { IdentitySettings } from './IdentitySettings';
 import { PrivacySettings } from './PrivacySettings';
+import { DrawingModeSettings, hasDrawingModes } from './DrawingModeSettings';
 import { PlatformRepos, hasRepos } from './PlatformRepos';
 import { SettingsBar } from './SettingsBar';
 import { Button } from './controls';
@@ -97,10 +98,11 @@ export function SettingsDialog({
   readOnly = false,
 }: SettingsDialogProps) {
   const repos = project !== undefined && hasRepos(project);
+  const modes = project !== undefined && hasDrawingModes(project);
   return (
     <Dialog
       title={t('settings.title')}
-      size={repos ? 'md' : 'sm'}
+      size={repos || modes ? 'md' : 'sm'}
       onCancel={onClose}
       actions={<Button onClick={onClose}>{t('common.close')}</Button>}
     >
@@ -109,6 +111,7 @@ export function SettingsDialog({
         {t('settings.shortcuts')}
       </Button>
       {repos && <PlatformRepos project={project} readOnly={readOnly} />}
+      {modes && <DrawingModeSettings project={project} readOnly={readOnly} />}
       <IdentitySettings />
       <PrivacySettings />
       <About />

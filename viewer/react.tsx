@@ -7,7 +7,7 @@
  *   desmonta e monta de novo, e cada ciclo cria e descarta o seu viewer sem vazar.
  * - Os callbacks (`onHover`, `onClick`, `onWarnings`, `onSource`) são lidos por ref: passar uma função nova
  *   a cada render NÃO recria o viewer.
- * - `library`/`screen`/`source`/`sourceSystem` → `update` (`source`, o JSON externo, vence `screen`
+ * - `library`/`screen`/`source`/`sourceSystem`/`drawingMode` → `update` (`source`, o JSON externo, vence `screen`
  *   e é traduzido pela origem da especialização; `onSource` recebe cada cálculo), `selection` → `setSelection`, `hover` → `setHover`,
  *   `fontsVersion` → `redraw`.
  * - `interactive` (padrão `true`) → `setInteractive`: com `false` o canvas não seleciona nem
@@ -30,6 +30,8 @@ export interface MappingViewerProps {
   /** JSON externo já parseado; definido, vence `screen` (ver `ViewerInput.source`). */
   readonly source?: unknown;
   readonly sourceSystem?: string;
+  /** Modo dos tokens do desenho (`light`, `dark`…); mudar redesenha sem recarregar. */
+  readonly drawingMode?: string;
   readonly onSource?: ViewerOptions['onSource'];
   readonly selection?: readonly string[];
   readonly hover?: string | undefined;
@@ -62,6 +64,7 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
     screen,
     source,
     sourceSystem,
+    drawingMode,
     selection,
     hover,
     fontsVersion,
@@ -87,6 +90,7 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
       screen: initial.screen,
       source: initial.source,
       sourceSystem: initial.sourceSystem,
+      drawingMode: initial.drawingMode,
       fit: initial.fit,
       padding: initial.padding,
       interactive: initial.interactive,
@@ -105,8 +109,8 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
   }, []);
 
   useEffect(() => {
-    viewerRef.current?.update({ library, screen, source, sourceSystem });
-  }, [library, screen, source, sourceSystem]);
+    viewerRef.current?.update({ library, screen, source, sourceSystem, drawingMode });
+  }, [library, screen, source, sourceSystem, drawingMode]);
 
   useEffect(() => {
     viewerRef.current?.setSelection(selection ?? NO_SELECTION);

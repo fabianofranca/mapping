@@ -193,6 +193,12 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
     renameProject: (name: string) => store.apply((p) => model.renameProject(p, name)),
     setContainerMarkingColor: (containerId: string, color: string | null) =>
       store.apply((p) => model.setContainerMarkingColor(p, containerId, color)),
+    /** Modo do desenho do projeto (v18); `null` volta ao primeiro modo de cada especialização. */
+    setProjectDrawingMode: (mode: string | null) =>
+      store.apply((p) => model.setProjectDrawingMode(p, mode)),
+    /** Modo do desenho que o container fixa; `null` volta a seguir o do projeto. */
+    setContainerDrawingMode: (containerId: string, mode: string | null) =>
+      store.apply((p) => model.setContainerDrawingMode(p, containerId, mode)),
     renameContainer: (containerId: string, name: string | null) =>
       store.apply((p) => model.renameContainer(p, containerId, name)),
 
