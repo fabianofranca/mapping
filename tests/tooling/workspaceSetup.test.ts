@@ -395,6 +395,20 @@ describe('idempotência', () => {
     expect(second.out).toContain('AGENTS.md: sem mudança');
   });
 
+  it('migra um AGENTS.md antigo grande sem SIGPIPE (status 141 sob carga)', () => {
+    const env = setup();
+    // Depois do "## Estrutura" há muito mais que o buffer do pipe: o `tail` ainda escreve
+    // quando o `head` já saiu. Com `set -o pipefail`, isso vira status 141 (causa da falha
+    // intermitente "expected 141 to be +0").
+    write(
+      env,
+      'AGENTS.md',
+      `${OLD_AGENTS}\n${'linha de enchimento do esqueleto antigo\n'.repeat(20000)}`,
+    );
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+  });
+
   it('vale também depois da migração', () => {
     const env = setup();
     write(env, 'AGENTS.md', OLD_AGENTS);

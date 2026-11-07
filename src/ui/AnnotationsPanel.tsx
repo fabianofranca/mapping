@@ -182,7 +182,7 @@ export function AnnotationsPanel({
   };
 
   return (
-    <div class="annotations" ref={root}>
+    <div class="annotations" ref={root} tabIndex={-1}>
       <IssuesNotice project={project} groups={byLayer} />
       <Section
         section={{ kind: 'annotations' }}
@@ -193,7 +193,14 @@ export function AnnotationsPanel({
         {layers.length === 0 && project.layers.length > 0 && (
           <div class="annotations-all-hidden">
             <span>{t('annotation.allLayersHidden')}</span>
-            <Button size="sm" onClick={() => showAllLayers(ui)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                // O botão some quando as camadas voltam: o foco fica na seção, não vai ao body.
+                root.current?.focus();
+                showAllLayers(ui);
+              }}
+            >
               {t('layer.showAll')}
             </Button>
           </div>

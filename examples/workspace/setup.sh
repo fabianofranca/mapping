@@ -218,7 +218,8 @@ migrate_old_agents() {
   e="$(line_of '## Estrutura')"
   {
     printf '# Mapeamentos\n\n'
-    tail -n +"$s" AGENTS.md | head -n $((e - s))
+    # sed (e não `tail | head`): com pipefail, o head fechando o pipe antes do tail terminar dava SIGPIPE (141).
+    sed -n "${s},$((e - 1))p" AGENTS.md
     cat "$TMP/AGENTS.mapping.md"
   } >"$TMP/AGENTS.new"
   backup_agents

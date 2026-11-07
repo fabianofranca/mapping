@@ -271,6 +271,31 @@ describe('useEditorShortcuts: modo visualização (Alt+H)', () => {
   });
 });
 
+describe('useEditorShortcuts: Alt+H com o foco num controle do painel', () => {
+  it('desliga o modo com o foco numa caixa de seleção (Choice) do painel', () => {
+    const s = setup();
+    s.press('h', { alt: true });
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    document.body.appendChild(box);
+    box.focus();
+    expect(pressOn(box, 'h', { alt: true }).defaultPrevented).toBe(true);
+    expect(s.harness.ui.viewMode.value).toBe(false);
+    box.remove();
+  });
+
+  it('com campo de texto em foco, o Alt+H não age', () => {
+    const s = setup();
+    s.press('h', { alt: true });
+    const input = document.createElement('input');
+    document.body.appendChild(input);
+    input.focus();
+    expect(pressOn(input, 'h', { alt: true }).defaultPrevented).toBe(false);
+    expect(s.harness.ui.viewMode.value).toBe(true);
+    input.remove();
+  });
+});
+
 describe('useEditorShortcuts: sair do modo visualização (Esc)', () => {
   it('o Esc sai do modo e não mexe na seleção', () => {
     const s = setup();

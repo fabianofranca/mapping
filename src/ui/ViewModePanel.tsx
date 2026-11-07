@@ -92,17 +92,34 @@ function PanelBody() {
   );
 }
 
-/** O botão "Mostrar no canvas" (só habilitado no modo) e o painel que ele abre. */
+/** O botão Visualizar (a barra o liga a este ref), para devolver o foco a ele. */
+export const viewModeButton: { current: HTMLButtonElement | null } = { current: null };
+
+/**
+ * O botão "Mostrar no canvas" (só habilitado no modo) e o painel que ele abre. O painel que
+ * abriu ao ligar o modo devolve o foco, ao fechar, ao Visualizar (o botão ativo na barra); o
+ * aberto pelo próprio "Mostrar no canvas" devolve a ele.
+ */
 export function ViewModePanel() {
   const { ui } = useEditor();
   const on = ui.viewMode.value;
+  const fromTrigger = useRef(false);
+  if (!on) fromTrigger.current = false;
+  const onOpenChange = (next: boolean) => {
+    ui.viewPanel.value = next;
+    if (next) return;
+    if (!fromTrigger.current) {
+      viewModeButton.current?.focus();
+    }
+    fromTrigger.current = false;
+  };
   return (
     <Popover
       align="end"
       label={t('view.panelTitle')}
       panelClass="view-panel-popover"
       open={on && ui.viewPanel.value}
-      onOpenChange={(next) => (ui.viewPanel.value = next)}
+      onOpenChange={onOpenChange}
       trigger={({ open, toggle }) => (
         <IconButton
           icon="layers"
@@ -110,7 +127,10 @@ export function ViewModePanel() {
           aria-haspopup="dialog"
           aria-expanded={open}
           disabled={!on}
-          onClick={toggle}
+          onClick={() => {
+            fromTrigger.current = true;
+            toggle();
+          }}
         />
       )}
     >
