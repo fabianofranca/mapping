@@ -72,19 +72,24 @@ jobs:
         working-directory: dist-mcp
         run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
 
+      - name: Arquivos do workspace
+        run: node scripts/release/workspaceAssets.mjs dist-mcp
+
       - name: Publicar na Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          assets="$(node scripts/release/workspaceAssets.mjs dist-mcp)"
+          mapfile -t assets <<< "$assets"
           if gh release view "$TAG" > /dev/null 2>&1; then
             # Criada pela tela do GitHub (ou numa execução anterior): só anexa os arquivos.
-            gh release upload "$TAG" dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 --clobber
+            gh release upload "$TAG" dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" --clobber
             gh release edit "$TAG" --title "$TAG"
           else
             gh release create "$TAG" \
-              dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
+              dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" \
               --title "$TAG" \
-              --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Instruções em docs/MCP.md."
+              --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Traz também o \`setup.sh\`, a skill \`SKILL.md\` e as regras \`AGENTS.mapping.md\` do workspace, cada um com o \`.sha256\`. Instruções em docs/MCP.md. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           fi
 
       - name: Apagar as release candidates desta versão

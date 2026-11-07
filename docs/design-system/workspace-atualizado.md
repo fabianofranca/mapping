@@ -2,7 +2,7 @@
 
 ## Pendências
 
-Nenhuma (impacto `nenhum` esperado).
+Nenhuma.
 
 ## Sincronização
 
