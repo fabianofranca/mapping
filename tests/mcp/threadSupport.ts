@@ -42,7 +42,11 @@ export interface Seed {
   readonly id?: string;
   readonly anchor: ThreadAnchor;
   /** Mensagens na ordem; a primeira abre a conversa. */
-  readonly messages: readonly { by: 'human' | 'agent'; text: string; proposal?: string }[];
+  readonly messages: readonly {
+    by: 'human' | 'agent';
+    text: string;
+    proposal?: string;
+  }[];
   readonly resolved?: boolean;
   /** Minuto da primeira mensagem (cada mensagem seguinte anda 1 minuto). */
   readonly start?: number;
@@ -97,7 +101,12 @@ export function readThread(projectDir: string, id: string): Thread {
 }
 
 /** Imita a app: acrescenta uma mensagem de pessoa à conversa aberta (`revision + 1`). */
-export function humanReplies(projectDir: string, id: string, text: string, minute: number) {
+export function humanReplies(
+  projectDir: string,
+  id: string,
+  text: string,
+  minute: number,
+) {
   const thread = appendMessage(readThread(projectDir, id), {
     id: randomUUID(),
     author: HUMAN,
