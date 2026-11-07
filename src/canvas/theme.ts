@@ -1,3 +1,5 @@
+import type { HostFonts } from '../model/components/tokens';
+
 // Tokens do canvas lidos das variáveis CSS do tema (nenhum valor de design fixo
 // no código). Os nomes em `--cv-*`, `--opacity-*`, `--t-cv-*` etc. vêm de
 // `src/theme/tokens.ts`, a fonte única.
@@ -172,6 +174,26 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
       unread: read('--cv-pin-unread'),
     },
   };
+}
+
+/** A fonte do hospedeiro lida do tema: `--font-sans` e `--font-mono`; valor vazio fica ausente. */
+export function hostFontsFrom(read: TokenReader): HostFonts {
+  const sans = read('--font-sans');
+  const mono = read('--font-mono');
+  return {
+    ...(sans === '' ? {} : { sans }),
+    ...(mono === '' ? {} : { mono }),
+  };
+}
+
+/** `hostFontsFrom` sobre o estilo calculado da página (vazio se não há DOM). */
+export function readHostFonts(root?: HTMLElement): HostFonts {
+  try {
+    const style = getComputedStyle(root ?? document.documentElement);
+    return hostFontsFrom((name) => style.getPropertyValue(name).trim());
+  } catch {
+    return {};
+  }
 }
 
 export function readCanvasTokens(

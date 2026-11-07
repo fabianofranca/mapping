@@ -11,6 +11,7 @@ import settings from '../../viewer/samples/settings.sdui.json';
 import { M3_FILES, M3_SCREEN } from '../../viewer/samples/samplesMaterial3';
 import type { Screen } from '../../src/model/components/screen';
 import { type Viewer, type ViewerOptions, createViewer } from '../../viewer';
+import { tokenValue } from '../../src/theme/tokens';
 
 beforeAll(() => installFakeCanvas());
 
@@ -602,5 +603,30 @@ describe('createViewer com source (JSON externo)', () => {
     viewer.update({ source: undefined });
     expect(viewer.screen()).toBe(M3_SCREEN);
     expect(instanceIds(stageOf(el))).toHaveLength(M3_SCREEN.instances.length);
+  });
+});
+
+describe('fonte padrão do visualizador (CF5)', () => {
+  /** As famílias que o medidor recebeu ao desenhar a tela de exemplo (textos sem `family`). */
+  function families(options: ViewerOptions = {}): Set<string> {
+    const seen = new Set<string>();
+    const measure: typeof approximateMeasurer = (text, font, maxWidth) => {
+      seen.add(font.family);
+      return approximateMeasurer(text, font, maxWidth);
+    };
+    make(container(), { library, screen: SAMPLE_SCREEN, measure, ...options });
+    return seen;
+  }
+
+  it('sem opção usa a pilha do --font-sans dos tokens da app, não uma fonte fixa', () => {
+    const seen = families();
+    expect(seen.has(tokenValue('font-sans', 'light'))).toBe(true);
+    expect(seen.has('Inter')).toBe(false);
+  });
+
+  it('a opção fonts do hospedeiro vence', () => {
+    const seen = families({ fonts: { sans: 'Hospedeiro Sans' } });
+    expect(seen.has('Hospedeiro Sans')).toBe(true);
+    expect(seen.has(tokenValue('font-sans', 'light'))).toBe(false);
   });
 });

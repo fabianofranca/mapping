@@ -45,6 +45,7 @@
 import type {
   Anchors,
   BoolExpr,
+  Color,
   ComponentFile,
   Expr,
   FieldValues,
@@ -73,6 +74,12 @@ import {
   parseSizeSpec,
 } from './layoutValues';
 import { expandRepeats } from './repeat';
+import {
+  applyTokens,
+  defaultFontFamily,
+  resolveTokens,
+  type ResolvedTokens,
+} from './tokens';
 import {
   layoutRuns,
   measureRichText,
@@ -144,6 +151,11 @@ export interface InstantiateOptions {
    * componente cujo tamanho depende dos filhos (`hug`). Ver o comentário do topo do arquivo.
    */
   readonly slotContent?: { readonly width: number; readonly height: number };
+  /**
+   * Tokens do modo de desenho, já resolvidos (`resolveTokens`); `font-sans` é a fonte padrão do
+   * texto. Ausente = os do componente (`resolvedTokens`, postos pelo catálogo) ou os embutidos.
+   */
+  readonly tokens?: ResolvedTokens;
 }
 
 export interface Instantiated {
@@ -323,7 +335,6 @@ const NONE_LAYOUT: FrameLayout = {
   align: 'start',
   justify: 'start',
 };
-const FALLBACK_FONT_FAMILY = 'Inter';
 
 function isNone(color: string): boolean {
   const c = color.trim().toLowerCase();
@@ -364,10 +375,14 @@ function anchorsOf(
  * `instantiate` e `measureComponent` compartilham este fechamento (e o cache dos planos).
  */
 function createEngine(
-  source: ComponentFile,
+  original: ComponentFile,
   sourceValues: FieldValues,
   options: InstantiateOptions,
 ) {
+  // Os `$token` viram o valor do modo antes de tudo (vale também dentro do `repeat`).
+  const tokens =
+    options.tokens ?? original.resolvedTokens ?? resolveTokens(undefined, {});
+  const source = applyTokens(original, tokens);
   // O `repeat` vira quadros com os valores de cada linha antes de o motor começar.
   const {
     component,
@@ -430,7 +445,7 @@ function createEngine(
     const lh = num(font.lineHeight, 1.2);
     return {
       ...textWrapping(font),
-      family: str(font.family, FALLBACK_FONT_FAMILY),
+      family: str(font.family, defaultFontFamily(tokens)),
       size,
       weight: num(font.weight, 400),
       italic: bool(font.italic, false),
@@ -1008,7 +1023,10 @@ function createEngine(
       type: 'linear',
       start: { x: cx - (dx * length) / 2, y: cy - (dy * length) / 2 },
       end: { x: cx + (dx * length) / 2, y: cy + (dy * length) / 2 },
-      stops: gradient.stops.map((stop) => ({ offset: stop.offset, color: stop.color })),
+      stops: gradient.stops.map((stop) => ({
+        offset: stop.offset,
+        color: ev<Color>(stop.color, 'none'),
+      })),
     };
   };
 

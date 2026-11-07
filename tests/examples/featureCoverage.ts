@@ -270,7 +270,7 @@ export const NODE_TYPES = [
   'repeat',
   'image',
 ] as const;
-export const EXPR_OPS = ['$field', '$if', '$switch', '$concat'] as const;
+export const EXPR_OPS = ['$field', '$if', '$switch', '$concat', '$token'] as const;
 export const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
 export const ROOT_KEYS = [
   'format',

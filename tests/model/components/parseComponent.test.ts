@@ -596,7 +596,12 @@ describe('validateComponent e parseComponent', () => {
 
   it('parseComponent devolve o componente quando válido', () => {
     const input = button();
-    expect(parseComponent(input)).toEqual({ ok: true, component: input, warnings: [] });
+    expect(parseComponent(input)).toEqual({
+      ok: true,
+      component: input,
+      warnings: [],
+      tokenRefs: [],
+    });
   });
 
   it('parseComponentText lê o texto JSON e trata JSON inválido como issue de caminho vazio', () => {
