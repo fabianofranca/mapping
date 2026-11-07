@@ -2,7 +2,7 @@
 
 Uma **conversa** é uma sequência de mensagens, de pessoas e de agentes, ancorada num item do mapeamento (uma marcação, um campo de anotação, uma camada, um ponto solto do canvas…). Ela fica aberta até **uma pessoa** resolver. Este documento descreve o arquivo da conversa, a gramática das referências e citações e a API do modelo. O formato do projeto está em [`FORMAT.md`](FORMAT.md) e o da proposta, em [`PROPOSAL-FORMAT.md`](PROPOSAL-FORMAT.md).
 
-**O formato é novo.** A app e o servidor MCP só passam a usá-lo nas fases seguintes da etapa Comentários: o armazenamento, a sessão e a identidade na app (CM2) e as tools do MCP (CM6). Esta fase (CM1) entrega apenas o modelo (`src/model/`) e este documento. Até lá, nenhum programa grava nem lê a pasta `comments/`, e ela não tem efeito sobre o projeto.
+**O formato é novo** (etapa Comentários; o `mapping.json` continua no schema v15). A app guarda e lê `comments/` (pasta, projeto local e zip) e mostra as conversas nos Detalhes, na janela Comentários e nos pinos do canvas; o servidor MCP (a partir da 0.25.0) lê a caixa de entrada, abre conversas, responde e liga propostas a elas (`list_threads`, `get_thread`, `open_thread`, `post_message`, `wait_for_comment` e o argumento `thread` do `propose_changes`; regras de uso no "Conversas" do guia do agente, `mapping-docs://AGENT-GUIDE.md`).
 
 A validação (zod) e todas as regras ficam em `src/model/` (`thread.ts`, `threadOps.ts`, `threadView.ts`, `threadUsers.ts`, `threadFilters.ts`, `threadPins.ts`, `threadDelete.ts`, `citations.ts` e `refGrammar.ts`), como funções puras usadas pela app e pelo servidor MCP.
 
@@ -149,7 +149,11 @@ Consequência aceita do "aguardando": uma conversa só entre pessoas fica "Aguar
 ## Quem grava o quê
 
 - **A app** grava como `human`, com a identidade das Configurações (nome e e-mail, por dispositivo, nunca no projeto): abre a conversa, acrescenta mensagens, **resolve** (grava `resolved` e muda o arquivo para `comments/resolved/`), **reabre** (limpa o campo e devolve o arquivo) e **apaga** (conversa a conversa ou em lote, com o aviso de quem são as mensagens que vão embora). Sem identidade, a pessoa só lê.
-- **O servidor MCP** (a partir da CM6) grava só como `agent`, com `email: null`: abre uma conversa (`open_thread`, arquivo novo por arquivo temporário e hard link, nunca sobrescreve), responde (`post_message`, com a guarda `after`: só grava se nada entrou depois da última mensagem que o agente leu) e liga uma proposta à conversa (`propose_changes` com `thread`, que acrescenta a mensagem com `proposal`). **Nunca resolve, reabre nem apaga**, e uma mensagem do MCP numa conversa resolvida é recusada. Nunca grava em `comments/resolved/`.
+- **O servidor MCP** (a partir da 0.25.0) grava só como `agent`, com `email: null`, e só em `comments/<id>.json`:
+  - **Conversa nova** (`open_thread`): arquivo novo por **arquivo temporário + hard link**, que nunca sobrescreve um existente (num disco sem hard link, grava direto, ainda sem sobrescrever). O `id` e o da primeira mensagem são UUIDs gerados pelo servidor.
+  - **Mensagem acrescentada** (`post_message`, e o `propose_changes` com `thread`, que acrescenta uma mensagem com `proposal`): **relê o arquivo imediatamente antes de gravar**, refaz a operação sobre a versão do disco se a app a mudou no meio e grava o arquivo inteiro de forma **atômica** (temporário + renomear) com `revision + 1`; depois de 3 tentativas sem estabilidade, recusa com `revision-conflict`. O `post_message` exige o `after` (o id da última mensagem lida): se entrou mensagem depois, não grava (`stale-thread`). O horário da mensagem nunca fica antes da última da conversa.
+  - **Nunca** resolve, reabre nem apaga uma conversa (não há tool para isso), **nunca** grava em `comments/resolved/` (uma mensagem do MCP numa conversa resolvida é recusada com `thread-resolved`) e **nunca** altera o `mapping.json`. Um arquivo ilegível não é sobrescrito (`invalid-thread`).
+  - O nome do autor é o argumento `author` da tool, senão o `clientInfo.name` do cliente MCP, senão "agente". O servidor nunca assina como pessoa: não existe `kind: "human"` vindo do MCP.
 - **O `kind` nunca vem do chamador:** a app só escreve `human` e o MCP só `agent`. No modelo, o autor entra como argumento das funções; o modelo não decide quem é humano.
 - **Ninguém altera nem remove uma mensagem.**
 - **Nenhum outro código escreve em `comments/`.** Uma alteração externa (o MCP, um editor de texto, o git) vira recarga na app.
@@ -264,7 +268,7 @@ mapping://<projeto>/a/<código>/f/<campo>/r/<código>     linha de table
 - **`<campo>`** é a `key` do campo, codificada do mesmo jeito (a leitura a decodifica; `%` inválido dá `null`).
 - **Leitura estrita** (`parseAnyRef`): qualquer coisa depois do código, `?`, `#`, espaço no meio, segmento vazio, letra desconhecida ou `e`/`f`/`r` fora do lugar dão `null` (o MCP o chama de `invalid-ref`). Só se aceita a URL completa, ou a curta começando pela letra (`c/…`, `a/…`); o código solto é do `parseRef` antigo (`m`, `i`, `a`).
 - **Os links dos documentos da biblioteca** (`mapping://<typeId>` e `mapping://<specId>/<typeId>`) têm no máximo dois segmentos depois do esquema, e a gramática exige a letra seguida do código: nunca se confundem com uma referência, e `extractCitations` os ignora.
-- As referências de hoje (`m`, `i`, `a`, `p`) continuam valendo, sem mudança. O servidor MCP só passa a aceitar as formas novas (`l`, `c`, `/f/`, `/e/`, `/r/`) na CM6; até lá, o comportamento dele não muda.
+- As referências de antes (`m`, `i`, `a`, `p`) continuam valendo, sem mudança. O servidor MCP aceita as formas novas (`l`, `c`, `/f/`, `/e/`, `/r/`) a partir da 0.25.0: `resolve` as entende todas, e `get_annotation` e as outras tools de item aceitam campo, par e linha como a anotação que os contém (numa tool de marcação ou de container, uma parte é `wrong-kind`; um sufixo que a gramática não conhece, `invalid-ref`).
 
 ### A citação é um link markdown
 
@@ -308,4 +312,4 @@ O chip mostra o nome **de agora** do alvo, resolvido pela referência (`liveLabe
 
 ## Na app e no MCP
 
-Nada disso é usado ainda. O armazenamento (pasta, projeto local e zip), a sessão com a conferência de `revision`, a identidade e o "não lida" entram na CM2; as tools (`list_threads`, `get_thread`, `open_thread`, `post_message`, `propose_changes` com `thread`, `resolve` com a gramática nova), o guia do agente e o recurso `mapping-docs://COMMENT-FORMAT.md`, na CM6.
+A app usa o modelo para o armazenamento (pasta, projeto local e zip), a sessão com a conferência de `revision`, a identidade e o "não lida". O servidor MCP o usa nas tools `list_threads`, `get_thread`, `open_thread`, `post_message`, `wait_for_comment`, no `propose_changes` com `thread` e no `resolve` com a gramática nova, e serve este documento como o recurso `mapping-docs://COMMENT-FORMAT.md`. O guia do agente (`mapping-docs://AGENT-GUIDE.md`, seção "Conversas") traz as regras de uso: quando abrir uma conversa, o `after`, e o que o agente nunca faz.

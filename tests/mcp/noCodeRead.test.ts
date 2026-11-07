@@ -154,6 +154,7 @@ describe('o servidor não abre arquivos de código (estático)', () => {
       'projects.ts',
       'proposalStore.ts',
       'specValidation.ts',
+      'threadStore.ts',
     ]);
   });
 

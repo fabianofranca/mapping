@@ -167,7 +167,7 @@ const NO_HARD_LINK: ReadonlySet<string> = new Set([
   'EXDEV',
 ]);
 
-const errnoCode = (error: unknown): string | undefined =>
+export const errnoCode = (error: unknown): string | undefined =>
   (error as NodeJS.ErrnoException | null)?.code;
 
 /**
@@ -195,7 +195,7 @@ async function removeTemp(temp: string): Promise<void> {
  * existe; perde só a atomicidade, e a pasta da proposta é removida inteira se algo falha. Nos
  * dois caminhos, o temporário é apagado no fim, em melhor esforço (`removeTemp`).
  */
-async function writeNewFile(path: string, data: Uint8Array | string): Promise<void> {
+export async function writeNewFile(path: string, data: Uint8Array | string): Promise<void> {
   const temp = join(
     dirname(path),
     `.${basename(path)}.${randomBytes(6).toString('hex')}.tmp`,
