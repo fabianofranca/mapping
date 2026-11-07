@@ -1,5 +1,6 @@
 import {
   buildProposal,
+  formatCitation,
   changeStatuses,
   compareProposals,
   proposalIndex,
@@ -21,6 +22,7 @@ import type { Operation } from './operations';
 import type { Roots } from './paths';
 import { findProject, loadProject, type ProjectLocation } from './projects';
 import { ProposalRefs, lookupStored, resolveProposal } from './proposalRefs';
+import { Threads } from './threads';
 import {
   listStored,
   reservedImages,
@@ -64,6 +66,8 @@ export interface ProposeArgs {
   readonly origin?: string | undefined;
   readonly author?: string | undefined;
   readonly supersedes?: string | undefined;
+  /** Conversa à qual a proposta se liga (referência `c/…`): vira uma mensagem do agente com `proposal`. */
+  readonly thread?: string | undefined;
   readonly operations: readonly Operation[];
 }
 
@@ -76,6 +80,7 @@ export class Proposals {
     private readonly roots: Roots,
     private readonly now: () => number = Date.now,
     private readonly clientName: () => string | undefined = () => undefined,
+    private readonly threads: Threads = new Threads(roots, now, clientName),
   ) {}
 
   // -------------------------------------------------------------------------
@@ -87,6 +92,12 @@ export class Proposals {
       throw new ToolError('invalid-title', 'a proposta precisa de um título');
     }
     const location = await findProject(this.roots, args.project);
+    // A conversa é conferida ANTES de qualquer gravação: se não existe ou está resolvida, a
+    // recusa não deixa nada no disco.
+    const linked =
+      args.thread === undefined
+        ? null
+        : await this.threads.checkOpen(args.thread, location);
     const all = await listStored(this.roots, location);
     const previous =
       args.supersedes === undefined ? null : lookupStored(all, location, args.supersedes);
@@ -189,6 +200,24 @@ export class Proposals {
     const labels = ProposalLabels.ofRefs(prepared.refs, new Refs(loaded));
     const tree = reviewTree(proposal, loaded.project);
     const { warnings: repoWarnings, ...rest } = report;
+    let thread: Json | undefined;
+    if (linked) {
+      try {
+        thread = await this.threads.linkProposal(
+          linked,
+          proposal.id,
+          `Proposta: ${formatCitation(title, refs.ref(proposal.id))}`,
+          args.author,
+        );
+      } catch (error) {
+        // A proposta já está gravada: reenviá-la a duplicaria. O aviso diz o que fazer.
+        warnings.push({
+          code: 'thread-not-linked',
+          message: `a proposta foi gravada, mas a mensagem na conversa não: ${error instanceof Error ? error.message : String(error)}`,
+          hint: 'avise na conversa com post_message citando a proposta: [título](mapping://<projeto>/p/<código>)',
+        });
+      }
+    }
     return {
       ...rest,
       proposed: true,
@@ -210,6 +239,7 @@ export class Proposals {
           : {}),
       },
       ...(superseded ? { superseded } : {}),
+      ...(thread ? { thread } : {}),
       ...(Array.isArray(repoWarnings) || warnings.length > 0
         ? {
             warnings: [...(Array.isArray(repoWarnings) ? repoWarnings : []), ...warnings],

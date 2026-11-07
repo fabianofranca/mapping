@@ -1,6 +1,7 @@
 import { SPEC_FORMAT_VERSION } from '../src/model/spec';
 import { SCHEMA_VERSION } from '../src/model/types';
 import agentGuide from '../docs/AGENT-GUIDE.md?raw';
+import commentFormat from '../docs/COMMENT-FORMAT.md?raw';
 import componentFormat from '../docs/COMPONENT-FORMAT.md?raw';
 import format from '../docs/FORMAT.md?raw';
 import specFormat from '../docs/SPEC-FORMAT.md?raw';
@@ -44,5 +45,13 @@ export const DOC_RESOURCES: readonly DocResource[] = [
     description:
       'Formato do arquivo de componente da biblioteca (mapping-component): template, tamanhos e dimensionamento, expressões e avisos do motor de desenho.',
     text: componentFormat,
+  },
+  {
+    name: 'comment-format',
+    uri: 'mapping-docs://COMMENT-FORMAT.md',
+    title: 'Formato da conversa',
+    description:
+      'Formato da conversa ancorada (mapping-thread, formatVersion 1): o arquivo em comments/, as mensagens, as nove âncoras, o que é derivado (aguardando, assunto, órfã), quem grava o quê, a gramática da referência e a citação.',
+    text: commentFormat,
   },
 ];
