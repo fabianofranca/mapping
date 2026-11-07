@@ -15,7 +15,7 @@ import { createProjectStore } from '../../src/store/history';
 import { createProjectActions } from '../../src/store/project';
 import { setMarkingDisplay, setShowComponentsOnPhotos } from '../../src/store/settings';
 import { textMeasurer } from '../../src/store/textMeasure';
-import { createEditorUi, type EditorUi } from '../../src/store/ui';
+import { createEditorUi, setViewMode, type EditorUi } from '../../src/store/ui';
 import { SPEC_ID, componentProject, testCatalog } from '../model/componentFixtures';
 import { NOTES_SPEC_ID, notesCatalog, notesProject } from '../model/notesFixtures';
 
@@ -263,15 +263,15 @@ describe('derivado: marcações desenhadas', () => {
       showOnly(ui, store.project.value, typed.id);
       expect(derived.markingVisibility.value.get('C')).toBe('full');
     }
-    // Ver limpo: nenhuma marcação aparece, nem a selecionada, mas o desenho segue à vista.
+    // Modo visualização: nenhuma marcação ao toque, nem a selecionada, mas o desenho segue à vista.
     setMarkingDisplay('all');
     ui.selection.value = { kind: 'marking', id: 'T1' };
-    ui.cleanView.value = true;
+    setViewMode(ui, true);
     const clean = derived.markingVisibility.value;
     expect(clean.size).toBeGreaterThan(0);
     expect([...clean.values()].every((v) => v === 'hidden')).toBe(true);
     expect([...derived.drawnMarkings.value].sort()).toEqual([...drawable].sort());
-    ui.cleanView.value = false;
+    setViewMode(ui, false);
     ui.selection.value = null;
     expect(derived.markingVisibility.value.get('T1')).toBe('full');
     // Sem a opção, na foto nada desenha; o filtro volta a valer para o que não desenha.

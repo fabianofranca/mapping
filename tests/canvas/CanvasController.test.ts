@@ -4,8 +4,8 @@ import { CanvasController } from '../../src/canvas/CanvasController';
 import { createDisplayImages } from '../../src/store/displayImages';
 import type { InteractionState } from '../../src/canvas/frame';
 import type { OverlayRenderer } from '../../src/canvas/renderers/overlay';
-import { selectItems, setCleanView, type SelectionItem } from '../../src/store/ui';
-import { editorFor, installFakeCanvas } from './harness';
+import { selectItems, type SelectionItem } from '../../src/store/ui';
+import { editorFor, installFakeCanvas, setOnlyScreens } from './harness';
 
 describe('CanvasController', () => {
   const frames: FrameRequestCallback[] = [];
@@ -138,7 +138,7 @@ describe('CanvasController', () => {
     controller.destroy();
   });
 
-  it('seleção múltipla: contorno secundário nos não primários, vazio no Ver limpo, e o pan não refaz a lista', () => {
+  it('seleção múltipla: contorno secundário nos não primários, vazio no modo visualização, e o pan não refaz a lista', () => {
     const { controller, ui } = setup();
     const internals = controller as unknown as {
       overlay: OverlayRenderer;
@@ -167,11 +167,11 @@ describe('CanvasController', () => {
     flush();
     expect(internals.frame.peek().items).toBe(items);
 
-    // Ver limpo esconde a seleção inteira, como esconde a primária.
-    setCleanView(ui, true);
+    // o modo visualização esconde a seleção inteira, como esconde a primária.
+    setOnlyScreens(ui, true);
     flush();
     expect(lit()).toHaveLength(0);
-    setCleanView(ui, false);
+    setOnlyScreens(ui, false);
     flush();
     expect(lit()).toHaveLength(2);
 

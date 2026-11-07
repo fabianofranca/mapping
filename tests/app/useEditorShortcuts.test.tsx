@@ -256,17 +256,17 @@ describe('useEditorShortcuts: excluir', () => {
   });
 });
 
-describe('useEditorShortcuts: Ver limpo (Alt+H)', () => {
+describe('useEditorShortcuts: modo visualização (Alt+H)', () => {
   it('liga e desliga, volta ao modo Navegar e mantém a seleção', () => {
     const s = setup();
     s.harness.ui.selection.value = { kind: 'marking', id: 'M2' };
     s.harness.ui.mode.value = 'draw';
     expect(s.press('h', { alt: true }).defaultPrevented).toBe(true);
-    expect(s.harness.ui.cleanView.value).toBe(true);
+    expect(s.harness.ui.viewMode.value).toBe(true);
     expect(s.harness.ui.mode.value).toBe('navigate');
     expect(s.harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M2' });
     s.press('h', { alt: true });
-    expect(s.harness.ui.cleanView.value).toBe(false);
+    expect(s.harness.ui.viewMode.value).toBe(false);
     expect(s.harness.ui.mode.value).toBe('navigate');
   });
 });

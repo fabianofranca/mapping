@@ -97,6 +97,18 @@ export function createInteractionState(): InteractionState {
   };
 }
 
+/**
+ * O que o modo visualização mostra do canvas (`ViewShow` sem as camadas com desenho, que já
+ * chegam filtradas em `drawn`). `null` no quadro fora do modo.
+ */
+export interface ViewFrame {
+  readonly containers: boolean;
+  readonly images: boolean;
+  readonly outline: boolean;
+  readonly names: boolean;
+  readonly arrows: boolean;
+}
+
 /** Tudo o que um quadro desenha. Mudar qualquer item agenda um novo quadro. */
 export interface Frame {
   readonly project: Project | null;
@@ -116,7 +128,7 @@ export interface Frame {
   readonly selection: Selection;
   /**
    * Todos os itens selecionados (seleção múltipla), o primário (`selection`) por último; vazio no
-   * Ver limpo, como a seleção. As alças, o cadeado e a etiqueta de nome são só do primário; os
+   * modo visualização, como a seleção. As alças, o cadeado e a etiqueta de nome são só do primário; os
    * demais recebem o contorno de seleção secundário (`overlay.ts`). Mesmo objeto enquanto a
    * seleção não muda: o quadro compara por referência.
    */
@@ -139,13 +151,20 @@ export interface Frame {
   readonly review: ReviewCanvas | null;
   /**
    * Setas desenhadas (v13): as do projeto desenhado com as duas pontas visíveis; vazio com
-   * "Mostrar setas" desligado e no Ver limpo. O mesmo array enquanto elas não mudam.
+   * "Mostrar setas" desligado (fora do modo visualização, que tem o item Setas). O mesmo array enquanto elas não mudam.
    */
   readonly arrows: readonly ArrowShape[];
   /** Gesto de seta em andamento (linha provisória e marcação de destino). */
   readonly arrowDraft: ArrowDraft | null;
   /** Retângulo da seleção por Shift+arrasto (canvas); `null` fora do gesto. */
   readonly marquee: Rect | null;
+  /**
+   * Modo visualização: o que o canvas mostra (`ViewFrame`); `null` fora do modo. No modo não há
+   * seleção, alças, hover, indicadores, rascunho nem marcas da revisão, e `visibility` traz todas
+   * as marcações inteiras (quem esconde o contorno ou o nome é este item). O mesmo objeto
+   * enquanto os cinco itens não mudam.
+   */
+  readonly view: ViewFrame | null;
 }
 
 /** `true` se `a` e `b` têm os mesmos valores (por referência) nas chaves dadas. */
@@ -158,7 +177,14 @@ export function sameFrame(
 }
 
 /** O que muda o desenho das imagens (o deslocamento do viewport não muda). */
-export const IMAGE_KEYS = ['project', 'bitmaps', 'preview', 'tokens', 'locale'] as const;
+export const IMAGE_KEYS = [
+  'project',
+  'bitmaps',
+  'preview',
+  'tokens',
+  'locale',
+  'view',
+] as const;
 /** O que muda a camada de componentes (as posições das imagens também, comparadas à parte). */
 export const COMPONENT_KEYS = ['drawings', 'drawn', 'floating', 'tokens'] as const;
 /** O que muda a camada das setas (o zoom, que muda a espessura, é comparado à parte). */

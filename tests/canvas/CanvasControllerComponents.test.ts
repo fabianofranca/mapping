@@ -20,7 +20,7 @@ import { createDisplayImages } from '../../src/store/displayImages';
 import { setShowComponentsOnPhotos } from '../../src/store/settings';
 import { textMeasurer } from '../../src/store/textMeasure';
 import { SPEC_ID } from '../model/componentFixtures';
-import { componentEditor, installFakeCanvas } from './harness';
+import { componentEditor, installFakeCanvas, setOnlyScreens } from './harness';
 
 // A camada de componentes dentro do `CanvasController` (B3, P6): o desenho de cada marcação com
 // componente, redesenhado só no que mudou, e as regras de borda e de texto do zoom semântico.
@@ -104,20 +104,20 @@ describe('CanvasController: componentes', () => {
     controller.destroy();
   });
 
-  it('Ver limpo esconde bordas e seleção, e a camada de componentes continua', () => {
+  it('O modo (Só as telas) esconde bordas e seleção, e a camada de componentes continua', () => {
     const { controller, ui, internals, drawing } = setup();
     // O grupo da marcação some inteiro (borda, nome e alças vão com ele).
     const shown = (id: string) => internals.markings.node(id)?.group.visible();
     ui.selection.value = { kind: 'marking', id: 'T1' };
     flush();
     expect(shown('T1')).toBe(true);
-    ui.cleanView.value = true;
+    setOnlyScreens(ui, true);
     flush();
     expect(shown('T1')).toBe(false);
     expect(shown('T2')).toBe(false);
     expect(drawing('T1')).toBeDefined();
     expect(drawing('T2')).toBeDefined();
-    ui.cleanView.value = false;
+    setOnlyScreens(ui, false);
     flush();
     expect(shown('T1')).toBe(true);
     controller.destroy();

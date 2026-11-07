@@ -1,7 +1,7 @@
 import { t } from '../i18n';
 import { useEditor } from '../ui/EditorContext';
 import { IconButton, Segmented } from '../ui/controls';
-import { setCleanView } from '../store/ui';
+import { setViewMode } from '../store/ui';
 import { SHORTCUT_LABELS } from './shortcuts';
 
 // Botões de ferramenta da barra principal e da barra dos breadcrumbs.
@@ -17,7 +17,7 @@ export function ModeButtons() {
           id: 'draw',
           label: t('editor.modeDraw'),
           icon: 'draw',
-          disabled: store.locked.value || ui.cleanView.value,
+          disabled: store.locked.value || ui.viewMode.value,
         },
       ]}
       value={ui.mode.value}
@@ -94,17 +94,17 @@ export function FitButton() {
   );
 }
 
-/** Ver limpo: o canvas mostra só as imagens e os componentes (Alt+H). */
-export function CleanViewButton() {
+/** Visualizar: liga o modo visualização, o canvas só para ver (Alt+H). */
+export function ViewModeButton() {
   const { ui } = useEditor();
   return (
     <IconButton
       icon="eyeOff"
-      label={t('view.cleanView')}
-      shortcut={SHORTCUT_LABELS.cleanView}
-      tooltip={t('view.cleanViewHint')}
-      pressed={ui.cleanView.value}
-      onClick={() => setCleanView(ui, !ui.cleanView.peek())}
+      label={t('view.viewMode')}
+      shortcut={SHORTCUT_LABELS.viewMode}
+      tooltip={t('view.viewModeHint')}
+      pressed={ui.viewMode.value}
+      onClick={() => setViewMode(ui, !ui.viewMode.peek())}
     />
   );
 }

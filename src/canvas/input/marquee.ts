@@ -21,7 +21,7 @@ import type { Point } from '../viewport';
 export interface MarqueeView {
   /** Visibilidade de cada marcação (o mesmo mapa do clique): `hidden` não entra. */
   readonly visibility: ReadonlyMap<string, MarkingVisibility>;
-  /** As setas desenhadas; sem "Mostrar setas" ou no Ver limpo, a lista vai vazia. */
+  /** As setas desenhadas; sem "Mostrar setas" ou no modo visualização, a lista vai vazia. */
   readonly arrows: readonly ArrowShape[];
 }
 

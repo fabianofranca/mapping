@@ -19,7 +19,7 @@ import {
   peekSelectedItems,
   resolveSelection,
   selectItems,
-  setCleanView,
+  setViewMode,
   type Selection,
 } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
@@ -274,8 +274,8 @@ export function useEditorShortcuts(
           }
           return;
         }
-        case 'clean-view':
-          return setCleanView(ui, !ui.cleanView.peek());
+        case 'view-mode':
+          return setViewMode(ui, !ui.viewMode.peek());
         case 'hide-window': {
           // Quem faz o retângulo de seleção tem o Shift apertado: com gesto em andamento, o Esc cancela.
           if (canvas.current?.cancelInteraction()) return;

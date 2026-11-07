@@ -22,6 +22,8 @@ export interface ComponentDrawing {
   /** Container da marcação; `null` = marcação do canvas (retângulo em unidades do canvas). */
   readonly containerId: string | null;
   readonly annotationId: string;
+  /** Camada (do projeto) da anotação que desenha: o modo visualização tira o desenho por ela. */
+  readonly layerId: string;
   /** Cena instanciada na caixa = retângulo da marcação (pixels da imagem ou unidades do canvas). */
   readonly root: FrameNode;
   readonly warnings: readonly string[];
@@ -125,6 +127,7 @@ function draw(
     markingId,
     containerId,
     annotationId: mc.annotation.id,
+    layerId: mc.annotation.layerId,
     root,
     warnings: [...warnings, ...valueWarnings],
     overflow,
@@ -183,6 +186,7 @@ export function createDrawingCache(): DrawingCache {
       if (
         before !== undefined &&
         before.annotationId === mc.annotation.id &&
+        before.drawing.layerId === mc.annotation.layerId &&
         before.containerId === marking.containerId &&
         sameRect(before.rect, marking.rect) &&
         before.component === mc.component &&

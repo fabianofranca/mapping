@@ -14,7 +14,6 @@ import {
   resolveSelection,
   revealInTree,
   selectItems,
-  setCleanView,
   showAllLayers,
   toggleLayerVisible,
   toggleTreeNode,
@@ -29,19 +28,6 @@ describe('estado da UI do editor', () => {
     expect(ui.selection.value).toBeNull();
     expect(ui.mode.value).toBe('navigate');
     expect(ui.listShowEmpty.value).toBe(false);
-  });
-
-  it('Ver limpo nasce desligado; ligar volta ao Navegar e desligar não mexe no modo', () => {
-    const ui = createEditorUi();
-    expect(ui.cleanView.value).toBe(false);
-    ui.mode.value = 'draw';
-    setCleanView(ui, true);
-    expect(ui.cleanView.value).toBe(true);
-    expect(ui.mode.value).toBe('navigate');
-    ui.mode.value = 'draw';
-    setCleanView(ui, false);
-    expect(ui.cleanView.value).toBe(false);
-    expect(ui.mode.value).toBe('draw');
   });
 
   it('resolve a seleção no projeto atual', () => {

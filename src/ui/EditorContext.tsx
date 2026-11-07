@@ -10,6 +10,7 @@ import type { ProjectActions } from '../store/project';
 import { createReviewState, type ReviewState } from '../store/review';
 import type { ProjectSession } from '../store/session';
 import { createEditorUi, type EditorUi } from '../store/ui';
+import { attachViewShowPersistence } from '../store/viewMode';
 
 /** Tudo o que os componentes do editor compartilham, sem passar por props. */
 export interface EditorContextValue {
@@ -26,6 +27,8 @@ export interface EditorContextValue {
   readonly canvas: { current: CanvasController | null };
   /** Zoom, cursor e área das imagens, escritos pelo canvas e lidos pela interface. */
   readonly view: CanvasViewState;
+  /** Para de guardar a escolha do modo visualização (ao fechar o editor). */
+  readonly stopViewShow: () => void;
 }
 
 /** Monta o contexto de um projeto aberto. `ui` pode ser injetado (testes). */
@@ -54,6 +57,8 @@ export function createEditorContextValue(
     review,
     canvas: { current: null },
     view: createCanvasViewState(),
+    // O que o modo visualização mostra volta, por cópia do projeto, neste navegador.
+    stopViewShow: attachViewShowPersistence(ui, session.storage.copyId),
   };
 }
 
@@ -68,7 +73,13 @@ export function EditorProvider({
   readonly children: ComponentChildren;
 }) {
   const value = useMemo(() => createEditorContextValue(open), [open]);
-  useEffect(() => () => value.review.dispose(), [value]);
+  useEffect(
+    () => () => {
+      value.review.dispose();
+      value.stopViewShow();
+    },
+    [value],
+  );
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;
 }
 
