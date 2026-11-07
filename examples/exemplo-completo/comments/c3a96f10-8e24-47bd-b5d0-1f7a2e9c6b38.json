@@ -1,0 +1,36 @@
+{
+  "format": "mapping-thread",
+  "formatVersion": 1,
+  "id": "c3a96f10-8e24-47bd-b5d0-1f7a2e9c6b38",
+  "anchor": {
+    "kind": "marking",
+    "id": "e5a1a106-cc83-4d95-8239-666b95af7c8b"
+  },
+  "createdAt": "2026-10-19T10:02:11.000Z",
+  "revision": 1,
+  "resolved": null,
+  "messages": [
+    {
+      "id": "7d2a4b90-3c1e-4f58-b6a7-9e0d1c2b3a4f",
+      "author": {
+        "kind": "agent",
+        "name": "Claude Code",
+        "email": null
+      },
+      "at": "2026-10-19T10:02:11.000Z",
+      "text": "O botão **Salvar** fica sempre habilitado, ou só depois de alguma mudança nas preferências?",
+      "proposal": null
+    },
+    {
+      "id": "a8b3c5d1-6e2f-4a07-9c4b-1d5e7f8a9b0c",
+      "author": {
+        "kind": "human",
+        "name": "Marina Alves",
+        "email": "marina@exemplo.com"
+      },
+      "at": "2026-10-19T10:30:45.000Z",
+      "text": "Só depois de alguma mudança. Pode marcar `enabled` como `false` no estado inicial e abrir a dúvida para o Gerenciar plano também.",
+      "proposal": null
+    }
+  ]
+}

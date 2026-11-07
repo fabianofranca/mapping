@@ -536,7 +536,7 @@ export const ptBR = {
   'help.search': 'Buscar na ajuda',
   'help.guide.title': 'Guia interativo',
   'help.guide.intro':
-    'Um passeio de 12 passos pelo projeto de exemplo: telas, marcações, camadas, anotações tipadas, containers com Material 3 e a revisão de uma proposta. Funciona sem internet e abre numa aba nova.',
+    'Um passeio de 13 passos pelo projeto de exemplo: telas, marcações, camadas, anotações tipadas, containers com Material 3 e a revisão de uma proposta. Funciona sem internet e abre numa aba nova.',
   'help.guide.example':
     'Para ver o mesmo projeto na app, baixe o arquivo examples/exemplo-completo.zip do repositório (github.com/fabianofranca/mapping) e use Abrir zip na tela inicial (ele cria uma cópia neste dispositivo, sem tocar em nenhuma pasta).',
   'help.guide.fileProtocol':

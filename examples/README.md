@@ -164,9 +164,10 @@ Para aplicar um arquivo solto: **Especializações** › **Aplicar especializaç
 - Dez camadas e quatro especializações aplicadas: SDUI, Modelo de dados, `material3-compose` (uma camada para o layout, com Row e Column, e outra para os componentes) e Notas. Há anotações de todos os tipos principais (Button, Input, Text, Ação, Feedback, Validação, Screen, classe e endpoint; os eventos já ligados por papel) e livres (Model e Dúvidas).
 - Casos de edição: uma marcação trancada (**Título**), uma com posição a revisar (**Idade**, em **Incompletas**), uma nota flutuante da biblioteca de notas e as marcações aninhadas na **Árvore**.
 - Uma proposta aberta, **Tela de Perfil e ajuste no Cadastro**, com dez mudanças para praticar a revisão (os tipos são os da `material3-compose`: `top-app-bar`, `list-item` e `button`): aceitar, rejeitar com nota e aplicar.
+- Três **conversas** em `comments/` (nomes e e-mails inventados, `exemplo.com`): uma aberta pelo agente no campo **estilo** do botão **Cadastrar**, que aguarda você e cita outras marcações; uma na marcação **Salvar**, que aguarda o agente; e uma resolvida, no **Gerenciar plano**. Abra a janela **Comentários** (`Ctrl+Shift+0`) e ligue o botão **Conversas** para ver os pinos. O guia ganha um passo de texto sobre elas.
 - O **Arrumar** (`Alt+Shift+A`) de um Row com chips e a Column **Preferências** com os dois Switches e o Checkbox dentro, o **Catálogo** com a **Paleta** e o **Diagnóstico**.
 
-**Roteiros.** R11.
+**Roteiros.** R11 e R22.
 
 ### `examples/proposta-exemplo.zip`
 

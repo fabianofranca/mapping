@@ -1,0 +1,42 @@
+{
+  "format": "mapping-thread",
+  "formatVersion": 1,
+  "id": "91b7e2d5-0a4c-4c68-8f3e-6d2b5a1c9e70",
+  "anchor": {
+    "kind": "marking",
+    "id": "1d73d841-f973-4f45-8b51-b03f414afd03"
+  },
+  "createdAt": "2026-10-18T23:20:00.000Z",
+  "revision": 2,
+  "resolved": {
+    "by": {
+      "name": "Marina Alves",
+      "email": "marina@exemplo.com"
+    },
+    "at": "2026-10-19T08:45:00.000Z"
+  },
+  "messages": [
+    {
+      "id": "3e9f1a2b-4c5d-4e6f-8a7b-0c1d2e3f4a5b",
+      "author": {
+        "kind": "agent",
+        "name": "Claude Code",
+        "email": null
+      },
+      "at": "2026-10-18T23:20:00.000Z",
+      "text": "O texto do botão **Gerenciar** cabe na largura do cartão, ou devo usar `Gerenciar plano`?",
+      "proposal": null
+    },
+    {
+      "id": "6b7c8d9e-0f1a-4b2c-9d3e-4f5a6b7c8d9e",
+      "author": {
+        "kind": "human",
+        "name": "Marina Alves",
+        "email": "marina@exemplo.com"
+      },
+      "at": "2026-10-19T08:40:00.000Z",
+      "text": "Fica `Gerenciar`, como está no desenho.",
+      "proposal": null
+    }
+  ]
+}

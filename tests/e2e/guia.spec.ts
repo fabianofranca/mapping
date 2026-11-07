@@ -6,7 +6,7 @@ import { watchViolations } from './helpers';
 // `dist/` final (ver playwright.config.ts): o `npm run build` publica `guia/` ao lado do
 // `index.html`.
 
-const STEPS = 12;
+const STEPS = 13;
 const EXAMPLE_PROPOSAL = 'Tela de Perfil e ajuste no Cadastro';
 
 /** Erros de console e de página (uma falha de script do guia aparece aqui). */
@@ -20,7 +20,7 @@ function watchErrors(page: Page): readonly string[] {
 }
 
 test.describe('guia interativo', () => {
-  test('carrega sem erro nem violação da CSP e o Próximo percorre os 12 passos', async ({
+  test('carrega sem erro nem violação da CSP e o Próximo percorre os 13 passos', async ({
     page,
   }) => {
     const errors = watchErrors(page);
