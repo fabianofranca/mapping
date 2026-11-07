@@ -1,12 +1,14 @@
 # Mapeamentos
 
-Esta pasta centraliza os projetos **Mapping**: containers (imagens de telas, protótipos, diagramas, ou áreas sem arquivo) com áreas retangulares marcadas, organizadas em camadas e descritas por anotações, cada projeto numa pasta com `mapping.json`. Ela é agnóstica de ferramenta: tudo o que você precisa está aqui, por caminho relativo.
-
 ## Para que servem estes mapeamentos
 
 <!-- Preencha: o objetivo de quem mantém esta pasta. Ex: "documentar as telas do app X, ligar cada
 componente ao código de instanciação Android/iOS e escrever as telas na solução a partir das marcações". É isto que o
 servidor MCP não sabe dizer: ele explica o mecanismo, não o propósito. -->
+
+<!-- mapping:begin (gerenciado pelo setup.sh; não edite entre estas linhas) -->
+
+Esta pasta centraliza os projetos **Mapping**: containers (imagens de telas, protótipos, diagramas, ou áreas sem arquivo) com áreas retangulares marcadas, organizadas em camadas e descritas por anotações, cada projeto numa pasta com `mapping.json`. Ela é agnóstica de ferramenta: tudo o que você precisa está aqui, por caminho relativo.
 
 ## Estrutura
 
@@ -46,3 +48,5 @@ Para escrever, revisar ou atualizar uma especialização, use a skill `spec-auth
 2. Leia os containers e marcações que interessam (`list_markings`, `get_marking`, `get_marking_image`). Se o seu cliente não mostra imagens no chat (como o Cursor), cole o `markdown` que `get_marking_image`/`get_container_file` devolvem (URL local do servidor).
 3. Monte o lote, confira com `plan_changes` (leia o `membership` da resposta, que lista quem muda de pai ou de espaço; não calcule interseções), envie com `propose_changes`, avise a pessoa.
 4. Quando a revisão terminar, leia `get_proposal_review` e, se preciso, corrija a mesma proposta com `revise_proposal` (enquanto nada foi aplicado; depois, envie outra com `supersedes`).
+
+<!-- mapping:end -->

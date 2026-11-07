@@ -73,20 +73,25 @@ jobs:
         working-directory: dist-mcp
         run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
 
+      - name: Arquivos do workspace
+        run: node scripts/release/workspaceAssets.mjs dist-mcp
+
       - name: Publicar no snapshot do PR
         run: |
           tag="mcp-snapshot-pr${PR}"
           title="$tag"
-          notes="Build provisório do PR #${PR}, para testar antes de entrar no épico. Commit ${HEAD_SHA:0:7}. Sobrescrito a cada push e apagado quando o PR fecha. Instalação: \`./setup.sh ${tag}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`."
+          assets="$(node scripts/release/workspaceAssets.mjs dist-mcp)"
+          mapfile -t assets <<< "$assets"
+          notes="Build provisório do PR #${PR}, para testar antes de entrar no épico. Commit ${HEAD_SHA:0:7}. Sobrescrito a cada push e apagado quando o PR fecha. Traz também o \`setup.sh\`, a skill \`SKILL.md\` e as regras \`AGENTS.mapping.md\` do workspace, cada um com o \`.sha256\`. Instalação: \`./setup.sh ${tag}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           if gh release view "$tag" > /dev/null 2>&1; then
             # Já existe: move a tag para o commit novo e troca os arquivos.
             gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" \
               -f sha="$HEAD_SHA" -F force=true
-            gh release upload "$tag" dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 --clobber
+            gh release upload "$tag" dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" --clobber
             gh release edit "$tag" --title "$title" --notes "$notes" --prerelease
           else
             gh release create "$tag" \
-              dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
+              dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" \
               --prerelease --target "$HEAD_SHA" \
               --title "$title" --notes "$notes"
           fi
@@ -166,10 +171,15 @@ jobs:
         working-directory: dist-mcp
         run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
 
+      - name: Arquivos do workspace
+        run: node scripts/release/workspaceAssets.mjs dist-mcp
+
       - name: Publicar a release candidate
         run: |
+          assets="$(node scripts/release/workspaceAssets.mjs dist-mcp)"
+          mapfile -t assets <<< "$assets"
           gh release create "$RC_TAG" \
-            dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 \
+            dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" \
             --prerelease --target "$TARGET_SHA" \
             --title "$RC_TAG" \
-            --notes "Release candidate do épico \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisória: apagada quando a estável mcp-v${SERVER_VERSION} for publicada. Instalação: \`./setup.sh ${RC_TAG}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`."
+            --notes "Release candidate do épico \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisória: apagada quando a estável mcp-v${SERVER_VERSION} for publicada. Traz também o \`setup.sh\`, a skill \`SKILL.md\` e as regras \`AGENTS.mapping.md\` do workspace, cada um com o \`.sha256\`. Instalação: \`./setup.sh ${RC_TAG}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${RC_TAG}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
