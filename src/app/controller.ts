@@ -37,6 +37,10 @@ import { loadProposals } from '../storage/loadProposals';
 import { loadThreads } from '../storage/loadThreads';
 import { loadLibraryIssues, type LibraryIssues } from '../storage/specPackage';
 import { requestPersistentStorage } from '../storage/local';
+import {
+  openLocalPerspectives,
+  type LocalPerspectiveStore,
+} from '../storage/localPerspectives';
 import type { ProjectStorage, StorageKind } from '../storage/types';
 import { readProjectZip, writeProjectZip, zipFileName } from '../storage/zip';
 import { createDisplayImages, type DisplayImages } from '../store/displayImages';
@@ -157,6 +161,13 @@ async function openFromStorage(target: OpenTarget): Promise<AppResult> {
   );
 }
 
+let localPerspectives: Promise<LocalPerspectiveStore | null> | null = null;
+
+/** O banco das perspectivas "Só eu", aberto uma vez por app (`null` sem IndexedDB). */
+function localPerspectiveStore(): Promise<LocalPerspectiveStore | null> {
+  return (localPerspectives ??= openLocalPerspectives());
+}
+
 /**
  * Vincula (recentes, `copyId`) e abre a sessão do projeto já lido. `text`: o `mapping.json`
  * como foi lido (`SessionOptions.loadedText`); `migratedFrom`: schema antigo (ou reparo), o
@@ -188,6 +199,9 @@ async function openLoaded(
     ? await target.bind(project)
     : { storage: target.storage, folderId: undefined };
   const unexported = signal(meta?.unexported ?? false);
+  // As perspectivas "Só eu" ficam neste navegador, por `project.id` (etapa #659).
+  const localStore = await localPerspectiveStore();
+  const localInitial = localStore ? await localStore.load(project.project.id) : [];
   const session = openSession({
     storage,
     project,
@@ -200,6 +214,7 @@ async function openLoaded(
     ...(loaded.libraryIssues === undefined
       ? {}
       : { libraryIssues: loaded.libraryIssues }),
+    localPerspectives: { store: localStore, initial: localInitial },
     proposals: await loadProposals(storage),
     threads: await loadThreads(storage),
     prepareImage,
