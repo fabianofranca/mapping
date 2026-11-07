@@ -1,3 +1,4 @@
+import { setProjectDrawingMode } from './drawingMode';
 import { clearArrowRoutes, settleHierarchy } from './hierarchySettle';
 import { reconcilePerspectives } from './perspectiveReconcile';
 import { anchorsOfChanges, placeCreatedMarkings } from './proposalOrder';
@@ -408,19 +409,23 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
 
   const mode = (maps.project.get('project') as ProjectModeEntity | undefined)
     ?.drawingMode;
-  const { drawingMode: _before, ...withoutMode } = p;
-  const project: Project = {
-    ...withoutMode,
-    ...(mode == null ? {} : { drawingMode: mode }),
-    specializations: [...maps.specialization.values()] as ProjectSpecialization[],
-    platformRepos: Object.fromEntries(maps.platformRepo) as Record<string, PlatformRepo>,
-    docRepos: Object.fromEntries(maps.docRepo) as Record<string, DocRepo>,
-    layers,
-    containers,
-    markings,
-    arrows,
-    annotations: [...maps.annotation.values()] as Annotation[],
-  };
+  const project: Project = setProjectDrawingMode(
+    {
+      ...p,
+      specializations: [...maps.specialization.values()] as ProjectSpecialization[],
+      platformRepos: Object.fromEntries(maps.platformRepo) as Record<
+        string,
+        PlatformRepo
+      >,
+      docRepos: Object.fromEntries(maps.docRepo) as Record<string, DocRepo>,
+      layers,
+      containers,
+      markings,
+      arrows,
+      annotations: [...maps.annotation.values()] as Annotation[],
+    },
+    mode ?? null,
+  );
   return { project: reconcilePerspectives(p, project), problems };
 }
 

@@ -121,7 +121,8 @@ function draw(
   measure: TextMeasurer,
   mode: string | undefined,
 ): ComponentDrawing {
-  const tokens = mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
+  const tokens =
+    mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
   const { root, warnings } = instantiate(mc.component, values, rect, {
     measure,
     idPrefix: markingId,

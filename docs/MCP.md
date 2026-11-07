@@ -130,6 +130,12 @@ Em `get_marking`, `get_annotation`, `find_by_code`, `get_component` (campo `code
 - **Nota quando falta o componente:** se o tipo declara `component` e o lote não o acha (arquivo ausente, ilegível ou com problema), o passo do `create_marking` ganha o aviso `ignored-argument`: "o tipo `<spec/tipo>` declara componente, mas `<motivo>`: a anotação foi criada sem o preview e sem o tamanho mínimo".
 - **`create_annotation` com `type`** numa marcação existente segue com os `default` (o `preview` é texto de exemplo); a descrição do argumento diz isso.
 
+### Modo do desenho (schema v18)
+
+- **Operações.** Nova `update_project` com `drawingMode` (string grava, `null` remove, ausente não muda); `add_container` e `update_container` aceitam `drawingMode` (string fixa, `null` volta a seguir o projeto). Nome fora de `[a-z0-9][a-z0-9-]*` falha com `invalid-name`.
+- **Leitura.** `get_project` devolve `drawingMode` (`null` sem modo) e, em cada container, o fixado e o `effectiveDrawingMode`; `get_container` idem; `list_markings` traz `effectiveDrawingMode` em cada linha. O efetivo é o do container, senão o do projeto, senão o primeiro modo declarado em `tokens.modes` pelas especializações, senão `null`.
+- **Propostas.** A mudança do modo vira a entidade `project` (e o campo `drawingMode` do container) na proposta, que então é gravada na `formatVersion` 6 (`docs/PROPOSAL-FORMAT.md`); propostas sem o modo seguem na 4 (criação) e 5 (revisão).
+
 ### Setas e `near` (ME4)
 
 - **`create_arrow`** (`from`, `to`, `style?`, `name?`, `as?`), **`update_arrow`** (`arrow`, `name?`, `style?`, `locked?`) e **`delete_arrow`** (`arrow`), operações de `plan_changes` e `propose_changes`. A seta liga duas marcações (nunca outra seta nem um container: `arrow-endpoint`; a mesma ponta duas vezes: `arrow-self`), com `style` `straight`, `curve` (padrão) ou `elbow`. **Nunca `points`**: a rota é da pessoa, e `points` em `create_arrow` ou `update_arrow` falha com `invalid-arguments`. A proposta leva só a criação e a remoção da seta (`create-arrow`, `delete-arrow`); `update_arrow` numa seta que já existe vale na prévia (`plan_changes`) e avisa com `ignored-argument` que não entra na proposta.

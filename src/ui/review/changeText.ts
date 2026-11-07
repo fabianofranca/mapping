@@ -241,6 +241,8 @@ const FIELD_KEYS: Readonly<Record<string, TranslationKey>> = {
   'image.markingColor': 'review.field.markingColor',
   'image.locked': 'review.field.locked',
   'image.source': 'review.field.source',
+  'image.drawingMode': 'review.field.drawingMode',
+  'project.drawingMode': 'review.field.drawingMode',
   'annotation.name': 'review.field.annotationName',
   'annotation.parentAnnotationId': 'review.field.owner',
   'annotation.parentRole': 'review.field.role',
@@ -262,6 +264,7 @@ const ENTITY_KEYS = {
   marking: 'review.entity.marking',
   arrow: 'review.entity.arrow',
   annotation: 'review.entity.annotation',
+  project: 'review.entity.project',
 } as const satisfies Record<Change['entity'], TranslationKey>;
 
 /** O tipo de entidade por extenso ("Camada"). */
@@ -345,6 +348,8 @@ function subjectName(names: ReviewNames, c: Change): string | null {
       return markingName(names, c.entityId);
     case 'arrow':
       return arrowName(names, c.entityId);
+    case 'project':
+      return null;
   }
 }
 
@@ -509,6 +514,8 @@ function entitySummary(names: ReviewNames, c: Change, value: JsonValue): string 
     case 'platformRepo':
     case 'docRepo':
       return text(value.localPath) ?? c.entityId;
+    case 'project':
+      return text(value.drawingMode) ?? t('review.value.empty');
   }
 }
 

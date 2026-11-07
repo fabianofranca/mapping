@@ -259,7 +259,7 @@ export function registerTools(
     'get_project',
     {
       description:
-        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) o clone local por plataforma (`platformRepos`), os repositórios de documentos das especializações (`docRepos`: `id`, o `repos` que cada especialização declara e o `localPath` do clone do projeto, `null` sem clone), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
+        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) o clone local por plataforma (`platformRepos`), os repositórios de documentos das especializações (`docRepos`: `id`, o `repos` que cada especialização declara e o `localPath` do clone do projeto, `null` sem clone), o modo do desenho do projeto (`drawingMode`, `null` sem modo; cada container traz o seu `drawingMode` fixado e o `effectiveDrawingMode`), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -293,7 +293,7 @@ export function registerTools(
     'list_markings',
     {
       description:
-        'Lista marcações em linhas compactas (referência, caminho, `space` (`container` ou `canvas`), `floating`, retângulo em pixels do container (no canvas, em unidades do canvas), trava, anotações). Sem `container` nem `canvas`, lista as marcações dos containers. Os filtros se combinam; os de camada, tipo e incompletas valem para a mesma anotação própria da marcação (herdadas não contam).',
+        'Lista marcações em linhas compactas (referência, caminho, `space` (`container` ou `canvas`), `floating`, retângulo em pixels do container (no canvas, em unidades do canvas), trava, anotações, `effectiveDrawingMode`: o modo do desenho que vale no espaço da marcação). Sem `container` nem `canvas`, lista as marcações dos containers. Os filtros se combinam; os de camada, tipo e incompletas valem para a mesma anotação própria da marcação (herdadas não contam).',
       inputSchema: {
         project: projectArg,
         container: z
@@ -460,7 +460,7 @@ export function registerTools(
     'get_container',
     {
       description:
-        'Um container do projeto (a referência `mapping://<projeto>/i/<código>`: a letra `i` é o container): `file` (arquivo de imagem, ou `null`) e `background` (cor, quando não há arquivo), caminho absoluto do arquivo (se existir), dimensões, posição, trava, `parent` (a marcação do canvas que contém o container, ou `null`) e as marcações de primeiro nível.',
+        'Um container do projeto (a referência `mapping://<projeto>/i/<código>`: a letra `i` é o container): `file` (arquivo de imagem, ou `null`) e `background` (cor, quando não há arquivo), caminho absoluto do arquivo (se existir), dimensões, posição, trava, `drawingMode` (o modo do desenho que o container fixa, `null` = segue o projeto), `effectiveDrawingMode` (o que vale nele), `parent` (a marcação do canvas que contém o container, ou `null`) e as marcações de primeiro nível.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },

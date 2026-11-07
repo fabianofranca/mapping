@@ -14,7 +14,9 @@ import { sampleProject } from './fixtures';
 type Raw = Record<string, unknown>;
 
 const v17Raw = (): Raw => {
-  const raw = JSON.parse(serialize({ ...sampleProject(), schemaVersion: 18 } as never)) as Raw;
+  const raw = JSON.parse(
+    serialize({ ...sampleProject(), schemaVersion: 18 } as never),
+  ) as Raw;
   raw.schemaVersion = 17;
   return raw;
 };
@@ -45,9 +47,7 @@ describe('schema v18', () => {
     const saved = JSON.parse(serialize(result.project)) as Raw;
     expect(saved.schemaVersion).toBe(18);
     expect('drawingMode' in saved).toBe(false);
-    expect(
-      (saved.containers as Raw[]).every((c) => !('drawingMode' in c)),
-    ).toBe(true);
+    expect((saved.containers as Raw[]).every((c) => !('drawingMode' in c))).toBe(true);
   });
 
   it('projeto com drawingMode "dark" e container com null são válidos e fazem round-trip', () => {
@@ -67,7 +67,10 @@ describe('schema v18', () => {
   it('container com drawingMode fixado é gravado', () => {
     const raw = v17Raw();
     raw.schemaVersion = 18;
-    (raw.containers as Raw[])[0] = { ...(raw.containers as Raw[])[0], drawingMode: 'light' };
+    (raw.containers as Raw[])[0] = {
+      ...(raw.containers as Raw[])[0],
+      drawingMode: 'light',
+    };
     const saved = JSON.parse(serialize(open(raw))) as Raw;
     expect((saved.containers as Raw[])[0]!.drawingMode).toBe('light');
   });
@@ -80,7 +83,10 @@ describe('schema v18', () => {
     expect(result.ok).toBe(false);
     const other = v17Raw();
     other.schemaVersion = 18;
-    (other.containers as Raw[])[0] = { ...(other.containers as Raw[])[0], drawingMode: 3 };
+    (other.containers as Raw[])[0] = {
+      ...(other.containers as Raw[])[0],
+      drawingMode: 3,
+    };
     expect(deserialize(JSON.stringify(other), migrations).ok).toBe(false);
   });
 });

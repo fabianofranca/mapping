@@ -18,8 +18,9 @@ function checkMode(mode: string): string {
 export function setProjectDrawingMode(p: Project, mode: string | null): Project {
   if (mode === null) {
     if (p.drawingMode === undefined) return p;
-    const { drawingMode: _removed, ...rest } = p;
-    return rest;
+    return Object.fromEntries(
+      Object.entries(p).filter(([key]) => key !== 'drawingMode'),
+    ) as unknown as Project;
   }
   checkMode(mode);
   return p.drawingMode === mode ? p : { ...p, drawingMode: mode };
@@ -37,7 +38,10 @@ export function setContainerDrawingMode(
   if ((container.drawingMode ?? null) === next) return p;
   return {
     ...p,
-    containers: updateById(p.containers, containerId, (c) => ({ ...c, drawingMode: next })),
+    containers: updateById(p.containers, containerId, (c) => ({
+      ...c,
+      drawingMode: next,
+    })),
   };
 }
 

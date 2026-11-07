@@ -25,7 +25,12 @@ const TOKEN_COMPONENT = {
   id: 'text',
   name: 'text',
   size: { width: 100, height: 40 },
-  template: { type: 'frame', layout: { type: 'none' }, fill: { $token: 'bg' }, children: [] },
+  template: {
+    type: 'frame',
+    layout: { type: 'none' },
+    fill: { $token: 'bg' },
+    children: [],
+  },
 };
 
 function tokenCatalog(): ComponentCatalog {
@@ -43,7 +48,9 @@ function tokenCatalog(): ComponentCatalog {
       JSON.stringify(c),
     ]),
   );
-  const loaded = loadSpecComponents(spec as never, SPEC_FILE, 1, (path) => texts.get(path));
+  const loaded = loadSpecComponents(spec as never, SPEC_FILE, 1, (path) =>
+    texts.get(path),
+  );
   return new Map([[SPEC_ID, loaded]]);
 }
 
@@ -97,7 +104,12 @@ describe('modo do desenho no desenho das marcações', () => {
     const cache = createDrawingCache();
     const p = withText('T1');
     const first = cache(p, catalog, approximateMeasurer, 0).get('T1');
-    const dark = cache(setProjectDrawingMode(p, 'dark'), catalog, approximateMeasurer, 0).get('T1');
+    const dark = cache(
+      setProjectDrawingMode(p, 'dark'),
+      catalog,
+      approximateMeasurer,
+      0,
+    ).get('T1');
     expect(dark).not.toBe(first);
     const again = cache(
       setProjectDrawingMode(setProjectDrawingMode(p, 'dark'), 'dark'),

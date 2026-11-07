@@ -54,6 +54,8 @@ const ALLOWLIST = [
   'src/app/useImageIntake.tsx',
   // Diagnóstico do projeto real.
   'src/ui/DiagnosticsView.tsx',
+  // Campo "Modo do desenho" do container (CF6): lê as especializações aplicadas do projeto real (como o ContainerDialog); desabilitado na revisão.
+  'src/ui/ContainerDrawingModeField.tsx',
   // Novo container: lê as especializações aplicadas e a seleção do projeto real, para criar nele.
   'src/ui/ContainerDialog.tsx',
   // Detalhes na revisão (fase 9.5): o painel lê o projeto à vista; o atual é o outro lado
