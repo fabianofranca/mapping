@@ -1,4 +1,4 @@
-# Comentários — [Não lançado] (épico `epic/comentarios`, PR #724, MCP 0.25.0, schema v15)
+# Comentários — 2026-11-07 (épico `epic/comentarios`, PR #724, MCP 0.25.0, schema v15)
 
 ## Adicionado
 
