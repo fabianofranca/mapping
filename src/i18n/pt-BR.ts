@@ -577,6 +577,17 @@ export const ptBR = {
   'imageConsent.dismiss': 'Agora não',
   'imageConsent.insecure': 'sem criptografia',
   'imageConsent.local': 'rede local',
+  'identity.title': 'Identidade',
+  'identity.intro':
+    'Seu nome e seu e-mail assinam as mensagens que você escreve nas conversas. Ficam só neste dispositivo, nunca no projeto. Use os mesmos do git config.',
+  'identity.name': 'Nome',
+  'identity.email': 'E-mail',
+  'identity.emailInvalid': 'Use o formato nome@exemplo.com.',
+  'identity.save': 'Salvar',
+  'identity.saved': 'Identidade salva neste dispositivo.',
+  'identity.clear': 'Esquecer',
+  'identity.missing':
+    'Sem identidade você só lê as conversas: escrever, resolver, reabrir e apagar pedem nome e e-mail.',
   'privacy.title': 'Privacidade',
   'privacy.intro':
     'Imagens de outros sites só aparecem depois que você permite a origem. A permissão vale só neste navegador e não vai no projeto nem no zip.',

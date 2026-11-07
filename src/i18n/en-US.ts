@@ -577,6 +577,17 @@ export const enUS: Dictionary = {
   'imageConsent.dismiss': 'Not now',
   'imageConsent.insecure': 'unencrypted',
   'imageConsent.local': 'local network',
+  'identity.title': 'Identity',
+  'identity.intro':
+    'Your name and email sign the messages you write in conversations. They stay on this device only, never in the project. Use the same ones as your git config.',
+  'identity.name': 'Name',
+  'identity.email': 'Email',
+  'identity.emailInvalid': 'Use the format name@example.com.',
+  'identity.save': 'Save',
+  'identity.saved': 'Identity saved on this device.',
+  'identity.clear': 'Forget',
+  'identity.missing':
+    'Without an identity you can only read conversations: writing, resolving, reopening and deleting need a name and email.',
   'privacy.title': 'Privacy',
   'privacy.intro':
     'Images from other sites only show after you allow their origin. The permission applies to this browser only and is never saved in the project or the zip.',
