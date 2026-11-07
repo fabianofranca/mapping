@@ -17,6 +17,8 @@ import { CopyButtons } from './CopyActions';
 import { useDetailsExtension } from './DetailsExtension';
 import { DetailsIdentity } from './DetailsIdentity';
 import { ThreadsSection } from './comments/ThreadsSection';
+import { ArrivalNotice } from './ArrivalNotice';
+import { PerspectivesSection, usePrincipalOnly } from './PerspectivesSection';
 import { Section } from './DetailsSection';
 import { Icon } from './icons';
 import { MarkingColorField } from './MarkingColorField';
@@ -53,6 +55,7 @@ export function SelectionPanel({
   const shown = review.derived.shownProject.value;
   const project = given === undefined ? shown : given;
   const ext = useDetailsExtension();
+  const deleteBlocked = usePrincipalOnly('delete', image ? [image.id] : []);
   const nameId = useId();
   const widthId = useId();
   const heightId = useId();
@@ -113,6 +116,7 @@ export function SelectionPanel({
         }
       />
       {ext?.header(image.id)}
+      <ArrivalNotice itemId={image.id} />
       {broken && (
         <div class="notice" role="status">
           <strong>{t(missing ? 'image.missingTitle' : 'canvas.imageError')}</strong>
@@ -189,6 +193,7 @@ export function SelectionPanel({
         anchor={{ kind: 'container', id: image.id }}
         onOpenSettings={onOpenSettings}
       />
+      <PerspectivesSection itemId={image.id} readOnly={readOnly} />
       {ext?.others(image.id)}
       {own.length > 0 && (
         <div class="row">
@@ -208,8 +213,14 @@ export function SelectionPanel({
         )}
         <Button
           variant="danger"
-          disabled={disabled || !deletable}
-          title={deletable ? undefined : t('lock.deleteBlocked')}
+          disabled={disabled || !deletable || deleteBlocked}
+          title={
+            deleteBlocked
+              ? t('perspective.principalOnly')
+              : deletable
+                ? undefined
+                : t('lock.deleteBlocked')
+          }
           onClick={() => onDelete(image)}
         >
           {t('image.delete')}

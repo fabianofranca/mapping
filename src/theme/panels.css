@@ -1058,3 +1058,56 @@ button.tree-toggle:hover {
 .comments-row[data-orphan] .comments-anchor-button {
   color: var(--color-warning);
 }
+
+/* Menu do botão direito: perspectivas (etapa #659, PE3) */
+.menu-items-group {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--color-border);
+}
+
+.menu-sub-host {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-sub-host > .button {
+  gap: var(--space-4);
+}
+
+.menu-sub-host > .button > .icon:last-child {
+  margin-inline-start: auto;
+}
+
+.menu-submenu {
+  position: absolute;
+  top: calc(-1 * var(--space-2));
+  left: 100%;
+  min-width: 200px;
+}
+
+.menu-heading {
+  padding: var(--space-1) var(--space-2);
+  font: var(--t-small);
+  color: var(--color-text-muted);
+}
+
+.menu-check-slot {
+  flex: none;
+  width: var(--control-icon);
+  height: var(--control-icon);
+}
+
+.menu-items .menu-note {
+  margin-inline-start: auto;
+  padding-inline-start: var(--space-4);
+  font: var(--t-small);
+  color: var(--color-text-muted);
+}
+
+.menu-hint {
+  padding: 0 var(--space-2) var(--space-1);
+  font: var(--t-small);
+  color: var(--color-text-muted);
+}

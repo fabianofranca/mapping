@@ -1355,3 +1355,67 @@ button.layer-group-label:hover {
   margin: 0;
   font: var(--t-text-small);
 }
+
+/* Perspectivas nos Detalhes (etapa #659, PE3) */
+.perspective-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.perspective-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.perspective-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  font: var(--t-text-small);
+  color: var(--color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--color-selection-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.perspective-check {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon);
+  height: var(--size-icon);
+}
+
+.perspective-row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perspective-row-note {
+  flex: none;
+}
+
+.arrow-link-outside {
+  flex: none;
+  font: var(--t-text-small);
+  white-space: nowrap;
+}
+
+.arrival-notice {
+  min-width: 0;
+}

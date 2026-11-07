@@ -32,9 +32,36 @@ interface LayersProps {
   readonly readOnly: boolean;
 }
 
+/**
+ * Visibilidade das camadas: com uma perspectiva aberta (etapa #659, decisão 11), as escondidas
+ * são as dela e mudam no projeto (com desfazer); na Principal, as da interface (`ui.hiddenLayers`).
+ */
+function useLayerVisibility() {
+  const { ui, session, review } = useEditor();
+  const open = review.derived.perspective.value;
+  const hidden: ReadonlySet<string> = open
+    ? new Set(open.hiddenLayers)
+    : ui.hiddenLayers.value;
+  return {
+    hidden,
+    toggle(layerId: string): void {
+      if (!open) return toggleLayerVisible(ui, layerId);
+      const next = new Set(open.hiddenLayers);
+      if (!next.delete(layerId)) next.add(layerId);
+      session.perspectiveActions.setPerspectiveHiddenLayers(open.id, [...next]);
+    },
+    showAll(): void {
+      if (!open) return showAllLayers(ui);
+      if (open.hiddenLayers.length > 0)
+        session.perspectiveActions.setPerspectiveHiddenLayers(open.id, []);
+    },
+  };
+}
+
 /** Nova camada e Mostrar todas: ícones no cabeçalho da janela. */
 export function LayerActions({ project, readOnly }: LayersProps) {
-  const { ui, actions } = useEditor();
+  const { actions } = useEditor();
+  const visibility = useLayerVisibility();
   const onAdd = () => {
     actions.addLayer(
       t('layer.newName', { n: project.layers.length + 1 }),
@@ -49,11 +76,7 @@ export function LayerActions({ project, readOnly }: LayersProps) {
         disabled={readOnly}
         onClick={onAdd}
       />
-      <IconButton
-        icon="eye"
-        label={t('layer.showAll')}
-        onClick={() => showAllLayers(ui)}
-      />
+      <IconButton icon="eye" label={t('layer.showAll')} onClick={visibility.showAll} />
     </>
   );
 }
@@ -105,10 +128,19 @@ interface LayerRowProps extends LayersProps {
   readonly layer: Layer;
   readonly index: number;
   readonly hidden: boolean;
+  readonly onToggle: (layerId: string) => void;
   readonly onDelete: (layer: Layer) => void;
 }
 
-function LayerRow({ project, readOnly, layer, index, hidden, onDelete }: LayerRowProps) {
+function LayerRow({
+  project,
+  readOnly,
+  layer,
+  index,
+  hidden,
+  onToggle,
+  onDelete,
+}: LayerRowProps) {
   const { ui, actions, store } = useEditor();
   const canComment = !readOnly && !store.reviewing.value;
   const last = project.layers.length - 1;
@@ -126,7 +158,7 @@ function LayerRow({ project, readOnly, layer, index, hidden, onDelete }: LayerRo
           type="checkbox"
           checked={!hidden}
           aria-label={t('layer.visible', { name: layer.name })}
-          onChange={() => toggleLayerVisible(ui, layer.id)}
+          onChange={() => onToggle(layer.id)}
         />
       </label>
 
@@ -236,9 +268,8 @@ function LayerRow({ project, readOnly, layer, index, hidden, onDelete }: LayerRo
 
 /** Lista de camadas, modo de exibição e a confirmação de exclusão. */
 export function LayersPanel({ project, readOnly }: LayersProps) {
-  const { ui } = useEditor();
   const [deleting, setDeleting] = useState<Layer | null>(null);
-  const hidden = ui.hiddenLayers.value;
+  const { hidden, toggle } = useLayerVisibility();
 
   return (
     <div class="layers-panel">
@@ -251,6 +282,7 @@ export function LayersPanel({ project, readOnly }: LayersProps) {
             layer={layer}
             index={index}
             hidden={hidden.has(layer.id)}
+            onToggle={toggle}
             onDelete={setDeleting}
           />
         ))}

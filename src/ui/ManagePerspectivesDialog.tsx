@@ -1,0 +1,256 @@
+import { useState } from 'preact/hooks';
+import { t } from '../i18n';
+import { perspectiveNameIssue, type Perspective, type Project } from '../model';
+import { Button, IconButton, Select, TextField } from './controls';
+import { Dialog } from './Dialog';
+import { useEditor } from './EditorContext';
+import { perspectiveContentText } from './perspectiveContentText';
+
+interface ManageProps {
+  readonly onClose: () => void;
+  /** Abre "Nova perspectiva". */
+  readonly onNew: () => void;
+  /** Abre a confirmação de apagar. */
+  readonly onDelete: (id: string) => void;
+}
+
+/** Um nome de cópia que ainda não existe: "X (cópia)", "X (cópia) 2"… */
+function copyName(project: Project, source: string): string {
+  const base = t('perspective.manage.copyName', { name: source });
+  const names = project.perspectives.map((p) => p.name);
+  let candidate = base;
+  for (let n = 2; perspectiveNameIssue(names, candidate) !== null; n++) {
+    candidate = `${base} ${n}`;
+  }
+  return candidate;
+}
+
+function nameMessage(issue: 'empty' | 'taken', name: string): string {
+  return issue === 'empty'
+    ? t('perspective.new.nameEmpty')
+    : t('perspective.new.nameTaken', { name: name.trim() });
+}
+
+function MainRow() {
+  const name = t('perspective.principal');
+  return (
+    <tr>
+      <th scope="row" class="perspective-name">
+        {name}
+      </th>
+      <td>{t('perspective.manage.fixed')}</td>
+      <td class="muted">{t('perspective.principalNote')}</td>
+      <td class="perspective-actions">
+        <IconButton
+          icon="edit"
+          label={t('perspective.manage.rename', { name })}
+          size="sm"
+          disabled
+        />
+        <IconButton
+          icon="trash"
+          label={t('perspective.manage.delete', { name })}
+          size="sm"
+          disabled
+        />
+      </td>
+    </tr>
+  );
+}
+
+interface RowProps {
+  readonly project: Project;
+  readonly perspective: Perspective;
+  readonly onDelete: (id: string) => void;
+  readonly onError: () => void;
+}
+
+function WhoSelect({ perspective, onError }: Pick<RowProps, 'perspective' | 'onError'>) {
+  const { session } = useEditor();
+  const local = session.perspective.localIds.value.has(perspective.id);
+  return (
+    <Select
+      size="sm"
+      aria-label={t('perspective.manage.who', { name: perspective.name })}
+      value={local ? 'mine' : 'all'}
+      onChange={(e) => {
+        const toLocal = e.currentTarget.value === 'mine';
+        void session.perspectiveActions
+          .setPerspectiveLocal(perspective.id, toLocal)
+          .then((r) => {
+            if (!r.ok) onError();
+          });
+      }}
+    >
+      <option value="all">{t('perspective.new.whoAll')}</option>
+      <option value="mine" disabled={!local && !session.perspective.localAvailable}>
+        {t('perspective.new.whoMine')}
+      </option>
+    </Select>
+  );
+}
+
+function NameCell({
+  project,
+  perspective,
+  editing,
+  onDone,
+  onError,
+}: Pick<RowProps, 'project' | 'perspective' | 'onError'> & {
+  readonly editing: boolean;
+  readonly onDone: () => void;
+}) {
+  const { session } = useEditor();
+  const [draft, setDraft] = useState(perspective.name);
+  if (!editing) return <>{perspective.name}</>;
+  const issue = perspectiveNameIssue(
+    project.perspectives.map((p) => p.name),
+    draft,
+    perspective.name,
+  );
+  const save = () => {
+    if (issue !== null) return;
+    if (!session.perspectiveActions.renamePerspective(perspective.id, draft.trim()).ok) {
+      onError();
+    }
+    onDone();
+  };
+  return (
+    <form
+      class="perspective-rename"
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        save();
+      }}
+    >
+      <TextField
+        size="sm"
+        aria-label={t('perspective.manage.renameField', { name: perspective.name })}
+        value={draft}
+        invalid={issue !== null}
+        onInput={(e) => setDraft(e.currentTarget.value)}
+      />
+      <IconButton
+        icon="check"
+        type="submit"
+        size="sm"
+        label={t('perspective.manage.renameSave')}
+        disabled={issue !== null}
+      />
+      <IconButton
+        icon="close"
+        size="sm"
+        label={t('perspective.manage.renameCancel')}
+        onClick={onDone}
+      />
+      {issue !== null && (
+        <p class="field-error" role="alert">
+          {nameMessage(issue, draft)}
+        </p>
+      )}
+    </form>
+  );
+}
+
+function PerspectiveRow(props: RowProps) {
+  const { project, perspective, onDelete, onError } = props;
+  const { session } = useEditor();
+  const [editing, setEditing] = useState(false);
+  const { name } = perspective;
+  const duplicate = () => {
+    const r = session.perspectiveActions.duplicatePerspective(
+      perspective.id,
+      copyName(project, name),
+    );
+    if (!r.ok) onError();
+  };
+  return (
+    <tr>
+      <th scope="row" class="perspective-name">
+        <NameCell
+          project={project}
+          perspective={perspective}
+          editing={editing}
+          onDone={() => setEditing(false)}
+          onError={onError}
+        />
+      </th>
+      <td>
+        <WhoSelect perspective={perspective} onError={onError} />
+      </td>
+      <td class="muted">{perspectiveContentText(project, perspective)}</td>
+      <td class="perspective-actions">
+        <IconButton
+          icon="edit"
+          size="sm"
+          label={t('perspective.manage.rename', { name })}
+          onClick={() => setEditing(true)}
+        />
+        <IconButton
+          icon="copy"
+          size="sm"
+          label={t('perspective.manage.duplicate', { name })}
+          onClick={duplicate}
+        />
+        <IconButton
+          icon="trash"
+          size="sm"
+          variant="danger"
+          label={t('perspective.manage.delete', { name })}
+          onClick={() => onDelete(perspective.id)}
+        />
+      </td>
+    </tr>
+  );
+}
+
+/** Gerenciar perspectivas: tabela com Quem vê trocável na linha, renomear, duplicar e apagar. */
+export function ManagePerspectivesDialog({ onClose, onNew, onDelete }: ManageProps) {
+  const { store } = useEditor();
+  const [failed, setFailed] = useState(false);
+  const project = store.project.value;
+  if (!project) return null;
+  return (
+    <Dialog
+      title={t('perspective.manage.title')}
+      size="lg"
+      onCancel={onClose}
+      actions={<Button onClick={onClose}>{t('common.close')}</Button>}
+    >
+      <div class="perspective-manage-bar">
+        <Button variant="primary" onClick={onNew}>
+          {t('perspective.manage.new')}
+        </Button>
+      </div>
+      <table class="perspective-table" aria-label={t('perspective.manage.table')}>
+        <thead>
+          <tr>
+            <th scope="col">{t('perspective.manage.colName')}</th>
+            <th scope="col">{t('perspective.manage.colWho')}</th>
+            <th scope="col">{t('perspective.manage.colContent')}</th>
+            <th scope="col">{t('perspective.manage.colActions')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <MainRow />
+          {project.perspectives.map((perspective) => (
+            <PerspectiveRow
+              key={perspective.id}
+              project={project}
+              perspective={perspective}
+              onDelete={onDelete}
+              onError={() => setFailed(true)}
+            />
+          ))}
+        </tbody>
+      </table>
+      {failed && (
+        <p class="field-error" role="alert">
+          {t('perspective.error')}
+        </p>
+      )}
+      <p class="muted">{t('perspective.manage.note')}</p>
+    </Dialog>
+  );
+}
