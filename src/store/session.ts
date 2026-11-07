@@ -27,6 +27,7 @@ import {
   type LibraryIssues,
 } from '../storage/specPackage';
 import type { LoadedProposals } from '../storage/loadProposals';
+import type { LoadedThreads } from '../storage/loadThreads';
 import { backupFileName, imageMimeType, type ProjectStorage } from '../storage/types';
 import type { ProjectFiles } from '../storage/zip';
 import { reportError } from '../utils/report';
@@ -41,6 +42,9 @@ import {
 } from './project';
 import { createProposalActions, type ProposalActions } from './proposalActions';
 import { createProposalStore, type ProposalStore } from './proposals';
+import { identity } from './identity';
+import { createThreadActions, type ThreadActions } from './threadActions';
+import { createThreadStore, type ThreadStore } from './threads';
 
 // A sessão é o único escritor do `mapping.json` de um projeto aberto e o único lugar que o lê
 // depois de aberto (regra ESLint em `eslint.config.js`; desenho em `docs/ARCHITECTURE.md`,
@@ -90,6 +94,13 @@ export interface SessionOptions {
   }[];
   /** As propostas de alteração lidas do armazenamento ao abrir (ver `loadProposals`). */
   readonly proposals?: LoadedProposals;
+  /** As conversas lidas do armazenamento ao abrir (ver `loadThreads`). */
+  readonly threads?: LoadedThreads;
+  /**
+   * `threads` já traz `comments/resolved/` (padrão: sim, `loadThreads` lê as duas pastas). Quem
+   * abre lendo só `comments/` passa `false`: as resolvidas vêm sob pedido (`threads.loadResolved`).
+   */
+  readonly threadsResolvedLoaded?: boolean;
   /** Problemas da biblioteca lidos ao abrir (ver `loadProject`); sem eles, nenhum. */
   readonly libraryIssues?: LibraryIssues;
   /**
@@ -186,6 +197,13 @@ export interface ProjectSession {
   readonly proposals: ProposalStore;
   /** Decidir, anotar e aplicar as aceitas: as únicas ações que mudam uma proposta. */
   readonly proposalActions: ProposalActions;
+  /**
+   * Conversas ancoradas do projeto (etapa Comentários): lista, problemas e conferência de
+   * `comments/`. Moram fora do `mapping.json`: não entram no desfazer.
+   */
+  readonly threads: ThreadStore;
+  /** Abrir, acrescentar, resolver, reabrir e apagar: as únicas ações que mudam uma conversa. */
+  readonly threadActions: ThreadActions;
   readonly saveStatus: ReadonlySignal<SaveStatus>;
   /**
    * Problemas (níveis 1 e 2 do validador) do pacote de cada especialização aplicada em pasta,
@@ -212,8 +230,9 @@ export interface ProjectSession {
   /** O armazenamento permite perceber mudanças externas (hoje, só a pasta). */
   readonly watchable: boolean;
   /**
-   * Confere o `mapping.json` (e, com `images`, os arquivos de imagem) e a pasta `proposals/`
-   * (propostas novas, alteradas ou apagadas por fora: `proposals.notices`). Sem alterações
+   * Confere o `mapping.json` (e, com `images`, os arquivos de imagem), a pasta `proposals/`
+   * (propostas novas, alteradas ou apagadas por fora: `proposals.notices`) e a `comments/`
+   * (conversas novas, alteradas ou apagadas por fora; `resolved/` não, só sob pedido). Sem alterações
    * locais pendentes, recarrega o projeto do disco se ele mudou por fora. Com a gravação em
    * erro (a pendência não chega ao disco), não recarrega: abre o `conflict`. Com um gesto em
    * andamento, ou uma gravação agendada ou enfileirada ainda não iniciada, devolve `busy`. A
@@ -251,7 +270,8 @@ export interface ProjectSession {
   flush(): Promise<FlushResult>;
   /**
    * `mapping.json` confirmado (nunca a prévia de um gesto), as imagens existentes, as cópias
-   * de `specs/` e as propostas (com as imagens que aguardam aceitação), para exportar.
+   * de `specs/`, as propostas (com as imagens que aguardam aceitação) e as conversas
+   * (abertas e resolvidas), para exportar.
    */
   collectFiles(): Promise<CollectedFiles>;
   /**
@@ -331,6 +351,12 @@ export function openSession(options: SessionOptions): ProjectSession {
     storage,
     initial: options.proposals,
     now,
+    onChanged: () => options.onChanged?.(),
+  });
+  const threads = createThreadStore({
+    storage,
+    ...(options.threads === undefined ? {} : { initial: options.threads }),
+    resolvedLoaded: options.threadsResolvedLoaded ?? options.threads !== undefined,
     onChanged: () => options.onChanged?.(),
   });
 
@@ -741,6 +767,14 @@ export function openSession(options: SessionOptions): ProjectSession {
     removeSpecialization: (specId, mode, texts) =>
       saveNow(baseActions.removeSpecialization(specId, mode, texts)),
   };
+  const threadActions = createThreadActions({
+    store,
+    threads,
+    identity,
+    now,
+    newId: options.newId ?? (() => crypto.randomUUID()),
+    ...(storage.copyId === undefined ? {} : { copyId: storage.copyId }),
+  });
   const proposalActions = createProposalActions({
     store,
     proposals,
@@ -919,6 +953,10 @@ export function openSession(options: SessionOptions): ProjectSession {
         if (!closed && storage.statProposal) {
           await proposals.scan().catch((e: unknown) => reportError('proposals.scan', e));
         }
+        // As conversas também: só `comments/`, pelo carimbo, lendo só o arquivo que mudou.
+        if (!closed && storage.statThread) {
+          await threads.scan().catch((e: unknown) => reportError('threads.scan', e));
+        }
         return result;
       });
     pendingSync = entry;
@@ -980,6 +1018,8 @@ export function openSession(options: SessionOptions): ProjectSession {
     actions,
     proposals,
     proposalActions,
+    threads,
+    threadActions,
     libraryIssues,
     components,
     catalogs,
@@ -1110,6 +1150,7 @@ export function openSession(options: SessionOptions): ProjectSession {
         if (raw !== null) specs.set(s.file, raw);
       }
       const withProposals = await proposals.collect();
+      const withThreads = await threads.collect();
       return {
         mapping: serialize({ ...p, revision: disk.revision }),
         images,
@@ -1117,6 +1158,7 @@ export function openSession(options: SessionOptions): ProjectSession {
         ...(specAssets.size > 0 ? { specAssets } : {}),
         proposals: withProposals.proposals,
         proposalImages: withProposals.images,
+        threads: withThreads,
         missingImages,
         saved,
         snapshot: p,
@@ -1131,6 +1173,7 @@ export function openSession(options: SessionOptions): ProjectSession {
       closed = true;
       stopWatching();
       await proposals.settled();
+      await threads.settled();
       // Na fila: espera a conferência ou a recarga em curso e grava o pendente.
       await saver.flush();
       saver.dispose();

@@ -1,18 +1,23 @@
 import {
+  COMMENTS_DIR,
   GITIGNORE_FILE,
   PROPOSALS_DIR,
   PROPOSAL_FILE,
   PROPOSAL_ID_RE,
   gitignoreWithBackups,
   proposalDir,
+  RESOLVED_DIR,
   proposalFilePath,
+  threadFilePath,
 } from '../model';
 import {
   BACKUPS_DIR,
   IMAGES_DIR,
   MAPPING_FILE,
   assertSpecPath,
+  assertThreadId,
   isImageFileName,
+  threadIdOfFileName,
   type ProjectStorage,
 } from './types';
 
@@ -348,6 +353,35 @@ export function createFolderStorage(
     },
     async statProposal(id) {
       const file = await readFile(root, proposalFilePath(id));
+      return file ? `${file.size}:${file.lastModified ?? 0}` : null;
+    },
+    async listThreads(resolved) {
+      const dirs = resolved ? RESOLVED_DIR.split('/') : [COMMENTS_DIR];
+      const dir = await resolveDir(root, dirs, false);
+      if (!dir) return [];
+      const ids: string[] = [];
+      for await (const entry of dir.values()) {
+        const id = entry.kind === 'file' ? threadIdOfFileName(entry.name) : null;
+        if (id !== null) ids.push(id);
+      }
+      return ids.sort();
+    },
+    async readThread(id, resolved) {
+      assertThreadId(id);
+      const blob = await readFile(root, threadFilePath(id, resolved));
+      return blob ? blob.text() : null;
+    },
+    async writeThread(id, resolved, text) {
+      assertThreadId(id);
+      await writeFile(root, threadFilePath(id, resolved), text);
+    },
+    async removeThread(id, resolved) {
+      assertThreadId(id);
+      await removeFile(root, threadFilePath(id, resolved));
+    },
+    async statThread(id, resolved) {
+      assertThreadId(id);
+      const file = await readFile(root, threadFilePath(id, resolved));
       return file ? `${file.size}:${file.lastModified ?? 0}` : null;
     },
     writeBackup: (name, text) => writeFile(root, `${BACKUPS_DIR}/${name}`, text),

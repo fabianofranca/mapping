@@ -34,6 +34,7 @@ import {
 import { createDisplayBitmap, prepareImage, readImageSize } from '../storage/imageImport';
 import { loadProject, type InconsistentLoad } from '../storage/loadProject';
 import { loadProposals } from '../storage/loadProposals';
+import { loadThreads } from '../storage/loadThreads';
 import { loadLibraryIssues, type LibraryIssues } from '../storage/specPackage';
 import { requestPersistentStorage } from '../storage/local';
 import type { ProjectStorage, StorageKind } from '../storage/types';
@@ -200,8 +201,10 @@ async function openLoaded(
       ? {}
       : { libraryIssues: loaded.libraryIssues }),
     proposals: await loadProposals(storage),
+    threads: await loadThreads(storage),
     prepareImage,
-    // Gravou o `mapping.json` (com conteúdo que ainda não saiu num zip) ou um `proposal.json`:
+    // Gravou o `mapping.json` (com conteúdo que ainda não saiu num zip), um `proposal.json` ou uma
+    // conversa (`comments/`):
     // há trabalho a exportar. `markExported` zera; o IndexedDB guarda o mesmo flag. Na pasta,
     // a linha dos recentes acompanha o nome e o último uso, como a do projeto local (R2).
     onChanged: () => {
@@ -349,6 +352,7 @@ export function createLocalProject(name: string): Promise<AppResult> {
       specs: newProjectSpecFiles(project),
       proposals: new Map(),
       proposalImages: new Map(),
+      threads: new Map(),
     });
     void requestPersistentStorage();
     return openFromStorage({ storage: library.open(id), localId: id });

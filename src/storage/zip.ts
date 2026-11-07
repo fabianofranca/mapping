@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { PROPOSALS_DIR } from '../model';
+import { COMMENTS_DIR, PROPOSALS_DIR } from '../model';
 import {
   IMAGES_DIR,
   MAPPING_FILE,
@@ -11,6 +11,7 @@ import {
   isProposalPackagePath,
   isSpecPackagePath,
   isSpecPath,
+  isThreadFilePath,
 } from './types';
 import { reportError } from '../utils/report';
 
@@ -35,6 +36,11 @@ export interface ProjectFiles {
    * pacotes de biblioteca (`proposals/<id>/specs/<pasta>/…`) → conteúdo.
    */
   readonly proposalImages: ReadonlyMap<string, Blob>;
+  /**
+   * Conversas: `comments/<id>.json` e `comments/resolved/<id>.json` → texto (como está, sem
+   * validar; o de um arquivo inválido volta idêntico). Ausente = nenhuma.
+   */
+  readonly threads?: ReadonlyMap<string, string>;
 }
 
 export type ReadZipResult =
@@ -101,6 +107,13 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
       proposalImages.set(relative, new Blob([await entry.async('arraybuffer')]));
     }
   }
+  const threads = new Map<string, string>();
+  const commentsPrefix = `${root}${COMMENTS_DIR}/`;
+  for (const [path, entry] of Object.entries(zip.files)) {
+    if (entry.dir || !path.startsWith(commentsPrefix)) continue;
+    const relative = path.slice(root.length);
+    if (isThreadFilePath(relative)) threads.set(relative, await entry.async('string'));
+  }
   return {
     ok: true,
     files: {
@@ -110,11 +123,12 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
       ...(specAssets.size > 0 ? { specAssets } : {}),
       proposals,
       proposalImages,
+      threads,
     },
   };
 }
 
-/** Gera o zip com `mapping.json`, `images/`, `specs/` e `proposals/` na raiz. */
+/** Gera o zip com `mapping.json`, `images/`, `specs/`, `proposals/` e `comments/` na raiz. */
 export async function writeProjectZip(files: ProjectFiles): Promise<Blob> {
   const zip = new JSZip();
   zip.file(MAPPING_FILE, files.mapping);
@@ -123,6 +137,7 @@ export async function writeProjectZip(files: ProjectFiles): Promise<Blob> {
   }
   for (const [path, text] of files.specs) zip.file(path, text);
   for (const [path, text] of files.proposals) zip.file(path, text);
+  for (const [path, text] of files.threads ?? []) zip.file(path, text);
   for (const [path, blob] of [...files.images, ...files.proposalImages]) {
     // Imagens já são comprimidas: guardar sem recomprimir é mais rápido.
     zip.file(path, await blob.arrayBuffer(), { compression: 'STORE' });

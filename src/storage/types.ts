@@ -1,6 +1,13 @@
 /** Pasta das cópias das especializações aplicadas (`specs/<id>.json`). */
 export const SPECS_DIR = 'specs';
-import { PROPOSALS_DIR, PROPOSAL_FILE, PROPOSAL_ID_RE } from '../model';
+import {
+  COMMENTS_DIR,
+  PROPOSALS_DIR,
+  PROPOSAL_FILE,
+  PROPOSAL_ID_RE,
+  RESOLVED_DIR,
+  THREAD_ID_RE,
+} from '../model';
 // Nomes da pasta do projeto: definidos no modelo, compartilhados com o servidor MCP.
 export {
   BACKUPS_DIR,
@@ -107,6 +114,27 @@ export interface ProjectStorage {
    */
   statProposal?(id: string): Promise<string | null>;
   /**
+   * Ids das conversas (`comments/<id>.json`; com `resolved`, `comments/resolved/<id>.json`),
+   * em ordem alfabética. Só lista o nome dos arquivos (a conferência de ~3 s depende de ser
+   * barato). `[]` se a pasta não existir; nomes fora do `THREAD_ID_RE` ficam de fora.
+   */
+  listThreads(resolved: boolean): Promise<string[]>;
+  /** Texto do arquivo da conversa, ou `null` se ele não existir. Recusa um id inválido. */
+  readThread(id: string, resolved: boolean): Promise<string | null>;
+  /**
+   * Grava o arquivo da conversa, criando as pastas. No projeto local marca "não exportado".
+   * Mover entre `comments/` e `comments/resolved/` é gravar no destino e só então apagar a
+   * origem (quem move é a sessão).
+   */
+  writeThread(id: string, resolved: boolean, text: string): Promise<void>;
+  /** Apaga o arquivo da conversa. Não falha se ele já não existir. */
+  removeThread(id: string, resolved: boolean): Promise<void>;
+  /**
+   * Carimbo (tamanho e `lastModified`) do arquivo da conversa, ou `null` se ele não existir.
+   * Só a pasta implementa, como `statProposal`: o projeto local não é observado.
+   */
+  statThread?(id: string, resolved: boolean): Promise<string | null>;
+  /**
    * Guarda uma cópia do `mapping.json` original (antes de migrar o schema).
    * `name` é o nome do arquivo (ver `backupFileName`), sem a pasta.
    */
@@ -195,6 +223,37 @@ export function isProposalPackagePath(path: string): boolean {
   const match = PROPOSAL_PATH_RE.exec(path);
   if (!match || !PROPOSAL_ID_RE.test(match[1] ?? '')) return false;
   return isSpecPackagePath(match[2] ?? '');
+}
+
+const THREAD_PATH_RE = new RegExp(
+  `^(${COMMENTS_DIR}/resolved|${COMMENTS_DIR})/([^/]+)\\.json$`,
+);
+
+/** Recusa (lança) um id de conversa que não vire só um nome de arquivo em `comments/`. */
+export function assertThreadId(id: string): void {
+  if (!THREAD_ID_RE.test(id)) throw new Error(`invalid thread id: ${id}`);
+}
+
+/** `true` para um nome de arquivo `<id>.json` com id válido (devolve o id), senão `null`. */
+export function threadIdOfFileName(name: string): string | null {
+  if (!name.endsWith('.json')) return null;
+  const id = name.slice(0, -'.json'.length);
+  return THREAD_ID_RE.test(id) ? id : null;
+}
+
+/** Id e pasta de `comments/<id>.json` ou `comments/resolved/<id>.json`; `null` se não for. */
+export function threadLocationOfPath(
+  path: string,
+): { readonly id: string; readonly resolved: boolean } | null {
+  const match = THREAD_PATH_RE.exec(path);
+  const id = match?.[2];
+  if (id === undefined || !THREAD_ID_RE.test(id)) return null;
+  return { id, resolved: match?.[1] === RESOLVED_DIR };
+}
+
+/** `true` para `comments/<id>.json` e `comments/resolved/<id>.json`, com id válido. */
+export function isThreadFilePath(path: string): boolean {
+  return threadLocationOfPath(path) !== null;
 }
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'avif'];
