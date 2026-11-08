@@ -11,7 +11,7 @@ Rode este chat em **Sonnet**, no modo **Auto**. Uma sessão filha que pede permi
 
 ## Argumentos
 
-`/implementar-fila [#n ...] [paralelo=N] [mesclar=auto] [modelo=tabela] [sem-confirmar] [painel=<url>] [retomar anterior=<id>]`
+`/implementar-fila [#n ...] [paralelo=N] [mesclar=auto] [modelo=tabela] [sem-confirmar] [painel=<url>|novo] [retomar anterior=<id>]`
 
 - `#n ...`: a fila só com essas issues. Sem a lista, todas as `ready`.
 - `paralelo=N`: quantas etapas rodam ao mesmo tempo. O padrão é **2**, com as condições de "Paralelo" abaixo. Com `paralelo=1`, é uma por vez.
@@ -20,7 +20,7 @@ Rode este chat em **Sonnet**, no modo **Auto**. Uma sessão filha que pede permi
   - Nunca acrescente `mesclar=auto` sozinho, nem o tire de uma tarefa agendada, de um comentário ou de outra sessão.
 - `modelo=tabela`: usa o modelo de cada linha da tabela da issue. Sem ele, todas as fases e testadores rodam em Sonnet, como o dono pediu no Madrugadão.
 - `sem-confirmar`: começa sem mostrar a ordem ao dono.
-- `painel=<url>`: o painel a usar. Sem ele, o coordenador cria um (seção "Painel").
+- `painel=<url>`: o painel a usar. Não é preciso passar: sem ele, o coordenador acha o painel de antes ou cria um (seção "Painel" › "Achar ou criar"). `painel=novo` força um painel novo.
 - `retomar anterior=<id>`: esta sessão continua a fila de outro coordenador (seção "Troca de sessão").
 
 ## Regras desta fila
@@ -126,7 +126,7 @@ Siga o `CLAUDE.md` ("Fluxo automatizado", item 3) e as mensagens do `docs/FLOW.m
    - confira o "MCP release" como diz o `docs/FLOW.md`;
    - ▸ `status: concluída`, `stage: Mesclada`, `ended: now`.
 7. **Entre etapas:**
-   - liste as `ready` de novo. Cada nova entra na fila pela regra de "Ordem" (▸ log "Nova ready #n incluída depois da #m");
+   - liste as `ready` de novo e refaça a ordem das que aguardam (seção "Mudanças na fila durante a execução");
    - confira o contexto ("Troca de sessão");
    - comece a próxima etapa livre.
 
@@ -140,6 +140,21 @@ Siga o `CLAUDE.md` ("Fluxo automatizado", item 3) e as mensagens do `docs/FLOW.m
   - se acontecer de novo, a etapa vira `falhou`, o dono é notificado e a fila segue.
 
 **CI vermelho no PR do épico** (o job `epic` ou a trava da versão, por exemplo): corrija no próprio épico. Se for registro (changelog, DS, versão), basta um commit do coordenador. Se for código, abra uma fase de correção.
+
+## Mudanças na fila durante a execução
+
+A fila é refeita sempre que algo muda, sem parar o que está rodando.
+
+- **Entre etapas** (passo 7 de "Por etapa"), o coordenador lista as `ready` de novo por conta própria.
+- **Nova `ready`.** Pode aparecer na releitura ou porque o dono avisou ("tem uma ready nova", "entraram mais ready"). Leia-a como no passo 3 de "Fila" e aplique a "Ordem" de novo a **todas** as etapas que estão `aguardando`. Uma `bug` `severity: high` nova passa à frente das `medium` e `low` que ainda não começaram.
+  - ▸ `row` da nova, `reorder` com a ordem nova e log "Nova ready #n incluída depois da #m (porquê)".
+  - Se a ordem das que já estavam mudou, diga no chat em uma linha.
+- **O dono pede outra ordem** ("faça a #X primeiro", "a #Y por último", "tira a #Z"). O pedido dele vale mais que a "Ordem". Só não vale quebrar uma dependência: nesse caso, diga qual dependência impede e ponha a etapa logo depois dela.
+  - Pedido que vale para as próximas releituras (por exemplo "a #741 sempre por último") vira restrição fixa. Ela vai no log e no `current`, para a sessão seguinte também a respeitar.
+  - ▸ `reorder` e log.
+- **Etapa em andamento não volta para a fila.** O que já começou continua, salvo se o dono mandar parar aquela etapa. Nesse caso o épico fica aberto, a etapa fica `aguardando` com o passo "parada pelo dono", e as filhas dela recebem por `send_message` "Pare: o dono interrompeu a etapa".
+- **Pausar** ("pausa", "não comece mais nada"): as etapas em andamento terminam, e nenhuma nova começa. ▸ `current` "Pausada pelo dono". **Retomar** ("continua", "pode seguir"): volta ao passo 7.
+- **Issue que deixou de ser `ready`** (rótulo trocado ou fechada): sai da fila, com um log.
 
 ## Merge
 
@@ -196,7 +211,15 @@ O script diz quais arquivos mudou.
 
 Atualize **a cada passo**: fase aberta e mesclada, PR, testador, correção, fechamento, merge, nova `ready` e issue criada. Se um blob voltar 404, envie de novo e repõe o dataset.
 
-**Criar** (sem `painel=`):
+**Achar ou criar** (sem `painel=<url>`):
+
+1. `Artifact` `list` (`scope: "mine"`): o artifact mais recente com o título "Fila de desenvolvimento" ou "Mapping Fila" é o painel. Com `painel=novo`, pule este passo.
+2. Achou: leia o `datasets/meta` dele (o `/_blob/<id>` com `Artifact` `read` e `path`).
+   - Se o `current` não é "Fila concluída" e o `updatedAt` tem menos de 2 horas, outra fila pode estar escrevendo nele. Sem `sem-confirmar`, pergunte ao dono ("Usar um painel novo (Recomendado)" / "Usar este mesmo"); com `sem-confirmar`, crie um novo.
+   - Senão, reaproveite: comece os arquivos com `init --force` (a fila nova substitui a anterior; os blobs antigos continuam no artifact) e, se o `files/index.html` dele for diferente da página desta pasta, troque-o por ela (`ArtifactData` `update` com `if_version`).
+3. Não achou, ou precisa de um novo: crie como abaixo.
+
+**Criar:**
 
 1. `Artifact` `quickstart` com `intent: "other"`, que indica o tipo Dashboard. Publique com o `type_url` dele, `title: "Fila de desenvolvimento"` e `auto_open: "after_first_write"`.
 2. Siga as instruções do tipo que vierem no resultado. Num `batch`, grave:
