@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "flow-row",
   "name": "FlowRow",
   "description": "Linha que quebra para a linha de baixo quando falta espaço: as filhas se enfileiram, com spacing e padding.",
@@ -193,8 +193,27 @@
             "$field": "padding",
             "default": 0
           },
-          "align": "start",
-          "justify": "start"
+          "align": {
+            "$switch": "itemVerticalAlignment",
+            "cases": {
+              "Top": "start",
+              "CenterVertically": "center",
+              "Bottom": "end"
+            },
+            "default": "start"
+          },
+          "justify": {
+            "$switch": "horizontalArrangement",
+            "cases": {
+              "Start": "start",
+              "End": "end",
+              "Center": "center",
+              "SpaceBetween": "space-between",
+              "SpaceAround": "space-between",
+              "SpaceEvenly": "space-between"
+            },
+            "default": "start"
+          }
         }
       }
     ]

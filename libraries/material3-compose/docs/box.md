@@ -43,3 +43,23 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 - **Sobreposição centralizada**: contentAlignment=Center, background=primaryContainer, padding=16, width=fill, height=fixed
 - **Cantinho**: contentAlignment=TopEnd, background=none
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Box.kt` (linhas 65 a 70: `Box(contentAlignment = Alignment.TopStart, propagateMinConstraints = false)`; sem `Defaults` de tamanho: o Box mede o conteúdo).
+  `ColorLightTokens.kt` e `ColorDarkTokens.kt`: os papéis de cor do tema, lidos como tokens (`$token`) nos dois modos.
+
+**Como o desenho segue o Compose**
+
+- `background` e o fundo seguem o papel do tema nos dois modos; `none` não desenha fundo (o `Modifier.background` é opcional).
+- O `padding` recua a área do conteúdo (o fundo cobre o Box inteiro, como `Modifier.background(...).padding(...)`).
+- O padrão de `contentAlignment` é `TopStart`, o do `Box.kt`.
+
+**O que ainda difere do Compose**
+
+- `contentAlignment` só aparece no rótulo da área do conteúdo: o formato não alinha filhas sobrepostas (o layout de slot `row`/`column` empilha, o do Box sobrepõe), então cada filha fica onde a pessoa a marcou.
+- `propagateMinConstraints` e as restrições mínimas do pai não são campos do tipo.

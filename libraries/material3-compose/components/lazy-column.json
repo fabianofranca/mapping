@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "lazy-column",
   "name": "LazyColumn",
   "description": "Lista vertical que compõe só os itens visíveis: as filhas se empilham, com spacing e contentPadding.",
@@ -131,8 +131,44 @@
             "$field": "contentPadding",
             "default": 0
           },
-          "align": "start",
-          "justify": "start"
+          "align": {
+            "$switch": "horizontalAlignment",
+            "cases": {
+              "Start": "start",
+              "CenterHorizontally": "center",
+              "End": "end"
+            },
+            "default": "start"
+          },
+          "justify": {
+            "$if": {
+              "$eq": ["reverseLayout", "true"]
+            },
+            "then": {
+              "$switch": "verticalArrangement",
+              "cases": {
+                "Top": "end",
+                "Bottom": "end",
+                "Center": "center",
+                "SpaceBetween": "space-between",
+                "SpaceAround": "space-between",
+                "SpaceEvenly": "space-between"
+              },
+              "default": "end"
+            },
+            "else": {
+              "$switch": "verticalArrangement",
+              "cases": {
+                "Top": "start",
+                "Bottom": "end",
+                "Center": "center",
+                "SpaceBetween": "space-between",
+                "SpaceAround": "space-between",
+                "SpaceEvenly": "space-between"
+              },
+              "default": "start"
+            }
+          }
         }
       }
     ]

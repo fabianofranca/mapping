@@ -54,3 +54,22 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 - **Tela padrão**: containerColor=background, floatingActionButtonPosition=End, width=fill, height=fill
 - **FAB ao centro**: containerColor=surface, floatingActionButtonPosition=Center, width=fill, height=fill
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Scaffold.kt` (linhas 83 a 94: `Scaffold(containerColor = MaterialTheme.colorScheme.background, floatingActionButtonPosition = FabPosition.End)`; linhas 100 a 105: o fundo é o `Surface(color = containerColor)`, sem elevação tonal; linha 355: `FabSpacing = 16.dp`).
+  `ColorLightTokens.kt` e `ColorDarkTokens.kt`: os papéis de cor do tema, lidos como tokens (`$token`) nos dois modos.
+
+**Como o desenho segue o Compose**
+
+- O fundo é o papel `containerColor` (padrão `background`), lido do token do papel nos dois modos; antes eram hex fixos, iguais nos dois modos.
+- Como o `Surface` do `Scaffold.kt` não passa `tonalElevation`, o fundo não leva a sobreposição tonal.
+
+**O que ainda difere do Compose**
+
+- O Scaffold desenha só o fundo e a área do `content`: `topBar`, `bottomBar`, `snackbarHost` e `floatingActionButton` são filhas (outros tipos) que ficam onde a pessoa as marcou. A posição do FAB (`floatingActionButtonPosition`) e o `FabSpacing` de 16 dp são só informação do campo; não há desenho da posição.
+- `contentColor` (`contentColorFor`) e `contentWindowInsets` não são campos do tipo; os filhos escolhem a própria cor.

@@ -1,9 +1,9 @@
 {
   "format": "mapping-component",
-  "formatVersion": 3,
+  "formatVersion": 4,
   "id": "image",
   "name": "Image",
-  "description": "Imagem remota (URL https) com o contentScale do Compose; sem URL, mostra a descrição e as medidas.",
+  "description": "Image do Foundation (sem token do Material): imagem remota (URL https) com o contentScale do Compose sobre o fundo surface variant; sem URL, mostra a descrição e as medidas.",
   "size": {
     "width": 160,
     "height": 120
@@ -35,7 +35,9 @@
           "$field": "url"
         },
         "fit": "cover",
-        "fill": "#E7E0EC",
+        "fill": {
+          "$token": "surface-variant"
+        },
         "visible": {
           "$or": [
             {
@@ -57,7 +59,9 @@
           "$field": "url"
         },
         "fit": "fill",
-        "fill": "#E7E0EC",
+        "fill": {
+          "$token": "surface-variant"
+        },
         "visible": {
           "$or": [
             {
@@ -73,7 +77,9 @@
           "$field": "url"
         },
         "fit": "contain",
-        "fill": "#E7E0EC",
+        "fill": {
+          "$token": "surface-variant"
+        },
         "visible": {
           "$not": {
             "$or": [
@@ -145,13 +151,23 @@
             }
           ]
         },
-        "color": "#49454F",
+        "color": {
+          "$token": "on-surface-variant"
+        },
         "font": {
-          "family": "Roboto",
-          "size": 11,
-          "weight": 400,
-          "lineHeight": 16,
-          "align": "center"
+          "size": {
+            "$token": "label-small-size"
+          },
+          "weight": {
+            "$token": "label-small-weight"
+          },
+          "lineHeight": {
+            "$token": "label-small-line-height"
+          },
+          "align": "center",
+          "letterSpacing": {
+            "$token": "label-small-tracking"
+          }
         }
       }
     ]

@@ -48,3 +48,21 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 - **Páginas de onboarding**: verticalAlignment=CenterVertically, width=fill, height=fill
 - **Páginas espiando**: contentPadding=32, pageSpacing=16, width=fill, height=fixed
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Este tipo é do Foundation, não do Material: não tem arquivo de tokens, e o desenho segue o comportamento do foundation, com os valores vindos dos campos.
+
+**Arquivos usados**
+
+- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/pager/Pager.kt` (linhas 113 a 125: `HorizontalPager(contentPadding = PaddingValues(0.dp), pageSpacing = 0.dp, verticalAlignment = Alignment.CenterVertically, userScrollEnabled = true, reverseLayout = false)`).
+
+**Como o desenho segue o Compose**
+
+- `verticalAlignment` vira o `align` do slot (`Top` `start`, `CenterVertically` `center`, `Bottom` `end`), por `$switch` (formato 4: expressão em `layout.align`); o padrão é `center`, como no Compose.
+- `pageSpacing` é o `gap` e `contentPadding` é o `padding` do slot, que é uma `row`.
+- Nenhuma cor, fonte ou raio é desenhado.
+
+**O que ainda difere do Compose**
+
+- `reverseLayout`, `userScrollEnabled`, `pageSize` e o estado de página não existem num desenho estático; as páginas aparecem lado a lado, na ordem da marcação.

@@ -45,3 +45,21 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 - **Galeria de duas colunas**: columns=2, verticalSpacing=8, horizontalSpacing=8, contentPadding=16, width=fill, height=fill
 - **Grade adaptativa**: minColumnWidth=120, verticalSpacing=12, horizontalSpacing=12, width=fill, height=fill
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Este tipo é do Foundation, não do Material: não tem arquivo de tokens, e o desenho segue o comportamento do foundation, com os valores vindos dos campos.
+
+**Arquivos usados**
+
+- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/grid/LazyGridDsl.kt` (linhas 67 a 77: `LazyVerticalGrid(columns, contentPadding = PaddingValues(0.dp), reverseLayout = false, verticalArrangement, horizontalArrangement = Arrangement.Start)`).
+
+**Como o desenho segue o Compose**
+
+- `contentPadding` é o `padding` do quadro, como o `PaddingValues` do Compose; o slot ocupa o que sobra (`fill`).
+- Nenhuma cor, fonte ou raio é desenhado; o rótulo do slot resume `columns` ou `minColumnWidth` e os espaçamentos.
+
+**O que ainda difere do Compose**
+
+- O formato não tem grade com colunas de largura igual para filhas de uma marcação (`GridCells.Fixed` e `GridCells.Adaptive`): o slot guarda as filhas sem `row` nem `column`, e `verticalSpacing` e `horizontalSpacing` só entram no rótulo.
+- Rolagem e `state` não existem num desenho estático.
