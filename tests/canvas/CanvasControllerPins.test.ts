@@ -5,6 +5,7 @@ import type { CommentPinRenderer } from '../../src/canvas/renderers/commentPins'
 import { approximateMeasurer, type Thread } from '../../src/model';
 import { createDisplayImages } from '../../src/store/displayImages';
 import { createEditorDerived } from '../../src/store/derived';
+import { THREAD_STATE_GLYPHS } from '../../src/utils/threadStateGlyph';
 import { textMeasurer } from '../../src/store/textMeasure';
 import { startComposing } from '../../src/store/threadUi';
 import { setViewMode } from '../../src/store/ui';
@@ -66,7 +67,7 @@ describe('CanvasController: pinos das conversas', () => {
       pinLayer: CommentPinRenderer;
       frame: { peek(): { pins: readonly unknown[]; draftPin: unknown } };
     };
-    return { ...base, derived, controller, internals };
+    return { ...base, derived, controller, internals, container };
   }
 
   it('nascem escondidos e aparecem pelo botão Conversas', () => {
@@ -149,6 +150,53 @@ describe('CanvasController: pinos das conversas', () => {
     ui.commentPins.value = true;
     expect(rafCalls).toBe(1);
     flush();
+    controller.destroy();
+  });
+
+  it('cada pino tem um glifo do estado mais urgente, em cv-pin-text; o rascunho não tem', () => {
+    const { controller, ui, store, internals } = setup();
+    ui.commentPins.value = true;
+    flush();
+    const node = internals.pinLayer.node('marking:M1');
+    const glyphs = node?.glyph.getChildren() ?? [];
+    // Aguardando humano (a última mensagem é do agente): a pessoa.
+    const drawn = glyphs
+      .filter((g) => g.visible())
+      .map((g) => (g as unknown as { data(): string }).data());
+    expect(drawn).toEqual([...THREAD_STATE_GLYPHS.awaitingHuman]);
+    expect((glyphs[0] as unknown as { stroke(): string }).stroke()).toBe('#0b1220');
+    startComposing(ui, store.project.peek()!, {
+      kind: 'point',
+      containerId: 'I1',
+      x: 50,
+      y: 60,
+    });
+    flush();
+    expect(internals.pinLayer.node('draft')?.glyph.visible()).toBe(false);
+    controller.destroy();
+  });
+
+  it('data-pin-states traz os estados na ordem de desenho, um por item do data-pins', () => {
+    const agentLast: Thread = sampleThread({
+      id: 't2',
+      anchor: { kind: 'marking', id: 'M2' },
+      messages: [message('c', T0, HUMAN, 'oi')],
+    });
+    const resolved: Thread = sampleThread({
+      id: 't3',
+      anchor: { kind: 'container', id: 'I1' },
+      resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
+      messages: [message('d', T0, HUMAN, 'ok')],
+    });
+    const { controller, ui, internals, container } = setup([OPEN, agentLast, resolved]);
+    expect(container.dataset.pinStates).toBe('');
+    ui.commentPins.value = true;
+    flush();
+    const states = (container.dataset.pinStates ?? '').split(',');
+    expect(states).toHaveLength(Number(container.dataset.pins));
+    expect(states).toContain('awaitingHuman');
+    expect(states).toContain('awaitingAgent');
+    expect(internals.pinLayer.states).toEqual(states);
     controller.destroy();
   });
 });

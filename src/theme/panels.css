@@ -1059,7 +1059,9 @@ button.tree-toggle:hover {
 }
 
 .comments-badge {
-  display: inline-block;
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
   max-width: 100%;
   padding: 0 var(--space-2);
   overflow: hidden;

@@ -92,6 +92,9 @@
 }
 
 .thread-state {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
   padding: var(--space-0-5) var(--space-2);
   border-radius: var(--radius-full);
   font: var(--t-micro);
