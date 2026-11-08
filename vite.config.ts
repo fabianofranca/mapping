@@ -4,8 +4,8 @@ import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { channelManifest, stampServiceWorker, type BuildChannel } from './pwa/build';
-import { applyCsp } from './pwa/csp';
+import type { BuildChannel } from './pwa/build';
+import { contentSecurityPolicy, serviceWorker } from './pwa/buildPlugins';
 import { tokensCss } from './pwa/tokensCss';
 import { resolveBuildId } from './src/utils/build';
 import { fontBytes, wasmBytes } from './tests/support/mcpVitePlugins';
@@ -24,76 +24,6 @@ const buildId = resolveBuildId({
     }),
   now: new Date(),
 });
-
-/** FNV-1a de 32 bits em hexadecimal: basta para distinguir um build do outro. */
-function hash(text: string): string {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) {
-    h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
-  }
-  return (h >>> 0).toString(16).padStart(8, '0');
-}
-
-/**
- * Content Security Policy do `index.html` (etapa 2.4). Roda depois do
- * vite-plugin-singlefile (que tem `enforce: 'post'`, então embute o JS e o CSS antes
- * deste `generateBundle`) e antes do `serviceWorker()`, cujo hash do build precisa
- * enxergar o HTML já com a CSP. Se a política não bater com os blocos embutidos,
- * o build falha.
- */
-function contentSecurityPolicy(): Plugin {
-  return {
-    name: 'content-security-policy',
-    apply: 'build',
-    generateBundle: {
-      order: 'post',
-      handler(_options, bundle) {
-        const html = bundle['index.html'];
-        if (html?.type !== 'asset')
-          throw new Error('index.html não encontrado no bundle');
-        html.source = applyCsp(String(html.source), 'app');
-      },
-    },
-  };
-}
-
-/**
- * Publica o service worker (`pwa/sw.js`) carimbado com um hash do index.html:
- * cada build novo muda o sw.js, e é isso que faz o navegador detectar a
- * "nova versão". Publica também o manifest do canal (o do preview tem outro
- * nome). Ficam fora de `public/` para poderem ser transformados.
- */
-function serviceWorker(): Plugin {
-  return {
-    name: 'service-worker',
-    apply: 'build',
-    generateBundle: {
-      order: 'post',
-      handler(_options, bundle) {
-        const html = bundle['index.html'];
-        if (html?.type !== 'asset')
-          throw new Error('index.html não encontrado no bundle');
-        // O guia (public/guia/, gerado antes do build) também está no cache: mudou, o sw.js muda.
-        const guide = readFileSync('public/guia/index.html', 'utf8');
-        const sw = stampServiceWorker(
-          readFileSync('pwa/sw.js', 'utf8'),
-          hash(String(html.source) + guide),
-          channel,
-        );
-        this.emitFile({ type: 'asset', fileName: 'sw.js', source: sw });
-        const manifest = channelManifest(
-          readFileSync('pwa/manifest.webmanifest', 'utf8'),
-          channel,
-        );
-        this.emitFile({
-          type: 'asset',
-          fileName: 'manifest.webmanifest',
-          source: manifest,
-        });
-      },
-    },
-  };
-}
 
 /**
  * Com `--coverage` o código roda instrumentado e bem mais lento: os orçamentos de
@@ -137,7 +67,7 @@ const base = {
     preact(),
     viteSingleFile(),
     contentSecurityPolicy(),
-    serviceWorker(),
+    serviceWorker(channel),
   ],
 };
 
@@ -178,6 +108,17 @@ export default defineConfig({
         },
       },
       {
+        // Roda o `vite build` (rolldown nativo) de verdade: precisa de Node puro, em processos
+        // comuns (o `vmThreads` do jsdom isola objetos que o binding do rolldown rejeita).
+        test: {
+          name: 'build',
+          environment: 'node',
+          env: testEnv,
+          include: ['tests/build/**/*.test.ts'],
+          testTimeout: 30_000,
+        },
+      },
+      {
         plugins: [wasmBytes(), fontBytes()],
         // Servidor MCP (etapa 3a): também em Node puro.
         test: {
@@ -202,6 +143,7 @@ export default defineConfig({
           exclude: [
             'tests/model/**',
             'tests/mcp/**',
+            'tests/build/**',
             'tests/viewer/react*.test.tsx',
             ...perfAppFiles,
           ],

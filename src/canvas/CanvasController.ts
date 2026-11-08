@@ -20,6 +20,7 @@ import { locale, showArrows } from '../store/settings';
 import type { PerspectiveState } from '../store/perspectives';
 import { projectInPerspective } from '../store/perspectiveShown';
 import { textMeasurer } from '../store/textMeasure';
+import { formatSelectionBox, formatViewport, selectionScreenBox } from './selectionBox';
 import { composingAnchor, selectedThreadId } from '../store/threadUi';
 import {
   itemsOf,
@@ -827,10 +828,19 @@ export class CanvasController {
       this.componentLayer.imageCount + this.floatingLayer.imageCount;
     const pins = this.pinLayer.size;
     const pinStates = this.pinLayer.states.join(',');
-    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${componentImages}:${pins}:${pinStates}`;
+    // A vista e a caixa da seleção (px de tela, só leitura para os testes): pan e zoom as
+    // reescrevem sem recalcular dado do projeto, usando a vista e as colocações já prontas.
+    const viewportText = formatViewport(v);
+    const boxText = formatSelectionBox(
+      selectionScreenBox(frame.project, frame.selection, this.placements, v),
+    );
+    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${componentImages}:${pins}:${pinStates}:${viewportText}:${boxText ?? ''}`;
     if (drawn !== this.published) {
       this.published = drawn;
       const host = this.stage.container();
+      host.dataset.viewport = viewportText;
+      if (boxText === null) delete host.dataset.selectionBox;
+      else host.dataset.selectionBox = boxText;
       host.dataset.fits = String(this.view.fits);
       host.dataset.images = String(this.readyImages);
       host.dataset.components = String(this.drawnComponents);

@@ -12,7 +12,7 @@ Ferramenta do Mapping para quem desenvolve o `mapping-viewer`: um **visualizador
   - `host.ts`: `loadLibraryFromUrl` e `registerLibraryFonts`, funções do hospedeiro (rede e fontes); o núcleo não faz nenhuma das duas.
   - `remoteImages.ts`: imagens remotas, desligadas por padrão e sempre `pixelSafe`.
   - `pinch.ts`: pinça com dois dedos no palco Konva e teto do pixel ratio.
-  - `build.mjs` e `tsconfig.json`: build do pacote e das declarações de tipo.
+  - `build.mjs`, `packageManifest.mjs` e `tsconfig.json`: build do pacote, o manifesto dele (versão e dependências; o teste das declarações o lê) e as declarações de tipo.
 - `demo/`: página de demonstração em React 19 de verdade (sem `preact/compat`), com CSS próprio (`--demo-*`, sem os tokens da app). É um exemplo copiável de hospedeiro.
 - `samples/`: exemplos embutidos (`samples.ts`, `samplesMaterial3.ts`, `settings.sdui.json`), usados pela demo e pelos testes do modelo e do canvas.
 - Os testes ficam em `tests/viewer/`. O desenho em si é o `ScreenRenderer` de `src/canvas/components/`.
@@ -25,7 +25,7 @@ npm run build:viewer  # gera dist-viewer/ (o tsc roda primeiro e verifica os tip
 cd dist-viewer && npm pack   # gera mapping-viewer-<versão>.tgz para instalar no hospedeiro
 ```
 
-A demo não entra no `npm run build` nem no deploy. `npm run build:viewer` gera `mapping-viewer.js` (núcleo) e `mapping-viewer-react.js` (invólucro), ESM minificados, com mapas externos e o Konva embutido, mais `package.json`, `types/` e o `README.md` do pacote. No fim ele confere que todo arquivo apontado por `exports` existe. A versão do pacote é a constante `VIEWER_VERSION` do `build.mjs` e sobe junto com mudanças da API.
+A demo não entra no `npm run build` nem no deploy. `npm run build:viewer` gera `mapping-viewer.js` (núcleo) e `mapping-viewer-react.js` (invólucro), ESM minificados, com mapas externos e o Konva embutido, mais `package.json`, `types/` e o `README.md` do pacote. No fim ele confere que todo arquivo apontado por `exports` existe. A versão do pacote é a constante `VIEWER_VERSION` do `packageManifest.mjs` e sobe junto com mudanças da API.
 
 ## API em resumo
 
