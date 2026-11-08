@@ -1,0 +1,62 @@
+Editor — 144 | alterar icon-button "Ações de Salvar" {"icone":"moreVertical"}
+Editor — 144 | alterar icon-button "Mais ações da camada Camada 1" {"icone":"moreVertical"}
+Editor — 144 | alterar icon-button "Mais ações da camada Notas" {"icone":"moreVertical"}
+Editor — 144 | alterar icon-button "Mais ações da camada Mapping" {"icone":"moreVertical"}
+Editor — 144 | alterar text "Editor — 1440 × 900" {"alinhamento":"left"}
+Editor — 144 | alterar text "Área do canvas" {"alinhamento":"left"}
+Editor — 144 | alterar text "Tela de login" {"alinhamento":"left"}
+Editor — 144 | alterar icon-button "Ações da janela Comentários" {"icone":"moreVertical"}
+Editor — 144 | alterar text "1" {"alinhamento":"right"}
+Editor — 144 | alterar text "3" {"alinhamento":"right"}
+Editor — 144 | alterar icon-button "Ações do campo texto" {"icone":"moreVertical"}
+Editor — 144 | alterar icon-button "Ações do campo variant" {"icone":"moreVertical"}
+Editor — 144 | alterar icon-button "Ações do campo size" {"icone":"moreVertical"}
+Editor — 144 | alterar icon-button "Ações do campo desabilitado" {"icone":"moreVertical"}
+Editor — 144 | alterar text "2" {"alinhamento":"left"}
+Editor — 144 | alterar icon-button "Ações da conversa" {"icone":"moreVertical"}
+Editor — 144 | alterar text "—" {"alinhamento":"left"}
+Editor — 144 | apagar text "12%" (dentro do zoom)
+Editor — 144 | apagar text "12%" (dentro do zoom)
+Editor — 144 | trocar box → tree-row "Linha Salvar" {"x":44,"y":622,"width":255,"height":28}
+Editor — 144 | trocar box → layer-group "Camada Camada 1" {"x":44,"y":683,"width":255,"height":28}
+Editor — 144 | trocar box → layer-group "Cor da camada" {"x":83,"y":689,"width":16,"height":16}
+Editor — 144 | trocar text-field → text "Camada 1" {"x":107,"y":685,"width":152,"height":24} → {"x":116,"y":685,"width":134,"height":24}
+Editor — 144 | trocar box → layer-group "Camada Notas" {"x":44,"y":713,"width":255,"height":54}
+Editor — 144 | trocar box → layer-group "Cor da camada" {"x":83,"y":719,"width":16,"height":16}
+Editor — 144 | trocar box → layer-group "Cor da camada" {"x":83,"y":775,"width":16,"height":16}
+Editor — 144 | trocar box → minimap "Minimapa" {"x":913,"y":562,"width":119,"height":96}
+Editor — 144 | trocar text-field → text "Rótulo da instância (opcional)" {"x":1062,"y":93,"width":317,"height":24} → {"x":1071,"y":93,"width":299,"height":24}
+Editor — 144 | criar tree-row "Linha Camadas (Ctrl+Shift+2)" {"x":44,"y":90,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Catálogo (Ctrl+Shift+9)" {"x":44,"y":118,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Lista (Ctrl+Shift+4)" {"x":44,"y":146,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Incompletas (Ctrl+Shift+" {"x":44,"y":174,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Avisos (Ctrl+Shift+8)" {"x":44,"y":202,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Diagnóstico (Ctrl+Shift+" {"x":44,"y":230,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Propostas (Ctrl+Shift+7)" {"x":44,"y":258,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Comentários (Ctrl+Shift+" {"x":44,"y":286,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Janela Árvore" {"x":44,"y":314,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Janela Camadas" {"x":44,"y":342,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Barra do canvas" {"x":44,"y":370,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Caminho da seleção" {"x":44,"y":398,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Enquadrar tudo" {"x":44,"y":426,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Visualizar (Alt+H)" {"x":44,"y":454,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Conversas (liga e deslig" {"x":44,"y":482,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Área do canvas" {"x":44,"y":510,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Tela de login" {"x":44,"y":538,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Campo E-mail" {"x":44,"y":566,"width":255,"height":28}
+Editor — 144 | criar tree-row "Linha Pino — aguardando agente" {"x":44,"y":594,"width":255,"height":28}
+Editor — 144 | criar choice "Mostrar a camada Camada 1" {"x":51,"y":683,"width":24,"height":28}
+Editor — 144 | criar choice "Mostrar a camada Notas" {"x":51,"y":713,"width":24,"height":28}
+Editor — 144 | criar layer-group "Camada Mapping" {"x":44,"y":769,"width":255,"height":48}
+Editor — 144 | criar choice "Mostrar a camada Mapping" {"x":51,"y":769,"width":24,"height":28}
+Editor — 144 | criar zoom-field "Zoom 11%" {"x":978,"y":42,"width":56,"height":28}
+Editor — 144 | criar minimap "Imagem no minimapa" {"x":990,"y":619,"width":18,"height":5}
+Editor — 144 | criar minimap "Imagem no minimapa" {"x":942,"y":619,"width":18,"height":5}
+Editor — 144 | criar minimap "Imagem no minimapa" {"x":960,"y":619,"width":10,"height":18}
+Editor — 144 | criar minimap "Imagem no minimapa" {"x":971,"y":619,"width":18,"height":9}
+Editor — 144 | criar minimap "Imagem no minimapa" {"x":918,"y":622,"width":18,"height":11}
+Editor — 144 | criar minimap "Área visível" {"x":914,"y":563,"width":119,"height":96}
+Editor — 144 | criar text "Buscar nas mensagens" {"x":696,"y":705,"width":147,"height":24}
+Editor — 144 | criar property-grid "Propriedades" {"x":1062,"y":125,"width":317,"height":180}
+Editor — 144 | criar code-definitions "Definição" {"x":1162,"y":277,"width":217,"height":28}
+Editor — 144 | criar zoom-field "Zoom 11%" {"x":1086,"y":876,"width":56,"height":24}

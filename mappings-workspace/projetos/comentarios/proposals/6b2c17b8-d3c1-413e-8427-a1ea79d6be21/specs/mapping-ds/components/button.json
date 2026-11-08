@@ -1,0 +1,106 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "button",
+  "name": "Button",
+  "description": "Botão com texto: 28 px de altura, raio 4, borda de controle. A variante muda fundo, borda e cor do texto.",
+  "size": {
+    "width": 96,
+    "height": 28
+  },
+  "minSize": {
+    "width": 28,
+    "height": 24
+  },
+  "sizing": {
+    "width": "hug",
+    "height": 28
+  },
+  "preview": {
+    "texto": "Salvar",
+    "variant": "default",
+    "size": "md",
+    "desabilitado": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "button",
+    "cornerRadius": 4,
+    "opacity": {
+      "$if": {
+        "$eq": [
+          "desabilitado",
+          "sim"
+        ]
+      },
+      "then": 0.45,
+      "else": 1
+    },
+    "fill": {
+      "$switch": "variant",
+      "cases": {
+        "primary": "#1a63cc",
+        "ghost": "rgba(0, 0, 0, 0)"
+      },
+      "default": "#ffffff"
+    },
+    "stroke": {
+      "color": {
+        "$switch": "variant",
+        "cases": {
+          "primary": "#1a63cc",
+          "danger": "#c62828",
+          "ghost": "rgba(0, 0, 0, 0)"
+        },
+        "default": "#7d8590"
+      },
+      "width": 1
+    },
+    "layout": {
+      "type": "row",
+      "gap": 6,
+      "padding": {
+        "$if": {
+          "$eq": [
+            "size",
+            "sm"
+          ]
+        },
+        "then": [
+          0,
+          8
+        ],
+        "else": [
+          0,
+          12
+        ]
+      },
+      "align": "center",
+      "justify": "center"
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "texto",
+        "text": {
+          "$field": "texto",
+          "default": "Botão"
+        },
+        "color": {
+          "$switch": "variant",
+          "cases": {
+            "primary": "#ffffff",
+            "danger": "#c62828"
+          },
+          "default": "#1b1f24"
+        },
+        "font": {
+          "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 20
+        }
+      }
+    ]
+  }
+}

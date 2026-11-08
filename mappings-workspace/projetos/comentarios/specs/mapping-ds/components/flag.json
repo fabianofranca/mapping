@@ -1,0 +1,237 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "flag",
+  "name": "Flag",
+  "description": "Pílula de 18 px com um fato sobre a linha (Nova, Aplicada, Conflito, Trancado, Envolvida, junto): texto t-micro, ícone opcional de 12 px; neutra com borda de controle ou num tom (aviso, perigo, ok, nova).",
+  "size": {
+    "width": 80,
+    "height": 18
+  },
+  "minSize": {
+    "width": 16,
+    "height": 14
+  },
+  "sizing": {
+    "width": "hug",
+    "height": 18
+  },
+  "preview": {
+    "texto": "Nova",
+    "tom": "nova"
+  },
+  "template": {
+    "type": "frame",
+    "name": "pílula",
+    "cornerRadius": 999,
+    "fill": {
+      "$switch": "tom",
+      "cases": {
+        "aviso": {
+          "$token": "color-warning-bg"
+        },
+        "perigo": {
+          "$token": "color-danger-bg"
+        },
+        "ok": {
+          "$token": "color-success-bg"
+        },
+        "nova": {
+          "$token": "color-accent"
+        }
+      },
+      "default": "rgba(0, 0, 0, 0)"
+    },
+    "stroke": {
+      "color": {
+        "$switch": "tom",
+        "cases": {
+          "aviso": {
+            "$token": "color-warning"
+          },
+          "perigo": {
+            "$token": "color-danger"
+          },
+          "ok": {
+            "$token": "color-success"
+          },
+          "nova": {
+            "$token": "color-accent"
+          }
+        },
+        "default": {
+          "$token": "color-border-control"
+        }
+      },
+      "width": 1
+    },
+    "layout": {
+      "type": "row",
+      "padding": [
+        0,
+        6
+      ],
+      "gap": 4,
+      "align": "center",
+      "justify": "center"
+    },
+    "children": [
+      {
+        "type": "icon",
+        "name": {
+          "$switch": "icone",
+          "cases": {
+            "undo": "undo",
+            "redo": "redo",
+            "edit": "edit",
+            "copy": "copy",
+            "trash": "trash",
+            "plus": "plus",
+            "minus": "minus",
+            "check": "check",
+            "close": "close",
+            "refresh": "refresh",
+            "pan": "pan",
+            "pointer": "pointer",
+            "draw": "draw",
+            "marking": "marking",
+            "arrow": "arrow",
+            "crop": "crop",
+            "text": "text",
+            "fit": "fit",
+            "zoomIn": "zoom-in",
+            "zoomOut": "zoom-out",
+            "search": "search",
+            "locate": "locate",
+            "filter": "filter",
+            "menu": "menu",
+            "chevronUp": "chevron-up",
+            "chevronDown": "chevron-down",
+            "chevronLeft": "chevron-left",
+            "chevronRight": "chevron-right",
+            "arrowUp": "arrow-up",
+            "arrowDown": "arrow-down",
+            "arrowLeft": "arrow-left",
+            "arrowRight": "arrow-right",
+            "collapseAll": "collapse-all",
+            "expandAll": "expand-all",
+            "maximize": "maximize",
+            "minimize": "minimize",
+            "externalLink": "external-link",
+            "home": "home",
+            "panelLeft": "panel-left",
+            "panelRight": "panel-right",
+            "panelBottom": "panel-bottom",
+            "minimap": "minimap",
+            "tree": "tree",
+            "perspective": "perspective",
+            "layers": "layers",
+            "list": "list",
+            "table": "table",
+            "checklist": "checklist",
+            "diagnostics": "diagnostics",
+            "specialization": "specialization",
+            "library": "library",
+            "container": "container",
+            "containerMark": "container-mark",
+            "arrange": "arrange",
+            "more": "more",
+            "moreVertical": "more-vertical",
+            "grip": "grip",
+            "addImage": "add-image",
+            "image": "image",
+            "folder": "folder",
+            "file": "file",
+            "save": "save",
+            "export": "export",
+            "upload": "upload",
+            "tag": "tag",
+            "link": "link",
+            "share": "share",
+            "eye": "eye",
+            "eyeOff": "eye-off",
+            "lock": "lock",
+            "unlock": "unlock",
+            "info": "info",
+            "warning": "warning",
+            "error": "error",
+            "help": "help",
+            "settings": "settings",
+            "keyboard": "keyboard",
+            "sun": "sun",
+            "moon": "moon",
+            "proposal": "proposal",
+            "chat": "chat",
+            "chatAdd": "chat-add",
+            "moved": "moved",
+            "changed": "changed",
+            "replaced": "replaced",
+            "compare": "compare",
+            "note": "note",
+            "blocked": "blocked",
+            "globe": "globe"
+          }
+        },
+        "color": {
+          "$switch": "tom",
+          "cases": {
+            "aviso": {
+              "$token": "color-warning"
+            },
+            "perigo": {
+              "$token": "color-danger"
+            },
+            "ok": {
+              "$token": "color-success"
+            },
+            "nova": {
+              "$token": "color-accent-text"
+            }
+          },
+          "default": {
+            "$token": "color-text"
+          }
+        },
+        "width": 12,
+        "height": 12,
+        "visible": {
+          "$has": "icone"
+        }
+      },
+      {
+        "type": "text",
+        "name": "texto",
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "tom",
+          "cases": {
+            "aviso": {
+              "$token": "color-warning"
+            },
+            "perigo": {
+              "$token": "color-danger"
+            },
+            "ok": {
+              "$token": "color-success"
+            },
+            "nova": {
+              "$token": "color-accent-text"
+            }
+          },
+          "default": {
+            "$token": "color-text"
+          }
+        },
+        "font": {
+          "size": 11,
+          "weight": 600,
+          "lineHeight": 16,
+          "wrap": "none"
+        }
+      }
+    ]
+  }
+}

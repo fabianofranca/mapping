@@ -1,0 +1,168 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "help-dialog",
+  "name": "HelpDialog",
+  "description": "Diálogo Ajuda (820 × 640): cabeçalho de 44 px com o título e o fechar, o corpo sem margem dividido em índice de 200 px e conteúdo, e o rodapé com a divisória.",
+  "size": {
+    "width": 820,
+    "height": 640
+  },
+  "minSize": {
+    "width": 480,
+    "height": 240
+  },
+  "sizing": {
+    "width": 820,
+    "height": 640
+  },
+  "preview": {
+    "titulo": "Ajuda"
+  },
+  "template": {
+    "type": "frame",
+    "name": "ajuda",
+    "cornerRadius": 8,
+    "fill": {
+      "$token": "color-surface"
+    },
+    "stroke": {
+      "color": {
+        "$token": "color-border"
+      },
+      "width": 1
+    },
+    "shadow": {
+      "color": {
+        "$token": "shadow-popup-color"
+      },
+      "x": 0,
+      "y": 8,
+      "blur": 24
+    },
+    "layout": {
+      "type": "column",
+      "padding": 1
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "width": "fill",
+        "height": 43,
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            4,
+            0,
+            16
+          ],
+          "gap": 8,
+          "align": "center",
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "titulo",
+              "default": "Ajuda"
+            },
+            "color": {
+              "$token": "color-text"
+            },
+            "font": {
+              "size": 15,
+              "weight": 600,
+              "lineHeight": 22
+            },
+            "width": "fill"
+          },
+          {
+            "type": "frame",
+            "name": "fechar",
+            "width": 28,
+            "height": 28,
+            "layout": {
+              "type": "none"
+            },
+            "children": [
+              {
+                "type": "icon",
+                "name": "close",
+                "color": {
+                  "$token": "color-text"
+                },
+                "width": 16,
+                "height": 16,
+                "anchors": {
+                  "centerX": true,
+                  "centerY": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "divisória do cabeçalho",
+        "width": "fill",
+        "height": 1,
+        "fill": {
+          "$token": "color-border"
+        }
+      },
+      {
+        "type": "frame",
+        "name": "corpo",
+        "width": "fill",
+        "height": "fill",
+        "layout": {
+          "type": "none"
+        },
+        "children": [
+          {
+            "type": "slot",
+            "name": "índice e conteúdo",
+            "label": "Índice e conteúdo",
+            "layout": {
+              "type": "none"
+            }
+          },
+          {
+            "type": "rect",
+            "name": "divisória do índice",
+            "width": 1,
+            "anchors": {
+              "left": 199,
+              "top": 0,
+              "bottom": 0
+            },
+            "fill": {
+              "$token": "color-border"
+            }
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "divisória do rodapé",
+        "width": "fill",
+        "height": 1,
+        "fill": {
+          "$token": "color-border"
+        }
+      },
+      {
+        "type": "rect",
+        "name": "rodapé",
+        "width": "fill",
+        "height": 52,
+        "fill": "rgba(0, 0, 0, 0)"
+      }
+    ]
+  }
+}

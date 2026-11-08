@@ -1,0 +1,75 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "review-row",
+  "name": "ReviewRow",
+  "description": "Moldura da linha dos níveis da revisão (28 px, raio 4): fundo color-selection na selecionada, color-danger-bg com a barra de 2 px à esquerda na inválida. Chevron, decisão, tipo, rótulo, resumo e o DecisionControl são marcações filhas.",
+  "size": {
+    "width": 720,
+    "height": 28
+  },
+  "minSize": {
+    "width": 120,
+    "height": 20
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 28
+  },
+  "preview": {
+    "selecionada": "não",
+    "invalida": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "linha",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 4,
+    "fill": {
+      "$if": {
+        "$eq": [
+          "invalida",
+          "sim"
+        ]
+      },
+      "then": {
+        "$token": "color-danger-bg"
+      },
+      "else": {
+        "$if": {
+          "$eq": [
+            "selecionada",
+            "sim"
+          ]
+        },
+        "then": {
+          "$token": "color-selection"
+        },
+        "else": "rgba(0, 0, 0, 0)"
+      }
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "barra de inválida",
+        "width": 2,
+        "anchors": {
+          "left": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$token": "color-danger"
+        },
+        "visible": {
+          "$eq": [
+            "invalida",
+            "sim"
+          ]
+        }
+      }
+    ]
+  }
+}

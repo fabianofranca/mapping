@@ -1,0 +1,44 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "tabs",
+  "name": "Tabs",
+  "description": "Moldura das abas: a divisória color-border embaixo. Cada aba é uma marcação Aba.",
+  "size": {
+    "width": 240,
+    "height": 28
+  },
+  "minSize": {
+    "width": 40,
+    "height": 24
+  },
+  "sizing": {
+    "width": 240,
+    "height": 28
+  },
+  "preview": {
+    "rotulo": "Janela inferior"
+  },
+  "template": {
+    "type": "frame",
+    "name": "abas",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "divisória",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$token": "color-border"
+        }
+      }
+    ]
+  }
+}

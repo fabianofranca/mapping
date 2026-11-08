@@ -1,0 +1,132 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "notice-badge",
+  "name": "NoticeBadge",
+  "description": "Selo em pílula do aviso de uma especialização: ícone e rótulo, na cor do kind.",
+  "size": {
+    "width": 104,
+    "height": 16
+  },
+  "minSize": {
+    "width": 48,
+    "height": 16
+  },
+  "sizing": {
+    "width": "hug",
+    "height": 16
+  },
+  "preview": {
+    "kind": "deprecated"
+  },
+  "template": {
+    "type": "frame",
+    "name": "notice-badge",
+    "cornerRadius": 999,
+    "fill": {
+      "$switch": "kind",
+      "cases": {
+        "removed": {
+          "$token": "color-danger-bg"
+        },
+        "deprecated": {
+          "$token": "color-warning-bg"
+        },
+        "diverges": {
+          "$token": "color-warning-bg"
+        },
+        "pending": {
+          "$token": "color-selection-muted"
+        }
+      },
+      "default": {
+        "$token": "color-selection-muted"
+      }
+    },
+    "layout": {
+      "type": "row",
+      "gap": 4,
+      "padding": [
+        0,
+        8
+      ],
+      "align": "center"
+    },
+    "children": [
+      {
+        "type": "icon",
+        "width": 16,
+        "height": 16,
+        "name": {
+          "$switch": "kind",
+          "cases": {
+            "removed": "blocked",
+            "deprecated": "warning",
+            "diverges": "compare",
+            "pending": "info"
+          },
+          "default": "info"
+        },
+        "color": {
+          "$switch": "kind",
+          "cases": {
+            "removed": {
+              "$token": "color-danger"
+            },
+            "deprecated": {
+              "$token": "color-warning"
+            },
+            "diverges": {
+              "$token": "color-warning"
+            },
+            "pending": {
+              "$token": "color-text-muted"
+            }
+          },
+          "default": {
+            "$token": "color-text-muted"
+          }
+        }
+      },
+      {
+        "type": "text",
+        "name": "rótulo",
+        "text": {
+          "$switch": "kind",
+          "cases": {
+            "removed": "Removido",
+            "deprecated": "Obsoleto",
+            "diverges": "Diverge",
+            "pending": "Pendente"
+          },
+          "default": "Pendente"
+        },
+        "color": {
+          "$switch": "kind",
+          "cases": {
+            "removed": {
+              "$token": "color-danger"
+            },
+            "deprecated": {
+              "$token": "color-warning"
+            },
+            "diverges": {
+              "$token": "color-warning"
+            },
+            "pending": {
+              "$token": "color-text-muted"
+            }
+          },
+          "default": {
+            "$token": "color-text-muted"
+          }
+        },
+        "font": {
+          "size": 11,
+          "weight": 600,
+          "lineHeight": 16
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "minimap",
+  "name": "Minimap",
+  "description": "Minimapa do canvas: a moldura (color-card, borda color-border-control, raio 4) e, como filhas do mesmo tipo, cada imagem (color-text-muted a 0,75) e a área visível (color-selection com borda color-accent, a 0,25).",
+  "size": {
+    "width": 132,
+    "height": 96
+  },
+  "minSize": {
+    "width": 1,
+    "height": 1
+  },
+  "sizing": {
+    "width": 132,
+    "height": 96
+  },
+  "preview": {
+    "parte": "moldura"
+  },
+  "template": {
+    "type": "frame",
+    "name": "minimapa",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "moldura",
+        "visible": {
+          "$not": {
+            "$or": [
+              {
+                "$eq": [
+                  "parte",
+                  "imagem"
+                ]
+              },
+              {
+                "$eq": [
+                  "parte",
+                  "vista"
+                ]
+              }
+            ]
+          }
+        },
+        "cornerRadius": 4,
+        "fill": {
+          "$token": "color-card"
+        },
+        "stroke": {
+          "color": {
+            "$token": "color-border-control"
+          },
+          "width": 1
+        }
+      },
+      {
+        "type": "rect",
+        "name": "imagem",
+        "visible": {
+          "$eq": [
+            "parte",
+            "imagem"
+          ]
+        },
+        "fill": {
+          "$token": "color-text-muted"
+        },
+        "opacity": 0.75
+      },
+      {
+        "type": "rect",
+        "name": "vista",
+        "visible": {
+          "$eq": [
+            "parte",
+            "vista"
+          ]
+        },
+        "fill": {
+          "$token": "color-selection"
+        },
+        "stroke": {
+          "color": {
+            "$token": "color-accent"
+          },
+          "width": 1
+        },
+        "opacity": 0.25
+      }
+    ]
+  }
+}

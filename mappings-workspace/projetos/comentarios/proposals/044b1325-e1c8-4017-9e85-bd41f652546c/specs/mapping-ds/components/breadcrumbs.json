@@ -1,0 +1,85 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "breadcrumbs",
+  "name": "Breadcrumbs",
+  "description": "Caminho da seleção acima do canvas: níveis em color-text-muted separados por ›, o último em negrito.",
+  "size": {
+    "width": 440,
+    "height": 28
+  },
+  "minSize": {
+    "width": 80,
+    "height": 28
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 28
+  },
+  "preview": {
+    "caminho": "Container › Marcação",
+    "atual": "Botão"
+  },
+  "template": {
+    "type": "frame",
+    "name": "caminho",
+    "layout": {
+      "type": "row",
+      "gap": 2,
+      "padding": [
+        0,
+        6
+      ],
+      "align": "center"
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "níveis",
+        "text": {
+          "$concat": [
+            {
+              "$field": "caminho"
+            },
+            "  ›  "
+          ]
+        },
+        "color": "#5b6470",
+        "font": {
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 20
+        },
+        "visible": {
+          "$has": "caminho"
+        }
+      },
+      {
+        "type": "text",
+        "name": "atual",
+        "text": {
+          "$field": "atual",
+          "default": "Nada selecionado"
+        },
+        "color": {
+          "$if": {
+            "$has": "atual"
+          },
+          "then": "#1b1f24",
+          "else": "#5b6470"
+        },
+        "font": {
+          "size": 13,
+          "weight": {
+            "$if": {
+              "$has": "atual"
+            },
+            "then": 600,
+            "else": 400
+          },
+          "lineHeight": 20
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,211 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "select",
+  "name": "Select",
+  "description": "Seleção de uma opção: rótulo em cima e caixa de 28 px com a seta no canto.",
+  "size": {
+    "width": 200,
+    "height": 48
+  },
+  "minSize": {
+    "width": 80,
+    "height": 28
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "rotulo": "Plataforma",
+    "valor": "Android",
+    "size": "md",
+    "invalido": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "select",
+    "layout": {
+      "type": "column",
+      "gap": 4
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "rótulo",
+        "text": {
+          "$field": "rotulo"
+        },
+        "color": "#5b6470",
+        "font": {
+          "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+          "size": 12,
+          "weight": 400,
+          "lineHeight": 16
+        },
+        "width": "fill",
+        "visible": {
+          "$has": "rotulo"
+        }
+      },
+      {
+        "type": "frame",
+        "name": "caixa 28",
+        "visible": {
+          "$not": {
+            "$eq": [
+              "size",
+              "sm"
+            ]
+          }
+        },
+        "width": "fill",
+        "height": 28,
+        "cornerRadius": 4,
+        "fill": {
+          "$if": {
+            "$eq": [
+              "invalido",
+              "sim"
+            ]
+          },
+          "then": "#fdecea",
+          "else": "#f6f7f9"
+        },
+        "stroke": {
+          "color": {
+            "$if": {
+              "$eq": [
+                "invalido",
+                "sim"
+              ]
+            },
+            "then": "#c62828",
+            "else": "#7d8590"
+          },
+          "width": 1
+        },
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            8
+          ],
+          "gap": 8,
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "valor",
+            "text": {
+              "$field": "valor"
+            },
+            "color": "#1b1f24",
+            "font": {
+              "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+              "size": 13,
+              "weight": 400,
+              "lineHeight": 20
+            },
+            "width": "fill"
+          },
+          {
+            "type": "path",
+            "name": "seta",
+            "width": 16,
+            "height": 16,
+            "viewBox": [
+              16,
+              16
+            ],
+            "d": "M4 6 4 4 4-4",
+            "fill": "none",
+            "stroke": {
+              "color": "#5b6470",
+              "width": 1.25
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "caixa 24",
+        "visible": {
+          "$eq": [
+            "size",
+            "sm"
+          ]
+        },
+        "width": "fill",
+        "height": 24,
+        "cornerRadius": 4,
+        "fill": {
+          "$if": {
+            "$eq": [
+              "invalido",
+              "sim"
+            ]
+          },
+          "then": "#fdecea",
+          "else": "#f6f7f9"
+        },
+        "stroke": {
+          "color": {
+            "$if": {
+              "$eq": [
+                "invalido",
+                "sim"
+              ]
+            },
+            "then": "#c62828",
+            "else": "#7d8590"
+          },
+          "width": 1
+        },
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            8
+          ],
+          "gap": 8,
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "valor",
+            "text": {
+              "$field": "valor"
+            },
+            "color": "#1b1f24",
+            "font": {
+              "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+              "size": 13,
+              "weight": 400,
+              "lineHeight": 20
+            },
+            "width": "fill"
+          },
+          {
+            "type": "path",
+            "name": "seta",
+            "width": 16,
+            "height": 16,
+            "viewBox": [
+              16,
+              16
+            ],
+            "d": "M4 6 4 4 4-4",
+            "fill": "none",
+            "stroke": {
+              "color": "#5b6470",
+              "width": 1.25
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

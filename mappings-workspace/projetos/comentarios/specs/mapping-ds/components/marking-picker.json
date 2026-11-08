@@ -1,0 +1,137 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "marking-picker",
+  "name": "MarkingPicker",
+  "description": "Moldura do seletor de marcação (\"Ligar a…\"): popup color-surface com borda de controle, raio 8, sombra, o título e a faixa do rodapé. Busca, opções e dicas são filhos.",
+  "size": {
+    "width": 600,
+    "height": 656
+  },
+  "minSize": {
+    "width": 200,
+    "height": 120
+  },
+  "sizing": {
+    "width": 600,
+    "height": 656
+  },
+  "preview": {
+    "titulo": "Ligar Filtro Status a…",
+    "rodape": "sim"
+  },
+  "template": {
+    "type": "frame",
+    "name": "seletor",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 8,
+    "fill": {
+      "$token": "color-surface"
+    },
+    "stroke": {
+      "color": {
+        "$token": "color-border-control"
+      },
+      "width": 1
+    },
+    "shadow": {
+      "color": {
+        "$token": "shadow-popup-color"
+      },
+      "x": 0,
+      "y": 8,
+      "blur": 24
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "anchors": {
+          "left": 1,
+          "right": 1,
+          "top": 1
+        },
+        "height": 36,
+        "layout": {
+          "type": "row",
+          "padding": [
+            8,
+            4,
+            0,
+            12
+          ],
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "titulo",
+              "default": "Ligar a…"
+            },
+            "color": {
+              "$token": "color-text"
+            },
+            "font": {
+              "size": 13,
+              "weight": 600,
+              "lineHeight": 20
+            },
+            "width": "hug"
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "rodapé",
+        "height": 30,
+        "anchors": {
+          "left": 1,
+          "right": 1,
+          "bottom": 1
+        },
+        "cornerRadius": [
+          0,
+          0,
+          7,
+          7
+        ],
+        "fill": {
+          "$token": "color-bg"
+        },
+        "visible": {
+          "$not": {
+            "$eq": [
+              "rodape",
+              "não"
+            ]
+          }
+        }
+      },
+      {
+        "type": "rect",
+        "name": "divisória do rodapé",
+        "height": 1,
+        "anchors": {
+          "left": 1,
+          "right": 1,
+          "bottom": 31
+        },
+        "fill": {
+          "$token": "color-border"
+        },
+        "visible": {
+          "$not": {
+            "$eq": [
+              "rodape",
+              "não"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,2402 @@
+{
+ "containers": [
+  {
+   "name": "Ajuda",
+   "background": "#ffffff",
+   "width": 820,
+   "height": 640,
+   "items": [
+    {
+     "type": "help-dialog",
+     "name": "Ajuda",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 820,
+      "height": 640
+     },
+     "values": {
+      "titulo": "Ajuda"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Buscar na ajuda",
+     "rect": {
+      "x": 13,
+      "y": 57,
+      "width": 175,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Guia interativo",
+     "rect": {
+      "x": 21,
+      "y": 98,
+      "width": 84,
+      "height": 17
+     },
+     "values": {
+      "texto": "Guia interativo",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "O que é uma especialização",
+     "rect": {
+      "x": 21,
+      "y": 122,
+      "width": 159,
+      "height": 41
+     },
+     "values": {
+      "texto": "O que é uma especialização",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Formato do arquivo",
+     "rect": {
+      "x": 21,
+      "y": 170,
+      "width": 114,
+      "height": 17
+     },
+     "values": {
+      "texto": "Formato do arquivo",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tipos de valor",
+     "rect": {
+      "x": 21,
+      "y": 200,
+      "width": 81,
+      "height": 17
+     },
+     "values": {
+      "texto": "Tipos de valor",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Relações entre anotações",
+     "rect": {
+      "x": 21,
+      "y": 230,
+      "width": 146,
+      "height": 17
+     },
+     "values": {
+      "texto": "Relações entre anotações",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Filhos por camada e grupo",
+     "rect": {
+      "x": 21,
+      "y": 260,
+      "width": 154,
+      "height": 17
+     },
+     "values": {
+      "texto": "Filhos por camada e grupo",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Papéis no vínculo (childRoles)",
+     "rect": {
+      "x": 21,
+      "y": 284,
+      "width": 159,
+      "height": 41
+     },
+     "values": {
+      "texto": "Papéis no vínculo (childRoles)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Documento em repositório externo (docRepos)",
+     "rect": {
+      "x": 21,
+      "y": 326,
+      "width": 159,
+      "height": 41
+     },
+     "values": {
+      "texto": "Documento em repositório externo (docRepos)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Referências e etiquetas",
+     "rect": {
+      "x": 21,
+      "y": 374,
+      "width": 132,
+      "height": 17
+     },
+     "values": {
+      "texto": "Referências e etiquetas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Plataformas e code",
+     "rect": {
+      "x": 21,
+      "y": 404,
+      "width": 110,
+      "height": 17
+     },
+     "values": {
+      "texto": "Plataformas e code",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Containers (tamanhos prontos)",
+     "rect": {
+      "x": 21,
+      "y": 428,
+      "width": 159,
+      "height": 41
+     },
+     "values": {
+      "texto": "Containers (tamanhos prontos)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tipo flutuante",
+     "rect": {
+      "x": 21,
+      "y": 476,
+      "width": 81,
+      "height": 17
+     },
+     "values": {
+      "texto": "Tipo flutuante",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Onde o tipo se aplica",
+     "rect": {
+      "x": 21,
+      "y": 506,
+      "width": 122,
+      "height": 17
+     },
+     "values": {
+      "texto": "Onde o tipo se aplica",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Avisos (notices)",
+     "rect": {
+      "x": 21,
+      "y": 536,
+      "width": 89,
+      "height": 17
+     },
+     "values": {
+      "texto": "Avisos (notices)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Origens (sources)",
+     "rect": {
+      "x": 21,
+      "y": 566,
+      "width": 100,
+      "height": 17
+     },
+     "values": {
+      "texto": "Origens (sources)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Guia interativo",
+     "rect": {
+      "x": 217,
+      "y": 62,
+      "width": 101,
+      "height": 20
+     },
+     "values": {
+      "texto": "Guia interativo",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Um passeio de 13 passos pelo projeto de exemplo: telas, marc",
+     "rect": {
+      "x": 217,
+      "y": 90,
+      "width": 586,
+      "height": 41
+     },
+     "values": {
+      "texto": "Um passeio de 13 passos pelo projeto de exemplo: telas, marcações, camadas, anotações tipadas, containers com Material 3 e a revisão de uma proposta. Funciona sem internet e abre numa aba nova.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aberto como arquivo avulso, a app não acha o guia: ele fica ",
+     "rect": {
+      "x": 217,
+      "y": 138,
+      "width": 586,
+      "height": 41
+     },
+     "values": {
+      "texto": "Aberto como arquivo avulso, a app não acha o guia: ele fica em guia/index.html, ao lado do index.html, na pasta dist/ do build e na versão publicada.",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Para ver o mesmo projeto na app, baixe o arquivo examples/ex",
+     "rect": {
+      "x": 217,
+      "y": 186,
+      "width": 586,
+      "height": 61
+     },
+     "values": {
+      "texto": "Para ver o mesmo projeto na app, baixe o arquivo examples/exemplo-completo.zip do repositório (github.com/fabianofranca/mapping) e use Abrir zip na tela inicial (ele cria uma cópia neste dispositivo, sem tocar em nenhuma pasta).",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "O que é uma especialização",
+     "rect": {
+      "x": 217,
+      "y": 272,
+      "width": 189,
+      "height": 20
+     },
+     "values": {
+      "texto": "O que é uma especialização",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Como criar e usar arquivos de especialização: camadas e tipo",
+     "rect": {
+      "x": 217,
+      "y": 302,
+      "width": 513,
+      "height": 17
+     },
+     "values": {
+      "texto": "Como criar e usar arquivos de especialização: camadas e tipos de anotação pré-definidos.",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Uma especialização é um arquivo JSON que define camadas obri",
+     "rect": {
+      "x": 217,
+      "y": 328,
+      "width": 586,
+      "height": 61
+     },
+     "values": {
+      "texto": "Uma especialização é um arquivo JSON que define camadas obrigatórias e os tipos de anotação que podem ser criados nelas. Ex: a SDUI traz a camada Componentes (Button, Input…) e a camada Eventos (onClick, onHold…). Ao criar um Button, as chaves já vêm definidas e só falta preencher os valores.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador •",
+     "rect": {
+      "x": 239,
+      "y": 393,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "•",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Um projeto pode aplicar várias especializações, a qualquer m",
+     "rect": {
+      "x": 257,
+      "y": 398,
+      "width": 534,
+      "height": 17
+     },
+     "values": {
+      "texto": "Um projeto pode aplicar várias especializações, a qualquer momento (botão Especializações).",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador •",
+     "rect": {
+      "x": 239,
+      "y": 413,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "•",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Uma especialização não cita outra pelo nome. A ligação entre",
+     "rect": {
+      "x": 257,
+      "y": 416,
+      "width": 546,
+      "height": 41
+     },
+     "values": {
+      "texto": "Uma especialização não cita outra pelo nome. A ligação entre elas é feita por referências fortes (tipo ref), que escolhem os alvos por etiquetas.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador •",
+     "rect": {
+      "x": 239,
+      "y": 453,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "•",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Camadas da especialização só aceitam anotações tipadas, sem ",
+     "rect": {
+      "x": 257,
+      "y": 456,
+      "width": 546,
+      "height": 41
+     },
+     "values": {
+      "texto": "Camadas da especialização só aceitam anotações tipadas, sem chaves extras. Camadas criadas por você continuam livres.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador •",
+     "rect": {
+      "x": 239,
+      "y": 493,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "•",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "A especialização aplicada é copiada para specs/<id>.json den",
+     "rect": {
+      "x": 257,
+      "y": 496,
+      "width": 546,
+      "height": 41
+     },
+     "values": {
+      "texto": "A especialização aplicada é copiada para specs/<id>.json dentro do projeto, que fica autocontido.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador •",
+     "rect": {
+      "x": 239,
+      "y": 533,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "•",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "A formatVersion 12 acrescenta três passos de migração dos pa",
+     "rect": {
+      "x": 257,
+      "y": 536,
+      "width": 546,
+      "height": 50
+     },
+     "values": {
+      "texto": "A formatVersion 12 acrescenta três passos de migração dos papéis em migrations: rename-role, remove-role e set-role (seções \"Contrato de versão\" e \"Papéis no vínculo (childRoles)\"). Tirar um papel de childRoles passa a ser quebra, e só sobe para a 12 quem declara um desses passos. As versões 1 a 11 continuam aceitas.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Fechar",
+     "rect": {
+      "x": 739,
+      "y": 599,
+      "width": 64,
+      "height": 28
+     },
+     "values": {
+      "texto": "Fechar",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Novo container",
+   "background": "#ffffff",
+   "width": 480,
+   "height": 463,
+   "items": [
+    {
+     "type": "container-dialog",
+     "name": "Novo container",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 480,
+      "height": 463
+     },
+     "values": {
+      "titulo": "Novo container"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Um container sem arquivo de imagem: serve para montar telas,",
+     "rect": {
+      "x": 17,
+      "y": 61,
+      "width": 446,
+      "height": 60
+     },
+     "values": {
+      "texto": "Um container sem arquivo de imagem: serve para montar telas, painéis ou cartões com os componentes da biblioteca. Largura e altura em pixels; as especializações aplicadas oferecem tamanhos prontos.",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nome",
+     "rect": {
+      "x": 17,
+      "y": 133,
+      "width": 33,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nome",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Campo",
+     "rect": {
+      "x": 17,
+      "y": 153,
+      "width": 446,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tamanho predefinido",
+     "rect": {
+      "x": 17,
+      "y": 193,
+      "width": 113,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tamanho predefinido",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "select",
+     "name": "Select",
+     "rect": {
+      "x": 17,
+      "y": 213,
+      "width": 446,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Janela mínima da app · 900 × 720",
+      "size": "md",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Largura",
+     "rect": {
+      "x": 17,
+      "y": 253,
+      "width": 41,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Largura",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Campo",
+     "rect": {
+      "x": 17,
+      "y": 273,
+      "width": 219,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "900",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Altura",
+     "rect": {
+      "x": 244,
+      "y": 253,
+      "width": 32,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Altura",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Campo",
+     "rect": {
+      "x": 244,
+      "y": 273,
+      "width": 219,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "720",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Cor de fundo",
+     "rect": {
+      "x": 17,
+      "y": 313,
+      "width": 70,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Cor de fundo",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "#FFFFFF",
+     "rect": {
+      "x": 17,
+      "y": 333,
+      "width": 446,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "#FFFFFF",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "No formato #RRGGBB.",
+     "rect": {
+      "x": 17,
+      "y": 374,
+      "width": 130,
+      "height": 17
+     },
+     "values": {
+      "texto": "No formato #RRGGBB.",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Cancelar",
+     "rect": {
+      "x": 270,
+      "y": 422,
+      "width": 75,
+      "height": 28
+     },
+     "values": {
+      "texto": "Cancelar",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Criar container",
+     "rect": {
+      "x": 353,
+      "y": 422,
+      "width": 110,
+      "height": 28
+     },
+     "values": {
+      "texto": "Criar container",
+      "variant": "primary",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Especializações",
+   "background": "#ffffff",
+   "width": 560,
+   "height": 605,
+   "items": [
+    {
+     "type": "specs-dialog",
+     "name": "Especializações",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 560,
+      "height": 605
+     },
+     "values": {
+      "titulo": "Especializações"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Especializações trazem camadas e tipos de anotação pré-defin",
+     "rect": {
+      "x": 17,
+      "y": 61,
+      "width": 526,
+      "height": 40
+     },
+     "values": {
+      "texto": "Especializações trazem camadas e tipos de anotação pré-definidos. Dá para desfazer cada operação.",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Uma biblioteca (`formatVersion` 4 em diante) vem numa pasta ",
+     "rect": {
+      "x": 17,
+      "y": 117,
+      "width": 526,
+      "height": 60
+     },
+     "values": {
+      "texto": "Uma biblioteca (`formatVersion` 4 em diante) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes. Se não citar arquivos do pacote, um .json isolado também serve.",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Aplicar especialização…",
+     "rect": {
+      "x": 17,
+      "y": 193,
+      "width": 160,
+      "height": 28
+     },
+     "values": {
+      "texto": "Aplicar especialização…",
+      "variant": "primary",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Aplicar pasta…",
+     "rect": {
+      "x": 185,
+      "y": 193,
+      "width": 109,
+      "height": 28
+     },
+     "values": {
+      "texto": "Aplicar pasta…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Aplicar zip…",
+     "rect": {
+      "x": 302,
+      "y": 193,
+      "width": 95,
+      "height": 28
+     },
+     "values": {
+      "texto": "Aplicar zip…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .spec-item",
+     "rect": {
+      "x": 17,
+      "y": 253,
+      "width": 526,
+      "height": 102
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "lg",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notas",
+     "rect": {
+      "x": 26,
+      "y": 263,
+      "width": 36,
+      "height": 17
+     },
+     "values": {
+      "texto": "Notas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "v3 · 1 camada(s)",
+     "rect": {
+      "x": 26,
+      "y": 291,
+      "width": 92,
+      "height": 17
+     },
+     "values": {
+      "texto": "v3 · 1 camada(s)",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Atualizar versão…",
+     "rect": {
+      "x": 26,
+      "y": 318,
+      "width": 126,
+      "height": 28
+     },
+     "values": {
+      "texto": "Atualizar versão…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Atualizar de pasta…",
+     "rect": {
+      "x": 160,
+      "y": 318,
+      "width": 138,
+      "height": 28
+     },
+     "values": {
+      "texto": "Atualizar de pasta…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Atualizar de zip…",
+     "rect": {
+      "x": 306,
+      "y": 318,
+      "width": 124,
+      "height": 28
+     },
+     "values": {
+      "texto": "Atualizar de zip…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Remover",
+     "rect": {
+      "x": 438,
+      "y": 318,
+      "width": 77,
+      "height": 28
+     },
+     "values": {
+      "texto": "Remover",
+      "variant": "danger",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .spec-item",
+     "rect": {
+      "x": 17,
+      "y": 363,
+      "width": 526,
+      "height": 172
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "lg",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping DS",
+     "rect": {
+      "x": 26,
+      "y": 373,
+      "width": 76,
+      "height": 17
+     },
+     "values": {
+      "texto": "Mapping DS",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "v4 · 1 camada(s)",
+     "rect": {
+      "x": 26,
+      "y": 401,
+      "width": 92,
+      "height": 17
+     },
+     "values": {
+      "texto": "v4 · 1 camada(s)",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Plataformas",
+     "rect": {
+      "x": 26,
+      "y": 430,
+      "width": 57,
+      "height": 15
+     },
+     "values": {
+      "texto": "Plataformas",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador ◦",
+     "rect": {
+      "x": 24,
+      "y": 445,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "◦",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Web (Preact) · web · typescript",
+     "rect": {
+      "x": 42,
+      "y": 451,
+      "width": 174,
+      "height": 17
+     },
+     "values": {
+      "texto": "Web (Preact) · web · typescript",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "https://github.com/fabianofranca/mapping",
+     "rect": {
+      "x": 50,
+      "y": 471,
+      "width": 248,
+      "height": 17
+     },
+     "values": {
+      "texto": "https://github.com/fabianofranca/mapping",
+      "estilo": "t-body",
+      "cor": "accent",
+      "alinhamento": "left",
+      "decoracao": "underline",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "referência mcp-v0.25.0",
+     "rect": {
+      "x": 305,
+      "y": 471,
+      "width": 131,
+      "height": 17
+     },
+     "values": {
+      "texto": "referência mcp-v0.25.0",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Atualizar versão…",
+     "rect": {
+      "x": 26,
+      "y": 498,
+      "width": 126,
+      "height": 28
+     },
+     "values": {
+      "texto": "Atualizar versão…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Atualizar de pasta…",
+     "rect": {
+      "x": 160,
+      "y": 498,
+      "width": 138,
+      "height": 28
+     },
+     "values": {
+      "texto": "Atualizar de pasta…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Atualizar de zip…",
+     "rect": {
+      "x": 306,
+      "y": 498,
+      "width": 124,
+      "height": 28
+     },
+     "values": {
+      "texto": "Atualizar de zip…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Remover",
+     "rect": {
+      "x": 438,
+      "y": 498,
+      "width": 77,
+      "height": 28
+     },
+     "values": {
+      "texto": "Remover",
+      "variant": "danger",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Fechar",
+     "rect": {
+      "x": 479,
+      "y": 564,
+      "width": 64,
+      "height": 28
+     },
+     "values": {
+      "texto": "Fechar",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Atualizar Notas — pacote com problemas",
+   "background": "#ffffff",
+   "width": 560,
+   "height": 865,
+   "items": [
+    {
+     "type": "specs-dialog",
+     "name": "Pacote \"Notas\"",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 560,
+      "height": 865
+     },
+     "values": {
+      "titulo": "Pacote \"Notas\""
+     }
+    },
+    {
+     "type": "update-impact",
+     "name": "Impacto da atualização",
+     "rect": {
+      "x": 17,
+      "y": 97,
+      "width": 526,
+      "height": 427
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "v4 · 2 tipo(s) · 2 componente(s) · 2 documento(s) · 0 fonte(",
+     "rect": {
+      "x": 17,
+      "y": 62,
+      "width": 341,
+      "height": 17
+     },
+     "values": {
+      "texto": "v4 · 2 tipo(s) · 2 componente(s) · 2 documento(s) · 0 fonte(s)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Da versão 3 para a 4.",
+     "rect": {
+      "x": 17,
+      "y": 98,
+      "width": 120,
+      "height": 17
+     },
+     "values": {
+      "texto": "Da versão 3 para a 4.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma camada criada ou removida.",
+     "rect": {
+      "x": 17,
+      "y": 134,
+      "width": 222,
+      "height": 17
+     },
+     "values": {
+      "texto": "Nenhuma camada criada ou removida.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Passos da migração",
+     "rect": {
+      "x": 17,
+      "y": 170,
+      "width": 119,
+      "height": 17
+     },
+     "values": {
+      "texto": "Passos da migração",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador 1.",
+     "rect": {
+      "x": 43,
+      "y": 218,
+      "width": 11,
+      "height": 20
+     },
+     "values": {
+      "texto": "1.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Remover o campo titulo em tabela",
+     "rect": {
+      "x": 57,
+      "y": 219,
+      "width": 199,
+      "height": 17
+     },
+     "values": {
+      "texto": "Remover o campo titulo em tabela",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "5 anotação(ões), 5 valor(es)",
+     "rect": {
+      "x": 57,
+      "y": 241,
+      "width": 131,
+      "height": 15
+     },
+     "values": {
+      "texto": "5 anotação(ões), 5 valor(es)",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador ◦",
+     "rect": {
+      "x": 79,
+      "y": 254,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "◦",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela › Tabela · Arquivos da conversa: campo titulo removid",
+     "rect": {
+      "x": 97,
+      "y": 259,
+      "width": 446,
+      "height": 40
+     },
+     "values": {
+      "texto": "Tabela › Tabela · Arquivos da conversa: campo titulo removido (valor \"Arquivos da conversa\")",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador ◦",
+     "rect": {
+      "x": 79,
+      "y": 294,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "◦",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela › Tabela · Âncoras (por id): campo titulo removido (v",
+     "rect": {
+      "x": 97,
+      "y": 299,
+      "width": 446,
+      "height": 40
+     },
+     "values": {
+      "texto": "Tabela › Tabela · Âncoras (por id): campo titulo removido (valor \"Âncoras (por id)\")",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador ◦",
+     "rect": {
+      "x": 79,
+      "y": 334,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "◦",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela › Tabela · Estados (derivados, nunca gravados): campo",
+     "rect": {
+      "x": 97,
+      "y": 339,
+      "width": 446,
+      "height": 40
+     },
+     "values": {
+      "texto": "Tabela › Tabela · Estados (derivados, nunca gravados): campo titulo removido (valor \"Estados (derivados, nunca gravados)\")",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador ◦",
+     "rect": {
+      "x": 79,
+      "y": 374,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "◦",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela › Tabela · Quem grava o quê: campo titulo removido (v",
+     "rect": {
+      "x": 97,
+      "y": 379,
+      "width": 446,
+      "height": 40
+     },
+     "values": {
+      "texto": "Tabela › Tabela · Quem grava o quê: campo titulo removido (valor \"Quem grava o quê\")",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador ◦",
+     "rect": {
+      "x": 79,
+      "y": 414,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "◦",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela › Tabela · Entradas e atalhos: campo titulo removido ",
+     "rect": {
+      "x": 97,
+      "y": 419,
+      "width": 446,
+      "height": 40
+     },
+     "values": {
+      "texto": "Tabela › Tabela · Entradas e atalhos: campo titulo removido (valor \"Entradas e atalhos\")",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .notice",
+     "rect": {
+      "x": 17,
+      "y": 488,
+      "width": 526,
+      "height": 36
+     },
+     "values": {
+      "fundo": "danger-bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "lg",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Esta atualização apaga 5 valor(es) e 0 anotação(ões).",
+     "rect": {
+      "x": 33,
+      "y": 497,
+      "width": 300,
+      "height": 17
+     },
+     "values": {
+      "texto": "Esta atualização apaga 5 valor(es) e 0 anotação(ões).",
+      "estilo": "t-body",
+      "cor": "danger",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .notice",
+     "rect": {
+      "x": 17,
+      "y": 540,
+      "width": 526,
+      "height": 56
+     },
+     "values": {
+      "fundo": "danger-bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "lg",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1 erro(s) e 2 aviso(s). Corrija os erros e tente de novo: um",
+     "rect": {
+      "x": 33,
+      "y": 548,
+      "width": 494,
+      "height": 40
+     },
+     "values": {
+      "texto": "1 erro(s) e 2 aviso(s). Corrija os erros e tente de novo: um pacote com erros não é aplicado.",
+      "estilo": "t-body",
+      "cor": "danger",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "library-issue-list",
+     "name": "Problemas da biblioteca",
+     "rect": {
+      "x": 17,
+      "y": 612,
+      "width": 526,
+      "height": 183
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "notas.spec.json",
+     "rect": {
+      "x": 26,
+      "y": 624,
+      "width": 108,
+      "height": 15
+     },
+     "values": {
+      "texto": "notas.spec.json",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "(1)",
+     "rect": {
+      "x": 133,
+      "y": 622,
+      "width": 18,
+      "height": 17
+     },
+     "values": {
+      "texto": "(1)",
+      "estilo": "t-body-strong",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "aviso",
+     "rect": {
+      "x": 26,
+      "y": 648,
+      "width": 40,
+      "height": 17
+     },
+     "values": {
+      "texto": "aviso",
+      "estilo": "preview"
+     }
+    },
+    {
+     "type": "text",
+     "name": "layers[0].annotationTypes[0].fields[2]",
+     "rect": {
+      "x": 69,
+      "y": 649,
+      "width": 272,
+      "height": 15
+     },
+     "values": {
+      "texto": "layers[0].annotationTypes[0].fields[2]",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "o campo \"cor\" do tipo \"nota\" não é usado pelo desenho do com",
+     "rect": {
+      "x": 26,
+      "y": 646,
+      "width": 508,
+      "height": 41
+     },
+     "values": {
+      "texto": "⁠                                                                                         o campo \"cor\" do tipo \"nota\" não é usado pelo desenho do componente components/nota.json",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "components/tabela.json",
+     "rect": {
+      "x": 26,
+      "y": 698,
+      "width": 158,
+      "height": 15
+     },
+     "values": {
+      "texto": "components/tabela.json",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "(2)",
+     "rect": {
+      "x": 183,
+      "y": 696,
+      "width": 20,
+      "height": 17
+     },
+     "values": {
+      "texto": "(2)",
+      "estilo": "t-body-strong",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Selo erro",
+     "rect": {
+      "x": 26,
+      "y": 722,
+      "width": 34,
+      "height": 17
+     },
+     "values": {
+      "fundo": "danger-bg",
+      "borda": "danger",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "erro",
+     "rect": {
+      "x": 33,
+      "y": 723,
+      "width": 21,
+      "height": 15
+     },
+     "values": {
+      "texto": "erro",
+      "estilo": "t-micro",
+      "cor": "danger",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "template.children[0].text.$field",
+     "rect": {
+      "x": 64,
+      "y": 723,
+      "width": 229,
+      "height": 15
+     },
+     "values": {
+      "texto": "template.children[0].text.$field",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "o desenho usa o campo \"titulo\", que o tipo \"tabela\" não decl",
+     "rect": {
+      "x": 26,
+      "y": 720,
+      "width": 508,
+      "height": 41
+     },
+     "values": {
+      "texto": "⁠                                                                            o desenho usa o campo \"titulo\", que o tipo \"tabela\" não declara",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "aviso",
+     "rect": {
+      "x": 26,
+      "y": 767,
+      "width": 40,
+      "height": 17
+     },
+     "values": {
+      "texto": "aviso",
+      "estilo": "preview"
+     }
+    },
+    {
+     "type": "text",
+     "name": "preview.titulo",
+     "rect": {
+      "x": 69,
+      "y": 768,
+      "width": 101,
+      "height": 15
+     },
+     "values": {
+      "texto": "preview.titulo",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "o tipo \"tabela\" não tem o campo \"titulo\"",
+     "rect": {
+      "x": 26,
+      "y": 765,
+      "width": 508,
+      "height": 21
+     },
+     "values": {
+      "texto": "⁠                                         o tipo \"tabela\" não tem o campo \"titulo\"",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Cancelar",
+     "rect": {
+      "x": 384,
+      "y": 824,
+      "width": 75,
+      "height": 28
+     },
+     "values": {
+      "texto": "Cancelar",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Atualizar",
+     "rect": {
+      "x": 467,
+      "y": 824,
+      "width": 76,
+      "height": 28
+     },
+     "values": {
+      "texto": "Atualizar",
+      "variant": "primary",
+      "size": "md",
+      "desabilitado": "sim",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Excluir container?",
+   "background": "#ffffff",
+   "width": 480,
+   "height": 171,
+   "items": [
+    {
+     "type": "confirm-dialogs",
+     "name": "Excluir container?",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 480,
+      "height": 171
+     },
+     "values": {
+      "titulo": "Excluir container?",
+      "fechavel": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "\"Janela Comentários\" será removido do projeto, com 5 marcaçã",
+     "rect": {
+      "x": 17,
+      "y": 61,
+      "width": 446,
+      "height": 40
+     },
+     "values": {
+      "texto": "\"Janela Comentários\" será removido do projeto, com 5 marcação(ões) e 5 anotação(ões). Dá para desfazer.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Cancelar",
+     "rect": {
+      "x": 317,
+      "y": 130,
+      "width": 75,
+      "height": 28
+     },
+     "values": {
+      "texto": "Cancelar",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Excluir",
+     "rect": {
+      "x": 400,
+      "y": 130,
+      "width": 63,
+      "height": 28
+     },
+     "values": {
+      "texto": "Excluir",
+      "variant": "danger",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Projeto com dados inconsistentes",
+   "background": "#ffffff",
+   "width": 560,
+   "height": 548,
+   "items": [
+    {
+     "type": "inconsistent-project-dialog",
+     "name": "Projeto com dados inconsistentes",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 560,
+      "height": 548
+     },
+     "values": {
+      "titulo": "Projeto com dados inconsistentes"
+     }
+    },
+    {
+     "type": "text",
+     "name": "O mapping.json tem 2 problema(s), todos com reparo automátic",
+     "rect": {
+      "x": 17,
+      "y": 60,
+      "width": 526,
+      "height": 41
+     },
+     "values": {
+      "texto": "O mapping.json tem 2 problema(s), todos com reparo automático. Ao reparar, uma cópia do original vai para backups/ na primeira gravação.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Problemas",
+     "rect": {
+      "x": 17,
+      "y": 132,
+      "width": 76,
+      "height": 20
+     },
+     "values": {
+      "texto": "Problemas",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador •",
+     "rect": {
+      "x": 39,
+      "y": 193,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "•",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação \"Aguardando humano — MA 3\" (31507ef5-2642-4947-8a79",
+     "rect": {
+      "x": 57,
+      "y": 196,
+      "width": 486,
+      "height": 40
+     },
+     "values": {
+      "texto": "Marcação \"Aguardando humano — MA 3\" (31507ef5-2642-4947-8a79-fbca86d3607c): retângulo fora da imagem",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador •",
+     "rect": {
+      "x": 39,
+      "y": 233,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "•",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação \"Citação — alvo existe\" (09b15346-7cfd-4aa0-a51f-89",
+     "rect": {
+      "x": 57,
+      "y": 236,
+      "width": 486,
+      "height": 40
+     },
+     "values": {
+      "texto": "Marcação \"Citação — alvo existe\" (09b15346-7cfd-4aa0-a51f-892322984283): pai inexistente (deadbeef-0000-4000-8000-000000000000)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "O que o reparo faz",
+     "rect": {
+      "x": 17,
+      "y": 321,
+      "width": 133,
+      "height": 20
+     },
+     "values": {
+      "texto": "O que o reparo faz",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador •",
+     "rect": {
+      "x": 39,
+      "y": 381,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "•",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação \"Aguardando humano — MA 3\" (31507ef5-2642-4947-8a79",
+     "rect": {
+      "x": 57,
+      "y": 384,
+      "width": 486,
+      "height": 41
+     },
+     "values": {
+      "texto": "Marcação \"Aguardando humano — MA 3\" (31507ef5-2642-4947-8a79-fbca86d3607c): recortada aos limites da imagem",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "marcador •",
+     "rect": {
+      "x": 39,
+      "y": 421,
+      "width": 9,
+      "height": 28
+     },
+     "values": {
+      "texto": "•",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação \"Citação — alvo existe\" (09b15346-7cfd-4aa0-a51f-89",
+     "rect": {
+      "x": 57,
+      "y": 424,
+      "width": 486,
+      "height": 41
+     },
+     "values": {
+      "texto": "Marcação \"Citação — alvo existe\" (09b15346-7cfd-4aa0-a51f-892322984283): vira raiz da imagem",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Copiar",
+     "rect": {
+      "x": 289,
+      "y": 507,
+      "width": 64,
+      "height": 28
+     },
+     "values": {
+      "texto": "Copiar",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Fechar",
+     "rect": {
+      "x": 361,
+      "y": 507,
+      "width": 64,
+      "height": 28
+     },
+     "values": {
+      "texto": "Fechar",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Reparar e abrir",
+     "rect": {
+      "x": 433,
+      "y": 507,
+      "width": 110,
+      "height": 28
+     },
+     "values": {
+      "texto": "Reparar e abrir",
+      "variant": "primary",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  }
+ ]
+}

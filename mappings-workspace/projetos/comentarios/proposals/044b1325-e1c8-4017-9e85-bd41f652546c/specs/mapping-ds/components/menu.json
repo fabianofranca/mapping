@@ -1,0 +1,141 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 2,
+  "id": "menu",
+  "name": "Menu",
+  "description": "Menu em popover: itens de 28 px com atalho opcional em caixa fina; item perigoso em color-danger.",
+  "size": {
+    "width": 200,
+    "height": 72
+  },
+  "minSize": {
+    "width": 120,
+    "height": 40
+  },
+  "sizing": {
+    "width": 200,
+    "height": "hug"
+  },
+  "preview": {
+    "itens": [
+      {
+        "rotulo": "Comentar aqui",
+        "atalho": "",
+        "perigo": "não"
+      },
+      {
+        "rotulo": "Copiar referência",
+        "atalho": "",
+        "perigo": "não"
+      }
+    ]
+  },
+  "template": {
+    "type": "frame",
+    "name": "menu",
+    "cornerRadius": 6,
+    "fill": "#ffffff",
+    "stroke": {
+      "color": "#dfe3e8",
+      "width": 1
+    },
+    "shadow": {
+      "color": "rgba(16, 24, 40, 0.18)",
+      "x": 0,
+      "y": 8,
+      "blur": 24
+    },
+    "layout": {
+      "type": "column",
+      "padding": 4
+    },
+    "children": [
+      {
+        "type": "repeat",
+        "name": "itens",
+        "field": "itens",
+        "direction": "column",
+        "gap": 2,
+        "width": "fill",
+        "template": {
+          "type": "frame",
+          "name": "item",
+          "width": "fill",
+          "height": 28,
+          "cornerRadius": 4,
+          "layout": {
+            "type": "row",
+            "gap": 16,
+            "padding": [
+              0,
+              12
+            ],
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "name": "rótulo",
+              "text": {
+                "$field": "rotulo"
+              },
+              "color": {
+                "$if": {
+                  "$eq": [
+                    "perigo",
+                    "sim"
+                  ]
+                },
+                "then": "#c62828",
+                "else": "#1b1f24"
+              },
+              "font": {
+                "size": 13,
+                "weight": 400,
+                "lineHeight": 20
+              },
+              "width": "fill"
+            },
+            {
+              "type": "frame",
+              "name": "atalho",
+              "width": "hug",
+              "height": "hug",
+              "cornerRadius": 2,
+              "opacity": 0.75,
+              "visible": {
+                "$has": "atalho"
+              },
+              "stroke": {
+                "color": "#5b6470",
+                "width": 1
+              },
+              "layout": {
+                "type": "row",
+                "padding": [
+                  0,
+                  4
+                ]
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "name": "tecla",
+                  "text": {
+                    "$field": "atalho"
+                  },
+                  "color": "#5b6470",
+                  "font": {
+                    "size": 11,
+                    "weight": 400,
+                    "lineHeight": 16
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

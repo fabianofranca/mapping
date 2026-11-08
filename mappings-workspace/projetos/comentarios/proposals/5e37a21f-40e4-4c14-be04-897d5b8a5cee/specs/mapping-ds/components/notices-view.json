@@ -1,0 +1,42 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "notices-view",
+  "name": "NoticesView",
+  "description": "Moldura da janela Avisos: a divisória color-border sob a barra de filtros de 38 px. Filtros, cabeçalhos dos grupos e linhas são filhos.",
+  "size": {
+    "width": 736,
+    "height": 176
+  },
+  "minSize": {
+    "width": 240,
+    "height": 48
+  },
+  "sizing": {
+    "width": 736,
+    "height": 176
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "avisos",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "divisória dos filtros",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 38
+        },
+        "fill": {
+          "$token": "color-border"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mapping": {
+      "command": "node",
+      "args": ["mappings-workspace/serve.mjs"]
+    }
+  }
+}

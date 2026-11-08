@@ -1,0 +1,75 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "help-tip",
+  "name": "HelpTip",
+  "description": "Ícone de ajuda discreto (info em color-text-muted), no botão de ícone de 28 px.",
+  "size": {
+    "width": 28,
+    "height": 28
+  },
+  "minSize": {
+    "width": 24,
+    "height": 24
+  },
+  "sizing": {
+    "width": 28,
+    "height": 28
+  },
+  "preview": {
+    "nome": "Ajuda",
+    "texto": "Explica o campo ao lado."
+  },
+  "template": {
+    "type": "frame",
+    "name": "help-tip",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "info",
+        "width": 16,
+        "height": 16,
+        "layout": {
+          "type": "none"
+        },
+        "anchors": {
+          "centerX": true,
+          "centerY": true
+        },
+        "children": [
+          {
+            "type": "path",
+            "name": "traço",
+            "width": 16,
+            "height": 16,
+            "viewBox": [
+              16,
+              16
+            ],
+            "d": "M2 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0ZM8 7.5V11",
+            "fill": "none",
+            "stroke": {
+              "color": "#5b6470",
+              "width": 1.25
+            }
+          },
+          {
+            "type": "path",
+            "name": "pontas",
+            "width": 16,
+            "height": 16,
+            "viewBox": [
+              16,
+              16
+            ],
+            "d": "M1.375 8a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM13.375 8a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.375 7.5a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.375 11a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.1 5.2a0.9 0.9 0 1 0 1.8 0a0.9 0.9 0 1 0 -1.8 0Z",
+            "fill": "#5b6470"
+          }
+        ]
+      }
+    ]
+  }
+}

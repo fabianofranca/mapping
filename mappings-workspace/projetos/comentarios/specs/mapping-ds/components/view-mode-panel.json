@@ -1,0 +1,71 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "view-mode-panel",
+  "name": "ViewModePanel",
+  "description": "Moldura do popover \"Mostrar no canvas\" do modo visualização: color-surface, borda color-border, raio 6, sombra de popup e o título. Os grupos e as opções são filhos.",
+  "size": {
+    "width": 280,
+    "height": 382
+  },
+  "minSize": {
+    "width": 120,
+    "height": 60
+  },
+  "sizing": {
+    "width": 280,
+    "height": 382
+  },
+  "preview": {
+    "titulo": "Mostrar no canvas"
+  },
+  "template": {
+    "type": "frame",
+    "name": "popover",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 6,
+    "fill": {
+      "$token": "color-surface"
+    },
+    "stroke": {
+      "color": {
+        "$token": "color-border"
+      },
+      "width": 1
+    },
+    "shadow": {
+      "color": {
+        "$token": "shadow-popup-color"
+      },
+      "x": 0,
+      "y": 8,
+      "blur": 24
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "título",
+        "text": {
+          "$field": "titulo",
+          "default": "Mostrar no canvas"
+        },
+        "color": {
+          "$token": "color-text"
+        },
+        "font": {
+          "size": 13,
+          "weight": 600,
+          "lineHeight": 20
+        },
+        "anchors": {
+          "left": 9,
+          "top": 9
+        },
+        "width": "hug",
+        "height": 20
+      }
+    ]
+  }
+}

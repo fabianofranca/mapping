@@ -1,0 +1,8984 @@
+{
+ "containers": [
+  {
+   "name": "Revisão — Janela Propostas",
+   "background": "#ffffff",
+   "width": 736,
+   "height": 382,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela proposals",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 736,
+      "height": 382
+     },
+     "values": {
+      "janela": "proposals",
+      "titulo": null,
+      "posicao": "bottom"
+     }
+    },
+    {
+     "type": "tabs",
+     "name": "Janelas inferiores",
+     "rect": {
+      "x": 0,
+      "y": 1,
+      "width": 672,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Janelas inferiores"
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Lista",
+     "rect": {
+      "x": 0,
+      "y": 1,
+      "width": 28,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Lista",
+      "selecionada": "não",
+      "selo": null,
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Incompletas",
+     "rect": {
+      "x": 28,
+      "y": 1,
+      "width": 97,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Incompletas",
+      "selecionada": "não",
+      "selo": "45",
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Avisos",
+     "rect": {
+      "x": 125,
+      "y": 1,
+      "width": 37,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Avisos",
+      "selecionada": "não",
+      "selo": null,
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Diagnóstico",
+     "rect": {
+      "x": 163,
+      "y": 1,
+      "width": 67,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Diagnóstico",
+      "selecionada": "não",
+      "selo": null,
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Propostas",
+     "rect": {
+      "x": 230,
+      "y": 1,
+      "width": 79,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Propostas",
+      "selecionada": "sim",
+      "selo": "1",
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Comentários",
+     "rect": {
+      "x": 308,
+      "y": 1,
+      "width": 42,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Comentários",
+      "selecionada": "não",
+      "selo": "3",
+      "tamanho": "sm",
+      "icone": "chat"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Verificar a pasta agora",
+     "rect": {
+      "x": 674,
+      "y": 3,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "refresh",
+      "rotulo": "Verificar a pasta agora",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Propostas",
+     "rect": {
+      "x": 704,
+      "y": 3,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Propostas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .review-filters",
+     "rect": {
+      "x": 0,
+      "y": 33,
+      "width": 736,
+      "height": 43
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "Mostrar",
+     "rect": {
+      "x": 12,
+      "y": 39,
+      "width": 241,
+      "height": 30
+     },
+     "values": {
+      "rotulo": "Mostrar",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Todas 4",
+     "rect": {
+      "x": 13,
+      "y": 40,
+      "width": 70,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Todas 4",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Abertas 1",
+     "rect": {
+      "x": 83,
+      "y": 40,
+      "width": 80,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Abertas 1",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Fechadas 3",
+     "rect": {
+      "x": 163,
+      "y": 40,
+      "width": 89,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Fechadas 3",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Buscar propostas",
+     "rect": {
+      "x": 261,
+      "y": 42,
+      "width": 463,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Grupo",
+     "rect": {
+      "x": 0,
+      "y": 76,
+      "width": 736,
+      "height": 24
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "border",
+      "lados": "cima",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Divisória de baixo",
+     "rect": {
+      "x": 0,
+      "y": 99,
+      "width": 736,
+      "height": 1
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Abertas",
+     "rect": {
+      "x": 12,
+      "y": 80,
+      "width": 43,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Abertas",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1",
+     "rect": {
+      "x": 60,
+      "y": 80,
+      "width": 6,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "proposal-row",
+     "name": "Proposta Revisão de teste: botões e pinos",
+     "rect": {
+      "x": 0,
+      "y": 100,
+      "width": 736,
+      "height": 49
+     },
+     "values": {}
+    },
+    {
+     "type": "decision-mark",
+     "name": "0 aceitas, 0 rejeitadas, 11 sem decisão",
+     "rect": {
+      "x": 12,
+      "y": 106,
+      "width": 16,
+      "height": 18
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Revisão de teste: botões e pinos",
+     "rect": {
+      "x": 36,
+      "y": 107,
+      "width": 189,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 188.796875,
+     "cw": 188.796875,
+     "sw": 189,
+     "ci": 189,
+     "values": {
+      "texto": "Revisão de teste: botões e pinos",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "flag",
+     "name": "Nova",
+     "rect": {
+      "x": 231,
+      "y": 107,
+      "width": 40,
+      "height": 18
+     },
+     "values": {
+      "texto": "Nova",
+      "tom": "nova",
+      "icone": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "shots/review-fixture.mjs · claude-code · 08/11",
+     "rect": {
+      "x": 36,
+      "y": 126,
+      "width": 240,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 240.3125,
+     "cw": 240.3125,
+     "sw": 240,
+     "ci": 240,
+     "values": {
+      "texto": "shots/review-fixture.mjs · claude-code · 08/11",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: sem-decisao",
+     "rect": {
+      "x": 410,
+      "y": 118,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "text",
+     "name": "11",
+     "rect": {
+      "x": 425,
+      "y": 116,
+      "width": 14,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "11",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: aceita",
+     "rect": {
+      "x": 450,
+      "y": 118,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "aceita"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 465,
+      "y": 116,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: rejeitada",
+     "rect": {
+      "x": 490,
+      "y": 118,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "rejeitada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 505,
+      "y": 116,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Revisar",
+     "rect": {
+      "x": 658,
+      "y": 110,
+      "width": 66,
+      "height": 28
+     },
+     "values": {
+      "texto": "Revisar",
+      "variant": "primary",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Grupo",
+     "rect": {
+      "x": 0,
+      "y": 149,
+      "width": 736,
+      "height": 24
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "border",
+      "lados": "cima",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Divisória de baixo",
+     "rect": {
+      "x": 0,
+      "y": 172,
+      "width": 736,
+      "height": 1
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Fechadas",
+     "rect": {
+      "x": 12,
+      "y": 153,
+      "width": 50,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Fechadas",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "3",
+     "rect": {
+      "x": 67,
+      "y": 153,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "3",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "proposal-row",
+     "name": "Proposta Fonte do app nos componentes (Mapping DS v4)",
+     "rect": {
+      "x": 0,
+      "y": 173,
+      "width": 736,
+      "height": 83
+     },
+     "values": {}
+    },
+    {
+     "type": "decision-mark",
+     "name": "1 aceitas, 0 rejeitadas, 0 sem decisão",
+     "rect": {
+      "x": 12,
+      "y": 179,
+      "width": 16,
+      "height": 18
+     },
+     "values": {
+      "estado": "aceita"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Fonte do app nos componentes (Mapping DS v4)",
+     "rect": {
+      "x": 36,
+      "y": 180,
+      "width": 284,
+      "height": 17
+     },
+     "values": {
+      "texto": "Fonte do app nos componentes (Mapping DS v4)",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "flag",
+     "name": "Aplicada",
+     "rect": {
+      "x": 326,
+      "y": 180,
+      "width": 57,
+      "height": 18
+     },
+     "values": {
+      "texto": "Aplicada",
+      "tom": "ok",
+      "icone": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Repositório fabianofranca/mapping @ mcp-v0.25.0: src/theme/t",
+     "rect": {
+      "x": 36,
+      "y": 199,
+      "width": 347,
+      "height": 16
+     },
+     "values": {
+      "texto": "Repositório fabianofranca/mapping @ mcp-v0.25.0: src/theme/tokens.ts (font-sans), src/canvas/theme.ts, src/model/components/instantiate.ts (fonte padrão do motor) · claude-code · hoje 10:50",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "da conversa",
+     "rect": {
+      "x": 36,
+      "y": 216,
+      "width": 47,
+      "height": 32
+     },
+     "lines": 2,
+     "values": {
+      "texto": "da conversa",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "citation-chip",
+     "name": "A especialização não diz qual variante usar no Campo E-mail. Qual vale?",
+     "rect": {
+      "x": 87,
+      "y": 215,
+      "width": 296,
+      "height": 34
+     },
+     "values": {
+      "rotulo": "A especialização não diz qual variante usar no Campo E-mail. Qual vale?",
+      "quebrada": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1 mudança aplicada",
+     "rect": {
+      "x": 395,
+      "y": 206,
+      "width": 106,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1 mudança aplicada",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Ver",
+     "rect": {
+      "x": 643,
+      "y": 200,
+      "width": 45,
+      "height": 28
+     },
+     "values": {
+      "texto": "Ver",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da proposta: Fonte do app nos componentes (Mapping DS v4)",
+     "rect": {
+      "x": 696,
+      "y": 200,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "grip",
+      "rotulo": "Ações da proposta: Fonte do app nos componentes (Mapping DS v4)",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "proposal-row",
+     "name": "Proposta Editor completo e valores dos componentes",
+     "rect": {
+      "x": 0,
+      "y": 256,
+      "width": 736,
+      "height": 49
+     },
+     "values": {}
+    },
+    {
+     "type": "decision-mark",
+     "name": "227 aceitas, 0 rejeitadas, 0 sem decisão",
+     "rect": {
+      "x": 12,
+      "y": 262,
+      "width": 16,
+      "height": 18
+     },
+     "values": {
+      "estado": "aceita"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Editor completo e valores dos componentes",
+     "rect": {
+      "x": 36,
+      "y": 263,
+      "width": 259,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 258.78125,
+     "cw": 258.78125,
+     "sw": 259,
+     "ci": 259,
+     "values": {
+      "texto": "Editor completo e valores dos componentes",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "flag",
+     "name": "Aplicada",
+     "rect": {
+      "x": 301,
+      "y": 263,
+      "width": 57,
+      "height": 18
+     },
+     "values": {
+      "texto": "Aplicada",
+      "tom": "ok",
+      "icone": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Repositório fabianofranca/mapping @ mcp-v0.25.0: src/app/Edi",
+     "rect": {
+      "x": 36,
+      "y": 282,
+      "width": 347,
+      "height": 16
+     },
+     "values": {
+      "texto": "Repositório fabianofranca/mapping @ mcp-v0.25.0: src/app/Editor*.tsx, src/ui/ToolStrip.tsx, src/ui/comments/, src/theme/editor.css, src/i18n/pt-BR.ts · claude-code · hoje 10:45",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "227 mudanças aplicadas",
+     "rect": {
+      "x": 395,
+      "y": 272,
+      "width": 130,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "227 mudanças aplicadas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Ver",
+     "rect": {
+      "x": 643,
+      "y": 266,
+      "width": 45,
+      "height": 28
+     },
+     "values": {
+      "texto": "Ver",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da proposta: Editor completo e valores dos componentes",
+     "rect": {
+      "x": 696,
+      "y": 266,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "grip",
+      "rotulo": "Ações da proposta: Editor completo e valores dos componentes",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "proposal-row",
+     "name": "Proposta Estrutura do sistema de comentários",
+     "rect": {
+      "x": 0,
+      "y": 305,
+      "width": 736,
+      "height": 49
+     },
+     "values": {}
+    },
+    {
+     "type": "decision-mark",
+     "name": "129 aceitas, 0 rejeitadas, 0 sem decisão",
+     "rect": {
+      "x": 12,
+      "y": 311,
+      "width": 16,
+      "height": 18
+     },
+     "values": {
+      "estado": "aceita"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Estrutura do sistema de comentários",
+     "rect": {
+      "x": 36,
+      "y": 312,
+      "width": 215,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 215.3125,
+     "cw": 215.3125,
+     "sw": 215,
+     "ci": 215,
+     "values": {
+      "texto": "Estrutura do sistema de comentários",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "flag",
+     "name": "Aplicada",
+     "rect": {
+      "x": 257,
+      "y": 312,
+      "width": 57,
+      "height": 18
+     },
+     "values": {
+      "texto": "Aplicada",
+      "tom": "ok",
+      "icone": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Repositório fabianofranca/mapping @ mcp-v0.25.0: docs/COMMEN",
+     "rect": {
+      "x": 36,
+      "y": 331,
+      "width": 347,
+      "height": 16
+     },
+     "values": {
+      "texto": "Repositório fabianofranca/mapping @ mcp-v0.25.0: docs/COMMENT-FORMAT.md, docs/design-system/2026-11-07-comentarios.md, src/ui/comments/, src/canvas/commentPins.ts, src/i18n/pt-BR.ts · claude-code · hoje 10:24",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "129 mudanças aplicadas",
+     "rect": {
+      "x": 395,
+      "y": 321,
+      "width": 130,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "129 mudanças aplicadas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Ver",
+     "rect": {
+      "x": 643,
+      "y": 315,
+      "width": 45,
+      "height": 28
+     },
+     "values": {
+      "texto": "Ver",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da proposta: Estrutura do sistema de comentários",
+     "rect": {
+      "x": 696,
+      "y": 315,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "grip",
+      "rotulo": "Ações da proposta: Estrutura do sistema de comentários",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    }
+   ]
+  },
+  {
+   "name": "Revisão — Editor 1440 × 900 (Salvar)",
+   "background": "#ffffff",
+   "width": 1440,
+   "height": 900,
+   "items": [
+    {
+     "type": "box",
+     "name": "Caixa .main-bar",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 40
+     },
+     "values": {
+      "fundo": "surface",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 8,
+      "y": 12,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "accent"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Sistema de comentários",
+     "rect": {
+      "x": 41,
+      "y": 9,
+      "width": 162,
+      "height": 22
+     },
+     "values": {
+      "texto": "Sistema de comentários",
+      "estilo": "t-title",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "seta do menu",
+     "rect": {
+      "x": 207,
+      "y": 12,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "flag",
+     "name": "Somente leitura",
+     "rect": {
+      "x": 240,
+      "y": 11,
+      "width": 109,
+      "height": 18
+     },
+     "values": {
+      "texto": "Somente leitura",
+      "tom": "neutro",
+      "icone": "lock"
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "Segmented",
+     "rect": {
+      "x": 358,
+      "y": 5,
+      "width": 58,
+      "height": 30
+     },
+     "values": {
+      "rotulo": "Opções",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Navegar",
+     "rect": {
+      "x": 359,
+      "y": 6,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Navegar",
+      "selecionada": "sim",
+      "icone": "pan"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Desenhar",
+     "rect": {
+      "x": 387,
+      "y": 6,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Desenhar",
+      "selecionada": "não",
+      "icone": "draw"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar imagens",
+     "rect": {
+      "x": 420,
+      "y": 6,
+      "width": 146,
+      "height": 28
+     },
+     "values": {
+      "icone": "addImage",
+      "rotulo": "Adicionar imagens",
+      "texto": "Adicionar imagens",
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Novo container",
+     "rect": {
+      "x": 570,
+      "y": 6,
+      "width": 129,
+      "height": 28
+     },
+     "values": {
+      "icone": "container",
+      "rotulo": "Novo container",
+      "texto": "Novo container",
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Comentar",
+     "rect": {
+      "x": 702,
+      "y": 6,
+      "width": 97,
+      "height": 28
+     },
+     "values": {
+      "icone": "chatAdd",
+      "rotulo": "Comentar",
+      "texto": "Comentar",
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Desfazer",
+     "rect": {
+      "x": 803,
+      "y": 6,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "undo",
+      "rotulo": "Desfazer",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Refazer",
+     "rect": {
+      "x": 835,
+      "y": 6,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "redo",
+      "rotulo": "Refazer",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Especializações",
+     "rect": {
+      "x": 1149,
+      "y": 6,
+      "width": 127,
+      "height": 28
+     },
+     "values": {
+      "icone": "specialization",
+      "rotulo": "Especializações",
+      "texto": "Especializações",
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Exportar",
+     "rect": {
+      "x": 1280,
+      "y": 6,
+      "width": 88,
+      "height": 28
+     },
+     "values": {
+      "icone": "export",
+      "rotulo": "Exportar",
+      "texto": "Exportar",
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ajuda",
+     "rect": {
+      "x": 1372,
+      "y": 6,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "help",
+      "rotulo": "Ajuda",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Configurações",
+     "rect": {
+      "x": 1404,
+      "y": 6,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "settings",
+      "rotulo": "Configurações",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "review-bar",
+     "name": "Barra da revisão",
+     "rect": {
+      "x": 0,
+      "y": 40,
+      "width": 1440,
+      "height": 40
+     },
+     "values": {}
+    },
+    {
+     "type": "box",
+     "name": "Selo REVISÃO",
+     "rect": {
+      "x": 12,
+      "y": 50,
+      "width": 71,
+      "height": 20
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "proposal",
+     "rect": {
+      "x": 16,
+      "y": 54,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "icone": "proposal",
+      "cor": "accent-text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Revisão",
+     "rect": {
+      "x": 32,
+      "y": 52,
+      "width": 45,
+      "height": 15
+     },
+     "values": {
+      "texto": "REVISÃO",
+      "estilo": "t-micro",
+      "cor": "accent-text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Revisão de teste: botões e pinos",
+     "rect": {
+      "x": 91,
+      "y": 51,
+      "width": 189,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 188.796875,
+     "cw": 188.796875,
+     "sw": 189,
+     "ci": 189,
+     "values": {
+      "texto": "Revisão de teste: botões e pinos",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "shots/review-fixture.mjs",
+     "rect": {
+      "x": 287,
+      "y": 52,
+      "width": 126,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 126.015625,
+     "cw": 126.015625,
+     "sw": 126,
+     "ci": 126,
+     "values": {
+      "texto": "shots/review-fixture.mjs",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Progresso",
+     "rect": {
+      "x": 496,
+      "y": 57,
+      "width": 120,
+      "height": 6
+     },
+     "values": {
+      "fundo": "surface",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: sem-decisao",
+     "rect": {
+      "x": 628,
+      "y": 52,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "text",
+     "name": "11",
+     "rect": {
+      "x": 647,
+      "y": 51,
+      "width": 16,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "11",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "sem decisão",
+     "rect": {
+      "x": 666,
+      "y": 52,
+      "width": 66,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "sem decisão",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: aceita",
+     "rect": {
+      "x": 744,
+      "y": 52,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "aceita"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 763,
+      "y": 51,
+      "width": 9,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "aceitas",
+     "rect": {
+      "x": 775,
+      "y": 52,
+      "width": 37,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "aceitas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: rejeitada",
+     "rect": {
+      "x": 824,
+      "y": 52,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "rejeitada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 843,
+      "y": 51,
+      "width": 8,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "rejeitadas",
+     "rect": {
+      "x": 854,
+      "y": 52,
+      "width": 52,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "rejeitadas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Rejeitar tudo",
+     "rect": {
+      "x": 918,
+      "y": 46,
+      "width": 121,
+      "height": 28
+     },
+     "values": {
+      "texto": "Rejeitar tudo",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Aceitar tudo",
+     "rect": {
+      "x": 1045,
+      "y": 46,
+      "width": 118,
+      "height": 28
+     },
+     "values": {
+      "texto": "Aceitar tudo",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Aplicar aceitas · 0",
+     "rect": {
+      "x": 1170,
+      "y": 46,
+      "width": 147,
+      "height": 28
+     },
+     "values": {
+      "texto": "Aplicar aceitas · 0",
+      "variant": "primary",
+      "size": "md",
+      "desabilitado": "sim",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Sair da revisão",
+     "rect": {
+      "x": 1323,
+      "y": 46,
+      "width": 109,
+      "height": 28
+     },
+     "values": {
+      "texto": "Sair da revisão",
+      "variant": "ghost",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tool-strip",
+     "rect": {
+      "x": 0,
+      "y": 80,
+      "width": 40,
+      "height": 794
+     },
+     "values": {
+      "fundo": "surface",
+      "borda": "border",
+      "lados": "direita",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tool-strip-button",
+     "name": "Esconder Árvore de marcações",
+     "rect": {
+      "x": 6,
+      "y": 86,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "tree",
+      "selecionado": "sim"
+     }
+    },
+    {
+     "type": "tool-strip-button",
+     "name": "Esconder Camadas",
+     "rect": {
+      "x": 6,
+      "y": 118,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "layers",
+      "selecionado": "sim"
+     }
+    },
+    {
+     "type": "tool-strip-button",
+     "name": "Mostrar Catálogo",
+     "rect": {
+      "x": 6,
+      "y": 150,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "library",
+      "selecionado": "não"
+     }
+    },
+    {
+     "type": "tool-strip-button",
+     "name": "Mostrar Lista de anotações",
+     "rect": {
+      "x": 6,
+      "y": 680,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "list",
+      "selecionado": "não"
+     }
+    },
+    {
+     "type": "tool-strip-button",
+     "name": "Mostrar Incompletas",
+     "rect": {
+      "x": 6,
+      "y": 712,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "checklist",
+      "selecionado": "não"
+     }
+    },
+    {
+     "type": "tool-strip-button",
+     "name": "Mostrar Avisos",
+     "rect": {
+      "x": 6,
+      "y": 744,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "warning",
+      "selecionado": "não"
+     }
+    },
+    {
+     "type": "tool-strip-button",
+     "name": "Mostrar Diagnóstico",
+     "rect": {
+      "x": 6,
+      "y": 776,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "diagnostics",
+      "selecionado": "não"
+     }
+    },
+    {
+     "type": "tool-strip-button",
+     "name": "Esconder Propostas",
+     "rect": {
+      "x": 6,
+      "y": 808,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "proposal",
+      "selecionado": "sim"
+     }
+    },
+    {
+     "type": "tool-strip-button",
+     "name": "Mostrar Comentários (3 abertas)",
+     "rect": {
+      "x": 6,
+      "y": 840,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "chat",
+      "selecionado": "não"
+     }
+    },
+    {
+     "type": "tool-window",
+     "name": "Janela Árvore de marcações",
+     "rect": {
+      "x": 40,
+      "y": 80,
+      "width": 264,
+      "height": 570
+     },
+     "values": {
+      "janela": "tree",
+      "titulo": "Árvore de marcações",
+      "posicao": "left"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Localizar a seleção na árvore",
+     "rect": {
+      "x": 211,
+      "y": 82,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "locate",
+      "rotulo": "Localizar a seleção na árvore",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Recolher tudo",
+     "rect": {
+      "x": 241,
+      "y": 82,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "collapseAll",
+      "rotulo": "Recolher tudo",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Árvore de marcações",
+     "rect": {
+      "x": 271,
+      "y": 82,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Árvore de marcações",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Catálogo (Ctrl+Shift+9)",
+     "rect": {
+      "x": 110,
+      "y": 123,
+      "width": 113,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 133.9375,
+     "cw": 113,
+     "sw": 134,
+     "ci": 113,
+     "values": {
+      "texto": "Catálogo (Ctrl+Shift+9)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 128,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Lista (Ctrl+Shift+4)",
+     "rect": {
+      "x": 110,
+      "y": 151,
+      "width": 108,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 108.015625,
+     "cw": 108.015625,
+     "sw": 108,
+     "ci": 108,
+     "values": {
+      "texto": "Lista (Ctrl+Shift+4)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 156,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Incompletas (Ctrl+Shift+5)",
+     "rect": {
+      "x": 110,
+      "y": 179,
+      "width": 113,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 151.984375,
+     "cw": 113,
+     "sw": 152,
+     "ci": 113,
+     "values": {
+      "texto": "Incompletas (Ctrl+Shift+5)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 184,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Avisos (Ctrl+Shift+8)",
+     "rect": {
+      "x": 110,
+      "y": 207,
+      "width": 113,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 118.375,
+     "cw": 113,
+     "sw": 118,
+     "ci": 113,
+     "values": {
+      "texto": "Avisos (Ctrl+Shift+8)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 212,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Diagnóstico (Ctrl+Shift+6)",
+     "rect": {
+      "x": 110,
+      "y": 235,
+      "width": 113,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 150.421875,
+     "cw": 113,
+     "sw": 150,
+     "ci": 113,
+     "values": {
+      "texto": "Diagnóstico (Ctrl+Shift+6)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 240,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Propostas (Ctrl+Shift+7)",
+     "rect": {
+      "x": 110,
+      "y": 263,
+      "width": 113,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 138.9375,
+     "cw": 113,
+     "sw": 139,
+     "ci": 113,
+     "values": {
+      "texto": "Propostas (Ctrl+Shift+7)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 268,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Comentários (Ctrl+Shift+0)",
+     "rect": {
+      "x": 110,
+      "y": 291,
+      "width": 113,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 155.0625,
+     "cw": 113,
+     "sw": 155,
+     "ci": 113,
+     "values": {
+      "texto": "Comentários (Ctrl+Shift+0)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 296,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Janela Árvore",
+     "rect": {
+      "x": 94,
+      "y": 319,
+      "width": 77,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 76.8125,
+     "cw": 76.8125,
+     "sw": 77,
+     "ci": 77,
+     "values": {
+      "texto": "Janela Árvore",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 324,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Janela Camadas",
+     "rect": {
+      "x": 94,
+      "y": 347,
+      "width": 91,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 91,
+     "cw": 91,
+     "sw": 91,
+     "ci": 91,
+     "values": {
+      "texto": "Janela Camadas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 352,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 68,
+      "y": 376,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Barra do canvas",
+     "rect": {
+      "x": 94,
+      "y": 375,
+      "width": 90,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 90.453125,
+     "cw": 90.453125,
+     "sw": 90,
+     "ci": 90,
+     "values": {
+      "texto": "Barra do canvas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Caminho da seleção",
+     "rect": {
+      "x": 110,
+      "y": 403,
+      "width": 113,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 115.234375,
+     "cw": 113,
+     "sw": 115,
+     "ci": 113,
+     "values": {
+      "texto": "Caminho da seleção",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 408,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Enquadrar tudo",
+     "rect": {
+      "x": 110,
+      "y": 431,
+      "width": 89,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 89.46875,
+     "cw": 89.46875,
+     "sw": 89,
+     "ci": 89,
+     "values": {
+      "texto": "Enquadrar tudo",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 436,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Visualizar (Alt+H)",
+     "rect": {
+      "x": 110,
+      "y": 459,
+      "width": 100,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 99.5,
+     "cw": 99.5,
+     "sw": 100,
+     "ci": 100,
+     "values": {
+      "texto": "Visualizar (Alt+H)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 464,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Conversas (liga e desliga os pinos)",
+     "rect": {
+      "x": 110,
+      "y": 487,
+      "width": 113,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 196.1875,
+     "cw": 113,
+     "sw": 196,
+     "ci": 113,
+     "values": {
+      "texto": "Conversas (liga e desliga os pinos)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 492,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 68,
+      "y": 516,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Área do canvas",
+     "rect": {
+      "x": 94,
+      "y": 515,
+      "width": 87,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 87.046875,
+     "cw": 87.046875,
+     "sw": 87,
+     "ci": 87,
+     "values": {
+      "texto": "Área do canvas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 520,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 84,
+      "y": 544,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tela de login",
+     "rect": {
+      "x": 110,
+      "y": 543,
+      "width": 73,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 72.609375,
+     "cw": 72.609375,
+     "sw": 73,
+     "ci": 73,
+     "values": {
+      "texto": "Tela de login",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 548,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Campo E-mail",
+     "rect": {
+      "x": 126,
+      "y": 571,
+      "width": 81,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 80.578125,
+     "cw": 80.578125,
+     "sw": 81,
+     "ci": 81,
+     "values": {
+      "texto": "Campo E-mail",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 576,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "lock",
+     "rect": {
+      "x": 245,
+      "y": 572,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "lock",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pino — aguardando agente",
+     "rect": {
+      "x": 126,
+      "y": 599,
+      "width": 97,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 158.375,
+     "cw": 97,
+     "sw": 158,
+     "ci": 97,
+     "values": {
+      "texto": "Pino — aguardando agente",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 604,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-row",
+     "rect": {
+      "x": 44,
+      "y": 622,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "fundo": "selection-muted",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Salvar alterações",
+     "rect": {
+      "x": 126,
+      "y": 627,
+      "width": 96,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 95.640625,
+     "cw": 95.640625,
+     "sw": 96,
+     "ci": 96,
+     "values": {
+      "texto": "Salvar alterações",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 227,
+      "y": 632,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "unlock",
+     "rect": {
+      "x": 245,
+      "y": 628,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "unlock",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações de Salvar alterações",
+     "rect": {
+      "x": 267,
+      "y": 622,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "grip",
+      "rotulo": "Ações de Salvar alterações",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "tool-window",
+     "name": "Janela Camadas",
+     "rect": {
+      "x": 40,
+      "y": 650,
+      "width": 264,
+      "height": 224
+     },
+     "values": {
+      "janela": "layers",
+      "titulo": "Camadas",
+      "posicao": "left"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Nova camada",
+     "rect": {
+      "x": 211,
+      "y": 653,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Nova camada",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mostrar todas",
+     "rect": {
+      "x": 241,
+      "y": 653,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "eye",
+      "rotulo": "Mostrar todas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Camadas",
+     "rect": {
+      "x": 271,
+      "y": 653,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Camadas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-row",
+     "rect": {
+      "x": 44,
+      "y": 683,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "danger",
+      "lados": "esquerda",
+      "raio": "md",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 83,
+      "y": 689,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "fundo": "tooltip",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Nome da camada",
+     "rect": {
+      "x": 107,
+      "y": 685,
+      "width": 152,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Rascunhos",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mais ações da camada Rascunhos",
+     "rect": {
+      "x": 263,
+      "y": 683,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "grip",
+      "rotulo": "Mais ações da camada Rascunhos",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-row",
+     "rect": {
+      "x": 44,
+      "y": 713,
+      "width": 255,
+      "height": 54
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "warning",
+      "lados": "esquerda",
+      "raio": "md",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 83,
+      "y": 719,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Nome da camada",
+     "rect": {
+      "x": 107,
+      "y": 715,
+      "width": 152,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Notas",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mais ações da camada Notas",
+     "rect": {
+      "x": 263,
+      "y": 713,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "grip",
+      "rotulo": "Mais ações da camada Notas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-badge",
+     "rect": {
+      "x": 107,
+      "y": 741,
+      "width": 49,
+      "height": 22
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notas",
+     "rect": {
+      "x": 116,
+      "y": 744,
+      "width": 32,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 31.28125,
+     "cw": 31.28125,
+     "sw": 47,
+     "ci": 47,
+     "values": {
+      "texto": "Notas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 83,
+      "y": 775,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Nome da camada",
+     "rect": {
+      "x": 107,
+      "y": 771,
+      "width": 152,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Mapping",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mais ações da camada Mapping",
+     "rect": {
+      "x": 263,
+      "y": 769,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "grip",
+      "rotulo": "Mais ações da camada Mapping",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-badge",
+     "rect": {
+      "x": 107,
+      "y": 797,
+      "width": 84,
+      "height": 20
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping DS",
+     "rect": {
+      "x": 116,
+      "y": 800,
+      "width": 66,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 65.84375,
+     "cw": 65.84375,
+     "sw": 82,
+     "ci": 82,
+     "values": {
+      "texto": "Mapping DS",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layers-footer",
+     "rect": {
+      "x": 44,
+      "y": 817,
+      "width": 255,
+      "height": 57
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "cima",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcações sem anotação",
+     "rect": {
+      "x": 48,
+      "y": 826,
+      "width": 134,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Marcações sem anotação",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "select",
+     "name": "Select",
+     "rect": {
+      "x": 48,
+      "y": 846,
+      "width": 247,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Esmaecer sem anotação",
+      "size": "sm",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .canvas-bar",
+     "rect": {
+      "x": 304,
+      "y": 80,
+      "width": 736,
+      "height": 32
+     },
+     "values": {
+      "fundo": "surface",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "breadcrumbs",
+     "name": "Caminho da seleção",
+     "rect": {
+      "x": 310,
+      "y": 82,
+      "width": 347,
+      "height": 28
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Canvas",
+     "rect": {
+      "x": 316,
+      "y": 87,
+      "width": 18,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 40.390625,
+     "cw": 18.078125,
+     "sw": 40,
+     "ci": 18,
+     "values": {
+      "texto": "Canvas",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "›",
+     "rect": {
+      "x": 342,
+      "y": 87,
+      "width": 5,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "›",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "image",
+     "rect": {
+      "x": 354,
+      "y": 88,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "image",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Editor — 1440 × 900",
+     "rect": {
+      "x": 376,
+      "y": 87,
+      "width": 51,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 119.125,
+     "cw": 51.328125,
+     "sw": 119,
+     "ci": 51,
+     "values": {
+      "texto": "Editor — 1440 × 900",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "›",
+     "rect": {
+      "x": 435,
+      "y": 87,
+      "width": 5,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "›",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 448,
+      "y": 88,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Área do canvas",
+     "rect": {
+      "x": 470,
+      "y": 87,
+      "width": 33,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 87.046875,
+     "cw": 32.90625,
+     "sw": 87,
+     "ci": 33,
+     "values": {
+      "texto": "Área do canvas",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "›",
+     "rect": {
+      "x": 510,
+      "y": 87,
+      "width": 5,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "›",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 523,
+      "y": 88,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tela de login",
+     "rect": {
+      "x": 545,
+      "y": 87,
+      "width": 25,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 72.609375,
+     "cw": 24.625,
+     "sw": 73,
+     "ci": 25,
+     "values": {
+      "texto": "Tela de login",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "›",
+     "rect": {
+      "x": 577,
+      "y": 87,
+      "width": 5,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "›",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 589,
+      "y": 88,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Salvar alterações",
+     "rect": {
+      "x": 611,
+      "y": 87,
+      "width": 39,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 98.515625,
+     "cw": 39.484375,
+     "sw": 99,
+     "ci": 39,
+     "values": {
+      "texto": "Salvar alterações",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .review-canvas-controls",
+     "rect": {
+      "x": 665,
+      "y": 81,
+      "width": 177,
+      "height": 30
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "direita",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "Visão do canvas",
+     "rect": {
+      "x": 665,
+      "y": 81,
+      "width": 136,
+      "height": 30
+     },
+     "values": {
+      "rotulo": "Visão do canvas",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Atual",
+     "rect": {
+      "x": 666,
+      "y": 82,
+      "width": 56,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Atual",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Proposto",
+     "rect": {
+      "x": 722,
+      "y": 82,
+      "width": 78,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Proposto",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Legenda das marcas",
+     "rect": {
+      "x": 805,
+      "y": 82,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Legenda das marcas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Conversas",
+     "rect": {
+      "x": 850,
+      "y": 82,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "chat",
+      "rotulo": "Conversas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "sim",
+      "selo": "1"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Visualizar",
+     "rect": {
+      "x": 882,
+      "y": 82,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "eye",
+      "rotulo": "Visualizar",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mostrar no canvas",
+     "rect": {
+      "x": 914,
+      "y": 82,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "layers",
+      "rotulo": "Mostrar no canvas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Enquadrar tudo",
+     "rect": {
+      "x": 946,
+      "y": 82,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "fit",
+      "rotulo": "Enquadrar tudo",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "552%",
+     "rect": {
+      "x": 991,
+      "y": 88,
+      "width": 30,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "552%",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "canvas-marking",
+     "name": "Área do canvas",
+     "rect": {
+      "x": 304,
+      "y": 112,
+      "width": 736,
+      "height": 522
+     },
+     "values": {
+      "nome": null,
+      "fundo": "canvas"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .minimap",
+     "rect": {
+      "x": 900,
+      "y": 577,
+      "width": 132,
+      "height": 49
+     },
+     "values": {
+      "fundo": "surface",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .minimap-image",
+     "rect": {
+      "x": 986,
+      "y": 591,
+      "width": 21,
+      "height": 7
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .minimap-image",
+     "rect": {
+      "x": 930,
+      "y": 591,
+      "width": 21,
+      "height": 5
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .minimap-image",
+     "rect": {
+      "x": 951,
+      "y": 591,
+      "width": 12,
+      "height": 21
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .minimap-image",
+     "rect": {
+      "x": 965,
+      "y": 591,
+      "width": 21,
+      "height": 10
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .minimap-image",
+     "rect": {
+      "x": 901,
+      "y": 595,
+      "width": 21,
+      "height": 13
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .minimap-view",
+     "rect": {
+      "x": 906,
+      "y": 599,
+      "width": 3,
+      "height": 2
+     },
+     "values": {
+      "fundo": "selection",
+      "borda": "accent",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tool-window",
+     "name": "Janela proposals",
+     "rect": {
+      "x": 304,
+      "y": 634,
+      "width": 736,
+      "height": 240
+     },
+     "values": {
+      "janela": "proposals",
+      "titulo": null,
+      "posicao": "bottom"
+     }
+    },
+    {
+     "type": "tabs",
+     "name": "Janelas inferiores",
+     "rect": {
+      "x": 304,
+      "y": 635,
+      "width": 672,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Janelas inferiores"
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Lista",
+     "rect": {
+      "x": 304,
+      "y": 635,
+      "width": 28,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Lista",
+      "selecionada": "não",
+      "selo": null,
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Incompletas",
+     "rect": {
+      "x": 332,
+      "y": 635,
+      "width": 97,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Incompletas",
+      "selecionada": "não",
+      "selo": "46",
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Avisos",
+     "rect": {
+      "x": 429,
+      "y": 635,
+      "width": 37,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Avisos",
+      "selecionada": "não",
+      "selo": null,
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Diagnóstico",
+     "rect": {
+      "x": 467,
+      "y": 635,
+      "width": 67,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Diagnóstico",
+      "selecionada": "não",
+      "selo": null,
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Propostas",
+     "rect": {
+      "x": 534,
+      "y": 635,
+      "width": 56,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Propostas",
+      "selecionada": "sim",
+      "selo": null,
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Comentários",
+     "rect": {
+      "x": 590,
+      "y": 635,
+      "width": 42,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Comentários",
+      "selecionada": "não",
+      "selo": "3",
+      "tamanho": "sm",
+      "icone": "chat"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Próxima pendente",
+     "rect": {
+      "x": 978,
+      "y": 637,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "arrowDown",
+      "rotulo": "Próxima pendente",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Propostas",
+     "rect": {
+      "x": 1008,
+      "y": 637,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Propostas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .review-filters",
+     "rect": {
+      "x": 304,
+      "y": 667,
+      "width": 736,
+      "height": 37
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Filtros",
+     "rect": {
+      "x": 316,
+      "y": 673,
+      "width": 75,
+      "height": 24
+     },
+     "values": {
+      "texto": "Filtros",
+      "variant": "default",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Cabeçalho dos níveis",
+     "rect": {
+      "x": 304,
+      "y": 704,
+      "width": 736,
+      "height": 26
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "border",
+      "lados": "cima",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Divisória de baixo",
+     "rect": {
+      "x": 304,
+      "y": 729,
+      "width": 736,
+      "height": 1
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nível",
+     "rect": {
+      "x": 312,
+      "y": 709,
+      "width": 27,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nível",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Resumo",
+     "rect": {
+      "x": 732,
+      "y": 709,
+      "width": 43,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Resumo",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Expandir tudo",
+     "rect": {
+      "x": 984,
+      "y": 705,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "expandAll",
+      "rotulo": "Expandir tudo",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Recolher tudo",
+     "rect": {
+      "x": 1008,
+      "y": 705,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "collapseAll",
+      "rotulo": "Recolher tudo",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "review-row",
+     "name": "Linha Trava",
+     "rect": {
+      "x": 304,
+      "y": 730,
+      "width": 736,
+      "height": 28
+     },
+     "values": {
+      "selecionada": "não",
+      "invalida": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Sem decisão",
+     "rect": {
+      "x": 382,
+      "y": 736,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "change-kind",
+     "name": "Alterada",
+     "rect": {
+      "x": 404,
+      "y": 735,
+      "width": 18,
+      "height": 18
+     },
+     "values": {
+      "tipo": "alterada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Trava",
+     "rect": {
+      "x": 428,
+      "y": 735,
+      "width": 30,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 29.65625,
+     "cw": 29.65625,
+     "sw": 30,
+     "ci": 30,
+     "values": {
+      "texto": "Trava",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "não → sim",
+     "rect": {
+      "x": 732,
+      "y": 737,
+      "width": 63,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 63.28125,
+     "cw": 63.28125,
+     "sw": 63,
+     "ci": 63,
+     "values": {
+      "texto": "não → sim",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-control",
+     "name": "Decisão Trava",
+     "rect": {
+      "x": 982,
+      "y": 732,
+      "width": 50,
+      "height": 24
+     },
+     "values": {}
+    },
+    {
+     "type": "icon-button",
+     "name": "Aceitar Trava",
+     "rect": {
+      "x": 982,
+      "y": 732,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "check",
+      "rotulo": "Aceitar Trava",
+      "texto": null,
+      "variant": "accept",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Rejeitar Trava",
+     "rect": {
+      "x": 1008,
+      "y": 732,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Rejeitar Trava",
+      "texto": null,
+      "variant": "reject",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "review-row",
+     "name": "Linha Salvar",
+     "rect": {
+      "x": 304,
+      "y": 758,
+      "width": 736,
+      "height": 28
+     },
+     "values": {
+      "selecionada": "não",
+      "invalida": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 344,
+      "y": 764,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Sem decisão",
+     "rect": {
+      "x": 366,
+      "y": 764,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "change-kind",
+     "name": "Alterada",
+     "rect": {
+      "x": 388,
+      "y": 763,
+      "width": 18,
+      "height": 18
+     },
+     "values": {
+      "tipo": "alterada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Salvar",
+     "rect": {
+      "x": 412,
+      "y": 763,
+      "width": 34,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 34.03125,
+     "cw": 34.03125,
+     "sw": 34,
+     "ci": 34,
+     "values": {
+      "texto": "Salvar",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "note",
+     "rect": {
+      "x": 452,
+      "y": 766,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "icone": "note",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: sem-decisao",
+     "rect": {
+      "x": 732,
+      "y": 766,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "text",
+     "name": "4",
+     "rect": {
+      "x": 748,
+      "y": 764,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "4",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: aceita",
+     "rect": {
+      "x": 772,
+      "y": 766,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "aceita"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 788,
+      "y": 764,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: rejeitada",
+     "rect": {
+      "x": 812,
+      "y": 766,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "rejeitada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 828,
+      "y": 764,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-control",
+     "name": "Decisão Salvar",
+     "rect": {
+      "x": 982,
+      "y": 760,
+      "width": 50,
+      "height": 24
+     },
+     "values": {}
+    },
+    {
+     "type": "icon-button",
+     "name": "Aceitar Salvar",
+     "rect": {
+      "x": 982,
+      "y": 760,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "check",
+      "rotulo": "Aceitar Salvar",
+      "texto": null,
+      "variant": "accept",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Rejeitar Salvar",
+     "rect": {
+      "x": 1008,
+      "y": 760,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Rejeitar Salvar",
+      "texto": null,
+      "variant": "reject",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "review-row",
+     "name": "Linha Nome",
+     "rect": {
+      "x": 304,
+      "y": 786,
+      "width": 736,
+      "height": 28
+     },
+     "values": {
+      "selecionada": "sim",
+      "invalida": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Sem decisão",
+     "rect": {
+      "x": 382,
+      "y": 792,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "change-kind",
+     "name": "Alterada",
+     "rect": {
+      "x": 404,
+      "y": 791,
+      "width": 18,
+      "height": 18
+     },
+     "values": {
+      "tipo": "alterada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nome",
+     "rect": {
+      "x": 428,
+      "y": 791,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36.15625,
+     "cw": 36.15625,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Nome",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "note",
+     "rect": {
+      "x": 470,
+      "y": 794,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "icone": "note",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Salvar → Salvar alterações",
+     "rect": {
+      "x": 732,
+      "y": 793,
+      "width": 183,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 182.8125,
+     "cw": 182.8125,
+     "sw": 183,
+     "ci": 183,
+     "values": {
+      "texto": "Salvar → Salvar alterações",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-control",
+     "name": "Decisão Nome",
+     "rect": {
+      "x": 982,
+      "y": 788,
+      "width": 50,
+      "height": 24
+     },
+     "values": {}
+    },
+    {
+     "type": "icon-button",
+     "name": "Aceitar Nome",
+     "rect": {
+      "x": 982,
+      "y": 788,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "check",
+      "rotulo": "Aceitar Nome",
+      "texto": null,
+      "variant": "accept",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Rejeitar Nome",
+     "rect": {
+      "x": 1008,
+      "y": 788,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Rejeitar Nome",
+      "texto": null,
+      "variant": "reject",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "review-row",
+     "name": "Linha Posição",
+     "rect": {
+      "x": 304,
+      "y": 814,
+      "width": 736,
+      "height": 28
+     },
+     "values": {
+      "selecionada": "não",
+      "invalida": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Sem decisão",
+     "rect": {
+      "x": 382,
+      "y": 820,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "change-kind",
+     "name": "Movida",
+     "rect": {
+      "x": 404,
+      "y": 819,
+      "width": 18,
+      "height": 18
+     },
+     "values": {
+      "tipo": "movida"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Posição",
+     "rect": {
+      "x": 428,
+      "y": 819,
+      "width": 43,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 43.328125,
+     "cw": 43.328125,
+     "sw": 43,
+     "ci": 43,
+     "values": {
+      "texto": "Posição",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "x 392 → 404",
+     "rect": {
+      "x": 732,
+      "y": 821,
+      "width": 77,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 77.34375,
+     "cw": 77.34375,
+     "sw": 77,
+     "ci": 77,
+     "values": {
+      "texto": "x 392 → 404",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-control",
+     "name": "Decisão Posição",
+     "rect": {
+      "x": 982,
+      "y": 816,
+      "width": 50,
+      "height": 24
+     },
+     "values": {}
+    },
+    {
+     "type": "icon-button",
+     "name": "Aceitar Posição",
+     "rect": {
+      "x": 982,
+      "y": 816,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "check",
+      "rotulo": "Aceitar Posição",
+      "texto": null,
+      "variant": "accept",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Rejeitar Posição",
+     "rect": {
+      "x": 1008,
+      "y": 816,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Rejeitar Posição",
+      "texto": null,
+      "variant": "reject",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .review-footer",
+     "rect": {
+      "x": 304,
+      "y": 846,
+      "width": 736,
+      "height": 28
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "border",
+      "lados": "cima",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aceitar",
+     "rect": {
+      "x": 341,
+      "y": 853,
+      "width": 37,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Aceitar",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .kbd",
+     "rect": {
+      "x": 316,
+      "y": 852,
+      "width": 21,
+      "height": 18
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "A",
+     "rect": {
+      "x": 323,
+      "y": 853,
+      "width": 8,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "A",
+      "estilo": "t-kbd",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Rejeitar",
+     "rect": {
+      "x": 418,
+      "y": 853,
+      "width": 41,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Rejeitar",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .kbd",
+     "rect": {
+      "x": 394,
+      "y": 852,
+      "width": 21,
+      "height": 18
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "R",
+     "rect": {
+      "x": 400,
+      "y": 853,
+      "width": 8,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "R",
+      "estilo": "t-kbd",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Próxima pendente",
+     "rect": {
+      "x": 500,
+      "y": 853,
+      "width": 97,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Próxima pendente",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .kbd",
+     "rect": {
+      "x": 474,
+      "y": 852,
+      "width": 22,
+      "height": 18
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "N",
+     "rect": {
+      "x": 481,
+      "y": 853,
+      "width": 9,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "N",
+      "estilo": "t-kbd",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Próximo conflito",
+     "rect": {
+      "x": 637,
+      "y": 853,
+      "width": 88,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Próximo conflito",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .kbd",
+     "rect": {
+      "x": 613,
+      "y": 852,
+      "width": 21,
+      "height": 18
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "C",
+     "rect": {
+      "x": 619,
+      "y": 853,
+      "width": 8,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "C",
+      "estilo": "t-kbd",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Atual / Proposto",
+     "rect": {
+      "x": 764,
+      "y": 853,
+      "width": 89,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Atual / Proposto",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .kbd",
+     "rect": {
+      "x": 741,
+      "y": 852,
+      "width": 20,
+      "height": 18
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "P",
+     "rect": {
+      "x": 747,
+      "y": 853,
+      "width": 7,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "P",
+      "estilo": "t-kbd",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aplicar",
+     "rect": {
+      "x": 935,
+      "y": 853,
+      "width": 38,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Aplicar",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .kbd",
+     "rect": {
+      "x": 868,
+      "y": 852,
+      "width": 64,
+      "height": 18
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Ctrl+Enter",
+     "rect": {
+      "x": 875,
+      "y": 853,
+      "width": 50,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Ctrl+Enter",
+      "estilo": "t-kbd",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "tool-window",
+     "name": "Janela Detalhes",
+     "rect": {
+      "x": 1040,
+      "y": 80,
+      "width": 360,
+      "height": 794
+     },
+     "values": {
+      "janela": "details",
+      "titulo": "Detalhes",
+      "posicao": "right"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Detalhes",
+     "rect": {
+      "x": 1368,
+      "y": 82,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Detalhes",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity",
+     "rect": {
+      "x": 1053,
+      "y": 120,
+      "width": 335,
+      "height": 61
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 1053,
+      "y": 130,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "accent"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Salvar alterações",
+     "rect": {
+      "x": 1075,
+      "y": 128,
+      "width": 114,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Salvar alterações",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity-id",
+     "rect": {
+      "x": 1220,
+      "y": 126,
+      "width": 134,
+      "height": 24
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "20875dee-b57b-4a34-b1bb-cd3f79305e32",
+     "rect": {
+      "x": 1227,
+      "y": 131,
+      "width": 100,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 253.125,
+     "cw": 100,
+     "sw": 253,
+     "ci": 100,
+     "values": {
+      "texto": "20875dee-b57b-4a34-b1bb-cd3f79305e32",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "copy",
+     "rect": {
+      "x": 1331,
+      "y": 130,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "copy",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Trancar marcação",
+     "rect": {
+      "x": 1360,
+      "y": 124,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "unlock",
+      "rotulo": "Trancar marcação",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Em Editor — 1440 × 900 › Área do canvas › Tela de login",
+     "rect": {
+      "x": 1053,
+      "y": 154,
+      "width": 298,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Em Editor — 1440 × 900 › Área do canvas › Tela de login",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "review-header",
+     "name": "Cabeçalho da revisão",
+     "rect": {
+      "x": 1053,
+      "y": 193,
+      "width": 335,
+      "height": 268
+     },
+     "values": {}
+    },
+    {
+     "type": "decision-mark",
+     "name": "Sem decisão",
+     "rect": {
+      "x": 1066,
+      "y": 204,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação alterada",
+     "rect": {
+      "x": 1088,
+      "y": 203,
+      "width": 113,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Marcação alterada",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0 aceitas, 0 rejeitadas, 4 sem decisão",
+     "rect": {
+      "x": 1066,
+      "y": 228,
+      "width": 194,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0 aceitas, 0 rejeitadas, 4 sem decisão",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-control",
+     "name": "Decisão Salvar",
+     "rect": {
+      "x": 1066,
+      "y": 252,
+      "width": 302,
+      "height": 28
+     },
+     "values": {}
+    },
+    {
+     "type": "button",
+     "name": "Aceitar marcação",
+     "rect": {
+      "x": 1066,
+      "y": 252,
+      "width": 147,
+      "height": 28
+     },
+     "values": {
+      "texto": "Aceitar marcação",
+      "variant": "accept",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Rejeitar marcação",
+     "rect": {
+      "x": 1219,
+      "y": 252,
+      "width": 150,
+      "height": 28
+     },
+     "values": {
+      "texto": "Rejeitar marcação",
+      "variant": "reject",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar nota",
+     "rect": {
+      "x": 1066,
+      "y": 288,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "note",
+      "rotulo": "Adicionar nota",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "sim",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "note-field",
+     "name": "Nota para o agente",
+     "rect": {
+      "x": 1066,
+      "y": 320,
+      "width": 309,
+      "height": 76
+     },
+     "values": {}
+    },
+    {
+     "type": "text-field",
+     "name": "Nota para o agente",
+     "rect": {
+      "x": 1066,
+      "y": 320,
+      "width": 309,
+      "height": 56
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Conferir o rótulo com o time de produto.",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "varias"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Grava ao sair do campo.",
+     "rect": {
+      "x": 1066,
+      "y": 380,
+      "width": 128,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Grava ao sair do campo.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Decidir aqui decide as 4 mudança(s) abaixo, inclusive os con",
+     "rect": {
+      "x": 1066,
+      "y": 404,
+      "width": 309,
+      "height": 48
+     },
+     "lines": 3,
+     "values": {
+      "texto": "Decidir aqui decide as 4 mudança(s) abaixo, inclusive os conflitos (aceitar sobrescreve o valor atual). Cada mudança pode contrariar o nível.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 1053,
+      "y": 479,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação",
+     "rect": {
+      "x": 1073,
+      "y": 478,
+      "width": 58,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Marcação",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .props-label-cell",
+     "rect": {
+      "x": 1053,
+      "y": 509,
+      "width": 116,
+      "height": 21
+     },
+     "values": {
+      "fundo": "selection",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nome",
+     "rect": {
+      "x": 1053,
+      "y": 513,
+      "width": 33,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nome",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "change-mark",
+     "name": "Nome: alterado, pendente, com nota",
+     "rect": {
+      "x": 1137,
+      "y": 512,
+      "width": 32,
+      "height": 18
+     },
+     "values": {
+      "tipo": "alterada",
+      "estado": "sem-decisao",
+      "conflito": "não",
+      "junto": "não",
+      "parte": "não",
+      "aberto": "não",
+      "alvo": "sim",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .props-value",
+     "rect": {
+      "x": 1177,
+      "y": 509,
+      "width": 211,
+      "height": 62
+     },
+     "values": {
+      "fundo": "selection",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Sem nome",
+     "rect": {
+      "x": 1177,
+      "y": 509,
+      "width": 211,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Salvar alterações",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "change-below",
+     "name": "Embaixo do campo",
+     "rect": {
+      "x": 1177,
+      "y": 539,
+      "width": 211,
+      "height": 32
+     },
+     "values": {}
+    },
+    {
+     "type": "icon",
+     "name": "note",
+     "rect": {
+      "x": 1177,
+      "y": 541,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "icone": "note",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Prefiro manter \"Salvar\": o botão é curto.",
+     "rect": {
+      "x": 1193,
+      "y": 539,
+      "width": 195,
+      "height": 32
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Prefiro manter \"Salvar\": o botão é curto.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Container",
+     "rect": {
+      "x": 1053,
+      "y": 579,
+      "width": 52,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Container",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Editor — 1440 × 900",
+     "rect": {
+      "x": 1177,
+      "y": 580,
+      "width": 120,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Editor — 1440 × 900",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pertence a",
+     "rect": {
+      "x": 1053,
+      "y": 607,
+      "width": 56,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pertence a",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tela de login",
+     "rect": {
+      "x": 1177,
+      "y": 608,
+      "width": 73,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tela de login",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Flutuante",
+     "rect": {
+      "x": 1053,
+      "y": 635,
+      "width": 50,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Flutuante",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Flutuante",
+     "rect": {
+      "x": 1145,
+      "y": 631,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Flutuante",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Flutuante",
+     "rect": {
+      "x": 1177,
+      "y": 631,
+      "width": 211,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Flutuante",
+      "dica": null,
+      "marcado": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Ordem",
+     "rect": {
+      "x": 1053,
+      "y": 667,
+      "width": 37,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Ordem",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Ordem",
+     "rect": {
+      "x": 1145,
+      "y": 663,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Ordem",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "3 de 6",
+     "rect": {
+      "x": 1177,
+      "y": 668,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "3 de 6",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mover para trás",
+     "rect": {
+      "x": 1336,
+      "y": 663,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "arrowDown",
+      "rotulo": "Mover para trás",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mover para a frente",
+     "rect": {
+      "x": 1364,
+      "y": 663,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "arrowUp",
+      "rotulo": "Mover para a frente",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Posição",
+     "rect": {
+      "x": 1053,
+      "y": 695,
+      "width": 40,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Posição",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tamanho",
+     "rect": {
+      "x": 1053,
+      "y": 721,
+      "width": 49,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tamanho",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Posição / Tamanho",
+     "rect": {
+      "x": 1145,
+      "y": 691,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Posição / Tamanho",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "change-mark",
+     "name": "Posição: movido, pendente",
+     "rect": {
+      "x": 1060,
+      "y": 748,
+      "width": 32,
+      "height": 18
+     },
+     "values": {
+      "tipo": "movida",
+      "estado": "sem-decisao",
+      "conflito": "não",
+      "junto": "não",
+      "parte": "não",
+      "aberto": "não",
+      "alvo": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "X",
+     "rect": {
+      "x": 1177,
+      "y": 695,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "X",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "X",
+     "rect": {
+      "x": 1188,
+      "y": 691,
+      "width": 92,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "404",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Y",
+     "rect": {
+      "x": 1284,
+      "y": 695,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Y",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Y",
+     "rect": {
+      "x": 1295,
+      "y": 691,
+      "width": 93,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "300",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "L",
+     "rect": {
+      "x": 1177,
+      "y": 721,
+      "width": 6,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "L",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Largura",
+     "rect": {
+      "x": 1187,
+      "y": 717,
+      "width": 94,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "96",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "A",
+     "rect": {
+      "x": 1284,
+      "y": 721,
+      "width": 9,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "A",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Altura",
+     "rect": {
+      "x": 1296,
+      "y": 717,
+      "width": 92,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "28",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 1053,
+      "y": 784,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Anotações",
+     "rect": {
+      "x": 1073,
+      "y": 783,
+      "width": 62,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Anotações",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1",
+     "rect": {
+      "x": 1138,
+      "y": 784,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-group",
+     "rect": {
+      "x": 1053,
+      "y": 814,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-group-head",
+     "rect": {
+      "x": 1054,
+      "y": 815,
+      "width": 333,
+      "height": 28
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "popup"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 1084,
+      "y": 823,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "tooltip",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Rascunhos",
+     "rect": {
+      "x": 1102,
+      "y": 820,
+      "width": 65,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 64.671875,
+     "cw": 64.671875,
+     "sw": 65,
+     "ci": 65,
+     "values": {
+      "texto": "Rascunhos",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 1173,
+      "y": 821,
+      "width": 183,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 182.90625,
+     "cw": 206.328125,
+     "sw": 206,
+     "ci": 206,
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 1084,
+      "y": 861,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notas",
+     "rect": {
+      "x": 1102,
+      "y": 858,
+      "width": 36,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 36,
+     "cw": 36,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Notas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 1189,
+      "y": 859,
+      "width": 183,
+      "height": 15
+     },
+     "lines": 1,
+     "tw": 182.90625,
+     "cw": 190.328125,
+     "sw": 190,
+     "ci": 190,
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tool-strip",
+     "rect": {
+      "x": 1400,
+      "y": 80,
+      "width": 40,
+      "height": 794
+     },
+     "values": {
+      "fundo": "surface",
+      "borda": "border",
+      "lados": "esquerda",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tool-strip-button",
+     "name": "Esconder Detalhes",
+     "rect": {
+      "x": 1407,
+      "y": 86,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "panelRight",
+      "selecionado": "sim"
+     }
+    },
+    {
+     "type": "status-bar",
+     "name": "Barra de status",
+     "rect": {
+      "x": 0,
+      "y": 874,
+      "width": 1440,
+      "height": 26
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Salvo",
+     "rect": {
+      "x": 34,
+      "y": 880,
+      "width": 29,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 28.171875,
+     "cw": 48.171875,
+     "sw": 60,
+     "ci": 60,
+     "values": {
+      "texto": "Salvo",
+      "estilo": "t-small",
+      "cor": "success",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "check",
+     "rect": {
+      "x": 14,
+      "y": 880,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "check",
+      "cor": "success"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Neste dispositivo",
+     "rect": {
+      "x": 76,
+      "y": 880,
+      "width": 92,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 90.875,
+     "cw": 90.875,
+     "sw": 103,
+     "ci": 103,
+     "values": {
+      "texto": "Neste dispositivo",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Alterações não exportadas",
+     "rect": {
+      "x": 181,
+      "y": 880,
+      "width": 141,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 140.1875,
+     "cw": 140.1875,
+     "sw": 152,
+     "ci": 152,
+     "values": {
+      "texto": "Alterações não exportadas",
+      "estilo": "t-small",
+      "cor": "warning",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Somente leitura",
+     "rect": {
+      "x": 355,
+      "y": 880,
+      "width": 84,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 83.671875,
+     "cw": 103.671875,
+     "sw": 116,
+     "ci": 116,
+     "values": {
+      "texto": "Somente leitura",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "lock",
+     "rect": {
+      "x": 335,
+      "y": 880,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "lock",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "3 conversas abertas · 2 aguardando agente",
+     "rect": {
+      "x": 472,
+      "y": 880,
+      "width": 228,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 226.875,
+     "cw": 246.875,
+     "sw": 259,
+     "ci": 259,
+     "values": {
+      "texto": "3 conversas abertas · 2 aguardando agente",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chat",
+     "rect": {
+      "x": 453,
+      "y": 880,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chat",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Salvar alterações",
+     "rect": {
+      "x": 962,
+      "y": 880,
+      "width": 89,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 88.28125,
+     "cw": 88.28125,
+     "sw": 100,
+     "ci": 100,
+     "values": {
+      "texto": "Salvar alterações",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "—",
+     "rect": {
+      "x": 1067,
+      "y": 881,
+      "width": 8,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 7.03125,
+     "cw": 7.03125,
+     "sw": 19,
+     "ci": 19,
+     "values": {
+      "texto": "—",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "552%",
+     "rect": {
+      "x": 1091,
+      "y": 880,
+      "width": 31,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 29.234375,
+     "cw": 44,
+     "sw": 56,
+     "ci": 56,
+     "values": {
+      "texto": "552%",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "schema v15",
+     "rect": {
+      "x": 1152,
+      "y": 880,
+      "width": 63,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 62.125,
+     "cw": 62.125,
+     "sw": 74,
+     "ci": 74,
+     "values": {
+      "texto": "schema v15",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "estável",
+     "rect": {
+      "x": 1231,
+      "y": 880,
+      "width": 38,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 36.46875,
+     "cw": 36.46875,
+     "sw": 48,
+     "ci": 48,
+     "values": {
+      "texto": "estável",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "88d80b8 · 2026-11-08",
+     "rect": {
+      "x": 1285,
+      "y": 881,
+      "width": 141,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 140.625,
+     "cw": 140.625,
+     "sw": 153,
+     "ci": 153,
+     "values": {
+      "texto": "88d80b8 · 2026-11-08",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Revisão — Detalhes da proposta",
+   "background": "#ffffff",
+   "width": 360,
+   "height": 794,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela Detalhes",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 794
+     },
+     "values": {
+      "janela": "details",
+      "titulo": "Detalhes",
+      "posicao": "right"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Detalhes",
+     "rect": {
+      "x": 328,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Detalhes",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity",
+     "rect": {
+      "x": 13,
+      "y": 40,
+      "width": 335,
+      "height": 83
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "proposal",
+     "rect": {
+      "x": 13,
+      "y": 47,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "proposal",
+      "cor": "accent"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Revisão de teste: botões e pinos",
+     "rect": {
+      "x": 35,
+      "y": 45,
+      "width": 218,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Revisão de teste: botões e pinos",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity-id",
+     "rect": {
+      "x": 13,
+      "y": 70,
+      "width": 134,
+      "height": 24
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "d1814c3b-d6c4-4e2a-81f4-7fc42000a58e",
+     "rect": {
+      "x": 20,
+      "y": 75,
+      "width": 100,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 253.125,
+     "cw": 100,
+     "sw": 253,
+     "ci": 100,
+     "values": {
+      "texto": "d1814c3b-d6c4-4e2a-81f4-7fc42000a58e",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "copy",
+     "rect": {
+      "x": 124,
+      "y": 74,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "copy",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "shots/review-fixture.mjs · claude-code · 08/11/2026, 08:00",
+     "rect": {
+      "x": 13,
+      "y": 96,
+      "width": 306,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "shots/review-fixture.mjs · claude-code · 08/11/2026, 08:00",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mudanças de exemplo para medir o modo revisão.",
+     "rect": {
+      "x": 13,
+      "y": 136,
+      "width": 292,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Mudanças de exemplo para medir o modo revisão.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "review-header",
+     "name": "Cabeçalho da revisão",
+     "rect": {
+      "x": 13,
+      "y": 167,
+      "width": 335,
+      "height": 130
+     },
+     "values": {}
+    },
+    {
+     "type": "decision-mark",
+     "name": "Sem decisão",
+     "rect": {
+      "x": 26,
+      "y": 178,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Proposta",
+     "rect": {
+      "x": 48,
+      "y": 177,
+      "width": 55,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Proposta",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0 aceitas, 0 rejeitadas, 11 sem decisão",
+     "rect": {
+      "x": 108,
+      "y": 178,
+      "width": 201,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0 aceitas, 0 rejeitadas, 11 sem decisão",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-control",
+     "name": "Decisão Revisão de teste: botões e pinos",
+     "rect": {
+      "x": 26,
+      "y": 204,
+      "width": 246,
+      "height": 28
+     },
+     "values": {}
+    },
+    {
+     "type": "button",
+     "name": "Aceitar tudo",
+     "rect": {
+      "x": 26,
+      "y": 204,
+      "width": 118,
+      "height": 28
+     },
+     "values": {
+      "texto": "Aceitar tudo",
+      "variant": "accept",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Rejeitar tudo",
+     "rect": {
+      "x": 150,
+      "y": 204,
+      "width": 121,
+      "height": 28
+     },
+     "values": {
+      "texto": "Rejeitar tudo",
+      "variant": "reject",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar nota",
+     "rect": {
+      "x": 280,
+      "y": 206,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "note",
+      "rotulo": "Adicionar nota",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Decidir aqui decide as 11 mudança(s) abaixo, inclusive os co",
+     "rect": {
+      "x": 26,
+      "y": 240,
+      "width": 309,
+      "height": 48
+     },
+     "lines": 3,
+     "values": {
+      "texto": "Decidir aqui decide as 11 mudança(s) abaixo, inclusive os conflitos (aceitar sobrescreve o valor atual). Cada mudança pode contrariar o nível.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "other-changes",
+     "name": "Outras mudanças",
+     "rect": {
+      "x": 13,
+      "y": 309,
+      "width": 335,
+      "height": 64
+     },
+     "values": {}
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 315,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Outras mudanças",
+     "rect": {
+      "x": 33,
+      "y": 314,
+      "width": 103,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Outras mudanças",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1",
+     "rect": {
+      "x": 139,
+      "y": 315,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .other-change-row",
+     "rect": {
+      "x": 13,
+      "y": 345,
+      "width": 335,
+      "height": 28
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "change-kind",
+     "name": "Alterada",
+     "rect": {
+      "x": 20,
+      "y": 350,
+      "width": 18,
+      "height": 18
+     },
+     "values": {
+      "tipo": "alterada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nome",
+     "rect": {
+      "x": 44,
+      "y": 350,
+      "width": 37,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nome",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Camada 1 → Rascunhos",
+     "rect": {
+      "x": 86,
+      "y": 351,
+      "width": 126,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 126.25,
+     "cw": 126.25,
+     "sw": 126,
+     "ci": 126,
+     "values": {
+      "texto": "Camada 1 → Rascunhos",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "change-mark",
+     "name": "Nome: alterado, pendente",
+     "rect": {
+      "x": 309,
+      "y": 350,
+      "width": 32,
+      "height": 18
+     },
+     "values": {
+      "tipo": "alterada",
+      "estado": "sem-decisao",
+      "conflito": "não",
+      "junto": "não",
+      "parte": "não",
+      "aberto": "não",
+      "alvo": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "other-changes",
+     "name": "Imagens",
+     "rect": {
+      "x": 13,
+      "y": 385,
+      "width": 335,
+      "height": 118
+     },
+     "values": {}
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 391,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Imagens",
+     "rect": {
+      "x": 33,
+      "y": 390,
+      "width": 51,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Imagens",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "2",
+     "rect": {
+      "x": 87,
+      "y": 391,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "2",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .other-change-row",
+     "rect": {
+      "x": 13,
+      "y": 421,
+      "width": 335,
+      "height": 48
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos das conversas — estados",
+     "rect": {
+      "x": 20,
+      "y": 425,
+      "width": 183,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pinos das conversas — estados",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: sem-decisao",
+     "rect": {
+      "x": 20,
+      "y": 450,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "text",
+     "name": "3",
+     "rect": {
+      "x": 36,
+      "y": 447,
+      "width": 8,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "3",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: aceita",
+     "rect": {
+      "x": 60,
+      "y": 450,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "aceita"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 76,
+      "y": 447,
+      "width": 8,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: rejeitada",
+     "rect": {
+      "x": 100,
+      "y": 450,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "rejeitada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 116,
+      "y": 447,
+      "width": 8,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Abrir",
+     "rect": {
+      "x": 295,
+      "y": 433,
+      "width": 46,
+      "height": 24
+     },
+     "values": {
+      "texto": "Abrir",
+      "variant": "default",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .other-change-row",
+     "rect": {
+      "x": 13,
+      "y": 473,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Editor — 1440 × 900",
+     "rect": {
+      "x": 20,
+      "y": 480,
+      "width": 121,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Editor — 1440 × 900",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: sem-decisao",
+     "rect": {
+      "x": 147,
+      "y": 482,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "text",
+     "name": "7",
+     "rect": {
+      "x": 162,
+      "y": 479,
+      "width": 8,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "7",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: aceita",
+     "rect": {
+      "x": 187,
+      "y": 482,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "aceita"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 202,
+      "y": 479,
+      "width": 8,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: rejeitada",
+     "rect": {
+      "x": 227,
+      "y": 482,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "estado": "rejeitada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 242,
+      "y": 479,
+      "width": 8,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Abrir",
+     "rect": {
+      "x": 295,
+      "y": 476,
+      "width": 46,
+      "height": 24
+     },
+     "values": {
+      "texto": "Abrir",
+      "variant": "default",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Revisão — Detalhes da marcação criada",
+   "background": "#ffffff",
+   "width": 360,
+   "height": 794,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela Detalhes",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 794
+     },
+     "values": {
+      "janela": "details",
+      "titulo": "Detalhes",
+      "posicao": "right"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Detalhes",
+     "rect": {
+      "x": 328,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Detalhes",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity",
+     "rect": {
+      "x": 13,
+      "y": 40,
+      "width": 335,
+      "height": 79
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 13,
+      "y": 50,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "accent"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos abertos",
+     "rect": {
+      "x": 35,
+      "y": 48,
+      "width": 93,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pinos abertos",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity-id",
+     "rect": {
+      "x": 180,
+      "y": 46,
+      "width": 134,
+      "height": 24
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "249ed6f2-ef02-427e-8daf-79e19466eb6b",
+     "rect": {
+      "x": 187,
+      "y": 51,
+      "width": 100,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 253.125,
+     "cw": 100,
+     "sw": 253,
+     "ci": 100,
+     "values": {
+      "texto": "249ed6f2-ef02-427e-8daf-79e19466eb6b",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "copy",
+     "rect": {
+      "x": 291,
+      "y": 50,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "copy",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Trancar marcação",
+     "rect": {
+      "x": 320,
+      "y": 44,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "unlock",
+      "rotulo": "Trancar marcação",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Em Pinos das conversas — estados",
+     "rect": {
+      "x": 13,
+      "y": 74,
+      "width": 185,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Em Pinos das conversas — estados",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "flag",
+     "name": "Criada pela proposta",
+     "rect": {
+      "x": 13,
+      "y": 92,
+      "width": 134,
+      "height": 18
+     },
+     "values": {
+      "texto": "Criada pela proposta",
+      "tom": "neutro",
+      "icone": "plus"
+     }
+    },
+    {
+     "type": "review-header",
+     "name": "Cabeçalho da revisão",
+     "rect": {
+      "x": 13,
+      "y": 131,
+      "width": 335,
+      "height": 168
+     },
+     "values": {}
+    },
+    {
+     "type": "decision-mark",
+     "name": "Sem decisão",
+     "rect": {
+      "x": 26,
+      "y": 142,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação criada",
+     "rect": {
+      "x": 48,
+      "y": 141,
+      "width": 100,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Marcação criada",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0 aceitas, 0 rejeitadas, 1 sem decisão",
+     "rect": {
+      "x": 26,
+      "y": 166,
+      "width": 194,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0 aceitas, 0 rejeitadas, 1 sem decisão",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-control",
+     "name": "Decisão Pinos abertos",
+     "rect": {
+      "x": 26,
+      "y": 190,
+      "width": 302,
+      "height": 28
+     },
+     "values": {}
+    },
+    {
+     "type": "button",
+     "name": "Aceitar marcação",
+     "rect": {
+      "x": 26,
+      "y": 190,
+      "width": 147,
+      "height": 28
+     },
+     "values": {
+      "texto": "Aceitar marcação",
+      "variant": "accept",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Rejeitar marcação",
+     "rect": {
+      "x": 179,
+      "y": 190,
+      "width": 150,
+      "height": 28
+     },
+     "values": {
+      "texto": "Rejeitar marcação",
+      "variant": "reject",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar nota",
+     "rect": {
+      "x": 26,
+      "y": 226,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "note",
+      "rotulo": "Adicionar nota",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "A criação é uma mudança só: os campos marcados com + entram ",
+     "rect": {
+      "x": 26,
+      "y": 258,
+      "width": 309,
+      "height": 32
+     },
+     "lines": 2,
+     "values": {
+      "texto": "A criação é uma mudança só: os campos marcados com + entram juntos.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 317,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação",
+     "rect": {
+      "x": 33,
+      "y": 316,
+      "width": 58,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Marcação",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nome",
+     "rect": {
+      "x": 13,
+      "y": 351,
+      "width": 33,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nome",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "change-mark",
+     "name": "Nome: novo, parte da criação de Pinos abertos",
+     "rect": {
+      "x": 111,
+      "y": 350,
+      "width": 18,
+      "height": 18
+     },
+     "values": {
+      "tipo": "criada",
+      "estado": "sem-decisao",
+      "conflito": "não",
+      "junto": "não",
+      "parte": "sim",
+      "aberto": "não",
+      "alvo": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Sem nome",
+     "rect": {
+      "x": 137,
+      "y": 347,
+      "width": 211,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Pinos abertos",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Container",
+     "rect": {
+      "x": 13,
+      "y": 379,
+      "width": 52,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Container",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos das conversas — estados",
+     "rect": {
+      "x": 137,
+      "y": 380,
+      "width": 179,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pinos das conversas — estados",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pertence a",
+     "rect": {
+      "x": 13,
+      "y": 407,
+      "width": 56,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pertence a",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma",
+     "rect": {
+      "x": 137,
+      "y": 408,
+      "width": 57,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nenhuma",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Flutuante",
+     "rect": {
+      "x": 13,
+      "y": 435,
+      "width": 50,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Flutuante",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Flutuante",
+     "rect": {
+      "x": 83,
+      "y": 431,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Flutuante",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "change-mark",
+     "name": "Flutuante: novo, parte da criação de Pinos abertos",
+     "rect": {
+      "x": 111,
+      "y": 434,
+      "width": 18,
+      "height": 18
+     },
+     "values": {
+      "tipo": "criada",
+      "estado": "sem-decisao",
+      "conflito": "não",
+      "junto": "não",
+      "parte": "sim",
+      "aberto": "não",
+      "alvo": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Flutuante",
+     "rect": {
+      "x": 137,
+      "y": 431,
+      "width": 211,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Flutuante",
+      "dica": null,
+      "marcado": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Ordem",
+     "rect": {
+      "x": 13,
+      "y": 467,
+      "width": 37,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Ordem",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Ordem",
+     "rect": {
+      "x": 105,
+      "y": 463,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Ordem",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "1 de 5",
+     "rect": {
+      "x": 137,
+      "y": 468,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1 de 5",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mover para trás",
+     "rect": {
+      "x": 296,
+      "y": 463,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "arrowDown",
+      "rotulo": "Mover para trás",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mover para a frente",
+     "rect": {
+      "x": 324,
+      "y": 463,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "arrowUp",
+      "rotulo": "Mover para a frente",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Posição",
+     "rect": {
+      "x": 13,
+      "y": 495,
+      "width": 40,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Posição",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tamanho",
+     "rect": {
+      "x": 13,
+      "y": 521,
+      "width": 49,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tamanho",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Posição / Tamanho",
+     "rect": {
+      "x": 76,
+      "y": 491,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Posição / Tamanho",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "change-mark",
+     "name": "Posição: novo, parte da criação de Pinos abertos",
+     "rect": {
+      "x": 111,
+      "y": 509,
+      "width": 18,
+      "height": 18
+     },
+     "values": {
+      "tipo": "criada",
+      "estado": "sem-decisao",
+      "conflito": "não",
+      "junto": "não",
+      "parte": "sim",
+      "aberto": "não",
+      "alvo": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "X",
+     "rect": {
+      "x": 137,
+      "y": 495,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "X",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "X",
+     "rect": {
+      "x": 148,
+      "y": 491,
+      "width": 92,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "16",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Y",
+     "rect": {
+      "x": 244,
+      "y": 495,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Y",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Y",
+     "rect": {
+      "x": 255,
+      "y": 491,
+      "width": 93,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "32",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "L",
+     "rect": {
+      "x": 137,
+      "y": 521,
+      "width": 6,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "L",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Largura",
+     "rect": {
+      "x": 147,
+      "y": 517,
+      "width": 94,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "156",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "A",
+     "rect": {
+      "x": 244,
+      "y": 521,
+      "width": 9,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "A",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Altura",
+     "rect": {
+      "x": 256,
+      "y": 517,
+      "width": 92,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "36",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 559,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Anotações",
+     "rect": {
+      "x": 33,
+      "y": 558,
+      "width": 62,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Anotações",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 98,
+      "y": 559,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-group",
+     "rect": {
+      "x": 13,
+      "y": 589,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-group-head",
+     "rect": {
+      "x": 14,
+      "y": 590,
+      "width": 333,
+      "height": 28
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "popup"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 44,
+      "y": 598,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "tooltip",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Rascunhos",
+     "rect": {
+      "x": 62,
+      "y": 595,
+      "width": 65,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 64.671875,
+     "cw": 64.671875,
+     "sw": 65,
+     "ci": 65,
+     "values": {
+      "texto": "Rascunhos",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 133,
+      "y": 596,
+      "width": 183,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 182.90625,
+     "cw": 206.328125,
+     "sw": 206,
+     "ci": 206,
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-group",
+     "rect": {
+      "x": 13,
+      "y": 627,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-group-head",
+     "rect": {
+      "x": 14,
+      "y": 628,
+      "width": 333,
+      "height": 28
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "popup"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 44,
+      "y": 636,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notas",
+     "rect": {
+      "x": 62,
+      "y": 633,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36,
+     "cw": 36,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Notas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Notas",
+     "rect": {
+      "x": 104,
+      "y": 633,
+      "width": 39,
+      "height": 18
+     },
+     "values": {
+      "texto": "Notas",
+      "estilo": "tag"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 149,
+      "y": 634,
+      "width": 183,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 182.90625,
+     "cw": 190.328125,
+     "sw": 190,
+     "ci": 190,
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-group",
+     "rect": {
+      "x": 13,
+      "y": 665,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-group-head",
+     "rect": {
+      "x": 14,
+      "y": 666,
+      "width": 333,
+      "height": 28
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "popup"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 44,
+      "y": 674,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 62,
+      "y": 671,
+      "width": 55,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 55.171875,
+     "cw": 55.171875,
+     "sw": 55,
+     "ci": 55,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Mapping DS",
+     "rect": {
+      "x": 123,
+      "y": 671,
+      "width": 70,
+      "height": 18
+     },
+     "values": {
+      "texto": "Mapping DS",
+      "estilo": "tag"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 200,
+      "y": 672,
+      "width": 139,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 182.90625,
+     "cw": 139.46875,
+     "sw": 183,
+     "ci": 139,
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Revisão — Popover da mudança",
+   "background": "#ffffff",
+   "width": 320,
+   "height": 261,
+   "items": [
+    {
+     "type": "change-popover",
+     "name": "Popover Nome · alterado",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 320,
+      "height": 261
+     },
+     "values": {}
+    },
+    {
+     "type": "change-kind",
+     "name": "Alterada",
+     "rect": {
+      "x": 9,
+      "y": 10,
+      "width": 18,
+      "height": 18
+     },
+     "values": {
+      "tipo": "alterada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nome · alterado",
+     "rect": {
+      "x": 31,
+      "y": 10,
+      "width": 96,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nome · alterado",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "diff-value",
+     "name": "Valores",
+     "rect": {
+      "x": 9,
+      "y": 37,
+      "width": 302,
+      "height": 46
+     },
+     "values": {
+      "linhas": [
+       {
+        "tipo": "antes",
+        "rotulo": "Atual",
+        "valor": "Salvar"
+       },
+       {
+        "tipo": "depois",
+        "rotulo": "Proposto",
+        "valor": "Salvar alterações"
+       }
+      ]
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .change-popover-foot",
+     "rect": {
+      "x": 9,
+      "y": 91,
+      "width": 302,
+      "height": 161
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "cima",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Decisão: Sem decisão",
+     "rect": {
+      "x": 29,
+      "y": 100,
+      "width": 114,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Decisão: Sem decisão",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "decision-mark",
+     "name": "Decisão: sem-decisao",
+     "rect": {
+      "x": 9,
+      "y": 100,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "estado": "sem-decisao"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Aceitar",
+     "rect": {
+      "x": 9,
+      "y": 120,
+      "width": 80,
+      "height": 24
+     },
+     "values": {
+      "texto": "Aceitar",
+      "variant": "accept",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Rejeitar",
+     "rect": {
+      "x": 93,
+      "y": 120,
+      "width": 83,
+      "height": 24
+     },
+     "values": {
+      "texto": "Rejeitar",
+      "variant": "reject",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar nota",
+     "rect": {
+      "x": 9,
+      "y": 148,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "note",
+      "rotulo": "Adicionar nota",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "sim",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "note-field",
+     "name": "Nota para o agente",
+     "rect": {
+      "x": 9,
+      "y": 176,
+      "width": 302,
+      "height": 76
+     },
+     "values": {}
+    },
+    {
+     "type": "text-field",
+     "name": "Nota para o agente",
+     "rect": {
+      "x": 9,
+      "y": 176,
+      "width": 302,
+      "height": 56
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Prefiro manter \"Salvar\": o botão é curto.",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "varias"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Grava ao sair do campo.",
+     "rect": {
+      "x": 9,
+      "y": 236,
+      "width": 128,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Grava ao sair do campo.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    }
+   ]
+  }
+ ]
+}

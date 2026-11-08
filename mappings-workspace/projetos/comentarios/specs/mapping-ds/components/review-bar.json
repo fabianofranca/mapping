@@ -1,0 +1,45 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "review-bar",
+  "name": "ReviewBar",
+  "description": "Moldura da faixa do modo revisão: 40 px em color-selection com a divisória color-accent embaixo. O selo REVISÃO, o título, a origem, o progresso, as contagens e as ações são marcações filhas.",
+  "size": {
+    "width": 1440,
+    "height": 40
+  },
+  "minSize": {
+    "width": 120,
+    "height": 24
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 40
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "faixa",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$token": "color-selection"
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "divisória",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$token": "color-accent"
+        }
+      }
+    ]
+  }
+}

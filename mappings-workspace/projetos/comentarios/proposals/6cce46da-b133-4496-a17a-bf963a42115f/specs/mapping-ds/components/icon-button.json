@@ -1,0 +1,154 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "icon-button",
+  "name": "IconButton",
+  "description": "Botão quadrado de 28 px só com ícone de 16 px; ligado (pressionado) fica cheio de color-accent.",
+  "size": {
+    "width": 28,
+    "height": 28
+  },
+  "minSize": {
+    "width": 24,
+    "height": 24
+  },
+  "sizing": {
+    "width": 28,
+    "height": 28
+  },
+  "preview": {
+    "icone": "plus",
+    "rotulo": "Adicionar",
+    "variant": "default",
+    "pressionado": "não",
+    "alerta": "não",
+    "selo": ""
+  },
+  "template": {
+    "type": "frame",
+    "name": "icon-button",
+    "cornerRadius": 4,
+    "fill": {
+      "$if": {
+        "$field": "pressionado"
+      },
+      "then": "#1a63cc",
+      "else": "rgba(0, 0, 0, 0)"
+    },
+    "children": [
+      {
+        "type": "path",
+        "name": "ícone",
+        "width": 16,
+        "height": 16,
+        "viewBox": [
+          16,
+          16
+        ],
+        "d": {
+          "$switch": "icone",
+          "cases": {
+            "close": "M3.5 3.5l9 9M12.5 3.5l-9 9",
+            "plus": "M8 3v10M3 8h10",
+            "minus": "M3 8h10",
+            "check": "m3 8.5 3.2 3.2L13 4.8",
+            "chevronDown": "m4 6 4 4 4-4",
+            "info": "M2 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0ZM8 7.5V11M7.4 5.2a0.6 0.6 0 1 0 1.2 0a0.6 0.6 0 1 0 -1.2 0Z",
+            "warning": "M8 2.5 14 13H2ZM8 6.5v3M7.4 11.2a0.6 0.6 0 1 0 1.2 0a0.6 0.6 0 1 0 -1.2 0Z",
+            "error": "M2 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0ZM8 5v3.5M7.4 10.8a0.6 0.6 0 1 0 1.2 0a0.6 0.6 0 1 0 -1.2 0Z",
+            "compare": "M2.5 3h11v10h-11ZM8 1.5v13M5.5 6.5l-2 1.5 2 1.5M10.5 6.5l2 1.5-2 1.5",
+            "blocked": "M2 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0ZM3.8 12.2l8.4-8.4",
+            "search": "M2.5 7a4.5 4.5 0 1 0 9 0a4.5 4.5 0 1 0 -9 0ZM10.5 10.5l3 3",
+            "copy": "M6.5 5.5h6a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1ZM10.5 5.5v-1a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1",
+            "trash": "M2.5 4.5h11M6.5 7v4.5M9.5 7v4.5M4 4.5l.7 8.5h6.6l.7-8.5M6 4.5v-2h4v2",
+            "edit": "M2.5 13.5 3.2 10.2 10.2 3.2a1.4 1.4 0 0 1 2 0l.6.6a1.4 1.4 0 0 1 0 2L5.8 12.8Z",
+            "refresh": "M13 3.5v3h-3M12.6 6.5A5 5 0 1 0 13 8.5",
+            "undo": "M5.5 3 2.5 6l3 3M2.5 6h6a4 4 0 0 1 0 8H7",
+            "redo": "m10.5 3 3 3-3 3M13.5 6h-6a4 4 0 0 0 0 8H9",
+            "note": "M2.5 3h11v8H8l-3 2.5V11H2.5ZM5 6h6M5 8.2h3.5",
+            "text": "M3 5V3h10v2M6 13h4M8 3v10",
+            "marking": "M2.5 4h11v8h-11Z",
+            "arrow": "M3 12.5c0-5 3-7 9-7M9 2.5l3 3-3 3"
+          },
+          "default": "M3 3h10v10H3Z"
+        },
+        "fill": "none",
+        "stroke": {
+          "color": {
+            "$if": {
+              "$field": "pressionado"
+            },
+            "then": "#ffffff",
+            "else": {
+              "$switch": "variant",
+              "cases": {
+                "danger": "#c62828",
+                "accept": "#5b6470",
+                "reject": "#5b6470"
+              },
+              "default": "#1b1f24"
+            }
+          },
+          "width": 1.25
+        },
+        "anchors": {
+          "centerX": true,
+          "centerY": true
+        }
+      },
+      {
+        "type": "ellipse",
+        "name": "alerta",
+        "width": 6,
+        "height": 6,
+        "anchors": {
+          "top": 4,
+          "right": 4
+        },
+        "fill": "#c62828",
+        "visible": {
+          "$field": "alerta"
+        }
+      },
+      {
+        "type": "frame",
+        "name": "selo",
+        "width": "hug",
+        "height": 16,
+        "anchors": {
+          "top": 0,
+          "right": 0
+        },
+        "cornerRadius": 999,
+        "fill": "#1a63cc",
+        "visible": {
+          "$has": "selo"
+        },
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            4
+          ],
+          "align": "center",
+          "justify": "center"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "número",
+            "text": {
+              "$field": "selo"
+            },
+            "color": "#ffffff",
+            "font": {
+              "size": 11,
+              "weight": 600,
+              "lineHeight": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "proposal-row",
+  "name": "ProposalRow",
+  "description": "Moldura da linha da lista de propostas: a divisória color-border embaixo. Estado, título, status, contexto, contagens e a ação são marcações filhas.",
+  "size": {
+    "width": 736,
+    "height": 49
+  },
+  "minSize": {
+    "width": 120,
+    "height": 28
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 49
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "linha",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "divisória",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$token": "color-border"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 2,
+  "id": "tabs",
+  "name": "Tabs",
+  "description": "Abas de uma região, de 28 px, com a linha embaixo; a selecionada tem sublinhado de 2 px em color-accent.",
+  "size": {
+    "width": 240,
+    "height": 28
+  },
+  "minSize": {
+    "width": 80,
+    "height": 24
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 28
+  },
+  "preview": {
+    "rotulo": "Janela inferior",
+    "abas": [
+      {
+        "rotulo": "Avisos",
+        "selecionada": "sim",
+        "selo": "3"
+      },
+      {
+        "rotulo": "Comentários",
+        "selecionada": "não",
+        "selo": ""
+      }
+    ]
+  },
+  "template": {
+    "type": "frame",
+    "name": "tabs",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "linha",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "fill": "#dfe3e8"
+      },
+      {
+        "type": "repeat",
+        "name": "abas",
+        "field": "abas",
+        "direction": "row",
+        "gap": 4,
+        "width": "fill",
+        "height": "fill",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "template": {
+          "type": "frame",
+          "name": "aba",
+          "width": "fill",
+          "height": "fill",
+          "layout": {
+            "type": "none"
+          },
+          "children": [
+            {
+              "type": "frame",
+              "name": "conteúdo",
+              "width": "hug",
+              "height": "hug",
+              "anchors": {
+                "centerX": true,
+                "centerY": true
+              },
+              "layout": {
+                "type": "row",
+                "gap": 6,
+                "align": "center"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "name": "rótulo",
+                  "text": {
+                    "$field": "rotulo"
+                  },
+                  "color": {
+                    "$if": {
+                      "$eq": [
+                        "selecionada",
+                        "sim"
+                      ]
+                    },
+                    "then": "#1b1f24",
+                    "else": "#5b6470"
+                  },
+                  "font": {
+                    "size": 13,
+                    "weight": {
+                      "$if": {
+                        "$eq": [
+                          "selecionada",
+                          "sim"
+                        ]
+                      },
+                      "then": 600,
+                      "else": 400
+                    },
+                    "lineHeight": 20
+                  }
+                },
+                {
+                  "type": "frame",
+                  "name": "selo",
+                  "width": "hug",
+                  "height": 16,
+                  "cornerRadius": 999,
+                  "fill": "#eceff3",
+                  "visible": {
+                    "$has": "selo"
+                  },
+                  "layout": {
+                    "type": "row",
+                    "padding": [
+                      0,
+                      6
+                    ],
+                    "align": "center",
+                    "justify": "center"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "name": "contador",
+                      "text": {
+                        "$field": "selo"
+                      },
+                      "color": "#5b6470",
+                      "font": {
+                        "size": 12,
+                        "weight": 400,
+                        "lineHeight": 16
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rect",
+              "name": "sublinhado",
+              "height": 2,
+              "anchors": {
+                "left": 0,
+                "right": 0,
+                "bottom": 0
+              },
+              "fill": "#1a63cc",
+              "visible": {
+                "$eq": [
+                  "selecionada",
+                  "sim"
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

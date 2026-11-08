@@ -1,0 +1,74 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "identity-settings",
+  "name": "IdentitySettings",
+  "description": "Seção Identidade das Configurações: título, o texto de apoio e, sem identidade, o aviso de que só dá para ler as conversas.",
+  "size": {
+    "width": 448,
+    "height": 180
+  },
+  "minSize": {
+    "width": 240,
+    "height": 120
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "semIdentidade": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "identidade",
+    "layout": {
+      "type": "column",
+      "gap": 8
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "título",
+        "text": "Identidade",
+        "color": "#1b1f24",
+        "font": {
+          "size": 15,
+          "weight": 600,
+          "lineHeight": 22
+        },
+        "width": "fill"
+      },
+      {
+        "type": "text",
+        "name": "apoio",
+        "text": "Seu nome e seu e-mail assinam as mensagens que você escreve nas conversas. Ficam só neste dispositivo, nunca no projeto. Use os mesmos do git config.",
+        "color": "#5b6470",
+        "font": {
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 20
+        },
+        "width": "fill"
+      },
+      {
+        "type": "text",
+        "name": "sem identidade",
+        "text": "Sem identidade você só lê as conversas: escrever, resolver, reabrir e apagar pedem nome e e-mail.",
+        "color": "#8a5a00",
+        "font": {
+          "size": 12,
+          "weight": 400,
+          "lineHeight": 16
+        },
+        "width": "fill",
+        "visible": {
+          "$eq": [
+            "semIdentidade",
+            "sim"
+          ]
+        }
+      }
+    ]
+  }
+}

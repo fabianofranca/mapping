@@ -1,0 +1,109 @@
+{
+  "format": "mapping-proposal",
+  "formatVersion": 4,
+  "id": "f0f47ffd-8303-4119-af75-4ead6dae2d54",
+  "title": "Dialog no \"Apagar a conversa\"",
+  "description": "O container \"Apagar a conversa\" não tinha a marcação do Dialog (fundo, título \"Apagar a conversa?\" e o fechar): o extrator recortava o <dialog> pela janela Comentários, onde ele fica no DOM, e o descartava. Sem ele aparecia o fundo branco do container, que é dado do projeto e não segue o modo do desenho (no escuro, o diálogo ficava claro). Cria o Dialog (sm, alerta) com o retângulo inteiro do container; os 6 itens passam a ser filhos dele, como no \"Apagar conversas em lote\".",
+  "origin": "App Mapping: build mcp-v0.25.0 medido no Chromium (extract.mjs corrigido); conferido na prévia do app 0.28.1 no modo escuro",
+  "author": "claude-code",
+  "createdAt": "2026-11-08T10:41:10.900Z",
+  "baseRevision": 20,
+  "supersedes": null,
+  "status": "applied",
+  "revision": 2,
+  "operations": [
+    {
+      "op": "create_marking",
+      "container": "mapping://comentarios/i/13fcbe6e",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 480,
+        "height": 187
+      },
+      "annotation": {
+        "type": "dialog",
+        "values": {
+          "titulo": "Apagar a conversa?",
+          "size": "sm",
+          "alerta": "sim"
+        }
+      }
+    }
+  ],
+  "changes": [
+    {
+      "id": "c1",
+      "kind": "create",
+      "entity": "marking",
+      "entityId": "285344d9-6651-491f-9126-6d8331e3f78f",
+      "imageId": "13fcbe6e-65fd-4100-b0a3-26de9669c2b5",
+      "markingId": "285344d9-6651-491f-9126-6d8331e3f78f",
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "285344d9-6651-491f-9126-6d8331e3f78f",
+        "containerId": "13fcbe6e-65fd-4100-b0a3-26de9669c2b5",
+        "parentId": null,
+        "floating": false,
+        "name": null,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 480,
+          "height": 187
+        },
+        "needsReview": false,
+        "locked": false,
+        "source": null
+      }
+    },
+    {
+      "id": "c2",
+      "kind": "create",
+      "entity": "annotation",
+      "entityId": "e935c731-87dd-48ba-9334-68269e735f2d",
+      "imageId": "13fcbe6e-65fd-4100-b0a3-26de9669c2b5",
+      "markingId": "285344d9-6651-491f-9126-6d8331e3f78f",
+      "field": null,
+      "from": null,
+      "to": {
+        "id": "e935c731-87dd-48ba-9334-68269e735f2d",
+        "markingId": "285344d9-6651-491f-9126-6d8331e3f78f",
+        "layerId": "d37f5585-b576-455b-a242-3ceda24e62a3",
+        "name": null,
+        "parentAnnotationId": null,
+        "parentRole": null,
+        "type": {
+          "specId": "mapping-ds",
+          "typeId": "dialog"
+        },
+        "values": {
+          "titulo": "Apagar a conversa?",
+          "size": "sm",
+          "alerta": "sim"
+        },
+        "entries": []
+      }
+    }
+  ],
+  "decisions": {
+    "c1": {
+      "state": "accepted",
+      "at": "2026-11-08T10:42:01.884Z"
+    },
+    "c2": {
+      "state": "accepted",
+      "at": "2026-11-08T10:42:01.884Z"
+    }
+  },
+  "notes": [],
+  "applied": {
+    "c1": {
+      "at": "2026-11-08T10:42:04.128Z"
+    },
+    "c2": {
+      "at": "2026-11-08T10:42:04.128Z"
+    }
+  }
+}

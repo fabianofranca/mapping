@@ -1,0 +1,38 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "review-header",
+  "name": "ReviewHeader",
+  "description": "Moldura do cabeçalho do item nos Detalhes da revisão: caixa color-bg com borda color-border e raio 6. O estado, a decisão, a nota, as dicas e os avisos são marcações filhas.",
+  "size": {
+    "width": 334,
+    "height": 120
+  },
+  "minSize": {
+    "width": 120,
+    "height": 40
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "cabeçalho",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$token": "color-bg"
+    },
+    "cornerRadius": 6,
+    "stroke": {
+      "color": {
+        "$token": "color-border"
+      },
+      "width": 1
+    },
+    "children": []
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "canvas-marking",
+  "name": "CanvasMarking",
+  "description": "Marcação no canvas: contorno branco com halo e a etiqueta do nome em cv-name-tag. Com fundo \"canvas\", pinta a cor de fundo do canvas para mapear a área.",
+  "size": {
+    "width": 160,
+    "height": 96
+  },
+  "minSize": {
+    "width": 48,
+    "height": 32
+  },
+  "sizing": {
+    "width": 160,
+    "height": 96
+  },
+  "preview": {
+    "nome": "Botão",
+    "fundo": "nenhum"
+  },
+  "template": {
+    "type": "frame",
+    "name": "marcação",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$switch": "fundo",
+      "cases": {
+        "canvas": {
+          "$token": "color-canvas-bg"
+        }
+      },
+      "default": "rgba(0, 0, 0, 0)"
+    },
+    "stroke": {
+      "color": {
+        "$switch": "fundo",
+        "cases": {
+          "canvas": {
+            "$token": "color-border"
+          }
+        },
+        "default": {
+          "$token": "cv-line"
+        }
+      },
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "etiqueta",
+        "width": "hug",
+        "height": 16,
+        "anchors": {
+          "top": 0,
+          "left": 0
+        },
+        "fill": {
+          "$token": "cv-name-tag"
+        },
+        "visible": {
+          "$has": "nome"
+        },
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            6
+          ],
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "nome",
+            "text": {
+              "$field": "nome"
+            },
+            "color": {
+              "$token": "cv-name-tag-text"
+            },
+            "font": {
+              "size": 11,
+              "weight": 600,
+              "lineHeight": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

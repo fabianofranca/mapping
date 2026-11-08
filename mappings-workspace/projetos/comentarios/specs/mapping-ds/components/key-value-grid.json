@@ -1,0 +1,86 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "key-value-grid",
+  "name": "KeyValueGrid",
+  "description": "Caixa da grade de pares da anotação livre: borda de controle, raio 4 e a faixa do cabeçalho (Chave, Valor). Títulos, linhas e células são filhos.",
+  "size": {
+    "width": 317,
+    "height": 124
+  },
+  "minSize": {
+    "width": 80,
+    "height": 26
+  },
+  "sizing": {
+    "width": 317,
+    "height": 124
+  },
+  "preview": {
+    "cabecalho": "sim"
+  },
+  "template": {
+    "type": "frame",
+    "name": "grade",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 4,
+    "stroke": {
+      "color": {
+        "$token": "color-border-control"
+      },
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "cabeçalho",
+        "height": 23,
+        "anchors": {
+          "left": 1,
+          "right": 1,
+          "top": 1
+        },
+        "cornerRadius": [
+          3,
+          3,
+          0,
+          0
+        ],
+        "fill": {
+          "$token": "color-bg"
+        },
+        "visible": {
+          "$not": {
+            "$eq": [
+              "cabecalho",
+              "não"
+            ]
+          }
+        }
+      },
+      {
+        "type": "rect",
+        "name": "divisória do cabeçalho",
+        "height": 1,
+        "anchors": {
+          "left": 1,
+          "right": 1,
+          "top": 24
+        },
+        "fill": {
+          "$token": "color-border"
+        },
+        "visible": {
+          "$not": {
+            "$eq": [
+              "cabecalho",
+              "não"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

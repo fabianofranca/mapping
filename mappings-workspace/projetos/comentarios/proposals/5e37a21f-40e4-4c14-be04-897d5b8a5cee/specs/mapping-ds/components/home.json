@@ -1,0 +1,63 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "home",
+  "name": "Home",
+  "description": "Moldura da tela inicial: o fundo color-bg e a coluna lateral de 240 px em color-surface, com a divisória à direita. A marca, a navegação, os botões e a tabela de projetos são filhos.",
+  "size": {
+    "width": 1440,
+    "height": 900
+  },
+  "minSize": {
+    "width": 480,
+    "height": 240
+  },
+  "sizing": {
+    "width": 1440,
+    "height": 900
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "tela",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$token": "color-bg"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "lateral",
+        "layout": {
+          "type": "none"
+        },
+        "width": 240,
+        "anchors": {
+          "left": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$token": "color-surface"
+        },
+        "children": [
+          {
+            "type": "rect",
+            "name": "divisória",
+            "width": 1,
+            "anchors": {
+              "right": 0,
+              "top": 0,
+              "bottom": 0
+            },
+            "fill": {
+              "$token": "color-border"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

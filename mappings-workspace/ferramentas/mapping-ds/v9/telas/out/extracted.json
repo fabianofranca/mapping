@@ -1,0 +1,8639 @@
+{
+ "containers": [
+  {
+   "name": "Tela inicial — 1440 × 900",
+   "background": "#f6f7f9",
+   "width": 1440,
+   "height": 900,
+   "items": [
+    {
+     "type": "home",
+     "name": "Tela inicial",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 900
+     },
+     "values": {}
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 20,
+      "y": 19,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "accent"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 44,
+      "y": 17,
+      "width": 62,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .home-nav-item",
+     "rect": {
+      "x": 12,
+      "y": 54,
+      "width": 215,
+      "height": 28
+     },
+     "values": {
+      "fundo": "selection",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Projetos",
+     "rect": {
+      "x": 44,
+      "y": 59,
+      "width": 49,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Projetos",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "folder",
+     "rect": {
+      "x": 20,
+      "y": 60,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "folder",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Ajuda",
+     "rect": {
+      "x": 44,
+      "y": 89,
+      "width": 34,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Ajuda",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "help",
+     "rect": {
+      "x": 20,
+      "y": 90,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "help",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Configurações",
+     "rect": {
+      "x": 44,
+      "y": 119,
+      "width": 83,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Configurações",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "settings",
+     "rect": {
+      "x": 20,
+      "y": 120,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "settings",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Começar",
+     "rect": {
+      "x": 384,
+      "y": 28,
+      "width": 60,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Começar",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Novo projeto",
+     "rect": {
+      "x": 805,
+      "y": 24,
+      "width": 125,
+      "height": 28
+     },
+     "values": {
+      "texto": "Novo projeto",
+      "variant": "primary",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Abrir pasta",
+     "rect": {
+      "x": 937,
+      "y": 24,
+      "width": 111,
+      "height": 28
+     },
+     "values": {
+      "texto": "Abrir pasta",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Abrir zip",
+     "rect": {
+      "x": 1056,
+      "y": 24,
+      "width": 96,
+      "height": 28
+     },
+     "values": {
+      "texto": "Abrir zip",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Abrir biblioteca",
+     "rect": {
+      "x": 1160,
+      "y": 24,
+      "width": 136,
+      "height": 28
+     },
+     "values": {
+      "texto": "Abrir biblioteca",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Usa git? Prefira Abrir pasta: o projeto vira arquivos comuns",
+     "rect": {
+      "x": 384,
+      "y": 68,
+      "width": 912,
+      "height": 32
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Usa git? Prefira Abrir pasta: o projeto vira arquivos comuns (mapping.json e images/) que você pode versionar. Ao criar o projeto na pasta, a app também grava um .gitignore com backups/.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .notice",
+     "rect": {
+      "x": 384,
+      "y": 116,
+      "width": 912,
+      "height": 36
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "lg",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aberto como arquivo: projetos \"neste dispositivo\" podem não ",
+     "rect": {
+      "x": 400,
+      "y": 125,
+      "width": 737,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Aberto como arquivo: projetos \"neste dispositivo\" podem não ser mantidos pelo navegador. No computador, prefira Abrir pasta.",
+      "estilo": "t-body",
+      "cor": "warning",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Projetos recentes",
+     "rect": {
+      "x": 384,
+      "y": 169,
+      "width": 117,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Projetos recentes",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Buscar projetos",
+     "rect": {
+      "x": 384,
+      "y": 202,
+      "width": 480,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .project-table",
+     "rect": {
+      "x": 384,
+      "y": 242,
+      "width": 912,
+      "height": 75
+     },
+     "values": {
+      "fundo": "surface",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "lg",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 385,
+      "y": 243,
+      "width": 274,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nome",
+     "rect": {
+      "x": 397,
+      "y": 251,
+      "width": 33,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nome",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 658,
+      "y": 243,
+      "width": 205,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Origem",
+     "rect": {
+      "x": 670,
+      "y": 251,
+      "width": 41,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Origem",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 863,
+      "y": 243,
+      "width": 211,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Último uso",
+     "rect": {
+      "x": 875,
+      "y": 251,
+      "width": 58,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Último uso",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 1074,
+      "y": 243,
+      "width": 221,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Sistema de comentários",
+     "rect": {
+      "x": 397,
+      "y": 287,
+      "width": 141,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Sistema de comentários",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Neste dispositivo",
+     "rect": {
+      "x": 670,
+      "y": 288,
+      "width": 100,
+      "height": 17
+     },
+     "values": {
+      "texto": "Neste dispositivo",
+      "estilo": "preview"
+     }
+    },
+    {
+     "type": "text",
+     "name": "07/11/2026, 11:39",
+     "rect": {
+      "x": 875,
+      "y": 287,
+      "width": 104,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "07/11/2026, 11:39",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Abrir",
+     "rect": {
+      "x": 1174,
+      "y": 284,
+      "width": 46,
+      "height": 24
+     },
+     "values": {
+      "texto": "Abrir",
+      "variant": "default",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Excluir",
+     "rect": {
+      "x": 1228,
+      "y": 284,
+      "width": 55,
+      "height": 24
+     },
+     "values": {
+      "texto": "Excluir",
+      "variant": "danger",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Janela estreita — 800 × 600",
+   "background": "#f6f7f9",
+   "width": 800,
+   "height": 600,
+   "items": [
+    {
+     "type": "narrow-window",
+     "name": "Abra numa janela maior",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 800,
+      "height": 600
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Abra numa janela maior",
+     "rect": {
+      "x": 318,
+      "y": 266,
+      "width": 164,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Abra numa janela maior",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "O Mapping precisa de uma janela de pelo menos 900 × 720 px. ",
+     "rect": {
+      "x": 160,
+      "y": 296,
+      "width": 480,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "O Mapping precisa de uma janela de pelo menos 900 × 720 px. O projeto continua aberto e as alterações continuam sendo salvas.",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Catálogo da biblioteca — 1440 × 900",
+   "background": "#f6f7f9",
+   "width": 1440,
+   "height": 900,
+   "items": [
+    {
+     "type": "catalog-screen",
+     "name": "Catálogo da biblioteca",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 900
+     },
+     "values": {}
+    },
+    {
+     "type": "button",
+     "name": "Voltar à tela inicial",
+     "rect": {
+      "x": 16,
+      "y": 8,
+      "width": 152,
+      "height": 28
+     },
+     "values": {
+      "texto": "Voltar à tela inicial",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping DS",
+     "rect": {
+      "x": 180,
+      "y": 12,
+      "width": 85,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Mapping DS",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "versão 4",
+     "rect": {
+      "x": 276,
+      "y": 13,
+      "width": 49,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "versão 4",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pacote válido, sem erros nem avisos.",
+     "rect": {
+      "x": 16,
+      "y": 62,
+      "width": 209,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pacote válido, sem erros nem avisos.",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Buscar componente",
+     "rect": {
+      "x": 16,
+      "y": 93,
+      "width": 360,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 16,
+      "y": 137,
+      "width": 48,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .catalog-entry",
+     "rect": {
+      "x": 16,
+      "y": 157,
+      "width": 360,
+      "height": 28
+     },
+     "values": {
+      "fundo": "selection",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Button",
+     "rect": {
+      "x": 24,
+      "y": 162,
+      "width": 39,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Button",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "IconButton",
+     "rect": {
+      "x": 24,
+      "y": 192,
+      "width": 64,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "IconButton",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "TextField",
+     "rect": {
+      "x": 24,
+      "y": 222,
+      "width": 50,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "TextField",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Select",
+     "rect": {
+      "x": 24,
+      "y": 252,
+      "width": 35,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Select",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Choice",
+     "rect": {
+      "x": 24,
+      "y": 282,
+      "width": 39,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Choice",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Segmented",
+     "rect": {
+      "x": 24,
+      "y": 312,
+      "width": 66,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Segmented",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabs",
+     "rect": {
+      "x": 24,
+      "y": 342,
+      "width": 26,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tabs",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tooltip",
+     "rect": {
+      "x": 24,
+      "y": 372,
+      "width": 40,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tooltip",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "HelpTip",
+     "rect": {
+      "x": 24,
+      "y": 402,
+      "width": 45,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "HelpTip",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tags",
+     "rect": {
+      "x": 24,
+      "y": 432,
+      "width": 26,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tags",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Menu",
+     "rect": {
+      "x": 24,
+      "y": 462,
+      "width": 34,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Menu",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Dialog",
+     "rect": {
+      "x": 24,
+      "y": 492,
+      "width": 38,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Dialog",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "containerMark",
+     "rect": {
+      "x": 352,
+      "y": 493,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "containerMark",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "ConfirmDialogs",
+     "rect": {
+      "x": 24,
+      "y": 522,
+      "width": 89,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "ConfirmDialogs",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Banner",
+     "rect": {
+      "x": 24,
+      "y": 552,
+      "width": 41,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Banner",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notice",
+     "rect": {
+      "x": 24,
+      "y": 582,
+      "width": 38,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Notice",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "NoticeBadge",
+     "rect": {
+      "x": 24,
+      "y": 612,
+      "width": 74,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "NoticeBadge",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Breadcrumbs",
+     "rect": {
+      "x": 24,
+      "y": 642,
+      "width": 76,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Breadcrumbs",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "StatusBar",
+     "rect": {
+      "x": 24,
+      "y": 672,
+      "width": 54,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "StatusBar",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "ToolWindow",
+     "rect": {
+      "x": 24,
+      "y": 702,
+      "width": 72,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "ToolWindow",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "containerMark",
+     "rect": {
+      "x": 352,
+      "y": 703,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "containerMark",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "ToolStripButton",
+     "rect": {
+      "x": 24,
+      "y": 732,
+      "width": 89,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "ToolStripButton",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "NarrowWindow",
+     "rect": {
+      "x": 24,
+      "y": 762,
+      "width": 90,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "NarrowWindow",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Home",
+     "rect": {
+      "x": 24,
+      "y": 792,
+      "width": 35,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Home",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "HelpDialog",
+     "rect": {
+      "x": 24,
+      "y": 822,
+      "width": 65,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "HelpDialog",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Arrow",
+     "rect": {
+      "x": 24,
+      "y": 852,
+      "width": 35,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Arrow",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "catalog-page",
+     "name": "Página Button",
+     "rect": {
+      "x": 392,
+      "y": 93,
+      "width": 1032,
+      "height": 791
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Button",
+     "rect": {
+      "x": 392,
+      "y": 94,
+      "width": 47,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Button",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "button · Mapping",
+     "rect": {
+      "x": 392,
+      "y": 120,
+      "width": 105,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "button · Mapping",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Botão com texto. Use para uma ação da tela; o estado (hover,",
+     "rect": {
+      "x": 392,
+      "y": 145,
+      "width": 1032,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Botão com texto. Use para uma ação da tela; o estado (hover, pressionado, foco, desabilitado) vem do CSS e dos tokens, não do componente. As variantes accept e reject são os botões de decisão da revisão.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Documento",
+     "rect": {
+      "x": 392,
+      "y": 201,
+      "width": 70,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Documento",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Button",
+     "rect": {
+      "x": 392,
+      "y": 228,
+      "width": 62,
+      "height": 27
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Button",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Botão com texto, do src/ui/controls/Button.tsx. Use para uma",
+     "rect": {
+      "x": 392,
+      "y": 257,
+      "width": 472,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Botão com texto, do src/ui/controls/Button.tsx. Use para uma ação da tela.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Variantes",
+     "rect": {
+      "x": 392,
+      "y": 293,
+      "width": 63,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Variantes",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .markdown-table",
+     "rect": {
+      "x": 392,
+      "y": 326,
+      "width": 1032,
+      "height": 177
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 394,
+      "y": 328,
+      "width": 131,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 402,
+      "y": 336,
+      "width": 57,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "variant",
+     "rect": {
+      "x": 406,
+      "y": 336,
+      "width": 50,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "variant",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 525,
+      "y": 328,
+      "width": 709,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aparência",
+     "rect": {
+      "x": 533,
+      "y": 333,
+      "width": 59,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Aparência",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 394,
+      "y": 357,
+      "width": 131,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 402,
+      "y": 365,
+      "width": 57,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "default",
+     "rect": {
+      "x": 406,
+      "y": 365,
+      "width": 50,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "default",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 525,
+      "y": 357,
+      "width": 709,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Fundo color-surface, borda de controle.",
+     "rect": {
+      "x": 533,
+      "y": 362,
+      "width": 252,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Fundo color-surface, borda de controle.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 394,
+      "y": 386,
+      "width": 131,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 402,
+      "y": 394,
+      "width": 57,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "primary",
+     "rect": {
+      "x": 406,
+      "y": 394,
+      "width": 50,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "primary",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 525,
+      "y": 386,
+      "width": 709,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Cheio de color-accent, texto color-accent-text. Um por regiã",
+     "rect": {
+      "x": 533,
+      "y": 391,
+      "width": 407,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Cheio de color-accent, texto color-accent-text. Um por região.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 394,
+      "y": 415,
+      "width": 131,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 402,
+      "y": 423,
+      "width": 50,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "danger",
+     "rect": {
+      "x": 406,
+      "y": 423,
+      "width": 43,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "danger",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 525,
+      "y": 415,
+      "width": 709,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Borda e texto color-danger.",
+     "rect": {
+      "x": 533,
+      "y": 420,
+      "width": 177,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Borda e texto color-danger.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 394,
+      "y": 444,
+      "width": 131,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 402,
+      "y": 452,
+      "width": 43,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "ghost",
+     "rect": {
+      "x": 406,
+      "y": 452,
+      "width": 36,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "ghost",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 525,
+      "y": 444,
+      "width": 709,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Sem borda nem fundo em repouso.",
+     "rect": {
+      "x": 533,
+      "y": 449,
+      "width": 205,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Sem borda nem fundo em repouso.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 394,
+      "y": 473,
+      "width": 131,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "accept e reject",
+     "rect": {
+      "x": 402,
+      "y": 478,
+      "width": 115,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "accept e reject",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 525,
+      "y": 473,
+      "width": 709,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Os botões de decisão da revisão; em repouso, como o default.",
+     "rect": {
+      "x": 533,
+      "y": 478,
+      "width": 693,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Os botões de decisão da revisão; em repouso, como o default. O estado marcado (aria-pressed) não é desenhado.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tamanho",
+     "rect": {
+      "x": 392,
+      "y": 520,
+      "width": 63,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tamanho",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "O desenho segue o retângulo da marcação. A altura é 28 px no",
+     "rect": {
+      "x": 392,
+      "y": 542,
+      "width": 983,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "O desenho segue o retângulo da marcação. A altura é 28 px no size=\"md\" e 24 px no sm; no sm o desenho só troca o espaço lateral, então ajuste a altura da marcação.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Estados",
+     "rect": {
+      "x": 392,
+      "y": 578,
+      "width": 52,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Estados",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Hover, pressionado e foco vêm do CSS e não são desenhados. O",
+     "rect": {
+      "x": 392,
+      "y": 600,
+      "width": 629,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Hover, pressionado e foco vêm do CSS e não são desenhados. O desabilitado usa opacity-disabled (0,45).",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "O texto é o filho (children) do componente. Para um link com",
+     "rect": {
+      "x": 392,
+      "y": 620,
+      "width": 719,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "O texto é o filho (children) do componente. Para um link com a aparência de botão, use LinkButton, do mesmo arquivo.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Propriedades",
+     "rect": {
+      "x": 392,
+      "y": 656,
+      "width": 78,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Propriedades",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .catalog-table-wrap",
+     "rect": {
+      "x": 392,
+      "y": 683,
+      "width": 1032,
+      "height": 130
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 393,
+      "y": 684,
+      "width": 127,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Chave",
+     "rect": {
+      "x": 401,
+      "y": 688,
+      "width": 31,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Chave",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 520,
+      "y": 684,
+      "width": 108,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Rótulo",
+     "rect": {
+      "x": 528,
+      "y": 688,
+      "width": 34,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Rótulo",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 628,
+      "y": 684,
+      "width": 72,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tipo",
+     "rect": {
+      "x": 635,
+      "y": 688,
+      "width": 23,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tipo",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 700,
+      "y": 684,
+      "width": 99,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Obrigatório",
+     "rect": {
+      "x": 707,
+      "y": 688,
+      "width": 60,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Obrigatório",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 799,
+      "y": 684,
+      "width": 340,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Opções",
+     "rect": {
+      "x": 806,
+      "y": 688,
+      "width": 39,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Opções",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 1139,
+      "y": 684,
+      "width": 71,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Padrão",
+     "rect": {
+      "x": 1146,
+      "y": 688,
+      "width": 36,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Padrão",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 1209,
+      "y": 684,
+      "width": 214,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Descrição",
+     "rect": {
+      "x": 1217,
+      "y": 688,
+      "width": 49,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Descrição",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .catalog-prop-key",
+     "rect": {
+      "x": 393,
+      "y": 709,
+      "width": 127,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "texto",
+     "rect": {
+      "x": 401,
+      "y": 715,
+      "width": 33,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "texto",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 520,
+      "y": 709,
+      "width": 108,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "texto",
+     "rect": {
+      "x": 528,
+      "y": 713,
+      "width": 28,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "texto",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 628,
+      "y": 709,
+      "width": 72,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "texto",
+     "rect": {
+      "x": 635,
+      "y": 713,
+      "width": 28,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "texto",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 700,
+      "y": 709,
+      "width": 99,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "sim",
+     "rect": {
+      "x": 707,
+      "y": 713,
+      "width": 20,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "sim",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 799,
+      "y": 709,
+      "width": 340,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 1139,
+      "y": 709,
+      "width": 71,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 1209,
+      "y": 709,
+      "width": 214,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .catalog-prop-key",
+     "rect": {
+      "x": 393,
+      "y": 735,
+      "width": 127,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "variant",
+     "rect": {
+      "x": 401,
+      "y": 741,
+      "width": 47,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "variant",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 520,
+      "y": 735,
+      "width": 108,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "variant",
+     "rect": {
+      "x": 528,
+      "y": 739,
+      "width": 36,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "variant",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 628,
+      "y": 735,
+      "width": 72,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "opções",
+     "rect": {
+      "x": 635,
+      "y": 739,
+      "width": 39,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "opções",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 700,
+      "y": 735,
+      "width": 99,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 799,
+      "y": 735,
+      "width": 340,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "default, primary, danger, accept, reject, ghost",
+     "rect": {
+      "x": 806,
+      "y": 739,
+      "width": 240,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "default, primary, danger, accept, reject, ghost",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 1139,
+      "y": 735,
+      "width": 71,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "default",
+     "rect": {
+      "x": 1146,
+      "y": 739,
+      "width": 38,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "default",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 1209,
+      "y": 735,
+      "width": 214,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .catalog-prop-key",
+     "rect": {
+      "x": 393,
+      "y": 761,
+      "width": 127,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "size",
+     "rect": {
+      "x": 401,
+      "y": 767,
+      "width": 27,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "size",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 520,
+      "y": 761,
+      "width": 108,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "size",
+     "rect": {
+      "x": 528,
+      "y": 765,
+      "width": 20,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "size",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 628,
+      "y": 761,
+      "width": 72,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "opções",
+     "rect": {
+      "x": 635,
+      "y": 765,
+      "width": 39,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "opções",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 700,
+      "y": 761,
+      "width": 99,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 799,
+      "y": 761,
+      "width": 340,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "md, sm",
+     "rect": {
+      "x": 806,
+      "y": 765,
+      "width": 40,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "md, sm",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 1139,
+      "y": 761,
+      "width": 71,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "md",
+     "rect": {
+      "x": 1146,
+      "y": 765,
+      "width": 18,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "md",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 1209,
+      "y": 761,
+      "width": 214,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "desabilitado",
+     "rect": {
+      "x": 401,
+      "y": 793,
+      "width": 80,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "desabilitado",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "desabilitado",
+     "rect": {
+      "x": 528,
+      "y": 791,
+      "width": 65,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "desabilitado",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "opções",
+     "rect": {
+      "x": 635,
+      "y": 791,
+      "width": 39,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "opções",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "sim, não",
+     "rect": {
+      "x": 806,
+      "y": 791,
+      "width": 46,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "sim, não",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "não",
+     "rect": {
+      "x": 1146,
+      "y": 791,
+      "width": 21,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "não",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Código",
+     "rect": {
+      "x": 392,
+      "y": 830,
+      "width": 43,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Código",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Web (Preact) (typescript)",
+     "rect": {
+      "x": 392,
+      "y": 858,
+      "width": 147,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Web (Preact) (typescript)",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Janela Catálogo — Mapping DS",
+   "background": "#ffffff",
+   "width": 264,
+   "height": 834,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela Catálogo",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 264,
+      "height": 834
+     },
+     "values": {
+      "janela": "catalog",
+      "titulo": "Catálogo",
+      "posicao": "left"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Catálogo",
+     "rect": {
+      "x": 231,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Catálogo",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "catalog-window",
+     "name": "Catálogo",
+     "rect": {
+      "x": 12,
+      "y": 32,
+      "width": 239,
+      "height": 802
+     },
+     "values": {}
+    },
+    {
+     "type": "tabs",
+     "name": "Seções do Catálogo",
+     "rect": {
+      "x": 12,
+      "y": 32,
+      "width": 239,
+      "height": 29
+     },
+     "values": {
+      "rotulo": "Seções do Catálogo"
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Componentes",
+     "rect": {
+      "x": 12,
+      "y": 32,
+      "width": 118,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Componentes",
+      "selecionada": "sim",
+      "selo": null,
+      "tamanho": "md",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Paleta",
+     "rect": {
+      "x": 134,
+      "y": 32,
+      "width": 118,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Paleta",
+      "selecionada": "não",
+      "selo": null,
+      "tamanho": "md",
+      "icone": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Biblioteca",
+     "rect": {
+      "x": 12,
+      "y": 69,
+      "width": 52,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Biblioteca",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "select",
+     "name": "Select",
+     "rect": {
+      "x": 12,
+      "y": 89,
+      "width": 239,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Mapping DS",
+      "size": "md",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pacote válido, sem erros nem avisos.",
+     "rect": {
+      "x": 12,
+      "y": 118,
+      "width": 209,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pacote válido, sem erros nem avisos.",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Buscar componente",
+     "rect": {
+      "x": 12,
+      "y": 149,
+      "width": 239,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 12,
+      "y": 193,
+      "width": 48,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Button",
+     "rect": {
+      "x": 20,
+      "y": 218,
+      "width": 39,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Button",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "IconButton",
+     "rect": {
+      "x": 20,
+      "y": 248,
+      "width": 64,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "IconButton",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "TextField",
+     "rect": {
+      "x": 20,
+      "y": 278,
+      "width": 50,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "TextField",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Select",
+     "rect": {
+      "x": 20,
+      "y": 308,
+      "width": 35,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Select",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Choice",
+     "rect": {
+      "x": 20,
+      "y": 338,
+      "width": 39,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Choice",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Segmented",
+     "rect": {
+      "x": 20,
+      "y": 368,
+      "width": 66,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Segmented",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabs",
+     "rect": {
+      "x": 20,
+      "y": 398,
+      "width": 26,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tabs",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tooltip",
+     "rect": {
+      "x": 20,
+      "y": 428,
+      "width": 40,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tooltip",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "HelpTip",
+     "rect": {
+      "x": 20,
+      "y": 458,
+      "width": 45,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "HelpTip",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tags",
+     "rect": {
+      "x": 20,
+      "y": 488,
+      "width": 26,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tags",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Menu",
+     "rect": {
+      "x": 20,
+      "y": 518,
+      "width": 34,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Menu",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Dialog",
+     "rect": {
+      "x": 20,
+      "y": 548,
+      "width": 38,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Dialog",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "containerMark",
+     "rect": {
+      "x": 227,
+      "y": 549,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "containerMark",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "ConfirmDialogs",
+     "rect": {
+      "x": 20,
+      "y": 578,
+      "width": 89,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "ConfirmDialogs",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Banner",
+     "rect": {
+      "x": 20,
+      "y": 608,
+      "width": 41,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Banner",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notice",
+     "rect": {
+      "x": 20,
+      "y": 638,
+      "width": 38,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Notice",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "NoticeBadge",
+     "rect": {
+      "x": 20,
+      "y": 668,
+      "width": 74,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "NoticeBadge",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Breadcrumbs",
+     "rect": {
+      "x": 20,
+      "y": 698,
+      "width": 76,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Breadcrumbs",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "StatusBar",
+     "rect": {
+      "x": 20,
+      "y": 728,
+      "width": 54,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "StatusBar",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "ToolWindow",
+     "rect": {
+      "x": 20,
+      "y": 758,
+      "width": 72,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "ToolWindow",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "containerMark",
+     "rect": {
+      "x": 227,
+      "y": 759,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "containerMark",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "ToolStripButton",
+     "rect": {
+      "x": 20,
+      "y": 788,
+      "width": 89,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "ToolStripButton",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "NarrowWindow",
+     "rect": {
+      "x": 20,
+      "y": 818,
+      "width": 90,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "NarrowWindow",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Catálogo — página do componente Notice",
+   "background": "#ffffff",
+   "width": 820,
+   "height": 640,
+   "items": [
+    {
+     "type": "dialog",
+     "name": "Notice",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 820,
+      "height": 640
+     },
+     "values": {
+      "titulo": "Notice",
+      "size": "lg",
+      "alerta": "não"
+     }
+    },
+    {
+     "type": "catalog-page",
+     "name": "Página Notice",
+     "rect": {
+      "x": 17,
+      "y": 61,
+      "width": 786,
+      "height": 525
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Notice",
+     "rect": {
+      "x": 17,
+      "y": 62,
+      "width": 39,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Notice",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Adicionar à tela",
+     "rect": {
+      "x": 688,
+      "y": 65,
+      "width": 115,
+      "height": 28
+     },
+     "values": {
+      "texto": "Adicionar à tela",
+      "variant": "primary",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "text",
+     "name": "notice · Mapping",
+     "rect": {
+      "x": 17,
+      "y": 102,
+      "width": 105,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "notice · Mapping",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aviso em caixa, com tom (informação, atenção, erro, sucesso)",
+     "rect": {
+      "x": 17,
+      "y": 127,
+      "width": 467,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Aviso em caixa, com tom (informação, atenção, erro, sucesso), título, dica e ações.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Documento",
+     "rect": {
+      "x": 17,
+      "y": 163,
+      "width": 70,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Documento",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notice",
+     "rect": {
+      "x": 17,
+      "y": 190,
+      "width": 60,
+      "height": 27
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Notice",
+      "estilo": "t-display",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aviso em caixa, do src/ui/Notice.tsx.",
+     "rect": {
+      "x": 17,
+      "y": 219,
+      "width": 240,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Aviso em caixa, do src/ui/Notice.tsx.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .markdown-table",
+     "rect": {
+      "x": 17,
+      "y": 250,
+      "width": 786,
+      "height": 148
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "md",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 19,
+      "y": 252,
+      "width": 74,
+      "height": 29
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 27,
+      "y": 260,
+      "width": 29,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "tom",
+     "rect": {
+      "x": 31,
+      "y": 260,
+      "width": 22,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "tom",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 93,
+      "y": 252,
+      "width": 138,
+      "height": 29
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Fundo",
+     "rect": {
+      "x": 101,
+      "y": 257,
+      "width": 38,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Fundo",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 230,
+      "y": 252,
+      "width": 116,
+      "height": 29
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Borda",
+     "rect": {
+      "x": 238,
+      "y": 257,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Borda",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 347,
+      "y": 252,
+      "width": 173,
+      "height": 29
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Ícone",
+     "rect": {
+      "x": 355,
+      "y": 257,
+      "width": 33,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Ícone",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 19,
+      "y": 281,
+      "width": 74,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 27,
+      "y": 289,
+      "width": 36,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "info",
+     "rect": {
+      "x": 31,
+      "y": 289,
+      "width": 29,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "info",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 93,
+      "y": 281,
+      "width": 138,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 101,
+      "y": 289,
+      "width": 113,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "color-selection",
+     "rect": {
+      "x": 105,
+      "y": 289,
+      "width": 106,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "color-selection",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 230,
+      "y": 281,
+      "width": 116,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "nenhuma",
+     "rect": {
+      "x": 238,
+      "y": 286,
+      "width": 55,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "nenhuma",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 347,
+      "y": 281,
+      "width": 173,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "info, em color-accent",
+     "rect": {
+      "x": 355,
+      "y": 286,
+      "width": 157,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "info, em color-accent",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 19,
+      "y": 310,
+      "width": 74,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 27,
+      "y": 318,
+      "width": 57,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "warning",
+     "rect": {
+      "x": 31,
+      "y": 318,
+      "width": 50,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "warning",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 93,
+      "y": 310,
+      "width": 138,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 101,
+      "y": 318,
+      "width": 121,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "color-warning-bg",
+     "rect": {
+      "x": 105,
+      "y": 318,
+      "width": 113,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "color-warning-bg",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 230,
+      "y": 310,
+      "width": 116,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 239,
+      "y": 318,
+      "width": 99,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "color-warning",
+     "rect": {
+      "x": 242,
+      "y": 318,
+      "width": 93,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "color-warning",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 347,
+      "y": 310,
+      "width": 173,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 355,
+      "y": 318,
+      "width": 57,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "warning",
+     "rect": {
+      "x": 359,
+      "y": 318,
+      "width": 50,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "warning",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 19,
+      "y": 339,
+      "width": 74,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 27,
+      "y": 347,
+      "width": 43,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "error",
+     "rect": {
+      "x": 31,
+      "y": 347,
+      "width": 36,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "error",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 93,
+      "y": 339,
+      "width": 138,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 101,
+      "y": 347,
+      "width": 113,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "color-danger-bg",
+     "rect": {
+      "x": 105,
+      "y": 347,
+      "width": 106,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "color-danger-bg",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 230,
+      "y": 339,
+      "width": 116,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 239,
+      "y": 347,
+      "width": 92,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "color-danger",
+     "rect": {
+      "x": 242,
+      "y": 347,
+      "width": 86,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "color-danger",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 347,
+      "y": 339,
+      "width": 173,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 355,
+      "y": 347,
+      "width": 43,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "error",
+     "rect": {
+      "x": 359,
+      "y": 347,
+      "width": 36,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "error",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 19,
+      "y": 368,
+      "width": 74,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 27,
+      "y": 376,
+      "width": 57,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "success",
+     "rect": {
+      "x": 31,
+      "y": 376,
+      "width": 50,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "success",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 93,
+      "y": 368,
+      "width": 138,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 101,
+      "y": 376,
+      "width": 121,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "color-success-bg",
+     "rect": {
+      "x": 105,
+      "y": 376,
+      "width": 113,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "color-success-bg",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 230,
+      "y": 368,
+      "width": 116,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 239,
+      "y": 376,
+      "width": 99,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "color-success",
+     "rect": {
+      "x": 242,
+      "y": 376,
+      "width": 93,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "color-success",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 347,
+      "y": 368,
+      "width": 173,
+      "height": 29
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa code",
+     "rect": {
+      "x": 355,
+      "y": 376,
+      "width": 43,
+      "height": 14
+     },
+     "values": {
+      "fundo": "hover",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "check",
+     "rect": {
+      "x": 359,
+      "y": 376,
+      "width": 36,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "check",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "tamanho sm reduz o espaço e a fonte (12 px).",
+     "rect": {
+      "x": 41,
+      "y": 399,
+      "width": 274,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "tamanho sm reduz o espaço e a fonte (12 px).",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "titulo aparece em negrito acima do texto.",
+     "rect": {
+      "x": 41,
+      "y": 419,
+      "width": 257,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "titulo aparece em negrito acima do texto.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "O tamanho line (uma linha só, com reticências), as ações e o",
+     "rect": {
+      "x": 41,
+      "y": 439,
+      "width": 742,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "O tamanho line (uma linha só, com reticências), as ações e o botão de dispensar não são desenhados; dica só vale no line.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "O texto é o filho (children) do componente.",
+     "rect": {
+      "x": 17,
+      "y": 459,
+      "width": 281,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "O texto é o filho (children) do componente.",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Propriedades",
+     "rect": {
+      "x": 17,
+      "y": 495,
+      "width": 78,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Propriedades",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 18,
+      "y": 523,
+      "width": 78,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Chave",
+     "rect": {
+      "x": 26,
+      "y": 527,
+      "width": 31,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Chave",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 96,
+      "y": 523,
+      "width": 79,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Rótulo",
+     "rect": {
+      "x": 103,
+      "y": 527,
+      "width": 34,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Rótulo",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 175,
+      "y": 523,
+      "width": 68,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tipo",
+     "rect": {
+      "x": 182,
+      "y": 527,
+      "width": 24,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tipo",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 243,
+      "y": 523,
+      "width": 93,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Obrigatório",
+     "rect": {
+      "x": 250,
+      "y": 527,
+      "width": 59,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Obrigatório",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 335,
+      "y": 523,
+      "width": 203,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Opções",
+     "rect": {
+      "x": 343,
+      "y": 527,
+      "width": 38,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Opções",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 538,
+      "y": 523,
+      "width": 64,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Padrão",
+     "rect": {
+      "x": 546,
+      "y": 527,
+      "width": 35,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Padrão",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 602,
+      "y": 523,
+      "width": 200,
+      "height": 25
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Descrição",
+     "rect": {
+      "x": 609,
+      "y": 527,
+      "width": 49,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Descrição",
+      "estilo": "t-micro",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .catalog-prop-key",
+     "rect": {
+      "x": 18,
+      "y": 548,
+      "width": 78,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "tom",
+     "rect": {
+      "x": 26,
+      "y": 554,
+      "width": 20,
+      "height": 14
+     },
+     "lines": 1,
+     "values": {
+      "texto": "tom",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 96,
+      "y": 548,
+      "width": 79,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "tom",
+     "rect": {
+      "x": 103,
+      "y": 552,
+      "width": 23,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "tom",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 175,
+      "y": 548,
+      "width": 68,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "opções",
+     "rect": {
+      "x": 182,
+      "y": 552,
+      "width": 39,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "opções",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 243,
+      "y": 548,
+      "width": 93,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "sim",
+     "rect": {
+      "x": 250,
+      "y": 552,
+      "width": 19,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "sim",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 335,
+      "y": 548,
+      "width": 203,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "info, warning, error, success",
+     "rect": {
+      "x": 343,
+      "y": 552,
+      "width": 147,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "info, warning, error, success",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 538,
+      "y": 548,
+      "width": 64,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "info",
+     "rect": {
+      "x": 546,
+      "y": 552,
+      "width": 21,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "info",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa td",
+     "rect": {
+      "x": 602,
+      "y": 548,
+      "width": 200,
+      "height": 26
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .dialog-actions",
+     "rect": {
+      "x": 1,
+      "y": 586,
+      "width": 818,
+      "height": 53
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "cima",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Fechar",
+     "rect": {
+      "x": 739,
+      "y": 599,
+      "width": 64,
+      "height": 28
+     },
+     "values": {
+      "texto": "Fechar",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Janela Avisos — 3 avisos",
+   "background": "#ffffff",
+   "width": 736,
+   "height": 472,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela notices",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 736,
+      "height": 472
+     },
+     "values": {
+      "janela": "notices",
+      "titulo": null,
+      "posicao": "bottom"
+     }
+    },
+    {
+     "type": "tabs",
+     "name": "Janelas inferiores",
+     "rect": {
+      "x": 0,
+      "y": 1,
+      "width": 702,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Janelas inferiores"
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Lista",
+     "rect": {
+      "x": 0,
+      "y": 1,
+      "width": 28,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Lista",
+      "selecionada": "não",
+      "selo": null,
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Incompletas",
+     "rect": {
+      "x": 28,
+      "y": 1,
+      "width": 97,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Incompletas",
+      "selecionada": "não",
+      "selo": "45",
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Avisos",
+     "rect": {
+      "x": 125,
+      "y": 1,
+      "width": 66,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Avisos",
+      "selecionada": "sim",
+      "selo": "21",
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Diagnóstico",
+     "rect": {
+      "x": 191,
+      "y": 1,
+      "width": 67,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Diagnóstico",
+      "selecionada": "não",
+      "selo": null,
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Propostas",
+     "rect": {
+      "x": 258,
+      "y": 1,
+      "width": 79,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Propostas",
+      "selecionada": "não",
+      "selo": "1",
+      "tamanho": "sm",
+      "icone": null
+     }
+    },
+    {
+     "type": "tab",
+     "name": "Comentários",
+     "rect": {
+      "x": 337,
+      "y": 1,
+      "width": 42,
+      "height": 32
+     },
+     "values": {
+      "rotulo": "Comentários",
+      "selecionada": "não",
+      "selo": "3",
+      "tamanho": "sm",
+      "icone": "chat"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Avisos",
+     "rect": {
+      "x": 704,
+      "y": 3,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Avisos",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "notices-view",
+     "name": "Avisos",
+     "rect": {
+      "x": 0,
+      "y": 33,
+      "width": 736,
+      "height": 439
+     },
+     "values": {}
+    },
+    {
+     "type": "segmented",
+     "name": "Filtrar por tipo de aviso",
+     "rect": {
+      "x": 12,
+      "y": 37,
+      "width": 347,
+      "height": 30
+     },
+     "values": {
+      "rotulo": "Filtrar por tipo de aviso",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Todos 21",
+     "rect": {
+      "x": 13,
+      "y": 38,
+      "width": 78,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Todos 21",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Obsoleto 5",
+     "rect": {
+      "x": 91,
+      "y": 38,
+      "width": 89,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Obsoleto 5",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Diverge 12",
+     "rect": {
+      "x": 180,
+      "y": 38,
+      "width": 88,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Diverge 12",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Pendente 4",
+     "rect": {
+      "x": 268,
+      "y": 38,
+      "width": 91,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Pendente 4",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Só avisos em uso",
+     "rect": {
+      "x": 375,
+      "y": 38,
+      "width": 130,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Só avisos em uso",
+      "dica": null,
+      "marcado": "sim"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Só camadas visíveis",
+     "rect": {
+      "x": 521,
+      "y": 38,
+      "width": 144,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Só camadas visíveis",
+      "dica": null,
+      "marcado": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .list-col-marking",
+     "rect": {
+      "x": 0,
+      "y": 72,
+      "width": 177,
+      "height": 28
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação",
+     "rect": {
+      "x": 12,
+      "y": 78,
+      "width": 52,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Marcação",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .list-col-layer",
+     "rect": {
+      "x": 177,
+      "y": 72,
+      "width": 191,
+      "height": 28
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Camada",
+     "rect": {
+      "x": 188,
+      "y": 78,
+      "width": 44,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Camada",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .list-col-annotation",
+     "rect": {
+      "x": 368,
+      "y": 72,
+      "width": 147,
+      "height": 28
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Anotação",
+     "rect": {
+      "x": 379,
+      "y": 78,
+      "width": 52,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Anotação",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 515,
+      "y": 72,
+      "width": 221,
+      "height": 28
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Valor",
+     "rect": {
+      "x": 527,
+      "y": 78,
+      "width": 27,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Valor",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 0,
+      "y": 100,
+      "width": 736,
+      "height": 28
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .notice-badge",
+     "rect": {
+      "x": 12,
+      "y": 106,
+      "width": 81,
+      "height": 16
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Obsoleto",
+     "rect": {
+      "x": 40,
+      "y": 106,
+      "width": 46,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Obsoleto",
+      "estilo": "t-micro",
+      "cor": "warning",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "warning",
+     "rect": {
+      "x": 20,
+      "y": 106,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "warning",
+      "cor": "warning"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Button",
+     "rect": {
+      "x": 101,
+      "y": 106,
+      "width": 40,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Button",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "(tipo)",
+     "rect": {
+      "x": 148,
+      "y": 106,
+      "width": 29,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "(tipo)",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Use o IconButton com texto nas barras.",
+     "rect": {
+      "x": 184,
+      "y": 106,
+      "width": 209,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Use o IconButton com texto nas barras.",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Desde 2026-10-01",
+     "rect": {
+      "x": 400,
+      "y": 106,
+      "width": 99,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Desde 2026-10-01",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "5 anotação(ões)",
+     "rect": {
+      "x": 639,
+      "y": 106,
+      "width": 85,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "5 anotação(ões)",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .list-row",
+     "rect": {
+      "x": 0,
+      "y": 128,
+      "width": 736,
+      "height": 49
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Configurações › Seção Identidade › Salvar",
+     "rect": {
+      "x": 12,
+      "y": 133,
+      "width": 153,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Configurações › Seção Identidade › Salvar",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 189,
+      "y": 136,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 207,
+      "y": 133,
+      "width": 52,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 51.734375,
+     "cw": 51.734375,
+     "sw": 52,
+     "ci": 52,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Button · Salvar",
+     "rect": {
+      "x": 379,
+      "y": 133,
+      "width": 91,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Button · Salvar",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .list-row",
+     "rect": {
+      "x": 0,
+      "y": 177,
+      "width": 736,
+      "height": 49
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Configurações › Seção Identidade › Esquecer",
+     "rect": {
+      "x": 12,
+      "y": 182,
+      "width": 153,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Configurações › Seção Identidade › Esquecer",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 189,
+      "y": 185,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 207,
+      "y": 182,
+      "width": 52,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 51.734375,
+     "cw": 51.734375,
+     "sw": 52,
+     "ci": 52,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Button · Esquecer",
+     "rect": {
+      "x": 379,
+      "y": 182,
+      "width": 108,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Button · Esquecer",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .list-row",
+     "rect": {
+      "x": 0,
+      "y": 226,
+      "width": 736,
+      "height": 49
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Preencher nas Configurações",
+     "rect": {
+      "x": 12,
+      "y": 231,
+      "width": 153,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Preencher nas Configurações",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 189,
+      "y": 234,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 207,
+      "y": 231,
+      "width": 52,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 51.734375,
+     "cw": 51.734375,
+     "sw": 52,
+     "ci": 52,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Button · Preencher nas Configurações",
+     "rect": {
+      "x": 379,
+      "y": 231,
+      "width": 125,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Button · Preencher nas Configurações",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .list-row",
+     "rect": {
+      "x": 0,
+      "y": 275,
+      "width": 736,
+      "height": 49
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Barra principal › Menu do projeto",
+     "rect": {
+      "x": 12,
+      "y": 280,
+      "width": 153,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Barra principal › Menu do projeto",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 189,
+      "y": 283,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 207,
+      "y": 280,
+      "width": 52,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 51.734375,
+     "cw": 51.734375,
+     "sw": 52,
+     "ci": 52,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Button · Sistema de comentários",
+     "rect": {
+      "x": 379,
+      "y": 280,
+      "width": 125,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Button · Sistema de comentários",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .list-row",
+     "rect": {
+      "x": 0,
+      "y": 324,
+      "width": 736,
+      "height": 49
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Área do canvas › Tela de login › Salvar",
+     "rect": {
+      "x": 12,
+      "y": 329,
+      "width": 153,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Área do canvas › Tela de login › Salvar",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 189,
+      "y": 332,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 207,
+      "y": 329,
+      "width": 52,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 51.734375,
+     "cw": 51.734375,
+     "sw": 52,
+     "ci": 52,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Button · Salvar",
+     "rect": {
+      "x": 379,
+      "y": 329,
+      "width": 91,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Button · Salvar",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa th",
+     "rect": {
+      "x": 0,
+      "y": 373,
+      "width": 736,
+      "height": 28
+     },
+     "values": {
+      "fundo": "bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .notice-badge",
+     "rect": {
+      "x": 12,
+      "y": 379,
+      "width": 75,
+      "height": 16
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Diverge",
+     "rect": {
+      "x": 40,
+      "y": 379,
+      "width": 39,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Diverge",
+      "estilo": "t-micro",
+      "cor": "warning",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "compare",
+     "rect": {
+      "x": 20,
+      "y": 379,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "compare",
+      "cor": "warning"
+     }
+    },
+    {
+     "type": "text",
+     "name": "IconButton › variant",
+     "rect": {
+      "x": 94,
+      "y": 379,
+      "width": 114,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "IconButton › variant",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "(campo)",
+     "rect": {
+      "x": 215,
+      "y": 379,
+      "width": 45,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "(campo)",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "O código também aceita \"subtle\".",
+     "rect": {
+      "x": 267,
+      "y": 379,
+      "width": 179,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "O código também aceita \"subtle\".",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "12 anotação(ões)",
+     "rect": {
+      "x": 633,
+      "y": 379,
+      "width": 91,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "12 anotação(ões)",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .list-row",
+     "rect": {
+      "x": 0,
+      "y": 401,
+      "width": 736,
+      "height": 49
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Barra principal › Adicionar imagens",
+     "rect": {
+      "x": 12,
+      "y": 406,
+      "width": 153,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "Barra principal › Adicionar imagens",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 189,
+      "y": 409,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 207,
+      "y": 406,
+      "width": 52,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 51.734375,
+     "cw": 51.734375,
+     "sw": 52,
+     "ci": 52,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "IconButton · Adicionar imagens",
+     "rect": {
+      "x": 379,
+      "y": 406,
+      "width": 125,
+      "height": 37
+     },
+     "lines": 2,
+     "values": {
+      "texto": "IconButton · Adicionar imagens",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "default",
+     "rect": {
+      "x": 527,
+      "y": 406,
+      "width": 41,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "default",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-dot",
+     "rect": {
+      "x": 189,
+      "y": 458,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 207,
+      "y": 455,
+      "width": 52,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 51.734375,
+     "cw": 51.734375,
+     "sw": 52,
+     "ci": 52,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "default",
+     "rect": {
+      "x": 527,
+      "y": 455,
+      "width": 41,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "default",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Janela Árvore de marcações",
+   "background": "#ffffff",
+   "width": 264,
+   "height": 610,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela Árvore de marcações",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 264,
+      "height": 610
+     },
+     "values": {
+      "janela": "tree",
+      "titulo": "Árvore de marcações",
+      "posicao": "left"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Localizar a seleção na árvore",
+     "rect": {
+      "x": 171,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "locate",
+      "rotulo": "Localizar a seleção na árvore",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Recolher tudo",
+     "rect": {
+      "x": 201,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "collapseAll",
+      "rotulo": "Recolher tudo",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Árvore de marcações",
+     "rect": {
+      "x": 231,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Árvore de marcações",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Canvas",
+     "rect": {
+      "x": 4,
+      "y": 32,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 12,
+      "y": 38,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Canvas",
+     "rect": {
+      "x": 38,
+      "y": 37,
+      "width": 40,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 40.390625,
+     "cw": 40.390625,
+     "sw": 40,
+     "ci": 40,
+     "values": {
+      "texto": "Canvas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Tabela",
+     "rect": {
+      "x": 4,
+      "y": 60,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 28,
+      "y": 66,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 54,
+      "y": 65,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36.171875,
+     "cw": 36.171875,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 70,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha arquivos → tabela de conversas",
+     "rect": {
+      "x": 4,
+      "y": 88,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "arrow",
+     "rect": {
+      "x": 70,
+      "y": 94,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "arrow",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "arquivos → tabela de conversas",
+     "rect": {
+      "x": 90,
+      "y": 93,
+      "width": 131,
+      "height": 17
+     },
+     "values": {
+      "texto": "arquivos → tabela de conversas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     },
+     "lines": 1,
+     "tw": 179.96875,
+     "cw": 131,
+     "sw": 180,
+     "ci": 131
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Tabela",
+     "rect": {
+      "x": 4,
+      "y": 116,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 28,
+      "y": 122,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 54,
+      "y": 121,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36.171875,
+     "cw": 36.171875,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 126,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha âncora → pino",
+     "rect": {
+      "x": 4,
+      "y": 144,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "arrow",
+     "rect": {
+      "x": 70,
+      "y": 150,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "arrow",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "âncora → pino",
+     "rect": {
+      "x": 90,
+      "y": 149,
+      "width": 83,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 82.84375,
+     "cw": 82.84375,
+     "sw": 83,
+     "ci": 83,
+     "values": {
+      "texto": "âncora → pino",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Tabela",
+     "rect": {
+      "x": 4,
+      "y": 172,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 28,
+      "y": 178,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 54,
+      "y": 177,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36.171875,
+     "cw": 36.171875,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 182,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha estados → tabela de conversas",
+     "rect": {
+      "x": 4,
+      "y": 200,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "arrow",
+     "rect": {
+      "x": 70,
+      "y": 206,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "arrow",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "estados → tabela de conversas",
+     "rect": {
+      "x": 90,
+      "y": 205,
+      "width": 131,
+      "height": 17
+     },
+     "values": {
+      "texto": "estados → tabela de conversas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     },
+     "lines": 1,
+     "tw": 175.4375,
+     "cw": 131,
+     "sw": 175,
+     "ci": 131
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Tabela",
+     "rect": {
+      "x": 4,
+      "y": 228,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 28,
+      "y": 234,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 54,
+      "y": 233,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36.171875,
+     "cw": 36.171875,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 238,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha quem grava → compositor",
+     "rect": {
+      "x": 4,
+      "y": 256,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "arrow",
+     "rect": {
+      "x": 70,
+      "y": 262,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "arrow",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "quem grava → compositor",
+     "rect": {
+      "x": 90,
+      "y": 261,
+      "width": 131,
+      "height": 17
+     },
+     "values": {
+      "texto": "quem grava → compositor",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     },
+     "lines": 1,
+     "tw": 151.828125,
+     "cw": 131,
+     "sw": 152,
+     "ci": 131
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Tabela",
+     "rect": {
+      "x": 4,
+      "y": 284,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 54,
+      "y": 289,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36.171875,
+     "cw": 36.171875,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 294,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Pinos das conversas — estados",
+     "rect": {
+      "x": 4,
+      "y": 312,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 12,
+      "y": 318,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos das conversas — estados",
+     "rect": {
+      "x": 38,
+      "y": 317,
+      "width": 157,
+      "height": 17
+     },
+     "values": {
+      "texto": "Pinos das conversas — estados",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     },
+     "lines": 1,
+     "tw": 182.421875,
+     "cw": 157,
+     "sw": 182,
+     "ci": 157
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Aguardando humano — MA 3",
+     "rect": {
+      "x": 4,
+      "y": 340,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aguardando humano — MA 3",
+     "rect": {
+      "x": 54,
+      "y": 345,
+      "width": 129,
+      "height": 17
+     },
+     "values": {
+      "texto": "Aguardando humano — MA 3",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     },
+     "lines": 1,
+     "tw": 173.25,
+     "cw": 129,
+     "sw": 173,
+     "ci": 129
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 350,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Aguardando agente",
+     "rect": {
+      "x": 4,
+      "y": 368,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "selecionada"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aguardando agente",
+     "rect": {
+      "x": 54,
+      "y": 373,
+      "width": 115,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 114.625,
+     "cw": 114.625,
+     "sw": 115,
+     "ci": 115,
+     "values": {
+      "texto": "Aguardando agente",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 378,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Resolvida (só selecionada)",
+     "rect": {
+      "x": 4,
+      "y": 396,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "atual"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Resolvida (só selecionada)",
+     "rect": {
+      "x": 54,
+      "y": 401,
+      "width": 129,
+      "height": 17
+     },
+     "values": {
+      "texto": "Resolvida (só selecionada)",
+      "estilo": "t-body",
+      "cor": "accent-text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     },
+     "lines": 1,
+     "tw": 149.5,
+     "cw": 129,
+     "sw": 150,
+     "ci": 129
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 406,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "unlock",
+     "rect": {
+      "x": 205,
+      "y": 402,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "unlock",
+      "cor": "accent-text"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações de Resolvida (só selecionada)",
+     "rect": {
+      "x": 227,
+      "y": 396,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "grip",
+      "rotulo": "Ações de Resolvida (só selecionada)",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Selecionado (anel de 2px)",
+     "rect": {
+      "x": 4,
+      "y": 424,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Selecionado (anel de 2px)",
+     "rect": {
+      "x": 54,
+      "y": 429,
+      "width": 129,
+      "height": 17
+     },
+     "values": {
+      "texto": "Selecionado (anel de 2px)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     },
+     "lines": 1,
+     "tw": 147.1875,
+     "cw": 129,
+     "sw": 147,
+     "ci": 129
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 434,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Não lida (ponto no canto)",
+     "rect": {
+      "x": 4,
+      "y": 452,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Não lida (ponto no canto)",
+     "rect": {
+      "x": 54,
+      "y": 457,
+      "width": 129,
+      "height": 17
+     },
+     "values": {
+      "texto": "Não lida (ponto no canto)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     },
+     "lines": 1,
+     "tw": 148.234375,
+     "cw": 129,
+     "sw": 148,
+     "ci": 129
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 462,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Agrupado — 3 conversas",
+     "rect": {
+      "x": 4,
+      "y": 480,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Agrupado — 3 conversas",
+     "rect": {
+      "x": 54,
+      "y": 485,
+      "width": 129,
+      "height": 17
+     },
+     "values": {
+      "texto": "Agrupado — 3 conversas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     },
+     "lines": 1,
+     "tw": 144.3125,
+     "cw": 129,
+     "sw": 144,
+     "ci": 129
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 490,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Rascunho (tracejado)",
+     "rect": {
+      "x": 4,
+      "y": 508,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Rascunho (tracejado)",
+     "rect": {
+      "x": 54,
+      "y": 513,
+      "width": 120,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 120.390625,
+     "cw": 120.390625,
+     "sw": 120,
+     "ci": 120,
+     "values": {
+      "texto": "Rascunho (tracejado)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 518,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Janela Comentários",
+     "rect": {
+      "x": 4,
+      "y": 536,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 12,
+      "y": 542,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Janela Comentários",
+     "rect": {
+      "x": 38,
+      "y": 541,
+      "width": 115,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 114.9375,
+     "cw": 114.9375,
+     "sw": 115,
+     "ci": 115,
+     "values": {
+      "texto": "Janela Comentários",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "tree-row",
+     "name": "Linha Filtro Status",
+     "rect": {
+      "x": 4,
+      "y": 564,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "estado": "normal"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Filtro Status",
+     "rect": {
+      "x": 54,
+      "y": 569,
+      "width": 68,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 67.546875,
+     "cw": 67.546875,
+     "sw": 68,
+     "ci": 68,
+     "values": {
+      "texto": "Filtro Status",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 574,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Filtro Usuário",
+     "rect": {
+      "x": 54,
+      "y": 597,
+      "width": 76,
+      "height": 13
+     },
+     "lines": 1,
+     "tw": 76.453125,
+     "cw": 76.453125,
+     "sw": 76,
+     "ci": 76,
+     "values": {
+      "texto": "Filtro Usuário",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .tree-dot",
+     "rect": {
+      "x": 187,
+      "y": 602,
+      "width": 8,
+      "height": 8
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Canvas — minimapa e zoom",
+   "background": "#ffffff",
+   "width": 736,
+   "height": 834,
+   "items": [
+    {
+     "type": "box",
+     "name": "Caixa .canvas-bar",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 736,
+      "height": 32
+     },
+     "values": {
+      "fundo": "surface",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "breadcrumbs",
+     "name": "Caminho da seleção",
+     "rect": {
+      "x": 6,
+      "y": 8,
+      "width": 532,
+      "height": 16
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Nada selecionado",
+     "rect": {
+      "x": 12,
+      "y": 8,
+      "width": 95,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nada selecionado",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Conversas",
+     "rect": {
+      "x": 546,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "chat",
+      "rotulo": "Conversas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "sim",
+      "selo": "1"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Visualizar",
+     "rect": {
+      "x": 578,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "eye",
+      "rotulo": "Visualizar",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mostrar no canvas",
+     "rect": {
+      "x": 610,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "layers",
+      "rotulo": "Mostrar no canvas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Enquadrar tudo",
+     "rect": {
+      "x": 642,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "fit",
+      "rotulo": "Enquadrar tudo",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "zoom-field",
+     "name": "Zoom 100%",
+     "rect": {
+      "x": 674,
+      "y": 2,
+      "width": 56,
+      "height": 28
+     },
+     "values": {
+      "valor": "100%"
+     }
+    },
+    {
+     "type": "canvas-marking",
+     "name": "Área do canvas",
+     "rect": {
+      "x": 0,
+      "y": 32,
+      "width": 736,
+      "height": 802
+     },
+     "values": {
+      "nome": null,
+      "fundo": "canvas"
+     }
+    },
+    {
+     "type": "minimap",
+     "name": "Minimapa",
+     "rect": {
+      "x": 596,
+      "y": 777,
+      "width": 132,
+      "height": 49
+     },
+     "values": {
+      "parte": "moldura"
+     }
+    },
+    {
+     "type": "minimap",
+     "name": "Imagem no minimapa",
+     "rect": {
+      "x": 682,
+      "y": 791,
+      "width": 21,
+      "height": 7
+     },
+     "values": {
+      "parte": "imagem"
+     }
+    },
+    {
+     "type": "minimap",
+     "name": "Imagem no minimapa",
+     "rect": {
+      "x": 626,
+      "y": 791,
+      "width": 21,
+      "height": 5
+     },
+     "values": {
+      "parte": "imagem"
+     }
+    },
+    {
+     "type": "minimap",
+     "name": "Imagem no minimapa",
+     "rect": {
+      "x": 647,
+      "y": 791,
+      "width": 12,
+      "height": 21
+     },
+     "values": {
+      "parte": "imagem"
+     }
+    },
+    {
+     "type": "minimap",
+     "name": "Imagem no minimapa",
+     "rect": {
+      "x": 661,
+      "y": 791,
+      "width": 21,
+      "height": 10
+     },
+     "values": {
+      "parte": "imagem"
+     }
+    },
+    {
+     "type": "minimap",
+     "name": "Imagem no minimapa",
+     "rect": {
+      "x": 597,
+      "y": 795,
+      "width": 21,
+      "height": 13
+     },
+     "values": {
+      "parte": "imagem"
+     }
+    },
+    {
+     "type": "minimap",
+     "name": "Área visível",
+     "rect": {
+      "x": 655,
+      "y": 794,
+      "width": 15,
+      "height": 17
+     },
+     "values": {
+      "parte": "vista"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Barra de status — zoom",
+   "background": "#ffffff",
+   "width": 1440,
+   "height": 26,
+   "items": [
+    {
+     "type": "status-bar",
+     "name": "Barra de status",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 1440,
+      "height": 26
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Salvo",
+     "rect": {
+      "x": 34,
+      "y": 6,
+      "width": 29,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 28.171875,
+     "cw": 48.171875,
+     "sw": 60,
+     "ci": 60,
+     "values": {
+      "texto": "Salvo",
+      "estilo": "t-small",
+      "cor": "success",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "check",
+     "rect": {
+      "x": 14,
+      "y": 6,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "check",
+      "cor": "success"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Neste dispositivo",
+     "rect": {
+      "x": 76,
+      "y": 6,
+      "width": 92,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 90.875,
+     "cw": 90.875,
+     "sw": 103,
+     "ci": 103,
+     "values": {
+      "texto": "Neste dispositivo",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1 proposta(s) nova(s)",
+     "rect": {
+      "x": 201,
+      "y": 6,
+      "width": 112,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 111,
+     "cw": 131,
+     "sw": 143,
+     "ci": 143,
+     "values": {
+      "texto": "1 proposta(s) nova(s)",
+      "estilo": "t-small",
+      "cor": "accent",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "proposal",
+     "rect": {
+      "x": 181,
+      "y": 6,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "proposal",
+      "cor": "accent"
+     }
+    },
+    {
+     "type": "text",
+     "name": "3 conversas abertas · 2 aguardando agente",
+     "rect": {
+      "x": 346,
+      "y": 6,
+      "width": 227,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 226.875,
+     "cw": 246.875,
+     "sw": 259,
+     "ci": 259,
+     "values": {
+      "texto": "3 conversas abertas · 2 aguardando agente",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chat",
+     "rect": {
+      "x": 326,
+      "y": 6,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chat",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nada selecionado",
+     "rect": {
+      "x": 956,
+      "y": 6,
+      "width": 95,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 94.578125,
+     "cw": 94.578125,
+     "sw": 107,
+     "ci": 107,
+     "values": {
+      "texto": "Nada selecionado",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "—",
+     "rect": {
+      "x": 1067,
+      "y": 7,
+      "width": 8,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 7.03125,
+     "cw": 7.03125,
+     "sw": 19,
+     "ci": 19,
+     "values": {
+      "texto": "—",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "zoom-field",
+     "name": "Zoom 100%",
+     "rect": {
+      "x": 1086,
+      "y": 2,
+      "width": 56,
+      "height": 24
+     },
+     "values": {
+      "valor": "100%"
+     }
+    },
+    {
+     "type": "text",
+     "name": "schema v15",
+     "rect": {
+      "x": 1152,
+      "y": 6,
+      "width": 63,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 62.125,
+     "cw": 62.125,
+     "sw": 74,
+     "ci": 74,
+     "values": {
+      "texto": "schema v15",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "estável",
+     "rect": {
+      "x": 1231,
+      "y": 6,
+      "width": 38,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 36.46875,
+     "cw": 36.46875,
+     "sw": 48,
+     "ci": 48,
+     "values": {
+      "texto": "estável",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "88d80b8 · 2026-11-08",
+     "rect": {
+      "x": 1285,
+      "y": 7,
+      "width": 141,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 140.625,
+     "cw": 140.625,
+     "sw": 153,
+     "ci": 153,
+     "values": {
+      "texto": "88d80b8 · 2026-11-08",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    }
+   ]
+  }
+ ]
+}

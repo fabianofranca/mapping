@@ -1,0 +1,46 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "menu",
+  "name": "Menu",
+  "description": "Moldura do menu em popover: color-surface, borda color-border, raio 6 e a sombra de popup. Os itens são Buttons filhos.",
+  "size": {
+    "width": 200,
+    "height": 72
+  },
+  "minSize": {
+    "width": 40,
+    "height": 20
+  },
+  "sizing": {
+    "width": 200,
+    "height": 72
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "menu",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 6,
+    "fill": {
+      "$token": "color-surface"
+    },
+    "stroke": {
+      "color": {
+        "$token": "color-border"
+      },
+      "width": 1
+    },
+    "shadow": {
+      "color": {
+        "$token": "shadow-popup-color"
+      },
+      "x": 0,
+      "y": 8,
+      "blur": 24
+    },
+    "children": []
+  }
+}

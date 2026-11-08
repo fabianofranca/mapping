@@ -1,0 +1,37 @@
+{
+ "valid": true,
+ "path": "C:/Pessoal/mapping/workspace/ferramentas/mapping-ds/v9/telas/out/pkg",
+ "spec": {
+  "id": "mapping-ds",
+  "name": "Mapping DS",
+  "version": 9,
+  "formatVersion": 15,
+  "platforms": [
+   "web"
+  ],
+  "containers": 1,
+  "layers": 1,
+  "types": 83,
+  "typesWithSources": 0,
+  "fieldsWithSources": 0,
+  "components": 38,
+  "docs": 46,
+  "examples": 36,
+  "structural": 8,
+  "fonts": 0,
+  "origins": 0,
+  "migrations": 1,
+  "icons": "icons/icons.json"
+ },
+ "summary": {
+  "level": 3,
+  "types": 83,
+  "components": 38,
+  "docs": 46,
+  "examples": 36,
+  "fonts": 0
+ },
+ "errors": [],
+ "warnings": [],
+ "hint": "a biblioteca é válida: aplique-a por proposta (`apply_specialization` ou, numa biblioteca já aplicada, `update_specialization`, com `file` da pasta; antes, `plan_library_update` mostra o impacto) ou pela app (Especializações › pasta ou zip do pacote)"
+}

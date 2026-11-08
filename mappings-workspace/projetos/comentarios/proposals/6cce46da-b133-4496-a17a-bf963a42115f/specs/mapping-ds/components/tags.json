@@ -1,0 +1,94 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "tags",
+  "name": "Tags",
+  "description": "Etiqueta (Chip) alternável de 24 px, em pílula; ligada fica em color-selection com borda color-accent.",
+  "size": {
+    "width": 80,
+    "height": 24
+  },
+  "minSize": {
+    "width": 32,
+    "height": 24
+  },
+  "sizing": {
+    "width": "hug",
+    "height": 24
+  },
+  "preview": {
+    "texto": "Camada",
+    "pressionado": "sim",
+    "contagem": 3
+  },
+  "template": {
+    "type": "frame",
+    "name": "chip",
+    "cornerRadius": 999,
+    "fill": {
+      "$if": {
+        "$eq": [
+          "pressionado",
+          "sim"
+        ]
+      },
+      "then": "#dce8fb",
+      "else": "#ffffff"
+    },
+    "stroke": {
+      "color": {
+        "$if": {
+          "$eq": [
+            "pressionado",
+            "sim"
+          ]
+        },
+        "then": "#1a63cc",
+        "else": "#7d8590"
+      },
+      "width": 1
+    },
+    "layout": {
+      "type": "row",
+      "gap": 4,
+      "padding": [
+        0,
+        8
+      ],
+      "align": "center",
+      "justify": "center"
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "texto",
+        "text": {
+          "$field": "texto",
+          "default": "Etiqueta"
+        },
+        "color": "#1b1f24",
+        "font": {
+          "size": 12,
+          "weight": 400,
+          "lineHeight": 16
+        }
+      },
+      {
+        "type": "text",
+        "name": "contagem",
+        "text": {
+          "$field": "contagem"
+        },
+        "color": "#1b1f24",
+        "font": {
+          "size": 12,
+          "weight": 600,
+          "lineHeight": 16
+        },
+        "visible": {
+          "$has": "contagem"
+        }
+      }
+    ]
+  }
+}

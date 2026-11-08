@@ -1,0 +1,247 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "choice",
+  "name": "Choice",
+  "description": "Caixa de seleção ou botão de rádio de 16 px, com o rótulo ao lado (e a dica embaixo).",
+  "size": {
+    "width": 260,
+    "height": 44
+  },
+  "minSize": {
+    "width": 16,
+    "height": 16
+  },
+  "sizing": {
+    "width": "hug",
+    "height": "hug"
+  },
+  "preview": {
+    "tipo": "checkbox",
+    "rotulo": "Mostrar rótulos",
+    "dica": "",
+    "marcado": "sim"
+  },
+  "template": {
+    "type": "frame",
+    "name": "choice",
+    "layout": {
+      "type": "row",
+      "gap": 8,
+      "padding": [
+        0,
+        4
+      ],
+      "align": "start"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "caixa",
+        "width": 16,
+        "height": 28,
+        "visible": {
+          "$not": {
+            "$eq": [
+              "tipo",
+              "radio"
+            ]
+          }
+        },
+        "layout": {
+          "type": "column",
+          "align": "center",
+          "justify": "center"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "quadrado",
+            "width": 16,
+            "height": 16,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": [
+                  "marcado",
+                  "sim"
+                ]
+              },
+              "then": {
+                "$token": "color-accent"
+              },
+              "else": {
+                "$token": "color-surface"
+              }
+            },
+            "stroke": {
+              "color": {
+                "$if": {
+                  "$eq": [
+                    "marcado",
+                    "sim"
+                  ]
+                },
+                "then": {
+                  "$token": "color-accent"
+                },
+                "else": {
+                  "$token": "color-border-control"
+                }
+              },
+              "width": 1
+            },
+            "layout": {
+              "type": "none"
+            },
+            "children": [
+              {
+                "type": "icon",
+                "width": 16,
+                "height": 16,
+                "visible": {
+                  "$eq": [
+                    "marcado",
+                    "sim"
+                  ]
+                },
+                "anchors": {
+                  "centerX": true,
+                  "centerY": true
+                },
+                "name": "check",
+                "color": {
+                  "$token": "color-accent-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "rádio",
+        "width": 16,
+        "height": 28,
+        "visible": {
+          "$eq": [
+            "tipo",
+            "radio"
+          ]
+        },
+        "layout": {
+          "type": "column",
+          "align": "center",
+          "justify": "center"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "círculo",
+            "width": 16,
+            "height": 16,
+            "cornerRadius": 8,
+            "fill": {
+              "$token": "color-surface"
+            },
+            "stroke": {
+              "color": {
+                "$if": {
+                  "$eq": [
+                    "marcado",
+                    "sim"
+                  ]
+                },
+                "then": {
+                  "$token": "color-accent"
+                },
+                "else": {
+                  "$token": "color-border-control"
+                }
+              },
+              "width": 1
+            },
+            "layout": {
+              "type": "row",
+              "align": "center",
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "ellipse",
+                "name": "miolo",
+                "width": 8,
+                "height": 8,
+                "fill": {
+                  "$token": "color-accent"
+                },
+                "visible": {
+                  "$eq": [
+                    "marcado",
+                    "sim"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "rótulo",
+        "width": "fill",
+        "layout": {
+          "type": "column"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "linha",
+            "width": "hug",
+            "height": 28,
+            "layout": {
+              "type": "row",
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "rótulo",
+                "text": {
+                  "$field": "rotulo"
+                },
+                "color": {
+                  "$token": "color-text"
+                },
+                "font": {
+                  "size": 13,
+                  "weight": 400,
+                  "lineHeight": 20
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "name": "dica",
+            "text": {
+              "$field": "dica"
+            },
+            "color": {
+              "$token": "color-text-muted"
+            },
+            "font": {
+              "size": 12,
+              "weight": 400,
+              "lineHeight": 16
+            },
+            "visible": {
+              "$has": "dica"
+            },
+            "width": "fill"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 {
+  "enabledMcpjsonServers": ["mapping"],
   "permissions": {
     "allow": [
       "Bash(npm ci)",

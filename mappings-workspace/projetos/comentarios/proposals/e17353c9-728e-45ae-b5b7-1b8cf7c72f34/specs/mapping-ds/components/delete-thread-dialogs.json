@@ -1,0 +1,28 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "delete-thread-dialogs",
+  "name": "DeleteThreadDialogs",
+  "description": "Agrupador: sem desenho próprio; os itens são marcações filhas.",
+  "size": {
+    "width": 200,
+    "height": 40
+  },
+  "minSize": {
+    "width": 8,
+    "height": 8
+  },
+  "sizing": {
+    "width": 200,
+    "height": 40
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "grupo",
+    "layout": {
+      "type": "none"
+    },
+    "children": []
+  }
+}

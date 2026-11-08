@@ -1,0 +1,235 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "choice",
+  "name": "Choice",
+  "description": "Caixa de seleção ou botão de rádio de 16 px, com o rótulo ao lado (e a dica embaixo).",
+  "size": {
+    "width": 260,
+    "height": 44
+  },
+  "minSize": {
+    "width": 48,
+    "height": 28
+  },
+  "sizing": {
+    "width": "hug",
+    "height": "hug"
+  },
+  "preview": {
+    "tipo": "checkbox",
+    "rotulo": "Mostrar rótulos",
+    "dica": "",
+    "marcado": "sim"
+  },
+  "template": {
+    "type": "frame",
+    "name": "choice",
+    "layout": {
+      "type": "row",
+      "gap": 8,
+      "padding": [
+        0,
+        4
+      ],
+      "align": "start"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "caixa",
+        "width": 16,
+        "height": 28,
+        "visible": {
+          "$not": {
+            "$eq": [
+              "tipo",
+              "radio"
+            ]
+          }
+        },
+        "layout": {
+          "type": "column",
+          "align": "center",
+          "justify": "center"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "quadrado",
+            "width": 16,
+            "height": 16,
+            "cornerRadius": 2,
+            "fill": {
+              "$if": {
+                "$eq": [
+                  "marcado",
+                  "sim"
+                ]
+              },
+              "then": "#1a63cc",
+              "else": "#ffffff"
+            },
+            "stroke": {
+              "color": {
+                "$if": {
+                  "$eq": [
+                    "marcado",
+                    "sim"
+                  ]
+                },
+                "then": "#1a63cc",
+                "else": "#7d8590"
+              },
+              "width": 1
+            },
+            "layout": {
+              "type": "none"
+            },
+            "children": [
+              {
+                "type": "path",
+                "name": "✓",
+                "width": 16,
+                "height": 16,
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "d": "M3 8.5 3.2 3.2L13 4.8",
+                "fill": "none",
+                "stroke": {
+                  "color": "#ffffff",
+                  "width": 1.25
+                },
+                "visible": {
+                  "$eq": [
+                    "marcado",
+                    "sim"
+                  ]
+                },
+                "anchors": {
+                  "centerX": true,
+                  "centerY": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "rádio",
+        "width": 16,
+        "height": 28,
+        "visible": {
+          "$eq": [
+            "tipo",
+            "radio"
+          ]
+        },
+        "layout": {
+          "type": "column",
+          "align": "center",
+          "justify": "center"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "círculo",
+            "width": 16,
+            "height": 16,
+            "cornerRadius": 8,
+            "fill": "#ffffff",
+            "stroke": {
+              "color": {
+                "$if": {
+                  "$eq": [
+                    "marcado",
+                    "sim"
+                  ]
+                },
+                "then": "#1a63cc",
+                "else": "#7d8590"
+              },
+              "width": 1
+            },
+            "layout": {
+              "type": "row",
+              "align": "center",
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "ellipse",
+                "name": "miolo",
+                "width": 8,
+                "height": 8,
+                "fill": "#1a63cc",
+                "visible": {
+                  "$eq": [
+                    "marcado",
+                    "sim"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "rótulo",
+        "width": "hug",
+        "layout": {
+          "type": "column"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "linha",
+            "width": "hug",
+            "height": 28,
+            "layout": {
+              "type": "row",
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "rótulo",
+                "text": {
+                  "$field": "rotulo"
+                },
+                "color": "#1b1f24",
+                "font": {
+                  "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+                  "size": 13,
+                  "weight": 400,
+                  "lineHeight": 20
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "name": "dica",
+            "text": {
+              "$field": "dica"
+            },
+            "color": "#5b6470",
+            "font": {
+              "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+              "size": 12,
+              "weight": 400,
+              "lineHeight": 16
+            },
+            "visible": {
+              "$has": "dica"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

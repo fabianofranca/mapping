@@ -1,0 +1,267 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "button",
+  "name": "Button",
+  "description": "Botão com texto: 28 px de altura, raio 4, borda de controle. A variante muda fundo, borda e cor do texto.",
+  "size": {
+    "width": 96,
+    "height": 28
+  },
+  "minSize": {
+    "width": 12,
+    "height": 16
+  },
+  "sizing": {
+    "width": "hug",
+    "height": 28
+  },
+  "preview": {
+    "texto": "Salvar",
+    "variant": "default",
+    "size": "md",
+    "desabilitado": "não",
+    "icone": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "button",
+    "cornerRadius": 4,
+    "opacity": {
+      "$if": {
+        "$eq": [
+          "desabilitado",
+          "sim"
+        ]
+      },
+      "then": {
+        "$token": "opacity-disabled"
+      },
+      "else": 1
+    },
+    "fill": {
+      "$switch": "variant",
+      "cases": {
+        "primary": {
+          "$token": "color-accent"
+        },
+        "ghost": "rgba(0, 0, 0, 0)"
+      },
+      "default": {
+        "$token": "color-surface"
+      }
+    },
+    "stroke": {
+      "color": {
+        "$switch": "variant",
+        "cases": {
+          "primary": {
+            "$token": "color-accent"
+          },
+          "danger": {
+            "$token": "color-danger"
+          },
+          "ghost": "rgba(0, 0, 0, 0)"
+        },
+        "default": {
+          "$token": "color-border-control"
+        }
+      },
+      "width": 1
+    },
+    "layout": {
+      "type": "row",
+      "gap": 6,
+      "padding": {
+        "$if": {
+          "$eq": [
+            "alinhamento",
+            "start"
+          ]
+        },
+        "then": [
+          0,
+          12
+        ],
+        "else": 0
+      },
+      "align": "center",
+      "justify": "start"
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "respiro esquerdo",
+        "width": "fill",
+        "height": 1,
+        "fill": "rgba(0, 0, 0, 0)",
+        "visible": {
+          "$not": {
+            "$eq": [
+              "alinhamento",
+              "start"
+            ]
+          }
+        }
+      },
+      {
+        "type": "icon",
+        "name": {
+          "$switch": "icone",
+          "cases": {
+            "undo": "undo",
+            "redo": "redo",
+            "edit": "edit",
+            "copy": "copy",
+            "trash": "trash",
+            "plus": "plus",
+            "minus": "minus",
+            "check": "check",
+            "close": "close",
+            "refresh": "refresh",
+            "pan": "pan",
+            "pointer": "pointer",
+            "draw": "draw",
+            "marking": "marking",
+            "arrow": "arrow",
+            "crop": "crop",
+            "text": "text",
+            "fit": "fit",
+            "zoomIn": "zoom-in",
+            "zoomOut": "zoom-out",
+            "search": "search",
+            "locate": "locate",
+            "filter": "filter",
+            "menu": "menu",
+            "chevronUp": "chevron-up",
+            "chevronDown": "chevron-down",
+            "chevronLeft": "chevron-left",
+            "chevronRight": "chevron-right",
+            "arrowUp": "arrow-up",
+            "arrowDown": "arrow-down",
+            "arrowLeft": "arrow-left",
+            "arrowRight": "arrow-right",
+            "collapseAll": "collapse-all",
+            "expandAll": "expand-all",
+            "maximize": "maximize",
+            "minimize": "minimize",
+            "externalLink": "external-link",
+            "home": "home",
+            "panelLeft": "panel-left",
+            "panelRight": "panel-right",
+            "panelBottom": "panel-bottom",
+            "minimap": "minimap",
+            "tree": "tree",
+            "perspective": "perspective",
+            "layers": "layers",
+            "list": "list",
+            "table": "table",
+            "checklist": "checklist",
+            "diagnostics": "diagnostics",
+            "specialization": "specialization",
+            "library": "library",
+            "container": "container",
+            "containerMark": "container-mark",
+            "arrange": "arrange",
+            "more": "more",
+            "moreVertical": "more-vertical",
+            "grip": "grip",
+            "addImage": "add-image",
+            "image": "image",
+            "folder": "folder",
+            "file": "file",
+            "save": "save",
+            "export": "export",
+            "upload": "upload",
+            "tag": "tag",
+            "link": "link",
+            "share": "share",
+            "eye": "eye",
+            "eyeOff": "eye-off",
+            "lock": "lock",
+            "unlock": "unlock",
+            "info": "info",
+            "warning": "warning",
+            "error": "error",
+            "help": "help",
+            "settings": "settings",
+            "keyboard": "keyboard",
+            "sun": "sun",
+            "moon": "moon",
+            "proposal": "proposal",
+            "chat": "chat",
+            "chatAdd": "chat-add",
+            "moved": "moved",
+            "changed": "changed",
+            "replaced": "replaced",
+            "compare": "compare",
+            "note": "note",
+            "blocked": "blocked",
+            "globe": "globe"
+          }
+        },
+        "color": {
+          "$switch": "variant",
+          "cases": {
+            "primary": {
+              "$token": "color-accent-text"
+            },
+            "danger": {
+              "$token": "color-danger"
+            }
+          },
+          "default": {
+            "$token": "color-text"
+          }
+        },
+        "width": 16,
+        "height": 16,
+        "visible": {
+          "$has": "icone"
+        }
+      },
+      {
+        "type": "text",
+        "name": "texto",
+        "text": {
+          "$field": "texto",
+          "default": "Botão"
+        },
+        "color": {
+          "$switch": "variant",
+          "cases": {
+            "primary": {
+              "$token": "color-accent-text"
+            },
+            "danger": {
+              "$token": "color-danger"
+            }
+          },
+          "default": {
+            "$token": "color-text"
+          }
+        },
+        "font": {
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 20
+        }
+      },
+      {
+        "type": "rect",
+        "name": "respiro direito",
+        "width": "fill",
+        "height": 1,
+        "fill": "rgba(0, 0, 0, 0)",
+        "visible": {
+          "$not": {
+            "$eq": [
+              "alinhamento",
+              "start"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

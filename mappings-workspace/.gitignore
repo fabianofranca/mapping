@@ -1,0 +1,20 @@
+# Installed by setup.sh from the Mapping release (the script recreates all of it).
+/tools/
+/.agents/
+/.claude/
+/.mapping-setup.*
+/AGENTS.md.bak-*
+
+# Backups the app writes when it migrates an old mapping.json.
+projetos/**/backups/
+.DS_Store
+Thumbs.db
+
+# Mapping DS pipeline: compiled app clones, the MCP copy and capture outputs.
+ferramentas/mapping-ds/app/
+ferramentas/mapping-ds/app25/
+ferramentas/mapping-ds/mcp25/
+ferramentas/mapping-ds/shots/*.png
+ferramentas/mapping-ds/shots/*.zip
+ferramentas/mapping-ds/shots/*.json
+node_modules/

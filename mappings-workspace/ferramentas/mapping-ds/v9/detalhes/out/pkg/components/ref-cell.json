@@ -1,0 +1,139 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "ref-cell",
+  "name": "RefCell",
+  "description": "Célula de uma coluna ref: o controle compacto (ícone e alvo) que abre o seletor, com 30 px à direita para o IconButton Limpar.",
+  "size": {
+    "width": 160,
+    "height": 28
+  },
+  "minSize": {
+    "width": 60,
+    "height": 24
+  },
+  "sizing": {
+    "width": 160,
+    "height": 28
+  },
+  "preview": {
+    "valor": "Arquivos.formato",
+    "estado": "valor"
+  },
+  "template": {
+    "type": "frame",
+    "name": "célula",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "controle",
+        "anchors": {
+          "left": 0,
+          "right": 30,
+          "centerY": true
+        },
+        "height": 24,
+        "cornerRadius": 4,
+        "fill": {
+          "$token": "color-bg"
+        },
+        "stroke": {
+          "color": {
+            "$switch": "estado",
+            "cases": {
+              "quebrado": {
+                "$token": "color-warning"
+              },
+              "invalido": {
+                "$token": "color-danger"
+              }
+            },
+            "default": {
+              "$token": "color-border-control"
+            }
+          },
+          "width": 1
+        },
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            6
+          ],
+          "gap": 4,
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "icon",
+            "name": {
+              "$switch": "estado",
+              "cases": {
+                "vazio": "search",
+                "quebrado": "warning"
+              },
+              "default": "arrow-right"
+            },
+            "color": {
+              "$switch": "estado",
+              "cases": {
+                "vazio": {
+                  "$token": "color-text-muted"
+                },
+                "quebrado": {
+                  "$token": "color-warning"
+                }
+              },
+              "default": {
+                "$token": "color-accent"
+              }
+            },
+            "width": 16,
+            "height": 16
+          },
+          {
+            "type": "text",
+            "name": "alvo",
+            "text": {
+              "$field": "valor",
+              "default": "Escolher…"
+            },
+            "color": {
+              "$switch": "estado",
+              "cases": {
+                "vazio": {
+                  "$token": "color-text-muted"
+                },
+                "quebrado": {
+                  "$token": "color-warning"
+                }
+              },
+              "default": {
+                "$token": "color-text"
+              }
+            },
+            "font": {
+              "size": 13,
+              "weight": {
+                "$switch": "estado",
+                "cases": {
+                  "quebrado": 600
+                },
+                "default": 400
+              },
+              "lineHeight": 20,
+              "verticalAlign": "middle",
+              "wrap": "none",
+              "ellipsis": true
+            },
+            "width": "fill",
+            "height": 20
+          }
+        ]
+      }
+    ]
+  }
+}

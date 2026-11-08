@@ -1,0 +1,161 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "reference-field",
+  "name": "ReferenceField",
+  "description": "Campo ref dos Detalhes: o controle de 24 px (ícone, alvo e camada) que abre o seletor, com 60 px à direita para os IconButtons Ir para e Limpar.",
+  "size": {
+    "width": 217,
+    "height": 28
+  },
+  "minSize": {
+    "width": 100,
+    "height": 24
+  },
+  "sizing": {
+    "width": 217,
+    "height": 28
+  },
+  "preview": {
+    "valor": "Arquivos.pasta",
+    "camada": "Camada 1",
+    "estado": "valor"
+  },
+  "template": {
+    "type": "frame",
+    "name": "campo",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "controle",
+        "anchors": {
+          "left": 0,
+          "right": 60,
+          "centerY": true
+        },
+        "height": 24,
+        "cornerRadius": 4,
+        "fill": {
+          "$token": "color-bg"
+        },
+        "stroke": {
+          "color": {
+            "$switch": "estado",
+            "cases": {
+              "quebrado": {
+                "$token": "color-warning"
+              },
+              "invalido": {
+                "$token": "color-danger"
+              }
+            },
+            "default": {
+              "$token": "color-border-control"
+            }
+          },
+          "width": 1
+        },
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            6
+          ],
+          "gap": 4,
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "icon",
+            "name": {
+              "$switch": "estado",
+              "cases": {
+                "vazio": "search",
+                "quebrado": "warning"
+              },
+              "default": "arrow-right"
+            },
+            "color": {
+              "$switch": "estado",
+              "cases": {
+                "vazio": {
+                  "$token": "color-text-muted"
+                },
+                "quebrado": {
+                  "$token": "color-warning"
+                }
+              },
+              "default": {
+                "$token": "color-accent"
+              }
+            },
+            "width": 16,
+            "height": 16
+          },
+          {
+            "type": "text",
+            "name": "alvo",
+            "text": {
+              "$field": "valor",
+              "default": "Escolher…"
+            },
+            "color": {
+              "$switch": "estado",
+              "cases": {
+                "vazio": {
+                  "$token": "color-text-muted"
+                },
+                "quebrado": {
+                  "$token": "color-warning"
+                }
+              },
+              "default": {
+                "$token": "color-text"
+              }
+            },
+            "font": {
+              "size": 13,
+              "weight": {
+                "$switch": "estado",
+                "cases": {
+                  "quebrado": 600
+                },
+                "default": 400
+              },
+              "lineHeight": 20,
+              "verticalAlign": "middle",
+              "wrap": "none",
+              "ellipsis": true
+            },
+            "width": "fill",
+            "height": 20
+          },
+          {
+            "type": "text",
+            "name": "camada",
+            "text": {
+              "$field": "camada",
+              "default": ""
+            },
+            "color": {
+              "$token": "color-text-muted"
+            },
+            "font": {
+              "size": 11,
+              "weight": 400,
+              "lineHeight": 16,
+              "wrap": "none"
+            },
+            "visible": {
+              "$has": "camada"
+            },
+            "maxWidth": 100
+          }
+        ]
+      }
+    ]
+  }
+}

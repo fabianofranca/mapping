@@ -1,0 +1,213 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "segmented-item",
+  "name": "Opção",
+  "description": "Uma opção do Segmented: o rótulo (ou só o ícone); a selecionada fica cheia de color-accent. A divisória da esquerda separa da opção anterior.",
+  "size": {
+    "width": 72,
+    "height": 28
+  },
+  "minSize": {
+    "width": 16,
+    "height": 16
+  },
+  "sizing": {
+    "width": 72,
+    "height": 28
+  },
+  "preview": {
+    "rotulo": "Atual",
+    "selecionada": "não",
+    "icone": null
+  },
+  "template": {
+    "type": "frame",
+    "name": "opção",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$if": {
+        "$eq": [
+          "selecionada",
+          "sim"
+        ]
+      },
+      "then": {
+        "$token": "color-accent"
+      },
+      "else": "rgba(0, 0, 0, 0)"
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "divisória",
+        "width": 1,
+        "anchors": {
+          "left": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$token": "color-border-control"
+        }
+      },
+      {
+        "type": "icon",
+        "width": 16,
+        "height": 16,
+        "visible": {
+          "$has": "icone"
+        },
+        "anchors": {
+          "centerX": true,
+          "centerY": true
+        },
+        "name": {
+          "$switch": "icone",
+          "cases": {
+            "undo": "undo",
+            "redo": "redo",
+            "edit": "edit",
+            "copy": "copy",
+            "trash": "trash",
+            "plus": "plus",
+            "minus": "minus",
+            "check": "check",
+            "close": "close",
+            "refresh": "refresh",
+            "pan": "pan",
+            "pointer": "pointer",
+            "draw": "draw",
+            "marking": "marking",
+            "arrow": "arrow",
+            "crop": "crop",
+            "text": "text",
+            "fit": "fit",
+            "zoomIn": "zoom-in",
+            "zoomOut": "zoom-out",
+            "search": "search",
+            "locate": "locate",
+            "filter": "filter",
+            "menu": "menu",
+            "chevronUp": "chevron-up",
+            "chevronDown": "chevron-down",
+            "chevronLeft": "chevron-left",
+            "chevronRight": "chevron-right",
+            "arrowUp": "arrow-up",
+            "arrowDown": "arrow-down",
+            "arrowLeft": "arrow-left",
+            "arrowRight": "arrow-right",
+            "collapseAll": "collapse-all",
+            "expandAll": "expand-all",
+            "maximize": "maximize",
+            "minimize": "minimize",
+            "externalLink": "external-link",
+            "home": "home",
+            "panelLeft": "panel-left",
+            "panelRight": "panel-right",
+            "panelBottom": "panel-bottom",
+            "minimap": "minimap",
+            "tree": "tree",
+            "perspective": "perspective",
+            "layers": "layers",
+            "list": "list",
+            "table": "table",
+            "checklist": "checklist",
+            "diagnostics": "diagnostics",
+            "specialization": "specialization",
+            "library": "library",
+            "container": "container",
+            "containerMark": "container-mark",
+            "arrange": "arrange",
+            "more": "more",
+            "moreVertical": "more-vertical",
+            "grip": "grip",
+            "addImage": "add-image",
+            "image": "image",
+            "folder": "folder",
+            "file": "file",
+            "save": "save",
+            "export": "export",
+            "upload": "upload",
+            "tag": "tag",
+            "link": "link",
+            "share": "share",
+            "eye": "eye",
+            "eyeOff": "eye-off",
+            "lock": "lock",
+            "unlock": "unlock",
+            "info": "info",
+            "warning": "warning",
+            "error": "error",
+            "help": "help",
+            "settings": "settings",
+            "keyboard": "keyboard",
+            "sun": "sun",
+            "moon": "moon",
+            "proposal": "proposal",
+            "chat": "chat",
+            "chatAdd": "chat-add",
+            "moved": "moved",
+            "changed": "changed",
+            "replaced": "replaced",
+            "compare": "compare",
+            "note": "note",
+            "blocked": "blocked",
+            "globe": "globe"
+          }
+        },
+        "color": {
+          "$if": {
+            "$eq": [
+              "selecionada",
+              "sim"
+            ]
+          },
+          "then": {
+            "$token": "color-accent-text"
+          },
+          "else": {
+            "$token": "color-text"
+          }
+        }
+      },
+      {
+        "type": "text",
+        "name": "rótulo",
+        "text": {
+          "$field": "rotulo"
+        },
+        "color": {
+          "$if": {
+            "$eq": [
+              "selecionada",
+              "sim"
+            ]
+          },
+          "then": {
+            "$token": "color-accent-text"
+          },
+          "else": {
+            "$token": "color-text"
+          }
+        },
+        "font": {
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 20
+        },
+        "visible": {
+          "$not": {
+            "$has": "icone"
+          }
+        },
+        "anchors": {
+          "centerX": true,
+          "centerY": true
+        }
+      }
+    ]
+  }
+}
