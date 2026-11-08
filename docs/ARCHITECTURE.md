@@ -363,6 +363,14 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   `tests/canvas/renderPerformance.test.ts`, `tests/store/reviewPerf.test.ts`) rodam em projetos próprios do Vitest (`perf-model`
   e `perf-app`, em `vite.config.ts`), com `sequence.groupOrder` maior que o dos demais e um arquivo por vez: começam depois do
   resto da suíte, sem disputar CPU com ela.
+- **Testes de crescimento** (`npm run test:scale`): medem a mesma operação com n = 1.250 e 4n = 5.000 marcações do fixture
+  `buildScaleProject` (`tests/model/scaleProject.ts`), pela mediana de rodadas após o aquecimento, cada rodada numa versão nova do
+  projeto, e exigem a razão entre as medianas abaixo de 5× (linear dá ~4×, quadrático ~16×). Passar do teto é defeito a corrigir,
+  não teto a subir. Rodam por `vitest.scale.config.ts` (projeto `scale-model`, arquivos `tests/scale/**/*.scale.ts`, um por vez),
+  fora do `npm test` e da cobertura, num passo do job `build` do CI depois do `test:perf`; cada teste repete uma vez e imprime no
+  log n, 4n, as duas medianas e a razão. O auxiliar é `tests/support/growth.ts` (coleta o lixo antes de cada rodada; os workers sobem com `--expose-gc` e `--max-semi-space-size=128`, porque com o semi-espaço padrão o _scavenge_ do V8 inflava a razão para 5 a 8× sem laço quadrático nenhum). Nesta fase mede-se o modelo (validar, ler e
+  gravar, índice e derivados, lista, perspectivas); sessão, estado derivado, MCP e visualizador entram na fase seguinte. Assentar
+  e editar ficam nos orçamentos do `test:perf`.
 
 ## Onde fica cada coisa
 

@@ -268,6 +268,8 @@ jobs:
         run: npm ci
       # Orçamentos de desempenho por quadro: sem cobertura (ela deixa o código mais lento).
       - run: npm run test:perf
+      # Testes de crescimento: a mesma operação com n e 4n marcações, razão das medianas abaixo de 5×.
+      - run: npm run test:scale
       # Os tipos ficam só no `typecheck` (job `static`): `build` e `build:mcp` não repetem o `tsc`.
       - run: npm run build
       - name: Tamanho do dist/index.html

@@ -15,6 +15,7 @@
     "test:coverage": "vitest run --coverage",
     "test:durations": "node scripts/test-durations.mjs",
     "test:perf": "vitest run tests/model/performance.test.ts tests/canvas/renderPerformance.test.ts tests/store/reviewPerf.test.ts",
+    "test:scale": "vitest run --config vitest.scale.config.ts --reporter=verbose",
     "test:e2e": "playwright test",
     "lint": "eslint . && prettier --check .",
     "lint:ci": "eslint . --cache --cache-location .cache/eslint/ && prettier --check . --cache --cache-location .cache/prettier",
