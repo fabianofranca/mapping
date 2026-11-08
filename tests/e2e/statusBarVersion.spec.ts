@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { createProject } from './helpers';
 
-// Barra de status a 900 px com uma mensagem longa à esquerda ("1 aceita aguardando
+// Barra de status a 900 px com uma mensagem longa (que encolhe) à esquerda ("1 aceita aguardando
 // aplicação"): a versão do build (à direita) nunca é cortada; quem trunca é a esquerda.
 // jsdom não tem layout; a medição é no Chromium.
 
@@ -14,7 +14,7 @@ test('a versão não é cortada quando a mensagem da esquerda é longa', async (
   const result = await bar.evaluate((el) => {
     const gap = el.querySelector('.statusbar-gap')!;
     const long = document.createElement('span');
-    long.className = 'status-item';
+    long.className = 'status-item status-item-s4';
     const text = document.createElement('span');
     text.className = 'status-item-text';
     text.textContent = 'x'.repeat(400);

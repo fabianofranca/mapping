@@ -477,6 +477,31 @@
   padding: 0 var(--space-1-5);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+  container-type: inline-size;
+}
+
+/*
+ * Coluna estreita na revisão (900×720 com Árvore, Camadas, Propostas e Detalhes: 360 px): os
+ * controles da revisão (Atual/Proposto) e o zoom ficam inteiros e o caminho encolhe com
+ * reticências e dica (BS3: sobram ~103 px, a seleção com ~5 letras + "…"; só "› ›" era ilegível);
+ * cedem, por valor menor, Conversas, Enquadrar tudo (Ctrl+0), Visualizar e Mostrar no canvas
+ * (opções de vista, fora da revisão), que fechar a janela Detalhes devolve. A legenda fica: é da revisão.
+ * Sem a revisão nada cede.
+ */
+.canvas-bar-low {
+  display: contents;
+}
+
+@container (max-width: 470px) {
+  .canvas-bar:has(.review-canvas-controls) .canvas-bar-low {
+    display: none;
+  }
+
+  /* A seleção (último trecho) fica com a sobra; os de antes recolhem, sem pintar fora. */
+  .canvas-bar:has(.review-canvas-controls) .crumb-item:not(:last-child) {
+    flex-shrink: 20;
+    overflow: hidden;
+  }
 }
 
 .crumbs {
@@ -490,6 +515,9 @@
 }
 
 .crumbs-empty {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font: var(--t-text-small);
   color: var(--color-text-muted);
   padding: 0 var(--space-1-5);
@@ -584,6 +612,7 @@
   white-space: nowrap;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
+  container-type: inline-size;
 }
 
 .statusbar-gap {
@@ -593,12 +622,12 @@
 
 .status-item {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: var(--space-1);
   max-width: 320px;
   overflow: hidden;
   padding: 0 var(--space-1-5);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -606,16 +635,44 @@
   flex: none;
 }
 
-/* O texto de um item da esquerda é o que trunca com reticências (o item é flex). */
+/*
+ * Prioridade (#675): por padrão o item nunca encolhe (estado de gravação, destino, Somente
+ * leitura, cursor, zoom, build). Os que encolhem (reticências no `.status-item-text`, dica no
+ * `title`) perdem espaço na ordem do `flex-shrink`: primeiro `s4` (perspectiva, aguardando
+ * aplicação), depois `s` (não exportadas, avisos, conversas, chegadas), que dividem o aperto pelo
+ * tamanho, e o nome da seleção (`sel`, o mais comprido, com largura mínima).
+ */
+.status-item-s,
+.status-item-s4,
+.status-item-sel {
+  flex-shrink: 1;
+  min-width: var(--space-8);
+}
+
+.status-item-s4 {
+  flex-shrink: 4;
+}
+
+.status-item-sel {
+  min-width: calc(var(--space-8) * 3);
+}
+
 .status-item-text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Tudo à direita do espaço (seleção, cursor, zoom, schema, canal, versão) nunca encolhe. */
-.statusbar-gap ~ * {
-  flex: none;
+/*
+ * Janela estreita: abaixo de 1100 px de barra (a 900×720 ela tem 884 px) schema e canal somem com
+ * os separadores. Medido na revisão com pasta e "aguardando aplicação" (o pior caso): sem eles,
+ * Salvo, o destino e Somente leitura cabem inteiros e só os itens encolhíveis perdem texto.
+ */
+@container (max-width: 1100px) {
+  .status-wide,
+  .status-sep:has(+ .status-wide) {
+    display: none;
+  }
 }
 
 .status-item-mono {

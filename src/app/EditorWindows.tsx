@@ -182,10 +182,16 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
             <Breadcrumbs onSelect={onSelect} />
             <div class="canvas-bar-end">
               <ReviewCanvasControls />
-              <PinsButton />
-              <ViewModeButton />
-              <ViewModePanel />
-              <FitButton />
+              <span class="canvas-bar-low">
+                <PinsButton />
+              </span>
+              <span class="canvas-bar-low">
+                <ViewModeButton />
+                <ViewModePanel />
+              </span>
+              <span class="canvas-bar-low">
+                <FitButton />
+              </span>
               <ZoomField />
             </div>
           </div>
