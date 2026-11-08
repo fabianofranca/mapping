@@ -1,4 +1,4 @@
-# Enquadrar a seleção e o Card que mudou de lugar no R25 — [Não lançado] (épico `epic/enquadrar-selecao`)
+# Enquadrar a seleção e o Card que mudou de lugar no R25 — 2026-11-08 (épico `epic/enquadrar-selecao`)
 
 ## Pendências
 

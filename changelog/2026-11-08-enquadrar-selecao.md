@@ -1,4 +1,4 @@
-# Enquadrar a seleção e o Card que mudou de lugar no R25 — [Não lançado] (épico `epic/enquadrar-selecao`, PR #1088, MCP 0.28.4 sem mudança, schema v18)
+# Enquadrar a seleção e o Card que mudou de lugar no R25 — 2026-11-08 (épico `epic/enquadrar-selecao`, PR #1088, MCP 0.28.5 sem mudança, schema v18)
 
 ## Adicionado
 
