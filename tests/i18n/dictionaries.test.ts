@@ -35,6 +35,14 @@ describe('dicionários', () => {
     expect(placeholders(en)).toEqual(placeholders(pt));
   });
 
+  it.each(entries)(
+    '%s: sem crase (markdown não é interpretado na interface)',
+    (key, pt) => {
+      expect(pt).not.toContain('`');
+      expect(enUS[key]).not.toContain('`');
+    },
+  );
+
   it.each(Object.keys(APP_ERROR_CODES))(
     'error.%s existe nos dois dicionários',
     (code) => {

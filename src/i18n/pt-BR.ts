@@ -417,6 +417,9 @@ export const ptBR = {
   'spec.apply': 'Aplicar especialização…',
   'spec.update': 'Atualizar versão…',
   'spec.remove': 'Remover',
+  'spec.designTokens': 'Tokens do desenho',
+  'spec.designModes': 'Modos',
+  'spec.designIcons': 'Ícones',
   'spec.item': 'v{version} · {layers} camada(s)',
   'spec.fileMissing': '(arquivo da especialização indisponível)',
   'spec.readFailed': 'Não foi possível ler o arquivo.',
@@ -485,7 +488,7 @@ export const ptBR = {
   'spec.updateFolder': 'Atualizar de pasta…',
   'spec.updateZip': 'Atualizar de zip…',
   'spec.packageHint':
-    'Uma biblioteca (`formatVersion` 4 em diante) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes. Se não citar arquivos do pacote, um .json isolado também serve.',
+    'Uma biblioteca (formatVersion 4 em diante) vem numa pasta ou num zip: a especialização, os componentes, os documentos e as fontes. Se não citar arquivos do pacote, um .json isolado também serve.',
   'spec.v4NeedsPackage':
     '"{name}" cita arquivos do pacote (componentes, documentos, exemplos ou fontes) e precisa da pasta inteira: um arquivo .json isolado não basta. Use "Aplicar pasta…" ou "Aplicar zip…".',
   'spec.packageValidating': 'Conferindo o pacote…',
@@ -1064,7 +1067,7 @@ export const ptBR = {
   'code.pathCopied': 'Caminho copiado',
   'code.copyFailed': 'Não foi possível copiar o caminho.',
   'migration.v11.discardedUrlTemplate':
-    'Schema 11: o endereço dos arquivos saiu do projeto e foi descartado de {platforms} ({templates}). O repositório agora é da especialização: regrave a especialização com `repo` (formatVersion 5) e atualize-a no projeto.',
+    'Schema 11: o endereço dos arquivos saiu do projeto e foi descartado de {platforms} ({templates}). O repositório agora é da especialização: regrave a especialização com repo (formatVersion 5) e atualize-a no projeto.',
   'migration.v13.discardedInherit':
     'Schema 13: a herança de anotações saiu do formato. {count} anotação(ões) valiam também para as marcações descendentes e agora valem só para a própria marcação: {markings}. Nenhuma anotação foi apagada.',
   'repos.title': 'Repositórios',

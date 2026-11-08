@@ -22,6 +22,7 @@ import { Dialog } from './Dialog';
 import { openToolWindow } from './toolWindowLayout';
 import { useEditor } from './EditorContext';
 import { LibraryIssueList } from './LibraryIssueList';
+import { SpecTokensInfo } from './SpecTokensInfo';
 import { UpdateImpact } from './UpdateImpact';
 import {
   canPickDirectory,
@@ -427,6 +428,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
                       })
                     : t('spec.fileMissing')}
                 </span>
+                {entry.spec && <SpecTokensInfo spec={entry.spec} />}
                 {entry.spec?.platforms && entry.spec.platforms.length > 0 && (
                   <div class="spec-platforms">
                     <small class="muted">{t('spec.platforms')}</small>
