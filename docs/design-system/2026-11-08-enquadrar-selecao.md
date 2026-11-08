@@ -8,8 +8,14 @@
 
 ## Sincronização
 
-(preenchida no fechamento do épico)
+Gravado no artefato Mapping do Claude Design em 2026-11-08 (índice `project/design-system.json`, versão 62, `lastChange` por Claude via claude):
+
+- **Ícone `fit-selection`:** asset novo `fit-selection.svg` (o `fit` com o quadrado central), no grupo `Icons` do índice, logo depois de `fit.svg`; `project/assets/Icons/README.md` passa a dizer 90 ícones e cita o novo.
+- **`Breadcrumbs`:** botão **Enquadrar seleção** logo depois de **Enquadrar tudo** na prévia (habilitado com seleção, desabilitado no modo visualização, `aria-keyshortcuts="Shift+2"`) e no `README.md` do componente (`FitSelectionButton` em "No código").
+- **`Atalhos.md`:** linha "Enquadrar a seleção | Shift+2" na tabela do grupo "Ver" (o app o chama de "Zoom"); **`HelpDialog`:** a mesma linha na prévia.
+
+Só tokens e classes que já existiam; as prévias não foram renderizadas no navegador.
 
 ## Ficou sem gravar
 
-(preenchido no fechamento do épico)
+Nada. (Não conferi o contraste das prévias nos temas claro e escuro: o botão e o ícone usam só tokens e `currentColor`.)
