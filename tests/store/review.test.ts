@@ -1476,6 +1476,32 @@ describe('apagar proposta (fase 9.2)', () => {
     return h;
   }
 
+  it('na revisão de P2, o segundo desfazer não desfaz a aplicação de P1 (R12.20b/c)', async () => {
+    const { after } = richScenario();
+    const p2 = propose(after, renameMarking(after, 'M5', 'Botão 2'), { id: 'P2' });
+    const h = await appliedHarness({ others: [p2] });
+    const { session, review, root } = h;
+    expect(session.store.project.value?.containers.map((i) => i.id)).toContain('I3');
+
+    review.open('P2');
+    await review.decide({ level: 'proposal', id: null }, 'accepted');
+    expect(await review.apply()).toMatchObject({ ok: true });
+    expect((await diskProposal(root, 'P2')).status).toBe('applied');
+
+    expect(session.store.undo()).toBe(true);
+    await session.proposals.settled();
+    expect((await diskProposal(root, 'P2')).status).toBe('open');
+    expect(review.proposalId.value).toBe('P2');
+
+    // O segundo não faz nada: a entrada é de P1, e a revisão aberta é a de P2.
+    expect(session.store.canUndo.value).toBe(false);
+    expect(session.store.undo()).toBe(false);
+    await session.proposals.settled();
+    expect((await diskProposal(root, 'P1')).status).toBe('applied');
+    expect(session.store.project.value?.containers.map((i) => i.id)).toContain('I3');
+    expect(review.proposalId.value).toBe('P2');
+  });
+
   it('apaga a aplicada do disco e da lista; desfazer e refazer o projeto depois não dão erro nem deixam arquivo órfão citado', async () => {
     const h = await appliedHarness();
     const { session, review, root } = h;

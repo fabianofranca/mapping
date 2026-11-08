@@ -592,7 +592,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
   it('durante a revisão o projeto é somente leitura: apply, gestos e desfazer são recusados', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'Antes');
-    store.setReviewing(true);
+    store.setReviewing('P1');
 
     expect(store.reviewing.value).toBe(true);
     expect(actions.renameLayer('L1', 'Depois')).toEqual({
@@ -604,7 +604,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
     expect(store.undo()).toBe(false);
     expect(project(store).layers[0]?.name).toBe('Antes');
 
-    store.setReviewing(false);
+    store.setReviewing(null);
     expect(actions.renameLayer('L1', 'Depois')).toEqual({ ok: true, value: undefined });
     expect(store.undo()).toBe(true);
   });
@@ -612,7 +612,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
   it('uma entrada com efeito (a aplicação das aceitas) passa pelo bloqueio e desfaz e refaz o efeito junto', () => {
     const { store } = setup();
     const { calls, link } = linked();
-    store.setReviewing(true);
+    store.setReviewing('P1');
     const original = project(store);
 
     const result = store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), { link });
@@ -633,7 +633,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
   it('na revisão só dá para desfazer entradas da própria revisão, não as de antes', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'De antes');
-    store.setReviewing(true);
+    store.setReviewing('P1');
     const { calls, link } = linked();
     store.apply((p) => renameLayer(p, 'L2', 'Da revisão'), { link });
 
@@ -642,9 +642,36 @@ describe('store: revisão de propostas (etapa 4)', () => {
     // A entrada anterior é de uma edição normal: fica para depois da revisão.
     expect(store.canUndo.value).toBe(false);
     expect(store.undo()).toBe(false);
-    store.setReviewing(false);
+    store.setReviewing(null);
     expect(store.undo()).toBe(true);
     expect(calls).toEqual(['undo']);
+  });
+
+  it('na revisão de P2, uma entrada com vínculo de P1 não desfaz nem refaz; na de P1, sim', () => {
+    const { store } = setup();
+    const { calls, link } = linked();
+    store.apply((p) => renameLayer(p, 'L1', 'Aplicado por P1'), { link });
+    const withP1 = project(store);
+
+    store.setReviewing('P2');
+    expect(store.canUndo.value).toBe(false);
+    expect(store.undo()).toBe(false);
+    expect(calls).toEqual([]);
+    expect(project(store)).toBe(withP1);
+
+    store.setReviewing('P1');
+    expect(store.undo()).toBe(true);
+    expect(calls).toEqual(['undo']);
+    expect(store.canRedo.value).toBe(true);
+
+    store.setReviewing('P2');
+    expect(store.canRedo.value).toBe(false);
+    expect(store.redo()).toBe(false);
+    expect(calls).toEqual(['undo']);
+
+    store.setReviewing('P1');
+    expect(store.redo()).toBe(true);
+    expect(calls).toEqual(['undo', 'redo']);
   });
 
   it('o projeto só leitura (schema novo) continua recusando até as entradas da revisão', () => {
@@ -718,7 +745,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
 
   it('fechar o projeto desliga a revisão; carregar outro (recarga externa) não', () => {
     const { store } = setup();
-    store.setReviewing(true);
+    store.setReviewing('P1');
     store.load(sampleProject());
     expect(store.reviewing.value).toBe(true);
     store.close();
