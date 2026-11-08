@@ -2,10 +2,11 @@
 // (tela cheia, janela e página no diálogo), a janela Avisos, a janela Árvore, o canvas com o minimapa e a
 // barra de status. Cada `open` parte do editor com a fixture aberta (1440 × 900) no app 0.25.0.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { PATHS } from '../../paths.mjs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const BASE = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
+const BASE = PATHS.base;
 const { JSZip, projectZip } = await import(pathToFileURL(`${BASE}/shots/extractor.mjs`).href);
 
 const walkFs = (d) => readdirSync(d).flatMap((n) => (statSync(join(d, n)).isDirectory() ? walkFs(join(d, n)) : [join(d, n)]));

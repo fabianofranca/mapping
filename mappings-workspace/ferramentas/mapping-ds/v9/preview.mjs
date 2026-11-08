@@ -6,13 +6,14 @@
 //     a 100% no modo Visualizar → out/preview-<tela>.png (compare com out/real-<tela>.png).
 // Saída em v9/<grupo>/out/. Nada fora dessa pasta é alterado.
 import { spawn, spawnSync } from 'node:child_process';
+import { PATHS } from '../paths.mjs';
 import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 
-const BASE = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
-const WS = 'C:/Pessoal/mapping/workspace';
+const BASE = PATHS.base;
+const WS = PATHS.ws;
 const [group, only] = process.argv.slice(2);
 if (!group) throw new Error('uso: node v9/preview.mjs <grupo> [tela]');
 const GDIR = `${BASE}/v9/${group}`;

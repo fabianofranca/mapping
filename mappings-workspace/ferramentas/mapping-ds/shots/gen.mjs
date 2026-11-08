@@ -1,13 +1,14 @@
 // A partir de extracted.json: (1) preview.zip, um projeto de prévia para abrir no app e comparar;
 // (2) ops.json, as operações da proposta para o projeto comentarios.
 import { createRequire } from 'node:module';
+import { PATHS } from '../paths.mjs';
 import { randomUUID } from 'node:crypto';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
-const SCRATCH = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
-const PROJECT = 'C:/Pessoal/mapping/workspace/projetos/comentarios';
-const LIB = 'C:/Pessoal/mapping/workspace/especializacoes/mapping-ds';
+const SCRATCH = PATHS.base;
+const PROJECT = `${PATHS.ws}/projetos/comentarios`;
+const LIB = `${PATHS.ws}/especializacoes/mapping-ds`;
 const require = createRequire(`${SCRATCH}/app/package.json`);
 const JSZip = require('jszip');
 

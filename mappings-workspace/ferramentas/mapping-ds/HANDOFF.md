@@ -2,6 +2,8 @@
 
 Biblioteca `especializacoes/mapping-ds/` (o design system do app Mapping como especialização) e o projeto `projetos/comentarios/` (o sistema de comentários do app, mapeado item a item com ela). Atualizado em 2026-11-08 (MCP 0.28.1).
 
+**Onde isto mora:** `mappings-workspace/ferramentas/mapping-ds/`, dentro do próprio repositório do Mapping (antes ficava fora dele). Os caminhos dos scripts saem de `paths.mjs` (`PATHS.base` = esta pasta, `PATHS.ws` = `mappings-workspace/`, `PATHS.repo` = a raiz do repositório), então funcionam em qualquer clone; nenhum script tem caminho absoluto. As tags e o código do app (`git show mcp-v0.28.2:…`, `src/ui/icons.tsx`) são os do repositório onde esta pasta está. `app/`, `app25/`, `mcp25/` e as saídas de `shots/` não vão para o git (ver o `.gitignore` do `mappings-workspace/`) e se recriam: `app/` e `app25/` com o `git clone --local` da tabela abaixo (a tag é `mcp-v0.28.1` e `mcp-v0.25.0`); `mcp25/` é o `mapping-mcp.js` da release 0.25.0.
+
 ## Onde estamos
 
 - **Biblioteca:** `mapping-ds` **v9** (especialização 15, componentes no formato 4): 83 tipos, **62 com desenho**, 18 estruturais, só Arrow, Container e ComponentDrawing sem desenho (são a seta, o container e o desenho do próprio canvas). 0 erros e 0 avisos. Os 43 tipos novos da v9 foram feitos em grupos (`v9/<grupo>/`: `revisao`, `detalhes`, `telas`, `dialogos`, cada um com `lib.mjs`, `rules.mjs` e `screens.mjs`; regras em `v9/README.md`).
@@ -22,7 +24,7 @@ Biblioteca `especializacoes/mapping-ds/` (o design system do app Mapping como es
 | --- | --- |
 | `lib.mjs` | Os desenhos (componentes), documentos, exemplos, campos e a migração. Ícones avaliados do `src/ui/icons.tsx` do repo. Organizado em blocos "Revisão N" (o último vence). |
 | `build-spec.mjs` | Os tipos (id, descrição, `code` conferido no repo) e a versão; grava o pacote em `especializacoes/mapping-ds/`. **Suba `version` a cada mudança** (a aplicada é a do projeto). |
-| `app/` | Clone compilado do repo do Mapping em **mcp-v0.28.1** (fora do git): é o que desenha a prévia (formato 4). Recriar: `git clone --local ../../../repo app && cd app && git checkout <tag> && npm ci && npm run build` (com `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`; o Chromium do cache do Playwright já serve). |
+| `app/` | Clone compilado do repo do Mapping em **mcp-v0.28.1** (fora do git): é o que desenha a prévia (formato 4). Recriar: `git clone --local ../../.. app && cd app && git checkout <tag> && npm ci && npm run build` (com `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1`; o Chromium do cache do Playwright já serve). |
 | `app25/` | O mesmo em **mcp-v0.25.0**: o app cujo layout o projeto mapeia. É o que `extract.mjs` mede (`SRC=…/app25`). |
 | `shots/fixture.mjs` | Remonta em `shots/fixture/` o projeto comentarios de antes da v5 (as conversas de teste ancoram em marcações que a v5 apagou). É o que `extract.mjs` abre. Diferença conhecida: as notas foram movidas depois, então o zoom ajustado sai 11% (o projeto tem 12%) e o minimapa muda. |
 | `shots/extract.mjs` | Abre o app real (`SRC`, padrão `app/`; use `app25/`) com a fixture + conversas de teste, a 1440 × 900, e converte cada elemento do DOM num item da biblioteca → `shots/extracted.json` (+ `real-*.png`). Texto dentro de `text-overflow: ellipsis` leva `tw` (largura do texto) e `cw` (do conteúdo da caixa): o app corta quando `tw > cw`. `extracted-v7.json` é a extração anterior. |

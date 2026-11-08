@@ -1,8 +1,9 @@
 // Telas do grupo "dialogos": cada diálogo vira um container, medido no app 0.25.0 com a fixture aberta.
 import { readFileSync, readdirSync } from 'node:fs';
+import { PATHS } from '../../paths.mjs';
 import { pathToFileURL } from 'node:url';
 
-const BASE = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
+const BASE = PATHS.base;
 const NOTAS = `${BASE}/shots/fixture/specs/notas`;
 const extractor = () => import(pathToFileURL(`${BASE}/shots/extractor.mjs`).href);
 

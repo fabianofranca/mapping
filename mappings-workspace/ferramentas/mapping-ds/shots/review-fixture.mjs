@@ -2,9 +2,10 @@
 // do app 0.25.0 (marcadores, decisões, valores antes/depois, outras mudanças, linha da lista de propostas).
 // Usa o servidor MCP da mesma versão (mcp25/mapping-mcp.js). Rodar depois de fixture.mjs.
 import { spawn } from 'node:child_process';
+import { PATHS } from '../paths.mjs';
 import { readdirSync, readFileSync, rmSync } from 'node:fs';
 
-const BASE = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
+const BASE = PATHS.base;
 const FIX = `${BASE}/shots/fixture`;
 const TITLE = 'Revisão de teste: botões e pinos';
 

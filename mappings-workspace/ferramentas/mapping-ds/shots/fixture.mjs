@@ -2,9 +2,10 @@
 // as conversas de teste ancoram em marcações daquele estado (Salvar, Campo E-mail), apagadas pela v5.
 // Grava shots/fixture/ (mapping.json + specs/). Só precisa rodar de novo se a fixture for apagada.
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { PATHS } from '../paths.mjs';
 
-const PROJECT = 'C:/Pessoal/mapping/workspace/projetos/comentarios';
-const OUT = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds/shots/fixture';
+const PROJECT = `${PATHS.ws}/projetos/comentarios`;
+const OUT = `${PATHS.base}/shots/fixture`;
 const V5 = 'fda8dd84-02ba-46a5-9f7a-8379c32db7fc';
 const V4 = '6b2c17b8-d3c1-413e-8427-a1ea79d6be21';
 

@@ -4,10 +4,11 @@
 // update_annotation; item sem par vira create_marking; marcação sem par (de um tipo que a medição
 // agora chama de outro jeito) vira delete_marking. Grava ops-v9-existentes.json e um relatório.
 import { readFileSync, writeFileSync } from 'node:fs';
+import { PATHS } from '../paths.mjs';
 
-const SHOTS = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds/shots';
-const PROJECT = 'C:/Pessoal/mapping/workspace/projetos/comentarios';
-const LIB = 'C:/Pessoal/mapping/workspace/especializacoes/mapping-ds';
+const SHOTS = `${PATHS.base}/shots`;
+const PROJECT = `${PATHS.ws}/projetos/comentarios`;
+const LIB = `${PATHS.ws}/especializacoes/mapping-ds`;
 const extracted = JSON.parse(readFileSync(process.argv[2] ?? `${SHOTS}/extracted.json`, 'utf8'));
 const p = JSON.parse(readFileSync(`${PROJECT}/mapping.json`, 'utf8'));
 const spec = JSON.parse(readFileSync(`${LIB}/mapping-ds.spec.json`, 'utf8'));

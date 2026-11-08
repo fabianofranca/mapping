@@ -1,8 +1,9 @@
 // Desenhos dos componentes do Mapping DS. Valores do tema CLARO de src/theme/tokens.ts e medidas de
 // src/theme/controls.css, details.css, dialogs.css, layout.css e review.css (repo Mapping, mcp-v0.25.0).
 import { readFileSync } from 'node:fs';
+import { PATHS } from './paths.mjs';
 
-const REPO = 'C:/Pessoal/mapping/repo';
+const REPO = PATHS.repo;
 
 // ---- Tokens (tema claro). C_LIGHT são os literais (o extrator casa as cores do DOM com eles);
 // C são os mesmos nomes como { $token } da especialização (v8: tokens claro e escuro de tokens.ts).

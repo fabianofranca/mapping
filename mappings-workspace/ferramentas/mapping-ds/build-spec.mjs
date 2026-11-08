@@ -1,12 +1,13 @@
 // Gera especializacoes/mapping-ds.json a partir do mapa de docs/DESIGN-SYSTEM.md do repo Mapping
 // e confere, para cada tipo, que o arquivo existe e que o símbolo aparece nele.
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { PATHS } from './paths.mjs';
 import { dirname, join } from 'node:path';
 import { applyLibrary, ICON_SET, MIGRATIONS, themeTokens } from './lib.mjs';
 
-const REPO = 'C:/Pessoal/mapping/repo';
+const REPO = PATHS.repo;
 // PKG=<pasta>: grava o pacote noutra pasta (a prévia de um grupo, sem tocar no pacote de verdade).
-const PKG = process.env.PKG ?? 'C:/Pessoal/mapping/workspace/especializacoes/mapping-ds';
+const PKG = process.env.PKG ?? `${PATHS.ws}/especializacoes/mapping-ds`;
 const OUT = `${PKG}/mapping-ds.spec.json`;
 const write = (rel, text) => {
   const p = `${PKG}/${rel}`;

@@ -1,11 +1,12 @@
 // Mede o app real (dist/index.html) e converte cada elemento visível num item da biblioteca Mapping DS.
 // Saída: extracted.json (containers com itens) e capturas real-*.png para comparar.
 import { createRequire } from 'node:module';
+import { PATHS } from '../paths.mjs';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const SCRATCH = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
+const SCRATCH = PATHS.base;
 // SRC=<pasta do build>: o app medido (o layout do projeto é o do mcp-v0.25.0, em app25).
 const SRC = process.env.SRC ?? `${SCRATCH}/app`;
 // O projeto aberto no app real é a fixture (o comentarios antes da v5; gerada por fixture.mjs), não o projeto vivo.

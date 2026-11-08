@@ -1,10 +1,11 @@
 // Chama propose_changes no servidor MCP do workspace (tools/mapping-mcp.js, stdio JSON-RPC),
 // com as operações de ops-min.json. Mesmo servidor e mesma validação do cliente.
 import { spawn } from 'node:child_process';
+import { PATHS } from '../paths.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const WS = 'C:/Pessoal/mapping/workspace';
-const SCRATCH = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
+const WS = PATHS.ws;
+const SCRATCH = PATHS.base;
 const tool = process.argv[2] ?? 'plan_changes';
 const operations = JSON.parse(readFileSync(`${SCRATCH}/shots/ops-min.json`, 'utf8'));
 writeFileSync(`${SCRATCH}/shots/lote/operacoes.json`, JSON.stringify(operations));

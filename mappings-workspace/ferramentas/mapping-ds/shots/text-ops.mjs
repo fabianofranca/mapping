@@ -2,10 +2,11 @@
 // TEXTO cujo retângulo mudou, acha a marcação do projeto com o retângulo antigo e o mesmo texto e gera update_marking.
 // node text-ops.mjs <final-antes.json> <final-depois.json>  →  ops-min.json (para mcp-propose.mjs)
 import { readFileSync, writeFileSync } from 'node:fs';
+import { PATHS } from '../paths.mjs';
 
-const SCRATCH = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
-const PROJECT = 'C:/Pessoal/mapping/workspace/projetos/comentarios';
-const LIB = 'C:/Pessoal/mapping/workspace/especializacoes/mapping-ds';
+const SCRATCH = PATHS.base;
+const PROJECT = `${PATHS.ws}/projetos/comentarios`;
+const LIB = `${PATHS.ws}/especializacoes/mapping-ds`;
 const [beforeFile, afterFile] = process.argv.slice(2);
 const before = JSON.parse(readFileSync(beforeFile, 'utf8'));
 const after = JSON.parse(readFileSync(afterFile, 'utf8'));

@@ -5,8 +5,8 @@ Cada grupo trabalha **só** na própria pasta `v9/<grupo>/` e entrega três arqu
 ## Contexto
 
 - A biblioteca `mapping-ds` é o design system do app Mapping (Preact) escrito como especialização do Mapping. Gerada por `ferramentas/mapping-ds/lib.mjs` (desenhos) e `build-spec.mjs` (tipos, `code`, versão). Leia `ferramentas/mapping-ds/HANDOFF.md` (decisões do dono e limitações do motor) e o fim do `lib.mjs` (Revisão 6 e 7) para o estilo.
-- Formato: componente `formatVersion` 4, especialização 15. Leia o `docs/COMPONENT-FORMAT.md` da versão do MCP em uso (`git -C C:/Pessoal/mapping/repo show mcp-v0.28.2:docs/COMPONENT-FORMAT.md`, ou o recurso `mapping-docs://COMPONENT-FORMAT.md` do servidor) inteiro (é o da 0.28.1) antes de desenhar.
-- **App medido = 0.25.0** (`ferramentas/mapping-ds/app25/`, código em `git -C C:/Pessoal/mapping/repo show mcp-v0.25.0:<arquivo>`; CSS em `src/theme/*.css`, tokens em `src/theme/tokens.ts`). **Prévia = app 0.28.1** (`ferramentas/mapping-ds/app/`).
+- Formato: componente `formatVersion` 4, especialização 15. Leia o `docs/COMPONENT-FORMAT.md` da versão do MCP em uso (`git show mcp-v0.28.2:docs/COMPONENT-FORMAT.md`, ou o recurso `mapping-docs://COMPONENT-FORMAT.md` do servidor) inteiro (é o da 0.28.1) antes de desenhar.
+- **App medido = 0.25.0** (`ferramentas/mapping-ds/app25/`, código em `git show mcp-v0.25.0:<arquivo>`; CSS em `src/theme/*.css`, tokens em `src/theme/tokens.ts`). **Prévia = app 0.28.1** (`ferramentas/mapping-ds/app/`).
 - A fixture (`shots/fixture/`) é o projeto aberto no app medido: containers Editor, Janela Comentários etc., conversas de teste e uma **proposta aberta** "Revisão de teste: botões e pinos" (7 mudanças: valores e nome do botão Salvar, deslocamento, trava do Campo E-mail, botão Cancelar criado, pino removido, dois pinos envolvidos, camada "Camada 1" renomeada para "Rascunhos").
 
 ## Decisões do dono (valem para todo grupo)

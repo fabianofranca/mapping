@@ -1,13 +1,14 @@
 // Abre o projeto `comentarios` no build real do app (dist/index.html) e tira capturas.
 // Uso: node shoot.mjs <saída.png> [zoomNoContainer]
 import { createRequire } from 'node:module';
+import { PATHS } from '../paths.mjs';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const SCRATCH = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
+const SCRATCH = PATHS.base;
 const SRC = `${SCRATCH}/app`;
-const PROJECT = 'C:/Pessoal/mapping/workspace/projetos/comentarios';
+const PROJECT = `${PATHS.ws}/projetos/comentarios`;
 const require = createRequire(`${SRC}/package.json`);
 const { chromium } = require('@playwright/test');
 const JSZip = require('jszip');

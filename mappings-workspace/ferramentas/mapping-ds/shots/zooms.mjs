@@ -1,11 +1,12 @@
 // Abre um container do projeto comentarios (estado atual) sozinho no app e captura em vários zooms.
 // node zooms.mjs <id-ou-prefixo-do-container> <saída-base> 50 100 200 400
 import { createRequire } from 'node:module';
+import { PATHS } from '../paths.mjs';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
-const SCRATCH = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
-const PROJECT = 'C:/Pessoal/mapping/workspace/projetos/comentarios';
+const SCRATCH = PATHS.base;
+const PROJECT = `${PATHS.ws}/projetos/comentarios`;
 const require = createRequire(`${SCRATCH}/app/package.json`);
 const { chromium } = require('@playwright/test');
 const JSZip = require('jszip');

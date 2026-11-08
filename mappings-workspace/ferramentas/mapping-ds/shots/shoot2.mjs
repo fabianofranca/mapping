@@ -1,8 +1,9 @@
 // Abre um zip de prévia no app e captura só a área do canvas.  node shoot2.mjs <zip> <png> [larg alt]
 import { createRequire } from 'node:module';
+import { PATHS } from '../paths.mjs';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-const SCRATCH = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
+const SCRATCH = PATHS.base;
 const require = createRequire(`${SCRATCH}/app/package.json`);
 const { chromium } = require('@playwright/test');
 const [zipPath, out, w = '2700', h = '1400'] = process.argv.slice(2);

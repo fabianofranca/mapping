@@ -3,11 +3,12 @@
 // Rodar com a fixture com a proposta de teste (fixture.mjs e depois review-fixture.mjs).
 // Saída: extracted-v9.json, real-v9-<tela>.png e ops-v9-novas.json.
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { PATHS } from '../paths.mjs';
 import { pathToFileURL } from 'node:url';
 
-const BASE = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
+const BASE = PATHS.base;
 const SHOTS = `${BASE}/shots`;
-const LIB = 'C:/Pessoal/mapping/workspace/especializacoes/mapping-ds';
+const LIB = `${PATHS.ws}/especializacoes/mapping-ds`;
 process.env.SRC = `${BASE}/app25`;
 const { extract, args, openApp } = await import(pathToFileURL(`${SHOTS}/extractor.mjs`).href);
 const safe = (s) => s.replace(/[^\p{L}\p{N}]+/gu, '_');

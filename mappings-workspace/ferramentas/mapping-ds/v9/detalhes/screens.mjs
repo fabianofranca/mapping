@@ -3,8 +3,9 @@
 // canvas" do modo visualização e a lista de camadas. Cada `open` parte do editor com a fixture aberta
 // (1440 × 900) no app 0.25.0; a altura da janela cresce onde é preciso para os Detalhes não rolarem.
 import { pathToFileURL } from 'node:url';
+import { PATHS } from '../../paths.mjs';
 
-const BASE = 'C:/Pessoal/mapping/workspace/ferramentas/mapping-ds';
+const BASE = PATHS.base;
 const { JSZip, projectZip } = await import(pathToFileURL(`${BASE}/shots/extractor.mjs`).href);
 
 const DETAILS = '.tool-window[data-window=details]';
