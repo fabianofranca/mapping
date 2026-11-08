@@ -1,9 +1,9 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "snackbar",
   "name": "Snackbar",
-  "description": "Aviso rápido e temporário: mensagem, ação opcional (texto em inversePrimary) e botão de fechar. Com a ação em nova linha a altura passa de 48 para 68.",
+  "description": "Aviso rápido e temporário em inverse surface: mensagem, ação opcional (texto em inverse primary) e botão de fechar. Uma linha mede 48 e duas, 68; com a ação em nova linha a ação desce para uma fileira de 48.",
   "size": {
     "width": 344,
     "height": 48
@@ -21,12 +21,19 @@
   "template": {
     "type": "frame",
     "name": "snackbar",
-    "cornerRadius": 4,
-    "fill": "#322F35",
+    "cornerRadius": {
+      "$token": "corner-extra-small"
+    },
+    "fill": {
+      "$token": "inverse-surface"
+    },
+    "maxWidth": 600,
     "shadow": {
-      "color": "rgba(0, 0, 0, 0.3)",
+      "color": {
+        "$token": "elevation-shadow"
+      },
       "y": 3,
-      "blur": 6
+      "blur": 12
     },
     "layout": {
       "type": "column"
@@ -36,10 +43,18 @@
         "type": "frame",
         "name": "linha",
         "width": "fill",
-        "height": "fill",
+        "height": "hug",
+        "minHeight": 48,
         "visible": {
           "$not": {
-            "$eq": ["actionOnNewLine", "true"]
+            "$and": [
+              {
+                "$eq": ["actionOnNewLine", "true"]
+              },
+              {
+                "$has": "actionLabel"
+              }
+            ]
           }
         },
         "layout": {
@@ -47,46 +62,68 @@
           "align": "center",
           "padding": {
             "$if": {
-              "$or": [
-                {
-                  "$has": "actionLabel"
-                },
-                {
-                  "$eq": ["dismissAction", "true"]
-                }
-              ]
+              "$eq": ["dismissAction", "true"]
             },
-            "then": [0, 4, 0, 16],
-            "else": [0, 16]
+            "then": [0, 0, 0, 16],
+            "else": [0, 8, 0, 16]
           }
         },
         "children": [
           {
-            "type": "text",
+            "type": "frame",
             "name": "mensagem",
-            "text": {
-              "$field": "message",
-              "default": "Mensagem"
+            "width": "fill",
+            "height": "hug",
+            "layout": {
+              "type": "column",
+              "padding": {
+                "$if": {
+                  "$eq": ["dismissAction", "true"]
+                },
+                "then": [14, 0, 14, 0],
+                "else": [14, 8, 14, 0]
+              }
             },
-            "font": {
-              "family": "Roboto",
-              "size": 14,
-              "weight": 400,
-              "lineHeight": 20,
-              "letterSpacing": 0.25
-            },
-            "color": "#F5EFF7",
-            "width": "fill"
+            "children": [
+              {
+                "type": "text",
+                "name": "mensagem",
+                "text": {
+                  "$field": "message",
+                  "default": "Mensagem"
+                },
+                "width": "fill",
+                "font": {
+                  "size": {
+                    "$token": "body-medium-size"
+                  },
+                  "weight": {
+                    "$token": "body-medium-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-medium-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-medium-tracking"
+                  }
+                },
+                "color": {
+                  "$token": "inverse-on-surface"
+                }
+              }
+            ]
           },
           {
             "type": "frame",
             "name": "ação",
             "width": "hug",
-            "height": 40,
+            "height": 48,
+            "minWidth": 58,
             "layout": {
               "type": "row",
               "padding": [0, 12],
-              "align": "center"
+              "align": "center",
+              "justify": "center"
             },
             "visible": {
               "$has": "actionLabel"
@@ -99,21 +136,30 @@
                   "$field": "actionLabel"
                 },
                 "font": {
-                  "family": "Roboto",
-                  "size": 14,
-                  "weight": 500,
-                  "lineHeight": 20,
-                  "letterSpacing": 0.1
+                  "size": {
+                    "$token": "label-large-size"
+                  },
+                  "weight": {
+                    "$token": "label-large-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "label-large-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "label-large-tracking"
+                  }
                 },
-                "color": "#D0BCFF"
+                "color": {
+                  "$token": "inverse-primary"
+                }
               }
             ]
           },
           {
             "type": "frame",
             "name": "fechar",
-            "width": 40,
-            "height": 40,
+            "width": 48,
+            "height": 48,
             "layout": {
               "type": "row",
               "align": "center",
@@ -124,13 +170,13 @@
             },
             "children": [
               {
-                "type": "path",
-                "name": "ícone fechar",
+                "type": "icon",
+                "name": "close",
+                "color": {
+                  "$token": "inverse-on-surface"
+                },
                 "width": 24,
-                "height": 24,
-                "viewBox": [24, 24],
-                "d": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
-                "fill": "#F5EFF7"
+                "height": 24
               }
             ]
           }
@@ -142,30 +188,57 @@
         "width": "fill",
         "height": "hug",
         "visible": {
-          "$eq": ["actionOnNewLine", "true"]
+          "$and": [
+            {
+              "$eq": ["actionOnNewLine", "true"]
+            },
+            {
+              "$has": "actionLabel"
+            }
+          ]
         },
         "layout": {
           "type": "column",
-          "gap": 2,
-          "padding": [14, 4, 4, 16]
+          "padding": [0, 0, 2, 16]
         },
         "children": [
           {
-            "type": "text",
+            "type": "frame",
             "name": "mensagem",
-            "text": {
-              "$field": "message",
-              "default": "Mensagem"
+            "width": "fill",
+            "height": "hug",
+            "layout": {
+              "type": "column",
+              "padding": [15, 8, 7, 0]
             },
-            "font": {
-              "family": "Roboto",
-              "size": 14,
-              "weight": 400,
-              "lineHeight": 20,
-              "letterSpacing": 0.25
-            },
-            "color": "#F5EFF7",
-            "width": "fill"
+            "children": [
+              {
+                "type": "text",
+                "name": "mensagem",
+                "text": {
+                  "$field": "message",
+                  "default": "Mensagem"
+                },
+                "width": "fill",
+                "font": {
+                  "size": {
+                    "$token": "body-medium-size"
+                  },
+                  "weight": {
+                    "$token": "body-medium-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-medium-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-medium-tracking"
+                  }
+                },
+                "color": {
+                  "$token": "inverse-on-surface"
+                }
+              }
+            ]
           },
           {
             "type": "frame",
@@ -175,18 +248,27 @@
             "layout": {
               "type": "row",
               "align": "center",
-              "justify": "end"
+              "justify": "end",
+              "padding": {
+                "$if": {
+                  "$eq": ["dismissAction", "true"]
+                },
+                "then": [0, 0, 0, 0],
+                "else": [0, 8, 0, 0]
+              }
             },
             "children": [
               {
                 "type": "frame",
                 "name": "ação",
                 "width": "hug",
-                "height": 40,
+                "height": 48,
+                "minWidth": 58,
                 "layout": {
                   "type": "row",
                   "padding": [0, 12],
-                  "align": "center"
+                  "align": "center",
+                  "justify": "center"
                 },
                 "visible": {
                   "$has": "actionLabel"
@@ -199,21 +281,30 @@
                       "$field": "actionLabel"
                     },
                     "font": {
-                      "family": "Roboto",
-                      "size": 14,
-                      "weight": 500,
-                      "lineHeight": 20,
-                      "letterSpacing": 0.1
+                      "size": {
+                        "$token": "label-large-size"
+                      },
+                      "weight": {
+                        "$token": "label-large-weight"
+                      },
+                      "lineHeight": {
+                        "$token": "label-large-line-height"
+                      },
+                      "letterSpacing": {
+                        "$token": "label-large-tracking"
+                      }
                     },
-                    "color": "#D0BCFF"
+                    "color": {
+                      "$token": "inverse-primary"
+                    }
                   }
                 ]
               },
               {
                 "type": "frame",
                 "name": "fechar",
-                "width": 40,
-                "height": 40,
+                "width": 48,
+                "height": 48,
                 "layout": {
                   "type": "row",
                   "align": "center",
@@ -224,13 +315,13 @@
                 },
                 "children": [
                   {
-                    "type": "path",
-                    "name": "ícone fechar",
+                    "type": "icon",
+                    "name": "close",
+                    "color": {
+                      "$token": "inverse-on-surface"
+                    },
                     "width": 24,
-                    "height": 24,
-                    "viewBox": [24, 24],
-                    "d": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
-                    "fill": "#F5EFF7"
+                    "height": 24
                   }
                 ]
               }
