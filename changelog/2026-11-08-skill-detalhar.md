@@ -1,4 +1,4 @@
-# Skill de detalhamento do backlog — 2026-11-08 (épico `epic/skill-detalhar`, PR #935, MCP 0.28.2, schema v18)
+# Skill de detalhamento do backlog — 2026-11-08 (épico `epic/skill-detalhar`, PR #938, MCP 0.28.2, schema v18)
 
 ## Adicionado
 
