@@ -1,9 +1,9 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "text",
   "name": "Text",
-  "description": "Texto do Material 3 com um dos 15 papéis de tipografia, cor e alinhamento; vazio, mostra as medidas.",
+  "description": "Texto do Material 3 com um dos 15 papéis de tipografia, cor e alinhamento (tokens do tema, claro e escuro, na Roboto); vazio, mostra as medidas.",
   "size": {
     "width": 240,
     "height": 32
@@ -49,130 +49,331 @@
         "color": {
           "$switch": "color",
           "cases": {
-            "primary": "#6750A4",
-            "onPrimary": "#FFFFFF",
-            "primaryContainer": "#EADDFF",
-            "onPrimaryContainer": "#21005D",
-            "secondary": "#625B71",
-            "onSecondary": "#FFFFFF",
-            "secondaryContainer": "#E8DEF8",
-            "onSecondaryContainer": "#1D192B",
-            "tertiary": "#7D5260",
-            "onTertiary": "#FFFFFF",
-            "tertiaryContainer": "#FFD8E4",
-            "onTertiaryContainer": "#31111D",
-            "error": "#B3261E",
-            "onError": "#FFFFFF",
-            "errorContainer": "#F9DEDC",
-            "onErrorContainer": "#410E0B",
-            "background": "#FEF7FF",
-            "onBackground": "#1D1B20",
-            "surface": "#FEF7FF",
-            "onSurface": "#1D1B20",
-            "surfaceVariant": "#E7E0EC",
-            "onSurfaceVariant": "#49454F",
-            "surfaceTint": "#6750A4",
-            "inverseSurface": "#322F35",
-            "inverseOnSurface": "#F5EFF7",
-            "inversePrimary": "#D0BCFF",
-            "outline": "#79747E",
-            "outlineVariant": "#CAC4D0",
-            "scrim": "#000000",
-            "surfaceBright": "#FEF7FF",
-            "surfaceDim": "#DED8E1",
-            "surfaceContainerLowest": "#FFFFFF",
-            "surfaceContainerLow": "#F7F2FA",
-            "surfaceContainer": "#F3EDF7",
-            "surfaceContainerHigh": "#ECE6F0",
-            "surfaceContainerHighest": "#E6E0E9"
+            "primary": {
+              "$token": "primary"
+            },
+            "onPrimary": {
+              "$token": "on-primary"
+            },
+            "primaryContainer": {
+              "$token": "primary-container"
+            },
+            "onPrimaryContainer": {
+              "$token": "on-primary-container"
+            },
+            "secondary": {
+              "$token": "secondary"
+            },
+            "onSecondary": {
+              "$token": "on-secondary"
+            },
+            "secondaryContainer": {
+              "$token": "secondary-container"
+            },
+            "onSecondaryContainer": {
+              "$token": "on-secondary-container"
+            },
+            "tertiary": {
+              "$token": "tertiary"
+            },
+            "onTertiary": {
+              "$token": "on-tertiary"
+            },
+            "tertiaryContainer": {
+              "$token": "tertiary-container"
+            },
+            "onTertiaryContainer": {
+              "$token": "on-tertiary-container"
+            },
+            "error": {
+              "$token": "error"
+            },
+            "onError": {
+              "$token": "on-error"
+            },
+            "errorContainer": {
+              "$token": "error-container"
+            },
+            "onErrorContainer": {
+              "$token": "on-error-container"
+            },
+            "background": {
+              "$token": "background"
+            },
+            "onBackground": {
+              "$token": "on-background"
+            },
+            "surface": {
+              "$token": "surface"
+            },
+            "onSurface": {
+              "$token": "on-surface"
+            },
+            "surfaceVariant": {
+              "$token": "surface-variant"
+            },
+            "onSurfaceVariant": {
+              "$token": "on-surface-variant"
+            },
+            "surfaceTint": {
+              "$token": "surface-tint"
+            },
+            "inverseSurface": {
+              "$token": "inverse-surface"
+            },
+            "inverseOnSurface": {
+              "$token": "inverse-on-surface"
+            },
+            "inversePrimary": {
+              "$token": "inverse-primary"
+            },
+            "outline": {
+              "$token": "outline"
+            },
+            "outlineVariant": {
+              "$token": "outline-variant"
+            },
+            "scrim": {
+              "$token": "scrim"
+            },
+            "surfaceBright": {
+              "$token": "surface-bright"
+            },
+            "surfaceDim": {
+              "$token": "surface-dim"
+            },
+            "surfaceContainerLowest": {
+              "$token": "surface-container-lowest"
+            },
+            "surfaceContainerLow": {
+              "$token": "surface-container-low"
+            },
+            "surfaceContainer": {
+              "$token": "surface-container"
+            },
+            "surfaceContainerHigh": {
+              "$token": "surface-container-high"
+            },
+            "surfaceContainerHighest": {
+              "$token": "surface-container-highest"
+            }
           },
-          "default": "#1D1B20"
+          "default": {
+            "$token": "on-surface"
+          }
         },
         "font": {
-          "family": "Roboto",
           "size": {
             "$switch": "style",
             "cases": {
-              "displayLarge": 57,
-              "displayMedium": 45,
-              "displaySmall": 36,
-              "headlineLarge": 32,
-              "headlineMedium": 28,
-              "headlineSmall": 24,
-              "titleLarge": 22,
-              "titleMedium": 16,
-              "titleSmall": 14,
-              "bodyLarge": 16,
-              "bodyMedium": 14,
-              "bodySmall": 12,
-              "labelLarge": 14,
-              "labelMedium": 12,
-              "labelSmall": 11
+              "displayLarge": {
+                "$token": "display-large-size"
+              },
+              "displayMedium": {
+                "$token": "display-medium-size"
+              },
+              "displaySmall": {
+                "$token": "display-small-size"
+              },
+              "headlineLarge": {
+                "$token": "headline-large-size"
+              },
+              "headlineMedium": {
+                "$token": "headline-medium-size"
+              },
+              "headlineSmall": {
+                "$token": "headline-small-size"
+              },
+              "titleLarge": {
+                "$token": "title-large-size"
+              },
+              "titleMedium": {
+                "$token": "title-medium-size"
+              },
+              "titleSmall": {
+                "$token": "title-small-size"
+              },
+              "bodyLarge": {
+                "$token": "body-large-size"
+              },
+              "bodyMedium": {
+                "$token": "body-medium-size"
+              },
+              "bodySmall": {
+                "$token": "body-small-size"
+              },
+              "labelLarge": {
+                "$token": "label-large-size"
+              },
+              "labelMedium": {
+                "$token": "label-medium-size"
+              },
+              "labelSmall": {
+                "$token": "label-small-size"
+              }
             },
-            "default": 16
+            "default": {
+              "$token": "body-large-size"
+            }
           },
           "weight": {
             "$switch": "style",
             "cases": {
-              "displayLarge": 400,
-              "displayMedium": 400,
-              "displaySmall": 400,
-              "headlineLarge": 400,
-              "headlineMedium": 400,
-              "headlineSmall": 400,
-              "titleLarge": 400,
-              "titleMedium": 500,
-              "titleSmall": 500,
-              "bodyLarge": 400,
-              "bodyMedium": 400,
-              "bodySmall": 400,
-              "labelLarge": 500,
-              "labelMedium": 500,
-              "labelSmall": 500
+              "displayLarge": {
+                "$token": "display-large-weight"
+              },
+              "displayMedium": {
+                "$token": "display-medium-weight"
+              },
+              "displaySmall": {
+                "$token": "display-small-weight"
+              },
+              "headlineLarge": {
+                "$token": "headline-large-weight"
+              },
+              "headlineMedium": {
+                "$token": "headline-medium-weight"
+              },
+              "headlineSmall": {
+                "$token": "headline-small-weight"
+              },
+              "titleLarge": {
+                "$token": "title-large-weight"
+              },
+              "titleMedium": {
+                "$token": "title-medium-weight"
+              },
+              "titleSmall": {
+                "$token": "title-small-weight"
+              },
+              "bodyLarge": {
+                "$token": "body-large-weight"
+              },
+              "bodyMedium": {
+                "$token": "body-medium-weight"
+              },
+              "bodySmall": {
+                "$token": "body-small-weight"
+              },
+              "labelLarge": {
+                "$token": "label-large-weight"
+              },
+              "labelMedium": {
+                "$token": "label-medium-weight"
+              },
+              "labelSmall": {
+                "$token": "label-small-weight"
+              }
             },
-            "default": 400
+            "default": {
+              "$token": "body-large-weight"
+            }
           },
           "lineHeight": {
             "$switch": "style",
             "cases": {
-              "displayLarge": 64,
-              "displayMedium": 52,
-              "displaySmall": 44,
-              "headlineLarge": 40,
-              "headlineMedium": 36,
-              "headlineSmall": 32,
-              "titleLarge": 28,
-              "titleMedium": 24,
-              "titleSmall": 20,
-              "bodyLarge": 24,
-              "bodyMedium": 20,
-              "bodySmall": 16,
-              "labelLarge": 20,
-              "labelMedium": 16,
-              "labelSmall": 16
+              "displayLarge": {
+                "$token": "display-large-line-height"
+              },
+              "displayMedium": {
+                "$token": "display-medium-line-height"
+              },
+              "displaySmall": {
+                "$token": "display-small-line-height"
+              },
+              "headlineLarge": {
+                "$token": "headline-large-line-height"
+              },
+              "headlineMedium": {
+                "$token": "headline-medium-line-height"
+              },
+              "headlineSmall": {
+                "$token": "headline-small-line-height"
+              },
+              "titleLarge": {
+                "$token": "title-large-line-height"
+              },
+              "titleMedium": {
+                "$token": "title-medium-line-height"
+              },
+              "titleSmall": {
+                "$token": "title-small-line-height"
+              },
+              "bodyLarge": {
+                "$token": "body-large-line-height"
+              },
+              "bodyMedium": {
+                "$token": "body-medium-line-height"
+              },
+              "bodySmall": {
+                "$token": "body-small-line-height"
+              },
+              "labelLarge": {
+                "$token": "label-large-line-height"
+              },
+              "labelMedium": {
+                "$token": "label-medium-line-height"
+              },
+              "labelSmall": {
+                "$token": "label-small-line-height"
+              }
             },
-            "default": 24
+            "default": {
+              "$token": "body-large-line-height"
+            }
           },
           "letterSpacing": {
             "$switch": "style",
             "cases": {
-              "displayLarge": -0.25,
-              "displayMedium": 0,
-              "displaySmall": 0,
-              "headlineLarge": 0,
-              "headlineMedium": 0,
-              "headlineSmall": 0,
-              "titleLarge": 0,
-              "titleMedium": 0.15,
-              "titleSmall": 0.1,
-              "bodyLarge": 0.5,
-              "bodyMedium": 0.25,
-              "bodySmall": 0.4,
-              "labelLarge": 0.1,
-              "labelMedium": 0.5,
-              "labelSmall": 0.5
+              "displayLarge": {
+                "$token": "display-large-tracking"
+              },
+              "displayMedium": {
+                "$token": "display-medium-tracking"
+              },
+              "displaySmall": {
+                "$token": "display-small-tracking"
+              },
+              "headlineLarge": {
+                "$token": "headline-large-tracking"
+              },
+              "headlineMedium": {
+                "$token": "headline-medium-tracking"
+              },
+              "headlineSmall": {
+                "$token": "headline-small-tracking"
+              },
+              "titleLarge": {
+                "$token": "title-large-tracking"
+              },
+              "titleMedium": {
+                "$token": "title-medium-tracking"
+              },
+              "titleSmall": {
+                "$token": "title-small-tracking"
+              },
+              "bodyLarge": {
+                "$token": "body-large-tracking"
+              },
+              "bodyMedium": {
+                "$token": "body-medium-tracking"
+              },
+              "bodySmall": {
+                "$token": "body-small-tracking"
+              },
+              "labelLarge": {
+                "$token": "label-large-tracking"
+              },
+              "labelMedium": {
+                "$token": "label-medium-tracking"
+              },
+              "labelSmall": {
+                "$token": "label-small-tracking"
+              }
             },
-            "default": 0.5
+            "default": {
+              "$token": "body-large-tracking"
+            }
           },
           "align": {
             "$switch": "textAlign",
@@ -183,6 +384,9 @@
               "Justify": "left"
             },
             "default": "left"
+          },
+          "maxLines": {
+            "$field": "maxLines"
           }
         }
       },
@@ -244,9 +448,10 @@
             }
           ]
         },
-        "color": "#79747E",
+        "color": {
+          "$token": "outline"
+        },
         "font": {
-          "family": "Roboto",
           "size": 12,
           "weight": 400,
           "lineHeight": 16,

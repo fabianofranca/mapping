@@ -6,11 +6,11 @@ Tipo de anotação: `icon` (camada Conteúdo).
 
 ## Campos
 
-| Chave                | Rótulo    | Tipo   | Obrigatório | Opções                                                         | Padrão | Descrição                                                                                                  |
-| -------------------- | --------- | ------ | ----------- | -------------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------- |
-| `imageVector`        | Ícone     | string | sim         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) | `Home` | Nome do ícone em Icons.Filled (por exemplo Home). A lista sugere os mais comuns, mas aceita qualquer nome. |
-| `contentDescription` | Descrição | string | não         |                                                                |        | Texto de acessibilidade do ícone. Vazio = decorativo (null).                                               |
-| `tint`               | Cor       | enum   | não         | papéis do `ColorScheme`                                        |        | Papel de cor do tema usado no ícone. Vazio = cor do conteúdo (LocalContentColor).                          |
+| Chave                | Rótulo    | Tipo   | Obrigatório | Opções                                                         | Padrão | Descrição                                                                                                                                                 |
+| -------------------- | --------- | ------ | ----------- | -------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `imageVector`        | Ícone     | string | sim         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) | `Home` | Nome do ícone em Icons.Default (por exemplo Home). A lista sugere os 164 ícones do conjunto da biblioteca; um nome fora dela desenha o reservado e avisa. |
+| `contentDescription` | Descrição | string | não         |                                                                |        | Texto de acessibilidade do ícone. Vazio = decorativo (null).                                                                                              |
+| `tint`               | Cor       | enum   | não         | papéis do `ColorScheme`                                        |        | Papel de cor do tema usado no ícone. Vazio = cor do conteúdo (LocalContentColor).                                                                         |
 
 ## Compose
 
@@ -35,3 +35,27 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 - **Início**: imageVector=Home, contentDescription=Início
 - **Favorito colorido**: imageVector=Favorite, tint=error
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Icon.kt` (linhas 65 a 70: `tint = LocalContentColor.current`; linhas 207 a 219: o tamanho padrão `SmallIconButtonTokens.IconSize`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SmallIconButtonTokens.kt` (linha 29: `IconSize` = 24 dp).
+- `ColorLightTokens.kt` e `ColorDarkTokens.kt`: os papéis de `tint`.
+- Os desenhos dos ícones vêm do pacote npm `@material-design-icons/svg` 0.14.15, pasta `filled` (o `Icons.Default` do Compose), em `icons/material-icons.json` (origem e licença em `icons/LEIA-ME.txt` e `icons/LICENSE-material-icons.txt`).
+
+**Como o desenho segue o Compose**
+
+- O nó `icon` do formato 4 escolhe o desenho no conjunto da biblioteca. O campo `imageVector` guarda o nome do Compose (`Home`, `KeyboardArrowRight`, o que vai em `Icons.Default.<nome>`) e o componente o traduz para o nome do conjunto (`home`, `keyboard_arrow_right`) por um `$switch`; os `$switch` de caminhos SVG saíram do componente.
+- O tamanho é o do `viewBox` do ícone (24 por 24), escalado para a caixa da marcação.
+- A cor é o papel de `tint`; sem `tint`, `on-surface` (o `LocalContentColor` padrão).
+
+**O que ainda difere do Compose**
+
+- O conjunto tem um subconjunto fechado do `Icons.Default` (ver as sugestões do campo `imageVector`). Um nome fora dele desenha o reservado (um quadrado contornado) e o Diagnóstico mostra o aviso `ícone desconhecido`; para usar outro ícone, acrescente-o ao conjunto (`icons/LEIA-ME.txt`).
+- Só a variante `Filled`: `Outlined`, `Rounded`, `Sharp` e `TwoTone` ficam fora da etapa.
+- Os ícones que espelham em idiomas da direita para a esquerda (`Icons.AutoMirrored.Filled`) desenham sempre na direção da esquerda para a direita.
+- `PhotoCamera` e os outros ícones do pacote que têm formas além de `<path>` (círculo, por exemplo) não estão no subconjunto.
