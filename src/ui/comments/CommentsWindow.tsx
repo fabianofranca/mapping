@@ -174,7 +174,7 @@ function Filters() {
         value={ui.commentsUser.value}
         onChange={(e) => (ui.commentsUser.value = e.currentTarget.value)}
       >
-        <option value="">{t('comments.filter.userAll', { count: users.length })}</option>
+        <option value="">{t('comments.filter.userAll')}</option>
         {userOptions(users)}
       </Select>
       <TextField
@@ -203,7 +203,10 @@ function Summary() {
 function StatusBadge({ thread }: { readonly thread: Thread }) {
   if (thread.resolved !== null) {
     return (
-      <span class="comments-badge comments-badge-resolved">
+      <span
+        class="comments-badge comments-badge-resolved"
+        title={t('comments.badge.resolved')}
+      >
         {t('comments.badge.resolved')}
       </span>
     );
@@ -215,7 +218,11 @@ function StatusBadge({ thread }: { readonly thread: Thread }) {
       : who === 'human'
         ? 'comments.badge.awaitingHuman'
         : 'comments.badge.open';
-  return <span class={`comments-badge comments-badge-${who ?? 'open'}`}>{t(key)}</span>;
+  return (
+    <span class={`comments-badge comments-badge-${who ?? 'open'}`} title={t(key)}>
+      {t(key)}
+    </span>
+  );
 }
 
 /** Quem abriu a conversa: iniciais e nome. */
@@ -224,7 +231,7 @@ function OpenerCell({ thread }: { readonly thread: Thread }) {
   if (!opener) return null;
   return (
     <>
-      <span class="comments-avatar" aria-hidden="true">
+      <span class="comments-avatar" aria-hidden="true" title={userLabel(opener.author)}>
         {initials(opener.author)}
       </span>
       <span class="comments-by-name">{userLabel(opener.author)}</span>
@@ -242,9 +249,9 @@ interface AnchorCellProps {
 
 function AnchorCell({ anchor, plain, selected, unread }: AnchorCellProps) {
   return (
-    <>
+    <div class="comments-anchor-line">
       {plain ? (
-        <span>{anchor}</span>
+        <span class="comments-anchor-text">{anchor}</span>
       ) : (
         <button
           type="button"
@@ -256,7 +263,7 @@ function AnchorCell({ anchor, plain, selected, unread }: AnchorCellProps) {
         </button>
       )}
       {unread && <span class="comments-unread-dot" title={t('comments.unread')} />}
-    </>
+    </div>
   );
 }
 

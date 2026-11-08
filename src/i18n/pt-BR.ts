@@ -630,7 +630,7 @@ export const ptBR = {
   'comments.filter.statusAwaitingAgent': 'Aguardando agente',
   'comments.filter.statusAwaitingHuman': 'Aguardando humano',
   'comments.filter.statusResolved': 'Resolvidas',
-  'comments.filter.userAll': 'Todos ({count})',
+  'comments.filter.userAll': 'Todos',
   'comments.filter.userOption': '{name} ({count})',
   'comments.filter.userAgent': '{name} (agente)',
   'comments.badge.open': 'Aberta',
