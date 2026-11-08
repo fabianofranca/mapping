@@ -477,6 +477,23 @@
   padding: 0 var(--space-1-5);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+  container-type: inline-size;
+}
+
+/*
+ * Coluna estreita na revisão (900×720 com Árvore, Camadas, Propostas e Detalhes: 360 px): os
+ * controles da revisão (Atual/Proposto, legenda) e o zoom ficam inteiros e o caminho encolhe com
+ * reticências; cedem Conversas e Enquadrar tudo (Ctrl+0 faz o mesmo), que o contorno (fechar uma
+ * janela) devolve. Sem a revisão o fim da barra cabe e nada cede.
+ */
+.canvas-bar-low {
+  display: contents;
+}
+
+@container (max-width: 470px) {
+  .canvas-bar:has(.review-canvas-controls) .canvas-bar-low {
+    display: none;
+  }
 }
 
 .crumbs {
@@ -490,6 +507,9 @@
 }
 
 .crumbs-empty {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font: var(--t-text-small);
   color: var(--color-text-muted);
   padding: 0 var(--space-1-5);
