@@ -184,6 +184,65 @@ test.describe('revisão a 900×720 com as quatro janelas abertas (BS2)', () => {
     }
     await expect(page.locator('.canvas-bar .zoom-field')).toBeVisible();
   });
+
+  test('caminho legível: letras e reticências, não só os separadores (BS3)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page
+      .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
+      .setInputFiles({
+        name: 'loja.zip',
+        mimeType: 'application/zip',
+        buffer: await fixtureZip(),
+      });
+    await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+    for (const key of ['1', '2', '3', '7'])
+      await page.keyboard.press(`Control+Shift+${key}`);
+    await page
+      .getByRole('button', { name: /^Revisar/ })
+      .first()
+      .click();
+    await expect(page.locator('.review-canvas-controls')).toBeVisible();
+    await page
+      .getByRole('button', { name: /^Atual$/ })
+      .first()
+      .click();
+    await page
+      .getByRole('button', { name: 'Banner promoção', exact: true })
+      .first()
+      .click();
+    const m = await page.locator('.canvas-bar').evaluate((bar) => {
+      const crumbs = bar.querySelector<HTMLElement>('.crumbs')!;
+      const items = [...crumbs.querySelectorAll<HTMLElement>('.crumb-item')];
+      return {
+        crumbsWidth: crumbs.clientWidth,
+        items: items.length,
+        lastName:
+          items.at(-1)?.querySelector<HTMLElement>('.crumb-name')?.clientWidth ?? 0,
+        lastCut: (() => {
+          const n = items.at(-1)?.querySelector<HTMLElement>('.crumb-name');
+          return n ? n.scrollWidth > n.clientWidth : false;
+        })(),
+        lastEllipsis: getComputedStyle(
+          items.at(-1)!.querySelector<HTMLElement>('.crumb-name')!,
+        ).textOverflow,
+        barScroll: bar.scrollWidth,
+        barClient: bar.clientWidth,
+        zoomWhole: (() => {
+          const z = bar.querySelector<HTMLElement>('.zoom-field')!;
+          return z.scrollWidth <= z.clientWidth && z.clientWidth > 0;
+        })(),
+      };
+    });
+    expect(m.items, JSON.stringify(m)).toBeGreaterThanOrEqual(2);
+    // A seleção (último trecho) mostra ~4 letras ou mais, com reticências se cortada.
+    expect(m.crumbsWidth, JSON.stringify(m)).toBeGreaterThanOrEqual(90);
+    expect(m.lastName, JSON.stringify(m)).toBeGreaterThanOrEqual(40);
+    if (m.lastCut) expect(m.lastEllipsis, JSON.stringify(m)).toBe('ellipsis');
+    expect(m.barScroll, JSON.stringify(m)).toBeLessThanOrEqual(m.barClient);
+    expect(m.zoomWhole, JSON.stringify(m)).toBe(true);
+  });
 });
 
 test.describe('a 1440×900', () => {
