@@ -1,4 +1,4 @@
-# Barra de status estreita — [Não lançado] (épico `epic/barra-status-estreita`, PR #0, MCP 0.28.4, schema v18)
+# Barra de status estreita — 2026-11-08 (épico `epic/barra-status-estreita`, PR #999, MCP 0.28.4, schema v18)
 
 ## Corrigido
 

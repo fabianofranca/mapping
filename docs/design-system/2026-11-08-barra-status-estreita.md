@@ -1,4 +1,4 @@
-# Barra de status estreita — [Não lançado] (épico `epic/barra-status-estreita`)
+# Barra de status estreita — 2026-11-08 (épico `epic/barra-status-estreita`)
 
 ## Pendências
 
@@ -7,8 +7,8 @@
 
 ## Sincronização
 
-Ainda não gravada no artefato Mapping (acontece no fechamento do épico).
+Nenhuma gravação feita pelo agente: artefato curado à mão.
 
 ## Ficou sem gravar
 
-Nada.
+- As duas pendências acima (guias `StatusBar` e `Breadcrumbs`), para aplicar à mão no artefato.
