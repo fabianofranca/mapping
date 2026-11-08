@@ -48,7 +48,7 @@
         "name": "hora e minuto",
         "layout": { "type": "row", "align": "start", "justify": "center" },
         "width": "fill",
-        "height": { "$if": { "$eq": ["mode", "input"] }, "then": 95, "else": 80 },
+        "height": { "$if": { "$eq": ["mode", "input"] }, "then": "hug", "else": 80 },
         "children": [
           {
             "type": "frame",
