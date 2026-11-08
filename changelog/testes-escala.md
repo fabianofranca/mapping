@@ -1,4 +1,4 @@
-# Testes de escala — [Não lançado] (épico `epic/testes-escala`, PR #0, MCP 0.28.4, schema v18)
+# Testes de escala — [Não lançado] (épico `epic/testes-escala`, PR #1072, MCP 0.28.4, schema v18)
 
 ## Adicionado
 
