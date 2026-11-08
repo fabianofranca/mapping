@@ -86,6 +86,9 @@ export function Dialog({
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const bodyId = useId();
+  // Onde começou o clique: só um clique inteiro no fundo fecha (um arrasto que começa no
+  // conteúdo e solta no fundo também gera `click` no `<dialog>`).
+  const pressedOnBackdrop = useRef(false);
 
   // Quem tinha o foco ao abrir (o botão que abriu, o diálogo de baixo, ou quem abriu o
   // primeiro diálogo do slot do host): ao fechar, o foco volta para ele em vez de cair no
@@ -121,9 +124,14 @@ export function Dialog({
           dialog.setAttribute('open', '');
         }
       }}
+      onPointerDown={(e) => {
+        pressedOnBackdrop.current = e.target === ref.current;
+      }}
       onClick={(e) => {
-        // Clique no fundo (fora do conteúdo) fecha.
-        if (e.target === ref.current) onCancel?.('backdrop');
+        // Clique no fundo (fora do conteúdo) fecha, se também começou nele.
+        const full = pressedOnBackdrop.current && e.target === ref.current;
+        pressedOnBackdrop.current = false;
+        if (full) onCancel?.('backdrop');
       }}
     >
       <header class="dialog-header">
