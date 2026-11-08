@@ -59,9 +59,8 @@
           "justify": "center"
         },
         "width": "hug",
-        "height": "hug",
+        "height": 16,
         "minWidth": 16,
-        "minHeight": 16,
         "cornerRadius": {
           "$token": "corner-full"
         },
@@ -94,7 +93,8 @@
             },
             "color": {
               "$token": "on-error"
-            }
+            },
+            "height": 16
           }
         ]
       }

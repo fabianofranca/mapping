@@ -41,3 +41,24 @@ Variante `large`: `Badge(content = { Text(<count>) })` desenha o contador de 16d
 - **Ponto**: style=small
 - **Contador**: count=3, style=large
 - **Muitos itens**: count=99+, style=large
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Badge.kt` (linhas 150 a 189: `Badge`, uma `Row` com `defaultMinSize(size, size)`, fundo na forma e, com conteúdo, `padding(horizontal = 4.dp)` e o estilo `LargeLabelTextFont`; 201: `BadgeWithContentHorizontalPadding` 4; 192 a 196: `BadgeDefaults.containerColor`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/BadgeTokens.kt` (`Size` 6, `LargeSize` 16, `Shape` e `LargeShape` = `CornerFull`, `Color` = `Error`, `LargeLabelTextColor` = `OnError`, `LargeLabelTextFont` = `LabelSmall`).
+
+**Como o desenho segue o Compose**
+
+- Pequeno: círculo de 6 em `error`. Com contador: pílula de 16 de altura e no mínimo 16 de largura, com 4 de padding dos lados, em `error`, com a forma `corner-full`; cresce com o texto (`99+` fica mais larga que um dígito, que fica em 16).
+- O texto usa `label-small-*` (11, peso 500, linha 16, espaçamento 0,5) em `on-error`, na fonte do tema (`font-sans`), sem `family` no arquivo.
+- Nos dois modos a cor vem do papel `error` e `on-error` do modo.
+
+**O que ainda difere do Compose**
+
+- O posicionamento no canto do ícone (`BadgedBox`, deslocamento de 6 sem conteúdo e de 12 por 14 com conteúdo) é da marcação ao redor, não deste componente.
+- Sem o limite de texto do contador do Compose (quem chama corta, por exemplo `99+`).
+- A altura do contador (e a do texto) é 16 fixa, não `defaultMinSize` com `hug`: a prova de desenho da biblioteca desenha sem tokens, e a linha de 14 × 1,2 do fallback estouraria a caixa de 16 (aviso `conteúdo maior que a caixa`). Com o `label-small-line-height` de 16 o resultado é o mesmo do Compose.

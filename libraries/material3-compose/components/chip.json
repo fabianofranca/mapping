@@ -167,12 +167,8 @@
         },
         "else": "none"
       },
-      "y": {
-        "$token": "elevation-1-y"
-      },
-      "blur": {
-        "$token": "elevation-1-blur"
-      }
+      "y": 1,
+      "blur": 2
     },
     "children": [
       {

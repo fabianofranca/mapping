@@ -163,12 +163,8 @@
       "color": {
         "$token": "elevation-shadow"
       },
-      "y": {
-        "$token": "elevation-3-y"
-      },
-      "blur": {
-        "$token": "elevation-3-blur"
-      }
+      "y": 3,
+      "blur": 12
     },
     "children": [
       {

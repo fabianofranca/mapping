@@ -53,3 +53,29 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Preenchido**: label=Salvar, style=filled
 - **Contornado**: label=Cancelar, style=outlined
 - **Com ícone**: label=Adicionar, style=tonal, icon=Add
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (linhas 139 a 150: o `Row` com `defaultMinSize(58, 40)`, o `contentPadding` e o estilo `labelLarge`; 479 a 543: `ContentPadding` 24/8, `ButtonWithIconContentPadding` com início 16, `TextButtonContentPadding` 12, `TextButtonWithIconContentPadding` 12/16, `MinWidth` 58, `MinHeight` 40, `IconSize` 18 e `IconSpacing` 8; 550 em diante: a forma `corner-full`; 598 a 790: as cores padrão de cada estilo; 805 a 880: as elevações; 898 a 910: `outlinedButtonBorder`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ButtonSmallTokens.kt` (`ContainerHeight` 40, `ContainerShapeRound` = `CornerFull`, `IconLabelSpace` 8, `OutlinedOutlineWidth` 1), `tokens/BaselineButtonTokens.kt` (`LeadingSpace` e `TrailingSpace` 24).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FilledButtonTokens.kt`, `ElevatedButtonTokens.kt`, `FilledTonalButtonTokens.kt`, `OutlinedButtonTokens.kt` e `TextButtonTokens.kt`: papéis de cor, opacidades do desabilitado (0,1; 0,12 no tonal; 0,38 no conteúdo) e `ContainerElevation` (nível 1 só no elevated).
+
+**Como o desenho segue o Compose**
+
+- Altura 40, largura mínima 58 e forma `corner-full`; o contêiner é um retângulo atrás do conteúdo, que fica centrado.
+- Padding do conteúdo: 24 dos lados e 8 em cima e embaixo (16 no início com ícone); no `text`, 12 (12 no início e 16 no fim com ícone).
+- Ícone de 18 desenhado pelo nó `icon` (nome do Compose para o nome do conjunto, como no `icon`), 8 de espaço até o rótulo. O rótulo usa os tokens `label-large-*` (14, peso 500, linha 20, espaçamento 0,1) e a fonte do tema (`font-sans`), sem `family` no arquivo.
+- Cores (iguais nos dois modos, com os valores de cada um): filled `primary` / `on-primary`; tonal `secondary-container` / `on-secondary-container`; elevated `surface-container-low` / `primary`, com a sombra do nível 1 (`elevation-shadow`, y 1, blur 2); outlined sem fundo, conteúdo `on-surface-variant` e contorno de 1 em `outline-variant`; text sem fundo e conteúdo `primary` (o `defaultTextButtonColors` do commit usa `Primary`, não o token `OnSurfaceVariant`).
+- Desabilitado: o contêiner vira `on-surface` a 0,1 (0,12 no tonal, `state-disabled-container`) e o conteúdo, a 0,38 (`state-disabled-content`), em `on-surface-variant` (em `on-surface` no tonal); o outlined tem o contorno a 0,1; o elevated perde a sombra.
+
+**O que ainda difere do Compose**
+
+- Sem estados de pressionado, foco e passar o mouse (o desenho é estático) e sem a forma `pressed` do Material expressivo.
+- A sombra tem y e blur literais (1 e 2, os valores de `elevation-1-y` e `elevation-1-blur`): o `shadow` do formato só aceita número literal, não `$token`.
+- O desabilitado de 0,1 no filled e no elevated é literal no componente: o token `state-disabled-container` vale 0,12 (o do tonal).
+- O rótulo longo quebra em linhas; o botão do Compose também, mas aqui a altura de 40 do `sizing` não cresce com as linhas.
+- `ButtonDefaults.shape` é redondo; o `shape` trocável e o `contentPadding` próprio de uma chamada não são campos do tipo.

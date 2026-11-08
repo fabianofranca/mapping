@@ -179,7 +179,7 @@ describe('M2 grupo D — fab, extended-fab e chip', () => {
     });
     expect(solid(label(off.dark).fills)).toBe('#E6E0E9');
     expect(label(off.dark).opacity).toBe(0.38);
-    expect(off.light.root.effects[0]?.color).not.toBe(SHADOW);
+    expect(off.light.root.effects).toEqual([]);
     const container = named(off.light.root, 'contêiner desabilitado');
     expect(solid(container?.fills ?? [])).toBe('#1D1B20');
     expect(container?.opacity).toBe(0.12);
@@ -187,6 +187,41 @@ describe('M2 grupo D — fab, extended-fab e chip', () => {
     const edge = named(outline.light.root, 'contorno desabilitado');
     expect(solid(edge?.stroke?.paints ?? [])).toBe('#1D1B20');
     expect(edge?.opacity).toBe(0.12);
+  });
+
+  it('todas as combinações de estilo, seleção, estado e ícones desenham sem aviso em light e dark', () => {
+    const styles = [
+      ...['assist', 'assist-elevated', 'filter', 'filter-elevated'],
+      ...['input', 'suggestion', 'suggestion-elevated'],
+    ];
+    for (const mode of ['light', 'dark'] as const) {
+      for (const style of styles) {
+        for (const selected of ['true', 'false']) {
+          for (const enabled of ['true', 'false']) {
+            for (const icons of [
+              {},
+              { leadingIcon: 'Star' },
+              { trailingIcon: 'Close' },
+            ]) {
+              const values = { label: 'Chip', style, selected, enabled, ...icons };
+              const d = drawIn(catalog, entryOf('chip'), values, mode);
+              expect(d.warnings, JSON.stringify(values)).toEqual([]);
+            }
+          }
+        }
+      }
+      for (const size of ['small', 'regular', 'large']) {
+        const d = drawIn(catalog, entryOf('fab'), { icon: 'Add', size }, mode);
+        expect(d.warnings, size).toEqual([]);
+      }
+      for (const expanded of ['true', 'false']) {
+        const values = { text: 'Criar', expanded };
+        for (const icon of ['Add', undefined]) {
+          const d = drawIn(catalog, entryOf('extended-fab'), { ...values, icon }, mode);
+          expect(d.warnings, `${expanded} ${String(icon)}`).toEqual([]);
+        }
+      }
+    }
   });
 
   it.each(['fab', 'extended-fab', 'chip'])(
