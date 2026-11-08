@@ -2,4 +2,4 @@
 
 ## Adicionado
 
-- (preenchido pela EQ2)
+- **Enquadrar seleção** (`Shift+2`, botão na barra do canvas): dá zoom e centra a vista nos itens selecionados.
