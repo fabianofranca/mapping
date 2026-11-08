@@ -1,4 +1,4 @@
-# Build resistente à ordem dos plugins — [Não lançado] (épico `epic/ordem-plugins-build`, PR #1065, MCP 0.28.4, schema v18)
+# Build resistente à ordem dos plugins — [Não lançado] (épico `epic/ordem-plugins-build`, PR #1069, MCP 0.28.4, schema v18)
 
 ## Corrigido
 
