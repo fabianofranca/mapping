@@ -1,0 +1,46 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "tree-row",
+  "name": "TreeRow",
+  "description": "Moldura da linha da Árvore de marcações: 28 px, raio 6; a atual em color-accent, a selecionada junto (seleção múltipla) em color-pressed. Chevron, ícone, nome, pontos das camadas, cadeado e menu são filhos.",
+  "size": {
+    "width": 248,
+    "height": 28
+  },
+  "minSize": {
+    "width": 24,
+    "height": 16
+  },
+  "sizing": {
+    "width": 248,
+    "height": 28
+  },
+  "preview": {
+    "estado": "normal"
+  },
+  "template": {
+    "type": "frame",
+    "name": "linha",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 6,
+    "fill": {
+      "$switch": "estado",
+      "cases": {
+        "atual": {
+          "$token": "color-accent"
+        },
+        "atual-sem-foco": {
+          "$token": "color-selection-muted"
+        },
+        "selecionada": {
+          "$token": "color-pressed"
+        }
+      },
+      "default": "rgba(0, 0, 0, 0)"
+    },
+    "children": []
+  }
+}

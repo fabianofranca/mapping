@@ -1,0 +1,136 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "status-bar",
+  "name": "StatusBar",
+  "description": "Barra de status de 26 px: salvamento e destino à esquerda, o item de conversas e as informações do editor à direita.",
+  "size": {
+    "width": 900,
+    "height": 26
+  },
+  "minSize": {
+    "width": 360,
+    "height": 26
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 26
+  },
+  "preview": {
+    "esquerda": "Salvo · projeto local",
+    "conversas": "2 conversas abertas · 1 aguardando agente",
+    "direita": "100% · v15"
+  },
+  "template": {
+    "type": "frame",
+    "name": "barra",
+    "layout": {
+      "type": "none"
+    },
+    "fill": "#ffffff",
+    "children": [
+      {
+        "type": "rect",
+        "name": "borda",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0
+        },
+        "fill": "#dfe3e8"
+      },
+      {
+        "type": "frame",
+        "name": "itens",
+        "layout": {
+          "type": "row",
+          "gap": 2,
+          "padding": [
+            0,
+            8
+          ],
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "esquerda",
+            "text": {
+              "$field": "esquerda"
+            },
+            "color": "#5b6470",
+            "font": {
+              "size": 12,
+              "weight": 400,
+              "lineHeight": 16
+            },
+            "width": "fill"
+          },
+          {
+            "type": "frame",
+            "name": "conversas",
+            "width": "hug",
+            "height": "hug",
+            "visible": {
+              "$has": "conversas"
+            },
+            "layout": {
+              "type": "row",
+              "gap": 4,
+              "padding": [
+                0,
+                6
+              ],
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "path",
+                "name": "conversa",
+                "width": 16,
+                "height": 16,
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "d": "M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2zM5 6h6M5 8h4",
+                "fill": "none",
+                "stroke": {
+                  "color": "#1a63cc",
+                  "width": 1.25
+                }
+              },
+              {
+                "type": "text",
+                "name": "texto",
+                "text": {
+                  "$field": "conversas"
+                },
+                "color": "#1a63cc",
+                "font": {
+                  "size": 12,
+                  "weight": 400,
+                  "lineHeight": 16
+                }
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "name": "direita",
+            "text": {
+              "$field": "direita"
+            },
+            "color": "#5b6470",
+            "font": {
+              "size": 12,
+              "weight": 400,
+              "lineHeight": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

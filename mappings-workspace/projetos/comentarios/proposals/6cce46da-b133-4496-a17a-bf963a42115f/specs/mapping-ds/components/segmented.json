@@ -1,0 +1,126 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 2,
+  "id": "segmented",
+  "name": "Segmented",
+  "description": "Opções exclusivas unidas numa borda só; a selecionada fica cheia de color-accent.",
+  "size": {
+    "width": 200,
+    "height": 28
+  },
+  "minSize": {
+    "width": 80,
+    "height": 24
+  },
+  "sizing": {
+    "width": "hug",
+    "height": 28
+  },
+  "preview": {
+    "rotulo": "Visão",
+    "desabilitado": "não",
+    "invalido": "não",
+    "opcoes": [
+      {
+        "rotulo": "Atual",
+        "selecionada": "sim"
+      },
+      {
+        "rotulo": "Proposto",
+        "selecionada": "não"
+      }
+    ]
+  },
+  "template": {
+    "type": "frame",
+    "name": "segmented",
+    "cornerRadius": 4,
+    "opacity": {
+      "$if": {
+        "$eq": [
+          "desabilitado",
+          "sim"
+        ]
+      },
+      "then": 0.45,
+      "else": 1
+    },
+    "fill": "#7d8590",
+    "stroke": {
+      "color": {
+        "$if": {
+          "$eq": [
+            "invalido",
+            "sim"
+          ]
+        },
+        "then": "#c62828",
+        "else": "#7d8590"
+      },
+      "width": 1
+    },
+    "layout": {
+      "type": "row",
+      "padding": 1
+    },
+    "children": [
+      {
+        "type": "repeat",
+        "name": "opções",
+        "field": "opcoes",
+        "direction": "row",
+        "gap": 1,
+        "width": "hug",
+        "height": "fill",
+        "template": {
+          "type": "frame",
+          "name": "opção",
+          "height": "fill",
+          "fill": {
+            "$if": {
+              "$eq": [
+                "selecionada",
+                "sim"
+              ]
+            },
+            "then": "#1a63cc",
+            "else": "#ffffff"
+          },
+          "layout": {
+            "type": "row",
+            "padding": [
+              0,
+              12
+            ],
+            "align": "center",
+            "justify": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "name": "rótulo",
+              "text": {
+                "$field": "rotulo"
+              },
+              "color": {
+                "$if": {
+                  "$eq": [
+                    "selecionada",
+                    "sim"
+                  ]
+                },
+                "then": "#ffffff",
+                "else": "#1b1f24"
+              },
+              "font": {
+                "size": 13,
+                "weight": 400,
+                "lineHeight": 20
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

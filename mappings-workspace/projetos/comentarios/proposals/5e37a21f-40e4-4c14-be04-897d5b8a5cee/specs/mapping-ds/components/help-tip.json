@@ -1,0 +1,45 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "help-tip",
+  "name": "HelpTip",
+  "description": "Ícone de ajuda discreto (info em color-text-muted), no botão de ícone de 28 px.",
+  "size": {
+    "width": 28,
+    "height": 28
+  },
+  "minSize": {
+    "width": 24,
+    "height": 24
+  },
+  "sizing": {
+    "width": 28,
+    "height": 28
+  },
+  "preview": {
+    "nome": "Ajuda",
+    "texto": "Explica o campo ao lado."
+  },
+  "template": {
+    "type": "frame",
+    "name": "help-tip",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "icon",
+        "width": 16,
+        "height": 16,
+        "anchors": {
+          "centerX": true,
+          "centerY": true
+        },
+        "name": "info",
+        "color": {
+          "$token": "color-text-muted"
+        }
+      }
+    ]
+  }
+}

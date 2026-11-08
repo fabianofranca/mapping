@@ -263,6 +263,8 @@ export default tseslint.config(
       'test-results',
       // Worktrees locais do Claude Code (`.claude/worktrees/`): cópias do repositório.
       '.claude/worktrees',
+      // Mapping workspace (project data and pipeline scripts, outside the app's code).
+      'mappings-workspace',
     ],
   },
   js.configs.recommended,

@@ -1,0 +1,46 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "change-popover",
+  "name": "ChangePopover",
+  "description": "Moldura do popover de um marcador (320 px): painel color-surface com borda color-border, raio 6 e a sombra de popup. Título, valores, ajuda, rodapé com a decisão e a nota são marcações filhas.",
+  "size": {
+    "width": 320,
+    "height": 160
+  },
+  "minSize": {
+    "width": 120,
+    "height": 60
+  },
+  "sizing": {
+    "width": 320,
+    "height": "hug"
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "popover",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$token": "color-surface"
+    },
+    "cornerRadius": 6,
+    "stroke": {
+      "color": {
+        "$token": "color-border"
+      },
+      "width": 1
+    },
+    "shadow": {
+      "color": {
+        "$token": "shadow-popup-color"
+      },
+      "x": 0,
+      "y": 8,
+      "blur": 24
+    },
+    "children": []
+  }
+}

@@ -1,0 +1,249 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "layer-group",
+  "name": "LayerGroup",
+  "description": "A camada como aparece nos Detalhes e na lista de camadas: o grupo (borda, cabeçalho com a faixa da cor e a divisória do corpo), a linha da lista (borda esquerda de 3 px na cor) e o ponto da cor.",
+  "size": {
+    "width": 335,
+    "height": 30
+  },
+  "minSize": {
+    "width": 8,
+    "height": 8
+  },
+  "sizing": {
+    "width": 335,
+    "height": 30
+  },
+  "preview": {
+    "forma": "grupo",
+    "cor": "#1A63CC",
+    "aberto": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "camada",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "grupo",
+        "visible": {
+          "$or": [
+            {
+              "$eq": [
+                "forma",
+                "grupo"
+              ]
+            },
+            {
+              "$not": {
+                "$has": "forma"
+              }
+            }
+          ]
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "cornerRadius": 6,
+        "stroke": {
+          "color": {
+            "$token": "color-border"
+          },
+          "width": 1
+        },
+        "layout": {
+          "type": "none"
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "cabeçalho",
+            "anchors": {
+              "left": 1,
+              "right": 1,
+              "top": 1
+            },
+            "height": 28,
+            "cornerRadius": {
+              "$if": {
+                "$eq": [
+                  "aberto",
+                  "sim"
+                ]
+              },
+              "then": [
+                6,
+                6,
+                0,
+                0
+              ],
+              "else": 6
+            },
+            "fill": {
+              "$token": "color-bg"
+            },
+            "layout": {
+              "type": "none"
+            },
+            "children": [
+              {
+                "type": "path",
+                "name": "faixa da cor",
+                "width": 9,
+                "height": 28,
+                "anchors": {
+                  "left": 0,
+                  "top": 0
+                },
+                "viewBox": [
+                  9,
+                  28
+                ],
+                "d": {
+                  "$if": {
+                    "$eq": [
+                      "aberto",
+                      "sim"
+                    ]
+                  },
+                  "then": "M9 0L6 0A6 6 0 0 0 0 6L0 28L3 28L3 6A6 6 0 0 1 9 0Z",
+                  "else": "M9 0L6 0A6 6 0 0 0 0 6L0 22A6 6 0 0 0 6 28L9 28A6 6 0 0 1 3 22L3 6A6 6 0 0 1 9 0Z"
+                },
+                "fill": {
+                  "$field": "cor",
+                  "default": "#1A63CC"
+                }
+              }
+            ]
+          },
+          {
+            "type": "rect",
+            "name": "divisória do corpo",
+            "height": 1,
+            "anchors": {
+              "left": 1,
+              "right": 1,
+              "top": 29
+            },
+            "fill": {
+              "$token": "color-border"
+            },
+            "visible": {
+              "$eq": [
+                "aberto",
+                "sim"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "linha",
+        "visible": {
+          "$eq": [
+            "forma",
+            "linha"
+          ]
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "layout": {
+          "type": "none"
+        },
+        "children": [
+          {
+            "type": "path",
+            "name": "canto de cima",
+            "width": 6,
+            "height": 6,
+            "anchors": {
+              "left": 0,
+              "top": 0
+            },
+            "viewBox": [
+              6,
+              6
+            ],
+            "d": "M6 0A6 6 0 0 0 0 6L3 6A3 6 0 0 1 6 0Z",
+            "fill": {
+              "$field": "cor",
+              "default": "#1A63CC"
+            }
+          },
+          {
+            "type": "rect",
+            "name": "borda esquerda",
+            "width": 3,
+            "anchors": {
+              "left": 0,
+              "top": 6,
+              "bottom": 6
+            },
+            "fill": {
+              "$field": "cor",
+              "default": "#1A63CC"
+            }
+          },
+          {
+            "type": "path",
+            "name": "canto de baixo",
+            "width": 6,
+            "height": 6,
+            "anchors": {
+              "left": 0,
+              "bottom": 0
+            },
+            "viewBox": [
+              6,
+              6
+            ],
+            "d": "M0 0A6 6 0 0 0 6 6A3 6 0 0 1 3 0Z",
+            "fill": {
+              "$field": "cor",
+              "default": "#1A63CC"
+            }
+          }
+        ]
+      },
+      {
+        "type": "ellipse",
+        "name": "ponto",
+        "visible": {
+          "$eq": [
+            "forma",
+            "ponto"
+          ]
+        },
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$field": "cor",
+          "default": "#1A63CC"
+        },
+        "stroke": {
+          "color": {
+            "$token": "color-border-control"
+          },
+          "width": 1
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "delete-thread-dialogs",
+  "name": "DeleteThreadDialogs",
+  "description": "Conteúdo dos diálogos de apagar conversa: o texto do impacto (quantas mensagens e de quem).",
+  "size": {
+    "width": 448,
+    "height": 60
+  },
+  "minSize": {
+    "width": 200,
+    "height": 40
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "texto": "Vão embora 3 mensagens: 2 de Marina Alves, 1 de Claude Code (agente). Não dá para desfazer."
+  },
+  "template": {
+    "type": "frame",
+    "name": "conteúdo",
+    "layout": {
+      "type": "column",
+      "gap": 8
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "texto",
+        "text": {
+          "$field": "texto"
+        },
+        "color": "#1b1f24",
+        "font": {
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 20
+        },
+        "width": "fill"
+      }
+    ]
+  }
+}

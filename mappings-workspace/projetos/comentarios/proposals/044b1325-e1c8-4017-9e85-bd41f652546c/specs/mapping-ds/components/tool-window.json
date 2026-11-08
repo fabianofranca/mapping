@@ -1,0 +1,98 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "tool-window",
+  "name": "ToolWindow",
+  "description": "Janela de ferramenta encaixada: cabeçalho de 32 px com o título e o corpo (slot); a borda fica do lado que toca o canvas.",
+  "size": {
+    "width": 360,
+    "height": 240
+  },
+  "minSize": {
+    "width": 160,
+    "height": 80
+  },
+  "sizing": {
+    "width": 360,
+    "height": 240
+  },
+  "preview": {
+    "janela": "details",
+    "titulo": "Detalhes",
+    "posicao": "right"
+  },
+  "template": {
+    "type": "frame",
+    "name": "janela",
+    "layout": {
+      "type": "column"
+    },
+    "fill": "#ffffff",
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "width": "fill",
+        "height": 32,
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            4,
+            0,
+            12
+          ],
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "titulo"
+            },
+            "color": "#1b1f24",
+            "font": {
+              "size": 13,
+              "weight": 600,
+              "lineHeight": 20
+            },
+            "width": "fill",
+            "visible": {
+              "$and": [
+                {
+                  "$has": "titulo"
+                },
+                {
+                  "$not": {
+                    "$eq": [
+                      "posicao",
+                      "bottom"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "type": "slot",
+        "name": "corpo",
+        "label": "Conteúdo",
+        "width": "fill",
+        "height": "fill",
+        "layout": {
+          "type": "column",
+          "gap": 12,
+          "padding": [
+            0,
+            12,
+            12,
+            12
+          ]
+        }
+      }
+    ]
+  }
+}

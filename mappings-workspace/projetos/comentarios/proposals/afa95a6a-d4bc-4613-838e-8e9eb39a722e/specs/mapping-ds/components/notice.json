@@ -1,0 +1,250 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "notice",
+  "name": "Notice",
+  "description": "Aviso em caixa, com ícone e título opcional; o tom (info, warning, error, success) escolhe fundo, borda e ícone.",
+  "size": {
+    "width": 360,
+    "height": 64
+  },
+  "minSize": {
+    "width": 120,
+    "height": 32
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "tom": "info",
+    "tamanho": "md",
+    "titulo": "Proposta substituída",
+    "dica": "",
+    "texto": "Há uma proposta mais nova para este item."
+  },
+  "template": {
+    "type": "frame",
+    "name": "notice",
+    "cornerRadius": 6,
+    "fill": {
+      "$switch": "tom",
+      "cases": {
+        "info": "#dce8fb",
+        "warning": "#fff4d6",
+        "error": "#fdecea",
+        "success": "#e3f4ea"
+      },
+      "default": "#dce8fb"
+    },
+    "stroke": {
+      "color": {
+        "$switch": "tom",
+        "cases": {
+          "info": "rgba(0, 0, 0, 0)",
+          "warning": "#8a5a00",
+          "error": "#c62828",
+          "success": "#1e7a46"
+        },
+        "default": "rgba(0, 0, 0, 0)"
+      },
+      "width": 1
+    },
+    "layout": {
+      "type": "row",
+      "gap": 8,
+      "padding": {
+        "$if": {
+          "$eq": [
+            "tamanho",
+            "sm"
+          ]
+        },
+        "then": [
+          6,
+          8
+        ],
+        "else": [
+          8,
+          12
+        ]
+      },
+      "align": "start"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "ícone",
+        "width": 16,
+        "height": "hug",
+        "layout": {
+          "type": "column",
+          "padding": [
+            2,
+            0,
+            0,
+            0
+          ]
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "ícone",
+            "width": 16,
+            "height": 16,
+            "layout": {
+              "type": "none"
+            },
+            "children": [
+              {
+                "type": "path",
+                "name": "traço",
+                "width": 16,
+                "height": 16,
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "d": {
+                  "$switch": "tom",
+                  "cases": {
+                    "info": "M2 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0ZM8 7.5V11",
+                    "warning": "M8 2.5 14 13H2ZM8 6.5v3",
+                    "error": "M2 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0ZM8 5v3.5",
+                    "success": "M3 8.5l3.2 3.2L13 4.8"
+                  },
+                  "default": "M2 8a6 6 0 1 0 12 0a6 6 0 1 0 -12 0ZM8 7.5V11"
+                },
+                "fill": "none",
+                "stroke": {
+                  "color": {
+                    "$switch": "tom",
+                    "cases": {
+                      "info": "#1a63cc",
+                      "warning": "#8a5a00",
+                      "error": "#c62828",
+                      "success": "#1e7a46"
+                    },
+                    "default": "#1a63cc"
+                  },
+                  "width": 1.25
+                }
+              },
+              {
+                "type": "path",
+                "name": "pontas",
+                "width": 16,
+                "height": 16,
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "d": {
+                  "$switch": "tom",
+                  "cases": {
+                    "info": "M1.375 8a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM13.375 8a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.375 7.5a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.375 11a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.1 5.2a0.9 0.9 0 1 0 1.8 0a0.9 0.9 0 1 0 -1.8 0Z",
+                    "warning": "M7.375 2.5a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM13.375 13a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM1.375 13a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.375 6.5a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.375 9.5a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.1 11.2a0.9 0.9 0 1 0 1.8 0a0.9 0.9 0 1 0 -1.8 0Z",
+                    "error": "M1.375 8a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM13.375 8a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.375 5a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.375 8.5a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.1 10.8a0.9 0.9 0 1 0 1.8 0a0.9 0.9 0 1 0 -1.8 0Z",
+                    "success": "M2.375 8.5a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM5.575 11.7a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM12.375 4.8a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0Z"
+                  },
+                  "default": "M1.375 8a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM13.375 8a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.375 7.5a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.375 11a0.625 0.625 0 1 0 1.25 0a0.625 0.625 0 1 0 -1.25 0ZM7.1 5.2a0.9 0.9 0 1 0 1.8 0a0.9 0.9 0 1 0 -1.8 0Z"
+                },
+                "fill": {
+                  "$switch": "tom",
+                  "cases": {
+                    "info": "#1a63cc",
+                    "warning": "#8a5a00",
+                    "error": "#c62828",
+                    "success": "#1e7a46"
+                  },
+                  "default": "#1a63cc"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "corpo",
+        "width": "fill",
+        "height": "fill",
+        "layout": {
+          "type": "column",
+          "gap": 2
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "titulo"
+            },
+            "color": "#1b1f24",
+            "font": {
+              "family": "Segoe UI",
+              "size": {
+                "$if": {
+                  "$eq": [
+                    "tamanho",
+                    "sm"
+                  ]
+                },
+                "then": 12,
+                "else": 13
+              },
+              "weight": 600,
+              "lineHeight": {
+                "$if": {
+                  "$eq": [
+                    "tamanho",
+                    "sm"
+                  ]
+                },
+                "then": 16,
+                "else": 20
+              }
+            },
+            "width": "fill",
+            "visible": {
+              "$has": "titulo"
+            }
+          },
+          {
+            "type": "text",
+            "name": "texto",
+            "text": {
+              "$field": "texto"
+            },
+            "color": "#1b1f24",
+            "font": {
+              "family": "Segoe UI",
+              "size": {
+                "$if": {
+                  "$eq": [
+                    "tamanho",
+                    "sm"
+                  ]
+                },
+                "then": 12,
+                "else": 13
+              },
+              "weight": 400,
+              "lineHeight": {
+                "$if": {
+                  "$eq": [
+                    "tamanho",
+                    "sm"
+                  ]
+                },
+                "then": 16,
+                "else": 20
+              }
+            },
+            "width": "fill"
+          }
+        ]
+      }
+    ]
+  }
+}

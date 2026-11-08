@@ -1,0 +1,448 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "change-mark",
+  "name": "ChangeMark",
+  "description": "Marcador de um campo alterado na revisão: peça de 18 px com o tipo à esquerda e a decisão à direita (ícones de 12 px); conflito com ⚠ em âmbar, junto com o elo, parte de uma criação ou remoção tracejada e só com o tipo; aberto e alvo com a borda de destaque.",
+  "size": {
+    "width": 32,
+    "height": 18
+  },
+  "minSize": {
+    "width": 16,
+    "height": 14
+  },
+  "sizing": {
+    "width": 32,
+    "height": 18
+  },
+  "preview": {
+    "tipo": "alterada",
+    "estado": "sem-decisao"
+  },
+  "template": {
+    "type": "frame",
+    "name": "marcador",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "peça",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "cornerRadius": 4,
+        "fill": {
+          "$if": {
+            "$eq": [
+              "conflito",
+              "sim"
+            ]
+          },
+          "then": {
+            "$token": "color-warning-bg"
+          },
+          "else": {
+            "$if": {
+              "$eq": [
+                "aberto",
+                "sim"
+              ]
+            },
+            "then": {
+              "$token": "color-selection"
+            },
+            "else": {
+              "$token": "color-surface"
+            }
+          }
+        },
+        "stroke": {
+          "color": {
+            "$if": {
+              "$eq": [
+                "parte",
+                "sim"
+              ]
+            },
+            "then": "none",
+            "else": {
+              "$if": {
+                "$eq": [
+                  "alvo",
+                  "sim"
+                ]
+              },
+              "then": {
+                "$token": "color-accent"
+              },
+              "else": {
+                "$if": {
+                  "$eq": [
+                    "conflito",
+                    "sim"
+                  ]
+                },
+                "then": {
+                  "$token": "color-warning"
+                },
+                "else": {
+                  "$if": {
+                    "$eq": [
+                      "aberto",
+                      "sim"
+                    ]
+                  },
+                  "then": {
+                    "$token": "color-accent"
+                  },
+                  "else": {
+                    "$token": "color-border-control"
+                  }
+                }
+              }
+            }
+          },
+          "width": 1
+        },
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            2
+          ],
+          "gap": 2,
+          "align": "center",
+          "justify": "center"
+        },
+        "children": [
+          {
+            "type": "icon",
+            "name": {
+              "$if": {
+                "$eq": [
+                  "conflito",
+                  "sim"
+                ]
+              },
+              "then": "warning",
+              "else": {
+                "$if": {
+                  "$eq": [
+                    "junto",
+                    "sim"
+                  ]
+                },
+                "then": "link",
+                "else": {
+                  "$switch": "tipo",
+                  "cases": {
+                    "criada": "plus",
+                    "removida": "minus",
+                    "movida": "moved",
+                    "alterada": "changed",
+                    "trocada": "replaced"
+                  },
+                  "default": "changed"
+                }
+              }
+            },
+            "color": {
+              "$if": {
+                "$eq": [
+                  "conflito",
+                  "sim"
+                ]
+              },
+              "then": {
+                "$token": "color-warning"
+              },
+              "else": {
+                "$if": {
+                  "$eq": [
+                    "parte",
+                    "sim"
+                  ]
+                },
+                "then": {
+                  "$token": "color-text-muted"
+                },
+                "else": {
+                  "$token": "color-text"
+                }
+              }
+            },
+            "strokeWidth": 1.5,
+            "width": 12,
+            "height": 12
+          },
+          {
+            "type": "frame",
+            "name": "decisão",
+            "width": 12,
+            "height": 12,
+            "layout": {
+              "type": "none"
+            },
+            "visible": {
+              "$not": {
+                "$eq": [
+                  "parte",
+                  "sim"
+                ]
+              }
+            },
+            "children": [
+              {
+                "type": "path",
+                "name": "sem decisão",
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "width": "fill",
+                "height": "fill",
+                "d": "M2.25 8a5.75 5.75 0 1 0 11.5 0a5.75 5.75 0 1 0 -11.5 0Z",
+                "fill": "none",
+                "stroke": {
+                  "color": {
+                    "$token": "color-text-muted"
+                  },
+                  "width": 1.25,
+                  "align": "center",
+                  "dash": [
+                    2.1,
+                    2.1
+                  ],
+                  "cap": "round"
+                },
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      {
+                        "$eq": [
+                          "estado",
+                          "aceita"
+                        ]
+                      },
+                      {
+                        "$eq": [
+                          "estado",
+                          "rejeitada"
+                        ]
+                      },
+                      {
+                        "$eq": [
+                          "estado",
+                          "parcial"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "path",
+                "name": "disco",
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "width": "fill",
+                "height": "fill",
+                "d": "M1.75 8a6.25 6.25 0 1 0 12.5 0a6.25 6.25 0 1 0 -12.5 0Z",
+                "fill": {
+                  "$switch": "estado",
+                  "cases": {
+                    "aceita": {
+                      "$token": "color-success"
+                    },
+                    "rejeitada": {
+                      "$token": "color-danger"
+                    }
+                  },
+                  "default": {
+                    "$token": "color-text"
+                  }
+                },
+                "visible": {
+                  "$or": [
+                    {
+                      "$eq": [
+                        "estado",
+                        "aceita"
+                      ]
+                    },
+                    {
+                      "$eq": [
+                        "estado",
+                        "rejeitada"
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "path",
+                "name": "visto",
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "width": "fill",
+                "height": "fill",
+                "d": "M5 8.3l2.2 2.2L11.2 5.9",
+                "fill": "none",
+                "stroke": {
+                  "color": {
+                    "$token": "color-surface"
+                  },
+                  "width": 1.5,
+                  "align": "center",
+                  "cap": "round",
+                  "join": "round"
+                },
+                "visible": {
+                  "$eq": [
+                    "estado",
+                    "aceita"
+                  ]
+                }
+              },
+              {
+                "type": "path",
+                "name": "xis",
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "width": "fill",
+                "height": "fill",
+                "d": "M5.6 5.6l4.8 4.8M10.4 5.6l-4.8 4.8",
+                "fill": "none",
+                "stroke": {
+                  "color": {
+                    "$token": "color-surface"
+                  },
+                  "width": 1.5,
+                  "align": "center",
+                  "cap": "round",
+                  "join": "round"
+                },
+                "visible": {
+                  "$eq": [
+                    "estado",
+                    "rejeitada"
+                  ]
+                }
+              },
+              {
+                "type": "path",
+                "name": "contorno parcial",
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "width": "fill",
+                "height": "fill",
+                "d": "M2.25 8a5.75 5.75 0 1 0 11.5 0a5.75 5.75 0 1 0 -11.5 0Z",
+                "fill": "none",
+                "stroke": {
+                  "color": {
+                    "$token": "color-text"
+                  },
+                  "width": 1.25,
+                  "align": "center"
+                },
+                "visible": {
+                  "$eq": [
+                    "estado",
+                    "parcial"
+                  ]
+                }
+              },
+              {
+                "type": "path",
+                "name": "metade",
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "width": "fill",
+                "height": "fill",
+                "d": "M8 2.25a5.75 5.75 0 0 0 0 11.5Z",
+                "fill": {
+                  "$token": "color-text"
+                },
+                "visible": {
+                  "$eq": [
+                    "estado",
+                    "parcial"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "parte",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "cornerRadius": 4,
+        "fill": "none",
+        "stroke": {
+          "color": {
+            "$token": "color-border-control"
+          },
+          "width": 1,
+          "dash": [
+            3,
+            3
+          ]
+        },
+        "visible": {
+          "$eq": [
+            "parte",
+            "sim"
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "inválido",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "cornerRadius": 4,
+        "fill": "none",
+        "stroke": {
+          "color": {
+            "$token": "color-danger"
+          },
+          "width": 2,
+          "align": "outside"
+        },
+        "visible": {
+          "$eq": [
+            "invalido",
+            "sim"
+          ]
+        }
+      }
+    ]
+  }
+}

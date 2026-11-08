@@ -1,0 +1,251 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 2,
+  "id": "threads-section",
+  "name": "ThreadsSection",
+  "description": "Seção Conversas dos Detalhes: cabeçalho com o botão Nova e a lista de conversas do item (avatar, assunto, onde, nº de mensagens).",
+  "size": {
+    "width": 352,
+    "height": 150
+  },
+  "minSize": {
+    "width": 200,
+    "height": 60
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "conversas": [
+      {
+        "iniciais": "AG",
+        "assunto": "A especialização não diz qual variante usar aqui",
+        "onde": "em Button › variant",
+        "mensagens": "3 mensagens",
+        "naoLida": "sim",
+        "selecionada": "não"
+      },
+      {
+        "iniciais": "MA",
+        "assunto": "Qual tamanho vale para o rótulo?",
+        "onde": "",
+        "mensagens": "1 mensagem",
+        "naoLida": "não",
+        "selecionada": "sim"
+      }
+    ]
+  },
+  "template": {
+    "type": "frame",
+    "name": "seção",
+    "layout": {
+      "type": "column",
+      "gap": 8
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "width": "fill",
+        "height": 28,
+        "layout": {
+          "type": "row",
+          "gap": 4,
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "path",
+            "name": "seta",
+            "width": 16,
+            "height": 16,
+            "viewBox": [
+              16,
+              16
+            ],
+            "d": "M4 6 4 4 4-4",
+            "fill": "none",
+            "stroke": {
+              "color": "#5b6470",
+              "width": 1.25
+            }
+          },
+          {
+            "type": "text",
+            "name": "título",
+            "text": "Conversas",
+            "color": "#1b1f24",
+            "font": {
+              "size": 13,
+              "weight": 600,
+              "lineHeight": 20
+            },
+            "width": "fill"
+          },
+          {
+            "type": "frame",
+            "name": "nova",
+            "width": "hug",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": "#ffffff",
+            "stroke": {
+              "color": "#7d8590",
+              "width": 1
+            },
+            "layout": {
+              "type": "row",
+              "padding": [
+                0,
+                8
+              ],
+              "align": "center",
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "texto",
+                "text": "Nova",
+                "color": "#1b1f24",
+                "font": {
+                  "size": 13,
+                  "weight": 400,
+                  "lineHeight": 20
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "repeat",
+        "name": "conversas",
+        "field": "conversas",
+        "direction": "column",
+        "gap": 2,
+        "width": "fill",
+        "template": {
+          "type": "frame",
+          "name": "conversa",
+          "width": "fill",
+          "cornerRadius": 4,
+          "fill": {
+            "$if": {
+              "$eq": [
+                "selecionada",
+                "sim"
+              ]
+            },
+            "then": "#dce8fb",
+            "else": "rgba(0, 0, 0, 0)"
+          },
+          "layout": {
+            "type": "row",
+            "gap": 8,
+            "padding": [
+              4,
+              8
+            ],
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "frame",
+              "name": "avatar",
+              "width": 24,
+              "height": 24,
+              "cornerRadius": 12,
+              "fill": "#eceff3",
+              "layout": {
+                "type": "row",
+                "align": "center",
+                "justify": "center"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "name": "iniciais",
+                  "text": {
+                    "$field": "iniciais"
+                  },
+                  "color": "#1b1f24",
+                  "font": {
+                    "size": 11,
+                    "weight": 600,
+                    "lineHeight": 16
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "texto",
+              "width": "fill",
+              "height": "hug",
+              "layout": {
+                "type": "column"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "name": "assunto",
+                  "text": {
+                    "$field": "assunto"
+                  },
+                  "color": "#1b1f24",
+                  "font": {
+                    "size": 13,
+                    "weight": {
+                      "$if": {
+                        "$eq": [
+                          "naoLida",
+                          "sim"
+                        ]
+                      },
+                      "then": 600,
+                      "else": 400
+                    },
+                    "lineHeight": 20
+                  },
+                  "width": "fill"
+                },
+                {
+                  "type": "text",
+                  "name": "onde",
+                  "text": {
+                    "$field": "onde"
+                  },
+                  "color": "#5b6470",
+                  "font": {
+                    "size": 12,
+                    "weight": 400,
+                    "lineHeight": 16
+                  },
+                  "width": "fill",
+                  "visible": {
+                    "$has": "onde"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "name": "mensagens",
+              "text": {
+                "$field": "mensagens"
+              },
+              "color": "#5b6470",
+              "font": {
+                "size": 12,
+                "weight": 400,
+                "lineHeight": 16
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,414 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "image-compare",
+  "name": "ImageCompare",
+  "description": "Comparação antes/depois de uma imagem trocada: a área em color-canvas-bg com as etiquetas Antes e Depois, a divisória e a alça de 28 px (deslizar), só a alça (sobrepor) ou as duas imagens lado a lado.",
+  "size": {
+    "width": 480,
+    "height": 270
+  },
+  "minSize": {
+    "width": 160,
+    "height": 96
+  },
+  "sizing": {
+    "width": "fill",
+    "height": 270
+  },
+  "preview": {
+    "modo": "deslizar"
+  },
+  "template": {
+    "type": "frame",
+    "name": "comparação",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "área",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "visible": {
+          "$not": {
+            "$eq": [
+              "modo",
+              "lado-a-lado"
+            ]
+          }
+        },
+        "layout": {
+          "type": "none"
+        },
+        "fill": {
+          "$token": "color-canvas-bg"
+        },
+        "cornerRadius": 4,
+        "stroke": {
+          "color": {
+            "$token": "color-border-control"
+          },
+          "width": 1
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "etiqueta Antes",
+            "width": "hug",
+            "height": 18,
+            "anchors": {
+              "left": 8,
+              "top": 8
+            },
+            "fill": {
+              "$token": "cv-badge"
+            },
+            "cornerRadius": 2,
+            "stroke": {
+              "color": {
+                "$token": "cv-line"
+              },
+              "width": 1
+            },
+            "layout": {
+              "type": "row",
+              "padding": [
+                0,
+                6
+              ],
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "texto",
+                "text": "Antes",
+                "color": {
+                  "$token": "cv-line"
+                },
+                "font": {
+                  "size": 11,
+                  "weight": 600,
+                  "lineHeight": 16,
+                  "wrap": "none"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "etiqueta Depois",
+            "width": "hug",
+            "height": 18,
+            "anchors": {
+              "right": 8,
+              "top": 8
+            },
+            "fill": {
+              "$token": "cv-badge"
+            },
+            "cornerRadius": 2,
+            "stroke": {
+              "color": {
+                "$token": "cv-line"
+              },
+              "width": 1
+            },
+            "layout": {
+              "type": "row",
+              "padding": [
+                0,
+                6
+              ],
+              "align": "center"
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "texto",
+                "text": "Depois",
+                "color": {
+                  "$token": "cv-line"
+                },
+                "font": {
+                  "size": 11,
+                  "weight": 600,
+                  "lineHeight": 16,
+                  "wrap": "none"
+                }
+              }
+            ]
+          },
+          {
+            "type": "rect",
+            "name": "divisória",
+            "width": 2,
+            "anchors": {
+              "centerX": true,
+              "top": 0,
+              "bottom": 0
+            },
+            "fill": {
+              "$token": "cv-line"
+            },
+            "stroke": {
+              "color": {
+                "$token": "cv-halo"
+              },
+              "width": 1,
+              "align": "outside"
+            },
+            "visible": {
+              "$not": {
+                "$eq": [
+                  "modo",
+                  "sobrepor"
+                ]
+              }
+            }
+          },
+          {
+            "type": "frame",
+            "name": "alça",
+            "width": 28,
+            "height": 28,
+            "anchors": {
+              "centerX": true,
+              "centerY": true
+            },
+            "layout": {
+              "type": "row",
+              "align": "center",
+              "justify": "center"
+            },
+            "fill": {
+              "$token": "color-surface"
+            },
+            "cornerRadius": 999,
+            "stroke": {
+              "color": {
+                "$token": "color-border-control"
+              },
+              "width": 1
+            },
+            "shadow": {
+              "color": {
+                "$token": "shadow-popup-color"
+              },
+              "x": 0,
+              "y": 8,
+              "blur": 24
+            },
+            "children": [
+              {
+                "type": "icon",
+                "name": "compare",
+                "color": {
+                  "$token": "color-text"
+                },
+                "width": 16,
+                "height": 16
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "lado a lado",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "visible": {
+          "$eq": [
+            "modo",
+            "lado-a-lado"
+          ]
+        },
+        "layout": {
+          "type": "row",
+          "gap": 8
+        },
+        "children": [
+          {
+            "type": "frame",
+            "name": "lado Antes",
+            "width": "fill",
+            "height": "fill",
+            "layout": {
+              "type": "column",
+              "gap": 4
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "imagem",
+                "width": "fill",
+                "height": "fill",
+                "layout": {
+                  "type": "none"
+                },
+                "fill": {
+                  "$token": "color-canvas-bg"
+                },
+                "cornerRadius": 4,
+                "stroke": {
+                  "color": {
+                    "$token": "color-border-control"
+                  },
+                  "width": 1
+                },
+                "children": []
+              },
+              {
+                "type": "frame",
+                "name": "legenda",
+                "width": "fill",
+                "height": 18,
+                "layout": {
+                  "type": "row",
+                  "align": "center"
+                },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "etiqueta Antes",
+                    "width": "hug",
+                    "height": 18,
+                    "fill": {
+                      "$token": "cv-badge"
+                    },
+                    "cornerRadius": 2,
+                    "stroke": {
+                      "color": {
+                        "$token": "cv-line"
+                      },
+                      "width": 1
+                    },
+                    "layout": {
+                      "type": "row",
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "align": "center"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "texto",
+                        "text": "Antes",
+                        "color": {
+                          "$token": "cv-line"
+                        },
+                        "font": {
+                          "size": 11,
+                          "weight": 600,
+                          "lineHeight": 16,
+                          "wrap": "none"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "lado Depois",
+            "width": "fill",
+            "height": "fill",
+            "layout": {
+              "type": "column",
+              "gap": 4
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "imagem",
+                "width": "fill",
+                "height": "fill",
+                "layout": {
+                  "type": "none"
+                },
+                "fill": {
+                  "$token": "color-canvas-bg"
+                },
+                "cornerRadius": 4,
+                "stroke": {
+                  "color": {
+                    "$token": "color-border-control"
+                  },
+                  "width": 1
+                },
+                "children": []
+              },
+              {
+                "type": "frame",
+                "name": "legenda",
+                "width": "fill",
+                "height": 18,
+                "layout": {
+                  "type": "row",
+                  "align": "center"
+                },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "etiqueta Depois",
+                    "width": "hug",
+                    "height": 18,
+                    "fill": {
+                      "$token": "cv-badge"
+                    },
+                    "cornerRadius": 2,
+                    "stroke": {
+                      "color": {
+                        "$token": "cv-line"
+                      },
+                      "width": 1
+                    },
+                    "layout": {
+                      "type": "row",
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "align": "center"
+                    },
+                    "children": [
+                      {
+                        "type": "text",
+                        "name": "texto",
+                        "text": "Depois",
+                        "color": {
+                          "$token": "cv-line"
+                        },
+                        "font": {
+                          "size": 11,
+                          "weight": 600,
+                          "lineHeight": 16,
+                          "wrap": "none"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

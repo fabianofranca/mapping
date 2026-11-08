@@ -1,0 +1,130 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "tool-window",
+  "name": "ToolWindow",
+  "description": "Moldura da janela de ferramenta: fundo color-surface, a divisória do lado que toca o canvas e o título do cabeçalho de 32 px.",
+  "size": {
+    "width": 360,
+    "height": 240
+  },
+  "minSize": {
+    "width": 120,
+    "height": 60
+  },
+  "sizing": {
+    "width": 360,
+    "height": 240
+  },
+  "preview": {
+    "janela": "details",
+    "titulo": "Detalhes",
+    "posicao": "right"
+  },
+  "template": {
+    "type": "frame",
+    "name": "janela",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$token": "color-surface"
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "título",
+        "text": {
+          "$field": "titulo"
+        },
+        "color": {
+          "$token": "color-text"
+        },
+        "font": {
+          "size": 13,
+          "weight": 600,
+          "lineHeight": 20,
+          "verticalAlign": "middle"
+        },
+        "anchors": {
+          "left": 12,
+          "right": 72,
+          "top": 0
+        },
+        "height": 32,
+        "visible": {
+          "$and": [
+            {
+              "$has": "titulo"
+            },
+            {
+              "$not": {
+                "$eq": [
+                  "posicao",
+                  "bottom"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "divisória",
+        "width": 1,
+        "anchors": {
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$token": "color-border"
+        },
+        "visible": {
+          "$eq": [
+            "posicao",
+            "left"
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "divisória",
+        "width": 1,
+        "anchors": {
+          "left": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$token": "color-border"
+        },
+        "visible": {
+          "$eq": [
+            "posicao",
+            "right"
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "divisória",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0
+        },
+        "fill": {
+          "$token": "color-border"
+        },
+        "visible": {
+          "$eq": [
+            "posicao",
+            "bottom"
+          ]
+        }
+      }
+    ]
+  }
+}

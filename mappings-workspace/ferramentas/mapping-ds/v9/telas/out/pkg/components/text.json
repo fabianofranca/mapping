@@ -1,0 +1,749 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "text",
+  "name": "Texto",
+  "description": "Texto solto com um estilo de tipografia do DS (t-*) e uma cor dos tokens. Uma linha fica centralizada na altura e não quebra (com reticencias, termina em … quando não cabe); o parágrafo quebra na largura.",
+  "size": {
+    "width": 120,
+    "height": 20
+  },
+  "minSize": {
+    "width": 1,
+    "height": 1
+  },
+  "sizing": {
+    "width": 120,
+    "height": 20
+  },
+  "preview": {
+    "texto": "Texto",
+    "estilo": "t-body",
+    "cor": "text",
+    "alinhamento": "left",
+    "decoracao": "none",
+    "reticencias": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "texto",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "linha (left)",
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "text": {
+              "$token": "color-text"
+            },
+            "muted": {
+              "$token": "color-text-muted"
+            },
+            "accent": {
+              "$token": "color-accent"
+            },
+            "danger": {
+              "$token": "color-danger"
+            },
+            "warning": {
+              "$token": "color-warning"
+            },
+            "success": {
+              "$token": "color-success"
+            },
+            "accent-text": {
+              "$token": "color-accent-text"
+            }
+          },
+          "default": {
+            "$token": "color-text"
+          }
+        },
+        "font": {
+          "family": {
+            "$if": {
+              "$eq": [
+                "estilo",
+                "t-code"
+              ]
+            },
+            "then": {
+              "$token": "font-mono"
+            },
+            "else": {
+              "$token": "font-sans"
+            }
+          },
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 20,
+              "t-title": 15,
+              "t-heading": 13,
+              "t-body": 13,
+              "t-body-strong": 13,
+              "t-small": 12,
+              "t-label": 12,
+              "t-micro": 11,
+              "t-code": 12,
+              "t-kbd": 11
+            },
+            "default": 13
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 600,
+              "t-title": 600,
+              "t-heading": 600,
+              "t-body": 400,
+              "t-body-strong": 600,
+              "t-small": 400,
+              "t-label": 400,
+              "t-micro": 600,
+              "t-code": 400,
+              "t-kbd": 400
+            },
+            "default": 400
+          },
+          "lineHeight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 28,
+              "t-title": 22,
+              "t-heading": 20,
+              "t-body": 20,
+              "t-body-strong": 20,
+              "t-small": 16,
+              "t-label": 16,
+              "t-micro": 16,
+              "t-code": 18,
+              "t-kbd": 16
+            },
+            "default": 20
+          },
+          "decoration": {
+            "$switch": "decoracao",
+            "cases": {
+              "line-through": "line-through",
+              "underline": "underline"
+            },
+            "default": "none"
+          }
+        },
+        "width": "hug",
+        "height": "hug",
+        "anchors": {
+          "left": 0,
+          "centerY": true
+        },
+        "visible": {
+          "$and": [
+            {
+              "$and": [
+                {
+                  "$not": {
+                    "$eq": [
+                      "quebra",
+                      "sim"
+                    ]
+                  }
+                },
+                {
+                  "$not": {
+                    "$or": [
+                      {
+                        "$eq": [
+                          "alinhamento",
+                          "center"
+                        ]
+                      },
+                      {
+                        "$eq": [
+                          "alinhamento",
+                          "right"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "$not": {
+                "$eq": [
+                  "reticencias",
+                  "sim"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "text",
+        "name": "linha (center)",
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "text": {
+              "$token": "color-text"
+            },
+            "muted": {
+              "$token": "color-text-muted"
+            },
+            "accent": {
+              "$token": "color-accent"
+            },
+            "danger": {
+              "$token": "color-danger"
+            },
+            "warning": {
+              "$token": "color-warning"
+            },
+            "success": {
+              "$token": "color-success"
+            },
+            "accent-text": {
+              "$token": "color-accent-text"
+            }
+          },
+          "default": {
+            "$token": "color-text"
+          }
+        },
+        "font": {
+          "family": {
+            "$if": {
+              "$eq": [
+                "estilo",
+                "t-code"
+              ]
+            },
+            "then": {
+              "$token": "font-mono"
+            },
+            "else": {
+              "$token": "font-sans"
+            }
+          },
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 20,
+              "t-title": 15,
+              "t-heading": 13,
+              "t-body": 13,
+              "t-body-strong": 13,
+              "t-small": 12,
+              "t-label": 12,
+              "t-micro": 11,
+              "t-code": 12,
+              "t-kbd": 11
+            },
+            "default": 13
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 600,
+              "t-title": 600,
+              "t-heading": 600,
+              "t-body": 400,
+              "t-body-strong": 600,
+              "t-small": 400,
+              "t-label": 400,
+              "t-micro": 600,
+              "t-code": 400,
+              "t-kbd": 400
+            },
+            "default": 400
+          },
+          "lineHeight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 28,
+              "t-title": 22,
+              "t-heading": 20,
+              "t-body": 20,
+              "t-body-strong": 20,
+              "t-small": 16,
+              "t-label": 16,
+              "t-micro": 16,
+              "t-code": 18,
+              "t-kbd": 16
+            },
+            "default": 20
+          },
+          "decoration": {
+            "$switch": "decoracao",
+            "cases": {
+              "line-through": "line-through",
+              "underline": "underline"
+            },
+            "default": "none"
+          }
+        },
+        "width": "hug",
+        "height": "hug",
+        "anchors": {
+          "centerX": true,
+          "centerY": true
+        },
+        "visible": {
+          "$and": [
+            {
+              "$and": [
+                {
+                  "$not": {
+                    "$eq": [
+                      "quebra",
+                      "sim"
+                    ]
+                  }
+                },
+                {
+                  "$eq": [
+                    "alinhamento",
+                    "center"
+                  ]
+                }
+              ]
+            },
+            {
+              "$not": {
+                "$eq": [
+                  "reticencias",
+                  "sim"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "text",
+        "name": "linha (right)",
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "text": {
+              "$token": "color-text"
+            },
+            "muted": {
+              "$token": "color-text-muted"
+            },
+            "accent": {
+              "$token": "color-accent"
+            },
+            "danger": {
+              "$token": "color-danger"
+            },
+            "warning": {
+              "$token": "color-warning"
+            },
+            "success": {
+              "$token": "color-success"
+            },
+            "accent-text": {
+              "$token": "color-accent-text"
+            }
+          },
+          "default": {
+            "$token": "color-text"
+          }
+        },
+        "font": {
+          "family": {
+            "$if": {
+              "$eq": [
+                "estilo",
+                "t-code"
+              ]
+            },
+            "then": {
+              "$token": "font-mono"
+            },
+            "else": {
+              "$token": "font-sans"
+            }
+          },
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 20,
+              "t-title": 15,
+              "t-heading": 13,
+              "t-body": 13,
+              "t-body-strong": 13,
+              "t-small": 12,
+              "t-label": 12,
+              "t-micro": 11,
+              "t-code": 12,
+              "t-kbd": 11
+            },
+            "default": 13
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 600,
+              "t-title": 600,
+              "t-heading": 600,
+              "t-body": 400,
+              "t-body-strong": 600,
+              "t-small": 400,
+              "t-label": 400,
+              "t-micro": 600,
+              "t-code": 400,
+              "t-kbd": 400
+            },
+            "default": 400
+          },
+          "lineHeight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 28,
+              "t-title": 22,
+              "t-heading": 20,
+              "t-body": 20,
+              "t-body-strong": 20,
+              "t-small": 16,
+              "t-label": 16,
+              "t-micro": 16,
+              "t-code": 18,
+              "t-kbd": 16
+            },
+            "default": 20
+          },
+          "decoration": {
+            "$switch": "decoracao",
+            "cases": {
+              "line-through": "line-through",
+              "underline": "underline"
+            },
+            "default": "none"
+          }
+        },
+        "width": "hug",
+        "height": "hug",
+        "anchors": {
+          "right": 0,
+          "centerY": true
+        },
+        "visible": {
+          "$and": [
+            {
+              "$and": [
+                {
+                  "$not": {
+                    "$eq": [
+                      "quebra",
+                      "sim"
+                    ]
+                  }
+                },
+                {
+                  "$eq": [
+                    "alinhamento",
+                    "right"
+                  ]
+                }
+              ]
+            },
+            {
+              "$not": {
+                "$eq": [
+                  "reticencias",
+                  "sim"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "text",
+        "name": "linha com reticências",
+        "visible": {
+          "$and": [
+            {
+              "$not": {
+                "$eq": [
+                  "quebra",
+                  "sim"
+                ]
+              }
+            },
+            {
+              "$eq": [
+                "reticencias",
+                "sim"
+              ]
+            }
+          ]
+        },
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "text": {
+              "$token": "color-text"
+            },
+            "muted": {
+              "$token": "color-text-muted"
+            },
+            "accent": {
+              "$token": "color-accent"
+            },
+            "danger": {
+              "$token": "color-danger"
+            },
+            "warning": {
+              "$token": "color-warning"
+            },
+            "success": {
+              "$token": "color-success"
+            },
+            "accent-text": {
+              "$token": "color-accent-text"
+            }
+          },
+          "default": {
+            "$token": "color-text"
+          }
+        },
+        "font": {
+          "family": {
+            "$if": {
+              "$eq": [
+                "estilo",
+                "t-code"
+              ]
+            },
+            "then": {
+              "$token": "font-mono"
+            },
+            "else": {
+              "$token": "font-sans"
+            }
+          },
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 20,
+              "t-title": 15,
+              "t-heading": 13,
+              "t-body": 13,
+              "t-body-strong": 13,
+              "t-small": 12,
+              "t-label": 12,
+              "t-micro": 11,
+              "t-code": 12,
+              "t-kbd": 11
+            },
+            "default": 13
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 600,
+              "t-title": 600,
+              "t-heading": 600,
+              "t-body": 400,
+              "t-body-strong": 600,
+              "t-small": 400,
+              "t-label": 400,
+              "t-micro": 600,
+              "t-code": 400,
+              "t-kbd": 400
+            },
+            "default": 400
+          },
+          "lineHeight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 28,
+              "t-title": 22,
+              "t-heading": 20,
+              "t-body": 20,
+              "t-body-strong": 20,
+              "t-small": 16,
+              "t-label": 16,
+              "t-micro": 16,
+              "t-code": 18,
+              "t-kbd": 16
+            },
+            "default": 20
+          },
+          "decoration": {
+            "$switch": "decoracao",
+            "cases": {
+              "line-through": "line-through",
+              "underline": "underline"
+            },
+            "default": "none"
+          },
+          "align": {
+            "$switch": "alinhamento",
+            "cases": {
+              "center": "center",
+              "right": "right"
+            },
+            "default": "left"
+          },
+          "verticalAlign": "middle",
+          "wrap": "none",
+          "ellipsis": true
+        },
+        "width": "fill",
+        "height": "fill"
+      },
+      {
+        "type": "text",
+        "name": "parágrafo",
+        "visible": {
+          "$eq": [
+            "quebra",
+            "sim"
+          ]
+        },
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "text": {
+              "$token": "color-text"
+            },
+            "muted": {
+              "$token": "color-text-muted"
+            },
+            "accent": {
+              "$token": "color-accent"
+            },
+            "danger": {
+              "$token": "color-danger"
+            },
+            "warning": {
+              "$token": "color-warning"
+            },
+            "success": {
+              "$token": "color-success"
+            },
+            "accent-text": {
+              "$token": "color-accent-text"
+            }
+          },
+          "default": {
+            "$token": "color-text"
+          }
+        },
+        "font": {
+          "family": {
+            "$if": {
+              "$eq": [
+                "estilo",
+                "t-code"
+              ]
+            },
+            "then": {
+              "$token": "font-mono"
+            },
+            "else": {
+              "$token": "font-sans"
+            }
+          },
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 20,
+              "t-title": 15,
+              "t-heading": 13,
+              "t-body": 13,
+              "t-body-strong": 13,
+              "t-small": 12,
+              "t-label": 12,
+              "t-micro": 11,
+              "t-code": 12,
+              "t-kbd": 11
+            },
+            "default": 13
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 600,
+              "t-title": 600,
+              "t-heading": 600,
+              "t-body": 400,
+              "t-body-strong": 600,
+              "t-small": 400,
+              "t-label": 400,
+              "t-micro": 600,
+              "t-code": 400,
+              "t-kbd": 400
+            },
+            "default": 400
+          },
+          "lineHeight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 28,
+              "t-title": 22,
+              "t-heading": 20,
+              "t-body": 20,
+              "t-body-strong": 20,
+              "t-small": 16,
+              "t-label": 16,
+              "t-micro": 16,
+              "t-code": 18,
+              "t-kbd": 16
+            },
+            "default": 20
+          },
+          "align": {
+            "$switch": "alinhamento",
+            "cases": {
+              "center": "center",
+              "right": "right"
+            },
+            "default": "left"
+          },
+          "verticalAlign": "top",
+          "decoration": {
+            "$switch": "decoracao",
+            "cases": {
+              "line-through": "line-through",
+              "underline": "underline"
+            },
+            "default": "none"
+          }
+        },
+        "width": "fill",
+        "height": "fill"
+      }
+    ]
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "box",
+  "name": "Caixa",
+  "description": "Região com fundo, borda, raio e sombra dos tokens: barras, faixas, linhas de tabela, divisórias e áreas que não são um componente.",
+  "size": {
+    "width": 160,
+    "height": 80
+  },
+  "minSize": {
+    "width": 1,
+    "height": 1
+  },
+  "sizing": {
+    "width": 160,
+    "height": 80
+  },
+  "preview": {
+    "fundo": "surface",
+    "borda": "border",
+    "lados": "todos",
+    "raio": "0",
+    "sombra": "nenhuma"
+  },
+  "template": {
+    "type": "frame",
+    "name": "caixa",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$switch": "fundo",
+      "cases": {
+        "nenhum": "rgba(0, 0, 0, 0)",
+        "surface": "#ffffff",
+        "bg": "#f6f7f9",
+        "canvas": "#e4e7eb",
+        "hover": "#eef1f4",
+        "pressed": "#e3e7ec",
+        "selection": "#dce8fb",
+        "selection-muted": "#eceff3",
+        "warning-bg": "#fff4d6",
+        "danger-bg": "#fdecea",
+        "success-bg": "#e3f4ea",
+        "accent": "#1a63cc",
+        "tooltip": "#1b1f24"
+      },
+      "default": "rgba(0, 0, 0, 0)"
+    },
+    "cornerRadius": {
+      "$switch": "raio",
+      "cases": {
+        "0": 0,
+        "xs": 2,
+        "sm": 4,
+        "md": 6,
+        "lg": 8,
+        "xl": 12,
+        "full": 999
+      },
+      "default": 0
+    },
+    "stroke": {
+      "color": {
+        "$if": {
+          "$eq": [
+            "lados",
+            "todos"
+          ]
+        },
+        "then": {
+          "$switch": "borda",
+          "cases": {
+            "nenhuma": "rgba(0, 0, 0, 0)",
+            "border": "#dfe3e8",
+            "control": "#7d8590",
+            "accent": "#1a63cc",
+            "danger": "#c62828",
+            "warning": "#8a5a00"
+          },
+          "default": "rgba(0, 0, 0, 0)"
+        },
+        "else": "rgba(0, 0, 0, 0)"
+      },
+      "width": 1
+    },
+    "shadow": {
+      "color": {
+        "$switch": "sombra",
+        "cases": {
+          "popup": "rgba(16, 24, 40, 0.18)"
+        },
+        "default": "none"
+      },
+      "x": 0,
+      "y": 8,
+      "blur": 24
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "borda cima",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0
+        },
+        "fill": {
+          "$switch": "borda",
+          "cases": {
+            "nenhuma": "rgba(0, 0, 0, 0)",
+            "border": "#dfe3e8",
+            "control": "#7d8590",
+            "accent": "#1a63cc",
+            "danger": "#c62828",
+            "warning": "#8a5a00"
+          },
+          "default": "rgba(0, 0, 0, 0)"
+        },
+        "visible": {
+          "$eq": [
+            "lados",
+            "cima"
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "borda baixo",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$switch": "borda",
+          "cases": {
+            "nenhuma": "rgba(0, 0, 0, 0)",
+            "border": "#dfe3e8",
+            "control": "#7d8590",
+            "accent": "#1a63cc",
+            "danger": "#c62828",
+            "warning": "#8a5a00"
+          },
+          "default": "rgba(0, 0, 0, 0)"
+        },
+        "visible": {
+          "$eq": [
+            "lados",
+            "baixo"
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "borda esquerda",
+        "width": 1,
+        "anchors": {
+          "left": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$switch": "borda",
+          "cases": {
+            "nenhuma": "rgba(0, 0, 0, 0)",
+            "border": "#dfe3e8",
+            "control": "#7d8590",
+            "accent": "#1a63cc",
+            "danger": "#c62828",
+            "warning": "#8a5a00"
+          },
+          "default": "rgba(0, 0, 0, 0)"
+        },
+        "visible": {
+          "$eq": [
+            "lados",
+            "esquerda"
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "borda direita",
+        "width": 1,
+        "anchors": {
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$switch": "borda",
+          "cases": {
+            "nenhuma": "rgba(0, 0, 0, 0)",
+            "border": "#dfe3e8",
+            "control": "#7d8590",
+            "accent": "#1a63cc",
+            "danger": "#c62828",
+            "warning": "#8a5a00"
+          },
+          "default": "rgba(0, 0, 0, 0)"
+        },
+        "visible": {
+          "$eq": [
+            "lados",
+            "direita"
+          ]
+        }
+      }
+    ]
+  }
+}

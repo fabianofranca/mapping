@@ -1,0 +1,157 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "specs-dialog",
+  "name": "SpecsDialog",
+  "description": "Diálogo Especializações (560 px) e os que ele abre por cima (pacote, atualizar, remover, aviso): cabeçalho de 44 px com o título e o fechar, o corpo com 16 px de margem e o rodapé com a divisória.",
+  "size": {
+    "width": 560,
+    "height": 605
+  },
+  "minSize": {
+    "width": 320,
+    "height": 160
+  },
+  "sizing": {
+    "width": 560,
+    "height": 605
+  },
+  "preview": {
+    "titulo": "Especializações"
+  },
+  "template": {
+    "type": "frame",
+    "name": "especializações",
+    "cornerRadius": 8,
+    "fill": {
+      "$token": "color-surface"
+    },
+    "stroke": {
+      "color": {
+        "$token": "color-border"
+      },
+      "width": 1
+    },
+    "shadow": {
+      "color": {
+        "$token": "shadow-popup-color"
+      },
+      "x": 0,
+      "y": 8,
+      "blur": 24
+    },
+    "layout": {
+      "type": "column",
+      "padding": 1
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "width": "fill",
+        "height": 43,
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            4,
+            0,
+            16
+          ],
+          "gap": 8,
+          "align": "center",
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "titulo",
+              "default": "Especializações"
+            },
+            "color": {
+              "$token": "color-text"
+            },
+            "font": {
+              "size": 15,
+              "weight": 600,
+              "lineHeight": 22
+            },
+            "width": "fill"
+          },
+          {
+            "type": "frame",
+            "name": "fechar",
+            "width": 28,
+            "height": 28,
+            "layout": {
+              "type": "none"
+            },
+            "children": [
+              {
+                "type": "icon",
+                "name": "close",
+                "color": {
+                  "$token": "color-text"
+                },
+                "width": 16,
+                "height": 16,
+                "anchors": {
+                  "centerX": true,
+                  "centerY": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "divisória do cabeçalho",
+        "width": "fill",
+        "height": 1,
+        "fill": {
+          "$token": "color-border"
+        }
+      },
+      {
+        "type": "frame",
+        "name": "corpo",
+        "width": "fill",
+        "height": "fill",
+        "layout": {
+          "type": "none"
+        },
+        "children": [
+          {
+            "type": "slot",
+            "name": "conteúdo",
+            "label": "Conteúdo",
+            "layout": {
+              "type": "column",
+              "gap": 16,
+              "padding": 16
+            }
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "divisória do rodapé",
+        "width": "fill",
+        "height": 1,
+        "fill": {
+          "$token": "color-border"
+        }
+      },
+      {
+        "type": "rect",
+        "name": "rodapé",
+        "width": "fill",
+        "height": 52,
+        "fill": "rgba(0, 0, 0, 0)"
+      }
+    ]
+  }
+}

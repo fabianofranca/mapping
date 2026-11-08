@@ -1,0 +1,45 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "catalog-screen",
+  "name": "CatalogScreen",
+  "description": "Moldura da tela do catálogo de uma biblioteca: o fundo color-bg e a divisória color-border sob a barra de 44 px. Voltar, nome, versão e o catálogo são filhos.",
+  "size": {
+    "width": 1440,
+    "height": 900
+  },
+  "minSize": {
+    "width": 480,
+    "height": 120
+  },
+  "sizing": {
+    "width": 1440,
+    "height": 900
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "tela",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$token": "color-bg"
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "divisória da barra",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 44
+        },
+        "fill": {
+          "$token": "color-border"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,9742 @@
+{
+ "containers": [
+  {
+   "name": "Detalhes — Segmented tipado",
+   "background": "#ffffff",
+   "width": 360,
+   "height": 1234,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela Detalhes",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 1234
+     },
+     "values": {
+      "janela": "details",
+      "titulo": "Detalhes",
+      "posicao": "right"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Detalhes",
+     "rect": {
+      "x": 328,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Detalhes",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "marking-panel",
+     "name": "Detalhes da marcação",
+     "rect": {
+      "x": 13,
+      "y": 32,
+      "width": 335,
+      "height": 1148
+     },
+     "values": {}
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity",
+     "rect": {
+      "x": 13,
+      "y": 32,
+      "width": 335,
+      "height": 59
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 13,
+      "y": 42,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "accent"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Filtro Status",
+     "rect": {
+      "x": 35,
+      "y": 40,
+      "width": 81,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Filtro Status",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity-id",
+     "rect": {
+      "x": 180,
+      "y": 38,
+      "width": 134,
+      "height": 24
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "f3dc1f71-d9a7-4a61-8226-fb40a1cc1d8b",
+     "rect": {
+      "x": 187,
+      "y": 41,
+      "width": 100,
+      "height": 18
+     },
+     "values": {
+      "texto": "f3dc1f71-d9a7-4a61-8226-fb40a1cc1d8b",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "copy",
+     "rect": {
+      "x": 291,
+      "y": 42,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "copy",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Trancar marcação",
+     "rect": {
+      "x": 320,
+      "y": 36,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "unlock",
+      "rotulo": "Trancar marcação",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Em Janela Comentários",
+     "rect": {
+      "x": 13,
+      "y": 66,
+      "width": 123,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Em Janela Comentários",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 109,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação",
+     "rect": {
+      "x": 33,
+      "y": 108,
+      "width": 58,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Marcação",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "property-grid",
+     "name": "Propriedades",
+     "rect": {
+      "x": 13,
+      "y": 139,
+      "width": 335,
+      "height": 196
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Nome",
+     "rect": {
+      "x": 13,
+      "y": 143,
+      "width": 33,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nome",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Sem nome",
+     "rect": {
+      "x": 113,
+      "y": 139,
+      "width": 235,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Filtro Status",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Container",
+     "rect": {
+      "x": 13,
+      "y": 171,
+      "width": 52,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Container",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Janela Comentários",
+     "rect": {
+      "x": 113,
+      "y": 172,
+      "width": 112,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Janela Comentários",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pertence a",
+     "rect": {
+      "x": 13,
+      "y": 199,
+      "width": 56,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pertence a",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma",
+     "rect": {
+      "x": 113,
+      "y": 200,
+      "width": 57,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nenhuma",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Flutuante",
+     "rect": {
+      "x": 13,
+      "y": 227,
+      "width": 50,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Flutuante",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Flutuante",
+     "rect": {
+      "x": 81,
+      "y": 223,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Flutuante",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Flutuante",
+     "rect": {
+      "x": 113,
+      "y": 223,
+      "width": 235,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Flutuante",
+      "dica": null,
+      "marcado": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Ordem",
+     "rect": {
+      "x": 13,
+      "y": 259,
+      "width": 37,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Ordem",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Ordem",
+     "rect": {
+      "x": 81,
+      "y": 255,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Ordem",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "1 de 5",
+     "rect": {
+      "x": 113,
+      "y": 260,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1 de 5",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mover para trás",
+     "rect": {
+      "x": 296,
+      "y": 255,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "arrowDown",
+      "rotulo": "Mover para trás",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mover para a frente",
+     "rect": {
+      "x": 324,
+      "y": 255,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "arrowUp",
+      "rotulo": "Mover para a frente",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Posição",
+     "rect": {
+      "x": 13,
+      "y": 287,
+      "width": 40,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Posição",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Posição",
+     "rect": {
+      "x": 81,
+      "y": 283,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Posição",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "X",
+     "rect": {
+      "x": 113,
+      "y": 287,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "X",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "X",
+     "rect": {
+      "x": 124,
+      "y": 283,
+      "width": 103,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "8",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Y",
+     "rect": {
+      "x": 233,
+      "y": 287,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Y",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Y",
+     "rect": {
+      "x": 244,
+      "y": 283,
+      "width": 104,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "8",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tamanho",
+     "rect": {
+      "x": 13,
+      "y": 315,
+      "width": 49,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tamanho",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Tamanho",
+     "rect": {
+      "x": 81,
+      "y": 311,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Tamanho",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "L",
+     "rect": {
+      "x": 113,
+      "y": 315,
+      "width": 6,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "L",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Largura",
+     "rect": {
+      "x": 123,
+      "y": 311,
+      "width": 105,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "540",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "A",
+     "rect": {
+      "x": 233,
+      "y": 315,
+      "width": 9,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "A",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Altura",
+     "rect": {
+      "x": 245,
+      "y": 311,
+      "width": 103,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "28",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 353,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Anotações",
+     "rect": {
+      "x": 33,
+      "y": 352,
+      "width": 62,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Anotações",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1",
+     "rect": {
+      "x": 98,
+      "y": 353,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Camada 1",
+     "rect": {
+      "x": 13,
+      "y": 383,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#D32F2F",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 392,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#D32F2F",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Camada 1",
+     "rect": {
+      "x": 62,
+      "y": 389,
+      "width": 60,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 60.125,
+     "cw": 60.125,
+     "sw": 60,
+     "ci": 60,
+     "values": {
+      "texto": "Camada 1",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 128,
+      "y": 390,
+      "width": 179,
+      "height": 16
+     },
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Camada 1",
+     "rect": {
+      "x": 315,
+      "y": 384,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Camada 1",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Notas",
+     "rect": {
+      "x": 13,
+      "y": 421,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#F5C400",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 430,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#F5C400",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notas",
+     "rect": {
+      "x": 62,
+      "y": 427,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36,
+     "cw": 36,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Notas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Notas",
+     "rect": {
+      "x": 104,
+      "y": 427,
+      "width": 39,
+      "height": 18
+     },
+     "values": {
+      "texto": "Notas",
+      "estilo": "tag"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 149,
+      "y": 428,
+      "width": 158,
+      "height": 16
+     },
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Notas",
+     "rect": {
+      "x": 315,
+      "y": 422,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Notas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Mapping",
+     "rect": {
+      "x": 13,
+      "y": 459,
+      "width": 335,
+      "height": 521
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#1A63CC",
+      "aberto": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 22,
+      "y": 466,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 468,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#1A63CC",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 62,
+      "y": 465,
+      "width": 55,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 55.171875,
+     "cw": 55.171875,
+     "sw": 55,
+     "ci": 55,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Mapping DS",
+     "rect": {
+      "x": 123,
+      "y": 465,
+      "width": 70,
+      "height": 18
+     },
+     "values": {
+      "texto": "Mapping DS",
+      "estilo": "tag"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Mapping",
+     "rect": {
+      "x": 315,
+      "y": 460,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Mapping",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Recolher Segmented · Status",
+     "rect": {
+      "x": 22,
+      "y": 495,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "chevronDown",
+      "rotulo": "Recolher Segmented · Status",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .type",
+     "rect": {
+      "x": 54,
+      "y": 501,
+      "width": 65,
+      "height": 16
+     },
+     "values": {
+      "fundo": "selection",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Segmented",
+     "rect": {
+      "x": 58,
+      "y": 501,
+      "width": 57,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Segmented",
+      "estilo": "t-micro",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Segmented",
+     "rect": {
+      "x": 123,
+      "y": 497,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Segmented",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Rótulo da instância (opcional)",
+     "rect": {
+      "x": 31,
+      "y": 527,
+      "width": 299,
+      "height": 24
+     },
+     "values": {
+      "texto": "Rótulo da instância (opcional)",
+      "estilo": "t-body-strong",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Excluir anotação",
+     "rect": {
+      "x": 311,
+      "y": 495,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "trash",
+      "rotulo": "Excluir anotação",
+      "texto": null,
+      "variant": "danger",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "property-grid",
+     "name": "Propriedades",
+     "rect": {
+      "x": 22,
+      "y": 559,
+      "width": 317,
+      "height": 412
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "rótulo",
+     "rect": {
+      "x": 22,
+      "y": 563,
+      "width": 32,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "rótulo",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do campo rótulo",
+     "rect": {
+      "x": 86,
+      "y": 559,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do campo rótulo",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "rótulo",
+     "rect": {
+      "x": 122,
+      "y": 559,
+      "width": 217,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Status",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "desabilitado",
+     "rect": {
+      "x": 22,
+      "y": 595,
+      "width": 65,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "desabilitado",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do campo desabilitado",
+     "rect": {
+      "x": 22,
+      "y": 615,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do campo desabilitado",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "desabilitado",
+     "rect": {
+      "x": 122,
+      "y": 591,
+      "width": 97,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "desabilitado",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "sim",
+     "rect": {
+      "x": 122,
+      "y": 591,
+      "width": 46,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "sim",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "não",
+     "rect": {
+      "x": 172,
+      "y": 591,
+      "width": 48,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "não",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "inválido",
+     "rect": {
+      "x": 22,
+      "y": 651,
+      "width": 42,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "inválido",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do campo inválido",
+     "rect": {
+      "x": 86,
+      "y": 647,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do campo inválido",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "inválido",
+     "rect": {
+      "x": 122,
+      "y": 647,
+      "width": 97,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "inválido",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "sim",
+     "rect": {
+      "x": 122,
+      "y": 647,
+      "width": 46,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "sim",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "não",
+     "rect": {
+      "x": 172,
+      "y": 647,
+      "width": 48,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "não",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "opções",
+     "rect": {
+      "x": 22,
+      "y": 683,
+      "width": 39,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "opções",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "5 linhas",
+     "rect": {
+      "x": 66,
+      "y": 683,
+      "width": 42,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "5 linhas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "+ Linha",
+     "rect": {
+      "x": 286,
+      "y": 682,
+      "width": 44,
+      "height": 17
+     },
+     "values": {
+      "texto": "+ Linha",
+      "estilo": "t-body",
+      "cor": "accent",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "data-grid",
+     "name": "opções",
+     "rect": {
+      "x": 22,
+      "y": 707,
+      "width": 317,
+      "height": 200
+     },
+     "values": {
+      "cabecalho": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "#",
+     "rect": {
+      "x": 57,
+      "y": 712,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 7.109375,
+     "cw": 12,
+     "sw": 24,
+     "ci": 24,
+     "values": {
+      "texto": "#",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "rótulo",
+     "rect": {
+      "x": 77,
+      "y": 712,
+      "width": 34,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 33.140625,
+     "cw": 88,
+     "sw": 100,
+     "ci": 100,
+     "values": {
+      "texto": "rótulo",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "selecionada",
+     "rect": {
+      "x": 177,
+      "y": 712,
+      "width": 64,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 63.765625,
+     "cw": 87.46875,
+     "sw": 99,
+     "ci": 99,
+     "values": {
+      "texto": "selecionada",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "ícone",
+     "rect": {
+      "x": 276,
+      "y": 712,
+      "width": 30,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 29.328125,
+     "cw": 88,
+     "sw": 100,
+     "ci": 100,
+     "values": {
+      "texto": "ícone",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 732,
+      "width": 316,
+      "height": 35
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 741,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1",
+     "rect": {
+      "x": 62,
+      "y": 741,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Todas",
+     "rect": {
+      "x": 82,
+      "y": 737,
+      "width": 78,
+      "height": 24
+     },
+     "values": {
+      "texto": "Todas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "selecionada (Linha 1)",
+     "rect": {
+      "x": 173,
+      "y": 734,
+      "width": 95,
+      "height": 30
+     },
+     "values": {
+      "rotulo": "selecionada (Linha 1)",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "sim",
+     "rect": {
+      "x": 174,
+      "y": 735,
+      "width": 46,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "sim",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "não",
+     "rect": {
+      "x": 220,
+      "y": 735,
+      "width": 48,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "não",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 767,
+      "width": 316,
+      "height": 35
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 776,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "2",
+     "rect": {
+      "x": 62,
+      "y": 776,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "2",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Abertas",
+     "rect": {
+      "x": 82,
+      "y": 772,
+      "width": 78,
+      "height": 24
+     },
+     "values": {
+      "texto": "Abertas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "selecionada (Linha 2)",
+     "rect": {
+      "x": 173,
+      "y": 769,
+      "width": 95,
+      "height": 30
+     },
+     "values": {
+      "rotulo": "selecionada (Linha 2)",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "sim",
+     "rect": {
+      "x": 174,
+      "y": 770,
+      "width": 46,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "sim",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "não",
+     "rect": {
+      "x": 220,
+      "y": 770,
+      "width": 48,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "não",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 802,
+      "width": 316,
+      "height": 35
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 811,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "3",
+     "rect": {
+      "x": 62,
+      "y": 811,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "3",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aguardando agente",
+     "rect": {
+      "x": 82,
+      "y": 807,
+      "width": 78,
+      "height": 24
+     },
+     "values": {
+      "texto": "Aguardando agente",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "selecionada (Linha 3)",
+     "rect": {
+      "x": 173,
+      "y": 804,
+      "width": 95,
+      "height": 30
+     },
+     "values": {
+      "rotulo": "selecionada (Linha 3)",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "sim",
+     "rect": {
+      "x": 174,
+      "y": 805,
+      "width": 46,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "sim",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "não",
+     "rect": {
+      "x": 220,
+      "y": 805,
+      "width": 48,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "não",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 837,
+      "width": 316,
+      "height": 35
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 846,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "4",
+     "rect": {
+      "x": 62,
+      "y": 846,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "4",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aguardando humano",
+     "rect": {
+      "x": 82,
+      "y": 842,
+      "width": 78,
+      "height": 24
+     },
+     "values": {
+      "texto": "Aguardando humano",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "selecionada (Linha 4)",
+     "rect": {
+      "x": 173,
+      "y": 839,
+      "width": 95,
+      "height": 30
+     },
+     "values": {
+      "rotulo": "selecionada (Linha 4)",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "sim",
+     "rect": {
+      "x": 174,
+      "y": 840,
+      "width": 46,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "sim",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "não",
+     "rect": {
+      "x": 220,
+      "y": 840,
+      "width": 48,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "não",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 881,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "5",
+     "rect": {
+      "x": 62,
+      "y": 881,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "5",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Resolvidas",
+     "rect": {
+      "x": 82,
+      "y": 877,
+      "width": 78,
+      "height": 24
+     },
+     "values": {
+      "texto": "Resolvidas",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "selecionada (Linha 5)",
+     "rect": {
+      "x": 173,
+      "y": 874,
+      "width": 95,
+      "height": 30
+     },
+     "values": {
+      "rotulo": "selecionada (Linha 5)",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "sim",
+     "rect": {
+      "x": 174,
+      "y": 875,
+      "width": 46,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "sim",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "não",
+     "rect": {
+      "x": 220,
+      "y": 875,
+      "width": 48,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "não",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Definição",
+     "rect": {
+      "x": 22,
+      "y": 915,
+      "width": 50,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Definição",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Definição",
+     "rect": {
+      "x": 90,
+      "y": 911,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Definição",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "code-definitions",
+     "name": "Definição",
+     "rect": {
+      "x": 122,
+      "y": 911,
+      "width": 217,
+      "height": 60
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Web (Preact) · Segmented.tsx",
+     "rect": {
+      "x": 122,
+      "y": 916,
+      "width": 168,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Web (Preact) · Segmented.tsx",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Abrir no repositório: Segmented.tsx",
+     "rect": {
+      "x": 293,
+      "y": 911,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "externalLink",
+      "rotulo": "Abrir no repositório: Segmented.tsx",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Copiar caminho: src/ui/controls/Segmented.tsx",
+     "rect": {
+      "x": 122,
+      "y": 943,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "copy",
+      "rotulo": "Copiar caminho: src/ui/controls/Segmented.tsx",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "threads-section",
+     "name": "Seção Conversas",
+     "rect": {
+      "x": 13,
+      "y": 992,
+      "width": 335,
+      "height": 148
+     },
+     "values": {}
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 998,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Conversas",
+     "rect": {
+      "x": 33,
+      "y": 997,
+      "width": 60,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Conversas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 96,
+      "y": 998,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "composer",
+     "name": "Compositor",
+     "rect": {
+      "x": 13,
+      "y": 1028,
+      "width": 335,
+      "height": 112
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Comentar como Marina Alves",
+     "rect": {
+      "x": 13,
+      "y": 1028,
+      "width": 157,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Comentar como Marina Alves",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Comentar como Marina Alves",
+     "rect": {
+      "x": 13,
+      "y": 1048,
+      "width": 335,
+      "height": 56
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "varias"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Enviar",
+     "rect": {
+      "x": 288,
+      "y": 1112,
+      "width": 60,
+      "height": 28
+     },
+     "values": {
+      "texto": "Enviar",
+      "variant": "primary",
+      "size": "md",
+      "desabilitado": "sim",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Ligar a…",
+     "rect": {
+      "x": 13,
+      "y": 1152,
+      "width": 74,
+      "height": 28
+     },
+     "values": {
+      "texto": "Ligar a…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Excluir marcação",
+     "rect": {
+      "x": 95,
+      "y": 1152,
+      "width": 121,
+      "height": 28
+     },
+     "values": {
+      "texto": "Excluir marcação",
+      "variant": "danger",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Detalhes — Tabela de notas e anotação livre",
+   "background": "#ffffff",
+   "width": 360,
+   "height": 974,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela Detalhes",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 974
+     },
+     "values": {
+      "janela": "details",
+      "titulo": "Detalhes",
+      "posicao": "right"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Detalhes",
+     "rect": {
+      "x": 328,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Detalhes",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "marking-panel",
+     "name": "Detalhes da marcação",
+     "rect": {
+      "x": 13,
+      "y": 32,
+      "width": 335,
+      "height": 937
+     },
+     "values": {}
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity",
+     "rect": {
+      "x": 13,
+      "y": 32,
+      "width": 335,
+      "height": 59
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 13,
+      "y": 42,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "accent"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 35,
+      "y": 40,
+      "width": 44,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity-id",
+     "rect": {
+      "x": 180,
+      "y": 38,
+      "width": 134,
+      "height": 24
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "83561ea1-1c3a-44c5-abee-59f41bee0cb5",
+     "rect": {
+      "x": 187,
+      "y": 41,
+      "width": 100,
+      "height": 18
+     },
+     "values": {
+      "texto": "83561ea1-1c3a-44c5-abee-59f41bee0cb5",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "copy",
+     "rect": {
+      "x": 291,
+      "y": 42,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "copy",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Trancar marcação",
+     "rect": {
+      "x": 320,
+      "y": 36,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "unlock",
+      "rotulo": "Trancar marcação",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Em Canvas",
+     "rect": {
+      "x": 13,
+      "y": 66,
+      "width": 57,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Em Canvas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronRight",
+     "rect": {
+      "x": 13,
+      "y": 109,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronRight",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação",
+     "rect": {
+      "x": 33,
+      "y": 108,
+      "width": 58,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Marcação",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "X 3963 · Y 743 · 380 × 170 px",
+     "rect": {
+      "x": 190,
+      "y": 109,
+      "width": 154,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 153.375,
+     "cw": 249.9375,
+     "sw": 250,
+     "ci": 250,
+     "values": {
+      "texto": "X 3963 · Y 743 · 380 × 170 px",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 149,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Anotações",
+     "rect": {
+      "x": 33,
+      "y": 148,
+      "width": 62,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Anotações",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "2",
+     "rect": {
+      "x": 98,
+      "y": 149,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "2",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Camada 1",
+     "rect": {
+      "x": 13,
+      "y": 179,
+      "width": 335,
+      "height": 265
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#D32F2F",
+      "aberto": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 22,
+      "y": 186,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 188,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#D32F2F",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Camada 1",
+     "rect": {
+      "x": 62,
+      "y": 185,
+      "width": 60,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 60.125,
+     "cw": 60.125,
+     "sw": 60,
+     "ci": 60,
+     "values": {
+      "texto": "Camada 1",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Camada 1",
+     "rect": {
+      "x": 315,
+      "y": 180,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Camada 1",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Recolher Arquivos",
+     "rect": {
+      "x": 22,
+      "y": 215,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "chevronDown",
+      "rotulo": "Recolher Arquivos",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Arquivos",
+     "rect": {
+      "x": 63,
+      "y": 217,
+      "width": 203,
+      "height": 24
+     },
+     "values": {
+      "texto": "Arquivos",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "key-value-grid",
+     "name": "Pares da anotação",
+     "rect": {
+      "x": 22,
+      "y": 251,
+      "width": 317,
+      "height": 124
+     },
+     "values": {
+      "cabecalho": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Chave",
+     "rect": {
+      "x": 53,
+      "y": 256,
+      "width": 34,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 33.078125,
+     "cw": 93.1875,
+     "sw": 105,
+     "ci": 105,
+     "values": {
+      "texto": "Chave",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Valor",
+     "rect": {
+      "x": 158,
+      "y": 256,
+      "width": 29,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 27.828125,
+     "cw": 145.796875,
+     "sw": 158,
+     "ci": 158,
+     "values": {
+      "texto": "Valor",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 276,
+      "width": 315,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 284,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "pasta",
+     "rect": {
+      "x": 58,
+      "y": 280,
+      "width": 83,
+      "height": 24
+     },
+     "values": {
+      "texto": "pasta",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "comments/",
+     "rect": {
+      "x": 163,
+      "y": 280,
+      "width": 136,
+      "height": 24
+     },
+     "values": {
+      "texto": "comments/",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do par pasta",
+     "rect": {
+      "x": 310,
+      "y": 278,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do par pasta",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 309,
+      "width": 315,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 317,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "formato",
+     "rect": {
+      "x": 58,
+      "y": 313,
+      "width": 83,
+      "height": 24
+     },
+     "values": {
+      "texto": "formato",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "mapping-thread",
+     "rect": {
+      "x": 163,
+      "y": 313,
+      "width": 136,
+      "height": 24
+     },
+     "values": {
+      "texto": "mapping-thread",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do par formato",
+     "rect": {
+      "x": 310,
+      "y": 311,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do par formato",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 350,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "ordem",
+     "rect": {
+      "x": 58,
+      "y": 346,
+      "width": 83,
+      "height": 24
+     },
+     "values": {
+      "texto": "ordem",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "a mais antiga primeiro",
+     "rect": {
+      "x": 163,
+      "y": 346,
+      "width": 136,
+      "height": 24
+     },
+     "values": {
+      "texto": "a mais antiga primeiro",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do par ordem",
+     "rect": {
+      "x": 310,
+      "y": 344,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do par ordem",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "+ Par",
+     "rect": {
+      "x": 31,
+      "y": 382,
+      "width": 31,
+      "height": 17
+     },
+     "values": {
+      "texto": "+ Par",
+      "estilo": "t-body",
+      "cor": "accent",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "property-grid",
+     "name": "Propriedades",
+     "rect": {
+      "x": 22,
+      "y": 411,
+      "width": 317,
+      "height": 24
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Vinculada a",
+     "rect": {
+      "x": 22,
+      "y": 415,
+      "width": 62,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Vinculada a",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Vinculada a",
+     "rect": {
+      "x": 90,
+      "y": 411,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Vinculada a",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "select",
+     "name": "Select",
+     "rect": {
+      "x": 122,
+      "y": 411,
+      "width": 217,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Nenhuma",
+      "size": "sm",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Notas",
+     "rect": {
+      "x": 13,
+      "y": 452,
+      "width": 335,
+      "height": 359
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#F5C400",
+      "aberto": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 22,
+      "y": 459,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 461,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#F5C400",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notas",
+     "rect": {
+      "x": 62,
+      "y": 458,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36,
+     "cw": 36,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Notas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Notas",
+     "rect": {
+      "x": 104,
+      "y": 458,
+      "width": 39,
+      "height": 18
+     },
+     "values": {
+      "texto": "Notas",
+      "estilo": "tag"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Notas",
+     "rect": {
+      "x": 315,
+      "y": 453,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Notas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Recolher Tabela · Arquivos da conversa",
+     "rect": {
+      "x": 22,
+      "y": 488,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "chevronDown",
+      "rotulo": "Recolher Tabela · Arquivos da conversa",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .type",
+     "rect": {
+      "x": 54,
+      "y": 494,
+      "width": 40,
+      "height": 16
+     },
+     "values": {
+      "fundo": "selection",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 58,
+      "y": 494,
+      "width": 32,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-micro",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Tabela",
+     "rect": {
+      "x": 98,
+      "y": 490,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Tabela",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Rótulo da instância (opcional)",
+     "rect": {
+      "x": 31,
+      "y": 520,
+      "width": 299,
+      "height": 24
+     },
+     "values": {
+      "texto": "Rótulo da instância (opcional)",
+      "estilo": "t-body-strong",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Excluir anotação",
+     "rect": {
+      "x": 311,
+      "y": 488,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "trash",
+      "rotulo": "Excluir anotação",
+      "texto": null,
+      "variant": "danger",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "property-grid",
+     "name": "Propriedades",
+     "rect": {
+      "x": 22,
+      "y": 552,
+      "width": 317,
+      "height": 250
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Título",
+     "rect": {
+      "x": 22,
+      "y": 556,
+      "width": 30,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Título",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Título",
+     "rect": {
+      "x": 58,
+      "y": 552,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Título",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do campo Título",
+     "rect": {
+      "x": 86,
+      "y": 552,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do campo Título",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Título",
+     "rect": {
+      "x": 122,
+      "y": 552,
+      "width": 217,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Arquivos da conversa",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Linhas",
+     "rect": {
+      "x": 22,
+      "y": 588,
+      "width": 35,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Linhas",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Linhas",
+     "rect": {
+      "x": 62,
+      "y": 584,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Linhas",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "5 linhas",
+     "rect": {
+      "x": 92,
+      "y": 588,
+      "width": 41,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "5 linhas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "+ Linha",
+     "rect": {
+      "x": 286,
+      "y": 587,
+      "width": 44,
+      "height": 17
+     },
+     "values": {
+      "texto": "+ Linha",
+      "estilo": "t-body",
+      "cor": "accent",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "data-grid",
+     "name": "Linhas",
+     "rect": {
+      "x": 22,
+      "y": 612,
+      "width": 317,
+      "height": 190
+     },
+     "values": {
+      "cabecalho": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "#",
+     "rect": {
+      "x": 57,
+      "y": 617,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 7.109375,
+     "cw": 12,
+     "sw": 24,
+     "ci": 24,
+     "values": {
+      "texto": "#",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Chave *",
+     "rect": {
+      "x": 77,
+      "y": 617,
+      "width": 42,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 41.59375,
+     "cw": 107.5,
+     "sw": 120,
+     "ci": 120,
+     "values": {
+      "texto": "Chave *",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Valor",
+     "rect": {
+      "x": 196,
+      "y": 617,
+      "width": 29,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 27.828125,
+     "cw": 107.5,
+     "sw": 120,
+     "ci": 120,
+     "values": {
+      "texto": "Valor",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 637,
+      "width": 315,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 645,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1",
+     "rect": {
+      "x": 62,
+      "y": 645,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "comments/<id>.json",
+     "rect": {
+      "x": 82,
+      "y": 641,
+      "width": 98,
+      "height": 24
+     },
+     "values": {
+      "texto": "comments/<id>.json",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "conversa aberta (um arquivo por conversa)",
+     "rect": {
+      "x": 202,
+      "y": 641,
+      "width": 98,
+      "height": 24
+     },
+     "values": {
+      "texto": "conversa aberta (um arquivo por conversa)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da linha Linha 1",
+     "rect": {
+      "x": 310,
+      "y": 639,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações da linha Linha 1",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 670,
+      "width": 315,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 678,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "2",
+     "rect": {
+      "x": 62,
+      "y": 678,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "2",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "comments/resolved/<id>.json",
+     "rect": {
+      "x": 82,
+      "y": 674,
+      "width": 98,
+      "height": 24
+     },
+     "values": {
+      "texto": "comments/resolved/<id>.json",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "conversa resolvida",
+     "rect": {
+      "x": 202,
+      "y": 674,
+      "width": 98,
+      "height": 24
+     },
+     "values": {
+      "texto": "conversa resolvida",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da linha Linha 2",
+     "rect": {
+      "x": 310,
+      "y": 672,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações da linha Linha 2",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 703,
+      "width": 315,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 711,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "3",
+     "rect": {
+      "x": 62,
+      "y": 711,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "3",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "campo resolved",
+     "rect": {
+      "x": 82,
+      "y": 707,
+      "width": 98,
+      "height": 24
+     },
+     "values": {
+      "texto": "campo resolved",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "é a verdade; a pasta é só o índice",
+     "rect": {
+      "x": 202,
+      "y": 707,
+      "width": 98,
+      "height": 24
+     },
+     "values": {
+      "texto": "é a verdade; a pasta é só o índice",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da linha Linha 3",
+     "rect": {
+      "x": 310,
+      "y": 705,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações da linha Linha 3",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 736,
+      "width": 315,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 744,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "4",
+     "rect": {
+      "x": 62,
+      "y": 744,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "4",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "mapping.json",
+     "rect": {
+      "x": 82,
+      "y": 740,
+      "width": 98,
+      "height": 24
+     },
+     "values": {
+      "texto": "mapping.json",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "não muda (schema v15)",
+     "rect": {
+      "x": 202,
+      "y": 740,
+      "width": 98,
+      "height": 24
+     },
+     "values": {
+      "texto": "não muda (schema v15)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da linha Linha 4",
+     "rect": {
+      "x": 310,
+      "y": 738,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações da linha Linha 4",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 777,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "5",
+     "rect": {
+      "x": 62,
+      "y": 777,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "5",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "mensagens",
+     "rect": {
+      "x": 82,
+      "y": 773,
+      "width": 98,
+      "height": 24
+     },
+     "values": {
+      "texto": "mensagens",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "só se acrescenta; ninguém altera nem remove",
+     "rect": {
+      "x": 202,
+      "y": 773,
+      "width": 98,
+      "height": 24
+     },
+     "values": {
+      "texto": "só se acrescenta; ninguém altera nem remove",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da linha Linha 5",
+     "rect": {
+      "x": 310,
+      "y": 771,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações da linha Linha 5",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Mapping",
+     "rect": {
+      "x": 13,
+      "y": 819,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#1A63CC",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 828,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#1A63CC",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 62,
+      "y": 825,
+      "width": 55,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 55.171875,
+     "cw": 55.171875,
+     "sw": 55,
+     "ci": 55,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Mapping DS",
+     "rect": {
+      "x": 123,
+      "y": 825,
+      "width": 70,
+      "height": 18
+     },
+     "values": {
+      "texto": "Mapping DS",
+      "estilo": "tag"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 200,
+      "y": 826,
+      "width": 107,
+      "height": 16
+     },
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Mapping",
+     "rect": {
+      "x": 315,
+      "y": 820,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Mapping",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "threads-section",
+     "name": "Seção Conversas",
+     "rect": {
+      "x": 13,
+      "y": 861,
+      "width": 335,
+      "height": 28
+     },
+     "values": {}
+    },
+    {
+     "type": "icon",
+     "name": "chevronRight",
+     "rect": {
+      "x": 13,
+      "y": 867,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronRight",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Conversas",
+     "rect": {
+      "x": 33,
+      "y": 866,
+      "width": 60,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Conversas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 96,
+      "y": 867,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronRight",
+     "rect": {
+      "x": 13,
+      "y": 907,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronRight",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Ligado por seta",
+     "rect": {
+      "x": 33,
+      "y": 906,
+      "width": 92,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Ligado por seta",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1",
+     "rect": {
+      "x": 128,
+      "y": 907,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Ligar a…",
+     "rect": {
+      "x": 13,
+      "y": 941,
+      "width": 74,
+      "height": 28
+     },
+     "values": {
+      "texto": "Ligar a…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Excluir marcação",
+     "rect": {
+      "x": 95,
+      "y": 941,
+      "width": 121,
+      "height": 28
+     },
+     "values": {
+      "texto": "Excluir marcação",
+      "variant": "danger",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Detalhes — campo e coluna de referência",
+   "background": "#ffffff",
+   "width": 520,
+   "height": 1034,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela Detalhes",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 520,
+      "height": 1034
+     },
+     "values": {
+      "janela": "details",
+      "titulo": "Detalhes",
+      "posicao": "right"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Detalhes",
+     "rect": {
+      "x": 488,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Detalhes",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "marking-panel",
+     "name": "Detalhes da marcação",
+     "rect": {
+      "x": 13,
+      "y": 32,
+      "width": 495,
+      "height": 968
+     },
+     "values": {}
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity",
+     "rect": {
+      "x": 13,
+      "y": 32,
+      "width": 495,
+      "height": 59
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 13,
+      "y": 42,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "accent"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 35,
+      "y": 40,
+      "width": 44,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity-id",
+     "rect": {
+      "x": 276,
+      "y": 38,
+      "width": 198,
+      "height": 24
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "83561ea1-1c3a-44c5-abee-59f41bee0cb5",
+     "rect": {
+      "x": 283,
+      "y": 41,
+      "width": 164,
+      "height": 18
+     },
+     "values": {
+      "texto": "83561ea1-1c3a-44c5-abee-59f41bee0cb5",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "copy",
+     "rect": {
+      "x": 451,
+      "y": 42,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "copy",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Trancar marcação",
+     "rect": {
+      "x": 480,
+      "y": 36,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "unlock",
+      "rotulo": "Trancar marcação",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Em Canvas",
+     "rect": {
+      "x": 13,
+      "y": 66,
+      "width": 57,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Em Canvas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronRight",
+     "rect": {
+      "x": 13,
+      "y": 109,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronRight",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcação",
+     "rect": {
+      "x": 33,
+      "y": 108,
+      "width": 58,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Marcação",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "X 3963 · Y 743 · 380 × 170 px",
+     "rect": {
+      "x": 350,
+      "y": 109,
+      "width": 154,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 153.375,
+     "cw": 409.9375,
+     "sw": 410,
+     "ci": 410,
+     "values": {
+      "texto": "X 3963 · Y 743 · 380 × 170 px",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .issues",
+     "rect": {
+      "x": 13,
+      "y": 143,
+      "width": 495,
+      "height": 62
+     },
+     "values": {
+      "fundo": "warning-bg",
+      "borda": "warning",
+      "lados": "todos",
+      "raio": "lg",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Incompleta: 1 pendência",
+     "rect": {
+      "x": 44,
+      "y": 152,
+      "width": 139,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Incompleta: 1 pendência",
+      "estilo": "t-small",
+      "cor": "warning",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "warning",
+     "rect": {
+      "x": 22,
+      "y": 152,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "warning",
+      "cor": "warning"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela · Arquivos da conversa · Linhas, linha 3, Alvo: refer",
+     "rect": {
+      "x": 40,
+      "y": 176,
+      "width": 381,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tabela · Arquivos da conversa · Linhas, linha 3, Alvo: referência quebrada",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "underline",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 22,
+      "y": 178,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#F5C400",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 219,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Anotações",
+     "rect": {
+      "x": 33,
+      "y": 218,
+      "width": 62,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Anotações",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "2",
+     "rect": {
+      "x": 98,
+      "y": 219,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "2",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Camada 1",
+     "rect": {
+      "x": 13,
+      "y": 249,
+      "width": 495,
+      "height": 288
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#D32F2F",
+      "aberto": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 22,
+      "y": 256,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 258,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#D32F2F",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Camada 1",
+     "rect": {
+      "x": 62,
+      "y": 255,
+      "width": 60,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 60.125,
+     "cw": 60.125,
+     "sw": 60,
+     "ci": 60,
+     "values": {
+      "texto": "Camada 1",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Camada 1",
+     "rect": {
+      "x": 475,
+      "y": 250,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Camada 1",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Recolher Arquivos",
+     "rect": {
+      "x": 22,
+      "y": 285,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "chevronDown",
+      "rotulo": "Recolher Arquivos",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Arquivos",
+     "rect": {
+      "x": 63,
+      "y": 287,
+      "width": 363,
+      "height": 24
+     },
+     "values": {
+      "texto": "Arquivos",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "key-value-grid",
+     "name": "Pares da anotação",
+     "rect": {
+      "x": 22,
+      "y": 321,
+      "width": 477,
+      "height": 147
+     },
+     "values": {
+      "cabecalho": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Chave",
+     "rect": {
+      "x": 53,
+      "y": 326,
+      "width": 34,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 33.078125,
+     "cw": 157.1875,
+     "sw": 169,
+     "ci": 169,
+     "values": {
+      "texto": "Chave",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Valor",
+     "rect": {
+      "x": 222,
+      "y": 326,
+      "width": 29,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 27.828125,
+     "cw": 241.796875,
+     "sw": 254,
+     "ci": 254,
+     "values": {
+      "texto": "Valor",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 346,
+      "width": 475,
+      "height": 61
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 354,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "pasta",
+     "rect": {
+      "x": 58,
+      "y": 350,
+      "width": 147,
+      "height": 24
+     },
+     "values": {
+      "texto": "pasta",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "comments/",
+     "rect": {
+      "x": 227,
+      "y": 350,
+      "width": 232,
+      "height": 24
+     },
+     "values": {
+      "texto": "comments/",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do par pasta",
+     "rect": {
+      "x": 470,
+      "y": 348,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do par pasta",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "← Tabela Arquivos da conversa (Tabela)",
+     "rect": {
+      "x": 55,
+      "y": 382,
+      "width": 208,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "← Tabela Arquivos da conversa (Tabela)",
+      "estilo": "t-small",
+      "cor": "accent",
+      "alinhamento": "left",
+      "decoracao": "underline",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 415,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "formato",
+     "rect": {
+      "x": 58,
+      "y": 411,
+      "width": 147,
+      "height": 24
+     },
+     "values": {
+      "texto": "formato",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "mapping-thread",
+     "rect": {
+      "x": 227,
+      "y": 411,
+      "width": 232,
+      "height": 24
+     },
+     "values": {
+      "texto": "mapping-thread",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do par formato",
+     "rect": {
+      "x": 470,
+      "y": 409,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do par formato",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "← Tabela Arquivos da conversa (Tabela)",
+     "rect": {
+      "x": 55,
+      "y": 443,
+      "width": 208,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "← Tabela Arquivos da conversa (Tabela)",
+      "estilo": "t-small",
+      "cor": "accent",
+      "alinhamento": "left",
+      "decoracao": "underline",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "+ Par",
+     "rect": {
+      "x": 31,
+      "y": 475,
+      "width": 31,
+      "height": 17
+     },
+     "values": {
+      "texto": "+ Par",
+      "estilo": "t-body",
+      "cor": "accent",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "property-grid",
+     "name": "Propriedades",
+     "rect": {
+      "x": 22,
+      "y": 504,
+      "width": 477,
+      "height": 24
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Vinculada a",
+     "rect": {
+      "x": 22,
+      "y": 508,
+      "width": 62,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Vinculada a",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Vinculada a",
+     "rect": {
+      "x": 90,
+      "y": 504,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Vinculada a",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "select",
+     "name": "Select",
+     "rect": {
+      "x": 122,
+      "y": 504,
+      "width": 377,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Nenhuma",
+      "size": "sm",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Notas",
+     "rect": {
+      "x": 13,
+      "y": 545,
+      "width": 495,
+      "height": 297
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#F5C400",
+      "aberto": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 22,
+      "y": 552,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 554,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#F5C400",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notas",
+     "rect": {
+      "x": 62,
+      "y": 551,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36,
+     "cw": 36,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Notas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Notas",
+     "rect": {
+      "x": 104,
+      "y": 551,
+      "width": 39,
+      "height": 18
+     },
+     "values": {
+      "texto": "Notas",
+      "estilo": "tag"
+     }
+    },
+    {
+     "type": "text",
+     "name": "⚠",
+     "rect": {
+      "x": 455,
+      "y": 551,
+      "width": 12,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "⚠",
+      "estilo": "t-body-strong",
+      "cor": "warning",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Notas",
+     "rect": {
+      "x": 475,
+      "y": 546,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Notas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Recolher Tabela · Arquivos da conversa",
+     "rect": {
+      "x": 22,
+      "y": 581,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "chevronDown",
+      "rotulo": "Recolher Tabela · Arquivos da conversa",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .type",
+     "rect": {
+      "x": 54,
+      "y": 587,
+      "width": 40,
+      "height": 16
+     },
+     "values": {
+      "fundo": "selection",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 58,
+      "y": 587,
+      "width": 32,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-micro",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Tabela",
+     "rect": {
+      "x": 98,
+      "y": 583,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Tabela",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "⚠",
+     "rect": {
+      "x": 125,
+      "y": 586,
+      "width": 13,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "⚠",
+      "estilo": "t-body-strong",
+      "cor": "warning",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Rótulo da instância (opcional)",
+     "rect": {
+      "x": 154,
+      "y": 583,
+      "width": 272,
+      "height": 24
+     },
+     "values": {
+      "texto": "Rótulo da instância (opcional)",
+      "estilo": "t-body-strong",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "property-grid",
+     "name": "Propriedades",
+     "rect": {
+      "x": 22,
+      "y": 617,
+      "width": 477,
+      "height": 216
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Título",
+     "rect": {
+      "x": 22,
+      "y": 621,
+      "width": 30,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Título",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Título",
+     "rect": {
+      "x": 58,
+      "y": 617,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Título",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do campo Título",
+     "rect": {
+      "x": 86,
+      "y": 617,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do campo Título",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Título",
+     "rect": {
+      "x": 122,
+      "y": 617,
+      "width": 377,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Arquivos da conversa",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Fonte",
+     "rect": {
+      "x": 22,
+      "y": 653,
+      "width": 31,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Fonte",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Fonte",
+     "rect": {
+      "x": 58,
+      "y": 649,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Fonte",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações do campo Fonte",
+     "rect": {
+      "x": 86,
+      "y": 649,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações do campo Fonte",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "reference-field",
+     "name": "Arquivos.pasta Camada 1: Fonte",
+     "rect": {
+      "x": 122,
+      "y": 649,
+      "width": 377,
+      "height": 28
+     },
+     "values": {
+      "valor": "Arquivos.pasta",
+      "camada": "Camada 1",
+      "estado": "valor"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ir para o alvo",
+     "rect": {
+      "x": 441,
+      "y": 649,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "externalLink",
+      "rotulo": "Ir para o alvo",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Limpar",
+     "rect": {
+      "x": 471,
+      "y": 649,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Limpar",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Linhas",
+     "rect": {
+      "x": 22,
+      "y": 685,
+      "width": 35,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Linhas",
+      "estilo": "t-small",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Sobre Linhas",
+     "rect": {
+      "x": 62,
+      "y": 681,
+      "width": 24,
+      "height": 24
+     },
+     "values": {
+      "icone": "info",
+      "rotulo": "Sobre Linhas",
+      "texto": null,
+      "variant": "default",
+      "size": "sm",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "3 linhas",
+     "rect": {
+      "x": 92,
+      "y": 685,
+      "width": 41,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "3 linhas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "+ Linha",
+     "rect": {
+      "x": 446,
+      "y": 684,
+      "width": 44,
+      "height": 17
+     },
+     "values": {
+      "texto": "+ Linha",
+      "estilo": "t-body",
+      "cor": "accent",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "data-grid",
+     "name": "Linhas",
+     "rect": {
+      "x": 22,
+      "y": 709,
+      "width": 477,
+      "height": 124
+     },
+     "values": {
+      "cabecalho": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "#",
+     "rect": {
+      "x": 57,
+      "y": 714,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 7.109375,
+     "cw": 12,
+     "sw": 24,
+     "ci": 24,
+     "values": {
+      "texto": "#",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Chave *",
+     "rect": {
+      "x": 77,
+      "y": 714,
+      "width": 42,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 41.59375,
+     "cw": 89.96875,
+     "sw": 102,
+     "ci": 102,
+     "values": {
+      "texto": "Chave *",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Valor",
+     "rect": {
+      "x": 178,
+      "y": 714,
+      "width": 29,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 27.828125,
+     "cw": 89.96875,
+     "sw": 102,
+     "ci": 102,
+     "values": {
+      "texto": "Valor",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Alvo",
+     "rect": {
+      "x": 280,
+      "y": 714,
+      "width": 26,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 24.359375,
+     "cw": 183.0625,
+     "sw": 195,
+     "ci": 195,
+     "values": {
+      "texto": "Alvo",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 734,
+      "width": 475,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 742,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1",
+     "rect": {
+      "x": 62,
+      "y": 742,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "comments/<id>.json",
+     "rect": {
+      "x": 82,
+      "y": 738,
+      "width": 80,
+      "height": 24
+     },
+     "values": {
+      "texto": "comments/<id>.json",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "conversa aberta (um arquivo por conversa)",
+     "rect": {
+      "x": 184,
+      "y": 738,
+      "width": 80,
+      "height": 24
+     },
+     "values": {
+      "texto": "conversa aberta (um arquivo por conversa)",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "ref-cell",
+     "name": "Arquivos.formato: Alvo (Linha 1)",
+     "rect": {
+      "x": 277,
+      "y": 736,
+      "width": 191,
+      "height": 28
+     },
+     "values": {
+      "valor": "Arquivos.formato",
+      "estado": "valor"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Limpar (Alvo (Linha 1))",
+     "rect": {
+      "x": 440,
+      "y": 736,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Limpar (Alvo (Linha 1))",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da linha Linha 1",
+     "rect": {
+      "x": 470,
+      "y": 736,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações da linha Linha 1",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Linha da grade",
+     "rect": {
+      "x": 23,
+      "y": 767,
+      "width": 475,
+      "height": 33
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 775,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "2",
+     "rect": {
+      "x": 62,
+      "y": 775,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "2",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "comments/resolved/<id>.json",
+     "rect": {
+      "x": 82,
+      "y": 771,
+      "width": 80,
+      "height": 24
+     },
+     "values": {
+      "texto": "comments/resolved/<id>.json",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "conversa resolvida",
+     "rect": {
+      "x": 184,
+      "y": 771,
+      "width": 80,
+      "height": 24
+     },
+     "values": {
+      "texto": "conversa resolvida",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "ref-cell",
+     "name": "Escolher: Alvo (Linha 2)",
+     "rect": {
+      "x": 277,
+      "y": 769,
+      "width": 191,
+      "height": 28
+     },
+     "values": {
+      "valor": "Escolher…",
+      "estado": "vazio"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Limpar (Alvo (Linha 2))",
+     "rect": {
+      "x": 440,
+      "y": 769,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Limpar (Alvo (Linha 2))",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da linha Linha 2",
+     "rect": {
+      "x": 470,
+      "y": 769,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações da linha Linha 2",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon",
+     "name": "grip",
+     "rect": {
+      "x": 27,
+      "y": 808,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "grip",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "3",
+     "rect": {
+      "x": 62,
+      "y": 808,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "3",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "right",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "campo resolved",
+     "rect": {
+      "x": 82,
+      "y": 804,
+      "width": 80,
+      "height": 24
+     },
+     "values": {
+      "texto": "campo resolved",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "é a verdade; a pasta é só o índice",
+     "rect": {
+      "x": 184,
+      "y": 804,
+      "width": 80,
+      "height": 24
+     },
+     "values": {
+      "texto": "é a verdade; a pasta é só o índice",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "ref-cell",
+     "name": "Referência quebrada: Alvo (Linha 3)",
+     "rect": {
+      "x": 277,
+      "y": 802,
+      "width": 191,
+      "height": 28
+     },
+     "values": {
+      "valor": "(referência quebrada)",
+      "estado": "quebrado"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Limpar (Alvo (Linha 3))",
+     "rect": {
+      "x": 440,
+      "y": 802,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Limpar (Alvo (Linha 3))",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Ações da linha Linha 3",
+     "rect": {
+      "x": 470,
+      "y": 802,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Ações da linha Linha 3",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Mapping",
+     "rect": {
+      "x": 13,
+      "y": 850,
+      "width": 495,
+      "height": 30
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#1A63CC",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 859,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#1A63CC",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 62,
+      "y": 856,
+      "width": 55,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 55.171875,
+     "cw": 55.171875,
+     "sw": 55,
+     "ci": 55,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Mapping DS",
+     "rect": {
+      "x": 123,
+      "y": 856,
+      "width": 70,
+      "height": 18
+     },
+     "values": {
+      "texto": "Mapping DS",
+      "estilo": "tag"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 200,
+      "y": 857,
+      "width": 183,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 182.90625,
+     "cw": 267.46875,
+     "sw": 267,
+     "ci": 267,
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Mapping",
+     "rect": {
+      "x": 475,
+      "y": 851,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Mapping",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "threads-section",
+     "name": "Seção Conversas",
+     "rect": {
+      "x": 13,
+      "y": 892,
+      "width": 495,
+      "height": 28
+     },
+     "values": {}
+    },
+    {
+     "type": "icon",
+     "name": "chevronRight",
+     "rect": {
+      "x": 13,
+      "y": 898,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronRight",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Conversas",
+     "rect": {
+      "x": 33,
+      "y": 897,
+      "width": 60,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Conversas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 96,
+      "y": 898,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronRight",
+     "rect": {
+      "x": 13,
+      "y": 938,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronRight",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Ligado por seta",
+     "rect": {
+      "x": 33,
+      "y": 937,
+      "width": 92,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Ligado por seta",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "1",
+     "rect": {
+      "x": 128,
+      "y": 938,
+      "width": 7,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "1",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Ligar a…",
+     "rect": {
+      "x": 13,
+      "y": 972,
+      "width": 74,
+      "height": 28
+     },
+     "values": {
+      "texto": "Ligar a…",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Excluir marcação",
+     "rect": {
+      "x": 95,
+      "y": 972,
+      "width": 121,
+      "height": 28
+     },
+     "values": {
+      "texto": "Excluir marcação",
+      "variant": "danger",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Detalhes — seta selecionada",
+   "background": "#ffffff",
+   "width": 360,
+   "height": 834,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela Detalhes",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 834
+     },
+     "values": {
+      "janela": "details",
+      "titulo": "Detalhes",
+      "posicao": "right"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Detalhes",
+     "rect": {
+      "x": 328,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Detalhes",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "arrow-panel",
+     "name": "Detalhes da seta",
+     "rect": {
+      "x": 13,
+      "y": 32,
+      "width": 335,
+      "height": 599
+     },
+     "values": {}
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity",
+     "rect": {
+      "x": 13,
+      "y": 32,
+      "width": 335,
+      "height": 85
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "baixo",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "arrow",
+     "rect": {
+      "x": 13,
+      "y": 39,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "arrow",
+      "cor": "accent"
+     }
+    },
+    {
+     "type": "text",
+     "name": "arquivos → tabela de conversas",
+     "rect": {
+      "x": 35,
+      "y": 37,
+      "width": 213,
+      "height": 20
+     },
+     "lines": 1,
+     "values": {
+      "texto": "arquivos → tabela de conversas",
+      "estilo": "t-title",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .identity-id",
+     "rect": {
+      "x": 13,
+      "y": 64,
+      "width": 134,
+      "height": 24
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "dd63df03-4104-4cc0-94ff-8a724bd78df6",
+     "rect": {
+      "x": 20,
+      "y": 67,
+      "width": 100,
+      "height": 18
+     },
+     "values": {
+      "texto": "dd63df03-4104-4cc0-94ff-8a724bd78df6",
+      "estilo": "t-code",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "copy",
+     "rect": {
+      "x": 124,
+      "y": 68,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "copy",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Trancar seta",
+     "rect": {
+      "x": 153,
+      "y": 62,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "unlock",
+      "rotulo": "Trancar seta",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text",
+     "name": "Liga Tabela a Tabela de conversas",
+     "rect": {
+      "x": 13,
+      "y": 92,
+      "width": 177,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Liga Tabela a Tabela de conversas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 135,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Seta",
+     "rect": {
+      "x": 33,
+      "y": 134,
+      "width": 26,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Seta",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "property-grid",
+     "name": "Propriedades",
+     "rect": {
+      "x": 13,
+      "y": 165,
+      "width": 335,
+      "height": 112
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Nome",
+     "rect": {
+      "x": 13,
+      "y": 169,
+      "width": 33,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Nome",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Sem nome",
+     "rect": {
+      "x": 113,
+      "y": 165,
+      "width": 235,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "arquivos → tabela de conversas",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Origem",
+     "rect": {
+      "x": 13,
+      "y": 197,
+      "width": 40,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Origem",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Tabela",
+     "rect": {
+      "x": 113,
+      "y": 193,
+      "width": 235,
+      "height": 24
+     },
+     "values": {
+      "texto": "Tabela",
+      "variant": "ghost",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Destino",
+     "rect": {
+      "x": 13,
+      "y": 225,
+      "width": 41,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Destino",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Tabela de conversas",
+     "rect": {
+      "x": 113,
+      "y": 221,
+      "width": 235,
+      "height": 24
+     },
+     "values": {
+      "texto": "Tabela de conversas",
+      "variant": "ghost",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Estilo",
+     "rect": {
+      "x": 13,
+      "y": 253,
+      "width": 29,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Estilo",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "segmented",
+     "name": "Estilo",
+     "rect": {
+      "x": 113,
+      "y": 249,
+      "width": 178,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Estilo",
+      "desabilitado": "não",
+      "invalido": "não"
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Reta",
+     "rect": {
+      "x": 113,
+      "y": 249,
+      "width": 51,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Reta",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Curva",
+     "rect": {
+      "x": 168,
+      "y": 249,
+      "width": 59,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Curva",
+      "selecionada": "sim",
+      "icone": null
+     }
+    },
+    {
+     "type": "segmented-item",
+     "name": "Canto",
+     "rect": {
+      "x": 231,
+      "y": 249,
+      "width": 60,
+      "height": 28
+     },
+     "values": {
+      "rotulo": "Canto",
+      "selecionada": "não",
+      "icone": null
+     }
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 295,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Anotações",
+     "rect": {
+      "x": 33,
+      "y": 294,
+      "width": 62,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Anotações",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 98,
+      "y": 295,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Camada 1",
+     "rect": {
+      "x": 13,
+      "y": 325,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#D32F2F",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 334,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#D32F2F",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Camada 1",
+     "rect": {
+      "x": 62,
+      "y": 331,
+      "width": 60,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 60.125,
+     "cw": 60.125,
+     "sw": 60,
+     "ci": 60,
+     "values": {
+      "texto": "Camada 1",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 128,
+      "y": 332,
+      "width": 179,
+      "height": 16
+     },
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Camada 1",
+     "rect": {
+      "x": 315,
+      "y": 326,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Camada 1",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Notas",
+     "rect": {
+      "x": 13,
+      "y": 363,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#F5C400",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 372,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#F5C400",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notas",
+     "rect": {
+      "x": 62,
+      "y": 369,
+      "width": 36,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 36,
+     "cw": 36,
+     "sw": 36,
+     "ci": 36,
+     "values": {
+      "texto": "Notas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Notas",
+     "rect": {
+      "x": 104,
+      "y": 369,
+      "width": 39,
+      "height": 18
+     },
+     "values": {
+      "texto": "Notas",
+      "estilo": "tag"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 149,
+      "y": 370,
+      "width": 158,
+      "height": 16
+     },
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Notas",
+     "rect": {
+      "x": 315,
+      "y": 364,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Notas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Mapping",
+     "rect": {
+      "x": 13,
+      "y": 401,
+      "width": 335,
+      "height": 30
+     },
+     "values": {
+      "forma": "grupo",
+      "cor": "#1A63CC",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 44,
+      "y": 410,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#1A63CC",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping",
+     "rect": {
+      "x": 62,
+      "y": 407,
+      "width": 55,
+      "height": 17
+     },
+     "lines": 1,
+     "tw": 55.171875,
+     "cw": 55.171875,
+     "sw": 55,
+     "ci": 55,
+     "values": {
+      "texto": "Mapping",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "badge",
+     "name": "Mapping DS",
+     "rect": {
+      "x": 123,
+      "y": 407,
+      "width": 70,
+      "height": 18
+     },
+     "values": {
+      "texto": "Mapping DS",
+      "estilo": "tag"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Nenhuma anotação nesta camada.",
+     "rect": {
+      "x": 200,
+      "y": 408,
+      "width": 107,
+      "height": 16
+     },
+     "values": {
+      "texto": "Nenhuma anotação nesta camada.",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não",
+      "reticencias": "sim"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Adicionar anotação na camada Mapping",
+     "rect": {
+      "x": 315,
+      "y": 402,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Adicionar anotação na camada Mapping",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "threads-section",
+     "name": "Seção Conversas",
+     "rect": {
+      "x": 13,
+      "y": 443,
+      "width": 335,
+      "height": 148
+     },
+     "values": {}
+    },
+    {
+     "type": "icon",
+     "name": "chevronDown",
+     "rect": {
+      "x": 13,
+      "y": 449,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "chevronDown",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Conversas",
+     "rect": {
+      "x": 33,
+      "y": 448,
+      "width": 60,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Conversas",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "0",
+     "rect": {
+      "x": 96,
+      "y": 449,
+      "width": 8,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "0",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "composer",
+     "name": "Compositor",
+     "rect": {
+      "x": 13,
+      "y": 479,
+      "width": 335,
+      "height": 112
+     },
+     "values": {}
+    },
+    {
+     "type": "text",
+     "name": "Comentar como Marina Alves",
+     "rect": {
+      "x": 13,
+      "y": 479,
+      "width": 157,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Comentar como Marina Alves",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Comentar como Marina Alves",
+     "rect": {
+      "x": 13,
+      "y": 499,
+      "width": 335,
+      "height": 56
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "varias"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Enviar",
+     "rect": {
+      "x": 288,
+      "y": 563,
+      "width": 60,
+      "height": 28
+     },
+     "values": {
+      "texto": "Enviar",
+      "variant": "primary",
+      "size": "md",
+      "desabilitado": "sim",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Excluir seta",
+     "rect": {
+      "x": 13,
+      "y": 603,
+      "width": 90,
+      "height": 28
+     },
+     "values": {
+      "texto": "Excluir seta",
+      "variant": "danger",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Detalhes — dois itens selecionados",
+   "background": "#ffffff",
+   "width": 360,
+   "height": 654,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela Detalhes",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 360,
+      "height": 654
+     },
+     "values": {
+      "janela": "details",
+      "titulo": "Detalhes",
+      "posicao": "right"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Detalhes",
+     "rect": {
+      "x": 328,
+      "y": 2,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Detalhes",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "multi-selection-panel",
+     "name": "2 itens selecionados",
+     "rect": {
+      "x": 13,
+      "y": 32,
+      "width": 335,
+      "height": 154
+     },
+     "values": {}
+    },
+    {
+     "type": "icon",
+     "name": "info",
+     "rect": {
+      "x": 173,
+      "y": 56,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "info",
+      "cor": "muted"
+     }
+    },
+    {
+     "type": "text",
+     "name": "2 itens selecionados",
+     "rect": {
+      "x": 119,
+      "y": 79,
+      "width": 123,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "2 itens selecionados",
+      "estilo": "t-body-strong",
+      "cor": "text",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "2 marcação(ões)",
+     "rect": {
+      "x": 133,
+      "y": 105,
+      "width": 95,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "2 marcação(ões)",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "center",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Envolver",
+     "rect": {
+      "x": 29,
+      "y": 134,
+      "width": 74,
+      "height": 28
+     },
+     "values": {
+      "texto": "Envolver",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Trancar",
+     "rect": {
+      "x": 107,
+      "y": 134,
+      "width": 67,
+      "height": 28
+     },
+     "values": {
+      "texto": "Trancar",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Destrancar",
+     "rect": {
+      "x": 178,
+      "y": 134,
+      "width": 87,
+      "height": 28
+     },
+     "values": {
+      "texto": "Destrancar",
+      "variant": "default",
+      "size": "md",
+      "desabilitado": "sim",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Excluir",
+     "rect": {
+      "x": 270,
+      "y": 134,
+      "width": 63,
+      "height": 28
+     },
+     "values": {
+      "texto": "Excluir",
+      "variant": "danger",
+      "size": "md",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Ligar a… — seletor de marcação",
+   "background": "#ffffff",
+   "width": 600,
+   "height": 656,
+   "items": [
+    {
+     "type": "marking-picker",
+     "name": "Ligar Filtro Status a…",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 600,
+      "height": 656
+     },
+     "values": {
+      "titulo": "Ligar Filtro Status a…",
+      "rodape": "sim"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar",
+     "rect": {
+      "x": 145,
+      "y": 9,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Buscar marcação",
+     "rect": {
+      "x": 13,
+      "y": 45,
+      "width": 574,
+      "height": 28
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "",
+      "size": "md",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Buscar marcação",
+     "rect": {
+      "x": 22,
+      "y": 45,
+      "width": 556,
+      "height": 28
+     },
+     "values": {
+      "texto": "Buscar marcação",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .picker-option",
+     "rect": {
+      "x": 5,
+      "y": 81,
+      "width": 590,
+      "height": 28
+     },
+     "values": {
+      "fundo": "accent",
+      "borda": "nenhuma",
+      "lados": "todos",
+      "raio": "sm",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 87,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "accent-text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aguardando humano — MA 3",
+     "rect": {
+      "x": 51,
+      "y": 88,
+      "width": 169,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 168.75,
+     "cw": 223.078125,
+     "sw": 223,
+     "ci": 223,
+     "values": {
+      "texto": "Aguardando humano — MA 3",
+      "estilo": "t-code",
+      "cor": "accent-text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos das conversas — estados › Aguardando humano — MA 3",
+     "rect": {
+      "x": 280,
+      "y": 87,
+      "width": 307,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pinos das conversas — estados › Aguardando humano — MA 3",
+      "estilo": "t-kbd",
+      "cor": "accent-text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 115,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Aguardando agente",
+     "rect": {
+      "x": 51,
+      "y": 116,
+      "width": 120,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 119.53125,
+     "cw": 272.6875,
+     "sw": 273,
+     "ci": 273,
+     "values": {
+      "texto": "Aguardando agente",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos das conversas — estados › Aguardando agente",
+     "rect": {
+      "x": 329,
+      "y": 115,
+      "width": 258,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pinos das conversas — estados › Aguardando agente",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 143,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Resolvida (só selecionada)",
+     "rect": {
+      "x": 51,
+      "y": 144,
+      "width": 183,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 182.8125,
+     "cw": 243.171875,
+     "sw": 243,
+     "ci": 243,
+     "values": {
+      "texto": "Resolvida (só selecionada)",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos das conversas — estados › Resolvida (só selecionada)",
+     "rect": {
+      "x": 300,
+      "y": 143,
+      "width": 287,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pinos das conversas — estados › Resolvida (só selecionada)",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 171,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Selecionado (anel de 2px)",
+     "rect": {
+      "x": 51,
+      "y": 172,
+      "width": 176,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 175.78125,
+     "cw": 245.125,
+     "sw": 245,
+     "ci": 245,
+     "values": {
+      "texto": "Selecionado (anel de 2px)",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos das conversas — estados › Selecionado (anel de 2px)",
+     "rect": {
+      "x": 302,
+      "y": 171,
+      "width": 285,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pinos das conversas — estados › Selecionado (anel de 2px)",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 199,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Não lida (ponto no canto)",
+     "rect": {
+      "x": 51,
+      "y": 200,
+      "width": 176,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 175.78125,
+     "cw": 244.25,
+     "sw": 244,
+     "ci": 244,
+     "values": {
+      "texto": "Não lida (ponto no canto)",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos das conversas — estados › Não lida (ponto no canto)",
+     "rect": {
+      "x": 301,
+      "y": 199,
+      "width": 286,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pinos das conversas — estados › Não lida (ponto no canto)",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 227,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Agrupado — 3 conversas",
+     "rect": {
+      "x": 51,
+      "y": 228,
+      "width": 155,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 154.6875,
+     "cw": 247.5625,
+     "sw": 248,
+     "ci": 248,
+     "values": {
+      "texto": "Agrupado — 3 conversas",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos das conversas — estados › Agrupado — 3 conversas",
+     "rect": {
+      "x": 304,
+      "y": 227,
+      "width": 283,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pinos das conversas — estados › Agrupado — 3 conversas",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 255,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Rascunho (tracejado)",
+     "rect": {
+      "x": 51,
+      "y": 256,
+      "width": 141,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 140.625,
+     "cw": 267.8125,
+     "sw": 268,
+     "ci": 268,
+     "values": {
+      "texto": "Rascunho (tracejado)",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Pinos das conversas — estados › Rascunho (tracejado)",
+     "rect": {
+      "x": 324,
+      "y": 255,
+      "width": 263,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Pinos das conversas — estados › Rascunho (tracejado)",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 283,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 51,
+      "y": 284,
+      "width": 43,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 42.1875,
+     "cw": 455.71875,
+     "sw": 456,
+     "ci": 456,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Canvas › Tabela",
+     "rect": {
+      "x": 512,
+      "y": 283,
+      "width": 75,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Canvas › Tabela",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 311,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 51,
+      "y": 312,
+      "width": 43,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 42.1875,
+     "cw": 455.71875,
+     "sw": 456,
+     "ci": 456,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Canvas › Tabela",
+     "rect": {
+      "x": 512,
+      "y": 311,
+      "width": 75,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Canvas › Tabela",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 339,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 51,
+      "y": 340,
+      "width": 43,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 42.1875,
+     "cw": 455.71875,
+     "sw": 456,
+     "ci": 456,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Canvas › Tabela",
+     "rect": {
+      "x": 512,
+      "y": 339,
+      "width": 75,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Canvas › Tabela",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 367,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 51,
+      "y": 368,
+      "width": 43,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 42.1875,
+     "cw": 455.71875,
+     "sw": 456,
+     "ci": 456,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Canvas › Tabela",
+     "rect": {
+      "x": 512,
+      "y": 367,
+      "width": 75,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Canvas › Tabela",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 395,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Tabela",
+     "rect": {
+      "x": 51,
+      "y": 396,
+      "width": 43,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 42.1875,
+     "cw": 455.71875,
+     "sw": 456,
+     "ci": 456,
+     "values": {
+      "texto": "Tabela",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Canvas › Tabela",
+     "rect": {
+      "x": 512,
+      "y": 395,
+      "width": 75,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Canvas › Tabela",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 423,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Filtro Usuário",
+     "rect": {
+      "x": 51,
+      "y": 424,
+      "width": 99,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 98.4375,
+     "cw": 361.390625,
+     "sw": 361,
+     "ci": 361,
+     "values": {
+      "texto": "Filtro Usuário",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Janela Comentários › Filtro Usuário",
+     "rect": {
+      "x": 418,
+      "y": 423,
+      "width": 169,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Janela Comentários › Filtro Usuário",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 451,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Busca nas mensagens",
+     "rect": {
+      "x": 51,
+      "y": 452,
+      "width": 134,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 133.59375,
+     "cw": 320.859375,
+     "sw": 321,
+     "ci": 321,
+     "values": {
+      "texto": "Busca nas mensagens",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Janela Comentários › Busca nas mensagens",
+     "rect": {
+      "x": 377,
+      "y": 451,
+      "width": 210,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Janela Comentários › Busca nas mensagens",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 479,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Filtro Citam a seleção",
+     "rect": {
+      "x": 51,
+      "y": 480,
+      "width": 155,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 154.6875,
+     "cw": 322.515625,
+     "sw": 323,
+     "ci": 323,
+     "values": {
+      "texto": "Filtro Citam a seleção",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Janela Comentários › Filtro Citam a seleção",
+     "rect": {
+      "x": 379,
+      "y": 479,
+      "width": 208,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Janela Comentários › Filtro Citam a seleção",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 507,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Conversas deste item",
+     "rect": {
+      "x": 51,
+      "y": 508,
+      "width": 141,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 140.625,
+     "cw": 308.828125,
+     "sw": 309,
+     "ci": 309,
+     "values": {
+      "texto": "Conversas deste item",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Detalhes — Conversas › Conversas deste item",
+     "rect": {
+      "x": 365,
+      "y": 507,
+      "width": 222,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Detalhes — Conversas › Conversas deste item",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 535,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mensagem de pessoa",
+     "rect": {
+      "x": 51,
+      "y": 536,
+      "width": 127,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 126.5625,
+     "cw": 306.4375,
+     "sw": 306,
+     "ci": 306,
+     "values": {
+      "texto": "Mensagem de pessoa",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Detalhes — Conversas › Mensagem de pessoa",
+     "rect": {
+      "x": 363,
+      "y": 535,
+      "width": 224,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Detalhes — Conversas › Mensagem de pessoa",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 563,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mensagem de agente (selo agente)",
+     "rect": {
+      "x": 51,
+      "y": 564,
+      "width": 225,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 225,
+     "cw": 240.765625,
+     "sw": 241,
+     "ci": 241,
+     "values": {
+      "texto": "Mensagem de agente (selo agente)",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Detalhes — Conversas › Mensagem de agente (selo agente)",
+     "rect": {
+      "x": 297,
+      "y": 563,
+      "width": 290,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Detalhes — Conversas › Mensagem de agente (selo agente)",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon",
+     "name": "marking",
+     "rect": {
+      "x": 29,
+      "y": 591,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "icone": "marking",
+      "cor": "text"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Citação — alvo existe",
+     "rect": {
+      "x": 51,
+      "y": 592,
+      "width": 148,
+      "height": 14
+     },
+     "lines": 1,
+     "tw": 147.65625,
+     "cw": 249.9375,
+     "sw": 250,
+     "ci": 250,
+     "values": {
+      "texto": "Citação — alvo existe",
+      "estilo": "t-code",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Detalhes — Conversas › Citada em › Citação — alvo existe",
+     "rect": {
+      "x": 306,
+      "y": 591,
+      "width": 281,
+      "height": 15
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Detalhes — Conversas › Citada em › Citação — alvo existe",
+      "estilo": "t-kbd",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Tecla ↑",
+     "rect": {
+      "x": 13,
+      "y": 633,
+      "width": 15,
+      "height": 18
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "↑",
+     "rect": {
+      "x": 18,
+      "y": 634,
+      "width": 6,
+      "height": 15
+     },
+     "values": {
+      "texto": "↑",
+      "estilo": "t-kbd",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Tecla ↓",
+     "rect": {
+      "x": 32,
+      "y": 633,
+      "width": 15,
+      "height": 18
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "↓",
+     "rect": {
+      "x": 36,
+      "y": 634,
+      "width": 6,
+      "height": 15
+     },
+     "values": {
+      "texto": "↓",
+      "estilo": "t-kbd",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "navegar",
+     "rect": {
+      "x": 50,
+      "y": 633,
+      "width": 43,
+      "height": 16
+     },
+     "values": {
+      "texto": "navegar",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Tecla Enter",
+     "rect": {
+      "x": 104,
+      "y": 633,
+      "width": 35,
+      "height": 18
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Enter",
+     "rect": {
+      "x": 109,
+      "y": 634,
+      "width": 26,
+      "height": 15
+     },
+     "values": {
+      "texto": "Enter",
+      "estilo": "t-kbd",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "escolher",
+     "rect": {
+      "x": 142,
+      "y": 633,
+      "width": 45,
+      "height": 16
+     },
+     "values": {
+      "texto": "escolher",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Tecla Esc",
+     "rect": {
+      "x": 199,
+      "y": 633,
+      "width": 25,
+      "height": 18
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "xs",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Esc",
+     "rect": {
+      "x": 203,
+      "y": 634,
+      "width": 17,
+      "height": 15
+     },
+     "values": {
+      "texto": "Esc",
+      "estilo": "t-kbd",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "fechar",
+     "rect": {
+      "x": 227,
+      "y": 633,
+      "width": 34,
+      "height": 16
+     },
+     "values": {
+      "texto": "fechar",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Mostrar no canvas — modo visualização",
+   "background": "#ffffff",
+   "width": 280,
+   "height": 382,
+   "items": [
+    {
+     "type": "view-mode-panel",
+     "name": "Mostrar no canvas",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 280,
+      "height": 382
+     },
+     "values": {
+      "titulo": "Mostrar no canvas"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Só para ver: nada se seleciona nem se edita.",
+     "rect": {
+      "x": 9,
+      "y": 38,
+      "width": 252,
+      "height": 17
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Só para ver: nada se seleciona nem se edita.",
+      "estilo": "t-body",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Elementos",
+     "rect": {
+      "x": 9,
+      "y": 65,
+      "width": 55,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Elementos",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Containers",
+     "rect": {
+      "x": 9,
+      "y": 85,
+      "width": 262,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Containers",
+      "dica": null,
+      "marcado": "sim"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Imagens",
+     "rect": {
+      "x": 9,
+      "y": 117,
+      "width": 262,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Imagens",
+      "dica": null,
+      "marcado": "sim"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Contorno das marcações",
+     "rect": {
+      "x": 9,
+      "y": 149,
+      "width": 262,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Contorno das marcações",
+      "dica": null,
+      "marcado": "não"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Nome das marcações",
+     "rect": {
+      "x": 9,
+      "y": 181,
+      "width": 262,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Nome das marcações",
+      "dica": null,
+      "marcado": "sim"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Setas",
+     "rect": {
+      "x": 9,
+      "y": 213,
+      "width": 262,
+      "height": 40
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Setas",
+      "dica": "continuam ligando os mesmos pontos",
+      "marcado": "sim"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Camadas com desenho",
+     "rect": {
+      "x": 9,
+      "y": 261,
+      "width": 124,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Camadas com desenho",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Notas",
+     "rect": {
+      "x": 9,
+      "y": 281,
+      "width": 262,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "⁠     Notas",
+      "dica": null,
+      "marcado": "sim"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 37,
+      "y": 289,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#F5C400",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Mapping",
+     "rect": {
+      "x": 9,
+      "y": 313,
+      "width": 262,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "⁠     Mapping",
+      "dica": null,
+      "marcado": "sim"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 37,
+      "y": 321,
+      "width": 12,
+      "height": 12
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#1A63CC",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Mostrar tudo",
+     "rect": {
+      "x": 91,
+      "y": 349,
+      "width": 93,
+      "height": 24
+     },
+     "values": {
+      "texto": "Mostrar tudo",
+      "variant": "default",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    },
+    {
+     "type": "button",
+     "name": "Só as telas",
+     "rect": {
+      "x": 193,
+      "y": 349,
+      "width": 78,
+      "height": 24
+     },
+     "values": {
+      "texto": "Só as telas",
+      "variant": "default",
+      "size": "sm",
+      "desabilitado": "não",
+      "alinhamento": "center"
+     }
+    }
+   ]
+  },
+  {
+   "name": "Camadas — lista",
+   "background": "#ffffff",
+   "width": 264,
+   "height": 224,
+   "items": [
+    {
+     "type": "tool-window",
+     "name": "Janela Camadas",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "width": 264,
+      "height": 224
+     },
+     "values": {
+      "janela": "layers",
+      "titulo": "Camadas",
+      "posicao": "left"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Nova camada",
+     "rect": {
+      "x": 171,
+      "y": 3,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "plus",
+      "rotulo": "Nova camada",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mostrar todas",
+     "rect": {
+      "x": 201,
+      "y": 3,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "eye",
+      "rotulo": "Mostrar todas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Fechar a janela Camadas",
+     "rect": {
+      "x": 231,
+      "y": 3,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "close",
+      "rotulo": "Fechar a janela Camadas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Camada 1",
+     "rect": {
+      "x": 4,
+      "y": 33,
+      "width": 255,
+      "height": 28
+     },
+     "values": {
+      "forma": "linha",
+      "cor": "#D32F2F",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Mostrar a camada Camada 1",
+     "rect": {
+      "x": 11,
+      "y": 33,
+      "width": 24,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Mostrar a camada Camada 1",
+      "dica": null,
+      "marcado": "sim"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 43,
+      "y": 39,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#D32F2F",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Camada 1",
+     "rect": {
+      "x": 76,
+      "y": 35,
+      "width": 134,
+      "height": 24
+     },
+     "values": {
+      "texto": "Camada 1",
+      "estilo": "t-body",
+      "cor": "text",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mais ações da camada Camada 1",
+     "rect": {
+      "x": 223,
+      "y": 33,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Mais ações da camada Camada 1",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Notas",
+     "rect": {
+      "x": 4,
+      "y": 63,
+      "width": 255,
+      "height": 54
+     },
+     "values": {
+      "forma": "linha",
+      "cor": "#F5C400",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Mostrar a camada Notas",
+     "rect": {
+      "x": 11,
+      "y": 63,
+      "width": 24,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Mostrar a camada Notas",
+      "dica": null,
+      "marcado": "sim"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 43,
+      "y": 69,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#F5C400",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Nome da camada",
+     "rect": {
+      "x": 67,
+      "y": 65,
+      "width": 152,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Notas",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mais ações da camada Notas",
+     "rect": {
+      "x": 223,
+      "y": 63,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Mais ações da camada Notas",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-badge",
+     "rect": {
+      "x": 67,
+      "y": 91,
+      "width": 49,
+      "height": 22
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Notas",
+     "rect": {
+      "x": 76,
+      "y": 94,
+      "width": 32,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 31.28125,
+     "cw": 31.28125,
+     "sw": 47,
+     "ci": 47,
+     "values": {
+      "texto": "Notas",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Camada Mapping",
+     "rect": {
+      "x": 4,
+      "y": 119,
+      "width": 255,
+      "height": 48
+     },
+     "values": {
+      "forma": "linha",
+      "cor": "#1A63CC",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "choice",
+     "name": "Mostrar a camada Mapping",
+     "rect": {
+      "x": 11,
+      "y": 119,
+      "width": 24,
+      "height": 28
+     },
+     "values": {
+      "tipo": "checkbox",
+      "rotulo": "Mostrar a camada Mapping",
+      "dica": null,
+      "marcado": "sim"
+     }
+    },
+    {
+     "type": "layer-group",
+     "name": "Cor da camada",
+     "rect": {
+      "x": 43,
+      "y": 125,
+      "width": 16,
+      "height": 16
+     },
+     "values": {
+      "forma": "ponto",
+      "cor": "#1A63CC",
+      "aberto": "não"
+     }
+    },
+    {
+     "type": "text-field",
+     "name": "Nome da camada",
+     "rect": {
+      "x": 67,
+      "y": 121,
+      "width": 152,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Mapping",
+      "size": "sm",
+      "invalido": "não",
+      "linhas": "uma"
+     }
+    },
+    {
+     "type": "icon-button",
+     "name": "Mais ações da camada Mapping",
+     "rect": {
+      "x": 223,
+      "y": 119,
+      "width": 28,
+      "height": 28
+     },
+     "values": {
+      "icone": "moreVertical",
+      "rotulo": "Mais ações da camada Mapping",
+      "texto": null,
+      "variant": "default",
+      "size": "md",
+      "pressionado": "não",
+      "alerta": "não",
+      "selo": null
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layer-badge",
+     "rect": {
+      "x": 67,
+      "y": 147,
+      "width": 84,
+      "height": 20
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "control",
+      "lados": "todos",
+      "raio": "full",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Mapping DS",
+     "rect": {
+      "x": 76,
+      "y": 150,
+      "width": 66,
+      "height": 16
+     },
+     "lines": 1,
+     "tw": 65.84375,
+     "cw": 65.84375,
+     "sw": 82,
+     "ci": 82,
+     "values": {
+      "texto": "Mapping DS",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "box",
+     "name": "Caixa .layers-footer",
+     "rect": {
+      "x": 4,
+      "y": 167,
+      "width": 255,
+      "height": 57
+     },
+     "values": {
+      "fundo": "nenhum",
+      "borda": "border",
+      "lados": "cima",
+      "raio": "0",
+      "sombra": "nenhuma"
+     }
+    },
+    {
+     "type": "text",
+     "name": "Marcações sem anotação",
+     "rect": {
+      "x": 8,
+      "y": 176,
+      "width": 134,
+      "height": 16
+     },
+     "lines": 1,
+     "values": {
+      "texto": "Marcações sem anotação",
+      "estilo": "t-small",
+      "cor": "muted",
+      "alinhamento": "left",
+      "decoracao": "none",
+      "quebra": "não"
+     }
+    },
+    {
+     "type": "select",
+     "name": "Select",
+     "rect": {
+      "x": 8,
+      "y": 196,
+      "width": 247,
+      "height": 24
+     },
+     "values": {
+      "rotulo": null,
+      "valor": "Esmaecer sem anotação",
+      "size": "sm",
+      "invalido": "não"
+     }
+    }
+   ]
+  }
+ ]
+}

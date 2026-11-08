@@ -1,0 +1,166 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "badge",
+  "name": "Selo",
+  "description": "Pílula de texto curto: etiqueta, selo de agente, estado da conversa, contagem de aba, status da tabela ou o selo PREVIEW.",
+  "size": {
+    "width": 56,
+    "height": 16
+  },
+  "minSize": {
+    "width": 8,
+    "height": 8
+  },
+  "sizing": {
+    "width": 56,
+    "height": 16
+  },
+  "preview": {
+    "texto": "agente",
+    "estilo": "agente"
+  },
+  "template": {
+    "type": "frame",
+    "name": "selo",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": {
+      "$switch": "estilo",
+      "cases": {
+        "preview": 4
+      },
+      "default": 999
+    },
+    "fill": {
+      "$switch": "estilo",
+      "cases": {
+        "tag": "rgba(0, 0, 0, 0)",
+        "agente": {
+          "$token": "color-selection-muted"
+        },
+        "estado-agente": {
+          "$token": "color-warning-bg"
+        },
+        "estado-humano": {
+          "$token": "color-selection"
+        },
+        "estado-resolvida": {
+          "$token": "color-success-bg"
+        },
+        "contagem": {
+          "$token": "color-selection-muted"
+        },
+        "contagem-info": {
+          "$token": "color-accent"
+        },
+        "status": {
+          "$token": "color-selection-muted"
+        },
+        "status-agente": {
+          "$token": "color-warning-bg"
+        },
+        "status-resolvida": {
+          "$token": "color-selection-muted"
+        },
+        "preview": {
+          "$token": "color-warning-bg"
+        }
+      },
+      "default": {
+        "$token": "color-selection-muted"
+      }
+    },
+    "stroke": {
+      "color": {
+        "$switch": "estilo",
+        "cases": {
+          "tag": {
+            "$token": "color-border-control"
+          },
+          "preview": {
+            "$token": "color-warning"
+          }
+        },
+        "default": "rgba(0, 0, 0, 0)"
+      },
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "texto",
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "estilo",
+          "cases": {
+            "tag": {
+              "$token": "color-text-muted"
+            },
+            "agente": {
+              "$token": "color-text-muted"
+            },
+            "estado-agente": {
+              "$token": "color-warning"
+            },
+            "estado-humano": {
+              "$token": "color-accent"
+            },
+            "estado-resolvida": {
+              "$token": "color-success"
+            },
+            "contagem": {
+              "$token": "color-text-muted"
+            },
+            "contagem-info": {
+              "$token": "color-accent-text"
+            },
+            "status": {
+              "$token": "color-text-muted"
+            },
+            "status-agente": {
+              "$token": "color-warning"
+            },
+            "status-resolvida": {
+              "$token": "color-success"
+            },
+            "preview": {
+              "$token": "color-warning"
+            }
+          },
+          "default": {
+            "$token": "color-text-muted"
+          }
+        },
+        "font": {
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "contagem": 12,
+              "contagem-info": 12
+            },
+            "default": 11
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "tag": 400,
+              "contagem": 400,
+              "contagem-info": 400
+            },
+            "default": 600
+          },
+          "lineHeight": 16,
+          "align": "center",
+          "verticalAlign": "middle"
+        },
+        "width": "fill",
+        "height": "fill"
+      }
+    ]
+  }
+}

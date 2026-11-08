@@ -1,0 +1,29 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "comments-window",
+  "name": "CommentsWindow",
+  "description": "Fundo da janela Comentários. Filtros, resumo, cabeçalho e linhas da tabela são filhos.",
+  "size": {
+    "width": 812,
+    "height": 164
+  },
+  "minSize": {
+    "width": 120,
+    "height": 40
+  },
+  "sizing": {
+    "width": 812,
+    "height": 164
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "janela",
+    "layout": {
+      "type": "none"
+    },
+    "fill": "#ffffff",
+    "children": []
+  }
+}

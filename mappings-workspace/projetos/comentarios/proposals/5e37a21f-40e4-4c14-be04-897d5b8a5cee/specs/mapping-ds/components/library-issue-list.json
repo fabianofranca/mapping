@@ -1,0 +1,46 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "library-issue-list",
+  "name": "LibraryIssueList",
+  "description": "Lista de problemas de uma biblioteca: a caixa com borda color-border e raio 8 que rola sozinha (até 40% da altura da janela); os grupos por arquivo são marcações filhas.",
+  "size": {
+    "width": 526,
+    "height": 180
+  },
+  "minSize": {
+    "width": 120,
+    "height": 40
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "problemas",
+    "cornerRadius": 8,
+    "stroke": {
+      "color": {
+        "$token": "color-border"
+      },
+      "width": 1
+    },
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "slot",
+        "name": "grupos",
+        "label": "Grupos",
+        "layout": {
+          "type": "column",
+          "gap": 8,
+          "padding": 8
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,492 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "text",
+  "name": "Texto",
+  "description": "Texto solto com um estilo de tipografia do DS (t-*) e uma cor dos tokens; centralizado na altura da marcação.",
+  "size": {
+    "width": 120,
+    "height": 20
+  },
+  "minSize": {
+    "width": 1,
+    "height": 1
+  },
+  "sizing": {
+    "width": 120,
+    "height": 20
+  },
+  "preview": {
+    "texto": "Texto",
+    "estilo": "t-body",
+    "cor": "text",
+    "alinhamento": "left",
+    "decoracao": "none"
+  },
+  "template": {
+    "type": "frame",
+    "name": "texto",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "linha (left)",
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "text": "#1b1f24",
+            "muted": "#5b6470",
+            "accent": "#1a63cc",
+            "danger": "#c62828",
+            "warning": "#8a5a00",
+            "success": "#1e7a46",
+            "accent-text": "#ffffff"
+          },
+          "default": "#1b1f24"
+        },
+        "font": {
+          "family": {
+            "$if": {
+              "$eq": [
+                "estilo",
+                "t-code"
+              ]
+            },
+            "then": "Cascadia Mono",
+            "else": "Segoe UI"
+          },
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 20,
+              "t-title": 15,
+              "t-heading": 13,
+              "t-body": 13,
+              "t-body-strong": 13,
+              "t-small": 12,
+              "t-label": 12,
+              "t-micro": 11,
+              "t-code": 12,
+              "t-kbd": 11
+            },
+            "default": 13
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 600,
+              "t-title": 600,
+              "t-heading": 600,
+              "t-body": 400,
+              "t-body-strong": 600,
+              "t-small": 400,
+              "t-label": 400,
+              "t-micro": 600,
+              "t-code": 400,
+              "t-kbd": 400
+            },
+            "default": 400
+          },
+          "lineHeight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 28,
+              "t-title": 22,
+              "t-heading": 20,
+              "t-body": 20,
+              "t-body-strong": 20,
+              "t-small": 16,
+              "t-label": 16,
+              "t-micro": 16,
+              "t-code": 18,
+              "t-kbd": 16
+            },
+            "default": 20
+          },
+          "decoration": {
+            "$switch": "decoracao",
+            "cases": {
+              "line-through": "line-through",
+              "underline": "underline"
+            },
+            "default": "none"
+          }
+        },
+        "width": "hug",
+        "height": "hug",
+        "anchors": {
+          "left": 0,
+          "centerY": true
+        },
+        "visible": {
+          "$and": [
+            {
+              "$not": {
+                "$eq": [
+                  "quebra",
+                  "sim"
+                ]
+              }
+            },
+            {
+              "$not": {
+                "$or": [
+                  {
+                    "$eq": [
+                      "alinhamento",
+                      "center"
+                    ]
+                  },
+                  {
+                    "$eq": [
+                      "alinhamento",
+                      "right"
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "text",
+        "name": "linha (center)",
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "text": "#1b1f24",
+            "muted": "#5b6470",
+            "accent": "#1a63cc",
+            "danger": "#c62828",
+            "warning": "#8a5a00",
+            "success": "#1e7a46",
+            "accent-text": "#ffffff"
+          },
+          "default": "#1b1f24"
+        },
+        "font": {
+          "family": {
+            "$if": {
+              "$eq": [
+                "estilo",
+                "t-code"
+              ]
+            },
+            "then": "Cascadia Mono",
+            "else": "Segoe UI"
+          },
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 20,
+              "t-title": 15,
+              "t-heading": 13,
+              "t-body": 13,
+              "t-body-strong": 13,
+              "t-small": 12,
+              "t-label": 12,
+              "t-micro": 11,
+              "t-code": 12,
+              "t-kbd": 11
+            },
+            "default": 13
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 600,
+              "t-title": 600,
+              "t-heading": 600,
+              "t-body": 400,
+              "t-body-strong": 600,
+              "t-small": 400,
+              "t-label": 400,
+              "t-micro": 600,
+              "t-code": 400,
+              "t-kbd": 400
+            },
+            "default": 400
+          },
+          "lineHeight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 28,
+              "t-title": 22,
+              "t-heading": 20,
+              "t-body": 20,
+              "t-body-strong": 20,
+              "t-small": 16,
+              "t-label": 16,
+              "t-micro": 16,
+              "t-code": 18,
+              "t-kbd": 16
+            },
+            "default": 20
+          },
+          "decoration": {
+            "$switch": "decoracao",
+            "cases": {
+              "line-through": "line-through",
+              "underline": "underline"
+            },
+            "default": "none"
+          }
+        },
+        "width": "hug",
+        "height": "hug",
+        "anchors": {
+          "centerX": true,
+          "centerY": true
+        },
+        "visible": {
+          "$and": [
+            {
+              "$not": {
+                "$eq": [
+                  "quebra",
+                  "sim"
+                ]
+              }
+            },
+            {
+              "$eq": [
+                "alinhamento",
+                "center"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "text",
+        "name": "linha (right)",
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "text": "#1b1f24",
+            "muted": "#5b6470",
+            "accent": "#1a63cc",
+            "danger": "#c62828",
+            "warning": "#8a5a00",
+            "success": "#1e7a46",
+            "accent-text": "#ffffff"
+          },
+          "default": "#1b1f24"
+        },
+        "font": {
+          "family": {
+            "$if": {
+              "$eq": [
+                "estilo",
+                "t-code"
+              ]
+            },
+            "then": "Cascadia Mono",
+            "else": "Segoe UI"
+          },
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 20,
+              "t-title": 15,
+              "t-heading": 13,
+              "t-body": 13,
+              "t-body-strong": 13,
+              "t-small": 12,
+              "t-label": 12,
+              "t-micro": 11,
+              "t-code": 12,
+              "t-kbd": 11
+            },
+            "default": 13
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 600,
+              "t-title": 600,
+              "t-heading": 600,
+              "t-body": 400,
+              "t-body-strong": 600,
+              "t-small": 400,
+              "t-label": 400,
+              "t-micro": 600,
+              "t-code": 400,
+              "t-kbd": 400
+            },
+            "default": 400
+          },
+          "lineHeight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 28,
+              "t-title": 22,
+              "t-heading": 20,
+              "t-body": 20,
+              "t-body-strong": 20,
+              "t-small": 16,
+              "t-label": 16,
+              "t-micro": 16,
+              "t-code": 18,
+              "t-kbd": 16
+            },
+            "default": 20
+          },
+          "decoration": {
+            "$switch": "decoracao",
+            "cases": {
+              "line-through": "line-through",
+              "underline": "underline"
+            },
+            "default": "none"
+          }
+        },
+        "width": "hug",
+        "height": "hug",
+        "anchors": {
+          "right": 0,
+          "centerY": true
+        },
+        "visible": {
+          "$and": [
+            {
+              "$not": {
+                "$eq": [
+                  "quebra",
+                  "sim"
+                ]
+              }
+            },
+            {
+              "$eq": [
+                "alinhamento",
+                "right"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "type": "text",
+        "name": "parágrafo",
+        "visible": {
+          "$eq": [
+            "quebra",
+            "sim"
+          ]
+        },
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "text": "#1b1f24",
+            "muted": "#5b6470",
+            "accent": "#1a63cc",
+            "danger": "#c62828",
+            "warning": "#8a5a00",
+            "success": "#1e7a46",
+            "accent-text": "#ffffff"
+          },
+          "default": "#1b1f24"
+        },
+        "font": {
+          "family": {
+            "$if": {
+              "$eq": [
+                "estilo",
+                "t-code"
+              ]
+            },
+            "then": "Cascadia Mono",
+            "else": "Segoe UI"
+          },
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 20,
+              "t-title": 15,
+              "t-heading": 13,
+              "t-body": 13,
+              "t-body-strong": 13,
+              "t-small": 12,
+              "t-label": 12,
+              "t-micro": 11,
+              "t-code": 12,
+              "t-kbd": 11
+            },
+            "default": 13
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 600,
+              "t-title": 600,
+              "t-heading": 600,
+              "t-body": 400,
+              "t-body-strong": 600,
+              "t-small": 400,
+              "t-label": 400,
+              "t-micro": 600,
+              "t-code": 400,
+              "t-kbd": 400
+            },
+            "default": 400
+          },
+          "lineHeight": {
+            "$switch": "estilo",
+            "cases": {
+              "t-display": 28,
+              "t-title": 22,
+              "t-heading": 20,
+              "t-body": 20,
+              "t-body-strong": 20,
+              "t-small": 16,
+              "t-label": 16,
+              "t-micro": 16,
+              "t-code": 18,
+              "t-kbd": 16
+            },
+            "default": 20
+          },
+          "align": {
+            "$switch": "alinhamento",
+            "cases": {
+              "center": "center",
+              "right": "right"
+            },
+            "default": "left"
+          },
+          "verticalAlign": "top",
+          "decoration": {
+            "$switch": "decoracao",
+            "cases": {
+              "line-through": "line-through",
+              "underline": "underline"
+            },
+            "default": "none"
+          }
+        },
+        "width": "fill",
+        "height": "fill"
+      }
+    ]
+  }
+}

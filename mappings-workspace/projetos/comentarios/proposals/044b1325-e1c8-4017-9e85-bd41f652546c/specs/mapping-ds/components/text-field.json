@@ -1,0 +1,176 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "text-field",
+  "name": "TextField",
+  "description": "Campo de texto de uma linha: rótulo em cima (12 px, muted) e caixa de 28 px com borda de controle.",
+  "size": {
+    "width": 200,
+    "height": 48
+  },
+  "minSize": {
+    "width": 80,
+    "height": 28
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "rotulo": "Nome",
+    "valor": "Tela de login",
+    "size": "md",
+    "invalido": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "text-field",
+    "layout": {
+      "type": "column",
+      "gap": 4
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "rótulo",
+        "text": {
+          "$field": "rotulo"
+        },
+        "color": "#5b6470",
+        "font": {
+          "size": 12,
+          "weight": 400,
+          "lineHeight": 16
+        },
+        "width": "fill",
+        "visible": {
+          "$has": "rotulo"
+        }
+      },
+      {
+        "type": "frame",
+        "name": "caixa 28",
+        "visible": {
+          "$not": {
+            "$eq": [
+              "size",
+              "sm"
+            ]
+          }
+        },
+        "width": "fill",
+        "height": 28,
+        "cornerRadius": 4,
+        "fill": {
+          "$if": {
+            "$eq": [
+              "invalido",
+              "sim"
+            ]
+          },
+          "then": "#fdecea",
+          "else": "#f6f7f9"
+        },
+        "stroke": {
+          "color": {
+            "$if": {
+              "$eq": [
+                "invalido",
+                "sim"
+              ]
+            },
+            "then": "#c62828",
+            "else": "#7d8590"
+          },
+          "width": 1
+        },
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            8
+          ],
+          "gap": 8,
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "valor",
+            "text": {
+              "$field": "valor"
+            },
+            "color": "#1b1f24",
+            "font": {
+              "size": 13,
+              "weight": 400,
+              "lineHeight": 20
+            },
+            "width": "fill"
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "caixa 24",
+        "visible": {
+          "$eq": [
+            "size",
+            "sm"
+          ]
+        },
+        "width": "fill",
+        "height": 24,
+        "cornerRadius": 4,
+        "fill": {
+          "$if": {
+            "$eq": [
+              "invalido",
+              "sim"
+            ]
+          },
+          "then": "#fdecea",
+          "else": "#f6f7f9"
+        },
+        "stroke": {
+          "color": {
+            "$if": {
+              "$eq": [
+                "invalido",
+                "sim"
+              ]
+            },
+            "then": "#c62828",
+            "else": "#7d8590"
+          },
+          "width": 1
+        },
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            8
+          ],
+          "gap": 8,
+          "align": "center"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "valor",
+            "text": {
+              "$field": "valor"
+            },
+            "color": "#1b1f24",
+            "font": {
+              "size": 13,
+              "weight": 400,
+              "lineHeight": 20
+            },
+            "width": "fill"
+          }
+        ]
+      }
+    ]
+  }
+}

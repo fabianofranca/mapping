@@ -1,0 +1,83 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "citation-chip",
+  "name": "CitationChip",
+  "description": "Chip de citação em texto corrido: pílula em color-selection com o nome de agora do alvo; riscado e cinza quando o alvo some.",
+  "size": {
+    "width": 190,
+    "height": 22
+  },
+  "minSize": {
+    "width": 40,
+    "height": 22
+  },
+  "sizing": {
+    "width": "hug",
+    "height": 22
+  },
+  "preview": {
+    "rotulo": "Botão da tela de login",
+    "quebrada": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "chip",
+    "cornerRadius": 999,
+    "fill": {
+      "$if": {
+        "$eq": [
+          "quebrada",
+          "sim"
+        ]
+      },
+      "then": "#eceff3",
+      "else": "#dce8fb"
+    },
+    "layout": {
+      "type": "row",
+      "padding": [
+        0,
+        7
+      ],
+      "align": "center",
+      "justify": "center"
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "rótulo",
+        "text": {
+          "$field": "rotulo",
+          "default": "(sem nome)"
+        },
+        "color": {
+          "$if": {
+            "$eq": [
+              "quebrada",
+              "sim"
+            ]
+          },
+          "then": "#5b6470",
+          "else": "#1a63cc"
+        },
+        "font": {
+          "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+          "size": 13,
+          "weight": 400,
+          "lineHeight": 20,
+          "decoration": {
+            "$if": {
+              "$eq": [
+                "quebrada",
+                "sim"
+              ]
+            },
+            "then": "line-through",
+            "else": "none"
+          }
+        }
+      }
+    ]
+  }
+}

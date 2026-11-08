@@ -1,0 +1,191 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "diff-value",
+  "name": "DiffValue",
+  "description": "Valores de um campo, um por linha (Atual, Proposto; no conflito Antes, Depois e Atual): o rótulo à esquerda e o valor em fonte mono numa pílula, sem vermelho nem verde: o que muda se destaca por peso e fundo.",
+  "size": {
+    "width": 300,
+    "height": 46
+  },
+  "minSize": {
+    "width": 80,
+    "height": 22
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "linhas": [
+      {
+        "tipo": "antes",
+        "rotulo": "Atual",
+        "valor": "Salvar"
+      },
+      {
+        "tipo": "depois",
+        "rotulo": "Proposto",
+        "valor": "Salvar alterações"
+      }
+    ]
+  },
+  "template": {
+    "type": "frame",
+    "name": "valores",
+    "layout": {
+      "type": "column"
+    },
+    "children": [
+      {
+        "type": "repeat",
+        "name": "linhas",
+        "field": "linhas",
+        "direction": "column",
+        "gap": 2,
+        "template": {
+          "type": "frame",
+          "name": "linha",
+          "width": "fill",
+          "height": 22,
+          "layout": {
+            "type": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "frame",
+              "name": "rótulo",
+              "width": 72,
+              "height": "hug",
+              "layout": {
+                "type": "row",
+                "gap": 2,
+                "align": "center"
+              },
+              "children": [
+                {
+                  "type": "icon",
+                  "name": "warning",
+                  "color": {
+                    "$token": "color-warning"
+                  },
+                  "width": 12,
+                  "height": 12,
+                  "visible": {
+                    "$eq": [
+                      "tipo",
+                      "atual"
+                    ]
+                  }
+                },
+                {
+                  "type": "text",
+                  "name": "rótulo",
+                  "text": {
+                    "$field": "rotulo",
+                    "default": ""
+                  },
+                  "color": {
+                    "$token": "color-text-muted"
+                  },
+                  "font": {
+                    "size": 12,
+                    "weight": 400,
+                    "lineHeight": 16,
+                    "wrap": "none"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "valor",
+              "width": "hug",
+              "height": 22,
+              "cornerRadius": 4,
+              "fill": {
+                "$switch": "tipo",
+                "cases": {
+                  "antes": {
+                    "$token": "color-bg"
+                  },
+                  "depois": {
+                    "$token": "color-selection"
+                  },
+                  "atual": {
+                    "$token": "color-warning-bg"
+                  }
+                },
+                "default": "rgba(0, 0, 0, 0)"
+              },
+              "stroke": {
+                "color": {
+                  "$if": {
+                    "$eq": [
+                      "tipo",
+                      "atual"
+                    ]
+                  },
+                  "then": {
+                    "$token": "color-warning"
+                  },
+                  "else": "none"
+                },
+                "width": 1
+              },
+              "layout": {
+                "type": "row",
+                "padding": [
+                  2,
+                  6
+                ],
+                "align": "center"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "name": "valor",
+                  "text": {
+                    "$field": "valor",
+                    "default": ""
+                  },
+                  "color": {
+                    "$switch": "tipo",
+                    "cases": {
+                      "antes": {
+                        "$token": "color-text-muted"
+                      },
+                      "igual": {
+                        "$token": "color-text-muted"
+                      }
+                    },
+                    "default": {
+                      "$token": "color-text"
+                    }
+                  },
+                  "font": {
+                    "family": {
+                      "$token": "font-mono"
+                    },
+                    "size": 12,
+                    "weight": {
+                      "$switch": "tipo",
+                      "cases": {
+                        "depois": 600
+                      },
+                      "default": 400
+                    },
+                    "lineHeight": 18,
+                    "wrap": "none"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

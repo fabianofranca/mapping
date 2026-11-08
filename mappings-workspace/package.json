@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "type": "commonjs",
+  "description": "The repository root is an ES module; tools/mapping-mcp.js (installed by setup.sh) is a CommonJS bundle. This file makes Node treat .js files here as CommonJS. The .mjs scripts are unaffected."
+}

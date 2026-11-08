@@ -1,0 +1,228 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "notice",
+  "name": "Notice",
+  "description": "Aviso em caixa, com ícone e título opcional; o tom (info, warning, error, success) escolhe fundo, borda e ícone.",
+  "size": {
+    "width": 360,
+    "height": 64
+  },
+  "minSize": {
+    "width": 120,
+    "height": 32
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "tom": "info",
+    "tamanho": "md",
+    "titulo": "Proposta substituída",
+    "dica": "",
+    "texto": "Há uma proposta mais nova para este item."
+  },
+  "template": {
+    "type": "frame",
+    "name": "notice",
+    "cornerRadius": 6,
+    "fill": {
+      "$switch": "tom",
+      "cases": {
+        "info": {
+          "$token": "color-selection"
+        },
+        "warning": {
+          "$token": "color-warning-bg"
+        },
+        "error": {
+          "$token": "color-danger-bg"
+        },
+        "success": {
+          "$token": "color-success-bg"
+        }
+      },
+      "default": {
+        "$token": "color-selection"
+      }
+    },
+    "stroke": {
+      "color": {
+        "$switch": "tom",
+        "cases": {
+          "info": "rgba(0, 0, 0, 0)",
+          "warning": {
+            "$token": "color-warning"
+          },
+          "error": {
+            "$token": "color-danger"
+          },
+          "success": {
+            "$token": "color-success"
+          }
+        },
+        "default": "rgba(0, 0, 0, 0)"
+      },
+      "width": 1
+    },
+    "layout": {
+      "type": "row",
+      "gap": 8,
+      "padding": {
+        "$if": {
+          "$eq": [
+            "tamanho",
+            "sm"
+          ]
+        },
+        "then": [
+          6,
+          8
+        ],
+        "else": [
+          8,
+          12
+        ]
+      },
+      "align": "start"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "ícone",
+        "width": 16,
+        "height": "hug",
+        "layout": {
+          "type": "column",
+          "padding": [
+            2,
+            0,
+            0,
+            0
+          ]
+        },
+        "children": [
+          {
+            "type": "icon",
+            "width": 16,
+            "height": 16,
+            "name": {
+              "$switch": "tom",
+              "cases": {
+                "info": "info",
+                "warning": "warning",
+                "error": "error",
+                "success": "check"
+              },
+              "default": "info"
+            },
+            "color": {
+              "$switch": "tom",
+              "cases": {
+                "info": {
+                  "$token": "color-accent"
+                },
+                "warning": {
+                  "$token": "color-warning"
+                },
+                "error": {
+                  "$token": "color-danger"
+                },
+                "success": {
+                  "$token": "color-success"
+                }
+              },
+              "default": {
+                "$token": "color-accent"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "corpo",
+        "width": "fill",
+        "height": "fill",
+        "layout": {
+          "type": "column",
+          "gap": 2
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "titulo"
+            },
+            "color": {
+              "$token": "color-text"
+            },
+            "font": {
+              "size": {
+                "$if": {
+                  "$eq": [
+                    "tamanho",
+                    "sm"
+                  ]
+                },
+                "then": 12,
+                "else": 13
+              },
+              "weight": 600,
+              "lineHeight": {
+                "$if": {
+                  "$eq": [
+                    "tamanho",
+                    "sm"
+                  ]
+                },
+                "then": 16,
+                "else": 20
+              }
+            },
+            "width": "fill",
+            "visible": {
+              "$has": "titulo"
+            }
+          },
+          {
+            "type": "text",
+            "name": "texto",
+            "text": {
+              "$field": "texto"
+            },
+            "color": {
+              "$token": "color-text"
+            },
+            "font": {
+              "size": {
+                "$if": {
+                  "$eq": [
+                    "tamanho",
+                    "sm"
+                  ]
+                },
+                "then": 12,
+                "else": 13
+              },
+              "weight": 400,
+              "lineHeight": {
+                "$if": {
+                  "$eq": [
+                    "tamanho",
+                    "sm"
+                  ]
+                },
+                "then": 16,
+                "else": 20
+              }
+            },
+            "width": "fill"
+          }
+        ]
+      }
+    ]
+  }
+}

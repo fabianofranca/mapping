@@ -180,3 +180,7 @@ O dono quer gastar pouco da cota do modelo mais caro. O que segura a qualidade �
 - **Concluídas:** a pasta `changelog/` resume cada entrega, um arquivo por épico (versões do schema, dos formatos e do MCP); o plano e as decisões ficam nas issues fechadas com o rótulo `in-progress`; o que veio antes delas (até a etapa Sincronia do design system, 2026-11-02) está no histórico do git. O marco "Uso real" foi alcançado em 2026-10-16.
 - **Princípio:** as funcionalidades do núcleo são genéricas, sem nada específico de Figma ou de outra origem. Plataformas, linguagens e componentes de código entram só pelas especializações: nenhum nome de plataforma no código do núcleo.
 - **Testes:** guiados por [`docs/TESTING.md`](docs/TESTING.md); o prompt do agente testador da nuvem (rodada completa ou dirigida) está em [`docs/TESTING-NUVEM.md`](docs/TESTING-NUVEM.md).
+
+## Mapping workspace
+
+`mappings-workspace/` holds the Mapping projects used to design and evolve this app (screens, flows and components mapped as markings and annotations). It is isolated from the app code: ignored by eslint and prettier, and not part of any build. Read `mappings-workspace/AGENTS.md` before touching it. The `mapping` MCP server is configured in `.mcp.json` (it runs `mappings-workspace/serve.mjs`, which in cloud sessions runs `setup.sh` first). Never edit `mapping.json`, `specs/` or `proposals/` by hand: use the MCP tools.

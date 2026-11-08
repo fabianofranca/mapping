@@ -1,0 +1,3773 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 15,
+  "id": "mapping-ds",
+  "name": "Mapping DS",
+  "version": 9,
+  "description": "Design system do Mapping (o app): os componentes do artefato \"Mapping\" do Claude Design, ligados ao código Preact/Konva do repositório. Os controles e avisos simples têm desenho, com os tokens claro e escuro do tema.",
+  "platforms": [
+    {
+      "id": "web",
+      "name": "Web (Preact)",
+      "language": "typescript",
+      "repo": {
+        "url": "https://github.com/fabianofranca/mapping",
+        "urlTemplate": "https://github.com/fabianofranca/mapping/blob/mcp-v0.28.1/{path}",
+        "ref": "mcp-v0.28.1"
+      }
+    }
+  ],
+  "tokens": {
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "values": {
+      "color-bg": {
+        "light": "#f6f7f9",
+        "dark": "#12151a"
+      },
+      "color-surface": {
+        "light": "#ffffff",
+        "dark": "#1c2027"
+      },
+      "color-hover": {
+        "light": "#eef1f4",
+        "dark": "#262b33"
+      },
+      "color-pressed": {
+        "light": "#e3e7ec",
+        "dark": "#2f353f"
+      },
+      "color-canvas-bg": {
+        "light": "#e4e7eb",
+        "dark": "#0b0d11"
+      },
+      "color-border": {
+        "light": "#dfe3e8",
+        "dark": "#2c323b"
+      },
+      "color-border-control": {
+        "light": "#7d8590",
+        "dark": "#6b7480"
+      },
+      "color-text": {
+        "light": "#1b1f24",
+        "dark": "#e8eaed"
+      },
+      "color-text-muted": {
+        "light": "#5b6470",
+        "dark": "#9aa3ad"
+      },
+      "color-accent": {
+        "light": "#1a63cc",
+        "dark": "#5b9bff"
+      },
+      "color-accent-hover": {
+        "light": "#1757b5",
+        "dark": "#7aaeff"
+      },
+      "color-accent-pressed": {
+        "light": "#134a99",
+        "dark": "#9cc3ff"
+      },
+      "color-accent-text": {
+        "light": "#ffffff",
+        "dark": "#0b1220"
+      },
+      "color-focus": {
+        "light": "#1a63cc",
+        "dark": "#5b9bff"
+      },
+      "color-selection": {
+        "light": "#dce8fb",
+        "dark": "#1f3354"
+      },
+      "color-selection-muted": {
+        "light": "#eceff3",
+        "dark": "#2a2f38"
+      },
+      "color-danger": {
+        "light": "#c62828",
+        "dark": "#ff8a80"
+      },
+      "color-danger-bg": {
+        "light": "#fdecea",
+        "dark": "#3b1d1d"
+      },
+      "color-warning": {
+        "light": "#8a5a00",
+        "dark": "#ffd27a"
+      },
+      "color-warning-bg": {
+        "light": "#fff4d6",
+        "dark": "#3a2f14"
+      },
+      "color-success": {
+        "light": "#1e7a46",
+        "dark": "#7ad3a0"
+      },
+      "color-success-bg": {
+        "light": "#e3f4ea",
+        "dark": "#163325"
+      },
+      "color-backdrop": {
+        "light": "rgba(0, 0, 0, 0.45)",
+        "dark": "rgba(0, 0, 0, 0.6)"
+      },
+      "color-tooltip": {
+        "light": "#1b1f24",
+        "dark": "#e8eaed"
+      },
+      "color-tooltip-text": {
+        "light": "#ffffff",
+        "dark": "#12151a"
+      },
+      "color-card": {
+        "light": "rgba(255, 255, 255, 0.92)",
+        "dark": "rgba(28, 32, 39, 0.92)"
+      },
+      "cv-line": "#ffffff",
+      "cv-halo": "rgba(10, 12, 16, 0.72)",
+      "cv-select": "#4d8dff",
+      "cv-select-fill": "rgba(77, 141, 255, 0.15)",
+      "cv-select-secondary": {
+        "light": "#2b6ad9",
+        "dark": "#8fb4ff"
+      },
+      "cv-invalid": "#ff6b6b",
+      "cv-warning": "#ffc247",
+      "cv-canvas-marking": {
+        "light": "#5a3fc0",
+        "dark": "#b9a8ff"
+      },
+      "cv-absorb": "#0a8a5c",
+      "cv-absorb-fill": "rgba(10, 138, 92, 0.2)",
+      "cv-arrow": {
+        "light": "#0f766e",
+        "dark": "#5eead4"
+      },
+      "cv-arrow-select": "#4d8dff",
+      "cv-arrow-label": {
+        "light": "#1b1f24",
+        "dark": "#e8eaed"
+      },
+      "cv-arrow-label-bg": {
+        "light": "rgba(255, 255, 255, 0.92)",
+        "dark": "rgba(28, 32, 39, 0.92)"
+      },
+      "cv-name-tag": "#4d8dff",
+      "cv-name-tag-text": "#0b1220",
+      "cv-lock": "#4d8dff",
+      "cv-lock-glyph": "#0b1220",
+      "cv-badge": "rgba(10, 12, 16, 0.9)",
+      "cv-pin-human": "#ffb020",
+      "cv-pin-agent": "#5eead4",
+      "cv-pin-resolved": "#b4bcc7",
+      "cv-pin-text": "#0b1220",
+      "cv-pin-halo": "rgba(10, 12, 16, 0.72)",
+      "cv-pin-selected": "#4d8dff",
+      "cv-pin-unread": "#ff6b6b",
+      "cv-component-placeholder": "rgba(128, 128, 128, 0.25)",
+      "cv-component-placeholder-line": "rgba(128, 128, 128, 0.8)",
+      "cv-component-unknown": "#d81b60",
+      "shadow-popup-color": {
+        "light": "rgba(16, 24, 40, 0.18)",
+        "dark": "rgba(0, 0, 0, 0.5)"
+      },
+      "opacity-disabled": 0.45
+    }
+  },
+  "icons": "icons/icons.json",
+  "containers": [
+    {
+      "id": "janela-minima",
+      "name": "Janela mínima da app",
+      "width": 900,
+      "height": 720
+    }
+  ],
+  "layers": [
+    {
+      "id": "mapping",
+      "name": "Mapping",
+      "color": "#1A63CC",
+      "annotationTypes": [
+        {
+          "id": "text",
+          "name": "Texto",
+          "description": "Texto solto da interface com um estilo de tipografia do DS (t-* de src/theme/tokens.ts) e uma cor dos tokens: títulos, rótulos, nomes, mensagens, células. O texto de um controle é campo do próprio controle.",
+          "labelField": "texto",
+          "fields": [
+            {
+              "key": "texto",
+              "label": "texto",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "estilo",
+              "label": "estilo",
+              "type": "enum",
+              "options": [
+                "t-display",
+                "t-title",
+                "t-heading",
+                "t-body",
+                "t-body-strong",
+                "t-small",
+                "t-label",
+                "t-micro",
+                "t-code",
+                "t-kbd"
+              ],
+              "default": "t-body"
+            },
+            {
+              "key": "cor",
+              "label": "cor",
+              "type": "enum",
+              "options": [
+                "text",
+                "muted",
+                "accent",
+                "danger",
+                "warning",
+                "success",
+                "accent-text"
+              ],
+              "default": "text"
+            },
+            {
+              "key": "alinhamento",
+              "label": "alinhamento",
+              "type": "enum",
+              "options": [
+                "left",
+                "center",
+                "right"
+              ],
+              "default": "left"
+            },
+            {
+              "key": "decoracao",
+              "label": "decoração",
+              "type": "enum",
+              "options": [
+                "none",
+                "line-through",
+                "underline"
+              ],
+              "default": "none"
+            },
+            {
+              "key": "quebra",
+              "label": "quebra linha",
+              "type": "enum",
+              "options": [
+                "não",
+                "sim"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "reticencias",
+              "label": "reticências",
+              "type": "enum",
+              "options": [
+                "não",
+                "sim"
+              ],
+              "default": "não"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "span",
+              "params": {
+                "texto": "children"
+              },
+              "notes": "Elemento JSX com o texto traduzido por t(). O estilo e a cor vêm do CSS da classe do elemento: font: var(--t-text…) (os papéis t-text, t-text-small, t-text-heading, t-text-title ou a escala t-*) e color: var(--color-…); a classe muted dá color-text-muted. Nenhum valor literal de fonte ou cor (regra do projeto)."
+            }
+          },
+          "component": "components/text.json",
+          "doc": "docs/text.md",
+          "examples": [
+            {
+              "name": "Título de janela",
+              "values": {
+                "texto": "Detalhes",
+                "estilo": "t-heading"
+              }
+            },
+            {
+              "name": "Apoio",
+              "values": {
+                "texto": "há 5 min",
+                "estilo": "t-small",
+                "cor": "muted"
+              }
+            },
+            {
+              "name": "Riscado",
+              "values": {
+                "texto": "Seção Identidade",
+                "estilo": "t-body",
+                "cor": "muted",
+                "decoracao": "line-through"
+              }
+            }
+          ]
+        },
+        {
+          "id": "icon",
+          "name": "Ícone",
+          "description": "Ícone decorativo do app (Icon de src/ui/icons.tsx): 16 px, traço 1,25, na cor do texto em volta. Ícone clicável é IconButton.",
+          "labelField": "icone",
+          "fields": [
+            {
+              "key": "icone",
+              "label": "ícone",
+              "type": "string",
+              "required": true,
+              "suggestions": [
+                "undo",
+                "redo",
+                "edit",
+                "copy",
+                "trash",
+                "plus",
+                "minus",
+                "check",
+                "close",
+                "refresh",
+                "pan",
+                "pointer",
+                "draw",
+                "marking",
+                "arrow",
+                "crop",
+                "text",
+                "fit",
+                "zoomIn",
+                "zoomOut",
+                "search",
+                "locate",
+                "filter",
+                "menu",
+                "chevronUp",
+                "chevronDown",
+                "chevronLeft",
+                "chevronRight",
+                "arrowUp",
+                "arrowDown",
+                "arrowLeft",
+                "arrowRight",
+                "collapseAll",
+                "expandAll",
+                "maximize",
+                "minimize",
+                "externalLink",
+                "home",
+                "panelLeft",
+                "panelRight",
+                "panelBottom",
+                "minimap",
+                "tree",
+                "perspective",
+                "layers",
+                "list",
+                "table",
+                "checklist",
+                "diagnostics",
+                "specialization",
+                "library",
+                "container",
+                "containerMark",
+                "arrange",
+                "more",
+                "moreVertical",
+                "grip",
+                "addImage",
+                "image",
+                "folder",
+                "file",
+                "save",
+                "export",
+                "upload",
+                "tag",
+                "link",
+                "share",
+                "eye",
+                "eyeOff",
+                "lock",
+                "unlock",
+                "info",
+                "warning",
+                "error",
+                "help",
+                "settings",
+                "keyboard",
+                "sun",
+                "moon",
+                "proposal",
+                "chat",
+                "chatAdd",
+                "moved",
+                "changed",
+                "replaced",
+                "compare",
+                "note",
+                "blocked",
+                "globe"
+              ]
+            },
+            {
+              "key": "cor",
+              "label": "cor",
+              "type": "enum",
+              "options": [
+                "text",
+                "muted",
+                "accent",
+                "danger",
+                "warning",
+                "success",
+                "accent-text"
+              ],
+              "default": "text"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Icon",
+              "path": "src/ui/icons.tsx",
+              "params": {
+                "icone": "name"
+              },
+              "notes": "A cor vem do currentColor do elemento em volta: aplique a cor no pai."
+            }
+          },
+          "component": "components/icon.json",
+          "doc": "docs/icon.md"
+        },
+        {
+          "id": "avatar",
+          "name": "Iniciais",
+          "description": "As iniciais do autor num círculo: .thread-avatar (24 px, mensagem e lista de conversas) e .comments-avatar (16 px, coluna Por da janela Comentários).",
+          "labelField": "iniciais",
+          "fields": [
+            {
+              "key": "iniciais",
+              "label": "iniciais",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "estilo",
+              "label": "estilo",
+              "type": "enum",
+              "options": [
+                "conversa",
+                "tabela"
+              ],
+              "default": "conversa"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "span",
+              "path": "src/ui/comments/ThreadMessage.tsx",
+              "params": {
+                "iniciais": "children"
+              },
+              "values": {
+                "estilo": {
+                  "conversa": "class=\"thread-avatar\"",
+                  "tabela": "class=\"comments-avatar\""
+                }
+              },
+              "notes": "As iniciais vêm de initials(author) (src/model/threadUsers.ts); o span leva aria-hidden=\"true\"."
+            }
+          },
+          "component": "components/avatar.json",
+          "doc": "docs/avatar.md"
+        },
+        {
+          "id": "badge",
+          "name": "Selo",
+          "description": "Pílula de texto curto, cada estilo uma classe do CSS: .tag, .thread-message-agent, .thread-state-*, .tab-badge, .comments-badge-* e .badge-warning.",
+          "labelField": "texto",
+          "fields": [
+            {
+              "key": "texto",
+              "label": "texto",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "estilo",
+              "label": "estilo",
+              "type": "enum",
+              "options": [
+                "tag",
+                "agente",
+                "estado-agente",
+                "estado-humano",
+                "estado-resolvida",
+                "contagem",
+                "contagem-info",
+                "status",
+                "status-agente",
+                "status-resolvida",
+                "preview"
+              ],
+              "default": "tag"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "span",
+              "params": {
+                "texto": "children"
+              },
+              "values": {
+                "estilo": {
+                  "tag": "class=\"tag\"",
+                  "agente": "class=\"thread-message-agent\"",
+                  "estado-agente": "class=\"thread-state thread-state-agent\"",
+                  "estado-humano": "class=\"thread-state thread-state-human\"",
+                  "estado-resolvida": "class=\"thread-state thread-state-resolved\"",
+                  "contagem": "class=\"tab-badge\"",
+                  "contagem-info": "class=\"tab-badge tab-badge-info\"",
+                  "status": "class=\"comments-badge\"",
+                  "status-agente": "class=\"comments-badge comments-badge-agent\"",
+                  "status-resolvida": "class=\"comments-badge comments-badge-resolved\"",
+                  "preview": "class=\"badge badge-warning\""
+                }
+              },
+              "notes": "Elemento JSX com a classe do estilo; o texto vem de t(). O contador de aba é o badge do TabItem, não um span solto."
+            }
+          },
+          "component": "components/badge.json",
+          "doc": "docs/badge.md"
+        },
+        {
+          "id": "box",
+          "name": "Caixa",
+          "description": "Região com fundo, borda, raio e sombra dos tokens, para o que não é componente: barras, faixas, linhas de tabela, divisórias, fundo de linha selecionada.",
+          "fields": [
+            {
+              "key": "fundo",
+              "label": "fundo",
+              "type": "enum",
+              "options": [
+                "nenhum",
+                "surface",
+                "bg",
+                "canvas",
+                "hover",
+                "pressed",
+                "selection",
+                "selection-muted",
+                "warning-bg",
+                "danger-bg",
+                "success-bg",
+                "accent",
+                "tooltip"
+              ],
+              "default": "surface"
+            },
+            {
+              "key": "borda",
+              "label": "borda",
+              "type": "enum",
+              "options": [
+                "nenhuma",
+                "border",
+                "control",
+                "accent",
+                "danger",
+                "warning"
+              ],
+              "default": "nenhuma"
+            },
+            {
+              "key": "lados",
+              "label": "lados",
+              "type": "enum",
+              "options": [
+                "todos",
+                "cima",
+                "baixo",
+                "esquerda",
+                "direita"
+              ],
+              "default": "todos"
+            },
+            {
+              "key": "raio",
+              "label": "raio",
+              "type": "enum",
+              "options": [
+                "0",
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl",
+                "full"
+              ],
+              "default": "0"
+            },
+            {
+              "key": "sombra",
+              "label": "sombra",
+              "type": "enum",
+              "options": [
+                "nenhuma",
+                "popup"
+              ],
+              "default": "nenhuma"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "div",
+              "notes": "Elemento JSX (div, header, nav, tr…) com uma classe cujo CSS usa só tokens: background: var(--color-…), border: 1px solid var(--color-border) ou var(--color-border-control), border-radius: var(--radius-…), box-shadow: var(--shadow-popup). Nenhum valor literal (regra do projeto; tests/theme/tokenLiterals.test.ts confere)."
+            }
+          },
+          "component": "components/box.json",
+          "doc": "docs/box.md"
+        },
+        {
+          "id": "button",
+          "name": "Button",
+          "description": "Botão com texto. Use para uma ação da tela; o estado (hover, pressionado, foco, desabilitado) vem do CSS e dos tokens, não do componente. As variantes accept e reject são os botões de decisão da revisão.",
+          "labelField": "texto",
+          "fields": [
+            {
+              "key": "texto",
+              "label": "texto",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "variant",
+              "type": "enum",
+              "options": [
+                "default",
+                "primary",
+                "danger",
+                "accept",
+                "reject",
+                "ghost"
+              ],
+              "default": "default"
+            },
+            {
+              "key": "size",
+              "type": "enum",
+              "options": [
+                "md",
+                "sm"
+              ],
+              "default": "md"
+            },
+            {
+              "key": "desabilitado",
+              "label": "desabilitado",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "alinhamento",
+              "label": "alinhamento",
+              "type": "enum",
+              "options": [
+                "center",
+                "start"
+              ],
+              "default": "center"
+            },
+            {
+              "key": "icone",
+              "label": "ícone",
+              "type": "string",
+              "suggestions": [
+                "undo",
+                "redo",
+                "edit",
+                "copy",
+                "trash",
+                "plus",
+                "minus",
+                "check",
+                "close",
+                "refresh",
+                "pan",
+                "pointer",
+                "draw",
+                "marking",
+                "arrow",
+                "crop",
+                "text",
+                "fit",
+                "zoomIn",
+                "zoomOut",
+                "search",
+                "locate",
+                "filter",
+                "menu",
+                "chevronUp",
+                "chevronDown",
+                "chevronLeft",
+                "chevronRight",
+                "arrowUp",
+                "arrowDown",
+                "arrowLeft",
+                "arrowRight",
+                "collapseAll",
+                "expandAll",
+                "maximize",
+                "minimize",
+                "externalLink",
+                "home",
+                "panelLeft",
+                "panelRight",
+                "panelBottom",
+                "minimap",
+                "tree",
+                "perspective",
+                "layers",
+                "list",
+                "table",
+                "checklist",
+                "diagnostics",
+                "specialization",
+                "library",
+                "container",
+                "containerMark",
+                "arrange",
+                "more",
+                "moreVertical",
+                "grip",
+                "addImage",
+                "image",
+                "folder",
+                "file",
+                "save",
+                "export",
+                "upload",
+                "tag",
+                "link",
+                "share",
+                "eye",
+                "eyeOff",
+                "lock",
+                "unlock",
+                "info",
+                "warning",
+                "error",
+                "help",
+                "settings",
+                "keyboard",
+                "sun",
+                "moon",
+                "proposal",
+                "chat",
+                "chatAdd",
+                "moved",
+                "changed",
+                "replaced",
+                "compare",
+                "note",
+                "blocked",
+                "globe"
+              ]
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Button",
+              "path": "src/ui/controls/Button.tsx",
+              "params": {
+                "variant": "variant",
+                "size": "size",
+                "desabilitado": "disabled"
+              },
+              "values": {
+                "desabilitado": {
+                  "sim": "true",
+                  "não": "false"
+                }
+              },
+              "notes": "O texto vai como filho (children), não como prop. Para um link com a aparência de botão, use LinkButton, do mesmo arquivo (prop href)."
+            }
+          },
+          "component": "components/button.json",
+          "doc": "docs/button.md",
+          "examples": [
+            {
+              "name": "Primário",
+              "values": {
+                "texto": "Aplicar",
+                "variant": "primary"
+              }
+            },
+            {
+              "name": "Perigo",
+              "values": {
+                "texto": "Excluir",
+                "variant": "danger"
+              }
+            },
+            {
+              "name": "Desabilitado",
+              "values": {
+                "texto": "Salvar",
+                "desabilitado": "sim"
+              }
+            }
+          ]
+        },
+        {
+          "id": "icon-button",
+          "name": "IconButton",
+          "description": "Botão só com ícone. O rótulo é obrigatório porque vira o nome acessível e o texto do Tooltip; não use onde cabe um Button com texto.",
+          "labelField": "rotulo",
+          "fields": [
+            {
+              "key": "icone",
+              "label": "ícone",
+              "type": "string",
+              "required": true,
+              "suggestions": [
+                "undo",
+                "redo",
+                "edit",
+                "copy",
+                "trash",
+                "plus",
+                "minus",
+                "check",
+                "close",
+                "refresh",
+                "pan",
+                "pointer",
+                "draw",
+                "marking",
+                "arrow",
+                "crop",
+                "text",
+                "fit",
+                "zoomIn",
+                "zoomOut",
+                "search",
+                "locate",
+                "filter",
+                "menu",
+                "chevronUp",
+                "chevronDown",
+                "chevronLeft",
+                "chevronRight",
+                "arrowUp",
+                "arrowDown",
+                "arrowLeft",
+                "arrowRight",
+                "collapseAll",
+                "expandAll",
+                "maximize",
+                "minimize",
+                "externalLink",
+                "home",
+                "panelLeft",
+                "panelRight",
+                "panelBottom",
+                "minimap",
+                "tree",
+                "perspective",
+                "layers",
+                "list",
+                "table",
+                "checklist",
+                "diagnostics",
+                "specialization",
+                "library",
+                "container",
+                "containerMark",
+                "arrange",
+                "more",
+                "moreVertical",
+                "grip",
+                "addImage",
+                "image",
+                "folder",
+                "file",
+                "save",
+                "export",
+                "upload",
+                "tag",
+                "link",
+                "share",
+                "eye",
+                "eyeOff",
+                "lock",
+                "unlock",
+                "info",
+                "warning",
+                "error",
+                "help",
+                "settings",
+                "keyboard",
+                "sun",
+                "moon",
+                "proposal",
+                "chat",
+                "chatAdd",
+                "moved",
+                "changed",
+                "replaced",
+                "compare",
+                "note",
+                "blocked",
+                "globe"
+              ]
+            },
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "tooltip",
+              "type": "string"
+            },
+            {
+              "key": "variant",
+              "type": "enum",
+              "options": [
+                "default",
+                "danger",
+                "accept",
+                "reject"
+              ],
+              "default": "default"
+            },
+            {
+              "key": "size",
+              "type": "enum",
+              "options": [
+                "md",
+                "sm"
+              ],
+              "default": "md"
+            },
+            {
+              "key": "atalho",
+              "label": "atalho",
+              "type": "string"
+            },
+            {
+              "key": "pressionado",
+              "label": "pressionado",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "alerta",
+              "label": "alerta",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "selo",
+              "label": "selo",
+              "type": "string"
+            },
+            {
+              "key": "texto",
+              "label": "texto",
+              "type": "string"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "IconButton",
+              "path": "src/ui/controls/IconButton.tsx",
+              "params": {
+                "icone": "icon",
+                "rotulo": "label",
+                "tooltip": "tooltip",
+                "variant": "variant",
+                "size": "size",
+                "atalho": "shortcut",
+                "pressionado": "pressed",
+                "alerta": "alert",
+                "selo": "badge"
+              },
+              "values": {
+                "pressionado": {
+                  "sim": "true",
+                  "não": "false"
+                },
+                "alerta": {
+                  "sim": "true",
+                  "não": "false"
+                }
+              },
+              "notes": "O ícone é o nome (chave camelCase) de um ícone de src/ui/icons.tsx. Para um link com a aparência de IconButton, use IconLink, do mesmo arquivo (prop href)."
+            }
+          },
+          "component": "components/icon-button.json",
+          "doc": "docs/icon-button.md",
+          "examples": [
+            {
+              "name": "Fechar",
+              "values": {
+                "icone": "close",
+                "rotulo": "Fechar"
+              }
+            },
+            {
+              "name": "Ligado",
+              "values": {
+                "icone": "marking",
+                "rotulo": "Marcar",
+                "pressionado": "sim"
+              }
+            },
+            {
+              "name": "Excluir",
+              "values": {
+                "icone": "trash",
+                "rotulo": "Excluir",
+                "variant": "danger"
+              }
+            }
+          ]
+        },
+        {
+          "id": "text-field",
+          "name": "TextField",
+          "description": "Campo de texto de uma linha. Com onCommit (CommitInput) só grava ao confirmar; sem ele é controlado por value/onInput. Para várias linhas, use TextArea.",
+          "labelField": "rotulo",
+          "fields": [
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string"
+            },
+            {
+              "key": "valor",
+              "label": "valor",
+              "type": "string"
+            },
+            {
+              "key": "size",
+              "type": "enum",
+              "options": [
+                "md",
+                "sm"
+              ],
+              "default": "md"
+            },
+            {
+              "key": "invalido",
+              "label": "inválido",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "linhas",
+              "label": "linhas",
+              "type": "enum",
+              "options": [
+                "uma",
+                "varias"
+              ],
+              "default": "uma"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "TextField",
+              "path": "src/ui/controls/TextField.tsx",
+              "params": {
+                "rotulo": "label",
+                "valor": "value",
+                "size": "size",
+                "invalido": "invalid"
+              },
+              "values": {
+                "invalido": {
+                  "sim": "true",
+                  "não": "false"
+                }
+              },
+              "notes": "TextArea (mesmo arquivo) é a versão de várias linhas. O onCommit vem de CommitInput (src/ui/CommitInput.tsx)."
+            }
+          },
+          "component": "components/text-field.json",
+          "doc": "docs/text-field.md",
+          "examples": [
+            {
+              "name": "Preenchido",
+              "values": {
+                "rotulo": "Nome",
+                "valor": "Tela de login"
+              }
+            },
+            {
+              "name": "Inválido",
+              "values": {
+                "rotulo": "Código",
+                "valor": "ab",
+                "invalido": "sim"
+              }
+            },
+            {
+              "name": "Compacto",
+              "values": {
+                "rotulo": "Zoom",
+                "valor": "100%",
+                "size": "sm"
+              }
+            }
+          ]
+        },
+        {
+          "id": "select",
+          "name": "Select",
+          "description": "Seleção de uma opção numa lista. Use para conjuntos fechados; as opções entram como filhos.",
+          "labelField": "rotulo",
+          "fields": [
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string"
+            },
+            {
+              "key": "size",
+              "type": "enum",
+              "options": [
+                "md",
+                "sm"
+              ],
+              "default": "md"
+            },
+            {
+              "key": "invalido",
+              "label": "inválido",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "valor",
+              "label": "valor",
+              "type": "string"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Select",
+              "path": "src/ui/controls/Select.tsx",
+              "params": {
+                "rotulo": "label",
+                "size": "size",
+                "invalido": "invalid",
+                "valor": "value"
+              },
+              "values": {
+                "invalido": {
+                  "sim": "true",
+                  "não": "false"
+                }
+              }
+            }
+          },
+          "component": "components/select.json",
+          "doc": "docs/select.md",
+          "examples": [
+            {
+              "name": "Selecionado",
+              "values": {
+                "rotulo": "Plataforma",
+                "valor": "Android"
+              }
+            },
+            {
+              "name": "Inválido",
+              "values": {
+                "rotulo": "Camada",
+                "valor": "",
+                "invalido": "sim"
+              }
+            }
+          ]
+        },
+        {
+          "id": "choice",
+          "name": "Choice",
+          "description": "Caixa de seleção ou botão de rádio, com rótulo e dica opcional.",
+          "labelField": "rotulo",
+          "fields": [
+            {
+              "key": "tipo",
+              "type": "enum",
+              "options": [
+                "checkbox",
+                "radio"
+              ],
+              "default": "checkbox"
+            },
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "dica",
+              "label": "dica",
+              "type": "string"
+            },
+            {
+              "key": "marcado",
+              "label": "marcado",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "rotuloVisivel",
+              "label": "rótulo à vista",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "sim"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Choice",
+              "path": "src/ui/controls/Choice.tsx",
+              "params": {
+                "tipo": "type",
+                "rotulo": "label",
+                "dica": "hint",
+                "marcado": "checked"
+              },
+              "values": {
+                "marcado": {
+                  "sim": "true",
+                  "não": "false"
+                }
+              }
+            }
+          },
+          "component": "components/choice.json",
+          "doc": "docs/choice.md",
+          "examples": [
+            {
+              "name": "Caixa marcada",
+              "values": {
+                "rotulo": "Mostrar rótulos",
+                "marcado": "sim"
+              }
+            },
+            {
+              "name": "Rádio",
+              "values": {
+                "tipo": "radio",
+                "rotulo": "Atual",
+                "marcado": "não"
+              }
+            },
+            {
+              "name": "Com dica",
+              "values": {
+                "rotulo": "Texto no canvas",
+                "dica": "Mostra o nome sobre a marcação",
+                "marcado": "não"
+              }
+            }
+          ]
+        },
+        {
+          "id": "segmented",
+          "name": "Segmented",
+          "description": "Controle segmentado: um grupo de opções exclusivas lado a lado, cada uma com rótulo e, se quiser, ícone.",
+          "labelField": "rotulo",
+          "fields": [
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string"
+            },
+            {
+              "key": "desabilitado",
+              "label": "desabilitado",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "invalido",
+              "label": "inválido",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Segmented",
+              "path": "src/ui/controls/Segmented.tsx",
+              "params": {
+                "rotulo": "label",
+                "desabilitado": "disabled",
+                "invalido": "invalid"
+              },
+              "values": {
+                "desabilitado": {
+                  "sim": "true",
+                  "não": "false"
+                },
+                "invalido": {
+                  "sim": "true",
+                  "não": "false"
+                }
+              },
+              "notes": "As opções vão em items (SegmentedItem: id, label, icon, showLabel, shortcut, disabled). Cada opção (Opção) vira um SegmentedItem em items (rotulo → label, icone → icon); a selecionada é o value."
+            }
+          },
+          "component": "components/segmented.json",
+          "doc": "docs/segmented.md"
+        },
+        {
+          "id": "tabs",
+          "name": "Tabs",
+          "description": "Abas de uma região. O rótulo do conjunto é obrigatório (nome acessível); cada aba aceita ícone, selo e alerta.",
+          "labelField": "rotulo",
+          "fields": [
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string",
+              "required": true
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Tabs",
+              "path": "src/ui/controls/Tabs.tsx",
+              "params": {
+                "rotulo": "label"
+              },
+              "notes": "As abas vão em tabs (TabItem: id, label, icon, badge, badgeTone, alert, disabled). BottomTabs (src/ui/BottomTabs.tsx) é o uso na janela inferior. Cada aba (Aba) vira um TabItem em tabs (rotulo → label, selo → badge); a selecionada é o value."
+            }
+          },
+          "component": "components/tabs.json",
+          "doc": "docs/tabs.md"
+        },
+        {
+          "id": "segmented-item",
+          "name": "Opção",
+          "description": "Uma opção do Segmented: o rótulo ou só o ícone; a selecionada fica cheia de color-accent.",
+          "labelField": "rotulo",
+          "fields": [
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "selecionada",
+              "label": "selecionada",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "icone",
+              "label": "ícone",
+              "type": "string"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "SegmentedItem",
+              "path": "src/ui/controls/Segmented.tsx",
+              "params": {
+                "rotulo": "label",
+                "icone": "icon"
+              },
+              "notes": "Um objeto SegmentedItem no array items do Segmented (id, label, icon?, showLabel?, shortcut?, disabled?); a opção selecionada é o value do Segmented."
+            }
+          },
+          "component": "components/segmented-item.json",
+          "doc": "docs/segmented-item.md"
+        },
+        {
+          "id": "tab",
+          "name": "Aba",
+          "description": "Uma aba do Tabs: o rótulo, o contador e o sublinhado da selecionada.",
+          "labelField": "rotulo",
+          "fields": [
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "selecionada",
+              "label": "selecionada",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "selo",
+              "label": "selo",
+              "type": "string"
+            },
+            {
+              "key": "tamanho",
+              "label": "tamanho",
+              "type": "enum",
+              "options": [
+                "md",
+                "sm"
+              ],
+              "default": "md"
+            },
+            {
+              "key": "icone",
+              "label": "ícone",
+              "type": "string"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "TabItem",
+              "path": "src/ui/controls/Tabs.tsx",
+              "params": {
+                "rotulo": "label",
+                "selo": "badge"
+              },
+              "notes": "Um objeto TabItem no array tabs do Tabs (id, label, icon?, badge?, badgeTone?, alert?); a aba selecionada é o value do Tabs, não um campo do item."
+            }
+          },
+          "component": "components/tab.json",
+          "doc": "docs/tab.md"
+        },
+        {
+          "id": "tooltip",
+          "name": "Tooltip",
+          "description": "Dica que aparece ao pairar ou focar o filho, com atalho opcional. É o que dá nome visível ao IconButton.",
+          "labelField": "rotulo",
+          "fields": [
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "atalho",
+              "label": "atalho",
+              "type": "string"
+            },
+            {
+              "key": "posicao",
+              "type": "enum",
+              "options": [
+                "bottom",
+                "top",
+                "end"
+              ],
+              "default": "bottom",
+              "label": "posição"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Tooltip",
+              "path": "src/ui/controls/Tooltip.tsx",
+              "params": {
+                "rotulo": "label",
+                "atalho": "shortcut",
+                "posicao": "placement"
+              }
+            }
+          },
+          "component": "components/tooltip.json",
+          "doc": "docs/tooltip.md",
+          "examples": [
+            {
+              "name": "Com atalho",
+              "values": {
+                "rotulo": "Marcar",
+                "atalho": "M"
+              }
+            },
+            {
+              "name": "Só texto",
+              "values": {
+                "rotulo": "Desfazer"
+              }
+            }
+          ]
+        },
+        {
+          "id": "help-tip",
+          "name": "HelpTip",
+          "description": "Ícone de ajuda com dica: o padrão da app para uma explicação, no lugar de um parágrafo de texto.",
+          "labelField": "nome",
+          "fields": [
+            {
+              "key": "nome",
+              "label": "nome",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "texto",
+              "label": "texto",
+              "type": "string",
+              "required": true
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "HelpTip",
+              "path": "src/ui/controls/HelpTip.tsx",
+              "params": {
+                "nome": "name",
+                "texto": "text"
+              }
+            }
+          },
+          "component": "components/help-tip.json",
+          "doc": "docs/help-tip.md"
+        },
+        {
+          "id": "tags",
+          "name": "Tags",
+          "description": "Etiqueta (chip) alternável, com contagem opcional. Na lista de anotações marca a camada.",
+          "labelField": "texto",
+          "fields": [
+            {
+              "key": "texto",
+              "label": "texto",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "pressionado",
+              "label": "pressionado",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "contagem",
+              "label": "contagem",
+              "type": "number"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Chip",
+              "path": "src/ui/controls/Chip.tsx",
+              "params": {
+                "pressionado": "pressed",
+                "contagem": "count"
+              },
+              "values": {
+                "pressionado": {
+                  "sim": "true",
+                  "não": "false"
+                }
+              },
+              "notes": "O texto vai como filho. A etiqueta de camada é feita em src/ui/ListView.tsx."
+            }
+          },
+          "component": "components/tags.json",
+          "doc": "docs/tags.md",
+          "examples": [
+            {
+              "name": "Ligada com contagem",
+              "values": {
+                "texto": "Camada",
+                "pressionado": "sim",
+                "contagem": 3
+              }
+            },
+            {
+              "name": "Desligada",
+              "values": {
+                "texto": "Avisos",
+                "pressionado": "não"
+              }
+            }
+          ]
+        },
+        {
+          "id": "menu",
+          "name": "Menu",
+          "description": "Menus da app: de ações (ActionMenu), de contexto do canvas (CanvasContextMenu) e de cópia (CopyActions), sobre a base de posicionamento Popover.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "MenuPopover",
+              "path": "src/ui/MenuPopover.tsx",
+              "notes": "O guia do DS cobre três menus: ActionMenu (src/ui/ActionMenu.tsx), CanvasContextMenu (src/ui/CanvasContextMenu.tsx) e CopyActions (src/ui/CopyActions.tsx); Popover (src/ui/Popover.tsx) é a base."
+            }
+          },
+          "component": "components/menu.json",
+          "doc": "docs/menu.md"
+        },
+        {
+          "id": "dialog",
+          "name": "Dialog",
+          "description": "Diálogo modal com título, conteúdo e ações. O tamanho vai de sm a lg; alert usa o papel de alerta para diálogos que exigem resposta.",
+          "labelField": "titulo",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string",
+              "required": true
+            },
+            {
+              "key": "size",
+              "type": "enum",
+              "options": [
+                "sm",
+                "md",
+                "lg"
+              ],
+              "default": "md"
+            },
+            {
+              "key": "alerta",
+              "label": "alerta",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Dialog",
+              "path": "src/ui/Dialog.tsx",
+              "params": {
+                "titulo": "title",
+                "size": "size",
+                "alerta": "alert"
+              },
+              "values": {
+                "alerta": {
+                  "sim": "true",
+                  "não": "false"
+                }
+              },
+              "notes": "As ações vão em actions e o conteúdo em children. Fechável por padrão; closable: false exige que a pessoa escolha uma ação."
+            }
+          },
+          "component": "components/dialog.json",
+          "doc": "docs/dialog.md",
+          "examples": [
+            {
+              "name": "Pequeno",
+              "values": {
+                "titulo": "Excluir marcação?"
+              }
+            },
+            {
+              "name": "Alerta",
+              "values": {
+                "titulo": "Projeto alterado fora da app",
+                "alerta": "sim"
+              }
+            }
+          ]
+        },
+        {
+          "id": "confirm-dialogs",
+          "name": "ConfirmDialogs",
+          "description": "Diálogos de confirmação do editor: ConfirmDialog e ExternalChangeDialog (\"Projeto alterado fora da app\").",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string",
+              "default": "Excluir container?"
+            },
+            {
+              "key": "fechavel",
+              "label": "fechável",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "sim"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "EditorDialogs",
+              "path": "src/app/EditorDialogs.tsx",
+              "notes": "ConfirmDialog e ExternalChangeDialog moram neste arquivo; o estado de abertura vem de src/app/useEditorDialogs.ts."
+            }
+          },
+          "component": "components/confirm-dialogs.json",
+          "doc": "docs/confirm-dialogs.md",
+          "examples": [
+            {
+              "name": "Excluir",
+              "values": {
+                "titulo": "Excluir marcação?",
+                "fechavel": "sim"
+              }
+            },
+            {
+              "name": "Projeto alterado fora da app",
+              "values": {
+                "titulo": "Projeto alterado fora da app",
+                "fechavel": "não"
+              }
+            }
+          ]
+        },
+        {
+          "id": "banner",
+          "name": "Banner",
+          "description": "Faixa de aviso no topo da região, com tom de atenção ou informação, ação e dispensa opcionais.",
+          "fields": [
+            {
+              "key": "tom",
+              "type": "enum",
+              "options": [
+                "warning",
+                "info"
+              ],
+              "default": "info",
+              "required": true
+            },
+            {
+              "key": "texto",
+              "label": "texto",
+              "type": "string",
+              "required": true
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Banner",
+              "path": "src/ui/Banner.tsx",
+              "params": {
+                "tom": "tone"
+              },
+              "notes": "Usos prontos: PreviewBanner (src/ui/PreviewBanner.tsx) e UpdateBanner (src/ui/UpdateBanner.tsx). O texto é o filho (children) do Banner."
+            }
+          },
+          "component": "components/banner.json",
+          "doc": "docs/banner.md",
+          "examples": [
+            {
+              "name": "Atenção",
+              "values": {
+                "tom": "warning",
+                "texto": "Build de preview: pode haver mudanças."
+              }
+            },
+            {
+              "name": "Informação",
+              "values": {
+                "tom": "info",
+                "texto": "Há uma nova versão da app."
+              }
+            }
+          ]
+        },
+        {
+          "id": "notice",
+          "name": "Notice",
+          "description": "Aviso em caixa, com tom (informação, atenção, erro, sucesso), título, dica e ações.",
+          "labelField": "titulo",
+          "fields": [
+            {
+              "key": "tom",
+              "type": "enum",
+              "options": [
+                "info",
+                "warning",
+                "error",
+                "success"
+              ],
+              "default": "info",
+              "required": true
+            },
+            {
+              "key": "tamanho",
+              "type": "enum",
+              "options": [
+                "md",
+                "sm",
+                "line"
+              ],
+              "default": "md"
+            },
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string"
+            },
+            {
+              "key": "dica",
+              "label": "dica",
+              "type": "string"
+            },
+            {
+              "key": "texto",
+              "label": "texto",
+              "type": "string",
+              "required": true
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Notice",
+              "path": "src/ui/Notice.tsx",
+              "params": {
+                "tom": "tone",
+                "tamanho": "size",
+                "titulo": "title",
+                "dica": "hint"
+              },
+              "notes": "O .notice de parágrafo também existe em src/ui/InstallHint.tsx. O texto é o filho (children) do Notice."
+            }
+          },
+          "component": "components/notice.json",
+          "doc": "docs/notice.md",
+          "examples": [
+            {
+              "name": "Informação",
+              "values": {
+                "tom": "info",
+                "titulo": "Proposta substituída",
+                "texto": "Há uma proposta mais nova para este item."
+              }
+            },
+            {
+              "name": "Erro",
+              "values": {
+                "tom": "error",
+                "texto": "Não foi possível gravar o projeto."
+              }
+            },
+            {
+              "name": "Sucesso compacto",
+              "values": {
+                "tom": "success",
+                "tamanho": "sm",
+                "texto": "Proposta aplicada."
+              }
+            }
+          ]
+        },
+        {
+          "id": "notice-badge",
+          "name": "NoticeBadge",
+          "description": "Selo, bloco e linha dos quatro tipos de aviso de uma especialização (pending, deprecated, diverges, removed). A cor sempre vem com ícone e texto.",
+          "fields": [
+            {
+              "key": "kind",
+              "type": "enum",
+              "options": [
+                "pending",
+                "deprecated",
+                "diverges",
+                "removed"
+              ],
+              "default": "pending",
+              "required": true
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "NoticeBadge",
+              "path": "src/ui/NoticeBadge.tsx",
+              "notes": "Recebe o aviso inteiro em notice (SpecNotice); o kind decide cor e ícone. Variantes no mesmo arquivo: TypeNoticeBadge, NoticeBlock, NoticeLines."
+            }
+          },
+          "component": "components/notice-badge.json",
+          "doc": "docs/notice-badge.md",
+          "examples": [
+            {
+              "name": "Removido",
+              "values": {
+                "kind": "removed"
+              }
+            },
+            {
+              "name": "Obsoleto",
+              "values": {
+                "kind": "deprecated"
+              }
+            },
+            {
+              "name": "Diverge",
+              "values": {
+                "kind": "diverges"
+              }
+            },
+            {
+              "name": "Pendente",
+              "values": {
+                "kind": "pending"
+              }
+            }
+          ]
+        },
+        {
+          "id": "breadcrumbs",
+          "name": "Breadcrumbs",
+          "description": "Caminho da seleção acima do canvas (Imagem › Marcação › Marcação). Clicar num nível seleciona aquele item; Alt+↑ e Alt+↓ andam no caminho.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "Breadcrumbs",
+              "path": "src/ui/Breadcrumbs.tsx",
+              "notes": "Os controles à direita da barra estão em src/app/EditorTools.tsx e src/ui/ZoomField.tsx."
+            }
+          },
+          "structural": true,
+          "doc": "docs/breadcrumbs.md"
+        },
+        {
+          "id": "status-bar",
+          "name": "StatusBar",
+          "description": "Barra de status do editor: salvamento, destino e \"não exportado\" à esquerda; seleção, cursor, zoom, schema, canal e build à direita.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "StatusBar",
+              "path": "src/ui/StatusBar.tsx"
+            }
+          },
+          "component": "components/status-bar.json",
+          "doc": "docs/status-bar.md"
+        },
+        {
+          "id": "tool-window",
+          "name": "ToolWindow",
+          "description": "Janela de ferramenta encaixada: cabeçalho de 32px com título (ou, na inferior, as abas) e ações, corpo com rolagem e divisória de arraste.",
+          "fields": [
+            {
+              "key": "janela",
+              "label": "janela",
+              "type": "string"
+            },
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string"
+            },
+            {
+              "key": "posicao",
+              "label": "posição",
+              "type": "enum",
+              "options": [
+                "left",
+                "right",
+                "bottom"
+              ],
+              "default": "right"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "ToolWindow",
+              "path": "src/ui/ToolWindow.tsx",
+              "params": {
+                "janela": "id"
+              },
+              "notes": "A janela é o ToolWindowId (src/ui/toolWindowMeta.ts). Tamanhos em src/ui/toolWindowLayout.ts; montagem em src/app/EditorWindows.tsx."
+            }
+          },
+          "component": "components/tool-window.json",
+          "doc": "docs/tool-window.md"
+        },
+        {
+          "id": "tool-strip-button",
+          "name": "ToolStripButton",
+          "description": "Botão da faixa de 40px nas laterais: um por janela de ferramenta, com o atalho na dica.",
+          "fields": [
+            {
+              "key": "icone",
+              "label": "ícone",
+              "type": "string"
+            },
+            {
+              "key": "selecionado",
+              "label": "selecionado",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "ToolStrip",
+              "path": "src/ui/ToolStrip.tsx",
+              "notes": "O botão é o StripButton, função interna não exportada; chame o ToolStrip. Metadados das janelas em src/ui/toolWindowMeta.ts."
+            }
+          },
+          "component": "components/tool-strip-button.json",
+          "doc": "docs/tool-strip-button.md"
+        },
+        {
+          "id": "narrow-window",
+          "name": "NarrowWindow",
+          "description": "Aviso \"Abra numa janela maior\", mostrado no lugar da tela abaixo de 900×720 px; a app é só desktop.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "NarrowWindowNotice",
+              "path": "src/app/NarrowWindow.tsx",
+              "notes": "O limite vem de src/theme/breakpoints.ts. O mesmo arquivo exporta o hook useNarrowWindow."
+            }
+          },
+          "component": "components/narrow-window.json",
+          "doc": "docs/narrow-window.md"
+        },
+        {
+          "id": "home",
+          "name": "Home",
+          "description": "Tela inicial da app, antes de abrir um projeto: a lista de projetos recentes e os diálogos iniciais.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "Home",
+              "path": "src/app/Home.tsx",
+              "notes": "As linhas dos recentes vêm de src/app/recentRows.ts."
+            }
+          },
+          "component": "components/home.json",
+          "doc": "docs/home.md"
+        },
+        {
+          "id": "help-dialog",
+          "name": "HelpDialog",
+          "description": "Diálogo de ajuda com os atalhos, o guia das propostas e o guia interativo.",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string",
+              "default": "Ajuda"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "HelpDialog",
+              "path": "src/ui/HelpDialog.tsx",
+              "notes": "Os atalhos listados vêm de src/ui/shortcutList.ts."
+            }
+          },
+          "component": "components/help-dialog.json",
+          "doc": "docs/help-dialog.md"
+        },
+        {
+          "id": "arrow",
+          "name": "Arrow",
+          "description": "Seta no canvas: uma marcação que aponta de um item a outro, fora da árvore de pertencimento. Desenhada no Konva.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ArrowRenderer",
+              "path": "src/canvas/renderers/arrows.ts",
+              "notes": "Não há componente Preact: o desenho é o ArrowRenderer; a geometria está em src/canvas/arrowGeometry.ts e o realce em src/canvas/renderers/overlay.ts."
+            }
+          }
+        },
+        {
+          "id": "arrow-panel",
+          "name": "ArrowPanel",
+          "description": "Detalhes da seta selecionada: identidade e a seção Seta (nome, origem e destino, estilo), mais as anotações.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ArrowPanel",
+              "path": "src/ui/ArrowPanel.tsx"
+            }
+          },
+          "structural": true,
+          "doc": "docs/arrow-panel.md"
+        },
+        {
+          "id": "canvas-marking",
+          "name": "CanvasMarking",
+          "description": "Marcação retangular no canvas, com o contorno, o rótulo e os selos de trava e de revisão. Especificação do desenho no Konva.",
+          "fields": [
+            {
+              "key": "nome",
+              "label": "nome",
+              "type": "string"
+            },
+            {
+              "key": "fundo",
+              "label": "fundo",
+              "type": "enum",
+              "options": [
+                "nenhum",
+                "canvas"
+              ],
+              "default": "nenhum"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "MarkingRenderer",
+              "path": "src/canvas/renderers/markings.ts",
+              "notes": "Não é componente Preact. Contorno e realce em src/canvas/renderers/overlay.ts, selo de trava em lockBadge.ts, revisão em review.ts, cores em src/canvas/theme.ts; geometria em src/canvas/markingGeometry.ts."
+            }
+          },
+          "component": "components/canvas-marking.json",
+          "doc": "docs/canvas-marking.md"
+        },
+        {
+          "id": "container",
+          "name": "Container",
+          "description": "Container no canvas: a área de topo (com imagem ou só tamanho e cor de fundo) que recebe as marcações. Desenhado no Konva.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ImageRenderer",
+              "path": "src/canvas/renderers/images.ts",
+              "notes": "Sem .tsx. Contorno e estados em src/canvas/renderers/overlay.ts e review.ts."
+            }
+          }
+        },
+        {
+          "id": "container-dialog",
+          "name": "ContainerDialog",
+          "description": "Diálogo Novo container: nome, tamanho (Personalizado, Tamanho da seleção e os tamanhos prontos das especializações aplicadas) e cor de fundo.",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string",
+              "default": "Novo container"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "ContainerDialog",
+              "path": "src/ui/ContainerDialog.tsx",
+              "notes": "A lógica do formulário está em src/ui/containerForm.ts."
+            }
+          },
+          "component": "components/container-dialog.json",
+          "doc": "docs/container-dialog.md"
+        },
+        {
+          "id": "component-drawing",
+          "name": "ComponentDrawing",
+          "description": "Desenho de um componente de biblioteca dentro de uma marcação, calculado do template e dos valores da anotação.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ComponentLayerRenderer",
+              "path": "src/canvas/components/componentLayer.ts",
+              "notes": "Desenhado no Konva. Cena em renderScene.ts e screenRenderer.ts (mesma pasta); o nó image usa imageLoader.ts e remoteImages.ts."
+            }
+          }
+        },
+        {
+          "id": "minimap",
+          "name": "Minimap",
+          "description": "Minimapa no canto do canvas: visão geral das imagens; clicar move a vista. Desenhado em DOM, sem Konva.",
+          "fields": [
+            {
+              "key": "parte",
+              "label": "parte",
+              "type": "enum",
+              "options": [
+                "moldura",
+                "imagem",
+                "vista"
+              ],
+              "default": "moldura"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Minimap",
+              "path": "src/ui/Minimap.tsx",
+              "notes": "As contas de layout ficam em src/canvas/minimap.ts."
+            }
+          },
+          "component": "components/minimap.json",
+          "doc": "docs/minimap.md",
+          "examples": [
+            {
+              "name": "Imagem",
+              "values": {
+                "parte": "imagem"
+              }
+            },
+            {
+              "name": "Área visível",
+              "values": {
+                "parte": "vista"
+              }
+            }
+          ]
+        },
+        {
+          "id": "zoom-field",
+          "name": "ZoomField",
+          "description": "Campo de zoom: mostra o zoom atual e, ao clicar, volta a 100%.",
+          "fields": [
+            {
+              "key": "valor",
+              "label": "valor",
+              "type": "string",
+              "default": "100%"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "ZoomField",
+              "path": "src/ui/ZoomField.tsx"
+            }
+          },
+          "component": "components/zoom-field.json",
+          "doc": "docs/zoom-field.md"
+        },
+        {
+          "id": "view-mode-panel",
+          "name": "ViewModePanel",
+          "description": "Painel \"Mostrar no canvas\" do modo visualização: o botão que o reabre e o popover com os elementos, as camadas com desenho e os atalhos do rodapé.",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string",
+              "default": "Mostrar no canvas"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "ViewModePanel",
+              "path": "src/ui/ViewModePanel.tsx",
+              "notes": "O botão Visualizar (ViewModeButton) mora em src/app/EditorTools.tsx; o item de modo na barra de status é o ViewModeItem, em src/ui/StatusBar.tsx."
+            }
+          },
+          "component": "components/view-mode-panel.json",
+          "doc": "docs/view-mode-panel.md"
+        },
+        {
+          "id": "marking-panel",
+          "name": "MarkingPanel",
+          "description": "Painel de Detalhes da marcação selecionada (inclui o estado trancado). A seção Marcação recolhida resume a posição e o tamanho (\"X 112 · Y 236 · 346 × 84 px\").",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "MarkingPanel",
+              "path": "src/ui/MarkingPanel.tsx"
+            }
+          },
+          "structural": true,
+          "doc": "docs/marking-panel.md"
+        },
+        {
+          "id": "marking-picker",
+          "name": "MarkingPicker",
+          "description": "Seletor de marcação (\"Ligar a…\"): o mesmo popup do RefPicker, com a lista das marcações do projeto, nunca as setas e sem a própria marcação.",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string",
+              "default": "Ligar a…"
+            },
+            {
+              "key": "rodape",
+              "label": "rodapé",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "sim"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "MarkingPicker",
+              "path": "src/ui/MarkingPicker.tsx"
+            }
+          },
+          "component": "components/marking-picker.json",
+          "doc": "docs/marking-picker.md"
+        },
+        {
+          "id": "multi-selection-panel",
+          "name": "MultiSelectionPanel",
+          "description": "Detalhes com mais de um item selecionado: só o resumo e as ações da seleção inteira.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "MultiSelectionPanel",
+              "path": "src/ui/MultiSelectionPanel.tsx"
+            }
+          },
+          "structural": true,
+          "doc": "docs/multi-selection-panel.md"
+        },
+        {
+          "id": "layer-group",
+          "name": "LayerGroup",
+          "description": "Grupo de uma camada na lista de anotações: cabeçalho com o selo da camada e as anotações dela. Cobre também a lista de camadas.",
+          "fields": [
+            {
+              "key": "forma",
+              "label": "forma",
+              "type": "enum",
+              "options": [
+                "grupo",
+                "linha",
+                "ponto"
+              ],
+              "default": "grupo"
+            },
+            {
+              "key": "cor",
+              "label": "cor da camada",
+              "type": "string",
+              "default": "#1A63CC"
+            },
+            {
+              "key": "aberto",
+              "label": "aberto",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "sim"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "AnnotationsPanel",
+              "path": "src/ui/AnnotationsPanel.tsx",
+              "notes": "LayerGroup é função interna de AnnotationsPanel.tsx (outra, homônima, está em src/ui/LinkedAnnotations.tsx). A lista de camadas é o LayersPanel (src/ui/LayersPanel.tsx), na janela de src/ui/LayersWindow.tsx."
+            }
+          },
+          "component": "components/layer-group.json",
+          "doc": "docs/layer-group.md",
+          "examples": [
+            {
+              "name": "Grupo aberto (Notas)",
+              "values": {
+                "forma": "grupo",
+                "cor": "#F5C400",
+                "aberto": "sim"
+              }
+            },
+            {
+              "name": "Grupo vazio (Camada 1)",
+              "values": {
+                "forma": "grupo",
+                "cor": "#D32F2F",
+                "aberto": "não"
+              }
+            },
+            {
+              "name": "Linha da lista",
+              "values": {
+                "forma": "linha",
+                "cor": "#1A63CC",
+                "aberto": "não"
+              }
+            },
+            {
+              "name": "Ponto da cor",
+              "values": {
+                "forma": "ponto",
+                "cor": "#F5C400",
+                "aberto": "não"
+              }
+            }
+          ]
+        },
+        {
+          "id": "tree-row",
+          "name": "TreeRow",
+          "description": "Linha da Árvore de marcações, na janela Árvore.",
+          "fields": [
+            {
+              "key": "estado",
+              "label": "estado",
+              "type": "enum",
+              "options": [
+                "normal",
+                "atual",
+                "atual-sem-foco",
+                "selecionada"
+              ],
+              "default": "normal"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "MarkingTree",
+              "path": "src/ui/MarkingTree.tsx",
+              "notes": "A janela da Árvore está em src/ui/TreeWindow.tsx."
+            }
+          },
+          "component": "components/tree-row.json",
+          "doc": "docs/tree-row.md",
+          "examples": [
+            {
+              "name": "Atual",
+              "values": {
+                "estado": "atual"
+              }
+            },
+            {
+              "name": "Selecionada junto",
+              "values": {
+                "estado": "selecionada"
+              }
+            }
+          ]
+        },
+        {
+          "id": "key-value-grid",
+          "name": "KeyValueGrid",
+          "description": "Grade de pares chave-valor da anotação livre, com edição na célula, alça de arraste e menu ⋯ por linha.",
+          "fields": [
+            {
+              "key": "cabecalho",
+              "label": "cabeçalho",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "sim"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "KeyValueGrid",
+              "path": "src/ui/KeyValueGrid.tsx"
+            }
+          },
+          "component": "components/key-value-grid.json",
+          "doc": "docs/key-value-grid.md",
+          "examples": [
+            {
+              "name": "Com cabeçalho",
+              "values": {
+                "cabecalho": "sim"
+              }
+            }
+          ]
+        },
+        {
+          "id": "property-grid",
+          "name": "PropertyGrid",
+          "description": "Grade de propriedades: rótulo à esquerda e controle à direita; os estados vêm dos controles.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "PropertyGrid",
+              "path": "src/ui/PropertyGrid.tsx"
+            }
+          },
+          "structural": true,
+          "doc": "docs/property-grid.md"
+        },
+        {
+          "id": "data-grid",
+          "name": "DataGrid",
+          "description": "Grade do campo table dos Detalhes (coluna # numerada, alça de arraste, edição na célula, menu ⋯ por linha) e a Lista em tabela.",
+          "fields": [
+            {
+              "key": "cabecalho",
+              "label": "cabeçalho",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "sim"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "TableField",
+              "path": "src/ui/TableField.tsx",
+              "notes": "Dois usos sob um nome: TableField (campo table) e ListView (src/ui/ListView.tsx, a Lista em tabela)."
+            }
+          },
+          "component": "components/data-grid.json",
+          "doc": "docs/data-grid.md",
+          "examples": [
+            {
+              "name": "Com cabeçalho",
+              "values": {
+                "cabecalho": "sim"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ref-cell",
+          "name": "RefCell",
+          "description": "Célula de uma coluna ref de tabela: versão compacta do campo de referência. Mostra o alvo (ou \"Escolher…\"), abre o seletor compacto e tem ✕ para limpar; é dado, nenhuma seta é desenhada.",
+          "fields": [
+            {
+              "key": "valor",
+              "label": "alvo",
+              "type": "string"
+            },
+            {
+              "key": "estado",
+              "label": "estado",
+              "type": "enum",
+              "options": [
+                "valor",
+                "vazio",
+                "quebrado",
+                "invalido"
+              ],
+              "default": "valor"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "RefCell",
+              "path": "src/ui/RefCell.tsx",
+              "notes": "O seletor é o RefPicker (src/ui/RefPicker.tsx), em modo compact."
+            }
+          },
+          "component": "components/ref-cell.json",
+          "doc": "docs/ref-cell.md",
+          "examples": [
+            {
+              "name": "Com alvo",
+              "values": {
+                "valor": "Arquivos.formato",
+                "estado": "valor"
+              }
+            },
+            {
+              "name": "Vazia",
+              "values": {
+                "valor": "Escolher…",
+                "estado": "vazio"
+              }
+            },
+            {
+              "name": "Quebrada",
+              "values": {
+                "valor": "(referência quebrada)",
+                "estado": "quebrado"
+              }
+            }
+          ]
+        },
+        {
+          "id": "reference-field",
+          "name": "ReferenceField",
+          "description": "Campo de referência (ref) dos Detalhes: escolhe o alvo entre as etiquetas aceitas.",
+          "fields": [
+            {
+              "key": "valor",
+              "label": "alvo",
+              "type": "string"
+            },
+            {
+              "key": "camada",
+              "label": "camada do alvo",
+              "type": "string"
+            },
+            {
+              "key": "estado",
+              "label": "estado",
+              "type": "enum",
+              "options": [
+                "valor",
+                "vazio",
+                "quebrado",
+                "invalido"
+              ],
+              "default": "valor"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "RefPicker",
+              "path": "src/ui/RefPicker.tsx",
+              "notes": "O RefField, que monta o campo, é função interna de src/ui/TypedFields.tsx; o seletor exportado é o RefPicker."
+            }
+          },
+          "component": "components/reference-field.json",
+          "doc": "docs/reference-field.md",
+          "examples": [
+            {
+              "name": "Com alvo",
+              "values": {
+                "valor": "Arquivos.pasta",
+                "camada": "Camada 1",
+                "estado": "valor"
+              }
+            },
+            {
+              "name": "Vazio",
+              "values": {
+                "valor": "Escolher…",
+                "estado": "vazio"
+              }
+            },
+            {
+              "name": "Quebrada",
+              "values": {
+                "valor": "(referência quebrada)",
+                "estado": "quebrado"
+              }
+            }
+          ]
+        },
+        {
+          "id": "inconsistent-project-dialog",
+          "name": "InconsistentProjectDialog",
+          "description": "Diálogo que lista as inconsistências de um projeto ao abrir e oferece o reparo.",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string",
+              "default": "Projeto com dados inconsistentes"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "InconsistentProjectDialog",
+              "path": "src/ui/InconsistentProjectDialog.tsx",
+              "notes": "Aberto por src/app/Home.tsx."
+            }
+          },
+          "component": "components/inconsistent-project-dialog.json",
+          "doc": "docs/inconsistent-project-dialog.md"
+        },
+        {
+          "id": "change-below",
+          "name": "ChangeBelow",
+          "description": "Linha embaixo do controle de um campo alterado na revisão: a nota da mudança (ícone e texto) e, numa proposta substituída, o selo igual / diferente / não consta na nova.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ChangeBelow",
+              "path": "src/ui/review/ChangeBelow.tsx"
+            }
+          },
+          "structural": true,
+          "doc": "docs/change-below.md"
+        },
+        {
+          "id": "change-kind",
+          "name": "ChangeKind",
+          "description": "Selo neutro do tipo de mudança: a forma diz o tipo, nunca a cor. Criada (+), removida (−), movida (⇄), alterada (∿) e imagem trocada.",
+          "fields": [
+            {
+              "key": "tipo",
+              "label": "tipo",
+              "type": "enum",
+              "options": [
+                "criada",
+                "removida",
+                "movida",
+                "alterada",
+                "trocada"
+              ],
+              "default": "alterada"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "ChangeKind",
+              "path": "src/ui/review/ChangeKind.tsx"
+            }
+          },
+          "component": "components/change-kind.json",
+          "doc": "docs/change-kind.md",
+          "examples": [
+            {
+              "name": "Criada",
+              "values": {
+                "tipo": "criada"
+              }
+            },
+            {
+              "name": "Removida",
+              "values": {
+                "tipo": "removida"
+              }
+            },
+            {
+              "name": "Movida",
+              "values": {
+                "tipo": "movida"
+              }
+            },
+            {
+              "name": "Alterada",
+              "values": {
+                "tipo": "alterada"
+              }
+            },
+            {
+              "name": "Trocada",
+              "values": {
+                "tipo": "trocada"
+              }
+            }
+          ]
+        },
+        {
+          "id": "change-mark",
+          "name": "ChangeMark",
+          "description": "Marcador de um campo alterado na revisão: peça de 18 px com o tipo à esquerda e a decisão à direita; conflito com ⚠ em âmbar.",
+          "fields": [
+            {
+              "key": "tipo",
+              "label": "tipo",
+              "type": "enum",
+              "options": [
+                "criada",
+                "removida",
+                "movida",
+                "alterada",
+                "trocada"
+              ],
+              "default": "alterada"
+            },
+            {
+              "key": "estado",
+              "label": "estado",
+              "type": "enum",
+              "options": [
+                "sem-decisao",
+                "aceita",
+                "rejeitada"
+              ],
+              "default": "sem-decisao"
+            },
+            {
+              "key": "conflito",
+              "label": "conflito",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "junto",
+              "label": "junto",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "parte",
+              "label": "parte de criação/remoção",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "aberto",
+              "label": "aberto",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "alvo",
+              "label": "alvo",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "invalido",
+              "label": "inválido",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "ChangeMark",
+              "path": "src/ui/review/ChangeMark.tsx"
+            }
+          },
+          "component": "components/change-mark.json",
+          "doc": "docs/change-mark.md",
+          "examples": [
+            {
+              "name": "Alterado, sem decisão",
+              "values": {
+                "tipo": "alterada",
+                "estado": "sem-decisao"
+              }
+            },
+            {
+              "name": "Movido, aceito",
+              "values": {
+                "tipo": "movida",
+                "estado": "aceita"
+              }
+            },
+            {
+              "name": "Conflito",
+              "values": {
+                "tipo": "alterada",
+                "estado": "sem-decisao",
+                "conflito": "sim"
+              }
+            },
+            {
+              "name": "Parte de uma criação",
+              "values": {
+                "tipo": "criada",
+                "parte": "sim"
+              }
+            },
+            {
+              "name": "Aberto",
+              "values": {
+                "tipo": "alterada",
+                "estado": "rejeitada",
+                "aberto": "sim"
+              }
+            }
+          ]
+        },
+        {
+          "id": "change-popover",
+          "name": "ChangePopover",
+          "description": "Conteúdo do popover de um marcador: título com o tipo e o campo, os valores, a ajuda do efeito e o rodapé com a decisão do campo.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ChangePopover",
+              "path": "src/ui/review/ChangePopover.tsx"
+            }
+          },
+          "component": "components/change-popover.json",
+          "doc": "docs/change-popover.md"
+        },
+        {
+          "id": "decision-control",
+          "name": "DecisionControl",
+          "description": "Par ✓ ✕ que decide um nível da revisão: nenhum marcado é \"sem decisão\"; apertar o marcado limpa. Decidir grava na hora, sem confirmação.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "DecisionControl",
+              "path": "src/ui/review/DecisionControl.tsx",
+              "notes": "Também exporta REVIEW_KEYS (atalhos A, R e Backspace)."
+            }
+          },
+          "structural": true,
+          "doc": "docs/decision-control.md"
+        },
+        {
+          "id": "decision-mark",
+          "name": "DecisionMark",
+          "description": "Estado de decisão de um nível, só leitura: círculo tracejado = sem decisão; cheio com ✓ = aceita; cheio com ✕ = rejeitada; metade cheia = parcial.",
+          "fields": [
+            {
+              "key": "estado",
+              "label": "estado",
+              "type": "enum",
+              "options": [
+                "sem-decisao",
+                "aceita",
+                "rejeitada",
+                "parcial"
+              ],
+              "default": "sem-decisao"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "DecisionMark",
+              "path": "src/ui/review/DecisionMark.tsx"
+            }
+          },
+          "component": "components/decision-mark.json",
+          "doc": "docs/decision-mark.md",
+          "examples": [
+            {
+              "name": "Sem decisão",
+              "values": {
+                "estado": "sem-decisao"
+              }
+            },
+            {
+              "name": "Aceita",
+              "values": {
+                "estado": "aceita"
+              }
+            },
+            {
+              "name": "Rejeitada",
+              "values": {
+                "estado": "rejeitada"
+              }
+            },
+            {
+              "name": "Parcial",
+              "values": {
+                "estado": "parcial"
+              }
+            }
+          ]
+        },
+        {
+          "id": "diff-value",
+          "name": "DiffValue",
+          "description": "Valor atual, antes e depois de um campo, em fonte mono, sem vermelho nem verde: o que muda se destaca por peso e fundo.",
+          "fields": [
+            {
+              "key": "linhas",
+              "label": "linhas",
+              "type": "table",
+              "columns": [
+                {
+                  "key": "tipo",
+                  "label": "tipo",
+                  "type": "enum",
+                  "options": [
+                    "antes",
+                    "depois",
+                    "atual",
+                    "igual"
+                  ],
+                  "default": "antes"
+                },
+                {
+                  "key": "rotulo",
+                  "label": "rótulo",
+                  "type": "string"
+                },
+                {
+                  "key": "valor",
+                  "label": "valor",
+                  "type": "string"
+                }
+              ]
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "DiffValue",
+              "path": "src/ui/review/DiffValue.tsx"
+            }
+          },
+          "component": "components/diff-value.json",
+          "doc": "docs/diff-value.md"
+        },
+        {
+          "id": "flag",
+          "name": "Flag",
+          "description": "Pílula de 18px com um fato sobre a linha (Conflito, Trancado, Envolvida, o status da proposta). Não é interativa; o texto aparece sempre.",
+          "fields": [
+            {
+              "key": "texto",
+              "label": "texto",
+              "type": "string"
+            },
+            {
+              "key": "tom",
+              "label": "tom",
+              "type": "enum",
+              "options": [
+                "neutro",
+                "aviso",
+                "perigo",
+                "ok",
+                "nova"
+              ],
+              "default": "neutro"
+            },
+            {
+              "key": "icone",
+              "label": "ícone",
+              "type": "string"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "Flag",
+              "path": "src/ui/review/Flag.tsx"
+            }
+          },
+          "component": "components/flag.json",
+          "doc": "docs/flag.md",
+          "examples": [
+            {
+              "name": "Nova",
+              "values": {
+                "texto": "Nova",
+                "tom": "nova"
+              }
+            },
+            {
+              "name": "Aplicada",
+              "values": {
+                "texto": "Aplicada",
+                "tom": "ok"
+              }
+            },
+            {
+              "name": "Conflito",
+              "values": {
+                "texto": "Conflito",
+                "tom": "aviso",
+                "icone": "warning"
+              }
+            },
+            {
+              "name": "Trancado",
+              "values": {
+                "texto": "Trancado",
+                "tom": "neutro",
+                "icone": "lock"
+              }
+            }
+          ]
+        },
+        {
+          "id": "image-compare",
+          "name": "ImageCompare",
+          "description": "Comparação antes/depois de uma imagem trocada: lado a lado, deslizar (padrão) e sobrepor; a alça é um slider.",
+          "fields": [
+            {
+              "key": "modo",
+              "label": "modo",
+              "type": "enum",
+              "options": [
+                "deslizar",
+                "sobrepor",
+                "lado-a-lado"
+              ],
+              "default": "deslizar"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "ImageCompare",
+              "path": "src/ui/review/ImageCompare.tsx",
+              "notes": "Aberto pelo CompareDialog, em src/ui/review/ReviewCanvasControls.tsx."
+            }
+          },
+          "component": "components/image-compare.json",
+          "doc": "docs/image-compare.md",
+          "examples": [
+            {
+              "name": "Deslizar",
+              "values": {
+                "modo": "deslizar"
+              }
+            },
+            {
+              "name": "Sobrepor",
+              "values": {
+                "modo": "sobrepor"
+              }
+            },
+            {
+              "name": "Lado a lado",
+              "values": {
+                "modo": "lado-a-lado"
+              }
+            }
+          ]
+        },
+        {
+          "id": "note-field",
+          "name": "NoteField",
+          "description": "Nota para o agente: campo de texto que grava ao sair, no cabeçalho do item e no popover de uma mudança. Texto vazio apaga a nota.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "NoteField",
+              "path": "src/ui/review/NoteField.tsx"
+            }
+          },
+          "structural": true,
+          "doc": "docs/note-field.md"
+        },
+        {
+          "id": "other-changes",
+          "name": "OtherChanges",
+          "description": "Seção \"Outras mudanças\" da revisão: o que não tem campo no painel normal (origem, trava, troca de imagem, camadas, especializações e repositórios), numa linha com o tipo e o resumo.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "OtherChangesSection",
+              "path": "src/ui/review/OtherChanges.tsx",
+              "notes": "O mesmo arquivo exporta OtherChangeRow e ImagesSection."
+            }
+          },
+          "structural": true,
+          "doc": "docs/other-changes.md"
+        },
+        {
+          "id": "proposal-row",
+          "name": "ProposalRow",
+          "description": "Linha da lista de propostas: estado do conjunto, título com o status, contexto (origem · autor · data), contagens e a ação Revisar, Continuar ou Ver.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ProposalRow",
+              "path": "src/ui/review/ProposalRow.tsx",
+              "notes": "Usada em ProposalList.tsx; o mesmo arquivo exporta DecisionCounts."
+            }
+          },
+          "component": "components/proposal-row.json",
+          "doc": "docs/proposal-row.md"
+        },
+        {
+          "id": "review-bar",
+          "name": "ReviewBar",
+          "description": "Faixa do modo revisão: selo REVISÃO, título, origem, progresso, contagens e as ações Rejeitar tudo, Aceitar tudo, Aplicar aceitas e Sair da revisão.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ReviewBar",
+              "path": "src/ui/review/ReviewBar.tsx"
+            }
+          },
+          "component": "components/review-bar.json",
+          "doc": "docs/review-bar.md"
+        },
+        {
+          "id": "review-header",
+          "name": "ReviewHeader",
+          "description": "Cabeçalho do item selecionado nos Detalhes da revisão: o que é, a decisão de três estados com as contagens e a criação ou remoção por inteiro.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ReviewHeader",
+              "path": "src/ui/review/ReviewHeader.tsx",
+              "notes": "O mesmo arquivo exporta IdentityFlags e WholeDecision."
+            }
+          },
+          "component": "components/review-header.json",
+          "doc": "docs/review-header.md"
+        },
+        {
+          "id": "review-row",
+          "name": "ReviewRow",
+          "description": "Linha dos níveis da revisão, em três colunas: nome (chevron, decisão, tipo, rótulo e sinalizadores), resumo (contagens ou \"antes → depois\") e o DecisionControl.",
+          "fields": [
+            {
+              "key": "selecionada",
+              "label": "selecionada",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "invalida",
+              "label": "inválida",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "ReviewRow",
+              "path": "src/ui/review/ReviewRow.tsx",
+              "notes": "Usada em src/ui/review/ReviewLevels.tsx."
+            }
+          },
+          "component": "components/review-row.json",
+          "doc": "docs/review-row.md"
+        },
+        {
+          "id": "update-impact",
+          "name": "UpdateImpact",
+          "description": "Impacto de atualizar uma especialização aplicada: o que muda por passo da migração, as perdas e as contagens.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "UpdateImpact",
+              "path": "src/ui/UpdateImpact.tsx"
+            }
+          },
+          "structural": true,
+          "doc": "docs/update-impact.md"
+        },
+        {
+          "id": "catalog-page",
+          "name": "CatalogPage",
+          "description": "Página de um componente do catálogo: cabeçalho, documento, propriedades, código por plataforma, origens, galeria e playground. Só apresentação.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "CatalogPage",
+              "path": "src/ui/catalog/CatalogPage.tsx",
+              "notes": "Também CatalogView.tsx, Playground.tsx e renderer.ts (mesma pasta) e src/ui/markdown/Markdown.tsx."
+            }
+          },
+          "structural": true,
+          "doc": "docs/catalog-page.md"
+        },
+        {
+          "id": "catalog-screen",
+          "name": "CatalogScreen",
+          "description": "Tela do catálogo de uma biblioteca aberta pela tela inicial, sem projeto: barra com Voltar, nome e versão, e o catálogo com lista e página lado a lado.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "CatalogScreen",
+              "path": "src/app/CatalogScreen.tsx",
+              "notes": "Usa src/store/libraryPreview.ts."
+            }
+          },
+          "component": "components/catalog-screen.json",
+          "doc": "docs/catalog-screen.md"
+        },
+        {
+          "id": "catalog-window",
+          "name": "CatalogWindow",
+          "description": "Janela Catálogo, à esquerda: a aba Componentes mostra o catálogo dos pacotes aplicados ao projeto e a aba Paleta é a paleta de componentes.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "CatalogWindow",
+              "path": "src/ui/CatalogWindow.tsx",
+              "notes": "Também src/ui/LibraryPalette.tsx e src/ui/useAddComponent.ts."
+            }
+          },
+          "structural": true,
+          "doc": "docs/catalog-window.md"
+        },
+        {
+          "id": "code-definitions",
+          "name": "CodeDefinitions",
+          "description": "Definição de uma anotação tipada: o arquivo que define o símbolo do code do tipo em cada plataforma, com \"Abrir no repositório\" e \"Copiar caminho\".",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "CodeDefinitions",
+              "path": "src/ui/CodeDefinitions.tsx",
+              "notes": "Resolve a variante por typeCodeDefinitions (src/model/codeVariants.ts)."
+            }
+          },
+          "structural": true,
+          "doc": "docs/code-definitions.md"
+        },
+        {
+          "id": "specs-dialog",
+          "name": "SpecsDialog",
+          "description": "Diálogo de especializações do projeto, com a importação de pacote de biblioteca.",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string",
+              "default": "Especializações"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "SpecsDialog",
+              "path": "src/ui/SpecsDialog.tsx",
+              "notes": "Importação de pacote em src/ui/specPackageImport.ts."
+            }
+          },
+          "component": "components/specs-dialog.json",
+          "doc": "docs/specs-dialog.md"
+        },
+        {
+          "id": "library-issue-list",
+          "name": "LibraryIssueList",
+          "description": "Problemas de uma biblioteca (erros e avisos) em lista compacta: um grupo por arquivo, com o caminho e a mensagem; a lista rola sozinha.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "LibraryIssueList",
+              "path": "src/ui/LibraryIssueList.tsx"
+            }
+          },
+          "component": "components/library-issue-list.json",
+          "doc": "docs/library-issue-list.md"
+        },
+        {
+          "id": "notices-view",
+          "name": "NoticesView",
+          "description": "Janela Avisos: os avisos das especializações aplicadas, com filtros, agrupados por aviso, e cada um leva à anotação.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "NoticesView",
+              "path": "src/ui/NoticesView.tsx",
+              "notes": "A aba com contagem está em src/ui/BottomTabs.tsx; atalho Ctrl+Shift+8."
+            }
+          },
+          "component": "components/notices-view.json",
+          "doc": "docs/notices-view.md"
+        },
+        {
+          "id": "settings-dialog",
+          "name": "SettingsDialog",
+          "description": "Diálogo de configurações: identidade, repositórios das plataformas e privacidade.",
+          "fields": [
+            {
+              "key": "titulo",
+              "label": "título",
+              "type": "string"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "SettingsDialog",
+              "path": "src/ui/SettingsDialog.tsx",
+              "notes": "Também SettingsBar.tsx, PlatformRepos.tsx e PrivacySettings.tsx (mesma pasta)."
+            }
+          },
+          "component": "components/settings-dialog.json",
+          "doc": "docs/settings-dialog.md"
+        },
+        {
+          "id": "comment-pin",
+          "name": "CommentPin",
+          "description": "Pino de conversa no canvas: pílula de 20 px de tela com as iniciais e o número de mensagens (ou a contagem, se há várias conversas), na cor do estado mais urgente (aguardando humano, aguardando agente, resolvida), com anel de selecionado e ponto de não lida.",
+          "fields": [
+            {
+              "key": "estado",
+              "label": "estado",
+              "type": "enum",
+              "options": [
+                "humano",
+                "agente",
+                "resolvida"
+              ],
+              "default": "humano"
+            },
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string"
+            },
+            {
+              "key": "selecionado",
+              "label": "selecionado",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "naoLida",
+              "label": "não lida",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            },
+            {
+              "key": "rascunho",
+              "label": "rascunho",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "CommentPinRenderer",
+              "path": "src/canvas/renderers/commentPins.ts",
+              "notes": "Desenhado no Konva, sem .tsx. Onde cada grupo de pinos fica e o acerto do clique estão em src/canvas/commentPins.ts; o clique e o menu Comentar, em src/canvas/input/commentPointer.ts."
+            }
+          },
+          "component": "components/comment-pin.json",
+          "doc": "docs/comment-pin.md"
+        },
+        {
+          "id": "citation-chip",
+          "name": "CitationChip",
+          "description": "Chip de citação em texto corrido: mostra o nome de agora do alvo de um link mapping://; riscado e cinza quando o alvo some. Clicar leva ao alvo.",
+          "fields": [
+            {
+              "key": "rotulo",
+              "label": "rótulo",
+              "type": "string"
+            },
+            {
+              "key": "quebrada",
+              "label": "alvo apagado",
+              "type": "enum",
+              "options": [
+                "sim",
+                "não"
+              ],
+              "default": "não"
+            }
+          ],
+          "code": {
+            "web": {
+              "symbol": "CitationChip",
+              "path": "src/ui/comments/CitationChip.tsx"
+            }
+          },
+          "component": "components/citation-chip.json",
+          "doc": "docs/citation-chip.md"
+        },
+        {
+          "id": "thread-message",
+          "name": "ThreadMessage",
+          "description": "Uma mensagem da conversa: iniciais, nome, selo de agente, hora relativa e o texto em markdown.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ThreadMessage",
+              "path": "src/ui/comments/ThreadMessage.tsx"
+            }
+          },
+          "structural": true,
+          "doc": "docs/thread-message.md"
+        },
+        {
+          "id": "composer",
+          "name": "Composer",
+          "description": "Compositor da conversa: campo de texto com o editor de citação (chips), seletor do @ e o botão Enviar (Ctrl+Enter); sem identidade mostra o aviso e leva às Configurações.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "Composer",
+              "path": "src/ui/comments/Composer.tsx",
+              "notes": "O editor de citação é o CitationEditor (src/ui/comments/CitationEditor.tsx) e o seletor do @ é o CitePicker (src/ui/comments/CitePicker.tsx)."
+            }
+          },
+          "structural": true,
+          "doc": "docs/composer.md"
+        },
+        {
+          "id": "threads-section",
+          "name": "ThreadsSection",
+          "description": "Seção Conversas dos Detalhes: lista de conversas do item (iniciais, assunto, nº de mensagens e \"em <onde>\"), botão Nova e o estado vazio com o compositor.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ThreadsSection",
+              "path": "src/ui/comments/ThreadsSection.tsx",
+              "notes": "A conversa escolhida é o ThreadView (src/ui/comments/ThreadView.tsx); a conversa sem item para selecionar, o StandaloneThreadPanel; a linha Citada em, o CitedIn."
+            }
+          },
+          "structural": true,
+          "doc": "docs/threads-section.md"
+        },
+        {
+          "id": "comments-window",
+          "name": "CommentsWindow",
+          "description": "Janela Comentários (Ctrl+Shift+0): todas as conversas numa tabela (Por, Âncora, Última mensagem, Msgs, Status, Quando), com filtros de status, usuário e texto, e a contagem. Só leitura durante a revisão.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "CommentsWindow",
+              "path": "src/ui/comments/CommentsWindow.tsx"
+            }
+          },
+          "component": "components/comments-window.json",
+          "doc": "docs/comments-window.md"
+        },
+        {
+          "id": "proposal-card",
+          "name": "ProposalCard",
+          "description": "Cartão da proposta numa conversa: título, quantas mudanças faltam revisar e o botão Revisar.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "ProposalCard",
+              "path": "src/ui/comments/ProposalCard.tsx"
+            }
+          },
+          "component": "components/proposal-card.json",
+          "doc": "docs/proposal-card.md"
+        },
+        {
+          "id": "delete-thread-dialogs",
+          "name": "DeleteThreadDialogs",
+          "description": "Diálogos de apagar conversa (alerta, com autores e contagens quando há mensagem de outra pessoa ou de agente) e de apagar em lote (Só as resolvidas, data, contagem).",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "BulkDeleteDialog",
+              "path": "src/ui/comments/BulkDeleteDialog.tsx",
+              "notes": "O diálogo de apagar uma conversa vem do hook useDeleteThread (src/ui/comments/useDeleteThread.tsx)."
+            }
+          },
+          "structural": true,
+          "doc": "docs/delete-thread-dialogs.md"
+        },
+        {
+          "id": "identity-settings",
+          "name": "IdentitySettings",
+          "description": "Seção Identidade do diálogo Configurações: Nome e E-mail, Salvar e Esquecer. A identidade fica no dispositivo, nunca no projeto; sem ela a pessoa só lê as conversas.",
+          "fields": [],
+          "code": {
+            "web": {
+              "symbol": "IdentitySettings",
+              "path": "src/ui/IdentitySettings.tsx"
+            }
+          },
+          "structural": true,
+          "doc": "docs/identity-settings.md"
+        }
+      ]
+    }
+  ],
+  "migrations": [
+    {
+      "from": 4,
+      "to": 5,
+      "steps": [
+        {
+          "op": "remove-field",
+          "type": "thread-message",
+          "field": "iniciais"
+        },
+        {
+          "op": "remove-field",
+          "type": "thread-message",
+          "field": "autor"
+        },
+        {
+          "op": "remove-field",
+          "type": "thread-message",
+          "field": "agente"
+        },
+        {
+          "op": "remove-field",
+          "type": "thread-message",
+          "field": "quando"
+        },
+        {
+          "op": "remove-field",
+          "type": "thread-message",
+          "field": "texto"
+        },
+        {
+          "op": "remove-field",
+          "type": "thread-message",
+          "field": "proposta"
+        },
+        {
+          "op": "remove-field",
+          "type": "thread-message",
+          "field": "propostaEstado"
+        },
+        {
+          "op": "remove-field",
+          "type": "thread-message",
+          "field": "propostaAcao"
+        },
+        {
+          "op": "remove-field",
+          "type": "threads-section",
+          "field": "conversas"
+        },
+        {
+          "op": "remove-field",
+          "type": "comments-window",
+          "field": "resumo"
+        },
+        {
+          "op": "remove-field",
+          "type": "comments-window",
+          "field": "conversas"
+        },
+        {
+          "op": "remove-field",
+          "type": "composer",
+          "field": "autor"
+        },
+        {
+          "op": "remove-field",
+          "type": "composer",
+          "field": "texto"
+        },
+        {
+          "op": "remove-field",
+          "type": "composer",
+          "field": "semIdentidade"
+        },
+        {
+          "op": "remove-field",
+          "type": "proposal-card",
+          "field": "titulo"
+        },
+        {
+          "op": "remove-field",
+          "type": "proposal-card",
+          "field": "estado"
+        },
+        {
+          "op": "remove-field",
+          "type": "proposal-card",
+          "field": "acao"
+        },
+        {
+          "op": "remove-field",
+          "type": "status-bar",
+          "field": "esquerda"
+        },
+        {
+          "op": "remove-field",
+          "type": "status-bar",
+          "field": "conversas"
+        },
+        {
+          "op": "remove-field",
+          "type": "status-bar",
+          "field": "direita"
+        },
+        {
+          "op": "remove-field",
+          "type": "menu",
+          "field": "itens"
+        },
+        {
+          "op": "remove-field",
+          "type": "breadcrumbs",
+          "field": "caminho"
+        },
+        {
+          "op": "remove-field",
+          "type": "breadcrumbs",
+          "field": "atual"
+        },
+        {
+          "op": "remove-field",
+          "type": "identity-settings",
+          "field": "semIdentidade"
+        },
+        {
+          "op": "remove-field",
+          "type": "delete-thread-dialogs",
+          "field": "texto"
+        },
+        {
+          "op": "remove-field",
+          "type": "tabs",
+          "field": "abas"
+        },
+        {
+          "op": "remove-field",
+          "type": "segmented",
+          "field": "opcoes"
+        }
+      ]
+    }
+  ]
+}

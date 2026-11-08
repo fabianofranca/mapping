@@ -1,0 +1,163 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "tool-strip-button",
+  "name": "ToolStripButton",
+  "description": "Botão da faixa lateral de 40 px: IconButton de 28 px com o ícone da janela em color-text-muted; ligado fica em color-selection-muted.",
+  "size": {
+    "width": 28,
+    "height": 28
+  },
+  "minSize": {
+    "width": 24,
+    "height": 24
+  },
+  "sizing": {
+    "width": 28,
+    "height": 28
+  },
+  "preview": {
+    "icone": "chat",
+    "selecionado": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "botão",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 6,
+    "fill": {
+      "$if": {
+        "$eq": [
+          "selecionado",
+          "sim"
+        ]
+      },
+      "then": {
+        "$token": "color-selection-muted"
+      },
+      "else": "rgba(0, 0, 0, 0)"
+    },
+    "children": [
+      {
+        "type": "icon",
+        "width": 16,
+        "height": 16,
+        "anchors": {
+          "centerX": true,
+          "centerY": true
+        },
+        "name": {
+          "$switch": "icone",
+          "cases": {
+            "undo": "undo",
+            "redo": "redo",
+            "edit": "edit",
+            "copy": "copy",
+            "trash": "trash",
+            "plus": "plus",
+            "minus": "minus",
+            "check": "check",
+            "close": "close",
+            "refresh": "refresh",
+            "pan": "pan",
+            "pointer": "pointer",
+            "draw": "draw",
+            "marking": "marking",
+            "arrow": "arrow",
+            "crop": "crop",
+            "text": "text",
+            "fit": "fit",
+            "zoomIn": "zoom-in",
+            "zoomOut": "zoom-out",
+            "search": "search",
+            "locate": "locate",
+            "filter": "filter",
+            "menu": "menu",
+            "chevronUp": "chevron-up",
+            "chevronDown": "chevron-down",
+            "chevronLeft": "chevron-left",
+            "chevronRight": "chevron-right",
+            "arrowUp": "arrow-up",
+            "arrowDown": "arrow-down",
+            "arrowLeft": "arrow-left",
+            "arrowRight": "arrow-right",
+            "collapseAll": "collapse-all",
+            "expandAll": "expand-all",
+            "maximize": "maximize",
+            "minimize": "minimize",
+            "externalLink": "external-link",
+            "home": "home",
+            "panelLeft": "panel-left",
+            "panelRight": "panel-right",
+            "panelBottom": "panel-bottom",
+            "minimap": "minimap",
+            "tree": "tree",
+            "perspective": "perspective",
+            "layers": "layers",
+            "list": "list",
+            "table": "table",
+            "checklist": "checklist",
+            "diagnostics": "diagnostics",
+            "specialization": "specialization",
+            "library": "library",
+            "container": "container",
+            "containerMark": "container-mark",
+            "arrange": "arrange",
+            "more": "grip",
+            "moreVertical": "grip",
+            "grip": "grip",
+            "addImage": "add-image",
+            "image": "image",
+            "folder": "folder",
+            "file": "file",
+            "save": "save",
+            "export": "export",
+            "upload": "upload",
+            "tag": "tag",
+            "link": "link",
+            "share": "share",
+            "eye": "eye",
+            "eyeOff": "eye-off",
+            "lock": "lock",
+            "unlock": "unlock",
+            "info": "info",
+            "warning": "warning",
+            "error": "error",
+            "help": "help",
+            "settings": "settings",
+            "keyboard": "keyboard",
+            "sun": "sun",
+            "moon": "moon",
+            "proposal": "proposal",
+            "chat": "chat",
+            "chatAdd": "chat-add",
+            "moved": "moved",
+            "changed": "changed",
+            "replaced": "replaced",
+            "compare": "compare",
+            "note": "note",
+            "blocked": "blocked",
+            "globe": "globe"
+          },
+          "default": "chat"
+        },
+        "color": {
+          "$if": {
+            "$eq": [
+              "selecionado",
+              "sim"
+            ]
+          },
+          "then": {
+            "$token": "color-text"
+          },
+          "else": {
+            "$token": "color-text-muted"
+          }
+        }
+      }
+    ]
+  }
+}

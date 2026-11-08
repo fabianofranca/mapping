@@ -1,0 +1,129 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "dialog",
+  "name": "Dialog",
+  "description": "Diálogo modal: cabeçalho de 44 px com o título e o fechar, e o corpo (slot) com 16 px de margem.",
+  "size": {
+    "width": 480,
+    "height": 240
+  },
+  "minSize": {
+    "width": 320,
+    "height": 120
+  },
+  "sizing": {
+    "width": 480,
+    "height": "hug"
+  },
+  "preview": {
+    "titulo": "Configurações",
+    "size": "sm",
+    "alerta": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "dialog",
+    "cornerRadius": 8,
+    "fill": "#ffffff",
+    "stroke": {
+      "color": "#dfe3e8",
+      "width": 1
+    },
+    "shadow": {
+      "color": "rgba(16, 24, 40, 0.18)",
+      "x": 0,
+      "y": 8,
+      "blur": 24
+    },
+    "layout": {
+      "type": "column"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "width": "fill",
+        "height": 44,
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            4,
+            0,
+            16
+          ],
+          "gap": 8,
+          "align": "center",
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "titulo"
+            },
+            "color": "#1b1f24",
+            "font": {
+              "size": 15,
+              "weight": 600,
+              "lineHeight": 22
+            },
+            "width": "fill"
+          },
+          {
+            "type": "frame",
+            "name": "fechar",
+            "width": 28,
+            "height": 28,
+            "layout": {
+              "type": "none"
+            },
+            "children": [
+              {
+                "type": "path",
+                "name": "×",
+                "width": 16,
+                "height": 16,
+                "viewBox": [
+                  16,
+                  16
+                ],
+                "d": "M3.5 3.5 9 9M12.5 3.5-9 9",
+                "fill": "none",
+                "stroke": {
+                  "color": "#1b1f24",
+                  "width": 1.25
+                },
+                "anchors": {
+                  "centerX": true,
+                  "centerY": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "divisória",
+        "width": "fill",
+        "height": 1,
+        "fill": "#dfe3e8"
+      },
+      {
+        "type": "slot",
+        "name": "corpo",
+        "label": "Conteúdo",
+        "width": "fill",
+        "height": "fill",
+        "layout": {
+          "type": "column",
+          "gap": 16,
+          "padding": 16
+        }
+      }
+    ]
+  }
+}

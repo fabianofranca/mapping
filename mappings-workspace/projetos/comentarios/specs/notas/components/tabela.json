@@ -1,0 +1,109 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 2,
+  "id": "tabela",
+  "name": "Tabela",
+  "description": "Post-it amarelo com um título opcional em negrito e uma linha por registro: a chave à esquerda e o valor à direita.",
+  "size": {
+    "width": 240,
+    "height": 120
+  },
+  "minSize": {
+    "width": 160,
+    "height": 112
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "fill"
+  },
+  "preview": {
+    "titulo": "checkout_started",
+    "linhas": [
+      { "chave": "origem", "valor": "carrinho" },
+      { "chave": "itens", "valor": "3" },
+      { "chave": "total", "valor": "149,90" }
+    ]
+  },
+  "template": {
+    "type": "frame",
+    "name": "post-it",
+    "layout": {
+      "type": "column",
+      "gap": 8,
+      "padding": 12
+    },
+    "cornerRadius": 2,
+    "fill": "#FFF1A8",
+    "shadow": {
+      "color": "rgba(0, 0, 0, 0.25)",
+      "x": 0,
+      "y": 2,
+      "blur": 6
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "título",
+        "text": {
+          "$field": "titulo"
+        },
+        "font": {
+          "size": 14,
+          "weight": 700,
+          "lineHeight": 20
+        },
+        "color": "#3B3200",
+        "visible": {
+          "$has": "titulo"
+        },
+        "width": "fill"
+      },
+      {
+        "type": "repeat",
+        "name": "linhas",
+        "field": "linhas",
+        "direction": "column",
+        "gap": 4,
+        "template": {
+          "type": "frame",
+          "name": "linha",
+          "layout": {
+            "type": "row",
+            "gap": 12
+          },
+          "children": [
+            {
+              "type": "text",
+              "name": "chave",
+              "text": {
+                "$field": "chave"
+              },
+              "font": {
+                "size": 12,
+                "weight": 600,
+                "lineHeight": 16
+              },
+              "color": "#3B3200",
+              "width": "hug"
+            },
+            {
+              "type": "text",
+              "name": "valor",
+              "text": {
+                "$field": "valor"
+              },
+              "font": {
+                "size": 12,
+                "weight": 400,
+                "lineHeight": 16,
+                "align": "right"
+              },
+              "color": "#3B3200",
+              "width": "fill"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

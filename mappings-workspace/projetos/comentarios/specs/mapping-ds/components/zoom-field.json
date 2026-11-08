@@ -1,0 +1,52 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "zoom-field",
+  "name": "ZoomField",
+  "description": "Campo de zoom: a porcentagem em t-small color-text-muted, centrada num botão sem fundo de 56 × 28 px (24 px na barra de status).",
+  "size": {
+    "width": 56,
+    "height": 28
+  },
+  "minSize": {
+    "width": 24,
+    "height": 16
+  },
+  "sizing": {
+    "width": 56,
+    "height": 28
+  },
+  "preview": {
+    "valor": "100%"
+  },
+  "template": {
+    "type": "frame",
+    "name": "zoom",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 4,
+    "children": [
+      {
+        "type": "text",
+        "name": "valor",
+        "text": {
+          "$field": "valor",
+          "default": "100%"
+        },
+        "color": {
+          "$token": "color-text-muted"
+        },
+        "font": {
+          "size": 12,
+          "weight": 400,
+          "lineHeight": 16
+        },
+        "anchors": {
+          "centerX": true,
+          "centerY": true
+        }
+      }
+    ]
+  }
+}

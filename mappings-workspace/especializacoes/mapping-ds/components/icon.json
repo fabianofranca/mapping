@@ -1,0 +1,160 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "icon",
+  "name": "Ícone",
+  "description": "Um dos 89 ícones do app (grade de 16 px, traço de 1,25, pontas redondas), na cor escolhida.",
+  "size": {
+    "width": 16,
+    "height": 16
+  },
+  "minSize": {
+    "width": 8,
+    "height": 8
+  },
+  "sizing": {
+    "width": 16,
+    "height": 16
+  },
+  "preview": {
+    "icone": "chat",
+    "cor": "text"
+  },
+  "template": {
+    "type": "frame",
+    "name": "ícone",
+    "layout": {
+      "type": "none"
+    },
+    "children": [
+      {
+        "type": "icon",
+        "name": {
+          "$switch": "icone",
+          "cases": {
+            "undo": "undo",
+            "redo": "redo",
+            "edit": "edit",
+            "copy": "copy",
+            "trash": "trash",
+            "plus": "plus",
+            "minus": "minus",
+            "check": "check",
+            "close": "close",
+            "refresh": "refresh",
+            "pan": "pan",
+            "pointer": "pointer",
+            "draw": "draw",
+            "marking": "marking",
+            "arrow": "arrow",
+            "crop": "crop",
+            "text": "text",
+            "fit": "fit",
+            "zoomIn": "zoom-in",
+            "zoomOut": "zoom-out",
+            "search": "search",
+            "locate": "locate",
+            "filter": "filter",
+            "menu": "menu",
+            "chevronUp": "chevron-up",
+            "chevronDown": "chevron-down",
+            "chevronLeft": "chevron-left",
+            "chevronRight": "chevron-right",
+            "arrowUp": "arrow-up",
+            "arrowDown": "arrow-down",
+            "arrowLeft": "arrow-left",
+            "arrowRight": "arrow-right",
+            "collapseAll": "collapse-all",
+            "expandAll": "expand-all",
+            "maximize": "maximize",
+            "minimize": "minimize",
+            "externalLink": "external-link",
+            "home": "home",
+            "panelLeft": "panel-left",
+            "panelRight": "panel-right",
+            "panelBottom": "panel-bottom",
+            "minimap": "minimap",
+            "tree": "tree",
+            "perspective": "perspective",
+            "layers": "layers",
+            "list": "list",
+            "table": "table",
+            "checklist": "checklist",
+            "diagnostics": "diagnostics",
+            "specialization": "specialization",
+            "library": "library",
+            "container": "container",
+            "containerMark": "container-mark",
+            "arrange": "arrange",
+            "more": "more",
+            "moreVertical": "more-vertical",
+            "grip": "grip",
+            "addImage": "add-image",
+            "image": "image",
+            "folder": "folder",
+            "file": "file",
+            "save": "save",
+            "export": "export",
+            "upload": "upload",
+            "tag": "tag",
+            "link": "link",
+            "share": "share",
+            "eye": "eye",
+            "eyeOff": "eye-off",
+            "lock": "lock",
+            "unlock": "unlock",
+            "info": "info",
+            "warning": "warning",
+            "error": "error",
+            "help": "help",
+            "settings": "settings",
+            "keyboard": "keyboard",
+            "sun": "sun",
+            "moon": "moon",
+            "proposal": "proposal",
+            "chat": "chat",
+            "chatAdd": "chat-add",
+            "moved": "moved",
+            "changed": "changed",
+            "replaced": "replaced",
+            "compare": "compare",
+            "note": "note",
+            "blocked": "blocked",
+            "globe": "globe"
+          }
+        },
+        "color": {
+          "$switch": "cor",
+          "cases": {
+            "text": {
+              "$token": "color-text"
+            },
+            "muted": {
+              "$token": "color-text-muted"
+            },
+            "accent": {
+              "$token": "color-accent"
+            },
+            "danger": {
+              "$token": "color-danger"
+            },
+            "warning": {
+              "$token": "color-warning"
+            },
+            "success": {
+              "$token": "color-success"
+            },
+            "accent-text": {
+              "$token": "color-accent-text"
+            }
+          },
+          "default": {
+            "$token": "color-text"
+          }
+        },
+        "width": "fill",
+        "height": "fill"
+      }
+    ]
+  }
+}

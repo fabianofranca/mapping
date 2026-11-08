@@ -1,0 +1,131 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "settings-dialog",
+  "name": "SettingsDialog",
+  "description": "Diálogo Configurações: cabeçalho de 44 px com o título e o fechar, e o corpo (slot) onde entram as seções.",
+  "size": {
+    "width": 480,
+    "height": 320
+  },
+  "minSize": {
+    "width": 320,
+    "height": 160
+  },
+  "sizing": {
+    "width": 480,
+    "height": "hug"
+  },
+  "preview": {
+    "titulo": "Configurações"
+  },
+  "template": {
+    "type": "frame",
+    "name": "configurações",
+    "cornerRadius": 8,
+    "fill": {
+      "$token": "color-surface"
+    },
+    "stroke": {
+      "color": {
+        "$token": "color-border"
+      },
+      "width": 1
+    },
+    "shadow": {
+      "color": {
+        "$token": "shadow-popup-color"
+      },
+      "x": 0,
+      "y": 8,
+      "blur": 24
+    },
+    "layout": {
+      "type": "column"
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "cabeçalho",
+        "width": "fill",
+        "height": 44,
+        "layout": {
+          "type": "row",
+          "padding": [
+            0,
+            4,
+            0,
+            16
+          ],
+          "gap": 8,
+          "align": "center",
+          "justify": "space-between"
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "título",
+            "text": {
+              "$field": "titulo",
+              "default": "Configurações"
+            },
+            "color": {
+              "$token": "color-text"
+            },
+            "font": {
+              "size": 15,
+              "weight": 600,
+              "lineHeight": 22
+            },
+            "width": "fill"
+          },
+          {
+            "type": "frame",
+            "name": "fechar",
+            "width": 28,
+            "height": 28,
+            "layout": {
+              "type": "none"
+            },
+            "children": [
+              {
+                "type": "icon",
+                "width": 16,
+                "height": 16,
+                "anchors": {
+                  "centerX": true,
+                  "centerY": true
+                },
+                "name": "close",
+                "color": {
+                  "$token": "color-text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "rect",
+        "name": "divisória",
+        "width": "fill",
+        "height": 1,
+        "fill": {
+          "$token": "color-border"
+        }
+      },
+      {
+        "type": "slot",
+        "name": "seções",
+        "label": "Seções",
+        "width": "fill",
+        "height": "fill",
+        "layout": {
+          "type": "column",
+          "gap": 16,
+          "padding": 16
+        }
+      }
+    ]
+  }
+}

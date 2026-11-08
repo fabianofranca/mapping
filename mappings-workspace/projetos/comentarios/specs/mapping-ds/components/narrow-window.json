@@ -1,0 +1,31 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "narrow-window",
+  "name": "NarrowWindow",
+  "description": "Moldura do aviso \"Abra numa janela maior\": a tela inteira em color-bg; o título e o texto, centrados, são filhos.",
+  "size": {
+    "width": 800,
+    "height": 600
+  },
+  "minSize": {
+    "width": 240,
+    "height": 160
+  },
+  "sizing": {
+    "width": 800,
+    "height": 600
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "tela",
+    "layout": {
+      "type": "none"
+    },
+    "fill": {
+      "$token": "color-bg"
+    },
+    "children": []
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "comment-pin",
+  "name": "CommentPin",
+  "description": "Pino de conversa: pílula de 20 px com as iniciais e o número de mensagens, na cor do estado mais urgente; anel de selecionado, ponto de não lida e contorno tracejado de rascunho.",
+  "size": {
+    "width": 56,
+    "height": 20
+  },
+  "minSize": {
+    "width": 20,
+    "height": 20
+  },
+  "sizing": {
+    "width": 56,
+    "height": 20
+  },
+  "preview": {
+    "estado": "humano",
+    "rotulo": "MA 3",
+    "selecionado": "não",
+    "naoLida": "não",
+    "rascunho": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "pino",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 10,
+    "fill": {
+      "$switch": "estado",
+      "cases": {
+        "agente": "#5eead4",
+        "resolvida": "#b4bcc7"
+      },
+      "default": "#ffb020"
+    },
+    "stroke": {
+      "color": "rgba(10, 12, 16, 0.72)",
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "rótulo",
+        "text": {
+          "$field": "rotulo",
+          "default": "MA 1"
+        },
+        "color": "#0b1220",
+        "font": {
+          "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+          "size": 11,
+          "weight": 600,
+          "lineHeight": 16
+        },
+        "anchors": {
+          "centerX": true,
+          "centerY": true
+        }
+      },
+      {
+        "type": "rect",
+        "name": "anel de selecionado",
+        "cornerRadius": 10,
+        "fill": "none",
+        "stroke": {
+          "color": "#4d8dff",
+          "width": 2,
+          "align": "outside"
+        },
+        "visible": {
+          "$eq": [
+            "selecionado",
+            "sim"
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "rascunho",
+        "cornerRadius": 10,
+        "fill": "none",
+        "stroke": {
+          "color": "#0b1220",
+          "width": 1,
+          "dash": [
+            3,
+            2
+          ]
+        },
+        "visible": {
+          "$eq": [
+            "rascunho",
+            "sim"
+          ]
+        }
+      },
+      {
+        "type": "ellipse",
+        "name": "não lida",
+        "width": 8,
+        "height": 8,
+        "anchors": {
+          "top": 0,
+          "right": 0
+        },
+        "fill": "#ff6b6b",
+        "stroke": {
+          "color": "rgba(10, 12, 16, 0.72)",
+          "width": 1
+        },
+        "visible": {
+          "$eq": [
+            "naoLida",
+            "sim"
+          ]
+        }
+      }
+    ]
+  }
+}

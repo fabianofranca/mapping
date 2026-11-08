@@ -1,0 +1,35 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "proposal-card",
+  "name": "ProposalCard",
+  "description": "Moldura do cartão da proposta: borda color-border e raio 6. Ícone, título, estado e o botão são filhos.",
+  "size": {
+    "width": 344,
+    "height": 44
+  },
+  "minSize": {
+    "width": 40,
+    "height": 28
+  },
+  "sizing": {
+    "width": 344,
+    "height": 44
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "cartão",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 6,
+    "stroke": {
+      "color": {
+        "$token": "color-border"
+      },
+      "width": 1
+    },
+    "children": []
+  }
+}

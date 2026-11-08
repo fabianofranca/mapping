@@ -1,0 +1,41 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "status-bar",
+  "name": "StatusBar",
+  "description": "Moldura da barra de status: 26 px, fundo color-surface e a divisória de cima.",
+  "size": {
+    "width": 900,
+    "height": 26
+  },
+  "minSize": {
+    "width": 120,
+    "height": 26
+  },
+  "sizing": {
+    "width": 900,
+    "height": 26
+  },
+  "preview": {},
+  "template": {
+    "type": "frame",
+    "name": "barra",
+    "layout": {
+      "type": "none"
+    },
+    "fill": "#ffffff",
+    "children": [
+      {
+        "type": "rect",
+        "name": "divisória",
+        "height": 1,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0
+        },
+        "fill": "#dfe3e8"
+      }
+    ]
+  }
+}

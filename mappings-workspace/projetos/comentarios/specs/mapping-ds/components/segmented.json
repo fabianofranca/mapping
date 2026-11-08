@@ -1,0 +1,65 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "segmented",
+  "name": "Segmented",
+  "description": "Moldura do controle segmentado: borda de controle e raio 4. Cada opção é uma marcação Opção.",
+  "size": {
+    "width": 200,
+    "height": 28
+  },
+  "minSize": {
+    "width": 20,
+    "height": 16
+  },
+  "sizing": {
+    "width": 200,
+    "height": 28
+  },
+  "preview": {
+    "rotulo": "Visão",
+    "desabilitado": "não",
+    "invalido": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "segmented",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": 4,
+    "opacity": {
+      "$if": {
+        "$eq": [
+          "desabilitado",
+          "sim"
+        ]
+      },
+      "then": {
+        "$token": "opacity-disabled"
+      },
+      "else": 1
+    },
+    "fill": {
+      "$token": "color-surface"
+    },
+    "stroke": {
+      "color": {
+        "$if": {
+          "$eq": [
+            "invalido",
+            "sim"
+          ]
+        },
+        "then": {
+          "$token": "color-danger"
+        },
+        "else": {
+          "$token": "color-border-control"
+        }
+      },
+      "width": 1
+    },
+    "children": []
+  }
+}

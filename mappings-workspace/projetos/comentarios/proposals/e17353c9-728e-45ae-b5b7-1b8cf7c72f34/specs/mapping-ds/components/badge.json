@@ -1,0 +1,117 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "badge",
+  "name": "Selo",
+  "description": "Pílula de texto curto: etiqueta, selo de agente, estado da conversa, contagem de aba, status da tabela ou o selo PREVIEW.",
+  "size": {
+    "width": 56,
+    "height": 16
+  },
+  "minSize": {
+    "width": 8,
+    "height": 8
+  },
+  "sizing": {
+    "width": 56,
+    "height": 16
+  },
+  "preview": {
+    "texto": "agente",
+    "estilo": "agente"
+  },
+  "template": {
+    "type": "frame",
+    "name": "selo",
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": {
+      "$switch": "estilo",
+      "cases": {
+        "preview": 4
+      },
+      "default": 999
+    },
+    "fill": {
+      "$switch": "estilo",
+      "cases": {
+        "tag": "rgba(0, 0, 0, 0)",
+        "agente": "#eceff3",
+        "estado-agente": "#fff4d6",
+        "estado-humano": "#dce8fb",
+        "estado-resolvida": "#e3f4ea",
+        "contagem": "#eceff3",
+        "contagem-info": "#1a63cc",
+        "status": "#eceff3",
+        "status-agente": "#fff4d6",
+        "status-resolvida": "#eceff3",
+        "preview": "#fff4d6"
+      },
+      "default": "#eceff3"
+    },
+    "stroke": {
+      "color": {
+        "$switch": "estilo",
+        "cases": {
+          "tag": "#7d8590",
+          "preview": "#8a5a00"
+        },
+        "default": "rgba(0, 0, 0, 0)"
+      },
+      "width": 1
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "texto",
+        "text": {
+          "$field": "texto",
+          "default": ""
+        },
+        "color": {
+          "$switch": "estilo",
+          "cases": {
+            "tag": "#5b6470",
+            "agente": "#5b6470",
+            "estado-agente": "#8a5a00",
+            "estado-humano": "#1a63cc",
+            "estado-resolvida": "#1e7a46",
+            "contagem": "#5b6470",
+            "contagem-info": "#ffffff",
+            "status": "#5b6470",
+            "status-agente": "#8a5a00",
+            "status-resolvida": "#1e7a46",
+            "preview": "#8a5a00"
+          },
+          "default": "#5b6470"
+        },
+        "font": {
+          "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+          "size": {
+            "$switch": "estilo",
+            "cases": {
+              "contagem": 12,
+              "contagem-info": 12
+            },
+            "default": 11
+          },
+          "weight": {
+            "$switch": "estilo",
+            "cases": {
+              "tag": 400,
+              "contagem": 400,
+              "contagem-info": 400
+            },
+            "default": 600
+          },
+          "lineHeight": 16,
+          "align": "center",
+          "verticalAlign": "middle"
+        },
+        "width": "fill",
+        "height": "fill"
+      }
+    ]
+  }
+}

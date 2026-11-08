@@ -1,0 +1,244 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "composer",
+  "name": "Composer",
+  "description": "Compositor da conversa: \"Comentar como …\", o campo de texto, a dica de atalhos e o botão Enviar; sem identidade, o aviso e o botão que leva às Configurações.",
+  "size": {
+    "width": 344,
+    "height": 128
+  },
+  "minSize": {
+    "width": 200,
+    "height": 96
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "autor": "Marina Alves",
+    "texto": "",
+    "semIdentidade": "não"
+  },
+  "template": {
+    "type": "frame",
+    "name": "compositor",
+    "layout": {
+      "type": "column",
+      "gap": 8
+    },
+    "children": [
+      {
+        "type": "frame",
+        "name": "com identidade",
+        "width": "fill",
+        "height": "hug",
+        "visible": {
+          "$not": {
+            "$eq": [
+              "semIdentidade",
+              "sim"
+            ]
+          }
+        },
+        "layout": {
+          "type": "column",
+          "gap": 8
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "rótulo",
+            "text": {
+              "$concat": [
+                "Comentar como ",
+                {
+                  "$field": "autor"
+                }
+              ]
+            },
+            "color": "#5b6470",
+            "font": {
+              "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+              "size": 12,
+              "weight": 400,
+              "lineHeight": 16
+            },
+            "width": "fill",
+            "visible": {
+              "$has": "autor"
+            }
+          },
+          {
+            "type": "frame",
+            "name": "campo",
+            "width": "fill",
+            "height": 64,
+            "cornerRadius": 4,
+            "fill": "#f6f7f9",
+            "stroke": {
+              "color": "#7d8590",
+              "width": 1
+            },
+            "layout": {
+              "type": "column",
+              "padding": [
+                6,
+                8
+              ]
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "texto",
+                "text": {
+                  "$field": "texto"
+                },
+                "color": "#1b1f24",
+                "font": {
+                  "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+                  "size": 13,
+                  "weight": 400,
+                  "lineHeight": 20
+                },
+                "width": "fill",
+                "visible": {
+                  "$has": "texto"
+                }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "ações",
+            "width": "fill",
+            "height": 24,
+            "layout": {
+              "type": "row",
+              "gap": 8,
+              "align": "center",
+              "justify": "end"
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "dica",
+                "text": "Ctrl+Enter envia; Enter quebra a linha",
+                "color": "#5b6470",
+                "font": {
+                  "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+                  "size": 12,
+                  "weight": 400,
+                  "lineHeight": 16
+                },
+                "width": "fill"
+              },
+              {
+                "type": "frame",
+                "name": "enviar",
+                "width": "hug",
+                "height": 24,
+                "cornerRadius": 4,
+                "fill": "#1a63cc",
+                "stroke": {
+                  "color": "#1a63cc",
+                  "width": 1
+                },
+                "layout": {
+                  "type": "row",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "align": "center",
+                  "justify": "center"
+                },
+                "children": [
+                  {
+                    "type": "text",
+                    "name": "texto",
+                    "text": "Enviar",
+                    "color": "#ffffff",
+                    "font": {
+                      "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+                      "size": 13,
+                      "weight": 400,
+                      "lineHeight": 20
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "frame",
+        "name": "sem identidade",
+        "width": "fill",
+        "height": "hug",
+        "visible": {
+          "$eq": [
+            "semIdentidade",
+            "sim"
+          ]
+        },
+        "layout": {
+          "type": "column",
+          "gap": 8
+        },
+        "children": [
+          {
+            "type": "text",
+            "name": "aviso",
+            "text": "Preencha seu nome e e-mail nas Configurações para comentar.",
+            "color": "#5b6470",
+            "font": {
+              "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+              "size": 12,
+              "weight": 400,
+              "lineHeight": 16
+            },
+            "width": "fill"
+          },
+          {
+            "type": "frame",
+            "name": "preencher",
+            "width": "hug",
+            "height": 24,
+            "cornerRadius": 4,
+            "fill": "#ffffff",
+            "stroke": {
+              "color": "#7d8590",
+              "width": 1
+            },
+            "layout": {
+              "type": "row",
+              "padding": [
+                0,
+                8
+              ],
+              "align": "center",
+              "justify": "center"
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "texto",
+                "text": "Preencher nas Configurações",
+                "color": "#1b1f24",
+                "font": {
+                  "family": "system-ui, -apple-system, \"Segoe UI\", Roboto, \"Helvetica Neue\", sans-serif",
+                  "size": 13,
+                  "weight": 400,
+                  "lineHeight": 20
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 1,
+  "id": "banner",
+  "name": "Banner",
+  "description": "Faixa de aviso no topo da região: atenção (color-warning) ou informação.",
+  "size": {
+    "width": 360,
+    "height": 32
+  },
+  "minSize": {
+    "width": 120,
+    "height": 24
+  },
+  "sizing": {
+    "width": "fill",
+    "height": "hug"
+  },
+  "preview": {
+    "tom": "warning",
+    "texto": "Build de preview: pode haver mudanças."
+  },
+  "template": {
+    "type": "frame",
+    "name": "banner",
+    "cornerRadius": 6,
+    "fill": {
+      "$if": {
+        "$eq": [
+          "tom",
+          "warning"
+        ]
+      },
+      "then": "#fff4d6",
+      "else": "#ffffff"
+    },
+    "stroke": {
+      "color": "#dfe3e8",
+      "width": 1
+    },
+    "layout": {
+      "type": "row",
+      "gap": 8,
+      "padding": [
+        4,
+        4,
+        4,
+        12
+      ],
+      "align": "center"
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "texto",
+        "text": {
+          "$field": "texto"
+        },
+        "color": {
+          "$if": {
+            "$eq": [
+              "tom",
+              "warning"
+            ]
+          },
+          "then": "#8a5a00",
+          "else": "#1b1f24"
+        },
+        "font": {
+          "family": "Segoe UI",
+          "size": 12,
+          "weight": {
+            "$if": {
+              "$eq": [
+                "tom",
+                "warning"
+              ]
+            },
+            "then": 600,
+            "else": 400
+          },
+          "lineHeight": 16
+        },
+        "width": "fill"
+      }
+    ]
+  }
+}
