@@ -77,6 +77,8 @@ const gap = (weight: number, c: Candidate) =>
 export interface FontBook {
   /** A fonte que desenha/mede `family` com o peso e o estilo pedidos. */
   fontFor(family: string, weight: number, italic: boolean): Font;
+  /** Há alguma fonte da biblioteca (`fonts`) lida; senão tudo é medido com a embutida. */
+  readonly hasLibraryFonts: boolean;
 }
 
 export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
@@ -106,6 +108,7 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
     return best?.font ?? null;
   };
   return {
+    hasLibraryFonts: candidates.length > 0,
     fontFor(family, weight, italic) {
       const names = familyNames(family);
       for (const name of names) {

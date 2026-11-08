@@ -169,6 +169,11 @@ export interface InstantiateOptions {
 export interface Instantiated {
   readonly root: FrameNode;
   readonly warnings: readonly string[];
+  /**
+   * Quanto falta (px) em cada aviso de "não cabe" (`conteúdo maior que a caixa: …`, `texto maior
+   * que a caixa: …`), pela mensagem do aviso; o maior, se o mesmo aviso se repete. Ausente = vazio.
+   */
+  readonly shortfalls?: Readonly<Record<string, number>>;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -414,6 +419,12 @@ function createEngine(
   } = expandRepeats(source, sourceValues);
   const warnings = new Set<string>(expansionWarnings);
   const warn = (message: string) => warnings.add(message);
+  const shortfalls = new Map<string, number>();
+  /** Aviso de "não cabe": a mensagem de sempre e quanto falta, para a prova de desenho dizer. */
+  const warnShort = (message: string, missing: number) => {
+    warn(message);
+    shortfalls.set(message, Math.max(shortfalls.get(message) ?? 0, missing));
+  };
   const prefix = options.idPrefix ?? 'c';
 
   for (const key of referencedFields(component.template))
@@ -860,7 +871,8 @@ function createEngine(
       if (fills > 0) warn('fill dentro de hug vira 0');
     } else {
       const remaining = content - fixed - layout.gap * Math.max(0, sizes.length - 1);
-      if (remaining < -tolerance) warn(`conteúdo maior que a caixa: ${nodeName(frame)}`);
+      if (remaining < -tolerance)
+        warnShort(`conteúdo maior que a caixa: ${nodeName(frame)}`, -remaining);
       free = Math.max(0, remaining);
     }
     const shares = distributeFill(
@@ -891,8 +903,9 @@ function createEngine(
     const numbers = sizes.map((s) => (s === 'fill' ? 0 : s));
     if (layout.kind !== 'none' && space.content !== null) {
       const content = space.content;
-      if (numbers.some((s) => s > content + tolerance))
-        warn(`conteúdo maior que a caixa: ${nodeName(frame)}`);
+      const widest = Math.max(...numbers);
+      if (widest > content + tolerance)
+        warnShort(`conteúdo maior que a caixa: ${nodeName(frame)}`, widest - content);
     }
     return numbers;
   };
@@ -1321,7 +1334,8 @@ function createEngine(
   ): void => {
     if (!checksOverflow(font, w)) return;
     const measured = typeof height === 'number' ? height : height();
-    if (measured > h + TEXT_TOLERANCE) warn(`texto maior que a caixa: ${nodeName(node)}`);
+    if (measured > h + TEXT_TOLERANCE)
+      warnShort(`texto maior que a caixa: ${nodeName(node)}`, measured - h);
   };
 
   /** O texto da cena e, com `runs`, os trechos resolvidos e o layout deles na caixa. */
@@ -1473,6 +1487,7 @@ function createEngine(
 
   return {
     warnings,
+    shortfalls,
     planFrame,
     buildRoot,
     template: component.template,
@@ -1489,7 +1504,11 @@ export function instantiate(
 ): Instantiated {
   const engine = createEngine(component, values, options);
   const root = engine.buildRoot(box);
-  return { root, warnings: [...engine.warnings] };
+  return {
+    root,
+    warnings: [...engine.warnings],
+    shortfalls: Object.fromEntries(engine.shortfalls),
+  };
 }
 
 /**

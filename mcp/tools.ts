@@ -16,6 +16,7 @@ import { listMarkings } from './markingList';
 import { modelToolError } from './modelErrors';
 import { findPerspective, perspectiveDetail } from './perspectives';
 import { operationSchema } from './operations';
+import { resolveOperations } from './operationsFile';
 import { Proposals } from './proposals';
 import { Threads, resolveExtended } from './threads';
 import { registerThreadTools } from './threadTools';
@@ -146,6 +147,24 @@ const operationsArg = z
   .min(1)
   .max(1000)
   .describe('Operações, aplicadas em ordem. Veja o recurso AGENT-GUIDE.md.');
+
+/**
+ * `operations` inline ou `operationsFile` (decisão 28): `plan_changes` e `propose_changes` aceitam
+ * um dos dois. Cada um é opcional no schema; `resolveOperations` recusa os dois juntos e nenhum.
+ */
+const batchOperationsArgs = {
+  operations: operationsArg
+    .optional()
+    .describe(
+      'Operações, aplicadas em ordem (inline). Veja o recurso AGENT-GUIDE.md. Use `operations` OU `operationsFile`, nunca os dois.',
+    ),
+  operationsFile: z
+    .string()
+    .optional()
+    .describe(
+      'Caminho de um `.json` dentro das raízes com a lista de operações (a mesma de `operations`), para lotes grandes demais para a chamada (uma tela medida tem centenas). Relativo a uma raiz ou absoluto dentro de uma; fora das raízes é `outside-roots`, JSON inválido é `invalid-arguments` com a posição. Os dois juntos, ou nenhum, é `invalid-arguments`.',
+    ),
+};
 
 const maxSizeArg = z
   .number()
@@ -768,13 +787,18 @@ export function registerTools(
         'As operações são aplicadas em ordem; um item criado pode ser citado nas seguintes pelo apelido de `as` (ex: "$porta"). Itens trancados não podem ser movidos, redimensionados nem excluídos. Para enviar a alteração ao usuário, use propose_changes (o agente nunca grava o projeto direto).',
       inputSchema: {
         project: projectArg,
-        operations: operationsArg,
+        ...batchOperationsArgs,
       },
       annotations: READ_ONLY,
     },
-    ({ project, operations }) =>
+    ({ project, ...args }) =>
       respond(async () =>
-        planChanges(roots, await findProject(roots, project), operations, Date.now),
+        planChanges(
+          roots,
+          await findProject(roots, project),
+          await resolveOperations(roots, args),
+          Date.now,
+        ),
       ),
   );
 
@@ -825,11 +849,20 @@ export function registerTools(
           .describe(
             'Conversa à qual ligar a proposta (referência `mapping://projeto/c/código` de list_threads ou open_thread). A tool confere a conversa ANTES de gravar (inexistente ou resolvida: recusa e não grava nada) e, gravada a proposta, acrescenta à conversa uma mensagem sua com a proposta, que a app mostra como cartão com o botão Revisar. O formato da proposta não muda.',
           ),
-        operations: operationsArg,
+        ...batchOperationsArgs,
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
-    (args) => respond(() => proposals.propose(args)),
+    ({ operations: _inline, operationsFile: _file, ...args }) =>
+      respond(async () =>
+        proposals.propose({
+          ...args,
+          operations: await resolveOperations(roots, {
+            operations: _inline,
+            operationsFile: _file,
+          }),
+        }),
+      ),
   );
 
   server.registerTool(
