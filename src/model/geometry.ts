@@ -92,6 +92,54 @@ export function rectsOverlap(a: Rect, b: Rect): boolean {
   );
 }
 
+/**
+ * O maior deslocamento de `moving` (retângulos que andam juntos) até `dx`, `dy` sem sobrepor
+ * `fixed`, **eixo a eixo**: primeiro o x (contra os fixos que o y atual cruza), depois o y (com o
+ * x já aplicado), só quando o destino pedido sobrepõe um fixo, de modo que o movimento encosta no obstáculo (borda igual, distância 0) e
+ * desliza ao longo dele no outro eixo. Deslocamento que cabe volta como está. Quem já se
+ * sobrepõe não limita (não há "passar por dentro" a evitar).
+ */
+export function slideToTouch(
+  moving: readonly Rect[],
+  fixed: readonly Rect[],
+  dx: number,
+  dy: number,
+): { readonly dx: number; readonly dy: number } {
+  const lands = moving.map((r) => ({ ...r, x: r.x + dx, y: r.y + dy }));
+  // Destino livre: fica como está (inclusive "passando por cima" de um container no caminho).
+  if (!lands.some((m) => fixed.some((f) => rectsOverlap(m, f)))) return { dx, dy };
+  const limitedX = limitAxis(moving, fixed, dx, 'x');
+  const shifted = moving.map((r) => ({ ...r, x: r.x + limitedX }));
+  const limitedY = limitAxis(shifted, fixed, dy, 'y');
+  return { dx: limitedX, dy: limitedY };
+}
+
+function limitAxis(
+  moving: readonly Rect[],
+  fixed: readonly Rect[],
+  delta: number,
+  axis: 'x' | 'y',
+): number {
+  if (delta === 0) return 0;
+  const [pos, size, crossPos, crossSize] =
+    axis === 'x'
+      ? (['x', 'width', 'y', 'height'] as const)
+      : (['y', 'height', 'x', 'width'] as const);
+  let limit = Math.abs(delta);
+  for (const m of moving) {
+    for (const f of fixed) {
+      // Só atrapalha quem o outro eixo cruza (estrito, como `rectsOverlap`).
+      const crosses =
+        m[crossPos] < f[crossPos] + f[crossSize] - EPSILON &&
+        f[crossPos] < m[crossPos] + m[crossSize] - EPSILON;
+      if (!crosses) continue;
+      const gap = delta > 0 ? f[pos] - (m[pos] + m[size]) : m[pos] - (f[pos] + f[size]);
+      if (gap >= -EPSILON) limit = Math.min(limit, Math.max(0, gap));
+    }
+  }
+  return Math.sign(delta) * limit || 0;
+}
+
 export function boundingBox(rects: readonly Rect[]): Rect | null {
   const first = rects[0];
   if (!first) return null;

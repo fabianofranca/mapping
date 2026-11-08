@@ -69,6 +69,20 @@ export function reportRemoteImageIssue(
   issues.value = current.map((item, i) => (i === at ? { ...item, reason } : item));
 }
 
+/**
+ * Tira a URL da lista: ela passou a ser desenhada nesta sessão (carregou), então o Diagnóstico
+ * não deve mais dizer que não foi mostrada. As linhas de baixo sobem e o índice acompanha.
+ */
+export function resolveRemoteImageIssue(url: string): void {
+  const at = issueIndex.get(url);
+  if (at === undefined) return;
+  issueIndex.delete(url);
+  for (const [known, position] of issueIndex) {
+    if (position > at) issueIndex.set(known, position - 1);
+  }
+  issues.value = issues.peek().filter((_, i) => i !== at);
+}
+
 /** Só para testes. */
 export function clearRemoteImageIssues(): void {
   issueIndex.clear();

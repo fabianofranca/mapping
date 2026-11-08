@@ -9,6 +9,7 @@ import {
   imagePixelRect,
   isIntegerRect,
   rectsOverlap,
+  slideToTouch,
   snapNearInteger,
   translateRect,
 } from './geometry';
@@ -207,6 +208,44 @@ export function moveItems(
   }
 
   return applyMoves(p, placements, rects, options);
+}
+
+/**
+ * O deslocamento do arrasto conjunto depois de encostar (decisão 4 da etapa #764): quando `dx`,
+ * `dy` fariam um container que anda sobrepor um que NÃO anda, devolve o maior deslocamento sem
+ * sobreposição, eixo a eixo (as bordas ficam iguais e ele desliza ao longo do obstáculo);
+ * deslocamento que cabe volta como está. É o que as prévias e o fim do gesto passam a `moveItems`,
+ * que continua recusando a sobreposição com `image-overlap`. Com marcação do canvas na seleção o
+ * deslocamento do canvas é inteiro (como em `moveItems`) e o limite sobe para o inteiro de menor
+ * módulo, para o arredondamento não devolver a sobreposição.
+ */
+export function limitItemsMove(
+  p: Project,
+  items: readonly ItemRef[],
+  dx: number,
+  dy: number,
+): { readonly dx: number; readonly dy: number } {
+  if (!Number.isFinite(dx) || !Number.isFinite(dy)) return { dx, dy };
+  const index = projectIndex(p);
+  const moving = movingItems(p, items);
+  const ids = new Set(moving.filter((m) => m.kind === 'image').map((m) => m.id));
+  if (ids.size === 0 || (dx === 0 && dy === 0)) return { dx, dy };
+  const sharesCanvasDelta = moving.some(
+    (item) =>
+      item.kind === 'marking' && index.markings.get(item.id)?.containerId === null,
+  );
+  const [wantedX, wantedY] = sharesCanvasDelta
+    ? [Math.round(dx), Math.round(dy)]
+    : [dx, dy];
+  const footprint = (c: ProjectContainer) => imageCanvasRect(c, c.placement);
+  const limited = slideToTouch(
+    p.containers.filter((c) => ids.has(c.id)).map(footprint),
+    p.containers.filter((c) => !ids.has(c.id)).map(footprint),
+    wantedX,
+    wantedY,
+  );
+  if (!sharesCanvasDelta) return limited;
+  return { dx: Math.trunc(limited.dx), dy: Math.trunc(limited.dy) };
 }
 
 /**

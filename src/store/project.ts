@@ -94,6 +94,44 @@ function packageSpecNameIn(spec: Spec, files?: SpecPackageFiles): string | undef
  * Gestos (arrastar/redimensionar) usam `store.beginGesture/updateGesture/commitGesture`
  * com as mesmas operações, para gerar uma única entrada no histórico.
  */
+/**
+ * Arrasto conjunto na Principal: `moveItems` com o deslocamento reduzido ao maior sem sobrepor
+ * um container que não anda (as bordas encostam; decisão 4 da etapa #764).
+ */
+function movedTouching(
+  p: Project,
+  items: readonly model.ItemRef[],
+  dx: number,
+  dy: number,
+  options: model.SettleOptions,
+): Project {
+  const limited = model.limitItemsMove(p, items, dx, dy);
+  return model.moveItems(p, items, limited.dx, limited.dy, options);
+}
+
+/**
+ * Posição pedida para mover um container (mesma escala) na Principal, reduzida ao que encosta no
+ * container que o ponteiro atravessaria. Redimensionar (escala diferente) segue como veio.
+ */
+function touchingPlacement(
+  p: Project,
+  containerId: string,
+  placement: Placement,
+): Placement {
+  const own = model.projectIndex(p).containers.get(containerId);
+  if (!own || own.placement.scale !== placement.scale) return placement;
+  const wantedX = placement.x - own.placement.x;
+  const wantedY = placement.y - own.placement.y;
+  const { dx, dy } = model.limitItemsMove(
+    p,
+    [{ kind: 'image', id: containerId }],
+    wantedX,
+    wantedY,
+  );
+  if (dx === wantedX && dy === wantedY) return placement;
+  return { ...placement, x: own.placement.x + dx, y: own.placement.y + dy };
+}
+
 export function createProjectActions(store: ProjectStore, deps: ActionDeps = {}) {
   const newId = deps.newId ?? (() => crypto.randomUUID());
   const catalog = deps.components ?? (() => model.EMPTY_CATALOG);
@@ -294,7 +332,14 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
             view.placementInView(p, viewFor(p), containerId, placement, {
               settle: false,
             }) ??
-            model.setContainerPlacement(p, containerId, placement, { settle: false }),
+            model.setContainerPlacement(
+              p,
+              containerId,
+              touchingPlacement(p, containerId, placement),
+              {
+                settle: false,
+              },
+            ),
         ),
       ),
     /**
@@ -395,7 +440,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
           (p) =>
             view.itemsMoveInView(p, viewFor(p), items, { dx, dy }, 'move', {
               settle: false,
-            }) ?? model.moveItems(p, items, dx, dy, { settle: false }),
+            }) ?? movedTouching(p, items, dx, dy, { settle: false }),
         ),
       ),
     /**
@@ -417,7 +462,7 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
               { dx, dy },
               'move',
               settleOptions(base),
-            ) ?? model.moveItems(base, items, dx, dy, settleOptions(base)),
+            ) ?? movedTouching(base, items, dx, dy, settleOptions(base)),
         ),
       ),
     /**

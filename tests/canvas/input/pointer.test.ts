@@ -196,17 +196,18 @@ describe('PointerInput', () => {
     s.cleanup();
   });
 
-  it('mouse: mover a imagem para cima de outra fica inválido e volta ao soltar', () => {
+  it('mouse: mover a imagem para cima de outra encosta nela e fica ali ao soltar', () => {
     const s = setup();
     s.ui.selection.value = { kind: 'image', id: 'I2' };
     s.fire('pointerdown', 1300, 300);
     s.fire('pointermove', 1100, 300);
     s.fire('pointermove', 800, 300);
-    expect(s.state.preview.value).toMatchObject({ containerId: 'I2', valid: false });
+    expect(s.state.preview.value).toMatchObject({ containerId: 'I2', valid: true });
     s.fire('pointerup', 800, 300);
     expect(s.state.preview.value).toBeNull();
+    // Encostou na borda direita da I1 (1000), em vez de ficar onde estava (1100).
     const p = s.store.project.peek();
-    expect(p && projectIndex(p).containers.get('I2')?.placement.x).toBe(1100);
+    expect(p && projectIndex(p).containers.get('I2')?.placement.x).toBe(1000);
     s.cleanup();
   });
 
@@ -1104,7 +1105,7 @@ describe('PointerInput: seleção múltipla', () => {
       s.cleanup();
     });
 
-    it('um movimento inválido no meio mantém a prévia na última posição válida, e soltar grava essa posição', () => {
+    it('um movimento que sobreporia um container fixo encosta nele, e soltar grava essa posição', () => {
       const s = groupSetup();
       selectItems(s.ui, [im('I1'), im('I2')]); // I3 fica de fora
       s.fire('pointerdown', 1300, 300);
@@ -1112,16 +1113,16 @@ describe('PointerInput: seleção múltipla', () => {
       s.fire('pointermove', 1450, 300); // +150: I2 vai a 1250..1750, antes de I3 (1800)
       expect(s.containerOf('I2')?.placement.x).toBe(1250);
       expect(s.containerOf('I1')?.placement.x).toBe(150);
-      s.fire('pointermove', 1700, 300); // +400: I2 passaria por cima de I3
-      expect(s.containerOf('I2')?.placement.x).toBe(1250); // a prévia inteira não saiu do lugar
-      expect(s.containerOf('I1')?.placement.x).toBe(150);
-      s.fire('pointermove', 1460, 300); // volta a uma posição válida: a prévia a segue
+      s.fire('pointermove', 1700, 300); // +400: I2 passaria por cima de I3 e encosta nele (+200)
+      expect(s.containerOf('I2')?.placement.x).toBe(1300);
+      expect(s.containerOf('I1')?.placement.x).toBe(200);
+      s.fire('pointermove', 1460, 300); // volta: a prévia segue o ponteiro
       expect(s.containerOf('I2')?.placement.x).toBe(1260);
       expect(s.containerOf('I1')?.placement.x).toBe(160);
-      s.fire('pointermove', 1800, 300); // inválida de novo
-      s.fire('pointerup', 1800, 300); // solta numa posição inválida
-      expect(s.containerOf('I2')?.placement.x).toBe(1260);
-      expect(s.containerOf('I1')?.placement.x).toBe(160);
+      s.fire('pointermove', 1800, 300); // de novo além do I3
+      s.fire('pointerup', 1800, 300); // solta além: grava a posição encostada
+      expect(s.containerOf('I2')?.placement.x).toBe(1300);
+      expect(s.containerOf('I1')?.placement.x).toBe(200);
       expect(s.containerOf('I3')?.placement.x).toBe(1800);
       expect(s.store.gestureActive.value).toBe(false);
       expect(s.store.undo()).toBe(true);

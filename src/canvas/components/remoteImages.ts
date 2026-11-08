@@ -3,7 +3,7 @@
 // Usada pelo canvas principal e pela galeria do Catálogo; o `renderScene` só recebe o resultado.
 import { computed, type ReadonlySignal } from '@preact/signals';
 import { allowNoCors, remoteImageGate } from '../../store/imagePermissions';
-import { reportRemoteImageIssue } from '../../store/diagnostics';
+import { reportRemoteImageIssue, resolveRemoteImageIssue } from '../../store/diagnostics';
 import {
   type RemoteImageLoader,
   type RemoteImageView,
@@ -30,6 +30,7 @@ export interface RemoteImageSourceDeps {
   readonly gate: typeof remoteImageGate;
   readonly allowNoCors: typeof allowNoCors;
   readonly report: typeof reportRemoteImageIssue;
+  readonly resolved: typeof resolveRemoteImageIssue;
 }
 
 export function createRemoteImageSource(
@@ -39,6 +40,7 @@ export function createRemoteImageSource(
   const gateSignal = deps.gate ?? remoteImageGate;
   const noCorsSignal = deps.allowNoCors ?? allowNoCors;
   const report = deps.report ?? reportRemoteImageIssue;
+  const resolved = deps.resolved ?? resolveRemoteImageIssue;
   // O carregador usa a URL normalizada pela política; o desenho, a do campo: o aviso traduz.
   const rawUrls = new Map<string, Set<string>>();
   return {
@@ -56,6 +58,7 @@ export function createRemoteImageSource(
       if (view.state === 'failed')
         report(url, view.reason === 'timeout' ? 'timeout' : 'failed');
       else if (view.state === 'too-large') report(url, 'too-large');
+      else if (view.state === 'loaded' || view.state === 'opaque') resolved(url);
       return view;
     },
     subscribe: (listener) =>

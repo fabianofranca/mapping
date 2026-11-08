@@ -212,14 +212,21 @@ describe('store: gestos', () => {
     if (!start) throw new Error('sem I2');
     expect(actions.beginGesture().ok).toBe(true);
     expect(actions.previewImagePlacement('I2', { ...start, y: 900 }).ok).toBe(true);
-    // Em cima da I1 (0..1000 × 0..750): recusada, fica na última válida.
-    expect(actions.previewImagePlacement('I2', { ...start, x: 100, y: 100 })).toEqual({
-      ok: false,
-      error: 'image-overlap',
+    // Em cima da I1 (0..1000 × 0..750): encosta nela (x = 1000) e desliza no y pedido.
+    expect(actions.previewImagePlacement('I2', { ...start, x: 100, y: 100 }).ok).toBe(
+      true,
+    );
+    expect(project(store).containers[1]?.placement).toEqual({
+      ...start,
+      x: 1000,
+      y: 100,
     });
-    expect(project(store).containers[1]?.placement).toEqual({ ...start, y: 900 });
     actions.commitGesture();
-    expect(project(store).containers[1]?.placement).toEqual({ ...start, y: 900 });
+    expect(project(store).containers[1]?.placement).toEqual({
+      ...start,
+      x: 1000,
+      y: 100,
+    });
     expect(store.undo()).toBe(true);
     expect(project(store).containers).toBe(before.containers);
     expect(store.undo()).toBe(false);
@@ -404,13 +411,13 @@ describe('store: gestos com assentar (ME1)', () => {
     if (!start) throw new Error('sem I2');
     expect(actions.beginGesture().ok).toBe(true);
     expect(actions.previewImagePlacement('I2', { ...start, y: 900 }).ok).toBe(true);
-    // Por cima da I1: recusada; a final assenta a última válida (y = 900).
+    // Por cima da I1: a prévia encosta nela (x = 1000, y = 100); a final assenta essa posição.
     expect(actions.previewImagePlacement('I2', { ...start, x: 100, y: 100 }).ok).toBe(
-      false,
+      true,
     );
     expect(actions.finishImagePlacement('I2').ok).toBe(true);
     actions.commitGesture();
-    expect(container(store, 'I2')?.placement).toEqual({ ...start, y: 900 });
+    expect(container(store, 'I2')?.placement).toEqual({ ...start, x: 1000, y: 100 });
   });
 
   it('a operação final nunca falha: se falhar, assenta a última prévia válida', () => {
