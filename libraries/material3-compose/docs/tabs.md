@@ -65,3 +65,35 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Primárias com ícone acima**: style=primary, iconPosition=top
 - **Secundárias com ícone à esquerda**: style=secondary, iconPosition=leading
 - **Primárias roláveis**: style=primary-scrollable, iconPosition=leading
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Tab.kt` (linhas 90 a 123: `Tab` com texto e ícone, o estilo `PrimaryNavigationTabTokens.LabelTextFont`; 154 a 196: `LeadingIconTab`, altura `SmallTabHeight`, `padding(horizontal = 16)` e o espaço de 8; 229 a 262: a `Tab` base, que ocupa a largura da fileira; 270 a 293: `TabTransition` e a cor do conteúdo; 301 a 364: `TabBaselineLayout`, a altura 48 ou 72; 367 a 417: `placeTextOrIcon` e `placeTextAndIcon`; 420 a 438: `SmallTabHeight` 48, `LargeTabHeight` 72, `HorizontalTextPadding` 16, `SingleLineTextBaselineWithIcon` 14, `IconDistanceFromBaseline` 20.sp e `TextDistanceFromLeadingIcon` 8).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/TabRow.kt` (linhas 150 a 165: `PrimaryTabRow`, indicador com `matchContentSize = true`; 201 a 216: `SecondaryTabRow`, indicador com `matchContentSize = false`; 253 a 282 e 324 a 350: as fileiras roláveis; 392 a 505: `TabRowImpl`, `tabWidth = tabRowWidth / tabCount` (447) e o indicador de no mínimo 24 (459 a 461); 511 a 650: `ScrollableTabRowImpl`, a aba de `maxOf(minTabWidth, largura)` (605) e o indicador centrado na aba (637); 682 a 745: `TabIndicatorOffsetNode`; 976 a 1090: `TabRowDefaults` com `ScrollableTabRowMinTabWidth` 90 (981), `ScrollableTabRowEdgeStartPadding` 52 (987), as cores do contêiner e do conteúdo (998 a 1018), `PrimaryIndicator` (1054) e `SecondaryIndicator` (1078)).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Divider.kt` (linhas 49 a 61: `HorizontalDivider`, uma linha de `DividerDefaults.Thickness`; 113 a 116: `DividerDefaults`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/PrimaryNavigationTabTokens.kt` (linhas 25 a 51: indicador de 3 em `Primary`, `RoundedCornerShape(3)`, contêiner `Surface` de 48, ícone de 24, cores ativa `Primary` e inativa `OnSurfaceVariant`, `LabelTextFont` `TitleSmall`) e `SecondaryNavigationTabTokens.kt` (linhas 24 a 42: ativa `OnSurface`, inativa `OnSurfaceVariant`, `ContainerHeight` 48).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/DividerTokens.kt` (linhas 23 a 26: `Color` `OutlineVariant`, `Thickness` 1) e `TypographyTokens.kt` (`TitleSmall`: 14, linha 20, peso 500, espaçamento 0,1).
+
+**Como o desenho segue o Compose**
+
+- Fileira fixa: as abas dividem a largura por igual (`repeat.distribute: "fill"`, o `tabWidth = tabRowWidth / tabCount` do `TabRowImpl`), sobre o fundo `surface`. A altura é a da marcação: 48 (`SmallTabHeight`) e 72 com ícone e texto empilhados (`LargeTabHeight`); aba só com texto ou só com ícone fica centrada na altura (`placeTextOrIcon`).
+- Divisória de 1 em `outline-variant` embaixo (`HorizontalDivider`), um quadro com `stroke.sides: ["bottom"]` desenhado por baixo das abas e dos indicadores. O `HorizontalDivider` padrão usa `DividerTokens.Color` (`OutlineVariant`), e não o `DividerColor` do token da secundária.
+- Rótulo em `title-small` pelos tokens (14, linha 20, peso 500, espaçamento 0,1), sem `family`. Ícone do conjunto da biblioteca (nó `icon`) de 24, na mesma cor do rótulo.
+- Cores: a aba selecionada em `primary` nas primárias e em `on-surface` nas secundárias (`ActiveLabelTextColor` e `ActiveIconColor` de cada token); as outras em `on-surface-variant` (`InactiveLabelTextColor`). Light e dark seguem os mesmos tokens.
+- Ícone acima do texto (`Tab`): o texto fica a 12 do fundo da aba (`tabHeight - baseline - (14 + 3)`, com a linha de base do Roboto 14/20 em 15) e o ícone a 5 acima dele, o que põe o ícone a 11 do topo na aba de 72. Ícone à esquerda (`LeadingIconTab`): ícone, 8 e texto, centrados juntos.
+- Indicador primário: 3 de altura em `primary`, canto 3 (o `RoundedCornerShape(3)` do token, que numa altura de 3 vira 1,5), do tamanho do conteúdo (`matchContentSize`: o texto, ou o ícone, o espaço e o texto no `LeadingIconTab`) e no mínimo 24 (`minWidth`), centrado na aba. Indicador secundário: 3 de altura (`SecondaryIndicator` usa `ActiveIndicatorHeight`, e não 2) em `primary`, na largura toda da aba, sem canto, desenhado por `stroke.sides: ["bottom"]` de 3. Só a aba selecionada leva indicador.
+- Roláveis: recuo inicial de 52 (`ScrollableTabRowEdgeStartPadding`), abas com a largura do conteúdo mais 2 vezes 16 (`HorizontalTextPadding`) e no mínimo 90 (`minWidth`, no lugar do retângulo sem altura que fazia isso na `formatVersion` 2). Com ícone à esquerda a aba mede 16 + ícone + 8 + texto + 16.
+
+**O que ainda difere do Compose**
+
+- Cor das abas não selecionadas: no Compose, sem `selectedContentColor` e `unselectedContentColor`, a `Tab` pinta todas as abas com a cor do conteúdo da fileira (`unselectedContentColor` vale o `selectedContentColor`), e as inativas só ficam em `OnSurfaceVariant` quando a tela passa as cores. O desenho segue os tokens (`InactiveLabelTextColor`) e o `code` do tipo não passa as cores.
+- Sem estados de pressionado, foco e passar o mouse, sem ripple, sem a animação do indicador e da cor, sem a rolagem (`scrollState`) nem o deslocamento que centraliza a aba selecionada: nas roláveis, o que passa da largura sai cortado.
+- A altura da fileira depende do conteúdo no Compose (72 se alguma aba tem ícone e texto empilhados); aqui é a da marcação. Sem retângulo (tela vinda de um JSON), o `sizing.height` é o literal 48, porque `sizing` não aceita expressão.
+- Rótulo longo: o Compose quebra em até duas linhas e sobe o texto (`DoubleLineTextBaselineWithIcon` 6); o desenho mantém uma linha, sem quebra, e o indicador acompanha a largura inteira do texto mesmo quando passa da aba (o Compose limita ao `tabWidth`).
+- A posição vertical do texto parte da linha de base do Compose; o motor não alinha por linha de base, então o 15 é uma estimativa do Roboto 14/20 (`ascent` de 0,928 e meia entrelinha extra) e vale para essa fonte e esse tamanho.
+- Sem o `badge` sobre o ícone (`Modifier.badgeBounds`) e sem `Tab` de conteúdo livre.
+- A descrição do campo `style` na especialização ainda fala em indicador secundário de 2 (o valor correto é 3); o arquivo da especialização não mudou nesta fase.

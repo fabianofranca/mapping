@@ -56,3 +56,27 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Ícone acima, distribuída**: arrangement=EqualWeight, iconPosition=Top
 - **Ícone ao lado, centralizada**: arrangement=Centered, iconPosition=Start
 - **Ícone acima, centralizada**: arrangement=Centered, iconPosition=Top
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ShortNavigationBar.kt` (linhas 121 a 146: `DefaultShortNavigationBarOverride`, o `Surface` de `defaultMinSize(minHeight = NavigationBarTokens.ContainerHeight)` e a escolha entre `EqualWeight` e `Centered`; 210 a 256: `ShortNavigationBarItem` e os recuos do indicador por `iconPosition`; 263 e 305 a 309: cor do contêiner e do item; 384 a 434: `EqualWeightContentMeasurePolicy`, a largura dividida por igual; 436 a 511: `CenteredContentMeasurePolicy` e `calculateCenteredContentHorizontalPadding` (60%, 70%, 80% e 90% da largura com 3 a 6 itens); 521 a 540: `TopIconItemVerticalPadding` 6, os recuos do indicador e `StartIconToLabelPadding` 4).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationItem.kt` (linhas 553 a 645: `TopIconOrIconOnlyMeasurePolicy`; 647 a 735: `StartIconMeasurePolicy`; 895 a 975: `placeLabelAndTopIcon` e `placeLabelAndStartIcon`, as posições do ícone, do rótulo e do indicador).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/NavigationBarTokens.kt` (linhas 24 a 38) e `NavigationBarVerticalItemTokens.kt` (24 a 27: indicador 56 × 32, `ContainerBetweenSpace` 6) e `NavigationBarHorizontalItemTokens.kt` (24 a 27: `ActiveIndicatorHeight` 40, `ActiveIndicatorLeadingSpace` e `TrailingSpace` 16).
+
+**Como o desenho segue o Compose**
+
+- Contêiner de 64 (`NavigationBarTokens.ContainerHeight`) em `surface-container`, sem sombra.
+- `EqualWeight`: os destinos dividem a largura por igual (`distribute: "fill"`), sem espaço entre eles. `Centered`: os destinos ficam agrupados no meio, com margens iguais nos dois lados.
+- Ícone acima: item de 64 com 6 de recuo (`topIconItemVerticalPadding`), indicador de 56 × 32 em `corner-full`, ícone de 24 no centro dele, 4 de espaço e o rótulo em `label-medium` (12 / 16, peso 500, 0,5): o conteúdo mede 6 + 32 + 4 + 16 + 6 = 64.
+- Ícone ao lado: pílula de 40 de altura (24 do ícone mais 8 em cima e em baixo) em `corner-full`, com 16 de respiro nos lados e 4 entre ícone e rótulo, centrada na altura. O rótulo usa `label-medium` também aqui (`NavigationBarTokens.LabelTextFont`).
+- Cores: indicador `secondary-container` (só no selecionado), ícone `on-secondary-container` selecionado e `on-surface-variant` nos demais, rótulo `secondary` selecionado e `on-surface-variant` nos demais.
+
+**O que ainda difere do Compose**
+
+- A margem do `Centered` é fixa em 10% de cada lado (o caso de 5 itens). O Compose usa 20% com 3 itens, 15% com 4, 10% com 5 e 5% com 6 (`calculateCenteredContentHorizontalPadding`), e deixa um item crescer até `largura / itens` quando o rótulo é mais largo. O formato não conta as linhas de uma `table` em expressão.
+- Sem estados de pressionado, foco e passar o mouse, sem o ripple e sem a animação do indicador (o desenho é o estado final), e sem `enabled`.
+- A altura mínima de 48 de toque do item e `windowInsets` não aparecem no desenho; `ShortNavigationBarItemColors` próprio não é campo do tipo.

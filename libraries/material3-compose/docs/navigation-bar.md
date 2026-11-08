@@ -54,3 +54,27 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 - **Sempre com rótulo**: alwaysShowLabel=true
 - **Rótulo só no ativo**: alwaysShowLabel=false
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationBar.kt` (linhas 138 a 158: `DefaultNavigationBarOverride`, o `Surface` com `Row` de `defaultMinSize(minHeight = NavigationBarHeight)` e `Arrangement.spacedBy(NavigationBarItemHorizontalPadding)`; 196 a 316: `NavigationBarItem`, o `weight(1f)`, o rótulo que só aparece com `alwaysShowLabel` ou selecionado; 321 a 329: `NavigationBarDefaults`, `Elevation` Level0 e `containerColor`; 407 a 411: as cores do item; 680 a 742: `placeLabelAndIcon`, as posições do ícone e do rótulo; 752 a 772: `NavigationBarHeight`, `NavigationBarItemHorizontalPadding` 8, `NavigationBarIndicatorToLabelPadding` 4, `IndicatorHorizontalPadding` e `IndicatorVerticalPadding`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/NavigationBarTokens.kt` (linhas 24 a 38: `ContainerColor` surface container, `ItemActiveIconColor`, `ItemActiveIndicatorColor`, `ItemActiveIndicatorShape` full, `ItemActiveLabelTextColor` secondary, `ItemInactive*` on surface variant, `NavShape` none, `TallContainerHeight` 80, `LabelTextFont` label medium).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/NavigationBarVerticalItemTokens.kt` (linhas 24 a 27: `ActiveIndicatorHeight` 32, `ActiveIndicatorWidth` 56, `IconSize` 24).
+
+**Como o desenho segue o Compose**
+
+- Contêiner de 80 (`TallContainerHeight`, o `defaultMinSize` da linha) em `surface-container`, sem canto e sem sombra (a elevação padrão do composable é Level0, não a Level2 do arquivo de tokens).
+- Os destinos têm a mesma largura (`weight(1f)`), com 8 entre eles e nenhuma margem nas pontas: o `repeat` com `distribute: "fill"` e `gap` 8.
+- Indicador do selecionado de 56 × 32 (`IndicatorHorizontalPadding` 16 e `IndicatorVerticalPadding` 4 em volta do ícone de 24) na forma `corner-full`, em `secondary-container`; o não selecionado não pinta o fundo. O ícone de 24 (nó `icon`) fica no centro do indicador: `on-secondary-container` selecionado, `on-surface-variant` nos demais.
+- Com rótulo, o conteúdo é indicador (a 12 do topo), 4 de espaço e o rótulo em `label-medium` (12 / 16, peso 500, 0,5 de espaçamento): `secondary` selecionado, `on-surface-variant` nos demais. Com `alwaysShowLabel` falso o rótulo some nos não selecionados e o ícone desce para o centro da altura (`unselectedIconY = (height - icon) / 2`, 28); a posição do conteúdo muda com o `justify` e o `padding` por expressão.
+
+**O que ainda difere do Compose**
+
+- O indicador do Compose 1.4.0 mede 56 × 32 (`NavigationBarVerticalItemTokens.ActiveIndicatorWidth`), e não os 64 × 32 da primeira versão deste componente nem os do desenho M3 anterior: o desenho segue o `.kt`.
+- Sem estados de pressionado, foco e passar o mouse, sem o ripple e sem a animação de expansão do indicador (o desenho é o estado final), e sem `enabled` (não é campo do tipo).
+- `windowInsets`, `tonalElevation`, `containerColor` e `NavigationBarItemColors` próprios não são campos do tipo; o ícone é só o nome do conjunto Material Icons da biblioteca.
+- O rótulo do Compose quebra em mais de uma linha quando passa da largura do destino; aqui ele é `hug` e a prova de desenho avisa o que não cabe.
