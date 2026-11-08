@@ -485,7 +485,7 @@
  * controles da revisão (Atual/Proposto) e o zoom ficam inteiros e o caminho encolhe com
  * reticências e dica (BS3: sobram ~103 px, a seleção com ~5 letras + "…"; só "› ›" era ilegível);
  * cedem, por valor menor, Conversas, Enquadrar tudo (Ctrl+0), Visualizar e Mostrar no canvas
- * (opções de vista, fora da revisão), que fechar uma janela devolve. A legenda fica: é da revisão.
+ * (opções de vista, fora da revisão), que fechar a janela Detalhes devolve. A legenda fica: é da revisão.
  * Sem a revisão nada cede.
  */
 .canvas-bar-low {
