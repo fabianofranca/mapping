@@ -1624,34 +1624,17 @@
           }
         }
       },
-      "allOf": [
+      "anyOf": [
         {
-          "if": {
-            "properties": {
-              "kind": {
-                "const": "measured"
-              }
-            },
-            "required": ["kind"]
-          },
-          "then": {
-            "not": {
-              "anyOf": [
-                {
-                  "required": ["node"]
-                },
-                {
-                  "required": ["screen"]
-                },
-                {
-                  "required": ["examples"]
-                }
-              ]
+          "required": ["node", "screen"]
+        },
+        {
+          "properties": {
+            "kind": {
+              "const": "measured"
             }
           },
-          "else": {
-            "required": ["node", "screen"]
-          }
+          "required": ["kind"]
         }
       ]
     },

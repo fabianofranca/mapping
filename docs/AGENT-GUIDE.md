@@ -269,7 +269,7 @@ Onde uma operação pede um item (`container`, `marking`, `parent`, `annotation`
 | `delete_image`          | `image`                                                                                                                                                  | **Antiga**, aceita com aviso: use `delete_container`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `create_marking`        | `container`, `rect?`, `near?`, `name?`, `source?`, `parent?`, `annotation?`, `annotationAs?`, `as?`                                                      | `rect` em pixels do container. O argumento antigo `image` ainda vale (com aviso `deprecated-op`); informar os dois falha com `invalid-arguments`. Sem `container`, a marcação nasce no **canvas** (`rect` em unidades do canvas, pode ser negativo); com `container`, ela entra no espaço dele, e o pai é derivado da geometria (a mais interna que a contém). `parent` é aceito com aviso `ignored-argument` e ignorado. `near`: só para tipo flutuante e exige `container` omitido (com `container` é ignorado com aviso `ignored-argument`, e um tipo flutuante nunca leva `container`); com `rect`, o `rect` dá só o tamanho. `annotation: { type, layer?, name?, values? }` cria também a anotação tipada; se o tipo tem componente, `rect` é opcional e vale o `minSize` (veja "Montar um container com componentes").                                                                                                                                                                 |
 | `wrap_items`            | `items`, `name?`, `source?`, `as?`                                                                                                                       | **Envolver** da app (não calcule o retângulo da mãe à mão): cria uma marcação em volta de marcações e containers (referência, id ou apelido), com 8 px de margem, limitada ao container e ao pai atual. Sem `container` na operação: se todas as marcações são do mesmo container, a nova é desse container; senão, é do canvas (um container entra inteiro). O pai de cada item sai da geometria (o assentar do modelo). `name` e `source` saem como em `create_marking`; `as` dá apelido à nova para as operações seguintes. Notas (flutuantes) e setas na lista são ignoradas com aviso `ignored-argument`; sem nada que entre, `invalid-parent`. **Empate de retângulo:** se o item preenche o container, a nova fica com o retângulo dele e é a mãe do item, no plano e no aplicado, também com `move_marking` no lote; a exceção rara é o limite conhecido #625 (empate novo entre marcações que já existiam, decidido por um passo intermediário do lote): confira com `get_marking`. |
-| `import_measured`       | `container`, `system`, `tree` ou `file`, `offset?`, `scale?`                                                                                             | Traduz uma **árvore medida** (os retângulos de uma página web, de uma hierarquia de views) em marcações com anotação tipada, pelas `sources` dos tipos da origem `kind: "measured"`. Detalhes em "Importar um layout medido". |
+| `import_measured`       | `container`, `system`, `tree` ou `file`, `offset?`, `scale?`                                                                                             | Traduz uma **árvore medida** (os retângulos de uma página web, de uma hierarquia de views) em marcações com anotação tipada, pelas `sources` dos tipos da origem `kind: "measured"`. Detalhes em "Importar um layout medido".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `move_marking`          | `marking`, `index`                                                                                                                                       | Posição entre as irmãs no estado do lote naquele ponto (0 = a primeira, desenhada por baixo); se já está nela, o resumo diz que nada muda. Não é geometria: a trava não impede.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `update_marking`        | `marking`, `name?`, `source?`, `rect?`, `move?`, `container?`, `floating?`, `parent?`, `locked?`, `confirmReview?`                                       | `rect` redimensiona (as filhas ficam onde estão; numa marcação que desenha um componente, respeita o `minSize` dele); `move: {dx, dy}` desloca com as filhas. `container` (referência, id ou apelido, ou `null` para o canvas), junto de `rect` nos pixels do novo container (no canvas, em unidades do canvas), troca o espaço da marcação; as descendentes ficam onde estão e o assentar recalcula espaço e pai pela geometria. `floating: true` passa a marcação ao canvas como flutuante (exige geometria destrancada); numa flutuante, `container` não nulo falha. `parent` é aceito com aviso e ignorado.                                                                                                                                                                                                                                                                                                                                                                              |
 | `delete_marking`        | `marking`                                                                                                                                                | Com as descendentes e as anotações.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
@@ -348,13 +348,13 @@ Regras:
 
 Quando a tela já existe num navegador ou num app (uma página web, uma hierarquia de views) e você consegue **medir** os retângulos dela, não recrie cada marcação à mão: a op `import_measured` do lote lê a árvore medida e a traduz em `create_marking`s, cada uma com a anotação do tipo que casou. Ela precisa de uma especialização aplicada com uma origem `kind: "measured"` (`origins`, `formatVersion` 15) e de tipos com `sources` nesse `system`; a biblioteca de exemplo é `examples/libraries/medido/` (`system` `dom`).
 
-| Parâmetro   | Descrição                                                                                                                                                  |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `container` | Onde as marcações nascem (referência, id ou apelido `$nome`). Os retângulos são em pixels dele, depois de `scale` e `offset`.                              |
-| `system`    | O `system` de uma origem `measured` da especialização aplicada.                                                                                            |
-| `tree`      | A árvore inline. **Ou** `file`: um `.json` dentro das raízes (para páginas com centenas de nós). Os dois juntos, ou nenhum, é `invalid-arguments`.        |
-| `offset`    | `{ x, y }` em px, somado depois da escala (padrão 0, 0).                                                                                                   |
-| `scale`     | Multiplicador dos retângulos (padrão 1), por exemplo `0.5` para uma página medida em 2x.                                                                   |
+| Parâmetro   | Descrição                                                                                                                                          |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `container` | Onde as marcações nascem (referência, id ou apelido `$nome`). Os retângulos são em pixels dele, depois de `scale` e `offset`.                      |
+| `system`    | O `system` de uma origem `measured` da especialização aplicada.                                                                                    |
+| `tree`      | A árvore inline. **Ou** `file`: um `.json` dentro das raízes (para páginas com centenas de nós). Os dois juntos, ou nenhum, é `invalid-arguments`. |
+| `offset`    | `{ x, y }` em px, somado depois da escala (padrão 0, 0).                                                                                           |
+| `scale`     | Multiplicador dos retângulos (padrão 1), por exemplo `0.5` para uma página medida em 2x.                                                           |
 
 **A árvore** é o nó raiz `{ type, id?, classes?, rect: { x, y, width, height }, props?, children? }`, e `children` repete o mesmo formato. O `rect` é do nó **relativo ao nó raiz** (o raiz fica em 0, 0), em px.
 
@@ -368,7 +368,13 @@ Quando a tela já existe num navegador ou num app (uma página web, uma hierarqu
 
 ```json
 [
-  { "op": "add_container", "width": 1280, "height": 900, "background": "#FFFFFF", "as": "$pagina" },
+  {
+    "op": "add_container",
+    "width": 1280,
+    "height": 900,
+    "background": "#FFFFFF",
+    "as": "$pagina"
+  },
   {
     "op": "import_measured",
     "container": "$pagina",
@@ -391,7 +397,9 @@ const tree = await page.evaluate(() => {
   const visible = (el) => {
     const r = el.getBoundingClientRect();
     const s = getComputedStyle(el);
-    return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none';
+    return (
+      r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'
+    );
   };
   const measure = (el) => {
     const r = el.getBoundingClientRect();
@@ -404,7 +412,12 @@ const tree = await page.evaluate(() => {
       type: el.tagName.toLowerCase(),
       ...(el.id ? { id: el.id } : {}),
       classes: [...el.classList],
-      rect: { x: r.left - origin.left, y: r.top - origin.top, width: r.width, height: r.height },
+      rect: {
+        x: r.left - origin.left,
+        y: r.top - origin.top,
+        width: r.width,
+        height: r.height,
+      },
       ...(label ? { props: { label } } : {}),
       children: [...el.children].filter(visible).map(measure),
     };

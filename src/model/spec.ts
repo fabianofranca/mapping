@@ -31,6 +31,8 @@ export { isPackagePath };
 // (`docRepos` na raiz e `doc` como objeto `{ repo, path }`); a versão 12 é a 11 mais os passos
 // de papel em `migrations` (`rename-role`, `remove-role` e `set-role`); a versão 13 é a 12 mais
 // `allowedChildren` com tipos da camada do próprio dono (vínculo entre anotações da mesma camada).
+// A versão 15 traz ainda `origins[].kind` (`tree` ou `measured`: a origem medida, só com `system`, `kind`,
+// `name` e `booleans`; a árvore vem da op `import_measured` do MCP), além de tokens, ícones e `structural`.
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -2029,7 +2031,11 @@ function checkMigrations(
 }
 
 /** Cada problema `"caminho: mensagem"` do `parseOrigins` vira uma issue no caminho exato. */
-function addOriginIssues(raw: unknown, ctx: z.RefinementCtx, formatVersion: number): void {
+function addOriginIssues(
+  raw: unknown,
+  ctx: z.RefinementCtx,
+  formatVersion: number,
+): void {
   // `kind` (origem `measured`) é da v15; antes dela a chave é erro no caminho exato.
   if (formatVersion < 15 && Array.isArray(raw)) {
     raw.forEach((item, index) => {

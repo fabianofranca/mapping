@@ -79,6 +79,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
+/** Os tipos da especialização com `source` no `system`. */
+function typesWithSource(spec: Spec, system: string): Candidate[] {
+  return spec.layers
+    .flatMap((layer) => layer.annotationTypes)
+    .filter((type) => (type.sources ?? []).some((s) => s.system === system))
+    .map((type) => ({ spec, type }));
+}
+
 /** As especializações que declaram `system` como origem `measured` e os tipos delas com `source` nele. */
 function candidatesOf(
   specs: readonly Spec[],
@@ -90,13 +98,7 @@ function candidatesOf(
     const declared = spec.origins?.find((o) => o.system === system);
     if (declared?.kind !== 'measured') continue;
     origin ??= declared;
-    for (const layer of spec.layers) {
-      for (const type of layer.annotationTypes) {
-        if ((type.sources ?? []).some((s) => s.system === system)) {
-          candidates.push({ spec, type });
-        }
-      }
-    }
+    candidates.push(...typesWithSource(spec, system));
   }
   return { candidates, ...(origin ? { origin } : {}) };
 }
