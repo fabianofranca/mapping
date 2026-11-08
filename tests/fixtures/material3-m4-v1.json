@@ -15,12 +15,7 @@
           "label": "Estilo",
           "type": "enum",
           "default": "small",
-          "options": [
-            "small",
-            "center",
-            "medium",
-            "large"
-          ],
+          "options": ["small", "center", "medium", "large"],
           "description": "small, center (título centralizado), medium ou large (título grande em duas linhas)."
         },
         {
@@ -1673,10 +1668,7 @@
               "label": "Selecionado",
               "type": "enum",
               "default": "false",
-              "options": [
-                "true",
-                "false"
-              ],
+              "options": ["true", "false"],
               "description": "true marca o destino atual."
             }
           ],
@@ -1687,10 +1679,7 @@
           "label": "Sempre mostrar o rótulo",
           "type": "enum",
           "default": "true",
-          "options": [
-            "true",
-            "false"
-          ],
+          "options": ["true", "false"],
           "description": "false mostra o rótulo só no destino selecionado."
         }
       ],
@@ -1925,10 +1914,7 @@
               "label": "Selecionado",
               "type": "enum",
               "default": "false",
-              "options": [
-                "true",
-                "false"
-              ],
+              "options": ["true", "false"],
               "description": "true marca o destino atual."
             }
           ],
@@ -1939,10 +1925,7 @@
           "label": "Distribuição",
           "type": "enum",
           "default": "EqualWeight",
-          "options": [
-            "EqualWeight",
-            "Centered"
-          ],
+          "options": ["EqualWeight", "Centered"],
           "description": "EqualWeight reparte a largura por igual (telas estreitas); Centered agrupa os itens no centro (telas médias; o desenho ocupa 80% da largura)."
         },
         {
@@ -1950,10 +1933,7 @@
           "label": "Posição do ícone",
           "type": "enum",
           "default": "Top",
-          "options": [
-            "Top",
-            "Start"
-          ],
+          "options": ["Top", "Start"],
           "description": "Top põe o ícone acima do rótulo; Start põe o ícone ao lado dele (parâmetro do item, o mesmo em todos)."
         }
       ],
@@ -2198,10 +2178,7 @@
               "label": "Selecionado",
               "type": "enum",
               "default": "false",
-              "options": [
-                "true",
-                "false"
-              ],
+              "options": ["true", "false"],
               "description": "true marca o destino atual."
             }
           ],
@@ -2212,11 +2189,7 @@
           "label": "Estilo",
           "type": "enum",
           "default": "rail",
-          "options": [
-            "rail",
-            "wide",
-            "modal-wide"
-          ],
+          "options": ["rail", "wide", "modal-wide"],
           "description": "rail (NavigationRail, 80 de largura), wide (WideNavigationRail, recolhida ou expandida) ou modal-wide (ModalWideNavigationRail, que expande sobre a tela)."
         },
         {
@@ -2224,10 +2197,7 @@
           "label": "Estado inicial",
           "type": "enum",
           "default": "Expanded",
-          "options": [
-            "Collapsed",
-            "Expanded"
-          ],
+          "options": ["Collapsed", "Expanded"],
           "description": "Só para wide e modal-wide: Expanded mostra o ícone ao lado do rótulo; Collapsed, o ícone acima (rememberWideNavigationRailState)."
         },
         {
@@ -2235,10 +2205,7 @@
           "label": "Sempre mostrar o rótulo",
           "type": "enum",
           "default": "true",
-          "options": [
-            "true",
-            "false"
-          ],
+          "options": ["true", "false"],
           "description": "Só para rail: false mostra o rótulo só no destino selecionado."
         }
       ],
@@ -2305,11 +2272,7 @@
           "label": "Estilo",
           "type": "enum",
           "default": "modal",
-          "options": [
-            "modal",
-            "dismissible",
-            "permanent"
-          ],
+          "options": ["modal", "dismissible", "permanent"],
           "description": "modal (ModalNavigationDrawer), dismissible (DismissibleNavigationDrawer) ou permanent (PermanentNavigationDrawer)."
         },
         {
@@ -2502,10 +2465,7 @@
               "label": "Selecionado",
               "type": "enum",
               "default": "false",
-              "options": [
-                "true",
-                "false"
-              ],
+              "options": ["true", "false"],
               "description": "true marca o destino atual."
             },
             {
@@ -2759,10 +2719,7 @@
               "label": "Selecionada",
               "type": "enum",
               "default": "false",
-              "options": [
-                "true",
-                "false"
-              ],
+              "options": ["true", "false"],
               "description": "true marca a aba atual (o selectedTabIndex da fileira)."
             }
           ],
@@ -2786,10 +2743,7 @@
           "label": "Posição do ícone",
           "type": "enum",
           "default": "top",
-          "options": [
-            "top",
-            "leading"
-          ],
+          "options": ["top", "leading"],
           "description": "top (Tab) põe o ícone acima do texto, e a fileira passa de 48 para 72; leading (LeadingIconTab) põe o ícone à esquerda do texto, em 48. Só vale para as abas com ícone e texto."
         }
       ],
@@ -3268,10 +3222,7 @@
           "label": "Estilo",
           "type": "enum",
           "default": "menu",
-          "options": [
-            "menu",
-            "exposed"
-          ],
+          "options": ["menu", "exposed"],
           "description": "menu (DropdownMenu, popup ancorado a um elemento) ou exposed (ExposedDropdownMenuBox, campo de texto com o menu preso a ele; exige opt-in)."
         },
         {
@@ -3636,10 +3587,7 @@
               "label": "Habilitado",
               "type": "enum",
               "default": "true",
-              "options": [
-                "true",
-                "false"
-              ],
+              "options": ["true", "false"],
               "description": "false desabilita o item (texto esmaecido)."
             }
           ],
@@ -3650,10 +3598,7 @@
           "label": "Aberto",
           "type": "enum",
           "default": "true",
-          "options": [
-            "true",
-            "false"
-          ],
+          "options": ["true", "false"],
           "description": "true mostra o menu; false o esconde (no exposed sobra só o campo). No código é o estado `expanded` da tela."
         },
         {
