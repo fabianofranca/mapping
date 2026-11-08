@@ -3,7 +3,7 @@
   "formatVersion": 4,
   "id": "tooltip",
   "name": "Tooltip",
-  "description": "Tooltip plain (pílula escura de 24, só texto) ou rich (cartão claro com título, texto e ação opcionais), como aparece ao lado do elemento âncora.",
+  "description": "Tooltip plain (pílula em inverse surface, só texto) ou rich (cartão em surface container com título, texto e ação opcionais), como aparece ao lado do elemento âncora.",
   "size": {
     "width": 240,
     "height": 24

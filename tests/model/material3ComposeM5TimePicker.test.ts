@@ -13,7 +13,8 @@ type Values = Parameters<typeof drawIn>[2];
 type Mode = 'light' | 'dark';
 type Drawing = ReturnType<typeof drawIn>;
 const MODES: Mode[] = ['light', 'dark'];
-const draw = (values: Values, mode: Mode): Drawing => drawIn(catalog, entry, values, mode);
+const draw = (values: Values, mode: Mode): Drawing =>
+  drawIn(catalog, entry, values, mode);
 
 const tokens = spec.tokens!.values as Record<string, unknown>;
 /** Valor do token da especialização no modo (cor). */
@@ -166,8 +167,12 @@ describe('M5 — time-picker: seletores de hora e minuto', () => {
       expect(textOf(d, 'hora')).toBe('09');
       expect(textOf(d, 'minuto')).toBe('45');
     }
-    expect(textOf(draw({ ...PICKER_24, hour: 0, minute: 5 }, 'light'), 'hora')).toBe('00');
-    expect(textOf(draw({ ...PICKER_24, hour: 0, minute: 5 }, 'light'), 'minuto')).toBe('05');
+    expect(textOf(draw({ ...PICKER_24, hour: 0, minute: 5 }, 'light'), 'hora')).toBe(
+      '00',
+    );
+    expect(textOf(draw({ ...PICKER_24, hour: 0, minute: 5 }, 'light'), 'minuto')).toBe(
+      '05',
+    );
   });
 
   it('12 horas: a hora mostra 1 a 12 e o seletor AM/PM de 52 × 80 vem 12 depois do minuto', () => {
@@ -333,14 +338,36 @@ describe('M5 — time-picker: mostrador (relógio)', () => {
 
   it('12 horas mostra 12, 1 a 11 no anel externo e nenhum interno; minutos mostram 0, 5 a 55', () => {
     const hours = draw({ ...PICKER_24, is24Hour: 'false' }, 'light');
-    expect(
-      Array.from({ length: 12 }, (_, k) => textOf(hours, `número ${k}`)),
-    ).toEqual(['12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']);
+    expect(Array.from({ length: 12 }, (_, k) => textOf(hours, `número ${k}`))).toEqual([
+      '12',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      '10',
+      '11',
+    ]);
     expect(named(hours, 'número interno 0')).toBeUndefined();
     const minutes = draw(PICKER_12_MINUTE, 'light');
-    expect(
-      Array.from({ length: 12 }, (_, k) => textOf(minutes, `número ${k}`)),
-    ).toEqual(['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55']);
+    expect(Array.from({ length: 12 }, (_, k) => textOf(minutes, `número ${k}`))).toEqual([
+      '0',
+      '5',
+      '10',
+      '15',
+      '20',
+      '25',
+      '30',
+      '35',
+      '40',
+      '45',
+      '50',
+      '55',
+    ]);
     expect(named(minutes, 'número interno 0')).toBeUndefined();
     const day = draw({ ...PICKER_24, selection: 'minute' }, 'light');
     expect(named(day, 'número interno 0')).toBeUndefined();
@@ -377,9 +404,7 @@ describe('M5 — time-picker: modo input (campos)', () => {
       expect(box(hourFocus, 'hora').node.stroke?.width).toBe(2);
       expect(strokeOf(hourFocus, 'hora')).toBe(tok('primary', mode));
       expect(colorOf(hourFocus, 'hora')).toBe(tok('on-primary-container', mode));
-      expect(fillOf(hourFocus, 'minuto')).toBe(
-        tok('surface-container-highest', mode),
-      );
+      expect(fillOf(hourFocus, 'minuto')).toBe(tok('surface-container-highest', mode));
       expect(strokeOf(hourFocus, 'minuto')).toBeUndefined();
       expect(colorOf(hourFocus, 'minuto')).toBe(tok('on-surface', mode));
       const minuteFocus = draw({ ...INPUT_12, selection: 'minute' }, mode);
