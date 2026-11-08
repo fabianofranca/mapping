@@ -26,6 +26,7 @@
     "mcp/image/opentype.d.ts",
     "vite.config.ts",
     "vite.viewer.config.ts",
+    "vitest.scale.config.ts",
     "eslint.config.js"
   ]
 }

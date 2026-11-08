@@ -486,41 +486,8 @@ describe('createViewer', () => {
     const viewer = make(container(), { library, screen: SAMPLE_SCREEN });
     expect(() => viewer.setSelection(['i-bar'])).not.toThrow();
   });
-
-  it('custo informativo: atualizar UMA instância contra redraw() completo', () => {
-    const lib = loadLibrary(M3_FILES);
-    const viewer = make(container(), { library: lib, screen: M3_SCREEN });
-    // Alterna um valor de texto de UMA instância a cada rodada.
-    const target = M3_SCREEN.instances.find((i) => i.id === 'm-search');
-    expect(target).toBeDefined();
-    let screen = M3_SCREEN;
-    const one = (n: number): void => {
-      screen = {
-        ...screen,
-        instances: screen.instances.map((i) =>
-          i.id === 'm-search'
-            ? { ...i, values: { ...i.values, value: `texto ${n}` } }
-            : i,
-        ),
-      };
-      viewer.update({ screen });
-    };
-    one(0);
-    const updates = 50;
-    const redraws = 10;
-    const t0 = performance.now();
-    for (let n = 1; n <= updates; n += 1) one(n);
-    const t1 = performance.now();
-    for (let n = 0; n < redraws; n += 1) viewer.redraw();
-    const t2 = performance.now();
-    const perUpdate = (t1 - t0) / updates;
-    const perRedraw = (t2 - t1) / redraws;
-    console.info(
-      `[viewer] ${M3_SCREEN.instances.length} instâncias: update de 1 instância = ` +
-        `${perUpdate.toFixed(2)} ms; redraw() completo = ${perRedraw.toFixed(2)} ms`,
-    );
-    expect(Number.isFinite(perUpdate) && Number.isFinite(perRedraw)).toBe(true);
-  });
+  // O custo de atualizar uma instância e de montar a cena deixou de ser só impresso aqui: o teste de
+  // crescimento (n e 4n instâncias, razão < 5×) está em tests/scale/app/viewerGrowth.scale.ts (npm run test:scale).
 });
 
 describe('createViewer com source (JSON externo)', () => {
