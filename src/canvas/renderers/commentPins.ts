@@ -5,11 +5,20 @@
 // dos tokens; o desenho é do quadro de sempre (sem `requestAnimationFrame` próprio).
 import Konva from 'konva/lib/Core';
 import { Circle as KonvaCircle } from 'konva/lib/shapes/Circle';
+import { Path as KonvaPath } from 'konva/lib/shapes/Path';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import type { PinColor } from '../../model';
 import type { Frame } from '../frame';
-import { PIN_HEIGHT, pinBox, pinWidth, type PinPlace } from '../commentPins';
+import { THREAD_STATE_GLYPHS } from '../../utils/threadStateGlyph';
+import {
+  PIN_GLYPH_EXTRA,
+  PIN_GLYPH_SIZE,
+  PIN_HEIGHT,
+  pinBox,
+  pinWidth,
+  type PinPlace,
+} from '../commentPins';
 import type { CanvasTokens } from '../theme';
 import type { Point } from '../viewport';
 import { HALO_WIDTH, fontStyle } from './metrics';
@@ -19,6 +28,13 @@ const UNREAD_RADIUS = 4;
 const SELECTED_STROKE = 2;
 const DRAFT_DASH = [3, 2];
 const DRAFT_KEY = 'draft';
+/** O glifo é desenhado na grade de 16 unidades do ícone, com traço um pouco mais grosso. */
+const GLYPH_GRID = 16;
+const GLYPH_STROKE = 2;
+/** Os estados que o glifo marca, na ordem em que o `data-pin-states` os lista; o rascunho é o último. */
+const MAX_GLYPH_PATHS = Math.max(
+  ...Object.values(THREAD_STATE_GLYPHS).map((paths) => paths.length),
+);
 
 export type CommentPinFrame = Pick<
   Frame,
@@ -29,7 +45,32 @@ interface PinNode {
   readonly group: Konva.Group;
   readonly box: KonvaRect;
   readonly label: KonvaText;
+  /** Glifo do estado (um `KonvaPath` por traço); escondido no rascunho. */
+  readonly glyph: Konva.Group;
   readonly unread: KonvaCircle;
+}
+
+function createGlyph(): Konva.Group {
+  const glyph = new Konva.Group({
+    x: (PIN_HEIGHT - PIN_GLYPH_SIZE) / 2,
+    y: (PIN_HEIGHT - PIN_GLYPH_SIZE) / 2,
+    scaleX: PIN_GLYPH_SIZE / GLYPH_GRID,
+    scaleY: PIN_GLYPH_SIZE / GLYPH_GRID,
+    visible: false,
+  });
+  for (let i = 0; i < MAX_GLYPH_PATHS; i++) {
+    glyph.add(
+      new KonvaPath({
+        data: '',
+        lineCap: 'round',
+        lineJoin: 'round',
+        strokeWidth: GLYPH_STROKE,
+        fillEnabled: false,
+        visible: false,
+      }),
+    );
+  }
+  return glyph;
 }
 
 function createNode(): PinNode {
@@ -37,9 +78,10 @@ function createNode(): PinNode {
     group: new Konva.Group({ listening: false }),
     box: new KonvaRect(),
     label: new KonvaText({ wrap: 'none', align: 'center', verticalAlign: 'middle' }),
+    glyph: createGlyph(),
     unread: new KonvaCircle({ radius: UNREAD_RADIUS }),
   };
-  node.group.add(node.box, node.label, node.unread);
+  node.group.add(node.box, node.label, node.glyph, node.unread);
   return node;
 }
 
@@ -51,6 +93,7 @@ function fillOf(color: PinColor, tokens: CanvasTokens): string {
 export class CommentPinRenderer {
   private readonly layer: Konva.Container;
   private readonly nodes = new Map<string, PinNode>();
+  private drawnStates: readonly string[] = [];
 
   constructor(layer: Konva.Container) {
     this.layer = layer;
@@ -59,6 +102,11 @@ export class CommentPinRenderer {
   /** Quantos pinos estão desenhados (os testes e2e esperam por ele). */
   get size(): number {
     return this.nodes.size;
+  }
+
+  /** Os estados dos pinos desenhados, na ordem de desenho (o rascunho, `draft`, por último). */
+  get states(): readonly string[] {
+    return this.drawnStates;
   }
 
   node(key: string): PinNode | undefined {
@@ -70,12 +118,15 @@ export class CommentPinRenderer {
     const { pins, tokens, draftPin } = frame;
     const zoom = frame.viewport.scale;
     const seen = new Set<string>();
+    const states: string[] = [];
     for (const place of pins) {
       seen.add(place.key);
+      states.push(place.group.color);
       this.draw(place, frame.pinSelected, zoom, tokens);
     }
     if (draftPin) {
       seen.add(DRAFT_KEY);
+      states.push(DRAFT_KEY);
       this.drawDraft(draftPin, zoom, tokens);
     }
     for (const [key, node] of this.nodes) {
@@ -83,6 +134,7 @@ export class CommentPinRenderer {
       node.group.destroy();
       this.nodes.delete(key);
     }
+    this.drawnStates = states;
   }
 
   private nodeFor(key: string): PinNode {
@@ -109,6 +161,7 @@ export class CommentPinRenderer {
     this.paint(node, group.label, fillOf(group.color, tokens), tokens, {
       selected: isSelected,
       dashed: false,
+      glyph: group.color,
     });
     node.unread.visible(group.hasUnread);
     node.unread.setAttrs({
@@ -124,7 +177,7 @@ export class CommentPinRenderer {
   private drawDraft(at: Point, zoom: number, tokens: CanvasTokens): void {
     const node = this.nodeFor(DRAFT_KEY);
     const label = '+';
-    const width = pinWidth(label) / zoom;
+    const width = pinWidth(label, false) / zoom;
     node.group.setAttrs({
       x: at.x - width / 2,
       y: at.y - PIN_HEIGHT / zoom / 2,
@@ -134,6 +187,7 @@ export class CommentPinRenderer {
     this.paint(node, label, tokens.pin.resolved, tokens, {
       selected: true,
       dashed: true,
+      glyph: null,
     });
     node.unread.visible(false);
   }
@@ -143,9 +197,16 @@ export class CommentPinRenderer {
     label: string,
     fill: string,
     tokens: CanvasTokens,
-    style: { readonly selected: boolean; readonly dashed: boolean },
+    style: {
+      readonly selected: boolean;
+      readonly dashed: boolean;
+      /** O estado do glifo; `null` no rascunho, que não tem. */
+      readonly glyph: PinColor | null;
+    },
   ): void {
-    const width = pinWidth(label);
+    const withGlyph = style.glyph !== null;
+    const width = pinWidth(label, withGlyph);
+    const extra = withGlyph ? PIN_GLYPH_EXTRA : 0;
     node.box.setAttrs({
       width,
       height: PIN_HEIGHT,
@@ -155,8 +216,10 @@ export class CommentPinRenderer {
       strokeWidth: style.selected ? SELECTED_STROKE : HALO_WIDTH,
       dash: style.dashed ? DRAFT_DASH : [],
     });
+    paintGlyph(node.glyph, style.glyph, tokens.pin.text);
     node.label.setAttrs({
-      width,
+      x: extra,
+      width: width - extra,
       height: PIN_HEIGHT,
       text: label,
       fontSize: tokens.type.name.size,
@@ -165,4 +228,19 @@ export class CommentPinRenderer {
       fill: tokens.pin.text,
     });
   }
+}
+
+/** Põe os traços do estado no glifo, na cor do texto do pino; sem estado (rascunho), esconde. */
+function paintGlyph(glyph: Konva.Group, state: PinColor | null, color: string): void {
+  glyph.visible(state !== null);
+  const paths = state === null ? [] : glyphPaths(state);
+  glyph.getChildren().forEach((child, i) => {
+    const d = paths[i];
+    child.visible(d !== undefined);
+    child.setAttrs({ data: d ?? '', stroke: color });
+  });
+}
+
+function glyphPaths(state: PinColor): readonly string[] {
+  return THREAD_STATE_GLYPHS[state];
 }

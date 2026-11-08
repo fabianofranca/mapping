@@ -4,6 +4,11 @@
 import type { JSX } from 'preact';
 import { LOCK_PATHS, UNLOCK_PATHS } from '../utils/lockGlyph';
 import {
+  AWAITING_AGENT_PATHS,
+  AWAITING_HUMAN_PATHS,
+  CHECK_PATHS,
+} from '../utils/threadStateGlyph';
+import {
   CHANGED_PATHS,
   CLOSE_PATHS,
   MINUS_PATHS,
@@ -49,7 +54,7 @@ const SHAPES = {
   },
   plus: { d: PLUS_PATHS },
   minus: { d: MINUS_PATHS },
-  check: { d: ['m3 8.5 3.2 3.2L13 4.8'] },
+  check: { d: CHECK_PATHS },
   close: { d: CLOSE_PATHS },
   refresh: { d: ['M13 3.5v3h-3', 'M12.6 6.5A5 5 0 1 0 13 8.5'] },
 
@@ -259,6 +264,8 @@ const SHAPES = {
       'm3 2.5 10 11',
     ],
   },
+  threadAwaitingHuman: { d: AWAITING_HUMAN_PATHS },
+  threadAwaitingAgent: { d: AWAITING_AGENT_PATHS },
   lock: { d: LOCK_PATHS },
   unlock: { d: UNLOCK_PATHS },
   info: { d: [circle(8, 8, 6), 'M8 7.5V11'], dots: [[8, 5.2]] },

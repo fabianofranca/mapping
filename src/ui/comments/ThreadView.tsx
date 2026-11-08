@@ -10,6 +10,7 @@ import { useEditor } from '../EditorContext';
 import { CitedIn } from './CitedIn';
 import { Composer } from './Composer';
 import { relativeTime } from './relativeTime';
+import { Icon } from '../icons';
 import { threadErrorText, useThreadAccess } from './threadAccess';
 import { ThreadMessage } from './ThreadMessage';
 import { useDeleteThread } from './useDeleteThread';
@@ -24,12 +25,16 @@ interface ThreadViewProps {
 function StateBadge({ thread }: { readonly thread: Thread }) {
   if (thread.resolved !== null) {
     return (
-      <span class="thread-state thread-state-resolved">{t('thread.state.resolved')}</span>
+      <span class="thread-state thread-state-resolved">
+        <Icon name="check" />
+        {t('thread.state.resolved')}
+      </span>
     );
   }
   const agent = awaiting(thread) === 'agent';
   return (
     <span class={`thread-state ${agent ? 'thread-state-agent' : 'thread-state-human'}`}>
+      <Icon name={agent ? 'threadAwaitingAgent' : 'threadAwaitingHuman'} />
       {t(agent ? 'thread.state.awaitingAgent' : 'thread.state.awaitingHuman')}
     </span>
   );

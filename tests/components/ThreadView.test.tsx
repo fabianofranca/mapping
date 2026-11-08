@@ -7,6 +7,7 @@ import { EditorContext } from '../../src/ui/EditorContext';
 import { ThreadView } from '../../src/ui/comments/ThreadView';
 import { sampleProject } from '../model/fixtures';
 import { AGENT, HUMAN, message, sampleThread } from '../model/threadFixtures';
+import { AWAITING_HUMAN_PATHS } from '../../src/utils/threadStateGlyph';
 import { createHarness } from './harness';
 
 beforeEach(() => {
@@ -54,6 +55,16 @@ describe('ThreadView', () => {
     view(['veja [o botão](mapping://project/M1)']);
     expect(screen.getByText(/o botão/)).toBeTruthy();
     expect(document.querySelector('.markdown a')).toBeNull();
+  });
+
+  it('o selo de estado leva o glifo antes do texto, escondido dos leitores de tela', () => {
+    view(['oi', 'ok']);
+    const badge = document.querySelector('.thread-state');
+    const svg = badge?.firstElementChild;
+    expect(svg?.tagName.toLowerCase()).toBe('svg');
+    expect(svg?.getAttribute('aria-hidden')).toBe('true');
+    expect(svg?.querySelector('path')?.getAttribute('d')).toBe(AWAITING_HUMAN_PATHS[0]);
+    expect(badge?.textContent).toBe(t('thread.state.awaitingHuman'));
   });
 
   it('mensagem com proposta é renderizada normalmente', () => {

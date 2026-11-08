@@ -20,6 +20,11 @@ export const PIN_HEIGHT = 20;
 /** Largura de cada caractere do rótulo e respiro dos lados (px de tela), para a largura da caixa. */
 const PIN_CHAR = 7;
 const PIN_PAD = 8;
+/** Glifo do estado à esquerda do rótulo (px de tela): o lado dele e a folga até o rótulo. */
+export const PIN_GLYPH_SIZE = 12;
+const PIN_GLYPH_GAP = 2;
+/** O que o glifo acrescenta à largura do pino. */
+export const PIN_GLYPH_EXTRA = PIN_GLYPH_SIZE + PIN_GLYPH_GAP;
 
 /** `corner`: o pino fica fora do item, com o canto de baixo à esquerda no canto de cima à direita. */
 export type PinAlign = 'corner' | 'center';
@@ -32,9 +37,13 @@ export interface PinPlace {
   readonly align: PinAlign;
 }
 
-/** Largura do pino (px de tela): cresce com o rótulo, nunca menos que a altura. */
-export function pinWidth(label: string): number {
-  return Math.max(PIN_HEIGHT, label.length * PIN_CHAR + 2 * PIN_PAD);
+/**
+ * Largura do pino (px de tela): cresce com o rótulo e, quando há, com o glifo do estado (o rascunho
+ * não tem: `glyph` falso), nunca menos que a altura.
+ */
+export function pinWidth(label: string, glyph = true): number {
+  const extra = glyph ? PIN_GLYPH_EXTRA : 0;
+  return Math.max(PIN_HEIGHT, label.length * PIN_CHAR + 2 * PIN_PAD + extra);
 }
 
 /** O ponto `x`,`y` de um container (pixels dele) ou do canvas (`containerId` nulo), em unidades do canvas. */

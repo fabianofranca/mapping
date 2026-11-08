@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  PIN_GLYPH_EXTRA,
   PIN_HEIGHT,
   pinBox,
   pinHit,
   pinPlaces,
+  pinWidth,
   pointCanvas,
 } from '../../src/canvas/commentPins';
 import { commentAnchorAt, pointAnchorAt } from '../../src/canvas/input/intents';
@@ -232,5 +234,27 @@ describe('o ponto de uma conversa nova', () => {
       x: 5000,
       y: 5000,
     });
+  });
+});
+
+describe('pinWidth: o glifo de estado entra na largura do pino', () => {
+  it('conta o glifo e a folga até o rótulo; o rascunho (sem glifo) fica como era', () => {
+    expect(PIN_GLYPH_EXTRA).toBeGreaterThan(0);
+    expect(pinWidth('MA 2')).toBe(4 * 7 + 16 + PIN_GLYPH_EXTRA);
+    expect(pinWidth('+', false)).toBe(7 + 16);
+  });
+
+  it('pinBox e pinHit seguem a largura nova (o alvo de clique cresce junto)', () => {
+    const p = canvasProject();
+    const places = pinPlaces(
+      p,
+      groupsOf(p, [thread('c1', { kind: 'marking', id: 'M1' })]),
+      FULL,
+    );
+    const place = places[0]!;
+    const box = pinBox(place, 1);
+    expect(box.width).toBe(pinWidth(place.group.label));
+    const insideGlyph = { x: box.x + 4, y: box.y + box.height / 2 };
+    expect(pinHit(places, insideGlyph, 1)?.group.threadIds).toEqual(['c1']);
   });
 });
