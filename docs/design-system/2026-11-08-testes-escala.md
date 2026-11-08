@@ -1,4 +1,4 @@
-# Testes de escala — [Não lançado] (épico `epic/testes-escala`)
+# Testes de escala — 2026-11-08 (épico `epic/testes-escala`)
 
 ## Pendências
 
@@ -10,4 +10,4 @@ Nenhuma gravação no artefato Mapping do Claude Design: o épico não mudou com
 
 ## Ficou sem gravar
 
-Nenhuma gravação no artefato Mapping do Claude Design: o épico não mudou componentes, tokens nem ícones da app.
+Nada.
