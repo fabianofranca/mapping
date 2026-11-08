@@ -135,6 +135,22 @@ leitura, na migração nem na abertura (ler nunca grava e nunca muda dado), e a 
 nas prévias de gesto. Sem a tolerância: o modelo só conhece "totalmente contido"; a ferramenta (a interação) é que ajuda a pessoa
 a chegar lá.
 
+**O assentar recortado (`settleFrom`, #882).** O assentar do fim de uma operação não olha o projeto inteiro: `settleFrom(before,
+next)` compara os dois por objeto (`src/model/settleDelta.ts`) e assenta só o que a operação mexeu, com o **mesmo resultado** do
+assentar inteiro (`settleHierarchy(next)`, que sem `before` continua assentando tudo: reparo, testes, quem chama de fora). Espaço
+afetado: o de antes e o de depois de toda marcação nova, apagada ou trocada; de todo container novo, apagado ou trocado, o dele e o
+canvas; o espaço cuja ordem relativa das marcações mudou (reordenar irmãs muda o posto dos empates); e, na dúvida (mais da metade
+das marcações mudou, id repetido), o projeto inteiro. Os espaços do canvas e os afetados por container, reordenação ou desistência
+são assentados inteiros (índice espacial de `spaceIndex.ts`); nos demais, só se revê quem cabe (inclusive igual) num retângulo que
+mudou, de antes ou de depois (`settleLocal.ts`): o pai de uma marcação só depende de quem a contém, dos postos de retângulos
+iguais e do pai atual. A varredura usa as posições e caixas das marcações de cada espaço, guardadas por array de marcações
+(`settlePositions.ts`, enchidas sob demanda e passadas de uma operação à seguinte sem varrer o projeto). As perspectivas e as marcas
+"Veio de…" são reconciliadas por `reconcilePerspectivesFrom`, o mesmo algoritmo sobre uma visão enxuta dos dois projetos (containers,
+marcações do canvas e marcações trocadas), em vez de montar o índice do projeto inteiro. A prova de equivalência é um teste de sorteio de
+sequências de operações públicas (`tests/model/settleSequences.test.ts`, semente impressa na falha), além do sorteio de projetos
+contra a referência congelada (`tests/model/settleEquivalence.test.ts`). O recorte supõe o que toda operação do modelo recebe: um
+projeto de antes já assentado.
+
 **Reconciliação das perspectivas.** No fim do assentar (`settleHierarchy`, salvo `settle: false`), `reconcilePerspectives(before, after)`
 (`src/model/perspectiveReconcile.ts`) mantém `perspectives[].items` e `arrivals[]` coerentes com a geometria nova, sem mover nada na
 tela: a raiz apagada sai; a que deixou de ser raiz (entrou noutra marcação) dá lugar à raiz nova, posta de modo que o item continue
@@ -388,7 +404,7 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
 
 - `types.ts`, `schema.ts`, `serialization.ts`, `migrations.ts`: tipos do `mapping.json` v13, validação (zod), (de)serialização e migração de versões antigas (a v8 → v9 recebe as cópias de `specs/` no contexto da migração, para saber quais campos eram `codeRef`; ver `FORMAT.md`, "Campos da v9"; a v10 → v11 descarta o `urlTemplate` de `platformRepos` e a leitura devolve o descartado para o Diagnóstico; ver "Campos da v11"; a v11 → v12 renomeia `images` para `containers` e `imageId` para `containerId`, sem apagar nada, ver "Campos da v12").
 - `invariants.ts`: `validateProject` (regras entre coleções: ids únicos, contenção, hierarquia sem ciclos, vínculos).
-- `hierarchySettle.ts`: `settleHierarchy` (o pai de cada marcação e de cada container sai do índice espacial de `spaceIndex.ts`, em vez de varrer o espaço; só o caso degenerado de muitas marcações enormes cobrindo todas as outras continua quadrático), `spaceOf`, `membersOf` e `SettleOptions` (`settle: false` só nas prévias de gesto; `before`, o projeto de antes da operação, de onde o assentar reconcilia as perspectivas); ver "Espaços, pertencimento e gestos". `invariants.ts` e `repair.ts` têm as regras e o reparo do `parentId` de container e da marcação flutuante.
+- `hierarchySettle.ts`: `settleHierarchy` (o pai de cada marcação e de cada container sai do índice espacial de `spaceIndex.ts`, em vez de varrer o espaço; só o caso degenerado de muitas marcações enormes cobrindo todas as outras continua quadrático), `settleFrom` (o assentar do fim da operação, recortado ao que ela mexeu: `settleDelta.ts`, `settleLocal.ts`, `settlePositions.ts` e `settleParent.ts`; mesmo resultado do inteiro), `spaceOf`, `membersOf` e `SettleOptions` (`settle: false` só nas prévias de gesto; `before`, o projeto de antes da operação, de onde o assentar reconcilia as perspectivas); ver "Espaços, pertencimento e gestos". `invariants.ts` e `repair.ts` têm as regras e o reparo do `parentId` de container e da marcação flutuante.
 - `perspective.ts`, `perspectiveOps.ts`, `perspectiveReconcile.ts`, `perspectivePlace.ts` (v16, etapa #659; formato em `FORMAT.md`, "Campos da v16"): perspectivas. `perspective.ts` tem as consultas de raiz (`isRootId`, `perspectiveRootOf`, `rootPosition`, `rootFootprint`) e `perspectiveView(p, perspectiva)`, o projeto à vista (só as raízes de `items`, cada uma com o grupo dela, deslocadas para a posição do item; memoizado por projeto e por perspectiva). `perspectiveOps.ts` tem as operações (criar, renomear, duplicar, apagar, enviar e tirar raízes, `moveRootsInPerspective`, camadas escondidas). `perspectiveReconcile.ts`: `reconcilePerspective`/`reconcilePerspectives` (o fim do assentar) e `pruneHiddenLayers`. `perspectivePlace.ts`: o lugar de uma raiz numa vista e `arriveInPrincipal`/`dismissArrival` (a marca "Veio de…"). Funções puras; ver "Espaços, pertencimento e gestos".
 - `layers.ts`, `containers.ts` (container = o objeto de topo do canvas, com arquivo de imagem ou só com cor de fundo; `addContainer`, `addBackgroundContainer`, `replaceContainer`…), `markings.ts`, `annotations.ts`, `hierarchy.ts`, `geometry.ts`: operações puras por entidade.
 - `locks.ts`: a trava. `setMarkingLocked`, `setImageLocked` e `setImageMarkingsLocked` (uma operação só para "trancar todas"); as consultas `canEditMarkingGeometry`, `canDeleteMarking`, `canEditImagePlacement`, `canDeleteImage` e `canReplaceImage`, que a interface usa para desabilitar controles e as operações de `markings.ts`/`images.ts` usam para lançar o erro `locked`; e `markingLockStates` (trava própria ou herdada do pai, de cada marcação, numa passada).

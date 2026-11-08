@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
+  addPerspective,
   buildListing,
+  buildPerspective,
   createMarking,
   canMoveItems,
   deserialize,
@@ -259,15 +261,22 @@ describe('assentar um espaço denso: crescimento', () => {
 describe('edição: crescimento e orçamento', () => {
   /** A i-ésima marcação nova de `I0`: fora dos grupos do fixture, numa grade de 100 colunas. */
   const newRect = (i: number) => ({
-    x: (i % 100) * 38 + 5,
-    y: 2750 + Math.floor(i / 100) * 24,
+    x: (i % 190) * 21 + 5,
+    y: 2750 + Math.floor(i / 190) * 22,
     width: 20,
     height: 20,
   });
-  const createMany = (p: Project, count: number): Project => {
+  /** Cria `count` marcações uma a uma em cada um dos containers `I0..I(containers-1)`. */
+  const createMany = (p: Project, count: number, containers = 1): Project => {
     let next = p;
-    for (let i = 0; i < count; i++) {
-      next = createMarking(next, { id: `N${i}`, containerId: 'I0', rect: newRect(i) });
+    for (let c = 0; c < containers; c++) {
+      for (let i = 0; i < count; i++) {
+        next = createMarking(next, {
+          id: `N${c}-${i}`,
+          containerId: `I${c}`,
+          rect: newRect(i),
+        });
+      }
     }
     return next;
   };
@@ -276,16 +285,20 @@ describe('edição: crescimento e orçamento', () => {
 
   it(
     'criar marcações uma a uma num container: 250 → 1.000 criações, razão < 5×',
-    GROWTH_OPTIONS,
+    { ...GROWTH_OPTIONS, timeout: 60_000 },
     () => {
-      const project = buildLargeProject();
+      // Num projeto de 20.000 marcações: cada criação sempre copia o array e confere o id (custo da
+      // operação, linear no projeto), e esse custo quase não cresce quando o container recebe mais mil.
+      // O que a razão mede é o assentar do container que vai enchendo, que não pode custar mais a cada
+      // vez (o assentar do container inteiro a cada criação daria mais de 10×).
+      const project = buildLargeProject({ images: 800 });
       expectLinearGrowth('criar uma a uma', {
         build: (n) => ({ project, count: n }),
         run: ({ project: p, count }) => createMany(p, count),
         prepare: ({ project: p }) => projectIndex(p),
         n: 250,
-        warmup: 2,
-        runs: 5,
+        warmup: 4,
+        runs: 7,
       });
     },
   );
@@ -319,15 +332,45 @@ describe('edição: crescimento e orçamento', () => {
     expect(created.ms).toBeLessThan(2000);
   });
 
+  /** Mediana de uma edição sobre versões novas do projeto, cujo índice já está montado (o app o lê a cada quadro). */
+  const medianEditMs = (project: Project, edit: (p: Project) => unknown): number => {
+    const run = () => {
+      const version = { ...project };
+      projectIndex(version);
+      return time(() => edit(version)).ms;
+    };
+    for (let i = 0; i < WARMUP_RUNS; i++) run();
+    return median(Array.from({ length: 9 }, run));
+  };
+  const create = (p: Project) =>
+    createMarking(p, { id: 'N', containerId: 'I0', rect: newRect(0) });
+  const move = (p: Project) => moveMarking(p, 'M0-0', 5, 5);
+
   budgetIt('uma edição com 10.000 marcações abaixo de 16 ms', BUDGET_OPTIONS, () => {
     const project = largeOf(10000);
     expect(project.markings).toHaveLength(10000);
-    for (const edit of [
-      (p: Project) => createMarking(p, { id: 'N', containerId: 'I0', rect: newRect(0) }),
-      (p: Project) => moveMarking(p, 'M0-0', 5, 5),
-    ]) {
-      projectIndex(project);
-      expect(medianMs(edit, project)).toBeLessThan(16);
-    }
+    expect(medianEditMs(project, create)).toBeLessThan(16);
+    expect(medianEditMs(project, move)).toBeLessThan(16);
   });
+
+  // Com perspectivas a reconciliação roda a cada edição: ela olha só o que a edição mexeu (decisão 6),
+  // não monta o índice do projeto inteiro (que sozinho levava ~17 ms com 10.000 marcações).
+  budgetIt(
+    'uma edição com 10.000 marcações e duas perspectivas abaixo de 16 ms',
+    BUDGET_OPTIONS,
+    () => {
+      let project = largeOf(10000);
+      project = addPerspective(
+        project,
+        buildPerspective(project, { id: 'P1', name: 'Todas', startFrom: null }),
+      );
+      project = addPerspective(
+        project,
+        buildPerspective(project, { id: 'P2', name: 'Vazia', startFrom: 'empty' }),
+      );
+      expect(project.perspectives[0]?.items.length).toBeGreaterThan(100);
+      expect(medianEditMs(project, create)).toBeLessThan(16);
+      expect(medianEditMs(project, move)).toBeLessThan(16);
+    },
+  );
 });

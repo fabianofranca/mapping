@@ -467,15 +467,19 @@ function startProject(rng: Rng, seed: number): { p: Project; counter: { n: numbe
 function runSequence(seed: number): void {
   const rng = makeRng(seed);
   let { p } = startProject(rng, seed);
+  // Versões anteriores: o desfazer volta a uma delas e a operação seguinte sai de um ramo novo.
+  const history: Project[] = [p];
   let n = 0;
   const next = (prefix: string): string => `${prefix}${seed}x${n++}`;
   for (let step = 0; step < STEPS; step++) {
+    if (rng.chance(0.1)) p = rng.pick(history);
     const name = rng.pick(WEIGHTED);
     check.context = `semente ${seed} · passo ${step} · ${name}`;
     try {
       const result = (OPS[name] as { run: Op }).run({ rng, p, next });
       if (result !== p) check.changed[name] = (check.changed[name] ?? 0) + 1;
       p = result;
+      history.push(p);
     } catch (error) {
       // Operação recusada pelo modelo (travada, sobreposta, fora do container…): o passo vira nada.
       if (!(error instanceof ModelError)) throw error;
