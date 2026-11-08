@@ -1,14 +1,12 @@
 // Marcações no canvas: borda, alerta de revisão, indicadores de camada e o
 // nome do zoom semântico. Só a parte visível na tela é atualizada.
 import Konva from 'konva/lib/Core';
-import { Circle as KonvaCircle } from 'konva/lib/shapes/Circle';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import {
   memoByProject,
   projectIndex,
   topDown,
-  type LayerDot,
   type Marking,
   type MarkingVisibility,
   type Placement,
@@ -17,25 +15,21 @@ import {
 } from '../../model';
 import { visibleArea, type Frame } from '../frame';
 import { semanticMode } from '../semanticText';
-import { showLayerIndicators } from './indicatorVisibility';
 import type { MarkingReviewMark } from '../reviewMarks';
 import { markingCanvasRect, placementOfSpace } from '../markingGeometry';
 import type { CanvasTokens } from '../theme';
 import {
   ALERT_GLYPH,
   ALERT_SIZE,
-  DOT_GAP,
-  DOT_MARGIN,
-  DOT_RADIUS,
-  MAX_DOTS,
+  CORNER_MARGIN,
   HALO_WIDTH,
-  MORE_WIDTH,
   REVIEW_BADGE_SIZE,
   fontStyle,
   intersectRects,
   sameInputs,
 } from './metrics';
 import {
+  TEXT_HEADER_HEIGHT,
   createSemanticNode,
   updateSemanticText,
   type HeaderBand,
@@ -57,11 +51,9 @@ export interface MarkingNode {
   /** Linha do meio da "linha dupla" (alterada, na revisão de propostas). */
   readonly inner: KonvaRect;
   readonly badge: KonvaText;
-  /** Bolinhas das camadas visíveis com anotação, recortadas no retângulo da marcação. */
-  readonly indicators: Konva.Group;
-  readonly dots: readonly KonvaCircle[];
-  readonly more: KonvaText;
-  /** Alerta de anotação incompleta, depois das bolinhas. */
+  /** Recorta o alerta no retângulo da marcação. */
+  readonly alertClip: Konva.Group;
+  /** Alerta de anotação incompleta, no canto depois do selo "a revisar". */
   readonly alert: KonvaText;
   /** Texto do zoom semântico, recortado no retângulo da marcação. */
   readonly text: SemanticNode;
@@ -75,7 +67,6 @@ export type MarkingFrame = Pick<
   | 'selection'
   | 'size'
   | 'viewport'
-  | 'dots'
   | 'incomplete'
   | 'visibility'
   | 'tokens'
@@ -89,8 +80,6 @@ export type MarkingFrame = Pick<
 export interface HeaderLookup {
   get(id: string): Rect | undefined;
 }
-
-const NO_LAYER_DOTS: readonly LayerDot[] = [];
 
 /** Marcações de cima para baixo na hierarquia, uma vez por versão do projeto. */
 const topDownMarkings = memoByProject((p: Project) => topDown(p.markings));
@@ -122,8 +111,8 @@ export class MarkingRenderer {
 
   /** Marcações de cima para baixo na hierarquia: as filhas ficam por cima dos pais. */
   render(frame: MarkingFrame, placements: ReadonlyMap<string, Placement>): void {
-    const { project, selection, dots, incomplete, tokens, review, drawn } = frame;
-    // Modo visualização (`null` fora dele): sem seleção, hover, indicadores nem marcas da revisão.
+    const { project, selection, incomplete, tokens, review, drawn } = frame;
+    // Modo visualização (`null` fora dele): sem seleção, hover, alerta nem marcas da revisão.
     const mode = frame.view;
     const zoom = frame.viewport.scale;
     const area = visibleArea(frame.size, frame.viewport);
@@ -162,21 +151,12 @@ export class MarkingRenderer {
       const lineColor = canvasMarking
         ? tokens.canvasMarking
         : (lookup?.containers.get(marking.containerId ?? '')?.markingColor ?? null);
-      const markingDots =
-        mode === null ? (dots.get(marking.id) ?? NO_LAYER_DOTS) : NO_LAYER_DOTS;
       const markingIncomplete = mode === null && incomplete.has(marking.id);
       const reviewMark =
         mode === null ? (review?.markings.get(marking.id) ?? null) : null;
       // Marcação com o desenho à vista: a borda só aparece sob o mouse ou selecionada (a
       // revisão de propostas, que marca a mudança na própria borda, a mantém).
       const withDrawing = drawn.has(marking.id);
-      const compact = !showLayerIndicators({
-        drawsComponent: withDrawing,
-        emphasized: selected || frame.hoverMarking === marking.id,
-        screenWidth: marking.rect.width * placement.scale * zoom,
-        screenHeight: marking.rect.height * placement.scale * zoom,
-        minScreenSize: tokens.indicatorMinMarking,
-      });
       const showBorder = mode
         ? mode.outline && !withDrawing
         : !withDrawing ||
@@ -191,13 +171,11 @@ export class MarkingRenderer {
         selected,
         showBorder,
         visibility,
-        markingDots,
         markingIncomplete,
         tokens,
         lineColor,
         zoom,
         mode === null,
-        compact,
       ];
       if (!sameInputs(node.drawn, inputs)) {
         node.drawn = inputs;
@@ -208,7 +186,6 @@ export class MarkingRenderer {
           selected,
           showBorder,
           visibility,
-          markingDots,
           markingIncomplete,
           lineColor ?? tokens.line,
           tokens,
@@ -216,7 +193,6 @@ export class MarkingRenderer {
           reviewMark,
           canvasMarking,
           mode === null,
-          compact,
         );
       }
       // Ancestral de contexto (modo Ocultar): só a borda, sem nome. O desenho ocupa o
@@ -237,7 +213,6 @@ export class MarkingRenderer {
           markingRect,
           view: area,
           mode: textMode,
-          dotCount: visibility === 'outline' ? 0 : markingDots.length,
           incomplete: markingIncomplete,
           // Filha começando sob o nome do pai: o dela desce uma linha.
           headerFloor:
@@ -273,27 +248,24 @@ export class MarkingRenderer {
   }
 
   private createNode(id: string): MarkingNode {
-    const dots = Array.from({ length: MAX_DOTS }, () => new KonvaCircle());
     const node: MarkingNode = {
       group: new Konva.Group(),
       halo: new KonvaRect(),
       border: new KonvaRect(),
       inner: new KonvaRect(),
       badge: new KonvaText({ text: '⚠' }),
-      indicators: new Konva.Group(),
-      dots,
-      more: new KonvaText(),
+      alertClip: new Konva.Group(),
       alert: new KonvaText({ text: ALERT_GLYPH }),
       text: createSemanticNode(),
       drawn: null,
     };
-    node.indicators.add(...dots, node.more, node.alert);
+    node.alertClip.add(node.alert);
     node.group.add(
       node.halo,
       node.border,
       node.inner,
       node.badge,
-      node.indicators,
+      node.alertClip,
       node.text.group,
     );
     this.layer.add(node.group);
@@ -309,7 +281,6 @@ function updateMarkingNode(
   selected: boolean,
   showBorder: boolean,
   visibility: MarkingVisibility,
-  dots: readonly LayerDot[],
   incomplete: boolean,
   lineColor: string,
   tokens: CanvasTokens,
@@ -317,7 +288,6 @@ function updateMarkingNode(
   review: MarkingReviewMark | null = null,
   canvasMarking = false,
   indicators = true,
-  compact = false,
 ): void {
   const rect = markingCanvasRect(placement, marking.rect);
   // Sem anotação (própria ou herdada) nas camadas visíveis: esmaecida (a selecionada, nunca).
@@ -377,7 +347,7 @@ function updateMarkingNode(
     node.inner.visible(false);
   }
   // Texto do Konva remede a cada mudança de atributo: só mexe nos que aparecem.
-  // Ancestral de contexto (modo Ocultar): só a borda, sem alerta nem bolinhas.
+  // Ancestral de contexto (modo Ocultar): só a borda, sem alerta.
   const outline = visibility === 'outline' || !indicators;
   if (marking.needsReview && !outline) {
     const badge = REVIEW_BADGE_SIZE / zoom;
@@ -396,105 +366,38 @@ function updateMarkingNode(
   } else {
     node.badge.visible(false);
   }
-  updateIndicators(
-    node,
-    marking,
-    rect,
-    outline || compact ? [] : dots,
-    incomplete && !outline,
-    tokens,
-    zoom,
-    compact,
-  );
+  updateAlert(node, marking, rect, incomplete && !outline, tokens, zoom);
 }
 
-/** Esconde cada bolinha e o "+N" (o grupo dos indicadores já está escondido). */
-function hideDotsAndMore(node: MarkingNode): void {
-  for (const dot of node.dots) dot.visible(false);
-  node.more.visible(false);
-  node.alert.visible(false);
-}
-
-/**
- * Bolinhas coloridas no canto superior esquerdo, uma por camada visível com
- * anotação, e o alerta de incompleta logo depois delas.
- */
-function updateIndicators(
+/** Alerta de incompleta no canto superior esquerdo, depois do selo "a revisar" (se houver). */
+function updateAlert(
   node: MarkingNode,
   marking: Marking,
   rect: Rect,
-  layers: readonly LayerDot[],
   incomplete: boolean,
   tokens: CanvasTokens,
   zoom: number,
-  compact = false,
 ): void {
-  // Compacta (marcação pequena na tela): sem bolinhas nem "+N", mas o alerta continua.
-  if (layers.length === 0 && !(compact && incomplete)) {
-    node.indicators.visible(false);
-    if (compact) hideDotsAndMore(node);
+  if (!incomplete) {
+    node.alertClip.visible(false);
+    node.alert.visible(false);
     return;
   }
-  node.indicators.setAttrs({
+  node.alertClip.setAttrs({
     visible: true,
     clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
   });
-  const radius = DOT_RADIUS / zoom;
-  const step = (2 * DOT_RADIUS + DOT_GAP) / zoom;
-  // Com o alerta de revisão no canto, as bolinhas começam depois dele.
-  const left = marking.needsReview ? (REVIEW_BADGE_SIZE + DOT_MARGIN) / zoom : 0;
-  const x0 = rect.x + left + (DOT_MARGIN + DOT_RADIUS) / zoom;
-  const cy = rect.y + (DOT_MARGIN + DOT_RADIUS) / zoom;
-  const shown = Math.min(layers.length, MAX_DOTS);
-  node.dots.forEach((dot, i) => {
-    if (i >= shown) {
-      dot.visible(false);
-      return;
-    }
-    const color = layers[i]?.layer.color ?? tokens.line;
-    dot.setAttrs({
-      visible: true,
-      x: x0 + i * step,
-      y: cy,
-      radius,
-      fill: color,
-      stroke: tokens.halo,
-      strokeWidth: 1 / zoom,
-    });
-  });
-  const extra = layers.length - MAX_DOTS;
-  const afterDots = x0 + shown * step - radius;
-  if (incomplete) {
-    const size = ALERT_SIZE / zoom;
-    node.alert.setAttrs({
-      visible: true,
-      x: afterDots + (extra > 0 ? MORE_WIDTH / zoom : 0),
-      y: cy - size / 2,
-      fontSize: size,
-      fontFamily: tokens.fontFamily,
-      fontStyle: fontStyle(tokens.type.name.weight),
-      fill: tokens.warning,
-      stroke: tokens.halo,
-      strokeWidth: 3 / zoom,
-      fillAfterStrokeEnabled: true,
-    });
-  } else {
-    node.alert.visible(false);
-  }
-  if (extra <= 0) {
-    node.more.visible(false);
-    return;
-  }
-  const fontSize = tokens.type.name.size / zoom;
-  node.more.setAttrs({
+  // Com o selo de revisão no canto, o alerta começa depois dele.
+  const left = marking.needsReview ? REVIEW_BADGE_SIZE : 0;
+  const size = ALERT_SIZE / zoom;
+  node.alert.setAttrs({
     visible: true,
-    text: `+${extra}`,
-    x: afterDots,
-    y: cy - fontSize / 2,
-    fontSize,
+    x: rect.x + (left + CORNER_MARGIN) / zoom,
+    y: rect.y + TEXT_HEADER_HEIGHT / 2 / zoom - size / 2,
+    fontSize: size,
     fontFamily: tokens.fontFamily,
     fontStyle: fontStyle(tokens.type.name.weight),
-    fill: tokens.line,
+    fill: tokens.warning,
     stroke: tokens.halo,
     strokeWidth: 3 / zoom,
     fillAfterStrokeEnabled: true,

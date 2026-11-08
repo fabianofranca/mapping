@@ -1,7 +1,13 @@
 import Konva from 'konva/lib/Core';
+import type { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Frame } from '../../../src/canvas/frame';
 import { MarkingRenderer } from '../../../src/canvas/renderers/markings';
+import {
+  ALERT_SIZE,
+  CORNER_MARGIN,
+  REVIEW_BADGE_SIZE,
+} from '../../../src/canvas/renderers/metrics';
 import {
   createMarking,
   removeMarking,
@@ -102,34 +108,75 @@ describe('MarkingRenderer', () => {
       ]),
     });
     expect(node(renderer, 'M1').group.opacity()).toBe(TOKENS.opacity.ancestor);
-    expect(node(renderer, 'M1').indicators.visible()).toBe(false);
+    expect(node(renderer, 'M1').alertClip.visible()).toBe(false);
     expect(node(renderer, 'M1').text.group.visible()).toBe(false);
     expect(node(renderer, 'M2').group.opacity()).toBe(TOKENS.opacity.dimmed);
   });
 
-  it('uma bolinha por camada; depois de quatro, "+N"', () => {
+  it('com camadas anotadas no frame, o nó não tem Circle nem texto "+N"', () => {
     const { renderer, render, editor } = setup();
-    render();
-    const m1 = node(renderer, 'M1');
-    expect(m1.indicators.visible()).toBe(true);
-    expect(m1.dots[0]?.fill()).toBe('#E53935');
-    expect(m1.dots[1]?.visible()).toBe(false);
-
     const layer = editor.store.project.peek()?.layers[0];
     if (!layer) throw new Error('fixture');
-    const dots: LayerDot[] = Array.from({ length: 6 }, (_, i) => ({
+    const many: LayerDot[] = Array.from({ length: 6 }, (_, i) => ({
       layer: { ...layer, id: `L${i}` },
     }));
-    render({ dots: new Map([['M1', dots]]) });
-    expect(m1.dots.filter((d) => d.visible())).toHaveLength(4);
-    expect(m1.dots[0]?.fill()).toBe('#E53935');
-    expect(m1.dots[0]?.stroke()).toBe(TOKENS.halo);
-    expect(m1.more.visible()).toBe(true);
-    expect(m1.more.text()).toBe('+2');
-    expect(m1.more.getAttrs()).toMatchObject({
-      fill: TOKENS.line,
-      stroke: TOKENS.halo,
-      fontFamily: TOKENS.fontFamily,
+    // O canal das bolinhas saiu do frame: mesmo se um chamador ainda o enviasse, nada é desenhado.
+    render({ dots: new Map([['M1', many]]) } as Partial<Frame>);
+    const m1 = node(renderer, 'M1');
+    expect(m1.group.find('Circle')).toHaveLength(0);
+    const texts = m1.group.find('Text').map((t) => (t as KonvaText).text());
+    expect(texts.some((t) => /^\+\d+$/.test(t))).toBe(false);
+  });
+
+  describe('nome do zoom semântico', () => {
+    it('num canto sem selo e sem ⚠ começa na margem do texto, na mesma altura de cabeçalho', () => {
+      const { renderer, render } = setup();
+      render();
+      const header = node(renderer, 'M1').text.header;
+      expect(header.visible()).toBe(true);
+      expect(header.x()).toBe(100 + 4);
+      expect(header.y()).toBe(100 + (14 - TOKENS.type.name.size) / 2);
+    });
+
+    it('depois do ⚠ de incompleta', () => {
+      const { renderer, render } = setup();
+      render({ incomplete: new Set(['M1']) });
+      expect(node(renderer, 'M1').text.header.x()).toBe(100 + ALERT_SIZE + 2);
+    });
+  });
+
+  describe('⚠ de incompleta no canto', () => {
+    const incomplete = new Set(['M1']);
+
+    it('sem o selo "a revisar": encostado no canto, com a margem', () => {
+      const { renderer, render } = setup();
+      render({ incomplete });
+      const m1 = node(renderer, 'M1');
+      expect(m1.alertClip.visible()).toBe(true);
+      expect(m1.alert.visible()).toBe(true);
+      expect(m1.alert.x()).toBe(100 + CORNER_MARGIN);
+      expect(m1.alert.getAttrs()).toMatchObject({
+        fill: TOKENS.warning,
+        stroke: TOKENS.halo,
+      });
+      expect(m1.badge.visible()).toBe(false);
+    });
+
+    it('com o selo "a revisar": o selo no canto e o ⚠ depois dele', () => {
+      const { renderer, render } = setup();
+      render({ project: withReview(canvasProject(), 'M1'), incomplete });
+      const m1 = node(renderer, 'M1');
+      expect(m1.badge.visible()).toBe(true);
+      expect(m1.badge.x()).toBeLessThan(100 + REVIEW_BADGE_SIZE);
+      expect(m1.alert.x()).toBe(100 + REVIEW_BADGE_SIZE + CORNER_MARGIN);
+    });
+
+    it('sem pendência: o grupo do alerta fica invisível', () => {
+      const { renderer, render } = setup();
+      render();
+      const m1 = node(renderer, 'M1');
+      expect(m1.alertClip.visible()).toBe(false);
+      expect(m1.alert.visible()).toBe(false);
     });
   });
 
@@ -150,101 +197,33 @@ describe('MarkingRenderer', () => {
     expect(m1.border.dash()).toEqual([6, 4]);
   });
 
-  describe('indicadores em zoom baixo (marcação que desenha componente)', () => {
+  describe('⚠ de incompleta em zoom baixo (marcação que desenha componente)', () => {
     const drawn = new Set(['M1']);
-    // M1 mede 600×500 no canvas: a 0,02 de zoom são 12×10 px de tela, a 0,2 são 120×100.
     const SMALL = { x: 0, y: 0, scale: 0.02 };
     const BIG = { x: 0, y: 0, scale: 0.2 };
-    const manyDots = (editor: ReturnType<typeof setup>['editor']): LayerDot[] => {
-      const layer = editor.store.project.peek()?.layers[0];
-      if (!layer) throw new Error('fixture');
-      return Array.from({ length: 6 }, (_, i) => ({ layer: { ...layer, id: `L${i}` } }));
-    };
 
-    it('menor que o limite do token: bolinhas e "+N" somem', () => {
-      const { renderer, render, editor } = setup();
-      render({ drawn, viewport: SMALL, dots: new Map([['M1', manyDots(editor)]]) });
-      const m1 = node(renderer, 'M1');
-      expect(m1.dots.some((d) => d.visible())).toBe(false);
-      expect(m1.more.visible()).toBe(false);
-    });
-
-    it('maior que o limite: bolinhas e "+N" aparecem', () => {
-      const { renderer, render, editor } = setup();
-      render({ drawn, viewport: BIG, dots: new Map([['M1', manyDots(editor)]]) });
-      const m1 = node(renderer, 'M1');
-      expect(m1.dots.filter((d) => d.visible())).toHaveLength(4);
-      expect(m1.more.visible()).toBe(true);
-    });
-
-    it('largura OU altura abaixo do limite já recolhe', () => {
-      const { renderer, render } = setup();
-      // 600×500 a 0,04 = 24×20: a altura (20) fica abaixo de 24.
-      render({ drawn, viewport: { x: 0, y: 0, scale: 0.04 } });
-      expect(node(renderer, 'M1').dots[0]?.visible()).toBe(false);
-    });
-
-    it('o limite vem do token (size-indicator-min-marking)', () => {
-      const { renderer, render } = setup();
-      expect(TOKENS.indicatorMinMarking).toBeGreaterThan(0);
-      render({
-        drawn,
-        viewport: SMALL,
-        tokens: { ...TOKENS, indicatorMinMarking: 5 },
-      });
-      expect(node(renderer, 'M1').dots[0]?.visible()).toBe(true);
-    });
-
-    it('selecionada ou sob o mouse mostra tudo', () => {
-      const { renderer, render, editor } = setup();
-      const dots = new Map([['M1', manyDots(editor)]]);
-      render({ drawn, viewport: SMALL, dots, hoverMarking: 'M1' });
-      const m1 = node(renderer, 'M1');
-      expect(m1.dots[0]?.visible()).toBe(true);
-      expect(m1.more.visible()).toBe(true);
-      render({ drawn, viewport: SMALL, dots, hoverMarking: null });
-      expect(m1.dots[0]?.visible()).toBe(false);
-      render({
-        drawn,
-        viewport: SMALL,
-        dots,
-        selection: { kind: 'marking', id: 'M1' },
-      });
-      expect(m1.dots[0]?.visible()).toBe(true);
-      expect(m1.more.visible()).toBe(true);
-    });
-
-    it('o alerta de incompleta aparece nos dois tamanhos', () => {
+    it('aparece nos dois tamanhos', () => {
       const { renderer, render } = setup();
       const incomplete = new Set(['M1']);
       render({ drawn, incomplete, viewport: SMALL });
       const m1 = node(renderer, 'M1');
       expect(m1.alert.visible()).toBe(true);
-      expect(m1.dots[0]?.visible()).toBe(false);
       render({ drawn, incomplete, viewport: BIG });
       expect(m1.alert.visible()).toBe(true);
-      expect(m1.dots[0]?.visible()).toBe(true);
-    });
-
-    it('marcação sem componente mantém as bolinhas e o "+N" no zoom baixo', () => {
-      const { renderer, render, editor } = setup();
-      render({ viewport: SMALL, dots: new Map([['M1', manyDots(editor)]]) });
-      const m1 = node(renderer, 'M1');
-      expect(m1.dots.filter((d) => d.visible())).toHaveLength(4);
-      expect(m1.more.visible()).toBe(true);
     });
   });
 
   describe('marcação com o desenho à vista', () => {
     const drawn = new Set(['M1']);
 
-    it('sem hover nem seleção: sem borda nem halo, mas com as bolinhas das camadas', () => {
+    it('sem hover nem seleção: sem borda nem halo e sem marca própria', () => {
       const { renderer, render } = setup();
       render({ drawn });
       const m1 = node(renderer, 'M1');
       expect(m1.border.visible()).toBe(false);
       expect(m1.halo.visible()).toBe(false);
-      expect(m1.indicators.visible()).toBe(true);
+      expect(m1.alertClip.visible()).toBe(false);
+      expect(m1.alert.visible()).toBe(false);
       // As outras marcações não mudam.
       expect(node(renderer, 'M2').border.visible()).toBe(true);
       expect(node(renderer, 'M2').halo.visible()).toBe(true);

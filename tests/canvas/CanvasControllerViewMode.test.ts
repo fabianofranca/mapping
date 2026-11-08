@@ -108,9 +108,9 @@ describe('CanvasController: modo visualização', () => {
     }
     const node = marking('P');
     expect(node?.border.visible()).toBe(true);
-    // Sem a seleção, a borda não é a da seleção; sem indicadores (bolinhas, ⚠, alerta).
+    // Sem a seleção, a borda não é a da seleção; sem indicadores (⚠, alerta).
     expect(node?.border.stroke()).not.toBe(internals.overlay.handles.get('nw')?.stroke());
-    expect(node?.indicators.visible()).toBe(false);
+    expect(node?.alertClip.visible()).toBe(false);
     expect(node?.badge.visible()).toBe(false);
     // O toque não alcança nada: nenhuma marcação está visível para o toque.
     expect(

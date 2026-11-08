@@ -10,16 +10,11 @@ export const REVIEW_BADGE_SIZE = 14;
 /** Risco do nome da removida na revisão (px de tela): espessura e altura na caixa do texto (0 = topo, 1 = base). */
 export const STRIKE_WIDTH = 1.5;
 export const STRIKE_HEIGHT = 0.55;
-/** Indicadores de camada: bolinhas (px de tela), no máximo `MAX_DOTS` e depois "+N". */
-export const DOT_RADIUS = 4;
-export const DOT_GAP = 3;
-export const DOT_MARGIN = 3;
-export const MAX_DOTS = 4;
-/** Alerta de anotação incompleta, depois das bolinhas (px de tela). */
+/** Margem do canto superior esquerdo da marcação, onde ficam o selo "a revisar" e o alerta (px de tela). */
+export const CORNER_MARGIN = 3;
+/** Alerta de anotação incompleta, no canto depois do selo "a revisar" (px de tela). */
 export const ALERT_GLYPH = '⚠';
 export const ALERT_SIZE = 13;
-/** Largura reservada para o "+N" depois das bolinhas (px de tela). */
-export const MORE_WIDTH = 22;
 export const ELLIPSIS = '…';
 /** Emblema do cadeado: o traço ocupa esta fração do lado, a grade do ícone tem 16 unidades. */
 export const LOCK_GLYPH_RATIO = 0.7;
