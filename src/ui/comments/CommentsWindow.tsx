@@ -174,7 +174,7 @@ function Filters() {
         value={ui.commentsUser.value}
         onChange={(e) => (ui.commentsUser.value = e.currentTarget.value)}
       >
-        <option value="">{t('comments.filter.userAll', { count: users.length })}</option>
+        <option value="">{t('comments.filter.userAll')}</option>
         {userOptions(users)}
       </Select>
       <TextField

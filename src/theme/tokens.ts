@@ -237,7 +237,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-arrow-head': '10px',
   'size-tw-left': '264px',
   'size-tw-right': '360px',
-  'size-tw-bottom': '208px',
+  /** Altura inicial da janela inferior: 4 linhas inteiras da lista da Comentários, com filtros e cabeçalho, a 900 × 720 (decisão 6 da #734). Medido: a lista ganha 1 px por px de janela e 357 px dão 148 px (4 × 37 px); 360 px cabem em 60% do corpo do editor a 900 × 720 (`BOTTOM_MAX_FRACTION`). */
+  'size-tw-bottom': '360px',
   'size-tw-layers': '224px',
   /** Altura inicial da janela inferior em modo revisão (filtros recolhidos, 3 linhas inteiras da lista e o rodapé de atalhos a 900 px de largura). */
   'size-tw-bottom-review': '240px',

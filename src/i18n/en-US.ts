@@ -630,7 +630,7 @@ export const enUS: Dictionary = {
   'comments.filter.statusAwaitingAgent': 'Waiting for agent',
   'comments.filter.statusAwaitingHuman': 'Waiting for human',
   'comments.filter.statusResolved': 'Resolved',
-  'comments.filter.userAll': 'Everyone ({count})',
+  'comments.filter.userAll': 'Everyone',
   'comments.filter.userOption': '{name} ({count})',
   'comments.filter.userAgent': '{name} (agent)',
   'comments.badge.open': 'Open',

@@ -46,11 +46,7 @@ async function expectFits(page: Page): Promise<void> {
 }
 
 async function expectDeleteMenu(page: Page): Promise<void> {
-  // Pelo teclado: a 900 × 720 a janela inferior ainda é baixa (a altura é da CL2) e a barra de
-  // status cobre as linhas, então o clique do ponteiro não as alcança.
-  const button = page.locator('.comments-row .comments-menu button').first();
-  await button.focus();
-  await page.keyboard.press('Enter');
+  await page.locator('.comments-row .comments-menu button').first().click();
   await expect(page.getByRole('menuitem', { name: 'Apagar' })).toBeVisible();
   await page.keyboard.press('Escape');
 }
@@ -93,3 +89,21 @@ for (const status of ['Todas', 'Resolvidas'] as const) {
     });
   });
 }
+
+test.describe('altura inicial da janela inferior (900 × 720, sem altura gravada)', () => {
+  test.use({ viewport: { width: 900, height: 720 } });
+
+  test('Comentários mostra 4 linhas inteiras da lista sem rolar', async ({ page }) => {
+    await openComments(page, 'Todas');
+    // O exemplo pode ter menos de 4 conversas: mede pela altura de uma linha.
+    const sizes = await page.locator('.comments-view .list-scroll').evaluate((el) => {
+      const row = el.querySelector('.comments-row')?.getBoundingClientRect();
+      return { client: el.clientHeight, row: row?.height ?? 0 };
+    });
+    expect(sizes.row).toBeGreaterThan(0);
+    expect(
+      sizes.client,
+      `.list-scroll clientHeight ${sizes.client} < 4 × linha ${4 * sizes.row}`,
+    ).toBeGreaterThanOrEqual(4 * sizes.row);
+  });
+});
