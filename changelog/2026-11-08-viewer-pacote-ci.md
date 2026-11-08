@@ -1,4 +1,4 @@
-# Pacote do visualizador e CI na troca de base — [Não lançado] (épico `epic/viewer-pacote-ci`, PR #1067, MCP sem mudança, schema v18, sem mudança)
+# Pacote do visualizador e CI na troca de base — 2026-11-08 (épico `epic/viewer-pacote-ci`, PR #1067, MCP sem mudança, schema v18, sem mudança)
 
 ## Corrigido
 
