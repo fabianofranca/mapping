@@ -936,6 +936,10 @@ button.tree-toggle:hover {
 }
 
 /* Janela Comentários (etapa Comentários, CM3): tabela de conversas, filtros e selos de status */
+.comments-view {
+  container: comments-window / inline-size;
+}
+
 .comments-filters {
   gap: var(--space-1) var(--space-3);
 }
@@ -956,27 +960,40 @@ button.tree-toggle:hover {
 }
 
 .comments-col-by {
-  width: 16%;
+  width: 14%;
 }
 
 .comments-col-anchor {
-  width: 24%;
+  width: 20%;
 }
 
 .comments-col-count {
   width: 7%;
 }
 
+/* "Aguardando humano" inteiro a 887 px: 19% dão 168 px, 144 úteis para o selo de ~120 px. */
 .comments-col-status {
-  width: 14%;
+  width: 19%;
 }
 
 .comments-col-when {
   width: 9%;
 }
 
+/* A coluna do ⋯ tem o tamanho do botão (28 px) mais um respiro de cada lado; sem o padding
+   de 12 px da .list-cell, que não deixava espaço útil e cortava o botão. */
 .comments-col-menu {
-  width: var(--size-target-min);
+  width: calc(var(--control-height) + 2 * var(--space-1));
+}
+
+.comments-menu {
+  padding-inline: var(--space-1);
+}
+
+.comments-when {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .comments-by {
@@ -1023,7 +1040,11 @@ button.tree-toggle:hover {
 
 .comments-badge {
   display: inline-block;
+  max-width: 100%;
   padding: 0 var(--space-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
   font: var(--t-micro);
   white-space: nowrap;
   color: var(--color-text-muted);
@@ -1124,4 +1145,45 @@ button.tree-toggle:hover {
   padding: 0 var(--space-2) var(--space-1);
   font: var(--t-small);
   color: var(--color-text-muted);
+}
+
+/*
+ * Janela estreita (#734): quem decide é a largura da janela, não a do viewport. Abaixo de 640 px
+ * (a 900 × 720 com Árvore, Camadas e Detalhes abertos a janela tem ~340 px) Msgs e Quando somem
+ * e Por mostra só o avatar; sobram Âncora, Última mensagem, Status e o ⋯, sem barra horizontal.
+ * 640 px é onde a coluna Status (19%, ~120 px) ainda deixa o selo de ~100 px quase inteiro e a
+ * Âncora (20%, ~128 px) mostra o nome; mais estreito que isso as 7 colunas já não cabem legíveis.
+ */
+@container comments-window (max-width: 640px) {
+  .comments-col-count,
+  .comments-count,
+  .comments-col-when,
+  .comments-when,
+  .comments-by-name {
+    display: none;
+  }
+
+  .comments-col-by {
+    width: 12%;
+  }
+
+  .comments-col-anchor {
+    width: 24%;
+  }
+
+  .comments-col-status {
+    width: 32%;
+  }
+
+  .comments-table .list-cell {
+    padding-inline: var(--space-2);
+  }
+
+  .comments-table .comments-menu {
+    padding-inline: var(--space-1);
+  }
+
+  .comments-avatar {
+    margin-right: 0;
+  }
 }
