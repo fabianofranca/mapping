@@ -1,4 +1,4 @@
-# Material 3 (Compose) fiel — [Não lançado] (épico `epic/material3-fiel`, PR #860, MCP sem mudança, schema v18)
+# Material 3 (Compose) fiel — 2026-11-08 (épico `epic/material3-fiel`, PR #860, MCP 0.28.0 (só a correção do raster de arcos, sem nova versão), schema v18)
 
 ## Adicionado
 
