@@ -114,6 +114,36 @@ describe('origins[].kind', () => {
   });
 });
 
+describe('origem measured: ciclo parse → gravação → releitura', () => {
+  it('a especialização lida e regravada em JSON relê sem erro e sem node/screen', () => {
+    const first = parseSpec(rawSpec(15));
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    const written = JSON.parse(JSON.stringify(first.spec)) as Json;
+    expect(written.origins[0]).not.toHaveProperty('node');
+    expect(written.origins[0]).not.toHaveProperty('screen');
+    const again = parseSpec(written);
+    expect(again.ok).toBe(true);
+    if (!again.ok) return;
+    expect(again.spec.origins?.[0]).toMatchObject({ system: 'dom', kind: 'measured' });
+  });
+
+  it('a biblioteca medido dos exemplos relê depois de gravada', () => {
+    const raw = JSON.parse(
+      readFileSync(join('examples', 'libraries', 'medido', 'medido.spec.json'), 'utf8'),
+    ) as Json;
+    const first = parseSpec(raw);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    const again = parseSpec(JSON.parse(JSON.stringify(first.spec)));
+    expect(again.ok).toBe(true);
+    if (!again.ok) return;
+    expect(importMeasured([again.spec], { system: 'dom' } as never)).not.toMatchObject({
+      error: expect.stringContaining('não declarada'),
+    });
+  });
+});
+
 describe('importMeasured: casamento', () => {
   it('casa a classe com o name do tipo, cria a marcação e preenche os campos', () => {
     const r = importMeasured([spec()], { system: 'dom', tree: button });

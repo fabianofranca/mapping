@@ -922,7 +922,7 @@ button.layer-group-label:hover {
 }
 
 .ref-control-text {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -930,7 +930,9 @@ button.layer-group-label:hover {
 }
 
 .ref-control-layer {
-  flex: none;
+  /* Em largura estreita a camada cede primeiro: o nome do alvo é o que importa. */
+  flex: 0 100 auto;
+  min-width: 0;
   max-width: 35%;
   overflow: hidden;
   font: var(--t-micro);

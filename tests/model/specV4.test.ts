@@ -716,7 +716,7 @@ describe('origins', () => {
       name: 'SDUI',
       node: { type: 'type', props: 'props', children: 'children' },
     });
-    expect(origin?.screen.roots).toEqual([{ path: 'content' }]);
+    expect(origin?.screen?.roots).toEqual([{ path: 'content' }]);
   });
 
   it('um problema do parseOrigins chega como issue do zod no caminho exato', () => {

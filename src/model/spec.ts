@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { isValidCodePath, isValidUrlTemplate } from './codeLocations';
 import { MAX_CONTAINER_SIZE } from './containers';
-import { parseOrigins, parsePath, type Origin } from './components/origin';
+import {
+  parseOrigins,
+  parsePath,
+  toSpecOrigin,
+  type SpecOrigin,
+} from './components/origin';
 import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
 import { isPackagePath, packagePathProblem } from './packagePaths';
 import { childSets } from './specChildren';
@@ -407,7 +412,7 @@ export interface Spec {
   /** Fontes do pacote (só `formatVersion` 4). */
   fonts?: SpecFont[];
   /** Origens executáveis, validadas por `parseOrigins` (só `formatVersion` 4). */
-  origins?: Origin[];
+  origins?: SpecOrigin[];
   /** Contrato de versão (só `formatVersion` 4). */
   migrations?: SpecMigration[];
   /** Tokens de design (cor, número, família) por modo, lidos por `$token` nos componentes (só `formatVersion` 15). */
@@ -2809,7 +2814,9 @@ function dropRemovedFields(parsed: ParsedSpec): {
   // `origins` foi validado por `parseOrigins` no schema; a forma lida é a dele.
   const { origins: rawOrigins, ...rest } = parsed;
   const origins =
-    rawOrigins === undefined ? {} : { origins: parseOrigins(rawOrigins).origins };
+    rawOrigins === undefined
+      ? {}
+      : { origins: parseOrigins(rawOrigins).origins.map(toSpecOrigin) };
   return { spec: { ...rest, ...origins, layers } as Spec, ignored };
 }
 
