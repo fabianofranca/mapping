@@ -56,8 +56,22 @@ const EPSILON = 1e-6;
  */
 export function snapNearInteger(v: number, eps: number = EPSILON): number {
   const rounded = Math.round(v);
-  if (!Number.isFinite(v) || Math.abs(v - rounded) >= eps) return v;
-  return rounded === 0 ? 0 : rounded;
+  if (!(Math.abs(v - rounded) < eps)) return v; // também devolve v se não for finito
+  return rounded || 0;
+}
+
+/**
+ * Limpa o ruído de ponto flutuante do `placement` de um container: `x`, `y` e `scale` passam pelo
+ * `snapNearInteger`, mas a escala só vira inteiro se ele for >= 1 (uma escala minúscula nunca vira 0).
+ * Fração de verdade (arrasto com zoom, `1868.13`) fica como está.
+ */
+export function snapPlacement(p: Placement): Placement {
+  const scale = snapNearInteger(p.scale);
+  return {
+    x: snapNearInteger(p.x),
+    y: snapNearInteger(p.y),
+    scale: scale >= 1 ? scale : p.scale,
+  };
 }
 
 export function right(r: Rect): number {

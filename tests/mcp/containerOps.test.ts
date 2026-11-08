@@ -216,6 +216,32 @@ describe('update_container, replace_container e delete_container', () => {
     expect(result.changes).toMatchObject({ containers: { updated: 1, deleted: 1 } });
   });
 
+  it('update_container com x ruidoso grava o inteiro; add_container com centro ruidoso também', async () => {
+    const { name, dir } = await newProject();
+    const created = await propose(mcp, name, [
+      {
+        op: 'add_container',
+        name: 'Cartão',
+        width: 100,
+        height: 100,
+        background: '#FFFFFF',
+        center: { x: 275.00000000000006, y: 100.00000000000001 },
+      },
+    ]);
+    const box = created.created[0]!.ref!;
+    const after = acceptAllAndApply(dir, created.proposal.id);
+    expect(after.containers[0]!.placement).toEqual({ x: -225, y: -400, scale: 10 });
+    const update = await plan(name, [
+      { op: 'update_container', container: box, x: 275.00000000000006 },
+    ]);
+    expect(update.summary[0]).toContain('posição (275, -400)');
+    const changed = await propose(mcp, name, [
+      { op: 'update_container', container: box, x: 275.00000000000006 },
+    ]);
+    const written = acceptAllAndApply(dir, changed.proposal.id);
+    expect(written.containers[0]!.placement.x).toBe(275);
+  });
+
   it('as antigas update_image, replace_image e delete_image seguem valendo, com aviso', async () => {
     const { name, dir } = await newProject();
     const created = await propose(mcp, name, [

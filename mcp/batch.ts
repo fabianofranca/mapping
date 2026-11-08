@@ -1553,7 +1553,9 @@ class Batch {
         scale: op.scale ?? placement.scale,
       };
       project = setContainerPlacement(project, id, next);
-      changes.push(`posição (${next.x}, ${next.y}) escala ${next.scale}`);
+      // O valor gravado, já sem ruído de ponto flutuante.
+      const saved = projectIndex(project).containers.get(id)!.placement;
+      changes.push(`posição (${saved.x}, ${saved.y}) escala ${saved.scale}`);
     }
     if (op.markingColor !== undefined) {
       project = setContainerMarkingColor(project, id, op.markingColor);
