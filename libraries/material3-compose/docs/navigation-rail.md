@@ -73,3 +73,27 @@ Variante `modal-wide`: Estável, sem opt-in. `ModalWideNavigationRail(state = re
 - **Rail estreita**: style=rail, alwaysShowLabel=true
 - **Wide expandida**: style=wide, initialValue=Expanded
 - **Modal expandida**: style=modal-wide, initialValue=Expanded
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt` (linhas 146 a 168: `DefaultNavigationRailOverride`, o `Surface` com `Column` de `widthIn(min = 80)`, `padding(vertical = 4)` e `spacedBy(4)`; 200 a 316: `NavigationRailItem`, `defaultMinSize(minHeight = 56)` e `widthIn(min = 80)`; 327 a 332: `containerColor`; 693 a 753: `placeLabelAndIcon`; 767 a 797: as constantes de recuo e tamanho).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRail.kt` (linhas 209 a 415: `WideNavigationRailLayout`; 230 a 252: a largura mínima 96 ou 220, o espaço entre itens 4 ou 0 e a altura mínima do item 64 ou 48; 264: o topo de 44; 317 a 336: a medida dos itens (`fitPrioritizingWidth`) e a largura do rail pelo item mais largo mais 20; 410: a posição dos itens; 788 a 814: `WideNavigationRailDefaults`, as formas; 855 a 860: `containerColor` e `modalContainerColor`; 993 a 1000: o `Surface` do rail modal expandido; 1135 a 1157: `ItemHorizontalPadding` 20, `WNRVerticalPadding` 44, `CollapsedRailWidth`, `ExpandedRailMinWidth` 220, `ExpandedRailMaxWidth` 360, `TopIconItemMinHeight` 64).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationItem.kt` (linhas 895 a 975: `placeLabelAndTopIcon`; 978 a 1075: `placeAnimatedLabelAndIcon`, o item do rail wide: indicador no topo, ícone a 4, rótulo a 36; a pílula do ícone ao lado a 20 da borda, com ícone a 16 do início e 8 até o rótulo).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/`: `NavigationRailCollapsedTokens.kt` (24 a 31: largura 96, 80 estreita, `TopSpace` 44, `ItemVerticalSpace` 4, cor surface), `NavigationRailExpandedTokens.kt` (24 a 32: largura 220 a 360, `ModalContainerShape` CornerLarge, `ModalContainerColor` surface container), `NavigationRailVerticalItemTokens.kt` (24 a 30: indicador 56 × 32, `IconLabelSpace` 4, label medium), `NavigationRailHorizontalItemTokens.kt` (24 a 30: indicador de 56 de altura, `IconLabelSpace` 8, label large), `NavigationRailBaselineItemTokens.kt` (24 a 32: `ContainerHeight` 64, `IconSize` 24) e `NavigationRailColorTokens.kt` (24 a 31: ícone `on-secondary-container`, indicador `secondary-container`, rótulo `secondary` ou `on-surface-variant`).
+
+**Como o desenho segue o Compose**
+
+- Rail estreita (`style: rail`): folha de 80 em `surface`, 4 de padding vertical, destinos de 56 com 4 entre eles. No destino, o indicador de 56 × 32 em `corner-full` fica no topo, o ícone de 24 a 4 dele e o rótulo em `label-medium` a 36 (4 de espaço depois do indicador). Com `alwaysShowLabel` falso o rótulo some nos não selecionados e o ícone fica no centro dos 56 (y = 16).
+- Wide recolhida: folha de 96 em `surface`, 44 de topo, destinos de 64 com 4 entre eles, o indicador de 56 × 32 a 20 da borda e o conteúdo (indicador, ícone, rótulo em `label-medium`) no topo do item.
+- Wide expandida: largura de no mínimo 220 e no máximo 360, que cresce com a pílula mais larga mais 20 (`hug` com `minWidth` e `maxWidth`); itens de 56 sem espaço entre eles; a pílula de 56 de altura em `corner-full` fica a 20 da borda e mede `16 + ícone 24 + 8 + rótulo + 16`, com o rótulo em `label-large` (14 / 20, peso 500, 0,1).
+- Modal expandida: `surface-container` com os quatro cantos de 16 (`corner-large`); recolhida, igual à wide recolhida. Cores como no Compose: ícone `on-secondary-container` selecionado e `on-surface-variant` nos demais, rótulo `secondary` selecionado, indicador `secondary-container`.
+
+**O que ainda difere do Compose**
+
+- O scrim, a elevação do rail modal (Level2 nos tokens, sem sombra no composable), a animação de expandir e recolher, o cabeçalho (`header`) e o botão do rail não fazem parte do desenho; o estilo `modal-wide` desenha só a folha.
+- A largura do rail estreito é `hug` com mínimo de 80 (o `widthIn(min = 80)` do Compose); a wide recolhida é limitada a 96 mesmo com rótulo mais largo, como o `actualMinWidth` do Compose.
+- Sem estados de pressionado, foco e passar o mouse, sem o ripple, sem `enabled` e sem o ícone sozinho (item sem rótulo, de indicador redondo de 56 × 56): o tipo exige o rótulo.

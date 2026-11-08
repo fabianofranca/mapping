@@ -42,3 +42,29 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Uma linha**: headlineContent=Wi-Fi, leadingIcon=Settings
 - **Duas linhas**: headlineContent=Ana Souza, supportingContent=Vamos almoçar?, trailingContent=12:30, leadingImage=https://example.com/ana.jpg
 - **Três linhas**: overlineContent=Hoje, headlineContent=Reunião de planejamento, supportingContent=Sala 3, com a equipe de produto., trailingIcon=KeyboardArrowRight
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ListItem.kt` (linhas 95 a 186: `ListItem`, o `Surface` com `ListItemDefaults.shape` e `containerColor`, o estilo de cada texto por token e os `Box` com `LeadingContentEndPadding` e `TrailingContentStartPadding`; 191 a 330: `ListItemMeasurePolicy`, o respiro `ListItemStartPadding`/`ListItemEndPadding` e o tipo do item; 451 a 473: `calculateHeight`, a altura mínima por tipo; 475 a 524: `place`, o conteúdo centrado (uma e duas linhas) ou no topo com `topPadding` (três linhas); 527 a 610: `ListItemDefaults` e `defaultListItemColors`; 712 a 741: `ListItemType`, três linhas com sobretítulo e apoio juntos ou com apoio multilinha; 743 a 757: `ListItemVerticalPadding` 8, `ListItemThreeLineVerticalPadding` 12, `ListItemStartPadding` e `ListItemEndPadding` 16, `LeadingContentEndPadding` e `TrailingContentStartPadding` 16; 764 a 768: `verticalPadding`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ListTokens.kt` (linhas 27: `ListItemContainerColor` `Surface`; 29: `ListItemContainerShape` `CornerNone`; 46 e 47: título em `OnSurface` e `BodyLarge`; 49 a 53: avatar de 40, `PrimaryContainer`, `CornerFull`; 54 e 55: ícone inicial de 24 em `OnSurfaceVariant`; 62, 78 e 72: alturas 56, 72 e 88; 63 e 64: sobretítulo `OnSurfaceVariant` e `LabelSmall`; 70 e 71: apoio `OnSurfaceVariant` e `BodyMedium`; 73 e 74: ícone final de 24 em `OnSurfaceVariant`; 76 e 77: texto final `OnSurfaceVariant` e `LabelSmall`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypographyTokens.kt` (`BodyLarge` 16/24/400/0,5, `BodyMedium` 14/20/400/0,2 e `LabelSmall` 11/16/500/0,5).
+
+**Como o desenho segue o Compose**
+
+- Contêiner `surface` sem canto (`CornerNone`), com 16 de respiro dos dois lados e 16 entre o conteúdo inicial, o texto e o conteúdo final (`LeadingContentEndPadding` e `TrailingContentStartPadding`). O respiro vertical é 8 e passa a 12 no item de três linhas (sobretítulo e apoio presentes).
+- Altura mínima por tipo (`calculateHeight`): 56 com só o título, 72 com sobretítulo ou apoio e 88 com os dois. É o `minHeight` da raiz, calculado pelos campos, e o `sizing` fica `hug` na altura: sem retângulo o item mede o conteúdo mais o respiro e nunca fica abaixo do mínimo. Com retângulo, o conteúdo se arruma na altura dele.
+- Uma e duas linhas: conteúdo inicial, bloco de texto e conteúdo final centrados na altura (`CenterVertically.align`). Três linhas: tudo preso ao topo, a 12 (`topPadding`), inclusive o ícone inicial e o final.
+- Título em `body-large` (16/24, `on-surface`), sobretítulo em `label-small` (11/16, `on-surface-variant`) acima dele e apoio em `body-medium` (14/20, `on-surface-variant`) abaixo, tudo pelos tokens e sem `family`. Texto final em `label-small` (`ListItemTrailingSupportingTextFont`) em `on-surface-variant`.
+- Ícones inicial e final pelo nó `icon` do conjunto da biblioteca, de 24 em `on-surface-variant`. Avatar de 40 (`ListItemLeadingAvatarSize`) em `corner-full`, com o preenchimento `primary-container` (`ListItemLeadingAvatarColor`) enquanto a imagem não carrega.
+- Texto cortado como o `Text` dos exemplos do Material: título e sobretítulo em uma linha com `…`, apoio em uma linha com `…` quando há sobretítulo e em até duas sem ele (`font.maxLines` e `font.ellipsis`), o que mantém o item dentro de 88.
+
+**O que ainda difere do Compose**
+
+- O `ListItem` não corta nenhum texto: quem decide as linhas é o `Text` que a tela passa. O desenho adota o corte acima (`maxLines` 1, 1 e 1 ou 2), que é a convenção do Material, e não uma regra do composable.
+- Apoio de duas linhas sem sobretítulo: o Compose o detecta pela linha de base (`isSupportingMultiline`) e passa a três linhas, com o conteúdo preso ao topo e 88 de altura. O desenho só conhece o tipo pelos campos preenchidos, então esse item mantém o respiro de 8 e o conteúdo inicial e final centrados (o bloco de texto cai no mesmo lugar numa caixa de 88, mas a altura medida é 80).
+- Só ícone, avatar remoto e texto como conteúdo inicial e final; o `leadingContent` e o `trailingContent` do Compose são livres (checkbox, switch, imagem de 56, vídeo de 100 por 56). O `ListItemDefaults.colors`, o desabilitado a 0,38, o selecionado, o arrastado (`tonalElevation` e `shadowElevation`), o pressionado, o foco e o passar o mouse não existem: o desenho é o estado normal.
+- A divisória entre itens (`ListTokens.DividerLeadingSpace` e `DividerTrailingSpace` de 16) é de um `HorizontalDivider` à parte, e não do `ListItem`, então o tipo não a desenha.
