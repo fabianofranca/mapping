@@ -48,6 +48,26 @@ function withFonts(): Map<string, Body> {
   return bodies;
 }
 
+/** Especialização de exemplo com `icons` na raiz e o arquivo de ícones servido. */
+function withIcons(): Map<string, Body> {
+  const bodies = sampleBodies();
+  const spec = JSON.parse(SAMPLE_FILES[0]!.text) as Record<string, unknown>;
+  spec.icons = 'icons/set.json';
+  bodies.set(SPEC_URL, JSON.stringify(spec));
+  bodies.set(
+    `${BASE}icons/set.json`,
+    JSON.stringify({
+      format: 'mapping-icons',
+      formatVersion: 1,
+      viewBox: [24, 24],
+      icons: {
+        star: { paths: [{ d: 'M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z' }] },
+      },
+    }),
+  );
+  return bodies;
+}
+
 describe('loadLibraryFromUrl', () => {
   it('carrega a especialização e os componentes por URL, igual ao loadLibrary com os arquivos', async () => {
     const { fetch, calls } = fakeFetch(sampleBodies());
@@ -118,6 +138,43 @@ describe('loadLibraryFromUrl', () => {
     const library = await loadLibraryFromUrl(SPEC_URL, { fetch });
     expect(library.problems).toHaveLength(1);
     expect(library.problems[0]).toContain('components/card.json');
+  });
+
+  it('baixa o arquivo de ícones da especialização (icons na raiz)', async () => {
+    const bodies = withIcons();
+    const { fetch, calls } = fakeFetch(bodies);
+    const library = await loadLibraryFromUrl(SPEC_URL, { fetch });
+    expect(calls).toContain(`${BASE}icons/set.json`);
+    expect(library.problems).toEqual([]);
+    expect(library.icons?.icons.star).toBeDefined();
+  });
+
+  it('ícones que não vêm (404 ou erro de rede) viram problema, sem derrubar o resto', async () => {
+    const missing = withIcons();
+    missing.delete(`${BASE}icons/set.json`);
+    const first = await loadLibraryFromUrl(SPEC_URL, {
+      fetch: fakeFetch(missing).fetch,
+    });
+    expect(first.icons).toBeUndefined();
+    expect(first.problems).toHaveLength(1);
+    expect(first.problems[0]).toContain('arquivo de ícones não encontrado');
+    expect(first.types.find((t) => t.id === 'card')?.component).toBeDefined();
+
+    const { fetch: inner } = fakeFetch(withIcons());
+    const offline = (async (input: RequestInfo | URL) => {
+      if (String(input).endsWith('icons/set.json')) throw new TypeError('offline');
+      return inner(input);
+    }) as typeof globalThis.fetch;
+    const second = await loadLibraryFromUrl(SPEC_URL, { fetch: offline });
+    expect(second.problems).toHaveLength(1);
+    expect(second.problems[0]).toContain('arquivo de ícones não encontrado');
+  });
+
+  it('com fonts: false os ícones continuam sendo pedidos', async () => {
+    const { fetch, calls } = fakeFetch(withIcons());
+    const library = await loadLibraryFromUrl(SPEC_URL, { fetch, fonts: false });
+    expect(calls).toContain(`${BASE}icons/set.json`);
+    expect(library.icons?.icons.star).toBeDefined();
   });
 
   it('especialização 404 lança com a URL e o status', async () => {

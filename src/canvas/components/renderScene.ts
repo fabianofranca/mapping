@@ -31,11 +31,8 @@ import {
 } from '../../model/components/scene';
 import type { RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
-import {
-  type RemoteImageView,
-  type RemoteImageViewState,
-  loadEmbeddedImage,
-} from './imageLoader';
+import { loadEmbeddedImage } from './imageLoader';
+import type { RemoteImageView, RemoteImageViewState } from './remoteImageTypes';
 
 /** Única origem de imagem que o renderizador carrega sozinho (herança do laboratório). */
 const DATA_URL = /^data:/i;

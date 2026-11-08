@@ -36,7 +36,8 @@ import type { TextMeasurer } from '../src/model/components/instantiate';
 import type { Box, Screen } from '../src/model/components/screen';
 import { type SourceResult, screenFromSource } from '../src/model/components/origin';
 import { capPixelRatio } from './pinch';
-import { type AllowOrigin, createViewerRemoteImages } from './remoteImages';
+import type { AllowOrigin } from './allowOrigin';
+import { createViewerRemoteImages } from './remoteImages';
 import { konvaMeasurer } from '../src/canvas/components/konvaMeasurer';
 import {
   type InstanceWarnings,

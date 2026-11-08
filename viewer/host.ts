@@ -22,11 +22,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Referências relativas da especialização: `component` dos tipos e `file` das fontes. */
-function collectRefs(spec: unknown): { components: string[]; fonts: string[] } {
+/** Referências relativas da especialização: `component` dos tipos, `file` das fontes e `icons`. */
+function collectRefs(spec: unknown): {
+  components: string[];
+  fonts: string[];
+  icons: string[];
+} {
   const components: string[] = [];
   const fonts: string[] = [];
-  if (!isRecord(spec)) return { components, fonts };
+  const icons: string[] = [];
+  if (!isRecord(spec)) return { components, fonts, icons };
+  if (typeof spec.icons === 'string') icons.push(spec.icons);
   if (Array.isArray(spec.layers)) {
     for (const layer of spec.layers) {
       if (!isRecord(layer) || !Array.isArray(layer.annotationTypes)) continue;
@@ -42,7 +48,7 @@ function collectRefs(spec: unknown): { components: string[]; fonts: string[] } {
       if (isRecord(font) && typeof font.file === 'string') fonts.push(font.file);
     }
   }
-  return { components, fonts };
+  return { components, fonts, icons };
 }
 
 /** Nome do arquivo sem a codificação da URL (`my%20spec.json` → `my spec.json`). */
@@ -56,10 +62,11 @@ function decodeName(name: string): string {
 
 /**
  * Carrega a biblioteca a partir da URL da especialização: busca o JSON, os componentes que ele
- * aponta (texto) e, salvo `fonts: false`, as fontes (bytes), todos relativos à URL da
- * especialização, e entrega a lista de arquivos ao `loadLibrary`. Um componente ou uma fonte
- * que não vem (resposta não-ok ou erro de rede) fica de fora, e o `loadLibrary` relata (em
- * `problems` ou no status das fontes). Lança se a especialização não vier ou se não houver
+ * aponta (texto), o arquivo de ícones (`icons`, texto; sempre, mesmo com `fonts: false`) e,
+ * salvo `fonts: false`, as fontes (bytes), todos relativos à URL da especialização, e entrega a
+ * lista de arquivos ao `loadLibrary`. Um componente, o arquivo de ícones ou uma fonte que não
+ * vem (resposta não-ok ou erro de rede) fica de fora, e o `loadLibrary` relata (em `problems`
+ * ou no status das fontes). Lança se a especialização não vier ou se não houver
  * `fetch`.
  */
 export async function loadLibraryFromUrl(
@@ -105,14 +112,19 @@ export async function loadLibraryFromUrl(
     }
   };
 
-  const [components, fonts] = await Promise.all([
+  const [components, icons, fonts] = await Promise.all([
     Promise.all(refs.components.map((ref) => get(ref, (r) => r.text()))),
+    Promise.all(refs.icons.map((ref) => get(ref, (r) => r.text()))),
     options.fonts === false
       ? Promise.resolve([])
       : Promise.all(refs.fonts.map((ref) => get(ref, (r) => r.arrayBuffer()))),
   ]);
   refs.components.forEach((ref, index) => {
     const text = components[index];
+    if (text !== undefined) files.push({ path: resolvePath(specName, ref), text });
+  });
+  refs.icons.forEach((ref, index) => {
+    const text = icons[index];
     if (text !== undefined) files.push({ path: resolvePath(specName, ref), text });
   });
   refs.fonts.forEach((ref, index) => {
