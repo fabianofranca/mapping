@@ -1370,9 +1370,9 @@ printf '# Badge\n\nDocumento do Badge, dentro do pacote.\n' > assets/docs-extern
 
 ### R21 — Workspace atualizado pela release
 
-**O que cobre:** a etapa Workspace atualizado (WA1 e WA2): o `setup.sh` do `examples/workspace/` que cada release do MCP publica junto com o `mapping-mcp.js`, a skill `SKILL.md` e o bloco `AGENTS.mapping.md` (cada arquivo com o `.sha256`). Os passos conferem, contra a **release real no GitHub**, o workspace novo pela linha única, a migração do workspace antigo pela linha da transição (o `AGENTS.md` do esqueleto antigo vira o bloco entre `mapping:begin` e `mapping:end`, com backup e a seção "Para que servem" intacta), a autoatualização do `setup.sh` e o `--no-self-update`, a repetição sem mudança, a cópia da skill em `.claude/skills/` atualizada, a conferência do `sha256` de todos os arquivos antes de trocar qualquer um e o servidor do workspace respondendo pelo cliente stdio. Não usa a app nem o navegador.
+**O que cobre:** a etapa Workspace atualizado (WA1 e WA2): o `setup.sh` do `examples/workspace/` que cada release do MCP publica junto com o `mapping-mcp.js`, a skill `SKILL.md`, o bloco `AGENTS.mapping.md` e o `watch-comments.mjs` (o watcher de conversas, que o `setup.sh` instala na raiz do workspace) (cada arquivo com o `.sha256`). Os passos conferem, contra a **release real no GitHub**, o workspace novo pela linha única, a migração do workspace antigo pela linha da transição (o `AGENTS.md` do esqueleto antigo vira o bloco entre `mapping:begin` e `mapping:end`, com backup e a seção "Para que servem" intacta), a autoatualização do `setup.sh` e o `--no-self-update`, a repetição sem mudança, a cópia da skill em `.claude/skills/` atualizada, a conferência do `sha256` de todos os arquivos antes de trocar qualquer um e o servidor do workspace respondendo pelo cliente stdio. Não usa a app nem o navegador.
 
-**Preparo.** Só shell e o cliente MCP por stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`). `REPO` é o clone do Mapping (receita 1 do apêndice A). Cada passo trabalha numa subpasta própria de `W21`. A tag `TAG` vem da mensagem do testador (a release candidate do épico); numa rodada completa na `main`, é a última estável. O R21 baixa da release **real**, não do build local: sem rede para `github.com`, marque todos "não executado (sem rede para a release)"; se a release da `TAG` não tiver o `setup.sh`, marque todos "não executado (a release não traz o setup.sh)". O resumo do `setup.sh` tem as linhas `Servidor:`, `Skill:` e `AGENTS.md:` (esta diz `criado`, `atualizado`, `migrado`, `sem mudança` ou `não reconhecido…`); os avisos saem pelo stderr, por isso a saída é gravada com `2>&1`.
+**Preparo.** Só shell e o cliente MCP por stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`). `REPO` é o clone do Mapping (receita 1 do apêndice A). Cada passo trabalha numa subpasta própria de `W21`. A tag `TAG` vem da mensagem do testador (a release candidate do épico); numa rodada completa na `main`, é a última estável. O R21 baixa da release **real**, não do build local: sem rede para `github.com`, marque todos "não executado (sem rede para a release)"; se a release da `TAG` não tiver o `setup.sh`, marque todos "não executado (a release não traz o setup.sh)". O resumo do `setup.sh` tem as linhas `Servidor:`, `Skill:`, `AGENTS.md:` (esta diz `criado`, `atualizado`, `migrado`, `sem mudança` ou `não reconhecido…`) e `Watcher:` (`instalado`, `atualizado`, `sem mudança` ou `não atualizado (release sem o watcher)`); os avisos saem pelo stderr, por isso a saída é gravada com `2>&1`.
 
 ```bash
 export W21=<pasta de trabalho>/release-ws && mkdir -p "$W21" && cd "$W21"
@@ -1381,7 +1381,7 @@ TAG=$(basename "$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.
 export TAG BASE="https://github.com/fabianofranca/mapping/releases/download/$TAG"
 curl -fsSI "$BASE/setup.sh" > /dev/null && echo "release com setup.sh"
 mkdir baixados
-for f in mapping-mcp.js setup.sh SKILL.md AGENTS.mapping.md; do
+for f in mapping-mcp.js setup.sh SKILL.md AGENTS.mapping.md watch-comments.mjs; do
   curl -fsSL "$BASE/$f" -o "baixados/$f" && curl -fsSL "$BASE/$f.sha256" -o "baixados/$f.sha256"
 done
 (cd baixados && sha256sum -c *.sha256)
@@ -1398,6 +1398,8 @@ curl -fsSL "$BASE/setup.sh" -o setup.sh && chmod +x setup.sh
 (cd tools && sha256sum -c mapping-mcp.js.sha256)
 node tools/mapping-mcp.js --version; node ../baixados/mapping-mcp.js --version
 cmp .agents/skills/spec-author/SKILL.md ../baixados/SKILL.md
+cmp watch-comments.mjs ../baixados/watch-comments.mjs
+node watch-comments.mjs > ../saida-watcher.txt 2>&1; echo "watcher-exit=$?"; cat ../saida-watcher.txt
 test -L .claude/skills/spec-author && echo link
 grep -c 'mapping:begin' AGENTS.md; grep -c 'mapping:end' AGENTS.md
 grep -n '^# Mapeamentos\|^## Para que servem estes mapeamentos' AGENTS.md
@@ -1425,6 +1427,7 @@ A conferência do R21.2, na `ws-antigo`:
 
 ```bash
 cmp setup.sh ../baixados/setup.sh; ls AGENTS.md.bak-*; cmp AGENTS.md.bak-* ../AGENTS-antes.md
+cmp watch-comments.mjs ../baixados/watch-comments.mjs
 grep -c 'mapping:begin' AGENTS.md
 [ "$(sed -n '/<!-- mapping:begin/,/<!-- mapping:end -->/p' AGENTS.md)" = "$(cat ../baixados/AGENTS.mapping.md)" ] && echo bloco-igual
 secao() { awk '/^## Para que servem/{f=1;next} /^## |<!-- mapping:begin/{f=0} f' "$1"; }
@@ -1492,8 +1495,8 @@ node tools/mapping-mcp.js --version; ls projetos/demo/mapping.json
 
 | Passo | Ação | Esperado |
 | --- | --- | --- |
-| R21.1 | **Workspace novo pela linha única.** Rode a shell do R21.1 (pasta vazia `ws-novo`, o `setup.sh` baixado da release e executado com a tag). | **Disco:** `exit=0`; `mapping-mcp.js: OK`; as duas `--version` iguais e começando pelo número da tag; `cmp` sem saída; `link`; as duas contagens `1`; o `grep` acha `# Mapeamentos` e `## Para que servem estes mapeamentos`. **Resposta:** o resumo tem `Servidor:` (a mesma versão), `Skill:` citando a release e `AGENTS.md: criado`. |
-| R21.2 | **Workspace antigo migrado pela linha da transição.** Rode a shell do R21.2 (monta a `ws-antigo` do histórico, com o texto do dono em "Para que servem", e roda a linha da transição) e a conferência dela. | **Disco:** `exit=0`; o `setup.sh` é o da release (`cmp` sem saída; o download da linha já o trocou, então **não** há "setup.sh atualizado"); **um** `AGENTS.md.bak-AAAAMMDD-HHMMSS`, igual à cópia; `1` marcador `mapping:begin`; `bloco-igual`; a seção do dono idêntica byte a byte (`cmp` sem saída) e com o texto (`1`); `## Estrutura` uma vez (dentro do bloco) e nada fora dele; `nota.txt: OK` e `CLAUDE.md: OK`. **Resposta:** o resumo diz `AGENTS.md: migrado`. |
+| R21.1 | **Workspace novo pela linha única.** Rode a shell do R21.1 (pasta vazia `ws-novo`, o `setup.sh` baixado da release e executado com a tag). | **Disco:** `exit=0`; `mapping-mcp.js: OK`; as duas `--version` iguais e começando pelo número da tag; `cmp` sem saída (a skill e o `watch-comments.mjs`); `watcher-exit=2` e a mensagem de uso do watcher (`uso: node watch-comments.mjs …`); `link`; as duas contagens `1`; o `grep` acha `# Mapeamentos` e `## Para que servem estes mapeamentos`. **Resposta:** o resumo tem `Servidor:` (a mesma versão), `Skill:` citando a release, `AGENTS.md: criado` e `Watcher: instalado`. |
+| R21.2 | **Workspace antigo migrado pela linha da transição.** Rode a shell do R21.2 (monta a `ws-antigo` do histórico, com o texto do dono em "Para que servem", e roda a linha da transição) e a conferência dela. | **Disco:** `exit=0`; o `setup.sh` é o da release (`cmp` sem saída; o download da linha já o trocou, então **não** há "setup.sh atualizado"); **um** `AGENTS.md.bak-AAAAMMDD-HHMMSS`, igual à cópia; `1` marcador `mapping:begin`; `bloco-igual`; a seção do dono idêntica byte a byte (`cmp` sem saída) e com o texto (`1`); `## Estrutura` uma vez (dentro do bloco) e nada fora dele; `nota.txt: OK` e `CLAUDE.md: OK`; o `watch-comments.mjs` chegou igual ao da release (`cmp watch-comments.mjs ../baixados/watch-comments.mjs`, sem saída). **Resposta:** o resumo diz `AGENTS.md: migrado` e `Watcher: instalado`. |
 | R21.3 | **Autoatualização do `setup.sh`.** Rode a shell do R21.3 (cópia da `ws-novo` com o `setup.sh` velho, executada com a tag). | **Disco:** `exit=0`; `setup.sh` igual ao da release (`cmp` sem saída). **Resposta:** "setup.sh atualizado" aparece **uma** vez e o resumo (`Servidor:`) também **uma**: o script rodou de novo só uma vez; `AGENTS.md: sem mudança`. |
 | R21.4 | **Rodar de novo sem mudança.** Rode a primeira parte da shell do R21.4/R21.5 (`snap` da `ws-antigo`, `./setup.sh "$TAG"` e `snap` de novo). | **Disco:** `exit=0`; `igual` (nenhum arquivo mudou nem surgiu; se o script deixar um diretório temporário na pasta, cite qual no relato); `ls` mostra o mesmo único backup do R21.2; `0` ocorrências de "setup.sh atualizado". **Resposta:** `AGENTS.md: sem mudança`. |
 | R21.5 | **`.claude/skills/` como cópia, atualizada.** Rode a segunda parte da shell do R21.4/R21.5 (troca o link por uma pasta real com um `SKILL.md` velho e roda o `setup.sh`). | **Disco:** `exit=0`; `pasta-real` (continua pasta, não virou link); os dois `cmp` sem saída (a cópia velha foi trocada pela da release). |

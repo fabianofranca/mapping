@@ -583,7 +583,7 @@ Para ficar de plantão, em vez de ser acordado de fora:
 
 - A conversa que **já aguardava** quando a espera começou não conta: por isso a leitura vem antes (passo 1). Uma que você deixou sem resposta não é devolvida de novo; guarde o que já tratou.
 - O limite de 50 s existe porque o Claude Code, no padrão, corta qualquer tool em 60 s e o progresso que o servidor envia a cada 15 s não estende esse prazo: repita a chamada em vez de pedir uma espera maior (o servidor não aceita mais de 50 s, mesmo que o usuário aumente o prazo do cliente).
-- Para a app avisar você sozinha, sem manter uma sessão aberta, use o `examples/workspace/watch-comments.mjs` (um arquivo do workspace, fora do servidor, que abre o seu agente quando uma conversa passa a aguardá-lo).
+- Para a app avisar você sozinha, sem manter uma sessão aberta, use o `watch-comments.mjs` (fica na raiz do workspace, fora do servidor, e o `setup.sh` o instala e atualiza; abre o seu agente quando uma conversa passa a aguardá-lo).
 
 ## Lendo uma anotação
 
