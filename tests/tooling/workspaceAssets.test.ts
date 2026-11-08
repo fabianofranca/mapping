@@ -33,6 +33,7 @@ function fakeRoot(agents: string): string {
     '#!/usr/bin/env bash\necho oi\n',
   );
   writeFileSync(join(root, '.claude/skills/spec-author/SKILL.md'), '# skill\n');
+  writeFileSync(join(root, 'examples/workspace/watch-comments.mjs'), '// watcher\n');
   writeFileSync(join(root, 'examples/workspace/AGENTS.md'), agents);
   return root;
 }
@@ -78,7 +79,7 @@ describe('o esqueleto examples/workspace/AGENTS.md', () => {
 });
 
 describe('scripts/release/workspaceAssets.mjs', () => {
-  it('grava os três arquivos e os três .sha256, e imprime a lista (um por linha)', () => {
+  it('grava os quatro arquivos e os quatro .sha256, e imprime a lista (um por linha)', () => {
     const out = tmp();
     const result = run(out);
     expect(result.status, result.stderr).toBe(0);
@@ -90,6 +91,8 @@ describe('scripts/release/workspaceAssets.mjs', () => {
       'SKILL.md.sha256',
       'AGENTS.mapping.md',
       'AGENTS.mapping.md.sha256',
+      'watch-comments.mjs',
+      'watch-comments.mjs.sha256',
     ]);
     for (const file of files) expect(read(file).length).toBeGreaterThan(0);
   });
@@ -97,7 +100,12 @@ describe('scripts/release/workspaceAssets.mjs', () => {
   it('cada .sha256 confere com sha256sum -c na pasta de saída', () => {
     const out = tmp();
     expect(run(out).status).toBe(0);
-    for (const name of ['setup.sh', 'SKILL.md', 'AGENTS.mapping.md']) {
+    for (const name of [
+      'setup.sh',
+      'SKILL.md',
+      'AGENTS.mapping.md',
+      'watch-comments.mjs',
+    ]) {
       const check = spawnSync('sha256sum', ['-c', `${name}.sha256`], {
         cwd: out,
         encoding: 'utf8',
@@ -107,11 +115,14 @@ describe('scripts/release/workspaceAssets.mjs', () => {
     }
   });
 
-  it('setup.sh e SKILL.md são cópias, e o AGENTS.mapping.md é o trecho entre os marcadores (inclusive)', () => {
+  it('setup.sh, SKILL.md e watch-comments.mjs são cópias, e o AGENTS.mapping.md é o trecho entre os marcadores (inclusive)', () => {
     const out = tmp();
     expect(run(out).status).toBe(0);
     expect(read(join(out, 'setup.sh'))).toBe(read('examples/workspace/setup.sh'));
     expect(read(join(out, 'SKILL.md'))).toBe(read('.claude/skills/spec-author/SKILL.md'));
+    expect(read(join(out, 'watch-comments.mjs'))).toBe(
+      read('examples/workspace/watch-comments.mjs'),
+    );
     const agents = read('examples/workspace/AGENTS.md');
     const block = agents.slice(agents.indexOf(BEGIN), agents.indexOf(END) + END.length);
     expect(read(join(out, 'AGENTS.mapping.md'))).toBe(`${block}\n`);
@@ -141,6 +152,14 @@ describe('scripts/release/workspaceAssets.mjs', () => {
     const result = run(tmp(), fakeRoot(`# T\n\n${END}\nregras\n${BEGIN}\n`));
     expect(result.status).not.toBe(0);
     expect(result.stderr).toMatch(/ordem|antes do começo/i);
+  });
+
+  it('falha, citando o arquivo, se falta o watch-comments.mjs de origem', () => {
+    const root = fakeRoot(`${BEGIN}\nx\n${END}\n`);
+    rmSync(join(root, 'examples/workspace/watch-comments.mjs'));
+    const result = run(tmp(), root);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('watch-comments.mjs');
   });
 
   it('falha se falta um arquivo de origem', () => {

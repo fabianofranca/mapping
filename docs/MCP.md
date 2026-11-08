@@ -6,7 +6,7 @@ Só projetos **em pasta** ficam ao alcance do MCP; projetos guardados no navegad
 
 ## Instalação
 
-1. Baixe `mapping-mcp.js` da [última Release `mcp-v*`](../../../releases) (há também um `mapping-mcp.js.sha256` para conferir: `sha256sum -c mapping-mcp.js.sha256`). Para testar algo ainda não publicado, baixe de uma pre-release: `mcp-snapshot-pr<N>` (o build de um PR de fase, antes de entrar no épico) ou `mcp-v0.28.1-rc.<n>` (a release candidate do épico, gerada no merge da última fase). Elas anunciam a versão com sufixo em `--version` (`0.8.0-snapshot.pr172+abc1234`, `0.8.0-rc.1`).
+1. Baixe `mapping-mcp.js` da [última Release `mcp-v*`](../../../releases) (há também um `mapping-mcp.js.sha256` para conferir: `sha256sum -c mapping-mcp.js.sha256`). Para testar algo ainda não publicado, baixe de uma pre-release: `mcp-snapshot-pr<N>` (o build de um PR de fase, antes de entrar no épico) ou `mcp-v0.28.2-rc.<n>` (a release candidate do épico, gerada no merge da última fase). Elas anunciam a versão com sufixo em `--version` (`0.8.0-snapshot.pr172+abc1234`, `0.8.0-rc.1`).
 2. Copie o arquivo para `tools/` no repositório do app. Ele é autocontido (dependências, WebAssembly de imagem e documentação embutidos): não precisa de `npm install`.
 3. Registre o servidor num `.mcp.json` na raiz do repositório:
 
@@ -204,7 +204,7 @@ Schema v15, especialização (`formatVersion` 13) e proposta (formato 5) sem mud
 - **O que o servidor grava:** só `comments/<id>.json`, como agente (`kind: "agent"`, `email: null`; o nome é o argumento `author`, senão o `clientInfo.name` do cliente, senão "agente"). **Nunca** resolve, reabre nem apaga uma conversa (não há tool para isso), nunca grava em `comments/resolved/` e nunca assina como pessoa.
 - **Erros novos** (lista no `AGENT-GUIDE.md`): `thread-not-found`, `thread-resolved`, `stale-thread`, `invalid-anchor`, `anchor-not-found`, `empty-message`, `message-too-long` (10.000 caracteres) e `invalid-thread` (o arquivo da conversa está ilegível; não é sobrescrito). Avisos novos: `broken-cite` (citação que não resolve; a mensagem é gravada assim mesmo) e `thread-not-linked`.
 - **Recurso novo:** `mapping-docs://COMMENT-FORMAT.md`, o formato da conversa.
-- **Acordar o agente:** o servidor só age quando o agente já está de pé. Para abrir o agente quando alguém pergunta algo, o workspace traz o `watch-comments.mjs` (`examples/workspace/README.md`, "Conversas: acordar o agente"), fora do servidor e que o `setup.sh` não atualiza.
+- **Acordar o agente:** o servidor só age quando o agente já está de pé. Para abrir o agente quando alguém pergunta algo, o workspace traz o `watch-comments.mjs` (`examples/workspace/README.md`, "Conversas: acordar o agente"), fora do servidor, que o `setup.sh` instala e atualiza na raiz do workspace.
 - **Compatibilidade:** um servidor anterior à 0.25.0 não conhece `comments/` (ignora a pasta) e recusa as referências `l` e `c` e os sufixos `/f/`, `/e/`, `/r/` com `invalid-ref`. A 0.25.0 lê e responde as conversas gravadas pela app; um arquivo de conversa com formato que ela não entende vai para `broken` no `list_threads`.
 
 ### Mudança da 0.24.0 (Vínculo na mesma camada)
@@ -537,28 +537,29 @@ A tabela abaixo cobre o que costuma aparecer na instalação e no uso; a lista c
 
 ## Publicar uma versão (mantenedores)
 
-A versão do servidor é **uma por épico**: `SERVER_VERSION` em `mcp/version.ts` (hoje `0.28.1`) é o único `x.y.z` do código, e os canais abaixo só acrescentam um sufixo ao build (`MCP_BUILD_SUFFIX`, que o `mcp/build.mjs` valida). O workflow `.github/workflows/mcp-prerelease.yml` cuida dos dois primeiros; o `mcp-release.yml`, do terceiro.
+A versão do servidor é **uma por épico**: `SERVER_VERSION` em `mcp/version.ts` (hoje `0.28.2`) é o único `x.y.z` do código, e os canais abaixo só acrescentam um sufixo ao build (`MCP_BUILD_SUFFIX`, que o `mcp/build.mjs` valida). O workflow `.github/workflows/mcp-prerelease.yml` cuida dos dois primeiros; o `mcp-release.yml`, do terceiro.
 
 **Arquivos de cada release.** O snapshot, a rc e a estável publicam os mesmos arquivos, montados por `scripts/release/workspaceAssets.mjs` (um só script para os três jobs; ele sai com erro se o `examples/workspace/AGENTS.md` não tiver exatamente um bloco gerenciado, com os marcadores `mapping:begin` e `mapping:end` na ordem). Cada um tem um `.sha256` no formato do `sha256sum` (conferido também por `shasum -a 256 -c`):
 
-| Arquivo             | Para que serve                                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `mapping-mcp.js`    | O servidor MCP.                                                                                                     |
-| `setup.sh`          | Cópia de `examples/workspace/setup.sh`: instala ou atualiza o workspace na versão da release.                       |
-| `SKILL.md`          | A skill `spec-author` do mesmo commit da release (cópia de `.claude/skills/spec-author/SKILL.md`).                  |
-| `AGENTS.mapping.md` | O bloco gerenciado do `examples/workspace/AGENTS.md`, entre `mapping:begin` e `mapping:end` (marcadores inclusive). |
+| Arquivo              | Para que serve                                                                                                         |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `mapping-mcp.js`     | O servidor MCP.                                                                                                        |
+| `setup.sh`           | Cópia de `examples/workspace/setup.sh`: instala ou atualiza o workspace na versão da release.                          |
+| `SKILL.md`           | A skill `spec-author` do mesmo commit da release (cópia de `.claude/skills/spec-author/SKILL.md`).                     |
+| `AGENTS.mapping.md`  | O bloco gerenciado do `examples/workspace/AGENTS.md`, entre `mapping:begin` e `mapping:end` (marcadores inclusive).    |
+| `watch-comments.mjs` | Cópia de `examples/workspace/watch-comments.mjs`, o watcher de conversas: o `setup.sh` o instala na raiz do workspace. |
 
-Releases anteriores a esta não têm os três últimos. Os workspaces que ainda têm o `setup.sh` antigo se atualizam uma vez, com a linha da transição (depois da primeira estável com os arquivos novos; antes disso, troque `latest/download` por `download/<tag da rc>` e passe a tag ao `./setup.sh`), que também vai nas notas de cada release:
+Releases anteriores a esta não têm os quatro últimos (o `watch-comments.mjs` só vem a partir da 0.28.2; com uma tag mais antiga, o `setup.sh` avisa e segue). Os workspaces que ainda têm o `setup.sh` antigo se atualizam uma vez, com a linha da transição (depois da primeira estável com os arquivos novos; antes disso, troque `latest/download` por `download/<tag da rc>` e passe a tag ao `./setup.sh`), que também vai nas notas de cada release:
 
 ```bash
 curl -fsSL https://github.com/fabianofranca/mapping/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh
 ```
 
-- **Snapshot por PR (automático).** Todo PR com base num `epic/**` gera um build de teste na pre-release fixa `mcp-snapshot-pr<N>` (versão `0.28.1-snapshot.pr<N>+<sha>`), sobrescrita a cada push e **apagada (release e tag) quando o PR fecha**, mesclado ou não. Instalação: `./setup.sh mcp-snapshot-pr<N>` (ver `examples/workspace/`) ou baixe os arquivos da Release.
-- **Release candidate pelo rótulo `mcp-rc` (automático).** O merge, num `epic/**`, de um PR com o rótulo `mcp-rc` (o da última fase do épico; o agente dessa fase põe o rótulo ao abrir o PR) gera a pre-release `mcp-v0.28.1-rc.<n>` (`n` = maior rc existente da versão + 1) a partir do commit do merge, depois de lint, typecheck e testes. Sem o rótulo, o merge não gera rc. Se esquecerem, rode o workflow "MCP pre-release" à mão (`workflow_dispatch`) no branch do épico. Elas são **apagadas (release e tag) quando a estável é publicada**.
+- **Snapshot por PR (automático).** Todo PR com base num `epic/**` gera um build de teste na pre-release fixa `mcp-snapshot-pr<N>` (versão `0.28.2-snapshot.pr<N>+<sha>`), sobrescrita a cada push e **apagada (release e tag) quando o PR fecha**, mesclado ou não. Instalação: `./setup.sh mcp-snapshot-pr<N>` (ver `examples/workspace/`) ou baixe os arquivos da Release.
+- **Release candidate pelo rótulo `mcp-rc` (automático).** O merge, num `epic/**`, de um PR com o rótulo `mcp-rc` (o da última fase do épico; o agente dessa fase põe o rótulo ao abrir o PR) gera a pre-release `mcp-v0.28.2-rc.<n>` (`n` = maior rc existente da versão + 1) a partir do commit do merge, depois de lint, typecheck e testes. Sem o rótulo, o merge não gera rc. Se esquecerem, rode o workflow "MCP pre-release" à mão (`workflow_dispatch`) no branch do épico. Elas são **apagadas (release e tag) quando a estável é publicada**.
 - **Estável (o dono).** Depois do merge do épico na `main`:
 
-1. Confirme que `SERVER_VERSION` em `mcp/version.ts` (`0.28.1`) e as versões desta seção batem (o teste `tests/mcp/version.test.ts` confere) e que isso já está na `main`.
-2. Crie a tag `mcp-v0.28.1` na `main`: `git tag mcp-v0.28.1 && git push origin mcp-v0.28.1`, ou crie a Release pela tela do GitHub (Releases › Draft a new release, tag nova `mcp-v0.28.1` na `main`), que cria a tag junto.
-3. O workflow `.github/workflows/mcp-release.yml` confere que a tag bate com `SERVER_VERSION` (tags de rc e de snapshot nunca o disparam), roda lint, typecheck e testes (sem os orçamentos de desempenho), gera `dist-mcp/mapping-mcp.js`, o testa fora do repositório (`--version` imprime só `0.28.1`) e o anexa à Release com o checksum: cria a Release se ela não existe, ou anexa os arquivos à que já existe. O título da Release é o nome da tag. Por fim, apaga as pre-releases `mcp-v0.28.1-rc.<n>`.
-4. Confira que a Release tem `mapping-mcp.js`, `setup.sh`, `SKILL.md` e `AGENTS.mapping.md`, cada um com o `.sha256`. Se ficou sem eles (o workflow falhou), corrija a causa e rode de novo pela tela: Actions › **MCP release** › Run workflow, com a tag (ex.: `mcp-v0.28.1`). O workflow usa o código da tag e só anexa os arquivos, sem apagar nem recriar a Release.
+1. Confirme que `SERVER_VERSION` em `mcp/version.ts` (`0.28.2`) e as versões desta seção batem (o teste `tests/mcp/version.test.ts` confere) e que isso já está na `main`.
+2. Crie a tag `mcp-v0.28.2` na `main`: `git tag mcp-v0.28.2 && git push origin mcp-v0.28.2`, ou crie a Release pela tela do GitHub (Releases › Draft a new release, tag nova `mcp-v0.28.2` na `main`), que cria a tag junto.
+3. O workflow `.github/workflows/mcp-release.yml` confere que a tag bate com `SERVER_VERSION` (tags de rc e de snapshot nunca o disparam), roda lint, typecheck e testes (sem os orçamentos de desempenho), gera `dist-mcp/mapping-mcp.js`, o testa fora do repositório (`--version` imprime só `0.28.2`) e o anexa à Release com o checksum: cria a Release se ela não existe, ou anexa os arquivos à que já existe. O título da Release é o nome da tag. Por fim, apaga as pre-releases `mcp-v0.28.2-rc.<n>`.
+4. Confira que a Release tem `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` e `watch-comments.mjs`, cada um com o `.sha256`. Se ficou sem eles (o workflow falhou), corrija a causa e rode de novo pela tela: Actions › **MCP release** › Run workflow, com a tag (ex.: `mcp-v0.28.2`). O workflow usa o código da tag e só anexa os arquivos, sem apagar nem recriar a Release.

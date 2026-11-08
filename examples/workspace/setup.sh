@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Deixa a pasta de mapeamentos na versão de uma release do MCP (mcp-v*): o servidor, a skill
-# spec-author (em .agents/ e no link de .claude/), o bloco de regras do AGENTS.md e este script.
+# spec-author (em .agents/ e no link de .claude/), o bloco de regras do AGENTS.md, o watcher de
+# conversas (watch-comments.mjs) e este script.
 # Uso: ./setup.sh [tag] [--no-self-update]     (a flag pode vir antes ou depois da tag)
 #      ./setup.sh                      última release estável
 #      ./setup.sh mcp-v0.5.0           uma release específica
@@ -20,7 +21,7 @@
 #   MAPPING_SETUP_UPDATED  =1 impede um segundo ciclo de autoatualização (o script o define)
 #
 # Toca em: tools/mapping-mcp.js(.sha256), .agents/skills/spec-author, .claude/skills/spec-author,
-# o próprio setup.sh e o bloco entre os marcadores mapping:begin/end do AGENTS.md (com cópia
+# watch-comments.mjs (na raiz; sobrescrito pela versão da release, sem backup), o próprio setup.sh e o bloco entre os marcadores mapping:begin/end do AGENTS.md (com cópia
 # AGENTS.md.bak-AAAAMMDD-HHMMSS quando o arquivo muda). Nunca altera projetos/ e especializacoes/
 # (só cria as pastas), um CLAUDE.md existente (e não cria um), .mcp.json nem as configs dos
 # outros clientes.
@@ -53,8 +54,10 @@ RAW_BASE="${MAPPING_RAW_BASE:-https://raw.githubusercontent.com/$REPO/main}"
 TMP=""
 SKILL_FROM=""
 AGENTS_SUMMARY=""
+WATCHER_SUMMARY=""
 HAVE_SETUP=0
 HAVE_BLOCK=0
+HAVE_WATCHER=0
 
 warn() { echo "Aviso: $*" >&2; }
 die() { echo "Erro: $*" >&2; exit 1; }
@@ -97,6 +100,7 @@ download_all() {
   fetch_with_hash mapping-mcp.js || die "não consegui baixar mapping-mcp.js de $RELEASE_BASE."
   if fetch_optional setup.sh; then HAVE_SETUP=1; fi
   if fetch_optional AGENTS.mapping.md; then HAVE_BLOCK=1; fi
+  if fetch_optional watch-comments.mjs; then HAVE_WATCHER=1; fi
   if fetch_optional SKILL.md; then
     SKILL_FROM="release ${TAG:-última}"
   else
@@ -111,6 +115,7 @@ verify_all() {
   verify mapping-mcp.js
   [ "$HAVE_SETUP" = 0 ] || verify setup.sh
   [ "$HAVE_BLOCK" = 0 ] || verify AGENTS.mapping.md
+  [ "$HAVE_WATCHER" = 0 ] || verify watch-comments.mjs
   [ "$SKILL_FROM" = "main (release antiga)" ] || verify SKILL.md
 }
 
@@ -154,6 +159,23 @@ install_skill() {
     ln -s ../../.agents/skills/spec-author .claude/skills/spec-author 2>/dev/null ||
       cp -R .agents/skills/spec-author .claude/skills/spec-author
   fi
+}
+
+# --- watcher de conversas -----------------------------------------------------------------------
+
+# Arquivo gerenciado, como o servidor: sobrescrito pela versão da release, sem backup.
+install_watcher() {
+  if [ "$HAVE_WATCHER" = 0 ]; then
+    WATCHER_SUMMARY="não atualizado (release sem o watcher)"
+  elif [ ! -f watch-comments.mjs ]; then
+    WATCHER_SUMMARY="instalado"
+  elif cmp -s "$TMP/watch-comments.mjs" watch-comments.mjs; then
+    WATCHER_SUMMARY="sem mudança"
+    return 0
+  else
+    WATCHER_SUMMARY="atualizado"
+  fi
+  [ "$HAVE_WATCHER" = 0 ] || cp "$TMP/watch-comments.mjs" watch-comments.mjs
 }
 
 # --- bloco do AGENTS.md -------------------------------------------------------------------------
@@ -272,10 +294,12 @@ main() {
   mkdir -p projetos especializacoes
   install_server
   install_skill
+  install_watcher
   update_agents
   echo "Servidor: $(node tools/mapping-mcp.js --version)"
   echo "Skill: $SKILL_FROM"
   echo "AGENTS.md: $AGENTS_SUMMARY"
+  echo "Watcher: $WATCHER_SUMMARY"
   echo "Pronto. Abra esta pasta no agente e aprove o servidor 'mapping'; preencha 'Para que servem' no AGENTS.md."
 }
 
