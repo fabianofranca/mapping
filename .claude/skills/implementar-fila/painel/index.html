@@ -1,0 +1,462 @@
+<!-- Modelo da página do painel do skill implementar-fila; vai inteiro em files/index.html do dashboard. -->
+<div id="mp">
+  <style>
+    #mp {
+      max-width: 1100px;
+      margin-inline: auto;
+      font-family: var(--font-anthropic-sans);
+    }
+    #mp h1 {
+      font-family: var(--font-anthropic-serif);
+      font-weight: 400;
+      font-size: var(--cds-font-size-title);
+      margin: 0;
+    }
+    #mp .sub {
+      color: var(--color-fg-muted);
+      margin: 4px 0 16px;
+    }
+    #mp .tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+      gap: var(--cds-gap-md);
+      margin-bottom: var(--cds-gap-md);
+    }
+    #mp .card {
+      background: var(--color-panel);
+      border: 1px solid var(--color-border-line);
+      border-radius: var(--cds-radius);
+      padding: var(--cds-pad-lg);
+      min-width: 0;
+    }
+    #mp .lab {
+      font-size: var(--cds-font-size-caption);
+      color: var(--color-fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    #mp .big {
+      font-family: var(--font-anthropic-serif);
+      font-size: 2rem;
+      font-variant-numeric: tabular-nums;
+      margin-top: 4px;
+    }
+    #mp .bar {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--color-border-line);
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    #mp .bar i {
+      display: block;
+      height: 100%;
+      background: var(--color-ok);
+      width: 0;
+    }
+    #mp h2 {
+      font-size: var(--cds-font-size-heading);
+      font-weight: var(--cds-font-weight-medium);
+      margin: 0 0 8px;
+    }
+    #mp .scroll {
+      overflow-x: auto;
+    }
+    #mp table {
+      border-collapse: collapse;
+      width: 100%;
+      font-variant-numeric: tabular-nums;
+      font-size: var(--cds-font-size-body);
+    }
+    #mp th,
+    #mp td {
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--color-border-line);
+      vertical-align: top;
+    }
+    #mp th {
+      font-size: var(--cds-font-size-caption);
+      color: var(--color-fg-muted);
+      font-weight: var(--cds-font-weight-medium);
+    }
+    #mp .pill {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: var(--cds-font-size-caption);
+      border: 1px solid var(--color-border-line);
+      white-space: nowrap;
+    }
+    #mp .s-concluída {
+      color: var(--color-ok);
+    }
+    #mp .s-em-andamento {
+      color: var(--color-warn);
+    }
+    #mp .s-falhou {
+      color: var(--color-bad);
+    }
+    #mp .s-aguardando {
+      color: var(--color-fg-muted);
+    }
+    #mp .s-esperando-dono {
+      color: var(--color-bad);
+    }
+    #mp ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    #mp li {
+      padding: 6px 0;
+      border-bottom: 1px solid var(--color-border-line);
+      display: flex;
+      gap: 12px;
+    }
+    #mp li time {
+      color: var(--color-fg-muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    #mp .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    #mp .chip {
+      font-size: var(--cds-font-size-caption);
+      padding: 0 6px;
+      border-radius: 4px;
+      border: 1px solid var(--color-border-line);
+      color: var(--color-fg-muted);
+      white-space: nowrap;
+    }
+    #mp .chip.ok {
+      color: var(--color-ok);
+      border-color: var(--color-ok);
+    }
+    #mp .chip.now {
+      color: var(--color-warn);
+      border-color: var(--color-warn);
+      font-weight: 600;
+    }
+    #mp .flow {
+      display: flex;
+      gap: 2px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    #mp .flow span {
+      font-size: var(--cds-font-size-caption);
+      color: var(--color-fg-muted);
+      white-space: nowrap;
+    }
+    #mp .flow span.done {
+      color: var(--color-ok);
+    }
+    #mp .flow span.cur {
+      color: var(--color-warn);
+      font-weight: 600;
+    }
+    #mp .gap {
+      display: grid;
+      gap: var(--cds-gap-md);
+    }
+  </style>
+  <h1>Fila de desenvolvimento</h1>
+  <p class="sub" id="mp-cur">—</p>
+  <div class="tiles">
+    <div class="card">
+      <div class="lab">Duração total</div>
+      <div class="big" id="mp-total">—</div>
+      <div class="lab" id="mp-totlab">&nbsp;</div>
+    </div>
+    <div class="card">
+      <div class="lab">Concluídas</div>
+      <div class="big">
+        <span data-source="summary" data-field="done">—</span> /
+        <span data-source="summary" data-field="total">—</span>
+      </div>
+      <div class="bar"><i id="mp-bar"></i></div>
+    </div>
+    <div class="card">
+      <div class="lab">Em andamento</div>
+      <div class="big" data-source="summary" data-field="running">—</div>
+    </div>
+    <div class="card">
+      <div class="lab">Com falha</div>
+      <div class="big" data-source="summary" data-field="failed">—</div>
+    </div>
+    <div class="card">
+      <div class="lab">Esperando o dono</div>
+      <div class="big" data-source="summary" data-field="waiting">—</div>
+    </div>
+  </div>
+  <div class="gap">
+    <div class="card">
+      <h2>Passo a passo</h2>
+      <div class="scroll">
+        <table data-source="queue" data-row-key="issue" id="mp-table">
+          <thead>
+            <tr>
+              <th data-field="order">Ordem</th>
+              <th data-field="issue">Issue</th>
+              <th data-field="title">Título</th>
+              <th data-field="kind">Tipo</th>
+              <th data-field="phases">Fases</th>
+              <th data-field="stage">Fluxo</th>
+              <th data-field="step">Passo atual</th>
+              <th data-field="status">Status</th>
+              <th data-field="pr">PR</th>
+              <th>Duração</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Bugs e roadmaps por etapa</h2>
+      <div id="mp-issues" data-source="issues"></div>
+    </div>
+    <div class="card">
+      <h2>Registro</h2>
+      <ul id="mp-log"></ul>
+    </div>
+  </div>
+  <script>
+    (function () {
+      dash.calc('summary', {
+        inputs: ['queue'],
+        title: 'Resumo da fila',
+        description: 'Contagem das issues da fila por status.',
+        fn: (queue) => {
+          const q = queue;
+          return [
+            {
+              total: q.length,
+              done: q.filter((r) => r.status === 'concluída').length,
+              running: q.filter((r) => r.status === 'em andamento').length,
+              failed: q.filter((r) => r.status === 'falhou').length,
+              waiting: q.filter((r) => r.status === 'esperando dono').length,
+            },
+          ];
+        },
+      });
+      const pad = (n) => String(n).padStart(2, '0');
+      const fmt = (ms) => {
+        if (!(ms >= 0)) return '—';
+        const s = Math.floor(ms / 1000);
+        return (
+          pad(Math.floor(s / 3600)) +
+          ':' +
+          pad(Math.floor((s % 3600) / 60)) +
+          ':' +
+          pad(s % 60)
+        );
+      };
+      const t = (s) => (s ? Date.parse(s) : NaN);
+      const q = (id) => {
+        const d = dash.data(id);
+        return d.status === 'ok' ? d.data : [];
+      };
+      const FLOW = ['Fases', 'Testador', 'Correção', 'Fechamento', 'Mesclada'];
+      function flowIndex(r) {
+        const s = String(r.stage || '');
+        if (r.status === 'concluída') return 4;
+        if (!s) return r.status === 'em andamento' ? 0 : -1;
+        const k = FLOW.findIndex((f) => s.indexOf(f) === 0);
+        return k;
+      }
+      function flowCell(r) {
+        const w = document.createElement('div');
+        w.className = 'flow';
+        const cur = flowIndex(r);
+        FLOW.forEach((f, i) => {
+          const sp = document.createElement('span');
+          sp.textContent = (i ? '› ' : '') + f;
+          if (cur > i || r.status === 'concluída') sp.className = 'done';
+          else if (cur === i) sp.className = 'cur';
+          w.appendChild(sp);
+        });
+        return w;
+      }
+      function phaseCell(r) {
+        const w = document.createElement('div');
+        const n = +r.phasesTotal || 0;
+        const head = document.createElement('div');
+        head.textContent = n ? (+r.phasesDone || 0) + ' / ' + n : '—';
+        w.appendChild(head);
+        if (n) {
+          const c = document.createElement('div');
+          c.className = 'chips';
+          let firstOpen = true;
+          String(r.phases || '')
+            .split('|')
+            .forEach((p) => {
+              const [code, st] = p.split(':');
+              const sp = document.createElement('span');
+              sp.className = 'chip';
+              sp.textContent = code;
+              if (st === 'ok') sp.classList.add('ok');
+              else if (firstOpen && r.status === 'em andamento') {
+                sp.classList.add('now');
+                firstOpen = false;
+              }
+              c.appendChild(sp);
+            });
+          w.appendChild(c);
+        }
+        return w;
+      }
+      function tick() {
+        const m = q('meta')[0] || {};
+        const now = Date.now();
+        const tot = document.getElementById('mp-total'),
+          lab = document.getElementById('mp-totlab');
+        const rs = t(m.runStart);
+        if (rs > 0) {
+          const rows = q('queue');
+          const all = rows.length && rows.every((r) => r.status === 'concluída');
+          const end = all ? Math.max(...rows.map((r) => t(r.ended))) : now;
+          tot.textContent = fmt(end - rs);
+          lab.textContent = all ? 'finalizado' : 'em tempo real';
+        } else {
+          tot.textContent = fmt(now - t(m.waitingSince));
+          lab.textContent = 'aguardando comando do dono (tempo de espera)';
+        }
+        document.querySelectorAll('#mp-table tbody tr').forEach((tr) => {
+          const c = tr.lastElementChild,
+            s = +tr.dataset.s,
+            e = +tr.dataset.e;
+          if (s) c.textContent = fmt((e || now) - s);
+        });
+      }
+      dash.onData(() => {
+        const m = q('meta')[0] || {};
+        document.getElementById('mp-cur').textContent =
+          (m.current || '—') +
+          (m.updatedAt
+            ? ' · atualizado ' + new Date(m.updatedAt).toLocaleTimeString('pt-BR')
+            : '');
+        const sm = dash.data('summary');
+        if (sm.status === 'ok' && sm.data[0]) {
+          document.getElementById('mp-bar').style.width =
+            (sm.data[0].total ? (100 * sm.data[0].done) / sm.data[0].total : 0) + '%';
+        }
+        document
+          .querySelectorAll('#mp [data-source="summary"][data-field]')
+          .forEach((el) => {
+            el.textContent =
+              sm.status === 'ok' && sm.data[0] && sm.data[0][el.dataset.field] != null
+                ? String(sm.data[0][el.dataset.field])
+                : '—';
+          });
+        const tb = document.querySelector('#mp-table tbody');
+        tb.replaceChildren();
+        for (const r of q('queue')) {
+          const tr = document.createElement('tr');
+          tr.dataset.key = r.issue;
+          tr.dataset.s = t(r.started) || '';
+          tr.dataset.e = t(r.ended) || '';
+          const cells = [
+            r.order,
+            r.issue,
+            r.title,
+            r.kind,
+            'PH',
+            'FL',
+            r.step,
+            null,
+            r.pr,
+            '',
+          ];
+          cells.forEach((v, i) => {
+            const td = document.createElement('td');
+            if (v === 'PH') {
+              td.appendChild(phaseCell(r));
+            } else if (v === 'FL') {
+              td.appendChild(flowCell(r));
+            } else if (i === 7) {
+              const p = document.createElement('span');
+              p.className = 'pill s-' + String(r.status).replace(/ /g, '-');
+              p.textContent = r.status;
+              td.appendChild(p);
+            } else td.textContent = v;
+            tr.appendChild(td);
+          });
+          tb.appendChild(tr);
+        }
+        const ul = document.getElementById('mp-log');
+        ul.replaceChildren();
+        for (const e of q('log')
+          .slice()
+          .sort((a, b) => t(b.at) - t(a.at))) {
+          const li = document.createElement('li'),
+            tm = document.createElement('time'),
+            sp = document.createElement('span');
+          tm.textContent = new Date(e.at).toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+          sp.textContent = e.text;
+          li.append(tm, sp);
+          ul.appendChild(li);
+        }
+        tick();
+      });
+      dash.onData(() => {
+        const box = document.getElementById('mp-issues');
+        if (!box) return;
+        box.replaceChildren();
+        const rows = q('issues');
+        if (!rows.length) {
+          const p = document.createElement('p');
+          p.className = 'sub';
+          p.textContent = 'Nenhum bug ou roadmap criado até agora.';
+          box.appendChild(p);
+          return;
+        }
+        const groups = new Map();
+        rows.forEach((r) => {
+          if (!groups.has(r.etapa))
+            groups.set(r.etapa, { title: r.etapaTitle, items: [] });
+          groups.get(r.etapa).items.push(r);
+        });
+        groups.forEach((g, etapa) => {
+          const h = document.createElement('h3');
+          h.textContent = etapa + ' — ' + (g.title || '');
+          h.style.margin = '12px 0 4px';
+          box.appendChild(h);
+          const ul = document.createElement('ul');
+          g.items.forEach((r) => {
+            const li = document.createElement('li');
+            li.style.display = 'block';
+            const top = document.createElement('div');
+            const a = document.createElement('a');
+            a.href = r.url;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.textContent = r.number + ' · ' + r.title;
+            const pill = document.createElement('span');
+            pill.className = 'pill';
+            pill.style.marginLeft = '8px';
+            pill.textContent = r.kind + ' · ' + r.level + ' · ' + r.state;
+            top.append(a, pill);
+            const d = document.createElement('div');
+            d.className = 'sub';
+            d.style.margin = '2px 0 0';
+            d.textContent = r.detail || '';
+            li.append(top, d);
+            ul.appendChild(li);
+          });
+          box.appendChild(ul);
+        });
+      });
+      setInterval(tick, 1000);
+    })();
+  </script>
+</div>
