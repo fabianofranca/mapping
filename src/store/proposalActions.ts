@@ -24,7 +24,7 @@ import {
 import type { FlushResult } from '../storage/autosave';
 import { imageMimeType, type ProjectStorage } from '../storage/types';
 import { reportError } from '../utils/report';
-import type { HistoryLink, ProjectStore } from './history';
+import type { HistoryLink, LinkResult, ProjectStore } from './history';
 import { validatePackage } from './packageValidation';
 import type { SpecPackageFiles } from './project';
 import type { ProposalErrorCode, ProposalStore, RemoveProposalError } from './proposals';
@@ -392,8 +392,8 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
       const link: HistoryLink = {
         tag: id,
         undo: () => {
-          if (abandoned) return;
-          void proposals
+          if (abandoned) return undefined;
+          return proposals
             .mutate<void, never>(id, (current) => {
               const rest = { ...current.applied };
               for (const changeId of appliedIds) delete rest[changeId];
@@ -411,13 +411,14 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
                 },
               };
             })
-            .then((r) => {
+            .then((r): LinkResult => {
               if (!r.ok) reportError('proposals.undoApply', new Error(r.error));
+              return r.ok ? { ok: true } : { ok: false, error: r.error };
             });
         },
         redo: () => {
-          if (abandoned) return;
-          void proposals
+          if (abandoned) return undefined;
+          return proposals
             .mutate<void, never>(id, (current) => {
               const again = { ...current.applied };
               for (const changeId of appliedIds) {
@@ -439,8 +440,9 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
                 },
               };
             })
-            .then((r) => {
+            .then((r): LinkResult => {
               if (!r.ok) reportError('proposals.redoApply', new Error(r.error));
+              return r.ok ? { ok: true } : { ok: false, error: r.error };
             });
         },
       };
