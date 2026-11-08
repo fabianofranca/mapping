@@ -1,4 +1,4 @@
-# Ajustes da rodada das perspectivas — [Não lançado] (épico `epic/perspectivas-ajustes`)
+# Ajustes da rodada das perspectivas — 2026-11-08 (épico `epic/perspectivas-ajustes`)
 
 ## Pendências
 
@@ -6,8 +6,8 @@ Pendências: nenhuma. A AP1 só mudou fluxo e foco (a confirmação de apagar vo
 
 ## Sincronização
 
-A preencher no fechamento do épico.
+Nenhuma gravação no artefato Mapping do Claude Design: a etapa não tem pendência de design system (só fluxo, foco e texto de roteiro).
 
 ## Ficou sem gravar
 
-A preencher no fechamento do épico.
+Nada.
