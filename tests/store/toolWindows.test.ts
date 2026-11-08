@@ -273,3 +273,43 @@ describe('fitSideWidths', () => {
     expect(fitSideWidths(480, 0, 600)).toEqual({ left: 240, right: 0 });
   });
 });
+
+describe('layout guardado malformado (#943)', () => {
+  const malformed: readonly [string, unknown][] = [
+    ['string', 'tree'],
+    ['número', 5],
+    ['null', null],
+    ['objeto', { tree: true }],
+  ];
+
+  it.each(malformed)('open %s cai no padrão, sem exceção', async (_nome, open) => {
+    localStorage.setItem('mapping.toolWindows', JSON.stringify({ open }));
+    vi.resetModules();
+    try {
+      const fresh = await import('../../src/store/toolWindows');
+      expect(fresh.isToolWindowOpen('tree')).toBe(true);
+      expect(fresh.isToolWindowOpen('layers')).toBe(true);
+      expect(fresh.isToolWindowOpen('details')).toBe(true);
+      expect(fresh.isToolWindowOpen('list')).toBe(false);
+    } finally {
+      localStorage.removeItem('mapping.toolWindows');
+      vi.resetModules();
+    }
+  });
+
+  it('open com itens que não são texto ignora só esses itens', async () => {
+    localStorage.setItem(
+      'mapping.toolWindows',
+      JSON.stringify({ open: [1, null, 'list'] }),
+    );
+    vi.resetModules();
+    try {
+      const fresh = await import('../../src/store/toolWindows');
+      expect(fresh.isToolWindowOpen('list')).toBe(true);
+      expect(fresh.isToolWindowOpen('tree')).toBe(false);
+    } finally {
+      localStorage.removeItem('mapping.toolWindows');
+      vi.resetModules();
+    }
+  });
+});
