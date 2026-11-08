@@ -128,6 +128,64 @@ test.describe('a 900×720', () => {
   });
 });
 
+test.describe('revisão a 900×720 com as quatro janelas abertas (BS2)', () => {
+  test.use({ viewport: { width: 900, height: 720 } });
+
+  test('caminho com reticências e dica, barra dentro da coluna, zoom inteiro', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page
+      .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
+      .setInputFiles({
+        name: 'loja.zip',
+        mimeType: 'application/zip',
+        buffer: await fixtureZip(),
+      });
+    await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+    for (const key of ['1', '2', '3', '7'])
+      await page.keyboard.press(`Control+Shift+${key}`);
+    await page
+      .getByRole('button', { name: /^Revisar/ })
+      .first()
+      .click();
+    await expect(page.locator('.review-canvas-controls')).toBeVisible();
+    const m = await page.locator('.canvas-bar').evaluate((bar) => {
+      const q = (s: string) => bar.querySelector<HTMLElement>(s)!;
+      const crumbs = q('.crumbs');
+      const name = bar.querySelector<HTMLElement>('.crumb-name');
+      return {
+        crumbsWidth: crumbs.clientWidth,
+        barScroll: bar.scrollWidth,
+        barClient: bar.clientWidth,
+        endRight: q('.canvas-bar-end').getBoundingClientRect().right,
+        barRight: bar.getBoundingClientRect().right,
+        nameCut: name ? name.scrollWidth > name.clientWidth : false,
+        nameTitle: name?.getAttribute('title') ?? '',
+        nameEllipsis: name ? getComputedStyle(name).textOverflow : '',
+      };
+    });
+    expect(m.crumbsWidth, JSON.stringify(m)).toBeGreaterThan(0);
+    expect(m.barScroll, JSON.stringify(m)).toBeLessThanOrEqual(m.barClient);
+    expect(m.endRight, JSON.stringify(m)).toBeLessThanOrEqual(m.barRight + 0.5);
+    const empty = page.locator('.crumbs-empty');
+    if ((await empty.count()) > 0) {
+      const e = await empty.evaluate((el) => ({
+        cut: el.scrollWidth > el.clientWidth,
+        ellipsis: getComputedStyle(el).textOverflow,
+        title: el.getAttribute('title') ?? '',
+      }));
+      if (e.cut) expect(e.ellipsis).toBe('ellipsis');
+      expect(e.title).not.toBe('');
+    }
+    if (m.nameCut) {
+      expect(m.nameEllipsis).toBe('ellipsis');
+      expect(m.nameTitle).not.toBe('');
+    }
+    await expect(page.locator('.canvas-bar .zoom-field')).toBeVisible();
+  });
+});
+
 test.describe('a 1440×900', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 

@@ -102,7 +102,9 @@ export function Breadcrumbs({
   return (
     <nav class="crumbs" aria-label={t('crumbs.label')}>
       {crumbs.length === 0 && (
-        <span class="crumbs-empty">{t('panel.nothingSelected')}</span>
+        <span class="crumbs-empty" title={t('panel.nothingSelected')}>
+          {t('panel.nothingSelected')}
+        </span>
       )}
       {crumbs.map((crumb, i) => {
         const { selection: target } = crumb;
