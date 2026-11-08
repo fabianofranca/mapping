@@ -102,7 +102,7 @@ const RECTS = {
   checkbox: { x: 300, y: 350, width: 240, height: 60 },
 } satisfies Record<string, Rect>;
 
-/** O que vale a partir do R25.8: o Card vai junto com o Navigation bar (ver lá). */
+/** O que vale logo depois do R25.8, antes de devolver o Card: ele vai junto com o Navigation bar. */
 const CARRIED = { ...RECTS, card: { x: 320, y: 60, width: 200, height: 100 } };
 
 type Expected = Partial<Record<keyof typeof RECTS, Rect>>;
@@ -293,7 +293,7 @@ test('R25.3 a R25.12: nenhuma marcação muda de lugar sem pedido', async ({ pag
   // R25.8: a Paleta cria o Navigation bar em (10,250), por cima do Card (30,290,200,100).
   // Pela geometria o Card vira filho dele, e mover o pai (para 300,20) o leva junto: o Card
   // vai de (30,290) para (320,60). É o comportamento documentado (decisão de produto B/C na
-  // issue #1087; o roteiro R25.8 é corrigido na EQ3), por isso o Card é esperado aí.
+  // issue #1087); o roteiro R25.8 avisa da adoção e devolve o Card a (30,290) pelos Detalhes.
   mapping = expectRects(raw, CARRIED, 'R25.8');
   const markingOf = (type: string) =>
     mapping.markings.find(
@@ -306,6 +306,12 @@ test('R25.3 a R25.12: nenhuma marcação muda de lugar sem pedido', async ({ pag
   expect(
     (nav?.values?.['items'] as readonly { label: string }[]).map((r) => r.label),
   ).toEqual(['A', 'B', 'C']);
+  // R25.8 (devolver o Card): X 30 / Y 290 pelos Detalhes tira o Card do Navigation bar.
+  await selectInTree(page, 'Card');
+  await setPosition(page, 30, 290);
+  raw = await settled(page);
+  mapping = expectRects(raw, RECTS, 'R25.8 (Card devolvido)');
+  expect(markingOf('card')?.parentId, 'R25.8: o Card sai do Navigation bar').toBeNull();
   before = raw;
 
   // R25.9 a R25.11: zoom em cada peça, sem mexer nas marcações.
@@ -318,7 +324,7 @@ test('R25.3 a R25.12: nenhuma marcação muda de lugar sem pedido', async ({ pag
     await zoomSelectionTo(page, width);
     raw = await settled(page);
     expect(raw, `${step}: o mapping.json não muda`).toBe(before);
-    expectRects(raw, CARRIED, step);
+    expectRects(raw, RECTS, step);
     before = raw;
   }
 
@@ -333,7 +339,7 @@ test('R25.3 a R25.12: nenhuma marcação muda de lugar sem pedido', async ({ pag
   await expect(host).toHaveAttribute('data-components', '6');
   raw = await settled(page);
   expect(raw, 'R25.12: reabrir não regrava o mapping.json').toBe(before);
-  expectRects(raw, CARRIED, 'R25.12');
+  expectRects(raw, RECTS, 'R25.12');
   expect(raw.match(/"(cap|join|sides|stroke|maxWidth|distribute)"/g)).toBeNull();
 });
 
