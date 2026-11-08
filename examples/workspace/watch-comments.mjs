@@ -8,6 +8,8 @@
 //   node watch-comments.mjs [--root <pasta>] [--quiet <segundos>] -- <comando> [args…]
 //   node watch-comments.mjs -- claude -p "<prompt>"
 //
+// Instalado e atualizado pelo `setup.sh`; não edite (a próxima atualização sobrescreve).
+//
 // Formato da conversa: `docs/COMMENT-FORMAT.md` do Mapping.
 import { spawn } from 'node:child_process';
 import { realpathSync, watch } from 'node:fs';

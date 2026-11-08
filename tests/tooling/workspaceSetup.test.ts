@@ -39,6 +39,8 @@ const REAL_AGENTS = readFileSync(join(SKELETON, 'AGENTS.md'), 'utf8');
 const BLOCK = `${REAL_AGENTS.slice(REAL_AGENTS.indexOf(BEGIN), REAL_AGENTS.indexOf(END) + END.length)}\n`;
 const RELEASE_SKILL = '# skill da release\n';
 const RAW_SKILL = '# skill do raw (main)\n';
+const RELEASE_WATCHER = '// watcher da release\n';
+const OLD_WATCHER = '// watcher copiado à mão, antigo\n';
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -81,6 +83,7 @@ function setup(options: Options = {}): Env {
   writeFileSync(join(root, 'examples/workspace/setup.sh'), COUNTED);
   writeFileSync(join(root, 'examples/workspace/AGENTS.md'), REAL_AGENTS);
   writeFileSync(join(root, '.claude/skills/spec-author/SKILL.md'), RELEASE_SKILL);
+  writeFileSync(join(root, 'examples/workspace/watch-comments.mjs'), RELEASE_WATCHER);
   const release = join(tmp('release'), 'rel');
   buildWorkspaceAssets(release, root);
   const server = "if (process.argv.includes('--version')) console.log('0.0.0-test');\n";
@@ -168,8 +171,11 @@ describe('workspace novo (só o setup.sh)', () => {
     writeFileSync(join(env.ws, 'setup.sh'), COUNTED);
     // O esqueleto não traz o AGENTS.md nem o link em um workspace novo.
     rmSync(join(env.ws, 'AGENTS.md'));
+    rmSync(join(env.ws, 'watch-comments.mjs'));
     const result = run(env);
     expect(result.status, result.all).toBe(0);
+    expect(read(env, 'watch-comments.mjs')).toBe(RELEASE_WATCHER);
+    expect(result.out).toContain('Watcher: instalado');
     expect(read(env, 'tools/mapping-mcp.js')).toContain('0.0.0-test');
     expect(read(env, 'tools/mapping-mcp.js.sha256')).toContain('mapping-mcp.js');
     expect(read(env, '.agents/skills/spec-author/SKILL.md')).toBe(RELEASE_SKILL);
@@ -187,6 +193,48 @@ describe('workspace novo (só o setup.sh)', () => {
     expect(result.out).toContain('AGENTS.md: criado');
     expect(result.out).toContain('Pronto.');
     expect(leftovers(env)).toEqual([]);
+  });
+});
+
+describe('watcher (watch-comments.mjs)', () => {
+  it('cópia antiga à mão: é trocada pela da release, sem backup, e o resumo diz atualizado', () => {
+    const env = setup();
+    write(env, 'watch-comments.mjs', OLD_WATCHER);
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(read(env, 'watch-comments.mjs')).toBe(RELEASE_WATCHER);
+    expect(result.out).toContain('Watcher: atualizado');
+    expect(readdirSync(env.ws).filter((n) => n.includes('watch-comments.mjs.'))).toEqual(
+      [],
+    );
+  });
+
+  it('release sem o watcher: aviso, o arquivo local intacto e o resto do setup segue', () => {
+    const env = setup({ omit: ['watch-comments.mjs'] });
+    write(env, 'watch-comments.mjs', OLD_WATCHER);
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(result.err).toContain('watch-comments.mjs');
+    expect(read(env, 'watch-comments.mjs')).toBe(OLD_WATCHER);
+    expect(result.out).toContain('Watcher: não atualizado (release sem o watcher)');
+    expect(result.out).toContain('Servidor: 0.0.0-test');
+  });
+
+  it('release sem o watcher e sem arquivo local: continua ausente', () => {
+    const env = setup({ omit: ['watch-comments.mjs'] });
+    rmSync(join(env.ws, 'watch-comments.mjs'));
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(existsSync(join(env.ws, 'watch-comments.mjs'))).toBe(false);
+    expect(result.out).toContain('Watcher: não atualizado (release sem o watcher)');
+  });
+
+  it('cópia igual à da release: sem mudança', () => {
+    const env = setup();
+    write(env, 'watch-comments.mjs', RELEASE_WATCHER);
+    const result = run(env);
+    expect(result.status, result.all).toBe(0);
+    expect(result.out).toContain('Watcher: sem mudança');
   });
 });
 
@@ -238,24 +286,28 @@ describe('autoatualização', () => {
 });
 
 describe('sha256 divergente', () => {
-  it.each(['mapping-mcp.js', 'setup.sh', 'SKILL.md', 'AGENTS.mapping.md'])(
-    'em %s: sai com erro e nada muda',
-    (name) => {
-      const env = setup();
-      write(env, 'tools/mapping-mcp.js', 'servidor antigo\n');
-      write(env, '.agents/skills/spec-author/SKILL.md', 'skill antiga\n');
-      write(env, 'AGENTS.md', `# Mapeamentos\n\nmeu texto\n\n${BEGIN}\nvelho\n${END}\n`);
-      const file = join(env.release, name);
-      writeFileSync(file, `${readFileSync(file, 'utf8')}adulterado\n`);
-      const before = snapshot(env.ws);
-      const result = run(env);
-      expect(result.status).not.toBe(0);
-      expect(snapshot(env.ws)).toEqual(before);
-      expect(backups(env)).toEqual([]);
-      expect(leftovers(env)).toEqual([]);
-      expect(executions(env)).toBe(1);
-    },
-  );
+  it.each([
+    'mapping-mcp.js',
+    'setup.sh',
+    'SKILL.md',
+    'AGENTS.mapping.md',
+    'watch-comments.mjs',
+  ])('em %s: sai com erro e nada muda', (name) => {
+    const env = setup();
+    write(env, 'tools/mapping-mcp.js', 'servidor antigo\n');
+    write(env, '.agents/skills/spec-author/SKILL.md', 'skill antiga\n');
+    write(env, 'watch-comments.mjs', OLD_WATCHER);
+    write(env, 'AGENTS.md', `# Mapeamentos\n\nmeu texto\n\n${BEGIN}\nvelho\n${END}\n`);
+    const file = join(env.release, name);
+    writeFileSync(file, `${readFileSync(file, 'utf8')}adulterado\n`);
+    const before = snapshot(env.ws);
+    const result = run(env);
+    expect(result.status).not.toBe(0);
+    expect(snapshot(env.ws)).toEqual(before);
+    expect(backups(env)).toEqual([]);
+    expect(leftovers(env)).toEqual([]);
+    expect(executions(env)).toBe(1);
+  });
 });
 
 describe('skill', () => {
@@ -393,6 +445,7 @@ describe('idempotência', () => {
     expect(second.status, second.all).toBe(0);
     expect(snapshot(env.ws)).toEqual(before);
     expect(second.out).toContain('AGENTS.md: sem mudança');
+    expect(second.out).toContain('Watcher: sem mudança');
   });
 
   it('migra um AGENTS.md antigo grande sem SIGPIPE (status 141 sob carga)', () => {

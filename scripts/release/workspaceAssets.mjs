@@ -1,6 +1,7 @@
 // Arquivos do workspace que cada release do MCP publica junto com o `mapping-mcp.js`
-// (etapa #681, decisão 1): `setup.sh`, `SKILL.md` (a skill `spec-author`) e `AGENTS.mapping.md`
-// (o bloco gerenciado do `examples/workspace/AGENTS.md`), cada um com o seu `.sha256`.
+// (etapa #681, decisão 1; etapa #735, decisão 1): `setup.sh`, `SKILL.md` (a skill `spec-author`),
+// `AGENTS.mapping.md` (o bloco gerenciado do `examples/workspace/AGENTS.md`) e `watch-comments.mjs`
+// (o watcher de conversas), cada um com o seu `.sha256`.
 // Os três jobs de publicação (snapshot, rc e estável) usam este script, sem repetir a lista.
 //   node scripts/release/workspaceAssets.mjs <pasta de saída> [--root <raiz do repositório>]
 // Imprime os arquivos gravados, um por linha, com a pasta de saída na frente. Só Node, sem
@@ -66,6 +67,7 @@ export function buildWorkspaceAssets(outDir, root) {
     ['setup.sh', readSource(root, 'examples/workspace/setup.sh')],
     ['SKILL.md', readSource(root, '.claude/skills/spec-author/SKILL.md')],
     ['AGENTS.mapping.md', `${extractBlock(readSource(root, AGENTS_PATH))}\n`],
+    ['watch-comments.mjs', readSource(root, 'examples/workspace/watch-comments.mjs')],
   ];
   mkdirSync(outDir, { recursive: true });
   const written = [];
