@@ -7,7 +7,15 @@ import {
   arrivalBadgeWidth,
   arrivalMarks,
 } from '../../src/canvas/arrivals';
-import { dismissArrival, type Arrival, type Project } from '../../src/model';
+import {
+  addContainer,
+  createArrow,
+  createMarking,
+  dismissArrival,
+  setContainerPlacement,
+  type Arrival,
+  type Project,
+} from '../../src/model';
 import { canvasProject } from './harness';
 
 // As marcas de chegada no canvas (etapa #659, PE3, decisão 8): o selo "Veio de <nome>" sobre cada
@@ -64,6 +72,38 @@ describe('arrivalMarks: o que desenhar', () => {
   it('com todas as raízes marcadas a faixa envolve todas', () => {
     const p = mark(mark(canvasProject(), 'I1'), 'I2');
     expect(arrivalMarks(p)?.band).not.toBeNull();
+  });
+
+  it('sem ArrivalInfo (depois de recarregar): a faixa envolve só a raiz sem referência (etapa #764, AP1)', () => {
+    // I3 (0,900) chegou perto da referência I1 (seta de M1 para M4); I2 (1100,0) não tem seta.
+    let p = addContainer(canvasProject(), {
+      id: 'I3',
+      file: 'images/c.jpg',
+      width: 400,
+      height: 300,
+    });
+    p = setContainerPlacement(p, 'I3', { x: 0, y: 900, scale: 1 });
+    p = createMarking(p, {
+      id: 'M4',
+      containerId: 'I3',
+      rect: { x: 10, y: 10, width: 50, height: 50 },
+    });
+    p = createArrow(p, { id: 'R1', from: 'M1', to: 'M4' });
+    const marks = arrivalMarks(mark(mark(p, 'I3'), 'I2'));
+    expect(marks?.badges.map((b) => b.root).sort()).toEqual(['I2', 'I3']);
+    expect(marks?.band).toEqual({
+      x: 1100 - ARRIVAL_BAND_PAD,
+      y: 0 - ARRIVAL_BAND_PAD,
+      width: 500 + 2 * ARRIVAL_BAND_PAD,
+      height: 500 + 2 * ARRIVAL_BAND_PAD,
+    });
+  });
+
+  it('só raízes marcadas com referência: selo e nenhuma faixa', () => {
+    const p = createArrow(canvasProject(), { id: 'R1', from: 'M1', to: 'M3' });
+    const marks = arrivalMarks(mark(p, 'I2'));
+    expect(marks?.badges).toHaveLength(1);
+    expect(marks?.band).toBeNull();
   });
 
   it('é calculado uma vez por versão do projeto (mesmo objeto na segunda chamada)', () => {

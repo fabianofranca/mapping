@@ -261,12 +261,30 @@ function renderDialog(
       return (
         <ManagePerspectivesDialog
           onClose={close}
+          focus={dialog.focus}
           onNew={() => dialogs.show({ kind: 'newPerspective' })}
           onDelete={(id) => dialogs.show({ kind: 'deletePerspective', id })}
         />
       );
     case 'deletePerspective':
-      return <DeletePerspectiveDialog id={dialog.id} onClose={close} />;
+      // Aberta pelo Gerenciar (a única origem): ao fechar, volta a ele (etapa #764, decisão 1).
+      return (
+        <DeletePerspectiveDialog
+          id={dialog.id}
+          onClose={() =>
+            dialogs.show({
+              kind: 'managePerspectives',
+              focus: { kind: 'delete', id: dialog.id },
+            })
+          }
+          onDeleted={(next) =>
+            dialogs.show({
+              kind: 'managePerspectives',
+              focus: next === null ? { kind: 'close' } : { kind: 'delete', id: next },
+            })
+          }
+        />
+      );
     case 'confirmClose':
       return (
         <ConfirmDialog

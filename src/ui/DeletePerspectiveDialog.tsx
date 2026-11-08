@@ -12,9 +12,16 @@ import { useState } from 'preact/hooks';
 export function DeletePerspectiveDialog({
   id,
   onClose,
+  onDeleted,
 }: {
   readonly id: string;
+  /** Cancelar, Esc ou o X: nada foi apagado. */
   readonly onClose: () => void;
+  /**
+   * Depois de apagar. `next` é a perspectiva que ficou no lugar da apagada (a de baixo; sem ela,
+   * a de cima), ou `null` se não sobrou nenhuma. Sem este callback vale `onClose`.
+   */
+  readonly onDeleted?: (next: string | null) => void;
 }) {
   const { session, store } = useEditor();
   const [failed, setFailed] = useState(false);
@@ -23,11 +30,14 @@ export function DeletePerspectiveDialog({
   if (!project || !perspective) return null;
 
   const confirm = () => {
+    const list = project.perspectives;
+    const at = list.findIndex((x) => x.id === id);
+    const next = list[at + 1] ?? list[at - 1] ?? null;
     if (!session.perspectiveActions.removePerspective(id).ok) {
       setFailed(true);
       return;
     }
-    onClose();
+    (onDeleted ?? onClose)(next?.id ?? null);
   };
 
   return (

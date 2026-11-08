@@ -14,6 +14,7 @@ import type { AspectChange } from '../store/session';
 import type { RefObject } from 'preact';
 import { useRef } from 'preact/hooks';
 import { useEditor } from '../ui/EditorContext';
+import type { ManageFocus } from '../ui/ManagePerspectivesDialog';
 import { useDialogSlot, type DialogSlot } from '../ui/focus';
 
 /** O diálogo aberto no editor (só um por vez), com os dados que ele precisa. */
@@ -40,7 +41,7 @@ export type EditorDialog =
   | { readonly kind: 'exitReview' }
   /** Perspectivas (etapa #659, PE3). */
   | { readonly kind: 'newPerspective' }
-  | { readonly kind: 'managePerspectives' }
+  | { readonly kind: 'managePerspectives'; readonly focus?: ManageFocus }
   | { readonly kind: 'deletePerspective'; readonly id: string };
 
 export interface EditorDialogs {

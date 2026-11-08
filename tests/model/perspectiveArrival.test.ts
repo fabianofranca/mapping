@@ -5,6 +5,7 @@ import {
   addBackgroundContainer,
   arriveInPrincipal,
   arrivalArea,
+  arrivalHasReference,
   createArrow,
   createMarking,
   dismissArrival,
@@ -310,5 +311,36 @@ describe('marca de chegada', () => {
     const p = arrived();
     expect(arrivalArea(world())).toBeNull();
     expect(arrivalArea(p)).toEqual({ x: 1750, y: 0, width: 500, height: 500 });
+  });
+});
+
+describe('arrivalHasReference (etapa #764, AP1: a chegada deduzida das setas)', () => {
+  it('raiz sem seta para outra raiz não tem referência', () => {
+    const p = withLinkedContainer(world(), 'Y', null);
+    expect(arrivalHasReference(p, 'Y')).toBe(false);
+  });
+
+  it('seta de um membro da raiz para um membro de outra raiz: tem referência', () => {
+    const p = withLinkedContainer(world(), 'X', 'm2');
+    expect(arrivalHasReference(p, 'X')).toBe(true);
+  });
+
+  it('a seta que chega na raiz (a outra ponta é quem aponta) também conta', () => {
+    let p = withLinkedContainer(world(), 'X', null);
+    p = createArrow(p, { id: 'in', from: 'm2', to: 'Xm' });
+    expect(arrivalHasReference(p, 'X')).toBe(true);
+  });
+
+  it('seta entre dois membros da própria raiz não conta', () => {
+    let p = withLinkedContainer(world(), 'X', null);
+    p = mark(p, 'Xm2', 'X');
+    p = createArrow(p, { id: 'self', from: 'Xm', to: 'Xm2' });
+    expect(arrivalHasReference(p, 'X')).toBe(false);
+  });
+
+  it('uma seta criada ou apagada depois muda o resultado', () => {
+    const p = withLinkedContainer(world(), 'X', 'm2');
+    const without = { ...p, arrows: p.arrows.filter((a) => a.id !== 'ar-X') };
+    expect(arrivalHasReference(without, 'X')).toBe(false);
   });
 });
