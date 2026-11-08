@@ -9,6 +9,7 @@ import {
   imagePixelRect,
   rectsOverlap,
   right,
+  snapPlacement,
 } from './geometry';
 import { settleFrom, type SettleOptions } from './hierarchySettle';
 import {
@@ -80,9 +81,9 @@ function checkPlacement({ x, y, scale }: Placement): void {
 function placementAtRight(p: Project, scale: number, excludeId?: string): Placement {
   const others = p.containers.filter((i) => i.id !== excludeId);
   const rects = others.map((i) => imageCanvasRect(i, i.placement));
-  if (rects.length === 0) return { x: 0, y: 0, scale };
+  if (rects.length === 0) return snapPlacement({ x: 0, y: 0, scale });
   const rightmost = rects.reduce((a, b) => (right(b) > right(a) ? b : a));
-  return { x: right(rightmost) + IMAGE_GAP, y: rightmost.y, scale };
+  return snapPlacement({ x: right(rightmost) + IMAGE_GAP, y: rightmost.y, scale });
 }
 
 /**
@@ -142,7 +143,7 @@ export function placementNear(
   const others = p.containers
     .filter((i) => i.id !== excludeId)
     .map((i) => imageCanvasRect(i, i.placement));
-  return { ...nearestFreeSpot(others, w, h, wanted), scale };
+  return snapPlacement({ ...nearestFreeSpot(others, w, h, wanted), scale });
 }
 
 /**
@@ -417,9 +418,10 @@ export function setContainerPlacement(
 ): Project {
   checkPlacement(placement);
   requireUnlocked(canEditImagePlacement(p, containerId));
-  const overlap = overlappingContainer(p, containerId, placement);
+  // Única porta de escrita do `placement` por movimento: o ruído de ponto flutuante some aqui.
+  const copy = snapPlacement(placement);
+  const overlap = overlappingContainer(p, containerId, copy);
   if (overlap) failOverlap(overlap);
-  const copy: Placement = { x: placement.x, y: placement.y, scale: placement.scale };
   return settleFrom(
     p,
     {
@@ -621,7 +623,7 @@ export function replaceContainer(
   const rescaled = rescaleMarkings(own, image, next, !sameAspect);
 
   const scale = (image.placement.scale * image.width) / next.width;
-  let placement: Placement = { ...image.placement, scale };
+  let placement: Placement = snapPlacement({ ...image.placement, scale });
   const candidate = imageCanvasRect(next, placement);
   const overlaps = p.containers.some(
     (o) =>

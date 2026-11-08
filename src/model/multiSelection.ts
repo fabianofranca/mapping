@@ -11,6 +11,7 @@ import {
   rectsOverlap,
   slideToTouch,
   snapNearInteger,
+  snapPlacement,
   translateRect,
 } from './geometry';
 import { ancestorsOf, descendantsOf } from './hierarchy';
@@ -173,11 +174,7 @@ export function moveItems(
       const container = index.containers.get(item.id);
       if (!container || (canvasDx === 0 && canvasDy === 0)) continue;
       const { x, y, scale } = container.placement;
-      placements.set(item.id, {
-        x: snapNearInteger(x + canvasDx),
-        y: snapNearInteger(y + canvasDy),
-        scale,
-      });
+      placements.set(item.id, snapPlacement({ x: x + canvasDx, y: y + canvasDy, scale }));
       continue;
     }
     const marking = index.markings.get(item.id);
