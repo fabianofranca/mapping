@@ -1,4 +1,4 @@
-import type { Annotation, JsonValue, Project } from '../../src/model';
+import type { Annotation, JsonValue, Marking, Project } from '../../src/model';
 import { buildLargeProject } from './largeProject';
 import { layerOf, specProject } from './specFixtures';
 
@@ -19,6 +19,22 @@ import { layerOf, specProject } from './specFixtures';
 export function buildLargeTypedProject(): Project {
   const spec = specProject();
   const { containers: images, markings } = buildLargeProject();
+  return {
+    ...spec,
+    containers: images,
+    markings,
+    annotations: typedAnnotations(spec, markings),
+  };
+}
+
+/**
+ * As anotações do projeto tipado para qualquer lista de marcações (a regra acima, por índice):
+ * `spec` é o `specProject()`, de onde vêm as camadas. Usada também pelo fixture de escala.
+ */
+export function typedAnnotations(
+  spec: Project,
+  markings: readonly Marking[],
+): Annotation[] {
   const layer = {
     classe: layerOf(spec, 'modelo-dados', 'classes'),
     componentes: layerOf(spec, 'sdui', 'componentes'),
@@ -85,5 +101,5 @@ export function buildLargeTypedProject(): Project {
       free(`G${i}`, marking.id, 'LM');
     }
   });
-  return { ...spec, containers: images, markings, annotations };
+  return annotations;
 }

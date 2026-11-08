@@ -1,16 +1,13 @@
 /// <reference types="vitest/config" />
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { fontFiles } from './mcp/fontFiles.mjs';
-import { wasmFiles } from './mcp/wasmFiles.mjs';
 import type { BuildChannel } from './pwa/build';
 import { contentSecurityPolicy, serviceWorker } from './pwa/buildPlugins';
 import { tokensCss } from './pwa/tokensCss';
 import { resolveBuildId } from './src/utils/build';
+import { fontBytes, wasmBytes } from './tests/support/mcpVitePlugins';
 import TimedSequencer from './tests/support/timedSequencer';
 
 /** `VITE_CHANNEL=preview` no build do branch publicado em /preview/ (deploy.yml). */
@@ -38,39 +35,6 @@ const perfBudgets =
   process.argv.includes('--coverage') || process.env.PERF_BUDGETS === 'off'
     ? 'off'
     : 'on';
-/** Nos testes do `mcp`, `import bytes from 'wasm:png'` (codecs de imagem) lê o `.wasm` do pacote, como o esbuild faz no build. */
-function wasmBytes(): Plugin {
-  const require = createRequire(import.meta.url);
-  const prefix = '\0wasm-bytes:';
-  return {
-    name: 'wasm-bytes',
-    resolveId: (id) => (id.startsWith('wasm:') ? prefix + id : null),
-    load(id) {
-      if (!id.startsWith(prefix)) return null;
-      const file = wasmFiles[id.slice(prefix.length) as keyof typeof wasmFiles];
-      const base64 = readFileSync(require.resolve(file)).toString('base64');
-      return `export default new Uint8Array(Buffer.from('${base64}', 'base64'));`;
-    },
-  };
-}
-
-/** Nos testes do `mcp`, `import bytes from 'font:sans'` lê o TTF embutido (mcp/fonts/), como o esbuild faz no build. */
-function fontBytes(): Plugin {
-  const prefix = '\0font-bytes:';
-  return {
-    name: 'font-bytes',
-    resolveId: (id) => (id.startsWith('font:') ? prefix + id : null),
-    load(id) {
-      if (!id.startsWith(prefix)) return null;
-      const file = fontFiles[id.slice(prefix.length) as keyof typeof fontFiles];
-      const base64 = readFileSync(new URL(`./mcp/${file}`, import.meta.url)).toString(
-        'base64',
-      );
-      return `export default new Uint8Array(Buffer.from('${base64}', 'base64'));`;
-    },
-  };
-}
-
 /**
  * Nos shards do CI (`COVERAGE_REPORT=off`) o blob já leva os dados de cobertura e só o job
  * `coverage` gera o relatório, no `--merge-reports`: gerá-lo em cada shard custava ~15 s.

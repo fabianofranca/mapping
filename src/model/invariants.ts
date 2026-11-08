@@ -8,7 +8,7 @@ import {
   rectsOverlap,
 } from './geometry';
 import { tableRows } from './refs';
-import type { Entry, Perspective, Project } from './types';
+import type { Entry, Perspective, Project, Rect } from './types';
 
 export type InvariantCode =
   | 'duplicate-id'
@@ -134,6 +134,34 @@ function rootProblem(
 ): 'missing' | 'not-root' | null {
   if (!ids.all.has(root)) return 'missing';
   return ids.roots.has(root) ? null : 'not-root';
+}
+
+/**
+ * Para cada container (pelo índice), os índices posteriores a ele, crescentes, cujo retângulo no
+ * canvas o sobrepõe. Agrupa por células de grade do tamanho do maior container (cada retângulo cai
+ * em até 4 células) e só compara vizinhos: cresce linear com os containers espalhados, em vez de
+ * comparar todos os pares.
+ */
+function overlappingContainers(containers: Project['containers']): number[][] {
+  const rects = containers.map((c) => imageCanvasRect(c, c.placement));
+  const size = Math.max(1, ...rects.map((r) => Math.max(r.width, r.height)));
+  const found = rects.map(() => new Set<number>());
+  const cells = new Map<string, number[]>();
+  const cell = (v: number) => Math.floor(v / size);
+  rects.forEach((r, i) => {
+    const x1 = cell(r.x + r.width);
+    const y1 = cell(r.y + r.height);
+    if (!Number.isFinite(x1 + y1 + r.x + r.y)) return;
+    for (let x = cell(r.x); x <= x1; x++) {
+      for (let y = cell(r.y); y <= y1; y++) {
+        const key = `${x},${y}`;
+        const bucket = cells.get(key) ?? [];
+        for (const j of bucket) if (rectsOverlap(rects[j] as Rect, r)) found[j]?.add(i);
+        cells.set(key, [...bucket, i]);
+      }
+    }
+  });
+  return found.map((set) => [...set].sort((a, b) => a - b));
 }
 
 type Report = (code: InvariantCode, item: Named, otherId?: string) => void;
@@ -270,6 +298,7 @@ export function validateProject(p: Project): InvariantIssue[] {
   }
 
   const files = new Set<string>();
+  const overlaps = overlappingContainers(p.containers);
   p.containers.forEach((image, i) => {
     // Container sem arquivo (sem arquivo) não disputa nome; cor e arquivo são mutuamente exclusivos.
     if (image.file !== null) {
@@ -279,12 +308,8 @@ export function validateProject(p: Project): InvariantIssue[] {
     if ((image.file === null) !== (image.background !== null)) {
       imageIssue('container-content', image);
     }
-    const rect = imageCanvasRect(image, image.placement);
-    for (const other of p.containers.slice(i + 1)) {
-      if (rectsOverlap(rect, imageCanvasRect(other, other.placement))) {
-        imageIssue('images-overlap', image, other.id);
-      }
-    }
+    for (const j of overlaps[i] ?? [])
+      imageIssue('images-overlap', image, p.containers[j]?.id ?? '');
   });
 
   const containers = new Map(p.containers.map((image) => [image.id, image]));

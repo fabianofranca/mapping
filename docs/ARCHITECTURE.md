@@ -363,6 +363,24 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   `tests/canvas/renderPerformance.test.ts`, `tests/store/reviewPerf.test.ts`) rodam em projetos próprios do Vitest (`perf-model`
   e `perf-app`, em `vite.config.ts`), com `sequence.groupOrder` maior que o dos demais e um arquivo por vez: começam depois do
   resto da suíte, sem disputar CPU com ela.
+- **Testes de crescimento** (`npm run test:scale`): medem a mesma operação com n = 1.250 e 4n = 5.000 marcações do fixture
+  `buildScaleProject` (`tests/model/scaleProject.ts`), pela mediana de rodadas após o aquecimento, cada rodada numa versão nova do
+  projeto, e exigem a razão entre as medianas abaixo de 5× (linear dá ~4×, quadrático ~16×). Passar do teto é defeito a corrigir,
+  não teto a subir. Rodam por `vitest.scale.config.ts` (projetos `scale-model`, `scale-app` e `scale-mcp`, arquivos `tests/scale/**/*.scale.ts`, um por vez),
+  fora do `npm test` e da cobertura, num passo do job `build` do CI depois do `test:perf`; cada teste repete até duas vezes (`retry: 2`: as operações de poucos ms oscilam em torno de 4× e chegam a 5–7× numa rodada) e imprime no
+  log n, 4n, as duas medianas e a razão. O auxiliar é `tests/support/growth.ts` (coleta o lixo antes de cada rodada; os workers sobem com `--expose-gc` e `--max-semi-space-size=128`, porque com o semi-espaço padrão o _scavenge_ do V8 inflava a razão para 5 a 8× sem laço quadrático nenhum). O que se mede (cada linha é um caso, n = 1.250 e 4n = 5.000, e o log mostra a razão de cada um):
+  - **Modelo** (`scale-model`, Node): `validateProject`; `serialize` + `deserialize`; índice, pendências, indicadores e visibilidade;
+    `buildListing`; `perspectiveView` de cada perspectiva (`tests/scale/model/`).
+  - **Sessão, estado derivado e visualizador** (`scale-app`, jsdom; `tests/scale/app/`): gravar um projeto já aberto (conferir
+    `revision` e conteúdo, gravar `revision + 1`, num armazenamento falso) e abrir o projeto; o estado derivado do editor
+    (`createEditorDerived`: camadas visíveis, indicadores, visibilidade, pendências, lista) a cada versão nova do projeto; o
+    visualizador, que monta a cena de n e 4n instâncias e atualiza uma delas já montada (contexto 2D falso).
+  - **MCP** (`scale-mcp`, Node; `tests/scale/mcp/`): `get_project`, `list_markings`, `get_marking`, `get_annotation`, `find_by_code`,
+    `find_by_source` e `list_threads`, em processo (`createServer` + `InMemoryTransport`), sobre o projeto de escala gravado numa
+    pasta temporária (com `specs/` e uma conversa a cada 25 marcações em `comments/`). O servidor lê o projeto do disco a cada
+    chamada, e é esse o custo medido de uma chamada por item num projeto grande.
+    O auxiliar tem a versão assíncrona (`expectLinearGrowthAsync`) para a sessão e o MCP. O `test:scale` inteiro leva cerca de 90 a
+    100 s. Assentar e editar ficam nos orçamentos do `test:perf`.
 
 ## Onde fica cada coisa
 

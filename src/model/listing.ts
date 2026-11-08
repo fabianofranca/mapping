@@ -45,6 +45,17 @@ export function layerSections(
   return sections;
 }
 
+/** As marcações sem pai por container (`null` = o canvas), na ordem do projeto: uma passada, não uma por container. */
+function groupRootsByContainer(roots: readonly Marking[]): Map<string | null, Marking[]> {
+  const byContainer = new Map<string | null, Marking[]>();
+  for (const root of roots) {
+    const group = byContainer.get(root.containerId);
+    if (group) group.push(root);
+    else byContainer.set(root.containerId, [root]);
+  }
+  return byContainer;
+}
+
 export interface ListedMarking {
   /** A marcação; numa linha de seta (`arrow`), a marcação de origem dela. */
   readonly marking: Marking;
@@ -95,7 +106,7 @@ export function buildListing(
       })
     : index.annotationsByMarking;
   const showEmpty = options.showEmpty && !only;
-  const roots = children.get(null) ?? [];
+  const rootsByContainer = groupRootsByContainer(children.get(null) ?? []);
   const result: ListedImage[] = [];
 
   // O grupo Canvas vem primeiro (como a raiz da Árvore), depois um grupo por container.
@@ -117,9 +128,7 @@ export function buildListing(
       }
       for (const child of children.get(marking.id) ?? []) visit(child, path);
     };
-    for (const root of roots) {
-      if (root.containerId === (image?.id ?? null)) visit(root, []);
-    }
+    for (const root of rootsByContainer.get(image?.id ?? null) ?? []) visit(root, []);
     // O grupo Canvas sem marcação nenhuma não aparece, nem com `showEmpty`.
     if (markings.length > 0 || (showEmpty && image !== null)) {
       result.push({ image, markings });
@@ -161,6 +170,7 @@ export function buildIncompleteList(
   if (issues.size === 0) return [];
   const index = projectIndex(p);
   const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
+  const rootsByContainer = groupRootsByContainer(index.children.get(null) ?? []);
   const result: IncompleteImage[] = [];
 
   for (const image of [null, ...p.containers]) {
@@ -184,9 +194,7 @@ export function buildIncompleteList(
       }
       for (const child of index.children.get(marking.id) ?? []) visit(child, path);
     };
-    for (const root of index.children.get(null) ?? []) {
-      if (root.containerId === (image?.id ?? null)) visit(root, []);
-    }
+    for (const root of rootsByContainer.get(image?.id ?? null) ?? []) visit(root, []);
     if (items.length > 0) result.push({ image, items });
   }
   return result;

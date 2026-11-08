@@ -479,3 +479,56 @@ describe('invariantes das setas', () => {
     expect(codes({ ...p, arrows: [] })).toEqual(['missing-marking:AR']);
   });
 });
+
+describe('images-overlap', () => {
+  it('acha os mesmos pares que a comparação de todos contra todos, na mesma ordem', () => {
+    const base = sampleProject();
+    const template = base.containers[0];
+    if (!template) throw new Error('fixture');
+    // Gerador determinístico; posições e escalas variadas, com encostos, contidos e cruzados.
+    let seed = 7;
+    const next = (max: number) => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed % max;
+    };
+    const containers = Array.from({ length: 80 }, (_, i) => ({
+      ...template,
+      id: `X${i}`,
+      file: `images/x${i}.png`,
+      width: 100 + next(300),
+      height: 100 + next(300),
+      placement: {
+        x: next(25) * 100 - 500,
+        y: next(25) * 100 - 500,
+        scale: 0.5 + next(3),
+      },
+    }));
+    const expected: string[] = [];
+    containers.forEach((a, i) => {
+      for (const b of containers.slice(i + 1)) {
+        const ax = a.placement.x;
+        const ay = a.placement.y;
+        const aw = a.width * a.placement.scale;
+        const ah = a.height * a.placement.scale;
+        const bx = b.placement.x;
+        const by = b.placement.y;
+        const bw = b.width * b.placement.scale;
+        const bh = b.height * b.placement.scale;
+        if (ax < bx + bw && bx < ax + aw && ay < by + bh && by < ay + ah) {
+          expected.push(`${a.id}:${b.id}`);
+        }
+      }
+    });
+    expect(expected.length).toBeGreaterThan(10);
+    const found = validateProject({
+      ...base,
+      containers,
+      markings: [],
+      annotations: [],
+      arrows: [],
+    })
+      .filter((i) => i.code === 'images-overlap')
+      .map((i) => `${i.id}:${i.otherId}`);
+    expect(found).toEqual(expected);
+  });
+});
