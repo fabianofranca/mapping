@@ -221,8 +221,8 @@ function hasCanvasMarking(p: Project, moving: readonly ItemRef[]): boolean {
  * sobreposição, eixo a eixo (as bordas ficam iguais e ele desliza ao longo do obstáculo);
  * deslocamento que cabe volta como está. É o que as prévias e o fim do gesto passam a `moveItems`,
  * que continua recusando a sobreposição com `image-overlap`. Com marcação do canvas na seleção o
- * deslocamento do canvas é inteiro (como em `moveItems`) e o limite sobe para o inteiro de menor
- * módulo, para o arredondamento não devolver a sobreposição.
+ * deslocamento do canvas é inteiro (como em `moveItems`) e o limite é o inteiro de menor módulo
+ * (sobra menos de 1 unidade com vizinho fracionário, sem sobrepor).
  */
 export function limitItemsMove(
   p: Project,
