@@ -146,7 +146,7 @@ const NO_OVERLAYS: Overlays = {
 };
 
 /** O que move o rótulo de nome das marcações (a etiqueta da selecionada desvia do do pai). */
-const LABEL_KEYS = ['visibility', 'dots', 'incomplete', 'view'] as const;
+const LABEL_KEYS = ['visibility', 'incomplete', 'view'] as const;
 
 export class CanvasController {
   private readonly store: ProjectStore;
@@ -389,7 +389,6 @@ export class CanvasController {
       items: this.selectedItems.value,
       mode: view === null ? this.ui.mode.value : 'navigate',
       locale: locale.value,
-      dots: this.derived.layerDots.value,
       incomplete: this.derived.incompleteMarkings.value,
       visibility: this.derived.canvasVisibility.value,
       drawings: this.drawings.value,

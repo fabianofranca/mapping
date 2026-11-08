@@ -7,11 +7,7 @@ import type { SemanticMode } from '../semanticText';
 import type { CanvasTokens } from '../theme';
 import {
   ALERT_SIZE,
-  DOT_GAP,
-  DOT_MARGIN,
-  DOT_RADIUS,
-  MAX_DOTS,
-  MORE_WIDTH,
+  CORNER_MARGIN,
   REVIEW_BADGE_SIZE,
   fontStyle,
   intersectRects,
@@ -19,12 +15,15 @@ import {
 
 /** Margem interna do texto do cabeçalho (px de tela); fonte e linha vêm de `t-cv-name`. */
 const TEXT_PADDING = 4;
-/** Altura da linha de cabeçalho (onde ficam o alerta, as bolinhas e o nome). */
-const TEXT_HEADER_HEIGHT = 2 * DOT_MARGIN + 2 * DOT_RADIUS;
+/**
+ * Altura da linha de cabeçalho (onde ficam o selo, o alerta e o nome). O valor vem de quando as
+ * bolinhas de camada definiam a linha (2 × margem + 2 × raio): mantido para o nome não subir.
+ */
+export const TEXT_HEADER_HEIGHT = 14;
 /** Nós do texto do zoom semântico de uma marcação, recortados no retângulo dela. */
 export interface SemanticNode {
   readonly group: Konva.Group;
-  /** Nome da marcação na linha de cabeçalho, ao lado das bolinhas. */
+  /** Nome da marcação na linha de cabeçalho, depois do selo e do alerta. */
   readonly header: KonvaText;
 }
 
@@ -49,8 +48,6 @@ export interface SemanticText {
   /** Parte do canvas visível na tela. */
   readonly view: Rect;
   readonly mode: SemanticMode;
-  /** Quantas bolinhas de camada a marcação mostra (o nome começa depois delas). */
-  readonly dotCount: number;
   readonly incomplete: boolean;
   /**
    * Fim (y do canvas) do cabeçalho do pai quando ele passa pelo canto desta marcação
@@ -66,7 +63,7 @@ export interface HeaderBand {
 }
 
 /**
- * Zoom semântico: o nome da marcação no cabeçalho, ao lado das bolinhas,
+ * Zoom semântico: o nome da marcação no cabeçalho, depois do selo e do alerta,
  * recortado na parte visível dela.
  */
 export function updateSemanticText(
@@ -89,24 +86,18 @@ export function updateSemanticText(
     visible: true,
     clip: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
   });
-  // Alerta e bolinhas só ocupam o cabeçalho se o canto da marcação estiver visível.
+  // Selo e alerta só ocupam o cabeçalho se o canto da marcação estiver visível.
   const atCorner = rect.x === markingRect.x && rect.y === markingRect.y;
-  const dotCount = atCorner ? input.dotCount : 0;
-  const shownDots = Math.min(dotCount, MAX_DOTS);
-  // O nome começa depois do alerta de revisão e das bolinhas.
-  const before = atCorner && marking.needsReview ? REVIEW_BADGE_SIZE + DOT_MARGIN : 0;
-  const dotsWidth =
-    shownDots > 0 ? shownDots * (2 * DOT_RADIUS + DOT_GAP) + DOT_MARGIN : 0;
-  const more =
-    (dotCount > MAX_DOTS ? MORE_WIDTH : 0) +
-    (atCorner && incomplete ? ALERT_SIZE + 2 : 0);
+  // O nome começa depois do selo de revisão e do alerta.
+  const before = atCorner && marking.needsReview ? REVIEW_BADGE_SIZE + CORNER_MARGIN : 0;
+  const alertWidth = atCorner && incomplete ? ALERT_SIZE + 2 : 0;
   // Filha no mesmo canto do pai: o nome vai para a linha de baixo do cabeçalho dele.
   const floor = input.headerFloor ?? null;
   const shifted = floor !== null && floor > rect.y;
   const headerTop = shifted ? floor : rect.y;
   const headerX = shifted
     ? rect.x + px(TEXT_PADDING)
-    : rect.x + px(before + dotsWidth + more + (dotsWidth + more > 0 ? 0 : TEXT_PADDING));
+    : rect.x + px(before + alertWidth + (alertWidth > 0 ? 0 : TEXT_PADDING));
   const headerText = marking.name ?? '';
   if (headerText === '') {
     node.header.visible(false);
