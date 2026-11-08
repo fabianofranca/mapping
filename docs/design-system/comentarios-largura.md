@@ -8,6 +8,7 @@
 - **Guia `CommentsWindow`, filtros no layout estreito** (CL3, #887): abaixo de 640 px de largura da janela os filtros viram uma grade de 2 colunas (Status | Usuário, busca | Citam a seleção), cada controle com 100% da coluna.
 - **Guia `BottomTabs`/`Tabs`, contador** (CL3, #887): na janela inferior o `tab-badge` leva `padding: 0 --space-1` e a margem esquerda do contador e do alerta cai para `--space-0-5` (a faixa de 6 abas cabe a 900 px com folga).
 - **Guia `CommentsWindow`, linha resolvida** (CL4, #918): o botão da âncora (`.comments-anchor-button`) herda a cor atenuada (`--color-text-muted`) e `text-decoration: line-through` (antes ficava sublinhado e escuro).
+- **Guia `CommentsWindow`, célula da âncora** (CL5, #921): o botão da âncora e o ponto de não lida ficam num contêiner `.comments-anchor-line` (`display: flex`, `align-items: center`); a âncora encolhe (`flex: 0 1 auto`, `min-width: 0`) com reticências e o ponto não encolhe (`flex: none`), então toda linha tem a altura de uma linha.
 
 ## Sincronização
 
