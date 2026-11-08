@@ -455,7 +455,7 @@ function IssuesNotice({
   readonly project: Project;
   readonly groups: readonly { layer: Layer; annotations: readonly Annotation[] }[];
 }) {
-  const { ui } = useEditor();
+  const { ui, layers } = useEditor();
   const items = groups.flatMap(({ layer, annotations }) =>
     annotations.flatMap((annotation) =>
       issuesOf(project, annotation.id).map((issue, i) => ({
@@ -482,7 +482,7 @@ function IssuesNotice({
               type="button"
               class="issue-link"
               onClick={() =>
-                goToAnnotation(ui, annotation, issueFocusKey(issue), project)
+                goToAnnotation(ui, annotation, issueFocusKey(issue), project, layers.show)
               }
             >
               <span class="layer-dot" aria-hidden="true" />

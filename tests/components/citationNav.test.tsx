@@ -85,6 +85,42 @@ describe('goToCitation', () => {
     expect(isToolWindowOpen('layers')).toBe(true);
   });
 
+  it('camada escondida pela perspectiva aberta: sai das escondidas dela, com desfazer', () => {
+    const h = withArrow();
+    const { session } = h.context;
+    const created = session.perspectiveActions.createPerspective({
+      name: 'Fluxo A',
+      startFrom: null,
+      local: false,
+    });
+    if (!created.ok) throw new Error('perspectiva não criada');
+    session.perspectiveActions.setPerspectiveHiddenLayers(created.value, ['L2']);
+    session.perspective.open(created.value);
+    const hiddenOf = () =>
+      h.project().perspectives.find((x) => x.id === created.value)?.hiddenLayers;
+    go(h, { kind: 'layer', id: 'L2' });
+    expect(hiddenOf()).toEqual([]);
+    expect(h.ui.hiddenLayers.value.size).toBe(0);
+    h.store.undo();
+    expect(hiddenOf()).toEqual(['L2']);
+  });
+
+  it('camada já visível na perspectiva aberta: não grava no histórico', () => {
+    const h = withArrow();
+    const { session } = h.context;
+    const created = session.perspectiveActions.createPerspective({
+      name: 'Fluxo A',
+      startFrom: null,
+      local: false,
+    });
+    if (!created.ok) throw new Error('perspectiva não criada');
+    session.perspective.open(created.value);
+    const before = h.store.canUndo.value;
+    go(h, { kind: 'layer', id: 'L2' });
+    go(h, { kind: 'annotation', id: 'A1' });
+    expect(h.store.canUndo.value).toBe(before);
+  });
+
   it('conversa: seleciona a conversa e o item dela', async () => {
     const h = withArrow();
     await h.context.session.threads.create(
