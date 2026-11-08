@@ -45,7 +45,6 @@
 
 .identity-main {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1) var(--space-1-5);
   min-width: 0;
@@ -868,9 +867,19 @@ button.layer-group-label:hover {
 /* ReferenceField */
 .ref-field {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-0-5);
   min-width: 0;
+}
+
+.ref-field:not(.ref-cell) {
+  /* Coluna estreita dos Detalhes: sem 14ch para o controle, os botões quebram de linha. */
+  flex-wrap: wrap;
+}
+
+.ref-field:not(.ref-cell) > .ref-control {
+  flex-basis: 14ch;
 }
 
 .ref-control {
