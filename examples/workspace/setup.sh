@@ -14,9 +14,13 @@
 # então troca algo. Se um hash divergir, sai com erro e nada muda. Se o setup.sh da release for
 # diferente deste, ele se substitui e roda de novo (uma vez só); --no-self-update desliga isso.
 # Arquivo que a release não publica (release antiga) é pulado com aviso; sem o servidor, é erro.
+# Se o GitHub falhar na hora de baixar (5xx, 429 ou sem resposta), tenta de novo duas vezes e, depois,
+# usa a API de assets do GitHub (só curl e node, sem token); a conferência do sha256 é a mesma.
 #
 # Só para teste e para o testador (não faz parte do uso normal):
-#   MAPPING_RELEASE_BASE   troca a URL base da release inteira (aceita file://)
+#   MAPPING_RELEASE_BASE   troca a URL base da release inteira (aceita file://); desliga o segundo caminho
+#   MAPPING_GITHUB_BASE    troca https://github.com (o download direto da release)
+#   MAPPING_GITHUB_API     troca https://api.github.com (o segundo caminho, pela API de assets)
 #   MAPPING_RAW_BASE       troca https://raw.githubusercontent.com/fabianofranca/mapping/main
 #   MAPPING_SETUP_UPDATED  =1 impede um segundo ciclo de autoatualização (o script o define)
 #
@@ -29,6 +33,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 REPO="fabianofranca/mapping"
+GITHUB_BASE="${MAPPING_GITHUB_BASE:-https://github.com}"
+GITHUB_API="${MAPPING_GITHUB_API:-https://api.github.com}"
 BEGIN='<!-- mapping:begin (gerenciado pelo setup.sh; não edite entre estas linhas) -->'
 END='<!-- mapping:end -->'
 SELF="$PWD/$(basename "$0")"
@@ -42,12 +48,16 @@ for arg in "$@"; do
   esac
 done
 
+# O segundo caminho (API de assets) só vale quando a base é o GitHub: com MAPPING_RELEASE_BASE ele fica desligado.
+SECOND_PATH=0
 if [ -n "${MAPPING_RELEASE_BASE:-}" ]; then
   RELEASE_BASE="$MAPPING_RELEASE_BASE"
 elif [ -n "$TAG" ]; then
-  RELEASE_BASE="https://github.com/$REPO/releases/download/$TAG"
+  RELEASE_BASE="$GITHUB_BASE/$REPO/releases/download/$TAG"
+  SECOND_PATH=1
 else
-  RELEASE_BASE="https://github.com/$REPO/releases/latest/download"
+  RELEASE_BASE="$GITHUB_BASE/$REPO/releases/latest/download"
+  SECOND_PATH=1
 fi
 RAW_BASE="${MAPPING_RAW_BASE:-https://raw.githubusercontent.com/$REPO/main}"
 
@@ -58,6 +68,16 @@ WATCHER_SUMMARY=""
 HAVE_SETUP=0
 HAVE_BLOCK=0
 HAVE_WATCHER=0
+# Estado do download (ver `download` e `fetch_file`): código HTTP, stderr do curl e classe da falha.
+DL_CODE=""
+DL_ERR=""
+DL_CLASS=""
+FETCH_MSG=""
+FETCH_CLASS=""
+API_JSON=""    # "" = ainda não lida; "ok" = em $TMP/release.json; "falhou" = não adianta tentar de novo
+API_FAIL=""
+SECOND_WARNED=0
+FIRST_CODE=""
 
 warn() { echo "Aviso: $*" >&2; }
 die() { echo "Erro: $*" >&2; exit 1; }
@@ -73,16 +93,131 @@ hash_of() {
   fi
 }
 
-# Baixa $1 (e $1.sha256) da release para $TMP; falha se qualquer um não vier.
-fetch_with_hash() {
-  curl -fsSL -o "$TMP/$1" "$RELEASE_BASE/$1" 2>/dev/null &&
-    curl -fsSL -o "$TMP/$1.sha256" "$RELEASE_BASE/$1.sha256" 2>/dev/null
+# Baixa $1 para $2 (curl extra em "${@:3}"). Sem -f: o 404 e o 504 não se confundem com falha de
+# rede. Define DL_CODE (HTTP, ou 000 sem resposta), DL_ERR (stderr do curl em uma linha) e DL_CLASS:
+# ok | missing (404) | down (5xx e 429) | net (sem resposta) | other. Só 2xx é sucesso; nos demais o
+# arquivo parcial é apagado.
+download() {
+  local url="$1" dest="$2" rc=0 errfile="$TMP/curl.err"
+  DL_CODE="$(curl -sS -L --retry 2 --retry-delay 1 --connect-timeout 10 -o "$dest" -w '%{http_code}' \
+    "${@:3}" "$url" 2>"$errfile")" || rc=$?
+  DL_ERR="$(tr '\n' ' ' <"$errfile" | sed 's/ *$//')"
+  rm -f "$errfile"
+  [ -n "$DL_CODE" ] || DL_CODE=000
+  case "$url" in
+    file://*) # sem HTTP: o curl dá 000 no sucesso e 37 quando o arquivo não existe
+      if [ "$rc" = 0 ]; then DL_CODE=200; elif [ "$rc" = 37 ]; then DL_CODE=404; rc=0; fi ;;
+  esac
+  if [ "$rc" = 0 ]; then
+    case "$DL_CODE" in
+      2??) DL_CLASS=ok ;;
+      404) DL_CLASS=missing ;;
+      429 | 5??) DL_CLASS=down ;;
+      *) DL_CLASS=other ;;
+    esac
+  else
+    case "$DL_CODE" in 429 | 5??) DL_CLASS=down ;; *) DL_CLASS=net ;; esac
+  fi
+  [ "$DL_CLASS" = ok ] || rm -f "$dest"
+  [ "$DL_CLASS" = ok ]
 }
 
-# Baixa um arquivo opcional da release; devolve 1 (com aviso) se a release não o publica.
+host_of() { local h="${1#*://}"; echo "${h%%/*}"; }
+
+# Mensagem de falha do último `download`: $1 = arquivo, $2 = URL, $3 = quem deveria trazê-lo.
+failure_message() {
+  case "$DL_CLASS" in
+    missing)
+      echo "$3 não traz $1 (HTTP 404). Confira a tag em https://github.com/$REPO/releases." ;;
+    down)
+      echo "o GitHub não respondeu (HTTP $DL_CODE) ao baixar $1 de $2. Tente de novo em alguns minutos.${API_FAIL:+ $API_FAIL}" ;;
+    net)
+      echo "sem resposta de $(host_of "$2") ao baixar $1: ${DL_ERR:-erro de rede}. Confira a rede.${API_FAIL:+ $API_FAIL}" ;;
+    *)
+      echo "HTTP $DL_CODE ao baixar $1 de $2.${API_FAIL:+ $API_FAIL}" ;;
+  esac
+}
+
+# --- segundo caminho: API de assets ---------------------------------------------------------------
+
+# Lê o JSON da release uma vez por execução (API_JSON); guarda a falha para as chamadas seguintes.
+api_release_json() {
+  [ "$API_JSON" != ok ] || return 0
+  [ "$API_JSON" != falhou ] || return 1
+  local url="$GITHUB_API/repos/$REPO/releases/latest"
+  [ -z "$TAG" ] || url="$GITHUB_API/repos/$REPO/releases/tags/$TAG"
+  if download "$url" "$TMP/release.json" -H 'Accept: application/vnd.github+json'; then
+    API_JSON=ok
+    return 0
+  fi
+  API_JSON=falhou
+  if [ "$DL_CLASS" = net ]; then
+    API_FAIL="A API de assets também não respondeu (${DL_ERR:-erro de rede})."
+  else
+    API_FAIL="A API de assets também falhou (HTTP $DL_CODE)."
+  fi
+  return 1
+}
+
+# Id do asset de nome $1 no JSON da release (vazio se a release não o traz).
+asset_id() {
+  node -e 'const fs = require("fs");
+const release = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+const asset = (release.assets || []).find((a) => a.name === process.argv[2]);
+if (asset) process.stdout.write(String(asset.id));' "$TMP/release.json" "$1"
+}
+
+# Baixa $1 pela API de assets para $TMP/$1. Devolve 1 e deixa FETCH_CLASS/FETCH_MSG se falhar.
+fetch_via_api() {
+  local name="$1" id
+  api_release_json || return 1
+  id="$(asset_id "$name")"
+  if [ -z "$id" ]; then
+    FETCH_CLASS=missing
+    DL_CLASS=missing
+    FETCH_MSG="a release ${TAG:-última} não traz $name (HTTP 404). Confira a tag em https://github.com/$REPO/releases."
+    return 1
+  fi
+  if [ "$SECOND_WARNED" = 0 ]; then
+    warn "download direto falhou (HTTP $FIRST_CODE); usando a API de assets do GitHub."
+    SECOND_WARNED=1
+  fi
+  download "$GITHUB_API/repos/$REPO/releases/assets/$id" "$TMP/$name" -H 'Accept: application/octet-stream' && return 0
+  API_FAIL="A API de assets também falhou (HTTP $DL_CODE)."
+  return 1
+}
+
+# Baixa o arquivo $1 da release para $TMP/$1; no 5xx, 429 ou sem resposta, tenta a API de assets (só
+# quando a base é o GitHub). Se falhar, FETCH_CLASS e FETCH_MSG dizem por quê.
+fetch_file() {
+  local name="$1" url="$RELEASE_BASE/$1"
+  API_FAIL=""
+  FETCH_CLASS="" FETCH_MSG=""
+  if download "$url" "$TMP/$name"; then return 0; fi
+  FIRST_CODE="$DL_CODE"
+  if [ "$SECOND_PATH" = 1 ] && { [ "$DL_CLASS" = down ] || [ "$DL_CLASS" = net ]; }; then
+    local direct_class="$DL_CLASS" direct_err="$DL_ERR"
+    if fetch_via_api "$name"; then return 0; fi
+    if [ -z "$FETCH_CLASS" ]; then
+      DL_CLASS="$direct_class" DL_CODE="$FIRST_CODE" DL_ERR="$direct_err"
+    fi
+  fi
+  FETCH_CLASS="$DL_CLASS"
+  if [ -z "$FETCH_MSG" ]; then FETCH_MSG="$(failure_message "$name" "$url" "a release ${TAG:-última}")"; fi
+  return 1
+}
+
+# Baixa $1 (e $1.sha256) da release para $TMP; falha (FETCH_CLASS/FETCH_MSG) se qualquer um não vier.
+fetch_with_hash() {
+  fetch_file "$1" && fetch_file "$1.sha256"
+}
+
+# Baixa um arquivo opcional da release; devolve 1 (com aviso) se a release não o publica. Qualquer
+# outra falha (GitHub fora, sem rede) é erro: não se confunde com release antiga.
 fetch_optional() {
   if fetch_with_hash "$1"; then return 0; fi
-  warn "a release (${TAG:-última}) não traz $1 (release antiga)."
+  [ "$FETCH_CLASS" = missing ] || die "$FETCH_MSG"
+  warn "a release (${TAG:-última}) não traz $1 (release antiga) (HTTP 404)."
   return 1
 }
 
@@ -97,7 +232,7 @@ verify() {
 
 download_all() {
   echo "Baixando da release ${TAG:-última}..."
-  fetch_with_hash mapping-mcp.js || die "não consegui baixar mapping-mcp.js de $RELEASE_BASE."
+  fetch_with_hash mapping-mcp.js || die "$FETCH_MSG"
   if fetch_optional setup.sh; then HAVE_SETUP=1; fi
   if fetch_optional AGENTS.mapping.md; then HAVE_BLOCK=1; fi
   if fetch_optional watch-comments.mjs; then HAVE_WATCHER=1; fi
@@ -105,8 +240,8 @@ download_all() {
     SKILL_FROM="release ${TAG:-última}"
   else
     warn "usando a skill da main."
-    curl -fsSL -o "$TMP/SKILL.md" "$RAW_BASE/.claude/skills/spec-author/SKILL.md" ||
-      die "não consegui baixar a skill de $RAW_BASE."
+    local url="$RAW_BASE/.claude/skills/spec-author/SKILL.md"
+    download "$url" "$TMP/SKILL.md" || die "$(failure_message SKILL.md "$url" "a main")"
     SKILL_FROM="main (release antiga)"
   fi
 }

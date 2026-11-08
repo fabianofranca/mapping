@@ -50,9 +50,20 @@ Toca: `tools/mapping-mcp.js` (e o `.sha256`), `.agents/skills/spec-author/`, `.c
 
 O `sha256` vem da mesma release dos arquivos que ele confere: protege contra arquivo corrompido ou incompleto, **não contra uma release adulterada**. É a mesma confiança que o `mapping-mcp.js` já exigia: quem publica a release do Mapping pode mudar o que o seu `setup.sh` baixa e roda. O script nunca executa nada que não tenha passado na conferência. Quem prefere travar a versão do próprio `setup.sh` usa `--no-self-update`.
 
+### Se o GitHub não responder
+
+O `setup.sh` mostra o motivo de cada falha de download, com o código HTTP, e tenta de novo duas vezes quando a falha pode ser passageira. Se o download direto da release responder 5xx, 429 ou não responder, ele ainda tenta a API de assets do GitHub (só `curl` e `node`, sem `gh` e sem token) e avisa: `download direto falhou (HTTP 504); usando a API de assets do GitHub`. O `sha256` de todos os arquivos é conferido do mesmo jeito, e nada muda se algo falhar. O que cada mensagem quer dizer:
+
+- `a release … não traz <arquivo> (HTTP 404)`: a release (ou a tag que você passou) não publica o arquivo; confira a tag em [Releases](https://github.com/fabianofranca/mapping/releases);
+- `o GitHub não respondeu (HTTP 5xx)`: o GitHub está fora; espere alguns minutos e rode de novo;
+- `sem resposta de <host> … Confira a rede`: DNS, conexão ou proxy; o texto do `curl` vem junto;
+- `HTTP <outro código>`: o script não interpreta (ex.: 401 e 403); a URL vem na mensagem.
+
+Último recurso, se nem a API responder: baixe a release com `gh release download mcp-vX.Y.Z` para uma pasta e rode `MAPPING_RELEASE_BASE=file://<pasta> ./setup.sh mcp-vX.Y.Z`. Quem ainda tem um `setup.sh` **antigo** continua com a falha até conseguir **um** download: o conserto só chega quando o script novo chegar pela autoatualização (ou pela linha de "Workspace criado antes disto"); para isso, use o último recurso acima.
+
 ### Variáveis só para teste
 
-`MAPPING_RELEASE_BASE` troca a origem da release (no lugar de `https://github.com/fabianofranca/mapping/releases/…`) e `MAPPING_RAW_BASE`, a da `main` (de onde vem a skill se a release não a tiver); ambas aceitam `file://`. Existem para os testes e para o testador do Mapping, **não as use no dia a dia**: apontadas para um lugar que você não controla, elas decidem o que o script baixa e roda. `MAPPING_SETUP_UPDATED` é interna (marca a segunda rodada da autoatualização).
+`MAPPING_RELEASE_BASE` troca a origem da release (no lugar de `https://github.com/fabianofranca/mapping/releases/…`) e `MAPPING_RAW_BASE`, a da `main` (de onde vem a skill se a release não a tiver); ambas aceitam `file://` (com `MAPPING_RELEASE_BASE` definida, o segundo caminho pela API de assets fica desligado). `MAPPING_GITHUB_BASE` troca `https://github.com` (o download direto) e `MAPPING_GITHUB_API`, `https://api.github.com` (o segundo caminho), para apontar o script para um servidor local. Existem para os testes e para o testador do Mapping, **não as use no dia a dia**: apontadas para um lugar que você não controla, elas decidem o que o script baixa e roda. `MAPPING_SETUP_UPDATED` é interna (marca a segunda rodada da autoatualização).
 
 ### Windows sem WSL
 

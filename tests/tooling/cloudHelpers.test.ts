@@ -364,6 +364,7 @@ describe('scripts/testing/ listado no repositório', () => {
         'cloud.d.mts',
         'cloud.mjs',
         'mcp-stdio-client.mjs',
+        'mock-github-release.mjs',
         'round-guide.d.mts',
         'round-guide.mjs',
       ].sort(),
