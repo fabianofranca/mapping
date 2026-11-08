@@ -1,4 +1,4 @@
-# Skill de implementação da fila — [Não lançado] (épico `epic/skill-fila`, PR #0, MCP 0.28.3, schema v18)
+# Skill de implementação da fila — 2026-11-08 (épico `epic/skill-fila`, PR #979, MCP 0.28.3, schema v18)
 
 ## Adicionado
 
