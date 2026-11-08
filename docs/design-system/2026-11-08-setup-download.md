@@ -1,4 +1,4 @@
-# Download do setup.sh — [Não lançado] (épico `epic/setup-download`)
+# Download do setup.sh — 2026-11-08 (épico `epic/setup-download`)
 
 ## Pendências
 

@@ -1,4 +1,4 @@
-# Download do setup.sh — [Não lançado] (épico `epic/setup-download`, PR #0, MCP 0.28.2 sem mudança, schema v18)
+# Download do setup.sh — 2026-11-08 (épico `epic/setup-download`, PR #880, MCP 0.28.2 sem mudança, schema v18)
 
 ## Corrigido
 
