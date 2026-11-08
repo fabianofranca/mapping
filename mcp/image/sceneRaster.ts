@@ -348,8 +348,7 @@ export function flattenPath(d: string): Subpath[] {
         break;
       }
       case 'A':
-        // Arco: linha reta até o ponto final.
-        lineTo({ x: ox + n[5]!, y: oy + n[6]! });
+        arcTo(lineTo, pos, n, { x: ox + n[5]!, y: oy + n[6]! });
         break;
     }
     lastCubic = cubic;
@@ -372,6 +371,94 @@ function cubicTo(lineTo: LineTo, p0: Point, c1: Point, c2: Point, p1: Point): vo
         u * u * u * p0.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * p1.y,
     });
   }
+}
+
+/** Passos por quarto de volta ao achatar um arco. */
+const ARC_STEPS_PER_QUARTER = 8;
+
+interface ArcCenter {
+  readonly cx: number;
+  readonly cy: number;
+  readonly rx: number;
+  readonly ry: number;
+  readonly phi: number;
+  readonly theta1: number;
+  readonly delta: number;
+}
+
+/** Ângulo orientado do vetor (ux, uy) ao (vx, vy). */
+const vectorAngle = (ux: number, uy: number, vx: number, vy: number): number =>
+  Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy);
+
+/**
+ * Pontos extremos do arco elíptico do SVG (`A rx ry rot large sweep x y`) em centro e ângulos
+ * (SVG 1.1, F.6.5). Raio pequeno demais cresce até caber nos dois pontos.
+ */
+function arcCenter(p0: Point, args: readonly number[], end: Point): ArcCenter {
+  let rx = Math.abs(args[0]!);
+  let ry = Math.abs(args[1]!);
+  const phi = (args[2]! * Math.PI) / 180;
+  const sweep = args[4]! !== 0;
+  const cosPhi = Math.cos(phi);
+  const sinPhi = Math.sin(phi);
+  const dx = (p0.x - end.x) / 2;
+  const dy = (p0.y - end.y) / 2;
+  const x1 = cosPhi * dx + sinPhi * dy;
+  const y1 = -sinPhi * dx + cosPhi * dy;
+  const lambda = (x1 * x1) / (rx * rx) + (y1 * y1) / (ry * ry);
+  if (lambda > 1) {
+    rx *= Math.sqrt(lambda);
+    ry *= Math.sqrt(lambda);
+  }
+  const rx2 = rx * rx;
+  const ry2 = ry * ry;
+  const sides = rx2 * y1 * y1 + ry2 * x1 * x1;
+  const sign = (args[3]! !== 0) === sweep ? -1 : 1;
+  const factor = sign * Math.sqrt(Math.max(0, (rx2 * ry2 - sides) / sides));
+  const cxp = (factor * rx * y1) / ry;
+  const cyp = (-factor * ry * x1) / rx;
+  const ux = (x1 - cxp) / rx;
+  const uy = (y1 - cyp) / ry;
+  let delta = vectorAngle(ux, uy, (-x1 - cxp) / rx, (-y1 - cyp) / ry);
+  if (!sweep && delta > 0) delta -= 2 * Math.PI;
+  if (sweep && delta < 0) delta += 2 * Math.PI;
+  return {
+    cx: cosPhi * cxp - sinPhi * cyp + (p0.x + end.x) / 2,
+    cy: sinPhi * cxp + cosPhi * cyp + (p0.y + end.y) / 2,
+    rx,
+    ry,
+    phi,
+    theta1: vectorAngle(1, 0, ux, uy),
+    delta,
+  };
+}
+
+/**
+ * Arco elíptico do SVG em segmentos. `args` traz `[rx, ry, rotação, large-arc, sweep, x, y]`
+ * (`end` é o ponto final já absoluto). Raio nulo ou pontos iguais viram linha reta.
+ */
+function arcTo(lineTo: LineTo, p0: Point, args: readonly number[], end: Point): void {
+  const flat = args[0] === 0 || args[1] === 0 || (p0.x === end.x && p0.y === end.y);
+  if (flat) {
+    lineTo(end);
+    return;
+  }
+  const { cx, cy, rx, ry, phi, theta1, delta } = arcCenter(p0, args, end);
+  const cosPhi = Math.cos(phi);
+  const sinPhi = Math.sin(phi);
+  const quarter = Math.PI / 2;
+  const steps = Math.max(
+    2,
+    Math.ceil((Math.abs(delta) / quarter) * ARC_STEPS_PER_QUARTER),
+  );
+  for (let i = 1; i < steps; i++) {
+    const t = theta1 + (delta * i) / steps;
+    lineTo({
+      x: cosPhi * rx * Math.cos(t) - sinPhi * ry * Math.sin(t) + cx,
+      y: sinPhi * rx * Math.cos(t) + cosPhi * ry * Math.sin(t) + cy,
+    });
+  }
+  lineTo(end);
 }
 
 function quadTo(lineTo: LineTo, p0: Point, c: Point, p1: Point): void {

@@ -78,7 +78,7 @@ describe('cor', () => {
 });
 
 describe('caminho SVG', () => {
-  it('achata M L H V Z e curvas em segmentos; arco vira linha reta', () => {
+  it('achata M L H V Z e curvas em segmentos', () => {
     const [square] = flattenPath('M 0 0 H 10 V 10 L 0 10 Z');
     expect(square?.closed).toBe(true);
     expect(square?.points).toEqual([
@@ -92,17 +92,62 @@ describe('caminho SVG', () => {
     );
     expect(curve?.points.length).toBeGreaterThan(40);
     expect(curve?.points.at(-1)).toEqual({ x: 40, y: 0 });
-    const [arc] = flattenPath('M0 0 a5 5 0 0 1 10 0');
-    expect(arc?.points).toEqual([
-      { x: 0, y: 0 },
-      { x: 10, y: 0 },
-    ]);
     const [relative] = flattenPath('m1 1 l2 0 2 2');
     expect(relative?.points).toEqual([
       { x: 1, y: 1 },
       { x: 3, y: 1 },
       { x: 5, y: 3 },
     ]);
+  });
+});
+
+describe('arcos do caminho SVG (achado 4 do relato da #838)', () => {
+  it('o arco a5 5 0 0 1 10 0 é o semicírculo de raio 5, não a reta até o ponto final', () => {
+    const [arc] = flattenPath('M0 0 a5 5 0 0 1 10 0');
+    const points = arc!.points;
+    expect(points.length).toBeGreaterThan(8);
+    expect(points[0]).toEqual({ x: 0, y: 0 });
+    expect(points.at(-1)!.x).toBeCloseTo(10, 6);
+    expect(points.at(-1)!.y).toBeCloseTo(0, 6);
+    for (const p of points) {
+      expect(Math.hypot(p.x - 5, p.y)).toBeCloseTo(5, 1);
+    }
+    // sweep-flag 1 passa por cima (y negativo) com a direção de x crescente
+    expect(Math.min(...points.map((p) => p.y))).toBeCloseTo(-5, 1);
+  });
+
+  it('large-arc e sweep escolhem entre os quatro arcos possíveis', () => {
+    const ys = (d: string) => flattenPath(d)[0]!.points.map((p) => p.y);
+    expect(Math.max(...ys('M0 0 a6 6 0 0 0 10 0'))).toBeCloseTo(2.68, 1);
+    expect(Math.min(...ys('M0 0 a6 6 0 1 1 10 0'))).toBeLessThan(-8);
+  });
+
+  it('raio pequeno demais é ampliado até caber nos dois pontos', () => {
+    const [arc] = flattenPath('M0 0 a1 1 0 0 1 10 0');
+    expect(Math.min(...arc!.points.map((p) => p.y))).toBeCloseTo(-5, 1);
+  });
+
+  it('a lupa do ícone Search sai com a lente vazada', () => {
+    const d =
+      'M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z';
+    const raster = canvas(24, 24);
+    const node: SceneNode = {
+      ...baseNode({
+        id: 'p',
+        name: 'p',
+        width: 24,
+        height: 24,
+        fills: [solid('#000000')],
+      }),
+      type: 'path',
+      d,
+      fillRule: 'nonzero',
+    };
+    paint(raster, node);
+    const at = (x: number, y: number) => raster.data[(y * 24 + x) * 4]!;
+    expect(at(9, 9)).toBe(255); // dentro da lente: fundo branco
+    expect(at(4, 9)).toBeLessThan(80); // aro da lente
+    expect(at(18, 18)).toBeLessThan(80); // cabo
   });
 });
 
