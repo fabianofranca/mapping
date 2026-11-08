@@ -1,9 +1,8 @@
 /// <reference types="vitest/config" />
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import type { BuildChannel } from './pwa/build';
 import { contentSecurityPolicy, serviceWorker } from './pwa/buildPlugins';
 import { tokensCss } from './pwa/tokensCss';
