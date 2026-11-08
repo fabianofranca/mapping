@@ -1155,6 +1155,24 @@ button.tree-toggle:hover {
  * Âncora (20%, ~128 px) mostra o nome; mais estreito que isso as 7 colunas já não cabem legíveis.
  */
 @container comments-window (max-width: 640px) {
+  /*
+   * Filtros em duas linhas de duas (Status | Usuário, busca | Citam a seleção) em vez de quatro
+   * empilhados: a 900 × 720 a janela tem 360 px de altura (teto de `BOTTOM_MAX_FRACTION`, 60% do
+   * corpo; subir o token não cabe) e a lista ganha 1 px por px que os filtros devolvem. Medido
+   * com o exemplo: filtros de 121 para 65 px e lista de 151 para 207 px, que comportam 4 linhas
+   * inteiras (37 + 3 × 53 px, âncoras longas quebradas) e a 900 × 720 (decisão 6 da #734).
+   */
+  .comments-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+  }
+
+  .comments-filters > * {
+    min-width: 0;
+    width: 100%;
+  }
+
   .comments-col-count,
   .comments-count,
   .comments-col-when,
