@@ -1,4 +1,4 @@
-# Workspace de mapeamentos no repositório — [Não lançado] (épico `epic/mappings-workspace`, PR #TBD, MCP 0.28.4, schema v18)
+# Workspace de mapeamentos no repositório — [Não lançado] (épico `epic/mappings-workspace`, PR #1063, MCP 0.28.4, schema v18)
 
 ## Adicionado
 
