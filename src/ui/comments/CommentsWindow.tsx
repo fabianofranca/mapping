@@ -21,6 +21,7 @@ import { Button, Choice, Select, TextField } from '../controls';
 import { useEditor } from '../EditorContext';
 import { openToolWindow } from '../toolWindowLayout';
 import { anchorLabel } from './anchorLabel';
+import { Icon } from '../icons';
 import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { summaryText } from './commentsText';
 import { relativeTime } from './relativeTime';
@@ -200,6 +201,11 @@ function Summary() {
   );
 }
 
+const STATE_ICON = {
+  human: 'threadAwaitingHuman',
+  agent: 'threadAwaitingAgent',
+} as const;
+
 function StatusBadge({ thread }: { readonly thread: Thread }) {
   if (thread.resolved !== null) {
     return (
@@ -207,6 +213,7 @@ function StatusBadge({ thread }: { readonly thread: Thread }) {
         class="comments-badge comments-badge-resolved"
         title={t('comments.badge.resolved')}
       >
+        <Icon name="check" />
         {t('comments.badge.resolved')}
       </span>
     );
@@ -220,6 +227,7 @@ function StatusBadge({ thread }: { readonly thread: Thread }) {
         : 'comments.badge.open';
   return (
     <span class={`comments-badge comments-badge-${who ?? 'open'}`} title={t(key)}>
+      {who !== null && <Icon name={STATE_ICON[who]} />}
       {t(key)}
     </span>
   );

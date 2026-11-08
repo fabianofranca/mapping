@@ -827,7 +827,8 @@ export class CanvasController {
     const componentImages =
       this.componentLayer.imageCount + this.floatingLayer.imageCount;
     const pins = this.pinLayer.size;
-    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${componentImages}:${pins}`;
+    const pinStates = this.pinLayer.states.join(',');
+    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${componentImages}:${pins}:${pinStates}`;
     if (drawn !== this.published) {
       this.published = drawn;
       const host = this.stage.container();
@@ -838,6 +839,7 @@ export class CanvasController {
       host.dataset.arrows = String(this.drawnArrows);
       host.dataset.componentImages = String(componentImages);
       host.dataset.pins = String(pins);
+      host.dataset.pinStates = pinStates;
     }
   }
 

@@ -15,6 +15,10 @@ import {
 import { EditorContext } from '../../src/ui/EditorContext';
 import { sampleProject } from '../model/fixtures';
 import { AGENT, HUMAN, T0, T1, T2, message, sampleThread } from '../model/threadFixtures';
+import {
+  AWAITING_AGENT_PATHS,
+  AWAITING_HUMAN_PATHS,
+} from '../../src/utils/threadStateGlyph';
 import { simulateModalFocus, restoreModalFocus } from './modalFocus';
 import { createHarness, renderLive, type Harness } from './harness';
 
@@ -120,6 +124,21 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(within(row).getByText('2')).toBeTruthy();
     expect(within(row).getByText(t('comments.badge.awaitingHuman'))).toBeTruthy();
     expect(within(rowOf('tc')).getByText(t('comments.badge.awaitingAgent'))).toBeTruthy();
+  });
+
+  it('o selo de estado leva o glifo do estado antes do texto, escondido dos leitores de tela', async () => {
+    await mount();
+    const glyphOf = (id: string) => {
+      const badge = rowOf(id).querySelector('.comments-badge');
+      const svg = badge?.firstElementChild;
+      return { badge, svg, d: svg?.querySelector('path')?.getAttribute('d') };
+    };
+    const human = glyphOf('ta');
+    expect(human.svg?.tagName.toLowerCase()).toBe('svg');
+    expect(human.svg?.getAttribute('aria-hidden')).toBe('true');
+    expect(human.badge?.textContent).toBe(t('comments.badge.awaitingHuman'));
+    expect(human.d).toBe(AWAITING_HUMAN_PATHS[0]);
+    expect(glyphOf('tc').d).toBe(AWAITING_AGENT_PATHS[0]);
   });
 
   it('filtro de status: todas, resolvidas, aguardando agente e humano', async () => {
