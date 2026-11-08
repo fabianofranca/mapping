@@ -103,6 +103,21 @@ Os nomes dos botões vêm da app em português. Na tela inicial: **Abrir pasta**
 
 **Roteiros.** R10.10 e R10.11.
 
+### `examples/libraries/medido/`
+
+**O que é.** O exemplo da origem **medida** (`origins[].kind: "measured"`): a árvore de retângulos de uma página (medida num navegador) vira marcações, casando cada nó com um tipo pelas `sources`. Dois tipos: **Cartão** e **Botão** (campos `label` e `tone`). A árvore de exemplo é `examples/pagina.medida.json`, ao lado da pasta da biblioteca.
+
+**Como abrir.** **Especializações** › **Aplicar pasta…** e escolher a pasta. A importação é só pelo MCP: a op `import_measured` do lote, com `file` apontando para `examples/pagina.medida.json`.
+
+**O que dá para ver.**
+
+- A origem `measured` (`system`, `kind`, `name`): o tipo sai do `id`, da classe ou do `type` do nó contra o `name` da `source`.
+- Campos lidos pelo `path` das `props`, com `values` no enum (`danger` vira `error`).
+- O nó raiz e o `x-misterioso` não têm tipo: viram aviso e são ignorados, e os filhos seguem.
+- O pertencimento sai da geometria: os botões ficam dentro do cartão porque o retângulo deles cabe no dele.
+
+**Roteiros.** R25.58 e seguintes.
+
 ## Especializações de arquivo único (`examples/specs/`)
 
 Para aplicar um arquivo solto: **Especializações** › **Aplicar especialização…**. Os dois principais também saem da própria app, em **Ajuda** (F1) › **Downloads**. Pelo MCP: `validate_specialization` e `apply_specialization`.
@@ -260,6 +275,7 @@ Sempre que existe, o exemplo é de `libraries/`. Os recursos de origem executáv
 | `appliesTo`                                                  | Transição, só em seta (`analytics`); Endpoint, só em marcação (`sdui-backend`)                                                    |
 | `component`, `doc` e `examples` (pacote de biblioteca)       | Todas as pastas de `libraries/` e a `analytics`                                                                                   |
 | `origins`, `sources` e exemplo de tela de um sistema externo | `sdui-backend`                                                                                                                    |
+| `origins[].kind: "measured"` (layout medido)                 | `medido`                                                                                                                          |
 | `migrations`                                                 | `sdui-backend`; `sdui.json` e `papeis-migracao.json` (passos de papel)                                                            |
 | `formatVersion` 1                                            | `modelo-de-dados.json`                                                                                                            |
 | `formatVersion` 4 e 5                                        | `sdui-backend` (4); `sdui.json` (5)                                                                                               |

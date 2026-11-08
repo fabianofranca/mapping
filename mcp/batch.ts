@@ -132,6 +132,7 @@ import {
   rectTooSmallDetail,
   MODEL_ERROR_HINTS,
 } from './modelErrors';
+import { measuredTree, planMeasured } from './importMeasured';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
 
@@ -382,6 +383,10 @@ function missingComponentNote(
       : 'o lote não achou os arquivos de componente dessa especialização';
   return `o tipo ${label} declara componente, mas ${reason}: a anotação foi criada sem o preview e sem o tamanho mínimo`;
 }
+
+type CreateMarkingValues = NonNullable<
+  Extract<Operation, { op: 'create_marking' }>['annotation']
+>['values'];
 
 class Batch {
   private p: Project;
@@ -1243,6 +1248,8 @@ class Batch {
         return this.createMarkingOp(op);
       case 'wrap_items':
         return this.wrapItemsOp(op);
+      case 'import_measured':
+        return this.importMeasuredOp(op);
       case 'move_marking': {
         const id = this.item(op.marking, 'm');
         const before = siblingPosition(p, id);
@@ -1795,6 +1802,56 @@ class Batch {
         op.source ? `, ${sourceLabel(toSource(op.source))}` : ''
       })`,
       created: [{ kind: 'm', id: markingId }],
+    };
+  }
+
+  /**
+   * Cria uma marcação por nó com tipo da árvore medida, cada uma por `create_marking` (o pai sai
+   * da geometria, nunca da árvore). Um nó que não cria (tamanho mínimo, por exemplo) vira aviso e
+   * os outros seguem; a prova de desenho da CF10 olha o que o lote criou.
+   */
+  private async importMeasuredOp(
+    op: Extract<Operation, { op: 'import_measured' }>,
+  ): Promise<Step> {
+    const tree = await measuredTree(op, this.io);
+    const plan = planMeasured(this.p, op, tree);
+    this.containerItem(op.container);
+    const notes = [...plan.warnings];
+    const created: { kind: CreatedKind; id: string }[] = [];
+    const rowAliases: [string, AliasTarget][] = [];
+    let project = this.p;
+    for (const marking of plan.markings) {
+      try {
+        this.p = project;
+        const step = this.createMarkingOp({
+          op: 'create_marking',
+          container: op.container,
+          rect: marking.rect,
+          annotation: {
+            type: `${marking.specId}/${marking.typeId}`,
+            values: marking.values as CreateMarkingValues,
+          },
+        });
+        project = step.project;
+        created.push(...(step.created ?? []));
+        rowAliases.push(...(step.rowAliases ?? []));
+        notes.push(...(step.notes ?? []));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        notes.push(`${marking.path}: não criada (${message})`);
+      }
+    }
+    const made = created.filter((c) => c.kind === 'm').length;
+    return {
+      project,
+      notes,
+      created,
+      rowAliases,
+      description: `Importar layout medido "${op.system}": ${made} marcação(ões) criada(s)${
+        plan.markings.length > made
+          ? `, ${plan.markings.length - made} não criada(s)`
+          : ''
+      }`,
     };
   }
 

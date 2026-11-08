@@ -2029,7 +2029,19 @@ function checkMigrations(
 }
 
 /** Cada problema `"caminho: mensagem"` do `parseOrigins` vira uma issue no caminho exato. */
-function addOriginIssues(raw: unknown, ctx: z.RefinementCtx): void {
+function addOriginIssues(raw: unknown, ctx: z.RefinementCtx, formatVersion: number): void {
+  // `kind` (origem `measured`) é da v15; antes dela a chave é erro no caminho exato.
+  if (formatVersion < 15 && Array.isArray(raw)) {
+    raw.forEach((item, index) => {
+      if (isRecord(item) && item.kind !== undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['origins', index, 'kind'],
+          message: 'só é permitido com formatVersion 15',
+        });
+      }
+    });
+  }
   for (const problem of parseOrigins(raw, 'origins').problems) {
     const cut = problem.indexOf(': ');
     ctx.addIssue({
@@ -2621,7 +2633,7 @@ export const specSchema = z
       }
       checkNoLibraryKeys(spec.layers, ctx);
     } else if (spec.origins !== undefined) {
-      addOriginIssues(spec.origins, ctx);
+      addOriginIssues(spec.origins, ctx, spec.formatVersion);
     }
     if (spec.formatVersion >= 3) {
       checkSources(spec.layers, spec.formatVersion, executable, ctx);

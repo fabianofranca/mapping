@@ -441,6 +441,42 @@ export const operationSchema = z.discriminatedUnion('op', [
       ),
   }),
   z.object({
+    op: z.literal('import_measured'),
+    container: item('Container').describe(
+      'Container onde as marcações nascem (referência, id ou apelido `$nome`). Os retângulos da árvore são em pixels dele, depois de `scale` e `offset`.',
+    ),
+    system: z
+      .string()
+      .describe(
+        'O `system` de uma origem `kind: "measured"` declarada por uma especialização aplicada (`origins`): as `sources` dos tipos com esse `system` dizem como casar cada nó e cada campo.',
+      ),
+    tree: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe(
+        'A árvore medida inline: `{ type, id?, classes?, rect: { x, y, width, height }, props?, children? }` (nó raiz). Use `tree` OU `file`, nunca os dois.',
+      ),
+    file: z
+      .string()
+      .optional()
+      .describe(
+        'Um `.json` com a árvore medida dentro das raízes (relativo à pasta do projeto ou a uma raiz, ou absoluto). Use `file` OU `tree`.',
+      ),
+    offset: z
+      .object({ x: z.number(), y: z.number() })
+      .optional()
+      .describe(
+        'Deslocamento em px do container, somado depois da escala (padrão 0, 0).',
+      ),
+    scale: z
+      .number()
+      .positive()
+      .optional()
+      .describe(
+        'Multiplicador dos retângulos medidos (padrão 1; 2 para uma captura em 2×).',
+      ),
+  }),
+  z.object({
     op: z.literal('wrap_items'),
     as: alias,
     items: z
