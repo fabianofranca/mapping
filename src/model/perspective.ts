@@ -1,4 +1,4 @@
-import { imageCanvasRect, snapPlacement, toCanvasRect } from './geometry';
+import { imageCanvasRect, toCanvasRect } from './geometry';
 import { projectIndex, type ProjectIndex } from './projectIndex';
 import type {
   Arrow,
@@ -110,11 +110,7 @@ function movedContainer(c: ProjectContainer, d: CanvasPosition): ProjectContaine
   if (isStill(d)) return c;
   return {
     ...c,
-    placement: snapPlacement({
-      ...c.placement,
-      x: c.placement.x + d.x,
-      y: c.placement.y + d.y,
-    }),
+    placement: { ...c.placement, x: c.placement.x + d.x, y: c.placement.y + d.y },
   };
 }
 

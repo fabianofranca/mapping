@@ -7,7 +7,6 @@ import {
   rectsOverlap,
   right,
   snapNearInteger,
-  snapPlacement,
 } from './geometry';
 import { markingCanvasRectOf, settleHierarchy } from './hierarchySettle';
 import { floatingSpotNear } from './markings';
@@ -314,9 +313,7 @@ function moveRootTo(p: Project, rootId: string, at: CanvasPosition): Project {
     return {
       ...p,
       containers: p.containers.map((c) =>
-        c.id === rootId
-          ? { ...c, placement: snapPlacement({ ...c.placement, x: at.x, y: at.y }) }
-          : c,
+        c.id === rootId ? { ...c, placement: { ...c.placement, x: at.x, y: at.y } } : c,
       ),
     };
   }

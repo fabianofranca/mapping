@@ -7,7 +7,6 @@ import {
   imagePixelRect,
   rectsOverlap,
   right,
-  snapPlacement,
   toCanvasRect,
 } from './geometry';
 import { IMAGE_GAP } from './containers';
@@ -292,7 +291,7 @@ function repairRound(
       let rect = imageCanvasRect(image, image.placement);
       if (placed.some((r) => rectsOverlap(r, rect))) {
         const x = Math.max(...placed.map(right)) + IMAGE_GAP;
-        next = { ...image, placement: snapPlacement({ ...image.placement, x }) };
+        next = { ...image, placement: { ...image.placement, x } };
         rect = imageCanvasRect(next, next.placement);
         record(out, 'moved', 'images-overlap', 'image', image);
       }

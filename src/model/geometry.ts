@@ -56,8 +56,8 @@ const EPSILON = 1e-6;
  */
 export function snapNearInteger(v: number, eps: number = EPSILON): number {
   const rounded = Math.round(v);
-  if (!Number.isFinite(v) || Math.abs(v - rounded) >= eps) return v;
-  return rounded === 0 ? 0 : rounded;
+  if (!(Math.abs(v - rounded) < eps)) return v; // também devolve v se não for finito
+  return rounded || 0;
 }
 
 /**
