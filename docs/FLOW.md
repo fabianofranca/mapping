@@ -28,6 +28,8 @@ Implemente a etapa #<etapa> no fluxo automatizado. Me chame só para confirmar o
 
 Para confirmar o merge final, o dono responde no chat de implementação: `pode mesclar`.
 
+Para implementar em sequência todas as `ready` (num chat Sonnet no modo Auto): `/implementar-fila`. O skill (`.claude/skills/implementar-fila/SKILL.md`) ordena a fila pela linha `**Depende de:**`, pela severidade e pelo impacto, mostra a ordem e então faz, etapa por etapa, o papel deste orquestrador: fases, testador, correções até zerar os ❌ (a decisão do dono vira `bug` e a fila segue) e fechamento. O painel "Fila de desenvolvimento" é atualizado a cada passo. O merge de cada épico é pedido ao dono pelo seletor de perguntas, salvo quando ele escreve `mesclar=auto` na chamada. Outros argumentos: `paralelo=N` (padrão 2, com arquivos disjuntos), `modelo=tabela`, `sem-confirmar`, `painel=<url>`. Quando o contexto passa de 60%, o coordenador passa a fila a uma sessão nova (`retomar`).
+
 Depois do merge, o orquestrador confere a Release do MCP: acha a execução do "MCP release" do commit do merge (`actions_list`), espera por ela (`send_later` de 15 min) e, com versão nova, confere que `mcp-v<versão>` existe (`get_release_by_tag`), não é pre-release, traz `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` e `watch-comments.mjs` (cada um com o `.sha256`) e que as rc da versão sumiram; sem versão nova, que o `release` foi pulado. Em falha, ou com a execução ausente, notifica o dono com o link da execução e o plano B manual do `docs/MCP.md`. O resultado entra no comentário de fechamento e na notificação final.
 
 ## Para a sessão da fase
