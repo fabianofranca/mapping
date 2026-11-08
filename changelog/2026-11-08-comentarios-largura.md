@@ -1,4 +1,4 @@
-# Janela Comentários na largura — [Não lançado] (épico `epic/comentarios-largura`, PR #0, MCP 0.28.2 sem mudança, schema v18)
+# Janela Comentários na largura — 2026-11-08 (épico `epic/comentarios-largura`, PR #885, MCP 0.28.2 sem mudança, schema v18)
 
 ## Alterado
 

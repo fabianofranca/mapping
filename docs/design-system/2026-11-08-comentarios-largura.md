@@ -1,4 +1,4 @@
-# Janela Comentários na largura — [Não lançado] (épico `epic/comentarios-largura`)
+# Janela Comentários na largura — 2026-11-08 (épico `epic/comentarios-largura`)
 
 ## Pendências
 
@@ -12,8 +12,8 @@
 
 ## Sincronização
 
-Ainda não aplicada (aplicada no fechamento do épico).
+Nenhuma gravação no artefato Mapping do Claude Design: o artefato é curado à mão e a sessão do orquestrador não tem acesso a ele. As pendências acima passam para "Ficou sem gravar", para quem edita o artefato aplicar.
 
 ## Ficou sem gravar
 
-Nada.
+Todas as pendências acima (guia `CommentsWindow`: colunas, layout estreito, filtros, filtro Usuário, linha resolvida e célula da âncora; guia `BottomTabs`/`Tabs`: contador; token `size-tw-bottom` de 208 para 360 px).
