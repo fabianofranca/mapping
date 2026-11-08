@@ -7,6 +7,7 @@ import {
   containerDeletionImpact,
   createMarking,
   itemsDeletionImpact,
+  limitItemsMove,
   markingDeletionImpact,
   moveItems,
   movingItems,
@@ -682,5 +683,60 @@ describe('setItemsLocked', () => {
     // Só containers: as marcações mantêm o array.
     const r = setItemsLocked(p, [img('A')], true);
     expect(r.markings).toBe(p.markings);
+  });
+});
+
+describe('limitItemsMove: o arrasto que encosta', () => {
+  it('deslocamento que cabe fica como está', () => {
+    const p = multiProject();
+    expect(limitItemsMove(p, [img('A')], 500, 20)).toEqual({ dx: 500, dy: 20 });
+    expect(limitItemsMove(p, [img('A')], -300, -40)).toEqual({ dx: -300, dy: -40 });
+  });
+
+  it('sobreporia um container fixo: vira o maior sem sobreposição e encosta (distância 0)', () => {
+    const p = multiProject();
+    // A (0..1000) contra B (2000..3000): só anda 1000 e as bordas ficam iguais.
+    const d = limitItemsMove(p, [img('A')], 1500, 0);
+    expect(d).toEqual({ dx: 1000, dy: 0 });
+    const q = expectValid(moveItems(p, [img('A')], d.dx, d.dy));
+    expect(image(q, 'A').placement.x + 1000).toBe(image(q, 'B').placement.x);
+    // Para a esquerda, B contra A: encosta na borda direita de A.
+    expect(limitItemsMove(p, [img('B')], -1500, 0)).toEqual({ dx: -1000, dy: 0 });
+  });
+
+  it('desliza no outro eixo: encosta em x e o y pedido continua', () => {
+    const p = multiProject();
+    expect(limitItemsMove(p, [img('A')], 1500, 300)).toEqual({ dx: 1000, dy: 300 });
+    // Contra um obstáculo em cima/baixo: o y encosta e o x anda inteiro.
+    const q = multiProject();
+    const d = limitItemsMove(q, [img('A')], 400, 1500);
+    expect(d.dx).toBe(400);
+    expect(d.dy).toBe(1500);
+  });
+
+  it('a seleção junta anda o menor deslocamento de quem encosta primeiro', () => {
+    const p = multiProject();
+    // B (2000..3000) contra C fixo (4000): 1000; A vai junto com o mesmo deslocamento.
+    expect(limitItemsMove(p, [img('A'), img('B')], 1500, 0)).toEqual({ dx: 1000, dy: 0 });
+  });
+
+  it('com marcação do canvas na seleção o deslocamento é inteiro (nunca para dentro do obstáculo)', () => {
+    const p = multiProject();
+    const d = limitItemsMove(p, [img('A'), mark('N')], 1500.7, 0);
+    expect(Number.isInteger(d.dx)).toBe(true);
+    expect(d.dx).toBeLessThanOrEqual(1000);
+    expect(() => moveItems(p, [img('A'), mark('N')], d.dx, d.dy)).not.toThrow();
+  });
+
+  it('destino livre depois de passar por cima de um container fica como pedido', () => {
+    const p = multiProject();
+    // A (0..1000) vai para o vão entre B (2000..3000) e C (4000): 3000..4000, sem sobrepor.
+    expect(limitItemsMove(p, [img('A')], 3000, 0)).toEqual({ dx: 3000, dy: 0 });
+  });
+
+  it('sem container na seleção, ou deslocamento zero, devolve o pedido', () => {
+    const p = multiProject();
+    expect(limitItemsMove(p, [mark('N')], 30, 0)).toEqual({ dx: 30, dy: 0 });
+    expect(limitItemsMove(p, [img('A')], 0, 0)).toEqual({ dx: 0, dy: 0 });
   });
 });

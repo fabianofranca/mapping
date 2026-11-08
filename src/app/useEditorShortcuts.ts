@@ -43,7 +43,10 @@ import {
   type Shortcut,
 } from './shortcuts';
 import { useApplyAccepted, useDecide } from '../ui/review/useReview';
-import { toggleReviewLegend } from '../ui/review/ReviewCanvasControls';
+import {
+  closeReviewLegendOnEscape,
+  toggleReviewLegend,
+} from '../ui/review/ReviewCanvasControls';
 import { arrangeMarking, canArrangeMarking } from '../ui/arrange';
 import { canWrapNow, currentWrapItems, wrapItemsNow } from './wrapSelection';
 import {
@@ -246,6 +249,8 @@ export function useEditorShortcuts(
         case 'escape':
           // Gesto em andamento: cancela. Senão, com vários itens volta ao primário; por fim limpa.
           if (canvas.current?.cancelInteraction()) return;
+          // A legenda da revisão aberta, com o foco no botão ou no canvas: o Esc fecha só ela.
+          if (closeReviewLegendOnEscape(ui)) return;
           // O Comentar armado: o Esc desarma e volta à ferramenta de antes.
           if (cancelComment(ui)) return;
           // No modo visualização o Esc sai do modo (o painel aberto já consumiu o Esc dele).

@@ -105,6 +105,36 @@ function assertNoViewOverlap(
   }
 }
 
+/**
+ * O deslocamento `dx`, `dy` das `roots` na vista, reduzido ao maior sem sobrepor um container da
+ * vista que não anda (eixo a eixo: encosta e desliza). Com raiz que é marcação do canvas o
+ * deslocamento é inteiro, como em `moveRootsInPerspective`. Deslocamento que cabe volta igual.
+ */
+function touchingViewDelta(
+  p: Project,
+  perspective: Perspective,
+  roots: readonly string[],
+  dx: number,
+  dy: number,
+): { readonly dx: number; readonly dy: number } {
+  const members = model.projectIndex(p).rootMembers;
+  const moved = new Set<string>();
+  for (const root of roots) {
+    for (const c of members.get(root)?.containers ?? []) moved.add(c.id);
+  }
+  const whole = roots.some((root) => model.isMarkingRoot(p, root));
+  const shown = model.perspectiveView(p, perspective).containers;
+  const footprint = (c: ProjectContainer) => model.imageCanvasRect(c, c.placement);
+  const round = whole ? Math.round : (v: number) => v;
+  const limited = model.slideToTouch(
+    shown.filter((c) => moved.has(c.id)).map(footprint),
+    shown.filter((c) => !moved.has(c.id)).map(footprint),
+    round(dx),
+    round(dy),
+  );
+  return whole ? { dx: Math.trunc(limited.dx), dy: Math.trunc(limited.dy) } : limited;
+}
+
 /** Anda as raízes na perspectiva (`moveRootsInPerspective`) e confere a sobreposição na vista. */
 function moveRootsChecked(
   p: Project,
@@ -185,10 +215,19 @@ export function placementInView(
   const shown =
     viewPlacement(p, perspective.id, containerId) ?? model.fail('not-found', containerId);
   model.requireUnlocked(model.canEditImagePlacement(p, containerId));
-  const dx = placement.x - shown.x;
-  const dy = placement.y - shown.y;
   const isRoot = model.isRootId(p, containerId);
   const rescaled = placement.scale !== own.placement.scale;
+  // Mover (mesma escala) encosta no container da vista que o ponteiro atravessaria.
+  const wanted = { dx: placement.x - shown.x, dy: placement.y - shown.y };
+  const { dx, dy } = rescaled
+    ? wanted
+    : touchingViewDelta(
+        p,
+        perspective,
+        [rootOrFail(p, containerId)],
+        wanted.dx,
+        wanted.dy,
+      );
   let next = p;
   if (rescaled) {
     const base = isRoot
@@ -365,6 +404,15 @@ function splitMoving(
   return { roots: [...roots], rest };
 }
 
+/** O arrasto aceita qualquer número finito; o passo das setas, só inteiros. */
+function assertValidDelta(
+  mode: 'move' | 'nudge',
+  delta: { readonly dx: number; readonly dy: number },
+): void {
+  const valid = mode === 'move' ? Number.isFinite : Number.isInteger;
+  if (!valid(delta.dx) || !valid(delta.dy)) model.fail('invalid-placement');
+}
+
 /**
  * Arrasto conjunto (`'move'`, unidades do canvas) ou passo das setas (`'nudge'`, inteiros) com uma
  * perspectiva aberta: as raízes dos containers e das marcações do canvas andam na perspectiva
@@ -380,11 +428,14 @@ export function itemsMoveInView(
   options: SettleOptions,
 ): Project | null {
   if (perspective === null) return null;
-  const { dx, dy } = delta;
-  const valid = mode === 'move' ? Number.isFinite : Number.isInteger;
-  if (!valid(dx) || !valid(dy)) model.fail('invalid-placement');
-  if (dx === 0 && dy === 0) return p;
+  assertValidDelta(mode, delta);
+  if (delta.dx === 0 && delta.dy === 0) return p;
   const { roots, rest } = splitMoving(p, items);
+  // O arrasto encosta (decisão 4 da etapa #764); o passo das setas segue recusando.
+  const { dx, dy } =
+    mode === 'move'
+      ? touchingViewDelta(p, perspective, roots, delta.dx, delta.dy)
+      : delta;
   let next = p;
   if (rest.length > 0) {
     next =
