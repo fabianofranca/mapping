@@ -1,14 +1,24 @@
 name: MCP release
 
-# Tag `mcp-v<versão>` (ex: mcp-v0.3.0): gera o `mapping-mcp.js` e o anexa à Release.
-# A versão da tag precisa ser a de `SERVER_VERSION` em `mcp/version.ts`. Só `x.y.z` dispara a
-# estável: as pre-releases `mcp-v<versão>-rc.<n>` e `mcp-snapshot-pr<N>` (`mcp-prerelease.yml`)
-# nunca a disparam. Ao publicar, apaga as rc (release e tag) da mesma versão.
-# A Release pode ter sido criada antes pela tela do GitHub (que cria a tag junto): nesse
-# caso os arquivos são anexados a ela. `workflow_dispatch` gera e anexa os arquivos de uma
-# tag que já existe (ex.: uma Release que ficou sem eles), sem apagar nem recriar nada.
+# Estável `mcp-v<versão>` (ex: mcp-v0.3.0): gera o `mapping-mcp.js` e o anexa à Release. A versão
+# da tag precisa ser a de `SERVER_VERSION` em `mcp/version.ts`. Só `x.y.z` dispara a estável: as
+# pre-releases `mcp-v<versão>-rc.<n>` e `mcp-snapshot-pr<N>` (`mcp-prerelease.yml`) nunca a
+# disparam. Ao publicar, apaga as rc (release e tag) da mesma versão.
+#
+# Três origens:
+# - push na `main` (o merge de um épico ou do Dependabot; o ruleset só aceita esses): o job `decide`
+#   confere se a tag da `SERVER_VERSION` existe. Existe: termina verde com um aviso e o `release` é
+#   pulado. Não existe: o `release` cria a tag e a Release juntas (`gh release create --target`),
+#   porque uma tag criada pelo GITHUB_TOKEN não dispara outro workflow (etapa #920).
+# - push de uma tag `mcp-v*` criada à mão (plano B): publica essa tag, como antes. A Release pode
+#   ter sido criada antes pela tela do GitHub (que cria a tag junto): os arquivos são anexados a ela.
+# - `workflow_dispatch`: gera e anexa os arquivos de uma tag que já existe (ex.: uma Release que
+#   ficou sem eles), sem apagar nem recriar nada.
+# Nenhum dado de PR entra em `run:`: só `github.sha`, `github.ref_name` e as saídas do `decide`,
+# passadas por `env:`.
 on:
   push:
+    branches: [main]
     tags: ['mcp-v*']
   workflow_dispatch:
     inputs:
@@ -17,13 +27,60 @@ on:
         required: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
+  decide:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.manual.outputs.tag || steps.main.outputs.tag }}
+      sha: ${{ steps.main.outputs.sha }}
+      publish: ${{ steps.manual.outputs.publish || steps.main.outputs.publish }}
+    steps:
+      # Tag manual ou `workflow_dispatch`: publica a tag do evento, como antes.
+      - name: Tag do evento
+        id: manual
+        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          {
+            echo "tag=$TAG"
+            echo "publish=true"
+          } >> "$GITHUB_OUTPUT"
+
+      # Push na main: a tag da versão do commit já existe?
+      - uses: actions/checkout@v7
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          ref: ${{ github.sha }}
+          sparse-checkout: |
+            mcp/version.ts
+            scripts/release
+      - name: Decidir se publica
+        id: main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          node scripts/release/stableRelease.mjs decide \
+            --version-file mcp/version.ts --sha "$SHA" --output "$GITHUB_OUTPUT"
+
+  release:
+    needs: decide
+    if: needs.decide.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Dois pushes seguidos na main com a mesma versão nova não publicam duas vezes: o segundo
+    # espera, acha a tag e só anexa (`--clobber`).
+    concurrency:
+      group: mcp-release-${{ needs.decide.outputs.tag }}
+      cancel-in-progress: false
     env:
-      TAG: ${{ inputs.tag || github.ref_name }}
+      TAG: ${{ needs.decide.outputs.tag }}
     steps:
       - name: Conferir o nome da tag
         run: |
@@ -32,9 +89,10 @@ jobs:
             exit 1
           fi
 
+      # Push na main: o commit do merge (o `sha` do `decide`); nos outros casos, a tag.
       - uses: actions/checkout@v7
         with:
-          ref: refs/tags/${{ env.TAG }}
+          ref: ${{ needs.decide.outputs.sha || format('refs/tags/{0}', env.TAG) }}
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -78,7 +136,12 @@ jobs:
       - name: Publicar na Release
         env:
           GH_TOKEN: ${{ github.token }}
+          FROM_MAIN: ${{ needs.decide.outputs.sha != '' }}
         run: |
+          if [ "$FROM_MAIN" = true ] && git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            # Outra execução criou a tag no meio do caminho: a Release sai nela, sem mover a tag.
+            echo "::notice::A tag $TAG apareceu durante a execução; só anexa os arquivos."
+          fi
           assets="$(node scripts/release/workspaceAssets.mjs dist-mcp)"
           mapfile -t assets <<< "$assets"
           if gh release view "$TAG" > /dev/null 2>&1; then
@@ -89,6 +152,7 @@ jobs:
             gh release create "$TAG" \
               dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" \
               --title "$TAG" \
+              --target "$(git rev-parse HEAD)" \
               --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace, cada um com o \`.sha256\`. Instruções em docs/MCP.md. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           fi
 
