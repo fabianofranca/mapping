@@ -185,8 +185,10 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
               <span class="canvas-bar-low">
                 <PinsButton />
               </span>
-              <ViewModeButton />
-              <ViewModePanel />
+              <span class="canvas-bar-low">
+                <ViewModeButton />
+                <ViewModePanel />
+              </span>
               <span class="canvas-bar-low">
                 <FitButton />
               </span>
