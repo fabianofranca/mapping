@@ -1,4 +1,4 @@
-# AGENTS.md do workspace acertado — [Não lançado] (épico `epic/agents-md-biblioteca`, PR #0, MCP 0.28.0 sem mudança, schema v18)
+# AGENTS.md do workspace acertado — 2026-11-08 (épico `epic/agents-md-biblioteca`, PR #873, MCP 0.28.0 sem mudança, schema v18)
 
 ## Corrigido
 

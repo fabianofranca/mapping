@@ -1,4 +1,4 @@
-# AGENTS.md do workspace acertado — [Não lançado] (épico `epic/agents-md-biblioteca`)
+# AGENTS.md do workspace acertado — 2026-11-08 (épico `epic/agents-md-biblioteca`)
 
 ## Pendências
 
