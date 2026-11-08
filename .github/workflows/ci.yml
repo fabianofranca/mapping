@@ -7,6 +7,14 @@ name: CI
 # de validações, que não diverge entre o PR e a publicação.
 on:
   pull_request:
+    # `edited` entra só pela troca de base (etapa #974): um PR de `fix/x` com base `epic/y` passa
+    # no job `epic`, e ao trocar a base para a `main` o CI precisa rodar de novo. Na edição de
+    # título ou corpo (sem `changes.base`) todo job é pulado pela condição `github.event.action != 'edited' || github.event.changes.base` abaixo.
+    # Risco conhecido e aceito pelo dono (2026-11-08): o GitHub conta job pulado como sucesso,
+    # então editar o título de um PR com `check` ou `epic` vermelho cria checks "pulados" mais
+    # novos no mesmo commit, que contam como verdes. No `workflow_call` (deploy) não há
+    # `github.event.action`, e a condição é verdadeira.
+    types: [opened, synchronize, reopened, edited]
   workflow_call:
     inputs:
       ref:
@@ -27,7 +35,10 @@ concurrency:
   # Num PR, o ref (`refs/pull/<n>/merge`) cancela o commit superado. No deploy
   # (`workflow_call`), o evento é o do Deploy (push na main ou workflow_dispatch) e
   # `inputs.ref` separa as duas chamadas dele (main e preview).
-  group: ci-${{ github.event_name }}-${{ github.ref }}-${{ inputs.ref }}
+  # A edição sem troca de base ganha um sufixo único (`run_id`): sua execução (toda pulada) não
+  # cancela o CI em andamento do mesmo commit. A troca de base fica no grupo de sempre e
+  # substitui a execução anterior.
+  group: ci-${{ github.event_name }}-${{ github.ref }}-${{ inputs.ref }}${{ github.event.action == 'edited' && !github.event.changes.base && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 jobs:
@@ -36,7 +47,7 @@ jobs:
   # do Dependabot (`dependabot/*`), pequenos e aprovados pelo dono. No deploy
   # (`workflow_call`) não há PR: o job é pulado, o que o GitHub conta como sucesso.
   epic:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && (github.event.action != 'edited' || github.event.changes.base)
     runs-on: ubuntu-latest
     steps:
       - name: Origem do PR
@@ -125,6 +136,7 @@ jobs:
   # `static`, `test` (+ `coverage`) e `build`. Os nomes dos checks obrigatórios (`check`,
   # `e2e`, `epic`) não mudam (etapa #375, decisão 4).
   static:
+    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -159,6 +171,7 @@ jobs:
   # (tests/support/timedSequencer.ts; `npm run test:durations` regenera os tempos); cada um
   # sobe o blob com os dados de cobertura, sem gerar relatório (o job `coverage` junta e relata).
   test:
+    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -243,10 +256,11 @@ jobs:
           if-no-files-found: ignore
 
   build:
+    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     env:
-      # Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64). Só aqui. Subido para 1.703.936 (1,625 MiB) na etapa #559 (decisão do dono, 2026-11-05): o épico estava a 151 bytes do teto e a PD5 soma ~7,4 KB de código real. Subido para 1.769.472 (1.728 KiB) na CM5 da etapa #645: o compositor com chips, o `@`, os menus de citação e o chip vivo somam ~38 KB de código real (1.738.403 bytes), com ~31 KB de folga. Subido para 1.867.776 (1.824 KiB) na PE3 da etapa #659: a interface das perspectivas (seletor, três diálogos, submenu, seção e aviso nos Detalhes, selo e área de chegada no canvas) soma ~66 KB de código real (1.804.237 bytes), com ~63 KB de folga.
-      INDEX_HTML_MAX_BYTES: 1867776
+      # Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64). Só aqui. Subido para 1.703.936 (1,625 MiB) na etapa #559 (decisão do dono, 2026-11-05): o épico estava a 151 bytes do teto e a PD5 soma ~7,4 KB de código real. Subido para 1.769.472 (1.728 KiB) na CM5 da etapa #645: o compositor com chips, o `@`, os menus de citação e o chip vivo somam ~38 KB de código real (1.738.403 bytes), com ~31 KB de folga. Subido para 1.867.776 (1.824 KiB) na PE3 da etapa #659: a interface das perspectivas (seletor, três diálogos, submenu, seção e aviso nos Detalhes, selo e área de chegada no canvas) soma ~66 KB de código real (1.804.237 bytes), com ~63 KB de folga. Subido para 1.884.160 (1.840 KiB) na etapa #842 (decisão do dono, 2026-11-08): a `main` já estava a ~300 bytes do teto e os atributos `data-viewport` e `data-selection-box` somam ~700 bytes.
+      INDEX_HTML_MAX_BYTES: 1884160
     steps:
       - uses: actions/checkout@v7
         with:
@@ -292,7 +306,7 @@ jobs:
   # Agregador: o check obrigatório `check` falha se algum dos quatro jobs não terminou em sucesso.
   check:
     needs: [static, test, coverage, build]
-    if: always()
+    if: ${{ always() && (github.event.action != 'edited' || github.event.changes.base) }}
     runs-on: ubuntu-latest
     steps:
       - name: Todos os jobs em sucesso
@@ -310,6 +324,7 @@ jobs:
   # Ponta a ponta no `dist/index.html` final, no desktop (a app é só desktop desde a fase 5.8).
   # Só roda aqui: o ambiente de desenvolvimento pode não conseguir baixar o navegador.
   e2e:
+    if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

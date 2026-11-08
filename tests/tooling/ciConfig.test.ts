@@ -55,7 +55,7 @@ describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
 
   it('orçamento do dist/index.html num só lugar, com o tamanho no resumo do job', () => {
     expect(ci.match(/INDEX_HTML_MAX_BYTES: (\d+)/)?.[1]).toBe(
-      String(1.78125 * 1024 * 1024),
+      String(1.796875 * 1024 * 1024),
     );
     expect(ci.match(/INDEX_HTML_MAX_BYTES:/g)).toHaveLength(1);
     expect(ci).toContain('GITHUB_STEP_SUMMARY');
@@ -291,6 +291,39 @@ describe('uma validação por commit', () => {
     expect(on).not.toMatch(/^ {2}push:/m);
   });
 
+  // Etapa #974, decisão 6: o CI ouve `edited`, mas só roda quando a base do PR mudou.
+  describe('CI na troca de base do PR', () => {
+    const condition = "github.event.action != 'edited' || github.event.changes.base";
+
+    it('o pull_request declara opened, synchronize, reopened e edited', () => {
+      const on = ci.slice(ci.indexOf('\non:'), ci.indexOf('\npermissions:'));
+      expect(on).toMatch(
+        /^ {2}pull_request:\n(?: {4}#.*\n)* {4}types: \[opened, synchronize, reopened, edited\]/m,
+      );
+    });
+
+    it.each(['epic', 'static', 'test', 'build', 'e2e', 'check'])(
+      'o job %s só roda na edição que troca a base',
+      (name) => {
+        expect(job(ci, name)).toContain(condition);
+      },
+    );
+
+    it('o coverage continua pulando junto com o test', () => {
+      expect(job(ci, 'coverage')).toMatch(/needs\.test\.result != 'skipped'/);
+    });
+
+    it('o grupo de concurrency separa a edição sem troca de base', () => {
+      const concurrency = ci.slice(ci.indexOf('\nconcurrency:'), ci.indexOf('\njobs:'));
+      expect(concurrency).toContain('github.run_id');
+      expect(concurrency).toContain('github.event.changes.base');
+    });
+
+    it('o comentário registra o risco aceito do check pulado', () => {
+      expect(ci).toMatch(/conta job pulado como sucesso/);
+    });
+  });
+
   it('o preview sai por workflow_run do CI, só depois de sucesso num PR do próprio repositório', () => {
     expect(preview).toMatch(
       /^ {2}workflow_run:\n {4}workflows: \[CI\]\n {4}types: \[completed\]/m,
@@ -388,7 +421,7 @@ describe('job check em paralelo e caches', () => {
   it('o check agrega os quatro jobs, sempre, e falha se algum não for success', () => {
     const check = block('check');
     expect(check).toMatch(/needs: \[static, test, coverage, build\]/);
-    expect(check).toMatch(/if: always\(\)/);
+    expect(check).toMatch(/if: \$\{\{ always\(\) &&/);
     expect(check).toContain('!= "success"');
     expect(check).toContain('exit 1');
   });

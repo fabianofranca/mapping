@@ -2434,7 +2434,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 
 - **O que é:** o passo usa um diálogo do sistema ou do navegador que a página não opera: o seletor de pasta ou de arquivo, a permissão da pasta ("Permitir que o site veja/edite os arquivos?"), o "Salvar como" da exportação, a confirmação de instalar o app e o "Sair da página?". Nos roteiros principais (R0 a R25), todo passo [pessoa] tem um substituto para o agente (receita da nuvem abaixo, shell ou cliente por stdio), e um teste do repositório impede passo "sem substituto" ali. A marca **[pessoa]** fica no guia para quem testa à mão.
 - **Nome da ação nos roteiros:** o "ou `select_folder`", "ou `open_file`", "ou `save_file`", "ou `accept_permission_prompt`" e "ou `cancel_dialog`" que acompanham a marca [pessoa] nomeiam a receita da nuvem que faz o papel da pessoa (tabela em "Diálogos nativos na nuvem (Xvfb)", mais abaixo).
-- **`data-arrows` e `data-components` do `.canvas-host` atualizam um quadro depois da ação** (clique, atalho, gravação): leia depois de esperar um quadro (`await page.waitForTimeout(100)` ou `requestAnimationFrame`); a leitura imediata devolve o valor anterior.
+- **`data-arrows`, `data-components`, `data-viewport` e `data-selection-box` do `.canvas-host` atualizam um quadro depois da ação** (clique, atalho, gravação): leia depois de esperar um quadro (`requestAnimationFrame`, como na receita abaixo; `waitForTimeout(100)` também serve); a leitura imediata devolve o valor anterior.
 - **Atalhos de uma letra** (V, R, A…) só valem com **nenhum campo focado**: com o foco num campo de texto a letra é digitada. Clique no canvas ou no título de uma janela antes de usar o atalho.
 - **Nenhum passo dos roteiros principais é inteiro da pessoa.** O R0.5 (`index.html` por `file://`) e o R6.2 (fechar a aba no meio da gravação) não funcionaram sozinhos e foram para os roteiros sob demanda RF e RA, por decisão do dono. O R6.2 ganhou o e2e `tests/e2e/folder.spec.ts` no lugar.
 - **Se um passo novo não funcionar sozinho** (o endereço não abre; o diálogo nativo não aparece), marque "não executado (vai para os roteiros sob demanda)", registre o que falhou e proponha mover o passo. Se o teste for relevante (perda de dados, integridade do `mapping.json`, segurança), **avise o dono** no relato, pela regra das convenções da seção 8; não decida sozinho.
@@ -2452,6 +2452,52 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 - **R10.4 (Experimentar):** o seletor `wrap`/`fill`/`fixed` e os campos numéricos têm o mesmo nome (**Largura**, **Altura**), mas papéis diferentes: o seletor é um `group` com esse nome e três botões (`wrap`, `fill`, `fixed`, com `aria-pressed`), e o campo numérico é um `spinbutton` (`getByRole('spinbutton', { name: 'Largura' })`, ou o `input` dentro de `.catalog-playground-size`); um `getByLabel('Largura')` solto pega os dois.
 - **Seletor de pasta só na primeira abertura:** depois, a pasta fica em **Projetos recentes** e você a reabre com **Abrir** na linha; o pedido de permissão só volta se o navegador o fizer (reiniciar o Chrome apaga as permissões daquela visita). **Abrir pasta** e **Localizar pasta…** são dois diálogos seguidos: o seletor e a permissão de edição.
 - **O "Salvar como" sugere a última pasta usada** (num teste, o zip do R1.22 caiu dentro da pasta `principal`): em toda exportação, digite o caminho completo, que decide a pasta e o nome.
+
+**Onde está uma marcação na tela (receita para clicar e arrastar sem calibrar por captura).** O `.canvas-host` publica a vista e a caixa da seleção, em px CSS relativos ao canto do host (leia depois de um quadro):
+
+- `data-viewport` = `"x y escala"`: a translação e a escala do canvas; `tela = host + ponto × escala + (x, y)`, com `host` o canto do `getBoundingClientRect()` do `.canvas-host`.
+- `data-selection-box` = `"esquerda topo largura altura"`: a caixa da **seleção primária** (marcação, container ou flutuante), **já com a posição do container somada**; sem seleção (ou com seta selecionada) o atributo some.
+- Uma marcação dentro de container está no espaço **dele** (pixels do container); para um ponto assim use `data-selection-box` (que já converte), ou some a colocação do container antes de aplicar a fórmula do `data-viewport`.
+
+```js
+// page: Playwright por CDP; a marcação aparece na Árvore (Ctrl+Shift+1) como "Marcação sem nome" ou pelo nome dela
+const host = page.locator('.canvas-host');
+await page.getByText('Marcação sem nome').first().click(); // 1. seleciona pela Árvore
+await page.evaluate(
+  () =>
+    new Promise((ok) =>
+      // 2. espera um quadro (sem tempo fixo)
+      requestAnimationFrame(() => requestAnimationFrame(ok)),
+    ),
+);
+const [l, t, w, h] = (await host.getAttribute('data-selection-box'))
+  .split(' ')
+  .map(Number);
+const o = await host.boundingBox(); // 3. canto do host na página
+const at = (fx, fy) => ({ x: o.x + l + w * fx, y: o.y + t + h * fy });
+const centro = at(0.5, 0.5); // clique/arraste para mover
+const alcas = {
+  nw: at(0, 0),
+  n: at(0.5, 0),
+  ne: at(1, 0),
+  e: at(1, 0.5),
+  se: at(1, 1),
+  s: at(0.5, 1),
+  sw: at(0, 1),
+  w: at(0, 0.5),
+}; // cantos e meios dos lados
+await page.mouse.move(alcas.se.x, alcas.se.y);
+await page.mouse.down();
+await page.mouse.move(alcas.se.x + 40, alcas.se.y + 30, { steps: 8 });
+await page.mouse.up();
+// ponto em pixels do canvas (cx, cy) -> tela, para o que não está selecionado:
+const [vx, vy, escala] = (await host.getAttribute('data-viewport'))
+  .split(' ')
+  .map(Number);
+const tela = (cx, cy) => ({ x: o.x + cx * escala + vx, y: o.y + cy * escala + vy });
+```
+
+Selecionar pela Árvore pode enquadrar a marcação e mudar a vista: leia os atributos **depois** do clique e do quadro, e releia se der zoom ou pan. Conferido contra o `dist/index.html` com um projeto de uma imagem e uma marcação: o clique no `centro` selecionou a marcação (a caixa lida foi `144 256.2 288 249.6` com escala 2,56).
 
 **Diálogos nativos na nuvem (Xvfb).** Na sessão do Claude Code na nuvem (ambiente "Mapping - testes", prompt [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md)) o Chrome for Testing roda numa tela virtual (Xvfb) e você opera a página pelo Playwright por CDP e os diálogos nativos com `xdotool` (teclado) e AT-SPI (o pedido de permissão). A regra é: primeiro o clique na app, depois a receita; não espere o diálogo aparecer antes de agir. As receitas abaixo foram executadas de verdade (Chrome 153, openbox) e valem para qualquer roteiro; `S` é a pasta `apoio/` da pasta de trabalho, fora do clone. A tabela diz que receita faz o papel de cada ação nomeada nos roteiros.
 
