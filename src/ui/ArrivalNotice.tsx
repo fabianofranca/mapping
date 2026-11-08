@@ -1,5 +1,6 @@
 import { t } from '../i18n';
-import { projectIndex, rootFootprint, type Project } from '../model';
+import { arrivalHasReference, projectIndex, rootFootprint, type Project } from '../model';
+import type { ArrivalInfo } from '../store/perspectives';
 import { selectItems } from '../store/ui';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
@@ -19,6 +20,25 @@ function referenceLabel(project: Project, id: string | null): string {
   return marking ? markingLabel(project, marking) : '';
 }
 
+/**
+ * A explicação: sem referência (deduzida das setas de agora, também depois de recarregar), "foi
+ * para a área de chegada"; com referência, "perto de"/"ocupado" só na sessão em que chegou.
+ */
+function whyText(
+  project: Project,
+  itemId: string,
+  sessionInfo: readonly ArrivalInfo[],
+): string | null {
+  if (!arrivalHasReference(project, itemId)) return t('perspective.arrival.area');
+  const info = sessionInfo.find((a) => a.root === itemId);
+  if (!info || info.kind === 'arrival-area') return null;
+  const reference = referenceLabel(project, info.referenceId);
+  return t(
+    info.kind === 'near' ? 'perspective.arrival.near' : 'perspective.arrival.occupied',
+    { reference },
+  );
+}
+
 export function ArrivalNotice({ itemId }: { readonly itemId: string }) {
   const { session, store, ui, canvas } = useEditor();
   const project = store.committed.value;
@@ -26,20 +46,7 @@ export function ArrivalNotice({ itemId }: { readonly itemId: string }) {
   if (!project || perspective.id.value !== null) return null;
   const arrival = project.arrivals.find((a) => a.root === itemId);
   if (!arrival) return null;
-  const info = perspective.arrivals.value.find((a) => a.root === itemId);
-  const reference = info ? referenceLabel(project, info.referenceId) : '';
-  const why = !info
-    ? null
-    : info.kind === 'arrival-area'
-      ? t('perspective.arrival.area')
-      : t(
-          info.kind === 'near'
-            ? 'perspective.arrival.near'
-            : 'perspective.arrival.occupied',
-          {
-            reference,
-          },
-        );
+  const why = whyText(project, itemId, perspective.arrivals.value);
 
   const { arrivals } = project;
   const goNext = () => {

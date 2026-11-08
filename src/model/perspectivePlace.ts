@@ -100,6 +100,16 @@ function findReference(
   return null;
 }
 
+/**
+ * A raiz `rootId` da Principal `p` tem referência: uma seta liga um membro dela a um membro de
+ * outra raiz (a mesma regra da busca de lugar; seta entre membros da própria raiz não conta).
+ * Lê as setas de agora, sem gravar nada: é como a interface deduz, até depois de recarregar, se a
+ * raiz com marca de chegada foi para perto de uma referência ou para a área de chegada.
+ */
+export function arrivalHasReference(p: Project, rootId: string): boolean {
+  return findReference(p, p, rootId) !== null;
+}
+
 function overlapsAny(rect: Rect, obstacles: readonly Rect[]): Rect | undefined {
   return obstacles.find((o) => rectsOverlap(rect, o));
 }
