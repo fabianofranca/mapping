@@ -76,7 +76,7 @@ export function drawIn(
   });
 }
 
-/** Componentes já migrados para o formato 4 (M1: 4; M2: +19; M3: +9). Cresce a cada fase. */
+/** Componentes já migrados para o formato 4 (M1: 4; M2: +19; M3: +9; M4: +9). Cresce a cada fase. */
 export const MIGRATED = [
   'text',
   'icon',
@@ -110,4 +110,13 @@ export const MIGRATED = [
   'search-bar',
   'segmented-button',
   'progress-indicator',
+  'top-app-bar',
+  'bottom-app-bar',
+  'navigation-bar',
+  'short-navigation-bar',
+  'navigation-rail',
+  'navigation-drawer',
+  'tabs',
+  'list-item',
+  'dropdown-menu',
 ];
