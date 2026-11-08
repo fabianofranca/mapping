@@ -1,0 +1,305 @@
+{
+  "commit": "5113b82a4ed6416d6344efa50e41db8cb65928ff",
+  "source": "compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/{ColorLightTokens,ColorDarkTokens,PaletteTokens,TypeScaleTokens,ShapeTokens,ElevationTokens}.kt",
+  "colors": {
+    "background": {
+      "light": "#FEF7FF",
+      "dark": "#141218"
+    },
+    "error": {
+      "light": "#B3261E",
+      "dark": "#F2B8B5"
+    },
+    "error-container": {
+      "light": "#F9DEDC",
+      "dark": "#8C1D18"
+    },
+    "inverse-on-surface": {
+      "light": "#F5EFF7",
+      "dark": "#322F35"
+    },
+    "inverse-primary": {
+      "light": "#D0BCFF",
+      "dark": "#6750A4"
+    },
+    "inverse-surface": {
+      "light": "#322F35",
+      "dark": "#E6E0E9"
+    },
+    "on-background": {
+      "light": "#1D1B20",
+      "dark": "#E6E0E9"
+    },
+    "on-error": {
+      "light": "#FFFFFF",
+      "dark": "#601410"
+    },
+    "on-error-container": {
+      "light": "#410E0B",
+      "dark": "#F9DEDC"
+    },
+    "on-primary": {
+      "light": "#FFFFFF",
+      "dark": "#381E72"
+    },
+    "on-primary-container": {
+      "light": "#21005D",
+      "dark": "#EADDFF"
+    },
+    "on-primary-fixed": {
+      "light": "#21005D",
+      "dark": "#21005D"
+    },
+    "on-primary-fixed-variant": {
+      "light": "#4F378B",
+      "dark": "#4F378B"
+    },
+    "on-secondary": {
+      "light": "#FFFFFF",
+      "dark": "#332D41"
+    },
+    "on-secondary-container": {
+      "light": "#1D192B",
+      "dark": "#E8DEF8"
+    },
+    "on-secondary-fixed": {
+      "light": "#1D192B",
+      "dark": "#1D192B"
+    },
+    "on-secondary-fixed-variant": {
+      "light": "#4A4458",
+      "dark": "#4A4458"
+    },
+    "on-surface": {
+      "light": "#1D1B20",
+      "dark": "#E6E0E9"
+    },
+    "on-surface-variant": {
+      "light": "#49454F",
+      "dark": "#CAC4D0"
+    },
+    "on-tertiary": {
+      "light": "#FFFFFF",
+      "dark": "#492532"
+    },
+    "on-tertiary-container": {
+      "light": "#31111D",
+      "dark": "#FFD8E4"
+    },
+    "on-tertiary-fixed": {
+      "light": "#31111D",
+      "dark": "#31111D"
+    },
+    "on-tertiary-fixed-variant": {
+      "light": "#633B48",
+      "dark": "#633B48"
+    },
+    "outline": {
+      "light": "#79747E",
+      "dark": "#938F99"
+    },
+    "outline-variant": {
+      "light": "#CAC4D0",
+      "dark": "#49454F"
+    },
+    "primary": {
+      "light": "#6750A4",
+      "dark": "#D0BCFF"
+    },
+    "primary-container": {
+      "light": "#EADDFF",
+      "dark": "#4F378B"
+    },
+    "primary-fixed": {
+      "light": "#EADDFF",
+      "dark": "#EADDFF"
+    },
+    "primary-fixed-dim": {
+      "light": "#D0BCFF",
+      "dark": "#D0BCFF"
+    },
+    "scrim": {
+      "light": "#000000",
+      "dark": "#000000"
+    },
+    "secondary": {
+      "light": "#625B71",
+      "dark": "#CCC2DC"
+    },
+    "secondary-container": {
+      "light": "#E8DEF8",
+      "dark": "#4A4458"
+    },
+    "secondary-fixed": {
+      "light": "#E8DEF8",
+      "dark": "#E8DEF8"
+    },
+    "secondary-fixed-dim": {
+      "light": "#CCC2DC",
+      "dark": "#CCC2DC"
+    },
+    "surface": {
+      "light": "#FEF7FF",
+      "dark": "#141218"
+    },
+    "surface-bright": {
+      "light": "#FEF7FF",
+      "dark": "#3B383E"
+    },
+    "surface-container": {
+      "light": "#F3EDF7",
+      "dark": "#211F26"
+    },
+    "surface-container-high": {
+      "light": "#ECE6F0",
+      "dark": "#2B2930"
+    },
+    "surface-container-highest": {
+      "light": "#E6E0E9",
+      "dark": "#36343B"
+    },
+    "surface-container-low": {
+      "light": "#F7F2FA",
+      "dark": "#1D1B20"
+    },
+    "surface-container-lowest": {
+      "light": "#FFFFFF",
+      "dark": "#0F0D13"
+    },
+    "surface-dim": {
+      "light": "#DED8E1",
+      "dark": "#141218"
+    },
+    "surface-tint": {
+      "light": "#6750A4",
+      "dark": "#D0BCFF"
+    },
+    "surface-variant": {
+      "light": "#E7E0EC",
+      "dark": "#49454F"
+    },
+    "tertiary": {
+      "light": "#7D5260",
+      "dark": "#EFB8C8"
+    },
+    "tertiary-container": {
+      "light": "#FFD8E4",
+      "dark": "#633B48"
+    },
+    "tertiary-fixed": {
+      "light": "#FFD8E4",
+      "dark": "#FFD8E4"
+    },
+    "tertiary-fixed-dim": {
+      "light": "#EFB8C8",
+      "dark": "#EFB8C8"
+    }
+  },
+  "typography": {
+    "display-large": {
+      "size": 57,
+      "line-height": 64,
+      "weight": 400,
+      "tracking": -0.2
+    },
+    "display-medium": {
+      "size": 45,
+      "line-height": 52,
+      "weight": 400,
+      "tracking": 0
+    },
+    "display-small": {
+      "size": 36,
+      "line-height": 44,
+      "weight": 400,
+      "tracking": 0
+    },
+    "headline-large": {
+      "size": 32,
+      "line-height": 40,
+      "weight": 400,
+      "tracking": 0
+    },
+    "headline-medium": {
+      "size": 28,
+      "line-height": 36,
+      "weight": 400,
+      "tracking": 0
+    },
+    "headline-small": {
+      "size": 24,
+      "line-height": 32,
+      "weight": 400,
+      "tracking": 0
+    },
+    "title-large": {
+      "size": 22,
+      "line-height": 28,
+      "weight": 400,
+      "tracking": 0
+    },
+    "title-medium": {
+      "size": 16,
+      "line-height": 24,
+      "weight": 500,
+      "tracking": 0.2
+    },
+    "title-small": {
+      "size": 14,
+      "line-height": 20,
+      "weight": 500,
+      "tracking": 0.1
+    },
+    "body-large": {
+      "size": 16,
+      "line-height": 24,
+      "weight": 400,
+      "tracking": 0.5
+    },
+    "body-medium": {
+      "size": 14,
+      "line-height": 20,
+      "weight": 400,
+      "tracking": 0.2
+    },
+    "body-small": {
+      "size": 12,
+      "line-height": 16,
+      "weight": 400,
+      "tracking": 0.4
+    },
+    "label-large": {
+      "size": 14,
+      "line-height": 20,
+      "weight": 500,
+      "tracking": 0.1
+    },
+    "label-medium": {
+      "size": 12,
+      "line-height": 16,
+      "weight": 500,
+      "tracking": 0.5
+    },
+    "label-small": {
+      "size": 11,
+      "line-height": 16,
+      "weight": 500,
+      "tracking": 0.5
+    }
+  },
+  "shapes": {
+    "corner-none": 0,
+    "corner-extra-small": 4,
+    "corner-small": 8,
+    "corner-medium": 12,
+    "corner-large": 16,
+    "corner-extra-large": 28
+  },
+  "elevationDp": {
+    "1": 1.0,
+    "2": 3.0,
+    "3": 6.0,
+    "4": 8.0,
+    "5": 12.0
+  }
+}

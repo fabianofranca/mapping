@@ -1,9 +1,9 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "tooltip",
   "name": "Tooltip",
-  "description": "Tooltip plain (pílula escura de 24, só texto) ou rich (cartão claro com título, texto e ação opcionais), como aparece ao lado do elemento âncora.",
+  "description": "Tooltip plain (pílula em inverse surface, só texto) ou rich (cartão em surface container com título, texto e ação opcionais), como aparece ao lado do elemento âncora.",
   "size": {
     "width": 240,
     "height": 24
@@ -37,9 +37,16 @@
           "top": 0
         },
         "width": "hug",
-        "height": 24,
-        "cornerRadius": 4,
-        "fill": "#322F35",
+        "height": "hug",
+        "minWidth": 40,
+        "maxWidth": 200,
+        "minHeight": 24,
+        "cornerRadius": {
+          "$token": "corner-extra-small"
+        },
+        "fill": {
+          "$token": "inverse-surface"
+        },
         "visible": {
           "$not": {
             "$eq": ["style", "rich"]
@@ -48,7 +55,7 @@
         "layout": {
           "type": "row",
           "align": "center",
-          "padding": [0, 8]
+          "padding": [4, 8]
         },
         "children": [
           {
@@ -58,14 +65,24 @@
               "$field": "text",
               "default": "Tooltip"
             },
+            "maxWidth": 184,
             "font": {
-              "family": "Roboto",
-              "size": 12,
-              "weight": 400,
-              "lineHeight": 16,
-              "letterSpacing": 0.4
+              "size": {
+                "$token": "body-small-size"
+              },
+              "weight": {
+                "$token": "body-small-weight"
+              },
+              "lineHeight": {
+                "$token": "body-small-line-height"
+              },
+              "letterSpacing": {
+                "$token": "body-small-tracking"
+              }
             },
-            "color": "#F5EFF7"
+            "color": {
+              "$token": "inverse-on-surface"
+            }
           }
         ]
       },
@@ -78,25 +95,45 @@
         },
         "width": "fill",
         "height": "hug",
-        "cornerRadius": 12,
-        "fill": "#F3EDF7",
+        "minWidth": 40,
+        "maxWidth": 320,
+        "minHeight": 24,
+        "cornerRadius": {
+          "$token": "corner-medium"
+        },
+        "fill": {
+          "$token": "surface-container"
+        },
         "shadow": {
-          "color": "rgba(0, 0, 0, 0.3)",
-          "y": 1,
-          "blur": 3
+          "color": {
+            "$token": "elevation-shadow"
+          },
+          "y": 2,
+          "blur": 6
         },
         "visible": {
           "$eq": ["style", "rich"]
         },
         "layout": {
           "type": "column",
-          "gap": 4,
           "padding": {
             "$if": {
-              "$has": "action"
+              "$has": "title"
             },
-            "then": [12, 16, 8, 16],
-            "else": [12, 16]
+            "then": {
+              "$if": {
+                "$has": "action"
+              },
+              "then": [13, 16, 8, 16],
+              "else": [13, 16, 16, 16]
+            },
+            "else": {
+              "$if": {
+                "$has": "action"
+              },
+              "then": [9, 16, 8, 16],
+              "else": [4, 16]
+            }
           }
         },
         "children": [
@@ -107,63 +144,120 @@
               "$field": "title"
             },
             "font": {
-              "family": "Roboto",
-              "size": 14,
-              "weight": 500,
-              "lineHeight": 20,
-              "letterSpacing": 0.1
+              "size": {
+                "$token": "title-small-size"
+              },
+              "weight": {
+                "$token": "title-small-weight"
+              },
+              "lineHeight": {
+                "$token": "title-small-line-height"
+              },
+              "letterSpacing": {
+                "$token": "title-small-tracking"
+              }
             },
-            "color": "#49454F",
+            "color": {
+              "$token": "on-surface-variant"
+            },
             "width": "fill",
             "visible": {
               "$has": "title"
             }
           },
           {
-            "type": "text",
-            "name": "texto",
-            "text": {
-              "$field": "text",
-              "default": "Tooltip"
+            "type": "frame",
+            "name": "corpo",
+            "width": "fill",
+            "height": "hug",
+            "layout": {
+              "type": "column",
+              "padding": {
+                "$if": {
+                  "$has": "title"
+                },
+                "then": [4, 0, 0, 0],
+                "else": 0
+              }
             },
-            "font": {
-              "family": "Roboto",
-              "size": 14,
-              "weight": 400,
-              "lineHeight": 20,
-              "letterSpacing": 0.25
-            },
-            "color": "#49454F",
-            "width": "fill"
+            "children": [
+              {
+                "type": "text",
+                "name": "texto",
+                "text": {
+                  "$field": "text",
+                  "default": "Tooltip"
+                },
+                "font": {
+                  "size": {
+                    "$token": "body-medium-size"
+                  },
+                  "weight": {
+                    "$token": "body-medium-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-medium-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-medium-tracking"
+                  }
+                },
+                "color": {
+                  "$token": "on-surface-variant"
+                },
+                "width": "fill"
+              }
+            ]
           },
           {
             "type": "frame",
             "name": "ação",
             "width": "hug",
-            "height": 36,
+            "height": "hug",
             "layout": {
-              "type": "row",
-              "align": "center",
-              "padding": [0, 8, 0, 0]
+              "type": "column",
+              "padding": [16, 0, 0, 0]
             },
             "visible": {
               "$has": "action"
             },
             "children": [
               {
-                "type": "text",
-                "name": "rótulo da ação",
-                "text": {
-                  "$field": "action"
+                "type": "frame",
+                "name": "botão da ação",
+                "width": "hug",
+                "height": 40,
+                "layout": {
+                  "type": "row",
+                  "align": "center",
+                  "padding": [0, 12]
                 },
-                "font": {
-                  "family": "Roboto",
-                  "size": 14,
-                  "weight": 500,
-                  "lineHeight": 20,
-                  "letterSpacing": 0.1
-                },
-                "color": "#6750A4"
+                "children": [
+                  {
+                    "type": "text",
+                    "name": "rótulo da ação",
+                    "text": {
+                      "$field": "action"
+                    },
+                    "font": {
+                      "size": {
+                        "$token": "label-large-size"
+                      },
+                      "weight": {
+                        "$token": "label-large-weight"
+                      },
+                      "lineHeight": {
+                        "$token": "label-large-line-height"
+                      },
+                      "letterSpacing": {
+                        "$token": "label-large-tracking"
+                      }
+                    },
+                    "color": {
+                      "$token": "primary"
+                    }
+                  }
+                ]
               }
             ]
           }

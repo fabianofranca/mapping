@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "lazy-vertical-grid",
   "name": "LazyVerticalGrid",
   "description": "Grade vertical que compõe só as células visíveis: as filhas ficam onde o retângulo delas diz; o contentPadding recua o conteúdo.",

@@ -71,16 +71,16 @@ const MISSING_TODAY: string[] = [
   // Layout do componente v4 (etapa #747, CF2): as bibliotecas distribuídas não migram para o
   // formato 4 nesta etapa (decisão 'Fora' da #747); coberto por
   // tests/model/components/layoutFidelity.test.ts, layoutV4Parse.test.ts e pelo roteiro R25.
-  'component:node.minWidth',
-  'component:node.maxWidth',
-  'component:node.minHeight',
   'component:node.maxHeight',
-  'component:node.repeat.distribute',
-  // Texto do componente v4 (etapa #747, CF3): as bibliotecas distribuídas não migram; coberto por
+  // `font.family` literal: o último componente da Material 3 que o usava migrou (etapa #833, M5) e
+  // herda a Roboto do token `font-sans`; coberto por tests/model/components/ e pelo roteiro R25.
+  'component:font.family',
+  // `stroke.align: outside`: o `text-field` e o `switch` deixaram de usá-lo ao migrar para o formato 4
+  // (etapa #833, M3); coberto por tests/model/components/ e pelo roteiro R25.
+  'component:stroke.align=outside',
+  // Texto do componente v4 (etapa #747, CF3): a biblioteca Material 3 já usa o `font.maxLines` no
+  // `text` (etapa #833, M1); o resto das bibliotecas distribuídas não migrou. Coberto por
   // tests/model/components/textWrap.test.ts, tests/e2e/textMetrics.spec.ts e pelo roteiro R25.
-  'component:font.wrap',
-  'component:font.ellipsis',
-  'component:font.maxLines',
   // Texto rico do componente v4 (etapa #747, CF4): as bibliotecas distribuídas não migram; coberto
   // por tests/model/components/richText.test.ts, tests/e2e/ e pelo roteiro R25.
   'component:node.text.runs',
@@ -94,18 +94,16 @@ const MISSING_TODAY: string[] = [
   'component:run.background',
   'component:run.radius',
   'component:run.padding',
-  // Tokens (formatVersion 15, etapa #747, CF5): as bibliotecas distribuídas não migram; coberto por
+  // Tokens (formatVersion 15, etapa #747, CF5): a raiz `tokens` já tem exemplo na biblioteca Material 3
+  // (etapa #833, M1); o `$token` nos componentes das outras bibliotecas ainda não. Coberto por
   // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts e
   // pelo roteiro R25.
   'component:expr.$token',
-  'spec:tokens',
-  // Ícones (formatVersion 15, etapa #747, CF7): as bibliotecas distribuídas não migram; coberto por
+  // Ícones (formatVersion 15, etapa #747, CF7): a raiz `icons` e o nó `icon` já têm exemplo na
+  // biblioteca Material 3 (etapa #833, M1); o `icon.name`/`strokeWidth` ainda não. Coberto por
   // tests/model/components/icons.test.ts, libraryIcons.test.ts, tests/mcp/libraryIcons.test.ts e
   // pelo roteiro R25.
-  'spec:icons',
-  'component:node.icon',
   'component:node.icon.name',
-  'component:node.icon.color',
   'component:node.icon.strokeWidth',
   // Tela e traço em escala (CF8, etapa #747): `screen` na raiz e `stroke.scale` (formato 4) e
   // `structural` no tipo (formatVersion 15); as bibliotecas distribuídas não migram; coberto por

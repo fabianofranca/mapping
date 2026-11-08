@@ -1,17 +1,11 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "slider",
   "name": "Slider",
-  "description": "Slider de 44: trilho de 16 em secondary container, trecho ativo em primary e alça de 4 × 44. No intervalo há duas alças; os valores vão de 0 a 1 em décimos e as marcas de steps aparecem de 1 a 5 e em 9.",
-  "size": {
-    "width": 328,
-    "height": 44
-  },
-  "sizing": {
-    "width": "fill",
-    "height": 44
-  },
+  "description": "Slider de 44: trilha de 16 em secondary container, trecho ativo em primary e alça de 4 × 44 com vão de 6 (SliderTokens). No intervalo há duas alças; os valores vão de 0 a 1 em décimos e as marcas de steps aparecem de 1 a 9 passos.",
+  "size": { "width": 328, "height": 44 },
+  "sizing": { "width": "fill", "height": 44 },
   "preview": {
     "type": "single",
     "value": "0.5",
@@ -23,2087 +17,1898 @@
   "template": {
     "type": "frame",
     "name": "slider",
-    "layout": {
-      "type": "none"
-    },
+    "layout": { "type": "none" },
     "children": [
       {
         "type": "frame",
-        "name": "valor 0",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
-                },
-                {
-                  "$eq": ["value", "0"]
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
-                },
-                {
-                  "$eq": ["valueEnd", "0"]
-                }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
+        "name": "faixa",
+        "height": 44,
+        "layout": { "type": "none" },
+        "anchors": { "left": 2, "right": 2 },
         "children": [
           {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
             "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "trilho inativo",
+            "name": "trilhas",
             "width": "fill",
-            "height": 16,
-            "cornerRadius": [2, 8, 8, 2],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "valor 0.1",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
+            "height": "fill",
+            "layout": { "type": "row" },
+            "children": [
+              {
+                "type": "frame",
+                "name": "recuo",
+                "width": {
+                  "$if": {
+                    "$and": [
+                      {
+                        "$and": [
+                          { "$has": "steps" },
+                          { "$not": { "$eq": ["steps", "0"] } }
+                        ]
+                      },
+                      {
+                        "$not": {
+                          "$and": [
+                            { "$not": { "$eq": ["type", "range"] } },
+                            {
+                              "$or": [
+                                { "$eq": ["value", "0"] },
+                                { "$eq": ["value", "1"] }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "then": 8,
+                  "else": 0
                 },
-                {
-                  "$eq": ["value", "0.1"]
-                }
-              ]
+                "height": "fill",
+                "layout": { "type": "none" }
+              },
+              {
+                "type": "frame",
+                "name": "pista",
+                "width": "fill",
+                "height": "fill",
+                "layout": { "type": "row" },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "antes do início",
+                    "width": {
+                      "$if": { "$eq": ["type", "range"] },
+                      "then": {
+                        "$switch": "valueStart",
+                        "cases": {
+                          "0": "0%",
+                          "0.1": "10%",
+                          "0.2": "20%",
+                          "0.3": "30%",
+                          "0.4": "40%",
+                          "0.5": "50%",
+                          "0.6": "60%",
+                          "0.7": "70%",
+                          "0.8": "80%",
+                          "0.9": "90%",
+                          "1": "100%"
+                        }
+                      },
+                      "else": "0%"
+                    },
+                    "height": "fill",
+                    "layout": { "type": "none" },
+                    "visible": { "$eq": ["type", "range"] },
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "trilho inativo",
+                        "height": 16,
+                        "anchors": { "centerY": true, "left": 0, "right": 8 },
+                        "cornerRadius": [8, 2, 2, 8],
+                        "fill": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "on-surface" },
+                          "else": { "$token": "secondary-container" }
+                        },
+                        "opacity": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "state-disabled-container" },
+                          "else": 1
+                        },
+                        "visible": {
+                          "$and": [
+                            { "$eq": ["type", "range"] },
+                            { "$not": { "$eq": ["valueStart", "0"] } },
+                            {
+                              "$not": {
+                                "$and": [
+                                  {
+                                    "$and": [
+                                      { "$has": "steps" },
+                                      { "$not": { "$eq": ["steps", "0"] } }
+                                    ]
+                                  },
+                                  {
+                                    "$not": {
+                                      "$and": [
+                                        {
+                                          "$not": { "$eq": ["type", "range"] }
+                                        },
+                                        {
+                                          "$or": [
+                                            { "$eq": ["value", "0"] },
+                                            { "$eq": ["value", "1"] }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "rect",
+                        "name": "trilho inativo",
+                        "height": 16,
+                        "anchors": { "centerY": true, "left": -8, "right": 8 },
+                        "cornerRadius": [8, 2, 2, 8],
+                        "fill": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "on-surface" },
+                          "else": { "$token": "secondary-container" }
+                        },
+                        "opacity": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "state-disabled-container" },
+                          "else": 1
+                        },
+                        "visible": {
+                          "$and": [
+                            { "$eq": ["type", "range"] },
+                            { "$not": { "$eq": ["valueStart", "0"] } },
+                            {
+                              "$and": [
+                                {
+                                  "$and": [
+                                    { "$has": "steps" },
+                                    { "$not": { "$eq": ["steps", "0"] } }
+                                  ]
+                                },
+                                {
+                                  "$not": {
+                                    "$and": [
+                                      {
+                                        "$not": { "$eq": ["type", "range"] }
+                                      },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["value", "0"] },
+                                          { "$eq": ["value", "1"] }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "trecho ativo",
+                    "width": "fill",
+                    "height": "fill",
+                    "layout": { "type": "none" },
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "trilho ativo",
+                        "height": 16,
+                        "anchors": { "centerY": true, "left": 0, "right": 8 },
+                        "cornerRadius": [8, 2, 2, 8],
+                        "fill": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "on-surface" },
+                          "else": { "$token": "primary" }
+                        },
+                        "opacity": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "state-disabled-content" },
+                          "else": 1
+                        },
+                        "visible": {
+                          "$and": [
+                            { "$not": { "$eq": ["type", "range"] } },
+                            {
+                              "$not": {
+                                "$and": [
+                                  {
+                                    "$and": [
+                                      { "$has": "steps" },
+                                      { "$not": { "$eq": ["steps", "0"] } }
+                                    ]
+                                  },
+                                  {
+                                    "$not": {
+                                      "$and": [
+                                        {
+                                          "$not": { "$eq": ["type", "range"] }
+                                        },
+                                        {
+                                          "$or": [
+                                            { "$eq": ["value", "0"] },
+                                            { "$eq": ["value", "1"] }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            },
+                            { "$not": { "$eq": ["value", "0"] } }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "rect",
+                        "name": "trilho ativo",
+                        "height": 16,
+                        "anchors": { "centerY": true, "left": -8, "right": 8 },
+                        "cornerRadius": [8, 2, 2, 8],
+                        "fill": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "on-surface" },
+                          "else": { "$token": "primary" }
+                        },
+                        "opacity": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "state-disabled-content" },
+                          "else": 1
+                        },
+                        "visible": {
+                          "$and": [
+                            { "$not": { "$eq": ["type", "range"] } },
+                            {
+                              "$and": [
+                                {
+                                  "$and": [
+                                    { "$has": "steps" },
+                                    { "$not": { "$eq": ["steps", "0"] } }
+                                  ]
+                                },
+                                {
+                                  "$not": {
+                                    "$and": [
+                                      {
+                                        "$not": { "$eq": ["type", "range"] }
+                                      },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["value", "0"] },
+                                          { "$eq": ["value", "1"] }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            },
+                            { "$not": { "$eq": ["value", "0"] } }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "rect",
+                        "name": "trilho ativo",
+                        "height": 16,
+                        "anchors": { "centerY": true, "left": 8, "right": 8 },
+                        "cornerRadius": [2, 2, 2, 2],
+                        "fill": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "on-surface" },
+                          "else": { "$token": "primary" }
+                        },
+                        "opacity": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "state-disabled-content" },
+                          "else": 1
+                        },
+                        "visible": { "$eq": ["type", "range"] }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "depois do fim",
+                    "width": {
+                      "$if": { "$eq": ["type", "range"] },
+                      "then": {
+                        "$switch": "valueEnd",
+                        "cases": {
+                          "0": "100%",
+                          "0.1": "90%",
+                          "0.2": "80%",
+                          "0.3": "70%",
+                          "0.4": "60%",
+                          "0.5": "50%",
+                          "0.6": "40%",
+                          "0.7": "30%",
+                          "0.8": "20%",
+                          "0.9": "10%",
+                          "1": "0%"
+                        }
+                      },
+                      "else": {
+                        "$switch": "value",
+                        "cases": {
+                          "0": "100%",
+                          "0.1": "90%",
+                          "0.2": "80%",
+                          "0.3": "70%",
+                          "0.4": "60%",
+                          "0.5": "50%",
+                          "0.6": "40%",
+                          "0.7": "30%",
+                          "0.8": "20%",
+                          "0.9": "10%",
+                          "1": "0%"
+                        }
+                      }
+                    },
+                    "height": "fill",
+                    "layout": { "type": "none" },
+                    "children": [
+                      {
+                        "type": "rect",
+                        "name": "trilho inativo",
+                        "height": 16,
+                        "anchors": { "centerY": true, "left": 8, "right": 0 },
+                        "cornerRadius": [2, 8, 8, 2],
+                        "fill": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "on-surface" },
+                          "else": { "$token": "secondary-container" }
+                        },
+                        "opacity": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "state-disabled-container" },
+                          "else": 1
+                        },
+                        "visible": {
+                          "$and": [
+                            {
+                              "$not": {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      {
+                                        "$not": { "$eq": ["type", "range"] }
+                                      },
+                                      { "$eq": ["value", "1"] }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$eq": ["type", "range"] },
+                                      { "$eq": ["valueEnd", "1"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "$not": {
+                                "$and": [
+                                  {
+                                    "$and": [
+                                      { "$has": "steps" },
+                                      { "$not": { "$eq": ["steps", "0"] } }
+                                    ]
+                                  },
+                                  {
+                                    "$not": {
+                                      "$and": [
+                                        {
+                                          "$not": { "$eq": ["type", "range"] }
+                                        },
+                                        {
+                                          "$or": [
+                                            { "$eq": ["value", "0"] },
+                                            { "$eq": ["value", "1"] }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "rect",
+                        "name": "trilho inativo",
+                        "height": 16,
+                        "anchors": { "centerY": true, "left": 8, "right": -8 },
+                        "cornerRadius": [2, 8, 8, 2],
+                        "fill": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "on-surface" },
+                          "else": { "$token": "secondary-container" }
+                        },
+                        "opacity": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "state-disabled-container" },
+                          "else": 1
+                        },
+                        "visible": {
+                          "$and": [
+                            {
+                              "$not": {
+                                "$or": [
+                                  {
+                                    "$and": [
+                                      {
+                                        "$not": { "$eq": ["type", "range"] }
+                                      },
+                                      { "$eq": ["value", "1"] }
+                                    ]
+                                  },
+                                  {
+                                    "$and": [
+                                      { "$eq": ["type", "range"] },
+                                      { "$eq": ["valueEnd", "1"] }
+                                    ]
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "$and": [
+                                {
+                                  "$and": [
+                                    { "$has": "steps" },
+                                    { "$not": { "$eq": ["steps", "0"] } }
+                                  ]
+                                },
+                                {
+                                  "$not": {
+                                    "$and": [
+                                      {
+                                        "$not": { "$eq": ["type", "range"] }
+                                      },
+                                      {
+                                        "$or": [
+                                          { "$eq": ["value", "0"] },
+                                          { "$eq": ["value", "1"] }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "recuo",
+                "width": {
+                  "$if": {
+                    "$and": [
+                      {
+                        "$and": [
+                          { "$has": "steps" },
+                          { "$not": { "$eq": ["steps", "0"] } }
+                        ]
+                      },
+                      {
+                        "$not": {
+                          "$and": [
+                            { "$not": { "$eq": ["type", "range"] } },
+                            {
+                              "$or": [
+                                { "$eq": ["value", "0"] },
+                                { "$eq": ["value", "1"] }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "then": 8,
+                  "else": 0
+                },
+                "height": "fill",
+                "layout": { "type": "none" }
+              }
+            ]
+          },
+          {
+            "type": "frame",
+            "name": "marcas sobre o trecho ativo",
+            "anchors": { "centerY": true, "left": -2, "right": -2 },
+            "height": 4,
+            "layout": {
+              "type": "row",
+              "padding": [0, 8],
+              "justify": "space-between"
             },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
+            "visible": {
+              "$and": [{ "$has": "steps" }, { "$not": { "$eq": ["steps", "0"] } }]
+            },
+            "children": [
+              {
+                "type": "ellipse",
+                "name": "marca",
+                "width": 4,
+                "height": 4,
+                "fill": {
+                  "$if": { "$eq": ["type", "range"] },
+                  "then": "none",
+                  "else": {
+                    "$if": { "$eq": ["enabled", "false"] },
+                    "then": { "$token": "on-surface" },
+                    "else": { "$token": "secondary-container" }
+                  }
                 },
-                {
-                  "$eq": ["valueEnd", "0.1"]
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
                 }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "trilho ativo",
-            "width": "9.5%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
               },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
+              {
+                "type": "ellipse",
+                "name": "marca",
+                "width": 4,
+                "height": 4,
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                }
+              },
+              {
+                "type": "ellipse",
+                "name": "marca",
+                "width": 4,
+                "height": 4,
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                },
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      { "$not": { "$has": "steps" } },
+                      { "$eq": ["steps", "0"] },
+                      { "$eq": ["steps", "1"] }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "ellipse",
+                "name": "marca",
+                "width": 4,
+                "height": 4,
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                },
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      { "$not": { "$has": "steps" } },
+                      { "$eq": ["steps", "0"] },
+                      { "$eq": ["steps", "1"] },
+                      { "$eq": ["steps", "2"] }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "ellipse",
+                "name": "marca",
+                "width": 4,
+                "height": 4,
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                },
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      { "$not": { "$has": "steps" } },
+                      { "$eq": ["steps", "0"] },
+                      { "$eq": ["steps", "1"] },
+                      { "$eq": ["steps", "2"] },
+                      { "$eq": ["steps", "3"] }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "ellipse",
+                "name": "marca",
+                "width": 4,
+                "height": 4,
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                },
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      { "$not": { "$has": "steps" } },
+                      { "$eq": ["steps", "0"] },
+                      { "$eq": ["steps", "1"] },
+                      { "$eq": ["steps", "2"] },
+                      { "$eq": ["steps", "3"] },
+                      { "$eq": ["steps", "4"] }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "ellipse",
+                "name": "marca",
+                "width": 4,
+                "height": 4,
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                },
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      { "$not": { "$has": "steps" } },
+                      { "$eq": ["steps", "0"] },
+                      { "$eq": ["steps", "1"] },
+                      { "$eq": ["steps", "2"] },
+                      { "$eq": ["steps", "3"] },
+                      { "$eq": ["steps", "4"] },
+                      { "$eq": ["steps", "5"] }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "ellipse",
+                "name": "marca",
+                "width": 4,
+                "height": 4,
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                },
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      { "$not": { "$has": "steps" } },
+                      { "$eq": ["steps", "0"] },
+                      { "$eq": ["steps", "1"] },
+                      { "$eq": ["steps", "2"] },
+                      { "$eq": ["steps", "3"] },
+                      { "$eq": ["steps", "4"] },
+                      { "$eq": ["steps", "5"] },
+                      { "$eq": ["steps", "6"] }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "ellipse",
+                "name": "marca",
+                "width": 4,
+                "height": 4,
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                },
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      { "$not": { "$has": "steps" } },
+                      { "$eq": ["steps", "0"] },
+                      { "$eq": ["steps", "1"] },
+                      { "$eq": ["steps", "2"] },
+                      { "$eq": ["steps", "3"] },
+                      { "$eq": ["steps", "4"] },
+                      { "$eq": ["steps", "5"] },
+                      { "$eq": ["steps", "6"] },
+                      { "$eq": ["steps", "7"] }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "ellipse",
+                "name": "marca",
+                "width": 4,
+                "height": 4,
+                "fill": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "on-surface" },
+                  "else": { "$token": "secondary-container" }
+                },
+                "opacity": {
+                  "$if": { "$eq": ["enabled", "false"] },
+                  "then": { "$token": "state-disabled-container" },
+                  "else": 1
+                },
+                "visible": {
+                  "$not": {
+                    "$or": [
+                      { "$not": { "$has": "steps" } },
+                      { "$eq": ["steps", "0"] },
+                      { "$eq": ["steps", "1"] },
+                      { "$eq": ["steps", "2"] },
+                      { "$eq": ["steps", "3"] },
+                      { "$eq": ["steps", "4"] },
+                      { "$eq": ["steps", "5"] },
+                      { "$eq": ["steps", "6"] },
+                      { "$eq": ["steps", "7"] },
+                      { "$eq": ["steps", "8"] }
+                    ]
+                  }
+                }
+              },
+              { "type": "frame", "name": "fim", "width": 4, "height": 4 }
+            ]
           },
           {
             "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "trilho inativo",
+            "name": "marcas e alças",
             "width": "fill",
-            "height": 16,
-            "cornerRadius": [2, 8, 8, 2],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "valor 0.2",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
+            "height": "fill",
+            "layout": { "type": "row" },
+            "children": [
+              {
+                "type": "frame",
+                "name": "recuo",
+                "width": {
+                  "$if": {
+                    "$and": [
+                      {
+                        "$and": [
+                          { "$has": "steps" },
+                          { "$not": { "$eq": ["steps", "0"] } }
+                        ]
+                      },
+                      {
+                        "$not": {
+                          "$and": [
+                            { "$not": { "$eq": ["type", "range"] } },
+                            {
+                              "$or": [
+                                { "$eq": ["value", "0"] },
+                                { "$eq": ["value", "1"] }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "then": 8,
+                  "else": 0
                 },
-                {
-                  "$eq": ["value", "0.2"]
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
+                "height": "fill",
+                "layout": { "type": "none" }
+              },
+              {
+                "type": "frame",
+                "name": "pista",
+                "width": "fill",
+                "height": "fill",
+                "layout": { "type": "row" },
+                "children": [
+                  {
+                    "type": "frame",
+                    "name": "antes do início",
+                    "width": {
+                      "$if": { "$eq": ["type", "range"] },
+                      "then": {
+                        "$switch": "valueStart",
+                        "cases": {
+                          "0": "0%",
+                          "0.1": "10%",
+                          "0.2": "20%",
+                          "0.3": "30%",
+                          "0.4": "40%",
+                          "0.5": "50%",
+                          "0.6": "60%",
+                          "0.7": "70%",
+                          "0.8": "80%",
+                          "0.9": "90%",
+                          "1": "100%"
+                        }
+                      },
+                      "else": "0%"
+                    },
+                    "height": "fill",
+                    "layout": { "type": "none" },
+                    "visible": { "$eq": ["type", "range"] },
+                    "children": [
+                      {
+                        "type": "frame",
+                        "name": "recorte",
+                        "layout": { "type": "none" },
+                        "anchors": { "left": -8, "right": 0, "top": 0, "bottom": 0 },
+                        "clip": true,
+                        "visible": {
+                          "$and": [
+                            { "$eq": ["type", "range"] },
+                            { "$not": { "$eq": ["valueStart", "0"] } }
+                          ]
+                        },
+                        "children": [
+                          {
+                            "type": "frame",
+                            "name": "base",
+                            "layout": { "type": "none" },
+                            "anchors": {
+                              "left": 8,
+                              "right": 0,
+                              "top": 0,
+                              "bottom": 0
+                            },
+                            "children": [
+                              {
+                                "type": "frame",
+                                "name": "régua",
+                                "anchors": { "centerY": true, "left": 0 },
+                                "width": {
+                                  "$switch": "valueStart",
+                                  "cases": {
+                                    "0": "100%",
+                                    "0.1": "1000%",
+                                    "0.2": "500%",
+                                    "0.3": "333.333333%",
+                                    "0.4": "250%",
+                                    "0.5": "200%",
+                                    "0.6": "166.666667%",
+                                    "0.7": "142.857143%",
+                                    "0.8": "125%",
+                                    "0.9": "111.111111%",
+                                    "1": "100%"
+                                  }
+                                },
+                                "height": 4,
+                                "layout": { "type": "none" },
+                                "children": [
+                                  {
+                                    "type": "frame",
+                                    "name": "marcas sobre o trecho inativo",
+                                    "anchors": {
+                                      "centerY": true,
+                                      "left": -2,
+                                      "right": -2
+                                    },
+                                    "height": 4,
+                                    "layout": {
+                                      "type": "row",
+                                      "padding": {
+                                        "$if": {
+                                          "$and": [
+                                            {
+                                              "$and": [
+                                                { "$has": "steps" },
+                                                {
+                                                  "$not": {
+                                                    "$eq": ["steps", "0"]
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "$not": {
+                                                "$and": [
+                                                  {
+                                                    "$not": {
+                                                      "$eq": ["type", "range"]
+                                                    }
+                                                  },
+                                                  {
+                                                    "$or": [
+                                                      {
+                                                        "$eq": ["value", "0"]
+                                                      },
+                                                      {
+                                                        "$eq": ["value", "1"]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "then": 0,
+                                        "else": [0, 8]
+                                      },
+                                      "justify": "space-between"
+                                    },
+                                    "children": [
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] },
+                                              { "$eq": ["steps", "4"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] },
+                                              { "$eq": ["steps", "4"] },
+                                              { "$eq": ["steps", "5"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] },
+                                              { "$eq": ["steps", "4"] },
+                                              { "$eq": ["steps", "5"] },
+                                              { "$eq": ["steps", "6"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] },
+                                              { "$eq": ["steps", "4"] },
+                                              { "$eq": ["steps", "5"] },
+                                              { "$eq": ["steps", "6"] },
+                                              { "$eq": ["steps", "7"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] },
+                                              { "$eq": ["steps", "4"] },
+                                              { "$eq": ["steps", "5"] },
+                                              { "$eq": ["steps", "6"] },
+                                              { "$eq": ["steps", "7"] },
+                                              { "$eq": ["steps", "8"] }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "rect",
+                        "name": "alça",
+                        "width": 4,
+                        "height": 44,
+                        "anchors": { "centerY": true, "right": -2 },
+                        "cornerRadius": { "$token": "corner-full" },
+                        "fill": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "on-surface" },
+                          "else": { "$token": "primary" }
+                        },
+                        "opacity": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "state-disabled-content" },
+                          "else": 1
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "frame",
+                    "name": "meio",
+                    "width": "fill",
+                    "height": "fill",
+                    "layout": { "type": "none" }
+                  },
+                  {
+                    "type": "frame",
+                    "name": "depois do fim",
+                    "width": {
+                      "$if": { "$eq": ["type", "range"] },
+                      "then": {
+                        "$switch": "valueEnd",
+                        "cases": {
+                          "0": "100%",
+                          "0.1": "90%",
+                          "0.2": "80%",
+                          "0.3": "70%",
+                          "0.4": "60%",
+                          "0.5": "50%",
+                          "0.6": "40%",
+                          "0.7": "30%",
+                          "0.8": "20%",
+                          "0.9": "10%",
+                          "1": "0%"
+                        }
+                      },
+                      "else": {
+                        "$switch": "value",
+                        "cases": {
+                          "0": "100%",
+                          "0.1": "90%",
+                          "0.2": "80%",
+                          "0.3": "70%",
+                          "0.4": "60%",
+                          "0.5": "50%",
+                          "0.6": "40%",
+                          "0.7": "30%",
+                          "0.8": "20%",
+                          "0.9": "10%",
+                          "1": "0%"
+                        }
+                      }
+                    },
+                    "height": "fill",
+                    "layout": { "type": "none" },
+                    "children": [
+                      {
+                        "type": "frame",
+                        "name": "recorte",
+                        "layout": { "type": "none" },
+                        "anchors": { "left": 0, "right": -8, "top": 0, "bottom": 0 },
+                        "clip": true,
+                        "visible": {
+                          "$not": {
+                            "$or": [
+                              {
+                                "$and": [
+                                  { "$not": { "$eq": ["type", "range"] } },
+                                  { "$eq": ["value", "1"] }
+                                ]
+                              },
+                              {
+                                "$and": [
+                                  { "$eq": ["type", "range"] },
+                                  { "$eq": ["valueEnd", "1"] }
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "children": [
+                          {
+                            "type": "frame",
+                            "name": "base",
+                            "layout": { "type": "none" },
+                            "anchors": {
+                              "left": 0,
+                              "right": 8,
+                              "top": 0,
+                              "bottom": 0
+                            },
+                            "children": [
+                              {
+                                "type": "frame",
+                                "name": "régua",
+                                "anchors": { "centerY": true, "right": 0 },
+                                "width": {
+                                  "$if": { "$eq": ["type", "range"] },
+                                  "then": {
+                                    "$switch": "valueEnd",
+                                    "cases": {
+                                      "0": "100%",
+                                      "0.1": "111.111111%",
+                                      "0.2": "125%",
+                                      "0.3": "142.857143%",
+                                      "0.4": "166.666667%",
+                                      "0.5": "200%",
+                                      "0.6": "250%",
+                                      "0.7": "333.333333%",
+                                      "0.8": "500%",
+                                      "0.9": "1000%",
+                                      "1": "100%"
+                                    }
+                                  },
+                                  "else": {
+                                    "$switch": "value",
+                                    "cases": {
+                                      "0": "100%",
+                                      "0.1": "111.111111%",
+                                      "0.2": "125%",
+                                      "0.3": "142.857143%",
+                                      "0.4": "166.666667%",
+                                      "0.5": "200%",
+                                      "0.6": "250%",
+                                      "0.7": "333.333333%",
+                                      "0.8": "500%",
+                                      "0.9": "1000%",
+                                      "1": "100%"
+                                    }
+                                  }
+                                },
+                                "height": 4,
+                                "layout": { "type": "none" },
+                                "children": [
+                                  {
+                                    "type": "frame",
+                                    "name": "marcas sobre o trecho inativo",
+                                    "anchors": {
+                                      "centerY": true,
+                                      "left": -2,
+                                      "right": -2
+                                    },
+                                    "height": 4,
+                                    "layout": {
+                                      "type": "row",
+                                      "padding": {
+                                        "$if": {
+                                          "$and": [
+                                            {
+                                              "$and": [
+                                                { "$has": "steps" },
+                                                {
+                                                  "$not": {
+                                                    "$eq": ["steps", "0"]
+                                                  }
+                                                }
+                                              ]
+                                            },
+                                            {
+                                              "$not": {
+                                                "$and": [
+                                                  {
+                                                    "$not": {
+                                                      "$eq": ["type", "range"]
+                                                    }
+                                                  },
+                                                  {
+                                                    "$or": [
+                                                      {
+                                                        "$eq": ["value", "0"]
+                                                      },
+                                                      {
+                                                        "$eq": ["value", "1"]
+                                                      }
+                                                    ]
+                                                  }
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        },
+                                        "then": 0,
+                                        "else": [0, 8]
+                                      },
+                                      "justify": "space-between"
+                                    },
+                                    "children": [
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": "none",
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] },
+                                              { "$eq": ["steps", "4"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] },
+                                              { "$eq": ["steps", "4"] },
+                                              { "$eq": ["steps", "5"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] },
+                                              { "$eq": ["steps", "4"] },
+                                              { "$eq": ["steps", "5"] },
+                                              { "$eq": ["steps", "6"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] },
+                                              { "$eq": ["steps", "4"] },
+                                              { "$eq": ["steps", "5"] },
+                                              { "$eq": ["steps", "6"] },
+                                              { "$eq": ["steps", "7"] }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "ellipse",
+                                        "name": "marca",
+                                        "width": 4,
+                                        "height": 4,
+                                        "fill": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": { "$token": "on-surface" },
+                                          "else": { "$token": "primary" }
+                                        },
+                                        "opacity": {
+                                          "$if": { "$eq": ["enabled", "false"] },
+                                          "then": {
+                                            "$token": "state-disabled-content"
+                                          },
+                                          "else": 1
+                                        },
+                                        "visible": {
+                                          "$not": {
+                                            "$or": [
+                                              {
+                                                "$not": { "$has": "steps" }
+                                              },
+                                              { "$eq": ["steps", "0"] },
+                                              { "$eq": ["steps", "1"] },
+                                              { "$eq": ["steps", "2"] },
+                                              { "$eq": ["steps", "3"] },
+                                              { "$eq": ["steps", "4"] },
+                                              { "$eq": ["steps", "5"] },
+                                              { "$eq": ["steps", "6"] },
+                                              { "$eq": ["steps", "7"] },
+                                              { "$eq": ["steps", "8"] }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "rect",
+                        "name": "alça",
+                        "width": 4,
+                        "height": 44,
+                        "anchors": { "centerY": true, "left": -2 },
+                        "cornerRadius": { "$token": "corner-full" },
+                        "fill": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "on-surface" },
+                          "else": { "$token": "primary" }
+                        },
+                        "opacity": {
+                          "$if": { "$eq": ["enabled", "false"] },
+                          "then": { "$token": "state-disabled-content" },
+                          "else": 1
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "frame",
+                "name": "recuo",
+                "width": {
+                  "$if": {
+                    "$and": [
+                      {
+                        "$and": [
+                          { "$has": "steps" },
+                          { "$not": { "$eq": ["steps", "0"] } }
+                        ]
+                      },
+                      {
+                        "$not": {
+                          "$and": [
+                            { "$not": { "$eq": ["type", "range"] } },
+                            {
+                              "$or": [
+                                { "$eq": ["value", "0"] },
+                                { "$eq": ["value", "1"] }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  "then": 8,
+                  "else": 0
                 },
-                {
-                  "$eq": ["valueEnd", "0.2"]
-                }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "trilho ativo",
-            "width": "19.0%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "trilho inativo",
-            "width": "fill",
-            "height": 16,
-            "cornerRadius": [2, 8, 8, 2],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "valor 0.3",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
-                },
-                {
-                  "$eq": ["value", "0.3"]
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
-                },
-                {
-                  "$eq": ["valueEnd", "0.3"]
-                }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "trilho ativo",
-            "width": "28.5%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "trilho inativo",
-            "width": "fill",
-            "height": 16,
-            "cornerRadius": [2, 8, 8, 2],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "valor 0.4",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
-                },
-                {
-                  "$eq": ["value", "0.4"]
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
-                },
-                {
-                  "$eq": ["valueEnd", "0.4"]
-                }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "trilho ativo",
-            "width": "38.0%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "trilho inativo",
-            "width": "fill",
-            "height": 16,
-            "cornerRadius": [2, 8, 8, 2],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "valor 0.5",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
-                },
-                {
-                  "$eq": ["value", "0.5"]
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
-                },
-                {
-                  "$eq": ["valueEnd", "0.5"]
-                }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "trilho ativo",
-            "width": "47.6%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "trilho inativo",
-            "width": "fill",
-            "height": 16,
-            "cornerRadius": [2, 8, 8, 2],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "valor 0.6",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
-                },
-                {
-                  "$eq": ["value", "0.6"]
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
-                },
-                {
-                  "$eq": ["valueEnd", "0.6"]
-                }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "trilho ativo",
-            "width": "57.1%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "trilho inativo",
-            "width": "fill",
-            "height": 16,
-            "cornerRadius": [2, 8, 8, 2],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "valor 0.7",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
-                },
-                {
-                  "$eq": ["value", "0.7"]
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
-                },
-                {
-                  "$eq": ["valueEnd", "0.7"]
-                }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "trilho ativo",
-            "width": "66.6%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "trilho inativo",
-            "width": "fill",
-            "height": 16,
-            "cornerRadius": [2, 8, 8, 2],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "valor 0.8",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
-                },
-                {
-                  "$eq": ["value", "0.8"]
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
-                },
-                {
-                  "$eq": ["valueEnd", "0.8"]
-                }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "trilho ativo",
-            "width": "76.1%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "trilho inativo",
-            "width": "fill",
-            "height": 16,
-            "cornerRadius": [2, 8, 8, 2],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "valor 0.9",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
-                },
-                {
-                  "$eq": ["value", "0.9"]
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
-                },
-                {
-                  "$eq": ["valueEnd", "0.9"]
-                }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "trilho ativo",
-            "width": "85.6%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "trilho inativo",
-            "width": "fill",
-            "height": 16,
-            "cornerRadius": [2, 8, 8, 2],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "valor 1",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$or": [
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "single"]
-                },
-                {
-                  "$eq": ["value", "1"]
-                }
-              ]
-            },
-            {
-              "$and": [
-                {
-                  "$eq": ["type", "range"]
-                },
-                {
-                  "$eq": ["valueEnd", "1"]
-                }
-              ]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "trilho ativo",
-            "width": "96.8%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 0",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "0"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 0.1",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "0.1"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "cobertura",
-            "width": "9.5%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 0.2",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "0.2"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "cobertura",
-            "width": "19.0%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 0.3",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "0.3"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "cobertura",
-            "width": "28.5%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 0.4",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "0.4"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "cobertura",
-            "width": "38.0%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 0.5",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "0.5"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "cobertura",
-            "width": "47.6%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 0.6",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "0.6"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "cobertura",
-            "width": "57.1%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 0.7",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "0.7"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "cobertura",
-            "width": "66.6%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 0.8",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "0.8"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "cobertura",
-            "width": "76.1%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 0.9",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "0.9"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "cobertura",
-            "width": "85.6%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "início 1",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$and": [
-            {
-              "$eq": ["type", "range"]
-            },
-            {
-              "$eq": ["valueStart", "1"]
-            }
-          ]
-        },
-        "layout": {
-          "type": "row",
-          "align": "center"
-        },
-        "children": [
-          {
-            "type": "rect",
-            "name": "cobertura",
-            "width": "96.8%",
-            "height": 16,
-            "cornerRadius": [8, 2, 2, 8],
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#E8DEF8"
-            }
-          },
-          {
-            "type": "frame",
-            "name": "espaço",
-            "width": 6,
-            "height": 16
-          },
-          {
-            "type": "rect",
-            "name": "alça inicial",
-            "width": 4,
-            "height": 44,
-            "cornerRadius": 2,
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "marcas 1",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$eq": ["steps", "1"]
-        },
-        "layout": {
-          "type": "row",
-          "padding": [0, 10],
-          "align": "center",
-          "justify": "space-between"
-        },
-        "children": [
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "marcas 2",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$eq": ["steps", "2"]
-        },
-        "layout": {
-          "type": "row",
-          "padding": [0, 10],
-          "align": "center",
-          "justify": "space-between"
-        },
-        "children": [
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "marcas 3",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$eq": ["steps", "3"]
-        },
-        "layout": {
-          "type": "row",
-          "padding": [0, 10],
-          "align": "center",
-          "justify": "space-between"
-        },
-        "children": [
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "marcas 4",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$eq": ["steps", "4"]
-        },
-        "layout": {
-          "type": "row",
-          "padding": [0, 10],
-          "align": "center",
-          "justify": "space-between"
-        },
-        "children": [
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "marcas 5",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$eq": ["steps", "5"]
-        },
-        "layout": {
-          "type": "row",
-          "padding": [0, 10],
-          "align": "center",
-          "justify": "space-between"
-        },
-        "children": [
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "marcas 9",
-        "width": "fill",
-        "height": "fill",
-        "visible": {
-          "$eq": ["steps", "9"]
-        },
-        "layout": {
-          "type": "row",
-          "padding": [0, 10],
-          "align": "center",
-          "justify": "space-between"
-        },
-        "children": [
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "marca",
-            "width": 4,
-            "height": 4,
-            "fill": "#6750A4",
-            "stroke": {
-              "color": "#E8DEF8",
-              "width": 1,
-              "align": "outside"
-            }
+                "height": "fill",
+                "layout": { "type": "none" }
+              }
+            ]
           }
         ]
       }

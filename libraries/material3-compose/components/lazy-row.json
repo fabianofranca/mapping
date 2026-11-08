@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "lazy-row",
   "name": "LazyRow",
   "description": "Lista horizontal que compõe só os itens visíveis: as filhas se enfileiram, com spacing e contentPadding.",
@@ -131,8 +131,44 @@
             "$field": "contentPadding",
             "default": 0
           },
-          "align": "start",
-          "justify": "start"
+          "align": {
+            "$switch": "verticalAlignment",
+            "cases": {
+              "Top": "start",
+              "CenterVertically": "center",
+              "Bottom": "end"
+            },
+            "default": "start"
+          },
+          "justify": {
+            "$if": {
+              "$eq": ["reverseLayout", "true"]
+            },
+            "then": {
+              "$switch": "horizontalArrangement",
+              "cases": {
+                "Start": "end",
+                "End": "end",
+                "Center": "center",
+                "SpaceBetween": "space-between",
+                "SpaceAround": "space-between",
+                "SpaceEvenly": "space-between"
+              },
+              "default": "end"
+            },
+            "else": {
+              "$switch": "horizontalArrangement",
+              "cases": {
+                "Start": "start",
+                "End": "end",
+                "Center": "center",
+                "SpaceBetween": "space-between",
+                "SpaceAround": "space-between",
+                "SpaceEvenly": "space-between"
+              },
+              "default": "start"
+            }
+          }
         }
       }
     ]

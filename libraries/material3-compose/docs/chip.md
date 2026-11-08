@@ -71,3 +71,30 @@ Variante `suggestion-elevated`: `onClick` liga à lógica da tela e `label = { T
 - **Assist**: label=Adicionar ao calendário, style=assist, leadingIcon=DateRange
 - **Filtro selecionado**: label=Aberto agora, style=filter, selected=true
 - **Valor digitado**: label=ana@exemplo.com, style=input, trailingIcon=Close
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Chip.kt`: os chips (`AssistChip`, `ElevatedAssistChip`, `FilterChip`, `ElevatedFilterChip`, `InputChip`, `SuggestionChip`, `ElevatedSuggestionChip`, linhas 130 a 1000), os `Defaults` e as cores padrão (linhas 1005 a 1940: `assistChipColors` nas linhas 1051 a 1070, `elevatedAssistChipColors` 1195 a 1218, `filterChipColors` 1319 a 1350, `elevatedFilterChipColors` 1476 a 1510, `inputChipColors` 1616 a 1650, `suggestionChipColors` 2719 a 2737, `elevatedSuggestionChipColors` 1885 a 1905; bordas em 1398, 1692, 1805), o `Chip` e o `SelectableChip` (linhas 1942 a 2037: `Surface` com cor, `shadowElevation` e borda), o `ChipContent` (linhas 2042 a 2100) e a política de medida `ChipLayoutMeasurePolicy` (linhas 2257 a 2300), e os paddings (linhas 2943 a 2964: `inputChipPadding` 4 ou 8, `HorizontalElementsPadding = 8.dp`, `AssistChipPadding`, `FilterChipPadding`, `SuggestionChipPadding`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/AssistChipTokens.kt`, `FilterChipTokens.kt`, `InputChipTokens.kt` e `SuggestionChipTokens.kt` (altura 32, `CornerSmall`, `LabelTextFont = LabelLarge`, ícones de 18, cores de contêiner, rótulo e ícone por estado, opacidades 0,38 e 0,12, `FlatOutlineColor = OutlineVariant`, `ElevatedContainerElevation = Level1`) e `ElevationTokens.kt` (`Level1 = 1.dp`).
+- `ColorLightTokens.kt`, `ColorDarkTokens.kt` e `ShapeTokens.kt` (`corner-small` 8).
+
+**Como o desenho segue o Compose**
+
+- 32 de altura e `corner-small`. Os chips planos (`assist`, `filter`, `input`, `suggestion`) não têm fundo e têm contorno de 1 em `outline-variant`; selecionado (`filter` e `input`) o fundo é `secondary-container` e o contorno some (`SelectedOutlineWidth = 0`). Os elevated têm fundo `surface-container-low` (o `filter-elevated` selecionado, `secondary-container`), sombra do nível 1 e nenhum contorno.
+- O rótulo usa `label-large-*`. Cores: assist `on-surface`; suggestion `on-surface-variant`; filter e input `on-surface-variant`, e `on-secondary-container` quando selecionados. Ícone inicial: assist, suggestion e filter não selecionado em `primary`; filter selecionado em `on-secondary-container`; input em `on-surface-variant` (selecionado, `primary`). Ícone final: assist em `primary`; filter e input em `on-surface-variant` (selecionado, `on-secondary-container`). O suggestion não tem ícone final (o Compose só dá um ícone, o inicial), então `trailingIcon` não desenha nele.
+- Medidas do `Chip.kt`: 8 de padding nas bordas, 18 de ícone e 8 de cada lado do rótulo (o texto começa 16 da borda sem ícone e 34 com ícone inicial); o input usa 4 (sem ícone inicial) ou 8 (com ícone inicial) nas bordas, e 4 ou 8 (com ícone final) no fim.
+- Filter selecionado sem `leadingIcon` desenha o check (`done`), que é o costume do Compose para o filtro marcado; com `leadingIcon` preenchido, desenha o ícone escolhido, como o Compose (que desenha só o que recebe).
+- Desabilitado: rótulo e ícones em `on-surface` com a opacidade `state-disabled-content` (0,38); o contêiner dos elevated e dos selecionados em `on-surface` com `state-disabled-container` (0,12); o contorno dos planos não selecionados em `on-surface` com 0,12; sem sombra.
+- Os ícones são nós `icon` do conjunto da biblioteca, com o `$switch` do nome do Compose para o nome do conjunto, cobrindo as sugestões de `leadingIcon` e `trailingIcon`.
+
+**O que ainda difere do Compose**
+
+- O `y` (1) e o `blur` (2) da sombra são números, os mesmos de `elevation-1-y` e `elevation-1-blur`: `shadow.y` e `shadow.blur` não aceitam `$token` no formato 4.
+- O avatar do `InputChip` não é campo do tipo; o desenho não o tem.
+- A largura é a da marcação: o chip não mede o rótulo para crescer (o `hug` do eixo largura só vale em tela arrumada pelo `layoutScreen`, e este componente não tem slot). O Compose mede o conteúdo.
+- O rótulo não corta nem quebra de propósito (o `Text` do Compose também não); um rótulo maior que a caixa avisa `texto maior que a caixa`.
+- Sem camadas de estado (hover, foco, pressionado, arrastado) nem movimento (a animação dos ícones do `SelectableChip`).

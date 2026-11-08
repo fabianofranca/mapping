@@ -73,3 +73,26 @@ Variante `permanent`: Estável, sem opt-in. `PermanentNavigationDrawer(drawerCon
 - **Modal com cabeçalho**: style=modal, headline=Mapping
 - **Dismissible**: style=dismissible, headline=Pastas
 - **Permanente sem cabeçalho**: style=permanent
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationDrawer.kt` (linhas 590 a 612: `ModalDrawerSheet`, forma e cor padrão e elevação Level0; 679 a 700: `DismissibleDrawerSheet`, `RectangleShape`; 764 a 784: `PermanentDrawerSheet`; 786 a 857: `DrawerSheet`, a largura entre 240 e 360 e o `Surface`; 997 a 1035: `DrawerDefaults`, `shape`, `standardContainerColor`, `modalContainerColor` e as elevações; 1068 a 1111: `NavigationDrawerItem`, `heightIn(min = 56)`, `fillMaxWidth()`, `padding(start = 16.dp, end = 24.dp)` e os `Spacer` de 12; 1146 a 1188: as cores do item e o `ItemPadding` de 12).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/NavigationDrawerTokens.kt` (linhas 28 a 58: cores ativa e inativa, `ActiveIndicatorHeight` 56, `ActiveIndicatorShape` full, `ActiveIndicatorWidth` 336, `ContainerShape` CornerLargeEnd, `ContainerWidth` 360, `HeadlineColor` e `HeadlineFont` title small, `LabelTextFont` e `LargeBadgeLabelFont` label large, `ModalContainerColor` surface container low, `StandardContainerColor` surface).
+
+**Como o desenho segue o Compose**
+
+- Folha de 360 de largura: a modal em `surface-container-low` com os cantos do fim de 16 (`CornerLargeEnd`); a dismissible e a permanent em `surface`, sem cantos. Sem sombra nem tonal (as elevações padrão são Level0).
+- Margem de 12 dos lados (`NavigationDrawerItemDefaults.ItemPadding`) e de 12 em cima; itens de 56 de altura mínima e 336 de largura, na forma `corner-full`, sem espaço entre eles. `secondary-container` no selecionado.
+- Item: 16 de recuo no começo, ícone de 24, 12 até o rótulo (que ocupa o resto, `weight(1f)`), 12 até o selo e 24 de recuo no fim. Ícone, rótulo e selo usam a mesma cor: `on-secondary-container` no selecionado e `on-surface-variant` nos demais.
+- Rótulo e selo em `label-large` (14 / 20, peso 500, 0,1); cabeçalho opcional de 56 de altura com 16 de recuo, em `title-small` e `on-surface-variant` (`HeadlineFont` e `HeadlineColor`).
+
+**O que ainda difere do Compose**
+
+- O `NavigationDrawerItem` não aplica estilo de texto: a tipografia vem do `Text` que a tela passa. O desenho usa a do arquivo de tokens (`LabelTextFont`, `LargeBadgeLabelFont`, `HeadlineFont`); o exemplo oficial do cabeçalho usa `titleLarge`. O cabeçalho de 56 e o espaço de 12 em cima são convenção do desenho (do exemplo), não do composable.
+- O raio `[0, 16, 16, 0]` da modal é literal: a lista de raios do formato não aceita `$token`, então o 16 de `CornerLargeEnd` não vem do token `corner-large`.
+- A largura do Compose fica entre 240 e 360 (`sizeIn`); aqui a folha ocupa a largura da marcação. Scrim, gesto, animação, o selo como composable (aqui é texto) e as variantes `DrawerState` ficam fora do desenho.
+- Sem estados de pressionado, foco e passar o mouse e sem o ripple.

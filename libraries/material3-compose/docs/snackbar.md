@@ -56,3 +56,32 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Só mensagem**: message=Arquivo salvo
 - **Com ação**: message=Mensagem arquivada, actionLabel=Desfazer
 - **Com ação e fechar**: message=Sem conexão, actionLabel=Tentar de novo, dismissAction=true
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade fica literal no componente, nenhum nó de texto declara `family` (todos herdam `font-sans`) e o ícone de fechar é o nó `icon` do conjunto da biblioteca (`close`), sem caminho SVG no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Snackbar.kt` (linhas 100 a 140: `Snackbar`, o `Surface` com `shadowElevation = SnackbarTokens.ContainerElevation` (117) e a escolha entre `NewLineButtonSnackbar` e `OneRowSnackbar`; 197 a 250: o `Snackbar(snackbarData)`, o `TextButton` da ação, o `IconButton` com `Icons.Filled.Close` e o `padding(12.dp)` de fora (238); 252 a 295: `NewLineButtonSnackbar`, `padding(start = 16, bottom = 2)`, `paddingFromBaseline(30, 12)` no texto e `padding(end = 8)` nas ações; 297 a 409: `OneRowSnackbar`, o texto com `padding(vertical = 6)` (310), a largura do texto sem os botões e sem os 8 de `TextEndExtraSpacing` quando não há fechar (344 a 347), a altura mínima de 48 (366) ou 68 (385) pelo número de linhas e o texto a 30 da linha de base (383) na versão de várias linhas; 411 a 435: `SnackbarDefaults`; 437 a 444: `ContainerMaxWidth` 600, `HeightToFirstLine` 30, `HorizontalSpacing` 16, `HorizontalSpacingButtonSide` 8, `SeparateButtonExtraY` 2, `SnackbarVerticalPadding` 6, `TextEndExtraSpacing` 8 e `LongButtonVerticalOffset` 12).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SnackbarTokens.kt` (linhas 26 e 27: ação em `InversePrimary` e `LabelLarge`; 29 a 31: contêiner `InverseSurface`, `ContainerElevation` `Level3` e forma `CornerExtraSmall`; 32 e 36: ícone `InverseOnSurface` de 24; 37 e 38: texto em `InverseOnSurface` e `BodyMedium`; 39 e 40: alturas 48 e 68), `ElevationTokens.kt` (`Level3` 6 dp) e `ShapeTokens.kt` (linha 38: `CornerExtraSmall` 4).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (linhas 497 a 510 e 527: `TextButtonContentPadding` de 12 e `MinWidth` 58), `IconButton.kt` (linhas 177 a 179: `minimumInteractiveComponentSize()` e `smallContainerSize()`, o contêiner de 40) e `Surface.kt` (linha 219: a área de toque de 48 do `Surface` clicável).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt` (`BodyMedium` 14/20/400/0,2 e `LabelLarge` 14/20/500/0,1).
+
+**Como o desenho segue o Compose**
+
+- Contêiner `inverse-surface` com `corner-extra-small` (4) e sombra do nível 3 (`elevation-shadow`, deslocamento 3 e desfoque 12, os valores de `elevation-3-y` e `elevation-3-blur`), em light e dark: no dark o fundo é claro e o texto escuro, porque os papéis `inverse-*` trocam de modo.
+- Mensagem em `body-medium` (14/20) em `inverse-on-surface`, a 16 da borda. Ação (`TextButton`) em `label-large` em `inverse-primary`, com 12 de cada lado, 58 no mínimo e 48 de altura (os 40 do botão mais a área de toque mínima); fechar é um `IconButton` com a área de 48 e o ícone `close` de 24 em `inverse-on-surface`, colado à direita (12 do ícone à borda).
+- Uma linha: altura mínima de 48 (`SingleLineContainerHeight`), mensagem centrada na altura. Com ação e sem fechar, a ação termina a 8 da borda (`HorizontalSpacingButtonSide`) e a mensagem a 8 dela (`TextEndExtraSpacing`); sem ação nem fechar, a mensagem tem 16 dos dois lados (8 + 8); com fechar não há folga entre a mensagem e a ação, e o fechar encosta na borda.
+- Mensagem de duas linhas: o respiro de 14 em cima e embaixo faz a altura ser 68 (`TwoLinesContainerHeight`) e a ação continua centrada, como o Compose; uma linha continua em 48 com o mesmo respiro.
+- Ação em nova linha (`actionOnNewLine` com ação preenchida; sem ação o Compose cai na linha única, e o desenho também): mensagem a 15 do topo (`paddingFromBaseline(30)` com a linha de base do Roboto 14/20 em 15), 7 abaixo dela (12 menos os 5 da linha de base ao fim da linha), as ações numa fileira de 48 à direita e 2 de margem embaixo: 15 + 20 + 7 + 48 + 2 = 92 para uma linha de texto.
+- Largura máxima de 600 (`ContainerMaxWidth`, o `maxWidth` da raiz).
+
+**O que ainda difere do Compose**
+
+- O Compose decide entre 48 e 68 pelo número de linhas reais do texto (`isOneLine`), com o texto a 30 da linha de base nas várias linhas; o formato não conhece o número de linhas na hora de arrumar. O respiro de 14 em cima e embaixo dá 48 com uma linha e 68 com duas, mas com três linhas o desenho mede 88 e o Compose 81, e na de duas linhas o texto fica a 14 do topo e no Compose a 15.
+- Com a ação em nova linha a altura é a do código (92 com uma linha de texto), e não os 68 que o campo `actionOnNewLine` diz: os 68 são o `TwoLinesContainerHeight` da linha única de duas linhas. A descrição do campo na especialização não mudou nesta fase.
+- A posição vertical vem da linha de base do Compose (30, 12, `FirstBaseline`); o motor não alinha por linha de base, então o 15 e o 7 são estimados para o Roboto 14/20 e valem para essa fonte e esse tamanho.
+- O limite de 600 vale só quando o componente é medido sem retângulo (`hug`), e o `sizing` deste componente é `fill` na largura; com a marcação desenhada a largura é a dela.
+- A sombra é uma só, em preto a 30%, com o `y` e o `blur` em números no componente (o `shadow` só aceita `$token` na cor); o Compose compõe a sombra ambiente e a do ponto.
+- Fora do desenho: o `SnackbarHost` (posição na tela, os 12 de margem do `Snackbar(snackbarData)`, a fila, o tempo de exibição e a animação), o estado de pressionado, foco e passar o mouse, e o `contentDescription` do fechar.

@@ -1,0 +1,20 @@
+Ícones do pacote Material 3 (Compose)
+=====================================
+
+A especialização (material3-compose.spec.json) declara o conjunto em "icons":
+
+  - icons/material-icons.json (mapping-icons, formatVersion 1, viewBox 24 x 24)
+
+O conjunto é um subconjunto do Material Icons na variante Filled (o Icons.Default do Compose),
+com os caminhos tirados do pacote npm @material-design-icons/svg 0.14.15 (pasta "filled"),
+licenciado sob a Apache License 2.0. O texto da licença está em LICENSE-material-icons.txt,
+ao lado.
+
+O nome de cada ícone é o do pacote, em snake_case (home, keyboard_arrow_right). Os campos de
+ícone dos tipos guardam o nome do Compose (Home, KeyboardArrowRight, o que vai em
+Icons.Default.<nome>), e o componente traduz um para o outro.
+
+Para acrescentar um ícone: pegue o <nome>.svg da pasta "filled" do pacote, copie o "d" do
+<path> para uma entrada nova de "icons" (um ícone de vários caminhos leva um item de "paths"
+por <path>), e acrescente o nome do Compose às "suggestions" dos campos de ícone e ao
+$switch de nomes do componente icon.

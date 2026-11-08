@@ -1,9 +1,9 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "divider",
   "name": "Divider",
-  "description": "Linha de 1 em outline variant, horizontal ou vertical, centrada na caixa da marcação, com recuo opcional nas pontas. O desenho aproxima a espessura de 1 a 4 dp.",
+  "description": "Linha de 1 dp em outline variant, horizontal ou vertical, centrada na caixa da marcação, com a espessura do campo e recuo opcional nas pontas.",
   "size": {
     "width": 360,
     "height": 16
@@ -26,189 +26,60 @@
     "children": [
       {
         "type": "frame",
-        "name": "horizontal",
+        "name": "linha com recuo",
         "layout": {
-          "type": "row",
-          "gap": {
-            "$field": "inset",
-            "default": 0
-          },
-          "align": "center"
-        },
-        "visible": {
-          "$not": {
-            "$eq": ["orientation", "vertical"]
-          }
-        },
-        "children": [
-          {
-            "type": "frame",
-            "name": "ponta esquerda",
-            "width": 0,
-            "height": 1,
-            "children": []
-          },
-          {
-            "type": "frame",
-            "name": "linha",
-            "width": "fill",
-            "height": "hug",
-            "layout": {
-              "type": "column"
+          "type": {
+            "$if": {
+              "$eq": ["orientation", "vertical"]
             },
-            "children": [
-              {
-                "type": "rect",
-                "name": "linha 1",
-                "fill": "#CAC4D0",
-                "visible": {
-                  "$not": {
-                    "$or": [
-                      {
-                        "$eq": ["thickness", "2"]
-                      },
-                      {
-                        "$eq": ["thickness", "3"]
-                      },
-                      {
-                        "$eq": ["thickness", "4"]
-                      }
-                    ]
-                  }
-                },
-                "width": "fill",
-                "height": 1
-              },
-              {
-                "type": "rect",
-                "name": "linha 2",
-                "fill": "#CAC4D0",
-                "visible": {
-                  "$eq": ["thickness", "2"]
-                },
-                "width": "fill",
-                "height": 2
-              },
-              {
-                "type": "rect",
-                "name": "linha 3",
-                "fill": "#CAC4D0",
-                "visible": {
-                  "$eq": ["thickness", "3"]
-                },
-                "width": "fill",
-                "height": 3
-              },
-              {
-                "type": "rect",
-                "name": "linha 4",
-                "fill": "#CAC4D0",
-                "visible": {
-                  "$eq": ["thickness", "4"]
-                },
-                "width": "fill",
-                "height": 4
-              }
-            ]
+            "then": "column",
+            "else": "row"
           },
-          {
-            "type": "frame",
-            "name": "ponta direita",
-            "width": 0,
-            "height": 1,
-            "children": []
-          }
-        ]
-      },
-      {
-        "type": "frame",
-        "name": "vertical",
-        "layout": {
-          "type": "column",
           "gap": {
             "$field": "inset",
             "default": 0
           },
           "align": "center"
         },
-        "visible": {
-          "$eq": ["orientation", "vertical"]
-        },
         "children": [
           {
             "type": "frame",
-            "name": "ponta de cima",
-            "width": 1,
+            "name": "ponta inicial",
+            "width": 0,
             "height": 0,
             "children": []
           },
           {
-            "type": "frame",
+            "type": "rect",
             "name": "linha",
-            "width": "hug",
-            "height": "fill",
-            "layout": {
-              "type": "row"
+            "fill": {
+              "$token": "outline-variant"
             },
-            "children": [
-              {
-                "type": "rect",
-                "name": "linha 1",
-                "fill": "#CAC4D0",
-                "visible": {
-                  "$not": {
-                    "$or": [
-                      {
-                        "$eq": ["thickness", "2"]
-                      },
-                      {
-                        "$eq": ["thickness", "3"]
-                      },
-                      {
-                        "$eq": ["thickness", "4"]
-                      }
-                    ]
-                  }
-                },
-                "width": 1,
-                "height": "fill"
+            "width": {
+              "$if": {
+                "$eq": ["orientation", "vertical"]
               },
-              {
-                "type": "rect",
-                "name": "linha 2",
-                "fill": "#CAC4D0",
-                "visible": {
-                  "$eq": ["thickness", "2"]
-                },
-                "width": 2,
-                "height": "fill"
+              "then": {
+                "$field": "thickness",
+                "default": 1
               },
-              {
-                "type": "rect",
-                "name": "linha 3",
-                "fill": "#CAC4D0",
-                "visible": {
-                  "$eq": ["thickness", "3"]
-                },
-                "width": 3,
-                "height": "fill"
+              "else": "fill"
+            },
+            "height": {
+              "$if": {
+                "$eq": ["orientation", "vertical"]
               },
-              {
-                "type": "rect",
-                "name": "linha 4",
-                "fill": "#CAC4D0",
-                "visible": {
-                  "$eq": ["thickness", "4"]
-                },
-                "width": 4,
-                "height": "fill"
+              "then": "fill",
+              "else": {
+                "$field": "thickness",
+                "default": 1
               }
-            ]
+            }
           },
           {
             "type": "frame",
-            "name": "ponta de baixo",
-            "width": 1,
+            "name": "ponta final",
+            "width": 0,
             "height": 0,
             "children": []
           }

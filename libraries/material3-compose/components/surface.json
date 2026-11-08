@@ -1,9 +1,9 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "surface",
   "name": "Surface",
-  "description": "Superfície do Material 3: cor, forma e elevação tonal (a sobreposição da cor primária) atrás do conteúdo.",
+  "description": "Superfície do Material 3: cor, forma e elevação tonal (a sobreposição do surface tint sobre a cor surface, como o `Surface` do Compose) atrás do conteúdo.",
   "size": {
     "width": 200,
     "height": 100
@@ -30,61 +30,149 @@
     "fill": {
       "$switch": "color",
       "cases": {
-        "primary": "#6750A4",
-        "onPrimary": "#FFFFFF",
-        "primaryContainer": "#EADDFF",
-        "onPrimaryContainer": "#21005D",
-        "secondary": "#625B71",
-        "onSecondary": "#FFFFFF",
-        "secondaryContainer": "#E8DEF8",
-        "onSecondaryContainer": "#1D192B",
-        "tertiary": "#7D5260",
-        "onTertiary": "#FFFFFF",
-        "tertiaryContainer": "#FFD8E4",
-        "onTertiaryContainer": "#31111D",
-        "error": "#B3261E",
-        "onError": "#FFFFFF",
-        "errorContainer": "#F9DEDC",
-        "onErrorContainer": "#410E0B",
-        "background": "#FEF7FF",
-        "onBackground": "#1D1B20",
-        "surface": "#FEF7FF",
-        "onSurface": "#1D1B20",
-        "surfaceVariant": "#E7E0EC",
-        "onSurfaceVariant": "#49454F",
-        "surfaceTint": "#6750A4",
-        "inverseSurface": "#322F35",
-        "inverseOnSurface": "#F5EFF7",
-        "inversePrimary": "#D0BCFF",
-        "outline": "#79747E",
-        "outlineVariant": "#CAC4D0",
-        "scrim": "#000000",
-        "surfaceBright": "#FEF7FF",
-        "surfaceDim": "#DED8E1",
-        "surfaceContainerLowest": "#FFFFFF",
-        "surfaceContainerLow": "#F7F2FA",
-        "surfaceContainer": "#F3EDF7",
-        "surfaceContainerHigh": "#ECE6F0",
-        "surfaceContainerHighest": "#E6E0E9"
+        "primary": {
+          "$token": "primary"
+        },
+        "onPrimary": {
+          "$token": "on-primary"
+        },
+        "primaryContainer": {
+          "$token": "primary-container"
+        },
+        "onPrimaryContainer": {
+          "$token": "on-primary-container"
+        },
+        "secondary": {
+          "$token": "secondary"
+        },
+        "onSecondary": {
+          "$token": "on-secondary"
+        },
+        "secondaryContainer": {
+          "$token": "secondary-container"
+        },
+        "onSecondaryContainer": {
+          "$token": "on-secondary-container"
+        },
+        "tertiary": {
+          "$token": "tertiary"
+        },
+        "onTertiary": {
+          "$token": "on-tertiary"
+        },
+        "tertiaryContainer": {
+          "$token": "tertiary-container"
+        },
+        "onTertiaryContainer": {
+          "$token": "on-tertiary-container"
+        },
+        "error": {
+          "$token": "error"
+        },
+        "onError": {
+          "$token": "on-error"
+        },
+        "errorContainer": {
+          "$token": "error-container"
+        },
+        "onErrorContainer": {
+          "$token": "on-error-container"
+        },
+        "background": {
+          "$token": "background"
+        },
+        "onBackground": {
+          "$token": "on-background"
+        },
+        "surface": {
+          "$token": "surface"
+        },
+        "onSurface": {
+          "$token": "on-surface"
+        },
+        "surfaceVariant": {
+          "$token": "surface-variant"
+        },
+        "onSurfaceVariant": {
+          "$token": "on-surface-variant"
+        },
+        "surfaceTint": {
+          "$token": "surface-tint"
+        },
+        "inverseSurface": {
+          "$token": "inverse-surface"
+        },
+        "inverseOnSurface": {
+          "$token": "inverse-on-surface"
+        },
+        "inversePrimary": {
+          "$token": "inverse-primary"
+        },
+        "outline": {
+          "$token": "outline"
+        },
+        "outlineVariant": {
+          "$token": "outline-variant"
+        },
+        "scrim": {
+          "$token": "scrim"
+        },
+        "surfaceBright": {
+          "$token": "surface-bright"
+        },
+        "surfaceDim": {
+          "$token": "surface-dim"
+        },
+        "surfaceContainerLowest": {
+          "$token": "surface-container-lowest"
+        },
+        "surfaceContainerLow": {
+          "$token": "surface-container-low"
+        },
+        "surfaceContainer": {
+          "$token": "surface-container"
+        },
+        "surfaceContainerHigh": {
+          "$token": "surface-container-high"
+        },
+        "surfaceContainerHighest": {
+          "$token": "surface-container-highest"
+        }
       },
-      "default": "#FEF7FF"
+      "default": {
+        "$token": "surface"
+      }
     },
     "cornerRadius": {
       "$switch": "shape",
       "cases": {
-        "extraSmall": 4,
-        "small": 8,
-        "medium": 12,
-        "large": 16,
-        "extraLarge": 28
+        "extraSmall": {
+          "$token": "corner-extra-small"
+        },
+        "small": {
+          "$token": "corner-small"
+        },
+        "medium": {
+          "$token": "corner-medium"
+        },
+        "large": {
+          "$token": "corner-large"
+        },
+        "extraLarge": {
+          "$token": "corner-extra-large"
+        }
       },
-      "default": 0
+      "default": {
+        "$token": "corner-none"
+      }
     },
     "children": [
       {
         "type": "rect",
         "name": "elevação tonal",
-        "fill": "#6750A4",
+        "fill": {
+          "$token": "surface-tint"
+        },
         "opacity": {
           "$if": {
             "$has": "tonalElevation"
@@ -92,17 +180,17 @@
           "then": {
             "$switch": "tonalElevation",
             "cases": {
-              "1": 0.05,
-              "2": 0.07,
-              "3": 0.08,
-              "4": 0.09,
-              "5": 0.1,
-              "6": 0.11,
-              "7": 0.115,
-              "8": 0.12,
-              "9": 0.125,
-              "10": 0.13,
-              "11": 0.135,
+              "1": 0.051,
+              "2": 0.069,
+              "3": 0.082,
+              "4": 0.092,
+              "5": 0.101,
+              "6": 0.108,
+              "7": 0.114,
+              "8": 0.119,
+              "9": 0.124,
+              "10": 0.128,
+              "11": 0.132,
               "12": 0.135
             },
             "default": 0.14
@@ -112,13 +200,37 @@
         "cornerRadius": {
           "$switch": "shape",
           "cases": {
-            "extraSmall": 4,
-            "small": 8,
-            "medium": 12,
-            "large": 16,
-            "extraLarge": 28
+            "extraSmall": {
+              "$token": "corner-extra-small"
+            },
+            "small": {
+              "$token": "corner-small"
+            },
+            "medium": {
+              "$token": "corner-medium"
+            },
+            "large": {
+              "$token": "corner-large"
+            },
+            "extraLarge": {
+              "$token": "corner-extra-large"
+            }
           },
-          "default": 0
+          "default": {
+            "$token": "corner-none"
+          }
+        },
+        "visible": {
+          "$or": [
+            {
+              "$not": {
+                "$has": "color"
+              }
+            },
+            {
+              "$eq": ["color", "surface"]
+            }
+          ]
         }
       },
       {

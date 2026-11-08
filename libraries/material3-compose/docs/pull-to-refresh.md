@@ -43,9 +43,33 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 ## Desenho
 
-O indicador é o padrão do Material 3: círculo de 40 em surfaceContainerHigh com sombra e um anel de 16 em onSurfaceVariant. Com `isRefreshing` verdadeiro ele fica a 40 do topo (o ponto de repouso, a distância de 80 do limiar menos o tamanho do indicador) com o spinner; com falso, o desenho mostra o indicador logo no topo com a seta, que no Compose só existe enquanto a pessoa puxa (em repouso o indicador fica escondido). O anel é estático.
+O indicador é o padrão do Material 3: círculo de 40 em surface container high com sombra e um anel de 16 em on surface variant, a 40 do topo (o limiar de 80 menos o tamanho do indicador) nos dois estados. Com `isRefreshing` verdadeiro mostra o spinner; com falso, o quadro do limiar com o arco e a seta, que no Compose só existe enquanto a pessoa puxa (em repouso o indicador fica escondido). O anel é estático.
 
 ## Exemplos
 
 - **Atualizando**: isRefreshing=true, width=fill, height=fill
 - **Em repouso**: isRefreshing=false, width=fill, height=fill
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade de cor fica literal no componente e nenhum nó de texto declara `family` (todos herdam `font-sans`). O indicador é o `Indicator` padrão do `PullToRefreshBox`; a seta, o spinner e o círculo não usam ícone do conjunto (são desenhos do próprio Compose).
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/pulltorefresh/PullToRefresh.kt` (linhas 120 a 142: `PullToRefreshBox`, o `Box` com o conteúdo e o indicador em `Alignment.TopCenter`; 393 a 430: `PullToRefreshDefaults`, `indicatorShape` `CircleShape`, `indicatorContainerColor` `surfaceContainerHigh`, `indicatorColor` `onSurfaceVariant`, `PositionalThreshold` 80 e `Elevation` `Level2`; 448 a 496: `IndicatorBox`, o `size(SpinnerContainerSize)`, a `translationY = distanceFraction * maxDistance - size.height` (481 a 484) e a sombra só quando `distanceFraction > 0` ou `isRefreshing`; 509 a 541: `Indicator`, o `CircularProgressIndicator` de `StrokeWidth` e `SpinnerSize` enquanto atualiza e o `CircularArrowProgressIndicator` ao puxar; 632 a 661: a seta e o arco; 663 a 681: `drawCircularIndicator`; 690 a 708: `ArrowValues`; 710 a 732: `drawArrow`; 734 a 746: `MaxProgressArc` 0,8, `StrokeWidth` 2,5, `ArcRadius` 5,5, `SpinnerSize` 16, `SpinnerContainerSize` 40, `ArrowWidth` 10, `ArrowHeight` 5, `MinAlpha` 0,3 e `MaxAlpha` 1).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/ProgressIndicator.kt` (o `CircularProgressIndicator` indeterminado, com `StrokeCap.Round` e a faixa de 0,1 a 0,87 de volta; ver `docs/progress-indicator.md`), `tokens/ElevationTokens.kt` (`Level2` 3 dp) e `tokens/ShapeTokens.kt` (`CornerFull`, `CircleShape`).
+
+**Como o desenho segue o Compose**
+
+- Indicador de 40 em `corner-full` (`CircleShape`), em `surface-container-high` com a sombra do nível 2 (`elevation-shadow`, deslocamento 2 e desfoque 6), centrado no topo. O Compose o põe em `distanceFraction * 80 - 40`, então com a fração em 1 (o limiar, que é também o ponto onde ele fica enquanto atualiza) o topo está a 40: é onde o desenho o põe nos dois estados.
+- Atualizando (`isRefreshing` verdadeiro): spinner de 16 (`SpinnerSize`) com traço de 2,5 de ponta redonda em `on-surface-variant`; raio do centro do traço 6,75 e o quadro congelado do indeterminado, um arco das 12h até (0,1 + 0,87) / 2 de volta, como no `progress-indicator`.
+- Puxando (`isRefreshing` falso): o quadro de `progress` = 1, o instante em que se atinge o limiar (`targetAlpha` 1). `ArrowValues(1)` dá `adjustedPercent` 1, `endTrim` 0,8 e `startAngle`/`endAngle` de 27° e 315°: um arco de 288° com ponta reta (`StrokeCap.Butt`) de raio 6,75 e, no fim dele, a seta aberta de 10 por 5 (`ArrowWidth`, `ArrowHeight`) com traço de 2,5 e canto em ponta (`Stroke` padrão), levada ao fim do arco e girada em `endAngle - strokeWidth` (312,5°) em torno do centro. As duas peças são `path`, em 24 de caixa com o círculo de 16 no meio.
+- Fundo da área em `surface`; as marcações filhas formam o conteúdo (o `slot`).
+
+**O que ainda difere do Compose**
+
+- O estado de arrasto é um quadro só (`progress` = 1): o Compose escala a seta (`scale`) e muda a opacidade de 0,3 a 1 conforme o dedo desce, e o indicador sobe e desce com a fração. Antes o desenho mostrava o indicador a 8 do topo com uma seta pequena; agora o quadro é o do limiar, a 40.
+- Em `ArrowValues` o `rotation` (0,075 volta) é passado como graus ao `rotate(degrees = values.rotation)`; o desenho ignora esse 0,075° (invisível).
+- O spinner é o quadro congelado da animação (não gira), e o arco não leva o ajuste que o Compose faz nas pontas redondas do indeterminado.
+- O recorte do `IndicatorBox` acima do topo (`clipRect(top = 0)`) e a sombra que só aparece com a fração maior que 0 não existem no desenho estático.
+- `contentAlignment` e o `weight` não mudam o desenho (o conteúdo é um `slot`), e o `state`, o `indicator` e o `onRefresh` são do código.

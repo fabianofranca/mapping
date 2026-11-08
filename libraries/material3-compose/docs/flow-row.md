@@ -45,3 +45,23 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 - **Grupo de chips**: spacing=8, verticalSpacing=8, width=fill
 - **Duas linhas no máximo**: spacing=12, maxLines=2, itemVerticalAlignment=CenterVertically, width=fill
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Este tipo é do Foundation, não do Material: não tem arquivo de tokens, e o desenho segue o comportamento do foundation, com os valores vindos dos campos.
+
+**Arquivos usados**
+
+- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/FlowLayout.kt` (linhas 91 a 99: `FlowRow(horizontalArrangement = Arrangement.Start, verticalArrangement = Arrangement.Top, itemVerticalAlignment = Alignment.Top, maxItemsInEachRow, maxLines)`).
+- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Arrangement.kt` (linhas 110 a 290: `Start`, `End`, `Top`, `Bottom`, `Center`, `SpaceEvenly`, `SpaceBetween`, `SpaceAround`; linha 296: `spacedBy`).
+
+**Como o desenho segue o Compose**
+
+- `horizontalArrangement` vira o `justify` do slot (`Start` `start`, `Center` `center`, `End` `end`, `SpaceBetween` `space-between`) e `itemVerticalAlignment` vira o `align` (`Top` `start`, `CenterVertically` `center`, `Bottom` `end`), por `$switch` (formato 4: expressão em `layout.justify` e `layout.align`).
+- `spacing` é o `gap` e `padding` é o `padding` do slot.
+- Nenhuma cor, fonte ou raio é desenhado.
+
+**O que ainda difere do Compose**
+
+- `SpaceAround` e `SpaceEvenly` caem em `space-between`: o `justify` do formato só tem `start`, `center`, `end` e `space-between`.
+- O slot é uma `row` sem quebra de linha: `maxItemsInEachRow`, `maxLines` e `verticalSpacing` (e a `verticalArrangement` entre as linhas) não têm efeito no desenho.

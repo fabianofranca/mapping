@@ -10,6 +10,7 @@ import { screenFromSource } from './components/origin';
 import { parseComponentText } from './components/parseComponent';
 import { type FrameNode, baseNode, translate } from './components/scene';
 import { renderOrder } from './components/screen';
+import { resolveTokens } from './components/tokens';
 import type { Size } from './geometry';
 import { type LibraryFile, type LibraryReport, validateLibrary } from './library';
 import { defaultValues, nodeProbeLibrary, withoutNodePrefix } from './libraryDrawing';
@@ -312,6 +313,16 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
     }
   })();
 
+  // Galeria e Experimentar desenham com os tokens (modo padrão) e os ícones da especialização,
+  // como o canvas; sem isso o texto sai preto sobre cinza e todo ícone é desconhecido.
+  const resolvedTokens = resolveTokens(library?.tokens, {});
+  const resolvedIcons = library?.icons;
+  const themed = (parsed: ComponentFile): ComponentFile => ({
+    ...parsed,
+    resolvedTokens,
+    ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
+  });
+
   const layers: CatalogLayer[] = spec.layers.map((layer) => ({
     id: layer.id,
     name: layer.name,
@@ -326,7 +337,7 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
           componentProblem = `arquivo ausente (${path})`;
         } else {
           const parsed = parseComponentText(text);
-          if (parsed.ok) component = parsed.component;
+          if (parsed.ok) component = themed(parsed.component);
           else componentProblem = parsed.errors[0] ?? 'componente inválido';
         }
       }

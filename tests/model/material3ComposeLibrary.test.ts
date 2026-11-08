@@ -1,21 +1,29 @@
 // Biblioteca Material 3 (Compose) (`libraries/material3-compose/`, pronta para uso e aplicada pela pessoa):
-// a especialização (`formatVersion` 9) com as estruturas de layout e conteúdo e os componentes do
+// a especialização (`formatVersion` 15, biblioteca v2: tokens claro e escuro e conjunto de ícones) com as estruturas de layout e conteúdo e os componentes do
 // Material 3 do Jetpack Compose, 50 tipos em três camadas, cada um com `code.compose` (símbolo e arquivo no
 // androidx, no commit fixado), componente que desenha, documento e exemplos. As variantes que trocam o
 // símbolo (`variants`) e os ícones por `suggestions` seguem o padrão da biblioteca.
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
-import { isFontPath } from '../../src/model/components/library';
-import { parseSpecText } from '../../src/model/spec';
-import type { Spec, SpecAnnotationType, SpecField } from '../../src/model/spec';
+import type { Spec, SpecField } from '../../src/model/spec';
 import { resolveCode } from '../../src/model/codeVariants';
-import { buildCatalog, drawEntry, findEntry } from '../../src/model/catalog';
-import { approximateMeasurer } from '../../src/model/components/instantiate';
+import { buildCatalog, findEntry } from '../../src/model/catalog';
+import { resolveTokens } from '../../src/model/components/tokens';
+import { missingMigrations } from '../../src/model/specVersions';
+import reference from '../fixtures/material3-tokens-reference.json';
+import {
+  MIGRATED,
+  SPEC_FILE,
+  drawIn,
+  files,
+  findText,
+  solid,
+  spec,
+  text,
+  typeOf,
+  types,
+} from '../support/material3Library';
 
-const ROOT = join(__dirname, '../../libraries/material3-compose');
-const SPEC_FILE = 'material3-compose.spec.json';
 const COMMIT = '5113b82a4ed6416d6344efa50e41db8cb65928ff';
 
 const LAYERS: Record<string, string[]> = {
@@ -43,13 +51,21 @@ const LAYERS: Record<string, string[]> = {
 };
 const ALL_TYPES = Object.values(LAYERS).flat();
 
-const ICONS = [
+/** As 30 sugestões da biblioteca v1: continuam todas no subconjunto da v2 (decisão 11). */
+const V1_ICONS = [
   ...['Home', 'Search', 'Person', 'Menu', 'MoreVert', 'Add', 'Check', 'Close'],
   ...['ArrowBack', 'Favorite', 'Edit', 'Delete', 'Share', 'Notifications'],
   ...['Settings', 'Info', 'Star', 'Email', 'Phone', 'Place', 'DateRange'],
   ...['ShoppingCart', 'AccountCircle', 'KeyboardArrowRight', 'KeyboardArrowDown'],
   ...['Refresh', 'Clear', 'Done', 'Lock', 'List'],
 ];
+/** Os ícones que os componentes ainda desenham por conta própria e que o subconjunto precisa ter. */
+const SELF_DRAWN_ICONS = [
+  ...['arrow_drop_down', 'check', 'close', 'schedule', 'calendar_today', 'search'],
+  ...['menu', 'more_vert', 'edit', 'keyboard', 'keyboard_arrow_left'],
+  ...['keyboard_arrow_right', 'keyboard_arrow_down'],
+];
+/** Os quatro componentes migrados na M1 (formato 4, sem cor literal, sem `family`). */
 const ICON_KEYS = [
   ...['icon', 'imageVector', 'navigationIcon', 'actionIcon1', 'actionIcon2'],
   ...['actionIcon3', 'actionIcon4', 'floatingActionButton'],
@@ -214,36 +230,6 @@ const VARIANT_SYMBOLS: Record<
   },
 };
 
-function listDisk(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory()
-      ? listDisk(join(dir, e.name))
-      : [relative(ROOT, join(dir, e.name)).split('\\').join('/')],
-  );
-}
-
-const files: { path: string; text?: string; binary?: true }[] = listDisk(ROOT)
-  .sort()
-  .map((path) =>
-    isFontPath(path)
-      ? { path, binary: true as const }
-      : { path, text: readFileSync(join(ROOT, path), 'utf8') },
-  );
-const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
-
-function loadSpec(): Spec {
-  const parsed = parseSpecText(text(SPEC_FILE));
-  if (!parsed.ok) throw new Error('especialização inválida');
-  return parsed.spec;
-}
-const spec = loadSpec();
-const types: SpecAnnotationType[] = spec.layers.flatMap((l) => l.annotationTypes);
-const typeOf = (id: string): SpecAnnotationType => {
-  const t = types.find((x) => x.id === id);
-  if (t === undefined) throw new Error(`tipo ${id} ausente`);
-  return t;
-};
-
 describe('biblioteca Material 3 (Compose)', () => {
   it('tem a especialização, as fontes, um componente e um documento por tipo', () => {
     expect(files.map((f) => f.path)).toEqual(
@@ -253,6 +239,9 @@ describe('biblioteca Material 3 (Compose)', () => {
         'fonts/LICENSE-Roboto.txt',
         'fonts/Roboto-Medium.woff2',
         'fonts/Roboto-Regular.woff2',
+        'icons/LEIA-ME.txt',
+        'icons/LICENSE-material-icons.txt',
+        'icons/material-icons.json',
         ...ALL_TYPES.map((id) => `components/${id}.json`),
         ...ALL_TYPES.map((id) => `docs/${id}.md`),
       ].sort(),
@@ -281,12 +270,14 @@ describe('biblioteca Material 3 (Compose)', () => {
     expect(report.warnings.map((w) => `${w.file}:${w.path}: ${w.message}`)).toEqual([]);
   });
 
-  it('é a formatVersion 9 com a plataforma compose no androidx fixado no commit', () => {
+  it('é a formatVersion 15, versão 2, com tokens nos modos light e dark e a plataforma compose no androidx fixado no commit', () => {
     expect(spec).toMatchObject({
-      formatVersion: 9,
+      formatVersion: 15,
       id: 'material3-compose',
-      version: 1,
+      version: 2,
+      icons: 'icons/material-icons.json',
     });
+    expect(spec.tokens?.modes).toEqual(['light', 'dark']);
     expect(spec.platforms).toHaveLength(1);
     expect(spec.platforms?.[0]).toMatchObject({
       id: 'compose',
@@ -376,11 +367,18 @@ describe('biblioteca Material 3 (Compose)', () => {
   });
 
   it('todo campo de ícone é string com a mesma lista de sugestões', () => {
+    const imageVectorField = typeOf('icon').fields.find((f) => f.key === 'imageVector');
+    expect(imageVectorField?.type).toBe('string');
+    const suggestions =
+      imageVectorField?.type === 'string' ? imageVectorField.suggestions : undefined;
+    expect(suggestions?.length).toBeGreaterThanOrEqual(100);
+    expect(suggestions?.length).toBeLessThanOrEqual(170);
+    for (const name of V1_ICONS) expect(suggestions, name).toContain(name);
     let checked = 0;
     const check = (f: SpecField, where: string): void => {
       if (!ICON_KEYS.includes(f.key)) return;
       expect(f.type, where).toBe('string');
-      expect(f.type === 'string' ? f.suggestions : undefined, where).toEqual(ICONS);
+      expect(f.type === 'string' ? f.suggestions : undefined, where).toEqual(suggestions);
       checked += 1;
     };
     for (const type of types) {
@@ -395,23 +393,25 @@ describe('biblioteca Material 3 (Compose)', () => {
   });
 
   it.each(ALL_TYPES)(
-    '%s desenha o preview e os exemplos sem aviso no tamanho inicial',
+    '%s desenha o preview e os exemplos sem aviso no tamanho inicial, nos modos light e dark',
     (id) => {
       const catalog = buildCatalog(files);
       expect(catalog.report.errors).toEqual([]);
       const entry = findEntry(catalog, id);
       expect(entry?.component).not.toBeNull();
-      const preview = drawEntry(entry!, entry?.previewValues ?? {}, approximateMeasurer);
-      expect(preview?.warnings, `${id} preview`).toEqual([]);
-      for (const example of entry?.examples ?? []) {
-        if (example.mode !== 'values') continue;
-        const drawing = drawEntry(entry!, example.values ?? {}, approximateMeasurer);
-        expect(drawing?.warnings, `${id}: ${example.name}`).toEqual([]);
+      for (const mode of ['light', 'dark'] as const) {
+        const preview = drawIn(catalog, entry!, entry?.previewValues ?? {}, mode);
+        expect(preview.warnings, `${id} ${mode} preview`).toEqual([]);
+        for (const example of entry?.examples ?? []) {
+          if (example.mode !== 'values') continue;
+          const drawing = drawIn(catalog, entry!, example.values ?? {}, mode);
+          expect(drawing.warnings, `${id} ${mode}: ${example.name}`).toEqual([]);
+        }
       }
     },
   );
 
-  it('imagem remota é campo string e o componente é formatVersion 3', () => {
+  it('imagem remota é campo string e o componente é formatVersion 3 ou 4', () => {
     const catalog = buildCatalog(files);
     for (const [id, key] of [
       ['image', 'url'],
@@ -419,7 +419,7 @@ describe('biblioteca Material 3 (Compose)', () => {
       ['list-item', 'leadingImage'],
     ] as const) {
       expect(typeOf(id).fields.find((f) => f.key === key)?.type, id).toBe('string');
-      expect(findEntry(catalog, id)?.component?.formatVersion, id).toBe(3);
+      expect([3, 4], id).toContain(findEntry(catalog, id)?.component?.formatVersion);
     }
   });
 
@@ -434,5 +434,172 @@ describe('biblioteca Material 3 (Compose)', () => {
       );
       expect(text(`components/${id}.json`), id).toContain('"type": "repeat"');
     }
+  });
+});
+
+// --- M1 da etapa "Material 3 fiel": tokens, ícones e o padrão de migração -------------------
+
+type Rec = Record<string, unknown>;
+const specRaw = JSON.parse(text(SPEC_FILE)) as Rec;
+const tokenValues = (specRaw.tokens as { values: Rec } | undefined)?.values ?? {};
+const snake = (name: string): string =>
+  name.replace(/(?<!^)([A-Z])/g, '_$1').toLowerCase();
+const iconSet = JSON.parse(text('icons/material-icons.json') || '{"icons":{}}') as {
+  format: string;
+  formatVersion: number;
+  icons: Record<string, { paths: { d: string }[] }>;
+};
+
+describe('tokens da biblioteca Material 3 (Compose) v2', () => {
+  it('tem todo papel de cor do ColorLightTokens e do ColorDarkTokens, com os dois modos e o valor do .kt', () => {
+    const roles = Object.keys(reference.colors);
+    expect(roles).toHaveLength(48);
+    for (const role of roles) {
+      const expected = reference.colors[role as keyof typeof reference.colors];
+      expect(tokenValues[role], role).toEqual({
+        light: expected.light,
+        dark: expected.dark,
+      });
+    }
+    // O `shadow` não vem do ColorLightTokens: é o ColorSchemeKeyTokens.Shadow (preto) nos dois modos.
+    expect(tokenValues.shadow).toEqual({ light: '#000000', dark: '#000000' });
+  });
+
+  it('tem as 15 escalas de tipografia com size, line-height, weight e tracking, e a font-sans Roboto', () => {
+    const scales = Object.keys(reference.typography);
+    expect(scales).toHaveLength(15);
+    for (const scale of scales) {
+      const expected = reference.typography[scale as keyof typeof reference.typography];
+      for (const prop of ['size', 'line-height', 'weight', 'tracking'] as const) {
+        expect(tokenValues[`${scale}-${prop}`], `${scale}-${prop}`).toBe(expected[prop]);
+      }
+    }
+    expect(tokenValues['body-large-size']).toBe(16);
+    expect(String(tokenValues['font-sans'])).toMatch(/^Roboto\b/);
+  });
+
+  it('tem forma, elevação e estado', () => {
+    for (const [name, value] of Object.entries(reference.shapes)) {
+      expect(tokenValues[name], name).toBe(value);
+    }
+    expect(tokenValues['corner-full']).toBeGreaterThanOrEqual(1000);
+    for (let n = 1; n <= 5; n++) {
+      expect(typeof tokenValues[`elevation-${n}-blur`], `elevation-${n}-blur`).toBe(
+        'number',
+      );
+      expect(typeof tokenValues[`elevation-${n}-y`], `elevation-${n}-y`).toBe('number');
+    }
+    expect(tokenValues['elevation-1-blur']).toBeLessThan(
+      Number(tokenValues['elevation-5-blur']),
+    );
+    expect(tokenValues['state-disabled-content']).toBe(0.38);
+    expect(tokenValues['state-disabled-container']).toBe(0.12);
+  });
+
+  it('resolve o primary para cores diferentes em light e dark', () => {
+    const light = resolveTokens(spec.tokens, {}, 'light');
+    const dark = resolveTokens(spec.tokens, {}, 'dark');
+    expect(light.primary).toBe('#6750A4');
+    expect(dark.primary).toBe('#D0BCFF');
+    expect(light.primary).not.toBe(dark.primary);
+  });
+});
+
+describe('conjunto de ícones da biblioteca Material 3 (Compose) v2', () => {
+  it('é um mapping-icons válido (a biblioteca valida com 0 erros e 0 avisos nos três níveis)', () => {
+    expect(iconSet.format).toBe('mapping-icons');
+    expect(iconSet.formatVersion).toBe(1);
+    const report = validateLibrary({ files, specPath: SPEC_FILE });
+    expect(report.errors).toEqual([]);
+    expect(report.warnings).toEqual([]);
+    expect(report.summary.level).toBe(3);
+  });
+
+  it('cobre toda sugestão (no nome do Compose) pelo $switch do nó icon, e o que os componentes desenham sozinhos', () => {
+    const field = typeOf('icon').fields.find((f) => f.key === 'imageVector');
+    const suggestions = field?.type === 'string' ? (field.suggestions ?? []) : [];
+    expect(suggestions.length).toBeGreaterThan(0);
+    const iconComponent = JSON.parse(text('components/icon.json')) as {
+      template: { children: { type: string; name: { cases: Record<string, string> } }[] };
+    };
+    const node = iconComponent.template.children[0]!;
+    expect(node.type).toBe('icon');
+    for (const name of suggestions) {
+      expect(node.name.cases[name], name).toBe(snake(name));
+      expect(iconSet.icons[snake(name)], name).toBeDefined();
+    }
+    for (const name of SELF_DRAWN_ICONS) expect(iconSet.icons[name], name).toBeDefined();
+  });
+
+  it('o nome de ícone fora da lista vira o reservado, com o aviso', () => {
+    const catalog = buildCatalog(files);
+    const entry = findEntry(catalog, 'icon')!;
+    const drawing = drawIn(catalog, entry, { imageVector: 'NaoExiste' }, 'light');
+    expect(drawing.warnings.join('|')).toMatch(/ícone desconhecido/);
+  });
+});
+
+describe('componentes migrados na M1 (text, icon, divider, surface)', () => {
+  it.each(MIGRATED)('%s é formato 4, sem cor literal e sem family literal', (id) => {
+    const raw = text(`components/${id}.json`);
+    const component = JSON.parse(raw) as Rec;
+    expect(component.formatVersion).toBe(4);
+    expect(raw).not.toMatch(/"family"/);
+    // nenhum #hex nem rgb()/rgba() no arquivo (cor só por `$token` ou `none`; layout puro não tem cor)
+    expect(raw).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(raw).not.toMatch(/rgba?\(/);
+  });
+
+  it('o text tira a family e usa os tokens de tipografia e de cor', () => {
+    const catalog = buildCatalog(files);
+    const entry = findEntry(catalog, 'text')!;
+    const light = drawIn(catalog, entry, { text: 'Olá', style: 'titleMedium' }, 'light');
+    const dark = drawIn(catalog, entry, { text: 'Olá', style: 'titleMedium' }, 'dark');
+    const textNode = (d: typeof light) => findText(d.root);
+    expect(textNode(light)?.style.fontSize).toBe(16);
+    expect(textNode(light)?.style.fontWeight).toBe(500);
+    expect(textNode(light)?.style.lineHeight).toBe(24);
+    expect(textNode(light)?.style.letterSpacing).toBe(0.2);
+    expect(solid(textNode(light)?.fills ?? [])).toBe('#1D1B20');
+    expect(solid(textNode(dark)?.fills ?? [])).toBe('#E6E0E9');
+    expect(textNode(light)?.style.fontFamily).toMatch(/Roboto/);
+  });
+
+  it('o surface muda de cor entre light e dark e só põe a elevação tonal sobre a cor surface', () => {
+    const catalog = buildCatalog(files);
+    const entry = findEntry(catalog, 'surface')!;
+    const light = drawIn(
+      catalog,
+      entry,
+      { color: 'surface', tonalElevation: 3 },
+      'light',
+    );
+    const dark = drawIn(catalog, entry, { color: 'surface', tonalElevation: 3 }, 'dark');
+    expect(solid(light.root.fills)).toBe('#FEF7FF');
+    expect(solid(dark.root.fills)).toBe('#141218');
+    const other = drawIn(
+      catalog,
+      entry,
+      { color: 'primary', tonalElevation: 3 },
+      'light',
+    );
+    expect(solid(other.root.fills)).toBe('#6750A4');
+    const tonal = (d: typeof light) =>
+      d.root.children.find((c) => c.name === 'elevação tonal');
+    expect(tonal(other)?.visible ?? false).toBe(false);
+    expect(tonal(light)?.visible).toBe(true);
+  });
+});
+
+describe('atualização v1 → v2 da biblioteca Material 3 (Compose)', () => {
+  it('é aditiva: nenhuma quebra de contrato, sem passos de migração', () => {
+    // A v1 tinha os mesmos tipos, campos, chaves e opções; só faltavam tokens e ícones.
+    const previous = JSON.parse(JSON.stringify(spec)) as Spec;
+    (previous as { version: number }).version = 1;
+    (previous as { formatVersion: number }).formatVersion = 9;
+    expect(missingMigrations(previous, spec)).toEqual([]);
+    expect(spec.migrations ?? []).toEqual([]);
+    const report = validateLibrary({ files, specPath: SPEC_FILE, previous });
+    expect(report.errors).toEqual([]);
   });
 });

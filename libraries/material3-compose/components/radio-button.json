@@ -1,9 +1,9 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "radio-button",
   "name": "Radio button",
-  "description": "Radio button de 20 numa área de 40, com rótulo ao lado: anel de 2 e, selecionado, ponto de 12 em primary.",
+  "description": "Radio button de 20 numa área de 24 (RadioButtonPadding 2 de cada lado), com rótulo ao lado: anel de 2 e, selecionado, ponto de 10 na mesma cor.",
   "size": {
     "width": 200,
     "height": 40
@@ -22,14 +22,13 @@
     "name": "radio button",
     "layout": {
       "type": "row",
-      "gap": 4,
       "align": "center"
     },
     "children": [
       {
         "type": "frame",
         "name": "área",
-        "width": 40,
+        "width": 24,
         "height": 40,
         "layout": {
           "type": "none"
@@ -40,23 +39,38 @@
             "name": "anel",
             "width": 20,
             "height": 20,
-            "fill": "rgba(0, 0, 0, 0)",
+            "fill": "none",
             "stroke": {
               "color": {
                 "$if": {
                   "$eq": ["enabled", "false"]
                 },
-                "then": "rgba(29, 27, 32, 0.38)",
+                "then": {
+                  "$token": "on-surface"
+                },
                 "else": {
                   "$if": {
                     "$field": "selected"
                   },
-                  "then": "#6750A4",
-                  "else": "#49454F"
+                  "then": {
+                    "$token": "primary"
+                  },
+                  "else": {
+                    "$token": "on-surface-variant"
+                  }
                 }
               },
               "width": 2,
               "align": "inside"
+            },
+            "opacity": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "state-disabled-content"
+              },
+              "else": 1
             },
             "anchors": {
               "centerX": true,
@@ -66,17 +80,38 @@
           {
             "type": "ellipse",
             "name": "ponto",
-            "width": 12,
-            "height": 12,
+            "width": 10,
+            "height": 10,
             "fill": {
               "$if": {
                 "$eq": ["enabled", "false"]
               },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#6750A4"
+              "then": {
+                "$token": "on-surface"
+              },
+              "else": {
+                "$if": {
+                  "$field": "selected"
+                },
+                "then": {
+                  "$token": "primary"
+                },
+                "else": {
+                  "$token": "on-surface-variant"
+                }
+              }
             },
             "visible": {
               "$field": "selected"
+            },
+            "opacity": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "state-disabled-content"
+              },
+              "else": 1
             },
             "anchors": {
               "centerX": true,
@@ -92,17 +127,30 @@
           "$field": "label"
         },
         "font": {
-          "family": "Roboto",
-          "size": 16,
-          "weight": 400,
-          "lineHeight": 24
+          "size": {
+            "$token": "body-large-size"
+          },
+          "weight": {
+            "$token": "body-large-weight"
+          },
+          "lineHeight": {
+            "$token": "body-large-line-height"
+          },
+          "letterSpacing": {
+            "$token": "body-large-tracking"
+          }
         },
         "color": {
+          "$token": "on-surface"
+        },
+        "opacity": {
           "$if": {
             "$eq": ["enabled", "false"]
           },
-          "then": "rgba(29, 27, 32, 0.38)",
-          "else": "#1D1B20"
+          "then": {
+            "$token": "state-disabled-content"
+          },
+          "else": 1
         },
         "width": "fill",
         "visible": {

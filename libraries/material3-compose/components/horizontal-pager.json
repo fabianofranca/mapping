@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "horizontal-pager",
   "name": "HorizontalPager",
   "description": "Páginas lado a lado com rolagem horizontal: cada filha é uma página, com pageSpacing e contentPadding.",
@@ -114,7 +114,15 @@
             "$field": "contentPadding",
             "default": 0
           },
-          "align": "center",
+          "align": {
+            "$switch": "verticalAlignment",
+            "cases": {
+              "Top": "start",
+              "CenterVertically": "center",
+              "Bottom": "end"
+            },
+            "default": "center"
+          },
           "justify": "start"
         }
       }

@@ -70,10 +70,35 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 ## Desenho
 
-O componente desenha os itens com largura uniforme (186 no multi-browse, 140 no uncontained, 264 no centered-hero, com o primeiro item recuado 48 para centrar o hero), cantos de 28 e o rótulo sobre um degradê; o excesso é cortado pela caixa da marcação. No Compose a largura varia com a rolagem (grande, média e pequena), e `preferredItemWidth` e `itemWidth` não mudam o desenho (o validador avisa que o desenho não os usa, como `width`, `height` e `weight`).
+O componente desenha os itens com largura uniforme (a `preferredItemWidth` no multi-browse, o `itemWidth` no uncontained e 232 no centered-hero, com o primeiro item recuado 64 para centrar o hero), cantos de 28 e o rótulo sobre um véu de scrim; o excesso é cortado pela caixa da marcação. No Compose a largura varia com a rolagem (grande, média e pequena). A seção Fidelidade diz o que cada valor segue.
 
 ## Exemplos
 
 - **Multi-browse**: style=multi-browse, preferredItemWidth=186, itemSpacing=8, width=fill, height=fixed
 - **Uncontained**: style=uncontained, itemWidth=140, itemSpacing=12, width=fill, height=fixed
 - **Hero centrado**: style=centered-hero, itemSpacing=8, width=fill, height=fixed
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte, raio ou opacidade de cor fica literal no componente e nenhum nó de texto declara `family` (todos herdam `font-sans`). O raio dos itens é a forma `corner-extra-large`, o `MaterialTheme.shapes.extraLarge` que o exemplo do `code` passa a `maskClip`. O `Carousel.kt` não define cor, forma nem tipografia: o item (imagem e rótulo) é do app, e o desenho usa os tokens do Material para ilustrá-lo.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/carousel/Carousel.kt` (linhas 109 a 150: `HorizontalMultiBrowseCarousel`, `preferredItemWidth` e `itemSpacing`; 209 a 245: `HorizontalUncontainedCarousel`, `itemWidth` como tamanho exato do item; 293 a 335: `HorizontalCenteredHeroCarousel`, com dois itens pequenos e um grande; 363 a 475: `Carousel`, o pager com `pageSpacing = itemSpacing`; 568 a 700: `carouselItem`, o item que recebe `mainAxisSize` da estratégia e o recorte (`clipShape`) do `maskClip`; 857 a 862: `MinSmallItemSize` 40, `MaxSmallItemSize` 56 e `AnchorSize` 10).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/carousel/Keylines.kt` (linhas 161 a 200: `uncontainedKeylineList`, itens do tamanho pedido alinhados ao início; 215 a 289: `heroKeylineList`, `targetSmallSize` = 1/3 do grande preso entre 40 e 56 e o item grande com o que sobra do espaço; 291 a 322: `createLeftAlignedKeylineList` (itens a partir da borda) e `createCenterAlignedKeylineList` (pequeno, grande, pequeno)) e `carousel/CarouselItemScope.kt` (linhas 51 a 95: `maskClip` com a forma passada).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ShapeTokens.kt` (linha 29: `CornerExtraLarge` 28), `tokens/ScrimTokens.kt` (linhas 22 e 23: `Scrim` e `ContainerOpacity` 0,32) e `tokens/TypeScaleTokens.kt` (`LabelLarge` 14/20/500/0,1).
+
+**Como o desenho segue o Compose**
+
+- Itens com `corner-extra-large` (28) recortados (`clip`), com o reservado da imagem em `surface-container-highest` (a cor de fundo enquanto a imagem não carrega ou quando a URL é vazia).
+- Uncontained: itens do tamanho do `itemWidth` (padrão 140), a partir da borda, com `itemSpacing` entre eles (`uncontainedKeylineList`). Multi-browse: o item grande tem a `preferredItemWidth` (padrão 186); no Compose o carrossel a ajusta para caber um número inteiro de itens, e o desenho usa o valor pedido. A largura e o espaço agora saem dos campos (antes o desenho não os lia).
+- Centered-hero: o item grande ocupa o que sobra entre dois itens pequenos de 56 (`targetSmallSize` do terço de 360, preso a `MaxSmallItemSize`) e dois espaços de 8: 360 - 2 x 56 - 2 x 8 = 232. O primeiro item começa depois do espaço do pequeno que falta (56 + 8 = 64), que é onde o `createCenterAlignedKeylineList` o põe.
+- Rótulo opcional sobre o item, em `label-large` numa linha com `…` (`maxLines` 1 e `ellipsis`), a 16 das bordas e 14 do fundo, em `secondary-fixed` (cor igual nos dois modos, porque o rótulo fica sobre uma imagem); sob ele um véu de 48 em `scrim` com a opacidade 0,32 (`ScrimTokens.ContainerOpacity`), no lugar do degradê que o formato 3 usava.
+
+**O que ainda difere do Compose**
+
+- Os itens têm largura uniforme: a repetição não conhece o índice da linha, então não há o item grande, o médio e o pequeno que o Compose mostra na mesma tela (multi-browse: 40 a 56 nos pequenos e um médio) nem a variação do tamanho com a rolagem.
+- Centered-hero: o 232 e o recuo de 64 valem para uma marcação de 360 de largura e `itemSpacing` 8, porque o formato não faz conta com a largura da caixa nem com o espaço (`anchors` não aceita expressão e a largura de um nó em porcentagem não subtrai os itens pequenos). Com menos de 3 itens o Compose alinha ao início (`shouldCenter`), e o desenho sempre recua.
+- `preferredItemWidth` do multi-browse: o Compose o trata como alvo e escolhe o tamanho dos grandes pelo `Arrangement` (`findLowestCostArrangement`); o desenho usa o valor como está.
+- O véu é um retângulo de cor única com opacidade, e não um degradê de transparente a escuro: o `$token` não tem canal alfa e a parada transparente de um gradiente não pode ser `none`. A cor do rótulo, o véu e o limite de uma linha são do app no Compose (`Text` sobre a imagem); o desenho os escolhe para ilustrar.
+- Sem `contentPadding`, `maxItemWidth` e `minSmallItemWidth`/`maxSmallItemWidth` (usa os 40 e 56 do padrão), sem rolagem nem fling, e sem a imagem remota: o desenho mostra o reservado até o carregador do app (Coil) entregar a imagem, como o nó `image`.
