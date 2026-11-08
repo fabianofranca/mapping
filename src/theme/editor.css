@@ -412,7 +412,7 @@
 
 /* Abas mais justas: as cinco cabem na largura mínima do canvas (`--size-canvas-min`). */
 .tool-window-bottom .tool-window-tabs .tab {
-  padding: 0 var(--space-0-5);
+  padding: 0 calc(var(--space-0-5) / 2);
   /* Seis abas: a fonte pequena deixa folga para as fontes mais largas de outras máquinas. */
   font: var(--t-text-small);
 }
@@ -422,9 +422,9 @@
   margin-left: var(--space-0-5);
 }
 
-/* Contador mais justo: com as seis abas e contagens em quase todas, a faixa de 356 px a 900 px de largura cabe inteira (sem rolar nem cortar a primeira aba). */
+/* Contador mais justo: com as seis abas e contagens em quase todas, a faixa de 356 px a 900 px de largura cabe inteira (sem rolar nem cortar a primeira aba), também com a fonte mais larga do CI (362 px de conteúdo antes, 342 depois). */
 .tool-window-bottom .tool-window-tabs .tab-badge {
-  padding: 0 var(--space-1);
+  padding: 0 var(--space-0-5);
 }
 
 /* As tabelas da janela inferior ocupam a largura toda. */
