@@ -24,7 +24,6 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-// @ts-expect-error módulo .mjs sem tipos
 import { buildWorkspaceAssets } from '../../scripts/release/workspaceAssets.mjs';
 
 const REPO = process.cwd();

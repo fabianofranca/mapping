@@ -153,7 +153,60 @@ describe('mcp-release.yml anexa o mapping-mcp.js à Release', () => {
 
   it('pode ser disparado à mão para uma tag que já existe', () => {
     expect(release).toMatch(/^ {2}workflow_dispatch:/m);
-    expect(release).toMatch(/ref: refs\/tags\/\$\{\{ env\.TAG \}\}/);
+    expect(release).toMatch(/refs\/tags\/\{0\}/);
+  });
+
+  // Etapa #920: a estável sai sozinha no merge do épico na main.
+  it('dispara no push na main, além da tag mcp-v*', () => {
+    expect(release).toMatch(/^ {4}branches: \[main\]$/m);
+    expect(release).toMatch(/^ {4}tags: \['mcp-v\*'\]$/m);
+  });
+
+  it('tem os jobs decide (contents: read) e release (contents: write, needs, if)', () => {
+    const decide = release.slice(
+      release.indexOf('\n  decide:'),
+      release.indexOf('\n  release:'),
+    );
+    const job = release.slice(release.indexOf('\n  release:'));
+    expect(decide).toMatch(/permissions:\n {6}contents: read/);
+    expect(decide).toContain('scripts/release/stableRelease.mjs decide');
+    expect(job).toMatch(/needs: decide/);
+    expect(job).toMatch(/if: needs\.decide\.outputs\.publish == 'true'/);
+    expect(job).toMatch(/permissions:\n {6}contents: write/);
+    expect(release).toMatch(/^permissions:\n {2}contents: read/m);
+  });
+
+  it('cria a tag e a Release juntas (--target) e não deixa duas publicações da mesma tag em paralelo', () => {
+    expect(release).toMatch(
+      /gh release create[\s\S]*--target "\$\(git rev-parse HEAD\)"/,
+    );
+    expect(release).toMatch(
+      /concurrency:\n {6}group: mcp-release-\$\{\{ needs\.decide\.outputs\.tag \}\}\n {6}cancel-in-progress: false/,
+    );
+  });
+
+  it('nenhum dado de PR entra em run: por interpolação', () => {
+    const runs = release.split('\n').filter((line) => /\$\{\{/.test(line));
+    for (const line of runs) {
+      expect(line).not.toMatch(/github\.event\.(pull_request|head_commit)/);
+    }
+  });
+});
+
+describe('ci.yml trava a versão do MCP no PR do épico para a main', () => {
+  const job = ci.slice(ci.indexOf('  epic:'), ci.indexOf('  static:'));
+  const step = job.slice(job.indexOf('Versão do MCP'));
+
+  it('o job epic faz checkout com histórico e tags e chama o script', () => {
+    expect(job).toMatch(/fetch-depth: 0/);
+    expect(job).toMatch(/fetch-tags: true/);
+    expect(step).toContain('node scripts/release/stableRelease.mjs epic');
+  });
+
+  it('só roda em epic/* com base na main', () => {
+    expect(job).toMatch(
+      /github\.base_ref == 'main' && startsWith\(github\.head_ref, 'epic\/'\)/,
+    );
   });
 });
 

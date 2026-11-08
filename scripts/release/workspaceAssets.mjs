@@ -19,6 +19,14 @@ export const BLOCK_END = '<!-- mapping:end -->';
 
 const AGENTS_PATH = 'examples/workspace/AGENTS.md';
 
+/** Origens (relativas à raiz) dos arquivos publicados: entram na lista de `releaseInputs.mjs`. */
+export const WORKSPACE_SOURCES = [
+  'examples/workspace/setup.sh',
+  '.claude/skills/spec-author/SKILL.md',
+  AGENTS_PATH,
+  'examples/workspace/watch-comments.mjs',
+];
+
 /** Quantas vezes `needle` aparece em `text`. */
 function occurrences(text, needle) {
   return text.split(needle).length - 1;
@@ -64,10 +72,10 @@ export function checksumLine(name, content) {
 /** Grava os arquivos em `outDir` e devolve os caminhos, na ordem de publicação. */
 export function buildWorkspaceAssets(outDir, root) {
   const files = [
-    ['setup.sh', readSource(root, 'examples/workspace/setup.sh')],
-    ['SKILL.md', readSource(root, '.claude/skills/spec-author/SKILL.md')],
-    ['AGENTS.mapping.md', `${extractBlock(readSource(root, AGENTS_PATH))}\n`],
-    ['watch-comments.mjs', readSource(root, 'examples/workspace/watch-comments.mjs')],
+    ['setup.sh', readSource(root, WORKSPACE_SOURCES[0])],
+    ['SKILL.md', readSource(root, WORKSPACE_SOURCES[1])],
+    ['AGENTS.mapping.md', `${extractBlock(readSource(root, WORKSPACE_SOURCES[2]))}\n`],
+    ['watch-comments.mjs', readSource(root, WORKSPACE_SOURCES[3])],
   ];
   mkdirSync(outDir, { recursive: true });
   const written = [];

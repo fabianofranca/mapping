@@ -107,6 +107,19 @@ jobs:
             echo "::error::A entrega de $HEAD para a main precisa trazer docs/design-system/$name.md (ou docs/design-system/AAAA-MM-DD-$name.md): pendências aplicadas e sincronização, ou o registro de que não houve impacto."
             exit 1
           fi
+      # A estável do MCP sai sozinha no merge do épico na main quando a `SERVER_VERSION` é nova
+      # (`mcp-release.yml`, etapa #920). Por isso o épico que muda o que vai na release (entradas
+      # em `scripts/release/releaseInputs.mjs`) precisa subir a versão: falha aqui, não no merge.
+      # Dependabot e PRs para outro branch não entram. O checkout traz o histórico e as tags.
+      - uses: actions/checkout@v7
+        if: github.base_ref == 'main' && startsWith(github.head_ref, 'epic/')
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Versão do MCP
+        if: github.base_ref == 'main' && startsWith(github.head_ref, 'epic/')
+        run: node scripts/release/stableRelease.mjs epic --version-file mcp/version.ts
 
   # O `check` (check obrigatório do ruleset) é só o agregador de quatro jobs em paralelo:
   # `static`, `test` (+ `coverage`) e `build`. Os nomes dos checks obrigatórios (`check`,
