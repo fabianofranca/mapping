@@ -14,7 +14,7 @@ import {
 } from '../../../src/model/components/instantiate';
 import { validateComponent } from '../../../src/model/components/parseComponent';
 import { baseNode, type TextNode } from '../../../src/model/components/scene';
-import { textBars } from '../../../mcp/image/sceneRaster';
+import { textBars } from '../../../mcp/image/textBars';
 
 const V4 = 'só é permitido com formatVersion 4';
 const LONG = 'Texto longo demais para a caixa';

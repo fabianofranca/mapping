@@ -5,6 +5,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { build } from 'esbuild';
+import { fontFiles } from './fontFiles.mjs';
 import { wasmFiles } from './wasmFiles.mjs';
 
 // `import bytes from 'wasm:<codec>'` embute os bytes do módulo WebAssembly do codec de imagem
@@ -21,6 +22,23 @@ const wasmModules = {
       return { path: require.resolve(file), namespace: 'wasm-bytes' };
     });
     esbuild.onLoad({ filter: /.*/, namespace: 'wasm-bytes' }, async (args) => ({
+      contents: await readFile(args.path),
+      loader: 'binary',
+      watchFiles: [args.path],
+    }));
+  },
+};
+
+// `import bytes from 'font:sans'` embute os bytes do TTF livre (mcp/fonts/), como os wasm.
+const fontModules = {
+  name: 'font-modules',
+  setup(esbuild) {
+    esbuild.onResolve({ filter: /^font:/ }, (args) => {
+      const file = fontFiles[args.path];
+      if (!file) return { errors: [{ text: `fonte desconhecida: ${args.path}` }] };
+      return { path: resolve(import.meta.dirname, file), namespace: 'font-bytes' };
+    });
+    esbuild.onLoad({ filter: /.*/, namespace: 'font-bytes' }, async (args) => ({
       contents: await readFile(args.path),
       loader: 'binary',
       watchFiles: [args.path],
@@ -55,7 +73,9 @@ if (suffix !== '' && !/^-(snapshot\.pr\d+\+[0-9a-f]{7,}|rc\.\d+)$/.test(suffix))
 
 await build({
   entryPoints: ['mcp/main.ts'],
-  plugins: [rawText, wasmModules],
+  plugins: [rawText, wasmModules, fontModules],
+  // A versão minificada do opentype.js (245 kB em vez de 495 kB): o limite do servidor é +500 kB.
+  alias: { 'opentype.js': 'opentype.js/dist/opentype.min.mjs' },
   outfile: 'dist-mcp/mapping-mcp.js',
   bundle: true,
   platform: 'node',

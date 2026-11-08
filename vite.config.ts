@@ -5,6 +5,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { fontFiles } from './mcp/fontFiles.mjs';
 import { wasmFiles } from './mcp/wasmFiles.mjs';
 import { channelManifest, stampServiceWorker, type BuildChannel } from './pwa/build';
 import { applyCsp } from './pwa/csp';
@@ -123,6 +124,23 @@ function wasmBytes(): Plugin {
   };
 }
 
+/** Nos testes do `mcp`, `import bytes from 'font:sans'` lê o TTF embutido (mcp/fonts/), como o esbuild faz no build. */
+function fontBytes(): Plugin {
+  const prefix = '\0font-bytes:';
+  return {
+    name: 'font-bytes',
+    resolveId: (id) => (id.startsWith('font:') ? prefix + id : null),
+    load(id) {
+      if (!id.startsWith(prefix)) return null;
+      const file = fontFiles[id.slice(prefix.length) as keyof typeof fontFiles];
+      const base64 = readFileSync(new URL(`./mcp/${file}`, import.meta.url)).toString(
+        'base64',
+      );
+      return `export default new Uint8Array(Buffer.from('${base64}', 'base64'));`;
+    },
+  };
+}
+
 /**
  * Nos shards do CI (`COVERAGE_REPORT=off`) o blob já leva os dados de cobertura e só o job
  * `coverage` gera o relatório, no `--merge-reports`: gerá-lo em cada shard custava ~15 s.
@@ -195,7 +213,7 @@ export default defineConfig({
         },
       },
       {
-        plugins: [wasmBytes()],
+        plugins: [wasmBytes(), fontBytes()],
         // Servidor MCP (etapa 3a): também em Node puro.
         test: {
           name: 'mcp',

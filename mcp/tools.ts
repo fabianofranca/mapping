@@ -9,6 +9,7 @@ import { ToolError } from './errors';
 import { DEFAULT_MAX_SIZE, MAX_MAX_SIZE, MIN_MAX_SIZE } from './image/compose';
 import type { ImageServer } from './imageServer';
 import { imageFile, markingImage, type ImageResult } from './imageTools';
+import { MAX_ZOOM, MIN_ZOOM, renderContainer, renderMarking } from './renderImage';
 import { findByCodeResult } from './findByCode';
 import { Refs, resolveItem } from './items';
 import { listMarkings } from './markingList';
@@ -573,11 +574,37 @@ export function registerTools(
       }),
   );
 
+  /** A marcação de container de uma referência `m` (a seta e a marcação do canvas não têm imagem). */
+  const imageMarkingOf = async (ref: string, project: string | undefined) => {
+    const item = await resolveItem(roots, ref, project, 'm');
+    if (projectIndex(item.refs.project).arrows.has(item.id)) {
+      throw new ToolError(
+        'arrow',
+        'a seta não tem imagem: ela é uma linha entre duas marcações',
+        {
+          hint: 'peça a imagem da marcação de origem ou de destino (`from`/`to` de get_marking na seta)',
+        },
+      );
+    }
+    const marking = projectIndex(item.refs.project).markings.get(item.id);
+    if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
+    if (marking.containerId === null) {
+      throw new ToolError(
+        'canvas-marking',
+        'a marcação do canvas não tem imagem: ela não pertence a um container',
+        {
+          hint: 'use get_container_file dos containers sob ela (`members` de get_marking), ou get_marking_image de uma marcação de dentro de um container',
+        },
+      );
+    }
+    return { item, marking };
+  };
+
   server.registerTool(
     'get_marking_image',
     {
       description:
-        'Devolve, como imagem, o recorte de uma marcação de container (a marcação do canvas e a seta falham com `canvas-marking` e `arrow`) (mode "crop", com `padding` opcional em pixels do container) ou o container inteiro com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Num container sem arquivo (só com fundo), o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
+        'Devolve, como imagem, o recorte de uma marcação de container (a marcação do canvas e a seta falham com `canvas-marking` e `arrow`) (mode "crop", com `padding` opcional em pixels do container) ou o container inteiro com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Num container sem arquivo (só com fundo), o recorte mostra o desenho dos componentes (`drawing: "rendered"`, o mesmo de render_container: texto real, sombra, tracejado e ícones). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -609,27 +636,7 @@ export function registerTools(
     },
     ({ ref, project, ...options }) =>
       respondWithImage(async () => {
-        const item = await resolveItem(roots, ref, project, 'm');
-        if (projectIndex(item.refs.project).arrows.has(item.id)) {
-          throw new ToolError(
-            'arrow',
-            'a seta não tem imagem: ela é uma linha entre duas marcações',
-            {
-              hint: 'peça a imagem da marcação de origem ou de destino (`from`/`to` de get_marking na seta)',
-            },
-          );
-        }
-        const marking = projectIndex(item.refs.project).markings.get(item.id);
-        if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
-        if (marking.containerId === null) {
-          throw new ToolError(
-            'canvas-marking',
-            'a marcação do canvas não tem imagem: ela não pertence a um container',
-            {
-              hint: 'use get_container_file dos containers sob ela (`members` de get_marking), ou get_marking_image de uma marcação de dentro de um container',
-            },
-          );
-        }
+        const { item, marking } = await imageMarkingOf(ref, project);
         return markingImage(roots, item.refs, marking, options, images);
       }),
   );
@@ -651,6 +658,82 @@ export function registerTools(
       respondWithImage(async () => {
         const { item, container } = await containerOf(ref, project);
         return imageFile(roots, item.refs, container, options, images);
+      }),
+  );
+
+  const zoomArg = z
+    .number()
+    .min(MIN_ZOOM)
+    .max(MAX_ZOOM)
+    .optional()
+    .describe(
+      `Aumento do desenho (padrão 1 = um pixel do container por pixel da saída; de ${MIN_ZOOM} a ${MAX_ZOOM}). Acima do limite de pixels da imagem a tool falha com \`image-too-large\`, como get_marking_image.`,
+    );
+  const drawingModeArg = z
+    .string()
+    .optional()
+    .describe(
+      'Modo do desenho (um dos `modes` dos `tokens` das especializações aplicadas, como "light" ou "dark") em todo o desenho. Padrão: o modo efetivo de cada container (o que ele fixa, senão o do projeto, senão o primeiro modo).',
+    );
+  const backgroundArg = z
+    .enum(['image', 'none'])
+    .optional()
+    .describe(
+      '"image" (padrão): pinta o arquivo do container por baixo (sem arquivo, a cor de fundo dele); "none": fundo transparente, só o desenho dos componentes (png ou webp).',
+    );
+  const RENDER_NOTE =
+    'O desenho é o do servidor, com texto de verdade (fonte livre embutida, ou a `fonts` da biblioteca quando declarada), traço com `align`/`cap`/`join`/`sides`/tracejado, sombra desfocada e ícones; o gradiente vale a primeira cor e a imagem remota vira um reservado. Não é uma captura da app. A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat.';
+
+  server.registerTool(
+    'render_marking',
+    {
+      description:
+        'Desenha, como imagem PNG, o componente de uma marcação de container e o de toda a subárvore dela (as filhas), com `zoom`, `drawingMode` e `background`. É como o agente confere o desenho de um componente sem abrir a app. ' +
+        RENDER_NOTE,
+      inputSchema: {
+        ref: refArg,
+        project: optionalProjectArg,
+        zoom: zoomArg,
+        drawingMode: drawingModeArg,
+        background: backgroundArg,
+        padding: z
+          .number()
+          .int()
+          .min(0)
+          .max(4096)
+          .optional()
+          .describe('Margem em volta da marcação, em pixels do container (padrão 0).'),
+        format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Padrão png.'),
+      },
+      annotations: READ_ONLY,
+    },
+    ({ ref, project, ...options }) =>
+      respondWithImage(async () => {
+        const { item, marking } = await imageMarkingOf(ref, project);
+        return renderMarking(roots, item.refs, marking, options, images);
+      }),
+  );
+
+  server.registerTool(
+    'render_container',
+    {
+      description:
+        'Desenha, como imagem PNG, os componentes de todas as marcações de um container (com ou sem arquivo), com `zoom`, `drawingMode` e `background`. Num container sem arquivo é o mesmo desenho que get_marking_image mostra. ' +
+        RENDER_NOTE,
+      inputSchema: {
+        ref: refArg,
+        project: optionalProjectArg,
+        zoom: zoomArg,
+        drawingMode: drawingModeArg,
+        background: backgroundArg,
+        format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Padrão png.'),
+      },
+      annotations: READ_ONLY,
+    },
+    ({ ref, project, ...options }) =>
+      respondWithImage(async () => {
+        const { item, container } = await containerOf(ref, project);
+        return renderContainer(roots, item.refs, container, options, images);
       }),
   );
 
