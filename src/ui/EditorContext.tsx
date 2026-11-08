@@ -8,6 +8,7 @@ import type { DisplayImages } from '../store/displayImages';
 import type { ProjectStore } from '../store/history';
 import type { ProjectActions } from '../store/project';
 import { identity } from '../store/identity';
+import { createLayerVisibility, type LayerVisibility } from '../store/layerVisibility';
 import { createOpenPerspective } from '../store/perspectiveShown';
 import { createReviewState, type ReviewState } from '../store/review';
 import type { ProjectSession } from '../store/session';
@@ -23,6 +24,8 @@ export interface EditorContextValue {
   readonly display: DisplayImages<ImageBitmap>;
   readonly ui: EditorUi;
   readonly derived: EditorDerived;
+  /** Visibilidade das camadas que conhece a perspectiva aberta (única via de escrita da UI). */
+  readonly layers: LayerVisibility;
   /** Revisão de propostas (etapa 4): proposta aberta, filtros, decisões e o estado derivado dela. */
   readonly review: ReviewState;
   /** Controller do canvas montado (`CanvasHost` o preenche); `null` fora do editor. */
@@ -66,6 +69,11 @@ export function createEditorContextValue(
       },
       perspective,
     ),
+    layers: createLayerVisibility({
+      ui,
+      perspective,
+      perspectiveActions: session.perspectiveActions,
+    }),
     review,
     canvas: { current: null },
     view: createCanvasViewState(),

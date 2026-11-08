@@ -1,9 +1,10 @@
 import 'fake-indexeddb/auto';
-import { act, cleanup, screen } from '@testing-library/preact';
+import { act, cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { locale } from '../../src/store/settings';
 import { LayerActions, LayersPanel } from '../../src/ui/LayersPanel';
+import { ListView } from '../../src/ui/ListView';
 import { cadastroProject } from '../model/specFixtures';
 import { renderLive } from './harness';
 import { createLocalHarness } from './perspectiveUiHarness';
@@ -16,7 +17,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-async function setup() {
+async function setup(withList = false) {
   const harness = await createLocalHarness(cadastroProject());
   const { session } = harness.context;
   const created = session.perspectiveActions.createPerspective({
@@ -29,6 +30,7 @@ async function setup() {
     <>
       <LayerActions project={p} readOnly={false} />
       <LayersPanel project={p} readOnly={false} />
+      {withList && <ListView onSelect={() => undefined} />}
     </>
   ));
   const hiddenOf = () =>
@@ -86,5 +88,22 @@ describe('Camadas com perspectiva aberta', () => {
     );
     expect([...harness.ui.hiddenLayers.value]).toEqual([layer.id]);
     expect(hiddenOf()).toEqual([]);
+  });
+
+  it('o checkbox da Lista grava as escondidas da perspectiva e esconde a camada no derivado', async () => {
+    const { harness, session, id, hiddenOf, user } = await setup(true);
+    const layer = harness.project().layers[0];
+    if (!layer) throw new Error('sem camada');
+    act(() => void session.perspective.open(id));
+    const group = await screen.findByRole('group', { name: 'Camadas visíveis' });
+    const box = within(group).getByRole('checkbox', {
+      name: `Mostrar a camada ${layer.name}`,
+    });
+    await user.click(box);
+    expect(hiddenOf()).toEqual([layer.id]);
+    expect(harness.ui.hiddenLayers.value.size).toBe(0);
+    expect(harness.context.derived.visibleLayers.value.map((l) => l.id)).not.toContain(
+      layer.id,
+    );
   });
 });

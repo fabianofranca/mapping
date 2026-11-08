@@ -13,7 +13,6 @@ import {
   markingDisplay,
   setMarkingDisplay,
 } from '../store/settings';
-import { showAllLayers, toggleLayerVisible } from '../store/ui';
 import { CiteItem, CopyReferenceItem } from './CiteMenuItems';
 import { CommitInput } from './CommitInput';
 import { Dialog } from './Dialog';
@@ -37,24 +36,11 @@ interface LayersProps {
  * são as dela e mudam no projeto (com desfazer); na Principal, as da interface (`ui.hiddenLayers`).
  */
 function useLayerVisibility() {
-  const { ui, session, derived } = useEditor();
-  const open = derived.perspective.value;
-  const hidden: ReadonlySet<string> = open
-    ? new Set(open.hiddenLayers)
-    : ui.hiddenLayers.value;
+  const { layers } = useEditor();
   return {
-    hidden,
-    toggle(layerId: string): void {
-      if (!open) return toggleLayerVisible(ui, layerId);
-      const next = new Set(open.hiddenLayers);
-      if (!next.delete(layerId)) next.add(layerId);
-      session.perspectiveActions.setPerspectiveHiddenLayers(open.id, [...next]);
-    },
-    showAll(): void {
-      if (!open) return showAllLayers(ui);
-      if (open.hiddenLayers.length > 0)
-        session.perspectiveActions.setPerspectiveHiddenLayers(open.id, []);
-    },
+    hidden: layers.hidden(),
+    toggle: layers.toggle,
+    showAll: layers.showAll,
   };
 }
 

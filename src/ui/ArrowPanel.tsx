@@ -3,7 +3,7 @@ import { t, type TranslationKey } from '../i18n';
 import { ARROW_STYLES, type Arrow, type ArrowStyle, type Project } from '../model';
 import { SHORTCUT_LABELS } from '../app/shortcuts';
 import type { ActionResult } from '../store/history';
-import { showLayer, type AnnotationLocation } from '../store/ui';
+import type { AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { ThreadsSection } from './comments/ThreadsSection';
 import { Button, HelpTip, IconButton, Segmented, TextField } from './controls';
@@ -42,7 +42,7 @@ export function ArrowPanel({
   onGoToAnnotation,
   onOpenSettings,
 }: ArrowPanelProps) {
-  const { actions, ui, derived } = useEditor();
+  const { actions, ui, derived, layers } = useEditor();
   const ext = useDetailsExtension();
   // O Editor recria o painel (via `key`) ao trocar de seta, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
@@ -158,7 +158,7 @@ export function ArrowPanel({
         ownerKind="arrow"
         layers={derived.visibleLayers.value}
         readOnly={readOnly}
-        onShowLayer={(layerId) => showLayer(ui, layerId)}
+        onShowLayer={layers.show}
         onGoToAnnotation={onGoToAnnotation}
         focusAnnotation={ui.focusAnnotation.value}
         onFocusDone={() => (ui.focusAnnotation.value = null)}
