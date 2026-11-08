@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "swipe-to-dismiss",
   "name": "Swipe to dismiss",
   "description": "Item que se dispensa deslizando: o fundo revelado (primaryContainer ao arrastar para o fim, errorContainer ao arrastar para o início) leva o ícone no lado de onde o item saiu; em repouso só o item aparece.",
@@ -29,6 +29,7 @@
     "layout": {
       "type": "none"
     },
+    "clip": true,
     "fill": {
       "$if": {
         "$and": [
@@ -42,7 +43,9 @@
           }
         ]
       },
-      "then": "#EADDFF",
+      "then": {
+        "$token": "primary-container"
+      },
       "else": {
         "$if": {
           "$and": [
@@ -56,33 +59,200 @@
             }
           ]
         },
-        "then": "#F9DEDC",
-        "else": "#FEF7FF"
+        "then": {
+          "$token": "error-container"
+        },
+        "else": {
+          "$token": "surface"
+        }
       }
     },
     "children": [
       {
-        "type": "path",
-        "name": "ícone início",
+        "type": "icon",
+        "name": {
+          "$if": {
+            "$has": "icon"
+          },
+          "then": {
+            "$switch": "icon",
+            "cases": {
+              "Home": "home",
+              "Search": "search",
+              "Person": "person",
+              "Menu": "menu",
+              "MoreVert": "more_vert",
+              "Add": "add",
+              "Check": "check",
+              "Close": "close",
+              "ArrowBack": "arrow_back",
+              "Favorite": "favorite",
+              "Edit": "edit",
+              "Delete": "delete",
+              "Share": "share",
+              "Notifications": "notifications",
+              "Settings": "settings",
+              "Info": "info",
+              "Star": "star",
+              "Email": "email",
+              "Phone": "phone",
+              "Place": "place",
+              "DateRange": "date_range",
+              "ShoppingCart": "shopping_cart",
+              "AccountCircle": "account_circle",
+              "KeyboardArrowRight": "keyboard_arrow_right",
+              "KeyboardArrowDown": "keyboard_arrow_down",
+              "Refresh": "refresh",
+              "Clear": "clear",
+              "Done": "done",
+              "Lock": "lock",
+              "List": "list",
+              "AccountBox": "account_box",
+              "AddCircle": "add_circle",
+              "ArrowDropDown": "arrow_drop_down",
+              "ArrowDropUp": "arrow_drop_up",
+              "ArrowForward": "arrow_forward",
+              "ArrowUpward": "arrow_upward",
+              "ArrowDownward": "arrow_downward",
+              "Build": "build",
+              "Call": "call",
+              "CheckCircle": "check_circle",
+              "Create": "create",
+              "Face": "face",
+              "FavoriteBorder": "favorite_border",
+              "ExitToApp": "exit_to_app",
+              "KeyboardArrowLeft": "keyboard_arrow_left",
+              "KeyboardArrowUp": "keyboard_arrow_up",
+              "LocationOn": "location_on",
+              "MailOutline": "mail_outline",
+              "PlayArrow": "play_arrow",
+              "Send": "send",
+              "ThumbUp": "thumb_up",
+              "Warning": "warning",
+              "Cancel": "cancel",
+              "ExpandMore": "expand_more",
+              "ExpandLess": "expand_less",
+              "ChevronLeft": "chevron_left",
+              "ChevronRight": "chevron_right",
+              "FirstPage": "first_page",
+              "LastPage": "last_page",
+              "MoreHoriz": "more_horiz",
+              "Apps": "apps",
+              "Dashboard": "dashboard",
+              "Folder": "folder",
+              "FolderOpen": "folder_open",
+              "InsertDriveFile": "insert_drive_file",
+              "Description": "description",
+              "Image": "image",
+              "Mic": "mic",
+              "Videocam": "videocam",
+              "Chat": "chat",
+              "Comment": "comment",
+              "Forum": "forum",
+              "NotificationsNone": "notifications_none",
+              "Visibility": "visibility",
+              "VisibilityOff": "visibility_off",
+              "Language": "language",
+              "Public": "public",
+              "Link": "link",
+              "Attachment": "attachment",
+              "ContentCopy": "content_copy",
+              "ContentPaste": "content_paste",
+              "ContentCut": "content_cut",
+              "Save": "save",
+              "Download": "download",
+              "Upload": "upload",
+              "CloudUpload": "cloud_upload",
+              "CloudDownload": "cloud_download",
+              "Cloud": "cloud",
+              "Sync": "sync",
+              "Schedule": "schedule",
+              "AccessTime": "access_time",
+              "CalendarToday": "calendar_today",
+              "Event": "event",
+              "Today": "today",
+              "Timer": "timer",
+              "Alarm": "alarm",
+              "History": "history",
+              "Bookmark": "bookmark",
+              "BookmarkBorder": "bookmark_border",
+              "Label": "label",
+              "Flag": "flag",
+              "Help": "help",
+              "HelpOutline": "help_outline",
+              "Error": "error",
+              "ErrorOutline": "error_outline",
+              "Report": "report",
+              "Block": "block",
+              "Tune": "tune",
+              "FilterList": "filter_list",
+              "Sort": "sort",
+              "Fullscreen": "fullscreen",
+              "Wifi": "wifi",
+              "Bluetooth": "bluetooth",
+              "LightMode": "light_mode",
+              "DarkMode": "dark_mode",
+              "Palette": "palette",
+              "ShoppingBag": "shopping_bag",
+              "Store": "store",
+              "Payment": "payment",
+              "CreditCard": "credit_card",
+              "AttachMoney": "attach_money",
+              "Receipt": "receipt",
+              "Map": "map",
+              "Navigation": "navigation",
+              "DirectionsCar": "directions_car",
+              "Flight": "flight",
+              "MenuOpen": "menu_open",
+              "Logout": "logout",
+              "Login": "login",
+              "People": "people",
+              "Group": "group",
+              "PersonAdd": "person_add",
+              "LockOpen": "lock_open",
+              "Security": "security",
+              "VerifiedUser": "verified_user",
+              "Key": "key",
+              "Pause": "pause",
+              "Stop": "stop",
+              "SkipNext": "skip_next",
+              "SkipPrevious": "skip_previous",
+              "VolumeUp": "volume_up",
+              "VolumeOff": "volume_off",
+              "ThumbDown": "thumb_down",
+              "Reply": "reply",
+              "Inbox": "inbox",
+              "Archive": "archive",
+              "Undo": "undo",
+              "Redo": "redo",
+              "ZoomIn": "zoom_in",
+              "ZoomOut": "zoom_out",
+              "Keyboard": "keyboard",
+              "CheckBox": "check_box",
+              "CheckBoxOutlineBlank": "check_box_outline_blank",
+              "RadioButtonChecked": "radio_button_checked",
+              "RadioButtonUnchecked": "radio_button_unchecked",
+              "ToggleOn": "toggle_on",
+              "ToggleOff": "toggle_off",
+              "StarBorder": "star_border",
+              "StarHalf": "star_half",
+              "Lightbulb": "lightbulb",
+              "Code": "code",
+              "Terminal": "terminal",
+              "Bolt": "bolt",
+              "EditCalendar": "edit_calendar"
+            },
+            "default": {
+              "$field": "icon"
+            }
+          },
+          "else": "delete"
+        },
         "width": 24,
         "height": 24,
-        "viewBox": [24, 24],
-        "d": {
-          "$switch": "icon",
-          "cases": {
-            "Delete": "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
-            "Done": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
-            "Check": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
-            "Favorite": "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
-            "Edit": "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
-            "Star": "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
-            "Share": "M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z",
-            "Add": "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
-            "Close": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-          },
-          "default": "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+        "color": {
+          "$token": "on-primary-container"
         },
-        "fill": "#21005D",
         "anchors": {
           "left": 24,
           "centerY": true
@@ -101,27 +271,190 @@
         }
       },
       {
-        "type": "path",
-        "name": "ícone fim",
+        "type": "icon",
+        "name": {
+          "$if": {
+            "$has": "icon"
+          },
+          "then": {
+            "$switch": "icon",
+            "cases": {
+              "Home": "home",
+              "Search": "search",
+              "Person": "person",
+              "Menu": "menu",
+              "MoreVert": "more_vert",
+              "Add": "add",
+              "Check": "check",
+              "Close": "close",
+              "ArrowBack": "arrow_back",
+              "Favorite": "favorite",
+              "Edit": "edit",
+              "Delete": "delete",
+              "Share": "share",
+              "Notifications": "notifications",
+              "Settings": "settings",
+              "Info": "info",
+              "Star": "star",
+              "Email": "email",
+              "Phone": "phone",
+              "Place": "place",
+              "DateRange": "date_range",
+              "ShoppingCart": "shopping_cart",
+              "AccountCircle": "account_circle",
+              "KeyboardArrowRight": "keyboard_arrow_right",
+              "KeyboardArrowDown": "keyboard_arrow_down",
+              "Refresh": "refresh",
+              "Clear": "clear",
+              "Done": "done",
+              "Lock": "lock",
+              "List": "list",
+              "AccountBox": "account_box",
+              "AddCircle": "add_circle",
+              "ArrowDropDown": "arrow_drop_down",
+              "ArrowDropUp": "arrow_drop_up",
+              "ArrowForward": "arrow_forward",
+              "ArrowUpward": "arrow_upward",
+              "ArrowDownward": "arrow_downward",
+              "Build": "build",
+              "Call": "call",
+              "CheckCircle": "check_circle",
+              "Create": "create",
+              "Face": "face",
+              "FavoriteBorder": "favorite_border",
+              "ExitToApp": "exit_to_app",
+              "KeyboardArrowLeft": "keyboard_arrow_left",
+              "KeyboardArrowUp": "keyboard_arrow_up",
+              "LocationOn": "location_on",
+              "MailOutline": "mail_outline",
+              "PlayArrow": "play_arrow",
+              "Send": "send",
+              "ThumbUp": "thumb_up",
+              "Warning": "warning",
+              "Cancel": "cancel",
+              "ExpandMore": "expand_more",
+              "ExpandLess": "expand_less",
+              "ChevronLeft": "chevron_left",
+              "ChevronRight": "chevron_right",
+              "FirstPage": "first_page",
+              "LastPage": "last_page",
+              "MoreHoriz": "more_horiz",
+              "Apps": "apps",
+              "Dashboard": "dashboard",
+              "Folder": "folder",
+              "FolderOpen": "folder_open",
+              "InsertDriveFile": "insert_drive_file",
+              "Description": "description",
+              "Image": "image",
+              "Mic": "mic",
+              "Videocam": "videocam",
+              "Chat": "chat",
+              "Comment": "comment",
+              "Forum": "forum",
+              "NotificationsNone": "notifications_none",
+              "Visibility": "visibility",
+              "VisibilityOff": "visibility_off",
+              "Language": "language",
+              "Public": "public",
+              "Link": "link",
+              "Attachment": "attachment",
+              "ContentCopy": "content_copy",
+              "ContentPaste": "content_paste",
+              "ContentCut": "content_cut",
+              "Save": "save",
+              "Download": "download",
+              "Upload": "upload",
+              "CloudUpload": "cloud_upload",
+              "CloudDownload": "cloud_download",
+              "Cloud": "cloud",
+              "Sync": "sync",
+              "Schedule": "schedule",
+              "AccessTime": "access_time",
+              "CalendarToday": "calendar_today",
+              "Event": "event",
+              "Today": "today",
+              "Timer": "timer",
+              "Alarm": "alarm",
+              "History": "history",
+              "Bookmark": "bookmark",
+              "BookmarkBorder": "bookmark_border",
+              "Label": "label",
+              "Flag": "flag",
+              "Help": "help",
+              "HelpOutline": "help_outline",
+              "Error": "error",
+              "ErrorOutline": "error_outline",
+              "Report": "report",
+              "Block": "block",
+              "Tune": "tune",
+              "FilterList": "filter_list",
+              "Sort": "sort",
+              "Fullscreen": "fullscreen",
+              "Wifi": "wifi",
+              "Bluetooth": "bluetooth",
+              "LightMode": "light_mode",
+              "DarkMode": "dark_mode",
+              "Palette": "palette",
+              "ShoppingBag": "shopping_bag",
+              "Store": "store",
+              "Payment": "payment",
+              "CreditCard": "credit_card",
+              "AttachMoney": "attach_money",
+              "Receipt": "receipt",
+              "Map": "map",
+              "Navigation": "navigation",
+              "DirectionsCar": "directions_car",
+              "Flight": "flight",
+              "MenuOpen": "menu_open",
+              "Logout": "logout",
+              "Login": "login",
+              "People": "people",
+              "Group": "group",
+              "PersonAdd": "person_add",
+              "LockOpen": "lock_open",
+              "Security": "security",
+              "VerifiedUser": "verified_user",
+              "Key": "key",
+              "Pause": "pause",
+              "Stop": "stop",
+              "SkipNext": "skip_next",
+              "SkipPrevious": "skip_previous",
+              "VolumeUp": "volume_up",
+              "VolumeOff": "volume_off",
+              "ThumbDown": "thumb_down",
+              "Reply": "reply",
+              "Inbox": "inbox",
+              "Archive": "archive",
+              "Undo": "undo",
+              "Redo": "redo",
+              "ZoomIn": "zoom_in",
+              "ZoomOut": "zoom_out",
+              "Keyboard": "keyboard",
+              "CheckBox": "check_box",
+              "CheckBoxOutlineBlank": "check_box_outline_blank",
+              "RadioButtonChecked": "radio_button_checked",
+              "RadioButtonUnchecked": "radio_button_unchecked",
+              "ToggleOn": "toggle_on",
+              "ToggleOff": "toggle_off",
+              "StarBorder": "star_border",
+              "StarHalf": "star_half",
+              "Lightbulb": "lightbulb",
+              "Code": "code",
+              "Terminal": "terminal",
+              "Bolt": "bolt",
+              "EditCalendar": "edit_calendar"
+            },
+            "default": {
+              "$field": "icon"
+            }
+          },
+          "else": "delete"
+        },
         "width": 24,
         "height": 24,
-        "viewBox": [24, 24],
-        "d": {
-          "$switch": "icon",
-          "cases": {
-            "Delete": "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
-            "Done": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
-            "Check": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
-            "Favorite": "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
-            "Edit": "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
-            "Star": "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z",
-            "Share": "M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z",
-            "Add": "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
-            "Close": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
-          },
-          "default": "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
+        "color": {
+          "$token": "on-error-container"
         },
-        "fill": "#410E0B",
         "anchors": {
           "right": 24,
           "centerY": true
@@ -142,7 +475,9 @@
       {
         "type": "frame",
         "name": "item em repouso",
-        "fill": "#FEF7FF",
+        "fill": {
+          "$token": "surface"
+        },
         "visible": {
           "$not": {
             "$or": [
@@ -192,8 +527,7 @@
             "width": "fill",
             "height": "hug",
             "layout": {
-              "type": "column",
-              "gap": 0
+              "type": "column"
             },
             "children": [
               {
@@ -204,12 +538,24 @@
                   "default": "Title"
                 },
                 "width": "fill",
-                "color": "#1D1B20",
+                "color": {
+                  "$token": "on-surface"
+                },
                 "font": {
-                  "family": "Roboto",
-                  "size": 16,
-                  "weight": 400,
-                  "lineHeight": 24
+                  "size": {
+                    "$token": "body-large-size"
+                  },
+                  "weight": {
+                    "$token": "body-large-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-large-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-large-tracking"
+                  },
+                  "maxLines": 1,
+                  "ellipsis": true
                 }
               },
               {
@@ -219,15 +565,27 @@
                   "$field": "supportingText"
                 },
                 "width": "fill",
-                "color": "#49454F",
+                "color": {
+                  "$token": "on-surface-variant"
+                },
                 "visible": {
                   "$has": "supportingText"
                 },
                 "font": {
-                  "family": "Roboto",
-                  "size": 14,
-                  "weight": 400,
-                  "lineHeight": 20
+                  "size": {
+                    "$token": "body-medium-size"
+                  },
+                  "weight": {
+                    "$token": "body-medium-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-medium-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-medium-tracking"
+                  },
+                  "maxLines": 1,
+                  "ellipsis": true
                 }
               }
             ]
@@ -237,7 +595,9 @@
       {
         "type": "frame",
         "name": "item deslizado para o fim",
-        "fill": "#FEF7FF",
+        "fill": {
+          "$token": "surface"
+        },
         "visible": {
           "$and": [
             {
@@ -251,8 +611,8 @@
           ]
         },
         "anchors": {
-          "left": 80,
-          "right": -80,
+          "left": 56,
+          "right": -56,
           "top": 0,
           "bottom": 0
         },
@@ -269,8 +629,7 @@
             "width": "fill",
             "height": "hug",
             "layout": {
-              "type": "column",
-              "gap": 0
+              "type": "column"
             },
             "children": [
               {
@@ -281,12 +640,24 @@
                   "default": "Title"
                 },
                 "width": "fill",
-                "color": "#1D1B20",
+                "color": {
+                  "$token": "on-surface"
+                },
                 "font": {
-                  "family": "Roboto",
-                  "size": 16,
-                  "weight": 400,
-                  "lineHeight": 24
+                  "size": {
+                    "$token": "body-large-size"
+                  },
+                  "weight": {
+                    "$token": "body-large-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-large-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-large-tracking"
+                  },
+                  "maxLines": 1,
+                  "ellipsis": true
                 }
               },
               {
@@ -296,15 +667,27 @@
                   "$field": "supportingText"
                 },
                 "width": "fill",
-                "color": "#49454F",
+                "color": {
+                  "$token": "on-surface-variant"
+                },
                 "visible": {
                   "$has": "supportingText"
                 },
                 "font": {
-                  "family": "Roboto",
-                  "size": 14,
-                  "weight": 400,
-                  "lineHeight": 20
+                  "size": {
+                    "$token": "body-medium-size"
+                  },
+                  "weight": {
+                    "$token": "body-medium-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-medium-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-medium-tracking"
+                  },
+                  "maxLines": 1,
+                  "ellipsis": true
                 }
               }
             ]
@@ -314,7 +697,9 @@
       {
         "type": "frame",
         "name": "item deslizado para o início",
-        "fill": "#FEF7FF",
+        "fill": {
+          "$token": "surface"
+        },
         "visible": {
           "$and": [
             {
@@ -328,8 +713,8 @@
           ]
         },
         "anchors": {
-          "left": -80,
-          "right": 80,
+          "left": -56,
+          "right": 56,
           "top": 0,
           "bottom": 0
         },
@@ -346,8 +731,7 @@
             "width": "fill",
             "height": "hug",
             "layout": {
-              "type": "column",
-              "gap": 0
+              "type": "column"
             },
             "children": [
               {
@@ -358,12 +742,24 @@
                   "default": "Title"
                 },
                 "width": "fill",
-                "color": "#1D1B20",
+                "color": {
+                  "$token": "on-surface"
+                },
                 "font": {
-                  "family": "Roboto",
-                  "size": 16,
-                  "weight": 400,
-                  "lineHeight": 24
+                  "size": {
+                    "$token": "body-large-size"
+                  },
+                  "weight": {
+                    "$token": "body-large-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-large-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-large-tracking"
+                  },
+                  "maxLines": 1,
+                  "ellipsis": true
                 }
               },
               {
@@ -373,15 +769,27 @@
                   "$field": "supportingText"
                 },
                 "width": "fill",
-                "color": "#49454F",
+                "color": {
+                  "$token": "on-surface-variant"
+                },
                 "visible": {
                   "$has": "supportingText"
                 },
                 "font": {
-                  "family": "Roboto",
-                  "size": 14,
-                  "weight": 400,
-                  "lineHeight": 20
+                  "size": {
+                    "$token": "body-medium-size"
+                  },
+                  "weight": {
+                    "$token": "body-medium-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-medium-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-medium-tracking"
+                  },
+                  "maxLines": 1,
+                  "ellipsis": true
                 }
               }
             ]

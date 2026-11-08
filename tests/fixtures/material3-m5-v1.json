@@ -1,0 +1,1351 @@
+{
+  "source": "Estado da biblioteca material3-compose em epic/material3-fiel antes da M5 (campos, exemplos, preview, size e minSize dos 9 componentes de superfícies e seletores).",
+  "components": {
+    "alert-dialog": {
+      "fields": [
+        {
+          "key": "style",
+          "label": "Estilo",
+          "type": "enum",
+          "default": "standard",
+          "options": ["standard", "basic"],
+          "description": "standard (AlertDialog, com título, texto e botões) ou basic (BasicAlertDialog, só a janela: o conteúdo é montado à mão e exige opt-in)."
+        },
+        {
+          "key": "title",
+          "label": "Título",
+          "type": "string",
+          "description": "Título do diálogo. Vazio = sem título."
+        },
+        {
+          "key": "text",
+          "label": "Texto",
+          "type": "string",
+          "description": "Texto de apoio com os detalhes. Vazio = sem texto."
+        },
+        {
+          "key": "confirmButton",
+          "label": "Botão de confirmar",
+          "type": "string",
+          "required": true,
+          "description": "Rótulo do botão que confirma a ação (obrigatório no AlertDialog)."
+        },
+        {
+          "key": "dismissButton",
+          "label": "Botão de dispensar",
+          "type": "string",
+          "description": "Rótulo do botão que dispensa o diálogo. Vazio = só o botão de confirmar."
+        },
+        {
+          "key": "icon",
+          "label": "Ícone",
+          "type": "string",
+          "suggestions": [
+            "Home",
+            "Search",
+            "Person",
+            "Menu",
+            "MoreVert",
+            "Add",
+            "Check",
+            "Close",
+            "ArrowBack",
+            "Favorite",
+            "Edit",
+            "Delete",
+            "Share",
+            "Notifications",
+            "Settings",
+            "Info",
+            "Star",
+            "Email",
+            "Phone",
+            "Place",
+            "DateRange",
+            "ShoppingCart",
+            "AccountCircle",
+            "KeyboardArrowRight",
+            "KeyboardArrowDown",
+            "Refresh",
+            "Clear",
+            "Done",
+            "Lock",
+            "List",
+            "AccountBox",
+            "AddCircle",
+            "ArrowDropDown",
+            "ArrowDropUp",
+            "ArrowForward",
+            "ArrowUpward",
+            "ArrowDownward",
+            "Build",
+            "Call",
+            "CheckCircle",
+            "Create",
+            "Face",
+            "FavoriteBorder",
+            "ExitToApp",
+            "KeyboardArrowLeft",
+            "KeyboardArrowUp",
+            "LocationOn",
+            "MailOutline",
+            "PlayArrow",
+            "Send",
+            "ThumbUp",
+            "Warning",
+            "Cancel",
+            "ExpandMore",
+            "ExpandLess",
+            "ChevronLeft",
+            "ChevronRight",
+            "FirstPage",
+            "LastPage",
+            "MoreHoriz",
+            "Apps",
+            "Dashboard",
+            "Folder",
+            "FolderOpen",
+            "InsertDriveFile",
+            "Description",
+            "Image",
+            "Mic",
+            "Videocam",
+            "Chat",
+            "Comment",
+            "Forum",
+            "NotificationsNone",
+            "Visibility",
+            "VisibilityOff",
+            "Language",
+            "Public",
+            "Link",
+            "Attachment",
+            "ContentCopy",
+            "ContentPaste",
+            "ContentCut",
+            "Save",
+            "Download",
+            "Upload",
+            "CloudUpload",
+            "CloudDownload",
+            "Cloud",
+            "Sync",
+            "Schedule",
+            "AccessTime",
+            "CalendarToday",
+            "Event",
+            "Today",
+            "Timer",
+            "Alarm",
+            "History",
+            "Bookmark",
+            "BookmarkBorder",
+            "Label",
+            "Flag",
+            "Help",
+            "HelpOutline",
+            "Error",
+            "ErrorOutline",
+            "Report",
+            "Block",
+            "Tune",
+            "FilterList",
+            "Sort",
+            "Fullscreen",
+            "Wifi",
+            "Bluetooth",
+            "LightMode",
+            "DarkMode",
+            "Palette",
+            "ShoppingBag",
+            "Store",
+            "Payment",
+            "CreditCard",
+            "AttachMoney",
+            "Receipt",
+            "Map",
+            "Navigation",
+            "DirectionsCar",
+            "Flight",
+            "MenuOpen",
+            "Logout",
+            "Login",
+            "People",
+            "Group",
+            "PersonAdd",
+            "LockOpen",
+            "Security",
+            "VerifiedUser",
+            "Key",
+            "Pause",
+            "Stop",
+            "SkipNext",
+            "SkipPrevious",
+            "VolumeUp",
+            "VolumeOff",
+            "ThumbDown",
+            "Reply",
+            "Inbox",
+            "Archive",
+            "Undo",
+            "Redo",
+            "ZoomIn",
+            "ZoomOut",
+            "Keyboard",
+            "CheckBox",
+            "CheckBoxOutlineBlank",
+            "RadioButtonChecked",
+            "RadioButtonUnchecked",
+            "ToggleOn",
+            "ToggleOff",
+            "StarBorder",
+            "StarHalf",
+            "Lightbulb",
+            "Code",
+            "Terminal",
+            "Bolt",
+            "EditCalendar"
+          ],
+          "description": "Ícone acima do título. Vazio = sem ícone."
+        },
+        {
+          "key": "contentDescription",
+          "label": "Descrição do ícone",
+          "type": "string",
+          "description": "Texto de acessibilidade do ícone (vai no `contentDescription` do Icon). Vazio = ícone decorativo."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Confirmação com ícone",
+          "values": {
+            "style": "standard",
+            "icon": "Delete",
+            "title": "Descartar rascunho?",
+            "text": "O rascunho será apagado e não poderá ser recuperado.",
+            "confirmButton": "Descartar",
+            "dismissButton": "Cancelar"
+          }
+        },
+        {
+          "name": "Só informação",
+          "values": {
+            "style": "standard",
+            "title": "Sincronização concluída",
+            "text": "Seus dados estão atualizados em todos os dispositivos.",
+            "confirmButton": "OK"
+          }
+        },
+        {
+          "name": "Basic com título e texto",
+          "values": {
+            "style": "basic",
+            "title": "Sair da conta?",
+            "text": "Você precisará entrar de novo para ver suas mensagens.",
+            "confirmButton": "Sair",
+            "dismissButton": "Cancelar"
+          }
+        }
+      ],
+      "preview": {
+        "style": "standard",
+        "title": "Descartar rascunho?",
+        "text": "O rascunho será apagado e não poderá ser recuperado.",
+        "confirmButton": "Descartar",
+        "dismissButton": "Cancelar",
+        "icon": "Delete",
+        "contentDescription": ""
+      },
+      "size": {
+        "width": 312,
+        "height": 240
+      }
+    },
+    "bottom-sheet": {
+      "fields": [
+        {
+          "key": "title",
+          "label": "Título",
+          "type": "string",
+          "description": "Título no topo da folha."
+        },
+        {
+          "key": "style",
+          "label": "Estilo",
+          "type": "enum",
+          "default": "modal",
+          "options": ["modal", "standard"],
+          "description": "modal (ModalBottomSheet) ou standard (BottomSheetScaffold)."
+        },
+        {
+          "key": "dragHandle",
+          "label": "Alça de arraste",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "false remove a alça no topo da folha."
+        },
+        {
+          "key": "sheetPeekHeight",
+          "label": "Altura recolhida (dp)",
+          "type": "number",
+          "default": 56,
+          "description": "Altura visível da folha recolhida em dp. Só vale no estilo standard."
+        },
+        {
+          "key": "items",
+          "label": "Itens",
+          "type": "table",
+          "columns": [
+            {
+              "key": "label",
+              "label": "Rótulo",
+              "type": "string",
+              "required": true,
+              "description": "Texto da ação."
+            },
+            {
+              "key": "icon",
+              "label": "Ícone",
+              "type": "string",
+              "suggestions": [
+                "Home",
+                "Search",
+                "Person",
+                "Menu",
+                "MoreVert",
+                "Add",
+                "Check",
+                "Close",
+                "ArrowBack",
+                "Favorite",
+                "Edit",
+                "Delete",
+                "Share",
+                "Notifications",
+                "Settings",
+                "Info",
+                "Star",
+                "Email",
+                "Phone",
+                "Place",
+                "DateRange",
+                "ShoppingCart",
+                "AccountCircle",
+                "KeyboardArrowRight",
+                "KeyboardArrowDown",
+                "Refresh",
+                "Clear",
+                "Done",
+                "Lock",
+                "List",
+                "AccountBox",
+                "AddCircle",
+                "ArrowDropDown",
+                "ArrowDropUp",
+                "ArrowForward",
+                "ArrowUpward",
+                "ArrowDownward",
+                "Build",
+                "Call",
+                "CheckCircle",
+                "Create",
+                "Face",
+                "FavoriteBorder",
+                "ExitToApp",
+                "KeyboardArrowLeft",
+                "KeyboardArrowUp",
+                "LocationOn",
+                "MailOutline",
+                "PlayArrow",
+                "Send",
+                "ThumbUp",
+                "Warning",
+                "Cancel",
+                "ExpandMore",
+                "ExpandLess",
+                "ChevronLeft",
+                "ChevronRight",
+                "FirstPage",
+                "LastPage",
+                "MoreHoriz",
+                "Apps",
+                "Dashboard",
+                "Folder",
+                "FolderOpen",
+                "InsertDriveFile",
+                "Description",
+                "Image",
+                "Mic",
+                "Videocam",
+                "Chat",
+                "Comment",
+                "Forum",
+                "NotificationsNone",
+                "Visibility",
+                "VisibilityOff",
+                "Language",
+                "Public",
+                "Link",
+                "Attachment",
+                "ContentCopy",
+                "ContentPaste",
+                "ContentCut",
+                "Save",
+                "Download",
+                "Upload",
+                "CloudUpload",
+                "CloudDownload",
+                "Cloud",
+                "Sync",
+                "Schedule",
+                "AccessTime",
+                "CalendarToday",
+                "Event",
+                "Today",
+                "Timer",
+                "Alarm",
+                "History",
+                "Bookmark",
+                "BookmarkBorder",
+                "Label",
+                "Flag",
+                "Help",
+                "HelpOutline",
+                "Error",
+                "ErrorOutline",
+                "Report",
+                "Block",
+                "Tune",
+                "FilterList",
+                "Sort",
+                "Fullscreen",
+                "Wifi",
+                "Bluetooth",
+                "LightMode",
+                "DarkMode",
+                "Palette",
+                "ShoppingBag",
+                "Store",
+                "Payment",
+                "CreditCard",
+                "AttachMoney",
+                "Receipt",
+                "Map",
+                "Navigation",
+                "DirectionsCar",
+                "Flight",
+                "MenuOpen",
+                "Logout",
+                "Login",
+                "People",
+                "Group",
+                "PersonAdd",
+                "LockOpen",
+                "Security",
+                "VerifiedUser",
+                "Key",
+                "Pause",
+                "Stop",
+                "SkipNext",
+                "SkipPrevious",
+                "VolumeUp",
+                "VolumeOff",
+                "ThumbDown",
+                "Reply",
+                "Inbox",
+                "Archive",
+                "Undo",
+                "Redo",
+                "ZoomIn",
+                "ZoomOut",
+                "Keyboard",
+                "CheckBox",
+                "CheckBoxOutlineBlank",
+                "RadioButtonChecked",
+                "RadioButtonUnchecked",
+                "ToggleOn",
+                "ToggleOff",
+                "StarBorder",
+                "StarHalf",
+                "Lightbulb",
+                "Code",
+                "Terminal",
+                "Bolt",
+                "EditCalendar"
+              ],
+              "description": "Ícone da ação. Vazio = sem ícone."
+            }
+          ],
+          "description": "Ações da folha, uma por linha."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Modal",
+          "values": {
+            "title": "Compartilhar",
+            "style": "modal",
+            "dragHandle": "true"
+          }
+        },
+        {
+          "name": "Standard recolhida",
+          "values": {
+            "title": "Detalhes",
+            "style": "standard",
+            "sheetPeekHeight": 96
+          }
+        }
+      ],
+      "preview": {
+        "title": "Compartilhar",
+        "style": "modal",
+        "dragHandle": "true",
+        "sheetPeekHeight": 56,
+        "items": [
+          {
+            "label": "Favoritos",
+            "icon": "Favorite"
+          },
+          {
+            "label": "Editar",
+            "icon": "Edit"
+          },
+          {
+            "label": "Configurações",
+            "icon": "Settings"
+          }
+        ]
+      },
+      "size": {
+        "width": 412,
+        "height": 320
+      }
+    },
+    "snackbar": {
+      "fields": [
+        {
+          "key": "message",
+          "label": "Mensagem",
+          "type": "string",
+          "required": true,
+          "description": "Texto do snackbar."
+        },
+        {
+          "key": "actionLabel",
+          "label": "Ação",
+          "type": "string",
+          "description": "Texto do botão de ação. Vazio = sem ação."
+        },
+        {
+          "key": "dismissAction",
+          "label": "Botão de fechar",
+          "type": "enum",
+          "default": "false",
+          "options": ["true", "false"],
+          "description": "true mostra o botão de fechar (ícone Close) depois da ação."
+        },
+        {
+          "key": "actionOnNewLine",
+          "label": "Ação em nova linha",
+          "type": "enum",
+          "default": "false",
+          "options": ["true", "false"],
+          "description": "true põe a ação abaixo da mensagem, para textos longos (a altura do retângulo passa de 48 para 68)."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Só mensagem",
+          "values": {
+            "message": "Arquivo salvo"
+          }
+        },
+        {
+          "name": "Com ação",
+          "values": {
+            "message": "Mensagem arquivada",
+            "actionLabel": "Desfazer"
+          }
+        },
+        {
+          "name": "Com ação e fechar",
+          "values": {
+            "message": "Sem conexão",
+            "actionLabel": "Tentar de novo",
+            "dismissAction": "true"
+          }
+        }
+      ],
+      "preview": {
+        "message": "Mensagem arquivada",
+        "actionLabel": "Desfazer",
+        "dismissAction": "false",
+        "actionOnNewLine": "false"
+      },
+      "size": {
+        "width": 344,
+        "height": 48
+      }
+    },
+    "tooltip": {
+      "fields": [
+        {
+          "key": "style",
+          "label": "Estilo",
+          "type": "enum",
+          "default": "plain",
+          "options": ["plain", "rich"],
+          "description": "plain (PlainTooltip, só texto) ou rich (RichTooltip, com título e ação)."
+        },
+        {
+          "key": "text",
+          "label": "Texto",
+          "type": "string",
+          "required": true,
+          "description": "Texto do tooltip."
+        },
+        {
+          "key": "title",
+          "label": "Título",
+          "type": "string",
+          "description": "Título do tooltip rich. Vazio = sem título. Só vale em rich."
+        },
+        {
+          "key": "action",
+          "label": "Ação",
+          "type": "string",
+          "description": "Texto do botão de ação do tooltip rich. Vazio = sem ação. Só vale em rich."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Plain",
+          "values": {
+            "style": "plain",
+            "text": "Adicionar aos favoritos"
+          }
+        },
+        {
+          "name": "Rich com título",
+          "values": {
+            "style": "rich",
+            "title": "Modo avião",
+            "text": "Desliga o Wi-Fi, o Bluetooth e os dados móveis."
+          }
+        },
+        {
+          "name": "Rich com ação",
+          "values": {
+            "style": "rich",
+            "title": "Sincronização",
+            "text": "Suas fotos são copiadas para a nuvem quando há Wi-Fi.",
+            "action": "Saiba mais"
+          }
+        }
+      ],
+      "preview": {
+        "style": "plain",
+        "text": "Adicionar aos favoritos",
+        "title": "",
+        "action": ""
+      },
+      "size": {
+        "width": 240,
+        "height": 24
+      },
+      "minSize": {
+        "width": 40,
+        "height": 24
+      }
+    },
+    "date-picker": {
+      "fields": [
+        {
+          "key": "title",
+          "label": "Título",
+          "type": "string",
+          "description": "Texto pequeno no topo (title). Vazio = o padrão do M3 (Selecionar data / Selecionar datas)."
+        },
+        {
+          "key": "headline",
+          "label": "Manchete",
+          "type": "string",
+          "description": "Data escolhida, em destaque no cabeçalho (headline), já formatada, como em qua., 15 de out. Vazio = o padrão do M3."
+        },
+        {
+          "key": "displayedMonth",
+          "label": "Mês exibido",
+          "type": "string",
+          "description": "Nome do mês e do ano mostrados no calendário, como em Outubro de 2025. É o estado inicial, não um parâmetro. A grade desenhada é sempre de 31 dias começando numa quarta-feira."
+        },
+        {
+          "key": "selection",
+          "label": "Seleção",
+          "type": "enum",
+          "default": "single",
+          "options": ["single", "range"],
+          "description": "single escolhe um dia (DatePicker); range escolhe um intervalo (DateRangePicker)."
+        },
+        {
+          "key": "selectedDay",
+          "label": "Dia escolhido",
+          "type": "number",
+          "description": "Dia do mês (1 a 31) marcado no estilo single. Vazio = nenhum dia."
+        },
+        {
+          "key": "rangeStartDay",
+          "label": "Dia inicial",
+          "type": "number",
+          "description": "Primeiro dia do intervalo (1 a 31), no estilo range."
+        },
+        {
+          "key": "rangeEndDay",
+          "label": "Dia final",
+          "type": "number",
+          "description": "Último dia do intervalo (1 a 31), no estilo range."
+        },
+        {
+          "key": "showModeToggle",
+          "label": "Alternar modo",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "false esconde o ícone que alterna entre calendário e digitação."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Um dia",
+          "values": {
+            "headline": "qua., 15 de out.",
+            "displayedMonth": "Outubro de 2025",
+            "selection": "single",
+            "selectedDay": 15
+          }
+        },
+        {
+          "name": "Intervalo",
+          "values": {
+            "headline": "9 out – 16 out",
+            "displayedMonth": "Outubro de 2025",
+            "selection": "range",
+            "rangeStartDay": 9,
+            "rangeEndDay": 16
+          }
+        },
+        {
+          "name": "Sem escolha",
+          "values": {
+            "displayedMonth": "Outubro de 2025",
+            "selection": "single",
+            "showModeToggle": "false"
+          }
+        }
+      ],
+      "preview": {
+        "title": "",
+        "headline": "qua., 15 de out.",
+        "displayedMonth": "Outubro de 2025",
+        "selectedDay": 15,
+        "rangeStartDay": null,
+        "rangeEndDay": null,
+        "showModeToggle": "true",
+        "selection": "single"
+      },
+      "size": {
+        "width": 360,
+        "height": 469
+      }
+    },
+    "time-picker": {
+      "fields": [
+        {
+          "key": "title",
+          "label": "Título",
+          "type": "string",
+          "description": "Título do diálogo (o `title` do TimePickerDialog). Vazio = sem título."
+        },
+        {
+          "key": "mode",
+          "label": "Modo",
+          "type": "enum",
+          "default": "picker",
+          "options": ["picker", "input"],
+          "description": "picker é o relógio (TimePicker); input são só os campos de hora e minuto (TimeInput)."
+        },
+        {
+          "key": "hour",
+          "label": "Hora",
+          "type": "number",
+          "description": "Hora de 0 a 23 (initialHour), sempre no formato de 24 horas."
+        },
+        {
+          "key": "minute",
+          "label": "Minuto",
+          "type": "number",
+          "description": "Minuto de 0 a 59 (initialMinute)."
+        },
+        {
+          "key": "is24Hour",
+          "label": "24 horas",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "true usa 24 horas; false usa 12 horas com o seletor AM/PM."
+        },
+        {
+          "key": "selection",
+          "label": "Em seleção",
+          "type": "enum",
+          "default": "hour",
+          "options": ["hour", "minute"],
+          "description": "Qual parte está sendo escolhida (o relógio mostra as horas ou os minutos). É o estado inicial, não um parâmetro."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Relógio, horas",
+          "values": {
+            "title": "Selecionar horário",
+            "mode": "picker",
+            "hour": 14,
+            "minute": 30,
+            "is24Hour": "true",
+            "selection": "hour"
+          }
+        },
+        {
+          "name": "Relógio, minutos em 12 horas",
+          "values": {
+            "title": "Selecionar horário",
+            "mode": "picker",
+            "hour": 9,
+            "minute": 45,
+            "is24Hour": "false",
+            "selection": "minute"
+          }
+        },
+        {
+          "name": "Campos",
+          "values": {
+            "title": "Informe o horário",
+            "mode": "input",
+            "hour": 8,
+            "minute": 5,
+            "is24Hour": "false"
+          }
+        }
+      ],
+      "preview": {
+        "title": "Selecionar horário",
+        "mode": "picker",
+        "hour": 14,
+        "minute": 30,
+        "is24Hour": "true",
+        "selection": "hour"
+      },
+      "size": {
+        "width": 328,
+        "height": 456
+      }
+    },
+    "carousel": {
+      "fields": [
+        {
+          "key": "items",
+          "label": "Itens",
+          "type": "table",
+          "required": true,
+          "description": "Um item do carrossel por linha, na ordem em que aparecem.",
+          "columns": [
+            {
+              "key": "image",
+              "label": "Imagem (URL)",
+              "type": "string",
+              "required": true,
+              "description": "Endereço https:// da imagem do item. Vazio = o reservado no lugar da imagem."
+            },
+            {
+              "key": "label",
+              "label": "Rótulo",
+              "type": "string",
+              "description": "Texto sobre a imagem, na base do item. Vazio = sem texto."
+            }
+          ]
+        },
+        {
+          "key": "style",
+          "label": "Estilo",
+          "type": "enum",
+          "default": "multi-browse",
+          "options": ["multi-browse", "uncontained", "centered-hero"],
+          "description": "multi-browse (HorizontalMultiBrowseCarousel), uncontained (HorizontalUncontainedCarousel) ou centered-hero (HorizontalCenteredHeroCarousel)."
+        },
+        {
+          "key": "preferredItemWidth",
+          "label": "Largura preferida do item (dp)",
+          "type": "number",
+          "description": "Só no multi-browse (obrigatório no Compose): a largura que os itens grandes querem ter; o carrossel a ajusta para caber um número inteiro de itens."
+        },
+        {
+          "key": "itemWidth",
+          "label": "Largura do item (dp)",
+          "type": "number",
+          "description": "Só no uncontained (obrigatório no Compose): a largura fixa de cada item."
+        },
+        {
+          "key": "itemSpacing",
+          "label": "Espaço entre itens (dp)",
+          "type": "number",
+          "description": "Espaço entre os itens em dp (itemSpacing). Vazio = 0 no código; o desenho usa 8."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Multi-browse",
+          "values": {
+            "style": "multi-browse",
+            "preferredItemWidth": 186,
+            "itemSpacing": 8,
+            "width": "fill",
+            "height": "fixed"
+          }
+        },
+        {
+          "name": "Uncontained",
+          "values": {
+            "style": "uncontained",
+            "itemWidth": 140,
+            "itemSpacing": 12,
+            "width": "fill",
+            "height": "fixed"
+          }
+        },
+        {
+          "name": "Hero centrado",
+          "values": {
+            "style": "centered-hero",
+            "itemSpacing": 8,
+            "width": "fill",
+            "height": "fixed"
+          }
+        }
+      ],
+      "preview": {
+        "items": [
+          {
+            "image": "https://example.com/praia.jpg",
+            "label": "Praia"
+          },
+          {
+            "image": "https://example.com/serra.jpg",
+            "label": "Serra"
+          },
+          {
+            "image": "https://example.com/cidade.jpg",
+            "label": "Cidade"
+          }
+        ],
+        "style": "multi-browse",
+        "preferredItemWidth": 186,
+        "itemWidth": 186,
+        "itemSpacing": 8,
+        "width": "fill",
+        "height": "fixed",
+        "weight": null
+      },
+      "size": {
+        "width": 360,
+        "height": 205
+      }
+    },
+    "pull-to-refresh": {
+      "fields": [
+        {
+          "key": "isRefreshing",
+          "label": "Atualizando",
+          "type": "enum",
+          "default": "false",
+          "options": ["true", "false"],
+          "description": "true mostra o spinner (atualização em curso, isRefreshing = true); false mostra o indicador em arrasto, com a seta."
+        },
+        {
+          "key": "contentAlignment",
+          "label": "Alinhamento do conteúdo",
+          "type": "enum",
+          "default": "TopStart",
+          "options": [
+            "TopStart",
+            "TopCenter",
+            "TopEnd",
+            "CenterStart",
+            "Center",
+            "CenterEnd",
+            "BottomStart",
+            "BottomCenter",
+            "BottomEnd"
+          ],
+          "description": "Onde o conteúdo fica dentro do Box (Alignment)."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Atualizando",
+          "values": {
+            "isRefreshing": "true",
+            "width": "fill",
+            "height": "fill"
+          }
+        },
+        {
+          "name": "Em repouso",
+          "values": {
+            "isRefreshing": "false",
+            "width": "fill",
+            "height": "fill"
+          }
+        }
+      ],
+      "preview": {
+        "isRefreshing": "true",
+        "contentAlignment": "TopStart",
+        "width": "fill",
+        "height": "fill",
+        "weight": null
+      },
+      "size": {
+        "width": 360,
+        "height": 400
+      }
+    },
+    "swipe-to-dismiss": {
+      "fields": [
+        {
+          "key": "title",
+          "label": "Título",
+          "type": "string",
+          "required": true,
+          "description": "Linha principal do item que se dispensa (o conteúdo é do app; o desenho mostra um item de lista)."
+        },
+        {
+          "key": "supportingText",
+          "label": "Texto de apoio",
+          "type": "string",
+          "description": "Linha de apoio abaixo do título. Vazio = sem linha."
+        },
+        {
+          "key": "direction",
+          "label": "Estado do deslize",
+          "type": "enum",
+          "default": "Settled",
+          "options": ["Settled", "StartToEnd", "EndToStart"],
+          "description": "Settled é o item em repouso; StartToEnd e EndToStart mostram o item deslizado e o fundo revelado (SwipeToDismissBoxValue)."
+        },
+        {
+          "key": "enableDismissFromStartToEnd",
+          "label": "Dispensar do início para o fim",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "false impede o deslize no sentido da leitura (enableDismissFromStartToEnd)."
+        },
+        {
+          "key": "enableDismissFromEndToStart",
+          "label": "Dispensar do fim para o início",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "false impede o deslize contra o sentido da leitura (enableDismissFromEndToStart)."
+        },
+        {
+          "key": "icon",
+          "label": "Ícone do fundo",
+          "type": "string",
+          "suggestions": [
+            "Home",
+            "Search",
+            "Person",
+            "Menu",
+            "MoreVert",
+            "Add",
+            "Check",
+            "Close",
+            "ArrowBack",
+            "Favorite",
+            "Edit",
+            "Delete",
+            "Share",
+            "Notifications",
+            "Settings",
+            "Info",
+            "Star",
+            "Email",
+            "Phone",
+            "Place",
+            "DateRange",
+            "ShoppingCart",
+            "AccountCircle",
+            "KeyboardArrowRight",
+            "KeyboardArrowDown",
+            "Refresh",
+            "Clear",
+            "Done",
+            "Lock",
+            "List",
+            "AccountBox",
+            "AddCircle",
+            "ArrowDropDown",
+            "ArrowDropUp",
+            "ArrowForward",
+            "ArrowUpward",
+            "ArrowDownward",
+            "Build",
+            "Call",
+            "CheckCircle",
+            "Create",
+            "Face",
+            "FavoriteBorder",
+            "ExitToApp",
+            "KeyboardArrowLeft",
+            "KeyboardArrowUp",
+            "LocationOn",
+            "MailOutline",
+            "PlayArrow",
+            "Send",
+            "ThumbUp",
+            "Warning",
+            "Cancel",
+            "ExpandMore",
+            "ExpandLess",
+            "ChevronLeft",
+            "ChevronRight",
+            "FirstPage",
+            "LastPage",
+            "MoreHoriz",
+            "Apps",
+            "Dashboard",
+            "Folder",
+            "FolderOpen",
+            "InsertDriveFile",
+            "Description",
+            "Image",
+            "Mic",
+            "Videocam",
+            "Chat",
+            "Comment",
+            "Forum",
+            "NotificationsNone",
+            "Visibility",
+            "VisibilityOff",
+            "Language",
+            "Public",
+            "Link",
+            "Attachment",
+            "ContentCopy",
+            "ContentPaste",
+            "ContentCut",
+            "Save",
+            "Download",
+            "Upload",
+            "CloudUpload",
+            "CloudDownload",
+            "Cloud",
+            "Sync",
+            "Schedule",
+            "AccessTime",
+            "CalendarToday",
+            "Event",
+            "Today",
+            "Timer",
+            "Alarm",
+            "History",
+            "Bookmark",
+            "BookmarkBorder",
+            "Label",
+            "Flag",
+            "Help",
+            "HelpOutline",
+            "Error",
+            "ErrorOutline",
+            "Report",
+            "Block",
+            "Tune",
+            "FilterList",
+            "Sort",
+            "Fullscreen",
+            "Wifi",
+            "Bluetooth",
+            "LightMode",
+            "DarkMode",
+            "Palette",
+            "ShoppingBag",
+            "Store",
+            "Payment",
+            "CreditCard",
+            "AttachMoney",
+            "Receipt",
+            "Map",
+            "Navigation",
+            "DirectionsCar",
+            "Flight",
+            "MenuOpen",
+            "Logout",
+            "Login",
+            "People",
+            "Group",
+            "PersonAdd",
+            "LockOpen",
+            "Security",
+            "VerifiedUser",
+            "Key",
+            "Pause",
+            "Stop",
+            "SkipNext",
+            "SkipPrevious",
+            "VolumeUp",
+            "VolumeOff",
+            "ThumbDown",
+            "Reply",
+            "Inbox",
+            "Archive",
+            "Undo",
+            "Redo",
+            "ZoomIn",
+            "ZoomOut",
+            "Keyboard",
+            "CheckBox",
+            "CheckBoxOutlineBlank",
+            "RadioButtonChecked",
+            "RadioButtonUnchecked",
+            "ToggleOn",
+            "ToggleOff",
+            "StarBorder",
+            "StarHalf",
+            "Lightbulb",
+            "Code",
+            "Terminal",
+            "Bolt",
+            "EditCalendar"
+          ],
+          "description": "Ícone do fundo revelado (o desenho mostra Delete, Done, Check, Favorite, Edit, Star, Share, Add e Close; outros caem em Delete). Vazio = Delete."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Em repouso",
+          "values": {
+            "title": "Reunião de equipe",
+            "supportingText": "Hoje, 14:00",
+            "direction": "Settled",
+            "icon": "Delete",
+            "width": "fill"
+          }
+        },
+        {
+          "name": "Excluir arrastando para o início",
+          "values": {
+            "title": "Reunião de equipe",
+            "supportingText": "Hoje, 14:00",
+            "direction": "EndToStart",
+            "enableDismissFromStartToEnd": "false",
+            "icon": "Delete",
+            "width": "fill"
+          }
+        },
+        {
+          "name": "Concluir arrastando para o fim",
+          "values": {
+            "title": "Convite de Ana",
+            "direction": "StartToEnd",
+            "enableDismissFromEndToStart": "false",
+            "icon": "Done",
+            "width": "fill"
+          }
+        }
+      ],
+      "preview": {
+        "title": "Reunião de equipe",
+        "supportingText": "Hoje, 14:00",
+        "direction": "EndToStart",
+        "enableDismissFromStartToEnd": "true",
+        "enableDismissFromEndToStart": "true",
+        "icon": "Delete",
+        "width": "fill",
+        "height": "wrap",
+        "weight": null
+      },
+      "size": {
+        "width": 360,
+        "height": 72
+      }
+    }
+  }
+}
