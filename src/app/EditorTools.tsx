@@ -4,7 +4,10 @@ import { useEditor } from '../ui/EditorContext';
 import { viewModeButton } from '../ui/ViewModePanel';
 import { IconButton, Segmented } from '../ui/controls';
 import { armComment, cancelComment } from '../store/threadUi';
-import { setViewMode } from '../store/ui';
+import { setViewMode, showToast } from '../store/ui';
+import { proposalErrorMessage } from '../ui/labels';
+import { REVIEW_ERROR_MS } from '../ui/review/useReviewCommands';
+import type { ProposalActionError } from '../store/proposalActions';
 import { SHORTCUT_LABELS } from './shortcuts';
 
 // Botões de ferramenta da barra principal e da barra dos breadcrumbs.
@@ -114,7 +117,18 @@ export function PinsButton() {
 
 /** Desfazer e refazer. */
 export function HistoryButtons() {
-  const { store } = useEditor();
+  const { store, ui } = useEditor();
+  // A gravação da proposta falhou ao desfazer/refazer uma aplicação: o passo foi revertido.
+  const failure = store.linkFailure.value;
+  useEffect(() => {
+    if (failure) {
+      showToast(
+        ui,
+        proposalErrorMessage(failure.error as ProposalActionError),
+        REVIEW_ERROR_MS,
+      );
+    }
+  }, [failure, ui]);
   return (
     <>
       <IconButton
