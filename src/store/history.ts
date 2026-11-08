@@ -79,7 +79,8 @@ export interface ProjectStore {
   readonly gestureActive: ReadonlySignal<boolean>;
   /**
    * Revisão de uma proposta aberta (etapa 4): o projeto fica somente leitura, e só as
-   * entradas ligadas à revisão (`ApplyOptions.link`) podem ser aplicadas, desfeitas e refeitas.
+   * entradas ligadas à proposta aberta (`ApplyOptions.link`, com `link.tag` igual ao id
+   * dela) podem ser aplicadas, desfeitas e refeitas.
    */
   readonly reviewing: ReadonlySignal<boolean>;
   /**
@@ -97,7 +98,8 @@ export interface ProjectStore {
 
   load(project: Project, options?: LoadOptions): void;
   close(): void;
-  setReviewing(reviewing: boolean): void;
+  /** Liga a revisão da proposta de id `tag`, ou a desliga com `null`. */
+  setReviewing(tag: string | null): void;
   /** Aplica a operação e cria uma entrada no histórico. */
   apply(op: Operation, options?: ApplyOptions): ActionResult;
   /**
@@ -142,7 +144,8 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
   const readOnly = signal(false);
   const past = signal<readonly Frame[]>([]);
   const future = signal<readonly Frame[]>([]);
-  const reviewing = signal(false);
+  const reviewTag = signal<string | null>(null);
+  const reviewing = computed(() => reviewTag.value !== null);
   const revision = signal(0);
   /** Projeto no início do gesto em andamento; `null` quando não há gesto. */
   const gestureBase = signal<Project | null>(null);
@@ -182,7 +185,7 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       return (
         top !== undefined &&
         gestureBase.value === null &&
-        (!reviewing.value || top.link !== null)
+        (reviewTag.value === null || top.link?.tag === reviewTag.value)
       );
     }),
     canRedo: computed(() => {
@@ -190,7 +193,7 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       return (
         top !== undefined &&
         gestureBase.value === null &&
-        (!reviewing.value || top.link !== null)
+        (reviewTag.value === null || top.link?.tag === reviewTag.value)
       );
     }),
     gestureActive: computed(() => gestureBase.value !== null),
@@ -228,15 +231,15 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       batch(() => {
         project.value = null;
         readOnly.value = false;
-        reviewing.value = false;
+        reviewTag.value = null;
         past.value = [];
         future.value = [];
         gestureBase.value = null;
       });
     },
 
-    setReviewing(value) {
-      reviewing.value = value;
+    setReviewing(tag) {
+      reviewTag.value = tag;
     },
 
     apply(op, options = {}) {
@@ -269,7 +272,8 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       const previous = past.value.at(-1);
       const current = project.value;
       if (!previous || !current || gestureBase.value || readOnly.value) return false;
-      if (reviewing.value && previous.link === null) return false;
+      if (reviewTag.value !== null && previous.link?.tag !== reviewTag.value)
+        return false;
       past.value = past.value.slice(0, -1);
       future.value = [{ project: current, link: previous.link }, ...future.value];
       project.value = touchProject(previous.project, now());
@@ -283,7 +287,7 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       const [next, ...rest] = future.value;
       const current = project.value;
       if (!next || !current || gestureBase.value || readOnly.value) return false;
-      if (reviewing.value && next.link === null) return false;
+      if (reviewTag.value !== null && next.link?.tag !== reviewTag.value) return false;
       future.value = rest;
       past.value = [...past.value, { project: current, link: next.link }].slice(
         -HISTORY_LIMIT,

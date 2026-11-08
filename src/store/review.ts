@@ -496,7 +496,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
       controlFocus = null;
       view.value = START_VIEW;
       filters.value = NO_FILTERS;
-      store.setReviewing(false);
+      store.setReviewing(null);
       // A troca volta; a perspectiva de antes não reabre sozinha.
       perspective.setLocked(false);
     });
@@ -559,7 +559,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
         // A revisão mostra só a Principal (decisão 12): abre-a e trava a troca.
         perspective.setLocked(true);
         proposalId.value = id;
-        store.setReviewing(true);
+        store.setReviewing(id);
         undoable.value = null;
         staleDismissed.value = NO_CONFLICTS;
         supersededDismissed.value = false;

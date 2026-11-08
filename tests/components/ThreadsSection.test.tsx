@@ -311,7 +311,7 @@ describe('Conversas › lida e não lida', () => {
 describe('Conversas › revisão e somente leitura', () => {
   it('na revisão de proposta a seção some', async () => {
     const harness = await setup([humanThread('t1')]);
-    harness.store.setReviewing(true);
+    harness.store.setReviewing('R');
     renderMarking(harness);
     expect(screen.queryByRole('region', { name: t('thread.section') })).toBeNull();
   });

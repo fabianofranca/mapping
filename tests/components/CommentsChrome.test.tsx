@@ -189,7 +189,7 @@ describe('Comentar no menu da camada', () => {
     cleanup();
     const h2 = await harnessWith([]);
     renderLive(h2, (p) => <LayersPanel project={p} readOnly={false} />);
-    act(() => h2.store.setReviewing(true));
+    act(() => h2.store.setReviewing('R'));
     await user.click(
       screen.getByRole('button', { name: t('layer.more', { name: layer.name }) }),
     );
