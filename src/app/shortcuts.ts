@@ -16,6 +16,8 @@ export type Shortcut =
   | { readonly kind: 'select-child' }
   | { readonly kind: 'zoom'; readonly factor: number }
   | { readonly kind: 'zoom-reset' }
+  /** Shift+2: enquadra a seleção (zoom e centro da vista). */
+  | { readonly kind: 'fit-selection' }
   | { readonly kind: 'export' }
   | { readonly kind: 'layers' }
   | { readonly kind: 'help' }
@@ -54,6 +56,7 @@ export const SHORTCUT_LABELS = {
   copyCrop: 'Ctrl+Alt+C',
   arrange: 'Alt+Shift+A',
   wrap: 'Ctrl+G',
+  fitSelection: 'Shift+2',
 } as const;
 
 const ARIA_MODIFIERS: Readonly<Record<string, string>> = {
@@ -216,7 +219,11 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   if (key === 'f1') return { kind: 'help' };
   const nudge = nudgeShortcut(key, e.shiftKey);
   if (nudge) return nudge;
-  if (e.shiftKey) return key === 'escape' ? { kind: 'hide-window' } : null;
+  if (e.shiftKey) {
+    // Pela tecla física: com Shift o `key` vira `@` ou `"` conforme o layout.
+    if (numberOf(e) === 2) return { kind: 'fit-selection' };
+    return key === 'escape' ? { kind: 'hide-window' } : null;
+  }
   if (key === 'delete' || key === 'backspace') return { kind: 'delete' };
   if (key === 'escape') return { kind: 'escape' };
   return null;

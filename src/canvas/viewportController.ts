@@ -81,6 +81,13 @@ export class ViewportController {
     );
   }
 
+  /** Enquadra `rect` (canvas) com a folga do `fitAll`, sem passar dos limites de zoom. */
+  fitTo(rect: Rect): void {
+    const size = this.readSize();
+    if (size.width === 0) return;
+    this.viewport.value = fitRect(rect, size);
+  }
+
   /** Tamanho atual do container; atualiza `size` só se ele mudou. */
   private readSize(): Size {
     const current = this.size.peek();
