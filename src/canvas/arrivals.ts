@@ -3,7 +3,13 @@
 // sobre o projeto desenhado, memoizada por versão dele (o objeto do projeto): pan e zoom não passam
 // por aqui; o tamanho do selo (em pixels de tela) entra só em `arrivalBadgeSpot`, na hora de
 // desenhar. O renderer só desenha.
-import { projectIndex, rootFootprint, type Project, type Rect } from '../model';
+import {
+  arrivalHasReference,
+  projectIndex,
+  rootFootprint,
+  type Project,
+  type Rect,
+} from '../model';
 import type { Point } from './viewport';
 
 /** Altura do selo (px de tela). */
@@ -47,19 +53,22 @@ function boxOf(rects: readonly Rect[]): Rect {
 
 /**
  * A faixa: `project.arrivals` não grava se a raiz foi para a área de chegada ou para perto da
- * referência. Por isso a faixa só existe quando a caixa das raízes com marca fica à direita de tudo
- * o que não tem marca (é onde a área de chegada abre colunas, `perspectivePlace.ts`); uma marca
- * "perto da referência" fica no meio do conteúdo e leva só o selo. Sem raízes sem marca, a faixa
- * envolve todas.
+ * referência; isso se deduz das setas de agora (`arrivalHasReference`, a mesma regra da busca de
+ * lugar), na sessão e depois de recarregar. Ela envolve só as raízes com marca **sem referência**
+ * (`orphans`) e só existe quando a caixa delas fica à direita de todas as outras raízes, com ou
+ * sem marca (é onde a área de chegada abre colunas, `perspectivePlace.ts`); as com referência
+ * levam só o selo.
  */
-function bandOf(
-  project: Project,
-  marked: ReadonlySet<string>,
-  rects: Rect[],
-): Rect | null {
+function bandOf(project: Project, orphans: ReadonlySet<string>): Rect | null {
+  const rects: Rect[] = [];
+  for (const id of orphans) {
+    const rect = rootFootprint(project, id);
+    if (rect) rects.push(rect);
+  }
+  if (rects.length === 0) return null;
   const area = boxOf(rects);
   for (const id of projectIndex(project).roots) {
-    if (marked.has(id)) continue;
+    if (orphans.has(id)) continue;
     const rect = rootFootprint(project, id);
     if (rect && right(rect) > area.x) return null;
   }
@@ -79,15 +88,10 @@ function compute(project: Project): ArrivalMarks | null {
     if (rect) badges.push({ root: a.root, name: a.fromName, rect });
   }
   if (badges.length === 0) return null;
-  const marked = new Set(badges.map((b) => b.root));
-  return {
-    badges,
-    band: bandOf(
-      project,
-      marked,
-      badges.map((b) => b.rect),
-    ),
-  };
+  const orphans = new Set(
+    badges.filter((b) => !arrivalHasReference(project, b.root)).map((b) => b.root),
+  );
+  return { badges, band: bandOf(project, orphans) };
 }
 
 const memo = new WeakMap<Project, ArrivalMarks | null>();

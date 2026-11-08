@@ -6,6 +6,10 @@ import type {
   RemoteImageView,
 } from '../../../src/canvas/components/imageLoader';
 import { createRemoteImageSource } from '../../../src/canvas/components/remoteImages';
+import {
+  clearRemoteImageIssues,
+  remoteImageIssues,
+} from '../../../src/store/diagnostics';
 import type { RemoteImageGate } from '../../../src/store/imagePermissions';
 
 const URL = 'https://cdn.exemplo.com/a.png?x=1';
@@ -125,5 +129,58 @@ describe('createRemoteImageSource', () => {
     expect(second).not.toBe(first);
     ctx.noCors.value = true;
     expect(ctx.source.gate.value).not.toBe(second);
+  });
+});
+
+describe('Diagnóstico: a imagem que passou a ser mostrada sai da lista (R15.5)', () => {
+  function realSource(initial: (url: string) => RemoteImageGate) {
+    const view = { current: { state: 'loading' } as RemoteImageView };
+    const loader = {
+      request: () => view.current,
+      subscribe: () => () => {},
+      epoch: signal(0),
+    } as unknown as RemoteImageLoader;
+    const gate = signal(initial);
+    const source = createRemoteImageSource({
+      loader,
+      gate,
+      allowNoCors: signal(false),
+    });
+    return { source, gate, view };
+  }
+
+  it('bloqueada por consentimento entra; depois de Permitir e carregar, sai', () => {
+    clearRemoteImageIssues();
+    const { source, gate, view } = realSource((): RemoteImageGate => ({
+      allowed: false,
+      state: 'blocked-consent',
+      origin: 'https://cdn.exemplo.com',
+    }));
+    source.resolve(URL);
+    expect(remoteImageIssues.value.map((i) => i.reason)).toEqual(['blocked-consent']);
+    gate.value = allow;
+    source.resolve(URL);
+    // Carregando ainda não a mostra: a linha fica até desenhar.
+    expect(remoteImageIssues.value).toHaveLength(1);
+    view.current = { state: 'loaded' };
+    source.resolve(URL);
+    expect(remoteImageIssues.value).toEqual([]);
+    clearRemoteImageIssues();
+  });
+
+  it('imagem que carregou sem CORS (opaca) também sai; outras linhas ficam', () => {
+    clearRemoteImageIssues();
+    const { source, gate, view } = realSource(allow);
+    source.resolve('https://b.com/y.png');
+    view.current = { state: 'failed', reason: 'timeout' };
+    source.resolve('https://b.com/y.png');
+    view.current = { state: 'failed' };
+    source.resolve(URL);
+    expect(remoteImageIssues.value).toHaveLength(2);
+    view.current = { state: 'opaque' };
+    source.resolve(URL);
+    expect(remoteImageIssues.value.map((i) => i.reason)).toEqual(['timeout']);
+    expect(gate.value).toBe(allow);
+    clearRemoteImageIssues();
   });
 });

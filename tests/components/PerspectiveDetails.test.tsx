@@ -179,6 +179,19 @@ describe('Detalhes — aviso "Veio de…"', () => {
     expect(screen.queryByText(/estava ocupado/)).toBeNull();
   });
 
+  it('sem info de sessão e sem seta para outra raiz: "Sem referência; foi para a área de chegada." (etapa #764, AP1)', () => {
+    const h = createHarness({ ...world([arrival('I1')]), arrows: [] });
+    panels(h, { image: 'I1' });
+    expect(notice()).toBeTruthy();
+    expect(document.body.textContent).toContain(t('perspective.arrival.area'));
+  });
+
+  it('com seta para outra raiz a frase de "sem referência" não aparece, mesmo com info de área', () => {
+    const h = createHarness(world([arrival('I1')]));
+    panels(h, { image: 'I1' });
+    expect(document.body.textContent).not.toContain(t('perspective.arrival.area'));
+  });
+
   it.each([
     ['near', 'I2', 'Ficou perto de images/frente.jpg, na mesma distância.'],
     [
@@ -188,7 +201,9 @@ describe('Detalhes — aviso "Veio de…"', () => {
     ],
     ['arrival-area', null, 'Sem referência; foi para a área de chegada.'],
   ] as const)('explica o caso %s', (kind, referenceId, text) => {
-    const h = createHarness(world([arrival('I1')]));
+    // "Sem referência" vem das setas: o caso da área de chegada é o projeto sem seta entre raízes.
+    const base = world([arrival('I1')]);
+    const h = createHarness(kind === 'arrival-area' ? { ...base, arrows: [] } : base);
     h.context.session.perspective.arrivals.value = [
       { root: 'I1', from: 'W', kind, referenceId },
     ];

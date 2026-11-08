@@ -164,13 +164,28 @@ describe('arrastar uma raiz numa perspectiva', () => {
     expect(project(store).containers).toBe(before.containers);
   });
 
-  it('o container raiz não pode sobrepor outro da vista', () => {
+  it('o container raiz que sobreporia outro da vista encosta nele (R12.10)', () => {
     const { store, actions } = setup();
     actions.beginGesture();
+    // D (7000..8000) pedido em 8500 cairia sobre o E (9000): fica em 8000, encostado.
     const result = actions.previewImagePlacement('D', { x: 8500, y: 3000, scale: 1 });
-    expect(result).toEqual({ ok: false, error: 'image-overlap' });
-    actions.cancelGesture();
+    expect(result.ok).toBe(true);
+    expect(actions.finishImagePlacement('D').ok).toBe(true);
+    actions.commitGesture();
+    expect(item(store, 'D')).toEqual({ root: 'D', x: 8000, y: 3000 });
+    expect(store.revision.value).toBe(1);
+    expect(store.undo()).toBe(true);
     expect(item(store, 'D')).toEqual({ root: 'D', x: 7000, y: 3000 });
+  });
+
+  it('o arrasto conjunto na perspectiva encosta no container que não se move', () => {
+    const { store, actions } = setup();
+    actions.beginGesture();
+    expect(actions.previewItemsMove([img('D')], 1500, 0).ok).toBe(true);
+    expect(actions.finishItemsMove([img('D')], 1500, 0).ok).toBe(true);
+    actions.commitGesture();
+    expect(item(store, 'D')).toEqual({ root: 'D', x: 8000, y: 3000 });
+    expect(store.revision.value).toBe(1);
   });
 
   it('o container trancado não anda', () => {

@@ -73,13 +73,49 @@ describe('legenda das marcas da revisão', () => {
     expect(document.activeElement).toBe(button);
   });
 
-  it('Esc com o foco fora da legenda não a fecha', async () => {
+  it('Esc com o foco em outro lugar (fora do canvas) não a fecha', async () => {
+    const h = await mount();
+    await openLegend();
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    outside.focus();
+    fireEvent.keyDown(outside, { key: 'Escape' });
+    await settle();
+    expect(h.ui.reviewLegend.value).toBe(true);
+    outside.remove();
+  });
+
+  it('Esc com o foco no botão da legenda a fecha e o foco fica no botão', async () => {
     const h = await mount();
     const button = await openLegend();
     button.focus();
     fireEvent.keyDown(button, { key: 'Escape' });
     await settle();
+    expect(h.ui.reviewLegend.value).toBe(false);
+    expect(document.activeElement).toBe(button);
+  });
+
+  it('aberta pelo L com o foco no canvas, o Esc fecha só a legenda e o seguinte limpa a seleção', async () => {
+    const h = await mount();
+    const canvas = document.createElement('main');
+    canvas.setAttribute('data-canvas-area', '');
+    canvas.tabIndex = -1;
+    document.body.append(canvas);
+    canvas.focus();
+    fireEvent.keyDown(canvas, { key: 'l' });
+    await settle();
     expect(h.ui.reviewLegend.value).toBe(true);
+    expect(document.activeElement).toBe(canvas);
+    h.ui.selection.value = { kind: 'image', id: 'qualquer' };
+    fireEvent.keyDown(canvas, { key: 'Escape' });
+    await settle();
+    expect(h.ui.reviewLegend.value).toBe(false);
+    expect(document.activeElement).toBe(canvas);
+    expect(h.ui.selection.value).not.toBeNull();
+    fireEvent.keyDown(canvas, { key: 'Escape' });
+    await settle();
+    expect(h.ui.selection.value).toBeNull();
+    canvas.remove();
   });
 
   it('L com o foco dentro da legenda a fecha e o foco volta ao botão que abriu', async () => {

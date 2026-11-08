@@ -120,23 +120,18 @@ describe('store: arrasto conjunto', () => {
     expect(marking(store, 'b1')?.rect).toMatchObject({ x: 100, y: 75 });
   });
 
-  it('um deslocamento inválido na final não falha o gesto: vale a última prévia válida, assentada', () => {
+  it('a final que sobreporia um container fixo encosta nele e assenta, numa entrada', () => {
     const { store, actions } = setup();
     const before = project(store);
     const pair = [img('A'), mark('N')];
     actions.beginGesture();
     expect(actions.previewItemsMove(pair, 100, 50).ok).toBe(true);
-    // A final pede um deslocamento que põe A sobre B, que não se move (o canvas não deveria): a
-    // operação falha, mas o gesto cai na última prévia válida, assentada, e o commit grava essa.
-    expect(actions.finishItemsMove(pair, 1500, 0)).toEqual({
-      ok: false,
-      error: 'image-overlap',
-    });
-    expect(container(store, 'A')?.placement).toEqual({ x: 100, y: 50, scale: 1 });
-    expect(container(store, 'A')?.parentId).toBe('G');
+    // A final pede 1500, que poria A sobre B (que não se move): A encosta em B (x = 1000).
+    expect(actions.finishItemsMove(pair, 1500, 0).ok).toBe(true);
+    expect(container(store, 'A')?.placement).toEqual({ x: 1000, y: 0, scale: 1 });
     actions.commitGesture();
     expect(validateProject(project(store))).toEqual([]);
-    expect(container(store, 'A')?.placement).toEqual({ x: 100, y: 50, scale: 1 });
+    expect(container(store, 'A')?.placement).toEqual({ x: 1000, y: 0, scale: 1 });
     expect(store.undo()).toBe(true);
     expect(project(store).containers).toBe(before.containers);
   });
@@ -293,5 +288,63 @@ describe('store: excluir e trancar a seleção', () => {
       error: 'gesture-active',
     });
     store.cancelGesture();
+  });
+});
+
+describe('store: o arrasto que encosta (R12.10)', () => {
+  // B (2000..3000 no canvas) contra C (4000), que não se move: o ponteiro pede 1500, cabem 1000.
+  it('o B sozinho termina encostado no C, numa entrada de desfazer', () => {
+    const { store, actions } = setup();
+    const before = project(store);
+    actions.beginGesture();
+    expect(actions.previewItemsMove([img('B')], 800, 0).ok).toBe(true);
+    // O ponteiro passou do C: a prévia segue o maior deslocamento sem sobreposição.
+    expect(actions.previewItemsMove([img('B')], 1500, 0).ok).toBe(true);
+    expect(container(store, 'B')?.placement.x).toBe(3000);
+    expect(actions.finishItemsMove([img('B')], 1500, 0).ok).toBe(true);
+    actions.commitGesture();
+    // Bordas iguais: a direita do B (3000 + 1000) é a esquerda do C.
+    expect(container(store, 'B')?.placement.x).toBe(3000);
+    expect(container(store, 'C')?.placement.x).toBe(4000);
+    expect(validateProject(project(store))).toEqual([]);
+    expect(store.revision.value).toBe(1);
+    expect(store.undo()).toBe(true);
+    expect(project(store).containers).toBe(before.containers);
+    expect(store.canUndo.value).toBe(false);
+  });
+
+  it('o B na seleção (com o A e uma marcação) encosta no C, numa entrada só', () => {
+    const { store, actions } = setup();
+    const items = [img('A'), img('B'), mark('N')];
+    actions.beginGesture();
+    expect(actions.previewItemsMove(items, 1500, 0).ok).toBe(true);
+    expect(actions.finishItemsMove(items, 1500, 0).ok).toBe(true);
+    actions.commitGesture();
+    expect(container(store, 'B')?.placement.x).toBe(3000);
+    expect(container(store, 'A')?.placement.x).toBe(1000);
+    expect(marking(store, 'N')?.rect.x).toBe(1100);
+    expect(validateProject(project(store))).toEqual([]);
+    expect(store.revision.value).toBe(1);
+  });
+
+  it('desliza: encosta em x e o y pedido continua', () => {
+    const { store, actions } = setup();
+    actions.beginGesture();
+    expect(actions.previewItemsMove([img('B')], 1500, 200).ok).toBe(true);
+    expect(actions.finishItemsMove([img('B')], 1500, 200).ok).toBe(true);
+    actions.commitGesture();
+    expect(container(store, 'B')?.placement).toMatchObject({ x: 3000, y: 200 });
+  });
+
+  it('o arrasto do container sozinho (previewImagePlacement) também encosta', () => {
+    const { store, actions } = setup();
+    const start = container(store, 'B')?.placement;
+    if (!start) throw new Error('sem B');
+    actions.beginGesture();
+    expect(actions.previewImagePlacement('B', { ...start, x: 3500 }).ok).toBe(true);
+    expect(actions.finishImagePlacement('B').ok).toBe(true);
+    actions.commitGesture();
+    expect(container(store, 'B')?.placement.x).toBe(3000);
+    expect(store.revision.value).toBe(1);
   });
 });

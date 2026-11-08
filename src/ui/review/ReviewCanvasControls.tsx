@@ -1,6 +1,7 @@
 import type { Signal } from '@preact/signals';
 import { createRef, type ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect } from 'preact/hooks';
+import { arrowsBelongToEditor } from '../../app/shortcuts';
 import { t } from '../../i18n';
 import {
   arrowContainerId,
@@ -39,6 +40,23 @@ export function toggleReviewLegend(ui: { readonly reviewLegend: Signal<boolean> 
     legendToggle.current?.focus();
   }
   ui.reviewLegend.value = !open;
+}
+
+/**
+ * Esc com a legenda aberta e o foco no botão que a abre ou no canvas (ou em nenhum controle):
+ * fecha só a legenda e deixa o foco onde estava, para o Esc seguinte fazer o de antes (limpar a
+ * seleção). Com o foco dentro da legenda quem fecha é o painel dela; em outro lugar (Propostas,
+ * Detalhes) o Esc é de quem tem o foco. Devolve `true` quando consumiu o Esc.
+ */
+export function closeReviewLegendOnEscape(ui: {
+  readonly reviewLegend: Signal<boolean>;
+}): boolean {
+  if (!ui.reviewLegend.peek()) return false;
+  const active = document.activeElement;
+  if (legendPanel.current?.contains(active)) return false;
+  if (active !== legendToggle.current && !arrowsBelongToEditor(active)) return false;
+  ui.reviewLegend.value = false;
+  return true;
 }
 
 /** A troca de arquivo da imagem ainda não aplicada (a que "Comparar" mostra). */

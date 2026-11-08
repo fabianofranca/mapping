@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { perspectiveNameIssue, type Perspective, type Project } from '../model';
 import { Button, IconButton, Select, TextField } from './controls';
@@ -6,8 +6,14 @@ import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import { perspectiveContentText } from './perspectiveContentText';
 
+/** Onde o foco abre quando o Gerenciar volta de uma confirmação de apagar (etapa #764, AP1). */
+export type ManageFocus =
+  { readonly kind: 'delete'; readonly id: string } | { readonly kind: 'close' };
+
 interface ManageProps {
   readonly onClose: () => void;
+  /** Foco inicial; sem ele vale o de sempre (o primeiro controle do corpo). */
+  readonly focus?: ManageFocus;
   /** Abre "Nova perspectiva". */
   readonly onNew: () => void;
   /** Abre a confirmação de apagar. */
@@ -198,6 +204,7 @@ function PerspectiveRow(props: RowProps) {
           size="sm"
           variant="danger"
           label={t('perspective.manage.delete', { name })}
+          data-delete-for={perspective.id}
           onClick={() => onDelete(perspective.id)}
         />
       </td>
@@ -206,10 +213,30 @@ function PerspectiveRow(props: RowProps) {
 }
 
 /** Gerenciar perspectivas: tabela com Quem vê trocável na linha, renomear, duplicar e apagar. */
-export function ManagePerspectivesDialog({ onClose, onNew, onDelete }: ManageProps) {
+export function ManagePerspectivesDialog({
+  onClose,
+  focus,
+  onNew,
+  onDelete,
+}: ManageProps) {
   const { store } = useEditor();
   const [failed, setFailed] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
   const project = store.project.value;
+  // Depois do foco inicial do `Dialog` (efeito do filho, que roda antes deste).
+  useLayoutEffect(() => {
+    if (!focus) return;
+    const dialog = root.current?.closest('dialog');
+    const target =
+      focus.kind === 'close'
+        ? dialog?.querySelector<HTMLElement>('[data-dialog-actions] button')
+        : [...(dialog?.querySelectorAll<HTMLElement>('[data-delete-for]') ?? [])].find(
+            (el) => el.dataset.deleteFor === focus.id,
+          );
+    target?.focus();
+    // Uma vez, ao abrir.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   if (!project) return null;
   return (
     <Dialog
@@ -218,7 +245,7 @@ export function ManagePerspectivesDialog({ onClose, onNew, onDelete }: ManagePro
       onCancel={onClose}
       actions={<Button onClick={onClose}>{t('common.close')}</Button>}
     >
-      <div class="perspective-manage-bar">
+      <div class="perspective-manage-bar" ref={root}>
         <Button variant="primary" onClick={onNew}>
           {t('perspective.manage.new')}
         </Button>
