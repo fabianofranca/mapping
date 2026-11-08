@@ -27,6 +27,8 @@ describe('crescimento do modelo (n = 1.250, 4n = 5.000 marcações)', () => {
         if (issues.length > 0) throw new Error('o fixture deveria ser válido');
         return issues;
       },
+      // Poucos ms por rodada: mais rodadas para a mediana não oscilar.
+      runs: 41,
     });
   });
 
@@ -53,6 +55,7 @@ describe('crescimento do modelo (n = 1.250, 4n = 5.000 marcações)', () => {
           const active = layerDotsByMarking(p, p.layers.slice(0, 1));
           return markingVisibility(p, active, 'hide', null);
         },
+        runs: 41,
       });
     },
   );
@@ -65,6 +68,7 @@ describe('crescimento do modelo (n = 1.250, 4n = 5.000 marcações)', () => {
         if (listing.length === 0) throw new Error('a lista não pode ficar vazia');
         return listing;
       },
+      runs: 41,
     });
   });
 

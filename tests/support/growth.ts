@@ -9,8 +9,11 @@ export const GROWTH_LIMIT = 5;
 /** Tamanhos padrão: 1.250 e 5.000 marcações. */
 export const GROWTH_N = 1250;
 export const GROWTH_FACTOR = 4;
-/** Um runner compartilhado ruidoso estoura por acaso; a regressão real estoura nas duas vezes. */
-export const GROWTH_OPTIONS = { retry: 1 };
+/**
+ * Um runner compartilhado ruidoso estoura por acaso (as operações de poucos ms chegam a 5–7× numa rodada, por cache e coleta de
+ * lixo, e voltam a ~4× na seguinte); a regressão real (~16×) estoura nas três.
+ */
+export const GROWTH_OPTIONS = { retry: 2 };
 
 export interface GrowthResult {
   readonly n: number;
@@ -82,6 +85,70 @@ export function expectLinearGrowth<P extends object>(
   options: GrowthOptions<P>,
 ): GrowthResult {
   const result = measureGrowth(options);
+  console.info(
+    `crescimento · ${label}: n=${result.n} ${result.smallMs.toFixed(2)} ms · ` +
+      `4n=${result.largeN} ${result.largeMs.toFixed(2)} ms · razão ${result.ratio.toFixed(2)}× (teto ${GROWTH_LIMIT}×)`,
+  );
+  expect(result.ratio, `${label}: razão 4n/n`).toBeLessThan(GROWTH_LIMIT);
+  return result;
+}
+
+export interface AsyncGrowthOptions<P extends object> {
+  readonly build: (n: number) => P | Promise<P>;
+  /** A operação assíncrona medida (ex.: gravar pela sessão); recebe sempre uma cópia rasa nova de `build`. */
+  readonly run: (p: P) => unknown;
+  /** Roda antes de cada `run`, fora do tempo. */
+  readonly prepare?: (p: P) => unknown;
+  readonly n?: number;
+  readonly factor?: number;
+  readonly warmup?: number;
+  readonly runs?: number;
+}
+
+async function medianMsAsync<P extends object>(
+  run: (p: P) => unknown,
+  prepare: ((p: P) => unknown) | undefined,
+  p: P,
+  warmup: number,
+  runs: number,
+): Promise<number> {
+  for (let i = 0; i < warmup; i++) {
+    const version = { ...p };
+    await prepare?.(version);
+    await run(version);
+  }
+  const times: number[] = [];
+  for (let i = 0; i < runs; i++) {
+    const version = { ...p };
+    await prepare?.(version);
+    (globalThis as { gc?: () => void }).gc?.();
+    const start = performance.now();
+    await run(version);
+    times.push(performance.now() - start);
+  }
+  return median(times);
+}
+
+/** Como `measureGrowth`, para operação assíncrona (a mediana é de rodadas sequenciais). */
+export async function measureGrowthAsync<P extends object>(
+  options: AsyncGrowthOptions<P>,
+): Promise<GrowthResult> {
+  const { build, run, prepare, n = GROWTH_N, factor = GROWTH_FACTOR } = options;
+  const { warmup = 24, runs = 21 } = options;
+  const largeN = n * factor;
+  const small = await build(n);
+  const large = await build(largeN);
+  const smallMs = await medianMsAsync(run, prepare, small, warmup, runs);
+  const largeMs = await medianMsAsync(run, prepare, large, Math.min(warmup, 10), runs);
+  return { n, largeN, smallMs, largeMs, ratio: largeMs / Math.max(smallMs, 1e-6) };
+}
+
+/** Como `expectLinearGrowth`, para operação assíncrona. */
+export async function expectLinearGrowthAsync<P extends object>(
+  label: string,
+  options: AsyncGrowthOptions<P>,
+): Promise<GrowthResult> {
+  const result = await measureGrowthAsync(options);
   console.info(
     `crescimento · ${label}: n=${result.n} ${result.smallMs.toFixed(2)} ms · ` +
       `4n=${result.largeN} ${result.largeMs.toFixed(2)} ms · razão ${result.ratio.toFixed(2)}× (teto ${GROWTH_LIMIT}×)`,
