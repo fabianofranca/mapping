@@ -1079,7 +1079,9 @@ button.tree-toggle:hover {
   color: var(--color-text-muted);
 }
 
-.comments-row[data-resolved] .comments-anchor {
+.comments-row[data-resolved] .comments-anchor,
+.comments-row[data-resolved] .comments-anchor-button {
+  color: var(--color-text-muted);
   text-decoration: line-through;
 }
 

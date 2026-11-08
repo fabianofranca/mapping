@@ -142,3 +142,27 @@ test.describe('faixa de abas da janela inferior (900 × 720)', () => {
     ).toBeGreaterThanOrEqual(SLACK);
   });
 });
+
+test.describe('âncora da conversa resolvida (900 × 720)', () => {
+  test.use({ viewport: { width: 900, height: 720 } });
+
+  for (const status of ['Resolvidas', 'Todas'] as const) {
+    test(`${status}: o botão da âncora fica riscado e em cinza`, async ({ page }) => {
+      await openComments(page, status);
+      const row = page.locator('.comments-row[data-resolved]').first();
+      await expect(row).toBeVisible();
+      const button = row.locator('.comments-anchor-button');
+      const style = await button.evaluate((el) => {
+        const muted = getComputedStyle(el.closest('.comments-row') as Element).color;
+        const s = getComputedStyle(el);
+        return { line: s.textDecorationLine, color: s.color, muted };
+      });
+      expect(style.line, `text-decoration-line: ${style.line}`).toContain('line-through');
+      expect(style.line).not.toContain('underline');
+      expect(style.color, `cor ${style.color} != atenuada ${style.muted}`).toBe(
+        style.muted,
+      );
+      await expect(button).toHaveAttribute('aria-label', /.+/);
+    });
+  }
+});
