@@ -1,4 +1,4 @@
-# Estável do MCP no merge do épico — [Não lançado] (épico `epic/release-automatica`, PR #0, MCP 0.28.2 sem mudança, schema v18)
+# Estável do MCP no merge do épico — 2026-11-08 (épico `epic/release-automatica`, PR #933, MCP 0.28.2 sem mudança, schema v18)
 
 ## Alterado
 

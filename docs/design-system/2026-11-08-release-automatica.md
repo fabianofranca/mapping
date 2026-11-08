@@ -1,4 +1,4 @@
-# Estável do MCP no merge do épico — [Não lançado] (épico `epic/release-automatica`)
+# Estável do MCP no merge do épico — 2026-11-08 (épico `epic/release-automatica`)
 
 ## Pendências
 
