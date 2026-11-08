@@ -75,6 +75,24 @@ const MEASURED_NODE: Origin['node'] = {
 /** Tela sem raízes: uma origem `measured` não gera tela, só marcações (`importMeasured`). */
 const MEASURED_SCREEN: ScreenSource = { width: 0, height: 0, roots: [] };
 
+/**
+ * Origem como a especialização a guarda e grava (`Spec.origins`): a `measured` não tem `node` nem
+ * `screen` (o leitor recusa as duas chaves), a `tree` tem os dois.
+ */
+export type SpecOrigin = Omit<Origin, 'node' | 'screen'> &
+  Partial<Pick<Origin, 'node' | 'screen'>>;
+
+/** Tira de uma origem `measured` o `node` e a `screen` fixos internos: é a forma que se grava e se relê. */
+export function toSpecOrigin(origin: Origin): SpecOrigin {
+  if (origin.kind !== 'measured') return origin;
+  return {
+    system: origin.system,
+    kind: origin.kind,
+    ...(origin.name !== undefined ? { name: origin.name } : {}),
+    ...(origin.booleans ? { booleans: origin.booleans } : {}),
+  };
+}
+
 export interface Origin {
   readonly system: string;
   /** `tree` (padrão) ou `measured` (formatVersion 15): esta não tem `node`, `screen` nem `examples` próprios. */

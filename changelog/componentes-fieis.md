@@ -46,3 +46,4 @@
 - Um texto `fill` numa coluna `hug` quebrava palavra por palavra (letra a letra, com largura 0). Agora o conteúdo é medido em duas passagens, como o flexbox (em todas as versões do formato): o texto quebra em linhas de palavras e o quadro tem a altura delas.
 - A janela **Especializações** mostra, na biblioteca, os modos do desenho, os tokens (com o valor de cada modo) e o arquivo do conjunto de ícones.
 - O diálogo **Especializações** não mostra mais crases soltas em volta de `formatVersion` (e de `repo` no aviso da migração do schema 11): a interface não interpreta markdown.
+- Uma biblioteca com origem `kind: "measured"` (como a `medido`) agora abre na app e no MCP: a especialização lida deixava na origem as chaves internas `node` e `screen`, que a própria leitura recusava, e a cópia gravada em `specs/` e a proposta com `apply_specialization` não se relíam (o `import_measured` respondia "origem não declarada como measured").

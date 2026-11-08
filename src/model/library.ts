@@ -893,7 +893,7 @@ function level2(
   const typeIds = new Set<string>();
   eachType(spec, (type) => typeIds.add(type.id));
   (spec.origins ?? []).forEach((origin, oi) => {
-    origin.screen.roots.forEach((root, ri) => {
+    (origin.screen?.roots ?? []).forEach((root, ri) => {
       if (root.scrim !== undefined && !typeIds.has(root.scrim)) {
         out.error(
           specPath,
