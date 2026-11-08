@@ -1,4 +1,5 @@
 import {
+  openThread,
   type Annotation,
   type Arrow,
   type ArrowStyle,
@@ -7,6 +8,7 @@ import {
   type Project,
   type ProjectContainer,
   type Rect,
+  type Thread,
 } from '../../src/model';
 import { typedAnnotations } from './largeTypedProject';
 import { specProject } from './specFixtures';
@@ -80,7 +82,12 @@ function block(b: number, bx: number, by: number) {
       );
     }
   }
-  inside.push(marking(`B${b}-s`, container, rect(910, 910, 60, 60)));
+  // Origem externa (Figma) numa marcação por bloco e num container a cada três: `find_by_source` as acha.
+  inside.push(
+    marking(`B${b}-s`, container, rect(910, 910, 60, 60), {
+      source: { system: 'figma', id: `N${b}`, url: null },
+    }),
+  );
   const placed: ProjectContainer = {
     id: container,
     name: b % 5 === 0 ? `Tela ${b}` : null,
@@ -91,7 +98,7 @@ function block(b: number, bx: number, by: number) {
     parentId: g2,
     markingColor: null,
     locked: false,
-    source: null,
+    source: b % 3 === 0 ? { system: 'figma', id: `F${b}`, url: null } : null,
     background: b % 2 === 0 ? null : '#FFFFFF',
   };
   return { canvas, inside, container: placed };
@@ -180,4 +187,31 @@ export function buildScaleProject({
     { id: 'PV2', name: 'Ímpares', hiddenLayers: ['LM'], items: items[1] },
   ];
   return { ...spec, containers, markings: all, arrows, annotations, perspectives };
+}
+
+/** Instante `n` minutos depois de 2026-11-01T10:00Z. */
+const minute = (n: number): string =>
+  new Date(Date.parse('2026-11-01T10:00:00.000Z') + n * 60_000).toISOString();
+
+/**
+ * Conversas do projeto de escala (#881), uma por bloco de 25 marcações, todas abertas e esperando o agente
+ * (a última mensagem é de pessoa): nas pares, ancorada na marcação solta do container; nas ímpares, num
+ * ponto do container. É o que `list_threads` lê da pasta `comments/`.
+ */
+export function buildScaleThreads(p: Project): Thread[] {
+  const blocks = p.markings.length / BLOCK;
+  return Array.from({ length: blocks }, (_, b) =>
+    openThread({
+      id: `T${b}`,
+      anchor:
+        b % 2 === 0
+          ? { kind: 'marking', id: `B${b}-s` }
+          : { kind: 'point', containerId: `K${b}`, x: 100, y: 100 },
+      author: { kind: 'human', name: 'Marina Alves', email: 'marina@exemplo.com' },
+      text: `Dúvida ${b}: esta área está certa?`,
+      at: minute(b),
+      messageId: `T${b}-m1`,
+      proposal: null,
+    }),
+  );
 }
