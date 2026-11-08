@@ -76,11 +76,11 @@ const MISSING_TODAY: string[] = [
   'component:node.minHeight',
   'component:node.maxHeight',
   'component:node.repeat.distribute',
-  // Texto do componente v4 (etapa #747, CF3): as bibliotecas distribuídas não migram; coberto por
+  // Texto do componente v4 (etapa #747, CF3): a biblioteca Material 3 já usa o `font.maxLines` no
+  // `text` (etapa #833, M1); o resto das bibliotecas distribuídas não migrou. Coberto por
   // tests/model/components/textWrap.test.ts, tests/e2e/textMetrics.spec.ts e pelo roteiro R25.
   'component:font.wrap',
   'component:font.ellipsis',
-  'component:font.maxLines',
   // Texto rico do componente v4 (etapa #747, CF4): as bibliotecas distribuídas não migram; coberto
   // por tests/model/components/richText.test.ts, tests/e2e/ e pelo roteiro R25.
   'component:node.text.runs',
@@ -94,18 +94,16 @@ const MISSING_TODAY: string[] = [
   'component:run.background',
   'component:run.radius',
   'component:run.padding',
-  // Tokens (formatVersion 15, etapa #747, CF5): as bibliotecas distribuídas não migram; coberto por
+  // Tokens (formatVersion 15, etapa #747, CF5): a raiz `tokens` já tem exemplo na biblioteca Material 3
+  // (etapa #833, M1); o `$token` nos componentes das outras bibliotecas ainda não. Coberto por
   // tests/model/specTokens.test.ts, tests/model/components/tokens.test.ts, libraryTokens.test.ts e
   // pelo roteiro R25.
   'component:expr.$token',
-  'spec:tokens',
-  // Ícones (formatVersion 15, etapa #747, CF7): as bibliotecas distribuídas não migram; coberto por
+  // Ícones (formatVersion 15, etapa #747, CF7): a raiz `icons` e o nó `icon` já têm exemplo na
+  // biblioteca Material 3 (etapa #833, M1); o `icon.name`/`strokeWidth` ainda não. Coberto por
   // tests/model/components/icons.test.ts, libraryIcons.test.ts, tests/mcp/libraryIcons.test.ts e
   // pelo roteiro R25.
-  'spec:icons',
-  'component:node.icon',
   'component:node.icon.name',
-  'component:node.icon.color',
   'component:node.icon.strokeWidth',
   // Tela e traço em escala (CF8, etapa #747): `screen` na raiz e `stroke.scale` (formato 4) e
   // `structural` no tipo (formatVersion 15); as bibliotecas distribuídas não migram; coberto por

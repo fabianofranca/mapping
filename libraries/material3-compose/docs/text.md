@@ -43,3 +43,26 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Título de tela**: text=Configurações, style=headlineMedium
 - **Parágrafo**: text=Texto de apoio com uma frase um pouco mais longa., style=bodyMedium, color=onSurfaceVariant
 - **Rótulo centralizado**: text=Salvar, style=labelLarge, textAlign=Center, width=fill
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Text.kt` (linhas 105 a 120: `color`, `overflow = TextOverflow.Clip`, `softWrap = true`, `maxLines = Int.MAX_VALUE` e `style = LocalTextStyle.current`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/TypeScaleTokens.kt`: tamanho, altura de linha, peso e espaçamento entre letras das 15 escalas (`BodyLargeSize` 16 sp na linha 26, `LabelLargeWeight` na linha 73, `TitleMediumTracking` 0,2 sp na linha 92…).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ColorLightTokens.kt` e `ColorDarkTokens.kt`: os papéis de cor (`color`).
+
+**Como o desenho segue o Compose**
+
+- Cada estilo lê `<escala>-size`, `<escala>-line-height`, `<escala>-weight` e `<escala>-tracking` (por exemplo `body-large-size`); sem `style`, vale `bodyLarge`.
+- A família não é escrita no componente: o texto herda a `font-sans` da especialização (Roboto), como o `TypefaceTokens.Plain` do Compose herda a fonte do tema.
+- A cor é o papel escolhido em `color`; sem `color`, `on-surface` (o `LocalContentColor` padrão). Cada papel tem a cor do modo `light` e a do `dark`.
+- `maxLines` corta o texto na última linha permitida, sem reticências, porque o padrão do `Text` é `TextOverflow.Clip` (`font.maxLines`, sem `ellipsis`).
+
+**O que ainda difere do Compose**
+
+- `textAlign = Justify` desenha como `Start`: o formato 4 só alinha à esquerda, ao centro e à direita.
+- Dentro de um `Surface` de outra cor o Compose troca o `LocalContentColor` (por exemplo para `on-primary`); o desenho do `text` não herda a cor do pai, então é preciso escolher `color`.
+- As variantes `*Emphasized` da escala (Material 3 Expressive) ficam fora da etapa.
