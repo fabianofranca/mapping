@@ -1,4 +1,4 @@
-# Componentes fiéis — [Não lançado] (épico `epic/componentes-fieis`, PR #786, MCP 0.28.0, schema v18)
+# Componentes fiéis — 2026-11-08 (épico `epic/componentes-fieis`, PR #786, MCP 0.28.0, schema v18)
 
 ## Adicionado
 

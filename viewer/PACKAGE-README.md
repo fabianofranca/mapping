@@ -8,13 +8,13 @@ Dentro de `dist-viewer/` (a pasta gerada por `npm run build:viewer` no repositó
 
 ```bash
 npm pack
-# gera mapping-viewer-0.3.0.tgz
+# gera mapping-viewer-0.4.0.tgz
 ```
 
 No projeto que vai usar:
 
 ```bash
-npm install ./mapping-viewer-0.3.0.tgz
+npm install ./mapping-viewer-0.4.0.tgz
 ```
 
 Também dá para copiar a pasta `dist-viewer/` inteira para o projeto e importar `mapping-viewer.js` por caminho.

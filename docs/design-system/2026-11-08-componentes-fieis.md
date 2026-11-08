@@ -1,4 +1,4 @@
-# Componentes fiéis — [Não lançado] (épico `epic/componentes-fieis`)
+# Componentes fiéis — 2026-11-08 (épico `epic/componentes-fieis`)
 
 ## Pendências
 
@@ -12,8 +12,14 @@
 
 ## Sincronização
 
-(preenchida no fechamento do épico)
+Gravado no artefato **Mapping** (versão 60, `lastChange` "Claude Code (fechamento do épico componentes-fieis)"), numa publicação só, índice por último:
+
+- `tokens.json`: `size-indicator-min-marking` = `24px` (família `size`).
+- `Canvas.md` e `components/CanvasMarking/README.md`: o token e a regra dos indicadores em zoom baixo (CF8).
+- `components/Select/README.md`, `components/SettingsDialog/README.md` e `components/MarkingPanel/README.md`: o "Modo do desenho" do projeto (Configurações) e do container (Detalhes) (CF6).
+- `components/SpecsDialog/README.md`: o bloco "Modos, tokens e ícones" (CF12).
+- `components/ReferenceField/README.md`: o campo de referência em largura estreita (CF13).
 
 ## Ficou sem gravar
 
-(preenchida no fechamento do épico)
+Nenhum `preview.html` foi alterado: os previews de `Select`, `SettingsDialog`, `SpecsDialog`, `ReferenceField` e `CanvasMarking` não mostram os estados novos (modo do desenho, bloco de tokens, campo estreito, bolinha oculta por tamanho), e mostrá-los pediria estados ou seções novas no DS. Fica para uma rodada do dono, se quiser os estados desenhados.
