@@ -233,14 +233,17 @@ function clipLines(
 }
 
 /**
- * Medidor aproximado sem canvas (testes e Node): largura ≈ 0,55·tamanho por caractere (0,6 se
- * o peso for ≥ 600) mais o espaçamento entre letras; altura = linhas × altura de linha. Com
- * `maxWidth`, quebra por palavras (uma palavra maior que a largura fica sozinha na linha);
- * `wrap: none` é uma linha por parágrafo, `maxLines` corta e `ellipsis` põe o `…`.
+ * Quebra, corta e mede um texto com uma função de largura qualquer (`widthOf`): `maxWidth`
+ * quebra por palavras (uma palavra maior que a largura fica sozinha na linha), `wrap: none` é uma
+ * linha por parágrafo, `maxLines` corta e `ellipsis` põe o `…`. É a base do medidor aproximado e
+ * do medidor com fonte real do servidor MCP.
  */
-export const approximateMeasurer: TextMeasurer = (text, font, maxWidth) => {
-  const charWidth = font.size * (font.weight >= 600 ? 0.6 : 0.55) + font.letterSpacing;
-  const widthOf = (value: string) => Math.max(0, value.length * charWidth);
+export function measureLines(
+  text: string,
+  font: MeasureFont,
+  maxWidth: number | undefined,
+  widthOf: (value: string) => number,
+): TextMetrics {
   const breaks = maxWidth !== undefined && font.wrap !== 'none';
   const raw = text
     .split('\n')
@@ -250,6 +253,17 @@ export const approximateMeasurer: TextMeasurer = (text, font, maxWidth) => {
   const lines = clipLines(raw, font, widthOf, maxWidth);
   const widest = lines.reduce((max, line) => Math.max(max, widthOf(line)), 0);
   return { width: widest, height: Math.max(1, lines.length) * font.lineHeight, lines };
+}
+
+/**
+ * Medidor aproximado sem canvas (testes e Node sem fonte): largura ≈ 0,55·tamanho por caractere
+ * (0,6 se o peso for ≥ 600) mais o espaçamento entre letras; altura = linhas × altura de linha.
+ */
+export const approximateMeasurer: TextMeasurer = (text, font, maxWidth) => {
+  const charWidth = font.size * (font.weight >= 600 ? 0.6 : 0.55) + font.letterSpacing;
+  return measureLines(text, font, maxWidth, (value) =>
+    Math.max(0, value.length * charWidth),
+  );
 };
 
 // ---------------------------------------------------------------------------------------

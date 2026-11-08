@@ -1,5 +1,5 @@
 import type { TextMeasurer } from '../../src/model/components/instantiate';
-import type { RunPiece, RunLayout } from '../../src/model/components/richText';
+import type { ScreenAnchor } from '../../src/model/components/componentFormat';
 import { sideSegments } from '../../src/model/components/strokeSides';
 import {
   multiply,
@@ -8,22 +8,33 @@ import {
   type Paint,
   type Point,
   type SceneNode,
-  type SceneTextRun,
   type TextNode,
 } from '../../src/model/components/scene';
-import type { PixelRect, Raster } from './raster';
+import { MAX_SHADOW_PIXELS, compositeShadow, dashPaths } from './effects';
+import { createRaster, type PixelRect, type Raster } from './raster';
+import { textBars, type TextBar } from './textBars';
+import { textInk } from './textLayout';
+import type { FontBook } from './textMeasurer';
+
+export { textBars, type TextBar };
 
 // Desenho simplificado de uma cena de componente, em pixels, para `get_marking_image` numa tela
 // em branco. O servidor não tem fontes nem canvas: formas viram polígonos preenchidos por
 // varredura com cobertura (suavizada), o gradiente vira a cor do primeiro stop, a imagem vira
-// um reservado cinza e o texto vira barras (uma por linha, na cor do texto). Sombras e
-// tracejado são ignorados e o alinhamento do traço é sempre ao centro. Puro: sem disco.
+// um reservado cinza. Com `view.fonts` o texto é desenhado com os glifos da fonte (quebra, `…`
+// e trechos); sem ela vira barras (uma por linha, na cor do texto). Traço com `align`, tracejado,
+// `cap`/`join` e `sides`, e sombra desfocada. Puro: sem disco.
 
 /** Janela de desenho: escala da imagem para o raster e a região (em pixels do raster) a pintar. */
 export interface SceneView {
   readonly scaleX: number;
   readonly scaleY: number;
   readonly clip: PixelRect;
+  /** Fontes do desenho do texto; ausente = o texto vira barras (o desenho simplificado). */
+  readonly fonts?: FontBook;
+  /** Onde fica a origem da imagem (0, 0) no raster, em pixels do raster (padrão 0, 0). */
+  readonly originX?: number;
+  readonly originY?: number;
 }
 
 type Rgb = readonly [number, number, number];
@@ -48,8 +59,6 @@ const CURVE_STEPS = 16;
 const CORNER_STEPS = 10;
 const ELLIPSE_STEPS = 64;
 const CIRCLE_STEPS = 12;
-/** Altura da barra de texto em relação à altura da linha. */
-const BAR_RATIO = 0.6;
 const HEX = /^#([0-9a-f]{3,8})$/i;
 const FUNC = /^rgba?\(\s*([^)]*)\)$/i;
 
@@ -637,6 +646,34 @@ export function fillPolygons(
   }
 }
 
+/** O raio do canto movido `d` px para dentro (negativo = para fora), sem passar de 0. */
+function shiftRadius(radius: CornerRadius, d: number): CornerRadius {
+  const shift = (r: number) => Math.max(0, r - d);
+  return typeof radius === 'number'
+    ? shift(radius)
+    : [shift(radius[0]), shift(radius[1]), shift(radius[2]), shift(radius[3])];
+}
+
+/**
+ * O contorno que o traço percorre: `center` é o próprio contorno; `inside`/`outside` movem a
+ * linha de centro meia largura para dentro/fora, em quadros, retângulos e elipses (a faixa do
+ * traço cobre então só um lado do contorno). Caminhos e linhas ficam ao centro.
+ */
+function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
+  const stroke = node.stroke;
+  if (!stroke || stroke.align === 'center') return shapes;
+  if (node.type !== 'frame' && node.type !== 'rect' && node.type !== 'ellipse')
+    return shapes;
+  const d = stroke.align === 'inside' ? stroke.width / 2 : -stroke.width / 2;
+  const width = Math.max(0.01, node.width - 2 * d);
+  const height = Math.max(0.01, node.height - 2 * d);
+  const points =
+    node.type === 'ellipse'
+      ? ellipse(width, height)
+      : roundedRect(width, height, shiftRadius(node.cornerRadius, d));
+  return [{ points: points.map((p) => ({ x: p.x + d, y: p.y + d })), closed: true }];
+}
+
 // ---------------------------------------------------------------------------
 // Cena
 
@@ -645,6 +682,7 @@ class Painter {
     private readonly raster: Raster,
     private readonly measure: TextMeasurer,
     private readonly scale: number,
+    private readonly fonts?: FontBook,
   ) {}
 
   paint(node: SceneNode, parent: Matrix, opacity: number, clip: PixelRect): void {
@@ -654,6 +692,7 @@ class Painter {
     if (alpha <= 0) return;
 
     const shapes = this.shapes(node);
+    this.shadows(node, shapes, matrix, alpha, clip);
     const rule = node.type === 'path' ? node.fillRule : 'nonzero';
     // Linha aberta não tem interior: só o traço.
     const fillable = node.type !== 'line' || node.closed;
@@ -671,25 +710,7 @@ class Painter {
         );
       }
     }
-    if (node.stroke && node.stroke.width > 0) {
-      const color = firstColor(node.stroke.paints);
-      if (color !== null) {
-        const width = Math.max(node.stroke.width, 1 / this.scale);
-        const style: StrokeStyle = {
-          cap: node.stroke.cap ?? 'butt',
-          join: node.stroke.join ?? 'miter',
-        };
-        const lines = this.sideLines(node);
-        this.fill(
-          strokePolygons(lines ?? shapes, width, style),
-          matrix,
-          'nonzero',
-          color,
-          alpha,
-          clip,
-        );
-      }
-    }
+    this.strokeNode(node, shapes, matrix, alpha, clip);
     if (node.type === 'text') this.text(node, matrix, alpha, clip);
 
     if (node.type === 'frame' || node.type === 'group') {
@@ -707,6 +728,73 @@ class Painter {
         childClip = intersect(clip, bounds(this.toRaster(rect, matrix)));
       }
       for (const child of node.children) this.paint(child, matrix, alpha, childClip);
+    }
+  }
+
+  /** O traço do nó: contorno com `align`, tracejado, `cap`/`join` ou os `sides` pedidos. */
+  private strokeNode(
+    node: SceneNode,
+    shapes: Subpath[],
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+  ): void {
+    if (!node.stroke || node.stroke.width <= 0) return;
+    const color = firstColor(node.stroke.paints);
+    if (color === null) return;
+    const width = Math.max(node.stroke.width, 1 / this.scale);
+    const style: StrokeStyle = {
+      cap: node.stroke.cap ?? 'butt',
+      join: node.stroke.join ?? 'miter',
+    };
+    const base = this.sideLines(node) ?? alignedShapes(node, shapes);
+    const dash = node.stroke.dash;
+    const lines = dash && dash.length > 0 ? dashPaths(base, dash) : base;
+    this.fill(strokePolygons(lines, width, style), matrix, 'nonzero', color, alpha, clip);
+  }
+
+  /** Sombra (`effects`, sem a interna): a forma do nó desfocada e deslocada, por baixo do nó. */
+  private shadows(
+    node: SceneNode,
+    shapes: Subpath[],
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+  ): void {
+    if (node.type === 'text' || shapes.length === 0) return;
+    for (const shadow of node.effects) {
+      const color = parseColor(shadow.color);
+      if (shadow.inner || color === null) continue;
+      const polygons = shapes.map((sub) => this.toRaster(sub.points, matrix));
+      const sigma = (shadow.blur * this.scale) / 2;
+      const margin = Math.ceil(sigma * 3) + 2;
+      const edge = bounds(polygons.flat());
+      const box: PixelRect = {
+        x: Math.floor(edge.x) - margin,
+        y: Math.floor(edge.y) - margin,
+        width: Math.ceil(edge.width) + 2 * margin,
+        height: Math.ceil(edge.height) + 2 * margin,
+      };
+      if (box.width * box.height > MAX_SHADOW_PIXELS) continue;
+      const temp = createRaster(box.width, box.height);
+      fillPolygons(
+        temp,
+        polygons.map((poly) => poly.map((p) => ({ x: p.x - box.x, y: p.y - box.y }))),
+        node.type === 'path' ? node.fillRule : 'nonzero',
+        { rgb: [0, 0, 0], alpha: 1 },
+        { x: 0, y: 0, width: box.width, height: box.height },
+      );
+      const mask = new Float32Array(box.width * box.height);
+      for (let i = 0; i < mask.length; i++) mask[i] = temp.data[i * 4 + 3]! / 255;
+      compositeShadow(
+        this.raster,
+        mask,
+        box,
+        sigma,
+        { dx: shadow.offset.x * this.scale, dy: shadow.offset.y * this.scale },
+        { rgb: color.rgb, alpha: color.alpha * alpha },
+        clip,
+      );
     }
   }
 
@@ -772,9 +860,13 @@ class Painter {
     );
   }
 
-  /** Texto como barras: uma por linha, na cor do texto (no texto rico, cada barra na sua cor). */
+  /** Texto: glifos da fonte (com `fonts`) ou barras, uma por linha, na cor do texto. */
   private text(node: TextNode, matrix: Matrix, opacity: number, clip: PixelRect): void {
     if (node.text === '') return;
+    if (this.fonts) {
+      this.glyphText(node, matrix, opacity, clip, this.fonts);
+      return;
+    }
     if (node.runLayout) {
       this.richText(node, matrix, opacity, clip);
       return;
@@ -783,6 +875,32 @@ class Painter {
     if (color === null) return;
     const bars = textBars(node, this.measure);
     this.fill(bars.map(barPolygon), matrix, 'nonzero', color, opacity, clip);
+  }
+
+  /** Os glifos do texto (e o fundo dos chips), cada trecho na sua cor. */
+  private glyphText(
+    node: TextNode,
+    matrix: Matrix,
+    opacity: number,
+    clip: PixelRect,
+    fonts: FontBook,
+  ): void {
+    const ink = textInk(node, this.measure, fonts);
+    const own = firstColor(node.fills);
+    for (const box of ink.boxes) {
+      const color = parseColor(box.color);
+      if (color === null) continue;
+      const poly = roundedRect(box.width, box.height, box.radius).map((p) => ({
+        x: p.x + box.x,
+        y: p.y + box.y,
+      }));
+      this.fill([poly], matrix, 'nonzero', color, opacity, clip);
+    }
+    for (const glyphs of ink.glyphs) {
+      const color = glyphs.color === undefined ? own : parseColor(glyphs.color);
+      if (color !== null)
+        this.fill(glyphs.polygons, matrix, 'nonzero', color, opacity, clip);
+    }
   }
 
   /** Texto rico: o fundo de cada chip e uma barra por pedaço de texto, em ordem, cada um na sua cor. */
@@ -833,157 +951,52 @@ function intersect(a: PixelRect, b: PixelRect): PixelRect {
   return { x: x0, y: y0, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) };
 }
 
-/** Quebra por palavras no `node.width` (o padrão, sem `wrap`/`ellipsis`/`maxLines`). */
-function breakLines(node: TextNode, widthOf: (text: string) => number): string[] {
-  const lines: string[] = [];
-  for (const paragraph of node.text.split('\n')) {
-    const words = paragraph.split(' ').filter((word) => word !== '');
-    if (words.length === 0) {
-      lines.push('');
-      continue;
-    }
-    let line = '';
-    for (const word of words) {
-      const candidate = line === '' ? word : `${line} ${word}`;
-      if (line !== '' && node.width > 0 && widthOf(candidate) > node.width + 1e-6) {
-        lines.push(line);
-        line = word;
-      } else {
-        line = candidate;
-      }
-    }
-    lines.push(line);
-  }
-  return lines;
-}
-
-/**
- * Com `wrap`, `ellipsis` ou `maxLines`, as linhas vêm do medidor (que já corta e põe o `…`);
- * `undefined` = quebra de sempre.
- */
-function customLines(
-  node: TextNode,
-  measure: TextMeasurer,
-  font: Parameters<TextMeasurer>[1],
-): string[] | undefined {
-  const { style } = node;
-  if (
-    style.wrap === undefined &&
-    style.ellipsis === undefined &&
-    style.maxLines === undefined
-  )
-    return undefined;
-  const lines = measure(
-    node.text,
-    {
-      ...font,
-      ...(style.wrap ? { wrap: style.wrap } : {}),
-      ...(style.ellipsis ? { ellipsis: true } : {}),
-      ...(style.maxLines !== undefined ? { maxLines: style.maxLines } : {}),
-    },
-    node.width > 0 ? node.width : undefined,
-  ).lines;
-  return lines === undefined ? undefined : [...lines];
-}
-
-/** Uma barra do texto; `color` só no texto rico, onde cada barra tem a sua. */
-export interface TextBar extends PixelRect {
-  readonly color?: string;
-}
-
-/** Deslocamento vertical do texto rico na caixa do nó (`verticalAlign`). */
-function richShift(node: TextNode, contentHeight: number): number {
-  if (node.height <= 0) return 0;
-  const free = node.height - contentHeight;
-  if (node.style.verticalAlign === 'middle') return free / 2;
-  return node.style.verticalAlign === 'bottom' ? free : 0;
-}
-
-/** O fundo (se for chip) e a barra do texto de um pedaço, com o topo do pedaço em `top`. */
-function pieceBars(piece: RunPiece, run: SceneTextRun, top: number): TextBar[] {
-  const [padV, padH] = piece.chip ? (run.padding ?? [0, 0]) : [0, 0];
-  const textHeight = piece.height - 2 * (padV ?? 0);
-  const barHeight = textHeight * BAR_RATIO;
-  const text: TextBar = {
-    x: piece.x + (padH ?? 0),
-    y: top + (padV ?? 0) + (textHeight - barHeight) / 2,
-    width: piece.width - 2 * (padH ?? 0),
-    height: barHeight,
-    color: run.color,
-  };
-  if (!piece.chip || run.background === undefined) return [text];
-  const box = { x: piece.x, y: top, width: piece.width, height: piece.height };
-  return [{ ...box, color: run.background }, text];
-}
-
-/**
- * Barras do texto rico (`runLayout`): para cada pedaço, o fundo do chip (a caixa inteira, na cor do
- * `background`) e uma barra do texto na cor do trecho, com o `verticalAlign` do nó aplicado.
- */
-function richBars(
-  node: TextNode,
-  layout: RunLayout,
-  runs: readonly SceneTextRun[],
-): TextBar[] {
-  const shift = richShift(node, layout.height);
-  return layout.lines.flatMap((line) =>
-    line.pieces.flatMap((piece) => {
-      const run = runs[piece.run];
-      const top = line.y + (line.height - piece.height) / 2 + shift;
-      return run ? pieceBars(piece, run, top) : [];
-    }),
-  );
-}
-
-/** Barras do texto no espaço local do nó: uma por linha medida (uma por pedaço, no texto rico). */
-export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
-  if (node.runLayout && node.runs) return richBars(node, node.runLayout, node.runs);
-  const { style } = node;
-  const lineHeight = style.lineHeight ?? style.fontSize * 1.2;
-  const font = {
-    family: style.fontFamily,
-    size: style.fontSize,
-    weight: style.fontWeight,
-    italic: style.italic,
-    lineHeight,
-    letterSpacing: style.letterSpacing ?? 0,
-  };
-  const widthOf = (text: string) => measure(text, font).width;
-  const lines = customLines(node, measure, font) ?? breakLines(node, widthOf);
-  const total = lines.length * lineHeight;
-  const top =
-    style.verticalAlign === 'middle'
-      ? (node.height - total) / 2
-      : style.verticalAlign === 'bottom'
-        ? node.height - total
-        : 0;
-  const barHeight = lineHeight * BAR_RATIO;
-  const bars: TextBar[] = [];
-  lines.forEach((line, i) => {
-    if (line === '') return;
-    const justified = style.align === 'justify' && i < lines.length - 1;
-    const width = justified
-      ? node.width
-      : Math.min(widthOf(line), node.width || Infinity);
-    const x =
-      style.align === 'center'
-        ? (node.width - width) / 2
-        : style.align === 'right'
-          ? node.width - width
-          : 0;
-    bars.push({
-      x,
-      y: top + i * lineHeight + (lineHeight - barHeight) / 2,
-      width,
-      height: barHeight,
-    });
-  });
-  return bars;
-}
+/** Fração (da largura e da altura) do ponto de cada âncora do desenho em pixels de tela. */
+const ANCHOR_FRACTION: Record<ScreenAnchor, readonly [number, number]> = {
+  'top-left': [0, 0],
+  top: [0.5, 0],
+  'top-right': [1, 0],
+  left: [0, 0.5],
+  center: [0.5, 0.5],
+  right: [1, 0.5],
+  'bottom-left': [0, 1],
+  bottom: [0.5, 1],
+  'bottom-right': [1, 1],
+};
 
 /** Desenho (a cena instanciada de uma marcação) para `paintScene`. */
 export interface SceneDrawing {
   readonly root: SceneNode;
+  /**
+   * Desenho em pixels de tela (`screen` do componente): `root` mede o `size` na origem e é
+   * ancorado em `anchor` no `rect` da marcação (pixels da imagem). Na imagem do servidor um pixel
+   * de design é um pixel da saída, em qualquer zoom.
+   */
+  readonly screen?: {
+    readonly anchor: ScreenAnchor;
+    readonly rect: { x: number; y: number; width: number; height: number };
+  };
+}
+
+/** A matriz do desenho no raster: a da imagem, ou só a translação do âncora num desenho de tela. */
+function drawingBase(drawing: SceneDrawing, view: SceneView): Matrix {
+  const ox = view.originX ?? 0;
+  const oy = view.originY ?? 0;
+  const { screen, root } = drawing;
+  if (screen === undefined) return [view.scaleX, 0, 0, view.scaleY, ox, oy];
+  const [fx, fy] = ANCHOR_FRACTION[screen.anchor];
+  return [
+    1,
+    0,
+    0,
+    1,
+    ox +
+      view.scaleX * screen.rect.x +
+      fx * (view.scaleX * screen.rect.width - root.width),
+    oy +
+      view.scaleY * screen.rect.y +
+      fy * (view.scaleY * screen.rect.height - root.height),
+  ];
 }
 
 /**
@@ -996,15 +1009,18 @@ export function paintScene(
   measure: TextMeasurer,
   view: SceneView,
 ): void {
-  const base: Matrix = [view.scaleX, 0, 0, view.scaleY, 0, 0];
-  const painter = new Painter(raster, measure, Math.sqrt(view.scaleX * view.scaleY));
+  const scale = Math.sqrt(view.scaleX * view.scaleY);
+  const painter = new Painter(raster, measure, scale, view.fonts);
+  const screenPainter = new Painter(raster, measure, 1, view.fonts);
   const clip = intersect(view.clip, {
     x: 0,
     y: 0,
     width: raster.width,
     height: raster.height,
   });
-  for (const { root } of drawings) {
+  for (const drawing of drawings) {
+    const { root } = drawing;
+    const base = drawingBase(drawing, view);
     const box = bounds(
       [
         { x: 0, y: 0 },
@@ -1022,6 +1038,6 @@ export function paintScene(
     ) {
       continue;
     }
-    painter.paint(root, base, 1, clip);
+    (drawing.screen === undefined ? painter : screenPainter).paint(root, base, 1, clip);
   }
 }

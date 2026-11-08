@@ -1045,6 +1045,8 @@ describe('recursos e instruções', () => {
       'plan_library_update',
       'post_message',
       'propose_changes',
+      'render_container',
+      'render_marking',
       'resolve',
       'revise_proposal',
       'validate_library',

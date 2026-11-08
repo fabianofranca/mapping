@@ -1,8 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 import {
-  approximateMeasurer,
-  createDrawingCache,
   isBackgroundContainer,
   projectIndex,
   type Marking,
@@ -28,7 +26,7 @@ import {
   type PixelRect,
   type Raster,
 } from './image/raster';
-import { paintScene } from './image/sceneRaster';
+import { paintContainerDrawings } from './image/containerDrawing';
 import type { ImageServer } from './imageServer';
 import type { Refs } from './items';
 import { resolveProjectFile, type Roots } from './paths';
@@ -54,7 +52,7 @@ export interface ImageResult {
   readonly image: { readonly bytes: Uint8Array; readonly mimeType: string };
 }
 
-interface LoadedImage {
+export interface LoadedImage {
   readonly raster: Raster;
   readonly bytes: Uint8Array;
   readonly format: ImageFormat;
@@ -64,13 +62,17 @@ interface LoadedImage {
   readonly scaleY: number;
 }
 
-const EXTENSION: Record<ImageFormat, string> = { png: 'png', jpeg: 'jpg', webp: 'webp' };
+export const EXTENSION: Record<ImageFormat, string> = {
+  png: 'png',
+  jpeg: 'jpg',
+  webp: 'webp',
+};
 
 /**
  * `url` (HTTP local) e `markdown` da imagem devolvida. Sem servidor, ou se ele não subir
  * (aviso no stderr), a tool responde sem esses campos.
  */
-async function urlFields(
+export async function urlFields(
   images: ImageServer | null,
   bytes: Uint8Array,
   format: ImageFormat,
@@ -121,7 +123,7 @@ function backgroundImage(image: ProjectContainer): LoadedImage {
   };
 }
 
-async function loadImage(
+export async function loadImage(
   roots: Roots,
   refs: Refs,
   image: ProjectContainer,
@@ -152,7 +154,7 @@ function outputFormat(requested: ImageFormat | undefined, source: ImageFormat) {
   return requested ?? (source === 'jpeg' ? 'jpeg' : 'png');
 }
 
-function scaleRect(rect: PixelRect, loaded: LoadedImage): PixelRect {
+export function scaleRect(rect: PixelRect, loaded: LoadedImage): PixelRect {
   return {
     x: rect.x * loaded.scaleX,
     y: rect.y * loaded.scaleY,
@@ -168,7 +170,7 @@ const sizeWarning = (loaded: LoadedImage, image: ProjectContainer) =>
         warning: `o arquivo tem ${loaded.raster.width}×${loaded.raster.height}, mas o projeto registra ${image.width}×${image.height}: as coordenadas foram proporcionalmente ajustadas`,
       };
 
-const rectJson = (r: PixelRect) => ({
+export const rectJson = (r: PixelRect) => ({
   x: r.x,
   y: r.y,
   width: r.width,
@@ -221,21 +223,19 @@ export async function markingImage(
     );
   }
 
-  // Container sem arquivo: pinta o desenho simplificado dos componentes (cena instanciada com o
-  // medidor aproximado; o servidor não tem fontes) na região que a saída mostra.
+  // Container sem arquivo: pinta o desenho dos componentes (o mesmo de `render_container`, com a
+  // fonte embutida ou a da biblioteca) na região que a saída mostra.
   const bgContainer = isBackgroundContainer(image);
   if (bgContainer) {
-    const drawings = createDrawingCache()(
-      refs.project,
-      refs.loaded.catalog,
-      approximateMeasurer,
-      0,
-    );
-    paintScene(
+    paintContainerDrawings(
       loaded.raster,
-      [...drawings.values()].filter((d) => d.containerId === image.id),
-      approximateMeasurer,
-      { scaleX: loaded.scaleX, scaleY: loaded.scaleY, clip: region },
+      { project: refs.project, catalog: refs.loaded.catalog, fonts: refs.loaded.fonts },
+      image.id,
+      {
+        scaleX: loaded.scaleX,
+        scaleY: loaded.scaleY,
+        clip: region,
+      },
     );
   }
 
@@ -289,9 +289,9 @@ export async function markingImage(
       },
       ...(bgContainer
         ? {
-            drawing: 'simplified',
+            drawing: 'rendered',
             drawingNote:
-              'texto em barras; cores sólidas (sem gradiente, sombra nem fontes)',
+              'desenho dos componentes com texto real (fonte embutida ou a da biblioteca), sombra, tracejado e ícones; sem gradiente (vale a primeira cor) e imagem remota (vira um reservado)',
           }
         : {}),
       format,

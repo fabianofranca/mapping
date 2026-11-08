@@ -12,7 +12,9 @@ import {
   type Project,
   type SpecFileWarning,
 } from '../src/model';
+import { resolvePath, type LoadedFont } from '../src/model/components/library';
 import { ToolError } from './errors';
+import { createFontBook, type FontBook } from './image/textMeasurer';
 import { Roots, resolveProjectFile } from './paths';
 
 /** Quantos níveis de pastas a descoberta percorre abaixo de cada raiz. */
@@ -46,6 +48,11 @@ export interface LoadedProject {
    * nunca arruma nem grava desenho.
    */
   readonly catalog: ComponentCatalog;
+  /**
+   * Fontes que medem e desenham o texto da imagem do desenho: a embutida e as `fonts` das
+   * bibliotecas (arquivos em `specs/<id>/`). Ausente = só a embutida.
+   */
+  readonly fonts?: FontBook;
 }
 
 async function isProjectDir(dir: string): Promise<boolean> {
@@ -209,6 +216,39 @@ async function loadCatalog(
   return catalog.size === 0 ? EMPTY_CATALOG : catalog;
 }
 
+/** Maior arquivo de fonte lido (o resto vale a fonte embutida). */
+const MAX_FONT_BYTES = 8 * 1024 * 1024;
+
+/** As `fonts` das especializações aplicadas, com os bytes lidos da cópia do projeto. */
+async function loadFontBook(
+  roots: Roots,
+  dir: string,
+  project: Project,
+): Promise<FontBook> {
+  const loaded: LoadedFont[] = [];
+  for (const applied of project.specializations) {
+    for (const entry of applied.spec?.fonts ?? []) {
+      try {
+        const path = resolvePath(applied.file, entry.file);
+        const absolute = await resolveProjectFile(roots, dir, path);
+        if (absolute === null) continue;
+        const bytes = await readFile(absolute);
+        if (bytes.length > MAX_FONT_BYTES) continue;
+        loaded.push({
+          family: entry.family,
+          weight: String(entry.weight ?? 400),
+          style: entry.style === 'italic' ? 'italic' : 'normal',
+          path,
+          bytes: new Uint8Array(bytes).buffer as ArrayBuffer,
+        });
+      } catch {
+        // Fonte ilegível: vale a embutida.
+      }
+    }
+  }
+  return createFontBook(loaded);
+}
+
 /** Lê o projeto da pasta: `mapping.json` e as cópias de `specs/`, validados pelo `src/model/`. */
 export async function loadProject(
   roots: Roots,
@@ -234,12 +274,14 @@ export async function loadProject(
       reason: result.error,
     });
   }
+  const catalog = await loadCatalog(roots, location.dir, result.project);
   return {
     location,
     project: result.project,
     readOnly: result.readOnly,
     migratedFrom: result.migratedFrom,
     specWarnings: result.specWarnings,
-    catalog: await loadCatalog(roots, location.dir, result.project),
+    catalog,
+    fonts: await loadFontBook(roots, location.dir, result.project),
   };
 }
