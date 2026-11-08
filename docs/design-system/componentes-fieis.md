@@ -8,7 +8,7 @@
   - **Modo do desenho do container** (`src/ui/DetailsSection.tsx`): campo "Modo do desenho: Seguir o projeto / <modos>" nos Detalhes do container.
 - CF8: indicadores das marcações (bolinhas de camada e "+N", `src/canvas/renderers/markings.ts`, `renderers/indicatorVisibility.ts`). Token novo do canvas **`size-indicator-min-marking`** = `24px` (3× o diâmetro de 8 px da bolinha; decisão 25 propõe da ordem de 3×), em `src/theme/tokens.ts`, lido em `src/canvas/theme.ts`: abaixo dele (largura ou altura na tela) as bolinhas e o "+N" somem no modo Editar em marcação com componente; selecionada ou sob o mouse mostra tudo; ⚠ sempre. Valor proposto para o DS: 24px nos dois temas.
 - CF12: bloco só de leitura **Modos, tokens e ícones** na linha da especialização (`src/ui/SpecTokensInfo.tsx`, dentro de `src/ui/SpecsDialog.tsx`): rótulos `small muted`, lista de definição `.spec-design-tokens` (`src/theme/dialogs.css`), só tokens de espaço, sem componente novo.
-- CF13: campo de referência (`ref-control`, `src/theme/details.css`): em largura estreita a camada do alvo (`.ref-control-layer`) encolhe antes do nome (`flex: 0 100 auto`). Sem token nem ícone novo; só o comportamento do componente no DS.
+- CF13: campo de referência (`ref-control`, `src/theme/details.css`): em largura estreita a camada do alvo (`.ref-control-layer`) encolhe antes do nome (`flex: 0 100 auto`) e, nos Detalhes (`.ref-field` fora de `.ref-cell`), os botões ir ao alvo e limpar quebram de linha quando o controle teria menos de 14ch. Sem token nem ícone novo; só o comportamento do componente no DS.
 
 ## Sincronização
 
