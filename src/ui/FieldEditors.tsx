@@ -69,7 +69,10 @@ function swallowEnterOnce(el: HTMLTextAreaElement) {
 interface MultilineProps {
   readonly id: string | undefined;
   readonly label: string;
+  /** O valor atual do projeto: o que o campo mostra enquanto a pessoa não editou. */
   readonly initial: string;
+  /** Rascunho que já nasce editado (o que foi digitado antes da troca por Shift+Enter). */
+  readonly startText?: string;
   readonly readOnly: boolean;
   readonly invalid: boolean;
   readonly required: boolean;
@@ -90,6 +93,7 @@ function MultilineEditor({
   id,
   label,
   initial,
+  startText,
   readOnly,
   invalid,
   required,
@@ -98,7 +102,25 @@ function MultilineEditor({
   onCommit,
   onEnterCommit,
 }: MultilineProps) {
-  const [current, setCurrent] = useState(initial);
+  // Rascunho + o valor do projeto sobre o qual foi digitado: se o projeto mudou por fora
+  // (desfazer, recarga) ou nada foi editado, o campo mostra o valor atual do projeto.
+  const [draft, setDraft] = useState<{ base: string; text: string } | null>(
+    startText === undefined ? null : { base: initial, text: startText },
+  );
+  const current =
+    draft !== null && draft.base === initial && draft.text !== initial
+      ? draft.text
+      : initial;
+  const area = useRef<HTMLTextAreaElement>(null);
+  // Foco e cursor no fim só ao montar: renderizar por digitação não os move.
+  useLayoutEffect(() => {
+    const el = area.current;
+    if (el === null || !autoFocus) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+    if (swallowBreak) swallowEnterOnce(el);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <TextArea
       id={id}
@@ -108,8 +130,11 @@ function MultilineEditor({
       disabled={readOnly}
       invalid={invalid}
       value={current}
-      onInput={setCurrent}
-      onCommit={onCommit}
+      onInput={(text) => setDraft({ base: initial, text })}
+      onCommit={(text) => {
+        // Sair sem editar não grava (nem o valor velho por cima de um valor novo).
+        if (text !== initial) onCommit(text);
+      }}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' || e.shiftKey || e.isComposing || readOnly) return;
         if (e.currentTarget.value.includes('\n')) return;
@@ -117,12 +142,7 @@ function MultilineEditor({
         onEnterCommit?.();
         onCommit(e.currentTarget.value);
       }}
-      textAreaRef={(el) => {
-        if (el === null || !autoFocus) return;
-        el.focus();
-        el.setSelectionRange(el.value.length, el.value.length);
-        if (swallowBreak) swallowEnterOnce(el);
-      }}
+      textAreaRef={area}
     />
   );
 }
@@ -190,7 +210,8 @@ export function StringEditor(props: SimpleEditorProps) {
       <MultilineEditor
         id={id}
         label={label}
-        initial={draft ?? text}
+        initial={text}
+        startText={draft ?? undefined}
         readOnly={readOnly}
         invalid={invalid || error !== null}
         required={field.required === true}

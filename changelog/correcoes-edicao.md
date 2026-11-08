@@ -1,4 +1,4 @@
-# Correções na edição — [Não lançado] (épico `epic/correcoes-edicao`, PR #?, MCP 0.28.5 sem mudança, schema v18)
+# Correções na edição — [Não lançado] (épico `epic/correcoes-edicao`, PR #1113, MCP 0.28.5 sem mudança, schema v18)
 
 ## Corrigido
 
