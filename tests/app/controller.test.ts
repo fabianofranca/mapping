@@ -277,7 +277,7 @@ describe('projeto em pasta', () => {
     expect(message).toContain(
       'https://git.example/{path}, https://git.example/ios/{path}',
     );
-    expect(message).toContain('`repo` (formatVersion 5)');
+    expect(message).toContain('repo (formatVersion 5)');
 
     // O original vai para backups/ na primeira gravação, como em toda migração.
     expect(await backupsOf(root)).toEqual([]);

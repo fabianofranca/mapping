@@ -44,3 +44,5 @@
 - Altura de linha do canvas igual à do DOM (conferida no Chromium): `lineHeight` em px não arredonda e o múltiplo não arredonda antes de multiplicar pelas linhas.
 - O anel `outside` do traço na raiz do componente, que não aparecia.
 - Um texto `fill` numa coluna `hug` quebrava palavra por palavra (letra a letra, com largura 0). Agora o conteúdo é medido em duas passagens, como o flexbox (em todas as versões do formato): o texto quebra em linhas de palavras e o quadro tem a altura delas.
+- A janela **Especializações** mostra, na biblioteca, os modos do desenho, os tokens (com o valor de cada modo) e o arquivo do conjunto de ícones.
+- O diálogo **Especializações** não mostra mais crases soltas em volta de `formatVersion` (e de `repo` no aviso da migração do schema 11): a interface não interpreta markdown.

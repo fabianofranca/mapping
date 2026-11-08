@@ -417,6 +417,9 @@ export const enUS: Dictionary = {
   'spec.apply': 'Apply specialization…',
   'spec.update': 'Update version…',
   'spec.remove': 'Remove',
+  'spec.designTokens': 'Drawing tokens',
+  'spec.designModes': 'Modes',
+  'spec.designIcons': 'Icons',
   'spec.item': 'v{version} · {layers} layer(s)',
   'spec.fileMissing': '(specialization file unavailable)',
   'spec.readFailed': 'Could not read the file.',
@@ -485,7 +488,7 @@ export const enUS: Dictionary = {
   'spec.updateFolder': 'Update from folder…',
   'spec.updateZip': 'Update from zip…',
   'spec.packageHint':
-    'A library (`formatVersion` 4 or later) comes in a folder or a zip: the specialization, components, documents and fonts. If it does not refer to package files, a lone .json also works.',
+    'A library (formatVersion 4 or later) comes in a folder or a zip: the specialization, components, documents and fonts. If it does not refer to package files, a lone .json also works.',
   'spec.v4NeedsPackage':
     '"{name}" refers to package files (components, documents, examples or fonts) and needs the whole folder: a lone .json file is not enough. Use "Apply folder…" or "Apply zip…".',
   'spec.packageValidating': 'Checking the package…',
@@ -1057,7 +1060,7 @@ export const enUS: Dictionary = {
   'code.pathCopied': 'Path copied',
   'code.copyFailed': 'Could not copy the path.',
   'migration.v11.discardedUrlTemplate':
-    'Schema 11: the file address left the project and was discarded from {platforms} ({templates}). The repository now belongs to the specialization: rewrite the specialization with `repo` (formatVersion 5) and update it in the project.',
+    'Schema 11: the file address left the project and was discarded from {platforms} ({templates}). The repository now belongs to the specialization: rewrite the specialization with repo (formatVersion 5) and update it in the project.',
   'migration.v13.discardedInherit':
     'Schema 13: annotation inheritance was removed from the format. {count} annotation(s) also applied to the descendant markings and now apply only to their own marking: {markings}. No annotation was deleted.',
   'repos.title': 'Repositories',

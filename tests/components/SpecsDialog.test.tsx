@@ -100,6 +100,38 @@ async function dialogTitled(title: string, timeout = 1000): Promise<HTMLElement>
 }
 
 describe('SpecsDialog', () => {
+  it('mostra os modos, os tokens e o conjunto de ícones da biblioteca (decisão 16)', () => {
+    const spec = libSpec(
+      1,
+      { c: [buttonType()] },
+      {
+        formatVersion: 15,
+        tokens: {
+          modes: ['light', 'dark'],
+          values: { primary: { light: '#1a73e8', dark: '#8ab4f8' }, radius: 8 },
+        },
+        icons: 'icons/set.json',
+      },
+    );
+    let n = 0;
+    setup(applySpecialization(emptyProject(), spec, { newId: () => `LS${++n}` }));
+    const item = document.querySelector<HTMLElement>('.spec-item');
+    expect(item).not.toBeNull();
+    const design = within(item!).getByRole('group', { name: 'Tokens do desenho' });
+    expect(within(design).getByText('light, dark')).toBeTruthy();
+    expect(within(design).getByText('primary')).toBeTruthy();
+    expect(within(design).getByText('light #1a73e8 · dark #8ab4f8')).toBeTruthy();
+    expect(within(design).getByText('radius')).toBeTruthy();
+    expect(within(design).getByText('8')).toBeTruthy();
+    expect(within(design).getByText('icons/set.json')).toBeTruthy();
+  });
+
+  it('biblioteca sem tokens nem ícones não mostra o bloco', () => {
+    let n = 0;
+    setup(applySpecialization(emptyProject(), libSpec(1), { newId: () => `LS${++n}` }));
+    expect(screen.queryByRole('group', { name: 'Tokens do desenho' })).toBeNull();
+  });
+
   it('sem especializações mostra o aviso e o botão de aplicar', () => {
     setup();
     expect(screen.getByText('Nenhuma especialização aplicada.')).toBeTruthy();
