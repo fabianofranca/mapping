@@ -584,6 +584,7 @@
   white-space: nowrap;
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
+  container-type: inline-size;
 }
 
 .statusbar-gap {
@@ -593,12 +594,12 @@
 
 .status-item {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: var(--space-1);
   max-width: 320px;
   overflow: hidden;
   padding: 0 var(--space-1-5);
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -606,16 +607,44 @@
   flex: none;
 }
 
-/* O texto de um item da esquerda é o que trunca com reticências (o item é flex). */
+/*
+ * Prioridade (#675): por padrão o item nunca encolhe (estado de gravação, destino, Somente
+ * leitura, cursor, zoom, build). Os que encolhem (reticências no `.status-item-text`, dica no
+ * `title`) perdem espaço na ordem do `flex-shrink`: primeiro `s4` (perspectiva, aguardando
+ * aplicação), depois `s` (não exportadas, avisos, conversas, chegadas), que dividem o aperto pelo
+ * tamanho, e o nome da seleção (`sel`, o mais comprido, com largura mínima).
+ */
+.status-item-s,
+.status-item-s4,
+.status-item-sel {
+  flex-shrink: 1;
+  min-width: var(--space-8);
+}
+
+.status-item-s4 {
+  flex-shrink: 4;
+}
+
+.status-item-sel {
+  min-width: calc(var(--space-8) * 3);
+}
+
 .status-item-text {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Tudo à direita do espaço (seleção, cursor, zoom, schema, canal, versão) nunca encolhe. */
-.statusbar-gap ~ * {
-  flex: none;
+/*
+ * Janela estreita: abaixo de 1100 px de barra (a 900×720 ela tem 884 px) schema e canal somem com
+ * os separadores. Medido na revisão com pasta e "aguardando aplicação" (o pior caso): sem eles,
+ * Salvo, o destino e Somente leitura cabem inteiros e só os itens encolhíveis perdem texto.
+ */
+@container (max-width: 1100px) {
+  .status-wide,
+  .status-sep:has(+ .status-wide) {
+    display: none;
+  }
 }
 
 .status-item-mono {

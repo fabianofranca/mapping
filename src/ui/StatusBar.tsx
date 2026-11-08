@@ -1,3 +1,4 @@
+import type { JSX } from 'preact';
 import { useComputed } from '@preact/signals';
 import { t } from '../i18n';
 import { SCHEMA_VERSION } from '../model';
@@ -6,7 +7,7 @@ import { resolveShownSelection, selectionProject } from '../store/shownSelection
 import { BUILD_ID } from '../utils/build';
 import { CHANNEL } from '../utils/channel';
 import { useEditor } from './EditorContext';
-import { Icon } from './icons';
+import { Icon, type IconName } from './icons';
 import { arrowText, imageLabel, markingLabel } from './labels';
 import { ZoomField } from './ZoomField';
 import { showAndFocusToolWindow } from './toolWindowLayout';
@@ -17,35 +18,45 @@ import { statusBarText } from './comments/commentsText';
 // seleção, cursor, zoom, schema, canal e build à direita. O cursor vem do canvas num signal
 // de UI próprio, atualizado no máximo uma vez por quadro (HANDOFF, seção 6).
 
+interface ItemProps extends JSX.HTMLAttributes<HTMLSpanElement> {
+  readonly icon?: IconName;
+}
+
+/** Um item da barra: ícone opcional e o texto em `.status-item-text` (nunca texto solto ao lado do ícone). */
+function Item({ icon, children, ...rest }: ItemProps) {
+  return (
+    <span {...rest}>
+      {icon && <Icon name={icon} />}
+      <span class="status-item-text">{children}</span>
+    </span>
+  );
+}
+
 function SaveItem() {
   const { session } = useEditor();
   if (session.store.readOnly.value) {
-    return <span class="status-item">{t('status.readOnly')}</span>;
+    return <Item class="status-item">{t('status.readOnly')}</Item>;
   }
   const status = session.saveStatus.value;
   if (status === 'error') {
     return (
       <span class="status-item status-item-error" role="alert">
-        {t('status.error')}
+        <span class="status-item-text">{t('status.error')}</span>
         <button type="button" class="link" onClick={() => void session.flush()}>
           {t('status.retry')}
         </button>
       </span>
     );
   }
-  if (status === 'saving') {
-    return (
-      <span class="status-item" aria-live="polite">
-        <Icon name="refresh" />
-        {t('status.saving')}
-      </span>
-    );
-  }
+  const saving = status === 'saving';
   return (
-    <span class="status-item status-item-ok" aria-live="polite">
-      <Icon name="check" />
-      {t('status.saved')}
-    </span>
+    <Item
+      class={saving ? 'status-item' : 'status-item status-item-ok'}
+      aria-live="polite"
+      icon={saving ? 'refresh' : 'check'}
+    >
+      {t(saving ? 'status.saving' : 'status.saved')}
+    </Item>
   );
 }
 
@@ -70,9 +81,12 @@ function SelectionItem() {
   });
   const label = name.value ?? t('panel.nothingSelected');
   return (
-    <span class="status-item" title={t('status.selectionLabel', { name: label })}>
+    <Item
+      class="status-item status-item-sel"
+      title={t('status.selectionLabel', { name: label })}
+    >
       {label}
-    </span>
+    </Item>
   );
 }
 
@@ -81,12 +95,12 @@ function CursorItem() {
   const cursor = view.cursor.value;
   const position = cursor ? `${cursor.x}, ${cursor.y}` : t('status.empty');
   return (
-    <span
+    <Item
       class="status-item status-item-mono"
       title={t('status.cursorLabel', { position })}
     >
       {position}
-    </span>
+    </Item>
   );
 }
 
@@ -102,15 +116,17 @@ function ProposalsItem() {
     const pending = review.derived.counts.value.acceptedPending;
     return (
       <>
-        <span class="status-item" title={t('review.readOnlyTip')}>
-          <Icon name="lock" />
+        <Item class="status-item" title={t('review.readOnlyTip')} icon="lock">
           {t('review.readOnlyFlag')}
-        </span>
+        </Item>
         {pending > 0 && (
-          <span class="status-item status-item-ok">
-            <Icon name="check" />
-            <span class="status-item-text">{awaitingText(pending)}</span>
-          </span>
+          <Item
+            class="status-item status-item-ok status-item-s4"
+            title={awaitingText(pending)}
+            icon="check"
+          >
+            {awaitingText(pending)}
+          </Item>
         )}
       </>
     );
@@ -124,7 +140,7 @@ function ProposalsItem() {
       onClick={() => showAndFocusToolWindow('proposals')}
     >
       <Icon name="proposal" />
-      {t('proposals.statusNew', { count: fresh })}
+      <span class="status-item-text">{t('proposals.statusNew', { count: fresh })}</span>
     </button>
   );
 }
@@ -137,12 +153,12 @@ function NoticesItem() {
   return (
     <button
       type="button"
-      class="status-item status-item-button"
+      class="status-item status-item-button status-item-s"
       title={t('notices.statusTip', { count })}
       onClick={() => showAndFocusToolWindow('notices')}
     >
       <Icon name="warning" />
-      {t('notices.status', { count })}
+      <span class="status-item-text">{t('notices.status', { count })}</span>
     </button>
   );
 }
@@ -155,12 +171,14 @@ function CommentsItem() {
   return (
     <button
       type="button"
-      class="status-item status-item-button"
+      class="status-item status-item-button status-item-s"
       title={t('comments.statusBar.tip')}
       onClick={() => showAndFocusToolWindow('comments')}
     >
       <Icon name="chat" />
-      {statusBarText(open, derived.threads.awaitingAgentCount.value)}
+      <span class="status-item-text">
+        {statusBarText(open, derived.threads.awaitingAgentCount.value)}
+      </span>
     </button>
   );
 }
@@ -182,14 +200,17 @@ function PerspectiveItem() {
   const arrivals = open ? 0 : (review.derived.shownProject.value?.arrivals.length ?? 0);
   return (
     <>
-      <span class="status-item" title={t('perspective.status.name', { name })}>
-        <Icon name="perspective" />
-        <span class="status-item-text">{t('perspective.status.name', { name })}</span>
-      </span>
+      <Item
+        class="status-item status-item-s4"
+        title={t('perspective.status.name', { name })}
+        icon="perspective"
+      >
+        {t('perspective.status.name', { name })}
+      </Item>
       {arrivals > 0 && (
-        <span class="status-item" title={arrivalsTitle(arrivals)}>
+        <Item class="status-item status-item-s" title={arrivalsTitle(arrivals)}>
           {t('perspective.status.arrivals', { count: arrivals })}
-        </span>
+        </Item>
       )}
     </>
   );
@@ -200,10 +221,9 @@ function ViewModeItem() {
   const { ui } = useEditor();
   if (!ui.viewMode.value) return null;
   return (
-    <span class="status-item" aria-live="polite">
-      <Icon name="eye" />
+    <Item class="status-item" aria-live="polite" icon="eye">
       {t('status.viewMode')}
-    </span>
+    </Item>
   );
 }
 
@@ -212,7 +232,8 @@ function useStatusTexts() {
   const { open } = useEditor();
   return {
     target: t(open.kind === 'folder' ? 'status.targetFolder' : 'status.targetLocal'),
-    unexported: open.kind === 'local' && open.unexported.value,
+    unexported:
+      open.kind === 'local' && open.unexported.value ? t('status.unexported') : '',
     channel: t(CHANNEL === 'preview' ? 'status.channelPreview' : 'status.channelMain'),
   };
 }
@@ -222,11 +243,13 @@ export function StatusBar() {
   return (
     <footer class="statusbar" aria-label={t('statusbar.label')}>
       <SaveItem />
-      <span class="status-item" title={t('status.targetLabel', { target })}>
+      <Item class="status-item" title={t('status.targetLabel', { target })}>
         {target}
-      </span>
+      </Item>
       {unexported && (
-        <span class="status-item status-item-warn">{t('status.unexported')}</span>
+        <Item class="status-item status-item-warn status-item-s" title={unexported}>
+          {unexported}
+        </Item>
       )}
       <PerspectiveItem />
       <ProposalsItem />
@@ -240,23 +263,23 @@ export function StatusBar() {
       <Separator />
       <ZoomField class="status-item" />
       <Separator />
-      <span
-        class="status-item"
+      <Item
+        class="status-item status-wide"
         title={t('status.schemaLabel', { version: SCHEMA_VERSION })}
       >
         {t('status.schema', { version: SCHEMA_VERSION })}
-      </span>
+      </Item>
       <Separator />
-      <span class="status-item" title={t('status.channelLabel', { channel })}>
+      <Item class="status-item status-wide" title={t('status.channelLabel', { channel })}>
         {channel}
-      </span>
+      </Item>
       <Separator />
-      <span
+      <Item
         class="status-item status-item-mono"
         title={t('status.buildLabel', { id: BUILD_ID })}
       >
         {BUILD_ID}
-      </span>
+      </Item>
     </footer>
   );
 }
