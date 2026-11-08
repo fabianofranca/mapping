@@ -35,7 +35,8 @@ Antes de cada chamada, mande um `PushNotification` curto, por exemplo "Detalhame
 2. `list_issues` (`state: OPEN`, `fields: [number, title, labels]`, sem `body`, porque o corpo de todas passa do limite) uma vez com `labels: [roadmap]` e uma com `labels: [bug]`.
 3. Fique só com as que **não** têm `ready`, `in-progress` nem `step`. Com a lista `#n ...`, use a interseção dela com as candidatas e diga quais números ficaram de fora e por quê.
 4. Ordem: `severity: high` e `impact: high` primeiro, depois `medium`, depois `low`; no empate, o menor número vem antes. A ordem do Project "Mapping - Backlog" é do dono, e as ferramentas não alcançam o Project.
-5. Sem candidatas, diga isso e termine.
+5. Issues do revisor de código (rótulo `code-review`, `CLAUDE.md` "Revisão de código"): a da rodada (`roadmap`, título "CR base …" ou "CR épico …") lista muitos achados, e cada defeito high ou medium dela já tem a sua issue `bug`, citada no corpo. O detalhamento da rodada cobre só os achados que **não** apontam para um `bug`. Passe isso à filha de agrupamento, para ela juntar cada `bug` com a rodada ou com outras candidatas da mesma área, ou separar a rodada por área, sem detalhar o mesmo achado duas vezes.
+6. Sem candidatas, diga isso e termine.
 
 ## 2. Agrupamento (uma filha Opus)
 
@@ -54,7 +55,7 @@ Mensagem:
 Você é o agente de agrupamento do backlog do `fabianofranca/mapping`. Ninguém está olhando esta sessão: não pergunte nada no chat e não use a ferramenta de perguntas. Não edite issue, não crie branch nem PR.
 
 1. Leia o `CLAUDE.md`, as candidatas <lista #n — título — rótulos> (corpo e comentários) e as issues `ready` abertas (corpo; as sub-issues `step` só quando precisar). Não proponha mexer nas `in-progress`.
-2. Proponha grupos: candidatas que valem mais num épico só do que em épicos separados. Pese:
+2. Proponha grupos: candidatas que valem mais num épico só do que em épicos separados. Nas issues `code-review`, um achado da rodada que aponta para um `bug` pertence a esse `bug`; a rodada, que é uma lista longa, pode ser dividida por área entre vários grupos (diga quais itens vão para cada um). Pese:
    - versão do MCP: várias etapas que subiriam o MCP cada uma (minor ou patch) viram uma versão só;
    - rodada do testador: roteiros iguais ou próximos rodam numa rodada só (`docs/TESTING-NUVEM.md`);
    - mesma área, os mesmos arquivos ou a mesma ordem proposta: menos conflito e menos merge da `main` no épico;
@@ -88,7 +89,7 @@ Se a filha não responder em 45 min (`send_later`), leia `get_session` (`status_
 
 ## 3. Detalhamento (filhas Opus, `paralelo` por vez)
 
-Cada **unidade** é um grupo aprovado ou uma issue sozinha. Siga a `ORDEM`. Se uma unidade depende de outra (a filha disse que depende, ou o corpo diz "depois da #X"), ela só começa depois que a outra estiver pronta. Crie até `paralelo` sessões com `create_session` (o mesmo `model`, `source_url` e `source_revision` do agrupamento, título "Detalhamento — #<principal> <título curto>"). Quando uma termina, a próxima começa.
+Cada **unidade** é um grupo aprovado ou uma issue sozinha. Siga a `ORDEM`. A dependência não segura o detalhamento: o `Depende de` ordena a implementação, e duas unidades que dependem uma da outra podem ser detalhadas ao mesmo tempo. Só espere a outra ficar pronta quando o plano de uma precisa do plano da outra (por exemplo, para usar um auxiliar que a outra cria). Crie até `paralelo` sessões com `create_session` (o mesmo `model`, `source_url` e `source_revision` do agrupamento, título "Detalhamento — #<principal> <título curto>"). Quando uma termina, a próxima começa.
 
 Mensagem:
 
@@ -97,7 +98,7 @@ Você é o agente de detalhamento <da issue #n | do grupo #a (principal), #b, #c
 
 1. Leia o `CLAUDE.md`, as issues da unidade com os comentários, as que elas citam e os títulos das `ready` e `in-progress` abertas, para achar sobreposição. Leia o código e os docs que o plano vai tocar: o "Toca em:" de cada fase cita arquivos que existem.
 <Só em grupo: 2. O grupo foi aprovado pelo dono: <decisão, com as palavras do dono se ele escreveu>. A #a vira a etapa. O conteúdo de cada outra entra no corpo como item numerado, com a origem, o rótulo e a severidade ou o impacto. As outras fecham como duplicadas da #a (`state_reason: duplicate`, `duplicate_of`), cada uma com um comentário que diz para onde foi. A etapa fica com o tipo e o rótulo da #a; em "Absorvidas", o corpo lista a severidade ou o impacto de cada uma. Um `bug` absorvido mantém os passos para reproduzir e a evidência. <Se o grupo traz uma `ready`: o plano dela muda; diga isso num comentário nela, com o porquê e a decisão do dono.>>
-3. Rascunhe o plano inteiro antes de criar qualquer coisa: objetivo, o que fica fora, decisões numeradas, épico (`epic/<nome>`), versões (schema, formatos e MCP: **uma** versão do MCP para a etapa toda), registros (changelog e DS), a linha `Impacto:` (ou a severidade) e a tabela de modelos e esforço (linha Orquestrador, uma linha por fase e a coluna Testador). Para cada fase: a linha da tabela, o "Toca em:", os checkboxes e o aceite. A última fase traz a seção **Testador**, com os roteiros e a linha "Passada visual: <lista>" (ou "nenhuma"). Com várias issues, junte os roteiros numa rodada só.
+3. Rascunhe o plano inteiro antes de criar qualquer coisa: objetivo, o que fica fora, decisões numeradas, épico (`epic/<nome>`), versões (schema, formatos e MCP: **uma** versão do MCP para a etapa toda, escrita como o tipo da subida — `MCP: minor`, `MCP: patch` ou `MCP: sem mudança` — e nunca como número, porque outras etapas detalhadas em paralelo pegariam o mesmo; o número é fixado quando o épico começa), registros (changelog e DS), a linha `Impacto:` (ou a severidade) e a tabela de modelos e esforço (linha Orquestrador, uma linha por fase e a coluna Testador). Para cada fase: a linha da tabela, o "Toca em:", os checkboxes e o aceite. A última fase traz a seção **Testador**, com os roteiros e a linha "Passada visual: <lista>" (ou "nenhuma"). Com várias issues, junte os roteiros numa rodada só.
 4. Acrescente no corpo a linha `**Depende de:** #x, #y` (ou `**Depende de:** nenhuma`): a etapa ou o que precisa estar na `main` antes de ela começar. O skill que implementa as etapas em sequência lê essa linha.
 5. Decisão de produto (CLAUDE.md: o esperado não está em issue, doc nem spec; há mais de uma leitura razoável; muda uma decisão já tomada; mexe em schema ou formato): não decida sozinho. Junte as perguntas numa mensagem ao coordenador, por `send_message`, neste formato, e termine o turno. A resposta chega como uma mensagem "RESPOSTAS #<principal>".
 
@@ -109,11 +110,11 @@ P1. #<principal> — <pergunta autossuficiente, com o contexto que o dono precis
 
    Decisão pequena você toma, segue e registra como decisão numerada. Não crie nada no GitHub antes das respostas.
 6. Com as respostas: edite o corpo da issue principal com o plano, crie cada fase como sub-issue `step` (`issue_write` e depois `sub_issue_write` com a principal como pai), na ordem, troque `roadmap` por `ready` (o `bug`, o `severity:` e o `impact:` ficam; uma `ready` que não é `bug` leva o `impact:`) e registre num comentário as decisões do dono, com a data e o porquê.
-7. Todo texto que você escreve no GitHub termina com o rodapé de atribuição.
+7. Todo texto que você escreve no GitHub termina com o rodapé de atribuição. Nunca escreva o número de um PR ou de uma issue que ainda não existe (o do PR do épico, por exemplo): diga "o PR do épico", e quem o abrir põe o número.
 8. Ao terminar, avise o coordenador por `send_message` com uma destas mensagens, e termine:
 
 PRONTA #<principal> — <link>
-  Épico: epic/<nome> · Fases: <n> · MCP: <versão ou "sem mudança"> · Schema: <v ou "sem mudança">
+  Épico: epic/<nome> · Fases: <n> · MCP: <minor, patch ou "sem mudança"> · Schema: <v ou "sem mudança">
   Modelos: Orquestrador <modelo>; <fase: modelo/esforço>; Testador <modelo/esforço>
   Depende de: <#x ou nenhuma>
   Absorvidas: <#b, #c ou nenhuma>
@@ -140,6 +141,7 @@ Para cada mensagem que chega:
 Para cada filha criada, agende uma conferência de reserva (`send_later`, 45 min). Se a filha não avisou até lá, leia `get_session` (`status_bucket`) e `list_events`:
 
 - trabalhando: agende de novo;
+- esperando as `RESPOSTAS` de perguntas que o dono ainda não respondeu: não é falha. Mande um `PushNotification` ("N filhas esperando suas respostas: #a, #b") e agende de novo;
 - parada esperando permissão, falha ou sessão morta: pergunte ao dono ("Seguir sem a #n (Recomendado)" / "Criar a sessão de novo"), com o que os eventos mostram.
 
 Cancele (`delete_trigger`) a conferência da filha que já avisou.
@@ -148,6 +150,6 @@ Cancele (`delete_trigger`) a conferência da filha que já avisou.
 
 Quando todas as unidades terminarem:
 
-1. Responda no chat com uma tabela: unidade, issue com link, resultado (pronta, bloqueada ou falhou), épico, fases, versão do MCP e "Depende de". Depois, as sobreposições entre as etapas prontas, as issues novas que as filhas criaram (elas **não** foram detalhadas nesta rodada) e a ordem de implementação sugerida (a `ORDEM` do agrupamento, ajustada pelos "Depende de").
+1. Responda no chat com uma tabela: unidade, issue com link, resultado (pronta, bloqueada ou falhou), épico, fases, versão do MCP e "Depende de". Depois, as sobreposições entre as etapas prontas, as issues novas que as filhas criaram (elas **não** foram detalhadas nesta rodada), as filhas que ainda esperam resposta do dono e a ordem de implementação sugerida (a `ORDEM` do agrupamento, ajustada pelos "Depende de").
 2. Mande um `PushNotification` com o total ("Backlog detalhado: 5 prontas, 1 bloqueada").
 3. Pergunte se arquiva as sessões filhas: "Arquivar (Recomendado)" / "Manter".

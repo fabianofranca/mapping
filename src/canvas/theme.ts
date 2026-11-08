@@ -16,7 +16,7 @@ export interface CanvasTokens {
   // Marcações e sobreposições (iguais nos dois temas: ficam sobre a imagem).
   /** Linha da marcação (cor padrão, sem cor escolhida para a imagem). */
   readonly line: string;
-  /** Contorno de linhas, nomes, bolinhas e alertas. */
+  /** Contorno de linhas, nomes e alertas. */
   readonly halo: string;
   /** Seleção, alças, rascunho e alvo de soltar. */
   readonly select: string;
@@ -66,7 +66,7 @@ export interface CanvasTokens {
   };
   /** Lado visível da alça (px de tela): `size-handle`. */
   readonly handleSize: number;
-  /** Lado (px de tela) abaixo do qual a marcação com componente esconde as bolinhas de camada e o "+N": `size-indicator-min-marking`. */
+  /** Lado (px de tela) mínimo de indicadores da marcação com componente: `size-indicator-min-marking` (hoje sem uso no desenho do canvas). */
   readonly indicatorMinMarking: number;
   /** Raios (px de tela): `sm` na etiqueta do nome, `md` nos demais cantos arredondados. */
   readonly radius: { readonly sm: number; readonly md: number };
