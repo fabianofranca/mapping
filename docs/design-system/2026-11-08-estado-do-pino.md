@@ -1,4 +1,4 @@
-# Estado do pino — [Não lançado] (épico `epic/estado-do-pino`)
+# Estado do pino — 2026-11-08 (épico `epic/estado-do-pino`)
 
 ## Pendências
 
@@ -6,8 +6,8 @@
 
 ## Sincronização
 
-Ainda não sincronizado (o fechamento do épico aplica as pendências no artefato).
+Nenhuma gravação no artefato Mapping do Claude Design: o artefato é curado à mão e a sessão do orquestrador não tem acesso a ele. A pendência acima passa para "Ficou sem gravar", para quem edita o artefato aplicar.
 
 ## Ficou sem gravar
 
-Nada até o fechamento.
+A pendência da EP1 acima: o glifo de estado no `CommentPin` e nos selos, os ícones `thread-awaiting-human` e `thread-awaiting-agent` (grupo "Conversas") e os trechos de `Canvas.md` e `Contraste.md`. Também em aberto, na issue #925: decidir se a cor do estado se unifica entre pino, janela e Detalhes.

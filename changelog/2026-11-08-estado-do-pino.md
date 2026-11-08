@@ -1,4 +1,4 @@
-# Estado do pino — [Não lançado] (épico `epic/estado-do-pino`, PR #0, MCP 0.28.2, schema v18)
+# Estado do pino — 2026-11-08 (épico `epic/estado-do-pino`, PR #924, MCP 0.28.2, schema v18)
 
 ## Alterado
 
