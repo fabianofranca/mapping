@@ -67,3 +67,29 @@ Variante `multi`: Um `SegmentedButton` por linha de `options`, dentro de `MultiC
 - **Seleção única**: selection=single
 - **Seleção múltipla**: selection=multi
 - **Desabilitado**: selection=single, enabled=false
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SegmentedButton.kt` (linhas 130 a 170 e 210 a 250: o `SegmentedButton` com `weight(1f)`, `defaultMinSize` de `ButtonDefaults.MinWidth` e `MinHeight` e o `Surface` com a `border`; 328 a 347 e 364 a 381: as linhas, com `Arrangement.spacedBy(-space)` que sobrepõe os segmentos em 1 (a borda) e altura mínima de `ContainerHeight`; 383 a 462: `SegmentedButtonContent`, com o ícone de 18, `IconSpacing` 8 e o conjunto centrado; 541 a 567: as cores padrão (selecionado `SelectedContainerColor`, borda `OutlineColor`, desabilitado com `DisabledLabelTextOpacity` e `DisabledOutlineOpacity`); 582 a 611: `BorderWidth`, `itemShape` (forma full só nas pontas), `IconSize` e `ContentPadding`; 614 a 622: o `ActiveIcon` é o `Icons.Filled.Check`; 841: `IconSpacing`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedSegmentedButtonTokens.kt` (linhas 25 a 54: `ContainerHeight` 40, `OutlineWidth` 1, `Shape` `CornerFull`, `LabelTextFont` `LabelLarge`, `IconSize` 18, e os papéis selecionado e desmarcado).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Button.kt` (linhas 479 a 543: `TextButtonContentPadding` 12 e 8, `MinWidth` 58 e `MinHeight` 40).
+
+**Como o desenho segue o Compose**
+
+- Linha de 40 de altura e forma `corner-full`; os segmentos são o `repeat` de `options` com `distribute: fill`, de largura igual, cada um com o mínimo de 58.
+- Selecionado: fundo `secondary-container`, rótulo e check `on-secondary-container`. Desmarcado: sem fundo, rótulo e ícone `on-surface`. O check é o nó `icon` de 18 e substitui o ícone da coluna; o rótulo usa os tokens de `label-large` (14, 20, 500 e 0,1).
+- O ícone (18) e o rótulo ficam separados por 8 e o conjunto é centrado no segmento, com o espaço de `TextButtonContentPadding` (12 dos lados, 8 em cima e embaixo). Sem ícone e desmarcado, só o rótulo, centrado.
+- Contorno de 1 em `outline`, dentro da caixa e com a forma full; o `clip` da raiz arredonda as pontas do fundo do selecionado. Entre os segmentos há um divisor de 1 em `outline` (a borda dupla do Compose, sobreposta em 1).
+- Desabilitado: contorno e divisores `outline` a `state-disabled-container` (0,12, como `disabledActiveBorderColor` e `disabledInactiveBorderColor`: o código usa `OutlineColor`, não o `on-surface` que o token cita), rótulo e ícone `on-surface` a `state-disabled-content` (0,38) e o fundo do selecionado continua `secondary-container` (`disabledActiveContainerColor`).
+
+**O que ainda difere do Compose**
+
+- Os segmentos se encostam e o divisor é o lado esquerdo de cada um (o do primeiro fica fora da caixa), em vez de se sobrepor em 1: a largura de cada segmento é `(largura + 1) / n`, e não `(largura + n - 1) / n`, então a fronteira cai a menos de 1 do Compose.
+- A linha ocupa a largura da marcação (`fill`); o Compose usa `width(IntrinsicSize.Min)` e mede os segmentos pelo conteúdo.
+- O rótulo não corta nem quebra de propósito; um rótulo maior que o segmento avisa `texto maior que a caixa`. O Compose só limita pelo `Row`.
+- Sem estados de pressionado, foco e passar o mouse e sem o movimento da troca do check e do deslocamento do rótulo (`SegmentedButtonContentMeasurePolicy` anima o `offsetX`).
+- O `selection` não muda o desenho (single e multi usam o mesmo check); só muda o símbolo do código.

@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "switch",
   "name": "Switch",
   "description": "Switch: trilho 52 × 32, alça de 24 (ligado, ou com ícone) ou 16 (desligado) e rótulo opcional ao lado.",
@@ -34,17 +34,30 @@
           "$field": "label"
         },
         "font": {
-          "family": "Roboto",
-          "size": 16,
-          "weight": 400,
-          "lineHeight": 24
+          "size": {
+            "$token": "body-large-size"
+          },
+          "weight": {
+            "$token": "body-large-weight"
+          },
+          "lineHeight": {
+            "$token": "body-large-line-height"
+          },
+          "letterSpacing": {
+            "$token": "body-large-tracking"
+          }
         },
         "color": {
+          "$token": "on-surface"
+        },
+        "opacity": {
           "$if": {
             "$eq": ["enabled", "false"]
           },
-          "then": "rgba(29, 27, 32, 0.38)",
-          "else": "#1D1B20"
+          "then": {
+            "$token": "state-disabled-content"
+          },
+          "else": 1
         },
         "width": "fill",
         "visible": {
@@ -53,189 +66,363 @@
       },
       {
         "type": "frame",
-        "name": "trilho",
+        "name": "chave",
         "width": 52,
         "height": 32,
-        "cornerRadius": 16,
-        "fill": {
-          "$if": {
-            "$field": "checked"
-          },
-          "then": {
-            "$if": {
-              "$eq": ["enabled", "false"]
-            },
-            "then": "rgba(29, 27, 32, 0.12)",
-            "else": "#6750A4"
-          },
-          "else": {
-            "$if": {
-              "$eq": ["enabled", "false"]
-            },
-            "then": "rgba(0, 0, 0, 0)",
-            "else": "#E6E0E9"
-          }
-        },
-        "stroke": {
-          "color": {
-            "$if": {
-              "$field": "checked"
-            },
-            "then": "rgba(0, 0, 0, 0)",
-            "else": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.12)",
-              "else": "#79747E"
-            }
-          },
-          "width": 2,
-          "align": "inside"
-        },
         "layout": {
           "type": "none"
         },
         "children": [
           {
-            "type": "ellipse",
-            "name": "alça ligada",
-            "visible": {
-              "$field": "checked"
-            },
-            "width": 24,
-            "height": 24,
-            "anchors": {
-              "right": 4,
-              "centerY": true
+            "type": "rect",
+            "name": "trilho",
+            "cornerRadius": {
+              "$token": "corner-full"
             },
             "fill": {
               "$if": {
                 "$eq": ["enabled", "false"]
               },
-              "then": "#FEF7FF",
-              "else": "#FFFFFF"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "alça desligada",
-            "visible": {
-              "$and": [
-                {
-                  "$not": {
-                    "$field": "checked"
-                  }
-                },
-                {
-                  "$not": {
-                    "$eq": ["thumbIcon", "true"]
-                  }
-                }
-              ]
-            },
-            "width": 16,
-            "height": 16,
-            "anchors": {
-              "left": 8,
-              "centerY": true
-            },
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
+              "then": {
+                "$token": "surface"
               },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#79747E"
-            }
-          },
-          {
-            "type": "ellipse",
-            "name": "alça desligada com ícone",
-            "visible": {
-              "$and": [
-                {
-                  "$not": {
-                    "$field": "checked"
-                  }
-                },
-                {
-                  "$eq": ["thumbIcon", "true"]
-                }
-              ]
-            },
-            "width": 24,
-            "height": 24,
-            "anchors": {
-              "left": 4,
-              "centerY": true
-            },
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#79747E"
-            }
-          },
-          {
-            "type": "path",
-            "name": "check",
-            "visible": {
-              "$and": [
-                {
+              "else": {
+                "$if": {
                   "$field": "checked"
                 },
-                {
-                  "$eq": ["thumbIcon", "true"]
+                "then": {
+                  "$token": "primary"
+                },
+                "else": {
+                  "$token": "surface-container-highest"
                 }
-              ]
-            },
-            "width": 16,
-            "height": 16,
-            "viewBox": [24, 24],
-            "d": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
-            "anchors": {
-              "right": 8,
-              "centerY": true
-            },
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
-              },
-              "then": "rgba(29, 27, 32, 0.38)",
-              "else": "#21005D"
+              }
             }
           },
           {
-            "type": "path",
-            "name": "close",
+            "type": "rect",
+            "name": "trilho desabilitado",
+            "cornerRadius": {
+              "$token": "corner-full"
+            },
+            "visible": {
+              "$eq": ["enabled", "false"]
+            },
+            "fill": {
+              "$if": {
+                "$field": "checked"
+              },
+              "then": {
+                "$token": "on-surface"
+              },
+              "else": {
+                "$token": "surface-container-highest"
+              }
+            },
+            "opacity": {
+              "$token": "state-disabled-container"
+            }
+          },
+          {
+            "type": "rect",
+            "name": "contorno",
+            "cornerRadius": {
+              "$token": "corner-full"
+            },
+            "visible": {
+              "$not": {
+                "$field": "checked"
+              }
+            },
+            "fill": "none",
+            "stroke": {
+              "color": {
+                "$if": {
+                  "$eq": ["enabled", "false"]
+                },
+                "then": {
+                  "$token": "surface"
+                },
+                "else": {
+                  "$token": "outline"
+                }
+              },
+              "width": 2,
+              "align": "inside"
+            }
+          },
+          {
+            "type": "rect",
+            "name": "contorno desabilitado",
+            "cornerRadius": {
+              "$token": "corner-full"
+            },
             "visible": {
               "$and": [
+                {
+                  "$eq": ["enabled", "false"]
+                },
                 {
                   "$not": {
                     "$field": "checked"
                   }
-                },
-                {
-                  "$eq": ["thumbIcon", "true"]
                 }
               ]
             },
-            "width": 16,
-            "height": 16,
-            "viewBox": [24, 24],
-            "d": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
-            "anchors": {
-              "left": 8,
-              "centerY": true
-            },
-            "fill": {
-              "$if": {
-                "$eq": ["enabled", "false"]
+            "fill": "none",
+            "stroke": {
+              "color": {
+                "$token": "on-surface"
               },
-              "then": "#FEF7FF",
-              "else": "#E6E0E9"
+              "width": 2,
+              "align": "inside"
+            },
+            "opacity": {
+              "$token": "state-disabled-container"
             }
+          },
+          {
+            "type": "frame",
+            "name": "curso",
+            "layout": {
+              "type": "row",
+              "padding": [0, 4],
+              "align": "center",
+              "justify": {
+                "$if": {
+                  "$field": "checked"
+                },
+                "then": "end",
+                "else": "start"
+              }
+            },
+            "children": [
+              {
+                "type": "frame",
+                "name": "área da alça",
+                "width": 24,
+                "height": 24,
+                "layout": {
+                  "type": "none"
+                },
+                "children": [
+                  {
+                    "type": "ellipse",
+                    "name": "alça",
+                    "width": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$field": "checked"
+                          },
+                          {
+                            "$eq": ["thumbIcon", "true"]
+                          }
+                        ]
+                      },
+                      "then": 24,
+                      "else": 16
+                    },
+                    "height": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$field": "checked"
+                          },
+                          {
+                            "$eq": ["thumbIcon", "true"]
+                          }
+                        ]
+                      },
+                      "then": 24,
+                      "else": 16
+                    },
+                    "fill": {
+                      "$if": {
+                        "$eq": ["enabled", "false"]
+                      },
+                      "then": {
+                        "$token": "surface"
+                      },
+                      "else": {
+                        "$if": {
+                          "$field": "checked"
+                        },
+                        "then": {
+                          "$token": "on-primary"
+                        },
+                        "else": {
+                          "$token": "outline"
+                        }
+                      }
+                    },
+                    "anchors": {
+                      "centerX": true,
+                      "centerY": true
+                    }
+                  },
+                  {
+                    "type": "ellipse",
+                    "name": "alça desabilitada",
+                    "width": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$field": "checked"
+                          },
+                          {
+                            "$eq": ["thumbIcon", "true"]
+                          }
+                        ]
+                      },
+                      "then": 24,
+                      "else": 16
+                    },
+                    "height": {
+                      "$if": {
+                        "$or": [
+                          {
+                            "$field": "checked"
+                          },
+                          {
+                            "$eq": ["thumbIcon", "true"]
+                          }
+                        ]
+                      },
+                      "then": 24,
+                      "else": 16
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$eq": ["enabled", "false"]
+                        },
+                        {
+                          "$not": {
+                            "$field": "checked"
+                          }
+                        }
+                      ]
+                    },
+                    "fill": {
+                      "$token": "on-surface"
+                    },
+                    "opacity": {
+                      "$token": "state-disabled-content"
+                    },
+                    "anchors": {
+                      "centerX": true,
+                      "centerY": true
+                    }
+                  },
+                  {
+                    "type": "icon",
+                    "name": "check",
+                    "width": 16,
+                    "height": 16,
+                    "color": {
+                      "$if": {
+                        "$eq": ["enabled", "false"]
+                      },
+                      "then": {
+                        "$token": "on-surface"
+                      },
+                      "else": {
+                        "$token": "on-primary-container"
+                      }
+                    },
+                    "opacity": {
+                      "$if": {
+                        "$eq": ["enabled", "false"]
+                      },
+                      "then": {
+                        "$token": "state-disabled-content"
+                      },
+                      "else": 1
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$eq": ["thumbIcon", "true"]
+                        },
+                        {
+                          "$field": "checked"
+                        }
+                      ]
+                    },
+                    "anchors": {
+                      "centerX": true,
+                      "centerY": true
+                    }
+                  },
+                  {
+                    "type": "icon",
+                    "name": "close",
+                    "width": 16,
+                    "height": 16,
+                    "color": {
+                      "$if": {
+                        "$eq": ["enabled", "false"]
+                      },
+                      "then": {
+                        "$token": "surface"
+                      },
+                      "else": {
+                        "$token": "surface-container-highest"
+                      }
+                    },
+                    "opacity": 1,
+                    "visible": {
+                      "$and": [
+                        {
+                          "$eq": ["thumbIcon", "true"]
+                        },
+                        {
+                          "$not": {
+                            "$field": "checked"
+                          }
+                        }
+                      ]
+                    },
+                    "anchors": {
+                      "centerX": true,
+                      "centerY": true
+                    }
+                  },
+                  {
+                    "type": "icon",
+                    "name": "close",
+                    "width": 16,
+                    "height": 16,
+                    "color": {
+                      "$token": "surface-container-highest"
+                    },
+                    "opacity": {
+                      "$token": "state-disabled-content"
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$eq": ["thumbIcon", "true"]
+                        },
+                        {
+                          "$not": {
+                            "$field": "checked"
+                          }
+                        },
+                        {
+                          "$eq": ["enabled", "false"]
+                        }
+                      ]
+                    },
+                    "anchors": {
+                      "centerX": true,
+                      "centerY": true
+                    }
+                  }
+                ]
+              }
+            ]
           }
         ]
       }

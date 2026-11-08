@@ -49,3 +49,27 @@ Variante `indeterminate`: `TriStateCheckbox(state = ToggleableState.Indeterminat
 - **Desmarcada**: label=Aceito os termos, state=unchecked
 - **Marcada**: label=Lembrar de mim, state=checked
 - **Indeterminada**: label=Selecionar tudo, state=indeterminate
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou opacidade fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Checkbox.kt` (linhas 91 a 110: `Checkbox` com traço de 2 e ponta quadrada; 267 a 306: `TriStateCheckbox`, o `minimumInteractiveComponentSize` do toque e o `padding(CheckboxDefaultPadding)`; 357 a 386: `defaultCheckboxColors`; 395 a 459: `CheckboxImpl` e o `Canvas` de `requiredSize(CheckboxSize)`; 461 a 487: `drawBox`; 489 a 523: `drawCheck`; 607 a 681: `checkmarkColor`, `boxColor` e `borderColor` por estado; 736 a 738: `CheckboxDefaultPadding` 2, `CheckboxSize` 20 e `RadiusSize` 2).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/CheckboxTokens.kt` (linhas 24 a 76: papéis de cor `SelectedContainerColor` `Primary`, `SelectedIconColor` `OnPrimary`, `UnselectedOutlineColor` `OnSurfaceVariant`, os desabilitados `OnSurface` a 0,38 e `UnselectedOutlineWidth` 2).
+
+**Como o desenho segue o Compose**
+
+- A caixa tem **20** por 20 e raio 2 (`CheckboxSize` e `RadiusSize` do `Checkbox.kt`, que mandam no `Canvas`; o token `ContainerHeight` de 18 não é o que o código desenha) e fica no centro da área de 48 do toque mínimo (`minimumInteractiveComponentSize`), com o rótulo logo depois, como numa `Row` com `onCheckedChange`. O rótulo usa `body-large-*` e `on-surface`.
+- Marcada e indeterminada: a caixa é cheia em `primary` (o `drawBox` desenha uma só forma quando a caixa e a borda têm a mesma cor) e a marca é `on-primary`. O check é o caminho de três pontos de `drawCheck` (20% e 50%, 40% e 70%, 80% e 30% da caixa) com traço de 2 e ponta quadrada; o traço do indeterminado é a mesma linha com a cruz no centro (50% e 50%), horizontal, de 4 a 16.
+- Desmarcada: sem fundo e contorno de 2 por dentro em `on-surface-variant`.
+- Desabilitado: a caixa (cheia ou o contorno) vai a `on-surface` com `state-disabled-content` (0,38), em light e dark. A marca continua `on-primary` e sem diluir, porque `defaultCheckboxColors` usa `SelectedIconColor` também desabilitado (o token `SelectedDisabledIconColor`, `Surface`, não entra no código).
+
+**O que ainda difere do Compose**
+
+- Sem estados de pressionado, foco e passar o mouse e sem a animação do traço do check (`checkDrawFraction`); o desenho é o estado final.
+- O raio 2 é literal: a especialização não tem token de raio de 2 (`corner-extra-small` vale 4).
+- A área é de 48 por 40: a altura de 40 vem do `sizing` do tipo, abaixo dos 48 do toque mínimo. Com `onClick = null` o Compose desenha só 24.
+- O rótulo a 0,38 quando desabilitado é convenção do desenho: o `Text` do Compose herda a cor do conteúdo e não diminui sozinho.
+- `CheckboxColors` próprio, os `Stroke` trocáveis e o estado de erro não são campos do tipo.
