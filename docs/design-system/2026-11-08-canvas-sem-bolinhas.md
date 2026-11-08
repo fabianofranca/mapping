@@ -1,4 +1,4 @@
-# Canvas sem bolinhas — [Não lançado] (épico `epic/canvas-sem-bolinhas`)
+# Canvas sem bolinhas — 2026-11-08 (épico `epic/canvas-sem-bolinhas`)
 
 ## Pendências
 
@@ -6,8 +6,8 @@
 
 ## Sincronização
 
-(preenchida no fechamento do épico)
+Nenhuma gravação feita pelo agente: artefato curado à mão.
 
 ## Ficou sem gravar
 
-(preenchida no fechamento do épico)
+- A pendência de `CanvasMarking` e da seção `Canvas.md` acima (bolinhas e `+N` saem do desenho; ⚠ no canto), para aplicar à mão no artefato.

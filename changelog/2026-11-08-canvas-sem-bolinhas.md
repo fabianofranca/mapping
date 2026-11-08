@@ -1,4 +1,4 @@
-# Canvas sem bolinhas — [Não lançado] (épico `epic/canvas-sem-bolinhas`, PR #0, MCP 0.28.4, schema v18)
+# Canvas sem bolinhas — 2026-11-08 (épico `epic/canvas-sem-bolinhas`, PR #986, MCP 0.28.4, schema v18)
 
 ## Alterado
 
