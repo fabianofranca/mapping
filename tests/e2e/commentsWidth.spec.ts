@@ -95,15 +95,50 @@ test.describe('altura inicial da janela inferior (900 × 720, sem altura gravada
 
   test('Comentários mostra 4 linhas inteiras da lista sem rolar', async ({ page }) => {
     await openComments(page, 'Todas');
-    // O exemplo pode ter menos de 4 conversas: mede pela altura de uma linha.
+    // O exemplo tem 3 conversas e, no layout estreito, âncoras longas quebram em duas linhas
+    // (37 e 53 px): as 4 linhas somam as que existem mais a mais alta para cada uma que falta.
     const sizes = await page.locator('.comments-view .list-scroll').evaluate((el) => {
-      const row = el.querySelector('.comments-row')?.getBoundingClientRect();
-      return { client: el.clientHeight, row: row?.height ?? 0 };
+      const rows = [...el.querySelectorAll('.comments-row')].map(
+        (r) => r.getBoundingClientRect().height,
+      );
+      const tallest = Math.max(0, ...rows);
+      const four = [...rows.slice(0, 4)];
+      while (four.length < 4) four.push(tallest);
+      return { client: el.clientHeight, need: four.reduce((a, b) => a + b, 0) };
     });
-    expect(sizes.row).toBeGreaterThan(0);
+    expect(sizes.need).toBeGreaterThan(0);
     expect(
       sizes.client,
-      `.list-scroll clientHeight ${sizes.client} < 4 × linha ${4 * sizes.row}`,
-    ).toBeGreaterThanOrEqual(4 * sizes.row);
+      `.list-scroll clientHeight ${sizes.client} < 4 linhas inteiras (${sizes.need})`,
+    ).toBeGreaterThanOrEqual(sizes.need);
+  });
+});
+
+test.describe('faixa de abas da janela inferior (900 × 720)', () => {
+  test.use({ viewport: { width: 900, height: 720 } });
+
+  // Folga mínima (px) entre a última aba e a borda da faixa: cobre fontes mais largas de outras
+  // máquinas e contagens de mais dígitos (o relato da CL2 e o CI medem 362 a 363 px de conteúdo para 356 antes do ajuste; aqui, com a fonte local, a folga é maior).
+  const SLACK = 12;
+
+  test('as seis abas cabem inteiras, sem rolar e com folga', async ({ page }) => {
+    await openComments(page, 'Todas');
+    const strip = page.locator('.tool-window-bottom [role=tablist]');
+    const sizes = await strip.evaluate((el) => ({
+      s: el.scrollWidth,
+      c: el.clientWidth,
+      left: el.scrollLeft,
+      lastRight:
+        el.querySelector('[role=tab]:last-of-type')?.getBoundingClientRect().right ?? 0,
+      right: el.getBoundingClientRect().right,
+    }));
+    expect(
+      sizes.s,
+      `faixa de abas: scrollWidth ${sizes.s} > clientWidth ${sizes.c} (scrollLeft ${sizes.left})`,
+    ).toBeLessThanOrEqual(sizes.c);
+    expect(
+      sizes.right - sizes.lastRight,
+      `folga ${sizes.right - sizes.lastRight} px < ${SLACK} px entre a última aba e a borda da faixa`,
+    ).toBeGreaterThanOrEqual(SLACK);
   });
 });
