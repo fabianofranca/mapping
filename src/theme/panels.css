@@ -1034,6 +1034,26 @@ button.tree-toggle:hover {
   text-align: left;
 }
 
+/* Âncora truncada e ponto de não lida na mesma linha: a linha nunca passa de uma linha de texto. */
+.comments-anchor-line {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.comments-anchor-line > .comments-anchor-button,
+.comments-anchor-line > .comments-anchor-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comments-anchor-line > .comments-unread-dot {
+  flex: none;
+}
+
 .comments-count {
   text-align: right;
 }

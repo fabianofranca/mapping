@@ -249,9 +249,9 @@ interface AnchorCellProps {
 
 function AnchorCell({ anchor, plain, selected, unread }: AnchorCellProps) {
   return (
-    <>
+    <div class="comments-anchor-line">
       {plain ? (
-        <span>{anchor}</span>
+        <span class="comments-anchor-text">{anchor}</span>
       ) : (
         <button
           type="button"
@@ -263,7 +263,7 @@ function AnchorCell({ anchor, plain, selected, unread }: AnchorCellProps) {
         </button>
       )}
       {unread && <span class="comments-unread-dot" title={t('comments.unread')} />}
-    </>
+    </div>
   );
 }
 

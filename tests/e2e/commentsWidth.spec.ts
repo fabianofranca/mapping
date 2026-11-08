@@ -1,19 +1,37 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
+import JSZip from 'jszip';
 
 // Janela Comentários (#734, CL1): sem barra horizontal, com o ⋯ de cada linha inteiro e o selo de
 // status dentro da célula, de 887 px (1591 × 1052) até a janela estreita de 900 × 720, onde
 // Msgs e Quando somem e Por mostra só o avatar. Árvore, Camadas e Detalhes ficam abertos.
 
-async function openComments(page: Page, status: 'Todas' | 'Resolvidas'): Promise<void> {
+const EXAMPLE_ZIP = 'examples/exemplo-completo.zip';
+const FIRST_THREAD = 'comments/5d0e8a41-2c7b-4f1e-9a63-b8c1d4e7f902.json';
+
+/** O exemplo com uma 4ª conversa aberta (cópia da primeira, âncora longa e não lida). */
+async function exampleWithFourThreads(): Promise<Buffer> {
+  const zip = await JSZip.loadAsync(readFileSync(EXAMPLE_ZIP));
+  const first = JSON.parse(await zip.file(FIRST_THREAD)!.async('string')) as {
+    id: string;
+    messages: { id: string }[];
+  };
+  const id = '7a1d3c52-9e04-4b86-8c2f-3d5e6f7a8b90';
+  first.id = id;
+  first.messages[0]!.id = '1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f';
+  zip.file(`comments/${id}.json`, JSON.stringify(first));
+  return zip.generateAsync({ type: 'nodebuffer' });
+}
+
+async function openComments(
+  page: Page,
+  status: 'Todas' | 'Resolvidas',
+  buffer: Buffer = readFileSync(EXAMPLE_ZIP),
+): Promise<void> {
   await page.goto('/');
   await page
     .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
-    .setInputFiles({
-      name: 'exemplo-completo.zip',
-      mimeType: 'application/zip',
-      buffer: readFileSync('examples/exemplo-completo.zip'),
-    });
+    .setInputFiles({ name: 'exemplo-completo.zip', mimeType: 'application/zip', buffer });
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
   for (const n of ['1', '2', '3', '0']) await page.keyboard.press(`Control+Shift+${n}`);
   await page.getByRole('combobox', { name: 'Status', exact: true }).selectOption({
@@ -93,24 +111,27 @@ for (const status of ['Todas', 'Resolvidas'] as const) {
 test.describe('altura inicial da janela inferior (900 × 720, sem altura gravada)', () => {
   test.use({ viewport: { width: 900, height: 720 } });
 
-  test('Comentários mostra 4 linhas inteiras da lista sem rolar', async ({ page }) => {
-    await openComments(page, 'Todas');
-    // O exemplo tem 3 conversas e, no layout estreito, âncoras longas quebram em duas linhas
-    // (37 e 53 px): as 4 linhas somam as que existem mais a mais alta para cada uma que falta.
+  test('Comentários mostra 4 linhas inteiras, todas com a altura de uma linha', async ({
+    page,
+  }) => {
+    await openComments(page, 'Todas', await exampleWithFourThreads());
+    // O ponto de não lida fica na mesma linha da âncora: nenhuma linha passa de uma linha de texto.
     const sizes = await page.locator('.comments-view .list-scroll').evaluate((el) => {
-      const rows = [...el.querySelectorAll('.comments-row')].map(
-        (r) => r.getBoundingClientRect().height,
-      );
-      const tallest = Math.max(0, ...rows);
-      const four = [...rows.slice(0, 4)];
-      while (four.length < 4) four.push(tallest);
-      return { client: el.clientHeight, need: four.reduce((a, b) => a + b, 0) };
+      const rows = [...el.querySelectorAll('.comments-row')];
+      const heights = rows.map((r) => r.getBoundingClientRect().height);
+      const box = el.getBoundingClientRect();
+      const last = rows[rows.length - 1]!.getBoundingClientRect();
+      return { client: el.clientHeight, heights, hidden: last.bottom - box.bottom };
     });
-    expect(sizes.need).toBeGreaterThan(0);
+    expect(sizes.heights).toHaveLength(4);
     expect(
-      sizes.client,
-      `.list-scroll clientHeight ${sizes.client} < 4 linhas inteiras (${sizes.need})`,
-    ).toBeGreaterThanOrEqual(sizes.need);
+      new Set(sizes.heights).size,
+      `alturas das linhas: ${sizes.heights.join(', ')}`,
+    ).toBe(1);
+    expect(
+      sizes.hidden,
+      `.list-scroll clientHeight ${sizes.client}: a 4ª linha passa ${sizes.hidden} px da borda`,
+    ).toBeLessThanOrEqual(0);
   });
 });
 

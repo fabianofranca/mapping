@@ -13,3 +13,4 @@
 - A faixa de abas da janela inferior cabe inteira a 900 × 720 (a primeira aba, **Lista**, não é mais cortada nem a faixa rola): a contagem das abas ficou mais justa.
 - A 900 × 720 a janela **Comentários** mostra de fato 4 linhas inteiras da lista, também com âncoras longas quebradas em duas linhas: no layout estreito os filtros ficam em duas linhas de duas (**Status** e **Usuário**; busca e **Citam a seleção**) em vez de quatro empilhados.
 - Na aba **Resolvidas** (e em **Todas**), a âncora da conversa resolvida aparece riscada e em cinza; antes o texto continuava sublinhado e escuro.
+- Na janela **Comentários**, o ponto de "não lida" fica na mesma linha da âncora (que corta com reticências): todas as linhas têm a altura de uma linha e as 4 linhas aparecem inteiras a 900 × 720, também com 4 conversas.
