@@ -1,4 +1,4 @@
-# Ajustes da rodada das perspectivas — 2026-11-08 (épico `epic/perspectivas-ajustes`, PR #931, MCP 0.28.2, schema v18)
+# Ajustes da rodada das perspectivas — 2026-11-08 (épico `epic/perspectivas-ajustes`, PR #931, MCP 0.28.3, schema v18)
 
 ## Corrigido
 
