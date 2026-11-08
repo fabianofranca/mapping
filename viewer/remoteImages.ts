@@ -18,9 +18,9 @@ import {
   type RemoteImageView,
 } from '../src/canvas/components/imageLoader';
 import { checkRemoteImageUrl } from '../src/model/remoteImages';
+import type { AllowOrigin } from './allowOrigin';
 
-/** O hospedeiro decide por origem (`https://cdn.exemplo.com`); lançar equivale a recusar. */
-export type AllowOrigin = (origin: string) => boolean;
+export type { AllowOrigin };
 
 export interface ViewerRemoteImages {
   /** O estado da URL (inicia a carga se for preciso; nunca lança). */

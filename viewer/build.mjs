@@ -16,35 +16,9 @@ import { execFileSync } from 'node:child_process';
 import process from 'node:process';
 import { access, copyFile, writeFile } from 'node:fs/promises';
 import { build } from 'esbuild';
-
-// Versão do pacote: sobe junto com mudanças da API (exports, assinaturas, comportamento).
-const VIEWER_VERSION = '0.4.0';
+import { packageJson } from './packageManifest.mjs';
 
 const OUT = 'dist-viewer';
-
-// Sem `sideEffects: false` de propósito: o núcleo ajusta `Konva.pixelRatio` ao carregar.
-// Sem `license`: o repositório ainda não tem arquivo LICENSE.
-const packageJson = {
-  name: 'mapping-viewer',
-  version: VIEWER_VERSION,
-  description:
-    'Visualizador embutível do Mapping: desenha uma tela de componentes (Konva), com núcleo sem framework e invólucro React.',
-  type: 'module',
-  files: ['*.js', '*.js.map', 'types', 'README.md'],
-  exports: {
-    '.': {
-      types: './types/viewer/index.d.ts',
-      import: './mapping-viewer.js',
-    },
-    './react': {
-      types: './types/viewer/react.d.ts',
-      import: './mapping-viewer-react.js',
-    },
-  },
-  types: './types/viewer/index.d.ts',
-  peerDependencies: { react: '>=18' },
-  peerDependenciesMeta: { react: { optional: true } },
-};
 
 execFileSync(
   process.execPath,
