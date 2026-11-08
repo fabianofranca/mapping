@@ -8,13 +8,13 @@ Dentro de `dist-viewer/` (a pasta gerada por `npm run build:viewer` no repositó
 
 ```bash
 npm pack
-# gera mapping-viewer-0.4.0.tgz
+# gera mapping-viewer-0.4.1.tgz
 ```
 
 No projeto que vai usar:
 
 ```bash
-npm install ./mapping-viewer-0.4.0.tgz
+npm install ./mapping-viewer-0.4.1.tgz
 ```
 
 Também dá para copiar a pasta `dist-viewer/` inteira para o projeto e importar `mapping-viewer.js` por caminho.
@@ -53,6 +53,8 @@ import { MappingViewer } from 'mapping-viewer/react';
   fontsVersion={fontsVersion}
 />;
 ```
+
+`konva` é peer dependency (a faixa vem do `package.json` do Mapping): só pelos tipos, porque o `ScreenRenderer` expõe `Konva.Group` nas declarações. O npm 7 ou mais novo o instala sozinho e o seu projeto compila com `skipLibCheck: false`; o código usa a cópia do Konva embutida no bundle.
 
 `react` é peer dependency **opcional**: só quem importa `mapping-viewer/react` precisa dele (18 ou mais novo).
 

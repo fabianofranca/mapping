@@ -4,6 +4,13 @@
 // aqui as imagens remotas (`crossOrigin`, `referrerPolicy`, limites, cache).
 
 import { signal, type ReadonlySignal } from '@preact/signals';
+import type { RemoteImageView } from './remoteImageTypes';
+
+export type {
+  RemoteImageState,
+  RemoteImageView,
+  RemoteImageViewState,
+} from './remoteImageTypes';
 
 const DATA_URL = /^data:/i;
 
@@ -33,24 +40,6 @@ export function loadEmbeddedImage(
 // política de URL: quem a chama (`remoteImages.ts`) só pede uma URL que já passou pelas duas
 // portas da app. Aqui ficam os limites (concorrência, tempo, tamanho), o bitmap reduzido, o
 // cache em memória e a única nova tentativa sem CORS.
-
-/** Estados que o carregador conhece. `blocked-consent` e `invalid` vêm das portas da app. */
-export type RemoteImageState = 'loading' | 'loaded' | 'opaque' | 'failed' | 'too-large';
-
-/** Estado de uma imagem para o desenho: os do carregador mais os das duas portas. */
-export type RemoteImageViewState = RemoteImageState | 'blocked-consent' | 'invalid';
-
-/** O que o desenho recebe de uma URL remota. Só `loaded` e `opaque` trazem `image`. */
-export interface RemoteImageView {
-  readonly state: RemoteImageViewState;
-  /** Bitmap reduzido (ou o próprio elemento, sem `createImageBitmap`). */
-  readonly image?: CanvasImageSource;
-  /** Tamanho da fonte `image`, em pixels (é nele que o `fit` calcula o recorte). */
-  readonly width?: number;
-  readonly height?: number;
-  /** Por que `failed`, para o Diagnóstico (`timeout` = estourou o tempo limite). */
-  readonly reason?: 'failed' | 'timeout';
-}
 
 export interface RemoteImageRequest {
   /** Interruptor "Mostrar imagens de servidores sem CORS" (decisão 17). */

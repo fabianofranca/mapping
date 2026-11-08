@@ -9,7 +9,7 @@
  */
 export { createViewer } from './viewer';
 export type { Viewer, ViewerInput, ViewerOptions } from './viewer';
-export type { AllowOrigin } from './remoteImages';
+export type { AllowOrigin } from './allowOrigin';
 export { ScreenRenderer } from '../src/canvas/components/screenRenderer';
 export type {
   InstanceWarnings,
