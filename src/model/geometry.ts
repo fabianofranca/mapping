@@ -108,32 +108,23 @@ export function slideToTouch(
   const lands = moving.map((r) => ({ ...r, x: r.x + dx, y: r.y + dy }));
   // Destino livre: fica como está (inclusive "passando por cima" de um container no caminho).
   if (!lands.some((m) => fixed.some((f) => rectsOverlap(m, f)))) return { dx, dy };
-  const limitedX = limitAxis(moving, fixed, dx, 'x');
-  const shifted = moving.map((r) => ({ ...r, x: r.x + limitedX }));
-  const limitedY = limitAxis(shifted, fixed, dy, 'y');
+  const limitedX = limitX(moving, fixed, dx);
+  const flip = (r: Rect): Rect => ({ x: r.y, y: r.x, width: r.height, height: r.width });
+  const limitedY = limitX(
+    moving.map((r) => flip({ ...r, x: r.x + limitedX })),
+    fixed.map(flip),
+    dy,
+  );
   return { dx: limitedX, dy: limitedY };
 }
 
-function limitAxis(
-  moving: readonly Rect[],
-  fixed: readonly Rect[],
-  delta: number,
-  axis: 'x' | 'y',
-): number {
-  if (delta === 0) return 0;
-  const [pos, size, crossPos, crossSize] =
-    axis === 'x'
-      ? (['x', 'width', 'y', 'height'] as const)
-      : (['y', 'height', 'x', 'width'] as const);
+/** O maior deslocamento em x, até `delta`, sem passar de um fixo que o y atual cruza. */
+function limitX(moving: readonly Rect[], fixed: readonly Rect[], delta: number): number {
   let limit = Math.abs(delta);
   for (const m of moving) {
     for (const f of fixed) {
-      // Só atrapalha quem o outro eixo cruza (estrito, como `rectsOverlap`).
-      const crosses =
-        m[crossPos] < f[crossPos] + f[crossSize] - EPSILON &&
-        f[crossPos] < m[crossPos] + m[crossSize] - EPSILON;
-      if (!crosses) continue;
-      const gap = delta > 0 ? f[pos] - (m[pos] + m[size]) : m[pos] - (f[pos] + f[size]);
+      if (m.y >= bottom(f) - EPSILON || f.y >= bottom(m) - EPSILON) continue;
+      const gap = delta > 0 ? f.x - right(m) : m.x - right(f);
       if (gap >= -EPSILON) limit = Math.min(limit, Math.max(0, gap));
     }
   }

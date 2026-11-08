@@ -162,10 +162,7 @@ export function moveItems(
   for (const item of moving) requireUnlocked(canEditItemGeometry(p, item));
 
   const index = projectIndex(p);
-  const sharesCanvasDelta = moving.some(
-    (item) =>
-      item.kind === 'marking' && index.markings.get(item.id)?.containerId === null,
-  );
+  const sharesCanvasDelta = hasCanvasMarking(p, moving);
   const canvasDx = sharesCanvasDelta ? Math.round(dx) : dx;
   const canvasDy = sharesCanvasDelta ? Math.round(dy) : dy;
 
@@ -210,6 +207,14 @@ export function moveItems(
   return applyMoves(p, placements, rects, options);
 }
 
+/** Algum item que anda é marcação do canvas (o deslocamento do canvas é inteiro). */
+function hasCanvasMarking(p: Project, moving: readonly ItemRef[]): boolean {
+  const { markings } = projectIndex(p);
+  return moving.some(
+    (item) => item.kind === 'marking' && markings.get(item.id)?.containerId === null,
+  );
+}
+
 /**
  * O deslocamento do arrasto conjunto depois de encostar (decisão 4 da etapa #764): quando `dx`,
  * `dy` fariam um container que anda sobrepor um que NÃO anda, devolve o maior deslocamento sem
@@ -225,15 +230,10 @@ export function limitItemsMove(
   dx: number,
   dy: number,
 ): { readonly dx: number; readonly dy: number } {
-  if (!Number.isFinite(dx) || !Number.isFinite(dy)) return { dx, dy };
-  const index = projectIndex(p);
   const moving = movingItems(p, items);
   const ids = new Set(moving.filter((m) => m.kind === 'image').map((m) => m.id));
   if (ids.size === 0 || (dx === 0 && dy === 0)) return { dx, dy };
-  const sharesCanvasDelta = moving.some(
-    (item) =>
-      item.kind === 'marking' && index.markings.get(item.id)?.containerId === null,
-  );
+  const sharesCanvasDelta = hasCanvasMarking(p, moving);
   const [wantedX, wantedY] = sharesCanvasDelta
     ? [Math.round(dx), Math.round(dy)]
     : [dx, dy];

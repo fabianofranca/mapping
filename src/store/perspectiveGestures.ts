@@ -122,15 +122,15 @@ function touchingViewDelta(
   for (const root of roots) {
     for (const c of members.get(root)?.containers ?? []) moved.add(c.id);
   }
-  if (moved.size === 0) return { dx, dy };
   const whole = roots.some((root) => model.isMarkingRoot(p, root));
   const shown = model.perspectiveView(p, perspective).containers;
   const footprint = (c: ProjectContainer) => model.imageCanvasRect(c, c.placement);
+  const round = whole ? Math.round : (v: number) => v;
   const limited = model.slideToTouch(
     shown.filter((c) => moved.has(c.id)).map(footprint),
     shown.filter((c) => !moved.has(c.id)).map(footprint),
-    whole ? Math.round(dx) : dx,
-    whole ? Math.round(dy) : dy,
+    round(dx),
+    round(dy),
   );
   return whole ? { dx: Math.trunc(limited.dx), dy: Math.trunc(limited.dy) } : limited;
 }

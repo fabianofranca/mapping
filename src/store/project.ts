@@ -128,8 +128,9 @@ function touchingPlacement(
     wantedX,
     wantedY,
   );
-  if (dx === wantedX && dy === wantedY) return placement;
-  return { ...placement, x: own.placement.x + dx, y: own.placement.y + dy };
+  return dx === wantedX && dy === wantedY
+    ? placement
+    : { ...placement, x: own.placement.x + dx, y: own.placement.y + dy };
 }
 
 export function createProjectActions(store: ProjectStore, deps: ActionDeps = {}) {
