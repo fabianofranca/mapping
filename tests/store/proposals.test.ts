@@ -677,6 +677,31 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     expect(await h.review.apply()).toMatchObject({ ok: true, applied: 5, files: 1 });
   });
 
+  it('desfazer a aplicação com o proposal.json falhando: o passo é revertido, a proposta continua aplicada em disco e o erro fica à vista', async () => {
+    const h = await readyToApply();
+    expect(await h.review.apply()).toMatchObject({ ok: true });
+    const store = h.session.store;
+    const applied = store.project.value;
+    const dir = h.root.dirs.get('proposals')?.dirs.get('P1');
+    if (!dir) throw new Error('sem a pasta da proposta');
+    dir.failWrites = new Error('disco cheio');
+
+    expect(store.undo()).toBe(true);
+    // Enquanto a gravação não termina, o histórico fica parado.
+    expect(store.canUndo.value).toBe(false);
+    expect(store.canRedo.value).toBe(false);
+    expect(store.undo()).toBe(false);
+    await h.session.proposals.settled();
+    await vi.waitFor(() => expect(store.linkFailure.value).not.toBeNull());
+
+    expect(store.linkFailure.value?.error).toBe('write-failed');
+    expect(store.project.value).toBe(applied);
+    expect(store.canUndo.value).toBe(true);
+    expect(store.canRedo.value).toBe(false);
+    dir.failWrites = null;
+    expect((await diskProposal(h.root)).status).toBe('applied');
+  });
+
   /**
    * Segura a próxima gravação do `proposal.json`: `reached` resolve quando ela começa (o
    * projeto já foi aplicado e o `mapping.json` gravado); `release()` a deixa seguir, ou

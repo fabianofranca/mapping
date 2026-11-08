@@ -31,8 +31,22 @@ export type StoreErrorCode =
  */
 export interface HistoryLink {
   readonly tag: string;
-  readonly undo: () => void;
-  readonly redo: () => void;
+  /**
+   * Desfazer/refazer o efeito. A promessa traz o resultado da gravação: enquanto está
+   * pendente o histórico fica parado, e uma falha reverte o passo. Sem promessa (efeito
+   * síncrono), vale como sucesso.
+   */
+  readonly undo: () => Promise<LinkResult> | undefined;
+  readonly redo: () => Promise<LinkResult> | undefined;
+}
+
+export type LinkResult =
+  { readonly ok: true } | { readonly ok: false; readonly error: string };
+
+/** A última falha de um vínculo (o passo foi revertido); `seq` distingue falhas iguais seguidas. */
+export interface LinkFailure {
+  readonly seq: number;
+  readonly error: string;
 }
 
 export interface ApplyOptions {
@@ -79,7 +93,8 @@ export interface ProjectStore {
   readonly gestureActive: ReadonlySignal<boolean>;
   /**
    * Revisão de uma proposta aberta (etapa 4): o projeto fica somente leitura, e só as
-   * entradas ligadas à revisão (`ApplyOptions.link`) podem ser aplicadas, desfeitas e refeitas.
+   * entradas ligadas à proposta aberta (`ApplyOptions.link`, com `link.tag` igual ao id
+   * dela) podem ser aplicadas, desfeitas e refeitas.
    */
   readonly reviewing: ReadonlySignal<boolean>;
   /**
@@ -87,6 +102,8 @@ export interface ProjectStore {
    * usa este para desabilitar o que seria recusado (desenhar, adicionar imagens, travar…).
    */
   readonly locked: ReadonlySignal<boolean>;
+  /** Falha da gravação ao desfazer/refazer uma aplicação; a interface mostra o erro. */
+  readonly linkFailure: ReadonlySignal<LinkFailure | null>;
 
   /**
    * Arquivos de imagem referenciados pelo projeto atual ou por qualquer
@@ -97,7 +114,8 @@ export interface ProjectStore {
 
   load(project: Project, options?: LoadOptions): void;
   close(): void;
-  setReviewing(reviewing: boolean): void;
+  /** Liga a revisão da proposta de id `tag`, ou a desliga com `null`. */
+  setReviewing(tag: string | null): void;
   /** Aplica a operação e cria uma entrada no histórico. */
   apply(op: Operation, options?: ApplyOptions): ActionResult;
   /**
@@ -142,8 +160,13 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
   const readOnly = signal(false);
   const past = signal<readonly Frame[]>([]);
   const future = signal<readonly Frame[]>([]);
-  const reviewing = signal(false);
+  const reviewTag = signal<string | null>(null);
+  const reviewing = computed(() => reviewTag.value !== null);
   const revision = signal(0);
+  /** Há um desfazer/refazer de vínculo esperando a gravação: o histórico fica parado. */
+  const linkPending = signal(false);
+  const linkFailure = signal<LinkFailure | null>(null);
+  let linkSeq = 0;
   /** Projeto no início do gesto em andamento; `null` quando não há gesto. */
   const gestureBase = signal<Project | null>(null);
 
@@ -155,12 +178,34 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
     return { ok: true, value: current };
   };
 
-  const runLink = (run: () => void) => {
+  /**
+   * Roda o efeito do vínculo. Assíncrono: o histórico para até a gravação terminar; se
+   * falha, `revert` devolve o passo (só se nada mais mudou o projeto desde então).
+   */
+  const runLink = (run: () => Promise<LinkResult> | undefined, revert: () => void) => {
+    let pending: Promise<LinkResult> | undefined;
     try {
-      run();
+      pending = run();
     } catch (e) {
       reportError('history.link', e);
+      return;
     }
+    if (!pending) return;
+    const token = ++linkSeq;
+    const stepped = project.peek();
+    linkPending.value = true;
+    const settle = (result: LinkResult) => {
+      batch(() => {
+        if (token === linkSeq) linkPending.value = false;
+        if (result.ok) return;
+        if (project.peek() === stepped) revert();
+        linkFailure.value = { seq: token, error: result.error };
+      });
+    };
+    pending.then(settle, (e: unknown) => {
+      reportError('history.link', e);
+      settle({ ok: false, error: 'failed' });
+    });
   };
 
   const commit = (before: Project, after: Project, link: HistoryLink | null = null) => {
@@ -181,21 +226,24 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       const top = past.value.at(-1);
       return (
         top !== undefined &&
+        !linkPending.value &&
         gestureBase.value === null &&
-        (!reviewing.value || top.link !== null)
+        (reviewTag.value === null || top.link?.tag === reviewTag.value)
       );
     }),
     canRedo: computed(() => {
       const top = future.value[0];
       return (
         top !== undefined &&
+        !linkPending.value &&
         gestureBase.value === null &&
-        (!reviewing.value || top.link !== null)
+        (reviewTag.value === null || top.link?.tag === reviewTag.value)
       );
     }),
     gestureActive: computed(() => gestureBase.value !== null),
     reviewing,
     locked: computed(() => readOnly.value || reviewing.value),
+    linkFailure,
 
     referencedImageFiles() {
       const files = new Set<string>();
@@ -221,6 +269,7 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
         future.value = [];
         gestureBase.value = null;
         revision.value = 0;
+        linkPending.value = false;
       });
     },
 
@@ -228,15 +277,16 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       batch(() => {
         project.value = null;
         readOnly.value = false;
-        reviewing.value = false;
+        reviewTag.value = null;
         past.value = [];
         future.value = [];
         gestureBase.value = null;
+        linkPending.value = false;
       });
     },
 
-    setReviewing(value) {
-      reviewing.value = value;
+    setReviewing(tag) {
+      reviewTag.value = tag;
     },
 
     apply(op, options = {}) {
@@ -269,13 +319,22 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       const previous = past.value.at(-1);
       const current = project.value;
       if (!previous || !current || gestureBase.value || readOnly.value) return false;
-      if (reviewing.value && previous.link === null) return false;
+      if (linkPending.value) return false;
+      if (reviewTag.value !== null && previous.link?.tag !== reviewTag.value)
+        return false;
       past.value = past.value.slice(0, -1);
       future.value = [{ project: current, link: previous.link }, ...future.value];
       project.value = touchProject(previous.project, now());
       revision.value++;
       const link = previous.link;
-      if (link) runLink(link.undo);
+      if (link) {
+        runLink(link.undo, () => {
+          past.value = [...past.value, previous].slice(-HISTORY_LIMIT);
+          future.value = future.value.slice(1);
+          project.value = current;
+          revision.value++;
+        });
+      }
       return true;
     },
 
@@ -283,7 +342,8 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       const [next, ...rest] = future.value;
       const current = project.value;
       if (!next || !current || gestureBase.value || readOnly.value) return false;
-      if (reviewing.value && next.link === null) return false;
+      if (linkPending.value) return false;
+      if (reviewTag.value !== null && next.link?.tag !== reviewTag.value) return false;
       future.value = rest;
       past.value = [...past.value, { project: current, link: next.link }].slice(
         -HISTORY_LIMIT,
@@ -291,7 +351,14 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       project.value = touchProject(next.project, now());
       revision.value++;
       const link = next.link;
-      if (link) runLink(link.redo);
+      if (link) {
+        runLink(link.redo, () => {
+          past.value = past.value.slice(0, -1);
+          future.value = [next, ...future.value];
+          project.value = current;
+          revision.value++;
+        });
+      }
       return true;
     },
 

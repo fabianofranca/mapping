@@ -475,7 +475,7 @@ describe('revisão de proposta (decisão 26)', () => {
   it('a janela fica só para leitura, com o aviso, sem Nova conversa nem Apagar', async () => {
     const { harness, user } = await mount([WAITING_HUMAN]);
     act(() => {
-      harness.store.setReviewing(true);
+      harness.store.setReviewing('R');
       harness.ui.selection.value = { kind: 'marking', id: 'M1' };
     });
     expect(screen.getByText(t('comments.reviewNotice'))).toBeTruthy();

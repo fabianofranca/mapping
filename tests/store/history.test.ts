@@ -583,8 +583,8 @@ describe('store: revisão de propostas (etapa 4)', () => {
     const calls: string[] = [];
     const link = {
       tag: 'P1',
-      undo: () => calls.push('undo'),
-      redo: () => calls.push('redo'),
+      undo: () => void calls.push('undo'),
+      redo: () => void calls.push('redo'),
     };
     return { calls, link };
   }
@@ -592,7 +592,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
   it('durante a revisão o projeto é somente leitura: apply, gestos e desfazer são recusados', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'Antes');
-    store.setReviewing(true);
+    store.setReviewing('P1');
 
     expect(store.reviewing.value).toBe(true);
     expect(actions.renameLayer('L1', 'Depois')).toEqual({
@@ -604,7 +604,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
     expect(store.undo()).toBe(false);
     expect(project(store).layers[0]?.name).toBe('Antes');
 
-    store.setReviewing(false);
+    store.setReviewing(null);
     expect(actions.renameLayer('L1', 'Depois')).toEqual({ ok: true, value: undefined });
     expect(store.undo()).toBe(true);
   });
@@ -612,7 +612,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
   it('uma entrada com efeito (a aplicação das aceitas) passa pelo bloqueio e desfaz e refaz o efeito junto', () => {
     const { store } = setup();
     const { calls, link } = linked();
-    store.setReviewing(true);
+    store.setReviewing('P1');
     const original = project(store);
 
     const result = store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), { link });
@@ -633,7 +633,7 @@ describe('store: revisão de propostas (etapa 4)', () => {
   it('na revisão só dá para desfazer entradas da própria revisão, não as de antes', () => {
     const { store, actions } = setup();
     actions.renameLayer('L1', 'De antes');
-    store.setReviewing(true);
+    store.setReviewing('P1');
     const { calls, link } = linked();
     store.apply((p) => renameLayer(p, 'L2', 'Da revisão'), { link });
 
@@ -642,9 +642,36 @@ describe('store: revisão de propostas (etapa 4)', () => {
     // A entrada anterior é de uma edição normal: fica para depois da revisão.
     expect(store.canUndo.value).toBe(false);
     expect(store.undo()).toBe(false);
-    store.setReviewing(false);
+    store.setReviewing(null);
     expect(store.undo()).toBe(true);
     expect(calls).toEqual(['undo']);
+  });
+
+  it('na revisão de P2, uma entrada com vínculo de P1 não desfaz nem refaz; na de P1, sim', () => {
+    const { store } = setup();
+    const { calls, link } = linked();
+    store.apply((p) => renameLayer(p, 'L1', 'Aplicado por P1'), { link });
+    const withP1 = project(store);
+
+    store.setReviewing('P2');
+    expect(store.canUndo.value).toBe(false);
+    expect(store.undo()).toBe(false);
+    expect(calls).toEqual([]);
+    expect(project(store)).toBe(withP1);
+
+    store.setReviewing('P1');
+    expect(store.undo()).toBe(true);
+    expect(calls).toEqual(['undo']);
+    expect(store.canRedo.value).toBe(true);
+
+    store.setReviewing('P2');
+    expect(store.canRedo.value).toBe(false);
+    expect(store.redo()).toBe(false);
+    expect(calls).toEqual(['undo']);
+
+    store.setReviewing('P1');
+    expect(store.redo()).toBe(true);
+    expect(calls).toEqual(['undo', 'redo']);
   });
 
   it('o projeto só leitura (schema novo) continua recusando até as entradas da revisão', () => {
@@ -676,8 +703,8 @@ describe('store: revisão de propostas (etapa 4)', () => {
     const { calls, link } = linked();
     const other = {
       tag: 'P2',
-      undo: () => calls.push('undo-P2'),
-      redo: () => calls.push('redo-P2'),
+      undo: () => void calls.push('undo-P2'),
+      redo: () => void calls.push('redo-P2'),
     };
     store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), { link });
     actions.renameLayer('L2', 'Normal');
@@ -718,10 +745,91 @@ describe('store: revisão de propostas (etapa 4)', () => {
 
   it('fechar o projeto desliga a revisão; carregar outro (recarga externa) não', () => {
     const { store } = setup();
-    store.setReviewing(true);
+    store.setReviewing('P1');
     store.load(sampleProject());
     expect(store.reviewing.value).toBe(true);
     store.close();
     expect(store.reviewing.value).toBe(false);
+  });
+});
+
+describe('store: vínculo assíncrono do histórico (desfazer espera a gravação da proposta)', () => {
+  function deferred() {
+    let resolve: (r: { ok: true } | { ok: false; error: string }) => void = () => {};
+    const promise = new Promise<{ ok: true } | { ok: false; error: string }>((r) => {
+      resolve = r;
+    });
+    return { promise, resolve };
+  }
+
+  function asyncLinked() {
+    const pending: ReturnType<typeof deferred>[] = [];
+    const next = () => {
+      const d = deferred();
+      pending.push(d);
+      return d.promise;
+    };
+    return { pending, link: { tag: 'P1', undo: next, redo: next } };
+  }
+
+  it('com o desfazer pendente, canUndo/canRedo ficam falsos e undo/redo recusam; resolvido, voltam', async () => {
+    const { store } = setup();
+    const { pending, link } = asyncLinked();
+    store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), { link });
+
+    expect(store.undo()).toBe(true);
+    expect(store.canUndo.value).toBe(false);
+    expect(store.canRedo.value).toBe(false);
+    expect(store.undo()).toBe(false);
+    expect(store.redo()).toBe(false);
+
+    pending[0]?.resolve({ ok: true });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(store.canRedo.value).toBe(true);
+    expect(store.redo()).toBe(true);
+    expect(store.canUndo.value).toBe(false);
+    pending[1]?.resolve({ ok: true });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(store.canUndo.value).toBe(true);
+  });
+
+  it('falha da gravação no desfazer: o passo é revertido (projeto e pilhas) e o erro fica à vista', async () => {
+    const { store } = setup();
+    const { pending, link } = asyncLinked();
+    store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), { link });
+    const applied = project(store);
+
+    expect(store.undo()).toBe(true);
+    pending[0]?.resolve({ ok: false, error: 'write-failed' });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(project(store).layers.find((l) => l.id === 'L1')?.name).toBe('Aplicado');
+    expect(project(store).layers).toEqual(applied.layers);
+    expect(store.canUndo.value).toBe(true);
+    expect(store.canRedo.value).toBe(false);
+    expect(store.linkFailure.value?.error).toBe('write-failed');
+  });
+
+  it('falha da gravação no refazer: o passo é revertido e o erro fica à vista', async () => {
+    const { store } = setup();
+    const { pending, link } = asyncLinked();
+    store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), { link });
+    store.undo();
+    pending[0]?.resolve({ ok: true });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(store.redo()).toBe(true);
+    pending[1]?.resolve({ ok: false, error: 'write-failed' });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(project(store).layers.find((l) => l.id === 'L1')?.name).not.toBe('Aplicado');
+    expect(store.canRedo.value).toBe(true);
+    expect(store.canUndo.value).toBe(false);
+    expect(store.linkFailure.value?.error).toBe('write-failed');
   });
 });

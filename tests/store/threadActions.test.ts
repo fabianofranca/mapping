@@ -42,7 +42,7 @@ async function setup(
   });
   const projectStore = createProjectStore({ now: () => NOW });
   projectStore.load(sampleProject(), { readOnly: options.readOnly === true });
-  if (options.reviewing) projectStore.setReviewing(true);
+  if (options.reviewing) projectStore.setReviewing('R');
   const me = signal<Identity | null>(
     options.identity === undefined ? ME : options.identity,
   );
