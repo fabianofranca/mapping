@@ -21,6 +21,7 @@ import {
   type ItemRef,
   type Project,
 } from '../../src/model';
+import { expectLinearGrowth, GROWTH_OPTIONS } from '../support/growth';
 import { buildLargeProject } from './largeProject';
 import { buildLargeTypedProject } from './largeTypedProject';
 
@@ -219,4 +220,36 @@ describe('projeto grande com tipadas e referências', () => {
       expect(median(runs)).toBeLessThan(FRAME_BUDGET_MS * 4);
     },
   );
+});
+
+// Crescimento do assentar (#882, fase 1): o espaço denso embaralhado (todos os `parentId` zerados, o
+// assentar refaz a hierarquia inteira) não pode ser quadrático. Mede 500 e 2.000 marcações num container só.
+describe('assentar um espaço denso: crescimento', () => {
+  const denseScrambled = (n: number): Project => {
+    const dense = buildLargeProject({
+      images: 1,
+      markingsPerImage: n,
+      imageWidth: 100000,
+    });
+    return { ...dense, markings: dense.markings.map((m) => ({ ...m, parentId: null })) };
+  };
+
+  it('500 → 2.000 marcações num container só: razão < 5×', GROWTH_OPTIONS, () => {
+    expectLinearGrowth('assentar espaço denso', {
+      build: denseScrambled,
+      run: (p) => settleHierarchy(p),
+      n: 500,
+    });
+  });
+
+  it('2.000 marcações num container só assentam abaixo de 50 ms', GROWTH_OPTIONS, () => {
+    const scrambled = denseScrambled(2000);
+    settleHierarchy({ ...scrambled });
+    const times = Array.from(
+      { length: 9 },
+      () => time(() => settleHierarchy({ ...scrambled })).ms,
+    );
+    times.sort((a, b) => a - b);
+    expect(times[4]).toBeLessThan(50);
+  });
 });
