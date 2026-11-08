@@ -65,6 +65,16 @@ describe('o esqueleto examples/workspace/AGENTS.md', () => {
     expect(block).not.toContain('Para que servem');
     expect(text.slice(text.indexOf(END) + END.length).trim()).toBe('');
   });
+
+  it('o bloco manda aplicar a biblioteca por proposta, com a pasta, e não diz que ela é recusada', () => {
+    const block = text.slice(text.indexOf(BEGIN), text.indexOf(END) + END.length);
+    expect(block).not.toContain('recusa pacote v4');
+    const item =
+      block.split('\n').find((l) => l.startsWith('- **Especializações nascem')) ?? '';
+    expect(item).toContain('`apply_specialization`');
+    expect(item).toContain('`update_specialization`');
+    expect(item).toMatch(/`file`\s*=\s*a pasta/);
+  });
 });
 
 describe('scripts/release/workspaceAssets.mjs', () => {
