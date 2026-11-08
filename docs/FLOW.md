@@ -18,6 +18,8 @@ Para um bug, o agente procura antes uma issue igual ou que o agrupe e põe o ró
 Detalhe a issue #<roadmap ou bug> como etapa, com as fases e a tabela de modelos (linha Orquestrador e coluna Testador). Pergunte o que for decisão de produto. Ao terminar, ponha o rótulo `ready` e tire o `roadmap` (o `bug` e o `impact:` ficam).
 ```
 
+Para detalhar de uma vez todas as `roadmap` e `bug` que ainda não estão `ready` (num chat no modo Auto): `/detalhar-backlog`. O skill (`.claude/skills/detalhar-backlog/SKILL.md`) cria uma sessão Opus que propõe juntar issues num épico só, para ter menos versões do MCP e uma rodada do testador só. Depois cria até 3 sessões Opus de detalhamento por vez e traz as perguntas delas ao dono pelo seletor de perguntas, sempre com uma opção recomendada. Cada etapa sai com a linha `**Depende de:**`, que dá a ordem da implementação.
+
 3. Implementação (no modelo da linha Orquestrador, no modo Auto):
 
 ```text
