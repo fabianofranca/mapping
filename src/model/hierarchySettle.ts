@@ -1,4 +1,5 @@
 import {
+  EPSILON,
   IDENTITY_PLACEMENT,
   area,
   containsRect,
@@ -11,6 +12,7 @@ import {
 } from './geometry';
 import { reconcilePerspectives } from './perspectiveReconcile';
 import { projectIndex } from './projectIndex';
+import { buildRectIndex, type RectIndex } from './spaceIndex';
 import type { Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
 // Pertencimento por geometria (regras em docs/ARCHITECTURE.md, "Espaços, pertencimento e gestos"
@@ -254,6 +256,11 @@ function settleSpace(
  * das pontas troca de espaço. No fim reconcilia as perspectivas e as marcas de chegada com o
  * resultado (`options.before` ?? `p` é o projeto de antes). Determinística e idempotente: nada a
  * mudar devolve `p` como está (o mesmo objeto).
+ *
+ * Custo (#882): o pai vem de um índice espacial por espaço (`spaceIndex.ts`), não de uma varredura
+ * do espaço; k marcações bem distribuídas custam ~O(k). Continua quadrático só no caso degenerado de
+ * muitas marcações enormes cobrindo todas as outras (o índice não poda quem cobre tudo), de muitos
+ * retângulos iguais (`chainOrder`) e de retângulos fora da grade (largura ou altura nula ou minúscula).
  */
 export function settleHierarchy(p: Project, options?: SettleOptions): Project {
   return reconcilePerspectives(options?.before ?? p, settleGeometry(p, options));
@@ -261,15 +268,14 @@ export function settleHierarchy(p: Project, options?: SettleOptions): Project {
 
 /** O assentar da geometria e do pertencimento, sem as perspectivas. */
 function settleGeometry(p: Project, options?: SettleOptions): Project {
-  let changed = false;
   // Marcações que trocaram de espaço: a seta presa a elas perde os pontos de passagem.
   const movedSpace = new Set<string>();
+  let changed = false;
   const placed = p.markings.map((m) => {
     const next = settleSpace(p, m, options);
-    if (next !== m) {
-      changed = true;
-      if (next.containerId !== m.containerId) movedSpace.add(m.id);
-    }
+    if (next === m) return m;
+    changed = true;
+    if (next.containerId !== m.containerId) movedSpace.add(m.id);
     return next;
   });
 
@@ -285,23 +291,31 @@ function settleGeometry(p: Project, options?: SettleOptions): Project {
   for (const group of bySpace.values()) equalRectRanks(group, ranks);
   const rankOf = (id: string) => ranks.get(id) ?? -1;
 
+  // Índice espacial de cada espaço, montado quando alguém pergunta (`docs/ARCHITECTURE.md`).
+  const indexes = new Map<string | null, RectIndex<Entry>>();
+  const indexOf = (containerId: string | null): RectIndex<Entry> => {
+    let index = indexes.get(containerId);
+    if (!index) {
+      index = buildRectIndex(bySpace.get(containerId) ?? [], (e) => e.m.rect);
+      indexes.set(containerId, index);
+    }
+    return index;
+  };
+
   const markings = placed.map((m) => {
-    const group = m.floating ? [] : (bySpace.get(m.containerId) ?? []);
-    const own = rankOf(m.id);
-    const candidates = group.filter((c) =>
-      canContain(c.m.rect, rankOf(c.m.id), m.rect, own),
-    );
-    const parentId = pickParent(candidates, m.parentId, rankOf);
+    const parentId = m.floating ? null : markingParent(indexOf(m.containerId), m, rankOf);
     if (parentId === m.parentId) return m;
     changed = true;
     return { ...m, parentId };
   });
 
   // Pai de um container: a menor marcação do canvas (não flutuante) que contém o retângulo dele.
-  const canvasGroup = bySpace.get(null) ?? [];
+  const canvasIndex = indexOf(null);
   const containers = p.containers.map((c) => {
     const rect = imageCanvasRect(c, c.placement);
-    const candidates = canvasGroup.filter((e) => containsRectApprox(e.m.rect, rect));
+    const candidates = canvasIndex
+      .containing(rect, EPSILON)
+      .filter((e) => containsRectApprox(e.m.rect, rect));
     const parentId = pickParent(candidates, c.parentId, rankOf);
     if (parentId === c.parentId) return c;
     changed = true;
@@ -311,6 +325,19 @@ function settleGeometry(p: Project, options?: SettleOptions): Project {
   // Seta (v13): fora da árvore de pertencimento, o assentar a ignora, salvo numa coisa: se uma
   // ponta mudou de espaço, os `points` (que ficam no espaço das pontas) voltam à rota padrão.
   return changed ? clearArrowRoutes({ ...p, markings, containers }, movedSpace) : p;
+}
+
+/** O pai de `m` entre as marcações do espaço dele (o índice dá as que podem contê-la). */
+function markingParent(
+  index: RectIndex<Entry>,
+  m: Marking,
+  rankOf: (id: string) => number,
+): string | null {
+  const own = rankOf(m.id);
+  const candidates = index
+    .containing(m.rect)
+    .filter((c) => canContain(c.m.rect, rankOf(c.m.id), m.rect, own));
+  return pickParent(candidates, m.parentId, rankOf);
 }
 
 /**
