@@ -49,7 +49,7 @@ describe('M2 grupo C — valores do Compose', () => {
       expect(label.style.letterSpacing).toBe(number('label-large-tracking'));
       expect(label.style.fontFamily).toMatch(/Roboto/);
       expect(solid(label.fills)).toBe(color('on-primary', mode));
-      const icon = named(d.root, 'ícone');
+      const icon = named(d.root, 'add');
       expect(icon?.width).toBe(18);
       expect(icon?.height).toBe(18);
       expect(kinds(icon!, 'path').length).toBeGreaterThan(0);
@@ -128,7 +128,7 @@ describe('M2 grupo C — valores do Compose', () => {
       const box = named(d.root, 'container')!;
       expect(box.type === 'rect' && box.cornerRadius).toBe(number('corner-full'));
       expect(solid(box.fills)).toBe(color('primary', mode));
-      const icon = named(d.root, 'ícone')!;
+      const icon = named(d.root, 'add')!;
       expect([icon.width, icon.height]).toEqual([24, 24]);
       expect([icon.transform[4], icon.transform[5]]).toEqual([8, 8]);
       expect(kinds(icon, 'path').length).toBeGreaterThan(0);
@@ -149,7 +149,7 @@ describe('M2 grupo C — valores do Compose', () => {
       );
       expect(named(off.root, 'container')!.opacity).toBe(0.1);
       expect(solid(named(off.root, 'container')!.fills)).toBe(color('on-surface', mode));
-      expect(named(off.root, 'ícone')!.opacity).toBe(number('state-disabled-content'));
+      expect(named(off.root, 'add')!.opacity).toBe(number('state-disabled-content'));
     }
   });
 
@@ -172,7 +172,7 @@ describe('M2 grupo C — valores do Compose', () => {
       const glyph = (style: string, checked: string) =>
         solid(
           kinds(
-            named(draw('icon-toggle-button', v(style, checked), mode).root, 'ícone')!,
+            named(draw('icon-toggle-button', v(style, checked), mode).root, 'favorite')!,
             'path',
           )[0]!.fills,
         );
@@ -187,10 +187,11 @@ describe('M2 grupo C — valores do Compose', () => {
       expect(glyph('outlined', 'true')).toBe(color('inverse-on-surface', mode));
       expect(glyph('standard', 'true')).toBe(color('primary', mode));
       expect(glyph('standard', 'false')).toBe(color('on-surface', mode));
-      const ring = (checked: string) =>
-        named(draw('icon-toggle-button', v('outlined', checked), mode).root, 'contorno')!;
-      expect(ring('false').visible).toBe(true);
-      expect(ring('true').visible).toBe(false);
+      const ring = (checked: string): SceneNode | undefined =>
+        named(draw('icon-toggle-button', v('outlined', checked), mode).root, 'contorno');
+      expect(ring('false')?.visible).toBe(true);
+      // ligado, o contorno some da cena (o Compose passa border = null)
+      expect(ring('true')).toBeUndefined();
       expect(box('filled', 'true', 'false').opacity).toBe(0.1);
     }
   });

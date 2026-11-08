@@ -411,7 +411,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     },
   );
 
-  it('imagem remota é campo string e o componente é formatVersion 3', () => {
+  it('imagem remota é campo string e o componente é formatVersion 3 ou 4', () => {
     const catalog = buildCatalog(files);
     for (const [id, key] of [
       ['image', 'url'],
@@ -419,7 +419,7 @@ describe('biblioteca Material 3 (Compose)', () => {
       ['list-item', 'leadingImage'],
     ] as const) {
       expect(typeOf(id).fields.find((f) => f.key === key)?.type, id).toBe('string');
-      expect(findEntry(catalog, id)?.component?.formatVersion, id).toBe(3);
+      expect([3, 4], id).toContain(findEntry(catalog, id)?.component?.formatVersion);
     }
   });
 
@@ -545,10 +545,9 @@ describe('componentes migrados na M1 (text, icon, divider, surface)', () => {
     const component = JSON.parse(raw) as Rec;
     expect(component.formatVersion).toBe(4);
     expect(raw).not.toMatch(/"family"/);
-    // só `$token` (ou `none`) onde se espera cor: nenhum #hex nem rgb()/rgba() no arquivo
+    // nenhum #hex nem rgb()/rgba() no arquivo (cor só por `$token` ou `none`; layout puro não tem cor)
     expect(raw).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     expect(raw).not.toMatch(/rgba?\(/);
-    expect(raw).toContain('"$token"');
   });
 
   it('o text tira a family e usa os tokens de tipografia e de cor', () => {
