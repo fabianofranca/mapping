@@ -1,9 +1,9 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "chip",
   "name": "Chip",
-  "description": "Chip de 32 e forma small: assist, filter (check quando selecionado), input (ícone final) e suggestion, cada um com a versão elevated.",
+  "description": "Chip de 32 e forma small, como os chips do Compose: assist, filter (selecionado com check), input (ícone final) e suggestion, cada um (menos input) com a versão elevated; desabilitado usa on-surface a 0,38 no conteúdo e 0,12 no contêiner.",
   "size": {
     "width": 232,
     "height": 32
@@ -23,41 +23,35 @@
   "template": {
     "type": "frame",
     "name": "chip",
-    "cornerRadius": 8,
+    "clip": false,
+    "layout": {
+      "type": "none"
+    },
+    "cornerRadius": {
+      "$token": "corner-small"
+    },
     "fill": {
       "$if": {
         "$eq": ["enabled", "false"]
       },
-      "then": {
-        "$if": {
-          "$or": [
-            {
-              "$eq": ["style", "assist-elevated"]
-            },
-            {
-              "$eq": ["style", "filter-elevated"]
-            },
-            {
-              "$eq": ["style", "suggestion-elevated"]
-            }
-          ]
-        },
-        "then": "rgba(29, 27, 32, 0.12)",
-        "else": "rgba(0, 0, 0, 0)"
-      },
+      "then": "none",
       "else": {
         "$if": {
           "$and": [
             {
-              "$field": "selected"
+              "$eq": ["selected", "true"]
             },
             {
               "$or": [
                 {
-                  "$eq": ["style", "filter"]
-                },
-                {
-                  "$eq": ["style", "filter-elevated"]
+                  "$or": [
+                    {
+                      "$eq": ["style", "filter"]
+                    },
+                    {
+                      "$eq": ["style", "filter-elevated"]
+                    }
+                  ]
                 },
                 {
                   "$eq": ["style", "input"]
@@ -66,7 +60,9 @@
             }
           ]
         },
-        "then": "#E8DEF8",
+        "then": {
+          "$token": "secondary-container"
+        },
         "else": {
           "$if": {
             "$or": [
@@ -81,8 +77,10 @@
               }
             ]
           },
-          "then": "#F7F2FA",
-          "else": "rgba(0, 0, 0, 0)"
+          "then": {
+            "$token": "surface-container-low"
+          },
+          "else": "none"
         }
       }
     },
@@ -106,15 +104,19 @@
             {
               "$and": [
                 {
-                  "$field": "selected"
+                  "$eq": ["selected", "true"]
                 },
                 {
                   "$or": [
                     {
-                      "$eq": ["style", "filter"]
-                    },
-                    {
-                      "$eq": ["style", "filter-elevated"]
+                      "$or": [
+                        {
+                          "$eq": ["style", "filter"]
+                        },
+                        {
+                          "$eq": ["style", "filter-elevated"]
+                        }
+                      ]
                     },
                     {
                       "$eq": ["style", "input"]
@@ -122,16 +124,15 @@
                   ]
                 }
               ]
+            },
+            {
+              "$eq": ["enabled", "false"]
             }
           ]
         },
-        "then": "rgba(0, 0, 0, 0)",
+        "then": "none",
         "else": {
-          "$if": {
-            "$eq": ["enabled", "false"]
-          },
-          "then": "rgba(29, 27, 32, 0.12)",
-          "else": "#CAC4D0"
+          "$token": "outline-variant"
         }
       },
       "width": 1,
@@ -161,174 +162,147 @@
             }
           ]
         },
-        "then": "rgba(0, 0, 0, 0.3)",
-        "else": "rgba(0, 0, 0, 0)"
+        "then": {
+          "$token": "elevation-shadow"
+        },
+        "else": "none"
       },
       "y": 1,
-      "blur": 3
-    },
-    "layout": {
-      "type": "row",
-      "gap": 8,
-      "padding": {
-        "$if": {
-          "$or": [
-            {
-              "$has": "leadingIcon"
-            },
-            {
-              "$and": [
-                {
-                  "$field": "selected"
-                },
-                {
-                  "$or": [
-                    {
-                      "$eq": ["style", "filter"]
-                    },
-                    {
-                      "$eq": ["style", "filter-elevated"]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        "then": {
-          "$if": {
-            "$has": "trailingIcon"
-          },
-          "then": [0, 8, 0, 8],
-          "else": [0, 16, 0, 8]
-        },
-        "else": {
-          "$if": {
-            "$has": "trailingIcon"
-          },
-          "then": [0, 8, 0, 16],
-          "else": [0, 16]
-        }
-      },
-      "align": "center",
-      "justify": "center"
+      "blur": 2
     },
     "children": [
       {
-        "type": "path",
-        "name": "check",
+        "type": "rect",
+        "name": "contêiner desabilitado",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$token": "on-surface"
+        },
+        "opacity": {
+          "$token": "state-disabled-container"
+        },
+        "cornerRadius": {
+          "$token": "corner-small"
+        },
         "visible": {
           "$and": [
             {
-              "$field": "selected"
+              "$eq": ["enabled", "false"]
             },
             {
               "$or": [
                 {
-                  "$eq": ["style", "filter"]
-                },
-                {
-                  "$eq": ["style", "filter-elevated"]
-                }
-              ]
-            }
-          ]
-        },
-        "width": 18,
-        "height": 18,
-        "viewBox": [24, 24],
-        "d": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
-        "fill": {
-          "$if": {
-            "$eq": ["enabled", "false"]
-          },
-          "then": "rgba(29, 27, 32, 0.38)",
-          "else": "#1D192B"
-        }
-      },
-      {
-        "type": "path",
-        "name": "ícone inicial",
-        "width": 18,
-        "height": 18,
-        "viewBox": [24, 24],
-        "d": {
-          "$switch": "leadingIcon",
-          "cases": {
-            "Home": "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",
-            "Search": "M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z",
-            "Person": "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z",
-            "Menu": "M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z",
-            "MoreVert": "M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
-            "Add": "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
-            "Check": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
-            "ArrowBack": "M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z",
-            "Favorite": "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
-            "Edit": "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
-            "Notifications": "M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z",
-            "KeyboardArrowRight": "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z",
-            "Settings": "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z",
-            "Close": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
-            "Done": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"
-          },
-          "default": "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM4.5 4.5v15h15v-15z"
-        },
-        "fill": {
-          "$if": {
-            "$eq": ["enabled", "false"]
-          },
-          "then": "rgba(29, 27, 32, 0.38)",
-          "else": {
-            "$if": {
-              "$and": [
-                {
-                  "$field": "selected"
-                },
-                {
                   "$or": [
                     {
-                      "$eq": ["style", "filter"]
+                      "$eq": ["style", "assist-elevated"]
                     },
                     {
                       "$eq": ["style", "filter-elevated"]
                     },
                     {
-                      "$eq": ["style", "input"]
+                      "$eq": ["style", "suggestion-elevated"]
+                    }
+                  ]
+                },
+                {
+                  "$and": [
+                    {
+                      "$eq": ["selected", "true"]
+                    },
+                    {
+                      "$or": [
+                        {
+                          "$or": [
+                            {
+                              "$eq": ["style", "filter"]
+                            },
+                            {
+                              "$eq": ["style", "filter-elevated"]
+                            }
+                          ]
+                        },
+                        {
+                          "$eq": ["style", "input"]
+                        }
+                      ]
                     }
                   ]
                 }
               ]
-            },
-            "then": "#1D192B",
-            "else": {
-              "$switch": "style",
-              "cases": {
-                "filter": "#49454F",
-                "filter-elevated": "#49454F",
-                "input": "#49454F"
-              },
-              "default": "#6750A4"
             }
-          }
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "contorno desabilitado",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": "none",
+        "stroke": {
+          "color": {
+            "$token": "on-surface"
+          },
+          "width": 1,
+          "align": "inside"
+        },
+        "opacity": {
+          "$token": "state-disabled-container"
+        },
+        "cornerRadius": {
+          "$token": "corner-small"
         },
         "visible": {
           "$and": [
             {
-              "$has": "leadingIcon"
+              "$eq": ["enabled", "false"]
             },
             {
               "$not": {
-                "$and": [
-                  {
-                    "$field": "selected"
-                  },
+                "$or": [
                   {
                     "$or": [
                       {
-                        "$eq": ["style", "filter"]
+                        "$eq": ["style", "assist-elevated"]
                       },
                       {
                         "$eq": ["style", "filter-elevated"]
+                      },
+                      {
+                        "$eq": ["style", "suggestion-elevated"]
+                      }
+                    ]
+                  },
+                  {
+                    "$and": [
+                      {
+                        "$eq": ["selected", "true"]
+                      },
+                      {
+                        "$or": [
+                          {
+                            "$or": [
+                              {
+                                "$eq": ["style", "filter"]
+                              },
+                              {
+                                "$eq": ["style", "filter-elevated"]
+                              }
+                            ]
+                          },
+                          {
+                            "$eq": ["style", "input"]
+                          }
+                        ]
                       }
                     ]
                   }
@@ -339,28 +313,365 @@
         }
       },
       {
-        "type": "text",
-        "name": "rótulo",
-        "text": {
-          "$field": "label",
-          "default": "Label"
+        "type": "frame",
+        "name": "conteúdo",
+        "clip": false,
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
         },
-        "font": {
-          "family": "Roboto",
-          "size": 14,
-          "weight": 500,
-          "lineHeight": 20
-        },
-        "color": {
-          "$if": {
-            "$eq": ["enabled", "false"]
-          },
-          "then": "rgba(29, 27, 32, 0.38)",
-          "else": {
+        "layout": {
+          "type": "row",
+          "gap": 8,
+          "padding": {
             "$if": {
+              "$eq": ["style", "input"]
+            },
+            "then": {
+              "$if": {
+                "$or": [
+                  {
+                    "$has": "leadingIcon"
+                  },
+                  {
+                    "$and": [
+                      {
+                        "$and": [
+                          {
+                            "$eq": ["selected", "true"]
+                          },
+                          {
+                            "$or": [
+                              {
+                                "$or": [
+                                  {
+                                    "$eq": ["style", "filter"]
+                                  },
+                                  {
+                                    "$eq": ["style", "filter-elevated"]
+                                  }
+                                ]
+                              },
+                              {
+                                "$eq": ["style", "input"]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "$or": [
+                          {
+                            "$eq": ["style", "filter"]
+                          },
+                          {
+                            "$eq": ["style", "filter-elevated"]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "then": {
+                "$if": {
+                  "$and": [
+                    {
+                      "$has": "trailingIcon"
+                    },
+                    {
+                      "$not": {
+                        "$or": [
+                          {
+                            "$eq": ["style", "suggestion"]
+                          },
+                          {
+                            "$eq": ["style", "suggestion-elevated"]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "then": [0, 8, 0, 8],
+                "else": [0, 12, 0, 8]
+              },
+              "else": {
+                "$if": {
+                  "$and": [
+                    {
+                      "$has": "trailingIcon"
+                    },
+                    {
+                      "$not": {
+                        "$or": [
+                          {
+                            "$eq": ["style", "suggestion"]
+                          },
+                          {
+                            "$eq": ["style", "suggestion-elevated"]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "then": [0, 8, 0, 12],
+                "else": [0, 12, 0, 12]
+              }
+            },
+            "else": {
+              "$if": {
+                "$or": [
+                  {
+                    "$has": "leadingIcon"
+                  },
+                  {
+                    "$and": [
+                      {
+                        "$and": [
+                          {
+                            "$eq": ["selected", "true"]
+                          },
+                          {
+                            "$or": [
+                              {
+                                "$or": [
+                                  {
+                                    "$eq": ["style", "filter"]
+                                  },
+                                  {
+                                    "$eq": ["style", "filter-elevated"]
+                                  }
+                                ]
+                              },
+                              {
+                                "$eq": ["style", "input"]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "$or": [
+                          {
+                            "$eq": ["style", "filter"]
+                          },
+                          {
+                            "$eq": ["style", "filter-elevated"]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "then": {
+                "$if": {
+                  "$and": [
+                    {
+                      "$has": "trailingIcon"
+                    },
+                    {
+                      "$not": {
+                        "$or": [
+                          {
+                            "$eq": ["style", "suggestion"]
+                          },
+                          {
+                            "$eq": ["style", "suggestion-elevated"]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "then": [0, 8, 0, 8],
+                "else": [0, 16, 0, 8]
+              },
+              "else": {
+                "$if": {
+                  "$and": [
+                    {
+                      "$has": "trailingIcon"
+                    },
+                    {
+                      "$not": {
+                        "$or": [
+                          {
+                            "$eq": ["style", "suggestion"]
+                          },
+                          {
+                            "$eq": ["style", "suggestion-elevated"]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                "then": [0, 8, 0, 16],
+                "else": [0, 16, 0, 16]
+              }
+            }
+          },
+          "align": "center",
+          "justify": "start"
+        },
+        "children": [
+          {
+            "type": "icon",
+            "name": "done",
+            "width": 18,
+            "height": 18,
+            "color": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "on-surface"
+              },
+              "else": {
+                "$if": {
+                  "$or": [
+                    {
+                      "$or": [
+                        {
+                          "$eq": ["style", "assist"]
+                        },
+                        {
+                          "$eq": ["style", "assist-elevated"]
+                        }
+                      ]
+                    },
+                    {
+                      "$or": [
+                        {
+                          "$eq": ["style", "suggestion"]
+                        },
+                        {
+                          "$eq": ["style", "suggestion-elevated"]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "then": {
+                  "$token": "primary"
+                },
+                "else": {
+                  "$if": {
+                    "$or": [
+                      {
+                        "$eq": ["style", "filter"]
+                      },
+                      {
+                        "$eq": ["style", "filter-elevated"]
+                      }
+                    ]
+                  },
+                  "then": {
+                    "$if": {
+                      "$and": [
+                        {
+                          "$eq": ["selected", "true"]
+                        },
+                        {
+                          "$or": [
+                            {
+                              "$or": [
+                                {
+                                  "$eq": ["style", "filter"]
+                                },
+                                {
+                                  "$eq": ["style", "filter-elevated"]
+                                }
+                              ]
+                            },
+                            {
+                              "$eq": ["style", "input"]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "then": {
+                      "$token": "on-secondary-container"
+                    },
+                    "else": {
+                      "$token": "primary"
+                    }
+                  },
+                  "else": {
+                    "$if": {
+                      "$and": [
+                        {
+                          "$eq": ["selected", "true"]
+                        },
+                        {
+                          "$or": [
+                            {
+                              "$or": [
+                                {
+                                  "$eq": ["style", "filter"]
+                                },
+                                {
+                                  "$eq": ["style", "filter-elevated"]
+                                }
+                              ]
+                            },
+                            {
+                              "$eq": ["style", "input"]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "then": {
+                      "$token": "primary"
+                    },
+                    "else": {
+                      "$token": "on-surface-variant"
+                    }
+                  }
+                }
+              }
+            },
+            "opacity": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "state-disabled-content"
+              },
+              "else": 1
+            },
+            "visible": {
               "$and": [
                 {
-                  "$field": "selected"
+                  "$and": [
+                    {
+                      "$eq": ["selected", "true"]
+                    },
+                    {
+                      "$or": [
+                        {
+                          "$or": [
+                            {
+                              "$eq": ["style", "filter"]
+                            },
+                            {
+                              "$eq": ["style", "filter-elevated"]
+                            }
+                          ]
+                        },
+                        {
+                          "$eq": ["style", "input"]
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "$or": [
@@ -369,86 +680,681 @@
                     },
                     {
                       "$eq": ["style", "filter-elevated"]
-                    },
-                    {
-                      "$eq": ["style", "input"]
                     }
                   ]
+                },
+                {
+                  "$not": {
+                    "$has": "leadingIcon"
+                  }
                 }
               ]
-            },
-            "then": "#1D192B",
-            "else": {
-              "$switch": "style",
+            }
+          },
+          {
+            "type": "icon",
+            "name": {
+              "$switch": "leadingIcon",
               "cases": {
-                "assist": "#1D1B20",
-                "assist-elevated": "#1D1B20"
+                "Home": "home",
+                "Search": "search",
+                "Person": "person",
+                "Menu": "menu",
+                "MoreVert": "more_vert",
+                "Add": "add",
+                "Check": "check",
+                "Close": "close",
+                "ArrowBack": "arrow_back",
+                "Favorite": "favorite",
+                "Edit": "edit",
+                "Delete": "delete",
+                "Share": "share",
+                "Notifications": "notifications",
+                "Settings": "settings",
+                "Info": "info",
+                "Star": "star",
+                "Email": "email",
+                "Phone": "phone",
+                "Place": "place",
+                "DateRange": "date_range",
+                "ShoppingCart": "shopping_cart",
+                "AccountCircle": "account_circle",
+                "KeyboardArrowRight": "keyboard_arrow_right",
+                "KeyboardArrowDown": "keyboard_arrow_down",
+                "Refresh": "refresh",
+                "Clear": "clear",
+                "Done": "done",
+                "Lock": "lock",
+                "List": "list",
+                "AccountBox": "account_box",
+                "AddCircle": "add_circle",
+                "ArrowDropDown": "arrow_drop_down",
+                "ArrowDropUp": "arrow_drop_up",
+                "ArrowForward": "arrow_forward",
+                "ArrowUpward": "arrow_upward",
+                "ArrowDownward": "arrow_downward",
+                "Build": "build",
+                "Call": "call",
+                "CheckCircle": "check_circle",
+                "Create": "create",
+                "Face": "face",
+                "FavoriteBorder": "favorite_border",
+                "ExitToApp": "exit_to_app",
+                "KeyboardArrowLeft": "keyboard_arrow_left",
+                "KeyboardArrowUp": "keyboard_arrow_up",
+                "LocationOn": "location_on",
+                "MailOutline": "mail_outline",
+                "PlayArrow": "play_arrow",
+                "Send": "send",
+                "ThumbUp": "thumb_up",
+                "Warning": "warning",
+                "Cancel": "cancel",
+                "ExpandMore": "expand_more",
+                "ExpandLess": "expand_less",
+                "ChevronLeft": "chevron_left",
+                "ChevronRight": "chevron_right",
+                "FirstPage": "first_page",
+                "LastPage": "last_page",
+                "MoreHoriz": "more_horiz",
+                "Apps": "apps",
+                "Dashboard": "dashboard",
+                "Folder": "folder",
+                "FolderOpen": "folder_open",
+                "InsertDriveFile": "insert_drive_file",
+                "Description": "description",
+                "Image": "image",
+                "Mic": "mic",
+                "Videocam": "videocam",
+                "Chat": "chat",
+                "Comment": "comment",
+                "Forum": "forum",
+                "NotificationsNone": "notifications_none",
+                "Visibility": "visibility",
+                "VisibilityOff": "visibility_off",
+                "Language": "language",
+                "Public": "public",
+                "Link": "link",
+                "Attachment": "attachment",
+                "ContentCopy": "content_copy",
+                "ContentPaste": "content_paste",
+                "ContentCut": "content_cut",
+                "Save": "save",
+                "Download": "download",
+                "Upload": "upload",
+                "CloudUpload": "cloud_upload",
+                "CloudDownload": "cloud_download",
+                "Cloud": "cloud",
+                "Sync": "sync",
+                "Schedule": "schedule",
+                "AccessTime": "access_time",
+                "CalendarToday": "calendar_today",
+                "Event": "event",
+                "Today": "today",
+                "Timer": "timer",
+                "Alarm": "alarm",
+                "History": "history",
+                "Bookmark": "bookmark",
+                "BookmarkBorder": "bookmark_border",
+                "Label": "label",
+                "Flag": "flag",
+                "Help": "help",
+                "HelpOutline": "help_outline",
+                "Error": "error",
+                "ErrorOutline": "error_outline",
+                "Report": "report",
+                "Block": "block",
+                "Tune": "tune",
+                "FilterList": "filter_list",
+                "Sort": "sort",
+                "Fullscreen": "fullscreen",
+                "Wifi": "wifi",
+                "Bluetooth": "bluetooth",
+                "LightMode": "light_mode",
+                "DarkMode": "dark_mode",
+                "Palette": "palette",
+                "ShoppingBag": "shopping_bag",
+                "Store": "store",
+                "Payment": "payment",
+                "CreditCard": "credit_card",
+                "AttachMoney": "attach_money",
+                "Receipt": "receipt",
+                "Map": "map",
+                "Navigation": "navigation",
+                "DirectionsCar": "directions_car",
+                "Flight": "flight",
+                "MenuOpen": "menu_open",
+                "Logout": "logout",
+                "Login": "login",
+                "People": "people",
+                "Group": "group",
+                "PersonAdd": "person_add",
+                "LockOpen": "lock_open",
+                "Security": "security",
+                "VerifiedUser": "verified_user",
+                "Key": "key",
+                "Pause": "pause",
+                "Stop": "stop",
+                "SkipNext": "skip_next",
+                "SkipPrevious": "skip_previous",
+                "VolumeUp": "volume_up",
+                "VolumeOff": "volume_off",
+                "ThumbDown": "thumb_down",
+                "Reply": "reply",
+                "Inbox": "inbox",
+                "Archive": "archive",
+                "Undo": "undo",
+                "Redo": "redo",
+                "ZoomIn": "zoom_in",
+                "ZoomOut": "zoom_out",
+                "Keyboard": "keyboard",
+                "CheckBox": "check_box",
+                "CheckBoxOutlineBlank": "check_box_outline_blank",
+                "RadioButtonChecked": "radio_button_checked",
+                "RadioButtonUnchecked": "radio_button_unchecked",
+                "ToggleOn": "toggle_on",
+                "ToggleOff": "toggle_off",
+                "StarBorder": "star_border",
+                "StarHalf": "star_half",
+                "Lightbulb": "lightbulb",
+                "Code": "code",
+                "Terminal": "terminal",
+                "Bolt": "bolt",
+                "EditCalendar": "edit_calendar"
               },
-              "default": "#49454F"
+              "default": {
+                "$field": "leadingIcon"
+              }
+            },
+            "width": 18,
+            "height": 18,
+            "color": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "on-surface"
+              },
+              "else": {
+                "$if": {
+                  "$or": [
+                    {
+                      "$or": [
+                        {
+                          "$eq": ["style", "assist"]
+                        },
+                        {
+                          "$eq": ["style", "assist-elevated"]
+                        }
+                      ]
+                    },
+                    {
+                      "$or": [
+                        {
+                          "$eq": ["style", "suggestion"]
+                        },
+                        {
+                          "$eq": ["style", "suggestion-elevated"]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "then": {
+                  "$token": "primary"
+                },
+                "else": {
+                  "$if": {
+                    "$or": [
+                      {
+                        "$eq": ["style", "filter"]
+                      },
+                      {
+                        "$eq": ["style", "filter-elevated"]
+                      }
+                    ]
+                  },
+                  "then": {
+                    "$if": {
+                      "$and": [
+                        {
+                          "$eq": ["selected", "true"]
+                        },
+                        {
+                          "$or": [
+                            {
+                              "$or": [
+                                {
+                                  "$eq": ["style", "filter"]
+                                },
+                                {
+                                  "$eq": ["style", "filter-elevated"]
+                                }
+                              ]
+                            },
+                            {
+                              "$eq": ["style", "input"]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "then": {
+                      "$token": "on-secondary-container"
+                    },
+                    "else": {
+                      "$token": "primary"
+                    }
+                  },
+                  "else": {
+                    "$if": {
+                      "$and": [
+                        {
+                          "$eq": ["selected", "true"]
+                        },
+                        {
+                          "$or": [
+                            {
+                              "$or": [
+                                {
+                                  "$eq": ["style", "filter"]
+                                },
+                                {
+                                  "$eq": ["style", "filter-elevated"]
+                                }
+                              ]
+                            },
+                            {
+                              "$eq": ["style", "input"]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "then": {
+                      "$token": "primary"
+                    },
+                    "else": {
+                      "$token": "on-surface-variant"
+                    }
+                  }
+                }
+              }
+            },
+            "opacity": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "state-disabled-content"
+              },
+              "else": 1
+            },
+            "visible": {
+              "$has": "leadingIcon"
+            }
+          },
+          {
+            "type": "text",
+            "name": "rótulo",
+            "text": {
+              "$field": "label",
+              "default": "Label"
+            },
+            "font": {
+              "size": {
+                "$token": "label-large-size"
+              },
+              "weight": {
+                "$token": "label-large-weight"
+              },
+              "lineHeight": {
+                "$token": "label-large-line-height"
+              },
+              "letterSpacing": {
+                "$token": "label-large-tracking"
+              }
+            },
+            "color": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "on-surface"
+              },
+              "else": {
+                "$if": {
+                  "$or": [
+                    {
+                      "$eq": ["style", "assist"]
+                    },
+                    {
+                      "$eq": ["style", "assist-elevated"]
+                    }
+                  ]
+                },
+                "then": {
+                  "$token": "on-surface"
+                },
+                "else": {
+                  "$if": {
+                    "$or": [
+                      {
+                        "$eq": ["style", "suggestion"]
+                      },
+                      {
+                        "$eq": ["style", "suggestion-elevated"]
+                      }
+                    ]
+                  },
+                  "then": {
+                    "$token": "on-surface-variant"
+                  },
+                  "else": {
+                    "$if": {
+                      "$and": [
+                        {
+                          "$eq": ["selected", "true"]
+                        },
+                        {
+                          "$or": [
+                            {
+                              "$or": [
+                                {
+                                  "$eq": ["style", "filter"]
+                                },
+                                {
+                                  "$eq": ["style", "filter-elevated"]
+                                }
+                              ]
+                            },
+                            {
+                              "$eq": ["style", "input"]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "then": {
+                      "$token": "on-secondary-container"
+                    },
+                    "else": {
+                      "$token": "on-surface-variant"
+                    }
+                  }
+                }
+              }
+            },
+            "opacity": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "state-disabled-content"
+              },
+              "else": 1
+            }
+          },
+          {
+            "type": "icon",
+            "name": {
+              "$switch": "trailingIcon",
+              "cases": {
+                "Home": "home",
+                "Search": "search",
+                "Person": "person",
+                "Menu": "menu",
+                "MoreVert": "more_vert",
+                "Add": "add",
+                "Check": "check",
+                "Close": "close",
+                "ArrowBack": "arrow_back",
+                "Favorite": "favorite",
+                "Edit": "edit",
+                "Delete": "delete",
+                "Share": "share",
+                "Notifications": "notifications",
+                "Settings": "settings",
+                "Info": "info",
+                "Star": "star",
+                "Email": "email",
+                "Phone": "phone",
+                "Place": "place",
+                "DateRange": "date_range",
+                "ShoppingCart": "shopping_cart",
+                "AccountCircle": "account_circle",
+                "KeyboardArrowRight": "keyboard_arrow_right",
+                "KeyboardArrowDown": "keyboard_arrow_down",
+                "Refresh": "refresh",
+                "Clear": "clear",
+                "Done": "done",
+                "Lock": "lock",
+                "List": "list",
+                "AccountBox": "account_box",
+                "AddCircle": "add_circle",
+                "ArrowDropDown": "arrow_drop_down",
+                "ArrowDropUp": "arrow_drop_up",
+                "ArrowForward": "arrow_forward",
+                "ArrowUpward": "arrow_upward",
+                "ArrowDownward": "arrow_downward",
+                "Build": "build",
+                "Call": "call",
+                "CheckCircle": "check_circle",
+                "Create": "create",
+                "Face": "face",
+                "FavoriteBorder": "favorite_border",
+                "ExitToApp": "exit_to_app",
+                "KeyboardArrowLeft": "keyboard_arrow_left",
+                "KeyboardArrowUp": "keyboard_arrow_up",
+                "LocationOn": "location_on",
+                "MailOutline": "mail_outline",
+                "PlayArrow": "play_arrow",
+                "Send": "send",
+                "ThumbUp": "thumb_up",
+                "Warning": "warning",
+                "Cancel": "cancel",
+                "ExpandMore": "expand_more",
+                "ExpandLess": "expand_less",
+                "ChevronLeft": "chevron_left",
+                "ChevronRight": "chevron_right",
+                "FirstPage": "first_page",
+                "LastPage": "last_page",
+                "MoreHoriz": "more_horiz",
+                "Apps": "apps",
+                "Dashboard": "dashboard",
+                "Folder": "folder",
+                "FolderOpen": "folder_open",
+                "InsertDriveFile": "insert_drive_file",
+                "Description": "description",
+                "Image": "image",
+                "Mic": "mic",
+                "Videocam": "videocam",
+                "Chat": "chat",
+                "Comment": "comment",
+                "Forum": "forum",
+                "NotificationsNone": "notifications_none",
+                "Visibility": "visibility",
+                "VisibilityOff": "visibility_off",
+                "Language": "language",
+                "Public": "public",
+                "Link": "link",
+                "Attachment": "attachment",
+                "ContentCopy": "content_copy",
+                "ContentPaste": "content_paste",
+                "ContentCut": "content_cut",
+                "Save": "save",
+                "Download": "download",
+                "Upload": "upload",
+                "CloudUpload": "cloud_upload",
+                "CloudDownload": "cloud_download",
+                "Cloud": "cloud",
+                "Sync": "sync",
+                "Schedule": "schedule",
+                "AccessTime": "access_time",
+                "CalendarToday": "calendar_today",
+                "Event": "event",
+                "Today": "today",
+                "Timer": "timer",
+                "Alarm": "alarm",
+                "History": "history",
+                "Bookmark": "bookmark",
+                "BookmarkBorder": "bookmark_border",
+                "Label": "label",
+                "Flag": "flag",
+                "Help": "help",
+                "HelpOutline": "help_outline",
+                "Error": "error",
+                "ErrorOutline": "error_outline",
+                "Report": "report",
+                "Block": "block",
+                "Tune": "tune",
+                "FilterList": "filter_list",
+                "Sort": "sort",
+                "Fullscreen": "fullscreen",
+                "Wifi": "wifi",
+                "Bluetooth": "bluetooth",
+                "LightMode": "light_mode",
+                "DarkMode": "dark_mode",
+                "Palette": "palette",
+                "ShoppingBag": "shopping_bag",
+                "Store": "store",
+                "Payment": "payment",
+                "CreditCard": "credit_card",
+                "AttachMoney": "attach_money",
+                "Receipt": "receipt",
+                "Map": "map",
+                "Navigation": "navigation",
+                "DirectionsCar": "directions_car",
+                "Flight": "flight",
+                "MenuOpen": "menu_open",
+                "Logout": "logout",
+                "Login": "login",
+                "People": "people",
+                "Group": "group",
+                "PersonAdd": "person_add",
+                "LockOpen": "lock_open",
+                "Security": "security",
+                "VerifiedUser": "verified_user",
+                "Key": "key",
+                "Pause": "pause",
+                "Stop": "stop",
+                "SkipNext": "skip_next",
+                "SkipPrevious": "skip_previous",
+                "VolumeUp": "volume_up",
+                "VolumeOff": "volume_off",
+                "ThumbDown": "thumb_down",
+                "Reply": "reply",
+                "Inbox": "inbox",
+                "Archive": "archive",
+                "Undo": "undo",
+                "Redo": "redo",
+                "ZoomIn": "zoom_in",
+                "ZoomOut": "zoom_out",
+                "Keyboard": "keyboard",
+                "CheckBox": "check_box",
+                "CheckBoxOutlineBlank": "check_box_outline_blank",
+                "RadioButtonChecked": "radio_button_checked",
+                "RadioButtonUnchecked": "radio_button_unchecked",
+                "ToggleOn": "toggle_on",
+                "ToggleOff": "toggle_off",
+                "StarBorder": "star_border",
+                "StarHalf": "star_half",
+                "Lightbulb": "lightbulb",
+                "Code": "code",
+                "Terminal": "terminal",
+                "Bolt": "bolt",
+                "EditCalendar": "edit_calendar"
+              },
+              "default": {
+                "$field": "trailingIcon"
+              }
+            },
+            "width": 18,
+            "height": 18,
+            "color": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "on-surface"
+              },
+              "else": {
+                "$if": {
+                  "$or": [
+                    {
+                      "$eq": ["style", "assist"]
+                    },
+                    {
+                      "$eq": ["style", "assist-elevated"]
+                    }
+                  ]
+                },
+                "then": {
+                  "$token": "primary"
+                },
+                "else": {
+                  "$if": {
+                    "$and": [
+                      {
+                        "$eq": ["selected", "true"]
+                      },
+                      {
+                        "$or": [
+                          {
+                            "$or": [
+                              {
+                                "$eq": ["style", "filter"]
+                              },
+                              {
+                                "$eq": ["style", "filter-elevated"]
+                              }
+                            ]
+                          },
+                          {
+                            "$eq": ["style", "input"]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "then": {
+                    "$token": "on-secondary-container"
+                  },
+                  "else": {
+                    "$token": "on-surface-variant"
+                  }
+                }
+              }
+            },
+            "opacity": {
+              "$if": {
+                "$eq": ["enabled", "false"]
+              },
+              "then": {
+                "$token": "state-disabled-content"
+              },
+              "else": 1
+            },
+            "visible": {
+              "$and": [
+                {
+                  "$has": "trailingIcon"
+                },
+                {
+                  "$not": {
+                    "$or": [
+                      {
+                        "$eq": ["style", "suggestion"]
+                      },
+                      {
+                        "$eq": ["style", "suggestion-elevated"]
+                      }
+                    ]
+                  }
+                }
+              ]
             }
           }
-        }
-      },
-      {
-        "type": "path",
-        "name": "ícone final",
-        "width": 18,
-        "height": 18,
-        "viewBox": [24, 24],
-        "d": {
-          "$switch": "trailingIcon",
-          "cases": {
-            "Home": "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",
-            "Search": "M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z",
-            "Person": "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z",
-            "Menu": "M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z",
-            "MoreVert": "M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z",
-            "Add": "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
-            "Check": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
-            "ArrowBack": "M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z",
-            "Favorite": "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
-            "Edit": "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
-            "Notifications": "M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z",
-            "KeyboardArrowRight": "M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z",
-            "Settings": "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z",
-            "Close": "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
-            "Done": "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"
-          },
-          "default": "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM4.5 4.5v15h15v-15z"
-        },
-        "fill": {
-          "$if": {
-            "$eq": ["enabled", "false"]
-          },
-          "then": "rgba(29, 27, 32, 0.38)",
-          "else": {
-            "$if": {
-              "$and": [
-                {
-                  "$field": "selected"
-                },
-                {
-                  "$or": [
-                    {
-                      "$eq": ["style", "filter"]
-                    },
-                    {
-                      "$eq": ["style", "filter-elevated"]
-                    },
-                    {
-                      "$eq": ["style", "input"]
-                    }
-                  ]
-                }
-              ]
-            },
-            "then": "#1D192B",
-            "else": "#49454F"
-          }
-        },
-        "visible": {
-          "$has": "trailingIcon"
-        }
+        ]
       }
     ]
   }

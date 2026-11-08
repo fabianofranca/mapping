@@ -48,3 +48,25 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 - **Capa recortada**: url=https://example.com/capa.jpg, contentDescription=Capa do álbum, contentScale=Crop, width=fill, height=fixed
 - **Ilustração inteira**: url=https://example.com/ilustracao.png, contentScale=Fit, width=fill
+
+## Fidelidade
+
+Referência: Compose `foundation` do commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (a biblioteca fixa o Compose `material3` 1.4.0 nesse commit). O `image` é do Foundation (`Image` e, para URL, o `AsyncImage` do carregador de imagens do app): o Material 3 não tem tokens de imagem, e este desenho não tem valores de tokens do `material3` a seguir.
+
+**Arquivos usados**
+
+- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/Image.kt` (`Image(painter, contentDescription, modifier, alignment, contentScale, alpha, colorFilter)`; o padrão de `contentScale` é `ContentScale.Fit`).
+- `compose/ui/ui/src/commonMain/kotlin/androidx/compose/ui/layout/ContentScale.kt` (`Crop`, `Fit`, `FillBounds`, `FillWidth`, `FillHeight`, `Inside` e `None`).
+
+**Como o desenho segue o Compose**
+
+- `Crop`, `FillWidth` e `FillHeight` desenham a imagem em `cover`, `FillBounds` em `fill` e as demais em `contain`, como o `contentScale` do campo.
+- A imagem vem de uma URL `https` pelo nó `image` do formato; o fundo atrás dela (e o reservado, antes de carregar) usa o token `surface-variant`, que muda com o modo claro e escuro. Não há cor literal.
+- Sem URL, a legenda mostra a descrição e as medidas, em `on-surface-variant`, com o estilo `label-small` dos tokens (sem `family`).
+
+**O que ainda difere do Compose**
+
+- Os dois `contentScale` `Inside` e `None` caem em `contain`; o `FillWidth` e o `FillHeight` caem em `cover` (o nó `image` só tem `cover`, `contain` e `fill`, sem escala só por eixo nem tamanho original).
+- Sem `alignment`, `alpha` nem `colorFilter` (não são campos do tipo).
+- A imagem só é pedida à rede com a permissão da origem na app, e o servidor MCP desenha sempre o reservado; o Compose carrega a imagem pelo carregador do app.
+- O fundo `surface-variant` é uma escolha de desenho: o `Image` do Compose não tem fundo nem reservado.

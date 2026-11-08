@@ -1,0 +1,3181 @@
+{
+  "source": "componentes da biblioteca v1 (formatos 1 a 3) no commit 97f64b2, antes da M2",
+  "components": {
+    "scaffold": {
+      "fields": [
+        {
+          "key": "containerColor",
+          "label": "Cor do fundo",
+          "type": "enum",
+          "default": "background",
+          "options": [
+            "primary",
+            "onPrimary",
+            "primaryContainer",
+            "onPrimaryContainer",
+            "secondary",
+            "onSecondary",
+            "secondaryContainer",
+            "onSecondaryContainer",
+            "tertiary",
+            "onTertiary",
+            "tertiaryContainer",
+            "onTertiaryContainer",
+            "error",
+            "onError",
+            "errorContainer",
+            "onErrorContainer",
+            "background",
+            "onBackground",
+            "surface",
+            "onSurface",
+            "surfaceVariant",
+            "onSurfaceVariant",
+            "surfaceTint",
+            "inverseSurface",
+            "inverseOnSurface",
+            "inversePrimary",
+            "outline",
+            "outlineVariant",
+            "scrim",
+            "surfaceBright",
+            "surfaceDim",
+            "surfaceContainerLowest",
+            "surfaceContainerLow",
+            "surfaceContainer",
+            "surfaceContainerHigh",
+            "surfaceContainerHighest"
+          ],
+          "description": "Papel de cor do tema usado como fundo da tela."
+        },
+        {
+          "key": "floatingActionButtonPosition",
+          "label": "Posição do botão flutuante",
+          "type": "enum",
+          "default": "End",
+          "options": ["Start", "Center", "End", "EndOverlay"],
+          "description": "Onde fica o FAB (FabPosition). EndOverlay o sobrepõe à barra de baixo."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "fill",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "fill",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Tela padrão",
+          "values": {
+            "containerColor": "background",
+            "floatingActionButtonPosition": "End",
+            "width": "fill",
+            "height": "fill"
+          }
+        },
+        {
+          "name": "FAB ao centro",
+          "values": {
+            "containerColor": "surface",
+            "floatingActionButtonPosition": "Center",
+            "width": "fill",
+            "height": "fill"
+          }
+        }
+      ],
+      "preview": {
+        "containerColor": "background",
+        "floatingActionButtonPosition": "End",
+        "width": "fill",
+        "height": "fill"
+      },
+      "size": {
+        "width": 360,
+        "height": 800
+      },
+      "sizing": {
+        "width": "fill",
+        "height": "fill"
+      },
+      "formatVersion": 1
+    },
+    "box": {
+      "fields": [
+        {
+          "key": "contentAlignment",
+          "label": "Alinhamento do conteúdo",
+          "type": "enum",
+          "default": "TopStart",
+          "options": [
+            "TopStart",
+            "TopCenter",
+            "TopEnd",
+            "CenterStart",
+            "Center",
+            "CenterEnd",
+            "BottomStart",
+            "BottomCenter",
+            "BottomEnd"
+          ],
+          "description": "Onde os filhos ficam dentro do Box (Alignment)."
+        },
+        {
+          "key": "background",
+          "label": "Fundo",
+          "type": "enum",
+          "default": "none",
+          "options": [
+            "none",
+            "primary",
+            "onPrimary",
+            "primaryContainer",
+            "onPrimaryContainer",
+            "secondary",
+            "onSecondary",
+            "secondaryContainer",
+            "onSecondaryContainer",
+            "tertiary",
+            "onTertiary",
+            "tertiaryContainer",
+            "onTertiaryContainer",
+            "error",
+            "onError",
+            "errorContainer",
+            "onErrorContainer",
+            "background",
+            "onBackground",
+            "surface",
+            "onSurface",
+            "surfaceVariant",
+            "onSurfaceVariant",
+            "surfaceTint",
+            "inverseSurface",
+            "inverseOnSurface",
+            "inversePrimary",
+            "outline",
+            "outlineVariant",
+            "scrim",
+            "surfaceBright",
+            "surfaceDim",
+            "surfaceContainerLowest",
+            "surfaceContainerLow",
+            "surfaceContainer",
+            "surfaceContainerHigh",
+            "surfaceContainerHighest"
+          ],
+          "description": "Papel de cor do tema usado como fundo (Modifier.background). none = sem fundo."
+        },
+        {
+          "key": "padding",
+          "label": "Margem interna (dp)",
+          "type": "number",
+          "description": "Modifier.padding em dp. Vazio = 0."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Sobreposição centralizada",
+          "values": {
+            "contentAlignment": "Center",
+            "background": "primaryContainer",
+            "padding": 16,
+            "width": "fill",
+            "height": "fixed"
+          }
+        },
+        {
+          "name": "Cantinho",
+          "values": {
+            "contentAlignment": "TopEnd",
+            "background": "none"
+          }
+        }
+      ],
+      "preview": {
+        "contentAlignment": "TopStart",
+        "background": "none",
+        "padding": 0,
+        "width": "wrap",
+        "height": "wrap",
+        "weight": null
+      },
+      "size": {
+        "width": 200,
+        "height": 120
+      },
+      "sizing": {
+        "width": "fill",
+        "height": "hug"
+      },
+      "formatVersion": 1
+    },
+    "row": {
+      "fields": [
+        {
+          "key": "horizontalArrangement",
+          "label": "Distribuição horizontal",
+          "type": "enum",
+          "default": "Start",
+          "options": [
+            "Start",
+            "End",
+            "Center",
+            "SpaceBetween",
+            "SpaceAround",
+            "SpaceEvenly"
+          ],
+          "description": "Como os filhos se distribuem no eixo horizontal (Arrangement)."
+        },
+        {
+          "key": "verticalAlignment",
+          "label": "Alinhamento vertical",
+          "type": "enum",
+          "default": "Top",
+          "options": ["Top", "CenterVertically", "Bottom"],
+          "description": "Como os filhos se alinham no eixo vertical (Alignment)."
+        },
+        {
+          "key": "spacing",
+          "label": "Espaçamento (dp)",
+          "type": "number",
+          "description": "Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0."
+        },
+        {
+          "key": "background",
+          "label": "Fundo",
+          "type": "enum",
+          "default": "none",
+          "options": [
+            "none",
+            "primary",
+            "onPrimary",
+            "primaryContainer",
+            "onPrimaryContainer",
+            "secondary",
+            "onSecondary",
+            "secondaryContainer",
+            "onSecondaryContainer",
+            "tertiary",
+            "onTertiary",
+            "tertiaryContainer",
+            "onTertiaryContainer",
+            "error",
+            "onError",
+            "errorContainer",
+            "onErrorContainer",
+            "background",
+            "onBackground",
+            "surface",
+            "onSurface",
+            "surfaceVariant",
+            "onSurfaceVariant",
+            "surfaceTint",
+            "inverseSurface",
+            "inverseOnSurface",
+            "inversePrimary",
+            "outline",
+            "outlineVariant",
+            "scrim",
+            "surfaceBright",
+            "surfaceDim",
+            "surfaceContainerLowest",
+            "surfaceContainerLow",
+            "surfaceContainer",
+            "surfaceContainerHigh",
+            "surfaceContainerHighest"
+          ],
+          "description": "Papel de cor do tema usado como fundo (Modifier.background). none = sem fundo."
+        },
+        {
+          "key": "padding",
+          "label": "Margem interna (dp)",
+          "type": "number",
+          "description": "Modifier.padding em dp. Vazio = 0."
+        },
+        {
+          "key": "scroll",
+          "label": "Rolagem",
+          "type": "enum",
+          "default": "false",
+          "options": ["false", "true"],
+          "description": "true torna o conteúdo rolável sem usar lazy (verticalScroll/horizontalScroll com rememberScrollState)."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Barra de ações",
+          "values": {
+            "horizontalArrangement": "SpaceBetween",
+            "verticalAlignment": "CenterVertically",
+            "width": "fill"
+          }
+        },
+        {
+          "name": "Linha espaçada",
+          "values": {
+            "horizontalArrangement": "Start",
+            "verticalAlignment": "CenterVertically",
+            "spacing": 8,
+            "padding": 16
+          }
+        },
+        {
+          "name": "Rolagem horizontal",
+          "values": {
+            "scroll": "true",
+            "spacing": 12,
+            "width": "fill"
+          }
+        }
+      ],
+      "preview": {
+        "horizontalArrangement": "Start",
+        "verticalAlignment": "Top",
+        "spacing": 8,
+        "background": "none",
+        "padding": 0,
+        "scroll": "false",
+        "width": "wrap",
+        "height": "wrap",
+        "weight": null
+      },
+      "size": {
+        "width": 380,
+        "height": 48
+      },
+      "sizing": {
+        "width": "fill",
+        "height": "hug"
+      },
+      "formatVersion": 1
+    },
+    "column": {
+      "fields": [
+        {
+          "key": "verticalArrangement",
+          "label": "Distribuição vertical",
+          "type": "enum",
+          "default": "Top",
+          "options": [
+            "Top",
+            "Bottom",
+            "Center",
+            "SpaceBetween",
+            "SpaceAround",
+            "SpaceEvenly"
+          ],
+          "description": "Como os filhos se distribuem no eixo vertical (Arrangement)."
+        },
+        {
+          "key": "horizontalAlignment",
+          "label": "Alinhamento horizontal",
+          "type": "enum",
+          "default": "Start",
+          "options": ["Start", "CenterHorizontally", "End"],
+          "description": "Como os filhos se alinham no eixo horizontal (Alignment)."
+        },
+        {
+          "key": "spacing",
+          "label": "Espaçamento (dp)",
+          "type": "number",
+          "description": "Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0."
+        },
+        {
+          "key": "background",
+          "label": "Fundo",
+          "type": "enum",
+          "default": "none",
+          "options": [
+            "none",
+            "primary",
+            "onPrimary",
+            "primaryContainer",
+            "onPrimaryContainer",
+            "secondary",
+            "onSecondary",
+            "secondaryContainer",
+            "onSecondaryContainer",
+            "tertiary",
+            "onTertiary",
+            "tertiaryContainer",
+            "onTertiaryContainer",
+            "error",
+            "onError",
+            "errorContainer",
+            "onErrorContainer",
+            "background",
+            "onBackground",
+            "surface",
+            "onSurface",
+            "surfaceVariant",
+            "onSurfaceVariant",
+            "surfaceTint",
+            "inverseSurface",
+            "inverseOnSurface",
+            "inversePrimary",
+            "outline",
+            "outlineVariant",
+            "scrim",
+            "surfaceBright",
+            "surfaceDim",
+            "surfaceContainerLowest",
+            "surfaceContainerLow",
+            "surfaceContainer",
+            "surfaceContainerHigh",
+            "surfaceContainerHighest"
+          ],
+          "description": "Papel de cor do tema usado como fundo (Modifier.background). none = sem fundo."
+        },
+        {
+          "key": "padding",
+          "label": "Margem interna (dp)",
+          "type": "number",
+          "description": "Modifier.padding em dp. Vazio = 0."
+        },
+        {
+          "key": "scroll",
+          "label": "Rolagem",
+          "type": "enum",
+          "default": "false",
+          "options": ["false", "true"],
+          "description": "true torna o conteúdo rolável sem usar lazy (verticalScroll/horizontalScroll com rememberScrollState)."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Pilha espaçada",
+          "values": {
+            "verticalArrangement": "Top",
+            "horizontalAlignment": "Start",
+            "spacing": 8,
+            "padding": 16,
+            "width": "fill"
+          }
+        },
+        {
+          "name": "Conteúdo centralizado",
+          "values": {
+            "verticalArrangement": "Center",
+            "horizontalAlignment": "CenterHorizontally",
+            "width": "fill",
+            "height": "fill"
+          }
+        },
+        {
+          "name": "Com rolagem",
+          "values": {
+            "spacing": 16,
+            "scroll": "true",
+            "width": "fill",
+            "height": "fill"
+          }
+        }
+      ],
+      "preview": {
+        "verticalArrangement": "Top",
+        "horizontalAlignment": "Start",
+        "spacing": 8,
+        "background": "none",
+        "padding": 0,
+        "scroll": "false",
+        "width": "wrap",
+        "height": "wrap",
+        "weight": null
+      },
+      "size": {
+        "width": 380,
+        "height": 200
+      },
+      "sizing": {
+        "width": "fill",
+        "height": "hug"
+      },
+      "formatVersion": 1
+    },
+    "lazy-column": {
+      "fields": [
+        {
+          "key": "verticalArrangement",
+          "label": "Distribuição vertical",
+          "type": "enum",
+          "default": "Top",
+          "options": [
+            "Top",
+            "Bottom",
+            "Center",
+            "SpaceBetween",
+            "SpaceAround",
+            "SpaceEvenly"
+          ],
+          "description": "Como os itens se distribuem no eixo vertical (Arrangement)."
+        },
+        {
+          "key": "horizontalAlignment",
+          "label": "Alinhamento horizontal",
+          "type": "enum",
+          "default": "Start",
+          "options": ["Start", "CenterHorizontally", "End"],
+          "description": "Como os itens se alinham no eixo horizontal (Alignment)."
+        },
+        {
+          "key": "spacing",
+          "label": "Espaçamento entre itens (dp)",
+          "type": "number",
+          "description": "Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0."
+        },
+        {
+          "key": "contentPadding",
+          "label": "Margem do conteúdo (dp)",
+          "type": "number",
+          "description": "Margem interna da lista em dp (PaddingValues). Vazio = 0."
+        },
+        {
+          "key": "reverseLayout",
+          "label": "Layout invertido",
+          "type": "enum",
+          "default": "false",
+          "options": ["true", "false"],
+          "description": "true começa pelo fim da lista (reverseLayout)."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "fill",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "fill",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Lista da tela",
+          "values": {
+            "spacing": 8,
+            "contentPadding": 16,
+            "width": "fill",
+            "height": "fill"
+          }
+        },
+        {
+          "name": "Lista compacta",
+          "values": {
+            "verticalArrangement": "Top",
+            "width": "fill",
+            "height": "fixed"
+          }
+        }
+      ],
+      "preview": {
+        "verticalArrangement": "Top",
+        "horizontalAlignment": "Start",
+        "spacing": 8,
+        "contentPadding": 16,
+        "reverseLayout": "false",
+        "width": "fill",
+        "height": "fill",
+        "weight": null
+      },
+      "size": {
+        "width": 360,
+        "height": 400
+      },
+      "sizing": {
+        "width": "fill",
+        "height": "fill"
+      },
+      "formatVersion": 1
+    },
+    "lazy-row": {
+      "fields": [
+        {
+          "key": "horizontalArrangement",
+          "label": "Distribuição horizontal",
+          "type": "enum",
+          "default": "Start",
+          "options": [
+            "Start",
+            "End",
+            "Center",
+            "SpaceBetween",
+            "SpaceAround",
+            "SpaceEvenly"
+          ],
+          "description": "Como os itens se distribuem no eixo horizontal (Arrangement)."
+        },
+        {
+          "key": "verticalAlignment",
+          "label": "Alinhamento vertical",
+          "type": "enum",
+          "default": "Top",
+          "options": ["Top", "CenterVertically", "Bottom"],
+          "description": "Como os itens se alinham no eixo vertical (Alignment)."
+        },
+        {
+          "key": "spacing",
+          "label": "Espaçamento entre itens (dp)",
+          "type": "number",
+          "description": "Espaço entre os filhos em dp (Arrangement.spacedBy). Vazio = 0."
+        },
+        {
+          "key": "contentPadding",
+          "label": "Margem do conteúdo (dp)",
+          "type": "number",
+          "description": "Margem interna da lista em dp (PaddingValues). Vazio = 0."
+        },
+        {
+          "key": "reverseLayout",
+          "label": "Layout invertido",
+          "type": "enum",
+          "default": "false",
+          "options": ["true", "false"],
+          "description": "true começa pelo fim da lista (reverseLayout)."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Carrossel de chips",
+          "values": {
+            "spacing": 8,
+            "contentPadding": 16,
+            "verticalAlignment": "CenterVertically",
+            "width": "fill"
+          }
+        },
+        {
+          "name": "Faixa de cartões",
+          "values": {
+            "horizontalArrangement": "Start",
+            "spacing": 12,
+            "width": "fill",
+            "height": "fixed"
+          }
+        }
+      ],
+      "preview": {
+        "horizontalArrangement": "Start",
+        "verticalAlignment": "Top",
+        "spacing": 8,
+        "contentPadding": 16,
+        "reverseLayout": "false",
+        "width": "wrap",
+        "height": "wrap",
+        "weight": null
+      },
+      "size": {
+        "width": 360,
+        "height": 120
+      },
+      "sizing": {
+        "width": "fill",
+        "height": "hug"
+      },
+      "formatVersion": 1
+    },
+    "lazy-vertical-grid": {
+      "fields": [
+        {
+          "key": "columns",
+          "label": "Colunas",
+          "type": "number",
+          "default": 2,
+          "description": "Número de colunas fixas (GridCells.Fixed)."
+        },
+        {
+          "key": "minColumnWidth",
+          "label": "Largura mínima da coluna (dp)",
+          "type": "number",
+          "description": "Se preenchida, as colunas se adaptam a esta largura (GridCells.Adaptive) e o número de colunas é ignorado."
+        },
+        {
+          "key": "verticalSpacing",
+          "label": "Espaçamento vertical (dp)",
+          "type": "number",
+          "description": "Espaço entre as linhas da grade em dp (verticalArrangement)."
+        },
+        {
+          "key": "horizontalSpacing",
+          "label": "Espaçamento horizontal (dp)",
+          "type": "number",
+          "description": "Espaço entre as colunas da grade em dp (horizontalArrangement)."
+        },
+        {
+          "key": "contentPadding",
+          "label": "Margem do conteúdo (dp)",
+          "type": "number",
+          "description": "Margem interna da grade em dp (PaddingValues). Vazio = 0."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Galeria de duas colunas",
+          "values": {
+            "columns": 2,
+            "verticalSpacing": 8,
+            "horizontalSpacing": 8,
+            "contentPadding": 16,
+            "width": "fill",
+            "height": "fill"
+          }
+        },
+        {
+          "name": "Grade adaptativa",
+          "values": {
+            "minColumnWidth": 120,
+            "verticalSpacing": 12,
+            "horizontalSpacing": 12,
+            "width": "fill",
+            "height": "fill"
+          }
+        }
+      ],
+      "preview": {
+        "columns": 2,
+        "minColumnWidth": null,
+        "verticalSpacing": 8,
+        "horizontalSpacing": 8,
+        "contentPadding": 16,
+        "width": "wrap",
+        "height": "wrap",
+        "weight": null
+      },
+      "size": {
+        "width": 360,
+        "height": 400
+      },
+      "sizing": {
+        "width": "fill",
+        "height": "hug"
+      },
+      "formatVersion": 1
+    },
+    "flow-row": {
+      "fields": [
+        {
+          "key": "horizontalArrangement",
+          "label": "Distribuição horizontal",
+          "type": "enum",
+          "default": "Start",
+          "options": [
+            "Start",
+            "End",
+            "Center",
+            "SpaceBetween",
+            "SpaceAround",
+            "SpaceEvenly"
+          ],
+          "description": "Como os filhos se distribuem em cada linha (Arrangement)."
+        },
+        {
+          "key": "verticalArrangement",
+          "label": "Distribuição vertical",
+          "type": "enum",
+          "default": "Top",
+          "options": [
+            "Top",
+            "Bottom",
+            "Center",
+            "SpaceBetween",
+            "SpaceAround",
+            "SpaceEvenly"
+          ],
+          "description": "Como as linhas se distribuem no eixo vertical (Arrangement)."
+        },
+        {
+          "key": "itemVerticalAlignment",
+          "label": "Alinhamento vertical dos itens",
+          "type": "enum",
+          "default": "Top",
+          "options": ["Top", "CenterVertically", "Bottom"],
+          "description": "Como os itens se alinham dentro de cada linha (Alignment)."
+        },
+        {
+          "key": "maxItemsInEachRow",
+          "label": "Máximo de itens por linha",
+          "type": "number",
+          "description": "Limite de itens em cada linha (Int). Vazio = sem limite."
+        },
+        {
+          "key": "maxLines",
+          "label": "Máximo de linhas",
+          "type": "number",
+          "description": "Limite de linhas (Int). Vazio = sem limite."
+        },
+        {
+          "key": "spacing",
+          "label": "Espaçamento horizontal (dp)",
+          "type": "number",
+          "description": "Espaço entre os itens de uma linha em dp (Arrangement.spacedBy)."
+        },
+        {
+          "key": "verticalSpacing",
+          "label": "Espaçamento vertical (dp)",
+          "type": "number",
+          "description": "Espaço entre as linhas em dp (Arrangement.spacedBy)."
+        },
+        {
+          "key": "padding",
+          "label": "Margem interna (dp)",
+          "type": "number",
+          "description": "Modifier.padding em dp. Vazio = 0."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Grupo de chips",
+          "values": {
+            "spacing": 8,
+            "verticalSpacing": 8,
+            "width": "fill"
+          }
+        },
+        {
+          "name": "Duas linhas no máximo",
+          "values": {
+            "spacing": 12,
+            "maxLines": 2,
+            "itemVerticalAlignment": "CenterVertically",
+            "width": "fill"
+          }
+        }
+      ],
+      "preview": {
+        "horizontalArrangement": "Start",
+        "verticalArrangement": "Top",
+        "itemVerticalAlignment": "Top",
+        "maxItemsInEachRow": null,
+        "maxLines": null,
+        "spacing": 8,
+        "verticalSpacing": 8,
+        "padding": 0,
+        "width": "wrap",
+        "height": "wrap",
+        "weight": null
+      },
+      "size": {
+        "width": 360,
+        "height": 96
+      },
+      "sizing": {
+        "width": "fill",
+        "height": "hug"
+      },
+      "formatVersion": 1
+    },
+    "spacer": {
+      "fields": [
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "fixed",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "fixed",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Espaço de 16 dp",
+          "values": {
+            "width": "fixed",
+            "height": "fixed"
+          }
+        },
+        {
+          "name": "Empurra para a ponta",
+          "values": {
+            "weight": 1
+          }
+        }
+      ],
+      "preview": {
+        "width": "fixed",
+        "height": "fixed",
+        "weight": null
+      },
+      "size": {
+        "width": 96,
+        "height": 24
+      },
+      "sizing": {
+        "width": 96,
+        "height": 24
+      },
+      "formatVersion": 1
+    },
+    "horizontal-pager": {
+      "fields": [
+        {
+          "key": "contentPadding",
+          "label": "Margem do conteúdo (dp)",
+          "type": "number",
+          "description": "Margem interna do pager em dp (PaddingValues). Vazio = 0."
+        },
+        {
+          "key": "pageSpacing",
+          "label": "Espaço entre páginas (dp)",
+          "type": "number",
+          "description": "Espaço entre as páginas em dp (pageSpacing). Vazio = 0."
+        },
+        {
+          "key": "verticalAlignment",
+          "label": "Alinhamento vertical",
+          "type": "enum",
+          "default": "CenterVertically",
+          "options": ["Top", "CenterVertically", "Bottom"],
+          "description": "Como cada página se alinha no eixo vertical (Alignment)."
+        },
+        {
+          "key": "userScrollEnabled",
+          "label": "Rolagem pelo usuário",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "false trava o deslize (só troca de página por código)."
+        },
+        {
+          "key": "reverseLayout",
+          "label": "Layout invertido",
+          "type": "enum",
+          "default": "false",
+          "options": ["true", "false"],
+          "description": "true começa pela última página."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Páginas de onboarding",
+          "values": {
+            "verticalAlignment": "CenterVertically",
+            "width": "fill",
+            "height": "fill"
+          }
+        },
+        {
+          "name": "Páginas espiando",
+          "values": {
+            "contentPadding": 32,
+            "pageSpacing": 16,
+            "width": "fill",
+            "height": "fixed"
+          }
+        }
+      ],
+      "preview": {
+        "contentPadding": 0,
+        "pageSpacing": 8,
+        "verticalAlignment": "CenterVertically",
+        "userScrollEnabled": "true",
+        "reverseLayout": "false",
+        "width": "wrap",
+        "height": "wrap",
+        "weight": null
+      },
+      "size": {
+        "width": 360,
+        "height": 240
+      },
+      "sizing": {
+        "width": "fill",
+        "height": "hug"
+      },
+      "formatVersion": 1
+    },
+    "button": {
+      "fields": [
+        {
+          "key": "label",
+          "label": "Rótulo",
+          "type": "string",
+          "required": true,
+          "description": "Texto do botão."
+        },
+        {
+          "key": "style",
+          "label": "Estilo",
+          "type": "enum",
+          "default": "filled",
+          "options": ["filled", "tonal", "outlined", "text", "elevated"],
+          "description": "filled (Button), tonal (FilledTonalButton), outlined, text ou elevated."
+        },
+        {
+          "key": "enabled",
+          "label": "Habilitado",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "false desabilita o botão."
+        },
+        {
+          "key": "icon",
+          "label": "Ícone",
+          "type": "string",
+          "suggestions": [
+            "Home",
+            "Search",
+            "Person",
+            "Menu",
+            "MoreVert",
+            "Add",
+            "Check",
+            "Close",
+            "ArrowBack",
+            "Favorite",
+            "Edit",
+            "Delete",
+            "Share",
+            "Notifications",
+            "Settings",
+            "Info",
+            "Star",
+            "Email",
+            "Phone",
+            "Place",
+            "DateRange",
+            "ShoppingCart",
+            "AccountCircle",
+            "KeyboardArrowRight",
+            "KeyboardArrowDown",
+            "Refresh",
+            "Clear",
+            "Done",
+            "Lock",
+            "List",
+            "AccountBox",
+            "AddCircle",
+            "ArrowDropDown",
+            "ArrowDropUp",
+            "ArrowForward",
+            "ArrowUpward",
+            "ArrowDownward",
+            "Build",
+            "Call",
+            "CheckCircle",
+            "Create",
+            "Face",
+            "FavoriteBorder",
+            "ExitToApp",
+            "KeyboardArrowLeft",
+            "KeyboardArrowUp",
+            "LocationOn",
+            "MailOutline",
+            "PlayArrow",
+            "Send",
+            "ThumbUp",
+            "Warning",
+            "Cancel",
+            "ExpandMore",
+            "ExpandLess",
+            "ChevronLeft",
+            "ChevronRight",
+            "FirstPage",
+            "LastPage",
+            "MoreHoriz",
+            "Apps",
+            "Dashboard",
+            "Folder",
+            "FolderOpen",
+            "InsertDriveFile",
+            "Description",
+            "Image",
+            "Mic",
+            "Videocam",
+            "Chat",
+            "Comment",
+            "Forum",
+            "NotificationsNone",
+            "Visibility",
+            "VisibilityOff",
+            "Language",
+            "Public",
+            "Link",
+            "Attachment",
+            "ContentCopy",
+            "ContentPaste",
+            "ContentCut",
+            "Save",
+            "Download",
+            "Upload",
+            "CloudUpload",
+            "CloudDownload",
+            "Cloud",
+            "Sync",
+            "Schedule",
+            "AccessTime",
+            "CalendarToday",
+            "Event",
+            "Today",
+            "Timer",
+            "Alarm",
+            "History",
+            "Bookmark",
+            "BookmarkBorder",
+            "Label",
+            "Flag",
+            "Help",
+            "HelpOutline",
+            "Error",
+            "ErrorOutline",
+            "Report",
+            "Block",
+            "Tune",
+            "FilterList",
+            "Sort",
+            "Fullscreen",
+            "Wifi",
+            "Bluetooth",
+            "LightMode",
+            "DarkMode",
+            "Palette",
+            "ShoppingBag",
+            "Store",
+            "Payment",
+            "CreditCard",
+            "AttachMoney",
+            "Receipt",
+            "Map",
+            "Navigation",
+            "DirectionsCar",
+            "Flight",
+            "MenuOpen",
+            "Logout",
+            "Login",
+            "People",
+            "Group",
+            "PersonAdd",
+            "LockOpen",
+            "Security",
+            "VerifiedUser",
+            "Key",
+            "Pause",
+            "Stop",
+            "SkipNext",
+            "SkipPrevious",
+            "VolumeUp",
+            "VolumeOff",
+            "ThumbDown",
+            "Reply",
+            "Inbox",
+            "Archive",
+            "Undo",
+            "Redo",
+            "ZoomIn",
+            "ZoomOut",
+            "Keyboard",
+            "CheckBox",
+            "CheckBoxOutlineBlank",
+            "RadioButtonChecked",
+            "RadioButtonUnchecked",
+            "ToggleOn",
+            "ToggleOff",
+            "StarBorder",
+            "StarHalf",
+            "Lightbulb",
+            "Code",
+            "Terminal",
+            "Bolt",
+            "EditCalendar"
+          ],
+          "description": "Ícone antes do texto. Vazio = só texto."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Preenchido",
+          "values": {
+            "label": "Salvar",
+            "style": "filled"
+          }
+        },
+        {
+          "name": "Contornado",
+          "values": {
+            "label": "Cancelar",
+            "style": "outlined"
+          }
+        },
+        {
+          "name": "Com ícone",
+          "values": {
+            "label": "Adicionar",
+            "style": "tonal",
+            "icon": "Add"
+          }
+        }
+      ],
+      "preview": {
+        "label": "Salvar",
+        "style": "filled",
+        "enabled": "true",
+        "icon": ""
+      },
+      "minSize": {
+        "width": 58,
+        "height": 40
+      },
+      "size": {
+        "width": 136,
+        "height": 40
+      },
+      "sizing": {
+        "width": "hug",
+        "height": 40
+      },
+      "formatVersion": 1
+    },
+    "fab": {
+      "fields": [
+        {
+          "key": "icon",
+          "label": "Ícone",
+          "type": "string",
+          "required": true,
+          "default": "Add",
+          "suggestions": [
+            "Home",
+            "Search",
+            "Person",
+            "Menu",
+            "MoreVert",
+            "Add",
+            "Check",
+            "Close",
+            "ArrowBack",
+            "Favorite",
+            "Edit",
+            "Delete",
+            "Share",
+            "Notifications",
+            "Settings",
+            "Info",
+            "Star",
+            "Email",
+            "Phone",
+            "Place",
+            "DateRange",
+            "ShoppingCart",
+            "AccountCircle",
+            "KeyboardArrowRight",
+            "KeyboardArrowDown",
+            "Refresh",
+            "Clear",
+            "Done",
+            "Lock",
+            "List",
+            "AccountBox",
+            "AddCircle",
+            "ArrowDropDown",
+            "ArrowDropUp",
+            "ArrowForward",
+            "ArrowUpward",
+            "ArrowDownward",
+            "Build",
+            "Call",
+            "CheckCircle",
+            "Create",
+            "Face",
+            "FavoriteBorder",
+            "ExitToApp",
+            "KeyboardArrowLeft",
+            "KeyboardArrowUp",
+            "LocationOn",
+            "MailOutline",
+            "PlayArrow",
+            "Send",
+            "ThumbUp",
+            "Warning",
+            "Cancel",
+            "ExpandMore",
+            "ExpandLess",
+            "ChevronLeft",
+            "ChevronRight",
+            "FirstPage",
+            "LastPage",
+            "MoreHoriz",
+            "Apps",
+            "Dashboard",
+            "Folder",
+            "FolderOpen",
+            "InsertDriveFile",
+            "Description",
+            "Image",
+            "Mic",
+            "Videocam",
+            "Chat",
+            "Comment",
+            "Forum",
+            "NotificationsNone",
+            "Visibility",
+            "VisibilityOff",
+            "Language",
+            "Public",
+            "Link",
+            "Attachment",
+            "ContentCopy",
+            "ContentPaste",
+            "ContentCut",
+            "Save",
+            "Download",
+            "Upload",
+            "CloudUpload",
+            "CloudDownload",
+            "Cloud",
+            "Sync",
+            "Schedule",
+            "AccessTime",
+            "CalendarToday",
+            "Event",
+            "Today",
+            "Timer",
+            "Alarm",
+            "History",
+            "Bookmark",
+            "BookmarkBorder",
+            "Label",
+            "Flag",
+            "Help",
+            "HelpOutline",
+            "Error",
+            "ErrorOutline",
+            "Report",
+            "Block",
+            "Tune",
+            "FilterList",
+            "Sort",
+            "Fullscreen",
+            "Wifi",
+            "Bluetooth",
+            "LightMode",
+            "DarkMode",
+            "Palette",
+            "ShoppingBag",
+            "Store",
+            "Payment",
+            "CreditCard",
+            "AttachMoney",
+            "Receipt",
+            "Map",
+            "Navigation",
+            "DirectionsCar",
+            "Flight",
+            "MenuOpen",
+            "Logout",
+            "Login",
+            "People",
+            "Group",
+            "PersonAdd",
+            "LockOpen",
+            "Security",
+            "VerifiedUser",
+            "Key",
+            "Pause",
+            "Stop",
+            "SkipNext",
+            "SkipPrevious",
+            "VolumeUp",
+            "VolumeOff",
+            "ThumbDown",
+            "Reply",
+            "Inbox",
+            "Archive",
+            "Undo",
+            "Redo",
+            "ZoomIn",
+            "ZoomOut",
+            "Keyboard",
+            "CheckBox",
+            "CheckBoxOutlineBlank",
+            "RadioButtonChecked",
+            "RadioButtonUnchecked",
+            "ToggleOn",
+            "ToggleOff",
+            "StarBorder",
+            "StarHalf",
+            "Lightbulb",
+            "Code",
+            "Terminal",
+            "Bolt",
+            "EditCalendar"
+          ],
+          "description": "Ícone do botão."
+        },
+        {
+          "key": "contentDescription",
+          "label": "Descrição",
+          "type": "string",
+          "description": "Texto de acessibilidade do botão."
+        },
+        {
+          "key": "size",
+          "label": "Tamanho",
+          "type": "enum",
+          "default": "regular",
+          "options": ["small", "regular", "large"],
+          "description": "small (40 dp), regular (56 dp) ou large (96 dp)."
+        },
+        {
+          "key": "containerColor",
+          "label": "Cor do botão",
+          "type": "enum",
+          "default": "primaryContainer",
+          "options": [
+            "primary",
+            "onPrimary",
+            "primaryContainer",
+            "onPrimaryContainer",
+            "secondary",
+            "onSecondary",
+            "secondaryContainer",
+            "onSecondaryContainer",
+            "tertiary",
+            "onTertiary",
+            "tertiaryContainer",
+            "onTertiaryContainer",
+            "error",
+            "onError",
+            "errorContainer",
+            "onErrorContainer",
+            "background",
+            "onBackground",
+            "surface",
+            "onSurface",
+            "surfaceVariant",
+            "onSurfaceVariant",
+            "surfaceTint",
+            "inverseSurface",
+            "inverseOnSurface",
+            "inversePrimary",
+            "outline",
+            "outlineVariant",
+            "scrim",
+            "surfaceBright",
+            "surfaceDim",
+            "surfaceContainerLowest",
+            "surfaceContainerLow",
+            "surfaceContainer",
+            "surfaceContainerHigh",
+            "surfaceContainerHighest"
+          ],
+          "description": "Papel de cor do tema usado no fundo do botão."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Adicionar",
+          "values": {
+            "icon": "Add",
+            "contentDescription": "Adicionar",
+            "size": "regular"
+          }
+        },
+        {
+          "name": "Pequeno terciário",
+          "values": {
+            "icon": "Edit",
+            "size": "small",
+            "containerColor": "tertiaryContainer"
+          }
+        },
+        {
+          "name": "Grande",
+          "values": {
+            "icon": "Add",
+            "size": "large"
+          }
+        }
+      ],
+      "preview": {
+        "icon": "Add",
+        "contentDescription": "Adicionar",
+        "size": "regular",
+        "containerColor": "primaryContainer"
+      },
+      "minSize": {
+        "width": 40,
+        "height": 40
+      },
+      "size": {
+        "width": 56,
+        "height": 56
+      },
+      "sizing": {
+        "width": 56,
+        "height": 56
+      },
+      "formatVersion": 1
+    },
+    "extended-fab": {
+      "fields": [
+        {
+          "key": "text",
+          "label": "Texto",
+          "type": "string",
+          "required": true,
+          "description": "Rótulo do botão."
+        },
+        {
+          "key": "icon",
+          "label": "Ícone",
+          "type": "string",
+          "suggestions": [
+            "Home",
+            "Search",
+            "Person",
+            "Menu",
+            "MoreVert",
+            "Add",
+            "Check",
+            "Close",
+            "ArrowBack",
+            "Favorite",
+            "Edit",
+            "Delete",
+            "Share",
+            "Notifications",
+            "Settings",
+            "Info",
+            "Star",
+            "Email",
+            "Phone",
+            "Place",
+            "DateRange",
+            "ShoppingCart",
+            "AccountCircle",
+            "KeyboardArrowRight",
+            "KeyboardArrowDown",
+            "Refresh",
+            "Clear",
+            "Done",
+            "Lock",
+            "List",
+            "AccountBox",
+            "AddCircle",
+            "ArrowDropDown",
+            "ArrowDropUp",
+            "ArrowForward",
+            "ArrowUpward",
+            "ArrowDownward",
+            "Build",
+            "Call",
+            "CheckCircle",
+            "Create",
+            "Face",
+            "FavoriteBorder",
+            "ExitToApp",
+            "KeyboardArrowLeft",
+            "KeyboardArrowUp",
+            "LocationOn",
+            "MailOutline",
+            "PlayArrow",
+            "Send",
+            "ThumbUp",
+            "Warning",
+            "Cancel",
+            "ExpandMore",
+            "ExpandLess",
+            "ChevronLeft",
+            "ChevronRight",
+            "FirstPage",
+            "LastPage",
+            "MoreHoriz",
+            "Apps",
+            "Dashboard",
+            "Folder",
+            "FolderOpen",
+            "InsertDriveFile",
+            "Description",
+            "Image",
+            "Mic",
+            "Videocam",
+            "Chat",
+            "Comment",
+            "Forum",
+            "NotificationsNone",
+            "Visibility",
+            "VisibilityOff",
+            "Language",
+            "Public",
+            "Link",
+            "Attachment",
+            "ContentCopy",
+            "ContentPaste",
+            "ContentCut",
+            "Save",
+            "Download",
+            "Upload",
+            "CloudUpload",
+            "CloudDownload",
+            "Cloud",
+            "Sync",
+            "Schedule",
+            "AccessTime",
+            "CalendarToday",
+            "Event",
+            "Today",
+            "Timer",
+            "Alarm",
+            "History",
+            "Bookmark",
+            "BookmarkBorder",
+            "Label",
+            "Flag",
+            "Help",
+            "HelpOutline",
+            "Error",
+            "ErrorOutline",
+            "Report",
+            "Block",
+            "Tune",
+            "FilterList",
+            "Sort",
+            "Fullscreen",
+            "Wifi",
+            "Bluetooth",
+            "LightMode",
+            "DarkMode",
+            "Palette",
+            "ShoppingBag",
+            "Store",
+            "Payment",
+            "CreditCard",
+            "AttachMoney",
+            "Receipt",
+            "Map",
+            "Navigation",
+            "DirectionsCar",
+            "Flight",
+            "MenuOpen",
+            "Logout",
+            "Login",
+            "People",
+            "Group",
+            "PersonAdd",
+            "LockOpen",
+            "Security",
+            "VerifiedUser",
+            "Key",
+            "Pause",
+            "Stop",
+            "SkipNext",
+            "SkipPrevious",
+            "VolumeUp",
+            "VolumeOff",
+            "ThumbDown",
+            "Reply",
+            "Inbox",
+            "Archive",
+            "Undo",
+            "Redo",
+            "ZoomIn",
+            "ZoomOut",
+            "Keyboard",
+            "CheckBox",
+            "CheckBoxOutlineBlank",
+            "RadioButtonChecked",
+            "RadioButtonUnchecked",
+            "ToggleOn",
+            "ToggleOff",
+            "StarBorder",
+            "StarHalf",
+            "Lightbulb",
+            "Code",
+            "Terminal",
+            "Bolt",
+            "EditCalendar"
+          ],
+          "description": "Ícone antes do texto. Vazio = só texto."
+        },
+        {
+          "key": "expanded",
+          "label": "Expandido",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "false recolhe o botão para só o ícone."
+        },
+        {
+          "key": "containerColor",
+          "label": "Cor do botão",
+          "type": "enum",
+          "default": "primaryContainer",
+          "options": [
+            "primary",
+            "onPrimary",
+            "primaryContainer",
+            "onPrimaryContainer",
+            "secondary",
+            "onSecondary",
+            "secondaryContainer",
+            "onSecondaryContainer",
+            "tertiary",
+            "onTertiary",
+            "tertiaryContainer",
+            "onTertiaryContainer",
+            "error",
+            "onError",
+            "errorContainer",
+            "onErrorContainer",
+            "background",
+            "onBackground",
+            "surface",
+            "onSurface",
+            "surfaceVariant",
+            "onSurfaceVariant",
+            "surfaceTint",
+            "inverseSurface",
+            "inverseOnSurface",
+            "inversePrimary",
+            "outline",
+            "outlineVariant",
+            "scrim",
+            "surfaceBright",
+            "surfaceDim",
+            "surfaceContainerLowest",
+            "surfaceContainerLow",
+            "surfaceContainer",
+            "surfaceContainerHigh",
+            "surfaceContainerHighest"
+          ],
+          "description": "Papel de cor do tema usado no fundo do botão."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Criar",
+          "values": {
+            "text": "Criar",
+            "icon": "Add"
+          }
+        },
+        {
+          "name": "Recolhido",
+          "values": {
+            "text": "Editar",
+            "icon": "Edit",
+            "expanded": "false",
+            "containerColor": "secondaryContainer"
+          }
+        }
+      ],
+      "preview": {
+        "text": "Criar",
+        "icon": "Add",
+        "expanded": "true",
+        "containerColor": "primaryContainer"
+      },
+      "minSize": {
+        "width": 56,
+        "height": 56
+      },
+      "size": {
+        "width": 142,
+        "height": 56
+      },
+      "sizing": {
+        "width": "hug",
+        "height": 56
+      },
+      "formatVersion": 1
+    },
+    "icon-button": {
+      "fields": [
+        {
+          "key": "icon",
+          "label": "Ícone",
+          "type": "string",
+          "required": true,
+          "default": "Favorite",
+          "suggestions": [
+            "Home",
+            "Search",
+            "Person",
+            "Menu",
+            "MoreVert",
+            "Add",
+            "Check",
+            "Close",
+            "ArrowBack",
+            "Favorite",
+            "Edit",
+            "Delete",
+            "Share",
+            "Notifications",
+            "Settings",
+            "Info",
+            "Star",
+            "Email",
+            "Phone",
+            "Place",
+            "DateRange",
+            "ShoppingCart",
+            "AccountCircle",
+            "KeyboardArrowRight",
+            "KeyboardArrowDown",
+            "Refresh",
+            "Clear",
+            "Done",
+            "Lock",
+            "List",
+            "AccountBox",
+            "AddCircle",
+            "ArrowDropDown",
+            "ArrowDropUp",
+            "ArrowForward",
+            "ArrowUpward",
+            "ArrowDownward",
+            "Build",
+            "Call",
+            "CheckCircle",
+            "Create",
+            "Face",
+            "FavoriteBorder",
+            "ExitToApp",
+            "KeyboardArrowLeft",
+            "KeyboardArrowUp",
+            "LocationOn",
+            "MailOutline",
+            "PlayArrow",
+            "Send",
+            "ThumbUp",
+            "Warning",
+            "Cancel",
+            "ExpandMore",
+            "ExpandLess",
+            "ChevronLeft",
+            "ChevronRight",
+            "FirstPage",
+            "LastPage",
+            "MoreHoriz",
+            "Apps",
+            "Dashboard",
+            "Folder",
+            "FolderOpen",
+            "InsertDriveFile",
+            "Description",
+            "Image",
+            "Mic",
+            "Videocam",
+            "Chat",
+            "Comment",
+            "Forum",
+            "NotificationsNone",
+            "Visibility",
+            "VisibilityOff",
+            "Language",
+            "Public",
+            "Link",
+            "Attachment",
+            "ContentCopy",
+            "ContentPaste",
+            "ContentCut",
+            "Save",
+            "Download",
+            "Upload",
+            "CloudUpload",
+            "CloudDownload",
+            "Cloud",
+            "Sync",
+            "Schedule",
+            "AccessTime",
+            "CalendarToday",
+            "Event",
+            "Today",
+            "Timer",
+            "Alarm",
+            "History",
+            "Bookmark",
+            "BookmarkBorder",
+            "Label",
+            "Flag",
+            "Help",
+            "HelpOutline",
+            "Error",
+            "ErrorOutline",
+            "Report",
+            "Block",
+            "Tune",
+            "FilterList",
+            "Sort",
+            "Fullscreen",
+            "Wifi",
+            "Bluetooth",
+            "LightMode",
+            "DarkMode",
+            "Palette",
+            "ShoppingBag",
+            "Store",
+            "Payment",
+            "CreditCard",
+            "AttachMoney",
+            "Receipt",
+            "Map",
+            "Navigation",
+            "DirectionsCar",
+            "Flight",
+            "MenuOpen",
+            "Logout",
+            "Login",
+            "People",
+            "Group",
+            "PersonAdd",
+            "LockOpen",
+            "Security",
+            "VerifiedUser",
+            "Key",
+            "Pause",
+            "Stop",
+            "SkipNext",
+            "SkipPrevious",
+            "VolumeUp",
+            "VolumeOff",
+            "ThumbDown",
+            "Reply",
+            "Inbox",
+            "Archive",
+            "Undo",
+            "Redo",
+            "ZoomIn",
+            "ZoomOut",
+            "Keyboard",
+            "CheckBox",
+            "CheckBoxOutlineBlank",
+            "RadioButtonChecked",
+            "RadioButtonUnchecked",
+            "ToggleOn",
+            "ToggleOff",
+            "StarBorder",
+            "StarHalf",
+            "Lightbulb",
+            "Code",
+            "Terminal",
+            "Bolt",
+            "EditCalendar"
+          ],
+          "description": "Ícone do botão."
+        },
+        {
+          "key": "contentDescription",
+          "label": "Descrição",
+          "type": "string",
+          "description": "Texto de acessibilidade do botão (vai no `contentDescription` do Icon). Vazio = sem nome para leitores de tela."
+        },
+        {
+          "key": "style",
+          "label": "Estilo",
+          "type": "enum",
+          "default": "standard",
+          "options": ["standard", "filled", "tonal", "outlined"],
+          "description": "standard (IconButton), filled (FilledIconButton), tonal (FilledTonalIconButton) ou outlined (OutlinedIconButton)."
+        },
+        {
+          "key": "enabled",
+          "label": "Habilitado",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "false desabilita o botão."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Padrão",
+          "values": {
+            "icon": "Edit",
+            "contentDescription": "Editar",
+            "style": "standard"
+          }
+        },
+        {
+          "name": "Preenchido",
+          "values": {
+            "icon": "Add",
+            "contentDescription": "Adicionar",
+            "style": "filled"
+          }
+        },
+        {
+          "name": "Contornado desabilitado",
+          "values": {
+            "icon": "Settings",
+            "contentDescription": "Ajustes",
+            "style": "outlined",
+            "enabled": "false"
+          }
+        }
+      ],
+      "preview": {
+        "icon": "Favorite",
+        "contentDescription": "Favoritar",
+        "style": "standard",
+        "enabled": "true"
+      },
+      "minSize": {
+        "width": 40,
+        "height": 40
+      },
+      "size": {
+        "width": 40,
+        "height": 40
+      },
+      "sizing": {
+        "width": 40,
+        "height": 40
+      },
+      "formatVersion": 1
+    },
+    "icon-toggle-button": {
+      "fields": [
+        {
+          "key": "icon",
+          "label": "Ícone",
+          "type": "string",
+          "required": true,
+          "default": "Favorite",
+          "suggestions": [
+            "Home",
+            "Search",
+            "Person",
+            "Menu",
+            "MoreVert",
+            "Add",
+            "Check",
+            "Close",
+            "ArrowBack",
+            "Favorite",
+            "Edit",
+            "Delete",
+            "Share",
+            "Notifications",
+            "Settings",
+            "Info",
+            "Star",
+            "Email",
+            "Phone",
+            "Place",
+            "DateRange",
+            "ShoppingCart",
+            "AccountCircle",
+            "KeyboardArrowRight",
+            "KeyboardArrowDown",
+            "Refresh",
+            "Clear",
+            "Done",
+            "Lock",
+            "List",
+            "AccountBox",
+            "AddCircle",
+            "ArrowDropDown",
+            "ArrowDropUp",
+            "ArrowForward",
+            "ArrowUpward",
+            "ArrowDownward",
+            "Build",
+            "Call",
+            "CheckCircle",
+            "Create",
+            "Face",
+            "FavoriteBorder",
+            "ExitToApp",
+            "KeyboardArrowLeft",
+            "KeyboardArrowUp",
+            "LocationOn",
+            "MailOutline",
+            "PlayArrow",
+            "Send",
+            "ThumbUp",
+            "Warning",
+            "Cancel",
+            "ExpandMore",
+            "ExpandLess",
+            "ChevronLeft",
+            "ChevronRight",
+            "FirstPage",
+            "LastPage",
+            "MoreHoriz",
+            "Apps",
+            "Dashboard",
+            "Folder",
+            "FolderOpen",
+            "InsertDriveFile",
+            "Description",
+            "Image",
+            "Mic",
+            "Videocam",
+            "Chat",
+            "Comment",
+            "Forum",
+            "NotificationsNone",
+            "Visibility",
+            "VisibilityOff",
+            "Language",
+            "Public",
+            "Link",
+            "Attachment",
+            "ContentCopy",
+            "ContentPaste",
+            "ContentCut",
+            "Save",
+            "Download",
+            "Upload",
+            "CloudUpload",
+            "CloudDownload",
+            "Cloud",
+            "Sync",
+            "Schedule",
+            "AccessTime",
+            "CalendarToday",
+            "Event",
+            "Today",
+            "Timer",
+            "Alarm",
+            "History",
+            "Bookmark",
+            "BookmarkBorder",
+            "Label",
+            "Flag",
+            "Help",
+            "HelpOutline",
+            "Error",
+            "ErrorOutline",
+            "Report",
+            "Block",
+            "Tune",
+            "FilterList",
+            "Sort",
+            "Fullscreen",
+            "Wifi",
+            "Bluetooth",
+            "LightMode",
+            "DarkMode",
+            "Palette",
+            "ShoppingBag",
+            "Store",
+            "Payment",
+            "CreditCard",
+            "AttachMoney",
+            "Receipt",
+            "Map",
+            "Navigation",
+            "DirectionsCar",
+            "Flight",
+            "MenuOpen",
+            "Logout",
+            "Login",
+            "People",
+            "Group",
+            "PersonAdd",
+            "LockOpen",
+            "Security",
+            "VerifiedUser",
+            "Key",
+            "Pause",
+            "Stop",
+            "SkipNext",
+            "SkipPrevious",
+            "VolumeUp",
+            "VolumeOff",
+            "ThumbDown",
+            "Reply",
+            "Inbox",
+            "Archive",
+            "Undo",
+            "Redo",
+            "ZoomIn",
+            "ZoomOut",
+            "Keyboard",
+            "CheckBox",
+            "CheckBoxOutlineBlank",
+            "RadioButtonChecked",
+            "RadioButtonUnchecked",
+            "ToggleOn",
+            "ToggleOff",
+            "StarBorder",
+            "StarHalf",
+            "Lightbulb",
+            "Code",
+            "Terminal",
+            "Bolt",
+            "EditCalendar"
+          ],
+          "description": "Ícone do botão."
+        },
+        {
+          "key": "contentDescription",
+          "label": "Descrição",
+          "type": "string",
+          "description": "Texto de acessibilidade do botão (vai no `contentDescription` do Icon). Vazio = sem nome para leitores de tela."
+        },
+        {
+          "key": "style",
+          "label": "Estilo",
+          "type": "enum",
+          "default": "standard",
+          "options": ["standard", "filled", "tonal", "outlined"],
+          "description": "standard (IconToggleButton), filled (FilledIconToggleButton), tonal (FilledTonalIconToggleButton) ou outlined (OutlinedIconToggleButton)."
+        },
+        {
+          "key": "checked",
+          "label": "Ligado",
+          "type": "enum",
+          "default": "false",
+          "options": ["true", "false"],
+          "description": "true liga o botão (cor de seleção do estilo)."
+        },
+        {
+          "key": "enabled",
+          "label": "Habilitado",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "false desabilita o botão."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Desligado",
+          "values": {
+            "icon": "Favorite",
+            "contentDescription": "Favoritar",
+            "style": "standard",
+            "checked": "false"
+          }
+        },
+        {
+          "name": "Preenchido ligado",
+          "values": {
+            "icon": "Favorite",
+            "contentDescription": "Favoritar",
+            "style": "filled",
+            "checked": "true"
+          }
+        },
+        {
+          "name": "Contornado ligado",
+          "values": {
+            "icon": "Notifications",
+            "contentDescription": "Notificações",
+            "style": "outlined",
+            "checked": "true"
+          }
+        }
+      ],
+      "preview": {
+        "icon": "Favorite",
+        "contentDescription": "Favoritar",
+        "style": "filled",
+        "checked": "true",
+        "enabled": "true"
+      },
+      "minSize": {
+        "width": 40,
+        "height": 40
+      },
+      "size": {
+        "width": 40,
+        "height": 40
+      },
+      "sizing": {
+        "width": 40,
+        "height": 40
+      },
+      "formatVersion": 1
+    },
+    "chip": {
+      "fields": [
+        {
+          "key": "label",
+          "label": "Rótulo",
+          "type": "string",
+          "required": true,
+          "description": "Texto do chip."
+        },
+        {
+          "key": "style",
+          "label": "Estilo",
+          "type": "enum",
+          "default": "assist",
+          "options": [
+            "assist",
+            "assist-elevated",
+            "filter",
+            "filter-elevated",
+            "input",
+            "suggestion",
+            "suggestion-elevated"
+          ],
+          "description": "assist, filter, input ou suggestion, cada um também na versão elevated."
+        },
+        {
+          "key": "selected",
+          "label": "Selecionado",
+          "type": "enum",
+          "default": "false",
+          "options": ["true", "false"],
+          "description": "true marca o chip. Só vale nos estilos filter e input."
+        },
+        {
+          "key": "enabled",
+          "label": "Habilitado",
+          "type": "enum",
+          "default": "true",
+          "options": ["true", "false"],
+          "description": "false desabilita o chip."
+        },
+        {
+          "key": "leadingIcon",
+          "label": "Ícone inicial",
+          "type": "string",
+          "suggestions": [
+            "Home",
+            "Search",
+            "Person",
+            "Menu",
+            "MoreVert",
+            "Add",
+            "Check",
+            "Close",
+            "ArrowBack",
+            "Favorite",
+            "Edit",
+            "Delete",
+            "Share",
+            "Notifications",
+            "Settings",
+            "Info",
+            "Star",
+            "Email",
+            "Phone",
+            "Place",
+            "DateRange",
+            "ShoppingCart",
+            "AccountCircle",
+            "KeyboardArrowRight",
+            "KeyboardArrowDown",
+            "Refresh",
+            "Clear",
+            "Done",
+            "Lock",
+            "List",
+            "AccountBox",
+            "AddCircle",
+            "ArrowDropDown",
+            "ArrowDropUp",
+            "ArrowForward",
+            "ArrowUpward",
+            "ArrowDownward",
+            "Build",
+            "Call",
+            "CheckCircle",
+            "Create",
+            "Face",
+            "FavoriteBorder",
+            "ExitToApp",
+            "KeyboardArrowLeft",
+            "KeyboardArrowUp",
+            "LocationOn",
+            "MailOutline",
+            "PlayArrow",
+            "Send",
+            "ThumbUp",
+            "Warning",
+            "Cancel",
+            "ExpandMore",
+            "ExpandLess",
+            "ChevronLeft",
+            "ChevronRight",
+            "FirstPage",
+            "LastPage",
+            "MoreHoriz",
+            "Apps",
+            "Dashboard",
+            "Folder",
+            "FolderOpen",
+            "InsertDriveFile",
+            "Description",
+            "Image",
+            "Mic",
+            "Videocam",
+            "Chat",
+            "Comment",
+            "Forum",
+            "NotificationsNone",
+            "Visibility",
+            "VisibilityOff",
+            "Language",
+            "Public",
+            "Link",
+            "Attachment",
+            "ContentCopy",
+            "ContentPaste",
+            "ContentCut",
+            "Save",
+            "Download",
+            "Upload",
+            "CloudUpload",
+            "CloudDownload",
+            "Cloud",
+            "Sync",
+            "Schedule",
+            "AccessTime",
+            "CalendarToday",
+            "Event",
+            "Today",
+            "Timer",
+            "Alarm",
+            "History",
+            "Bookmark",
+            "BookmarkBorder",
+            "Label",
+            "Flag",
+            "Help",
+            "HelpOutline",
+            "Error",
+            "ErrorOutline",
+            "Report",
+            "Block",
+            "Tune",
+            "FilterList",
+            "Sort",
+            "Fullscreen",
+            "Wifi",
+            "Bluetooth",
+            "LightMode",
+            "DarkMode",
+            "Palette",
+            "ShoppingBag",
+            "Store",
+            "Payment",
+            "CreditCard",
+            "AttachMoney",
+            "Receipt",
+            "Map",
+            "Navigation",
+            "DirectionsCar",
+            "Flight",
+            "MenuOpen",
+            "Logout",
+            "Login",
+            "People",
+            "Group",
+            "PersonAdd",
+            "LockOpen",
+            "Security",
+            "VerifiedUser",
+            "Key",
+            "Pause",
+            "Stop",
+            "SkipNext",
+            "SkipPrevious",
+            "VolumeUp",
+            "VolumeOff",
+            "ThumbDown",
+            "Reply",
+            "Inbox",
+            "Archive",
+            "Undo",
+            "Redo",
+            "ZoomIn",
+            "ZoomOut",
+            "Keyboard",
+            "CheckBox",
+            "CheckBoxOutlineBlank",
+            "RadioButtonChecked",
+            "RadioButtonUnchecked",
+            "ToggleOn",
+            "ToggleOff",
+            "StarBorder",
+            "StarHalf",
+            "Lightbulb",
+            "Code",
+            "Terminal",
+            "Bolt",
+            "EditCalendar"
+          ],
+          "description": "Ícone antes do texto. Vazio = sem ícone."
+        },
+        {
+          "key": "trailingIcon",
+          "label": "Ícone final",
+          "type": "string",
+          "suggestions": [
+            "Home",
+            "Search",
+            "Person",
+            "Menu",
+            "MoreVert",
+            "Add",
+            "Check",
+            "Close",
+            "ArrowBack",
+            "Favorite",
+            "Edit",
+            "Delete",
+            "Share",
+            "Notifications",
+            "Settings",
+            "Info",
+            "Star",
+            "Email",
+            "Phone",
+            "Place",
+            "DateRange",
+            "ShoppingCart",
+            "AccountCircle",
+            "KeyboardArrowRight",
+            "KeyboardArrowDown",
+            "Refresh",
+            "Clear",
+            "Done",
+            "Lock",
+            "List",
+            "AccountBox",
+            "AddCircle",
+            "ArrowDropDown",
+            "ArrowDropUp",
+            "ArrowForward",
+            "ArrowUpward",
+            "ArrowDownward",
+            "Build",
+            "Call",
+            "CheckCircle",
+            "Create",
+            "Face",
+            "FavoriteBorder",
+            "ExitToApp",
+            "KeyboardArrowLeft",
+            "KeyboardArrowUp",
+            "LocationOn",
+            "MailOutline",
+            "PlayArrow",
+            "Send",
+            "ThumbUp",
+            "Warning",
+            "Cancel",
+            "ExpandMore",
+            "ExpandLess",
+            "ChevronLeft",
+            "ChevronRight",
+            "FirstPage",
+            "LastPage",
+            "MoreHoriz",
+            "Apps",
+            "Dashboard",
+            "Folder",
+            "FolderOpen",
+            "InsertDriveFile",
+            "Description",
+            "Image",
+            "Mic",
+            "Videocam",
+            "Chat",
+            "Comment",
+            "Forum",
+            "NotificationsNone",
+            "Visibility",
+            "VisibilityOff",
+            "Language",
+            "Public",
+            "Link",
+            "Attachment",
+            "ContentCopy",
+            "ContentPaste",
+            "ContentCut",
+            "Save",
+            "Download",
+            "Upload",
+            "CloudUpload",
+            "CloudDownload",
+            "Cloud",
+            "Sync",
+            "Schedule",
+            "AccessTime",
+            "CalendarToday",
+            "Event",
+            "Today",
+            "Timer",
+            "Alarm",
+            "History",
+            "Bookmark",
+            "BookmarkBorder",
+            "Label",
+            "Flag",
+            "Help",
+            "HelpOutline",
+            "Error",
+            "ErrorOutline",
+            "Report",
+            "Block",
+            "Tune",
+            "FilterList",
+            "Sort",
+            "Fullscreen",
+            "Wifi",
+            "Bluetooth",
+            "LightMode",
+            "DarkMode",
+            "Palette",
+            "ShoppingBag",
+            "Store",
+            "Payment",
+            "CreditCard",
+            "AttachMoney",
+            "Receipt",
+            "Map",
+            "Navigation",
+            "DirectionsCar",
+            "Flight",
+            "MenuOpen",
+            "Logout",
+            "Login",
+            "People",
+            "Group",
+            "PersonAdd",
+            "LockOpen",
+            "Security",
+            "VerifiedUser",
+            "Key",
+            "Pause",
+            "Stop",
+            "SkipNext",
+            "SkipPrevious",
+            "VolumeUp",
+            "VolumeOff",
+            "ThumbDown",
+            "Reply",
+            "Inbox",
+            "Archive",
+            "Undo",
+            "Redo",
+            "ZoomIn",
+            "ZoomOut",
+            "Keyboard",
+            "CheckBox",
+            "CheckBoxOutlineBlank",
+            "RadioButtonChecked",
+            "RadioButtonUnchecked",
+            "ToggleOn",
+            "ToggleOff",
+            "StarBorder",
+            "StarHalf",
+            "Lightbulb",
+            "Code",
+            "Terminal",
+            "Bolt",
+            "EditCalendar"
+          ],
+          "description": "Ícone depois do texto. Vazio = sem ícone. Não existe em suggestion."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Assist",
+          "values": {
+            "label": "Adicionar ao calendário",
+            "style": "assist",
+            "leadingIcon": "DateRange"
+          }
+        },
+        {
+          "name": "Filtro selecionado",
+          "values": {
+            "label": "Aberto agora",
+            "style": "filter",
+            "selected": "true"
+          }
+        },
+        {
+          "name": "Valor digitado",
+          "values": {
+            "label": "ana@exemplo.com",
+            "style": "input",
+            "trailingIcon": "Close"
+          }
+        }
+      ],
+      "preview": {
+        "label": "Aberto agora",
+        "style": "filter",
+        "selected": "true",
+        "enabled": "true",
+        "leadingIcon": "",
+        "trailingIcon": ""
+      },
+      "size": {
+        "width": 232,
+        "height": 32
+      },
+      "sizing": {
+        "width": "hug",
+        "height": 32
+      },
+      "formatVersion": 1
+    },
+    "badge": {
+      "fields": [
+        {
+          "key": "count",
+          "label": "Contador",
+          "type": "string",
+          "description": "Texto do contador (por exemplo 3 ou 99+). Só vale no estilo large."
+        },
+        {
+          "key": "style",
+          "label": "Estilo",
+          "type": "enum",
+          "default": "small",
+          "options": ["small", "large"],
+          "description": "small é um ponto sem conteúdo; large é o contador com o texto de count."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Ponto",
+          "values": {
+            "style": "small"
+          }
+        },
+        {
+          "name": "Contador",
+          "values": {
+            "count": "3",
+            "style": "large"
+          }
+        },
+        {
+          "name": "Muitos itens",
+          "values": {
+            "count": "99+",
+            "style": "large"
+          }
+        }
+      ],
+      "preview": {
+        "count": "3",
+        "style": "large"
+      },
+      "minSize": {
+        "width": 6,
+        "height": 6
+      },
+      "size": {
+        "width": 32,
+        "height": 16
+      },
+      "sizing": {
+        "width": "hug",
+        "height": "hug"
+      },
+      "formatVersion": 1
+    },
+    "card": {
+      "fields": [
+        {
+          "key": "title",
+          "label": "Título",
+          "type": "string",
+          "required": true,
+          "description": "Título do cartão."
+        },
+        {
+          "key": "subtitle",
+          "label": "Subtítulo",
+          "type": "string",
+          "description": "Linha de apoio abaixo do título."
+        },
+        {
+          "key": "supportingText",
+          "label": "Texto",
+          "type": "string",
+          "description": "Parágrafo de apoio do cartão."
+        },
+        {
+          "key": "media",
+          "label": "Imagem (URL)",
+          "type": "string",
+          "description": "Endereço https:// da imagem no topo do cartão. Vazio = sem imagem."
+        },
+        {
+          "key": "style",
+          "label": "Estilo",
+          "type": "enum",
+          "default": "filled",
+          "options": ["filled", "elevated", "outlined"],
+          "description": "filled (Card), elevated ou outlined."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Cartão simples",
+          "values": {
+            "title": "Resumo da semana",
+            "subtitle": "12 a 18 de outubro",
+            "supportingText": "Você concluiu 8 de 10 tarefas.",
+            "style": "filled",
+            "width": "fill"
+          }
+        },
+        {
+          "name": "Com imagem",
+          "values": {
+            "title": "Praia do Rosa",
+            "supportingText": "Fim de semana de sol.",
+            "media": "https://example.com/praia.jpg",
+            "style": "elevated",
+            "width": "fill"
+          }
+        },
+        {
+          "name": "Contornado",
+          "values": {
+            "title": "Plano gratuito",
+            "style": "outlined",
+            "width": "fill"
+          }
+        }
+      ],
+      "preview": {
+        "title": "Praia do Rosa",
+        "subtitle": "Santa Catarina",
+        "supportingText": "Fim de semana de sol.",
+        "media": "https://example.com/praia.jpg",
+        "style": "elevated"
+      },
+      "size": {
+        "width": 360,
+        "height": 244
+      },
+      "sizing": {
+        "width": "fill",
+        "height": "hug"
+      },
+      "formatVersion": 3
+    },
+    "image": {
+      "fields": [
+        {
+          "key": "url",
+          "label": "URL da imagem",
+          "type": "string",
+          "required": true,
+          "description": "Endereço https:// da imagem. O componente a exibe no canvas; no código ela passa pelo carregador de imagens do app."
+        },
+        {
+          "key": "contentDescription",
+          "label": "Descrição",
+          "type": "string",
+          "description": "Texto de acessibilidade da imagem. Vazio = decorativa (null)."
+        },
+        {
+          "key": "contentScale",
+          "label": "Escala",
+          "type": "enum",
+          "default": "Fit",
+          "options": [
+            "Crop",
+            "Fit",
+            "FillBounds",
+            "FillWidth",
+            "FillHeight",
+            "Inside",
+            "None"
+          ],
+          "description": "Como a imagem preenche o espaço (ContentScale)."
+        },
+        {
+          "key": "width",
+          "label": "Largura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp)."
+        },
+        {
+          "key": "height",
+          "label": "Altura",
+          "type": "enum",
+          "default": "wrap",
+          "options": ["wrap", "fill", "fixed"],
+          "description": "wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp)."
+        },
+        {
+          "key": "weight",
+          "label": "Peso (weight)",
+          "type": "number",
+          "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+        }
+      ],
+      "examples": [
+        {
+          "name": "Capa recortada",
+          "values": {
+            "url": "https://example.com/capa.jpg",
+            "contentDescription": "Capa do álbum",
+            "contentScale": "Crop",
+            "width": "fill",
+            "height": "fixed"
+          }
+        },
+        {
+          "name": "Ilustração inteira",
+          "values": {
+            "url": "https://example.com/ilustracao.png",
+            "contentScale": "Fit",
+            "width": "fill"
+          }
+        }
+      ],
+      "preview": {
+        "url": "https://example.com/foto.jpg",
+        "contentDescription": "Foto",
+        "contentScale": "Fit",
+        "width": "wrap",
+        "height": "wrap",
+        "weight": null
+      },
+      "size": {
+        "width": 160,
+        "height": 120
+      },
+      "sizing": {
+        "width": 160,
+        "height": 120
+      },
+      "formatVersion": 3
+    }
+  }
+}

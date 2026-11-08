@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "spacer",
   "name": "Spacer",
   "description": "Espaço vazio entre irmãos: um retângulo tracejado discreto com as medidas.",
@@ -25,11 +25,15 @@
       "type": "none"
     },
     "stroke": {
-      "color": "#CAC4D0",
+      "color": {
+        "$token": "outline-variant"
+      },
       "width": 1,
       "dash": [4, 3]
     },
-    "cornerRadius": 4,
+    "cornerRadius": {
+      "$token": "corner-extra-small"
+    },
     "children": [
       {
         "type": "text",
@@ -67,12 +71,22 @@
             }
           ]
         },
-        "color": "#79747E",
+        "color": {
+          "$token": "outline"
+        },
         "font": {
-          "family": "Roboto",
-          "size": 10,
-          "weight": 400,
-          "lineHeight": 14
+          "size": {
+            "$token": "label-small-size"
+          },
+          "weight": {
+            "$token": "label-small-weight"
+          },
+          "lineHeight": {
+            "$token": "label-small-line-height"
+          },
+          "letterSpacing": {
+            "$token": "label-small-tracking"
+          }
         }
       }
     ]

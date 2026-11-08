@@ -1,9 +1,9 @@
 {
   "format": "mapping-component",
-  "formatVersion": 3,
+  "formatVersion": 4,
   "id": "card",
   "name": "Card",
-  "description": "Card de forma medium (12): mídia opcional no topo, título, subtítulo e texto; filled, elevated (sombra) ou outlined (contorno).",
+  "description": "Card do Material 3 (CardDefaults): forma medium (12), mídia opcional no topo, título, subtítulo e texto; filled (surface container highest), elevated (surface container low, elevação 1) ou outlined (surface com contorno outline variant de 1).",
   "size": {
     "width": 360,
     "height": 244
@@ -22,22 +22,32 @@
   "template": {
     "type": "frame",
     "name": "card",
-    "cornerRadius": 12,
+    "cornerRadius": {
+      "$token": "corner-medium"
+    },
     "fill": {
       "$switch": "style",
       "cases": {
-        "elevated": "#F7F2FA",
-        "outlined": "#FEF7FF"
+        "elevated": {
+          "$token": "surface-container-low"
+        },
+        "outlined": {
+          "$token": "surface"
+        }
       },
-      "default": "#E6E0E9"
+      "default": {
+        "$token": "surface-container-highest"
+      }
     },
     "stroke": {
       "color": {
         "$if": {
           "$eq": ["style", "outlined"]
         },
-        "then": "#CAC4D0",
-        "else": "rgba(0, 0, 0, 0)"
+        "then": {
+          "$token": "outline-variant"
+        },
+        "else": "none"
       },
       "width": 1,
       "align": "inside"
@@ -47,11 +57,13 @@
         "$if": {
           "$eq": ["style", "elevated"]
         },
-        "then": "rgba(0, 0, 0, 0.3)",
-        "else": "rgba(0, 0, 0, 0)"
+        "then": {
+          "$token": "elevation-shadow"
+        },
+        "else": "none"
       },
       "y": 1,
-      "blur": 3
+      "blur": 2
     },
     "layout": {
       "type": "column",
@@ -67,7 +79,9 @@
         "fit": "cover",
         "width": "fill",
         "height": 140,
-        "fill": "#E6E0E9",
+        "fill": {
+          "$token": "surface-container-highest"
+        },
         "visible": {
           "$has": "media"
         }
@@ -91,12 +105,22 @@
               "default": "Title"
             },
             "font": {
-              "family": "Roboto",
-              "size": 16,
-              "weight": 500,
-              "lineHeight": 24
+              "size": {
+                "$token": "title-medium-size"
+              },
+              "weight": {
+                "$token": "title-medium-weight"
+              },
+              "lineHeight": {
+                "$token": "title-medium-line-height"
+              },
+              "letterSpacing": {
+                "$token": "title-medium-tracking"
+              }
             },
-            "color": "#1D1B20",
+            "color": {
+              "$token": "on-surface"
+            },
             "width": "fill"
           },
           {
@@ -106,12 +130,22 @@
               "$field": "subtitle"
             },
             "font": {
-              "family": "Roboto",
-              "size": 14,
-              "weight": 400,
-              "lineHeight": 20
+              "size": {
+                "$token": "body-medium-size"
+              },
+              "weight": {
+                "$token": "body-medium-weight"
+              },
+              "lineHeight": {
+                "$token": "body-medium-line-height"
+              },
+              "letterSpacing": {
+                "$token": "body-medium-tracking"
+              }
             },
-            "color": "#49454F",
+            "color": {
+              "$token": "on-surface-variant"
+            },
             "width": "fill",
             "visible": {
               "$has": "subtitle"
@@ -124,12 +158,22 @@
               "$field": "supportingText"
             },
             "font": {
-              "family": "Roboto",
-              "size": 14,
-              "weight": 400,
-              "lineHeight": 20
+              "size": {
+                "$token": "body-medium-size"
+              },
+              "weight": {
+                "$token": "body-medium-weight"
+              },
+              "lineHeight": {
+                "$token": "body-medium-line-height"
+              },
+              "letterSpacing": {
+                "$token": "body-medium-tracking"
+              }
             },
-            "color": "#49454F",
+            "color": {
+              "$token": "on-surface-variant"
+            },
             "width": "fill",
             "visible": {
               "$has": "supportingText"

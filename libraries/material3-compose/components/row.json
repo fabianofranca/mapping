@@ -1,6 +1,6 @@
 {
   "format": "mapping-component",
-  "formatVersion": 1,
+  "formatVersion": 4,
   "id": "row",
   "name": "Row",
   "description": "Linha do Compose: as filhas se enfileiram pela ordem, com spacing, padding e alinhamentos dos campos.",
@@ -33,44 +33,116 @@
     "fill": {
       "$switch": "background",
       "cases": {
-        "primary": "#6750A4",
-        "onPrimary": "#FFFFFF",
-        "primaryContainer": "#EADDFF",
-        "onPrimaryContainer": "#21005D",
-        "secondary": "#625B71",
-        "onSecondary": "#FFFFFF",
-        "secondaryContainer": "#E8DEF8",
-        "onSecondaryContainer": "#1D192B",
-        "tertiary": "#7D5260",
-        "onTertiary": "#FFFFFF",
-        "tertiaryContainer": "#FFD8E4",
-        "onTertiaryContainer": "#31111D",
-        "error": "#B3261E",
-        "onError": "#FFFFFF",
-        "errorContainer": "#F9DEDC",
-        "onErrorContainer": "#410E0B",
-        "background": "#FEF7FF",
-        "onBackground": "#1D1B20",
-        "surface": "#FEF7FF",
-        "onSurface": "#1D1B20",
-        "surfaceVariant": "#E7E0EC",
-        "onSurfaceVariant": "#49454F",
-        "surfaceTint": "#6750A4",
-        "inverseSurface": "#322F35",
-        "inverseOnSurface": "#F5EFF7",
-        "inversePrimary": "#D0BCFF",
-        "outline": "#79747E",
-        "outlineVariant": "#CAC4D0",
-        "scrim": "#000000",
-        "surfaceBright": "#FEF7FF",
-        "surfaceDim": "#DED8E1",
-        "surfaceContainerLowest": "#FFFFFF",
-        "surfaceContainerLow": "#F7F2FA",
-        "surfaceContainer": "#F3EDF7",
-        "surfaceContainerHigh": "#ECE6F0",
-        "surfaceContainerHighest": "#E6E0E9"
+        "primary": {
+          "$token": "primary"
+        },
+        "onPrimary": {
+          "$token": "on-primary"
+        },
+        "primaryContainer": {
+          "$token": "primary-container"
+        },
+        "onPrimaryContainer": {
+          "$token": "on-primary-container"
+        },
+        "secondary": {
+          "$token": "secondary"
+        },
+        "onSecondary": {
+          "$token": "on-secondary"
+        },
+        "secondaryContainer": {
+          "$token": "secondary-container"
+        },
+        "onSecondaryContainer": {
+          "$token": "on-secondary-container"
+        },
+        "tertiary": {
+          "$token": "tertiary"
+        },
+        "onTertiary": {
+          "$token": "on-tertiary"
+        },
+        "tertiaryContainer": {
+          "$token": "tertiary-container"
+        },
+        "onTertiaryContainer": {
+          "$token": "on-tertiary-container"
+        },
+        "error": {
+          "$token": "error"
+        },
+        "onError": {
+          "$token": "on-error"
+        },
+        "errorContainer": {
+          "$token": "error-container"
+        },
+        "onErrorContainer": {
+          "$token": "on-error-container"
+        },
+        "background": {
+          "$token": "background"
+        },
+        "onBackground": {
+          "$token": "on-background"
+        },
+        "surface": {
+          "$token": "surface"
+        },
+        "onSurface": {
+          "$token": "on-surface"
+        },
+        "surfaceVariant": {
+          "$token": "surface-variant"
+        },
+        "onSurfaceVariant": {
+          "$token": "on-surface-variant"
+        },
+        "surfaceTint": {
+          "$token": "surface-tint"
+        },
+        "inverseSurface": {
+          "$token": "inverse-surface"
+        },
+        "inverseOnSurface": {
+          "$token": "inverse-on-surface"
+        },
+        "inversePrimary": {
+          "$token": "inverse-primary"
+        },
+        "outline": {
+          "$token": "outline"
+        },
+        "outlineVariant": {
+          "$token": "outline-variant"
+        },
+        "scrim": {
+          "$token": "scrim"
+        },
+        "surfaceBright": {
+          "$token": "surface-bright"
+        },
+        "surfaceDim": {
+          "$token": "surface-dim"
+        },
+        "surfaceContainerLowest": {
+          "$token": "surface-container-lowest"
+        },
+        "surfaceContainerLow": {
+          "$token": "surface-container-low"
+        },
+        "surfaceContainer": {
+          "$token": "surface-container"
+        },
+        "surfaceContainerHigh": {
+          "$token": "surface-container-high"
+        },
+        "surfaceContainerHighest": {
+          "$token": "surface-container-highest"
+        }
       },
-      "default": "rgba(0, 0, 0, 0)"
+      "default": "none"
     },
     "children": [
       {
@@ -174,8 +246,27 @@
             "$field": "padding",
             "default": 0
           },
-          "align": "start",
-          "justify": "start"
+          "align": {
+            "$switch": "verticalAlignment",
+            "cases": {
+              "Top": "start",
+              "CenterVertically": "center",
+              "Bottom": "end"
+            },
+            "default": "start"
+          },
+          "justify": {
+            "$switch": "horizontalArrangement",
+            "cases": {
+              "Start": "start",
+              "End": "end",
+              "Center": "center",
+              "SpaceBetween": "space-between",
+              "SpaceAround": "space-between",
+              "SpaceEvenly": "space-between"
+            },
+            "default": "start"
+          }
         }
       }
     ]

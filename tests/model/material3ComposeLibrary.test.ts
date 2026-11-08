@@ -3,24 +3,27 @@
 // Material 3 do Jetpack Compose, 50 tipos em três camadas, cada um com `code.compose` (símbolo e arquivo no
 // androidx, no commit fixado), componente que desenha, documento e exemplos. As variantes que trocam o
 // símbolo (`variants`) e os ícones por `suggestions` seguem o padrão da biblioteca.
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
-import { isFontPath } from '../../src/model/components/library';
-import { parseSpecText } from '../../src/model/spec';
-import type { Spec, SpecAnnotationType, SpecField } from '../../src/model/spec';
+import type { Spec, SpecField } from '../../src/model/spec';
 import { resolveCode } from '../../src/model/codeVariants';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
-import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
 import { resolveTokens } from '../../src/model/components/tokens';
 import { missingMigrations } from '../../src/model/specVersions';
-import { defaultValues } from '../../src/model/libraryDrawing';
-import type { Paint, SceneNode, TextNode } from '../../src/model/components/scene';
 import reference from '../fixtures/material3-tokens-reference.json';
+import {
+  MIGRATED,
+  SPEC_FILE,
+  drawIn,
+  files,
+  findText,
+  solid,
+  spec,
+  text,
+  typeOf,
+  types,
+} from '../support/material3Library';
 
-const ROOT = join(__dirname, '../../libraries/material3-compose');
-const SPEC_FILE = 'material3-compose.spec.json';
 const COMMIT = '5113b82a4ed6416d6344efa50e41db8cb65928ff';
 
 const LAYERS: Record<string, string[]> = {
@@ -63,7 +66,6 @@ const SELF_DRAWN_ICONS = [
   ...['keyboard_arrow_right', 'keyboard_arrow_down'],
 ];
 /** Os quatro componentes migrados na M1 (formato 4, sem cor literal, sem `family`). */
-const MIGRATED = ['text', 'icon', 'divider', 'surface'];
 const ICON_KEYS = [
   ...['icon', 'imageVector', 'navigationIcon', 'actionIcon1', 'actionIcon2'],
   ...['actionIcon3', 'actionIcon4', 'floatingActionButton'],
@@ -226,36 +228,6 @@ const VARIANT_SYMBOLS: Record<
       'centered-hero': CAROUSEL + 'HorizontalCenteredHeroCarousel',
     },
   },
-};
-
-function listDisk(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory()
-      ? listDisk(join(dir, e.name))
-      : [relative(ROOT, join(dir, e.name)).split('\\').join('/')],
-  );
-}
-
-const files: { path: string; text?: string; binary?: true }[] = listDisk(ROOT)
-  .sort()
-  .map((path) =>
-    isFontPath(path)
-      ? { path, binary: true as const }
-      : { path, text: readFileSync(join(ROOT, path), 'utf8') },
-  );
-const text = (path: string): string => files.find((f) => f.path === path)?.text ?? '';
-
-function loadSpec(): Spec {
-  const parsed = parseSpecText(text(SPEC_FILE));
-  if (!parsed.ok) throw new Error('especialização inválida');
-  return parsed.spec;
-}
-const spec = loadSpec();
-const types: SpecAnnotationType[] = spec.layers.flatMap((l) => l.annotationTypes);
-const typeOf = (id: string): SpecAnnotationType => {
-  const t = types.find((x) => x.id === id);
-  if (t === undefined) throw new Error(`tipo ${id} ausente`);
-  return t;
 };
 
 describe('biblioteca Material 3 (Compose)', () => {
@@ -439,7 +411,7 @@ describe('biblioteca Material 3 (Compose)', () => {
     },
   );
 
-  it('imagem remota é campo string e o componente é formatVersion 3', () => {
+  it('imagem remota é campo string e o componente é formatVersion 3 ou 4', () => {
     const catalog = buildCatalog(files);
     for (const [id, key] of [
       ['image', 'url'],
@@ -447,7 +419,7 @@ describe('biblioteca Material 3 (Compose)', () => {
       ['list-item', 'leadingImage'],
     ] as const) {
       expect(typeOf(id).fields.find((f) => f.key === key)?.type, id).toBe('string');
-      expect(findEntry(catalog, id)?.component?.formatVersion, id).toBe(3);
+      expect([3, 4], id).toContain(findEntry(catalog, id)?.component?.formatVersion);
     }
   });
 
@@ -567,48 +539,15 @@ describe('conjunto de ícones da biblioteca Material 3 (Compose) v2', () => {
   });
 });
 
-function findText(node: SceneNode): TextNode | undefined {
-  if (node.type === 'text' && node.visible) return node;
-  if ('children' in node) {
-    for (const child of node.children) {
-      const found = findText(child);
-      if (found !== undefined) return found;
-    }
-  }
-  return undefined;
-}
-
-const solid = (paints: readonly Paint[]): string | undefined => {
-  const first = paints[0];
-  return first?.type === 'solid' ? first.color : undefined;
-};
-
-function drawIn(
-  catalog: ReturnType<typeof buildCatalog>,
-  entry: NonNullable<ReturnType<typeof findEntry>>,
-  values: Parameters<typeof instantiate>[1],
-  mode: 'light' | 'dark',
-) {
-  const library = catalog.library;
-  if (library === null || entry.component === null) throw new Error('sem biblioteca');
-  const box = { x: 0, y: 0, ...entry.component.size };
-  return instantiate(entry.component, { ...defaultValues(entry.type), ...values }, box, {
-    measure: approximateMeasurer,
-    tokens: resolveTokens(library.tokens, {}, mode),
-    ...(library.icons === undefined ? {} : { icons: library.icons }),
-  });
-}
-
 describe('componentes migrados na M1 (text, icon, divider, surface)', () => {
   it.each(MIGRATED)('%s é formato 4, sem cor literal e sem family literal', (id) => {
     const raw = text(`components/${id}.json`);
     const component = JSON.parse(raw) as Rec;
     expect(component.formatVersion).toBe(4);
     expect(raw).not.toMatch(/"family"/);
-    // só `$token` (ou `none`) onde se espera cor: nenhum #hex nem rgb()/rgba() no arquivo
+    // nenhum #hex nem rgb()/rgba() no arquivo (cor só por `$token` ou `none`; layout puro não tem cor)
     expect(raw).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     expect(raw).not.toMatch(/rgba?\(/);
-    expect(raw).toContain('"$token"');
   });
 
   it('o text tira a family e usa os tokens de tipografia e de cor', () => {

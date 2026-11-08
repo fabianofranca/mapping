@@ -47,3 +47,24 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Pilha espaçada**: verticalArrangement=Top, horizontalAlignment=Start, spacing=8, padding=16, width=fill
 - **Conteúdo centralizado**: verticalArrangement=Center, horizontalAlignment=CenterHorizontally, width=fill, height=fill
 - **Com rolagem**: spacing=16, scroll=true, width=fill, height=fill
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Os valores vêm dos tokens da especialização (`tokens`, nos modos `light` e `dark`), que espelham os arquivos de tokens do androidx; nenhuma cor, fonte ou raio fica literal no componente.
+
+**Arquivos usados**
+
+- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Column.kt` (linhas 82 a 86: `Column(verticalArrangement = Arrangement.Top, horizontalAlignment = Alignment.Start)`).
+  `ColorLightTokens.kt` e `ColorDarkTokens.kt`: os papéis de cor do tema, lidos como tokens (`$token`) nos dois modos.
+
+**Como o desenho segue o Compose**
+
+- `verticalArrangement` vira o `justify` do layout do slot (`Top` em `start`, `Bottom` em `end`, `Center` em `center`, `SpaceBetween` em `space-between`) e `horizontalAlignment` vira o `align` (`Start` em `start`, `CenterHorizontally` em `center`, `End` em `end`); antes o slot ficava sempre em `start`.
+- `spacing` é o `gap` (`Arrangement.spacedBy`) e `padding` o recuo do slot, depois do fundo, como na ordem dos `Modifier`.
+- O fundo segue o papel do tema nos dois modos; `none` não desenha fundo.
+
+**O que ainda difere do Compose**
+
+- `SpaceAround` e `SpaceEvenly` caem em `space-between`: o `justify` do formato só reparte a folga entre os filhos, sem folga nas pontas.
+- `scroll` só aparece no rótulo: a rolagem não é desenhada.
+- O Compose limita os filhos à altura da Column; o formato não corta nem rola o que passa dela.

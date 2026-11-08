@@ -71,9 +71,7 @@ const MISSING_TODAY: string[] = [
   // Layout do componente v4 (etapa #747, CF2): as bibliotecas distribuídas não migram para o
   // formato 4 nesta etapa (decisão 'Fora' da #747); coberto por
   // tests/model/components/layoutFidelity.test.ts, layoutV4Parse.test.ts e pelo roteiro R25.
-  'component:node.minWidth',
   'component:node.maxWidth',
-  'component:node.minHeight',
   'component:node.maxHeight',
   'component:node.repeat.distribute',
   // Texto do componente v4 (etapa #747, CF3): a biblioteca Material 3 já usa o `font.maxLines` no

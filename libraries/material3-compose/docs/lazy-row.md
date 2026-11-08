@@ -44,3 +44,25 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 
 - **Carrossel de chips**: spacing=8, contentPadding=16, verticalAlignment=CenterVertically, width=fill
 - **Faixa de cartões**: horizontalArrangement=Start, spacing=12, width=fill, height=fixed
+
+## Fidelidade
+
+Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8cb65928ff` (decisões 1 a 3 da etapa Material 3 fiel). A unidade é a de sempre: 1 dp = 1 px do componente. Este tipo é do Foundation, não do Material: não tem arquivo de tokens, e o desenho segue o comportamento do foundation, com os valores vindos dos campos.
+
+**Arquivos usados**
+
+- `compose/foundation/foundation/src/commonMain/kotlin/androidx/compose/foundation/lazy/LazyDsl.kt` (linhas 328 a 338: `LazyRow(contentPadding = PaddingValues(0.dp), reverseLayout = false, horizontalArrangement = if (!reverseLayout) Arrangement.Start else Arrangement.End, verticalAlignment = Alignment.Top)`).
+- `compose/foundation/foundation-layout/src/commonMain/kotlin/androidx/compose/foundation/layout/Arrangement.kt` (linhas 110 a 290: `Start`, `End`, `Top`, `Bottom`, `Center`, `SpaceEvenly`, `SpaceBetween`, `SpaceAround`; linha 296: `spacedBy`).
+
+**Como o desenho segue o Compose**
+
+- `horizontalArrangement` vira o `justify` do slot (`Start` `start`, `Center` `center`, `End` `end`, `SpaceBetween` `space-between`) e `verticalAlignment` vira o `align` (`Top` `start`, `CenterVertically` `center`, `Bottom` `end`), por `$switch` (formato 4: expressão em `layout.justify` e `layout.align`).
+- `spacing` é o `gap` e `contentPadding` é o `padding` do slot.
+- `reverseLayout` ligado com `Start` vira `end`, o padrão do Compose nessa combinação (`Arrangement.End`).
+- Nenhuma cor, fonte ou raio é desenhado.
+
+**O que ainda difere do Compose**
+
+- `SpaceAround` e `SpaceEvenly` caem em `space-between`: o `justify` do formato só tem `start`, `center`, `end` e `space-between`.
+- O formato não inverte a ordem dos filhos com `reverseLayout`.
+- Rolagem, `state` e `flingBehavior` não existem num desenho estático.
