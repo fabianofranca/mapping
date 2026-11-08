@@ -2,6 +2,7 @@ import type { ComponentFile, FieldValues } from './components/componentFormat';
 import { type Box, approximateMeasurer, instantiate } from './components/instantiate';
 import { type Library, type TextFile, loadLibrary } from './components/library';
 import { type Origin, screenFromSource } from './components/origin';
+import type { IconSet } from './components/icons';
 import type { LibraryIssue } from './library';
 import type { Spec, SpecAnnotationType } from './spec';
 
@@ -37,6 +38,8 @@ export interface DrawingContext {
   readonly jsonOf: (path: string) => unknown;
   /** Os `.json` do pacote com texto, a especialização primeiro (alimenta `loadLibrary`). */
   readonly textFiles: readonly TextFile[];
+  /** O conjunto de ícones da especialização (`icons`), quando o arquivo é válido. */
+  readonly icons?: IconSet;
 }
 
 const messageOf = (error: unknown): string =>
@@ -191,8 +194,10 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
       const basePath = `layers[${li}].annotationTypes[${ti}]`;
       if (type.component === undefined) return;
       const componentPath = ctx.resolve(type.component);
-      const component = ctx.components.get(componentPath);
-      if (component === undefined) return;
+      const loaded = ctx.components.get(componentPath);
+      if (loaded === undefined) return;
+      const component =
+        ctx.icons === undefined ? loaded : { ...loaded, resolvedIcons: ctx.icons };
       typeDrawing(type, component, componentPath, specPath, basePath, out);
 
       (type.examples ?? []).forEach((example, index) => {

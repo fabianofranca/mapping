@@ -29,7 +29,35 @@ export const PROPOSAL_FORMAT_VERSION = 4;
  * composta `space` e `floating`, e as mudanças `create-arrow` e `delete-arrow` (entidade `arrow`,
  * ME4); a 2 acrescenta `add_container` às `operations`; a 1 continua válida.
  */
-export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5] as const;
+export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6] as const;
+
+/**
+ * Versão da proposta que traz o modo do desenho (schema v18): a entidade `project` (campo
+ * `drawingMode`), o campo `drawingMode` do container e o `drawingMode` no valor de um container
+ * criado. Uma versão anterior recusaria a entidade e o campo, mas descartaria em silêncio o
+ * `drawingMode` do container criado; por isso a proposta que o usa grava a 6 (a criação e a
+ * revisão não sobem a versão de uma proposta que não o usa). A 6 aceita `revisions` (opcional).
+ */
+export const PROPOSAL_DRAWING_MODE_FORMAT_VERSION = 6;
+
+/** A proposta usa o modo do desenho (e por isso só a `formatVersion` 6 a representa)? */
+export function usesDrawingMode(changes: readonly Change[]): boolean {
+  return changes.some(
+    (c) =>
+      c.entity === 'project' ||
+      (c.entity === 'image' &&
+        (c.field === 'drawingMode' || hasDrawingMode(c.to) || hasDrawingMode(c.from))),
+  );
+}
+
+function hasDrawingMode(value: JsonValue): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as { readonly drawingMode?: JsonValue }).drawingMode === 'string'
+  );
+}
 
 /**
  * Versão gravada pela revisão do agente (`reviseProposal`): a 4 com `revisions` na raiz. A
@@ -62,6 +90,7 @@ export type ChangeEntity =
   | 'specialization'
   | 'platformRepo'
   | 'docRepo'
+  | 'project'
   | 'layer'
   | 'image'
   | 'marking'
@@ -72,6 +101,7 @@ export const CHANGE_ENTITIES: readonly ChangeEntity[] = [
   'specialization',
   'platformRepo',
   'docRepo',
+  'project',
   'layer',
   'image',
   'marking',
@@ -92,6 +122,7 @@ export const IMAGE_FIELDS = [
   'markingColor',
   'locked',
   'source',
+  'drawingMode',
 ] as const;
 /**
  * Campos alterados de uma marcação. `space` é a troca de espaço (`{ containerId, rect }`, o
@@ -372,10 +403,18 @@ const annotationValueSchema = z.preprocess(
   annotationSchema,
 );
 
+const drawingModeName = z
+  .string()
+  .regex(/^[a-z0-9][a-z0-9-]*$/, 'use [a-z0-9][a-z0-9-]*');
+
+/** A entidade `project` (formatVersion 6): o que do projeto é proposto; hoje só o modo do desenho. */
+const projectValueSchema = z.object({ drawingMode: drawingModeName.nullable() });
+
 const entitySchemas: Record<ChangeEntity, z.ZodType> = {
   specialization: specializationValue,
   platformRepo: platformRepoSchema,
   docRepo: docRepoSchema,
+  project: projectValueSchema,
   layer: layerSchema,
   image: containerSchema,
   marking: markingSchema,
@@ -392,6 +431,7 @@ const imageFieldSchemas: Record<(typeof IMAGE_FIELDS)[number], z.ZodType> = {
   markingColor: hexColor.nullable(),
   locked: z.boolean(),
   source: sourceSchema.nullable(),
+  drawingMode: drawingModeName.nullable(),
 };
 
 /**
@@ -505,6 +545,9 @@ const changeSchema = z
     if (c.entity === 'platformRepo' && !PLATFORM_ID_RE.test(c.entityId)) {
       add(['entityId'], 'id de plataforma inválido; use [a-z0-9-]+');
     }
+    if (c.entity === 'project' && (c.entityId !== 'project' || c.kind !== 'update')) {
+      add(['entityId'], 'a entidade project é só alterada, com entityId "project"');
+    }
     if (c.entity === 'docRepo' && !PLATFORM_ID_RE.test(c.entityId)) {
       add(['entityId'], 'id de repositório inválido; use [a-z0-9-]+');
     }
@@ -512,6 +555,7 @@ const changeSchema = z
       c.entity === 'specialization' ||
       c.entity === 'platformRepo' ||
       c.entity === 'docRepo' ||
+      c.entity === 'project' ||
       c.entity === 'layer';
     if (projectLevel && (c.imageId !== null || c.markingId !== null)) {
       add(['imageId'], 'mudanças do projeto não têm imageId nem markingId');
@@ -538,7 +582,8 @@ const changeSchema = z
     const wholeEntity =
       c.entity === 'specialization' ||
       c.entity === 'platformRepo' ||
-      c.entity === 'docRepo';
+      c.entity === 'docRepo' ||
+      c.entity === 'project';
     if (c.kind === 'update' && !wholeEntity) {
       if (c.field === null) {
         add(['field'], 'obrigatório na alteração');
@@ -564,7 +609,8 @@ const changeSchema = z
     if (c.kind !== 'remove') checkValue(schema, c.to, ctx, ['to']);
     else if (c.to !== null) add(['to'], 'deve ser null na remoção');
 
-    if (c.entity === 'platformRepo' || c.entity === 'docRepo') return;
+    if (c.entity === 'platformRepo' || c.entity === 'docRepo' || c.entity === 'project')
+      return;
     // Criação e remoção levam a entidade inteira: o id dela é o `entityId`.
     for (const side of ['from', 'to'] as const) {
       const value = c[side];
@@ -644,8 +690,8 @@ function checkRevisions(
     if (p.formatVersion === 5) add(['revisions'], 'obrigatório na formatVersion 5');
     return;
   }
-  if (p.formatVersion !== 5) {
-    add(['revisions'], 'só na formatVersion 5');
+  if (p.formatVersion !== 5 && p.formatVersion !== 6) {
+    add(['revisions'], 'só na formatVersion 5 ou 6');
     return;
   }
   const added = new Set<string>();
@@ -670,8 +716,15 @@ export const proposalSchema = z
   .object({
     format: z.literal(PROPOSAL_FORMAT, { error: `deve ser "${PROPOSAL_FORMAT}"` }),
     formatVersion: z.union(
-      [z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)],
-      { error: 'deve ser 1, 2, 3, 4 ou 5' },
+      [
+        z.literal(1),
+        z.literal(2),
+        z.literal(3),
+        z.literal(4),
+        z.literal(5),
+        z.literal(6),
+      ],
+      { error: 'deve ser 1, 2, 3, 4, 5 ou 6' },
     ),
     id: proposalId,
     title: z.string().trim().min(1, 'não pode ser vazio'),

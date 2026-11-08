@@ -29,8 +29,9 @@ A demo não entra no `npm run build` nem no deploy. `npm run build:viewer` gera 
 
 ## API em resumo
 
-- `createViewer(container, { library, screen, onHover, onClick, onWarnings, measure, fit, padding, interactive, selectionColor, hoverColor, remoteImages, allowOrigin })` devolve `{ update, redraw, setSelection, setHover, setInteractive, fit, scale, boxOf, instanceAt, clientToScreen, warnings, toDataURL, dispose }`.
+- `createViewer(container, { library, screen, drawingMode, onHover, onClick, onWarnings, measure, fit, padding, interactive, selectionColor, hoverColor, remoteImages, allowOrigin })` devolve `{ update, redraw, setSelection, setHover, setInteractive, fit, scale, boxOf, instanceAt, clientToScreen, warnings, toDataURL, dispose }`.
 - `update` faz o diff por identidade (`===`): só as instâncias novas ou com objeto novo são re-instanciadas. O desenho roda no `requestAnimationFrame`, no máximo uma vez por quadro.
+- `drawingMode` escolhe o modo dos `tokens` da especialização (`light`, `dark`…); sem ele (ou com um modo que a especialização não declara) vale o primeiro modo. O visualizador não tem projeto nem container: o modo é só o da opção. Mudá-lo em tempo de execução (`update({ drawingMode })`, ou a prop `drawingMode` do invólucro) redesenha sem recarregar a biblioteca nem a tela (a biblioteca com os tokens do modo é guardada por modo). Os tokens embutidos `font-sans` e `font-mono` valem a fonte do hospedeiro (`fonts`, ou a pilha do tema da app) em qualquer modo, a menos que a especialização os redefina.
 - `<MappingViewer library screen selection hover interactive ... />` lê os callbacks por ref e sobrevive ao `<StrictMode>`.
 - A biblioteca vem de `loadLibrary(files)` (ou `loadLibraryFromUrl`); a tela, de `parseScreen(json)`, de um objeto ou de um JSON de origem (`source`) traduzido pela declaração da especialização.
 - O núcleo não registra fonte: o hospedeiro fornece e chama `redraw()` (ou muda `fontsVersion` no invólucro).

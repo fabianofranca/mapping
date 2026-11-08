@@ -203,6 +203,7 @@ export async function findTypesBySourceResult(
       by: m.by,
       source: m.source,
       requiresOwner: m.type.requiresOwner === true,
+      ...(m.type.structural === true ? { structural: true } : {}),
       fields: m.type.fields
         .map((field) => fieldView(field, system))
         .filter((field): field is Json => field !== null),

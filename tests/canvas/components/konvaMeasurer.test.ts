@@ -9,6 +9,7 @@ vi.mock('konva/lib/shapes/Text', () => ({
     }
     width = () => 10;
     height = () => 10;
+    textArr: { text: string }[] = [];
     destroy = () => undefined;
   },
 }));

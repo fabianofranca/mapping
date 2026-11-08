@@ -17,7 +17,9 @@ import {
   parsePath,
   parseTypeSources,
 } from './origin';
+import { parseIconsFile, type IconSet } from './icons';
 import { parseComponent } from './parseComponent';
+import { resolveTokens, type HostFonts, type SpecTokens } from './tokens';
 
 export interface TextFile {
   /** Caminho relativo à raiz escolhida, com `/`. */
@@ -86,6 +88,10 @@ export interface Library {
   readonly fonts: readonly LoadedFont[];
   /** Origens executáveis declaradas (`origins`): como ler um JSON externo como tela. */
   readonly origins: readonly Origin[];
+  /** `tokens` da especialização (lidos sem validar; o validador da biblioteca confere). */
+  readonly tokens?: SpecTokens;
+  /** Conjunto de ícones da especialização (`icons`), quando o arquivo existe e é válido. */
+  readonly icons?: IconSet;
   /** O que não carregou: arquivo ausente, componente inválido, tipo sem componente. */
   readonly problems: readonly string[];
 }
@@ -288,14 +294,78 @@ export function loadLibrary(files: readonly TextFile[]): Library {
     });
   });
   const fonts = readFonts(spec.fonts, specPath, files, problems);
+  return withHostTokens(
+    {
+      specId: typeof spec.id === 'string' ? spec.id : 'spec',
+      specName: typeof spec.name === 'string' ? spec.name : 'Especialização',
+      specPath,
+      types,
+      fonts,
+      origins,
+      tokens: readTokens(spec.tokens),
+      icons: readIcons(spec.icons, specPath, parsed, problems),
+      problems,
+    },
+    {},
+  );
+}
+
+/** O conjunto de ícones apontado por `icons` (arquivo ausente ou inválido vira problema). */
+function readIcons(
+  raw: unknown,
+  specPath: string,
+  parsed: ReadonlyMap<string, unknown>,
+  problems: string[],
+): IconSet | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const path = resolvePath(specPath, raw);
+  const json = parsed.get(path);
+  if (json === undefined) {
+    problems.push(`arquivo de ícones não encontrado: ${path}`);
+    return undefined;
+  }
+  const result = parseIconsFile(json);
+  if (result.ok) return result.set;
+  for (const issue of result.issues)
+    problems.push(`${path}: ${issue.path ? `${issue.path}: ` : ''}${issue.message}`);
+  return undefined;
+}
+
+/** `tokens` do JSON da especialização, na forma mínima (modos texto e valores texto, número ou por modo). */
+function readTokens(raw: unknown): SpecTokens | undefined {
+  if (!isRecord(raw) || !Array.isArray(raw.modes) || !isRecord(raw.values))
+    return undefined;
+  const modes = raw.modes.filter((m): m is string => typeof m === 'string');
+  return modes.length === 0
+    ? undefined
+    : { modes, values: raw.values as SpecTokens['values'] };
+}
+
+/**
+ * A biblioteca com os componentes levando os tokens do modo (`resolvedTokens`): `font-sans` e
+ * `font-mono` valem a fonte do hospedeiro, a menos que a especialização os redefina.
+ */
+export function withHostTokens(
+  library: Library,
+  fonts: HostFonts,
+  mode?: string,
+): Library {
+  const resolvedTokens = resolveTokens(library.tokens, fonts, mode);
+  const resolvedIcons = library.icons;
   return {
-    specId: typeof spec.id === 'string' ? spec.id : 'spec',
-    specName: typeof spec.name === 'string' ? spec.name : 'Especialização',
-    specPath,
-    types,
-    fonts,
-    origins,
-    problems,
+    ...library,
+    types: library.types.map((type) =>
+      type.component === undefined
+        ? type
+        : {
+            ...type,
+            component: {
+              ...type.component,
+              resolvedTokens,
+              ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
+            },
+          },
+    ),
   };
 }
 

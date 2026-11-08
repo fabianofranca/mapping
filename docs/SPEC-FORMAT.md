@@ -1,6 +1,6 @@
-# Formato da especialização (`formatVersion` 1 a 14)
+# Formato da especialização (`formatVersion` 1 a 15)
 
-O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo; na 12, os passos de migração dos papéis; na 13, os filhos da própria camada; na 14, a anotação inteira como alvo de um `ref`). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
+O formato do arquivo que define camadas e tipos de anotação (e, na `formatVersion` 2, as plataformas de código e o código de instanciação dos tipos; na 3, as origens externas; na 4, a **biblioteca**: componentes, documentos, exemplos, fontes, origens executáveis e o contrato de versão; na 5, o repositório de cada plataforma; na 6, os tamanhos prontos de container; na 7, o tipo flutuante; na 8, as sugestões de texto; na 9, as variantes do código; na 10, os avisos; na 11, os filhos por camada e grupo, os papéis no vínculo e o documento em repositório externo; na 12, os passos de migração dos papéis; na 13, os filhos da própria camada; na 14, a anotação inteira como alvo de um `ref`; na 15, os tokens de design). A página "Ajuda → Especializações" da app é uma versão resumida deste documento (um teste garante que os títulos das seções e os blocos de código coincidem).
 
 ## O que é uma especialização
 
@@ -13,7 +13,8 @@ Uma **especialização** é um arquivo JSON que define **camadas obrigatórias**
 - A `formatVersion` 12 é a 11 mais três **passos de migração dos papéis**, em `migrations`: `rename-role`, `remove-role` e `set-role` (ver "Contrato de versão" e "Papéis no vínculo (childRoles)"). Antes dela, tirar um papel de `childRoles` deixava `parentRole` das anotações apontando para um papel que não existe mais; a 12 trata essa troca como **quebra** e a cobre com um passo que renomeia, remove ou preenche o papel nas anotações do projeto. A 12 é aditiva: as versões 1 a 11 continuam aceitas sem mudança, e cada passo novo numa versão anterior é o erro `só é permitido com formatVersion 12`, no caminho exato. Só sobe para a 12 a especialização que declara algum desses passos. Uma v11 que remove ou torna obrigatório o papel de um tipo, sem o passo, é recusada na atualização até subir para a 12 com ele.
 - A `formatVersion` 13 é a 12 mais os **filhos da própria camada**: `allowedChildren` passa a aceitar a cláusula `{ layer }` com a camada do próprio dono e o id de um tipo da mesma camada, inclusive o do próprio tipo (ver "Filhos por camada e grupo"). Com isso um evento pode ser dono de outros eventos, cada filho no papel em que se liga (`childRoles`), e a anotação **tipada** pode ter dona da mesma camada no projeto (schema v15; a **livre** continua só com dona de outra camada, e o ciclo continua barrado). A 13 é aditiva: as versões 1 a 12 continuam aceitas sem mudança, e a camada ou o tipo da própria camada em `allowedChildren` numa versão anterior continua sendo o erro de sempre (`filhos devem estar em outra camada`). Só sobe para a 13 a especialização que declara um filho da própria camada.
 - A `formatVersion` 14 é a 13 mais a **anotação inteira como alvo**: o `accepts` de um campo ou coluna `ref` ganha `annotations`, uma lista de ids de tipo ou cláusulas `{ layer, groups? }` da **mesma especialização**, com a mesma sintaxe e o mesmo resolvedor do `allowedChildren` (ver "Referências e etiquetas"). A 14 é aditiva: as versões 1 a 13 continuam aceitas sem mudança, e `annotations` numa versão anterior é o erro `só é permitido com formatVersion 14`, no caminho `…accepts.annotations`. Só sobe para a 14 a especialização que declara `accepts.annotations`.
-- A `formatVersion` 2 é a 1 mais o código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 14; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
+- A `formatVersion` 15 é a 14 mais os **tokens de design**: a chave `tokens` na raiz declara valores nomeados (cores, raios, espaçamentos, famílias de fonte), simples ou por modo (`light`/`dark`), que os componentes de formato 4 leem com `{ "$token": "nome" }` (ver "Tokens de design"). A 15 também traz o **conjunto de ícones**: a chave `icons` na raiz aponta para um arquivo `.json` do pacote com os ícones, que o nó `icon` dos componentes de formato 4 lê (ver "Conjunto de ícones"). A 15 é aditiva: as versões 1 a 14 continuam aceitas sem mudança, e `tokens` ou `icons` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho da chave. A 15 traz ainda `structural` no tipo de anotação: `structural: true` marca o tipo que **agrupa e não desenha** (um grupo, uma seção). Ele não tem `component` (`structural` junto com `component` é erro de validação, no caminho `structural`), a marcação dele não mostra o cabeçalho com o nome no canvas, o contorno aparece só com o mouse ou selecionada (como o de quem tem desenho) e ela não conta como "sem componente" em nenhuma pendência; `structural` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho `…annotationTypes[n].structural`. A 15 traz também a **origem medida**: `origins[].kind` (`tree`, o padrão, ou `measured`; ver "Origens (sources)"); `kind` numa versão anterior é o erro `só é permitido com formatVersion 15`, no caminho `origins[n].kind`. Só sobe para a 15 a especialização que declara `tokens`, `icons`, `structural` ou `kind: "measured"`.
+- A `formatVersion` 2 é a 1 mais o código de instanciação (plataformas e `code`: como se cria uma instância de cada tipo). A importação aceita as versões 1 a 15; uma especialização v1 é uma v2 sem plataformas e sem `code` (ver "Plataformas e code").
 - A `formatVersion` 3 é a 2 mais `sources`: a que elementos de um sistema externo cada tipo corresponde e de que propriedade de origem vem cada campo (ver "Origens (sources)").
 - A `formatVersion` 4 é a 3 mais a **biblioteca**: o tipo aponta para um componente (`component`), um documento (`doc`) e exemplos (`examples`); a raiz ganha `fonts`, `origins` e `migrations`; as `sources` ganham `path`, `slot` e `ignore` (ver "Origens (sources)", "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca"). As versões 1, 2 e 3 continuam aceitas sem mudança: cada chave da v4 numa versão anterior é o erro `só é permitido com formatVersion 4`, no caminho exato.
 - A `formatVersion` 5 é a 4 mais `repo` nas plataformas: o repositório da biblioteca em cada plataforma (`url`, `urlTemplate`, `ref`), de onde vêm o link e a revisão do arquivo de cada `symbol` (ver "Plataformas e code"). As versões 1 a 4 continuam aceitas sem mudança: `repo` numa versão anterior é o erro `só é permitido com formatVersion 5`, no caminho exato.
@@ -77,7 +78,7 @@ Arquivos de apoio:
 }
 ```
 
-Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `14`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
+Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `15`), `id`, `name` e `version` (inteiro ≥ 1) são obrigatórios; `description`, `platforms` (a partir da versão 2, com `repo` na 5), `containers` (a partir da versão 6), `docRepos` (a partir da versão 11) e, a partir da versão 4, `fonts`, `origins` e `migrations` são opcionais, e `tokens` (a partir da versão 15) também. Cada camada tem `id` (único), `name`, `color` (`#RRGGBB`) e `annotationTypes`, e, a partir da versão 11, `groups` opcional (ver "Filhos por camada e grupo"). A importação ainda aceita arquivos antigos com `"mapeador-spec"`.
 
 ### Tipo de anotação
 
@@ -100,6 +101,7 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `14`), `id`,
 | `examples`        | não         | A partir da `formatVersion` 4. Exemplos nomeados do tipo: valores dos campos ou o JSON de um sistema externo.                                                                                                            |
 | `floating`        | não         | A partir da `formatVersion` 7. Padrão `false`. A instância é uma marcação flutuante (ver "Tipo flutuante").                                                                                                              |
 | `appliesTo`       | não         | A partir da `formatVersion` 7. `["marking"]`, `["arrow"]` ou os dois; padrão `["marking"]` (ver "Onde o tipo se aplica").                                                                                                |
+| `structural`      | não         | A partir da `formatVersion` 15. Padrão `false`. `true`: o tipo agrupa e não desenha (sem `component`); a marcação não mostra o nome e o contorno só aparece com o mouse ou selecionada.                                  |
 | `notices`         | não         | A partir da `formatVersion` 10. Avisos sobre o tipo (ver "Avisos (notices)").                                                                                                                                            |
 
 ### Campo
@@ -827,6 +829,8 @@ A v4 deixa uma origem ser **executável**: a especialização declara em `origin
 
 A declaração é a chave `origins` da raiz: uma lista, uma entrada por sistema (`system` único). Ela é **estrita**: chave desconhecida é problema, com o caminho (`origins[0].screen.roots[1].path: …`).
 
+**Origem medida (`kind: "measured"`, v15).** Para uma tela que já existe e pode ser medida (uma página web aberta num navegador, a hierarquia de views de um app), a origem não lê um documento de backend: o MCP recebe a árvore `{ type, id?, classes?, rect: { x, y, width, height }, props?, children? }` na op `import_measured` e cria uma marcação por nó. As `sources` dos tipos e dos campos casam assim: no tipo, o `id` do nó contra o `id` da source, depois cada classe contra o `name`, depois o `type` contra o `name`; no campo, o `path` da source é lido nas `props` do nó (com `values` para `enum`). O pertencimento sai da geometria, não da árvore. Exemplo: `{ "system": "dom", "kind": "measured" }`; biblioteca em `examples/libraries/medido/`.
+
 | Propriedade | Descrição                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `system`    | Obrigatório. O nome do sistema (o mesmo `system` das `sources`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -834,6 +838,7 @@ A declaração é a chave `origins` da raiz: uma lista, uma entrada por sistema 
 | `node`      | Obrigatório. `{ type, props, children }`: os nomes das chaves do nó externo que guardam o tipo, as props e os filhos. Os três são obrigatórios nesta versão.                                                                                                                                                                                                                                                                                                                                                                                  |
 | `screen`    | Obrigatório. Onde ficam os valores da tela: `width` e `height` (obrigatórios; sem eles não há tela), `id`, `name`, `background` e `roots` (ao menos uma raiz). Cada valor é um **literal** ou `{ path, values?, default? }`.                                                                                                                                                                                                                                                                                                                  |
 | `roots`     | Em `screen`. Lista de `{ path, anchor?, margin?, scrim? }`: `path` é o caminho da raiz no documento (`[*]` faz cada elemento virar uma raiz; raiz que não existe é ignorada, sem aviso); `anchor` é uma das nove âncoras da tela (`top-start`, `top`, `top-end`, `start`, `center`, `end`, `bottom-start`, `bottom`, `bottom-end`), literal ou caminho relativo ao nó da raiz; `margin` é a distância das bordas em px; `scrim` é o `id` de um tipo desenhado por baixo da raiz (a película de um modal). Sem `anchor` a raiz entra no fluxo. |
+| `kind`      | `tree` (padrão: o JSON de um backend, lido por `node` e `screen`) ou `measured` (`formatVersion` 15: uma árvore de retângulos medidos, importada pela op `import_measured` do MCP). A origem `measured` aceita só `system`, `kind`, `name` e `booleans`; `node`, `screen` e `examples` são erro.                                                                                                                                                                                                                                              |
 | `booleans`  | `{ "true": texto, "false": texto }`: como um booleano do JSON vira texto nos campos sem `values` próprio (ex: `sim`/`não`).                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `examples`  | Lista de `{ name, file }`: telas de exemplo (o JSON de uma tela inteira) do sistema; `name` não vazio e único na origem, `file` caminho do pacote `.json`.                                                                                                                                                                                                                                                                                                                                                                                    |
 
@@ -936,11 +941,72 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 **Fontes.** O arquivo de uma fonte declarada pode não estar no pacote (as fontes têm licença e peso; o pacote de exemplo não leva os `.ttf`). A fonte ausente **avisa** e o desenho cai na fonte do sistema; o pacote continua válido.
 
-**Aplicar a um projeto.** Aplicar uma biblioteca **copia a pasta inteira** para `specs/<id>/` (a cópia de uma especialização v1 a v3 continua sendo o arquivo `specs/<id>.json`). Na app, **Especializações** aceita a pasta (`showDirectoryPicker`, Chrome/Edge) ou um zip do pacote (com ou sem uma pasta-raiz única), confere os três níveis e mostra erros (bloqueiam) e avisos (deixam aplicar); **Atualizar de pasta…/zip…** passa a versão aplicada como `previous` ao contrato de versão (quebra sem migração é erro) e regrava a pasta, e **Remover** a apaga. Uma especialização v4 ou v5 que **não cita nenhum arquivo do pacote** (nenhum tipo com `component`, `doc` em texto ou `examples`, e sem `fonts` nem `origins` na raiz; `migrations` não conta, e o `doc` objeto da v11, que é um documento em repositório externo, também não) vale como arquivo isolado, como a v1 a v3: a app a aplica e atualiza com o `.json` e a cópia é `specs/<id>.json`. Um `.json` v4 ou v5 que cita arquivos do pacote é **recusado** na app: ele pede a pasta (ou o zip). Ao abrir o projeto, o Diagnóstico mostra os problemas dos níveis 1 e 2 da cópia. As tools do servidor MCP e a skill que escreve o pacote são da B2 também.
+**Aplicar a um projeto.** Aplicar uma biblioteca **copia a pasta inteira** para `specs/<id>/` (a cópia de uma especialização v1 a v3 continua sendo o arquivo `specs/<id>.json`). Na app, **Especializações** aceita a pasta (`showDirectoryPicker`, Chrome/Edge) ou um zip do pacote (com ou sem uma pasta-raiz única), confere os três níveis e mostra erros (bloqueiam) e avisos (deixam aplicar); **Atualizar de pasta…/zip…** passa a versão aplicada como `previous` ao contrato de versão (quebra sem migração é erro) e regrava a pasta, e **Remover** a apaga. Uma especialização v4 ou v5 que **não cita nenhum arquivo do pacote** (nenhum tipo com `component`, `doc` em texto ou `examples`, e sem `fonts`, `origins` nem `icons` na raiz; `migrations` não conta, e o `doc` objeto da v11, que é um documento em repositório externo, também não) vale como arquivo isolado, como a v1 a v3: a app a aplica e atualiza com o `.json` e a cópia é `specs/<id>.json`. Um `.json` v4 ou v5 que cita arquivos do pacote é **recusado** na app: ele pede a pasta (ou o zip). Ao abrir o projeto, o Diagnóstico mostra os problemas dos níveis 1 e 2 da cópia. As tools do servidor MCP e a skill que escreve o pacote são da B2 também.
 
 **Pacote embutido.** `libraries/notas/` (especialização v7: a camada Notas, o tipo flutuante `nota` e o componente post-it) é um pacote comum que a app traz dentro do build e **aplica por padrão** em projeto novo e em projeto aberto de um schema anterior ao 13 (ver "Tipo flutuante"). Para o resto do ciclo ele é uma biblioteca como as outras: a cópia vai para `specs/notas/` e a pessoa pode removê-la.
 
 **Pacote de exemplo.** `libraries/material3-compose/` é o Material Design 3 (baseline, tema claro) para o Jetpack Compose, pronto para uso: a especialização v9 com cinquenta tipos, cada um com `component`, `doc` e de um a três exemplos, os componentes, os tamanhos de container e a Roboto em `fonts/`. A origem executável (`origins`, `sources`, `migrations` e a tela de exemplo `examples/settings.sdui.json`, uma tela de SDUI sem retângulos, traduzida pela `origins`) está em `examples/libraries/sdui-backend/`. Os testes usam uma cópia congelada de um pacote antigo de quinze tipos, em `tests/fixtures/material3/` (não é um exemplo distribuído).
+
+## Tokens de design
+
+`tokens` (`formatVersion` 15, opcional, na raiz) guarda os **valores de design** da biblioteca com nome: cores, raios, espaçamentos e famílias de fonte. Os componentes de formato 4 leem cada valor com `{ "$token": "nome" }` (ver `docs/COMPONENT-FORMAT.md`), em vez de repetir o literal em cada nó. Trocar o valor num lugar só muda o desenho inteiro.
+
+```json
+{
+  "formatVersion": 15,
+  "tokens": {
+    "modes": ["light", "dark"],
+    "values": {
+      "primary": { "light": "#6750A4", "dark": "#D0BCFF" },
+      "on-primary": { "light": "#FFFFFF", "dark": "#381E72" },
+      "radius-md": 12,
+      "space-4": 16,
+      "font-sans": "Roboto, sans-serif"
+    }
+  }
+}
+```
+
+- `modes`: lista **não vazia** de nomes distintos no formato `[a-z0-9][a-z0-9-]*`. A convenção é `["light", "dark"]`.
+- `values`: o nome do token (`[a-z0-9][a-z0-9-]*`) aponta para um valor, que é **texto** (cor `#rrggbb`, `rgba(…)`, ou família de fonte) ou **número** (raio, espaçamento, tamanho, peso).
+- Um valor **simples** vale em todos os modos (`"radius-md": 12`). Um valor **por modo** é um objeto com **todos** os modos de `modes` (e só eles) e todos do **mesmo tipo**: misturar cor num modo e número no outro é erro.
+- **Embutidos:** `font-sans` e `font-mono` (famílias de fonte) existem em toda biblioteca, mesmo sem `tokens`, e valem a fonte do hospedeiro (na app, o `--font-sans` e o `--font-mono` do tema; no visualizador, a pilha dos tokens da app ou a opção `fonts`; no MCP, `sans-serif`). A especialização pode redefini-los em `values`, e a definição dela vence a do hospedeiro. O texto sem `font.family` usa `font-sans`.
+- **Modo do desenho:** nesta versão o desenho usa sempre o **primeiro** modo de `modes`; um modo não declarado cai no primeiro, sem aviso. Ligar o modo ao projeto é trabalho da fase seguinte.
+- Erros de validação, com o caminho em `tokens`: `só é permitido com formatVersion 15`, nome fora do padrão, `modes` vazio ou com nome repetido, valor por modo sem algum modo (ou com modo que não existe em `modes`) e valores de tipos diferentes entre os modos. No `validate_library` (nível 2), `$token` com nome inexistente é `o token "x" não existe nos tokens da especialização` e com tipo errado é `o token "primary" é cor, mas aqui se espera número`.
+
+## Conjunto de ícones
+
+`icons` (`formatVersion` 15, opcional, na raiz) é o caminho de **um** arquivo `.json` do pacote, relativo ao arquivo da especialização (como `component`, `doc` e `fonts[].file`: sem `.`, `..` nem unidade, com `/`). O arquivo guarda os ícones da biblioteca; o nó `icon` dos componentes de formato 4 (`docs/COMPONENT-FORMAT.md`) escolhe um pelo nome. Isso substitui o `$switch` que repetia todos os caminhos dentro de cada componente que mostra um ícone escolhido pela pessoa.
+
+```json
+{
+  "format": "mapping-icons",
+  "formatVersion": 1,
+  "viewBox": [24, 24],
+  "icons": {
+    "check": {
+      "paths": [
+        {
+          "d": "M5 12l5 5L20 7",
+          "stroke": true,
+          "width": 2,
+          "cap": "round",
+          "join": "round"
+        }
+      ]
+    },
+    "dot": {
+      "viewBox": [10, 10],
+      "paths": [{ "d": "M5 1a4 4 0 1 0 0 8a4 4 0 1 0 0-8z", "fill": true }]
+    }
+  }
+}
+```
+
+- `format` é `mapping-icons` e `formatVersion` é `1` (a única versão do arquivo; outra é o erro `formatVersion: deve ser 1`). `viewBox` (`[largura, altura]` positivos) é obrigatório e vale para todos os ícones que não trazem o seu.
+- `icons`: o nome do ícone (`^[a-z0-9][a-z0-9-_]*$`; `Check` é erro) aponta para `{ viewBox?, paths }`. `paths` é uma lista **não vazia** de `{ d, fill?, stroke?, width?, cap?, join? }`: `d` são os dados SVG; `fill` e `stroke` são `true` (a cor do nó `icon`), `false` (nada) ou uma cor própria; `width` é a largura do traço em unidades do `viewBox` (padrão 1); `cap` (`butt`, `round`, `square`) e `join` (`miter`, `round`, `bevel`) como em `stroke` do componente. Um caminho sem `fill` nem `stroke` é preenchido com a cor do nó; com `stroke` e sem `fill`, só o traço aparece.
+- O arquivo faz parte do pacote: a app o copia com a pasta (`specs/<id>/`), a especialização que declara `icons` não vale como arquivo isolado, e o arquivo apontado não é "arquivo não referenciado".
+- **Validação da biblioteca.** Nível 1: o arquivo existe (`arquivo não encontrado: <caminho>`, no caminho `icons` da especialização) e é um `mapping-icons` válido (cada erro com o caminho dentro do arquivo, ex.: `icons.Check: nome inválido; use [a-z0-9][a-z0-9-_]*`). Nível 2: todo nome **literal** de um nó `icon` existe no conjunto (`o ícone "nuvem" não existe no conjunto de ícones (icons/set.json)`, no caminho do `name`); sem `icons` declarado o literal é erro (`o ícone "check" não pode ser conferido: a especialização não declara icons`). Nível 3: um campo `enum` lido pelo `name` de um nó `icon` com uma `option` que não está no conjunto gera aviso (`a opção "nuvem" do campo "icon" não está no conjunto de ícones; o desenho cai no reservado`), e a prova de desenho avisa `ícone desconhecido: <nome>`.
 
 ## Contrato de versão
 
@@ -1275,7 +1341,7 @@ Os pacotes `libraries/material3-compose/` e `examples/libraries/sdui-backend/` p
 
 As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[2].type: "numero" inválido; use "string", "number", "date", "enum", "table" ou "ref"`.
 
-- `format`, `formatVersion` (1 a 14), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
+- `format`, `formatVersion` (1 a 15), `id`, `name` e `version` obrigatórios; `version` inteiro ≥ 1;
 - ids de camada únicos; ids de tipo únicos na especialização inteira; `key` única no tipo e nas colunas; nenhuma `key` começando com `_`;
 - `allowedChildren` só referencia tipos existentes **em outra camada** (a partir da `formatVersion` 13, também na camada do próprio dono, inclusive o próprio tipo);
 - todo tipo com `requiresOwner: true` aparece no `allowedChildren` de algum tipo (na v11, no conjunto **resolvido** dos filhos de algum dono: por id, por camada inteira ou por grupo);
@@ -1284,6 +1350,9 @@ As mensagens de erro trazem o caminho, ex: `layers[1].annotationTypes[0].fields[
 - `labelField` aponta para um campo `string` do tipo;
 - `accepts` com pelo menos uma etiqueta, `free: true` ou `annotations`; etiquetas no formato `[a-z0-9-]+`;
 - **v14, `accepts.annotations`:** só a partir da `formatVersion` 14 (antes, `só é permitido com formatVersion 14`, no caminho `…accepts.annotations` do campo ou da coluna); lista não vazia de ids de tipo ou cláusulas `{ layer, groups }` da mesma especialização; camada, grupo e tipo inexistentes são os erros do `allowedChildren`;
+- **v15, `structural`:** só a partir da `formatVersion` 15 (antes, `só é permitido com formatVersion 15`, no caminho `…annotationTypes[n].structural`); booleano; `true` com `component` no mesmo tipo é erro;
+- **v15, `origins[].kind`:** só a partir da `formatVersion` 15 (antes, `só é permitido com formatVersion 15`, no caminho `origins[n].kind`); `tree` (padrão) ou `measured`; a `measured` aceita só `system`, `kind`, `name` e `booleans` (`node`, `screen` e `examples` são erro, com o caminho).
+- **v15, `tokens`:** só a partir da `formatVersion` 15 (antes, `só é permitido com formatVersion 15`, no caminho `tokens`); `modes` lista não vazia de nomes distintos `[a-z0-9][a-z0-9-]*`; nome de token no mesmo padrão; cada valor é texto ou número, simples ou com todos os modos (e só eles) do mesmo tipo (ver "Tokens de design");
 - `platforms`: `id` no formato `[a-z0-9-]+` e único, `name` obrigatório, `language` e `repo` opcionais; `platforms` e `code` a partir da `formatVersion` 2;
 - **v5, `repo`:** só na `formatVersion` 5, dentro de uma entrada de `platforms` (numa versão anterior o erro é `só é permitido com formatVersion 5`, no caminho `platforms[0].repo`); `url` obrigatória, começando com `http://` ou `https://`, sem espaços; `urlTemplate` opcional, também `http(s)://` e com `{path}`; `ref` opcional, texto não vazio; qualquer outra propriedade em `repo` é recusada;
 - **v11, filhos por camada e grupo:** só a partir da `formatVersion` 11 (numa versão anterior o erro é `só é permitido com formatVersion 11`, no caminho `…annotationTypes[n].allowedChildren[k]` para a cláusula, `layers[n].groups` e `…annotationTypes[m].groups`); cada item de `allowedChildren` é um id de tipo ou uma cláusula `{ layer, groups? }` estrita (outra propriedade é erro, e `groups: []` também); erros: `layer` que não é uma camada da especialização, `layer` que é a camada do próprio dono (`filhos devem estar em outra camada`) e grupo inexistente na camada da cláusula; `requiresOwner` é conferido no conjunto resolvido; `layers[n].groups`: `id` não vazio e único na camada, `name` não vazio; `annotationTypes[m].groups`: lista não vazia, sem repetição, só de grupos da própria camada (grupo inexistente na camada é erro); **avisos:** 20 ids ou mais em texto no mesmo `allowedChildren` (`N tipos listados um a um; uma cláusula { layer, groups } cobre a camada ou os grupos`; com 19, não) e grupo declarado que nenhum tipo usa (ver "Filhos por camada e grupo");

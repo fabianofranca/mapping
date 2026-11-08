@@ -113,6 +113,14 @@ const noPoints = z
   .optional()
   .describe('Não use: a rota é da pessoa (recusado com `invalid-arguments`).');
 
+const drawingModeField = z
+  .string()
+  .nullable()
+  .optional()
+  .describe(
+    'Modo do desenho (`[a-z0-9][a-z0-9-]*`, ex: `dark`): escolhe os valores dos `tokens` das especializações. `null` volta a seguir o do projeto; ausente não muda.',
+  );
+
 /** Campos de `update_container` (e da antiga `update_image`). */
 const updateContainerFields = {
   name: name.optional(),
@@ -129,6 +137,7 @@ const updateContainerFields = {
     .optional()
     .describe('Cor da borda das marcações (#RRGGBB) ou `null` (cor do tema).'),
   locked: z.boolean().optional().describe('Trancar ou destrancar o container.'),
+  drawingMode: drawingModeField,
   markingsLocked: z
     .boolean()
     .optional()
@@ -170,6 +179,17 @@ const replaceContainerFields = {
 };
 
 export const operationSchema = z.discriminatedUnion('op', [
+  // Projeto
+  z.object({
+    op: z.literal('update_project'),
+    drawingMode: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        'Modo do desenho do projeto (`[a-z0-9][a-z0-9-]*`, ex: `dark`): escolhe os valores dos `tokens` das especializações (não é o tema claro/escuro da app). `null` remove (volta ao primeiro modo de cada especialização); ausente não muda.',
+      ),
+  }),
   // Repositórios por plataforma
   z.object({
     op: z.literal('set_platform_repo'),
@@ -265,6 +285,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     op: z.literal('add_container'),
     as: alias,
     ...imageSource,
+    drawingMode: drawingModeField,
     name: z
       .string()
       .optional()
@@ -389,7 +410,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     rect: rect
       .optional()
       .describe(
-        'Retângulo em pixels do container (sem `container`: unidades do canvas, podendo ser negativo). Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (no centro do container). Um retângulo menor que o `minSize` do componente falha com `rect-too-small`.',
+        'Retângulo em pixels do container (sem `container`: unidades do canvas, podendo ser negativo). Obrigatório, a menos que `annotation` seja de um tipo com componente: então, omitido, a marcação nasce no tamanho inicial do componente (no centro do container). O mínimo de cada lado é 8 px numa marcação comum e 1 px numa marcação com anotação de um tipo com componente (se o componente declara `minSize`, esse mínimo vale); abaixo dele falha com `rect-too-small`.',
       ),
     name: name.optional(),
     source: externalSource.optional(),
@@ -417,6 +438,42 @@ export const operationSchema = z.discriminatedUnion('op', [
       .optional()
       .describe(
         'Cria, junto da marcação, uma anotação tipada (uma instância do tipo). Quando o tipo tem componente, os campos começam com o `preview` do componente (como a paleta da app) e `values` sobrescreve só os campos informados, também depois de `apply_specialization` ou `update_specialization` no mesmo lote (o lote já vê os componentes da versão nova). Se o tipo declara componente e o lote não o acha, o passo avisa (`ignored-argument`) que a anotação nasceu sem o preview e sem o tamanho mínimo.',
+      ),
+  }),
+  z.object({
+    op: z.literal('import_measured'),
+    container: item('Container').describe(
+      'Container onde as marcações nascem (referência, id ou apelido `$nome`). Os retângulos da árvore são em pixels dele, depois de `scale` e `offset`.',
+    ),
+    system: z
+      .string()
+      .describe(
+        'O `system` de uma origem `kind: "measured"` declarada por uma especialização aplicada (`origins`): as `sources` dos tipos com esse `system` dizem como casar cada nó e cada campo.',
+      ),
+    tree: z
+      .record(z.string(), z.unknown())
+      .optional()
+      .describe(
+        'A árvore medida inline: `{ type, id?, classes?, rect: { x, y, width, height }, props?, children? }` (nó raiz). Use `tree` OU `file`, nunca os dois.',
+      ),
+    file: z
+      .string()
+      .optional()
+      .describe(
+        'Um `.json` com a árvore medida dentro das raízes (relativo à pasta do projeto ou a uma raiz, ou absoluto). Use `file` OU `tree`.',
+      ),
+    offset: z
+      .object({ x: z.number(), y: z.number() })
+      .optional()
+      .describe(
+        'Deslocamento em px do container, somado depois da escala (padrão 0, 0).',
+      ),
+    scale: z
+      .number()
+      .positive()
+      .optional()
+      .describe(
+        'Multiplicador dos retângulos medidos (padrão 1; 2 para uma captura em 2×).',
       ),
   }),
   z.object({
@@ -452,7 +509,7 @@ export const operationSchema = z.discriminatedUnion('op', [
     rect: rect
       .optional()
       .describe(
-        'Novo retângulo (as filhas não se movem e precisam continuar dentro; numa marcação que desenha um componente, respeita o `minSize` dele). Sem `container`, vale no espaço atual da marcação; com `container`, nos pixels do container novo (no canvas, em unidades do canvas).',
+        'Novo retângulo (as filhas não se movem e precisam continuar dentro; o mínimo de cada lado é 8 px, ou 1 px numa marcação que desenha um componente, que também respeita o `minSize` dele). Sem `container`, vale no espaço atual da marcação; com `container`, nos pixels do container novo (no canvas, em unidades do canvas).',
       ),
     container: item('Container novo')
       .nullable()

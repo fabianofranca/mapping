@@ -221,7 +221,10 @@ export const SHOWCASE_NAMES = {
 export interface Showcase {
   readonly base: Project;
   readonly proposal: Proposal;
-  /** Id da mudança de criação da marcação, por caso (`marking:create`). */
+  /**
+   * Id da mudança de criação da marcação, por caso (`marking:create`); no "invalid", o da
+   * criação da anotação adulterada (`annotation:create`), que é a que a revisão aponta.
+   */
   readonly createIds: Readonly<
     Record<Exclude<keyof typeof SHOWCASE_NAMES, 'existing'>, string>
   >;
@@ -231,7 +234,7 @@ export interface Showcase {
 /**
  * O projeto "Telas" (uma tela em branco 360 × 800 e o componente existente "Existente") e a
  * proposta aberta "Componentes novos": um Button novo pendente, um aceito, um rejeitado, um
- * aceito e inválido (retângulo menor que o mínimo), um sem o rótulo obrigatório, um de um tipo
+ * aceito e inválido (anotação criada numa camada que não existe), um sem o rótulo obrigatório, um de um tipo
  * do pacote da proposta (`m3novo`) e o "Existente" com o rótulo alterado. As decisões já estão
  * gravadas em `proposal.json`.
  */
@@ -296,7 +299,9 @@ export function showcase(): Showcase {
     createdAt: NOW,
   });
 
-  // O "Inválido": a criação adulterada fica menor que o mínimo de marcação.
+  // O "Inválido": com o mínimo de 1 px (decisão 24) o retângulo pequeno vale e o assentar da
+  // hierarquia conserta pai e container; a anotação criada fica numa camada que não existe
+  // (`missing-layer`), o que a revisão marca como inválido.
   const createOf = (markingId: string) => {
     const found = built.changes.find(
       (c) => c.entity === 'marking' && c.entityId === markingId && c.kind === 'create',
@@ -304,32 +309,43 @@ export function showcase(): Showcase {
     if (!found) throw new Error(`sem mudança de criação de ${markingId}`);
     return found;
   };
+  const annotationOf = (markingId: string) => {
+    const found = built.changes.find(
+      (c) =>
+        c.entity === 'annotation' &&
+        c.entityId === `A_${markingId}` &&
+        c.kind === 'create',
+    );
+    if (!found) throw new Error(`sem mudança de criação da anotação de ${markingId}`);
+    return found;
+  };
   const tampered: Proposal = {
     ...built,
     changes: built.changes.map((c) =>
-      c.id === createOf('N4').id &&
+      c.id === annotationOf('N4').id &&
       typeof c.to === 'object' &&
       c.to !== null &&
       !Array.isArray(c.to)
-        ? { ...c, to: { ...c.to, rect: { x: 20, y: 380, width: 3, height: 3 } } }
+        ? { ...c, to: { ...c.to, layerId: 'GHOST' } }
         : c,
     ),
   };
 
   let proposal = tampered;
-  for (const [markingId, state] of [
-    ['N2', 'accepted'],
-    ['N3', 'rejected'],
-    ['N4', 'accepted'],
+  for (const [change, state] of [
+    [createOf('N2'), 'accepted'],
+    [createOf('N3'), 'rejected'],
+    [createOf('N4'), 'accepted'],
+    [annotationOf('N4'), 'accepted'],
   ] as const) {
     const result = decide(
       proposal,
       reviewTree(proposal, base),
-      { level: 'change', id: createOf(markingId).id },
+      { level: 'change', id: change.id },
       state,
       NOW,
     );
-    if (!result.ok) throw new Error(`decisão de ${markingId}: ${result.reason}`);
+    if (!result.ok) throw new Error(`decisão de ${change.entityId}: ${result.reason}`);
     proposal = { ...proposal, decisions: result.decisions };
   }
 
@@ -348,7 +364,7 @@ export function showcase(): Showcase {
       pending: createOf('N1').id,
       accepted: createOf('N2').id,
       rejected: createOf('N3').id,
-      invalid: createOf('N4').id,
+      invalid: annotationOf('N4').id,
       noLabel: createOf('N5').id,
       package: createOf('N6').id,
     },

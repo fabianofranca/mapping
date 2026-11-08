@@ -1,3 +1,5 @@
+import type { HostFonts } from '../model/components/tokens';
+
 // Tokens do canvas lidos das variáveis CSS do tema (nenhum valor de design fixo
 // no código). Os nomes em `--cv-*`, `--opacity-*`, `--t-cv-*` etc. vêm de
 // `src/theme/tokens.ts`, a fonte única.
@@ -64,6 +66,8 @@ export interface CanvasTokens {
   };
   /** Lado visível da alça (px de tela): `size-handle`. */
   readonly handleSize: number;
+  /** Lado (px de tela) abaixo do qual a marcação com componente esconde as bolinhas de camada e o "+N": `size-indicator-min-marking`. */
+  readonly indicatorMinMarking: number;
   /** Raios (px de tela): `sm` na etiqueta do nome, `md` nos demais cantos arredondados. */
   readonly radius: { readonly sm: number; readonly md: number };
   /** Seta (v13): cores do traço, da seleção e do rótulo; espessuras e ponta (px de tela). */
@@ -147,6 +151,7 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
       image: textStyle(read, 't-cv-image'),
     },
     handleSize: number(read, '--size-handle'),
+    indicatorMinMarking: number(read, '--size-indicator-min-marking'),
     radius: { sm: number(read, '--radius-sm'), md: number(read, '--radius-md') },
     arrow: {
       stroke: read('--cv-arrow'),
@@ -172,6 +177,26 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
       unread: read('--cv-pin-unread'),
     },
   };
+}
+
+/** A fonte do hospedeiro lida do tema: `--font-sans` e `--font-mono`; valor vazio fica ausente. */
+export function hostFontsFrom(read: TokenReader): HostFonts {
+  const sans = read('--font-sans');
+  const mono = read('--font-mono');
+  return {
+    ...(sans === '' ? {} : { sans }),
+    ...(mono === '' ? {} : { mono }),
+  };
+}
+
+/** `hostFontsFrom` sobre o estilo calculado da página (vazio se não há DOM). */
+export function readHostFonts(root?: HTMLElement): HostFonts {
+  try {
+    const style = getComputedStyle(root ?? document.documentElement);
+    return hostFontsFrom((name) => style.getPropertyValue(name).trim());
+  } catch {
+    return {};
+  }
 }
 
 export function readCanvasTokens(

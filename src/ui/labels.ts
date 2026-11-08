@@ -127,8 +127,12 @@ export function perspectiveErrorMessage(code: StoreErrorCode): string {
   return t(PERSPECTIVE_ERRORS[code] ?? 'perspective.error.generic');
 }
 
-export function markingErrorMessage(code: StoreErrorCode): string {
-  return t(MARKING_ERRORS[code] ?? 'marking.error.generic', { min: MIN_MARKING_SIZE });
+/** `min` é o mínimo efetivo da marcação (8 px na comum; 1 px ou o `minSize` na que desenha componente). */
+export function markingErrorMessage(
+  code: StoreErrorCode,
+  min: number = MIN_MARKING_SIZE,
+): string {
+  return t(MARKING_ERRORS[code] ?? 'marking.error.generic', { min });
 }
 
 /** Nome da anotação; sem nome, o primeiro par como `chave: valor`. */

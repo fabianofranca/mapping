@@ -29,7 +29,9 @@
  * CSP (`img-src`) é do site hospedeiro. Ver `remoteImages.ts` e o `PACKAGE-README.md`.
  */
 import Konva from 'konva';
-import type { Library } from '../src/model/components/library';
+import { type Library, withHostTokens } from '../src/model/components/library';
+import type { HostFonts } from '../src/model/components/tokens';
+import { tokenValue } from '../src/theme/tokens';
 import type { TextMeasurer } from '../src/model/components/instantiate';
 import type { Box, Screen } from '../src/model/components/screen';
 import { type SourceResult, screenFromSource } from '../src/model/components/origin';
@@ -50,6 +52,12 @@ export interface ViewerInput {
   readonly source: unknown;
   /** Origem da especialização usada em `source` (ausente = a primeira). */
   readonly sourceSystem: string | undefined;
+  /**
+   * Modo dos tokens do desenho (`light`, `dark`…, os `modes` da especialização). Ausente, ou um
+   * modo que a especialização não declara, vale o primeiro modo. Trocá-lo redesenha sem
+   * recarregar a biblioteca nem a tela.
+   */
+  readonly drawingMode: string | undefined;
 }
 
 export interface ViewerOptions {
@@ -58,6 +66,8 @@ export interface ViewerOptions {
   /** JSON externo (ver `ViewerInput.source`); vence `screen`. */
   readonly source?: unknown;
   readonly sourceSystem?: string;
+  /** Modo inicial dos tokens do desenho (ver `ViewerInput.drawingMode`); muda por `update`. */
+  readonly drawingMode?: string;
   /** Resultado de cada cálculo da tela a partir de `source` (tela, avisos e `error`). */
   readonly onSource?: (result: SourceResult) => void;
   /** O ponteiro entrou/saiu de uma instância (`undefined` = nenhuma). */
@@ -67,6 +77,12 @@ export interface ViewerOptions {
   /** Avisos da instanciação por instância, a cada atualização que redesenhou algo. */
   readonly onWarnings?: (byInstance: InstanceWarnings) => void;
   readonly measure?: TextMeasurer;
+  /**
+   * Fonte padrão dos textos sem `family` (os `font-sans`/`font-mono` embutidos nos tokens).
+   * Padrão: a pilha dos tokens da app (`--font-sans`/`--font-mono`), a mesma da app. Uma
+   * especialização que redefine `font-sans` nos `tokens` vence.
+   */
+  readonly fonts?: HostFonts;
   /** Como a tela cabe no contêiner: `'contain'` (padrão, com margem `padding`) ou uma escala fixa. */
   readonly fit?: 'contain' | number;
   /** Margem, em px do contêiner, do enquadramento `'contain'` (padrão 16). */
@@ -170,6 +186,22 @@ export function createViewer(
   stage.add(content, overlay);
 
   const measure = options.measure ?? konvaMeasurer;
+  const fonts: HostFonts = options.fonts ?? {
+    sans: tokenValue('font-sans', 'light'),
+    mono: tokenValue('font-mono', 'light'),
+  };
+  /** A biblioteca recebida, com os tokens do modo e a fonte do hospedeiro nos componentes. */
+  const baked = new WeakMap<Library, Map<string, Library>>();
+  let drawingMode: string | undefined = options.drawingMode;
+  const withFonts = (lib: Library | undefined): Library | undefined => {
+    if (lib === undefined) return undefined;
+    const byMode = baked.get(lib) ?? new Map<string, Library>();
+    baked.set(lib, byMode);
+    const key = drawingMode ?? '';
+    const hit = byMode.get(key) ?? withHostTokens(lib, fonts, drawingMode);
+    byMode.set(key, hit);
+    return hit;
+  };
   // `pixelSafe` sempre: o `toDataURL` abaixo lê pixels, então nenhuma imagem `opaque` é desenhada.
   const images = options.remoteImages
     ? createViewerRemoteImages(options.allowOrigin)
@@ -281,7 +313,10 @@ export function createViewer(
       screen = undefined;
       return;
     }
-    const result = screenFromSource(library, source, { system: sourceSystem, measure });
+    const result = screenFromSource(withFonts(library) ?? library, source, {
+      system: sourceSystem,
+      measure,
+    });
     screen = result.screen;
     options.onSource?.(result);
   };
@@ -294,7 +329,7 @@ export function createViewer(
       fill: current.background,
       visible: screen !== undefined,
     });
-    const changed = renderer.update(library, current, { force, zBase: 1 });
+    const changed = renderer.update(withFonts(library), current, { force, zBase: 1 });
     if (screen && fittedKey !== `${screen.width}x${screen.height}`) applyFit();
     syncOverlay();
     if (changed || force) emitWarnings();
@@ -376,6 +411,11 @@ export function createViewer(
       if ('sourceSystem' in input && input.sourceSystem !== sourceSystem) {
         sourceSystem = input.sourceSystem;
         recompute = true;
+      }
+      if ('drawingMode' in input && input.drawingMode !== drawingMode) {
+        drawingMode = input.drawingMode;
+        // com `source`, a tela sai da biblioteca já com os tokens do modo
+        if (source !== undefined) recompute = true;
       }
       if ('screen' in input && input.screen !== passedScreen) {
         passedScreen = input.screen;

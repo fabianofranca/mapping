@@ -61,8 +61,10 @@ function expectIssueStarting(spec: Json, path: string, start: string): void {
 }
 
 describe('o exemplo da biblioteca (formatVersion 4)', () => {
-  it('as versões aceitas vão de 1 a 14', () => {
-    expect(SPEC_FORMAT_VERSIONS).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
+  it('as versões aceitas vão de 1 a 15', () => {
+    expect(SPEC_FORMAT_VERSIONS).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    ]);
   });
 
   it('valida no zod e no JSON Schema, sem erros nem avisos escondidos', () => {
@@ -714,7 +716,7 @@ describe('origins', () => {
       name: 'SDUI',
       node: { type: 'type', props: 'props', children: 'children' },
     });
-    expect(origin?.screen.roots).toEqual([{ path: 'content' }]);
+    expect(origin?.screen?.roots).toEqual([{ path: 'content' }]);
   });
 
   it('um problema do parseOrigins chega como issue do zod no caminho exato', () => {

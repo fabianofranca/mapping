@@ -121,3 +121,58 @@ test('seletor e linha Referenciada por sem barra horizontal a 900 px', async ({
   await expect(page.getByRole('group', { name: 'Referenciada por' })).toBeVisible();
   expect(await overflow(page, '.editor')).toEqual([]);
 });
+
+// CF13 (R24.15): na janela estreita o nome do alvo no campo `ref` dos Detalhes não pode ficar
+// espremido ("→ Pl…", 24 de 50 px) pelos botões ao lado: ou cabe inteiro, ou os botões quebram
+// de linha. Vale a 900 px e a 1280 px.
+async function measureRef(page: Page) {
+  return page.evaluate(() => {
+    const text = document.querySelector<HTMLElement>('.ref-field .ref-control-text')!;
+    const field = text.closest<HTMLElement>('.ref-field')!;
+    const box = (el: Element) => Math.round(el.getBoundingClientRect().width);
+    return {
+      shown: text.clientWidth,
+      full: text.scrollWidth,
+      control: box(text.closest('.ref-control')!),
+      field: box(field),
+    };
+  });
+}
+
+test('o nome do alvo do campo ref cabe a 900 e a 1280 px', async ({ page }, info) => {
+  const file = info.outputPath('fora.json');
+  writeFileSync(file, JSON.stringify(spec));
+  await createProject(page, 'Fora da imagem');
+  await addImage(page);
+  await drawMarking(page, await canvasPoint(page, 1 / 4));
+  await applySpecialization(page, file);
+  await page.getByRole('button', { name: 'Mostrar Detalhes' }).click();
+  await page
+    .getByRole('button', { name: /Adicionar anotação na camada Componentes/ })
+    .first()
+    .click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Item de lista/ })
+    .click();
+  const title = page.getByRole('textbox', { name: 'titulo' });
+  await title.fill('Plugin B');
+  await title.press('Enter');
+  await drawMarking(page, await canvasPoint(page, 2 / 3));
+  await page
+    .getByRole('button', { name: /Adicionar anotação na camada Eventos/ })
+    .first()
+    .click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Evento/ })
+    .click();
+  await page.getByRole('button', { name: /^Escolher: principal/i }).click();
+  await page.getByRole('dialog').getByRole('option').first().click();
+
+  for (const width of [900, 1280]) {
+    await page.setViewportSize({ width, height: 720 });
+    const m = await measureRef(page);
+    expect(m.shown, `largura ${width}`).toBeGreaterThanOrEqual(m.full - 1);
+  }
+});

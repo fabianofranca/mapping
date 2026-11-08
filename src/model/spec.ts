@@ -1,13 +1,19 @@
 import { z } from 'zod';
 import { isValidCodePath, isValidUrlTemplate } from './codeLocations';
 import { MAX_CONTAINER_SIZE } from './containers';
-import { parseOrigins, parsePath, type Origin } from './components/origin';
+import {
+  parseOrigins,
+  parsePath,
+  toSpecOrigin,
+  type SpecOrigin,
+} from './components/origin';
+import { TOKEN_NAME_PATTERN, type SpecTokens } from './components/tokens';
 import { isPackagePath, packagePathProblem } from './packagePaths';
 import { childSets } from './specChildren';
 
 export { isPackagePath };
 
-// Formato da especialização (`formatVersion` 1 a 14), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
+// Formato da especialização (`formatVersion` 1 a 15), ver docs/SPEC-FORMAT.md. A versão 2 acrescenta `platforms` e `code`; a
 // versão 1 é a 2 sem plataformas e sem `code`; a versão 3 é a 2 mais `sources` (origens
 // externas nos tipos e nos campos, inclusive nas colunas de `table`); a versão 4 é a 3 mais a
 // biblioteca: o pacote (pasta da especialização) com `component`, `doc` e `examples` nos
@@ -30,6 +36,8 @@ export { isPackagePath };
 // (`docRepos` na raiz e `doc` como objeto `{ repo, path }`); a versão 12 é a 11 mais os passos
 // de papel em `migrations` (`rename-role`, `remove-role` e `set-role`); a versão 13 é a 12 mais
 // `allowedChildren` com tipos da camada do próprio dono (vínculo entre anotações da mesma camada).
+// A versão 15 traz ainda `origins[].kind` (`tree` ou `measured`: a origem medida, só com `system`, `kind`,
+// `name` e `booleans`; a árvore vem da op `import_measured` do MCP), além de tokens, ícones e `structural`.
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -42,10 +50,10 @@ export const SPEC_FORMAT = 'mapping-spec';
 /** Valor usado antes do renome do produto: a importação ainda o aceita. */
 export const LEGACY_SPEC_FORMAT = 'mapeador-spec';
 /** Versão atual do formato (a que a documentação e os exemplos novos usam). */
-export const SPEC_FORMAT_VERSION = 14;
+export const SPEC_FORMAT_VERSION = 15;
 /** Versões aceitas na importação. */
 export const SPEC_FORMAT_VERSIONS = [
-  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+  1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 ] as const;
 export type SpecFormatVersion = (typeof SPEC_FORMAT_VERSIONS)[number];
 
@@ -345,6 +353,11 @@ export interface SpecAnnotationType {
   appliesTo?: SpecAppliesTo[];
   /** Avisos do tipo (só `formatVersion` 10). */
   notices?: SpecNotice[];
+  /**
+   * O tipo agrupa e não desenha (só `formatVersion` 15): sem `component`; a marcação não mostra o
+   * cabeçalho com o nome e o contorno só aparece com o mouse ou selecionada. Ausente = `false`.
+   */
+  structural?: boolean;
 }
 
 /** Itens a que um tipo de anotação se aplica (ME4, decisão 14). */
@@ -399,9 +412,13 @@ export interface Spec {
   /** Fontes do pacote (só `formatVersion` 4). */
   fonts?: SpecFont[];
   /** Origens executáveis, validadas por `parseOrigins` (só `formatVersion` 4). */
-  origins?: Origin[];
+  origins?: SpecOrigin[];
   /** Contrato de versão (só `formatVersion` 4). */
   migrations?: SpecMigration[];
+  /** Tokens de design (cor, número, família) por modo, lidos por `$token` nos componentes (só `formatVersion` 15). */
+  tokens?: SpecTokens;
+  /** Arquivo `.json` do pacote com o conjunto de ícones (`mapping-icons`; só `formatVersion` 15). */
+  icons?: string;
 }
 
 const KEY_RE = /^[A-Za-z0-9_]+$/;
@@ -1213,9 +1230,17 @@ const annotationTypeShape = z
       )
       .optional(),
     notices: noticesShape.optional(),
+    structural: z.boolean({ error: 'deve ser true ou false' }).optional(),
   })
   .strict()
   .superRefine((type, ctx) => {
+    if (type.structural === true && type.component !== undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['structural'],
+        message: 'um tipo estrutural não desenha: não pode ter component',
+      });
+    }
     checkNotices(type.notices, ctx, []);
     checkFields(type.fields, ctx, ['fields']);
     checkAppliesTo(type, ctx);
@@ -1234,6 +1259,23 @@ const annotationTypeShape = z
       }
     }
   });
+
+/** Antes da v15, `structural` no tipo é erro no caminho exato. */
+function checkNoStructural(
+  layers: readonly { annotationTypes: readonly { structural?: unknown }[] }[],
+  ctx: z.RefinementCtx,
+): void {
+  layers.forEach((layer, li) => {
+    layer.annotationTypes.forEach((type, ti) => {
+      if (type.structural === undefined) return;
+      ctx.addIssue({
+        code: 'custom',
+        path: ['layers', li, 'annotationTypes', ti, 'structural'],
+        message: 'só é permitido com formatVersion 15',
+      });
+    });
+  });
+}
 
 /** Antes da v10, `notices` (no tipo, no campo e na coluna) é erro no caminho exato. */
 function checkNoNotices(
@@ -1994,7 +2036,23 @@ function checkMigrations(
 }
 
 /** Cada problema `"caminho: mensagem"` do `parseOrigins` vira uma issue no caminho exato. */
-function addOriginIssues(raw: unknown, ctx: z.RefinementCtx): void {
+function addOriginIssues(
+  raw: unknown,
+  ctx: z.RefinementCtx,
+  formatVersion: number,
+): void {
+  // `kind` (origem `measured`) é da v15; antes dela a chave é erro no caminho exato.
+  if (formatVersion < 15 && Array.isArray(raw)) {
+    raw.forEach((item, index) => {
+      if (isRecord(item) && item.kind !== undefined) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['origins', index, 'kind'],
+          message: 'só é permitido com formatVersion 15',
+        });
+      }
+    });
+  }
   for (const problem of parseOrigins(raw, 'origins').problems) {
     const cut = problem.indexOf(': ');
     ctx.addIssue({
@@ -2305,6 +2363,104 @@ function checkRequiresOwner(
   });
 }
 
+const TOKEN_NAME_RE = TOKEN_NAME_PATTERN;
+const TOKEN_MODE_RE = /^[a-z0-9][a-z0-9-]*$/;
+
+/** `tokens.modes`: lista não vazia de nomes distintos. Devolve os modos válidos (ou `null`). */
+function tokenModes(
+  tokens: Record<string, unknown>,
+  add: IssueAdder,
+): readonly string[] | null {
+  const modes = tokens.modes;
+  if (!Array.isArray(modes) || modes.length === 0) {
+    add(['tokens', 'modes'], 'deve ser uma lista com ao menos um modo');
+    return null;
+  }
+  const seen = new Set<string>();
+  let ok = true;
+  modes.forEach((mode: unknown, i) => {
+    if (typeof mode !== 'string' || !TOKEN_MODE_RE.test(mode)) {
+      add(['tokens', 'modes', i], 'modo inválido; use [a-z0-9][a-z0-9-]*');
+      ok = false;
+    } else if (seen.has(mode)) {
+      add(['tokens', 'modes', i], `modo "${mode}" repetido`);
+      ok = false;
+    }
+    if (typeof mode === 'string') seen.add(mode);
+  });
+  return ok ? (modes as string[]) : null;
+}
+
+const isTokenLiteral = (v: unknown): v is string | number =>
+  (typeof v === 'string' && v !== '') || (typeof v === 'number' && Number.isFinite(v));
+
+/** Um token: literal (vale em todos os modos) ou um literal por modo, todos do mesmo tipo. */
+function checkTokenValue(
+  name: string,
+  value: unknown,
+  modes: readonly string[],
+  add: IssueAdder,
+): void {
+  const path = ['tokens', 'values', name];
+  if (isTokenLiteral(value)) return;
+  if (!isRecord(value)) {
+    add(path, 'deve ser texto, número ou um valor por modo');
+    return;
+  }
+  const given = Object.keys(value);
+  const missing = modes.filter((m) => !given.includes(m));
+  const extra = given.filter((m) => !modes.includes(m));
+  if (missing.length > 0) add(path, `falta o modo ${missing.join(', ')}`);
+  if (extra.length > 0) add(path, `modo não declarado em modes: ${extra.join(', ')}`);
+  const literals = given.map((m) => value[m]);
+  if (!literals.every(isTokenLiteral)) {
+    add(path, 'cada modo deve ter texto ou número');
+  } else if (new Set(literals.map((l) => typeof l)).size > 1) {
+    add(path, 'os modos de um token devem ter o mesmo tipo (texto ou número)');
+  }
+}
+
+/** `tokens` (só `formatVersion` 15): `modes` e `values` por nome `^[a-z0-9][a-z0-9-]*$`. */
+function checkTokens(
+  spec: { formatVersion: number; tokens?: unknown },
+  ctx: z.RefinementCtx,
+): void {
+  if (spec.tokens === undefined) return;
+  const add = issueAdder(ctx);
+  if (spec.formatVersion < 15) {
+    add(['tokens'], 'só é permitido com formatVersion 15');
+    return;
+  }
+  if (!isRecord(spec.tokens))
+    return add(['tokens'], 'deve ser um objeto com modes e values');
+  const modes = tokenModes(spec.tokens, add);
+  const values = spec.tokens.values;
+  if (!isRecord(values)) return add(['tokens', 'values'], 'deve ser um objeto');
+  for (const [name, value] of Object.entries(values)) {
+    if (!TOKEN_NAME_RE.test(name)) {
+      add(['tokens', 'values', name], 'nome inválido; use [a-z0-9][a-z0-9-]*');
+    } else if (modes !== null) {
+      checkTokenValue(name, value, modes, add);
+    }
+  }
+}
+
+/** `icons` (só `formatVersion` 15): o caminho de um `.json` do pacote. */
+function checkIcons(
+  spec: { formatVersion: number; icons?: unknown },
+  ctx: z.RefinementCtx,
+): void {
+  if (spec.icons === undefined) return;
+  const add = issueAdder(ctx);
+  if (spec.formatVersion < 15)
+    return add(['icons'], 'só é permitido com formatVersion 15');
+  if (typeof spec.icons !== 'string') {
+    return add(['icons'], 'deve ser o caminho de um arquivo .json do pacote');
+  }
+  const problem = packagePathProblem(spec.icons, '.json');
+  if (problem !== undefined) add(['icons'], problem);
+}
+
 export const specSchema = z
   .object({
     format: z.union([z.literal(SPEC_FORMAT), z.literal(LEGACY_SPEC_FORMAT)], {
@@ -2326,6 +2482,7 @@ export const specSchema = z
         z.literal(12),
         z.literal(13),
         z.literal(14),
+        z.literal(15),
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
@@ -2343,6 +2500,10 @@ export const specSchema = z
     // Validado por `parseOrigins` (a fonte da verdade da declaração de origem), no superRefine.
     origins: z.unknown().optional(),
     migrations: z.array(migrationShape).optional(),
+    // Validado por `checkTokens` (caminhos e mensagens próprios), no superRefine.
+    tokens: z.unknown().optional(),
+    // O caminho é conferido por `checkIcons` (a versão primeiro); o arquivo, pelo validador da biblioteca.
+    icons: z.unknown().optional(),
   })
   .strict()
   .superRefine((spec, ctx) => {
@@ -2442,6 +2603,8 @@ export const specSchema = z
     }
     // v10: `notices` no tipo, no campo e na coluna. Antes dela, é erro no caminho exato.
     if (spec.formatVersion < 10) checkNoNotices(spec.layers, ctx);
+    // v15: `structural` no tipo. Antes dela, é erro no caminho exato.
+    if (spec.formatVersion < 15) checkNoStructural(spec.layers, ctx);
     // v11: cláusulas, `groups`, papéis e documento externo. Antes dela, é erro no caminho exato.
     if (spec.formatVersion < 11) checkNoV11Keys(spec, ctx);
     // v6: `containers`. Antes dela, é erro no caminho exato.
@@ -2481,7 +2644,7 @@ export const specSchema = z
       }
       checkNoLibraryKeys(spec.layers, ctx);
     } else if (spec.origins !== undefined) {
-      addOriginIssues(spec.origins, ctx);
+      addOriginIssues(spec.origins, ctx, spec.formatVersion);
     }
     if (spec.formatVersion >= 3) {
       checkSources(spec.layers, spec.formatVersion, executable, ctx);
@@ -2549,6 +2712,8 @@ export const specSchema = z
     });
 
     checkRequiresOwner(spec, ctx);
+    checkTokens(spec, ctx);
+    checkIcons(spec, ctx);
   });
 
 export type SpecIssue = { path: string; message: string };
@@ -2649,7 +2814,9 @@ function dropRemovedFields(parsed: ParsedSpec): {
   // `origins` foi validado por `parseOrigins` no schema; a forma lida é a dele.
   const { origins: rawOrigins, ...rest } = parsed;
   const origins =
-    rawOrigins === undefined ? {} : { origins: parseOrigins(rawOrigins).origins };
+    rawOrigins === undefined
+      ? {}
+      : { origins: parseOrigins(rawOrigins).origins.map(toSpecOrigin) };
   return { spec: { ...rest, ...origins, layers } as Spec, ignored };
 }
 

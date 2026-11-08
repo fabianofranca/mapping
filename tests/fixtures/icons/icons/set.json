@@ -1,0 +1,27 @@
+{
+  "format": "mapping-icons",
+  "formatVersion": 1,
+  "viewBox": [24, 24],
+  "icons": {
+    "check": {
+      "paths": [
+        {
+          "d": "M5 12l5 5L20 7",
+          "stroke": true,
+          "width": 2,
+          "cap": "round",
+          "join": "round"
+        }
+      ]
+    },
+    "close": {
+      "paths": [
+        { "d": "M6 6l12 12M18 6L6 18", "stroke": true, "width": 2, "cap": "round" }
+      ]
+    },
+    "dot": {
+      "viewBox": [10, 10],
+      "paths": [{ "d": "M5 1a4 4 0 1 0 0 8a4 4 0 1 0 0-8z", "fill": true }]
+    }
+  }
+}

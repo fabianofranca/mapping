@@ -312,8 +312,8 @@ describe('get_marking_image num container com componentes', () => {
     const marking = result.project.markings.find((m) => m.id === id)!;
     const out = await markingImage(roots, refs, marking, { padding: 10 });
     expect(out.json).toMatchObject({
-      drawing: 'simplified',
-      drawingNote: expect.stringContaining('barras'),
+      drawing: 'rendered',
+      drawingNote: expect.stringContaining('texto real'),
       container: { file: null, background: '#FFEBEE' },
       width: 180,
       height: 76,
@@ -337,7 +337,7 @@ describe('get_marking_image num container com componentes', () => {
     const id = (result.aliases.get('$btn') as { id: string }).id;
     const marking = result.project.markings.find((m) => m.id === id)!;
     const out = await markingImage(roots, refs, marking, { mode: 'context' });
-    expect(out.json).toMatchObject({ mode: 'context', drawing: 'simplified' });
+    expect(out.json).toMatchObject({ mode: 'context', drawing: 'rendered' });
     const { raster } = await decodeImage(out.image.bytes);
     expect([raster.data[0], raster.data[1], raster.data[2]]).toEqual([0xff, 0xeb, 0xee]);
   });

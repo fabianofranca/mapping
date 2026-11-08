@@ -1,7 +1,7 @@
 import { fail } from './errors';
 import {
   IDENTITY_PLACEMENT,
-  MIN_MARKING_SIZE,
+  effectiveMinSize,
   bottom,
   checkRectSize,
   clamp,
@@ -288,7 +288,7 @@ export function adjustMarkingRect(
       options,
     );
   }
-  const minimum = Math.max(MIN_MARKING_SIZE, options?.minSize?.[field] ?? 0);
+  const minimum = effectiveMinSize(options?.minSize)[field];
   const maximum = bounds
     ? field === 'width'
       ? right(bounds) - rect.x

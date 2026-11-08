@@ -22,6 +22,7 @@ export {
 } from './project';
 export * from './layers';
 export * from './containers';
+export * from './drawingMode';
 export * from './imageOptimization';
 export * from './exif';
 export * from './markings';
@@ -32,6 +33,7 @@ export { approximateMeasurer, type TextMeasurer } from './components/instantiate
 export type { ComponentFile, FieldValues } from './components/componentFormat';
 export type { FrameNode } from './components/scene';
 export * from './componentCatalog';
+export * from './structural';
 export * from './componentValues';
 export * from './componentDrawings';
 export * from './componentMarkings';

@@ -23,13 +23,14 @@ import {
   annotationShortLabel,
   applySpecialization,
   checkSpecApply,
+  MIN_STORED_MARKING_SIZE,
   componentMinSize,
   componentPlacement,
   componentTypes,
   findSpecType,
   loadSpecComponents,
   type ComponentCatalog,
-  approximateMeasurer,
+  type TextMeasurer,
   confirmMarkingReview,
   createMarking,
   reorderMarking,
@@ -72,7 +73,9 @@ import {
   setEntries,
   setFieldValue,
   setImageLocked,
+  setContainerDrawingMode,
   setContainerMarkingColor,
+  setProjectDrawingMode,
   setImageMarkingsLocked,
   setContainerPlacement,
   setImageSource,
@@ -119,6 +122,7 @@ import {
 } from './libraryUpdate';
 import type { ReadPackage, SpecInput } from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
+import { builtinFontBook, measurerFor } from './image/textMeasurer';
 import { prepareImage } from './imagePrepare';
 import { INVALID_REF_HINT, KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
 import { containersNamed } from './markingList';
@@ -128,6 +132,7 @@ import {
   rectTooSmallDetail,
   MODEL_ERROR_HINTS,
 } from './modelErrors';
+import { measuredTree, planMeasured } from './importMeasured';
 import type { Operation } from './operations';
 import type { LoadedProject } from './projects';
 
@@ -379,6 +384,10 @@ function missingComponentNote(
   return `o tipo ${label} declara componente, mas ${reason}: a anotação foi criada sem o preview e sem o tamanho mínimo`;
 }
 
+type CreateMarkingValues = NonNullable<
+  Extract<Operation, { op: 'create_marking' }>['annotation']
+>['values'];
+
 class Batch {
   private p: Project;
   private readonly aliases = new Map<string, AliasTarget>();
@@ -402,6 +411,8 @@ class Batch {
    * especializações que o próprio lote aplica, atualiza ou remove.
    */
   private catalog: ComponentCatalog;
+  /** Mede o texto como o desenho do servidor: fonte embutida e, se houver, as `fonts` da biblioteca. */
+  private readonly measurer: TextMeasurer;
 
   constructor(
     private readonly loaded: LoadedProject,
@@ -409,6 +420,7 @@ class Batch {
   ) {
     this.p = loaded.project;
     this.catalog = loaded.catalog;
+    this.measurer = measurerFor(loaded.fonts ?? builtinFontBook());
   }
 
   private refs(p: Project = this.p): Refs {
@@ -1212,10 +1224,10 @@ class Batch {
               : `Remover a especialização "${op.specId}": ${layers} camada(s) e ${impact.annotations} anotação(ões) viram livres${broken}`,
         };
       }
+      case 'update_project':
+        return this.updateProjectOp(op, p);
       case 'add_container':
-        return op.file !== undefined || op.base64 !== undefined
-          ? this.addContainerFromFile(op, p)
-          : this.addContainerWithBackground(op, p);
+        return this.addContainerOp(op, p);
       case 'add_image':
         return this.addContainerFromFile(op, p);
       case 'add_blank_image':
@@ -1236,6 +1248,8 @@ class Batch {
         return this.createMarkingOp(op);
       case 'wrap_items':
         return this.wrapItemsOp(op);
+      case 'import_measured':
+        return this.importMeasuredOp(op);
       case 'move_marking': {
         const id = this.item(op.marking, 'm');
         const before = siblingPosition(p, id);
@@ -1401,6 +1415,41 @@ class Batch {
    * componente) e vale o `minSize`; a anotação nasce como na paleta da app (`preview`), com os
    * `values` por cima. O servidor nunca arruma: os retângulos são os que o agente informou.
    */
+  /** `update_project`: hoje só o modo do desenho. */
+  private updateProjectOp(
+    op: Extract<Operation, { op: 'update_project' }>,
+    p: Project,
+  ): Step {
+    if (op.drawingMode === undefined) {
+      return { project: p, description: 'Alterar o projeto: nada' };
+    }
+    return {
+      project: setProjectDrawingMode(p, op.drawingMode),
+      description:
+        op.drawingMode === null
+          ? 'Alterar o projeto: modo do desenho removido'
+          : `Alterar o projeto: modo do desenho ${quoted(op.drawingMode)}`,
+    };
+  }
+
+  /** `add_container` (com arquivo ou só com fundo) e o modo do desenho que ele fixa. */
+  private async addContainerOp(
+    op: Extract<Operation, { op: 'add_container' }>,
+    p: Project,
+  ): Promise<Step> {
+    const step =
+      op.file !== undefined || op.base64 !== undefined
+        ? await this.addContainerFromFile(op, p)
+        : this.addContainerWithBackground(op, p);
+    const id = step.created?.find((c) => c.kind === 'i')?.id;
+    if (op.drawingMode == null || id === undefined) return step;
+    return {
+      ...step,
+      project: setContainerDrawingMode(step.project, id, op.drawingMode),
+      description: `${step.description}, modo do desenho ${quoted(op.drawingMode)}`,
+    };
+  }
+
   /** Container com arquivo de imagem: `add_container` com `file`/`base64` e a antiga `add_image`. */
   private async addContainerFromFile(
     op: Extract<Operation, { op: 'add_container' | 'add_image' }>,
@@ -1532,6 +1581,14 @@ class Batch {
       const container = projectIndex(project).containers.get(id)!;
       changes.push(
         `tamanho ${container.width}×${container.height} px, fundo ${container.background}`,
+      );
+    }
+    if (op.drawingMode !== undefined) {
+      project = setContainerDrawingMode(project, id, op.drawingMode);
+      changes.push(
+        op.drawingMode === null
+          ? 'modo do desenho do projeto'
+          : `modo do desenho ${quoted(op.drawingMode)}`,
       );
     }
     if (op.locked === true) {
@@ -1748,6 +1805,56 @@ class Batch {
     };
   }
 
+  /**
+   * Cria uma marcação por nó com tipo da árvore medida, cada uma por `create_marking` (o pai sai
+   * da geometria, nunca da árvore). Um nó que não cria (tamanho mínimo, por exemplo) vira aviso e
+   * os outros seguem; a prova de desenho da CF10 olha o que o lote criou.
+   */
+  private async importMeasuredOp(
+    op: Extract<Operation, { op: 'import_measured' }>,
+  ): Promise<Step> {
+    const tree = await measuredTree(op, this.io);
+    const plan = planMeasured(this.p, op, tree);
+    this.containerItem(op.container);
+    const notes = [...plan.warnings];
+    const created: { kind: CreatedKind; id: string }[] = [];
+    const rowAliases: [string, AliasTarget][] = [];
+    let project = this.p;
+    for (const marking of plan.markings) {
+      try {
+        this.p = project;
+        const step = this.createMarkingOp({
+          op: 'create_marking',
+          container: op.container,
+          rect: marking.rect,
+          annotation: {
+            type: `${marking.specId}/${marking.typeId}`,
+            values: marking.values as CreateMarkingValues,
+          },
+        });
+        project = step.project;
+        created.push(...(step.created ?? []));
+        rowAliases.push(...(step.rowAliases ?? []));
+        notes.push(...(step.notes ?? []));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        notes.push(`${marking.path}: não criada (${message})`);
+      }
+    }
+    const made = created.filter((c) => c.kind === 'm').length;
+    return {
+      project,
+      notes,
+      created,
+      rowAliases,
+      description: `Importar layout medido "${op.system}": ${made} marcação(ões) criada(s)${
+        plan.markings.length > made
+          ? `, ${plan.markings.length - made} não criada(s)`
+          : ''
+      }`,
+    };
+  }
+
   private createMarkingOp(op: Extract<Operation, { op: 'create_marking' }>): Step {
     const p = this.p;
     const catalog = this.catalog;
@@ -1782,7 +1889,14 @@ class Batch {
         '`rect` é obrigatório (só um tipo de anotação com componente dispensa o retângulo: veja list_components)',
       );
     }
-    const minSize = component?.component.minSize ?? null;
+    // Com componente o mínimo é o `minSize` dele ou 1×1; sem componente, o de qualquer marcação (8).
+    const minSize =
+      component === null
+        ? null
+        : (component.component.minSize ?? {
+            width: MIN_STORED_MARKING_SIZE,
+            height: MIN_STORED_MARKING_SIZE,
+          });
     // `near` (ME4): só um tipo flutuante; o lugar sai de `placeFloatingNear` e o `rect`, se vier,
     // dá só o tamanho. Nos outros casos o argumento é ignorado, com aviso.
     const notes: string[] = [];
@@ -1796,7 +1910,7 @@ class Batch {
             p,
             catalog,
             { containerId: null, parentId: null, ...typeRef! },
-            approximateMeasurer,
+            this.measurer,
           );
         nearRect = placeFloatingNear(p, target, size);
       } else {
@@ -1824,7 +1938,7 @@ class Batch {
           p,
           catalog,
           { containerId, parentId: null, ...typeRef },
-          approximateMeasurer,
+          this.measurer,
         );
       if (annotation.layer !== undefined) {
         const layer = this.layer(annotation.layer);
@@ -1848,7 +1962,7 @@ class Batch {
             rect,
             name: op.name ?? null,
           },
-          approximateMeasurer,
+          this.measurer,
         ),
       );
       if (annotation.name !== undefined) {

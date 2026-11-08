@@ -1,7 +1,19 @@
 import type { ComponentFile } from './components/componentFormat';
 import { findSlot } from './components/arrange';
 import { resolvePath, type TextFile } from './components/library';
-import { collectFieldKeys, parseComponent } from './components/parseComponent';
+import {
+  collectFieldKeys,
+  parseComponent,
+  type TokenRef,
+} from './components/parseComponent';
+import {
+  iconNodes,
+  parseIconsText,
+  type IconNodeRef,
+  type IconSet,
+} from './components/icons';
+import { TOKEN_KIND_NAMES, knownTokenKinds } from './components/tokens';
+import { iconLiteralIssues, iconOptionIssues } from './libraryIcons';
 import {
   parseSpecText,
   type Spec,
@@ -278,6 +290,12 @@ interface Package {
   readonly components: Map<string, ComponentFile>;
   /** JSON do componente pelo caminho resolvido (para localizar as citações de campos). */
   readonly componentJson: Map<string, unknown>;
+  /** Os `$token` de cada componente válido, pelo caminho resolvido. */
+  readonly tokenRefs: Map<string, readonly TokenRef[]>;
+  /** O conjunto de ícones (`icons`), quando o arquivo existe e é válido. */
+  icons?: IconSet;
+  /** Caminho resolvido do arquivo de ícones declarado (`icons`). */
+  iconsPath?: string;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -313,6 +331,7 @@ function level1(
     byPath,
     components: new Map(),
     componentJson: new Map(),
+    tokenRefs: new Map(),
   };
   const referenced = new Set<string>([specPath]);
   const readComponents = new Set<string>();
@@ -347,6 +366,11 @@ function level1(
   for (const origin of spec.origins ?? []) {
     for (const example of origin.examples ?? []) referenced.add(resolve(example.file));
   }
+  if (spec.icons !== undefined) {
+    pkg.iconsPath = resolve(spec.icons);
+    referenced.add(pkg.iconsPath);
+    readIcons(pkg, out);
+  }
 
   for (const file of files) {
     const lower = file.path.toLowerCase();
@@ -356,6 +380,24 @@ function level1(
     }
   }
   return pkg;
+}
+
+/** Nível 1: o arquivo `icons` existe e é um `mapping-icons` válido. */
+function readIcons(pkg: Package, out: Collector): void {
+  const path = pkg.iconsPath;
+  if (path === undefined) return;
+  const file = pkg.byPath.get(path);
+  if (file === undefined) {
+    out.error(pkg.specPath, 'icons', `arquivo não encontrado: ${path}`);
+    return;
+  }
+  if (file.text === undefined) return void out.error(path, '', NOT_READ);
+  const parsed = parseIconsText(file.text);
+  if (!parsed.ok) {
+    for (const issue of parsed.issues) out.error(path, issue.path, issue.message);
+    return;
+  }
+  pkg.icons = parsed.set;
 }
 
 function readComponent(file: LibraryFile, pkg: Package, out: Collector): void {
@@ -379,6 +421,7 @@ function readComponent(file: LibraryFile, pkg: Package, out: Collector): void {
     out.warning(file.path, warning.path, warning.message);
   pkg.components.set(file.path, parsed.component);
   pkg.componentJson.set(file.path, json);
+  pkg.tokenRefs.set(file.path, parsed.tokenRefs);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -410,6 +453,27 @@ function readJsonFile(
     cache.set(full, JSON.parse(file.text));
   } catch (error) {
     out.error(full, '', `JSON inválido: ${messageOf(error)}`);
+  }
+}
+
+/** Cada `$token` do componente existe nos `tokens` da especialização (ou é embutido) e tem o tipo da posição. */
+function tokenChecks(pkg: Package, path: string, out: Collector): void {
+  const known = knownTokenKinds(pkg.spec.tokens);
+  for (const ref of pkg.tokenRefs.get(path) ?? []) {
+    const kind = known.get(ref.name);
+    if (kind === undefined) {
+      out.error(
+        path,
+        ref.path,
+        `o token "${ref.name}" não existe nos tokens da especialização`,
+      );
+    } else if (kind !== ref.kind) {
+      out.error(
+        path,
+        ref.path,
+        `o token "${ref.name}" é ${TOKEN_KIND_NAMES[kind]}, mas aqui se espera ${TOKEN_KIND_NAMES[ref.kind]}`,
+      );
+    }
   }
 }
 
@@ -463,6 +527,7 @@ function typeCoherence(
       `o desenho usa o campo "${key}", que o tipo "${type.id}" não declara`,
     );
   }
+  tokenChecks(pkg, path, out);
   const innerUsed = repeatChecks(type, path, rawTemplate, out);
   imageChecks(type, path, rawTemplate, out);
   for (const [key, value] of Object.entries(component.preview ?? {})) {
@@ -808,6 +873,13 @@ function level2(
     });
   });
 
+  for (const [path, json] of pkg.componentJson) {
+    const template = isRecord(json) ? json.template : undefined;
+    out.issues.push(
+      ...iconLiteralIssues(path, iconNodes(template), pkg.icons, pkg.iconsPath),
+    );
+  }
+
   (spec.fonts ?? []).forEach((font, index) => {
     const path = pkg.resolve(font.file);
     if (pkg.byPath.has(path)) return;
@@ -821,7 +893,7 @@ function level2(
   const typeIds = new Set<string>();
   eachType(spec, (type) => typeIds.add(type.id));
   (spec.origins ?? []).forEach((origin, oi) => {
-    origin.screen.roots.forEach((root, ri) => {
+    (origin.screen?.roots ?? []).forEach((root, ri) => {
       if (root.scrim !== undefined && !typeIds.has(root.scrim)) {
         out.error(
           specPath,
@@ -844,6 +916,21 @@ function level2(
 
   if (previous !== undefined) versionContract(previous, spec, specPath, out);
   return jsons;
+}
+
+// ---------------------------------------------------------------------------------------
+// Nível 3: opções de enum fora do conjunto de ícones
+// ---------------------------------------------------------------------------------------
+
+function iconOptionChecks(pkg: Package): LibraryIssue[] {
+  const out: LibraryIssue[] = [];
+  eachType(pkg.spec, (type, base) => {
+    if (type.component === undefined) return;
+    const json = pkg.componentJson.get(pkg.resolve(type.component));
+    const nodes: IconNodeRef[] = iconNodes(isRecord(json) ? json.template : undefined);
+    out.push(...iconOptionIssues(pkg.specPath, type, base, nodes, pkg.icons));
+  });
+  return out;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -941,7 +1028,9 @@ export function validateLibrary(input: LibraryInput): LibraryReport {
           components: pkg.components,
           jsonOf: (path) => jsons.get(path),
           textFiles,
+          icons: pkg.icons,
         }),
+        ...iconOptionChecks(pkg),
       );
     }
   }

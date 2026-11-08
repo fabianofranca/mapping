@@ -268,26 +268,30 @@ describe('CanvasController: visão Proposto com componentes', () => {
     t.controller.destroy();
   });
 
+  // Inválida: com o mínimo de 1 px (decisão 24) a criação com 3×3 px vale, e o assentar da
+  // hierarquia conserta pai, container e retângulo fora dos limites; a adulteração é a camada da
+  // anotação criada, que não existe no projeto (`missing-layer`).
   it('inválida: desenhada, com a linha e o selo de inválida', async () => {
     const { base, catalog, proposal } = scenario();
-    // A criação adulterada é pequeno demais: aceita, ela entra no conjunto inválido.
     const create = changeOf(proposal, 'marking', 'N1');
+    const annotation = changeOf(proposal, 'annotation', 'A_N1');
     const tampered: Proposal = {
       ...proposal,
       changes: proposal.changes.map((c) =>
-        c.id === create.id &&
+        c.id === annotation.id &&
         typeof c.to === 'object' &&
         c.to !== null &&
         !Array.isArray(c.to)
-          ? { ...c, to: { ...c.to, rect: { x: 20, y: 100, width: 3, height: 3 } } }
+          ? { ...c, to: { ...c.to, layerId: 'GHOST' } }
           : c,
       ),
     };
     const t = await setup(base, catalog, tampered, async (review) => {
       await review.decide({ level: 'change', id: create.id }, 'accepted');
+      await review.decide({ level: 'change', id: annotation.id }, 'accepted');
     });
     t.show('proposed');
-    expect(t.review.derived.invalid.value.changeIds.has(create.id)).toBe(true);
+    expect(t.review.derived.invalid.value.changeIds.has(annotation.id)).toBe(true);
     expect(t.drawing('N1')).toBeDefined();
     expect(t.marks()?.markings.get('N1')).toMatchObject({
       line: 'invalid',

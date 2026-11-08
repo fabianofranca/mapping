@@ -22,6 +22,8 @@
     "tests",
     "pwa",
     "mcp/image/wasm.d.ts",
+    "mcp/image/font.d.ts",
+    "mcp/image/opentype.d.ts",
     "vite.config.ts",
     "vite.viewer.config.ts",
     "eslint.config.js"

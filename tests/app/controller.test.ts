@@ -277,7 +277,7 @@ describe('projeto em pasta', () => {
     expect(message).toContain(
       'https://git.example/{path}, https://git.example/ios/{path}',
     );
-    expect(message).toContain('`repo` (formatVersion 5)');
+    expect(message).toContain('repo (formatVersion 5)');
 
     // O original vai para backups/ na primeira gravação, como em toda migração.
     expect(await backupsOf(root)).toEqual([]);
@@ -889,7 +889,7 @@ describe('projeto com dados inconsistentes', () => {
 
     const [backup, ...rest] = await backupsOf(root);
     expect(rest).toEqual([]);
-    expect(backup).toMatch(/^mapping\.v17\.\d{8}-\d{6}\.json$/);
+    expect(backup).toMatch(/^mapping\.v18\.\d{8}-\d{6}\.json$/);
     expect(
       await root.dirs
         .get('backups')

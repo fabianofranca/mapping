@@ -15,6 +15,8 @@
  *   separada da do nó.
  */
 
+import type { RunLayout } from './richText';
+
 export interface Point {
   readonly x: number;
   readonly y: number;
@@ -89,6 +91,18 @@ export interface Stroke {
   readonly dash?: readonly number[];
   readonly cap?: 'butt' | 'round' | 'square';
   readonly join?: 'miter' | 'round' | 'bevel';
+  /** `false`: a largura é em pixels de tela, em qualquer zoom; ausente = escala com o zoom. */
+  readonly scale?: boolean;
+  /** Só estes lados da caixa têm traço (`frame` e `rect`); ausente = os quatro, em contorno. */
+  readonly sides?: readonly ('top' | 'right' | 'bottom' | 'left')[];
+}
+
+/** Retângulo no espaço local do nó (px): o recorte ampliado de um quadro. */
+export interface ClipBox {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
 }
 
 export interface Shadow {
@@ -113,6 +127,12 @@ export interface TextStyle {
   readonly align: 'left' | 'center' | 'right' | 'justify';
   readonly verticalAlign: 'top' | 'middle' | 'bottom';
   readonly decoration?: 'underline' | 'line-through';
+  /** `none` = uma linha por parágrafo (ausente = quebra por palavra). */
+  readonly wrap?: 'none';
+  /** O texto que não cabe termina em `…`. */
+  readonly ellipsis?: true;
+  /** Máximo de linhas desenhadas. */
+  readonly maxLines?: number;
 }
 
 interface NodeBase {
@@ -134,6 +154,12 @@ export interface FrameNode extends NodeBase {
   readonly type: 'frame';
   /** Recorta os filhos na própria caixa (Figma: `clipsContent`). */
   readonly clip: boolean;
+  /**
+   * Recorte maior que a caixa, quando o traço `outside`/`center` ou a sombra do quadro (ou de um
+   * filho que passa da caixa só por eles) sai dela; ausente = o recorte é a própria caixa. Só
+   * vale com `clip`. O conteúdo (formas e texto) segue recortado na caixa.
+   */
+  readonly clipBox?: ClipBox;
   readonly cornerRadius: CornerRadius;
   readonly children: readonly SceneNode[];
 }
@@ -169,10 +195,33 @@ export interface PathNode extends NodeBase {
   readonly fillRule: 'nonzero' | 'evenodd';
 }
 
+/** Estilo resolvido de um trecho de texto rico (o texto e o que o desenho precisa dele). */
+export interface SceneTextRun {
+  readonly text: string;
+  readonly fontFamily: string;
+  readonly fontSize: number;
+  readonly fontWeight: number;
+  readonly italic: boolean;
+  readonly color: string;
+  readonly decoration?: 'underline' | 'line-through';
+  /** Cor de fundo da caixa em linha; com ela o trecho é um bloco inquebrável. */
+  readonly background?: string;
+  readonly radius?: number;
+  /** Respiro da caixa em linha: [vertical, horizontal]. */
+  readonly padding?: readonly [number, number];
+}
+
 export interface TextNode extends NodeBase {
   readonly type: 'text';
   readonly text: string;
   readonly style: TextStyle;
+  /**
+   * Texto rico (`runs` do componente v4): o estilo resolvido de cada trecho; `text` é a
+   * concatenação deles. Ausente = texto de um estilo só (`style`).
+   */
+  readonly runs?: readonly SceneTextRun[];
+  /** As linhas dos trechos na largura do nó (posições antes do `verticalAlign`); com `runs`. */
+  readonly runLayout?: RunLayout;
 }
 
 /** Nó que o conversor reconheceu, mas não sabe desenhar: vira só a caixa (e um aviso). */

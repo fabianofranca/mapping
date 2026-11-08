@@ -1,0 +1,79 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 15,
+  "id": "medido",
+  "name": "Layout medido",
+  "version": 1,
+  "description": "Exemplo da origem medida: a árvore de retângulos de uma página (medida num navegador) vira marcações pelas sources dos tipos Botão e Cartão. O pertencimento sai da geometria.",
+  "origins": [
+    {
+      "system": "dom",
+      "name": "Página medida",
+      "kind": "measured"
+    }
+  ],
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#2563EB",
+      "annotationTypes": [
+        {
+          "id": "card",
+          "name": "Cartão",
+          "component": "components/card.json",
+          "doc": "docs/card.md",
+          "sources": [
+            {
+              "system": "dom",
+              "name": "card"
+            }
+          ],
+          "fields": []
+        },
+        {
+          "id": "button",
+          "name": "Botão",
+          "labelField": "label",
+          "component": "components/button.json",
+          "doc": "docs/button.md",
+          "sources": [
+            {
+              "system": "dom",
+              "name": "btn-primary"
+            }
+          ],
+          "fields": [
+            {
+              "key": "label",
+              "label": "Rótulo",
+              "type": "string",
+              "sources": [
+                {
+                  "system": "dom",
+                  "path": "label"
+                }
+              ]
+            },
+            {
+              "key": "tone",
+              "label": "Tom",
+              "type": "enum",
+              "options": ["neutral", "error"],
+              "default": "neutral",
+              "sources": [
+                {
+                  "system": "dom",
+                  "path": "tone",
+                  "values": {
+                    "danger": "error"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 import { findSlot, slotBoxOfScene } from './components/arrange';
-import type { ComponentFile, FieldValues } from './components/componentFormat';
+import type {
+  ComponentFile,
+  FieldValues,
+  ScreenAnchor,
+} from './components/componentFormat';
 import { instantiate, type TextMeasurer } from './components/instantiate';
 import type { FrameNode } from './components/scene';
 import {
@@ -8,6 +12,7 @@ import {
   type MarkingComponent,
 } from './componentCatalog';
 import { drawingValues } from './componentValues';
+import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
 import type { Project, Rect } from './types';
@@ -29,6 +34,16 @@ export interface ComponentDrawing {
   readonly warnings: readonly string[];
   /** Não cabe: aviso "conteúdo maior que a caixa" do motor ou filha fora da caixa do slot. */
   readonly overflow: boolean;
+  /**
+   * Quanto falta (px) em cada "não cabe", pela mensagem do aviso do motor; a filha fora do slot
+   * entra como `SLOT_OVERFLOW`. Vazio quando cabe ou quando o desenho é em pixels de tela.
+   */
+  readonly shortfalls: Readonly<Record<string, number>>;
+  /**
+   * Componente com `screen`: `root` mede o `size` do componente na origem, em pixels de tela, e o
+   * canvas o ancora em `anchor` no `rect` (retângulo da marcação, nos pixels da imagem).
+   */
+  readonly screen?: { readonly anchor: ScreenAnchor; readonly rect: Rect };
 }
 
 /** Por id de marcação, inserido em ordem de desenho (pais antes das filhas; irmãs na ordem do array). */
@@ -39,7 +54,8 @@ export const NO_DRAWINGS: ComponentDrawings = new Map();
 /** Tolerância (px) entre a caixa do slot (decimal) e o retângulo inteiro de uma filha. */
 const SLOT_TOLERANCE = 1;
 
-const OVERFLOW_WARNING = 'conteúdo maior que a caixa';
+/** Avisos do motor que são a pendência "o componente não cabe". */
+const OVERFLOW_WARNINGS = ['conteúdo maior que a caixa', 'texto maior que a caixa'];
 
 export type DrawingCache = (
   p: Project | null,
@@ -58,6 +74,8 @@ interface Entry {
   readonly valueWarnings: readonly string[];
   readonly measure: TextMeasurer;
   readonly epoch: number;
+  /** Modo do desenho efetivo da marcação (`undefined` = o primeiro modo). */
+  readonly mode: string | undefined;
   /** Retângulos das filhas diretas (só containers). */
   readonly childRects: readonly Rect[];
   readonly drawing: ComponentDrawing;
@@ -93,17 +111,40 @@ function shallowEqual(a: FieldValues, b: FieldValues): boolean {
   return keysA.every((key) => key in b && sameFieldValue(a[key], b[key]));
 }
 
-/** Alguma filha com o retângulo fora da caixa do slot (com a tolerância do arredondamento). */
-function childOutsideSlot(root: FrameNode, childRects: readonly Rect[]): boolean {
+/** Chave de `shortfalls` para a filha que passa da caixa do slot. */
+export const SLOT_OVERFLOW = 'conteúdo maior que a caixa: slot';
+
+/** O quanto a pior filha passa da caixa do slot (com a tolerância do arredondamento); 0 = cabe. */
+function slotExcess(root: FrameNode, childRects: readonly Rect[]): number {
   const box = slotBoxOfScene(root);
-  if (box === undefined) return false;
-  return childRects.some(
-    (r) =>
-      r.x < box.x - SLOT_TOLERANCE ||
-      r.y < box.y - SLOT_TOLERANCE ||
-      r.x + r.width > box.x + box.width + SLOT_TOLERANCE ||
-      r.y + r.height > box.y + box.height + SLOT_TOLERANCE,
-  );
+  if (box === undefined) return 0;
+  let worst = 0;
+  for (const r of childRects) {
+    const excess = Math.max(
+      box.x - SLOT_TOLERANCE - r.x,
+      box.y - SLOT_TOLERANCE - r.y,
+      r.x + r.width - (box.x + box.width + SLOT_TOLERANCE),
+      r.y + r.height - (box.y + box.height + SLOT_TOLERANCE),
+    );
+    worst = Math.max(worst, excess);
+  }
+  return worst > 0 ? worst + SLOT_TOLERANCE : 0;
+}
+
+/** Os "não cabe" do desenho: o aviso do motor (com quanto falta) e a filha fora do slot. */
+function overflowsOf(
+  warnings: readonly string[],
+  shortfalls: Readonly<Record<string, number>>,
+  root: FrameNode,
+  childRects: readonly Rect[],
+): Record<string, number> {
+  const found: Record<string, number> = {};
+  for (const w of warnings) {
+    if (OVERFLOW_WARNINGS.some((o) => w.startsWith(o))) found[w] = shortfalls[w] ?? 0;
+  }
+  const excess = childRects.length > 0 ? slotExcess(root, childRects) : 0;
+  if (excess > 0) found[SLOT_OVERFLOW] = excess;
+  return found;
 }
 
 function draw(
@@ -115,14 +156,21 @@ function draw(
   valueWarnings: readonly string[],
   childRects: readonly Rect[],
   measure: TextMeasurer,
+  mode: string | undefined,
 ): ComponentDrawing {
-  const { root, warnings } = instantiate(mc.component, values, rect, {
+  const tokens =
+    mode === undefined ? undefined : mc.component.resolvedTokensByMode?.[mode];
+  const screen = mc.component.screen;
+  // Em pixels de tela o desenho mede o `size` do componente, na origem (o canvas o ancora).
+  const box: Rect = screen === undefined ? rect : { x: 0, y: 0, ...mc.component.size };
+  const { root, warnings, shortfalls } = instantiate(mc.component, values, box, {
     measure,
     idPrefix: markingId,
+    ...(tokens === undefined ? {} : { tokens }),
   });
-  const overflow =
-    warnings.some((w) => w.startsWith(OVERFLOW_WARNING)) ||
-    (childRects.length > 0 && childOutsideSlot(root, childRects));
+  // Com `screen` o desenho pode passar do retângulo da marcação: não há pendência "não cabe".
+  const found =
+    screen === undefined ? overflowsOf(warnings, shortfalls ?? {}, root, childRects) : {};
   return {
     markingId,
     containerId,
@@ -130,7 +178,11 @@ function draw(
     layerId: mc.annotation.layerId,
     root,
     warnings: [...warnings, ...valueWarnings],
-    overflow,
+    overflow: Object.keys(found).length > 0,
+    shortfalls: found,
+    ...(screen === undefined
+      ? {}
+      : { screen: { anchor: screen.anchor ?? 'center', rect } }),
   };
 }
 
@@ -182,6 +234,7 @@ export function createDrawingCache(): DrawingCache {
         findSlot(mc.component) === undefined
           ? []
           : (children.get(marking.id) ?? []).map((c) => c.rect);
+      const mode = effectiveDrawingMode(p, marking.containerId);
       const before = entries.get(marking.id);
       if (
         before !== undefined &&
@@ -192,6 +245,7 @@ export function createDrawingCache(): DrawingCache {
         before.component === mc.component &&
         before.measure === measure &&
         before.epoch === epoch &&
+        before.mode === mode &&
         shallowEqual(before.values, values) &&
         before.valueWarnings.length === valueWarnings.length &&
         before.valueWarnings.every((w, i) => w === valueWarnings[i]) &&
@@ -210,6 +264,7 @@ export function createDrawingCache(): DrawingCache {
         valueWarnings,
         childRects,
         measure,
+        mode,
       );
       next.set(marking.id, {
         markingId: marking.id,
@@ -221,6 +276,7 @@ export function createDrawingCache(): DrawingCache {
         valueWarnings,
         measure,
         epoch,
+        mode,
         childRects,
         drawing,
       });

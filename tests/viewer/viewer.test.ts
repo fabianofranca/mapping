@@ -11,6 +11,7 @@ import settings from '../../viewer/samples/settings.sdui.json';
 import { M3_FILES, M3_SCREEN } from '../../viewer/samples/samplesMaterial3';
 import type { Screen } from '../../src/model/components/screen';
 import { type Viewer, type ViewerOptions, createViewer } from '../../viewer';
+import { tokenValue } from '../../src/theme/tokens';
 
 beforeAll(() => installFakeCanvas());
 
@@ -602,5 +603,109 @@ describe('createViewer com source (JSON externo)', () => {
     viewer.update({ source: undefined });
     expect(viewer.screen()).toBe(M3_SCREEN);
     expect(instanceIds(stageOf(el))).toHaveLength(M3_SCREEN.instances.length);
+  });
+});
+
+describe('fonte padrão do visualizador (CF5)', () => {
+  /** As famílias que o medidor recebeu ao desenhar a tela de exemplo (textos sem `family`). */
+  function families(options: ViewerOptions = {}): Set<string> {
+    const seen = new Set<string>();
+    const measure: typeof approximateMeasurer = (text, font, maxWidth) => {
+      seen.add(font.family);
+      return approximateMeasurer(text, font, maxWidth);
+    };
+    make(container(), { library, screen: SAMPLE_SCREEN, measure, ...options });
+    return seen;
+  }
+
+  it('sem opção usa a pilha do --font-sans dos tokens da app, não uma fonte fixa', () => {
+    const seen = families();
+    expect(seen.has(tokenValue('font-sans', 'light'))).toBe(true);
+    expect(seen.has('Inter')).toBe(false);
+  });
+
+  it('a opção fonts do hospedeiro vence', () => {
+    const seen = families({ fonts: { sans: 'Hospedeiro Sans' } });
+    expect(seen.has('Hospedeiro Sans')).toBe(true);
+    expect(seen.has(tokenValue('font-sans', 'light'))).toBe(false);
+  });
+});
+
+describe('drawingMode (modo dos tokens)', () => {
+  const spec = {
+    format: 'mapping-spec',
+    formatVersion: 15,
+    id: 'tk',
+    name: 'Tk',
+    version: 1,
+    tokens: {
+      modes: ['light', 'dark'],
+      values: { primary: { light: '#1a73e8', dark: '#8ab4f8' } },
+    },
+    layers: [
+      {
+        id: 'l',
+        name: 'L',
+        color: '#112233',
+        annotationTypes: [
+          { id: 't', name: 'T', component: 'components/tk.json', fields: [] },
+        ],
+      },
+    ],
+  };
+  const component = {
+    format: 'mapping-component',
+    formatVersion: 4,
+    id: 'tk',
+    name: 'Tk',
+    size: { width: 100, height: 50 },
+    template: { type: 'frame', fill: { $token: 'primary' } },
+  };
+  const tokenLibrary = loadLibrary([
+    { path: 'tk.spec.json', text: JSON.stringify(spec) },
+    { path: 'components/tk.json', text: JSON.stringify(component) },
+  ]);
+  const tokenScreen: Screen = {
+    id: 's',
+    name: 'S',
+    width: 100,
+    height: 50,
+    background: '#FFFFFF',
+    instances: [
+      { id: 'i1', typeId: 't', box: { x: 0, y: 0, width: 100, height: 50 }, values: {} },
+    ],
+  };
+
+  /** Os preenchimentos dos retângulos da instância (o fundo da tela fica de fora). */
+  function fills(el: HTMLElement): unknown[] {
+    return instanceNode(stageOf(el), 'i1')
+      .find<Konva.Rect>('Rect')
+      .map((r) => r.fill());
+  }
+
+  it('sem a opção usa o primeiro modo; drawingMode "dark" desenha com os tokens do modo dark', () => {
+    expect(tokenLibrary.problems).toEqual([]);
+    const light = container();
+    make(light, { library: tokenLibrary, screen: tokenScreen });
+    expect(fills(light)).toContain('#1a73e8');
+
+    const dark = container();
+    make(dark, { library: tokenLibrary, screen: tokenScreen, drawingMode: 'dark' });
+    expect(fills(dark)).toContain('#8ab4f8');
+    expect(fills(dark)).not.toContain('#1a73e8');
+  });
+
+  it('trocar o modo em tempo de execução redesenha sem recarregar o projeto', () => {
+    const el = container();
+    const viewer = make(el, { library: tokenLibrary, screen: tokenScreen });
+    expect(fills(el)).toContain('#1a73e8');
+
+    viewer.update({ drawingMode: 'dark' });
+    expect(fills(el)).toContain('#8ab4f8');
+    expect(fills(el)).not.toContain('#1a73e8');
+    expect(viewer.screen()).toBe(tokenScreen); // a tela e a biblioteca não foram recarregadas
+
+    viewer.update({ drawingMode: undefined });
+    expect(fills(el)).toContain('#1a73e8');
   });
 });

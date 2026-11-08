@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { approximateMeasurer } from '../../src/model';
 import { instantiate } from '../../src/model/components/instantiate';
 import { parseComponent } from '../../src/model/components/parseComponent';
+import { layoutRuns } from '../../src/model/components/richText';
 import {
   baseNode,
   translate,
@@ -428,6 +429,114 @@ describe('texto em barras', () => {
   });
 });
 
+describe('texto rico em barras (runs)', () => {
+  const rich = (verticalAlign: 'top' | 'middle' | 'bottom' = 'top'): TextNode => {
+    const font = {
+      family: 'Roboto',
+      size: 10,
+      weight: 400,
+      italic: false,
+      lineHeight: 12,
+      letterSpacing: 0,
+    };
+    const runs = [
+      { text: 'Vence em ', font },
+      { text: 'ok', font, chip: { padding: [2, 4] as const } },
+    ];
+    const base = { size: 10, lineHeight: 12 };
+    return {
+      ...baseNode({
+        id: 't',
+        name: 't',
+        width: 100,
+        height: 40,
+        fills: [solid('#000000')],
+      }),
+      type: 'text',
+      text: 'Vence em ok',
+      style: {
+        fontFamily: 'Roboto',
+        fontSize: 10,
+        fontWeight: 400,
+        italic: false,
+        lineHeight: 12,
+        align: 'left',
+        verticalAlign,
+      },
+      runs: [
+        {
+          text: 'Vence em ',
+          fontFamily: 'Roboto',
+          fontSize: 10,
+          fontWeight: 400,
+          italic: false,
+          color: '#112233',
+        },
+        {
+          text: 'ok',
+          fontFamily: 'Roboto',
+          fontSize: 10,
+          fontWeight: 400,
+          italic: false,
+          color: '#ff0000',
+          background: '#00ff00',
+          radius: 3,
+          padding: [2, 4],
+        },
+      ],
+      runLayout: layoutRuns(runs, base, approximateMeasurer, 100),
+    };
+  };
+
+  it('uma barra por pedaço de texto na cor do trecho e o fundo do chip como retângulo', () => {
+    const bars = textBars(rich(), approximateMeasurer);
+    expect(bars).toHaveLength(3);
+    // "Vence em " (9 × 5,5) numa linha de 16 (a do chip): centrado, a barra tem 60% de 12.
+    expect(bars[0]).toMatchObject({ x: 0, width: 49.5, color: '#112233' });
+    expect(bars[0]!.height).toBeCloseTo(7.2, 5);
+    expect(bars[0]!.y).toBeCloseTo(2 + 2.4, 5);
+    // O fundo do chip é a caixa inteira (11 + 2·4 de largura, 12 + 2·2 de altura).
+    expect(bars[1]).toMatchObject({
+      x: 49.5,
+      y: 0,
+      width: 19,
+      height: 16,
+      color: '#00ff00',
+    });
+    // O texto do chip fica 4 para dentro e 2 para baixo, na cor do trecho.
+    expect(bars[2]).toMatchObject({ x: 53.5, width: 11, color: '#ff0000' });
+    expect(bars[2]!.height).toBeCloseTo(7.2, 5);
+    expect(bars[2]!.y).toBeCloseTo(2 + 2.4, 5);
+  });
+
+  it('o verticalAlign desloca todas as barras pela folga da caixa', () => {
+    const top = textBars(rich(), approximateMeasurer);
+    const middle = textBars(rich('middle'), approximateMeasurer);
+    const bottom = textBars(rich('bottom'), approximateMeasurer);
+    top.forEach((bar, i) => {
+      expect(middle[i]!.y).toBeCloseTo(bar.y + (40 - 16) / 2, 5);
+      expect(bottom[i]!.y).toBeCloseTo(bar.y + (40 - 16), 5);
+    });
+  });
+
+  it('pinta o fundo do chip e a barra do trecho, cada um na sua cor', () => {
+    const raster = canvas(100, 40);
+    paint(raster, rich());
+    expect(pixel(raster, 20, 5)).toEqual([0x11, 0x22, 0x33, 255]);
+    // No chip: o fundo verde aparece fora da barra do texto; a barra é vermelha.
+    expect(pixel(raster, 51, 1)).toEqual([0, 255, 0, 255]);
+    expect(pixel(raster, 58, 5)).toEqual([255, 0, 0, 255]);
+    expect(pixel(raster, 90, 5)).toEqual(WHITE);
+  });
+
+  it('sem runLayout nada muda: o texto de um estilo só', () => {
+    const plain = { ...rich(), runs: undefined, runLayout: undefined } as TextNode;
+    const bars = textBars(plain, approximateMeasurer);
+    expect(bars).toHaveLength(1);
+    expect(bars[0]!.color).toBeUndefined();
+  });
+});
+
 describe('imagem remota de um componente', () => {
   it('um componente com o nó image desenha a cor do reservado, sem rede', () => {
     const parsed = parseComponent({
@@ -458,5 +567,108 @@ describe('imagem remota de um componente', () => {
     expect(r).toBeGreaterThan(150);
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+  });
+});
+
+describe('traço com cap, join e sides (formato 4)', () => {
+  const INK = '#FF00FF';
+
+  function openLine(
+    points: { x: number; y: number }[],
+    extra: Partial<NonNullable<SceneNode['stroke']>> = {},
+  ): SceneNode {
+    return {
+      ...baseNode({ id: 'l', name: 'l', width: 40, height: 40 }),
+      type: 'line',
+      points,
+      closed: false,
+      stroke: { paints: [solid(INK)], width: 4, align: 'center', ...extra },
+    };
+  }
+
+  const isInk = (p: number[]): boolean => p[0] === 255 && p[1] === 0 && p[2] === 255;
+
+  it('cap square pinta 2 px a mais em cada ponta; butt não pinta; round pinta a ponta redonda', () => {
+    const points = [
+      { x: 10, y: 10 },
+      { x: 30, y: 10 },
+    ];
+    const square = canvas(40, 20);
+    paint(square, openLine(points, { cap: 'square' }));
+    expect(isInk(pixel(square, 8, 10))).toBe(true);
+    expect(isInk(pixel(square, 31, 10))).toBe(true);
+    expect(pixel(square, 7, 10)).toEqual(WHITE);
+
+    const butt = canvas(40, 20);
+    paint(butt, openLine(points, { cap: 'butt' }));
+    expect(pixel(butt, 8, 10)).toEqual(WHITE);
+    expect(pixel(butt, 31, 10)).toEqual(WHITE);
+    expect(isInk(pixel(butt, 10, 10))).toBe(true);
+
+    const none = canvas(40, 20);
+    paint(none, openLine(points));
+    expect(pixel(none, 8, 10)).toEqual(WHITE);
+
+    const round = canvas(40, 20);
+    paint(round, openLine(points, { cap: 'round' }));
+    expect(pixel(round, 8, 10)).not.toEqual(WHITE);
+    expect(pixel(round, 8, 7)).toEqual(WHITE);
+  });
+
+  it('join miter pinta o canto de fora; bevel o corta; round o arredonda', () => {
+    const corner = [
+      { x: 5, y: 10 },
+      { x: 20, y: 10 },
+      { x: 20, y: 25 },
+    ];
+    const miter = canvas(40, 40);
+    paint(miter, openLine(corner, { join: 'miter' }));
+    expect(isInk(pixel(miter, 21, 8))).toBe(true);
+
+    const bevel = canvas(40, 40);
+    paint(bevel, openLine(corner, { join: 'bevel' }));
+    expect(pixel(bevel, 21, 8)).toEqual(WHITE);
+    expect(isInk(pixel(bevel, 20, 10))).toBe(true);
+
+    const round = canvas(40, 40);
+    paint(round, openLine(corner, { join: 'round' }));
+    expect(isInk(pixel(round, 21, 8))).toBe(false);
+    expect(pixel(round, 21, 9)).not.toEqual(WHITE);
+  });
+
+  it('sides ["bottom"] pinta só a borda de baixo do retângulo', () => {
+    const rect: SceneNode = {
+      ...baseNode({ id: 'r', name: 'r', width: 30, height: 20 }),
+      type: 'rect',
+      cornerRadius: 0,
+      stroke: { paints: [solid(INK)], width: 2, align: 'inside', sides: ['bottom'] },
+    };
+    const raster = canvas(30, 20);
+    paint(raster, rect);
+    expect(isInk(pixel(raster, 15, 19))).toBe(true);
+    expect(pixel(raster, 15, 0)).toEqual(WHITE);
+    expect(pixel(raster, 0, 10)).toEqual(WHITE);
+    expect(pixel(raster, 29, 10)).toEqual(WHITE);
+  });
+
+  it('o recorte ampliado (clipBox) deixa o traço que sai da caixa aparecer', () => {
+    const child: SceneNode = {
+      ...baseNode({ id: 'c', name: 'c', width: 20, height: 20 }),
+      type: 'rect',
+      cornerRadius: 0,
+      stroke: { paints: [solid(INK)], width: 4, align: 'center' },
+    };
+    const make = (clipBox?: { x: number; y: number; width: number; height: number }) =>
+      frame(
+        [child],
+        { width: 20, height: 20 },
+        { clip: true, ...(clipBox ? { clipBox } : {}), transform: translate(6, 6) },
+      );
+    const widened = canvas(40, 40);
+    paint(widened, make({ x: -4, y: -4, width: 28, height: 28 }));
+    expect(isInk(pixel(widened, 5, 16))).toBe(true);
+    const clipped = canvas(40, 40);
+    paint(clipped, make());
+    expect(pixel(clipped, 5, 16)).toEqual(WHITE);
   });
 });

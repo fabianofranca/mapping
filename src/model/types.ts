@@ -1,9 +1,9 @@
 import type { Spec } from './spec';
 
-// Tipos do `mapping.json` (schema v17). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
+// Tipos do `mapping.json` (schema v18). Ver docs/FORMAT.md. Tudo é `readonly`: o modelo é imutável e as operações sempre
 // devolvem um novo projeto.
 
-export const SCHEMA_VERSION = 17;
+export const SCHEMA_VERSION = 18;
 export const APP_ID = 'mapping';
 /** Valor gravado antes do renome do produto: ainda é aceito na leitura e vira `APP_ID`. */
 export const LEGACY_APP_ID = 'mapeador-imagens';
@@ -85,6 +85,11 @@ export interface ProjectContainer {
   readonly source: ExternalSource | null;
   /** Cor de fundo (`#RRGGBB`) do container sem arquivo (v10); `null` na imagem com arquivo. */
   readonly background: string | null;
+  /**
+   * Modo do desenho que o container fixa (v18); ausente ou `null` = segue o do projeto. O modo
+   * escolhe os valores dos `tokens` das especializações, não depende do tema da interface.
+   */
+  readonly drawingMode?: string | null;
 }
 
 export interface Marking {
@@ -341,6 +346,11 @@ export interface Project {
    * Mesmas regras do `platformRepos`: o mesmo id em especializações diferentes é a mesma entrada.
    */
   readonly docRepos: DocRepos;
+  /**
+   * Modo do desenho do projeto (v18): escolhe o modo dos `tokens` das especializações. Ausente =
+   * o primeiro modo de cada especialização. Um modo que nenhuma declara fica gravado (Diagnóstico).
+   */
+  readonly drawingMode?: string;
   readonly layers: readonly Layer[];
   readonly containers: readonly ProjectContainer[];
   readonly markings: readonly Marking[];

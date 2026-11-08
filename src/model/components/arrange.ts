@@ -15,6 +15,12 @@ import type {
 } from './componentFormat';
 import { evaluate } from './expressions';
 import {
+  LAYOUT_ALIGNS,
+  LAYOUT_JUSTIFIES,
+  LAYOUT_TYPES,
+  allowedValue,
+} from './layoutValues';
+import {
   type Box,
   type Padding,
   type TextMeasurer,
@@ -65,13 +71,29 @@ function toNumber(value: unknown, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+/** Avalia uma expressão de conjunto fechado (sem aviso: cai no padrão se vier algo de fora). */
+function choice<T extends string>(
+  expr: Expr<T> | undefined,
+  allowed: readonly T[],
+  fallback: T,
+  values: FieldValues,
+): T {
+  if (expr === undefined) return fallback;
+  return (
+    allowedValue(evaluate<unknown>(expr as Expr<unknown>, values, fallback), allowed) ??
+    fallback
+  );
+}
+
 /** Avalia o layout do slot com os valores da instância (`gap`/`padding` podem ser expressões). Sem layout → type 'none'. */
 export function resolveSlotLayout(
   slot: SlotTemplate,
   values: FieldValues,
 ): ResolvedSlotLayout {
   const layout = slot.layout;
-  if (!layout || layout.type === 'none') return NO_LAYOUT;
+  if (!layout) return NO_LAYOUT;
+  const type = choice(layout.type, LAYOUT_TYPES, 'none', values);
+  if (type === 'none') return NO_LAYOUT;
   const gap = Math.max(
     0,
     toNumber(evaluate<unknown>(layout.gap as Expr<unknown>, values, 0), 0),
@@ -83,11 +105,11 @@ export function resolveSlotLayout(
     ? normalizePadding(rawPadding.map((v) => toNumber(v, 0)))
     : normalizePadding(toNumber(rawPadding, 0));
   return {
-    type: layout.type,
+    type,
     gap,
     padding,
-    align: layout.align ?? 'start',
-    justify: layout.justify ?? 'start',
+    align: choice(layout.align, LAYOUT_ALIGNS, 'start', values),
+    justify: choice(layout.justify, LAYOUT_JUSTIFIES, 'start', values),
   };
 }
 

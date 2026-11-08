@@ -96,6 +96,8 @@ export class ProposalLabels {
         return `repositório da plataforma ${c.entityId}`;
       case 'docRepo':
         return `repositório de documentos ${c.entityId}`;
+      case 'project':
+        return 'modo do desenho do projeto';
     }
   }
 }

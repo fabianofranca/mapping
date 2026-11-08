@@ -1,4 +1,6 @@
 import type { TextMeasurer } from '../../src/model/components/instantiate';
+import type { ScreenAnchor } from '../../src/model/components/componentFormat';
+import { sideSegments } from '../../src/model/components/strokeSides';
 import {
   multiply,
   type CornerRadius,
@@ -8,19 +10,31 @@ import {
   type SceneNode,
   type TextNode,
 } from '../../src/model/components/scene';
-import type { PixelRect, Raster } from './raster';
+import { MAX_SHADOW_PIXELS, compositeShadow, dashPaths } from './effects';
+import { createRaster, type PixelRect, type Raster } from './raster';
+import { textBars, type TextBar } from './textBars';
+import { textInk } from './textLayout';
+import type { FontBook } from './textMeasurer';
+
+export { textBars, type TextBar };
 
 // Desenho simplificado de uma cena de componente, em pixels, para `get_marking_image` numa tela
 // em branco. O servidor não tem fontes nem canvas: formas viram polígonos preenchidos por
 // varredura com cobertura (suavizada), o gradiente vira a cor do primeiro stop, a imagem vira
-// um reservado cinza e o texto vira barras (uma por linha, na cor do texto). Sombras e
-// tracejado são ignorados e o alinhamento do traço é sempre ao centro. Puro: sem disco.
+// um reservado cinza. Com `view.fonts` o texto é desenhado com os glifos da fonte (quebra, `…`
+// e trechos); sem ela vira barras (uma por linha, na cor do texto). Traço com `align`, tracejado,
+// `cap`/`join` e `sides`, e sombra desfocada. Puro: sem disco.
 
 /** Janela de desenho: escala da imagem para o raster e a região (em pixels do raster) a pintar. */
 export interface SceneView {
   readonly scaleX: number;
   readonly scaleY: number;
   readonly clip: PixelRect;
+  /** Fontes do desenho do texto; ausente = o texto vira barras (o desenho simplificado). */
+  readonly fonts?: FontBook;
+  /** Onde fica a origem da imagem (0, 0) no raster, em pixels do raster (padrão 0, 0). */
+  readonly originX?: number;
+  readonly originY?: number;
 }
 
 type Rgb = readonly [number, number, number];
@@ -45,8 +59,6 @@ const CURVE_STEPS = 16;
 const CORNER_STEPS = 10;
 const ELLIPSE_STEPS = 64;
 const CIRCLE_STEPS = 12;
-/** Altura da barra de texto em relação à altura da linha. */
-const BAR_RATIO = 0.6;
 const HEX = /^#([0-9a-f]{3,8})$/i;
 const FUNC = /^rgba?\(\s*([^)]*)\)$/i;
 
@@ -376,41 +388,144 @@ function quadTo(lineTo: LineTo, p0: Point, c: Point, p1: Point): void {
 // ---------------------------------------------------------------------------
 // Traço: união de retângulos por segmento e círculos nos vértices (pontas e junções redondas)
 
-function strokePolygons(subpaths: readonly Subpath[], width: number): Polygon[] {
-  const half = width / 2;
+interface StrokeStyle {
+  readonly cap: 'butt' | 'round' | 'square';
+  readonly join: 'miter' | 'round' | 'bevel';
+}
+
+/** Limite do canto `miter` (como o padrão do canvas 2D): acima dele o canto vira `bevel`. */
+const MITER_LIMIT = 10;
+
+function circlePolygon(center: Point, radius: number): Polygon {
+  return Array.from({ length: CIRCLE_STEPS }, (_, i) => {
+    const angle = (Math.PI * 2 * i) / CIRCLE_STEPS;
+    return {
+      x: center.x + radius * Math.cos(angle),
+      y: center.y + radius * Math.sin(angle),
+    };
+  });
+}
+
+/** O retângulo de um segmento, com a ponta `square` empurrada para fora quando pedida. */
+function segmentPolygon(
+  a: Point,
+  b: Point,
+  half: number,
+  extendA: boolean,
+  extendB: boolean,
+) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = Math.hypot(dx, dy);
+  if (length === 0) return null;
+  const ux = dx / length;
+  const uy = dy / length;
+  const nx = -uy * half;
+  const ny = ux * half;
+  const from = extendA ? { x: a.x - ux * half, y: a.y - uy * half } : a;
+  const to = extendB ? { x: b.x + ux * half, y: b.y + uy * half } : b;
+  return oriented([
+    { x: from.x + nx, y: from.y + ny },
+    { x: to.x + nx, y: to.y + ny },
+    { x: to.x - nx, y: to.y - ny },
+    { x: from.x - nx, y: from.y - ny },
+  ]);
+}
+
+/** O canto entre dois segmentos consecutivos (a→b, b→c): círculo, chanfro ou ponta de esquadro. */
+function joinPolygon(
+  a: Point,
+  b: Point,
+  c: Point,
+  half: number,
+  join: StrokeStyle['join'],
+): Polygon | null {
+  const l1 = Math.hypot(b.x - a.x, b.y - a.y);
+  const l2 = Math.hypot(c.x - b.x, c.y - b.y);
+  if (l1 === 0 || l2 === 0) return null;
+  const d1 = { x: (b.x - a.x) / l1, y: (b.y - a.y) / l1 };
+  const d2 = { x: (c.x - b.x) / l2, y: (c.y - b.y) / l2 };
+  const cross = d1.x * d2.y - d1.y * d2.x;
+  const dot = d1.x * d2.x + d1.y * d2.y;
+  if (Math.abs(cross) < 1e-9 && dot > 0) return null;
+  if (join === 'round') return circlePolygon(b, half);
+  // A volta aponta para o lado da normal esquerda quando `cross` > 0; o canto de fora é o oposto.
+  const side = cross > 0 ? -1 : 1;
+  const p1 = { x: b.x + side * -d1.y * half, y: b.y + side * d1.x * half };
+  const p2 = { x: b.x + side * -d2.y * half, y: b.y + side * d2.x * half };
+  const ratio = Math.sqrt(2 / Math.max(1e-9, 1 + dot));
+  if (join === 'miter' && ratio <= MITER_LIMIT) {
+    const k = 1 / (1 + dot);
+    const m = {
+      x: b.x + side * (-d1.y - d2.y) * half * k,
+      y: b.y + side * (d1.x + d2.x) * half * k,
+    };
+    return oriented([b, p1, m, p2]);
+  }
+  return oriented([b, p1, p2]);
+}
+
+function segmentPolygons(sub: Subpath, half: number, cap: StrokeStyle['cap']): Polygon[] {
+  const { points, closed } = sub;
+  const count = points.length;
+  const segments = closed ? count : count - 1;
   const out: Polygon[] = [];
-  const circle = (center: Point): Polygon =>
-    Array.from({ length: CIRCLE_STEPS }, (_, i) => {
-      const angle = (Math.PI * 2 * i) / CIRCLE_STEPS;
-      return {
-        x: center.x + half * Math.cos(angle),
-        y: center.y + half * Math.sin(angle),
-      };
-    });
-  for (const { points, closed } of subpaths) {
-    const count = points.length;
-    const segments = closed ? count : count - 1;
-    for (let i = 0; i < segments; i++) {
-      const a = points[i]!;
-      const b = points[(i + 1) % count]!;
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const length = Math.hypot(dx, dy);
-      if (length === 0) continue;
-      const nx = (-dy / length) * half;
-      const ny = (dx / length) * half;
-      out.push(
-        oriented([
-          { x: a.x + nx, y: a.y + ny },
-          { x: b.x + nx, y: b.y + ny },
-          { x: b.x - nx, y: b.y - ny },
-          { x: a.x - nx, y: a.y - ny },
-        ]),
-      );
-    }
-    for (const point of points) out.push(oriented(circle(point)));
+  for (let i = 0; i < segments; i++) {
+    const square = !closed && cap === 'square';
+    const poly = segmentPolygon(
+      points[i]!,
+      points[(i + 1) % count]!,
+      half,
+      square && i === 0,
+      square && i === segments - 1,
+    );
+    if (poly) out.push(poly);
   }
   return out;
+}
+
+function cornerPolygons(
+  sub: Subpath,
+  half: number,
+  join: StrokeStyle['join'],
+): Polygon[] {
+  const { points, closed } = sub;
+  const count = points.length;
+  const corners = closed ? count : count - 2;
+  const out: Polygon[] = [];
+  for (let i = 0; i < corners; i++) {
+    const at = closed ? i : i + 1;
+    const poly = joinPolygon(
+      points[(at + count - 1) % count]!,
+      points[at]!,
+      points[(at + 1) % count]!,
+      half,
+      join,
+    );
+    if (poly) out.push(poly);
+  }
+  return out;
+}
+
+function capPolygons(sub: Subpath, half: number, cap: StrokeStyle['cap']): Polygon[] {
+  const { points, closed } = sub;
+  if (closed || cap !== 'round' || points.length < 2) return [];
+  return [points[0]!, points[points.length - 1]!].map((p) =>
+    oriented(circlePolygon(p, half)),
+  );
+}
+
+function strokePolygons(
+  subpaths: readonly Subpath[],
+  width: number,
+  style: StrokeStyle = { cap: 'butt', join: 'miter' },
+): Polygon[] {
+  const half = width / 2;
+  return subpaths.flatMap((sub) => [
+    ...segmentPolygons(sub, half, style.cap),
+    ...cornerPolygons(sub, half, style.join),
+    ...capPolygons(sub, half, style.cap),
+  ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -531,6 +646,34 @@ export function fillPolygons(
   }
 }
 
+/** O raio do canto movido `d` px para dentro (negativo = para fora), sem passar de 0. */
+function shiftRadius(radius: CornerRadius, d: number): CornerRadius {
+  const shift = (r: number) => Math.max(0, r - d);
+  return typeof radius === 'number'
+    ? shift(radius)
+    : [shift(radius[0]), shift(radius[1]), shift(radius[2]), shift(radius[3])];
+}
+
+/**
+ * O contorno que o traço percorre: `center` é o próprio contorno; `inside`/`outside` movem a
+ * linha de centro meia largura para dentro/fora, em quadros, retângulos e elipses (a faixa do
+ * traço cobre então só um lado do contorno). Caminhos e linhas ficam ao centro.
+ */
+function alignedShapes(node: SceneNode, shapes: Subpath[]): Subpath[] {
+  const stroke = node.stroke;
+  if (!stroke || stroke.align === 'center') return shapes;
+  if (node.type !== 'frame' && node.type !== 'rect' && node.type !== 'ellipse')
+    return shapes;
+  const d = stroke.align === 'inside' ? stroke.width / 2 : -stroke.width / 2;
+  const width = Math.max(0.01, node.width - 2 * d);
+  const height = Math.max(0.01, node.height - 2 * d);
+  const points =
+    node.type === 'ellipse'
+      ? ellipse(width, height)
+      : roundedRect(width, height, shiftRadius(node.cornerRadius, d));
+  return [{ points: points.map((p) => ({ x: p.x + d, y: p.y + d })), closed: true }];
+}
+
 // ---------------------------------------------------------------------------
 // Cena
 
@@ -539,6 +682,7 @@ class Painter {
     private readonly raster: Raster,
     private readonly measure: TextMeasurer,
     private readonly scale: number,
+    private readonly fonts?: FontBook,
   ) {}
 
   paint(node: SceneNode, parent: Matrix, opacity: number, clip: PixelRect): void {
@@ -548,6 +692,7 @@ class Painter {
     if (alpha <= 0) return;
 
     const shapes = this.shapes(node);
+    this.shadows(node, shapes, matrix, alpha, clip);
     const rule = node.type === 'path' ? node.fillRule : 'nonzero';
     // Linha aberta não tem interior: só o traço.
     const fillable = node.type !== 'line' || node.closed;
@@ -565,25 +710,105 @@ class Painter {
         );
       }
     }
-    if (node.stroke && node.stroke.width > 0) {
-      const color = firstColor(node.stroke.paints);
-      if (color !== null) {
-        const width = Math.max(node.stroke.width, 1 / this.scale);
-        this.fill(strokePolygons(shapes, width), matrix, 'nonzero', color, alpha, clip);
-      }
-    }
+    this.strokeNode(node, shapes, matrix, alpha, clip);
     if (node.type === 'text') this.text(node, matrix, alpha, clip);
 
     if (node.type === 'frame' || node.type === 'group') {
       let childClip = clip;
       if (node.type === 'frame' && node.clip) {
-        childClip = intersect(
-          clip,
-          bounds(this.toRaster(roundedRect(node.width, node.height, 0), matrix)),
-        );
+        const box = node.clipBox;
+        const rect = box
+          ? [
+              { x: box.x, y: box.y },
+              { x: box.x + box.width, y: box.y },
+              { x: box.x + box.width, y: box.y + box.height },
+              { x: box.x, y: box.y + box.height },
+            ]
+          : roundedRect(node.width, node.height, 0);
+        childClip = intersect(clip, bounds(this.toRaster(rect, matrix)));
       }
       for (const child of node.children) this.paint(child, matrix, alpha, childClip);
     }
+  }
+
+  /** O traço do nó: contorno com `align`, tracejado, `cap`/`join` ou os `sides` pedidos. */
+  private strokeNode(
+    node: SceneNode,
+    shapes: Subpath[],
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+  ): void {
+    if (!node.stroke || node.stroke.width <= 0) return;
+    const color = firstColor(node.stroke.paints);
+    if (color === null) return;
+    const width = Math.max(node.stroke.width, 1 / this.scale);
+    const style: StrokeStyle = {
+      cap: node.stroke.cap ?? 'butt',
+      join: node.stroke.join ?? 'miter',
+    };
+    const base = this.sideLines(node) ?? alignedShapes(node, shapes);
+    const dash = node.stroke.dash;
+    const lines = dash && dash.length > 0 ? dashPaths(base, dash) : base;
+    this.fill(strokePolygons(lines, width, style), matrix, 'nonzero', color, alpha, clip);
+  }
+
+  /** Sombra (`effects`, sem a interna): a forma do nó desfocada e deslocada, por baixo do nó. */
+  private shadows(
+    node: SceneNode,
+    shapes: Subpath[],
+    matrix: Matrix,
+    alpha: number,
+    clip: PixelRect,
+  ): void {
+    if (node.type === 'text' || shapes.length === 0) return;
+    for (const shadow of node.effects) {
+      const color = parseColor(shadow.color);
+      if (shadow.inner || color === null) continue;
+      const polygons = shapes.map((sub) => this.toRaster(sub.points, matrix));
+      const sigma = (shadow.blur * this.scale) / 2;
+      const margin = Math.ceil(sigma * 3) + 2;
+      const edge = bounds(polygons.flat());
+      const box: PixelRect = {
+        x: Math.floor(edge.x) - margin,
+        y: Math.floor(edge.y) - margin,
+        width: Math.ceil(edge.width) + 2 * margin,
+        height: Math.ceil(edge.height) + 2 * margin,
+      };
+      if (box.width * box.height > MAX_SHADOW_PIXELS) continue;
+      const temp = createRaster(box.width, box.height);
+      fillPolygons(
+        temp,
+        polygons.map((poly) => poly.map((p) => ({ x: p.x - box.x, y: p.y - box.y }))),
+        node.type === 'path' ? node.fillRule : 'nonzero',
+        { rgb: [0, 0, 0], alpha: 1 },
+        { x: 0, y: 0, width: box.width, height: box.height },
+      );
+      const mask = new Float32Array(box.width * box.height);
+      for (let i = 0; i < mask.length; i++) mask[i] = temp.data[i * 4 + 3]! / 255;
+      compositeShadow(
+        this.raster,
+        mask,
+        box,
+        sigma,
+        { dx: shadow.offset.x * this.scale, dy: shadow.offset.y * this.scale },
+        { rgb: color.rgb, alpha: color.alpha * alpha },
+        clip,
+      );
+    }
+  }
+
+  /** `stroke.sides` num `frame`/`rect`: os lados pedidos como linhas retas (sem os cantos). */
+  private sideLines(node: SceneNode): Subpath[] | null {
+    if ((node.type !== 'frame' && node.type !== 'rect') || !node.stroke?.sides)
+      return null;
+    return sideSegments(node.stroke, node.width, node.height).map((seg) => ({
+      points: [
+        { x: seg.x1, y: seg.y1 },
+        { x: seg.x2, y: seg.y2 },
+      ],
+      closed: false,
+    }));
   }
 
   private toRaster(points: Polygon, matrix: Matrix): Point[] {
@@ -635,25 +860,71 @@ class Painter {
     );
   }
 
-  /** Texto como barras: uma por linha, na cor do texto. */
+  /** Texto: glifos da fonte (com `fonts`) ou barras, uma por linha, na cor do texto. */
   private text(node: TextNode, matrix: Matrix, opacity: number, clip: PixelRect): void {
+    if (node.text === '') return;
+    if (this.fonts) {
+      this.glyphText(node, matrix, opacity, clip, this.fonts);
+      return;
+    }
+    if (node.runLayout) {
+      this.richText(node, matrix, opacity, clip);
+      return;
+    }
     const color = firstColor(node.fills);
-    if (color === null || node.text === '') return;
+    if (color === null) return;
     const bars = textBars(node, this.measure);
-    this.fill(
-      bars.map((b) => [
-        { x: b.x, y: b.y },
-        { x: b.x + b.width, y: b.y },
-        { x: b.x + b.width, y: b.y + b.height },
-        { x: b.x, y: b.y + b.height },
-      ]),
-      matrix,
-      'nonzero',
-      color,
-      opacity,
-      clip,
-    );
+    this.fill(bars.map(barPolygon), matrix, 'nonzero', color, opacity, clip);
   }
+
+  /** Os glifos do texto (e o fundo dos chips), cada trecho na sua cor. */
+  private glyphText(
+    node: TextNode,
+    matrix: Matrix,
+    opacity: number,
+    clip: PixelRect,
+    fonts: FontBook,
+  ): void {
+    const ink = textInk(node, this.measure, fonts);
+    const own = firstColor(node.fills);
+    for (const box of ink.boxes) {
+      const color = parseColor(box.color);
+      if (color === null) continue;
+      const poly = roundedRect(box.width, box.height, box.radius).map((p) => ({
+        x: p.x + box.x,
+        y: p.y + box.y,
+      }));
+      this.fill([poly], matrix, 'nonzero', color, opacity, clip);
+    }
+    for (const glyphs of ink.glyphs) {
+      const color = glyphs.color === undefined ? own : parseColor(glyphs.color);
+      if (color !== null)
+        this.fill(glyphs.polygons, matrix, 'nonzero', color, opacity, clip);
+    }
+  }
+
+  /** Texto rico: o fundo de cada chip e uma barra por pedaço de texto, em ordem, cada um na sua cor. */
+  private richText(
+    node: TextNode,
+    matrix: Matrix,
+    opacity: number,
+    clip: PixelRect,
+  ): void {
+    for (const bar of textBars(node, this.measure)) {
+      const color = bar.color === undefined ? null : parseColor(bar.color);
+      if (color !== null)
+        this.fill([barPolygon(bar)], matrix, 'nonzero', color, opacity, clip);
+    }
+  }
+}
+
+function barPolygon(b: PixelRect): Polygon {
+  return [
+    { x: b.x, y: b.y },
+    { x: b.x + b.width, y: b.y },
+    { x: b.x + b.width, y: b.y + b.height },
+    { x: b.x, y: b.y + b.height },
+  ];
 }
 
 function firstColor(paints: readonly Paint[]): Color | null {
@@ -680,72 +951,52 @@ function intersect(a: PixelRect, b: PixelRect): PixelRect {
   return { x: x0, y: y0, width: Math.max(0, x1 - x0), height: Math.max(0, y1 - y0) };
 }
 
-/** Barras do texto no espaço local do nó: uma por linha medida. */
-export function textBars(node: TextNode, measure: TextMeasurer): PixelRect[] {
-  const { style } = node;
-  const lineHeight = style.lineHeight ?? style.fontSize * 1.2;
-  const font = {
-    family: style.fontFamily,
-    size: style.fontSize,
-    weight: style.fontWeight,
-    italic: style.italic,
-    lineHeight,
-    letterSpacing: style.letterSpacing ?? 0,
-  };
-  const widthOf = (text: string) => measure(text, font).width;
-  const lines: string[] = [];
-  for (const paragraph of node.text.split('\n')) {
-    const words = paragraph.split(' ').filter((word) => word !== '');
-    if (words.length === 0) {
-      lines.push('');
-      continue;
-    }
-    let line = '';
-    for (const word of words) {
-      const candidate = line === '' ? word : `${line} ${word}`;
-      if (line !== '' && node.width > 0 && widthOf(candidate) > node.width + 1e-6) {
-        lines.push(line);
-        line = word;
-      } else {
-        line = candidate;
-      }
-    }
-    lines.push(line);
-  }
-  const total = lines.length * lineHeight;
-  const top =
-    style.verticalAlign === 'middle'
-      ? (node.height - total) / 2
-      : style.verticalAlign === 'bottom'
-        ? node.height - total
-        : 0;
-  const barHeight = lineHeight * BAR_RATIO;
-  const bars: PixelRect[] = [];
-  lines.forEach((line, i) => {
-    if (line === '') return;
-    const justified = style.align === 'justify' && i < lines.length - 1;
-    const width = justified
-      ? node.width
-      : Math.min(widthOf(line), node.width || Infinity);
-    const x =
-      style.align === 'center'
-        ? (node.width - width) / 2
-        : style.align === 'right'
-          ? node.width - width
-          : 0;
-    bars.push({
-      x,
-      y: top + i * lineHeight + (lineHeight - barHeight) / 2,
-      width,
-      height: barHeight,
-    });
-  });
-  return bars;
-}
+/** Fração (da largura e da altura) do ponto de cada âncora do desenho em pixels de tela. */
+const ANCHOR_FRACTION: Record<ScreenAnchor, readonly [number, number]> = {
+  'top-left': [0, 0],
+  top: [0.5, 0],
+  'top-right': [1, 0],
+  left: [0, 0.5],
+  center: [0.5, 0.5],
+  right: [1, 0.5],
+  'bottom-left': [0, 1],
+  bottom: [0.5, 1],
+  'bottom-right': [1, 1],
+};
 
 /** Desenho (a cena instanciada de uma marcação) para `paintScene`. */
 export interface SceneDrawing {
   readonly root: SceneNode;
+  /**
+   * Desenho em pixels de tela (`screen` do componente): `root` mede o `size` na origem e é
+   * ancorado em `anchor` no `rect` da marcação (pixels da imagem). Na imagem do servidor um pixel
+   * de design é um pixel da saída, em qualquer zoom.
+   */
+  readonly screen?: {
+    readonly anchor: ScreenAnchor;
+    readonly rect: { x: number; y: number; width: number; height: number };
+  };
+}
+
+/** A matriz do desenho no raster: a da imagem, ou só a translação do âncora num desenho de tela. */
+function drawingBase(drawing: SceneDrawing, view: SceneView): Matrix {
+  const ox = view.originX ?? 0;
+  const oy = view.originY ?? 0;
+  const { screen, root } = drawing;
+  if (screen === undefined) return [view.scaleX, 0, 0, view.scaleY, ox, oy];
+  const [fx, fy] = ANCHOR_FRACTION[screen.anchor];
+  return [
+    1,
+    0,
+    0,
+    1,
+    ox +
+      view.scaleX * screen.rect.x +
+      fx * (view.scaleX * screen.rect.width - root.width),
+    oy +
+      view.scaleY * screen.rect.y +
+      fy * (view.scaleY * screen.rect.height - root.height),
+  ];
 }
 
 /**
@@ -758,15 +1009,18 @@ export function paintScene(
   measure: TextMeasurer,
   view: SceneView,
 ): void {
-  const base: Matrix = [view.scaleX, 0, 0, view.scaleY, 0, 0];
-  const painter = new Painter(raster, measure, Math.sqrt(view.scaleX * view.scaleY));
+  const scale = Math.sqrt(view.scaleX * view.scaleY);
+  const painter = new Painter(raster, measure, scale, view.fonts);
+  const screenPainter = new Painter(raster, measure, 1, view.fonts);
   const clip = intersect(view.clip, {
     x: 0,
     y: 0,
     width: raster.width,
     height: raster.height,
   });
-  for (const { root } of drawings) {
+  for (const drawing of drawings) {
+    const { root } = drawing;
+    const base = drawingBase(drawing, view);
     const box = bounds(
       [
         { x: 0, y: 0 },
@@ -784,6 +1038,6 @@ export function paintScene(
     ) {
       continue;
     }
-    painter.paint(root, base, 1, clip);
+    (drawing.screen === undefined ? painter : screenPainter).paint(root, base, 1, clip);
   }
 }

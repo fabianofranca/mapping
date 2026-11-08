@@ -1,30 +1,48 @@
 import { fail, type RectTooSmallData } from './errors';
 import type { ArrowPoint, Placement, ProjectContainer, Rect } from './types';
 
-/** Tamanho mínimo de cada lado de uma marcação, em pixels da imagem. */
+/**
+ * Tamanho mínimo de cada lado de uma marcação **comum** (sem componente) nos gestos e no MCP,
+ * em pixels da imagem.
+ */
 export const MIN_MARKING_SIZE = 8;
 
 /**
- * Falha com `rect-too-small` se algum lado do retângulo ficar abaixo do mínimo: o de qualquer
- * marcação (`MIN_MARKING_SIZE`) ou, quando maior, o `minSize` do componente. O `data` do erro diz
- * o tamanho recebido, o mínimo que valeu (o maior de cada lado) e de onde ele veio.
+ * Mínimo de cada lado de uma marcação com anotação de tipo **com componente** (o `minSize` do
+ * componente, se houver, vale por cima) e de qualquer marcação ao ler o `mapping.json`.
+ */
+export const MIN_STORED_MARKING_SIZE = 1;
+
+/** Base do mínimo: 1 px quando há mínimo de componente (`componentMin`), 8 px (`MIN_MARKING_SIZE`) sem ele. */
+export function markingMinBase(componentMin?: Size | null): number {
+  return componentMin ? MIN_STORED_MARKING_SIZE : MIN_MARKING_SIZE;
+}
+
+/** Mínimo efetivo por lado: a base (1 ou 8) ou, quando maior, o `minSize` do componente. */
+export function effectiveMinSize(componentMin?: Size | null): Size {
+  const base = markingMinBase(componentMin);
+  return {
+    width: Math.max(base, componentMin?.width ?? 0),
+    height: Math.max(base, componentMin?.height ?? 0),
+  };
+}
+
+/**
+ * Falha com `rect-too-small` se algum lado do retângulo ficar abaixo do mínimo: 8 px numa
+ * marcação comum, 1 px (ou o `minSize` do componente, se maior) quando `componentMin` é dado,
+ * isto é, quando a marcação desenha um componente. O `data` do erro diz o tamanho recebido, o
+ * mínimo que valeu e de onde ele veio (`component` quando `componentMin` foi dado).
  */
 export function checkRectSize(
   rect: Pick<Rect, 'width' | 'height'>,
-  componentMin?: { readonly width: number; readonly height: number },
+  componentMin?: Size | null,
 ): void {
-  const min = {
-    width: Math.max(MIN_MARKING_SIZE, componentMin?.width ?? 0),
-    height: Math.max(MIN_MARKING_SIZE, componentMin?.height ?? 0),
-  };
+  const min = effectiveMinSize(componentMin);
   if (rect.width >= min.width && rect.height >= min.height) return;
   const data: RectTooSmallData = {
     received: { width: rect.width, height: rect.height },
     min,
-    source:
-      min.width > MIN_MARKING_SIZE || min.height > MIN_MARKING_SIZE
-        ? 'component'
-        : 'marking',
+    source: componentMin ? 'component' : 'marking',
   };
   fail('rect-too-small', undefined, data);
 }
@@ -186,7 +204,7 @@ function roundSpan(
 /**
  * Converte um retângulo do canvas (decimal) para o espaço de `placement`, em inteiros:
  * as bordas são arredondadas (o tamanho é o que a pessoa via na tela), cada lado fica com
- * pelo menos `MIN_MARKING_SIZE` (e `min`, o mínimo do componente) e, com `bounds`, o
+ * pelo menos o mínimo (`MIN_MARKING_SIZE`, ou 1 px e o `min` do componente quando há `min`) e, com `bounds`, o
  * retângulo fica dentro dele (o container; o canvas não tem limite).
  */
 export function fromCanvasRect(
@@ -199,14 +217,14 @@ export function fromCanvasRect(
   const [x, width] = roundSpan(
     (canvas.x - placement.x) / s,
     canvas.width / s,
-    Math.max(MIN_MARKING_SIZE, min?.width ?? 0),
+    effectiveMinSize(min).width,
     bounds ? bounds.x : -Infinity,
     bounds ? right(bounds) : Infinity,
   );
   const [y, height] = roundSpan(
     (canvas.y - placement.y) / s,
     canvas.height / s,
-    Math.max(MIN_MARKING_SIZE, min?.height ?? 0),
+    effectiveMinSize(min).height,
     bounds ? bounds.y : -Infinity,
     bounds ? bottom(bounds) : Infinity,
   );

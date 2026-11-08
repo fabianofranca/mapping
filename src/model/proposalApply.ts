@@ -1,3 +1,4 @@
+import { setProjectDrawingMode } from './drawingMode';
 import { clearArrowRoutes, settleHierarchy } from './hierarchySettle';
 import { reconcilePerspectives } from './perspectiveReconcile';
 import { anchorsOfChanges, placeCreatedMarkings } from './proposalOrder';
@@ -57,10 +58,16 @@ export interface PatchProblem {
   readonly changeId: string;
 }
 
+/** A entidade `project` (formatVersion 6): o modo do desenho (`null` = sem modo fixado). */
+interface ProjectModeEntity {
+  readonly drawingMode: string | null;
+}
+
 type Entity =
   | ProjectSpecialization
   | PlatformRepo
   | DocRepo
+  | ProjectModeEntity
   | Layer
   | ProjectContainer
   | Marking
@@ -72,21 +79,23 @@ const UPSERT_PHASE: Record<ChangeEntity, number> = {
   specialization: 0,
   platformRepo: 1,
   docRepo: 2,
-  layer: 3,
-  image: 4,
-  marking: 5,
-  arrow: 6,
-  annotation: 7,
+  project: 3,
+  layer: 4,
+  image: 5,
+  marking: 6,
+  arrow: 7,
+  annotation: 8,
 };
 const REMOVE_PHASE: Record<ChangeEntity, number> = {
-  annotation: 8,
-  arrow: 9,
-  marking: 10,
-  image: 11,
-  layer: 12,
-  specialization: 13,
-  platformRepo: 14,
-  docRepo: 15,
+  annotation: 9,
+  arrow: 10,
+  marking: 11,
+  image: 12,
+  layer: 13,
+  project: 14,
+  specialization: 15,
+  platformRepo: 16,
+  docRepo: 17,
 };
 
 /**
@@ -247,6 +256,7 @@ function withField(
     case 'specialization':
     case 'platformRepo':
     case 'docRepo':
+    case 'project':
       return decode(entity, to);
   }
 }
@@ -319,6 +329,7 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
     specialization: new Map(p.specializations.map((s) => [s.id, s])),
     platformRepo: new Map(Object.entries(p.platformRepos)),
     docRepo: new Map(Object.entries(p.docRepos)),
+    project: new Map([['project', { drawingMode: p.drawingMode ?? null }]]),
     layer: new Map(p.layers.map((l) => [l.id, l])),
     image: new Map(p.containers.map((i) => [i.id, i])),
     marking: new Map(p.markings.map((m) => [m.id, m])),
@@ -396,17 +407,25 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   }
   placeAmongSiblings(markings, markingPositions);
 
-  const project: Project = {
-    ...p,
-    specializations: [...maps.specialization.values()] as ProjectSpecialization[],
-    platformRepos: Object.fromEntries(maps.platformRepo) as Record<string, PlatformRepo>,
-    docRepos: Object.fromEntries(maps.docRepo) as Record<string, DocRepo>,
-    layers,
-    containers,
-    markings,
-    arrows,
-    annotations: [...maps.annotation.values()] as Annotation[],
-  };
+  const mode = (maps.project.get('project') as ProjectModeEntity | undefined)
+    ?.drawingMode;
+  const project: Project = setProjectDrawingMode(
+    {
+      ...p,
+      specializations: [...maps.specialization.values()] as ProjectSpecialization[],
+      platformRepos: Object.fromEntries(maps.platformRepo) as Record<
+        string,
+        PlatformRepo
+      >,
+      docRepos: Object.fromEntries(maps.docRepo) as Record<string, DocRepo>,
+      layers,
+      containers,
+      markings,
+      arrows,
+      annotations: [...maps.annotation.values()] as Annotation[],
+    },
+    mode ?? null,
+  );
   return { project: reconcilePerspectives(p, project), problems };
 }
 

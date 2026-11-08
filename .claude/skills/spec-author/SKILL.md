@@ -108,7 +108,62 @@ Só quando o prompt pede uma biblioteca (componentes que a app desenha). Faça o
 3. **Um documento por componente** (`doc`, `docs/<tipo>.md`): quando usar, variantes, o que não confundir; markdown simples (títulos, parágrafos, listas, tabelas, código). É o que o agente lê em `get_component`.
 4. **Exemplos nomeados** (`examples` no tipo): `values` (chaves de campos do próprio tipo, valores válidos) com `name` único; para uma origem de sistema externo (`origins`), `system` + `file` (o JSON de **um nó** em `examples/`) e, na origem, telas inteiras em `examples[]`.
 5. **Fontes:** `fonts` na raiz (`family`, `file`, `weight`, `style`). Os arquivos têm licença e peso: se não puder incluí-los, deixe `fonts/LEIA-ME.txt` dizendo quais arquivos faltam e de onde obtê-los (fonte ausente é **aviso**, não erro).
-6. **Atualização de biblioteca já aplicada:** preserve ids de tipo e `key` de campo, suba a `version`. **Aditivo** (não precisa de `migrations`): tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, mudar só o desenho. **Quebra** (exige entrada em `migrations`, com `from`, `to` e `steps`; `to` ≤ `version`, `from` único, `steps` não vazia; a cadeia precisa ligar a versão aplicada à nova, senão toda quebra fica sem cobertura): remover ou renomear tipo, campo ou opção de `enum` (passos `rename-type {from,to}`, `remove-type {type,mode: convert|delete}` (`delete` apaga também as anotações), `rename-field {type,from,to}`, `remove-field {type,field}` e `map-values {type,field,values}`; a chave de campo pode ser `tabela.coluna`), tornar um campo obrigatório (inclusive um campo novo que já nasce obrigatório: cubra com `fill-field {type,field,default}`), mudar o `type` de um campo, tirar um papel de `childRoles` ou dar `childRoles` a um tipo que não tinha (passos `rename-role`, `remove-role` e `set-role`, da `formatVersion` 12: ver a seção 12). Passe a versão anterior à validação (`previous`).
+6. **Tokens de design (`formatVersion` 15 na especialização; `{ "$token": … }` no componente de formato 4).** Quando a origem tem um design system (tokens do tema, variáveis do Figma, tabela de cores), declare-o em `tokens` na raiz **em vez de repetir literais** em cada nó. O padrão é `light`/`dark`:
+
+   ```json
+   "tokens": {
+     "modes": ["light", "dark"],
+     "values": {
+       "primary": { "light": "#6750A4", "dark": "#D0BCFF" },
+       "on-primary": { "light": "#FFFFFF", "dark": "#381E72" },
+       "radius-md": 12,
+       "space-4": 16
+     }
+   }
+   ```
+
+   - `modes` é lista não vazia de nomes distintos `[a-z0-9][a-z0-9-]*`; o nome do token segue o mesmo padrão. **Cor vai por modo** (objeto com todos os modos e só eles, todos do mesmo tipo); **raio, espaçamento e tamanho** que não mudam com o tema são valores **simples** (valem em todos os modos). Um valor é texto (cor `#rrggbb`/`rgba()` ou família de fonte) ou número.
+   - No componente, `{ "$token": "primary" }` vale onde se espera cor (`fill`, `color`, `stroke.color`, `shadow.color`, stops do gradiente, `run.color`/`background`), número (`gap`, `padding`, `font.size`, `cornerRadius`, `width`, `opacity`…) ou família (`font.family`), inclusive como resultado de `$switch` e `$if`. Não vale em enum, booleano nem texto.
+   - **Embutidos:** `font-sans` e `font-mono` existem em toda biblioteca (a fonte do tema do hospedeiro) e `{ "$token": "font-mono" }` serve em `font.family`. O texto sem `font.family` usa `font-sans`, **não mais a `Inter`**: não escreva `Inter` por padrão e não conte com a largura dela. Redefinir `font-sans`/`font-mono` em `tokens.values` vence o hospedeiro.
+   - Nesta versão o desenho usa sempre o **primeiro** modo de `modes` (modo não declarado cai no primeiro, sem aviso): ponha `light` primeiro.
+   - `tokens` só com `formatVersion` 15 (antes: `só é permitido com formatVersion 15`) e `$token` só no componente de formato 4 (`só é permitido com formatVersion 4`). O `validate_library` recusa token inexistente (`o token "x" não existe nos tokens da especialização`) e de tipo errado (`o token "primary" é cor, mas aqui se espera número`), com o caminho do nó. Detalhes em `docs/SPEC-FORMAT.md` ("Tokens de design") e `docs/COMPONENT-FORMAT.md`.
+
+7. **Conjunto de ícones (`formatVersion` 15 na especialização; nó `icon` no componente de formato 4).** Quando mais de um componente mostra ícone, ou um campo `enum` escolhe o ícone, **não repita os caminhos num `$switch`** dentro do componente: ponha os ícones num arquivo do pacote (`icons/icons.json`, `"format": "mapping-icons"`, `"formatVersion": 1`, `viewBox` padrão `[24, 24]` e `icons` por nome `^[a-z0-9][a-z0-9-_]*$`) e aponte `"icons": "icons/icons.json"` na raiz da especialização:
+
+   ```json
+   {
+     "format": "mapping-icons",
+     "formatVersion": 1,
+     "viewBox": [24, 24],
+     "icons": {
+       "check": {
+         "paths": [
+           {
+             "d": "M5 12l5 5L20 7",
+             "stroke": true,
+             "width": 2,
+             "cap": "round",
+             "join": "round"
+           }
+         ]
+       }
+     }
+   }
+   ```
+   - Cada ícone tem `paths` (lista **não vazia** de `{ d, fill?, stroke?, width?, cap?, join? }`) e, se precisar, o próprio `viewBox`. `fill`/`stroke` `true` usam a cor do nó `icon`; um texto é cor própria; caminho sem `fill` nem `stroke` é preenchido com a cor do nó. A largura (`width`) é em unidades do `viewBox`. Use os `d` do SVG da origem (Figma, Material Symbols, o `icons.tsx` do app), nunca de memória.
+   - No componente: `{ "type": "icon", "name": { "$field": "icone" }, "color": { "$token": "on-surface" }, "width": 24, "height": 24 }` (`strokeWidth` troca a largura dos traços; `hug` mede o `viewBox`). O `name` do nó `icon` é o do **ícone**, não um nome de nó. Ligue o `name` a um campo `enum` cujas `options` são os nomes do conjunto.
+   - O `validate_library` confere o arquivo (nível 1), recusa nome **literal** fora do conjunto (`o ícone "nuvem" não existe no conjunto de ícones (icons/set.json)`, com o caminho do `name`) e avisa, no nível 3, a `option` de `enum` que não está no conjunto. Nome vindo de campo que não existe no conjunto desenha o reservado com o aviso `ícone desconhecido: <nome>`.
+   - `icons` só com `formatVersion` 15 (antes: `só é permitido com formatVersion 15`) e o nó `icon` só no componente de formato 4 (`só é permitido com formatVersion 4`). Detalhes em `docs/SPEC-FORMAT.md` ("Conjunto de ícones") e `docs/COMPONENT-FORMAT.md`.
+
+8. **Tamanho de tela, tipo estrutural e marcação mínima (`formatVersion` 15 na especialização; formato 4 no componente).**
+   - **`screen`** na raiz do componente (`{ "anchor": "center" }`, padrão; ou `top-left`, `top`, `top-right`, `left`, `right`, `bottom-left`, `bottom`, `bottom-right`): o desenho tem o `size` em **pixels de tela** em qualquer zoom, ancorado no ponto do retângulo da marcação (pino, selo, emblema). Pode passar do retângulo sem a pendência "não cabe". `stroke.scale: false` mantém a largura do traço em px de tela. Em formato < 4: `só é permitido com formatVersion 4`.
+   - **`"structural": true`** no tipo de anotação: o tipo só agrupa e não desenha (seção, compositor); a app não mostra o nome dele no canvas e não o conta como "sem componente". `structural` com `component` é erro (`um tipo estrutural não desenha: não pode ter component`); `structural` só com `formatVersion` 15.
+   - Marcação de tipo **com componente** vale a partir de 1 px (itens de 1 a 7 px: divisória, ponto, separador), respeitando o `minSize` do componente; sem componente o mínimo continua 8 px. Não dimensione o `size` para 8 px por causa do mínimo antigo.
+9. **Origem medida (`origins[].kind: "measured"`, `formatVersion` 15).** Quando a tela de origem existe e pode ser **medida** (uma página web aberta num navegador, a hierarquia de views de um app), declare `{ "system": "dom", "kind": "measured" }` em `origins` (só `system`, `kind`, `name` e `booleans`; `node`, `screen` e `examples` são erro) em vez de uma origem de árvore. O agente do projeto então mede e importa com a op `import_measured` do MCP (`docs/AGENT-GUIDE.md`, "Importar um layout medido"). O trabalho da especialização está nas `sources` com esse `system`:
+   - **Tipo:** `{ "system": "dom", "name": "btn" }` e/ou `"id"`. O nó casa pelo `id` contra o `id` da source, depois cada classe do nó contra o `name`, depois o `type` do nó (a tag) contra o `name`; use classe para o que distingue (`btn`, `card`) e a tag para o resto (`img`, `input`).
+   - **Campo:** `{ "system": "dom", "path": "label" }` lê o valor nas `props` do nó; num campo `enum`, `values` traduz o texto medido para as `options`. Sem `path` o campo fica no valor padrão.
+   - Cor pelo token mais próximo e ícone reconhecido pelo traço **não existem**: o que a medida não traz fica no padrão. `kind` numa versão anterior à 15 é o erro `só é permitido com formatVersion 15`. Exemplo: `examples/libraries/medido/`.
+10. **Atualização de biblioteca já aplicada:** preserve ids de tipo e `key` de campo, suba a `version`. **Aditivo** (não precisa de `migrations`): tipo novo, campo **opcional** novo, opção nova de `enum`, componente, documento, exemplo ou fonte novos, mudar só o desenho. **Quebra** (exige entrada em `migrations`, com `from`, `to` e `steps`; `to` ≤ `version`, `from` único, `steps` não vazia; a cadeia precisa ligar a versão aplicada à nova, senão toda quebra fica sem cobertura): remover ou renomear tipo, campo ou opção de `enum` (passos `rename-type {from,to}`, `remove-type {type,mode: convert|delete}` (`delete` apaga também as anotações), `rename-field {type,from,to}`, `remove-field {type,field}` e `map-values {type,field,values}`; a chave de campo pode ser `tabela.coluna`), tornar um campo obrigatório (inclusive um campo novo que já nasce obrigatório: cubra com `fill-field {type,field,default}`), mudar o `type` de um campo, tirar um papel de `childRoles` ou dar `childRoles` a um tipo que não tinha (passos `rename-role`, `remove-role` e `set-role`, da `formatVersion` 12: ver a seção 12). Passe a versão anterior à validação (`previous`).
 
 ### 9. Containers (`formatVersion` 6)
 
@@ -146,6 +201,32 @@ Use `image` quando o desenho mostra uma foto cuja URL vem do dado (avatar, foto,
 - `src` é só o literal (`https://...` absoluto) ou o `$field` puro: **nunca `$concat`**, `$switch` ou `$if`; nunca `http:`, `data:` nem caminho relativo.
 - `fit`: `cover` (padrão), `contain` ou `fill`. Dê tamanho fixo, `fill` ou `%`; **nunca `hug`** (é erro). `fill` (cor) serve de fundo atrás da imagem e `cornerRadius` faz avatar redondo.
 - Um componente com nó `image` usa a `formatVersion` 3 do componente. A especialização não muda (nada de declarar origem) e o `preview` traz uma URL `https://` só se você a viu na origem.
+
+#### Traço com ponta, canto e lados (componente `formatVersion` 4)
+
+O `stroke` do desenho aceita, só na `formatVersion` 4 do **componente**, `cap` (`butt` padrão, `round`, `square`), `join` (`miter` padrão, `round`, `bevel`) e `sides` (lista não vazia, sem repetição, de `top`, `right`, `bottom`, `left`; ausente = os quatro). Todos aceitam expressão (`sides` por um `$switch` que devolve a lista). Use `sides` para divisória só embaixo ou borda parcial: o traço fica reto, sem arco no canto, mesmo com `cornerRadius`, e os lados pedidos têm a mesma cor, largura, `align` e `dash` (valores diferentes por lado pedem dois nós). `sides` só vale em `frame` e `rect` (em `ellipse` e `path`: `só vale em frame e rect (este é <tipo>)`). Numa `formatVersion` do componente menor que 4, as três chaves são erro: `template.children[0].stroke.cap: só é permitido com formatVersion 4`. A especialização não muda. Não existe sombra interna.
+
+#### Layout fiel: texto que quebra, linhas iguais, limites (componente `formatVersion` 4)
+
+Na `formatVersion` 4 do **componente** o layout ganha quatro recursos; a especialização não muda. Em qualquer versão, a medição é em duas passagens (como o flexbox): um **texto `fill` (ou `%`) numa coluna ou quadro `hug`** é medido dentro do limite que o quadro recebe do pai e **quebra em linhas de palavras**, e o quadro tem a altura delas. Escreva o cartão como `hug` com o texto `fill`; **não precisa mais de altura fixa** para o texto não quebrar letra a letra. Só o `fill` no eixo **principal** de um quadro `hug` continua valendo 0 (aviso `fill dentro de hug vira 0`).
+
+- **`distribute: "fill"` no `repeat`** (lista que ocupa o espaço do pai, linhas de alturas iguais): o `repeat` ocupa o eixo do pai e as linhas dividem o eixo por igual, menos os `gap`s. Sem ele, as linhas são `hug` e um `fill` no `template` vale 0.
+- **`minWidth`, `maxWidth`, `minHeight`, `maxHeight`** (px, aceitam expressão) em qualquer nó: o `fill` que bate no `max` congela e a sobra vai para os outros `fill` do mesmo pai (flexbox); um texto `hug` cortado pelo `maxWidth` quebra na largura cortada. `min` literal maior que o `max` é erro (`template.children[1].minWidth: não pode ser maior que maxWidth`); por expressão vale o `min`. Na raiz, os limites só valem quando o componente é medido (`hug`).
+- **Expressão** em `layout.type`, `layout.align`, `layout.justify`, `width` e `height` (em quadro e em slot): um `$switch` sobre um campo `enum` escolhe `row` ou `column`. Valor resolvido fora do conjunto cai no padrão com o aviso `valor inválido em <chave>: <valor>`; texto numérico puro (`"120"`) vale como px. Literais continuam conferidos na validação.
+- Numa `formatVersion` do componente menor que 4, `distribute`, as quatro chaves de limite e expressão nessas chaves de layout são erro: `template.children[0].maxWidth: só é permitido com formatVersion 4`.
+- Aviso novo da prova de desenho: `texto medido com largura 0: <nó>` (um texto com largura `fill` ou `%` sem largura de onde sair; dê largura ao pai).
+- **Texto de uma linha, reticências e linhas máximas** (só `formatVersion` 4 do componente): o `font` do nó `text` aceita `wrap` (`"word"` padrão, `"none"` = uma linha por parágrafo, sem quebra), `ellipsis` (`true`: o texto que não cabe na largura, com `wrap: "none"`, ou além de `maxLines` termina em `…`) e `maxLines` (inteiro ≥ 1; a última linha permitida leva o `…` com `ellipsis` ou é cortada). Use para célula, título e assunto de uma linha só (`wrap: "none"` + `ellipsis: true`, em caixa de largura definida) e para parágrafo de N linhas (`maxLines` + `ellipsis`). Aceitam expressão (`maxLines: { "$field": "linhas", "default": 2 }`). Numa `formatVersion` menor que 4 são erro: `template.children[0].font.wrap: só é permitido com formatVersion 4`; `maxLines` 0 ou fracionário: `esperava inteiro maior ou igual a 1`. A especialização não muda.
+- Aviso novo da prova de desenho: `texto maior que a caixa: <nó>` (as linhas quebradas passam da altura do nó e nada as corta; dê mais altura, ou `maxLines`/`ellipsis`). Tolerância de 1 px por nó de texto; o aviso entra na pendência "o componente não cabe". A altura de linha segue o CSS: `lineHeight` em px (acima de 3) é a altura da linha como está, o múltiplo não arredonda.
+
+#### Texto rico: trechos e chip no meio da linha (componente `formatVersion` 4)
+
+Quando o desenho mostra **negrito, outra cor ou uma caixa com fundo no meio de uma frase** ("Fatura de **março** `vencida`"), use `runs` no nó `text`, no lugar de `text`: uma lista não vazia de trechos `{ "text", "weight"?, "italic"?, "color"?, "decoration"?, "family"?, "size"?, "background"?, "radius"?, "padding"? }`. A especialização não muda (a `formatVersion` dela fica como está). Regras:
+
+- **O nó é a base; o trecho sobrepõe.** O `font` e o `color` do nó valem para todos; o trecho sobrepõe só `weight`, `italic`, `family`, `size`, `decoration` e `color`. `lineHeight`, `letterSpacing`, `align`, `verticalAlign`, `wrap`, `ellipsis` e `maxLines` são só do nó e valem para os trechos (no trecho são chave desconhecida). Cada chave aceita expressão; o `text` do trecho aceita `$field` (`{ "text": { "$field": "label" }, "weight": 700 }`).
+- **O chip é um trecho com `background`.** `background` mais `radius` e `padding` (número ou `[vertical, horizontal]`) fazem uma caixa em linha, inquebrável: a largura é o texto mais 2 vezes o respiro horizontal e a altura é a da linha do trecho mais 2 vezes o vertical. Não cabendo no resto da linha, vai inteiro para a de baixo. `radius` e `padding` sem `background` não fazem nada.
+- **Quebra pela palavra, como um texto só.** Quebra nos espaços dos trechos sem fundo e nas bordas de um chip; `\n` num trecho sem fundo quebra e num chip vira espaço. Espaço no começo da linha é descartado fora do chip e mantido dentro dele. Prefira o espaço entre o texto e o chip no trecho sem fundo (`"Fatura "`, depois o chip): um espaço dentro do chip aumenta a caixa dele.
+- **Use `runs` em vez de trocar o rótulo por espaços e desenhar o chip por cima** com outro nó: o chip por cima não acompanha o texto quando ele quebra ou muda de largura. Componente da biblioteca dentro da linha não existe (o chip é um trecho, não um nó), e os pedaços ficam centrados na linha, sem alinhar pela linha de base.
+- `text` e `runs` no mesmo nó é erro (`template.children[0]: text e runs juntos: use um ou outro`); `runs: []`, `esperava lista não vazia de trechos`; chave desconhecida no trecho, `template.children[0].runs[1].bogus: chave desconhecida: bogus`. Numa `formatVersion` do componente menor que 4: `template.children[0].runs: só é permitido com formatVersion 4`. No MCP, `render_marking` e `render_container` (e o `get_marking_image` de um container sem arquivo) desenham o texto rico com letras de verdade, com o chip, pela fonte livre embutida ou pela `fonts` da biblioteca.
 
 ### 11. Avisos (`formatVersion` 10)
 
@@ -310,8 +391,9 @@ O `id` do papel é dado que as anotações guardam (`parentRole` no vínculo do 
 - `formatVersion` 12: `rename-role`, `remove-role` ou `set-role` em `migrations`.
 - `formatVersion` 13: a cláusula `{ layer }` da camada do próprio tipo, ou o id de um tipo da mesma camada (inclusive o do próprio tipo), em `allowedChildren`.
 - `formatVersion` 14: `accepts.annotations` em campo ou coluna `ref` (a anotação inteira como alvo).
+- `formatVersion` 15: `tokens` na raiz (tokens de design por modo, lidos por `{ "$token": … }` nos componentes de formato 4) ou `icons` na raiz (o conjunto de ícones lido pelo nó `icon`) ou `structural` num tipo ou `origins[].kind: "measured"` (a origem medida).
 
-A versão atual do formato é a 14. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta) para a 12 só se declara um passo de papel para a 13 só se um tipo aceita filhos da própria camada e para a 14 só se um `ref` usa `accepts.annotations`**: o resto da biblioteca fica na versão que o conteúdo pede (a de notas fica na 7, a Kotlin na 8 e a Material 3 na 9). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
+A versão atual do formato é a 15. **Só suba para a 9 se algum tipo usa `variants`, para a 10 se algum tipo, campo ou coluna usa `notices`, para a 11 se algo usa uma chave da lista acima (o `doc` em texto não conta) para a 12 só se declara um passo de papel para a 13 só se um tipo aceita filhos da própria camada para a 14 só se um `ref` usa `accepts.annotations` e para a 15 só se declara `tokens`, `icons`, `structural` ou `kind: "measured"`**: o resto da biblioteca fica na versão que o conteúdo pede (a de notas fica na 7, a Kotlin na 8 e a Material 3 na 9). O **componente** tem a própria versão: `formatVersion` 1, 2 quando usa `repeat`, ou 3 quando usa `image` (a 1 continua aceita; `repeat` numa 1 é erro). Uma versão maior que o necessário impede a importação em apps antigas sem ganho.
 
 - `version` é inteiro ≥ 1. Especialização nova: `1`. Atualização de uma já aplicada: um a mais que a aplicada (`update_specialization` exige versão maior). Nunca mude o `id` numa atualização: ele é a identidade.
 
@@ -398,6 +480,7 @@ Não aplique a especialização a um projeto nem crie proposta, a menos que o pr
 ## Armadilhas frequentes
 
 - `font.family` do componente com aspas sem fechar, item vazio numa pilha (`Roboto, , serif`) ou aspas no meio do nome: é **aviso** na validação e o texto cai em `sans-serif`. A família aceita uma pilha CSS (`system-ui, "Segoe UI", Roboto, sans-serif`) ou um nome genérico sozinho (`system-ui`); não ponha aspas em volta da pilha inteira.
+- Negrito, cor ou chip no meio de uma frase desenhados com vários nós `text` lado a lado ou com um espaço no rótulo e um retângulo por cima: use `runs` (componente `formatVersion` 4). `runs` junto de `text`, ou numa `formatVersion` do componente menor que 4, é erro.
 - Camada por módulo do código em vez de por natureza: os eventos acabam na mesma camada dos componentes e `allowedChildren` não valida.
 - `id` de tipo repetido em camadas diferentes (`button` em Componentes e `button` em Telas): o id é único na especialização inteira.
 - Booleano como `string` com `default: "true"`: use `enum`.

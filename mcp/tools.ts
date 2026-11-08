@@ -9,12 +9,14 @@ import { ToolError } from './errors';
 import { DEFAULT_MAX_SIZE, MAX_MAX_SIZE, MIN_MAX_SIZE } from './image/compose';
 import type { ImageServer } from './imageServer';
 import { imageFile, markingImage, type ImageResult } from './imageTools';
+import { MAX_ZOOM, MIN_ZOOM, renderContainer, renderMarking } from './renderImage';
 import { findByCodeResult } from './findByCode';
 import { Refs, resolveItem } from './items';
 import { listMarkings } from './markingList';
 import { modelToolError } from './modelErrors';
 import { findPerspective, perspectiveDetail } from './perspectives';
 import { operationSchema } from './operations';
+import { resolveOperations } from './operationsFile';
 import { Proposals } from './proposals';
 import { Threads, resolveExtended } from './threads';
 import { registerThreadTools } from './threadTools';
@@ -146,6 +148,24 @@ const operationsArg = z
   .max(1000)
   .describe('Operações, aplicadas em ordem. Veja o recurso AGENT-GUIDE.md.');
 
+/**
+ * `operations` inline ou `operationsFile` (decisão 28): `plan_changes` e `propose_changes` aceitam
+ * um dos dois. Cada um é opcional no schema; `resolveOperations` recusa os dois juntos e nenhum.
+ */
+const batchOperationsArgs = {
+  operations: operationsArg
+    .optional()
+    .describe(
+      'Operações, aplicadas em ordem (inline). Veja o recurso AGENT-GUIDE.md. Use `operations` OU `operationsFile`, nunca os dois.',
+    ),
+  operationsFile: z
+    .string()
+    .optional()
+    .describe(
+      'Caminho de um `.json` dentro das raízes com a lista de operações (a mesma de `operations`), para lotes grandes demais para a chamada (uma tela medida tem centenas). Relativo a uma raiz ou absoluto dentro de uma; fora das raízes é `outside-roots`, JSON inválido é `invalid-arguments` com a posição. Os dois juntos, ou nenhum, é `invalid-arguments`.',
+    ),
+};
+
 const maxSizeArg = z
   .number()
   .int()
@@ -259,7 +279,7 @@ export function registerTools(
     'get_project',
     {
       description:
-        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) o clone local por plataforma (`platformRepos`), os repositórios de documentos das especializações (`docRepos`: `id`, o `repos` que cada especialização declara e o `localPath` do clone do projeto, `null` sem clone), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
+        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) o clone local por plataforma (`platformRepos`), os repositórios de documentos das especializações (`docRepos`: `id`, o `repos` que cada especialização declara e o `localPath` do clone do projeto, `null` sem clone), o modo do desenho do projeto (`drawingMode`, `null` sem modo; cada container traz o seu `drawingMode` fixado e o `effectiveDrawingMode`), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -293,7 +313,7 @@ export function registerTools(
     'list_markings',
     {
       description:
-        'Lista marcações em linhas compactas (referência, caminho, `space` (`container` ou `canvas`), `floating`, retângulo em pixels do container (no canvas, em unidades do canvas), trava, anotações). Sem `container` nem `canvas`, lista as marcações dos containers. Os filtros se combinam; os de camada, tipo e incompletas valem para a mesma anotação própria da marcação (herdadas não contam).',
+        'Lista marcações em linhas compactas (referência, caminho, `space` (`container` ou `canvas`), `floating`, retângulo em pixels do container (no canvas, em unidades do canvas), trava, anotações, `effectiveDrawingMode`: o modo do desenho que vale no espaço da marcação). Sem `container` nem `canvas`, lista as marcações dos containers. Os filtros se combinam; os de camada, tipo e incompletas valem para a mesma anotação própria da marcação (herdadas não contam).',
       inputSchema: {
         project: projectArg,
         container: z
@@ -460,7 +480,7 @@ export function registerTools(
     'get_container',
     {
       description:
-        'Um container do projeto (a referência `mapping://<projeto>/i/<código>`: a letra `i` é o container): `file` (arquivo de imagem, ou `null`) e `background` (cor, quando não há arquivo), caminho absoluto do arquivo (se existir), dimensões, posição, trava, `parent` (a marcação do canvas que contém o container, ou `null`) e as marcações de primeiro nível.',
+        'Um container do projeto (a referência `mapping://<projeto>/i/<código>`: a letra `i` é o container): `file` (arquivo de imagem, ou `null`) e `background` (cor, quando não há arquivo), caminho absoluto do arquivo (se existir), dimensões, posição, trava, `drawingMode` (o modo do desenho que o container fixa, `null` = segue o projeto), `effectiveDrawingMode` (o que vale nele), `parent` (a marcação do canvas que contém o container, ou `null`) e as marcações de primeiro nível.',
       inputSchema: { ref: refArg, project: optionalProjectArg },
       annotations: READ_ONLY,
     },
@@ -573,11 +593,37 @@ export function registerTools(
       }),
   );
 
+  /** A marcação de container de uma referência `m` (a seta e a marcação do canvas não têm imagem). */
+  const imageMarkingOf = async (ref: string, project: string | undefined) => {
+    const item = await resolveItem(roots, ref, project, 'm');
+    if (projectIndex(item.refs.project).arrows.has(item.id)) {
+      throw new ToolError(
+        'arrow',
+        'a seta não tem imagem: ela é uma linha entre duas marcações',
+        {
+          hint: 'peça a imagem da marcação de origem ou de destino (`from`/`to` de get_marking na seta)',
+        },
+      );
+    }
+    const marking = projectIndex(item.refs.project).markings.get(item.id);
+    if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
+    if (marking.containerId === null) {
+      throw new ToolError(
+        'canvas-marking',
+        'a marcação do canvas não tem imagem: ela não pertence a um container',
+        {
+          hint: 'use get_container_file dos containers sob ela (`members` de get_marking), ou get_marking_image de uma marcação de dentro de um container',
+        },
+      );
+    }
+    return { item, marking };
+  };
+
   server.registerTool(
     'get_marking_image',
     {
       description:
-        'Devolve, como imagem, o recorte de uma marcação de container (a marcação do canvas e a seta falham com `canvas-marking` e `arrow`) (mode "crop", com `padding` opcional em pixels do container) ou o container inteiro com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Num container sem arquivo (só com fundo), o recorte mostra o desenho simplificado dos componentes (`drawing: "simplified"`: texto em barras, cores sólidas). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
+        'Devolve, como imagem, o recorte de uma marcação de container (a marcação do canvas e a seta falham com `canvas-marking` e `arrow`) (mode "crop", com `padding` opcional em pixels do container) ou o container inteiro com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Num container sem arquivo (só com fundo), o recorte mostra o desenho dos componentes (`drawing: "rendered"`, o mesmo de render_container: texto real, sombra, tracejado e ícones). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -609,27 +655,7 @@ export function registerTools(
     },
     ({ ref, project, ...options }) =>
       respondWithImage(async () => {
-        const item = await resolveItem(roots, ref, project, 'm');
-        if (projectIndex(item.refs.project).arrows.has(item.id)) {
-          throw new ToolError(
-            'arrow',
-            'a seta não tem imagem: ela é uma linha entre duas marcações',
-            {
-              hint: 'peça a imagem da marcação de origem ou de destino (`from`/`to` de get_marking na seta)',
-            },
-          );
-        }
-        const marking = projectIndex(item.refs.project).markings.get(item.id);
-        if (!marking) throw new ToolError('not-found', `marcação não encontrada: ${ref}`);
-        if (marking.containerId === null) {
-          throw new ToolError(
-            'canvas-marking',
-            'a marcação do canvas não tem imagem: ela não pertence a um container',
-            {
-              hint: 'use get_container_file dos containers sob ela (`members` de get_marking), ou get_marking_image de uma marcação de dentro de um container',
-            },
-          );
-        }
+        const { item, marking } = await imageMarkingOf(ref, project);
         return markingImage(roots, item.refs, marking, options, images);
       }),
   );
@@ -651,6 +677,82 @@ export function registerTools(
       respondWithImage(async () => {
         const { item, container } = await containerOf(ref, project);
         return imageFile(roots, item.refs, container, options, images);
+      }),
+  );
+
+  const zoomArg = z
+    .number()
+    .min(MIN_ZOOM)
+    .max(MAX_ZOOM)
+    .optional()
+    .describe(
+      `Aumento do desenho (padrão 1 = um pixel do container por pixel da saída; de ${MIN_ZOOM} a ${MAX_ZOOM}). Acima do limite de pixels da imagem a tool falha com \`image-too-large\`, como get_marking_image.`,
+    );
+  const drawingModeArg = z
+    .string()
+    .optional()
+    .describe(
+      'Modo do desenho (um dos `modes` dos `tokens` das especializações aplicadas, como "light" ou "dark") em todo o desenho. Padrão: o modo efetivo de cada container (o que ele fixa, senão o do projeto, senão o primeiro modo).',
+    );
+  const backgroundArg = z
+    .enum(['image', 'none'])
+    .optional()
+    .describe(
+      '"image" (padrão): pinta o arquivo do container por baixo (sem arquivo, a cor de fundo dele); "none": fundo transparente, só o desenho dos componentes (png ou webp).',
+    );
+  const RENDER_NOTE =
+    'O desenho é o do servidor, com texto de verdade (fonte livre embutida, ou a `fonts` da biblioteca quando declarada), traço com `align`/`cap`/`join`/`sides`/tracejado, sombra desfocada e ícones; o gradiente vale a primeira cor e a imagem remota vira um reservado. Não é uma captura da app. A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat.';
+
+  server.registerTool(
+    'render_marking',
+    {
+      description:
+        'Desenha, como imagem PNG, o componente de uma marcação de container e o de toda a subárvore dela (as filhas), com `zoom`, `drawingMode` e `background`. É como o agente confere o desenho de um componente sem abrir a app. ' +
+        RENDER_NOTE,
+      inputSchema: {
+        ref: refArg,
+        project: optionalProjectArg,
+        zoom: zoomArg,
+        drawingMode: drawingModeArg,
+        background: backgroundArg,
+        padding: z
+          .number()
+          .int()
+          .min(0)
+          .max(4096)
+          .optional()
+          .describe('Margem em volta da marcação, em pixels do container (padrão 0).'),
+        format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Padrão png.'),
+      },
+      annotations: READ_ONLY,
+    },
+    ({ ref, project, ...options }) =>
+      respondWithImage(async () => {
+        const { item, marking } = await imageMarkingOf(ref, project);
+        return renderMarking(roots, item.refs, marking, options, images);
+      }),
+  );
+
+  server.registerTool(
+    'render_container',
+    {
+      description:
+        'Desenha, como imagem PNG, os componentes de todas as marcações de um container (com ou sem arquivo), com `zoom`, `drawingMode` e `background`. Num container sem arquivo é o mesmo desenho que get_marking_image mostra. ' +
+        RENDER_NOTE,
+      inputSchema: {
+        ref: refArg,
+        project: optionalProjectArg,
+        zoom: zoomArg,
+        drawingMode: drawingModeArg,
+        background: backgroundArg,
+        format: z.enum(['png', 'webp', 'jpeg']).optional().describe('Padrão png.'),
+      },
+      annotations: READ_ONLY,
+    },
+    ({ ref, project, ...options }) =>
+      respondWithImage(async () => {
+        const { item, container } = await containerOf(ref, project);
+        return renderContainer(roots, item.refs, container, options, images);
       }),
   );
 
@@ -685,13 +787,18 @@ export function registerTools(
         'As operações são aplicadas em ordem; um item criado pode ser citado nas seguintes pelo apelido de `as` (ex: "$porta"). Itens trancados não podem ser movidos, redimensionados nem excluídos. Para enviar a alteração ao usuário, use propose_changes (o agente nunca grava o projeto direto).',
       inputSchema: {
         project: projectArg,
-        operations: operationsArg,
+        ...batchOperationsArgs,
       },
       annotations: READ_ONLY,
     },
-    ({ project, operations }) =>
+    ({ project, ...args }) =>
       respond(async () =>
-        planChanges(roots, await findProject(roots, project), operations, Date.now),
+        planChanges(
+          roots,
+          await findProject(roots, project),
+          await resolveOperations(roots, args),
+          Date.now,
+        ),
       ),
   );
 
@@ -742,11 +849,20 @@ export function registerTools(
           .describe(
             'Conversa à qual ligar a proposta (referência `mapping://projeto/c/código` de list_threads ou open_thread). A tool confere a conversa ANTES de gravar (inexistente ou resolvida: recusa e não grava nada) e, gravada a proposta, acrescenta à conversa uma mensagem sua com a proposta, que a app mostra como cartão com o botão Revisar. O formato da proposta não muda.',
           ),
-        operations: operationsArg,
+        ...batchOperationsArgs,
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
-    (args) => respond(() => proposals.propose(args)),
+    ({ operations: _inline, operationsFile: _file, ...args }) =>
+      respond(async () =>
+        proposals.propose({
+          ...args,
+          operations: await resolveOperations(roots, {
+            operations: _inline,
+            operationsFile: _file,
+          }),
+        }),
+      ),
   );
 
   server.registerTool(
@@ -909,7 +1025,7 @@ export function registerTools(
     'validate_library',
     {
       description:
-        'Valida o PACOTE de uma biblioteca (especialização formatVersion 4 com `components/`, `docs/`, `examples/` e `fonts/`) com os mesmos três níveis da app e da skill: (1) cada arquivo, (2) a coerência entre eles (componente, slot, campos, exemplos, fontes, origens e, com `previous`, o contrato de versão) e (3) a prova de desenho (instancia cada componente e passa os exemplos de sistema externo pela declaração). `path` é a pasta do pacote ou o arquivo da especialização dentro dela, dentro das raízes. Devolve `valid`, `errors` e `warnings` (cada um com `file`, `path`, `message`, `severity`): erro impede usar, aviso deixa usar. Somente leitura: não aplica nada a projeto algum (para aplicar ou atualizar, use apply_specialization/update_specialization em propose_changes; antes, plan_library_update mostra o impacto). O documento de um tipo em repositório externo (`doc` objeto) está fora do pacote: com `docClones` (`{ repositório: pasta dentro das raízes }`) cada documento é conferido no clone e o ausente é AVISO; sem o clone de um repositório, um aviso por repositório conta os documentos não conferidos. Um `doc` cujo `repo` não está em `docRepos` é erro do nível 1. É o ciclo gerar, validar, corrigir.',
+        'Valida o PACOTE de uma biblioteca (especialização formatVersion 4 com `components/`, `docs/`, `examples/` e `fonts/`) com os mesmos três níveis da app e da skill: (1) cada arquivo (inclusive o conjunto de ícones apontado por `icons`, formatVersion 15), (2) a coerência entre eles (componente, slot, campos, exemplos, fontes, origens, nome literal de ícone fora do conjunto e, com `previous`, o contrato de versão) e (3) a prova de desenho (instancia cada componente e passa os exemplos de sistema externo pela declaração; avisa o campo `enum` lido pelo `name` de um nó `icon` com opção fora do conjunto de ícones). `path` é a pasta do pacote ou o arquivo da especialização dentro dela, dentro das raízes. Devolve `valid`, `errors` e `warnings` (cada um com `file`, `path`, `message`, `severity`): erro impede usar, aviso deixa usar. Somente leitura: não aplica nada a projeto algum (para aplicar ou atualizar, use apply_specialization/update_specialization em propose_changes; antes, plan_library_update mostra o impacto). O documento de um tipo em repositório externo (`doc` objeto) está fora do pacote: com `docClones` (`{ repositório: pasta dentro das raízes }`) cada documento é conferido no clone e o ausente é AVISO; sem o clone de um repositório, um aviso por repositório conta os documentos não conferidos. Um `doc` cujo `repo` não está em `docRepos` é erro do nível 1. É o ciclo gerar, validar, corrigir.',
       inputSchema: {
         path: z
           .string()

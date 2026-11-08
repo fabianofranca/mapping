@@ -795,6 +795,11 @@ export class CanvasController {
     if (placementsChanged || !sameFrame(last, frame, COMPONENT_KEYS)) {
       this.renderComponents(frame);
     }
+    // Os desenhos em pixels de tela (`screen`) só reajustam escala e posição com o zoom.
+    if (scaleChanged) {
+      this.componentLayer.setZoom(v.scale);
+      this.floatingLayer.setZoom(v.scale);
+    }
     // As setas só se refazem com elas, o tema ou o zoom (a espessura e a ponta são de tela).
     if (scaleChanged || !sameFrame(last, frame, ARROW_KEYS)) {
       this.arrows.render(frame);
@@ -870,15 +875,18 @@ export class CanvasController {
       this.floatingLayer = this.newComponentLayer(this.floatingDrawings);
     }
     const { drawn, floating } = frame;
+    const zoom = frame.viewport.scale;
     this.componentLayer.render(
       frame.drawings,
       (drawing) => drawn.has(drawing.markingId) && !floating.has(drawing.markingId),
       this.placements,
+      zoom,
     );
     this.floatingLayer.render(
       frame.drawings,
       (drawing) => drawn.has(drawing.markingId) && floating.has(drawing.markingId),
       this.placements,
+      zoom,
     );
     this.drawnComponents = this.componentLayer.size + this.floatingLayer.size;
   }

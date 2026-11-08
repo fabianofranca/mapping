@@ -1,0 +1,31 @@
+{
+  "format": "mapping-spec",
+  "formatVersion": 15,
+  "id": "icons",
+  "name": "Ícones de teste",
+  "version": 1,
+  "icons": "icons/set.json",
+  "layers": [
+    {
+      "id": "ui",
+      "name": "Interface",
+      "color": "#6750A4",
+      "annotationTypes": [
+        {
+          "id": "badge",
+          "name": "Selo",
+          "component": "components/badge.json",
+          "fields": [
+            {
+              "key": "icon",
+              "type": "enum",
+              "options": ["check", "close"],
+              "default": "check"
+            },
+            { "key": "tint", "type": "string", "default": "#0a7" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# Formato do componente (`mapping-component`, `formatVersion` 1, 2 e 3)
+# Formato do componente (`mapping-component`, `formatVersion` 1, 2, 3 e 4)
 
 O formato do arquivo que desenha um tipo de anotação: um **componente**. É para quem escreve um à mão ou gera um (a skill `spec-author` e os agentes). O componente vive dentro do pacote de uma biblioteca (ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Biblioteca: o pacote"); este documento descreve só o arquivo dele.
 
@@ -10,7 +10,7 @@ Arquivos de apoio:
 
 ## O que é um componente
 
-Um componente é o **desenho genérico** de um tipo de anotação: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto, caminho, slot, na `formatVersion` 2, `repeat` e, na 3, `image`) cujos atributos podem ser **ligados aos campos** do tipo por expressões. Trocar o valor de um campo redesenha o componente.
+Um componente é o **desenho genérico** de um tipo de anotação: uma árvore de primitivas neutras (quadro, retângulo, elipse, texto, caminho, slot, na `formatVersion` 2, `repeat`, na 3, `image` e, na 4, o traço com ponta, canto e lados, o layout com expressão, os limites `min`/`max` de tamanho, o `distribute` do `repeat` e o texto rico em `runs`) cujos atributos podem ser **ligados aos campos** do tipo por expressões. Trocar o valor de um campo redesenha o componente.
 
 - **Um arquivo por componente.** O tipo da especialização só o referencia, com a chave `component` (`"component": "components/button.json"`).
 - O caminho é **relativo ao arquivo da especialização**, com `/`, sem `..`, sem `/` no começo e sem unidade de disco, e termina em `.json`.
@@ -63,46 +63,48 @@ Um componente é o **desenho genérico** de um tipo de anotação: uma árvore d
 }
 ```
 
-| Propriedade     | Obrigatória | Descrição                                                                                                                                                                                                     |
-| --------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `format`        | sim         | Sempre `"mapping-component"`.                                                                                                                                                                                 |
-| `formatVersion` | sim         | `1`, `2` ou `3`. A `2` é a `1` mais o nó `repeat` (a tabela desenhada); a `3` é a `2` mais o nó `image`. `repeat` numa `1` e `image` numa `1` ou `2` são erro. As três são aceitas.                           |
-| `id`            | sim         | Texto no padrão `^[a-z0-9][a-z0-9-_]*$`.                                                                                                                                                                      |
-| `name`          | sim         | Nome exibido, não vazio.                                                                                                                                                                                      |
-| `description`   | não         | Texto de ajuda.                                                                                                                                                                                               |
-| `size`          | sim         | `{ width, height }`, números positivos (px). Tamanho **inicial** da instância e, sem `sizing`, o tamanho dos dois eixos na arrumação por tamanhos.                                                            |
-| `minSize`       | não         | `{ width, height }`, positivos e **não maiores** que `size`. Piso do redimensionamento e de todo tamanho calculado.                                                                                           |
-| `sizing`        | não         | `{ width?, height? }`: dimensionamento de uma instância **sem retângulo** (ver "Dimensionamento").                                                                                                            |
-| `preview`       | não         | Valores de exemplo dos campos (`chave` → texto, número ou `null`; num campo `table`, a lista das linhas), usados ao criar uma instância, no Catálogo e na prova de desenho. Os campos vêm do tipo, não daqui. |
-| `template`      | sim         | A raiz do desenho. Precisa ser um nó `frame`; ocupa o retângulo inteiro da instância.                                                                                                                         |
+| Propriedade     | Obrigatória | Descrição                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `format`        | sim         | Sempre `"mapping-component"`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `formatVersion` | sim         | `1`, `2`, `3` ou `4`. A `2` é a `1` mais o nó `repeat` (a tabela desenhada); a `3` é a `2` mais o nó `image`; a `4` é a `3` mais `stroke.cap`, `stroke.join` e `stroke.sides`, expressão em `layout.type`, `layout.align`, `layout.justify`, `width` e `height`, `minWidth`, `maxWidth`, `minHeight`, `maxHeight` e `repeat.distribute`. `repeat` numa `1`, `image` numa `1` ou `2` e as chaves da `4` numa menor são erro. A medição em duas passagens ("Dimensionamento") vale em todas as versões. As quatro são aceitas. |
+| `id`            | sim         | Texto no padrão `^[a-z0-9][a-z0-9-_]*$`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `name`          | sim         | Nome exibido, não vazio.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `description`   | não         | Texto de ajuda.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `size`          | sim         | `{ width, height }`, números positivos (px). Tamanho **inicial** da instância e, sem `sizing`, o tamanho dos dois eixos na arrumação por tamanhos.                                                                                                                                                                                                                                                                                                                                                                           |
+| `minSize`       | não         | `{ width, height }`, positivos e **não maiores** que `size`. Piso do redimensionamento e de todo tamanho calculado.                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `sizing`        | não         | `{ width?, height? }`: dimensionamento de uma instância **sem retângulo** (ver "Dimensionamento").                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `screen`        | não         | Só na `formatVersion` 4: desenha o componente em pixels de tela (ver "Pixels de tela: `screen` e `stroke.scale`").                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `preview`       | não         | Valores de exemplo dos campos (`chave` → texto, número ou `null`; num campo `table`, a lista das linhas), usados ao criar uma instância, no Catálogo e na prova de desenho. Os campos vêm do tipo, não daqui.                                                                                                                                                                                                                                                                                                                |
+| `template`      | sim         | A raiz do desenho. Precisa ser um nó `frame`; ocupa o retângulo inteiro da instância.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 Qualquer outra chave na raiz é problema (o formato é estrito).
 
 ## Nós do template
 
-Cada nó tem `type` (`frame`, `rect`, `ellipse`, `text`, `path`, `slot`, na `formatVersion` 2, `repeat` ou, na 3, `image`) e as chaves comuns abaixo. As chaves de cada tipo vêm depois. **Chave desconhecida é problema**, para que erro de digitação apareça.
+Cada nó tem `type` (`frame`, `rect`, `ellipse`, `text`, `path`, `slot`, na `formatVersion` 2, `repeat`, na 3, `image` ou, na 4, `icon`) e as chaves comuns abaixo. As chaves de cada tipo vêm depois. **Chave desconhecida é problema**, para que erro de digitação apareça.
 
-| Chave             | Descrição                                                                                                                                                                                                                                                                       |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`            | Nome do nó (aparece nos avisos e na árvore). Opcional.                                                                                                                                                                                                                          |
-| `visible`         | Expressão booleana (ver "Expressões e condições"). Nó invisível não ocupa lugar nem entra na arrumação. Padrão: visível.                                                                                                                                                        |
-| `opacity`         | Número de 0 a 1 (aceita expressão). Padrão 1.                                                                                                                                                                                                                                   |
-| `width`, `height` | Tamanho do nó (ver "Dimensionamento"): px, `"fill"`, `"hug"` ou `"NN%"`.                                                                                                                                                                                                        |
-| `anchors`         | `{ left?, right?, top?, bottom?, centerX?, centerY? }`. Só tem efeito quando o pai é um quadro com `layout: none`.                                                                                                                                                              |
-| `fill`            | Cor CSS (`#rrggbb`, `#rrggbbaa`, `rgba(...)`), `"none"` ou gradiente `{ "type": "linear", "angle": 90, "stops": [{ "offset": 0, "color": "#fff" }, …] }` (ao menos 2 paradas, `offset` de 0 a 1; 0° vai da esquerda para a direita e 90° de cima para baixo). Aceita expressão. |
-| `stroke`          | `{ color, width?, align?, dash? }`. `color` é obrigatório e aceita expressão; `width` padrão 1; `align` `inside` (padrão; `center` no `path`), `center` ou `outside`; `dash` é a lista de comprimentos. Cor `"none"` desliga.                                                   |
-| `shadow`          | `{ color, x?, y?, blur? }`. `color` é obrigatório (`"none"` desliga); `x` e `y` em px; `blur` maior ou igual a 0.                                                                                                                                                               |
-| `cornerRadius`    | Número maior ou igual a 0 ou lista de 4 (superior-esquerdo, superior-direito, inferior-direito, inferior-esquerdo). Aceita expressão. Vale em `frame` e `rect`.                                                                                                                 |
+| Chave                                            | Descrição                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                                           | Nome do nó (aparece nos avisos e na árvore). Opcional.                                                                                                                                                                                                                                                                        |
+| `visible`                                        | Expressão booleana (ver "Expressões e condições"). Nó invisível não ocupa lugar nem entra na arrumação. Padrão: visível.                                                                                                                                                                                                      |
+| `opacity`                                        | Número de 0 a 1 (aceita expressão). Padrão 1.                                                                                                                                                                                                                                                                                 |
+| `width`, `height`                                | Tamanho do nó (ver "Dimensionamento"): px, `"fill"`, `"hug"` ou `"NN%"`. Na `formatVersion` 4 aceitam expressão (ver "Dimensionamento").                                                                                                                                                                                      |
+| `minWidth`, `maxWidth`, `minHeight`, `maxHeight` | `formatVersion` 4. Limites do tamanho do nó, em px (número maior ou igual a 0; aceitam expressão). Valem em qualquer nó, depois de resolvido `fill`/`hug`/`%` (ver "Limites de tamanho").                                                                                                                                     |
+| `anchors`                                        | `{ left?, right?, top?, bottom?, centerX?, centerY? }`. Só tem efeito quando o pai é um quadro com `layout: none`.                                                                                                                                                                                                            |
+| `fill`                                           | Cor CSS (`#rrggbb`, `#rrggbbaa`, `rgba(...)`), `"none"` ou gradiente `{ "type": "linear", "angle": 90, "stops": [{ "offset": 0, "color": "#fff" }, …] }` (ao menos 2 paradas, `offset` de 0 a 1; 0° vai da esquerda para a direita e 90° de cima para baixo). Aceita expressão.                                               |
+| `stroke`                                         | `{ color, width?, align?, dash? }`. `color` é obrigatório e aceita expressão; `width` padrão 1; `align` `inside` (padrão; `center` no `path`), `center` ou `outside`; `dash` é a lista de comprimentos. Cor `"none"` desliga. Na `formatVersion` 4 aceita também `cap`, `join` e `sides` (ver "Traço: ponta, canto e lados"). |
+| `shadow`                                         | `{ color, x?, y?, blur? }`. `color` é obrigatório (`"none"` desliga); `x` e `y` em px; `blur` maior ou igual a 0.                                                                                                                                                                                                             |
+| `cornerRadius`                                   | Número maior ou igual a 0 ou lista de 4 (superior-esquerdo, superior-direito, inferior-direito, inferior-esquerdo). Aceita expressão. Vale em `frame` e `rect`.                                                                                                                                                               |
 
 ### `frame`
 
 O nó que agrupa. Os filhos ficam em `children` e se distribuem conforme o `layout`.
 
-| Chave      | Descrição                                                                                             |
-| ---------- | ----------------------------------------------------------------------------------------------------- |
-| `layout`   | `{ "type": "none" }` (padrão), `row` ou `column` (ver "Dimensionamento").                             |
-| `children` | Lista de nós.                                                                                         |
-| `clip`     | Recorta os filhos na caixa do quadro. Padrão `true` na raiz do template e `false` nos demais quadros. |
+| Chave      | Descrição                                                                                                                                                |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layout`   | `{ "type": "none" }` (padrão), `row` ou `column` (ver "Dimensionamento"). Na `formatVersion` 4, `type`, `align` e `justify` aceitam expressão.           |
+| `children` | Lista de nós.                                                                                                                                            |
+| `clip`     | Recorta os filhos na caixa do quadro (e o traço e a sombra dele, ver "Recorte da raiz"). Padrão `true` na raiz do template e `false` nos demais quadros. |
 
 ### `rect` e `ellipse`
 
@@ -110,11 +112,12 @@ Só as chaves comuns. `rect` aceita `cornerRadius`.
 
 ### `text`
 
-| Chave   | Descrição                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `text`  | Obrigatório. Texto ou número, ou expressão (`$field`, `$concat`…). Número vira texto; vazio vira texto vazio.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `color` | Cor do texto (aceita expressão). Padrão `#000000`; `"none"` esconde.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `font`  | `{ family?, size?, weight?, italic?, lineHeight?, letterSpacing?, align?, verticalAlign?, decoration? }`, todos aceitando expressão. Padrões: `size` 14, `weight` 400 (de 100 a 900), `italic` falso, `lineHeight` 1,2, `letterSpacing` 0, `align` `left`, `verticalAlign` `top`, `decoration` `none` (`underline` ou `line-through`). `lineHeight` até 3 é múltiplo do tamanho; acima disso é px. `family` é uma família (`Roboto`) ou uma pilha CSS (`system-ui, "Segoe UI", Roboto, sans-serif`): a pilha vale como está, um nome com espaço pode vir entre aspas (`"Segoe UI"`), e um nome genérico (`system-ui`, `monospace`) vale sozinho, sem aspas; uma fonte da biblioteca (`fonts`) entra se a pilha começa pelo nome dela. Valor que o CSS não aceita (aspas sem fechar, item vazio) gera **aviso** na validação e o texto cai em `sans-serif`. Sem `family`, o desenho usa `Inter`. |
+| Chave   | Descrição                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `text`  | Obrigatório, a menos que haja `runs` (um ou outro). Texto ou número, ou expressão (`$field`, `$concat`…). Número vira texto; vazio vira texto vazio.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `color` | Cor do texto (aceita expressão). Padrão `#000000`; `"none"` esconde.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `runs`  | `formatVersion` 4. Lista não vazia de trechos, no lugar de `text`: o texto rico, com peso, cor e caixa de fundo no meio da linha (veja "Texto rico: trechos e caixa em linha").                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `font`  | `{ family?, size?, weight?, italic?, lineHeight?, letterSpacing?, align?, verticalAlign?, decoration?, wrap?, ellipsis?, maxLines? }`, todos aceitando expressão. Padrões: `size` 14, `weight` 400 (de 100 a 900), `italic` falso, `lineHeight` 1,2, `letterSpacing` 0, `align` `left`, `verticalAlign` `top`, `decoration` `none` (`underline` ou `line-through`). `lineHeight` até 3 é múltiplo do tamanho; acima disso é px. Como no CSS, o px é a altura da linha como está (sem arredondar para cima) e o múltiplo é multiplicado pelo tamanho sem arredondar antes de multiplicar pelas linhas: 2 linhas de `lineHeight` 18,5 medem 37 e de 1,4 × 13, 36,4. `wrap`, `ellipsis` e `maxLines` são só da `formatVersion` 4 (veja "Texto de uma linha, reticências e `maxLines`"). `family` é uma família (`Roboto`) ou uma pilha CSS (`system-ui, "Segoe UI", Roboto, sans-serif`): a pilha vale como está, um nome com espaço pode vir entre aspas (`"Segoe UI"`), e um nome genérico (`system-ui`, `monospace`) vale sozinho, sem aspas; uma fonte da biblioteca (`fonts`) entra se a pilha começa pelo nome dela. Valor que o CSS não aceita (aspas sem fechar, item vazio) gera **aviso** na validação e o texto cai em `sans-serif`. Sem `family`, o desenho usa o token embutido `font-sans`, a fonte do tema do hospedeiro (a `Inter` fixa saiu; veja "Tokens de design (`$token`)"). **Aviso:** a largura de um texto sem `family` muda em relação às versões que usavam a `Inter`, e com ela o `hug`, a quebra de linha e o `texto maior que a caixa`; quem precisa de largura estável declara a `family`. |
 
 O texto **quebra linha** quando o nó tem largura definida (px, `fill` ou `%`) e **não quebra** quando a largura é `hug`. Sem `width` e `height`, o texto é `hug` nos dois eixos (todos os outros nós são `fill`).
 
@@ -167,6 +170,32 @@ Mostra uma imagem de uma URL `https://` (avatar, foto, logo cuja URL vem do dado
 
 Escala diferente nos dois eixos (caixa do nó com outra proporção que o `viewBox`) estica o ícone e gera um aviso.
 
+### `icon` (ícone do conjunto da biblioteca, `formatVersion` 4)
+
+Desenha um ícone do conjunto declarado em `icons` na especialização (`formatVersion` 15; ver `docs/SPEC-FORMAT.md`, "Conjunto de ícones"), no lugar de um `$switch` com todos os caminhos dentro do componente.
+
+```json
+{
+  "type": "icon",
+  "name": { "$field": "icone" },
+  "color": { "$token": "primary" },
+  "width": 24,
+  "height": 24
+}
+```
+
+| Chave         | Descrição                                                                                                                                    |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`        | Obrigatória. O nome do ícone no conjunto: texto ou expressão (`$field`, `$switch`…). É o nome do **ícone**: o nó `icon` não tem nome de nó.  |
+| `color`       | Cor do nó (expressão); padrão `#000000`. Pinta os caminhos sem cor própria e os que pedem a cor do nó (`fill` ou `stroke` `true`).           |
+| `strokeWidth` | Largura dos traços, em unidades do `viewBox` do ícone (expressão); troca a `width` de todos os caminhos com traço.                           |
+| comuns        | `visible`, `opacity`, `width`, `height` (`hug` = o `viewBox` do ícone), `minWidth`…, `anchors`, `fill`, `stroke`, `shadow` e `cornerRadius`. |
+
+- **Escala.** Os caminhos são desenhados no `viewBox` do ícone (o dele, senão o do conjunto) e escalados para a caixa do nó; proporção diferente estica e gera o aviso `ícone esticado: escala diferente nos dois eixos`. A largura do traço escala junto.
+- **Cor.** `color` pinta só o que não tem cor própria: `fill` ou `stroke` `true` e o caminho sem `fill` nem `stroke` usam a cor do nó; `fill`/`stroke` com uma cor própria a mantêm.
+- **Nome fora do conjunto.** No desenho (nome vindo de um campo, ou sem conjunto carregado) o nó vira o **reservado** e o aviso `ícone desconhecido: <nome>` acompanha. Um nome **literal** fora do conjunto é erro do `validate_library` (nível 2), e um campo `enum` ligado ao `name` com opção fora do conjunto é aviso (nível 3).
+- Numa `formatVersion` do componente menor que 4: `template.children[0].type: só é permitido com formatVersion 4`.
+
 ### `slot`
 
 O espaço reservado para outras instâncias: a **marcação filha** de uma marcação com este tipo é desenhada dentro do slot. Um componente com slot recebe marcações filhas dentro do slot.
@@ -201,13 +230,14 @@ Repete o desenho de **uma linha** por linha de um campo `table` do tipo: é como
 }
 ```
 
-| Chave       | Descrição                                                                                                                                                      |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `field`     | Obrigatório. A `key` do campo `table` do tipo cujas linhas se repetem.                                                                                         |
-| `template`  | Obrigatório. Um nó `frame`: o desenho de **uma** linha. Não pode ter `repeat` nem `slot` dentro.                                                               |
-| `direction` | `column` (padrão: as linhas se empilham) ou `row` (lado a lado).                                                                                               |
-| `gap`       | Espaço entre as linhas em px (aceita expressão sobre os campos do tipo). Padrão 0.                                                                             |
-| comuns      | Só `name`, `visible`, `opacity`, `width`, `height` e `anchors`. `fill`, `stroke`, `shadow` e `cornerRadius` não valem no `repeat` (o desenho é do `template`). |
+| Chave        | Descrição                                                                                                                                                      |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `field`      | Obrigatório. A `key` do campo `table` do tipo cujas linhas se repetem.                                                                                         |
+| `template`   | Obrigatório. Um nó `frame`: o desenho de **uma** linha. Não pode ter `repeat` nem `slot` dentro.                                                               |
+| `direction`  | `column` (padrão: as linhas se empilham) ou `row` (lado a lado).                                                                                               |
+| `distribute` | `formatVersion` 4. `"none"` (padrão) ou `"fill"`: com `fill`, o `repeat` ocupa o eixo do pai e as linhas dividem o eixo das linhas por igual (ver abaixo).     |
+| `gap`        | Espaço entre as linhas em px (aceita expressão sobre os campos do tipo). Padrão 0.                                                                             |
+| comuns       | Só `name`, `visible`, `opacity`, `width`, `height` e `anchors`. `fill`, `stroke`, `shadow` e `cornerRadius` não valem no `repeat` (o desenho é do `template`). |
 
 Como o `template` lê a linha:
 
@@ -216,6 +246,69 @@ Como o `template` lê a linha:
 - A tabela sem linhas (ou nula) desenha um quadro vazio. A ordem das linhas é a do campo.
 
 Como o `repeat` se dimensiona (é um quadro por baixo): `hug` no **eixo das linhas** (a altura em `column`, a largura em `row`) e `fill` no outro, a menos que `width` ou `height` digam outra coisa; e o `template` também é `hug` no eixo das linhas se não disser o contrário. Por isso a altura do componente acompanha o número de linhas **medido**, mas a caixa da marcação não cresce sozinha: linhas demais para a caixa saem cortadas (a raiz recorta) e o desenho avisa `conteúdo maior que a caixa` (a marcação ganha a pendência de que o componente não cabe). O `preview` do componente traz algumas linhas de exemplo, que o Catálogo e a prova de desenho usam.
+
+**`distribute: "fill"` (`formatVersion` 4).** Para uma lista que ocupa a altura que o pai lhe dá (e não a das linhas medidas), com as linhas de alturas iguais:
+
+- o `repeat` ocupa o eixo do pai, como um filho `fill` (a altura em `column`, a largura em `row`);
+- as linhas dividem o eixo das linhas **por igual**, depois de descontar os `gap`s: o `fill` do `template` nesse eixo (ou o eixo omitido) vale a fração; um valor explícito (px, `hug` ou `%`) no `template` ou no `repeat` fica como escrito, e as linhas `fill` dividem só o que sobra;
+- sem `distribute` (ou `"none"`), um `fill` no `template` no eixo das linhas continua valendo 0, com o aviso `fill dentro de hug vira 0`.
+
+```json
+{
+  "type": "repeat",
+  "field": "linhas",
+  "gap": 4,
+  "distribute": "fill",
+  "template": { "type": "frame", "layout": { "type": "row" }, "children": [] }
+}
+```
+
+`distribute` numa `formatVersion` menor que 4 é erro (`template.children[0].distribute: só é permitido com formatVersion 4`).
+
+### Traço: ponta, canto e lados (`formatVersion` 4)
+
+Na `formatVersion` 4 o `stroke` ganha três chaves. Todas aceitam expressão e só valem a partir da 4: numa versão menor o parser recusa com `<caminho da chave>: só é permitido com formatVersion 4` (ex.: `template.children[0].stroke.cap: só é permitido com formatVersion 4`).
+
+| Chave   | Descrição                                                                                                                                                                                                                |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cap`   | A ponta do traço (onde ele começa e termina, nas pontas das linhas tracejadas e dos lados de `sides`): `butt` (padrão), `round` ou `square`.                                                                             |
+| `join`  | O canto entre dois segmentos do traço: `miter` (padrão, ponta viva), `round` ou `bevel`.                                                                                                                                 |
+| `sides` | Lista não vazia, sem repetição, de `top`, `right`, `bottom` e `left`: só esses lados são traçados. Ausente, os quatro. Só em `frame` e `rect`; em `ellipse` e `path` é erro (`só vale em frame e rect (este é <tipo>)`). |
+
+- `sides` pode vir de uma expressão que devolve a lista (um `$switch` com uma lista por caso, por exemplo).
+- Com `cornerRadius` e lados parciais, o traço é **reto**: não há arco no canto.
+- Os lados pedidos têm a **mesma** cor, largura, `align` e `dash`. Cor ou largura diferentes por lado pedem **dois nós** (ver "Limites conhecidos").
+- O raster do servidor MCP (`get_marking_image`) respeita `cap`, `join` e `sides`.
+
+```json
+{
+  "type": "frame",
+  "name": "divisória",
+  "height": 48,
+  "stroke": { "color": "#CAC4D0", "width": 1, "sides": ["bottom"] }
+}
+```
+
+### Pixels de tela: `screen` e `stroke.scale` (`formatVersion` 4)
+
+`screen` é uma chave **da raiz do arquivo** (não de nó): `"screen": { "anchor": "top-left" }`. Com ela, o template é desenhado no `size` do componente em **pixels de tela**, em qualquer zoom (não escala com a imagem nem com o zoom), ancorado no ponto `anchor` do retângulo da marcação. A marcação continua em pixels da imagem; só o desenho tem tamanho fixo na tela, como os pinos de comentário.
+
+- `anchor`: `center` (padrão), `top-left`, `top`, `top-right`, `left`, `right`, `bottom-left`, `bottom` ou `bottom-right`. O ponto do desenho e o ponto do retângulo com o mesmo nome coincidem (no `center`, os centros).
+- O desenho pode passar do retângulo da marcação; por isso a pendência "não cabe" não é gerada em componente com `screen`.
+- O tamanho do desenho é sempre o `size` (o retângulo da marcação só diz **onde**); `sizing`, `minSize` e o redimensionar da marcação não mudam o tamanho do desenho.
+- Limite: o desenho em pixels de tela não é um nó de layout; as filhas de um `slot` continuam nos retângulos delas e não são arrumadas dentro dele.
+- `screen` com chave desconhecida ou `anchor` fora do conjunto é erro com caminho (`screen.anchor: esperava um de: …`). Numa `formatVersion` menor que 4: `screen: só é permitido com formatVersion 4`. Em nó filho, `screen` é chave desconhecida.
+
+`stroke.scale` (literal booleano, `formatVersion` 4): `true` (padrão) escala a largura do traço com o zoom, como o resto do desenho; `false` mantém a largura em **pixels de tela**, em qualquer zoom (um traço de 2 é 2 pixels a 50% e a 400%). Numa versão menor: `…stroke.scale: só é permitido com formatVersion 4`.
+
+### Recorte da raiz
+
+A raiz do template (e um quadro interno com `clip: true`) recorta os filhos na caixa da instância. Em **todas** as versões, o recorte inclui também a extensão do traço e da sombra do próprio quadro e dos filhos que passam da caixa **só** por traço ou sombra:
+
+- traço `outside` entra inteiro e `center`, pela metade (o `inside` já cabe na caixa);
+- sombra entra com o `blur` e o deslocamento (`x`, `y`), por lado.
+
+O **conteúdo** (formas e texto) continua recortado no retângulo da instância. Na cena, o recorte ampliado é `FrameNode.clipBox`, um retângulo local presente só quando maior que a caixa. O anel de um traço `outside` na raiz, que antes sumia, agora aparece.
 
 ## Dimensionamento
 
@@ -249,6 +342,18 @@ O cartão do Material 3 ocupa a largura da coluna em que está e tem a altura do
 | `"NN%"`  | Fração da **área de conteúdo** do pai (sem o padding).                                                                                                                                            |
 | ausente  | `hug` para texto e `fill` para todo o resto, nos dois eixos. Num pai `none`, um filho sem tamanho e sem âncoras ocupa o pai inteiro.                                                              |
 
+**Expressão em `width` e `height` (`formatVersion` 4).** O valor avaliado precisa ser um número finito maior ou igual a 0, um texto numérico puro (`"120"` vale 120 px), `"fill"`, `"hug"` ou `"NN%"`. Outro valor cai no padrão do tipo de nó (`hug` para texto, `fill` para o resto) e o motor avisa `valor inválido em width: <valor>` (ou `height`). Um literal inválido continua sendo erro da validação, em todas as versões.
+
+### Limites de tamanho: `minWidth`, `maxWidth`, `minHeight`, `maxHeight` (`formatVersion` 4)
+
+Quatro chaves em **qualquer** nó, em px (número maior ou igual a 0; aceitam expressão, e um valor que não é número finito maior ou igual a 0 conta como ausente). O limite é aplicado **depois** de resolvido o tamanho do nó (px, `%`, `hug` ou `fill`) e **antes** do `minSize` da instância.
+
+- **`fill` com `max` (ou `min`)** se comporta como no flexbox: o filho que bate no limite **congela** nele e a diferença é repartida entre os outros `fill` do mesmo pai. Dois `fill` lado a lado, um com `maxWidth: 100`, dão 100 px ao primeiro e **todo o resto** ao segundo.
+- **`min` maior que `max`** com literais é erro da validação (`template.children[1].minWidth: não pode ser maior que maxWidth`). Quando vem de expressão, vale o `min`.
+- **Texto `hug`** cortado pelo `maxWidth` quebra linha na largura cortada, e a altura é a das linhas resultantes.
+- **Na raiz** do template os limites só valem quando o componente é **medido** (eixo `hug`, por exemplo `sizing` numa tela sem retângulo); numa marcação com retângulo a raiz ocupa a caixa e os limites dela não mudam nada.
+- Numa versão menor que 4 as quatro chaves são erro (`só é permitido com formatVersion 4`).
+
 ### Layout de um quadro
 
 `layout.type` é `none` (padrão), `row` (filhos lado a lado) ou `column` (filhos empilhados).
@@ -260,9 +365,16 @@ O cartão do Material 3 ocupa a largura da coluna em que está e tem a altura do
 | `align`   | `start` (padrão), `center`, `end`, `stretch`                                              | Posição no eixo **cruzado**.                                          |
 | `justify` | `start` (padrão), `center`, `end`, `space-between`                                        | Posição no eixo **principal** (largura em `row`, altura em `column`). |
 
+**Expressão no layout (`formatVersion` 4).** `layout.type`, `layout.align` e `layout.justify` aceitam expressão (um `$switch` sobre um campo `enum` escolhe `row` ou `column`, por exemplo), em quadro e em slot. O valor resolvido precisa estar no conjunto da tabela acima; fora dele vale o padrão (`none`, `start`, `start`) e o motor avisa `valor inválido em layout.type: <valor>` (ou `layout.align`, `layout.justify`). Os literais continuam conferidos na validação, em todas as versões; expressão nessas chaves numa versão menor que 4 é erro (`só é permitido com formatVersion 4`). Com `type` literal `"none"`, só `type` vale no `layout`.
+
 Dentro de um template:
 
-- **`hug` num quadro**: o conteúdo é medido primeiro (com `fill` e `%` valendo 0) e o resultado vira o tamanho do quadro; depois `fill` e `%` são resolvidos contra ele. Só o `fill` no eixo **principal** de um quadro `hug` avisa (`fill dentro de hug vira 0`), porque ali o resultado é mesmo 0.
+- **`hug` num quadro, em duas passagens** (o `shrink-to-fit` do flexbox; vale em todas as versões do formato):
+  1. mede-se o conteúdo dentro do **limite que o quadro recebe do pai** (o conteúdo do pai, ou o limite que o próprio pai recebeu): um filho `fill` no eixo **cruzado** (ou num quadro `none`) contribui com o **menor** entre o limite e o que ele abraçaria dentro dele (um texto quebrado no limite, um quadro medido no limite) e um filho `"NN%"` com o limite × NN / 100. Sem limite conhecido, `fill` e `%` valem 0;
+  2. o resultado vira o tamanho do quadro; depois `fill` e `%` são resolvidos contra ele e o texto é medido **nessa largura**.
+
+  Assim, um texto `fill` numa coluna `hug` quebra em linhas de palavras, e o quadro tem a altura delas (antes, o texto era medido com largura 0 e quebrava letra a letra). O texto `hug` não muda: não quebra. Só o `fill` no eixo **principal** de um quadro `hug` avisa (`fill dentro de hug vira 0`), porque ali o resultado é mesmo 0. Um texto que, apesar disso, é medido com largura máxima 0 avisa `texto medido com largura 0: <nó>`.
+
 - **`fill` no eixo principal** divide o que sobra (conteúdo menos tamanhos fixos menos `gap`s) por igual entre os filhos `fill`; o que sobra nunca é negativo.
 - **`align: stretch`** estica o filho no eixo cruzado até a área de conteúdo (um `hug` com `stretch` vira `fill`); a posição `center` e `end` usa o tamanho do filho.
 - **`justify: space-between`** reparte a folga entre os filhos (com um filho só, não faz nada).
@@ -332,12 +444,13 @@ O teste que prova é `tests/model/components/layout.test.ts` (grupo "cartão do 
 
 Quase todo atributo aceita, no lugar de um literal, uma **expressão** sobre os campos da anotação.
 
-| Expressão                                                             | Resultado                                                                                                                            |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `{ "$field": "label", "default": "Botão" }`                           | O valor do campo. Se o campo está vazio (`null`, ausente ou só espaços), vale o `default`; sem `default`, vale o padrão do atributo. |
-| `{ "$if": <condição>, "then": …, "else": … }`                         | `then` se a condição vale; senão `else` (opcional; sem ele vale o padrão do atributo). `then` e `else` são expressões.               |
-| `{ "$switch": "variant", "cases": { "a": …, "b": … }, "default": … }` | O caso cujo nome é o valor do campo; `default` (opcional) se não há caso ou o campo está vazio.                                      |
-| `{ "$concat": ["R$ ", { "$field": "preco" }] }`                       | Só em texto: junta as partes (números viram texto).                                                                                  |
+| Expressão                                                             | Resultado                                                                                                                                                         |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{ "$field": "label", "default": "Botão" }`                           | O valor do campo. Se o campo está vazio (`null`, ausente ou só espaços), vale o `default`; sem `default`, vale o padrão do atributo.                              |
+| `{ "$if": <condição>, "then": …, "else": … }`                         | `then` se a condição vale; senão `else` (opcional; sem ele vale o padrão do atributo). `then` e `else` são expressões.                                            |
+| `{ "$switch": "variant", "cases": { "a": …, "b": … }, "default": … }` | O caso cujo nome é o valor do campo; `default` (opcional) se não há caso ou o campo está vazio.                                                                   |
+| `{ "$concat": ["R$ ", { "$field": "preco" }] }`                       | Só em texto: junta as partes (números viram texto).                                                                                                               |
+| `{ "$token": "primary" }`                                             | `formatVersion` 4. O valor do token da especialização no modo do desenho (veja "Tokens de design (`$token`)"). Só onde se espera cor, número ou família de fonte. |
 
 ```json
 {
@@ -362,18 +475,53 @@ Quase todo atributo aceita, no lugar de um literal, uma **expressão** sobre os 
 
 Uma expressão que cita um campo que o **tipo não declara** é erro do validador da biblioteca (o desenho não acha o valor); campo do tipo que o desenho não usa é aviso, **a menos que o `code` do tipo o use**: chave de `params` ou de `values`, o `field` de `variants` (ou dos casos dela) ou uma palavra inteira das `notes` (é o caso de `width`, `height`, `weight` e `contentDescription`, que viram modificador ou argumento no código e não mudam o desenho).
 
+### Tokens de design (`$token`, `formatVersion` 4)
+
+`{ "$token": "<nome>" }` lê um valor nomeado da chave `tokens` da especialização (a `formatVersion` 15 dela, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Tokens de design"). O motor troca cada `$token` pelo valor antes de desenhar, então o token vale em qualquer lugar onde a expressão vale, inclusive como resultado de `$switch` e `$if`.
+
+```json
+{
+  "type": "frame",
+  "fill": { "$token": "primary" },
+  "cornerRadius": { "$token": "radius-md" },
+  "padding": { "$token": "space-4" },
+  "children": [
+    {
+      "type": "text",
+      "text": { "$field": "label" },
+      "color": {
+        "$switch": "variant",
+        "cases": { "filled": { "$token": "on-primary" } },
+        "default": { "$token": "primary" }
+      },
+      "font": { "family": { "$token": "font-mono" }, "size": 14 }
+    }
+  ]
+}
+```
+
+- **Onde vale:** cor (`fill`, `color`, `stroke.color`, `shadow.color`, a cor de cada stop do gradiente, `background` e `color` de um trecho de `runs`), número (`gap`, `padding`, `font.size`, `font.weight`, `cornerRadius`, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `width`/`height`, `opacity`…) e família de fonte (`font.family`, `family` de um trecho). Em enum, booleano ou texto (`layout.type`, `visible`, `text`…) é o erro `$token só vale onde se espera cor, número ou família de fonte`.
+- **Versão:** só na `formatVersion` 4 do componente; nas versões 1 a 3 o erro é `só é permitido com formatVersion 4`, no caminho da chave. O nome segue `[a-z0-9][a-z0-9-]*` e o objeto não aceita outra chave.
+- **Tokens embutidos:** `font-sans` e `font-mono` (família) existem em toda biblioteca e valem a fonte do hospedeiro: a app usa o `--font-sans` e o `--font-mono` do tema, o visualizador usa a pilha dos tokens da app ou a opção `fonts` do `createViewer`, e o MCP usa `sans-serif`. A especialização pode redefini-los em `tokens.values`, e a definição dela vence a do hospedeiro. O texto sem `font.family` usa `font-sans`.
+- **Modo:** nesta versão o desenho usa sempre o **primeiro** modo de `tokens.modes`; um modo não declarado cai no primeiro, sem aviso. Ligar o modo (claro/escuro) ao projeto é trabalho da fase seguinte.
+- **Validação:** o `parseComponent` confere a forma e a posição e entrega a lista de `$token` do arquivo; o validador da biblioteca (`validate_library`, nível 2) cruza com os `tokens` da especialização e recusa o token inexistente (`o token "x" não existe nos tokens da especialização`) e o de tipo errado (`o token "primary" é cor, mas aqui se espera número`), com o caminho do nó (`template.children[0].fill`). Sem `tokens` na especialização, só os embutidos existem.
+
 ## Avisos do motor
 
 O motor **avisa**, não recorta nem recusa: conteúdo maior que o slot ou que a tela sai desenhado como pedido e o aviso acompanha. Os avisos são textos (em português) e vêm de três lugares.
 
 **Ao desenhar um componente** (`instantiate`):
 
-| Aviso                                             | Quando                                                                                                                                     |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `campo não informado: <chave>`                    | O template cita um campo que não está nos valores recebidos (o campo existe no tipo e o valor não veio).                                   |
-| `fill dentro de hug vira 0`                       | Um filho `fill` no eixo principal de um quadro `hug` (dentro de um template o `fill` vale 0).                                              |
-| `conteúdo maior que a caixa: <quadro>`            | Os filhos (tamanhos fixos mais `gap`s) passam do conteúdo do quadro no eixo principal, ou um filho fixo passa do conteúdo no eixo cruzado. |
-| `ícone esticado: escala diferente nos dois eixos` | A caixa de um `path` tem outra proporção que o `viewBox`.                                                                                  |
+| Aviso                                             | Quando                                                                                                                                                                                          |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `campo não informado: <chave>`                    | O template cita um campo que não está nos valores recebidos (o campo existe no tipo e o valor não veio).                                                                                        |
+| `fill dentro de hug vira 0`                       | Um filho `fill` no eixo principal de um quadro `hug` (dentro de um template o `fill` vale 0).                                                                                                   |
+| `texto medido com largura 0: <nó>`                | Um texto com largura definida (`fill` ou `%`) foi medido com largura máxima 0 (o pai não tem largura para ele); sai quebrado letra a letra.                                                     |
+| `valor inválido em <chave>: <valor>`              | Uma expressão de `layout.type`, `layout.align`, `layout.justify`, `width` ou `height` (`formatVersion` 4) resolveu fora do conjunto; vale o padrão.                                             |
+| `texto maior que a caixa: <nó>`                   | Um texto com largura e altura definidas quebra em mais linhas do que a altura comporta (tolerância de 1 px) e não tem `maxLines` nem `ellipsis` que o corte (`formatVersion` 4 ou não).         |
+| `conteúdo maior que a caixa: <quadro>`            | Os filhos (tamanhos fixos mais `gap`s) passam do conteúdo do quadro no eixo principal, ou um filho fixo passa do conteúdo no eixo cruzado (tolerância de 1 px quando entre os filhos há texto). |
+| `ícone esticado: escala diferente nos dois eixos` | A caixa de um `path` ou `icon` tem outra proporção que o `viewBox`.                                                                                                                             |
+| `ícone desconhecido: <nome>`                      | O `name` de um nó `icon` não está no conjunto de ícones da especialização (ou ela não declara `icons`): o nó vira o reservado (`formatVersion` 4).                                              |
 
 **Ao arrumar uma tela sem geometria** (`layoutScreen`; o texto leva o id da instância na frente):
 
@@ -390,12 +538,90 @@ O motor **avisa**, não recorta nem recusa: conteúdo maior que o slot ou que a 
 
 Os avisos não se repetem. A mesma regra vale na prova de desenho do validador da biblioteca (nível 3), onde cada aviso do motor vira um aviso do pacote.
 
+## Texto de uma linha, reticências e `maxLines`
+
+Na `formatVersion` 4, o `font` do nó `text` ganha três chaves (todas aceitam expressão, e `$field`/`$switch` valem como nas outras):
+
+| Chave      | Valores                    | Efeito                                                                                                                                                  |
+| ---------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrap`     | `"word"` (padrão) `"none"` | `"word"` quebra por palavra na largura da caixa. `"none"` é **uma linha por parágrafo**: o texto não quebra e passa da caixa (o recorte da raiz corta). |
+| `ellipsis` | `true` / `false` (padrão)  | O texto que não cabe termina em `…`: na largura, com `wrap: "none"`; na altura, depois de `maxLines` linhas.                                            |
+| `maxLines` | inteiro ≥ 1                | Número máximo de linhas. A última linha permitida leva o `…` (com `ellipsis`) ou é cortada (sem). Zero, negativo ou fracionário é erro.                 |
+
+A medida do texto (`hug`, quebra e a prova de desenho) recebe as três chaves e mede o que o desenho mostra: `wrap: "none"` mede uma linha só, e `maxLines` limita a altura a `maxLines` × a altura da linha.
+
+Numa `formatVersion` menor que 4 elas são erro (`template.children[0].font.wrap: só é permitido com formatVersion 4`, também com expressão).
+
+Quando as linhas quebradas passam da altura do nó e nada as corta (nem `maxLines` nem `ellipsis`), o desenho avisa `texto maior que a caixa: <nó>`, que entra na pendência "o componente não cabe" como o `conteúdo maior que a caixa`. Em ambos o excesso que **vem de texto** tem uma tolerância de 1 px por nó de texto (o DOM e o canvas diferem em frações de pixel).
+
+## Texto rico: trechos e caixa em linha
+
+Na `formatVersion` 4, o nó `text` aceita `runs` **no lugar de** `text`: uma lista não vazia de **trechos**, cada um com o seu estilo, que quebram linha juntos como um texto só. Serve para o negrito ou a cor no meio da frase e para o "chip" (uma caixa com fundo dentro da linha, como o rótulo `vencida` de uma fatura). Use `runs` em vez de trocar o rótulo por espaços e desenhar o chip por cima com outro nó: o chip acompanha o texto quando ele quebra ou muda de largura.
+
+Cada trecho é um objeto com `text` (obrigatório) e as chaves abaixo. Todas aceitam expressão, e o `text` do trecho aceita `$field`, `$concat` e as outras, avaliado como o `text` do nó (número vira texto, vazio vira texto vazio).
+
+| Chave        | Valores                                                             | Efeito                                                                                      |
+| ------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `text`       | texto, número ou expressão                                          | O texto do trecho. Obrigatório.                                                             |
+| `weight`     | 100 a 900                                                           | Sobrepõe o `font.weight` do nó.                                                             |
+| `italic`     | `true` / `false`                                                    | Sobrepõe o `font.italic` do nó.                                                             |
+| `family`     | família ou pilha CSS                                                | Sobrepõe o `font.family` do nó (família ou pilha CSS, como no `font`).                      |
+| `size`       | número                                                              | Sobrepõe o `font.size` do nó. A altura de linha do trecho escala com ele (veja abaixo).     |
+| `decoration` | `none`, `underline`, `line-through`                                 | Sobrepõe o `font.decoration` do nó.                                                         |
+| `color`      | cor CSS                                                             | Sobrepõe o `color` do nó.                                                                   |
+| `background` | cor CSS                                                             | **Faz do trecho um chip**: uma caixa em linha com esse fundo. Sem ele, o trecho é só texto. |
+| `radius`     | número maior ou igual a 0                                           | Raio do canto do chip. Só vale com `background`. Padrão 0.                                  |
+| `padding`    | número, ou `[vertical, horizontal]` (números maiores ou iguais a 0) | O respiro do chip: um número vale nos dois eixos. Só vale com `background`. Padrão 0.       |
+
+Exemplo, uma fatura com o mês em negrito e um chip vermelho no fim da linha:
+
+```json
+{
+  "type": "text",
+  "name": "aviso",
+  "width": "fill",
+  "color": "#1D1B20",
+  "font": { "size": 14, "lineHeight": 20 },
+  "runs": [
+    { "text": "Fatura de " },
+    { "text": { "$field": "mes" }, "weight": 700 },
+    { "text": " " },
+    {
+      "text": "vencida",
+      "color": "#FFFFFF",
+      "background": "#B3261E",
+      "radius": 8,
+      "padding": [2, 6]
+    }
+  ]
+}
+```
+
+**O que é do nó e o que é do trecho.** O nó dá a base: o `font` e o `color`. O trecho sobrepõe só `weight`, `italic`, `family`, `size`, `decoration` e `color`. `lineHeight`, `letterSpacing`, `align`, `verticalAlign`, `wrap`, `ellipsis` e `maxLines` são **só do nó** e valem para todos os trechos (não existem no trecho: chave desconhecida).
+
+**Quebra de linha.** Os trechos quebram **como um texto só, pela palavra**, e não um trecho por linha:
+
+- As oportunidades de quebra são os **espaços dos trechos sem fundo** e as **bordas de um chip**. Uma palavra que atravessa trechos sem espaço entre eles (`"Pa"` e `"gar"`) é uma palavra só: o negrito no meio da palavra não a parte.
+- `\n` num trecho sem fundo quebra a linha; num chip vira espaço.
+- Um espaço no começo da linha é **descartado** num trecho sem fundo e **mantido** num chip (o chip desenha o texto inteiro, com o espaço inicial dentro do respiro). Espaço no fim da linha não conta na largura.
+
+**O chip.** É um átomo inquebrável: a largura é a do texto mais 2·h (o `padding` horizontal) e a altura é a altura de linha do trecho mais 2·v (o vertical). Se não cabe no resto da linha, vai **inteiro** para a de baixo; se é maior que a linha inteira, fica sozinho na linha e passa da largura (nunca quebra por dentro). Componente da biblioteca dentro da linha não existe: o chip é um trecho, não um nó.
+
+**Altura da linha.** A altura de linha de um trecho é a `lineHeight` do nó vezes o tamanho do trecho sobre o tamanho do nó (um trecho com `size` 21 num nó de 14 e `lineHeight` 20 tem linha de 30). Cada linha tem a maior altura entre a do nó e a dos pedaços dela; o chip conta com o respiro vertical (um chip com `padding` `[2, 6]` numa linha de 20 faz a linha de 24). Os pedaços ficam **centrados verticalmente** na linha, não alinhados pela linha de base (veja "Limites conhecidos").
+
+**Reticências e linhas máximas.** `wrap`, `ellipsis` e `maxLines` do nó valem para o texto rico. `ellipsis` tira caracteres do fim do último pedaço de texto da linha (corta no meio de um trecho, se preciso; um chip sai inteiro, nunca cortado) e o `…` usa a fonte desse pedaço.
+
+Numa `formatVersion` menor que 4, `runs` é erro (`template.children[0].runs: só é permitido com formatVersion 4`). Outros erros: `text` e `runs` juntos (`template.children[0]: text e runs juntos: use um ou outro`), `runs` vazio ou que não é lista (`template.children[0].runs: esperava lista não vazia de trechos`), trecho sem `text` (`template.children[0].runs[0].text: campo obrigatório`) e chave desconhecida no trecho (`template.children[0].runs[1].bogus: chave desconhecida: bogus`).
+
 ## Medida do texto
 
 `hug`, quebra de linha e a altura de um texto dependem da **medida do texto**, que o motor recebe de fora (uma função `TextMeasurer`). Há duas:
 
-- **Real**, no navegador: o Konva mede o texto com a fonte carregada. É o `konvaMeasurer`, usado pela app e pelo visualizador.
-- **Aproximada**, no Node (e nos testes): `approximateMeasurer`, sem canvas. Largura ≈ 0,55 × o tamanho da fonte por caractere (0,6 se o peso é 600 ou mais) mais o espaçamento entre letras; altura = número de linhas × altura de linha; com largura máxima, quebra por palavras.
+- **Real**, no navegador: o Konva mede o texto com a fonte carregada. É o `konvaMeasurer`, usado pela app e pelo visualizador. A altura de linha segue o CSS (veja `lineHeight` em "Nós"): o teste do Chromium (`tests/e2e/textMetrics.spec.ts`) confere que o canvas e o DOM medem a mesma altura (2 linhas de `lineHeight` 18,5 px = 37).
+- **Fonte livre, no servidor MCP**: `createMeasurer` (`mcp/image/textMeasurer.ts`) mede com o `opentype.js` e a fonte embutida (Mapping Sans e Mono, regular e negrito) ou a `fonts` da biblioteca, com kerning e `letterSpacing`; `render_marking`/`render_container` desenham as letras com a mesma fonte, então medida e desenho andam juntos. Sem a fonte do componente (fonte do sistema da app), a largura é a da fonte livre, não a da app.
+- **Aproximada**, no Node (e nos testes do modelo): `approximateMeasurer`, sem canvas. Largura ≈ 0,55 × o tamanho da fonte por caractere (0,6 se o peso é 600 ou mais) mais o espaçamento entre letras; altura = número de linhas × altura de linha; com largura máxima, quebra por palavras; respeita `wrap`, `ellipsis` e `maxLines` e devolve as linhas já cortadas (`lines`).
+
+O texto rico (`runs`) usa a mesma medida: o layout dos trechos mede cada pedaço de uma linha com o medidor, na fonte do trecho, e **o mesmo layout** serve à medida do `hug`, à prova de desenho do validador e ao desenho. Por isso a altura de um texto `hug` com `runs` é a soma das linhas (com a altura do chip) e a largura é a da linha mais larga. O servidor MCP também desenha o texto rico com letras (`render_marking`, `render_container` e o `get_marking_image` de container sem arquivo), com a fonte livre embutida.
 
 Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validador da biblioteca, no servidor MCP ou na skill) deve entender que o texto foi medido pela aproximação: um aviso de "conteúdo maior que a caixa" pode sumir, ou aparecer só em outro tamanho, quando o navegador medir com a fonte de verdade. O aviso é um sinal para olhar, não uma sentença. E o contrário também vale: sem o aviso, o navegador pode medir um pouco mais largo.
 
@@ -409,7 +635,7 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 ```
 
 - `errors[i]` é `"caminho: mensagem"` (ou só a mensagem quando o caminho é vazio), com o caminho JSON do problema: `template.children[1].text: esperava texto ou número`.
-- O formato é **estrito**: chave desconhecida em qualquer nó, expressão, estilo ou na raiz é problema (`chave desconhecida: <chave>`). Outros problemas: `format`/`formatVersion` errados (`esperava 1, 2 ou 3`), `image` numa `formatVersion` menor que 3 (`o nó image só existe na formatVersion 3`), `src` fora da regra do nó `image`, `width`/`height` `hug` no `image`, `repeat` numa `formatVersion` 1 (`o nó repeat só existe na formatVersion 2`, no caminho do nó), `repeat` sem `field` ou sem `template`, `repeat` ou `slot` dentro de um `repeat`, `id` fora do padrão, `size`/`minSize` inválidos, `minSize` maior que `size`, raiz do template que não é `frame`, `children` ou `layout` num nó que não é quadro (o `slot` aceita `layout`), tamanho de nó fora de `número`/`fill`/`hug`/`NN%`, expressão com mais de um operador, condição sem operador, peso de fonte fora de 100 a 900, cor vazia.
+- O formato é **estrito**: chave desconhecida em qualquer nó, expressão, estilo ou na raiz é problema (`chave desconhecida: <chave>`). Outros problemas: `format`/`formatVersion` errados (`esperava 1, 2, 3 ou 4`), `image` numa `formatVersion` menor que 3 (`o nó image só existe na formatVersion 3`), `src` fora da regra do nó `image`, `width`/`height` `hug` no `image`, `repeat` numa `formatVersion` 1 (`o nó repeat só existe na formatVersion 2`, no caminho do nó), o nó `icon`, `runs`, `stroke.cap`, `stroke.join` ou `stroke.sides`, `font.wrap`, `font.ellipsis` ou `font.maxLines` (`font.maxLines` que não é inteiro maior ou igual a 1: `esperava inteiro maior ou igual a 1`), `minWidth`, `maxWidth`, `minHeight`, `maxHeight`, `repeat.distribute` ou expressão em `layout.type`, `layout.align`, `layout.justify`, `width` ou `height` numa `formatVersion` menor que 4 (`só é permitido com formatVersion 4`, no caminho da chave), `text` e `runs` juntos no mesmo nó (`text e runs juntos: use um ou outro`, no caminho do nó), `runs` vazio ou que não é lista (`esperava lista não vazia de trechos`), trecho sem `text` ou com chave desconhecida, `padding` ou `radius` do trecho negativo, `min` literal maior que o `max` do mesmo eixo (`<nó>.minWidth: não pode ser maior que maxWidth`), `minWidth`, `maxWidth`, `minHeight` ou `maxHeight` negativo ou que não é número (`esperava número maior ou igual a 0`), `distribute` fora de `none`/`fill`, `sides` vazio, repetido ou fora de `top`/`right`/`bottom`/`left`, `sides` em `ellipse` ou `path`, `repeat` sem `field` ou sem `template`, `repeat` ou `slot` dentro de um `repeat`, `id` fora do padrão, `size`/`minSize` inválidos, `minSize` maior que `size`, raiz do template que não é `frame`, `children` ou `layout` num nó que não é quadro (o `slot` aceita `layout`), tamanho de nó fora de `número`/`fill`/`hug`/`NN%`, expressão com mais de um operador, condição sem operador, peso de fonte fora de 100 a 900, cor vazia.
 - `parseComponentText(texto)` lê o texto JSON (JSON inválido vira um problema de caminho vazio) e `validateComponent(json)` devolve só a lista `string[]`.
 - `docs/component.schema.json` espelha a estrutura (para editores e geradores); ele **não** substitui o parser, e o código é a fonte da verdade.
 - O **validador da biblioteca** (`src/model/library.ts`, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Validação da biblioteca") roda o `parseComponent` em cada componente do pacote e confere o que depende de mais de um arquivo (o campo citado pelo desenho existe no tipo, o `slot` declarado existe no template; num `repeat`, o `field` é uma `table` do tipo e cada chave citada no `template` é coluna dela ou campo do tipo; o `preview` de uma `table` é uma lista de linhas com colunas que existem).
@@ -418,8 +644,14 @@ Quem lê um aviso terminado em **`(aproximado)`** (a prova de desenho do validad
 
 - **Um slot por componente.** Os filhos de uma instância vão sempre para o primeiro slot do template (busca em profundidade). Vários slots ficam para depois.
 - **Imagem só remota e só no nó `image`.** O arquivo do componente não carrega bitmap; a imagem vem de uma URL `https://` (um campo `string`) e não é gravada no projeto. Imagem local no pacote fica para depois (por isso o caminho relativo é recusado no `src`). Elipse e caminho não aceitam imagem como preenchimento.
-- **`formatVersion` 1, 2 e 3.** A 2 acrescenta só o `repeat`, a 3 só o `image`, e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
+- **`formatVersion` 1, 2, 3 e 4.** A 2 acrescenta só o `repeat`, a 3 só o `image`, a 4 só `stroke.cap`, `stroke.join` e `stroke.sides`, `font.wrap`, `font.ellipsis` e `font.maxLines`, a expressão no layout e no tamanho, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `repeat.distribute`, `runs` (o texto rico), `$token` (os tokens de design) e o nó `icon` (o conjunto de ícones) (a medição em duas passagens vale em todas), e as anteriores continuam aceitas sem mudança. Mudar o formato do componente pede uma versão nova e a decisão de aceitar as antigas.
 - Gradiente só `linear`; sombra só uma por nó; borda uma por nó.
 - Listas que viram campos numerados (`label1`, `label2`…) são frágeis: para um dado em forma de tabela (os eventos de uma tela, as propriedades de uma chamada), declare um campo `table` e desenhe-o com `repeat`. Os componentes do Material 3 (a barra de navegação, a folha com N itens) ainda usam campos numerados.
-- O `repeat` não aninha (uma `table` não tem `table` dentro) e não mede a tabela para crescer a marcação: a caixa é da marcação. Um desenho de linha com colunas de largura alinhada entre linhas (uma grade) precisa de larguras fixas ou em `%`; `hug` mede cada linha à parte.
+- O `repeat` não aninha (uma `table` não tem `table` dentro) e não mede a tabela para crescer a marcação: a caixa é da marcação. Um desenho de linha com colunas de largura alinhada entre linhas (uma grade) precisa de larguras fixas ou em `%`; `hug` mede cada linha à parte. Para linhas de alturas iguais que ocupam o espaço do pai, use `distribute: "fill"` (`formatVersion` 4).
+- **`fill` no eixo principal de um pai `hug` continua valendo 0** (com o aviso `fill dentro de hug vira 0`): não há de onde tirar o tamanho. O que a medição em duas passagens resolve é o `fill` e o `%` no eixo **cruzado**, como um texto que quebra numa coluna `hug`.
 - A medida do texto no Node é aproximada (ver acima).
+- **Sombra interna não existe.** `shadow` é sempre externa; para um efeito de fundo afundado, desenhe um nó a mais.
+- **`stroke.sides` com cor ou largura por lado.** Os lados pedidos compartilham cor, largura, `align` e `dash`; para valores diferentes por lado, use dois nós (cada um com os seus `sides`).
+- **Texto rico não alinha pela linha de base.** Os pedaços de uma linha (texto de tamanhos diferentes e chips) ficam centrados verticalmente na linha. Com trechos de `size` bem diferentes, as letras podem não encostar na mesma linha de base; para um destaque grande, prefira um chip ou um nó à parte.
+- **Componente da biblioteca dentro da linha de texto não existe.** O chip é um trecho com fundo (texto, cor, raio e respiro), não um nó: um ícone ou outro componente no meio do texto pede um quadro `row` com nós vizinhos.
+- **A imagem do MCP não é a da app.** `render_marking` e `render_container` desenham com a fonte livre embutida (ou a `fonts` da biblioteca): a largura do texto difere da fonte do sistema da app, então uma quebra de linha pode cair em outro lugar. O gradiente vale a primeira cor, a imagem remota vira um reservado e a sombra não tem `spread` nem versão interna.

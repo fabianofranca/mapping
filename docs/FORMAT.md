@@ -1,4 +1,4 @@
-# Formato do `mapping.json` (schema v17)
+# Formato do `mapping.json` (schema v18)
 
 O projeto é uma pasta (ou um zip com o mesmo conteúdo) com `mapping.json`, `images/` (os arquivos de imagem dos containers) e,
 se houver especializações aplicadas, `specs/` (e, se houver propostas de alteração, `proposals/`). Todas as coordenadas das marcações são
@@ -34,7 +34,7 @@ por projeto). A pasta `backups/` não faz parte do projeto: o zip exportado não
 
 ```json
 {
-  "schemaVersion": 17,
+  "schemaVersion": 18,
   "revision": 0,
   "app": "mapping",
   "coordinateSystem": "image-pixels-exif-oriented",
@@ -98,7 +98,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 
 | Campo              | Tipo    | Descrição                                                                    |
 | ------------------ | ------- | ---------------------------------------------------------------------------- |
-| `schemaVersion`    | `17`    | Versão do schema.                                                            |
+| `schemaVersion`    | `18`    | Versão do schema.                                                            |
 | `revision`         | inteiro | Contador de gravações (v6, ver abaixo).                                      |
 | `app`              | string  | Sempre `"mapping"` (a leitura aceita também `"mapeador-imagens"`).           |
 | `coordinateSystem` | string  | Sempre `"image-pixels-exif-oriented"`: pixels da imagem, EXIF aplicado.      |
@@ -106,6 +106,7 @@ como `M1` nos exemplos também valem). Cores são `#RRGGBB`.
 | `specializations`  | array   | Especializações aplicadas (ver v4).                                          |
 | `platformRepos`    | objeto  | Clone local de cada plataforma (v7; só `localPath` desde a v11, ver abaixo). |
 | `docRepos`         | objeto  | Clone local de cada repositório de documentos (v14, ver "Campos da v14").    |
+| `drawingMode`      | string  | Modo do desenho do projeto (v18, opcional, ver "Campos da v18").             |
 | `layers`           | array   | Camadas, **globais** (valem para todos os containers), na ordem de exibição. |
 | `containers`       | array   | Containers do projeto (v12; antes `images`).                                 |
 | `markings`         | array   | Marcações retangulares (de um container ou do canvas, v13).                  |
@@ -121,7 +122,8 @@ no projeto; `null` no container sem arquivo, v10: ver abaixo); `width` e `height
 `placement` (`{ x, y, scale }` — posição e escala da imagem no canvas, só para a interface);
 `parentId` (v13: `null` ou a marcação do canvas que envolve o container, calculado pela app; ver abaixo);
 `markingColor` (`null` ou cor); `locked` (booleano, v5: ver abaixo); `source` (`null` ou origem, v8:
-ver abaixo); `background` (`null` ou cor `#RRGGBB`, v10: a cor de fundo do container sem arquivo).
+ver abaixo); `background` (`null` ou cor `#RRGGBB`, v10: a cor de fundo do container sem arquivo);
+`drawingMode` (v18, opcional: o modo do desenho que o container fixa; ver "Campos da v18").
 
 **`markings[]`**: `id`; `containerId` (v12; antes `imageId`; `null` na marcação do canvas, v13); `parentId` (marcação-pai ou `null`,
 calculado pela app desde a v13); `name` (`string` ou `null`);
@@ -150,7 +152,7 @@ arquivo ao ler.
 - Ids únicos em cada coleção; `file` único entre as imagens que têm arquivo; `file` das especializações único.
 - Container (v12): `file` é `null` se, e somente se, `background` é uma cor (`container-content`).
 - Toda marcação tem `containerId` nulo (marcação do canvas, v13) ou de um container existente; `parentId`, se houver, é uma marcação existente.
-- `rect`: inteiros, largura e altura **≥ 8 px**; na marcação de container, **inteiramente dentro** da imagem (`0 ≤ x`,
+- `rect`: inteiros, largura e altura **≥ 1 px** (ao abrir, qualquer marcação vale a partir de 1 px; abaixo disso é `rect-too-small`; os gestos e o MCP exigem 8 px numa marcação comum, ver "Campos da v18"); na marcação de container, **inteiramente dentro** da imagem (`0 ≤ x`,
   `x + width ≤ width da imagem`; idem para `y`); na marcação do canvas, sem limite de posição.
 - A marcação-pai está **no mesmo espaço** (o mesmo container, ou o canvas) e **contém** o `rect` da filha. Não há ciclos.
 - Pertencimento (v13): ver "Campos da v13 (pertencimento)"; o `parentId` do container e a marcação flutuante têm regras próprias.
@@ -1015,6 +1017,35 @@ o número. Um app anterior recusa o arquivo v17 como "versão mais nova", em vez
 Só `schemaVersion` muda para 17; nenhum dado é alterado. Como em toda migração, o original vai para
 `backups/` antes da primeira gravação e a faixa da migração aparece no topo.
 
+## Campos da v18 (modo do desenho)
+
+A v18 acrescenta o **modo do desenho**, que escolhe o modo dos `tokens` das especializações (`light`, `dark`…;
+ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), `formatVersion` 15) com que os componentes são desenhados. Ele não
+depende do tema claro/escuro da interface.
+
+- **`drawingMode` na raiz** (string, opcional): o modo do projeto. Ausente, cada especialização usa o seu
+  **primeiro modo**.
+- **`containers[].drawingMode`** (string, opcional): o modo que o container fixa. Ausente, o container **segue o
+  projeto**. A marcação do canvas (`containerId` nulo) segue sempre o projeto. O modo efetivo de uma marcação é o
+  do seu container, se ele fixa um; senão o do projeto.
+- **`null` no container** é lido como ausente e **não é gravado**; o campo só aparece no arquivo quando tem valor.
+- **Nome:** o mesmo padrão dos modos da especialização (`^[a-z0-9][a-z0-9-]*$`).
+- **Modo não declarado:** um modo que nenhuma especialização do projeto declara em `tokens.modes` continua
+  gravado, e o desenho cai no primeiro modo daquela especialização; o **Diagnóstico** avisa. O arquivo não é
+  recusado.
+
+- **Tamanho mínimo da marcação:** a marcação com anotação de um tipo **com componente** vale a partir de **1 px** por lado
+  (o `minSize` do componente, se houver, continua mandando nos gestos e no MCP); a marcação comum mantém **8 px** nos
+  gestos e no MCP. A **leitura do arquivo** aceita qualquer marcação de 1 px ou mais, com ou sem componente: a invariante
+  `rect-too-small` só vale abaixo de 1 px. Nenhum campo novo e nenhuma migração.
+
+Um app anterior recusa o arquivo v18 como "versão mais nova", em vez de ignorar o modo e desenhar errado.
+
+### Migração v17 → v18
+
+Só `schemaVersion` muda para 18; nenhum dado é alterado (nenhum modo é criado). Como em toda migração, o original
+vai para `backups/` antes da primeira gravação e a faixa da migração aparece no topo.
+
 ## Migração
 
 Arquivos v1 são migrados ao abrir: toda imagem recebe `name: null` e toda anotação recebe
@@ -1025,7 +1056,7 @@ imagem e em cada marcação. Arquivos v5 recebem `revision: 0`. Arquivos v6 rece
 Arquivos v7 recebem `source: null` em cada imagem e em cada marcação. Arquivos v8 perdem os valores dos
 campos `codeRef`, pelo tipo declarado na cópia da especialização (ver "Campos da v9"). Arquivos v9
 recebem `background: null` em cada imagem (ver "Campos da v10"). Arquivos v10 perdem o `urlTemplate` de
-cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Arquivos v15 ganham `project.id` (um UUID novo), `perspectives: []` e `arrivals: []` (ver "Campos da v16"). Arquivos v16 só sobem o número (ver "Campos da v17"). Ao salvar, o
-arquivo passa a ser v17 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
+cada entrada de `platformRepos`, e a entrada que só o tinha sai (ver "Campos da v11"). Arquivos v11 trocam `images` por `containers` e `imageId` por `containerId` (ver "Campos da v12"). Arquivos v12 perdem `inherit` de cada anotação e ganham `floating: false` em cada marcação, `parentId: null` em cada container e `arrows: []` na raiz (ver "Campos da v13"). Arquivos v13 ganham `parentRole: null` em cada anotação e `docRepos: {}` na raiz (ver "Campos da v14"). Arquivos v14 só sobem o número (ver "Campos da v15"). Arquivos v15 ganham `project.id` (um UUID novo), `perspectives: []` e `arrivals: []` (ver "Campos da v16"). Arquivos v16 só sobem o número (ver "Campos da v17"). Arquivos v17 só sobem o número (ver "Campos da v18"). Ao salvar, o
+arquivo passa a ser v18 (e, no modo pasta, o original vai antes para `backups/`, como em qualquer
 migração).
 Arquivos de versão mais nova abrem somente para leitura.

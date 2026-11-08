@@ -13,6 +13,7 @@
  * `layout` que diz como os filhos se distribuem (`none` com âncoras, `row` ou `column`), para o
  * desenho se adaptar ao tamanho do retângulo.
  */
+import type { IconSet } from './icons';
 
 export const COMPONENT_FORMAT = 'mapping-component';
 /** Versão em que os componentes sem `repeat` são escritos (os geradores do repositório a gravam). */
@@ -24,8 +25,14 @@ export const COMPONENT_FORMAT_VERSION_REPEAT = 2;
  * aceitas sem mudança (e o `repeat` vale na 2 e na 3).
  */
 export const COMPONENT_FORMAT_VERSION_IMAGE = 3;
+/**
+ * A versão 4 (etapa "componentes fiéis") reúne as chaves novas do arquivo: `stroke.cap`,
+ * `stroke.join` e `stroke.sides` já aqui. Toda chave da v4 numa versão anterior é o erro
+ * `só é permitido com formatVersion 4`, no caminho da chave.
+ */
+export const COMPONENT_FORMAT_VERSION_FIDELITY = 4;
 /** Versões aceitas. */
-export const COMPONENT_FORMAT_VERSIONS = [1, 2, 3] as const;
+export const COMPONENT_FORMAT_VERSIONS = [1, 2, 3, 4] as const;
 export type ComponentFormatVersion = (typeof COMPONENT_FORMAT_VERSIONS)[number];
 
 // ---------------------------------------------------------------------------------------
@@ -74,7 +81,9 @@ export type Expr<T> =
       readonly default?: Expr<T>;
     }
   /** Só para texto: concatena as partes (números viram texto). */
-  | { readonly $concat: readonly Expr<string | number>[] };
+  | { readonly $concat: readonly Expr<string | number>[] }
+  /** Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). */
+  | { readonly $token: string };
 
 // ---------------------------------------------------------------------------------------
 // Estilo
@@ -87,7 +96,7 @@ export interface GradientSpec {
   readonly type: 'linear';
   /** Ângulo em graus (0 = da esquerda para a direita, 90 = de cima para baixo). */
   readonly angle: number;
-  readonly stops: readonly { readonly offset: number; readonly color: Color }[];
+  readonly stops: readonly { readonly offset: number; readonly color: Expr<Color> }[];
 }
 
 export type FillSpec = Color | GradientSpec;
@@ -97,7 +106,21 @@ export interface StrokeSpec {
   readonly width?: Expr<number>;
   readonly align?: 'inside' | 'center' | 'outside';
   readonly dash?: readonly number[];
+  /** Ponta do traço (v4); o padrão é `butt`. */
+  readonly cap?: Expr<'butt' | 'round' | 'square'>;
+  /** Canto do traço (v4); o padrão é `miter`. */
+  readonly join?: Expr<'miter' | 'round' | 'bevel'>;
+  /** Só estes lados têm traço (v4, em `frame` e `rect`); ausente = os quatro. */
+  readonly sides?: Expr<readonly StrokeSide[]>;
+  /**
+   * Largura do traço (v4, literal): `true` (padrão) escala com o zoom; `false` mantém a largura
+   * em pixels de tela, em qualquer zoom.
+   */
+  readonly scale?: boolean;
 }
+
+export type StrokeSide = 'top' | 'right' | 'bottom' | 'left';
+export const STROKE_SIDES: readonly StrokeSide[] = ['top', 'right', 'bottom', 'left'];
 
 export interface ShadowSpec {
   readonly color: Expr<Color>;
@@ -118,6 +141,12 @@ export interface FontSpec {
   readonly align?: Expr<'left' | 'center' | 'right'>;
   readonly verticalAlign?: Expr<'top' | 'middle' | 'bottom'>;
   readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
+  /** `word` (padrão) quebra por palavra; `none` é uma linha por parágrafo. Só formatVersion 4. */
+  readonly wrap?: Expr<'word' | 'none'>;
+  /** Texto que não cabe termina em `…` (largura com `wrap: none`; altura com `maxLines`). Só v4. */
+  readonly ellipsis?: BoolExpr;
+  /** Máximo de linhas (inteiro ≥ 1); a última leva o `…` (com `ellipsis`) ou é cortada. Só v4. */
+  readonly maxLines?: Expr<number>;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -142,20 +171,28 @@ export interface Anchors {
   readonly centerY?: boolean;
 }
 
-export type LayoutSpec =
-  | { readonly type: 'none' }
-  | {
-      readonly type: 'row' | 'column';
-      readonly gap?: Expr<number>;
-      /** Um valor, [vertical, horizontal] ou [cima, direita, baixo, esquerda]. */
-      readonly padding?: Expr<
-        number | readonly [number, number] | readonly [number, number, number, number]
-      >;
-      /** No eixo cruzado. */
-      readonly align?: 'start' | 'center' | 'end' | 'stretch';
-      /** No eixo principal. */
-      readonly justify?: 'start' | 'center' | 'end' | 'space-between';
-    };
+/** Tipo de layout de um quadro ou slot. */
+export type LayoutType = 'none' | 'row' | 'column';
+export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch';
+export type LayoutJustify = 'start' | 'center' | 'end' | 'space-between';
+
+/**
+ * Layout dos filhos. Na `formatVersion` 4, `type`, `align` e `justify` aceitam expressão (o valor
+ * resolvido é conferido no desenho: fora do conjunto, cai no padrão com o aviso
+ * `valor inválido em layout.<chave>: <valor>`); com `type` literal `"none"`, só `type` vale.
+ */
+export interface LayoutSpec {
+  readonly type: Expr<LayoutType>;
+  readonly gap?: Expr<number>;
+  /** Um valor, [vertical, horizontal] ou [cima, direita, baixo, esquerda]. */
+  readonly padding?: Expr<
+    number | readonly [number, number] | readonly [number, number, number, number]
+  >;
+  /** No eixo cruzado. */
+  readonly align?: Expr<LayoutAlign>;
+  /** No eixo principal. */
+  readonly justify?: Expr<LayoutJustify>;
+}
 
 // ---------------------------------------------------------------------------------------
 // Nós do template
@@ -166,8 +203,18 @@ interface TemplateNodeBase {
   readonly name?: string;
   readonly visible?: BoolExpr;
   readonly opacity?: Expr<number>;
-  readonly width?: SizeSpec;
-  readonly height?: SizeSpec;
+  /** Tamanho no eixo; aceita expressão na `formatVersion` 4 (valor inválido cai no padrão, com aviso). */
+  readonly width?: Expr<SizeSpec>;
+  readonly height?: Expr<SizeSpec>;
+  /**
+   * Limites do tamanho (px, `formatVersion` 4; aceitam expressão), aplicados depois do
+   * `fill`/`hug`/`%` e antes do `minSize` da instância. Um `fill` que bate no `max` devolve a
+   * sobra aos outros `fill` do mesmo pai, como o flexbox.
+   */
+  readonly minWidth?: Expr<number>;
+  readonly maxWidth?: Expr<number>;
+  readonly minHeight?: Expr<number>;
+  readonly maxHeight?: Expr<number>;
   /** Só com pai `layout: none`. */
   readonly anchors?: Anchors;
   readonly fill?: Expr<FillSpec>;
@@ -191,9 +238,37 @@ export interface EllipseTemplate extends TemplateNodeBase {
   readonly type: 'ellipse';
 }
 
+/**
+ * Um trecho de um texto rico (`runs`, `formatVersion` 4). Os trechos de um nó quebram linha como
+ * UM texto só, pela palavra; cada chave aceita expressão e o `text` é avaliado como o `text` do
+ * nó. `weight`, `italic`, `family`, `size` e `decoration` sobrepõem os do `font` do nó, e
+ * `color` o `color` do nó; `lineHeight`, `letterSpacing`, `align`, `verticalAlign`, `wrap`,
+ * `ellipsis` e `maxLines` continuam só do nó. Com `background`, o trecho vira uma caixa em linha
+ * (o "chip"): um bloco inquebrável de `padding` (número para os dois eixos ou `[vertical,
+ * horizontal]`) e `radius` de canto. `padding` e `radius` sem `background` não têm efeito.
+ */
+export interface TextRunTemplate {
+  readonly text: Expr<string | number>;
+  readonly weight?: Expr<number>;
+  readonly italic?: BoolExpr;
+  readonly color?: Expr<Color>;
+  readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
+  readonly family?: Expr<string>;
+  readonly size?: Expr<number>;
+  /** Cor de fundo da caixa em linha (`none` = sem caixa). */
+  readonly background?: Expr<Color>;
+  readonly radius?: Expr<number>;
+  readonly padding?: Expr<number | readonly [number, number]>;
+}
+
+/**
+ * Texto do nó: `text` (um estilo só) **ou** `runs` (trechos com estilo próprio, só na
+ * `formatVersion` 4); os dois juntos não valem, e um deles é obrigatório.
+ */
 export interface TextTemplate extends TemplateNodeBase {
   readonly type: 'text';
-  readonly text: Expr<string | number>;
+  readonly text?: Expr<string | number>;
+  readonly runs?: readonly TextRunTemplate[];
   readonly font?: FontSpec;
   /** Cor do texto (`fill` do nó). Padrão: `#000000`. */
   readonly color?: Expr<Color>;
@@ -241,6 +316,13 @@ export interface RepeatTemplate extends TemplateNodeBase {
   readonly direction?: 'column' | 'row';
   /** Espaço entre as linhas (px). */
   readonly gap?: Expr<number>;
+  /**
+   * `formatVersion` 4: `"fill"` faz o `repeat` ocupar o eixo do pai (como um filho `fill`) e
+   * dividir o eixo das linhas igualmente entre elas, menos os `gap`s; o tamanho `fill` (ou
+   * omitido) do `template` no eixo das linhas vale a fração. `"none"` (padrão): o `repeat` é
+   * `hug` no eixo das linhas.
+   */
+  readonly distribute?: 'none' | 'fill';
   /** O desenho de uma linha. */
   readonly template: FrameTemplate;
 }
@@ -261,6 +343,20 @@ export interface ImageTemplate extends TemplateNodeBase {
   readonly fit?: 'cover' | 'contain' | 'fill';
 }
 
+/**
+ * Ícone do conjunto da biblioteca (`formatVersion` 4; `icons` da especialização). `name` é o
+ * nome no conjunto (literal ou expressão); `color` pinta os caminhos sem cor própria e os que
+ * pedem a cor do nó (`fill`/`stroke` `true`); `strokeWidth` (unidades do `viewBox`) troca a
+ * largura de todos os traços. O `name` é o do ícone (não há nome de nó). `hug` mede o `viewBox` do ícone. Nome fora do conjunto: reservado
+ * com o aviso `ícone desconhecido: <nome>`; um nome literal fora do conjunto é erro da biblioteca.
+ */
+export interface IconTemplate extends Omit<TemplateNodeBase, 'name'> {
+  readonly type: 'icon';
+  readonly name: Expr<string>;
+  readonly color?: Expr<Color>;
+  readonly strokeWidth?: Expr<number>;
+}
+
 export type TemplateNode =
   | FrameTemplate
   | RectTemplate
@@ -269,7 +365,8 @@ export type TemplateNode =
   | PathTemplate
   | SlotTemplate
   | RepeatTemplate
-  | ImageTemplate;
+  | ImageTemplate
+  | IconTemplate;
 
 // ---------------------------------------------------------------------------------------
 // Arquivo
@@ -288,6 +385,29 @@ export interface ComponentSizing {
   readonly height?: InstanceSizeSpec;
 }
 
+/** Pontos de ancoragem do desenho em pixels de tela (`screen.anchor`). */
+export const SCREEN_ANCHORS = [
+  'center',
+  'top-left',
+  'top',
+  'top-right',
+  'left',
+  'right',
+  'bottom-left',
+  'bottom',
+  'bottom-right',
+] as const;
+export type ScreenAnchor = (typeof SCREEN_ANCHORS)[number];
+
+/**
+ * Desenho em pixels de tela (v4, só na raiz do arquivo): o template é desenhado no `size` do
+ * componente em pixels de tela, em qualquer zoom, ancorado no ponto `anchor` do retângulo da
+ * marcação (que continua em pixels da imagem). O desenho pode passar do retângulo.
+ */
+export interface ScreenSpec {
+  readonly anchor?: ScreenAnchor;
+}
+
 export interface ComponentFile {
   readonly format: typeof COMPONENT_FORMAT;
   readonly formatVersion: ComponentFormatVersion;
@@ -301,6 +421,8 @@ export interface ComponentFile {
   readonly minSize?: { readonly width: number; readonly height: number };
   /** Dimensionamento sem retângulo (ver `ComponentSizing`); ausente = `size` nos dois eixos. */
   readonly sizing?: ComponentSizing;
+  /** Desenho em pixels de tela ancorado no retângulo da marcação (v4); ver `ScreenSpec`. */
+  readonly screen?: ScreenSpec;
   /**
    * Valores de pré-visualização dos campos (biblioteca e instância nova): os campos vêm do
    * tipo da especialização; aqui só os valores de exemplo.
@@ -308,6 +430,20 @@ export interface ComponentFile {
   readonly preview?: FieldValues;
   /** Raiz do desenho: ocupa o retângulo inteiro da instância. */
   readonly template: FrameTemplate;
+  /**
+   * Tokens do modo de desenho (nome → valor), postos pelo catálogo ao carregar a especialização;
+   * nunca vêm do arquivo (o parser recusa a chave). Ver `tokens.ts`.
+   */
+  readonly resolvedTokens?: Readonly<Record<string, string | number>>;
+  /**
+   * Os tokens de cada modo declarado (`tokens.modes`), postos pelo catálogo: o desenho escolhe a
+   * tabela do modo efetivo da marcação sem recarregar o componente. Ausente = só `resolvedTokens`.
+   */
+  readonly resolvedTokensByMode?: Readonly<
+    Record<string, Readonly<Record<string, string | number>>>
+  >;
+  /** Conjunto de ícones da especialização (`icons`), posto pelo catálogo; nunca vem do arquivo. */
+  readonly resolvedIcons?: IconSet;
 }
 
 /** Como o tipo da especialização referencia o componente (chave nova, formatVersion 4 do spec). */

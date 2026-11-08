@@ -1,7 +1,10 @@
 import { findSlot } from './components/arrange';
 import type { ComponentFile } from './components/componentFormat';
+import { parseIconsText, type IconSet } from './components/icons';
 import { resolvePath } from './components/library';
 import { parseComponentText } from './components/parseComponent';
+import { resolveTokens, type HostFonts, type ResolvedTokens } from './components/tokens';
+import { MIN_STORED_MARKING_SIZE } from './geometry';
 import { projectIndex } from './projectIndex';
 import type { Spec, SpecAnnotationType } from './spec';
 import { findSpecType } from './specLookup';
@@ -52,7 +55,48 @@ export function componentPaths(spec: Spec, specFile: string): string[] {
   for (const type of typesWithComponent(spec)) {
     paths.add(resolvePath(specFile, type.component));
   }
+  // O conjunto de ícones (`icons`) é lido junto: os componentes dependem dele para desenhar.
+  if (spec.icons !== undefined) paths.add(resolvePath(specFile, spec.icons));
   return [...paths];
+}
+
+/** O conjunto de ícones da especialização; arquivo ausente ou inválido vira um problema `icons: …`. */
+function loadIcons(
+  spec: Spec,
+  specFile: string,
+  readText: (projectPath: string) => string | undefined,
+  problems: string[],
+): IconSet | undefined {
+  if (spec.icons === undefined) return undefined;
+  const path = resolvePath(specFile, spec.icons);
+  const text = readText(path);
+  if (text === undefined) {
+    problems.push(`icons: arquivo ausente (${path})`);
+    return undefined;
+  }
+  const parsed = parseIconsText(text);
+  if (parsed.ok) return parsed.set;
+  problems.push(`icons: ${parsed.errors[0] ?? 'conjunto de ícones inválido'}`);
+  return undefined;
+}
+
+/** O que vem de fora do modelo ao carregar: a fonte do hospedeiro e o modo do desenho. */
+export interface LoadOptions {
+  /** A pilha `--font-sans`/`--font-mono` do tema (ou o que o hospedeiro usa); ausente = genéricas. */
+  readonly fonts?: HostFonts;
+  /** Modo dos `tokens` da especialização; ausente ou não declarado = o primeiro. */
+  readonly mode?: string;
+}
+
+/** A tabela de tokens de cada modo declarado (sem `tokens`: nenhuma). */
+function tokensByMode(
+  spec: Spec,
+  fonts: HostFonts,
+): Readonly<Record<string, ResolvedTokens>> | undefined {
+  if (spec.tokens === undefined) return undefined;
+  return Object.fromEntries(
+    spec.tokens.modes.map((mode) => [mode, resolveTokens(spec.tokens, fonts, mode)]),
+  );
 }
 
 /**
@@ -66,10 +110,15 @@ export function loadSpecComponents(
   specFile: string,
   version: number,
   readText: (projectPath: string) => string | undefined,
+  options: LoadOptions = {},
 ): SpecComponents {
   const byType = new Map<string, ComponentFile>();
   const problems: string[] = [];
+  const fonts = options.fonts ?? {};
+  const resolvedTokens = resolveTokens(spec.tokens, fonts, options.mode);
+  const resolvedTokensByMode = tokensByMode(spec, fonts);
   if (spec.formatVersion >= 4) {
+    const resolvedIcons = loadIcons(spec, specFile, readText, problems);
     for (const type of typesWithComponent(spec)) {
       const path = resolvePath(specFile, type.component);
       const text = readText(path);
@@ -82,7 +131,12 @@ export function loadSpecComponents(
         problems.push(`${type.id}: ${parsed.errors[0] ?? 'componente inválido'}`);
         continue;
       }
-      byType.set(type.id, parsed.component);
+      byType.set(type.id, {
+        ...parsed.component,
+        resolvedTokens,
+        resolvedTokensByMode,
+        ...(resolvedIcons === undefined ? {} : { resolvedIcons }),
+      });
     }
   }
   return { specId: spec.id, version, byType, problems };
@@ -146,12 +200,21 @@ export function hasSlotComponent(component: ComponentFile): boolean {
   return findSlot(component) !== undefined;
 }
 
-/** `minSize` do componente que desenha a marcação, ou `null` (marcação comum ou componente sem mínimo). */
+/**
+ * Mínimo do componente que desenha a marcação: o `minSize` dele ou, sem `minSize`, 1×1 (a
+ * marcação com componente aceita a partir de 1 px); `null` na marcação comum (vale o mínimo
+ * de 8 px dos gestos).
+ */
 export function componentMinSize(
   p: Project,
   catalog: ComponentCatalog,
   markingId: string,
 ): { width: number; height: number } | null {
-  const minSize = markingComponent(p, catalog, markingId)?.component.minSize;
-  return minSize === undefined ? null : { width: minSize.width, height: minSize.height };
+  const drawn = markingComponent(p, catalog, markingId);
+  if (drawn === null) return null;
+  const { minSize } = drawn.component;
+  return {
+    width: minSize?.width ?? MIN_STORED_MARKING_SIZE,
+    height: minSize?.height ?? MIN_STORED_MARKING_SIZE,
+  };
 }

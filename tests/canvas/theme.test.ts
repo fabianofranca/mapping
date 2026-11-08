@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { canvasTokensFrom, readCanvasTokens } from '../../src/canvas/theme';
+import {
+  canvasTokensFrom,
+  hostFontsFrom,
+  readCanvasTokens,
+} from '../../src/canvas/theme';
 import { TOKENS, tokenValue } from '../../src/theme/tokens';
 
 /** Leitor que resolve os tokens de `tokens.ts` (inclusive os `var(--…)`), como o navegador. */
@@ -18,6 +22,19 @@ function leaves(value: unknown, path = ''): [string, unknown][] {
     ? Object.entries(value).flatMap(([k, v]) => leaves(v, path ? `${path}.${k}` : k))
     : [[path, value]];
 }
+
+describe('hostFontsFrom', () => {
+  it('a fonte do hospedeiro é a pilha do --font-sans e do --font-mono do tema', () => {
+    expect(hostFontsFrom(reader('light'))).toEqual({
+      sans: tokenValue('font-sans', 'light'),
+      mono: tokenValue('font-mono', 'light'),
+    });
+  });
+
+  it('valor vazio vira ausente (o padrão do modelo vale)', () => {
+    expect(hostFontsFrom(() => '')).toEqual({});
+  });
+});
 
 describe('canvasTokensFrom', () => {
   it('lê cada token do canvas dos tokens do tema', () => {
@@ -92,5 +109,13 @@ describe('tokens do cadeado', () => {
 
   it('o lado é 20 px', () => {
     expect(canvasTokensFrom(reader('light')).lock.size).toBe(20);
+  });
+});
+
+describe('limite dos indicadores de camada', () => {
+  it('vem do token size-indicator-min-marking (3× o diâmetro da bolinha) nos dois temas', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      expect(canvasTokensFrom(reader(theme)).indicatorMinMarking).toBe(24);
+    }
   });
 });

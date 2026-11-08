@@ -156,6 +156,8 @@ export const ORIGIN_FEATURES = [
   'origins[]',
   'origins[].system',
   'origins[].name',
+  'origins[].kind',
+  'origins[].kind=measured',
   'origins[].node',
   'origins[].node.type',
   'origins[].node.props',
@@ -203,11 +205,13 @@ function originFeatures(origins: unknown, out: Set<string>): void {
     keys('origins[]', origin, [
       'system',
       'name',
+      'kind',
       'node',
       'screen',
       'booleans',
       'examples',
     ]);
+    if (origin.kind === 'measured') add('origins[].kind=measured');
     keys('origins[].node', origin.node, ['type', 'props', 'children']);
     keys('origins[].booleans', origin.booleans, ['true', 'false']);
     if (Array.isArray(origin.examples)) {
@@ -269,8 +273,9 @@ export const NODE_TYPES = [
   'slot',
   'repeat',
   'image',
+  'icon',
 ] as const;
-export const EXPR_OPS = ['$field', '$if', '$switch', '$concat'] as const;
+export const EXPR_OPS = ['$field', '$if', '$switch', '$concat', '$token'] as const;
 export const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
 export const ROOT_KEYS = [
   'format',
@@ -281,6 +286,7 @@ export const ROOT_KEYS = [
   'size',
   'minSize',
   'sizing',
+  'screen',
   'preview',
   'template',
 ] as const;
@@ -296,17 +302,22 @@ export const BASE_KEYS = [
   'stroke',
   'shadow',
   'cornerRadius',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
 ] as const;
 /** Chaves de cada tipo de nó, além das comuns. */
 export const EXTRA_KEYS: Record<(typeof NODE_TYPES)[number], readonly string[]> = {
   frame: ['clip', 'layout', 'children'],
   rect: [],
   ellipse: [],
-  text: ['text', 'font', 'color'],
+  text: ['text', 'runs', 'font', 'color'],
   path: ['d', 'viewBox', 'fillRule'],
   slot: ['label', 'layout'],
-  repeat: ['field', 'direction', 'gap', 'template'],
+  repeat: ['field', 'direction', 'gap', 'distribute', 'template'],
   image: ['src', 'fit'],
+  icon: ['name', 'color', 'strokeWidth'],
 };
 /** O `repeat` só aceita estas chaves comuns: o desenho é do `template` de cada linha. */
 export const REPEAT_BASE_KEYS = [
@@ -316,11 +327,15 @@ export const REPEAT_BASE_KEYS = [
   'width',
   'height',
   'anchors',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
 ];
 
 const ANCHOR_KEYS = ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'] as const;
 const LAYOUT_KEYS = ['gap', 'padding', 'align', 'justify'] as const;
-const STROKE_KEYS = ['color', 'width', 'align', 'dash'] as const;
+const STROKE_KEYS = ['color', 'width', 'align', 'dash', 'scale'] as const;
 const SHADOW_KEYS = ['color', 'x', 'y', 'blur'] as const;
 const FONT_KEYS = [
   'family',
@@ -332,6 +347,22 @@ const FONT_KEYS = [
   'align',
   'verticalAlign',
   'decoration',
+  'wrap',
+  'ellipsis',
+  'maxLines',
+] as const;
+/** Chaves de um trecho de texto rico (`runs[]`, formatVersion 4). */
+const RUN_KEYS = [
+  'text',
+  'weight',
+  'italic',
+  'color',
+  'decoration',
+  'family',
+  'size',
+  'background',
+  'radius',
+  'padding',
 ] as const;
 const ENUM_VALUES = {
   'layout.type': ['none', 'row', 'column'],
@@ -386,6 +417,7 @@ export function componentFeatureList(): string[] {
   for (const key of STROKE_KEYS) out.add(`stroke.${key}`);
   for (const key of SHADOW_KEYS) out.add(`shadow.${key}`);
   for (const key of FONT_KEYS) out.add(`font.${key}`);
+  for (const key of RUN_KEYS) out.add(`run.${key}`);
   for (const [group, values] of Object.entries(ENUM_VALUES)) {
     for (const value of values) out.add(`${group}=${value}`);
   }
@@ -505,6 +537,8 @@ function nodeFeatures(node: unknown, out: Set<string>): void {
   recordKeys('stroke', node.stroke, STROKE_KEYS, out);
   recordKeys('shadow', node.shadow, SHADOW_KEYS, out);
   recordKeys('font', node.font, FONT_KEYS, out);
+  if (Array.isArray(node.runs))
+    for (const run of node.runs) recordKeys('run', run, RUN_KEYS, out);
   if (isRec(node.stroke)) {
     for (const leaf of leaves(node.stroke.align)) out.add(`stroke.align=${String(leaf)}`);
   }

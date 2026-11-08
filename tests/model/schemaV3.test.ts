@@ -56,14 +56,14 @@ describe('migração v2 → v3', () => {
     const result = deserialize(v2Text());
     if (!result.ok) throw new Error('falhou');
     expect(result.migratedFrom).toBe(2);
-    expect(result.project.schemaVersion).toBe(17);
+    expect(result.project.schemaVersion).toBe(18);
     expect(result.project.containers.every((i) => i.markingColor === null)).toBe(true);
     expect(withoutEntryIds(result.project)).toEqual(withoutEntryIds(sampleProject()));
   });
 
   it('salvar o v2 migrado gera v16 estável (round-trip)', () => {
     const saved = serialize(load(v2Text()));
-    expect(JSON.parse(saved).schemaVersion).toBe(17);
+    expect(JSON.parse(saved).schemaVersion).toBe(18);
     expect(serialize(load(saved))).toBe(saved);
   });
 });

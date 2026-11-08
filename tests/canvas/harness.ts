@@ -98,6 +98,7 @@ export const TOKENS: CanvasTokens = {
     image: { size: 12, line: 16, weight: 600 },
   },
   handleSize: 10,
+  indicatorMinMarking: 24,
   arrow: {
     stroke: '#0f766f',
     select: '#0057bb',

@@ -133,4 +133,157 @@ describe('component.schema.json', () => {
       ).toEqual([]);
     });
   });
+
+  describe('stroke.cap, join e sides (formatVersion 4)', () => {
+    const v4 = (stroke: Record<string, unknown>): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'borda',
+      name: 'Borda',
+      size: { width: 100, height: 40 },
+      template: { type: 'frame', stroke: { color: '#000', ...stroke } },
+    });
+
+    it('aceita cap, join e sides, literais ou por expressão', () => {
+      for (const stroke of [
+        { cap: 'round', join: 'bevel', sides: ['top', 'bottom'] },
+        { cap: { $field: 'ponta', default: 'square' } },
+        { sides: { $switch: 'modo', cases: { a: ['left'] }, default: ['top', 'right'] } },
+      ]) {
+        const c = v4(stroke);
+        expect(checkSchema(schema, c), JSON.stringify(stroke)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(stroke)).toBe(true);
+      }
+    });
+
+    it('recusa valores inválidos e formatVersion 5', () => {
+      for (const stroke of [
+        { cap: 'pontudo' },
+        { join: 'redondo' },
+        { sides: [] },
+        { sides: ['meio'] },
+      ])
+        expect(
+          checkSchema(schema, v4(stroke)).length,
+          JSON.stringify(stroke),
+        ).toBeGreaterThan(0);
+      expect(checkSchema(schema, { ...v4({}), formatVersion: 5 }).length).toBeGreaterThan(
+        0,
+      );
+    });
+  });
+
+  describe('limites, expressão de tamanho e layout, distribute (formatVersion 4)', () => {
+    const v4 = (template: Record<string, unknown>): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'layout',
+      name: 'Layout',
+      size: { width: 200, height: 100 },
+      template,
+    });
+
+    it('aceita as chaves novas, e o parseComponent também', () => {
+      for (const template of [
+        { type: 'frame', minWidth: 10, maxWidth: { $field: 'm', default: 90 } },
+        { type: 'frame', width: { $field: 'w', default: 'fill' }, height: '50%' },
+        {
+          type: 'frame',
+          layout: {
+            type: { $switch: 'dir', cases: { h: 'row' }, default: 'none' },
+            gap: 4,
+            align: { $field: 'a', default: 'center' },
+            justify: { $field: 'j', default: 'space-between' },
+          },
+        },
+        {
+          type: 'frame',
+          children: [
+            { type: 'slot', layout: { type: { $field: 'd', default: 'column' } } },
+            {
+              type: 'repeat',
+              field: 'rows',
+              distribute: 'fill',
+              minHeight: 20,
+              template: { type: 'frame' },
+            },
+            { type: 'image', src: { $field: 'f' }, width: { $field: 'w', default: 8 } },
+          ],
+        },
+      ]) {
+        const c = v4(template);
+        expect(checkSchema(schema, c), JSON.stringify(template)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(template)).toBe(true);
+      }
+    });
+
+    it('recusa valores inválidos', () => {
+      for (const template of [
+        { type: 'frame', minWidth: -1 },
+        { type: 'frame', width: { $field: 'w', default: 'enorme' } },
+        {
+          type: 'frame',
+          layout: { type: 'row', align: { $field: 'a', default: 'meio' } },
+        },
+        { type: 'frame', layout: { type: 'none', gap: 4 } },
+        { type: 'frame', layout: { type: { $field: 'd', default: 'grade' } } },
+        { type: 'frame', children: [{ type: 'rect', distribute: 'fill' }] },
+        {
+          type: 'frame',
+          children: [
+            { type: 'repeat', field: 'r', distribute: 'x', template: { type: 'frame' } },
+          ],
+        },
+        {
+          type: 'frame',
+          children: [
+            {
+              type: 'image',
+              src: { $field: 'f' },
+              width: { $field: 'w', default: 'hug' },
+            },
+          ],
+        },
+      ])
+        expect(
+          checkSchema(schema, v4(template)).length,
+          JSON.stringify(template),
+        ).toBeGreaterThan(0);
+    });
+  });
+  describe('expressões de wrap e maxLines em $if e $switch (formatVersion 4)', () => {
+    const v4 = (font: Record<string, unknown>): Record<string, unknown> => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'texto',
+      name: 'Texto',
+      size: { width: 100, height: 40 },
+      template: { type: 'frame', children: [{ type: 'text', text: 'oi', font }] },
+    });
+
+    it('aceita $if e $switch com ramos do tipo do campo (o parser também)', () => {
+      for (const font of [
+        { maxLines: { $if: { $field: 'curto' }, then: 2, else: 3 } },
+        { maxLines: { $switch: 'modo', cases: { a: 2 }, default: 3 } },
+        { wrap: { $if: { $field: 'curto' }, then: 'none', else: 'word' } },
+        { wrap: { $switch: 'modo', cases: { a: 'none' }, default: 'word' } },
+      ]) {
+        const c = v4(font);
+        expect(checkSchema(schema, c), JSON.stringify(font)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(font)).toBe(true);
+      }
+    });
+
+    it('recusa ramo fora do tipo (maxLines 0 ou texto, wrap sublinhado)', () => {
+      for (const font of [
+        { maxLines: { $if: { $field: 'curto' }, then: 0, else: 3 } },
+        { maxLines: { $switch: 'modo', cases: { a: 'underline' }, default: 3 } },
+        { wrap: { $if: { $field: 'curto' }, then: 'underline', else: 'word' } },
+      ])
+        expect(
+          checkSchema(schema, v4(font)).length,
+          JSON.stringify(font),
+        ).toBeGreaterThan(0);
+    });
+  });
 });

@@ -9,18 +9,31 @@
 import {
   COMPONENT_FORMAT,
   COMPONENT_FORMAT_VERSIONS,
+  COMPONENT_FORMAT_VERSION_FIDELITY,
+  SCREEN_ANCHORS,
+  STROKE_SIDES,
   type ComponentFile,
 } from './componentFormat';
 import { checkRemoteImageUrl } from '../remoteImages';
 import { isValidFontFamily } from './fontFamily';
 import { referencedFields } from './expressions';
+import { TOKEN_NAME_PATTERN, type TokenKind } from './tokens';
 
 /** Um problema do arquivo: caminho JSON (vazio = arquivo inteiro) e mensagem. */
 export type ComponentIssue = { path: string; message: string };
 
 export type ComponentParseResult =
-  | { ok: true; component: ComponentFile; warnings: ComponentIssue[] }
+  | {
+      ok: true;
+      component: ComponentFile;
+      warnings: ComponentIssue[];
+      /** Cada `$token` do arquivo, para a biblioteca conferir contra os `tokens` da especialização. */
+      tokenRefs: TokenRef[];
+    }
   | { ok: false; issues: ComponentIssue[]; errors: string[] };
+
+/** Um `{ "$token": … }` do arquivo: onde está, o nome e o tipo de valor que a posição espera. */
+export type TokenRef = { path: string; name: string; kind: TokenKind };
 
 type Rec = Record<string, unknown>;
 /** Confere um literal (valor que não é expressão) e acrescenta os problemas a `out`. */
@@ -35,8 +48,9 @@ const NODE_TYPES = [
   'slot',
   'repeat',
   'image',
+  'icon',
 ] as const;
-const EXPR_OPS = ['$field', '$if', '$switch', '$concat'] as const;
+const EXPR_OPS = ['$field', '$if', '$switch', '$concat', '$token'] as const;
 const CONDITION_OPS = ['$field', '$eq', '$has', '$not', '$and', '$or'] as const;
 /** Operadores que só existem em condição (`$field` é ambíguo e fica como expressão). */
 const DIRECT_CONDITION_OPS: readonly string[] = ['$eq', '$has', '$not', '$and', '$or'];
@@ -53,6 +67,10 @@ const BASE_KEYS = [
   'opacity',
   'width',
   'height',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
   'anchors',
   'fill',
   'stroke',
@@ -62,6 +80,11 @@ const BASE_KEYS = [
 
 function isRecord(value: unknown): value is Rec {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Um objeto com algum operador `$…`: uma expressão, não um literal. */
+function isExprObject(value: unknown): value is Rec {
+  return isRecord(value) && Object.keys(value).some((k) => k.startsWith('$'));
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -117,6 +140,9 @@ const checkString: Check = (v, p, out) => {
   if (typeof v !== 'string') add(out, p, 'esperava texto');
 };
 
+/** `font.family` (e `family` de um trecho): texto; aceita `$token` de família. */
+const checkFamily: Check = (v, p, out) => checkString(v, p, out);
+
 const checkTextOrNumber: Check = (v, p, out) => {
   if (typeof v !== 'string' && !isFiniteNumber(v))
     add(out, p, 'esperava texto ou número');
@@ -155,7 +181,7 @@ const checkFill: Check = (v, p, out) => {
     if (!isRecord(stop)) return add(out, sp, 'esperava objeto');
     checkKeys(stop, ['offset', 'color'], sp, out);
     checkUnit(stop.offset, join(sp, 'offset'), out);
-    checkColor(stop.color, join(sp, 'color'), out);
+    checkExpr(stop.color, join(sp, 'color'), checkColor, out);
   });
 };
 
@@ -213,6 +239,44 @@ function checkFieldKey(value: unknown, path: string, out: ComponentIssue[]): voi
     add(out, path, 'esperava chave de campo (texto não vazio)');
 }
 
+/** Onde `$token` coleta as referências durante uma validação (ver `collectIssues`). */
+let tokenSink: TokenRef[] | null = null;
+
+/** O tipo de valor que o `check` aceita como `$token`; nenhum = a posição não aceita token. */
+function tokenKindOf(check: Check): TokenKind | undefined {
+  if (check === checkColor || check === checkFill) return 'color';
+  if (check === checkFamily) return 'family';
+  const numeric: readonly Check[] = [
+    checkNumber,
+    checkNonNegative,
+    checkUnit,
+    checkWeight,
+    checkPositiveInteger,
+    checkSize,
+    checkSizeNoHug,
+    checkCornerRadius,
+    checkPadding,
+  ];
+  return numeric.includes(check) ? 'number' : undefined;
+}
+
+function checkTokenExpr(
+  value: Rec,
+  path: string,
+  check: Check,
+  out: ComponentIssue[],
+): void {
+  checkKeys(value, ['$token'], path, out);
+  const at = join(path, '$token');
+  const kind = tokenKindOf(check);
+  if (kind === undefined)
+    add(out, path, '$token só vale onde se espera cor, número ou família de fonte');
+  const name = value.$token;
+  if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name))
+    add(out, at, 'esperava nome de token ([a-z0-9][a-z0-9-]*)');
+  else if (kind !== undefined) tokenSink?.push({ path, name, kind });
+}
+
 /** Confere uma expressão: operador (`$field`, `$if`…) ou o literal conferido por `check`. */
 function checkExpr(
   value: unknown,
@@ -220,9 +284,7 @@ function checkExpr(
   check: Check,
   out: ComponentIssue[],
 ): void {
-  if (!isRecord(value) || !Object.keys(value).some((k) => k.startsWith('$'))) {
-    return check(value, path, out);
-  }
+  if (!isExprObject(value)) return check(value, path, out);
   const ops = Object.keys(value).filter((k) =>
     (EXPR_OPS as readonly string[]).includes(k),
   );
@@ -260,6 +322,8 @@ function checkExpr(
       if ('default' in value) checkExpr(value.default, join(path, 'default'), check, out);
       return;
     }
+    case '$token':
+      return checkTokenExpr(value, path, check, out);
     case '$concat':
       checkKeys(value, ['$concat'], path, out);
       if (!Array.isArray(value.$concat)) return add(out, at, 'esperava lista de partes');
@@ -287,6 +351,39 @@ function checkSize(value: unknown, path: string, out: ComponentIssue[]): void {
   add(out, path, 'esperava número maior ou igual a 0, "fill", "hug" ou "<número>%"');
 }
 
+/** Como `checkSize`, mas sem `hug`: o nó `image` não depende da imagem baixada. */
+const checkSizeNoHug: Check = (v, p, out) => {
+  if (v === 'hug')
+    add(out, p, 'o nó image não aceita hug: a arrumação não depende da imagem baixada');
+  else checkSize(v, p, out);
+};
+
+const SIZE_LIMIT_AXES = [
+  ['minWidth', 'maxWidth'],
+  ['minHeight', 'maxHeight'],
+] as const;
+
+/** `width`/`height` (literal ou expressão), `min*`/`max*` e a ordem entre `min` e `max`. */
+function checkNodeSizes(
+  value: Rec,
+  path: string,
+  nodeType: string,
+  out: ComponentIssue[],
+): void {
+  const check = nodeType === 'image' ? checkSizeNoHug : checkSize;
+  for (const key of ['width', 'height']) {
+    if (key in value) checkExpr(value[key], join(path, key), check, out);
+  }
+  for (const [min, max] of SIZE_LIMIT_AXES) {
+    if (min in value) checkExpr(value[min], join(path, min), checkNonNegative, out);
+    if (max in value) checkExpr(value[max], join(path, max), checkNonNegative, out);
+    const lo = value[min];
+    const hi = value[max];
+    if (isFiniteNumber(lo) && isFiniteNumber(hi) && lo > hi)
+      add(out, join(path, min), `não pode ser maior que ${max}`);
+  }
+}
+
 function checkAnchors(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(value, ['left', 'right', 'top', 'bottom', 'centerX', 'centerY'], path, out);
@@ -298,9 +395,51 @@ function checkAnchors(value: unknown, path: string, out: ComponentIssue[]): void
   }
 }
 
-function checkStroke(value: unknown, path: string, out: ComponentIssue[]): void {
+/** `stroke.sides`: lista não vazia de lados, sem repetição. */
+const checkSides: Check = (v, p, out) => {
+  if (!Array.isArray(v)) return add(out, p, 'esperava lista de lados');
+  if (v.length === 0) return add(out, p, 'esperava ao menos um lado');
+  const seen = new Set<unknown>();
+  v.forEach((side: unknown, i) => {
+    const at = `${p}[${i}]`;
+    oneOf(STROKE_SIDES)(side, at, out);
+    if (seen.has(side)) add(out, at, `lado repetido: ${String(side)}`);
+    seen.add(side);
+  });
+};
+
+/** As chaves da v4 do traço (`cap`, `join`, `sides`); o `sides` só vale em `frame` e `rect`. */
+function checkStrokeV4(
+  value: Rec,
+  path: string,
+  nodeType: string | undefined,
+  out: ComponentIssue[],
+): void {
+  if ('cap' in value)
+    checkExpr(value.cap, join(path, 'cap'), oneOf(['butt', 'round', 'square']), out);
+  if ('join' in value)
+    checkExpr(value.join, join(path, 'join'), oneOf(['miter', 'round', 'bevel']), out);
+  if ('scale' in value) checkBoolean(value.scale, join(path, 'scale'), out);
+  if (!('sides' in value)) return;
+  const at = join(path, 'sides');
+  if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
+    add(out, at, `só vale em frame e rect (este é ${nodeType})`);
+  else checkExpr(value.sides, at, checkSides, out);
+}
+
+function checkStroke(
+  value: unknown,
+  path: string,
+  out: ComponentIssue[],
+  nodeType?: string,
+): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
-  checkKeys(value, ['color', 'width', 'align', 'dash'], path, out);
+  checkKeys(
+    value,
+    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale'],
+    path,
+    out,
+  );
   if (!('color' in value)) add(out, join(path, 'color'), 'campo obrigatório');
   else checkExpr(value.color, join(path, 'color'), checkColor, out);
   if ('width' in value)
@@ -312,6 +451,7 @@ function checkStroke(value: unknown, path: string, out: ComponentIssue[]): void 
     if (!Array.isArray(value.dash)) add(out, dash, 'esperava lista de números');
     else value.dash.forEach((n: unknown, i) => checkNonNegative(n, `${dash}[${i}]`, out));
   }
+  checkStrokeV4(value, path, nodeType, out);
 }
 
 function checkShadow(value: unknown, path: string, out: ComponentIssue[]): void {
@@ -324,10 +464,16 @@ function checkShadow(value: unknown, path: string, out: ComponentIssue[]): void 
   if ('blur' in value) checkNonNegative(value.blur, join(path, 'blur'), out);
 }
 
+/** `font.maxLines`: inteiro maior ou igual a 1. */
+const checkPositiveInteger: Check = (v, p, out) => {
+  if (!Number.isInteger(v) || (v as number) < 1)
+    add(out, p, 'esperava inteiro maior ou igual a 1');
+};
+
 function checkFont(value: unknown, path: string, out: ComponentIssue[]): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   const specs: Record<string, Check> = {
-    family: checkString,
+    family: checkFamily,
     size: checkNumber,
     weight: checkWeight,
     italic: checkBoolean,
@@ -336,11 +482,15 @@ function checkFont(value: unknown, path: string, out: ComponentIssue[]): void {
     align: oneOf(['left', 'center', 'right']),
     verticalAlign: oneOf(['top', 'middle', 'bottom']),
     decoration: oneOf(['none', 'underline', 'line-through']),
+    wrap: oneOf(['word', 'none']),
+    ellipsis: checkBoolean,
+    maxLines: checkPositiveInteger,
   };
   checkKeys(value, Object.keys(specs), path, out);
   for (const [key, check] of Object.entries(specs)) {
     if (!(key in value)) continue;
-    if (key === 'italic') checkBoolExpr(value[key], join(path, key), out);
+    if (key === 'italic' || key === 'ellipsis')
+      checkBoolExpr(value[key], join(path, key), out);
     else checkExpr(value[key], join(path, key), check, out);
   }
 }
@@ -361,31 +511,112 @@ function checkPadding(value: unknown, path: string, out: ComponentIssue[]): void
   );
 }
 
-function checkLayout(value: unknown, path: string, out: ComponentIssue[]): void {
-  if (!isRecord(value)) return add(out, path, 'esperava objeto');
-  if (value.type === 'none') return checkKeys(value, ['type'], path, out);
-  if (value.type !== 'row' && value.type !== 'column') {
-    add(out, join(path, 'type'), 'esperava "none", "row" ou "column"');
-    return;
-  }
+const checkLayoutType: Check = (v, p, out) => {
+  if (v !== 'none' && v !== 'row' && v !== 'column')
+    add(out, p, 'esperava "none", "row" ou "column"');
+};
+
+/** As chaves de um layout `row`/`column` (ou de `type` por expressão), na v4 também por expressão. */
+function checkLayoutFlow(value: Rec, path: string, out: ComponentIssue[]): void {
   checkKeys(value, ['type', 'gap', 'padding', 'align', 'justify'], path, out);
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
   if ('padding' in value)
     checkExpr(value.padding, join(path, 'padding'), checkPadding, out);
   if ('align' in value)
-    oneOf(['start', 'center', 'end', 'stretch'])(value.align, join(path, 'align'), out);
-  if ('justify' in value)
-    oneOf(['start', 'center', 'end', 'space-between'])(
-      value.justify,
-      join(path, 'justify'),
+    checkExpr(
+      value.align,
+      join(path, 'align'),
+      oneOf(['start', 'center', 'end', 'stretch']),
       out,
     );
+  if ('justify' in value)
+    checkExpr(
+      value.justify,
+      join(path, 'justify'),
+      oneOf(['start', 'center', 'end', 'space-between']),
+      out,
+    );
+}
+
+function checkLayout(value: unknown, path: string, out: ComponentIssue[]): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  if (value.type === 'none') return checkKeys(value, ['type'], path, out);
+  const at = join(path, 'type');
+  if (isExprObject(value.type)) checkExpr(value.type, at, checkLayoutType, out);
+  else if (value.type !== 'row' && value.type !== 'column')
+    return add(out, at, 'esperava "none", "row" ou "column"');
+  checkLayoutFlow(value, path, out);
 }
 
 function checkViewBox(value: unknown, path: string, out: ComponentIssue[]): void {
   const ok = (n: unknown): boolean => isFiniteNumber(n) && n > 0;
   if (!Array.isArray(value) || value.length !== 2 || !value.every(ok))
     add(out, path, 'esperava [largura, altura] com números positivos');
+}
+
+/** Chaves de um trecho de texto rico (`runs[i]`). */
+const RUN_KEYS = [
+  'text',
+  'weight',
+  'italic',
+  'color',
+  'decoration',
+  'family',
+  'size',
+  'background',
+  'radius',
+  'padding',
+];
+
+/** `runs[i].padding`: número (os dois eixos) ou `[vertical, horizontal]`, não negativos. */
+const checkRunPadding: Check = (v, p, out) => {
+  const ok = (n: unknown): boolean => isFiniteNumber(n) && n >= 0;
+  if (ok(v)) return;
+  if (Array.isArray(v) && v.length === 2 && v.every(ok)) return;
+  add(
+    out,
+    p,
+    'esperava número ou lista [vertical, horizontal] de números (maiores ou iguais a 0)',
+  );
+};
+
+/** Um trecho de `runs`: `text` obrigatório e o estilo, cada chave com literal ou expressão. */
+function checkRun(value: unknown, path: string, out: ComponentIssue[]): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto (trecho)');
+  checkKeys(value, RUN_KEYS, path, out);
+  if (!('text' in value)) add(out, join(path, 'text'), 'campo obrigatório');
+  const specs: Record<string, Check> = {
+    text: checkTextOrNumber,
+    weight: checkWeight,
+    color: checkColor,
+    decoration: oneOf(['none', 'underline', 'line-through']),
+    family: checkFamily,
+    size: checkNumber,
+    background: checkColor,
+    radius: checkNonNegative,
+    padding: checkRunPadding,
+  };
+  for (const [key, check] of Object.entries(specs))
+    if (key in value) checkExpr(value[key], join(path, key), check, out);
+  if ('italic' in value) checkBoolExpr(value.italic, join(path, 'italic'), out);
+}
+
+function checkRuns(value: unknown, path: string, out: ComponentIssue[]): void {
+  if (!Array.isArray(value) || value.length === 0)
+    return add(out, path, 'esperava lista não vazia de trechos');
+  value.forEach((run: unknown, i) => checkRun(run, `${path}[${i}]`, out));
+}
+
+/** Nó `text`: `text` ou `runs` (um dos dois), mais `font` e `color`. */
+function checkTextNode(value: Rec, path: string, out: ComponentIssue[]): void {
+  const hasText = 'text' in value;
+  const hasRuns = 'runs' in value;
+  if (hasText && hasRuns) add(out, path, 'text e runs juntos: use um ou outro');
+  else if (!hasText && !hasRuns) add(out, join(path, 'text'), 'campo obrigatório');
+  if (hasText) checkExpr(value.text, join(path, 'text'), checkTextOrNumber, out);
+  if (hasRuns) checkRuns(value.runs, join(path, 'runs'), out);
+  if ('font' in value) checkFont(value.font, join(path, 'font'), out);
+  if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
 }
 
 function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
@@ -404,11 +635,12 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
     frame: ['clip', 'layout', 'children'],
     rect: [],
     ellipse: [],
-    text: ['text', 'font', 'color'],
+    text: ['text', 'runs', 'font', 'color'],
     path: ['d', 'viewBox', 'fillRule'],
     slot: ['label', 'layout'],
-    repeat: ['field', 'direction', 'gap', 'template'],
+    repeat: ['field', 'direction', 'gap', 'distribute', 'template'],
     image: ['src', 'fit'],
+    icon: ['name', 'color', 'strokeWidth'],
   };
   // children/layout em nó que não é quadro têm mensagem própria, em vez de "chave desconhecida"
   for (const key of ['children', 'layout']) {
@@ -427,14 +659,14 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
       add(out, join(path, key), `chave desconhecida: ${key}`);
   }
 
-  if ('name' in value) checkString(value.name, join(path, 'name'), out);
+  if ('name' in value && type !== 'icon')
+    checkString(value.name, join(path, 'name'), out);
   if ('visible' in value) checkBoolExpr(value.visible, join(path, 'visible'), out);
   if ('opacity' in value) checkExpr(value.opacity, join(path, 'opacity'), checkUnit, out);
-  if ('width' in value) checkSize(value.width, join(path, 'width'), out);
-  if ('height' in value) checkSize(value.height, join(path, 'height'), out);
+  checkNodeSizes(value, path, type, out);
   if ('anchors' in value) checkAnchors(value.anchors, join(path, 'anchors'), out);
   if ('fill' in value) checkExpr(value.fill, join(path, 'fill'), checkFill, out);
-  if ('stroke' in value) checkStroke(value.stroke, join(path, 'stroke'), out);
+  if ('stroke' in value) checkStroke(value.stroke, join(path, 'stroke'), out, type);
   if ('shadow' in value) checkShadow(value.shadow, join(path, 'shadow'), out);
   if ('cornerRadius' in value)
     checkExpr(value.cornerRadius, join(path, 'cornerRadius'), checkCornerRadius, out);
@@ -454,10 +686,7 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
       return;
     }
     case 'text':
-      if (!('text' in value)) add(out, join(path, 'text'), 'campo obrigatório');
-      else checkExpr(value.text, join(path, 'text'), checkTextOrNumber, out);
-      if ('font' in value) checkFont(value.font, join(path, 'font'), out);
-      if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
+      checkTextNode(value, path, out);
       return;
     case 'path':
       if (!('d' in value)) add(out, join(path, 'd'), 'campo obrigatório');
@@ -477,12 +706,25 @@ function checkNode(value: unknown, path: string, out: ComponentIssue[]): void {
     case 'image':
       checkImage(value, path, out);
       return;
+    case 'icon':
+      checkIconNode(value, path, out);
+      return;
   }
+}
+
+/** `icon` (formatVersion 4): `name` obrigatório (texto ou expressão), `color` e `strokeWidth`. */
+function checkIconNode(value: Rec, path: string, out: ComponentIssue[]): void {
+  if (!('name' in value)) add(out, join(path, 'name'), 'campo obrigatório');
+  else checkExpr(value.name, join(path, 'name'), checkString, out);
+  if ('color' in value) checkExpr(value.color, join(path, 'color'), checkColor, out);
+  if ('strokeWidth' in value)
+    checkExpr(value.strokeWidth, join(path, 'strokeWidth'), checkNonNegative, out);
 }
 
 /**
  * `image` (formatVersion 3): `src` obrigatório e restrito (URL `https://` literal ou exatamente
- * `{ "$field": "<campo>" }`), `fit` e nenhum `hug` (a arrumação não depende da imagem baixada).
+ * `{ "$field": "<campo>" }`), `fit` e nenhum `hug` (conferido em `checkNodeSizes`: a arrumação não
+ * depende da imagem baixada).
  * O host local não é erro de formato aqui: a política da app decide em tempo de execução.
  */
 function checkImage(value: Rec, path: string, out: ComponentIssue[]): void {
@@ -504,14 +746,6 @@ function checkImage(value: Rec, path: string, out: ComponentIssue[]): void {
   }
   if ('fit' in value)
     oneOf(['cover', 'contain', 'fill'])(value.fit, join(path, 'fit'), out);
-  for (const key of ['width', 'height']) {
-    if (value[key] === 'hug')
-      add(
-        out,
-        join(path, key),
-        'o nó image não aceita hug: a arrumação não depende da imagem baixada',
-      );
-  }
 }
 
 /** `repeat`: o campo `table`, a direção, o espaço e o `template` (um quadro, sem `repeat` nem `slot`). */
@@ -521,6 +755,8 @@ function checkRepeat(value: Rec, path: string, out: ComponentIssue[]): void {
   if ('direction' in value)
     oneOf(['column', 'row'])(value.direction, join(path, 'direction'), out);
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
+  if ('distribute' in value)
+    oneOf(['none', 'fill'])(value.distribute, join(path, 'distribute'), out);
   const at = join(path, 'template');
   if (!('template' in value)) return add(out, at, 'campo obrigatório');
   const template = value.template;
@@ -532,6 +768,94 @@ function checkRepeat(value: Rec, path: string, out: ComponentIssue[]): void {
     add(out, nested.path, `${nested.type} não é permitido dentro de um repeat`);
   }
 }
+
+/** Caminhos (cadeias de chaves) das chaves que só existem na formatVersion 4, em qualquer nó. */
+const V4_NODE_KEYS: readonly (readonly string[])[] = [
+  ['stroke', 'cap'],
+  ['stroke', 'join'],
+  ['stroke', 'sides'],
+  ['stroke', 'scale'],
+  ['minWidth'],
+  ['maxWidth'],
+  ['minHeight'],
+  ['maxHeight'],
+  ['distribute'],
+  ['font', 'wrap'],
+  ['font', 'ellipsis'],
+  ['font', 'maxLines'],
+  ['runs'],
+];
+
+/** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
+const V4_EXPR_KEYS: readonly (readonly string[])[] = [
+  ['width'],
+  ['height'],
+  ['layout', 'type'],
+  ['layout', 'align'],
+  ['layout', 'justify'],
+];
+
+/**
+ * A regra genérica da v4: para cada nó da árvore (`children` e `template` do repeat) que traz uma
+ * das chaves de `keys` (cadeias como `['stroke', 'cap']`), numa versão anterior à 4, devolve
+ * `só é permitido com formatVersion 4` no caminho da chave. As fases seguintes só acrescentam
+ * cadeias a `V4_NODE_KEYS`. As cadeias de `exprKeys` só contam quando o valor é uma expressão
+ * (objeto com operador `$…`): o literal continua valendo em todas as versões.
+ */
+/** `$token` em qualquer ponto do template, numa versão anterior à 4: `só é permitido com formatVersion 4`. */
+function tokenVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (node: unknown, at: string): void => {
+    if (Array.isArray(node)) return node.forEach((n, i) => walk(n, `${at}[${i}]`));
+    if (!isRecord(node)) return;
+    if ('$token' in node) add(out, at, V4_ONLY_MESSAGE);
+    for (const [key, value] of Object.entries(node)) walk(value, join(at, key));
+  };
+  walk(template, 'template');
+  return out;
+}
+
+/** O nó `icon` numa versão anterior à 4: `só é permitido com formatVersion 4`, no caminho do `type`. */
+function iconVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return [];
+  return nodesOfTypes(template, 'template', ['icon']).map((node) => ({
+    path: node.path,
+    message: V4_ONLY_MESSAGE,
+  }));
+}
+
+export function v4OnlyKeyIssues(
+  version: unknown,
+  node: unknown,
+  path: string,
+  keys: readonly (readonly string[])[],
+  exprKeys: readonly (readonly string[])[] = [],
+): ComponentIssue[] {
+  const out: ComponentIssue[] = [];
+  if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
+    return out;
+  const walk = (n: unknown, at: string): void => {
+    if (!isRecord(n)) return;
+    const flag = (chain: readonly string[], exprOnly: boolean): void => {
+      let cursor: unknown = n;
+      for (const key of chain) cursor = isRecord(cursor) ? cursor[key] : undefined;
+      if (cursor !== undefined && (!exprOnly || isExprObject(cursor)))
+        add(out, [at, ...chain].filter((x) => x !== '').join('.'), V4_ONLY_MESSAGE);
+    };
+    keys.forEach((chain) => flag(chain, false));
+    exprKeys.forEach((chain) => flag(chain, true));
+    if (Array.isArray(n.children))
+      n.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
+    if (n.type === 'repeat') walk(n.template, join(at, 'template'));
+  };
+  walk(node, path);
+  return out;
+}
+
+const V4_ONLY_MESSAGE = 'só é permitido com formatVersion 4';
 
 /** Caminhos dos nós dos tipos dados na árvore (pelos `children` dos quadros e `template` dos repeat). */
 function nodesOfTypes(
@@ -589,6 +913,7 @@ const ROOT_KEYS = [
   'size',
   'minSize',
   'sizing',
+  'screen',
   'preview',
   'template',
 ];
@@ -603,6 +928,13 @@ function checkSizing(value: unknown, path: string, out: ComponentIssue[]): void 
     if (v === 'fill' || v === 'hug' || (isFiniteNumber(v) && v >= 0)) continue;
     add(out, join(path, key), 'esperava número maior ou igual a 0, "fill" ou "hug"');
   }
+}
+
+/** `screen` (só v4, só na raiz): objeto com `anchor` opcional, de `SCREEN_ANCHORS`. */
+function checkScreen(value: unknown, path: string, out: ComponentIssue[]): void {
+  if (!isRecord(value)) return add(out, path, 'esperava objeto');
+  checkKeys(value, ['anchor'], path, out);
+  if ('anchor' in value) oneOf(SCREEN_ANCHORS)(value.anchor, join(path, 'anchor'), out);
 }
 
 /** Todos os problemas do arquivo, com caminho e mensagem separados; lista vazia = válido. */
@@ -642,6 +974,12 @@ function collectIssues(input: unknown): ComponentIssue[] {
 
   if ('sizing' in input) checkSizing(input.sizing, 'sizing', out);
 
+  if ('screen' in input) {
+    checkScreen(input.screen, 'screen', out);
+    if (typeof version === 'number' && version < COMPONENT_FORMAT_VERSION_FIDELITY)
+      add(out, 'screen', V4_ONLY_MESSAGE);
+  }
+
   if ('preview' in input) {
     if (!isRecord(input.preview)) add(out, 'preview', 'esperava objeto');
     else
@@ -668,11 +1006,16 @@ function collectIssues(input: unknown): ComponentIssue[] {
         add(out, node.path, 'o nó repeat só existe na formatVersion 2');
       }
     }
+    out.push(
+      ...v4OnlyKeyIssues(version, input.template, 'template', V4_NODE_KEYS, V4_EXPR_KEYS),
+    );
+    out.push(...tokenVersionIssues(version, input.template));
     if (version === 1 || version === 2) {
       for (const node of nodesOfTypes(input.template, 'template', ['image'])) {
         add(out, node.path, 'o nó image só existe na formatVersion 3');
       }
     }
+    out.push(...iconVersionIssues(version, input.template));
   }
   return out;
 }
@@ -698,31 +1041,54 @@ export function validateComponent(input: unknown): string[] {
   return collectIssues(input).map(formatIssue);
 }
 
+/** Os problemas do arquivo e os `$token` que ele cita (a coleta é local a esta chamada). */
+function collectWithRefs(input: unknown): { issues: ComponentIssue[]; refs: TokenRef[] } {
+  const refs: TokenRef[] = [];
+  tokenSink = refs;
+  try {
+    return { issues: collectIssues(input), refs };
+  } finally {
+    tokenSink = null;
+  }
+}
+
 /** Valida um JSON já lido (não lança). */
 export function parseComponent(input: unknown): ComponentParseResult {
-  const issues = collectIssues(input);
+  const { issues, refs } = collectWithRefs(input);
   if (issues.length > 0) return { ok: false, issues, errors: issues.map(formatIssue) };
   const component = input as ComponentFile;
   return {
     ok: true,
     component,
     warnings: collectWarnings(component.template, 'template'),
+    tokenRefs: refs,
   };
 }
 
+/** Aviso de um `family` literal (no `font` do nó ou num trecho) que o CSS não aceita. */
+function familyWarning(holder: unknown, path: string): ComponentIssue[] {
+  const family = isRecord(holder) ? holder.family : undefined;
+  if (typeof family !== 'string' || isValidFontFamily(family)) return [];
+  return [
+    {
+      path: join(path, 'family'),
+      message: `família de fonte inválida para o CSS (${JSON.stringify(family)}): o texto cai em sans-serif`,
+    },
+  ];
+}
+
 /**
- * Avisos (não erros): hoje, um `font.family` literal que o CSS não aceita (o desenho cai em
- * `sans-serif`). Expressões não são conferidas aqui.
+ * Avisos (não erros): hoje, um `font.family` (ou `runs[i].family`) literal que o CSS não aceita
+ * (o desenho cai em `sans-serif`). Expressões não são conferidas aqui.
  */
 function collectWarnings(node: unknown, path: string): ComponentIssue[] {
   if (!isRecord(node)) return [];
   const out: ComponentIssue[] = [];
-  const family = isRecord(node.font) ? node.font.family : undefined;
-  if (typeof family === 'string' && !isValidFontFamily(family))
-    out.push({
-      path: join(join(path, 'font'), 'family'),
-      message: `família de fonte inválida para o CSS (${JSON.stringify(family)}): o texto cai em sans-serif`,
-    });
+  out.push(...familyWarning(node.font, join(path, 'font')));
+  if (Array.isArray(node.runs))
+    node.runs.forEach((run: unknown, i) =>
+      out.push(...familyWarning(run, `${join(path, 'runs')}[${i}]`)),
+    );
   const children = Array.isArray(node.children) ? node.children : [];
   children.forEach((child: unknown, i) =>
     out.push(...collectWarnings(child, `${join(path, 'children')}[${i}]`)),

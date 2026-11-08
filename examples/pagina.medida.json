@@ -1,0 +1,39 @@
+{
+  "type": "body",
+  "classes": ["x-pagina"],
+  "rect": { "x": 0, "y": 0, "width": 800, "height": 600 },
+  "children": [
+    {
+      "type": "div",
+      "classes": ["card"],
+      "rect": { "x": 40, "y": 40, "width": 400, "height": 200 },
+      "children": [
+        {
+          "type": "button",
+          "classes": ["btn-primary"],
+          "rect": { "x": 60, "y": 160, "width": 120, "height": 40 },
+          "props": { "label": "Salvar", "tone": "danger" }
+        },
+        {
+          "type": "button",
+          "classes": ["btn-primary"],
+          "rect": { "x": 200, "y": 160, "width": 120, "height": 40 },
+          "props": { "label": "Cancelar", "tone": "neutral" }
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "classes": ["x-misterioso"],
+      "rect": { "x": 40, "y": 280, "width": 400, "height": 120 },
+      "children": [
+        {
+          "type": "button",
+          "classes": ["btn-primary"],
+          "rect": { "x": 60, "y": 320, "width": 120, "height": 40 },
+          "props": { "label": "Ajuda", "tone": "neutral" }
+        }
+      ]
+    }
+  ]
+}

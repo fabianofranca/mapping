@@ -150,6 +150,91 @@ describe('MarkingRenderer', () => {
     expect(m1.border.dash()).toEqual([6, 4]);
   });
 
+  describe('indicadores em zoom baixo (marcação que desenha componente)', () => {
+    const drawn = new Set(['M1']);
+    // M1 mede 600×500 no canvas: a 0,02 de zoom são 12×10 px de tela, a 0,2 são 120×100.
+    const SMALL = { x: 0, y: 0, scale: 0.02 };
+    const BIG = { x: 0, y: 0, scale: 0.2 };
+    const manyDots = (editor: ReturnType<typeof setup>['editor']): LayerDot[] => {
+      const layer = editor.store.project.peek()?.layers[0];
+      if (!layer) throw new Error('fixture');
+      return Array.from({ length: 6 }, (_, i) => ({ layer: { ...layer, id: `L${i}` } }));
+    };
+
+    it('menor que o limite do token: bolinhas e "+N" somem', () => {
+      const { renderer, render, editor } = setup();
+      render({ drawn, viewport: SMALL, dots: new Map([['M1', manyDots(editor)]]) });
+      const m1 = node(renderer, 'M1');
+      expect(m1.dots.some((d) => d.visible())).toBe(false);
+      expect(m1.more.visible()).toBe(false);
+    });
+
+    it('maior que o limite: bolinhas e "+N" aparecem', () => {
+      const { renderer, render, editor } = setup();
+      render({ drawn, viewport: BIG, dots: new Map([['M1', manyDots(editor)]]) });
+      const m1 = node(renderer, 'M1');
+      expect(m1.dots.filter((d) => d.visible())).toHaveLength(4);
+      expect(m1.more.visible()).toBe(true);
+    });
+
+    it('largura OU altura abaixo do limite já recolhe', () => {
+      const { renderer, render } = setup();
+      // 600×500 a 0,04 = 24×20: a altura (20) fica abaixo de 24.
+      render({ drawn, viewport: { x: 0, y: 0, scale: 0.04 } });
+      expect(node(renderer, 'M1').dots[0]?.visible()).toBe(false);
+    });
+
+    it('o limite vem do token (size-indicator-min-marking)', () => {
+      const { renderer, render } = setup();
+      expect(TOKENS.indicatorMinMarking).toBeGreaterThan(0);
+      render({
+        drawn,
+        viewport: SMALL,
+        tokens: { ...TOKENS, indicatorMinMarking: 5 },
+      });
+      expect(node(renderer, 'M1').dots[0]?.visible()).toBe(true);
+    });
+
+    it('selecionada ou sob o mouse mostra tudo', () => {
+      const { renderer, render, editor } = setup();
+      const dots = new Map([['M1', manyDots(editor)]]);
+      render({ drawn, viewport: SMALL, dots, hoverMarking: 'M1' });
+      const m1 = node(renderer, 'M1');
+      expect(m1.dots[0]?.visible()).toBe(true);
+      expect(m1.more.visible()).toBe(true);
+      render({ drawn, viewport: SMALL, dots, hoverMarking: null });
+      expect(m1.dots[0]?.visible()).toBe(false);
+      render({
+        drawn,
+        viewport: SMALL,
+        dots,
+        selection: { kind: 'marking', id: 'M1' },
+      });
+      expect(m1.dots[0]?.visible()).toBe(true);
+      expect(m1.more.visible()).toBe(true);
+    });
+
+    it('o alerta de incompleta aparece nos dois tamanhos', () => {
+      const { renderer, render } = setup();
+      const incomplete = new Set(['M1']);
+      render({ drawn, incomplete, viewport: SMALL });
+      const m1 = node(renderer, 'M1');
+      expect(m1.alert.visible()).toBe(true);
+      expect(m1.dots[0]?.visible()).toBe(false);
+      render({ drawn, incomplete, viewport: BIG });
+      expect(m1.alert.visible()).toBe(true);
+      expect(m1.dots[0]?.visible()).toBe(true);
+    });
+
+    it('marcação sem componente mantém as bolinhas e o "+N" no zoom baixo', () => {
+      const { renderer, render, editor } = setup();
+      render({ viewport: SMALL, dots: new Map([['M1', manyDots(editor)]]) });
+      const m1 = node(renderer, 'M1');
+      expect(m1.dots.filter((d) => d.visible())).toHaveLength(4);
+      expect(m1.more.visible()).toBe(true);
+    });
+  });
+
   describe('marcação com o desenho à vista', () => {
     const drawn = new Set(['M1']);
 

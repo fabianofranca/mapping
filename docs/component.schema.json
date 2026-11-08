@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mapping.local/component.schema.json",
-  "title": "Mapping — componente (mapping-component, formatVersion 1, 2 e 3)",
-  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres).",
+  "title": "Mapping — componente (mapping-component, formatVersion 1, 2, 3 e 4)",
+  "description": "Valida só a estrutura do arquivo de componente. A fonte da verdade é o código (src/model/components/parseComponent.ts), que também confere o que o schema não vê: campos citados pelas expressões que existem no tipo da especialização, minSize não maior que size, raiz do template obrigatoriamente do tipo frame, o slot único e a prova de desenho. Veja COMPONENT-FORMAT.md. O nó repeat (a tabela desenhada) vale a partir da formatVersion 2: numa formatVersion 1 é erro do parseComponent; o repeat não pode ter repeat nem slot dentro, e o schema não confere que o campo citado é uma table do tipo. O nó image (imagem remota) só existe na formatVersion 3: numa 1 ou 2 é erro do parseComponent; o schema confere que o src é um literal https:// ou exatamente {\"$field\"}, mas não que o campo ligado é do tipo string nem a forma completa da URL (sem usuário e senha, até 2048 caracteres). A formatVersion 4 acrescenta stroke.cap, stroke.join e stroke.sides, minWidth, maxWidth, minHeight e maxHeight (qualquer nó), repeat.distribute e expressão em width, height, layout.type, layout.align e layout.justify (numa versão menor é erro do parseComponent; o literal nessas cinco chaves vale em todas as versões). O schema não confere que minWidth não é maior que maxWidth. A formatVersion 4 também aceita { \"$token\": \"nome\" } onde se espera cor, número ou família de fonte (o schema deixa a expressão nas chaves de tipo compatível, mas não confere a posição nem que o token existe nos tokens da especialização: isso é do parseComponent e do validate_library).",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "formatVersion", "id", "name", "size", "template"],
@@ -11,7 +11,7 @@
       "const": "mapping-component"
     },
     "formatVersion": {
-      "enum": [1, 2, 3]
+      "enum": [1, 2, 3, 4]
     },
     "id": {
       "type": "string",
@@ -32,6 +32,26 @@
     },
     "sizing": {
       "$ref": "#/$defs/sizing"
+    },
+    "screen": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "enum": [
+            "center",
+            "top-left",
+            "top",
+            "top-right",
+            "left",
+            "right",
+            "bottom-left",
+            "bottom",
+            "bottom-right"
+          ]
+        }
+      },
+      "description": "formatVersion 4, só na raiz. O template é desenhado no size do componente em pixels de tela, em qualquer zoom, ancorado no ponto anchor (padrão center) do retângulo da marcação; o desenho pode passar do retângulo (sem a pendência 'não cabe'). Numa formatVersion menor o parseComponent recusa com 'só é permitido com formatVersion 4'."
     },
     "preview": {
       "type": "object",
@@ -146,6 +166,23 @@
         }
       ]
     },
+    "lit_runPadding": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      ]
+    },
     "lit_layoutAlign": {
       "enum": ["start", "center", "end", "stretch"]
     },
@@ -162,7 +199,7 @@
       "enum": ["none", "underline", "line-through"]
     },
     "expr_number": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_number"
@@ -227,11 +264,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_nonNegative": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_nonNegative"
@@ -296,11 +343,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_unit": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_unit"
@@ -365,11 +422,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_weight": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_weight"
@@ -434,11 +501,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_string": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_string"
@@ -501,6 +578,16 @@
               "items": {
                 "$ref": "#/$defs/expr_textOrNumber"
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
             }
           }
         }
@@ -576,7 +663,7 @@
       ]
     },
     "expr_color": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_color"
@@ -639,6 +726,16 @@
               "items": {
                 "$ref": "#/$defs/expr_textOrNumber"
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
             }
           }
         }
@@ -717,7 +814,7 @@
       ]
     },
     "expr_fill": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_fill"
@@ -782,11 +879,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_cornerRadius": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_cornerRadius"
@@ -851,11 +958,21 @@
               }
             }
           }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
         }
       ]
     },
     "expr_padding": {
-      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
       "anyOf": [
         {
           "$ref": "#/$defs/lit_padding"
@@ -918,6 +1035,95 @@
               "items": {
                 "$ref": "#/$defs/expr_textOrNumber"
               }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
+        }
+      ]
+    },
+    "expr_runPadding": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_runPadding"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_runPadding"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_runPadding"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_runPadding"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_runPadding"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_runPadding"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
             }
           }
         }
@@ -1501,8 +1707,22 @@
             "type": "number",
             "minimum": 0
           }
+        },
+        "cap": {
+          "$ref": "#/$defs/expr_cap"
+        },
+        "join": {
+          "$ref": "#/$defs/expr_join"
+        },
+        "sides": {
+          "$ref": "#/$defs/expr_sides"
+        },
+        "scale": {
+          "type": "boolean",
+          "description": "true (padrão): a largura escala com o zoom; false: a largura é em pixels de tela, em qualquer zoom."
         }
-      }
+      },
+      "description": "cap, join, sides e scale só existem na formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4'). sides só vale em frame e rect (em ellipse e path é erro do parseComponent, que o schema não confere)."
     },
     "shadow": {
       "type": "object",
@@ -1554,11 +1774,63 @@
         },
         "decoration": {
           "$ref": "#/$defs/expr_decoration"
+        },
+        "wrap": {
+          "description": "formatVersion 4. word (padrão) quebra por palavra; none é uma linha por parágrafo.",
+          "$ref": "#/$defs/expr_wrap"
+        },
+        "ellipsis": {
+          "description": "formatVersion 4. O texto que não cabe (na largura com wrap none, ou além de maxLines) termina em …",
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "maxLines": {
+          "description": "formatVersion 4. Inteiro maior ou igual a 1; a última linha permitida leva o … (com ellipsis) ou é cortada.",
+          "$ref": "#/$defs/expr_positiveInteger"
+        }
+      }
+    },
+    "run": {
+      "description": "formatVersion 4. Um trecho do texto rico (runs): quebra linha junto com os outros como um texto só. weight, italic, family, size e decoration sobrepõem o font do nó; color sobrepõe o color do nó. Com background o trecho é uma caixa em linha (chip) inquebrável, com radius e padding.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": {
+          "$ref": "#/$defs/expr_textOrNumber"
+        },
+        "weight": {
+          "$ref": "#/$defs/expr_weight"
+        },
+        "italic": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "color": {
+          "$ref": "#/$defs/expr_color"
+        },
+        "decoration": {
+          "$ref": "#/$defs/expr_decoration"
+        },
+        "family": {
+          "$ref": "#/$defs/expr_string"
+        },
+        "size": {
+          "$ref": "#/$defs/expr_number"
+        },
+        "background": {
+          "description": "Cor de fundo da caixa em linha; none = sem caixa.",
+          "$ref": "#/$defs/expr_color"
+        },
+        "radius": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "padding": {
+          "description": "Número (os dois eixos) ou [vertical, horizontal].",
+          "$ref": "#/$defs/expr_runPadding"
         }
       }
     },
     "layout": {
-      "description": "Distribuição dos filhos: none (âncoras), row ou column.",
+      "description": "Distribuição dos filhos: none (âncoras), row ou column. Na formatVersion 4, type, align e justify aceitam expressão; com type literal \"none\" só type vale.",
       "anyOf": [
         {
           "type": "object",
@@ -1576,7 +1848,7 @@
           "required": ["type"],
           "properties": {
             "type": {
-              "enum": ["row", "column"]
+              "$ref": "#/$defs/expr_layoutFlow"
             },
             "gap": {
               "$ref": "#/$defs/expr_nonNegative"
@@ -1612,10 +1884,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1664,10 +1948,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1704,10 +2000,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1727,9 +2035,18 @@
       }
     },
     "node_text": {
+      "description": "Exatamente um de text e runs (runs só na formatVersion 4).",
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "text"],
+      "required": ["type"],
+      "oneOf": [
+        {
+          "required": ["text"]
+        },
+        {
+          "required": ["runs"]
+        }
+      ],
       "properties": {
         "type": {
           "const": "text"
@@ -1744,10 +2061,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1766,6 +2095,14 @@
         },
         "text": {
           "$ref": "#/$defs/expr_textOrNumber"
+        },
+        "runs": {
+          "description": "formatVersion 4. Lista não vazia de trechos com estilo próprio (no lugar de text).",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/run"
+          }
         },
         "font": {
           "$ref": "#/$defs/font"
@@ -1793,10 +2130,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1848,10 +2197,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1902,8 +2263,70 @@
         },
         {
           "$ref": "#/$defs/node_image"
+        },
+        {
+          "$ref": "#/$defs/node_icon"
         }
       ]
+    },
+    "node_icon": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "formatVersion 4. Ícone do conjunto da biblioteca (icons da especialização, formatVersion 15). O name é o nome do ícone no conjunto (literal ou expressão; aqui não há nome de nó). color pinta os caminhos sem cor própria e os que pedem a cor do nó (fill/stroke true); strokeWidth (unidades do viewBox) troca a largura dos traços. hug mede o viewBox do ícone. Nome fora do conjunto: reservado com o aviso ícone desconhecido; literal fora do conjunto é erro do validador da biblioteca.",
+      "required": ["type", "name"],
+      "properties": {
+        "type": {
+          "const": "icon"
+        },
+        "name": {
+          "$ref": "#/$defs/expr_string"
+        },
+        "visible": {
+          "$ref": "#/$defs/expr_boolean"
+        },
+        "opacity": {
+          "$ref": "#/$defs/expr_unit"
+        },
+        "width": {
+          "$ref": "#/$defs/expr_size"
+        },
+        "height": {
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "anchors": {
+          "$ref": "#/$defs/anchors"
+        },
+        "fill": {
+          "$ref": "#/$defs/expr_fill"
+        },
+        "stroke": {
+          "$ref": "#/$defs/stroke"
+        },
+        "shadow": {
+          "$ref": "#/$defs/shadow"
+        },
+        "cornerRadius": {
+          "$ref": "#/$defs/expr_cornerRadius"
+        },
+        "color": {
+          "$ref": "#/$defs/expr_color"
+        },
+        "strokeWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        }
+      }
     },
     "node_image": {
       "type": "object",
@@ -1924,10 +2347,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size_noHug"
+          "$ref": "#/$defs/expr_sizeNoHug"
         },
         "height": {
-          "$ref": "#/$defs/size_noHug"
+          "$ref": "#/$defs/expr_sizeNoHug"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -1986,10 +2421,22 @@
           "$ref": "#/$defs/expr_unit"
         },
         "width": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
         },
         "height": {
-          "$ref": "#/$defs/size"
+          "$ref": "#/$defs/expr_size"
+        },
+        "minWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxWidth": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "minHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
+        },
+        "maxHeight": {
+          "$ref": "#/$defs/expr_nonNegative"
         },
         "anchors": {
           "$ref": "#/$defs/anchors"
@@ -2003,10 +2450,684 @@
         "gap": {
           "$ref": "#/$defs/expr_nonNegative"
         },
+        "distribute": {
+          "enum": ["none", "fill"],
+          "description": "formatVersion 4: \"fill\" faz o repeat ocupar o eixo do pai e dividir o eixo das linhas igualmente (menos os gaps); \"none\" (padrão) é hug no eixo das linhas. Só literal."
+        },
         "template": {
           "$ref": "#/$defs/node_frame"
         }
       }
+    },
+    "lit_cap": {
+      "enum": ["butt", "round", "square"]
+    },
+    "lit_join": {
+      "enum": ["miter", "round", "bevel"]
+    },
+    "lit_sides": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": ["top", "right", "bottom", "left"]
+      },
+      "description": "Lista não vazia de lados. A ausência de repetição é conferida pelo parseComponent, não pelo schema."
+    },
+    "expr_cap": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_cap"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_cap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_cap"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_cap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_cap"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_cap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_join": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_join"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_join"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_join"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_join"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_join"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_join"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_sides": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_sides"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_sides"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_sides"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_sides"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_sides"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_sides"
+            }
+          }
+        }
+      ]
+    },
+    "lit_layoutType": {
+      "enum": ["none", "row", "column"]
+    },
+    "lit_layoutFlow": {
+      "enum": ["row", "column"]
+    },
+    "expr_layoutType": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_layoutType"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_layoutType"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_layoutType"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_layoutFlow": {
+      "description": "Tipo do layout de um quadro ou slot que não é o literal \"none\": row ou column, ou uma expressão cujos ramos são none, row ou column (formatVersion 4).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_layoutFlow"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_layoutType"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_layoutType"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_layoutType"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_size": {
+      "description": "Tamanho de nó: literal (px, \"fill\", \"hug\" ou \"NN%\") ou expressão ($field, $if, $switch, $concat, $token). A expressão vale a partir da formatVersion 4 (numa 1, 2 ou 3 o parseComponent recusa com 'só é permitido com formatVersion 4').",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/size"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/size"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_size"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_size"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_size"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_size"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
+        }
+      ]
+    },
+    "expr_sizeNoHug": {
+      "description": "Tamanho do nó image: literal (px, \"fill\" ou \"NN%\", sem hug) ou expressão, formatVersion 4.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/size_noHug"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/size_noHug"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_sizeNoHug"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_sizeNoHug"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_sizeNoHug"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_sizeNoHug"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
+        }
+      ]
+    },
+    "lit_wrap": {
+      "enum": ["word", "none"]
+    },
+    "lit_positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "expr_wrap": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_wrap"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_wrap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_wrap"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_wrap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_wrap"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_wrap"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "expr_positiveInteger": {
+      "description": "Literal ou expressão ($field, $if, $switch, $concat, $token).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/lit_positiveInteger"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$field"],
+          "properties": {
+            "$field": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "default": {
+              "$ref": "#/$defs/lit_positiveInteger"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$if", "then"],
+          "properties": {
+            "$if": {
+              "$ref": "#/$defs/condition"
+            },
+            "then": {
+              "$ref": "#/$defs/expr_positiveInteger"
+            },
+            "else": {
+              "$ref": "#/$defs/expr_positiveInteger"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$switch", "cases"],
+          "properties": {
+            "$switch": {
+              "$ref": "#/$defs/fieldKey"
+            },
+            "cases": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/expr_positiveInteger"
+              }
+            },
+            "default": {
+              "$ref": "#/$defs/expr_positiveInteger"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$concat"],
+          "properties": {
+            "$concat": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expr_textOrNumber"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["$token"],
+          "properties": {
+            "$token": {
+              "$ref": "#/$defs/tokenName"
+            }
+          }
+        }
+      ]
+    },
+    "tokenName": {
+      "description": "Nome de um token da especialização (formatVersion 15 da especialização; formatVersion 4 do componente).",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
     }
   }
 }
