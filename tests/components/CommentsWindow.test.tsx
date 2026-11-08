@@ -141,7 +141,8 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     const options = Array.from(select.querySelectorAll('option')).map(
       (o) => o.textContent,
     );
-    expect(options[0]).toBe(t('comments.filter.userAll', { count: 3 }));
+    expect(options[0]).toBe(t('comments.filter.userAll'));
+    expect(options[0]).not.toMatch(/\d/);
     expect(options.some((o) => o?.includes('marina@exemplo.com'))).toBe(true);
     expect(options).toContain(
       t('comments.filter.userAgent', { name: 'Claude Code' }) + ' (1)',
