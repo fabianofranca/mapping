@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addAnnotation,
   buildListing,
+  createMarking,
   canMoveItems,
   deserialize,
   getAnnotationIssues,
@@ -251,5 +252,82 @@ describe('assentar um espaço denso: crescimento', () => {
     );
     times.sort((a, b) => a - b);
     expect(times[4]).toBeLessThan(50);
+  });
+});
+
+// Edição em projeto grande (#882, fase 2): uma edição custa o espaço que ela mexe, não o projeto inteiro.
+describe('edição: crescimento e orçamento', () => {
+  /** A i-ésima marcação nova de `I0`: fora dos grupos do fixture, numa grade de 100 colunas. */
+  const newRect = (i: number) => ({
+    x: (i % 100) * 38 + 5,
+    y: 2750 + Math.floor(i / 100) * 24,
+    width: 20,
+    height: 20,
+  });
+  const createMany = (p: Project, count: number): Project => {
+    let next = p;
+    for (let i = 0; i < count; i++) {
+      next = createMarking(next, { id: `N${i}`, containerId: 'I0', rect: newRect(i) });
+    }
+    return next;
+  };
+  /** Um projeto do `buildLargeProject` com `n` marcações (25 por imagem). */
+  const largeOf = (n: number): Project => buildLargeProject({ images: n / 25 });
+
+  it(
+    'criar marcações uma a uma num container: 250 → 1.000 criações, razão < 5×',
+    GROWTH_OPTIONS,
+    () => {
+      const project = buildLargeProject();
+      expectLinearGrowth('criar uma a uma', {
+        build: (n) => ({ project, count: n }),
+        run: ({ project: p, count }) => createMany(p, count),
+        prepare: ({ project: p }) => projectIndex(p),
+        n: 250,
+        warmup: 2,
+        runs: 5,
+      });
+    },
+  );
+
+  it(
+    'uma edição (criar, mover): 2.500 → 10.000 marcações, razão < 5×',
+    GROWTH_OPTIONS,
+    () => {
+      for (const [label, edit] of [
+        [
+          'criar uma marcação',
+          (p: Project) =>
+            createMarking(p, { id: 'N', containerId: 'I0', rect: newRect(0) }),
+        ],
+        ['mover uma marcação', (p: Project) => moveMarking(p, 'M0-0', 5, 5)],
+      ] as const) {
+        expectLinearGrowth(`edição: ${label}`, {
+          build: largeOf,
+          run: edit,
+          prepare: (p) => projectIndex(p),
+          n: 2500,
+        });
+      }
+    },
+  );
+
+  budgetIt('1.000 criações num container abaixo de 2 s', BUDGET_OPTIONS, () => {
+    const project = buildLargeProject();
+    const created = time(() => createMany(project, 1000));
+    expect(created.value.markings).toHaveLength(1500);
+    expect(created.ms).toBeLessThan(2000);
+  });
+
+  budgetIt('uma edição com 10.000 marcações abaixo de 16 ms', BUDGET_OPTIONS, () => {
+    const project = largeOf(10000);
+    expect(project.markings).toHaveLength(10000);
+    for (const edit of [
+      (p: Project) => createMarking(p, { id: 'N', containerId: 'I0', rect: newRect(0) }),
+      (p: Project) => moveMarking(p, 'M0-0', 5, 5),
+    ]) {
+      projectIndex(project);
+      expect(medianMs(edit, project)).toBeLessThan(16);
+    }
   });
 });
