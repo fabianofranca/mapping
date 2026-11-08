@@ -8,7 +8,7 @@ import {
   rectsOverlap,
 } from './geometry';
 import { tableRows } from './refs';
-import type { Entry, Perspective, Project } from './types';
+import type { Entry, Perspective, Project, Rect } from './types';
 
 export type InvariantCode =
   | 'duplicate-id'
@@ -137,65 +137,31 @@ function rootProblem(
 }
 
 /**
- * Para cada container, os ids (na ordem da lista, só os posteriores a ele) dos containers cujo
- * retângulo no canvas o sobrepõe. Agrupa por células de grade do tamanho do maior container (cada
- * retângulo cai em até 4 células), então só compara vizinhos: cresce linear quando os containers
- * estão espalhados, em vez de comparar todos os pares. Com coordenada não finita, volta ao laço duplo.
+ * Para cada container (pelo índice), os índices posteriores a ele, crescentes, cujo retângulo no
+ * canvas o sobrepõe. Agrupa por células de grade do tamanho do maior container (cada retângulo cai
+ * em até 4 células) e só compara vizinhos: cresce linear com os containers espalhados, em vez de
+ * comparar todos os pares.
  */
-function overlappingContainers(
-  containers: Project['containers'],
-): ReadonlyMap<number, string[]> {
-  const items = containers.map((c, order) => ({
-    id: c.id,
-    order,
-    rect: imageCanvasRect(c, c.placement),
-  }));
-  const found = new Map<number, { order: number; id: string }[]>();
-  const add = (a: (typeof items)[number], b: (typeof items)[number]) => {
-    if (!rectsOverlap(a.rect, b.rect)) return;
-    const list = found.get(a.order) ?? [];
-    list.push({ order: b.order, id: b.id });
-    found.set(a.order, list);
-  };
-  const cell = Math.max(1, ...items.map((i) => Math.max(i.rect.width, i.rect.height)));
-  const finite =
-    Number.isFinite(cell) &&
-    items.every((i) =>
-      [i.rect.x, i.rect.y, i.rect.width, i.rect.height].every(Number.isFinite),
-    );
-  if (!finite) {
-    items.forEach((a, i) => items.slice(i + 1).forEach((b) => add(a, b)));
-  } else {
-    const cells = new Map<string, (typeof items)[number][]>();
-    for (const item of items) {
-      const { x, y, width, height } = item.rect;
-      for (let cx = Math.floor(x / cell); cx <= Math.floor((x + width) / cell); cx++) {
-        for (let cy = Math.floor(y / cell); cy <= Math.floor((y + height) / cell); cy++) {
-          const key = `${cx},${cy}`;
-          const bucket = cells.get(key);
-          if (bucket) bucket.push(item);
-          else cells.set(key, [item]);
-        }
+function overlappingContainers(containers: Project['containers']): number[][] {
+  const rects = containers.map((c) => imageCanvasRect(c, c.placement));
+  const size = Math.max(1, ...rects.map((r) => Math.max(r.width, r.height)));
+  const found = rects.map(() => new Set<number>());
+  const cells = new Map<string, number[]>();
+  const cell = (v: number) => Math.floor(v / size);
+  rects.forEach((r, i) => {
+    const x1 = cell(r.x + r.width);
+    const y1 = cell(r.y + r.height);
+    if (!Number.isFinite(x1 + y1 + r.x + r.y)) return;
+    for (let x = cell(r.x); x <= x1; x++) {
+      for (let y = cell(r.y); y <= y1; y++) {
+        const key = `${x},${y}`;
+        const bucket = cells.get(key) ?? [];
+        for (const j of bucket) if (rectsOverlap(rects[j] as Rect, r)) found[j]?.add(i);
+        cells.set(key, [...bucket, i]);
       }
     }
-    const seen = new Set<string>();
-    for (const bucket of cells.values()) {
-      bucket.forEach((a, i) => {
-        for (const b of bucket.slice(i + 1)) {
-          const key = `${a.order}:${b.order}`; // bucket é crescente em `order`
-          if (seen.has(key)) continue;
-          seen.add(key);
-          add(a, b);
-        }
-      });
-    }
-  }
-  return new Map(
-    [...found].map(([order, list]) => [
-      order,
-      list.sort((x, y) => x.order - y.order).map((o) => o.id),
-    ]),
-  );
+  });
+  return found.map((set) => [...set].sort((a, b) => a - b));
 }
 
 type Report = (code: InvariantCode, item: Named, otherId?: string) => void;
@@ -342,7 +308,8 @@ export function validateProject(p: Project): InvariantIssue[] {
     if ((image.file === null) !== (image.background !== null)) {
       imageIssue('container-content', image);
     }
-    for (const other of overlaps.get(i) ?? []) imageIssue('images-overlap', image, other);
+    for (const j of overlaps[i] ?? [])
+      imageIssue('images-overlap', image, p.containers[j]?.id ?? '');
   });
 
   const containers = new Map(p.containers.map((image) => [image.id, image]));
