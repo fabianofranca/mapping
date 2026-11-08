@@ -1,4 +1,4 @@
-# Watcher no workspace — [Não lançado] (épico `epic/watcher-no-workspace`, PR #0, MCP 0.28.2, schema v18)
+# Watcher no workspace — 2026-11-08 (épico `epic/watcher-no-workspace`, PR #876, MCP 0.28.2, schema v18)
 
 ## Adicionado
 
