@@ -1,4 +1,4 @@
-# Revisor de código — [Não lançado] (épico `epic/revisor-codigo`, PR #0, MCP 0.28.4, schema v18)
+# Revisor de código — 2026-11-08 (épico `epic/revisor-codigo`, PR #985, MCP 0.28.4, schema v18)
 
 ## Adicionado
 
