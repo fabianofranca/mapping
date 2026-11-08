@@ -728,6 +728,27 @@ describe('limitItemsMove: o arrasto que encosta', () => {
     expect(() => moveItems(p, [img('A'), mark('N')], d.dx, d.dy)).not.toThrow();
   });
 
+  it('vizinho fracionário: com marcação do canvas na seleção encosta a menos de 1 unidade, sem sobrepor', () => {
+    const base = multiProject();
+    const p = {
+      ...base,
+      containers: base.containers.map((c) =>
+        c.id === 'B' ? { ...c, placement: { ...c.placement, x: 2000.4 } } : c,
+      ),
+    };
+    const items = [img('A'), mark('N')];
+    const d = limitItemsMove(p, items, 1500, 0);
+    const q = expectValid(moveItems(p, items, d.dx, d.dy));
+    const gap = image(q, 'B').placement.x - (image(q, 'A').placement.x + 1000);
+    expect(Number.isInteger(d.dx)).toBe(true);
+    expect(gap).toBeGreaterThanOrEqual(0);
+    expect(gap).toBeLessThan(1);
+    // Sem marcação do canvas na seleção o deslocamento é fracionário e encosta exato.
+    const solo = limitItemsMove(p, [img('A')], 1500, 0);
+    const r = expectValid(moveItems(p, [img('A')], solo.dx, solo.dy));
+    expect(image(r, 'A').placement.x + 1000).toBeCloseTo(image(r, 'B').placement.x, 9);
+  });
+
   it('destino livre depois de passar por cima de um container fica como pedido', () => {
     const p = multiProject();
     // A (0..1000) vai para o vão entre B (2000..3000) e C (4000): 3000..4000, sem sobrepor.
