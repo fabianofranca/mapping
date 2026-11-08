@@ -136,6 +136,68 @@ function rootProblem(
   return ids.roots.has(root) ? null : 'not-root';
 }
 
+/**
+ * Para cada container, os ids (na ordem da lista, só os posteriores a ele) dos containers cujo
+ * retângulo no canvas o sobrepõe. Agrupa por células de grade do tamanho do maior container (cada
+ * retângulo cai em até 4 células), então só compara vizinhos: cresce linear quando os containers
+ * estão espalhados, em vez de comparar todos os pares. Com coordenada não finita, volta ao laço duplo.
+ */
+function overlappingContainers(
+  containers: Project['containers'],
+): ReadonlyMap<number, string[]> {
+  const items = containers.map((c, order) => ({
+    id: c.id,
+    order,
+    rect: imageCanvasRect(c, c.placement),
+  }));
+  const found = new Map<number, { order: number; id: string }[]>();
+  const add = (a: (typeof items)[number], b: (typeof items)[number]) => {
+    if (!rectsOverlap(a.rect, b.rect)) return;
+    const list = found.get(a.order) ?? [];
+    list.push({ order: b.order, id: b.id });
+    found.set(a.order, list);
+  };
+  const cell = Math.max(1, ...items.map((i) => Math.max(i.rect.width, i.rect.height)));
+  const finite =
+    Number.isFinite(cell) &&
+    items.every((i) =>
+      [i.rect.x, i.rect.y, i.rect.width, i.rect.height].every(Number.isFinite),
+    );
+  if (!finite) {
+    items.forEach((a, i) => items.slice(i + 1).forEach((b) => add(a, b)));
+  } else {
+    const cells = new Map<string, (typeof items)[number][]>();
+    for (const item of items) {
+      const { x, y, width, height } = item.rect;
+      for (let cx = Math.floor(x / cell); cx <= Math.floor((x + width) / cell); cx++) {
+        for (let cy = Math.floor(y / cell); cy <= Math.floor((y + height) / cell); cy++) {
+          const key = `${cx},${cy}`;
+          const bucket = cells.get(key);
+          if (bucket) bucket.push(item);
+          else cells.set(key, [item]);
+        }
+      }
+    }
+    const seen = new Set<string>();
+    for (const bucket of cells.values()) {
+      bucket.forEach((a, i) => {
+        for (const b of bucket.slice(i + 1)) {
+          const key = `${a.order}:${b.order}`; // bucket é crescente em `order`
+          if (seen.has(key)) continue;
+          seen.add(key);
+          add(a, b);
+        }
+      });
+    }
+  }
+  return new Map(
+    [...found].map(([order, list]) => [
+      order,
+      list.sort((x, y) => x.order - y.order).map((o) => o.id),
+    ]),
+  );
+}
+
 type Report = (code: InvariantCode, item: Named, otherId?: string) => void;
 
 /** Camadas escondidas e itens (raiz existente, que é raiz e sem repetir) de uma perspectiva. */
@@ -270,6 +332,7 @@ export function validateProject(p: Project): InvariantIssue[] {
   }
 
   const files = new Set<string>();
+  const overlaps = overlappingContainers(p.containers);
   p.containers.forEach((image, i) => {
     // Container sem arquivo (sem arquivo) não disputa nome; cor e arquivo são mutuamente exclusivos.
     if (image.file !== null) {
@@ -279,12 +342,7 @@ export function validateProject(p: Project): InvariantIssue[] {
     if ((image.file === null) !== (image.background !== null)) {
       imageIssue('container-content', image);
     }
-    const rect = imageCanvasRect(image, image.placement);
-    for (const other of p.containers.slice(i + 1)) {
-      if (rectsOverlap(rect, imageCanvasRect(other, other.placement))) {
-        imageIssue('images-overlap', image, other.id);
-      }
-    }
+    for (const other of overlaps.get(i) ?? []) imageIssue('images-overlap', image, other);
   });
 
   const containers = new Map(p.containers.map((image) => [image.id, image]));
