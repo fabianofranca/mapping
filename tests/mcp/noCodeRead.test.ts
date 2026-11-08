@@ -141,7 +141,8 @@ describe('o servidor não abre arquivos de código (estático)', () => {
     // Quem entra aqui lê/grava `mapping.json`, `specs/`, imagens, `proposals/` ou arquivos de
     // especialização (`validate_specialization`) e de pacotes de biblioteca (`library.ts`: só `.json`
     // e `.md` são lidos; o resto é listado) ou o `.md` do documento externo de um tipo
-    // (`docFiles.ts`, confinado ao diretório de trabalho pelo mesmo conferidor), nunca código. Um módulo novo
+    // (`docFiles.ts`, confinado ao diretório de trabalho pelo mesmo conferidor) ou o `.json` de um lote
+    // (`operationsFile.ts`, dentro das raízes), nunca código. Um módulo novo
     // que precise do disco entra nesta lista de propósito, depois de conferir que não toca em código.
     expect(importers).toEqual([
       'changes.ts',
@@ -150,6 +151,7 @@ describe('o servidor não abre arquivos de código (estático)', () => {
       'docFiles.ts',
       'imageTools.ts',
       'library.ts',
+      'operationsFile.ts',
       'paths.ts',
       'projects.ts',
       'proposalStore.ts',

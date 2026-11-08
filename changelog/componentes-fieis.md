@@ -20,6 +20,8 @@
 - Tipo estrutural (`formatVersion` 15 da especialização): `"structural": true` no tipo de anotação agrupa sem desenhar; a marcação não mostra o nome no canvas, não conta como "sem componente" e `structural` junto de `component` é erro de validação.
 - MCP: as tools `render_marking` e `render_container` devolvem um PNG do desenho dos componentes (da marcação com a subárvore, ou do container inteiro) com `zoom`, `drawingMode` e `background`. A imagem do desenho no MCP passou a ter texto de verdade (fonte livre embutida, Mapping Sans e Mono, ou a `fonts` da biblioteca), com quebra, `…` e trechos, sombra desfocada, tracejado, `align` do traço, `cap`/`join`, `sides` e ícones.
 - Marcações de tipo com componente a partir de 1 px, no app, no `create_marking`/`update_marking` do MCP e ao abrir o projeto (o `minSize` do componente continua valendo).
+- MCP: prova de desenho por instância em `plan_changes` e `propose_changes`: o componente de cada marcação que o lote cria ou altera é desenhado no retângulo e com os valores reais, no modo efetivo do container, e o "não cabe" volta em `issues.new` como `component-overflow` (`kind`, o nó, quanto falta em px, `(aproximado)` quando a biblioteca não declara `fonts`). É aviso: não bloqueia o lote nem a proposta.
+- MCP: `operationsFile` em `plan_changes` e `propose_changes`: o lote vem de um `.json` dentro das raízes, no lugar de `operations` (para telas medidas com centenas de operações). Os dois juntos, ou nenhum, é `invalid-arguments`; fora das raízes, `outside-roots`; JSON inválido, `invalid-arguments` com a posição.
 
 ## Alterado
 
@@ -30,6 +32,7 @@
 - `mapping-mcp.js` cresce 447.684 bytes (de 4.773.135 para 5.220.819, o `opentype.js` minificado e as fontes embutidas).
 - A fonte padrão do texto sem `font.family` passa a ser a do tema (`font-sans`, e `font-mono` para código) em vez da `Inter` fixa. Bibliotecas cujos textos não declaram `family` mudam de largura de texto (o `hug`, a quebra de linha e o aviso `texto maior que a caixa` seguem a fonte do tema).
 - No modo Editar, as bolinhas de camada e o "+N" somem em marcações pequenas que desenham componente (menores que 24 px de tela em largura ou altura); selecionada ou sob o mouse mostra tudo e o alerta ⚠ continua sempre. Marcação sem componente não muda.
+- A colocação de uma marcação sem `rect` e o `near` do lote do MCP medem o texto com o medidor do servidor (a fonte embutida e as `fonts` da biblioteca), no lugar da aproximação.
 
 ## Corrigido
 

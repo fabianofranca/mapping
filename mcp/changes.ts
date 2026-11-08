@@ -17,6 +17,7 @@ import {
   type BatchIo,
   type BatchResult,
 } from './batch';
+import { withOverflow } from './drawingProof';
 import { ToolError } from './errors';
 import { Refs } from './items';
 import { membershipView } from './membership';
@@ -237,7 +238,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
       : {}),
     summary: result.steps.map((s) => `${s.index}. ${s.description}`),
     changes: changeCounts(result.before, result.project),
-    issues: issueChanges(refs, result.before),
+    issues: withOverflow(issueChanges(refs, result.before), refs, result.before),
     notices: noticeChanges(refs, result.before),
     ...(membership.length > 0 ? { membership } : {}),
     ...(warnings.length > 0 ? { warnings } : {}),

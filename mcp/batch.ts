@@ -30,7 +30,7 @@ import {
   findSpecType,
   loadSpecComponents,
   type ComponentCatalog,
-  approximateMeasurer,
+  type TextMeasurer,
   confirmMarkingReview,
   createMarking,
   reorderMarking,
@@ -122,6 +122,7 @@ import {
 } from './libraryUpdate';
 import type { ReadPackage, SpecInput } from './library';
 import { MAX_BASE64_LENGTH, MIME, detectFormat } from './image/formats';
+import { builtinFontBook, measurerFor } from './image/textMeasurer';
 import { prepareImage } from './imagePrepare';
 import { INVALID_REF_HINT, KIND_NOT_FOUND, KIND_WITH_ARTICLE, Refs } from './items';
 import { containersNamed } from './markingList';
@@ -405,6 +406,8 @@ class Batch {
    * especializações que o próprio lote aplica, atualiza ou remove.
    */
   private catalog: ComponentCatalog;
+  /** Mede o texto como o desenho do servidor: fonte embutida e, se houver, as `fonts` da biblioteca. */
+  private readonly measurer: TextMeasurer;
 
   constructor(
     private readonly loaded: LoadedProject,
@@ -412,6 +415,7 @@ class Batch {
   ) {
     this.p = loaded.project;
     this.catalog = loaded.catalog;
+    this.measurer = measurerFor(loaded.fonts ?? builtinFontBook());
   }
 
   private refs(p: Project = this.p): Refs {
@@ -1849,7 +1853,7 @@ class Batch {
             p,
             catalog,
             { containerId: null, parentId: null, ...typeRef! },
-            approximateMeasurer,
+            this.measurer,
           );
         nearRect = placeFloatingNear(p, target, size);
       } else {
@@ -1877,7 +1881,7 @@ class Batch {
           p,
           catalog,
           { containerId, parentId: null, ...typeRef },
-          approximateMeasurer,
+          this.measurer,
         );
       if (annotation.layer !== undefined) {
         const layer = this.layer(annotation.layer);
@@ -1901,7 +1905,7 @@ class Batch {
             rect,
             name: op.name ?? null,
           },
-          approximateMeasurer,
+          this.measurer,
         ),
       );
       if (annotation.name !== undefined) {
