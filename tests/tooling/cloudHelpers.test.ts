@@ -363,6 +363,7 @@ describe('scripts/testing/ listado no repositório', () => {
         'cloud-up.sh',
         'cloud.d.mts',
         'cloud.mjs',
+        'fiel.mjs',
         'mcp-stdio-client.mjs',
         'mock-github-release.mjs',
         'round-guide.d.mts',
