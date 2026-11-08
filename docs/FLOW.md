@@ -126,3 +126,41 @@ Branch `<branch>`, commit `<hash>`.
 ```text
 Etapa #<etapa> pronta: <resumo em uma linha>. PR do épico: <link>. Responda "pode mesclar" no chat.
 ```
+
+## Revisão de código
+
+As regras estão no `CLAUDE.md` ("Revisão de código"). O revisor só lê o código: não corrige nada, não faz commit, push nem PR e não comenta PRs. A saída é uma issue da rodada e as issues `bug`, todas com o rótulo `code-review`.
+
+### Como roda
+
+- **Agendamento "CR por épico"**, todo dia às 02:50 (America/Sao_Paulo). Ele dispara na **sessão coordenadora** ("CR — coordenador (não arquivar)"), não numa sessão nova: a sessão aberta direto por um agendamento nasce sem o repositório e recebe 403 da API do GitHub, e o `add_repo` não existe nela. Se a coordenadora for arquivada, o agendamento para de funcionar.
+- **A coordenadora** lista os PRs de `epic/*` mesclados na `main` depois do ponto base (2026-11-08T15:05:07Z, commit `4532e75`), pula os que já têm a issue "CR épico <nome> (PR #N)" com o rótulo `code-review` e cria até 3 sessões revisoras por noite (`create_session` com `source_url` do repositório, Sonnet). As que sobram ficam para a noite seguinte. Sem épico novo, não faz nada.
+- **Cada revisor** lê o diff do épico (`git diff <merge>^1 <merge>`), o PR e a issue da etapa, e avisa a coordenadora por `send_message`. Com todos os avisos da noite, a coordenadora notifica o dono com os links, os achados, os `bug` e o custo.
+- **O prompt do agendamento** guarda uma cópia da mensagem do revisor abaixo. Quem muda uma muda a outra (`update_trigger` no "CR por épico").
+
+### Limitações conhecidas
+
+- O `/code-review` só serve com um diff. Para revisar arquivos inteiros (como no CR base), o revisor lê os arquivos; num diff, se a skill devolver achados de arquivos fora dele, eles são descartados.
+- Use a API REST: `gh api -X POST repos/fabianofranca/mapping/issues …`. `gh issue create`, `gh repo clone` e GraphQL falham nessas sessões. Na busca, escreva `-X GET`, porque `gh api` com `-f` vira POST.
+- Os defeitos high e medium são conferidos lendo o código, não executando a app; os low não são reconferidos.
+
+### CR base (2026-11-08)
+
+Revisão única da `main` inteira no commit `4532e7519cc06c9adf849ee254be1ed636f783a9`, em 6 blocos paralelos (cerca de 120 mil linhas de produção, US$ 46 equivalentes, 30 minutos): #945 (`src/model/`), #954 (`src/ui/`), #940 (`src/canvas/` e `src/store/`), #965 (`mcp/`), #971 (`src/app/`, `src/storage/`, `src/utils/`, `viewer/`, `pwa/`, `scripts/` e `.github/`) e #964 (`src/i18n/` e `src/theme/`). É o ponto de partida do "CR por épico".
+
+### Para o revisor do CR por épico
+
+```text
+Você é o revisor do CR por épico do repositório fabianofranca/mapping: épico `epic/<nome>`, PR #<pr>, commit de merge `<sha>`. Ninguém está acompanhando: não faça perguntas. Leia o CLAUDE.md antes de começar.
+
+Esta revisão é SOMENTE LEITURA no código: não corrija nada, não faça commit nem push, não abra PR, não comente PRs. O único efeito permitido são issues novas e comentários em issues `bug` existentes.
+
+1. O código revisado é o diff do épico: `git fetch origin main && git diff <sha>^1 <sha>` (o que o épico mudou em relação à `main` daquele momento). Leia a descrição do PR #<pr> e a issue da etapa ("Closes #N"), com as sub-issues das fases, para saber a intenção e as decisões. Arquivos inteiros só para contexto.
+2. Diff até 3 mil linhas de produção: revise com a skill `/code-review` no nível high, alvo `<sha>^1..<sha>` (sem --comment e sem --fix); se a skill devolver achados de arquivos fora do diff, descarte-os e revise lendo o diff. Maior que isso: divida por área em pedaços de até 3 mil linhas, um subagente Sonnet por pedaço (até 5 em paralelo, esforço high), cada um revisando o diff do seu pedaço (`git diff <sha>^1 <sha> -- <arquivos>`) com os arquivos inteiros para contexto. Testes: só para entender a intenção e apontar caso não coberto de comportamento novo. Procure: defeitos de corretude e regressões; violações das regras de arquitetura e de código do CLAUDE.md (model sem API de navegador, mutação fora de action do store, Konva fora de src/canvas, consulta por id fora do projectIndex, string de UI fora de t(), valor de design fora dos tokens, regras de CSP, complexidade acima de 10 fora das supressões); simplificação, reuso e eficiência. Cada achado: arquivo:linha, o que está errado ou pode melhorar, categoria (defeito, simplificação, eficiência, estilo), severidade (high, medium ou low, conforme o CLAUDE.md) para defeito, e o trecho que sustenta.
+3. Confirme cada defeito lendo o código no commit `<sha>` (você ou um subagente de conferência, esforço high). Descarte o que não se sustentar.
+4. Crie UMA issue "CR épico <nome> (PR #<pr>)" com os rótulos `roadmap` e `code-review`, exatamente um rótulo `impact:` e a linha `Impacto: <nível> — <porquê>` (seção "Impacto" do CLAUDE.md). O corpo, em pt-BR, traz o épico, o PR, a issue da etapa, o commit e os achados numerados e agrupados por arquivo, cada um com o link `https://github.com/fabianofranca/mapping/blob/<sha>/<arquivo>#L<linha>`, o que é, a categoria e a severidade (para defeito). Sem achados, a issue diz "sem achados". Termine o corpo, antes do rodapé, com `<!-- cr-epic: pr=<pr> sha=<sha> -->`.
+5. Para cada DEFEITO CONFIRMADO de severidade high ou medium, siga "Bugs e evidência visual" do CLAUDE.md: procure duplicadas nas issues abertas e fechadas (inclusive as com o rótulo `code-review`); sem duplicada, crie uma issue `bug` com os rótulos `bug`, `code-review` e exatamente um rótulo de severidade, e o corpo completo (o que acontece, o esperado e de onde vem, passos para reproduzir, commit, origem com o link da issue da rodada e do PR, severidade e porquê, "Duplicadas: nenhuma (busca: <termos>)"); com duplicada ou agrupável, comente nela. Defeitos low ficam só na issue da rodada. Na issue da rodada, aponte cada `bug` criado ou comentado.
+6. GitHub só pela API REST: `gh api -X POST repos/fabianofranca/mapping/issues -f title=... -f body=... -f 'labels[]=...'` e `gh api -X POST repos/fabianofranca/mapping/issues/<n>/comments -f body=...`. `gh issue create`, `gh repo clone` e GraphQL não funcionam nesta sessão. Busca: `gh api -X GET search/issues -f q='repo:fabianofranca/mapping is:issue <termos>'` (com `-X GET` explícito; sem ele o `-f` vira POST).
+7. Todo texto no GitHub termina com o rodapé: linha `---` e `_Generated by [Claude Code](https://claude.ai/code)_`.
+8. Ao terminar (ou se travar), avise o coordenador por `send_message` (session_id <id da coordenadora>) com: link da issue, total de achados por categoria, os `bug` criados ou comentados, e o que falhou. Coordenador: `<id da coordenadora>`.
+```

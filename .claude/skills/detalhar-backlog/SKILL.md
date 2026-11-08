@@ -35,7 +35,8 @@ Antes de cada chamada, mande um `PushNotification` curto, por exemplo "Detalhame
 2. `list_issues` (`state: OPEN`, `fields: [number, title, labels]`, sem `body`, porque o corpo de todas passa do limite) uma vez com `labels: [roadmap]` e uma com `labels: [bug]`.
 3. Fique só com as que **não** têm `ready`, `in-progress` nem `step`. Com a lista `#n ...`, use a interseção dela com as candidatas e diga quais números ficaram de fora e por quê.
 4. Ordem: `severity: high` e `impact: high` primeiro, depois `medium`, depois `low`; no empate, o menor número vem antes. A ordem do Project "Mapping - Backlog" é do dono, e as ferramentas não alcançam o Project.
-5. Sem candidatas, diga isso e termine.
+5. Issues do revisor de código (rótulo `code-review`, `CLAUDE.md` "Revisão de código"): a da rodada (`roadmap`, título "CR base …" ou "CR épico …") lista muitos achados, e cada defeito high ou medium dela já tem a sua issue `bug`, citada no corpo. O detalhamento da rodada cobre só os achados que **não** apontam para um `bug`. Passe isso à filha de agrupamento, para ela juntar cada `bug` com a rodada ou com outras candidatas da mesma área, ou separar a rodada por área, sem detalhar o mesmo achado duas vezes.
+6. Sem candidatas, diga isso e termine.
 
 ## 2. Agrupamento (uma filha Opus)
 
@@ -54,7 +55,7 @@ Mensagem:
 Você é o agente de agrupamento do backlog do `fabianofranca/mapping`. Ninguém está olhando esta sessão: não pergunte nada no chat e não use a ferramenta de perguntas. Não edite issue, não crie branch nem PR.
 
 1. Leia o `CLAUDE.md`, as candidatas <lista #n — título — rótulos> (corpo e comentários) e as issues `ready` abertas (corpo; as sub-issues `step` só quando precisar). Não proponha mexer nas `in-progress`.
-2. Proponha grupos: candidatas que valem mais num épico só do que em épicos separados. Pese:
+2. Proponha grupos: candidatas que valem mais num épico só do que em épicos separados. Nas issues `code-review`, um achado da rodada que aponta para um `bug` pertence a esse `bug`; a rodada, que é uma lista longa, pode ser dividida por área entre vários grupos (diga quais itens vão para cada um). Pese:
    - versão do MCP: várias etapas que subiriam o MCP cada uma (minor ou patch) viram uma versão só;
    - rodada do testador: roteiros iguais ou próximos rodam numa rodada só (`docs/TESTING-NUVEM.md`);
    - mesma área, os mesmos arquivos ou a mesma ordem proposta: menos conflito e menos merge da `main` no épico;
