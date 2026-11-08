@@ -72,6 +72,9 @@ const MISSING_TODAY: string[] = [
   // formato 4 nesta etapa (decisão 'Fora' da #747); coberto por
   // tests/model/components/layoutFidelity.test.ts, layoutV4Parse.test.ts e pelo roteiro R25.
   'component:node.maxHeight',
+  // `font.family` literal: o último componente da Material 3 que o usava migrou (etapa #833, M5) e
+  // herda a Roboto do token `font-sans`; coberto por tests/model/components/ e pelo roteiro R25.
+  'component:font.family',
   // `stroke.align: outside`: o `text-field` e o `switch` deixaram de usá-lo ao migrar para o formato 4
   // (etapa #833, M3); coberto por tests/model/components/ e pelo roteiro R25.
   'component:stroke.align=outside',

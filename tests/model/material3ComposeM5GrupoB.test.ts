@@ -4,8 +4,7 @@
 // a geometria, das constantes do Compose (dp = px do componente).
 import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
-import { instantiate } from '../../src/model/components/instantiate';
-import { approximateMeasurer } from '../../src/model/components/instantiate';
+import { approximateMeasurer, instantiate } from '../../src/model/components/instantiate';
 import { resolveTokens } from '../../src/model/components/tokens';
 import { defaultValues } from '../../src/model/libraryDrawing';
 import { absoluteBoxes, walk } from '../../src/model/components/scene';
@@ -67,16 +66,6 @@ const fillOf = (d: Drawing, name: string): string | undefined =>
   solid(named(d, name)?.fills ?? []);
 const radiusOf = (node: SceneNode | undefined) =>
   node !== undefined && 'cornerRadius' in node ? node.cornerRadius : undefined;
-/** O ícone desenhado dentro do nó `name`: o `PathNode`, a cor e a caixa dele. */
-const iconIn = (d: Drawing, name: string) => {
-  const holder = named(d, name);
-  if (holder === undefined) return undefined;
-  const path = [...walk(holder)].find(
-    (n): n is PathNode => n.type === 'path' && n.visible,
-  );
-  if (path === undefined) return undefined;
-  return { path, color: solid(path.fills), box: absOf(d, path) };
-};
 const textIn = (d: Drawing, name: string): TextNode | undefined => {
   const holder = named(d, name);
   if (holder === undefined) return undefined;

@@ -499,9 +499,9 @@ describe('docs/TESTING-NUVEM.md (modos, roteiros e fluxo do relato)', () => {
       expect(guide).toContain('`material3-compose.zip` (R17)');
     });
 
-    it('tem os passos R17.1 a R17.9, em ordem, e nenhum depende do dono', () => {
+    it('tem os passos R17.1 a R17.12, em ordem, e nenhum depende do dono', () => {
       const codes = [...stepActions(r17).keys()];
-      expect(codes).toEqual(Array.from({ length: 9 }, (_, i) => `R17.${i + 1}`));
+      expect(codes).toEqual(Array.from({ length: 12 }, (_, i) => `R17.${i + 1}`));
       expect(/sem substituto/i.test(r17)).toBe(false);
       expect(r17).not.toContain('[pessoa]');
     });
