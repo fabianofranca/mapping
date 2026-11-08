@@ -111,7 +111,19 @@ describe('M3 grupo C — slider', () => {
   });
 
   it('o valor (0 a 1) leva a alça para 2 + valor * largura do trilho e some o trecho vazio', () => {
-    for (const value of ['0', '0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1']) {
+    for (const value of [
+      '0',
+      '0.1',
+      '0.2',
+      '0.3',
+      '0.4',
+      '0.5',
+      '0.6',
+      '0.7',
+      '0.8',
+      '0.9',
+      '1',
+    ]) {
       const f = Number(value);
       const d = draw('slider', { type: 'single', value });
       near(box(d, 'alça').x, T * f);
@@ -128,7 +140,11 @@ describe('M3 grupo C — slider', () => {
   });
 
   it('desabilitado (SliderTokens): alça e trecho ativo on-surface a 0,38, trecho inativo a 0,12', () => {
-    const { light, dark } = both('slider', { type: 'single', value: '0.5', enabled: 'false' });
+    const { light, dark } = both('slider', {
+      type: 'single',
+      value: '0.5',
+      enabled: 'false',
+    });
     for (const [d, mode] of [
       [light, 'light'],
       [dark, 'dark'],
@@ -218,6 +234,19 @@ describe('M3 grupo C — slider', () => {
     }
   });
 
+  it('passos: no primeiro e no último passo a alça vai para a ponta (largura inteira), como em Slider.kt', () => {
+    const first = draw('slider', { type: 'single', value: '0', steps: 4 });
+    near(box(first, 'alça').x, 0);
+    expect(named(first, 'trilho ativo')).toBeUndefined();
+    near(box(first, 'trilho inativo').x, 2 + GAP);
+    const last = draw('slider', { type: 'single', value: '1', steps: 4 });
+    near(box(last, 'alça').x, T);
+    near(box(last, 'trilho ativo').width, T - GAP);
+    expect(named(last, 'trilho inativo')).toBeUndefined();
+    // sem o trecho inativo não há indicador de parada
+    expect(dotsOf(last).filter((dot) => dot.x > 300)).toEqual([]);
+  });
+
   it('passos: 1, 2 e 9 passos desenham passos + 2 posições de marca, igualmente espaçadas (single e range)', () => {
     for (const steps of [1, 2, 9]) {
       const expected = Array.from(
@@ -228,7 +257,9 @@ describe('M3 grupo C — slider', () => {
         { type: 'single', value: '0.5', steps },
         { type: 'range', valueStart: '0.2', valueEnd: '0.8', steps },
       ]) {
-        const xs = [...new Set(dotCenters(draw('slider', values)).map((x) => x.toFixed(3)))]
+        const xs = [
+          ...new Set(dotCenters(draw('slider', values)).map((x) => x.toFixed(3))),
+        ]
           .map(Number)
           .sort((a, b) => a - b);
         expect(xs).toHaveLength(steps + 2);
@@ -269,13 +300,18 @@ interface Dot {
 function dotsOf(d: Drawing): Dot[] {
   const all = boxes(d);
   const out: Dot[] = [];
-  const visit = (node: SceneNode, clips: { x: number; y: number; w: number; h: number }[]) => {
+  const visit = (
+    node: SceneNode,
+    clips: { x: number; y: number; w: number; h: number }[],
+  ) => {
     if (!node.visible) return;
     const b = all.get(node.id)!;
     if (node.name === 'marca' && node.type === 'ellipse') {
       const cx = b.x + b.width / 2;
       const cy = b.y + b.height / 2;
-      if (clips.every((c) => cx >= c.x && cx <= c.x + c.w && cy >= c.y && cy <= c.y + c.h)) {
+      if (
+        clips.every((c) => cx >= c.x && cx <= c.x + c.w && cy >= c.y && cy <= c.y + c.h)
+      ) {
         out.push({ node, ...b, color: solid(node.fills) });
       }
     }
@@ -371,9 +407,12 @@ describe('M3 grupo C — segmented-button', () => {
     const d = draw('segmented-button', { options: three });
     const dia = texts(d).find((t) => t.text === 'Dia')!;
     const style = dia.style;
-    expect([style.fontSize, style.lineHeight, style.fontWeight, style.letterSpacing]).toEqual([
-      14, 20, 500, 0.1,
-    ]);
+    expect([
+      style.fontSize,
+      style.lineHeight,
+      style.fontWeight,
+      style.letterSpacing,
+    ]).toEqual([14, 20, 500, 0.1]);
     const [first] = segments(d);
     const b = boxOf(d, dia);
     near(b.x + b.width / 2, first!.x + first!.width / 2);
@@ -421,7 +460,10 @@ describe('M3 grupo C — segmented-button', () => {
   });
 
   it('desabilitado: contorno e divisores outline a 0,12, ícone e rótulo on-surface a 0,38 e o selecionado mantém o fundo', () => {
-    const { light, dark } = both('segmented-button', { options: three, enabled: 'false' });
+    const { light, dark } = both('segmented-button', {
+      options: three,
+      enabled: 'false',
+    });
     for (const [d, mode] of [
       [light, 'light'],
       [dark, 'dark'],

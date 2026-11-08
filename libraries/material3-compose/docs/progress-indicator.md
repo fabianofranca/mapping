@@ -37,7 +37,7 @@ LinearProgressIndicator(
 
 Notas do `code` (o que a ferramenta entrega ao agente):
 
-> Estável, sem opt-in. Com `progress` preenchido, passe-o como lambda: `progress = { <progress>f }` (ou ligado ao estado da tela, por exemplo `progress = { uploadProgress }`); o overload com `progress: Float` está `@Deprecated`. Com `progress` vazio, chame sem o parâmetro (indeterminado). O tamanho vem do `Modifier` (`Modifier.size(<largura da marcação>.dp)` no circular, que tem 48 dp por padrão; `Modifier.fillMaxWidth()` no linear).
+> Estável, sem opt-in. Com `progress` preenchido, passe-o como lambda: `progress = { <progress>f }` (ou ligado ao estado da tela, por exemplo `progress = { uploadProgress }`); o overload com `progress: Float` está `@Deprecated`. Com `progress` vazio, chame sem o parâmetro (indeterminado). O tamanho vem do `Modifier` (`Modifier.size(<largura da marcação>.dp)` no circular, que tem 40 dp por padrão; `Modifier.fillMaxWidth()` no linear).
 
 Variante `linear`: Estável, sem opt-in. Com `progress` preenchido, `progress = { <progress>f }`; vazio é indeterminado (sem o parâmetro). A barra ocupa a largura da marcação: `Modifier.fillMaxWidth()` ou `Modifier.width(<largura da marcação>.dp)`.
 
