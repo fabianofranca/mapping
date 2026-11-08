@@ -62,8 +62,23 @@ export interface ScreenSource {
   readonly roots: readonly RootSource[];
 }
 
+/** Jeito de a origem produzir a tela: `tree` (padrão, JSON de backend) ou `measured` (retângulos medidos). */
+export const ORIGIN_KINDS = ['tree', 'measured'] as const;
+export type OriginKind = (typeof ORIGIN_KINDS)[number];
+
+/** Chaves do nó de uma árvore medida: fixas (`{ type, id?, classes?, rect, props?, children? }`). */
+const MEASURED_NODE: Origin['node'] = {
+  type: 'type',
+  props: 'props',
+  children: 'children',
+};
+/** Tela sem raízes: uma origem `measured` não gera tela, só marcações (`importMeasured`). */
+const MEASURED_SCREEN: ScreenSource = { width: 0, height: 0, roots: [] };
+
 export interface Origin {
   readonly system: string;
+  /** `tree` (padrão) ou `measured` (formatVersion 15): esta não tem `node`, `screen` nem `examples` próprios. */
+  readonly kind?: OriginKind;
   readonly name?: string;
   /** Chaves do nó no documento. */
   readonly node: {
@@ -443,15 +458,67 @@ function parseScreen(
   };
 }
 
+function parseBooleans(
+  raw: unknown,
+  path: string,
+  problems: string[],
+): Origin['booleans'] {
+  if (raw === undefined) return undefined;
+  if (!isRecord(raw)) {
+    problems.push(`${path}: esperava { "true": texto, "false": texto }`);
+    return undefined;
+  }
+  checkKeys(raw, ['true', 'false'], path, problems);
+  const t = raw.true;
+  const f = raw.false;
+  if (typeof t !== 'string') problems.push(`${path}.true: esperava texto`);
+  if (typeof f !== 'string') problems.push(`${path}.false: esperava texto`);
+  return typeof t === 'string' && typeof f === 'string'
+    ? { true: t, false: f }
+    : undefined;
+}
+
+/** Origem `measured`: só `system`, `kind`, `name` e `booleans` (o nó e a árvore são fixos). */
+function parseMeasuredOrigin(
+  raw: Record<string, unknown>,
+  path: string,
+  problems: string[],
+): Origin | undefined {
+  const before = problems.length;
+  checkKeys(raw, ['system', 'kind', 'name', 'booleans'], path, problems);
+  if (!nonEmptyString(raw.system)) {
+    problems.push(`${path}.system: esperava texto não vazio`);
+  }
+  if (raw.name !== undefined && typeof raw.name !== 'string') {
+    problems.push(`${path}.name: esperava texto`);
+  }
+  const booleans = parseBooleans(raw.booleans, `${path}.booleans`, problems);
+  if (problems.length > before) return undefined;
+  return {
+    system: raw.system as string,
+    kind: 'measured',
+    ...(typeof raw.name === 'string' ? { name: raw.name } : {}),
+    node: MEASURED_NODE,
+    screen: MEASURED_SCREEN,
+    ...(booleans ? { booleans } : {}),
+  };
+}
+
 function parseOrigin(raw: unknown, path: string, problems: string[]): Origin | undefined {
   if (!isRecord(raw)) {
     problems.push(`${path}: esperava um objeto`);
     return undefined;
   }
+  const kind = raw.kind === undefined ? 'tree' : raw.kind;
+  if (!ORIGIN_KINDS.includes(kind as OriginKind)) {
+    problems.push(`${path}.kind: esperava um de: ${ORIGIN_KINDS.join(', ')}`);
+    return undefined;
+  }
+  if (kind === 'measured') return parseMeasuredOrigin(raw, path, problems);
   const before = problems.length;
   checkKeys(
     raw,
-    ['system', 'name', 'node', 'screen', 'booleans', 'examples'],
+    ['system', 'kind', 'name', 'node', 'screen', 'booleans', 'examples'],
     path,
     problems,
   );
@@ -486,21 +553,7 @@ function parseOrigin(raw: unknown, path: string, problems: string[]): Origin | u
     raw.screen === undefined
       ? (problems.push(`${path}.screen: obrigatório`), undefined)
       : parseScreen(raw.screen, `${path}.screen`, problems);
-  let booleans: Origin['booleans'];
-  if (raw.booleans !== undefined) {
-    const bPath = `${path}.booleans`;
-    if (!isRecord(raw.booleans)) {
-      problems.push(`${bPath}: esperava { "true": texto, "false": texto }`);
-    } else {
-      checkKeys(raw.booleans, ['true', 'false'], bPath, problems);
-      const t = raw.booleans.true;
-      const f = raw.booleans.false;
-      if (typeof t !== 'string') problems.push(`${bPath}.true: esperava texto`);
-      if (typeof f !== 'string') problems.push(`${bPath}.false: esperava texto`);
-      if (typeof t === 'string' && typeof f === 'string')
-        booleans = { true: t, false: f };
-    }
-  }
+  const booleans = parseBooleans(raw.booleans, `${path}.booleans`, problems);
   const examples =
     raw.examples === undefined
       ? undefined
@@ -508,6 +561,7 @@ function parseOrigin(raw: unknown, path: string, problems: string[]): Origin | u
   if (problems.length > before || !node || !screen) return undefined;
   return {
     system: raw.system as string,
+    ...(raw.kind === 'tree' ? { kind: 'tree' as const } : {}),
     ...(typeof raw.name === 'string' ? { name: raw.name } : {}),
     node,
     screen,
@@ -727,11 +781,26 @@ function firstKey(path: string): string | undefined {
   return typeof first === 'string' ? first : undefined;
 }
 
-function translateFieldValue(
-  field: FieldDef,
+/** O que o valor de um campo precisa do campo (da biblioteca ou da especialização). */
+export type FieldLike = Pick<
+  FieldDef,
+  'key' | 'type' | 'options' | 'default' | 'sources'
+>;
+
+/** O que o valor de um campo precisa da origem: o sistema, os booleanos e a chave das props. */
+export interface FieldContext {
+  readonly origin: Pick<Origin, 'system' | 'booleans'> & {
+    readonly node: Pick<Origin['node'], 'props'>;
+  };
+  readonly warnings: string[];
+}
+
+/** O valor de um campo lido de `props` pelo `path` da `source` do sistema (com `values`); avisa o que não serve. */
+export function translateFieldValue(
+  field: FieldLike,
   props: Record<string, unknown>,
   nodePath: string,
-  ctx: Context,
+  ctx: FieldContext,
 ): FieldValue {
   const fallback: FieldValue = field.default ?? null;
   const source = field.sources.find((s) => s.system === ctx.origin.system);

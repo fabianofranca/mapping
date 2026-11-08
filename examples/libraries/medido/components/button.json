@@ -1,0 +1,59 @@
+{
+  "format": "mapping-component",
+  "formatVersion": 4,
+  "id": "button",
+  "name": "Botão",
+  "description": "Botão com rótulo; o tom neutro é cinza e o de erro é vermelho.",
+  "size": {
+    "width": 120,
+    "height": 40
+  },
+  "minSize": {
+    "width": 64,
+    "height": 32
+  },
+  "preview": {
+    "label": "Salvar",
+    "tone": "neutral"
+  },
+  "template": {
+    "type": "frame",
+    "name": "botão",
+    "layout": {
+      "type": "row",
+      "padding": [0, 16],
+      "align": "center",
+      "justify": "center"
+    },
+    "cornerRadius": 6,
+    "fill": {
+      "$switch": "tone",
+      "cases": {
+        "error": "#DC2626"
+      },
+      "default": "#E5E7EB"
+    },
+    "children": [
+      {
+        "type": "text",
+        "name": "rótulo",
+        "text": {
+          "$field": "label"
+        },
+        "font": {
+          "size": 14,
+          "weight": 500,
+          "lineHeight": 20
+        },
+        "color": {
+          "$switch": "tone",
+          "cases": {
+            "error": "#FFFFFF"
+          },
+          "default": "#111827"
+        },
+        "width": "hug"
+      }
+    ]
+  }
+}

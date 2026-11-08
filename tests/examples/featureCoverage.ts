@@ -156,6 +156,8 @@ export const ORIGIN_FEATURES = [
   'origins[]',
   'origins[].system',
   'origins[].name',
+  'origins[].kind',
+  'origins[].kind=measured',
   'origins[].node',
   'origins[].node.type',
   'origins[].node.props',
@@ -203,11 +205,13 @@ function originFeatures(origins: unknown, out: Set<string>): void {
     keys('origins[]', origin, [
       'system',
       'name',
+      'kind',
       'node',
       'screen',
       'booleans',
       'examples',
     ]);
+    if (origin.kind === 'measured') add('origins[].kind=measured');
     keys('origins[].node', origin.node, ['type', 'props', 'children']);
     keys('origins[].booleans', origin.booleans, ['true', 'false']);
     if (Array.isArray(origin.examples)) {

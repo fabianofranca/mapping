@@ -22,6 +22,9 @@
 - Marcações de tipo com componente a partir de 1 px, no app, no `create_marking`/`update_marking` do MCP e ao abrir o projeto (o `minSize` do componente continua valendo).
 - MCP: prova de desenho por instância em `plan_changes` e `propose_changes`: o componente de cada marcação que o lote cria ou altera é desenhado no retângulo e com os valores reais, no modo efetivo do container, e o "não cabe" volta em `issues.new` como `component-overflow` (`kind`, o nó, quanto falta em px, `(aproximado)` quando a biblioteca não declara `fonts`). É aviso: não bloqueia o lote nem a proposta.
 - MCP: `operationsFile` em `plan_changes` e `propose_changes`: o lote vem de um `.json` dentro das raízes, no lugar de `operations` (para telas medidas com centenas de operações). Os dois juntos, ou nenhum, é `invalid-arguments`; fora das raízes, `outside-roots`; JSON inválido, `invalid-arguments` com a posição.
+- Origem medida (`formatVersion` 15 da especialização): `origins[].kind` (`tree`, o padrão, ou `measured`). A `measured` declara só `system`, `kind`, `name` e `booleans`, e as `sources` dos tipos e dos campos do sistema dizem como casar cada nó da árvore medida (o `id` e as classes ou o `type` do nó contra o `id` e o `name` do tipo; o `path` do campo nas `props`, com `values` nos `enum`).
+- MCP: a op `import_measured` do lote (`container`, `system`, `tree` inline ou `file` de um `.json` dentro das raízes, `offset`, `scale`) traduz uma árvore de retângulos medidos (`{ type, id?, classes?, rect, props?, children? }`) em marcações com anotação tipada. O pertencimento sai da geometria; nó sem tipo e retângulo vazio são ignorados com aviso (os filhos seguem); a prova de desenho avisa o que não cabe (`component-overflow`).
+- Guia do agente: exemplo de captura com o Playwright (mede o DOM de uma página aberta e grava a árvore num `.json`) e a biblioteca de exemplo `examples/libraries/medido/`.
 
 ## Alterado
 
