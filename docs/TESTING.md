@@ -264,7 +264,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - R18 usa a pasta própria `avisos` (criada pelo MCP no R18.3), a pasta `avisos-pacote` do R18.7, a especialização `avisos.json` que a shell escreve no R18.1, o MCP por stdio e, nos passos R18.4 a R18.10 e R18.12, a app; R18.1 a R18.12 seguem em sequência, não dependem de nenhum outro roteiro. Sem o MCP, marque todos "não executado (sem MCP)".
 - R19 usa as pastas próprias `papeis`, `juntar` e `encadeia` (e as especializações `formatVersion` 11, 12 e 13 que o roteiro escreve), a shell, o MCP por stdio e a app; os passos seguem em sequência. Na rodada dirigida, o R19.19 precisa antes do R19.1, R19.5, R19.6 e R19.13; o R19.20 a R19.21a, do R19.1 ao R19.19 (Home e Ajuda em `click`, Tap e Perfil em `hold`), em ordem (R19.20, R19.20b, R19.20a, R19.20c, R19.21, R19.21a); o R19.22 a R19.29, só do R19.1, em ordem. Sem o MCP, marque os passos de MCP "não executado (sem MCP)".
 - R20 usa a pasta própria `docext` (a especialização com `docRepos` e o clone com `git init` e `.md` que o roteiro escreve), a shell, o MCP por stdio e a app; não depende de nenhum outro roteiro. Sem o MCP, marque os passos de MCP "não executado (sem MCP)".
-- R21 usa a pasta própria `release-ws` (`W21`) e a **release real** no GitHub, a da tag da mensagem (numa completa na `main`, a última estável), só com shell e o MCP por stdio, sem a app. R21.1 a R21.5 e R21.8 seguem em sequência sobre a `ws-novo` e a `ws-antigo`; R21.3, R21.6 e R21.7 copiam delas. Sem rede para a release, marque todos "não executado (sem rede para a release)".
+- R21 usa a pasta própria `release-ws` (`W21`) e a **release real** no GitHub, a da tag da mensagem (numa completa na `main`, a última estável), só com shell e o MCP por stdio, sem a app. R21.1 a R21.5 e R21.8 seguem em sequência sobre a `ws-novo` e a `ws-antigo`; R21.3, R21.6 e R21.7 copiam delas. R21.9 a R21.11 copiam a `ws-novo` e rodam o `setup.sh` do commit contra um servidor local (`mock-github-release.mjs`), sem depender de o GitHub falhar. Sem rede para a release, marque todos "não executado (sem rede para a release)".
 - R22 usa a pasta própria `conversas` (o `examples/exemplo-completo.zip` descompactado em `design/mapeamentos/`, que o MCP lê), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. Sem identidade (perfil novo) no R22.2; o R22.3 a preenche. Sem o MCP, marque os passos de MCP "não executado (sem MCP)".
 - R23 usa a pasta própria `perspectivas` (um `mapping.json` schema 15 que a shell escreve em `design/mapeamentos/` do repositório de teste, que o MCP lê), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. O R23.12 e o R23.13 são a passada visual própria das perspectivas. Sem o MCP, marque o R23.21 e o R23.24 "não executado (sem MCP)".
 - R24 usa a pasta própria `fora` (criada pelo `create_project` do R24.3, com a especialização `fora-demo.json` que a shell grava em `design/mapeamentos/`), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. O R24.14 e o R24.15 são a passada visual própria do roteiro. Sem o MCP, marque o R24.1 a R24.3, o R24.10 e o R24.11 "não executado (sem MCP)" e pule o resto (o projeto `fora` nasce do R24.3).
@@ -1370,7 +1370,7 @@ printf '# Badge\n\nDocumento do Badge, dentro do pacote.\n' > assets/docs-extern
 
 ### R21 — Workspace atualizado pela release
 
-**O que cobre:** a etapa Workspace atualizado (WA1 e WA2): o `setup.sh` do `examples/workspace/` que cada release do MCP publica junto com o `mapping-mcp.js`, a skill `SKILL.md`, o bloco `AGENTS.mapping.md` e o `watch-comments.mjs` (o watcher de conversas, que o `setup.sh` instala na raiz do workspace) (cada arquivo com o `.sha256`). Os passos conferem, contra a **release real no GitHub**, o workspace novo pela linha única, a migração do workspace antigo pela linha da transição (o `AGENTS.md` do esqueleto antigo vira o bloco entre `mapping:begin` e `mapping:end`, com backup e a seção "Para que servem" intacta), a autoatualização do `setup.sh` e o `--no-self-update`, a repetição sem mudança, a cópia da skill em `.claude/skills/` atualizada, a conferência do `sha256` de todos os arquivos antes de trocar qualquer um e o servidor do workspace respondendo pelo cliente stdio. Não usa a app nem o navegador.
+**O que cobre:** a etapa Workspace atualizado (WA1 e WA2): o `setup.sh` do `examples/workspace/` que cada release do MCP publica junto com o `mapping-mcp.js`, a skill `SKILL.md`, o bloco `AGENTS.mapping.md` e o `watch-comments.mjs` (o watcher de conversas, que o `setup.sh` instala na raiz do workspace) (cada arquivo com o `.sha256`). Os passos conferem, contra a **release real no GitHub**, o workspace novo pela linha única, a migração do workspace antigo pela linha da transição (o `AGENTS.md` do esqueleto antigo vira o bloco entre `mapping:begin` e `mapping:end`, com backup e a seção "Para que servem" intacta), a autoatualização do `setup.sh` e o `--no-self-update`, a repetição sem mudança, a cópia da skill em `.claude/skills/` atualizada, a conferência do `sha256` de todos os arquivos antes de trocar qualquer um, o servidor do workspace respondendo pelo cliente stdio e, com um servidor local que imita o GitHub, o `setup.sh` do commit mostrando o motivo da falha de download (HTTP 504 e 404) e usando a API de assets quando o download direto da release responde 5xx (etapa #877). Não usa a app nem o navegador.
 
 **Preparo.** Só shell e o cliente MCP por stdio (apêndice A: `WS=<workspace> node scripts/testing/mcp-stdio-client.mjs calls.json`). `REPO` é o clone do Mapping (receita 1 do apêndice A). Cada passo trabalha numa subpasta própria de `W21`. A tag `TAG` vem da mensagem do testador (a release candidate do épico); numa rodada completa na `main`, é a última estável. O R21 baixa da release **real**, não do build local: sem rede para `github.com`, marque todos "não executado (sem rede para a release)"; se a release da `TAG` não tiver o `setup.sh`, marque todos "não executado (a release não traz o setup.sh)". O resumo do `setup.sh` tem as linhas `Servidor:`, `Skill:`, `AGENTS.md:` (esta diz `criado`, `atualizado`, `migrado`, `sem mudança` ou `não reconhecido…`) e `Watcher:` (`instalado`, `atualizado`, `sem mudança` ou `não atualizado (release sem o watcher)`); os avisos saem pelo stderr, por isso a saída é gravada com `2>&1`.
 
@@ -1493,6 +1493,34 @@ WS="$W21/ws-novo" node "$REPO/scripts/testing/mcp-stdio-client.mjs" calls.json
 node tools/mapping-mcp.js --version; ls projetos/demo/mapping.json
 ```
 
+O R21.9 a R21.11 usam o `setup.sh` **do commit** (`$REPO/examples/workspace/setup.sh`: a release real ainda não traz o conserto) e um servidor local que imita o GitHub (`scripts/testing/mock-github-release.mjs`), sem rede para `github.com`. O servidor serve a pasta `baixados` (ou uma cópia dela), responde `504` no download direto quando pedido e entrega os assets pela API; a primeira linha da saída dele é a URL base, e as demais são as requisições:
+
+```bash
+# serve <pasta> [opções do servidor] numa cópia nova da ws-novo; ws=<nome>, log em ../mock-<nome>.txt
+mock() { # $1 = nome, $2 = pasta da release, resto = opções do servidor
+  local n="$1" d="$2"; shift 2
+  node "$REPO/scripts/testing/mock-github-release.mjs" "$d" "$@" > "$W21/mock-$n.txt" &
+  MOCK_PID=$!; sleep 1; MOCK_BASE=$(head -1 "$W21/mock-$n.txt")
+  cd "$W21" && rm -rf "ws-$n" && cp -a ws-novo "ws-$n" && cp "$REPO/examples/workspace/setup.sh" "ws-$n/setup.sh" && rm -rf "ws-$n/tools"
+}
+# R21.9: 504 no download direto, 200 na API de assets
+cd "$W21" && mock r9 baixados --direct 504
+snap ws-r9 > antes-r9.txt
+(cd ws-r9 && MAPPING_GITHUB_BASE="$MOCK_BASE" MAPPING_GITHUB_API="$MOCK_BASE/api" ./setup.sh --no-self-update > ../saida-r9.txt 2>&1; echo "exit=$?"); kill $MOCK_PID
+cat saida-r9.txt; (cd ws-r9/tools && sha256sum -c mapping-mcp.js.sha256)
+grep -c 'releases/latest$' mock-r9.txt; grep -c 'releases/assets/' mock-r9.txt
+# R21.10: 404 nos dois caminhos (a release sem o servidor)
+cd "$W21" && cp -a baixados release-sem-servidor && rm release-sem-servidor/mapping-mcp.js release-sem-servidor/mapping-mcp.js.sha256
+mock r10 release-sem-servidor && snap ws-r10 > antes-r10.txt
+(cd ws-r10 && MAPPING_GITHUB_BASE="$MOCK_BASE" MAPPING_GITHUB_API="$MOCK_BASE/api" ./setup.sh --no-self-update > ../saida-r10.txt 2>&1; echo "exit=$?"); kill $MOCK_PID
+cat saida-r10.txt; snap ws-r10 > depois-r10.txt && diff antes-r10.txt depois-r10.txt && echo igual
+grep -c '/api/' mock-r10.txt
+# R21.11: 504 nos dois caminhos
+cd "$W21" && mock r11 baixados --direct 504 --api 504 && snap ws-r11 > antes-r11.txt
+(cd ws-r11 && MAPPING_GITHUB_BASE="$MOCK_BASE" MAPPING_GITHUB_API="$MOCK_BASE/api" ./setup.sh --no-self-update > ../saida-r11.txt 2>&1; echo "exit=$?"); kill $MOCK_PID
+cat saida-r11.txt; snap ws-r11 > depois-r11.txt && diff antes-r11.txt depois-r11.txt && echo igual
+```
+
 | Passo | Ação | Esperado |
 | --- | --- | --- |
 | R21.1 | **Workspace novo pela linha única.** Rode a shell do R21.1 (pasta vazia `ws-novo`, o `setup.sh` baixado da release e executado com a tag). | **Disco:** `exit=0`; `mapping-mcp.js: OK`; as duas `--version` iguais e começando pelo número da tag; `cmp` sem saída (a skill e o `watch-comments.mjs`); `watcher-exit=2` e a mensagem de uso do watcher (`uso: node watch-comments.mjs …`); `link`; as duas contagens `1`; o `grep` acha `# Mapeamentos` e `## Para que servem estes mapeamentos`. **Resposta:** o resumo tem `Servidor:` (a mesma versão), `Skill:` citando a release, `AGENTS.md: criado` e `Watcher: instalado`. |
@@ -1503,6 +1531,9 @@ node tools/mapping-mcp.js --version; ls projetos/demo/mapping.json
 | R21.6 | **`--no-self-update`.** Rode a primeira parte da shell do R21.6/R21.7 (cópia da `ws-novo` sem `tools/`, com o `setup.sh` velho, executada com `--no-self-update`). | **Disco:** `exit=0`; `setup.sh: OK` (continua o velho); `0` ocorrências de "setup.sh atualizado"; `tools/mapping-mcp.js` voltou e `mapping-mcp.js: OK` (o resto foi atualizado). |
 | R21.7 | **Arquivo adulterado para tudo.** Rode a segunda parte da shell do R21.6/R21.7 (`release-falsa` com um byte do `mapping-mcp.js` estragado, `ws-adulterado` copiada da `ws-antigo`, e o `setup.sh` com `MAPPING_RELEASE_BASE` apontando para ela). | **Resposta:** `exit` diferente de `0`, e a saída cita o `sha256` de `mapping-mcp.js` que não confere e que nada foi alterado. **Disco:** `igual` (nenhum arquivo mudou: `setup.sh`, `tools/`, `.agents/`, `.claude/`, `AGENTS.md`); `ls` mostra só o backup do R21.2, nenhum novo. |
 | R21.8 | **O servidor do workspace responde pelo cliente stdio.** Rode a shell do R21.8 (cria o projeto `Demo` na `ws-novo` e pede `list_projects` pelo cliente). | **Resposta:** o `create_project` devolve `created` `true`; o `list_projects` traz o `Demo` (em `projetos/demo`), `roots` com as duas raízes (`projetos` e `especializacoes`, caminhos reais do workspace) e `missingRoots` vazio. A `--version` é a do R21.1 (a da tag). **Disco:** `projetos/demo/mapping.json` existe. |
+| R21.9 | **504 no download direto, 200 na API de assets.** Rode a primeira parte da shell do R21.9 a R21.11 (servidor local com `--direct 504`; o `setup.sh` do commit aponta para ele). | **Resposta:** `exit=0`; o stderr traz `download direto falhou (HTTP 504); usando a API de assets do GitHub`; o resumo tem `Servidor:` (a versão da tag), `Skill:` e `AGENTS.md:`. **Disco:** `mapping-mcp.js: OK` (o `sha256` confere); o log do servidor tem **uma** chamada a `releases/latest` e as chamadas a `releases/assets/`. |
+| R21.10 | **404 nos dois caminhos.** Rode a segunda parte (release sem o `mapping-mcp.js`). | **Resposta:** `exit` diferente de `0`; a mensagem diz `não traz mapping-mcp.js (HTTP 404)` e cita `https://github.com/fabianofranca/mapping/releases`. **Disco:** `igual` (a pasta não mudou); o log do servidor tem `0` chamadas a `/api/`. |
+| R21.11 | **504 nos dois caminhos.** Rode a terceira parte (`--direct 504 --api 504`). | **Resposta:** `exit` diferente de `0`; a mensagem cita `o GitHub não respondeu (HTTP 504)`, `Tente de novo em alguns minutos` e que a API de assets também falhou. **Disco:** `igual`. |
 
 ### R22 — Comentários: conversas ancoradas no mapeamento
 

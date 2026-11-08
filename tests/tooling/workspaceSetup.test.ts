@@ -2,7 +2,7 @@
 // Etapa #681, fase WA2: `examples/workspace/setup.sh` deixa o workspace inteiro na versão da
 // tag (servidor, skill, bloco do AGENTS.md e o próprio script). Cada teste roda o script de
 // verdade, contra uma "release" falsa em `file://` montada por `workspaceAssets.mjs`.
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   chmodSync,
@@ -19,6 +19,8 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -108,7 +110,7 @@ function setup(options: Options = {}): Env {
   return { release, raw, ws, count: join(tmp('count'), 'count') };
 }
 
-/** Roda o `setup.sh` do workspace. */
+/** Roda o `setup.sh` do workspace (síncrono: o `file://` não precisa de servidor). */
 function run(env: Env, args: string[] = [], extraEnv: Record<string, string> = {}) {
   const result = spawnSync('bash', ['setup.sh', ...args], {
     cwd: env.ws,
@@ -505,5 +507,348 @@ describe('o que nunca é tocado', () => {
     rmSync(join(env.ws, 'CLAUDE.md'), { force: true });
     run(env);
     expect(existsSync(join(env.ws, 'CLAUDE.md'))).toBe(false);
+  });
+});
+
+// Etapa #877 (SD1): o download da release mostra o motivo da falha, tenta de novo e, quando o
+// GitHub responde 5xx ou não responde, usa a API de assets. Um servidor `node:http` local imita
+// `github.com`, `api.github.com` e a CDN dos assets; o `setup.sh` real aponta para ele por
+// `MAPPING_GITHUB_BASE` e `MAPPING_GITHUB_API`, sem `MAPPING_RELEASE_BASE`.
+const SLOW = 40_000;
+
+interface MockOptions {
+  /** Status do download direto (arquivo, nº da requisição àquela URL); 200 serve o arquivo. */
+  direct?: (file: string, n: number) => number;
+  /** Status do JSON da release (`releases/latest` ou `releases/tags/<tag>`). */
+  api?: number;
+  /** Status do download do asset pela API. */
+  asset?: number;
+  /** Assets cujo conteúdo, pela API, sai adulterado. */
+  tamper?: string[];
+}
+
+interface Mock {
+  base: string;
+  calls: string[];
+  close: () => Promise<void>;
+}
+
+const REPO_PATH = '/fabianofranca/mapping';
+const API_PATH = '/api/repos/fabianofranca/mapping';
+
+async function startMock(env: Env, options: MockOptions = {}): Promise<Mock> {
+  const calls: string[] = [];
+  const counts = new Map<string, number>();
+  const names = readdirSync(env.release).sort();
+  const idOf = (name: string): number => names.indexOf(name) + 1;
+  const body = (name: string, tamper: boolean): Buffer => {
+    const data = readFileSync(join(env.release, name));
+    return tamper ? Buffer.concat([data, Buffer.from('adulterado\n')]) : data;
+  };
+  const server: Server = createServer((req, res) => {
+    const url = req.url ?? '';
+    calls.push(`${req.method} ${url}`);
+    const n = (counts.get(url) ?? 0) + 1;
+    counts.set(url, n);
+    const send = (status: number, data: string | Buffer = 'erro', headers = {}): void => {
+      res.writeHead(status, headers);
+      res.end(data);
+    };
+    const direct = new RegExp(
+      `^${REPO_PATH}/releases/(?:latest/download|download/[^/]+)/([^/]+)$`,
+    ).exec(url);
+    if (direct) {
+      const file = direct[1] as string;
+      const status = options.direct?.(file, n) ?? 200;
+      if (status !== 200) return send(status);
+      return names.includes(file)
+        ? send(200, body(file, false))
+        : send(404, 'não existe');
+    }
+    if (new RegExp(`^${API_PATH}/releases/(?:latest|tags/[^/]+)$`).test(url)) {
+      const status = options.api ?? 200;
+      if (status !== 200) return send(status);
+      const assets = names.map((name) => ({ name, id: idOf(name) }));
+      return send(200, JSON.stringify({ tag_name: 'mcp-v0.0.0', assets }), {
+        'content-type': 'application/json',
+      });
+    }
+    const asset = new RegExp(`^${API_PATH}/releases/assets/(\\d+)$`).exec(url);
+    if (asset) {
+      const status = options.asset ?? 200;
+      if (status !== 200) return send(status);
+      if (req.headers.accept !== 'application/octet-stream') return send(415);
+      return send(302, '', { location: `/cdn/${asset[1]}` });
+    }
+    const cdn = /^\/cdn\/(\d+)$/.exec(url);
+    if (cdn) {
+      const name = names[Number(cdn[1]) - 1] as string;
+      return send(200, body(name, options.tamper?.includes(name) ?? false));
+    }
+    return send(404);
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  return {
+    base,
+    calls,
+    close: () => new Promise<void>((resolve) => server.close(() => resolve())),
+  };
+}
+
+/** Roda o `setup.sh` apontando para o servidor local (assíncrono, para o servidor responder). */
+function runMock(
+  env: Env,
+  base: string,
+  args: string[] = [],
+  extraEnv: Record<string, string> = {},
+): Promise<{ status: number | null; out: string; err: string; all: string }> {
+  const childEnv: Record<string, string | undefined> = {
+    ...process.env,
+    MAPPING_GITHUB_BASE: base,
+    MAPPING_GITHUB_API: `${base}/api`,
+    MAPPING_RAW_BASE: `file://${env.raw}`,
+    MAPPING_TEST_COUNT: env.count,
+    NO_PROXY: '127.0.0.1,localhost',
+    no_proxy: '127.0.0.1,localhost',
+    ...extraEnv,
+  };
+  delete childEnv.MAPPING_RELEASE_BASE;
+  Object.assign(childEnv, extraEnv);
+  return new Promise((resolve) => {
+    const child = spawn('bash', ['setup.sh', ...args], {
+      cwd: env.ws,
+      env: childEnv as NodeJS.ProcessEnv,
+    });
+    let out = '';
+    let err = '';
+    child.stdout.on('data', (chunk: Buffer) => (out += chunk.toString()));
+    child.stderr.on('data', (chunk: Buffer) => (err += chunk.toString()));
+    child.on('close', (status) => resolve({ status, out, err, all: out + err }));
+  });
+}
+
+const apiCalls = (mock: Mock): string[] => mock.calls.filter((c) => c.includes('/api/'));
+const releaseJsonCalls = (mock: Mock): string[] =>
+  mock.calls.filter((c) => /\/releases\/(latest|tags\/[^/]+)$/.test(c));
+
+describe('download da release (etapa #877)', () => {
+  it(
+    '504 no download direto e 200 na API: instala pelo segundo caminho, com aviso e sha256 conferidos',
+    async () => {
+      const env = setup();
+      const mock = await startMock(env, { direct: () => 504 });
+      try {
+        const result = await runMock(env, mock.base, ['--no-self-update']);
+        expect(result.status, result.all).toBe(0);
+        expect(result.err).toContain(
+          'download direto falhou (HTTP 504); usando a API de assets do GitHub',
+        );
+        expect(result.out).toContain('Servidor: 0.0.0-test');
+        expect(result.out).toContain('Skill: release');
+        expect(result.out).toContain('AGENTS.md:');
+        expect(read(env, 'tools/mapping-mcp.js')).toContain('0.0.0-test');
+        expect(read(env, '.agents/skills/spec-author/SKILL.md')).toBe(RELEASE_SKILL);
+        // O JSON da release é lido uma vez por execução, não uma vez por arquivo.
+        expect(releaseJsonCalls(mock)).toHaveLength(1);
+        expect(leftovers(env)).toEqual([]);
+      } finally {
+        await mock.close();
+      }
+    },
+    SLOW,
+  );
+
+  it(
+    '504 nos dois caminhos: erro com o HTTP, o que fazer, os dois códigos, e a pasta fica igual',
+    async () => {
+      const env = setup();
+      const mock = await startMock(env, { direct: () => 504, api: 504 });
+      try {
+        const before = snapshot(env.ws);
+        const result = await runMock(env, mock.base);
+        expect(result.status).not.toBe(0);
+        expect(result.err).toContain('o GitHub não respondeu (HTTP 504)');
+        expect(result.err).toContain('mapping-mcp.js');
+        expect(result.err).toContain('Tente de novo em alguns minutos');
+        expect(result.err).toContain('API de assets');
+        expect(snapshot(env.ws)).toEqual(before);
+        expect(executions(env)).toBe(1);
+      } finally {
+        await mock.close();
+      }
+    },
+    SLOW,
+  );
+
+  it(
+    '404 nos dois caminhos: diz que a release não traz o arquivo, sem chamar a API, pasta igual',
+    async () => {
+      const env = setup({ omit: ['mapping-mcp.js'] });
+      const mock = await startMock(env);
+      try {
+        const before = snapshot(env.ws);
+        const result = await runMock(env, mock.base);
+        expect(result.status).not.toBe(0);
+        expect(result.err).toContain('não traz mapping-mcp.js (HTTP 404)');
+        expect(result.err).toContain('https://github.com/fabianofranca/mapping/releases');
+        expect(apiCalls(mock)).toEqual([]);
+        expect(snapshot(env.ws)).toEqual(before);
+      } finally {
+        await mock.close();
+      }
+    },
+    SLOW,
+  );
+
+  it(
+    'falha de rede (porta fechada): cita o host e o motivo do curl, sem segundo caminho de sucesso',
+    async () => {
+      const env = setup();
+      const closed = await startMock(env);
+      const base = closed.base;
+      await closed.close();
+      const before = snapshot(env.ws);
+      const result = await runMock(env, base);
+      expect(result.status).not.toBe(0);
+      expect(result.err).toContain('sem resposta de 127.0.0.1');
+      expect(result.err).toContain('curl: (7)');
+      expect(result.err).toContain('Confira a rede');
+      expect(snapshot(env.ws)).toEqual(before);
+    },
+    SLOW,
+  );
+
+  it(
+    'falha passageira: 503 na primeira tentativa e 200 na segunda instala sem o segundo caminho',
+    async () => {
+      const env = setup();
+      const mock = await startMock(env, { direct: (_file, n) => (n === 1 ? 503 : 200) });
+      try {
+        const result = await runMock(env, mock.base, ['--no-self-update']);
+        expect(result.status, result.all).toBe(0);
+        expect(result.err).not.toContain('API de assets');
+        expect(apiCalls(mock)).toEqual([]);
+        expect(result.out).toContain('Servidor: 0.0.0-test');
+      } finally {
+        await mock.close();
+      }
+    },
+    SLOW,
+  );
+
+  it(
+    'com tag, o segundo caminho lê releases/tags/<tag>',
+    async () => {
+      const env = setup();
+      const mock = await startMock(env, { direct: () => 504 });
+      try {
+        const result = await runMock(env, mock.base, ['mcp-v9.9.9', '--no-self-update']);
+        expect(result.status, result.all).toBe(0);
+        expect(mock.calls).toContain(`GET ${API_PATH}/releases/tags/mcp-v9.9.9`);
+        expect(mock.calls.some((c) => c.endsWith('/releases/latest'))).toBe(false);
+        expect(
+          mock.calls.some((c) =>
+            c.startsWith(`GET ${REPO_PATH}/releases/download/mcp-v9.9.9/`),
+          ),
+        ).toBe(true);
+      } finally {
+        await mock.close();
+      }
+    },
+    SLOW,
+  );
+
+  it(
+    'sha256 divergente no segundo caminho: erro "não confere" e a pasta fica igual',
+    async () => {
+      const env = setup();
+      const mock = await startMock(env, {
+        direct: () => 504,
+        tamper: ['mapping-mcp.js'],
+      });
+      try {
+        const before = snapshot(env.ws);
+        const result = await runMock(env, mock.base);
+        expect(result.status).not.toBe(0);
+        expect(result.err).toContain('não confere');
+        expect(snapshot(env.ws)).toEqual(before);
+        expect(leftovers(env)).toEqual([]);
+        expect(executions(env)).toBe(1);
+      } finally {
+        await mock.close();
+      }
+    },
+    SLOW,
+  );
+
+  it(
+    'MAPPING_RELEASE_BASE definida: 5xx não aciona o segundo caminho',
+    async () => {
+      const env = setup();
+      const mock = await startMock(env, { direct: () => 504 });
+      try {
+        const before = snapshot(env.ws);
+        const result = await runMock(env, mock.base, [], {
+          MAPPING_RELEASE_BASE: `${mock.base}${REPO_PATH}/releases/latest/download`,
+        });
+        expect(result.status).not.toBe(0);
+        expect(result.err).toContain('HTTP 504');
+        expect(apiCalls(mock)).toEqual([]);
+        expect(snapshot(env.ws)).toEqual(before);
+      } finally {
+        await mock.close();
+      }
+    },
+    SLOW,
+  );
+
+  it(
+    'opcional ausente (404 do setup.sh): só avisa "release antiga", agora com o HTTP',
+    async () => {
+      const env = setup({ omit: ['setup.sh'] });
+      const mock = await startMock(env);
+      try {
+        const result = await runMock(env, mock.base);
+        expect(result.status, result.all).toBe(0);
+        expect(result.err).toContain('não traz setup.sh');
+        expect(result.err).toContain('release antiga');
+        expect(result.err).toContain('HTTP 404');
+        expect(apiCalls(mock)).toEqual([]);
+      } finally {
+        await mock.close();
+      }
+    },
+    SLOW,
+  );
+
+  it(
+    'SKILL.md da release fora do ar (5xx nos dois): erro, sem cair para a skill da main',
+    async () => {
+      const env = setup();
+      const mock = await startMock(env, {
+        direct: (file) => (file.startsWith('SKILL.md') ? 503 : 200),
+        asset: 504,
+      });
+      try {
+        const before = snapshot(env.ws);
+        const result = await runMock(env, mock.base);
+        expect(result.status).not.toBe(0);
+        expect(result.err).toContain('SKILL.md');
+        expect(result.err).toContain('HTTP 50');
+        expect(result.err).not.toContain('usando a skill da main');
+        expect(snapshot(env.ws)).toEqual(before);
+      } finally {
+        await mock.close();
+      }
+    },
+    SLOW,
+  );
+
+  it('arquivo ausente em file://: a mensagem também traz o HTTP 404', () => {
+    const env = setup({ omit: ['mapping-mcp.js'] });
+    const result = run(env);
+    expect(result.status).not.toBe(0);
+    expect(result.err).toContain('não traz mapping-mcp.js (HTTP 404)');
   });
 });

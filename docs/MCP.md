@@ -551,6 +551,8 @@ A versão do servidor é **uma por épico**: `SERVER_VERSION` em `mcp/version.ts
 
 Releases anteriores a esta não têm os quatro últimos (o `watch-comments.mjs` só vem a partir da 0.28.2; com uma tag mais antiga, o `setup.sh` avisa e segue). Os workspaces que ainda têm o `setup.sh` antigo se atualizam uma vez, com a linha da transição (depois da primeira estável com os arquivos novos; antes disso, troque `latest/download` por `download/<tag da rc>` e passe a tag ao `./setup.sh`), que também vai nas notas de cada release:
 
+O `setup.sh` baixa esses arquivos pelo download direto da release e, se o GitHub responder 5xx ou 429 ou não responder, tenta de novo e usa a API de assets (`api.github.com/repos/…/releases/assets/<id>`, sem token), conferindo o `sha256` do mesmo jeito; o erro final traz o código HTTP (etapa #877).
+
 ```bash
 curl -fsSL https://github.com/fabianofranca/mapping/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh
 ```
