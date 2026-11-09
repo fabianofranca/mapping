@@ -1179,6 +1179,8 @@ export const enUS: Dictionary = {
   'drawingMode.intro':
     'Picks the mode (light, dark…) of the specializations tokens the components are drawn with. It does not change the interface theme.',
   'drawingMode.label': 'Drawing mode',
+  'drawingMode.light': 'Light',
+  'drawingMode.dark': 'Dark',
   'drawingMode.followProject': 'Follow the project',
   'drawingMode.undeclared': '{mode} (not declared)',
   'drawingMode.containerHint':

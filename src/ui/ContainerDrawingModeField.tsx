@@ -3,7 +3,7 @@ import { t } from '../i18n';
 import type { ProjectContainer } from '../model';
 import { Select } from './controls';
 import { useEditor } from './EditorContext';
-import { declaredDrawingModes } from './drawingModes';
+import { declaredDrawingModes, drawingModeLabel } from './drawingModes';
 import { Property } from './PropertyGrid';
 
 interface ContainerDrawingModeFieldProps {
@@ -44,11 +44,13 @@ export function ContainerDrawingModeField({
         <option value="">{t('drawingMode.followProject')}</option>
         {declared.map((mode) => (
           <option key={mode} value={mode}>
-            {mode}
+            {drawingModeLabel(mode)}
           </option>
         ))}
         {undeclared && (
-          <option value={fixed}>{t('drawingMode.undeclared', { mode: fixed })}</option>
+          <option value={fixed}>
+            {t('drawingMode.undeclared', { mode: drawingModeLabel(fixed) })}
+          </option>
         )}
       </Select>
     </Property>

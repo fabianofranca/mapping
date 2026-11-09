@@ -7,3 +7,4 @@
 ## Corrigido
 
 - Roteiro R22.6 (`docs/TESTING.md`): o clique do **Comentar** vai num ponto vazio que não depende do zoom, e o passo diz que o **Comentar** sobre um item ancora a conversa nele, sem pino tracejado nem `draft`.
+- As opções do seletor **Modo do desenho** (**Configurações** e **Detalhes** do container) aparecem como "Claro" e "Escuro" em pt-BR (e "Light" e "Dark" em en-US), em vez de `light` e `dark`; o valor gravado no `mapping.json` continua o mesmo.
