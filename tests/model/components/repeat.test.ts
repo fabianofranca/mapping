@@ -400,6 +400,28 @@ describe('expandRepeats', () => {
     expect(out.values['$r0_1:chave']).toBe('c');
   });
 
+  it('coluna que nenhuma linha traz (projeto antigo) fica vazia, sem aviso de campo não informado', () => {
+    const c = component(
+      {},
+      {
+        template: row([
+          text('chave', { width: 'hug' }),
+          text('selecionada', {
+            width: 'fill',
+            visible: { $eq: ['selecionada', 'true'] },
+          }),
+        ]),
+      },
+    );
+    const out = expandRepeats(c, { linhas: [{ chave: 'a' }, { chave: 'b' }] });
+    expect(out.values['$r0_0:selecionada']).toBeNull();
+    expect(out.values['$r0_1:selecionada']).toBeNull();
+    const drawn = instantiate(c, { titulo: 'T', linhas: [{ chave: 'a' }] }, BOX, {
+      measure: approximateMeasurer,
+    });
+    expect(drawn.warnings.filter((w) => w.startsWith('campo não informado'))).toEqual([]);
+  });
+
   it('o campo table não informado vira aviso; informado vazio ou nulo, não', () => {
     expect(expandRepeats(component(), {}).warnings).toEqual([
       'campo não informado: linhas',

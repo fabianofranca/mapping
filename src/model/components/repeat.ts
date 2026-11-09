@@ -24,6 +24,7 @@ import type {
   RepeatTemplate,
   TemplateNode,
 } from './componentFormat';
+import { referencedFields } from './expressions';
 
 const INHERITED_KEYS = [
   'visible',
@@ -135,7 +136,13 @@ export function expandRepeats(
     const n = counter++;
     if (!(node.field in values)) warnings.push(`campo não informado: ${node.field}`);
     const rows = rowsOf(values[node.field]);
+    // Coluna que o `template` cita, não é campo do tipo e nenhuma linha traz (linha gravada antes
+    // de a coluna existir) também é coluna: fica vazia, em vez de virar "campo não informado".
     const columns = new Set(columnsOf(rows));
+    if (rows.length > 0) {
+      for (const key of referencedFields(node.template))
+        if (!(key in values)) columns.add(key);
+    }
     const column = (node.direction ?? 'column') === 'column';
     const children = rows.map((row, i): FrameTemplate => {
       const scope = `$r${n}_${i}`;
