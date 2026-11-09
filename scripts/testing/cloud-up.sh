@@ -65,7 +65,7 @@ start_display_and_chrome() {
   sleep 1
   export DBUS_SESSION_BUS_ADDRESS=$(setsid dbus-daemon --session --fork --print-address=1 </dev/null 2>"$S/dbus.log")
   setsid /usr/libexec/at-spi-bus-launcher --launch-immediately </dev/null >"$S/at-spi.log" 2>&1 &
-  echo "export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >"$S/env"
+  echo "export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >"$S/env.sh"
   GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 setsid nohup "${CHROME_CMD[@]}" </dev/null >"$S/chrome.log" 2>&1 &
 }
 
@@ -85,9 +85,9 @@ if [ "$RESTART_CHROME" -eq 1 ]; then
     sleep 1
   done
   rm -rf "$S/profile/Default/Sessions"
-  if [ -f "$S/env" ]; then
+  if [ -f "$S/env.sh" ]; then
     # shellcheck disable=SC1091
-    source "$S/env"
+    source "$S/env.sh"
   fi
   if ! (pgrep -x Xvfb >/dev/null 2>&1 && pgrep -x dbus-daemon >/dev/null 2>&1); then
     start_display_and_chrome
@@ -103,14 +103,28 @@ fi
 node "$REPO_DIR/scripts/testing/cloud.mjs" mark ambiente start
 
 cd "$REPO_DIR"
-npm ci
-npm run build
+BUILD_LOG="$S/build.log"
+: >"$BUILD_LOG"
+# Etapa #1148, decisão 5: a saída do npm vai para apoio/build.log; com falha, as últimas 40
+# linhas aparecem aqui e o script sai com o código do comando (como antes, por causa do set -e).
+run_logged() {
+  echo "+ $*" >>"$BUILD_LOG"
+  local rc=0
+  "$@" >>"$BUILD_LOG" 2>&1 || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "ERRO: '$*' falhou (código $rc); últimas 40 linhas de $BUILD_LOG:" >&2
+    tail -n 40 "$BUILD_LOG" >&2
+    exit "$rc"
+  fi
+}
+run_logged npm ci
+run_logged npm run build
 
 # A redireção vai no grupo todo: o subshell que espera o servidor também larga o pipe de quem
 # chamou o script (com ela só no `python3`, um `| tail` nunca fechava).
 (cd dist && exec setsid python3 -m http.server 8080 --bind 127.0.0.1) </dev/null >"$S/http.log" 2>&1 &
 
-npm run build:mcp
+run_logged npm run build:mcp
 MCP_VERSION_OUTPUT=$(node dist-mcp/mapping-mcp.js --version)
 
 sleep 1

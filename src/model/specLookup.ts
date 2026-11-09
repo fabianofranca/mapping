@@ -84,10 +84,7 @@ export function projectLayerFor(
   specId: string,
   specLayerId: string,
 ): Layer | null {
-  return (
-    p.layers.find((l) => l.spec?.specId === specId && l.spec.layerId === specLayerId) ??
-    null
-  );
+  return projectIndex(p).layersBySpecLayer.get(typeKey(specId, specLayerId)) ?? null;
 }
 
 export function fieldOf(type: SpecAnnotationType, key: string): SpecField | null {
@@ -126,10 +123,10 @@ export interface OwnerRoles {
  * desconhecido ou o tipo dela não declara `childRoles`.
  */
 export function ownerRolesOf(p: Project, owner: Annotation): OwnerRoles | null {
-  const roles = typeOfAnnotation(p, owner)?.type.childRoles;
-  if (!roles || roles.length === 0) return null;
-  const resolved = typeOfAnnotation(p, owner);
-  return { label: resolved?.type.childRolesLabel ?? null, roles };
+  const type = typeOfAnnotation(p, owner)?.type;
+  const roles = type?.childRoles;
+  if (!type || !roles || roles.length === 0) return null;
+  return { label: type.childRolesLabel ?? null, roles };
 }
 
 /**

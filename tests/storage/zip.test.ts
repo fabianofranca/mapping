@@ -5,7 +5,7 @@ import {
   codeLink,
   deserialize,
   findByCode,
-  getProjectIssues,
+  projectIssues,
   migrations,
   serialize,
   specFiles,
@@ -98,7 +98,7 @@ describe('zip do projeto', () => {
     ).toBe(
       'https://github.com/org/app-android/blob/main/app/src/main/java/com/app/ds/DSButton.kt',
     );
-    expect([...getProjectIssues(loaded.project).keys()]).toEqual(['AT']);
+    expect([...projectIssues(loaded.project).keys()]).toEqual(['AT']);
   });
 
   it('aceita o projeto dentro de uma pasta no zip', async () => {

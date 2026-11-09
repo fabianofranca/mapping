@@ -10,7 +10,10 @@ import {
   fittedSize,
   hugAxes,
   playgroundSizeRange,
+  rawMessage,
+  type ModelMessage,
 } from '../../model';
+import { messageText } from '../modelMessage';
 import { Button, TextField } from '../controls';
 import { TypedForm } from '../TypedForm';
 import { drawWarningText } from './drawWarnings';
@@ -29,7 +32,7 @@ interface PlaygroundProps {
 
 interface Drawn {
   readonly url: string | null;
-  readonly warnings: readonly string[];
+  readonly warnings: readonly ModelMessage[];
 }
 
 export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps) {
@@ -76,7 +79,10 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
         });
         setDrawn({ url, warnings: [...drawing.warnings, ...renderWarnings] });
       } catch {
-        setDrawn({ url: null, warnings: [t('catalog.playground.drawFailed')] });
+        setDrawn({
+          url: null,
+          warnings: [rawMessage(t('catalog.playground.drawFailed'))],
+        });
       }
     });
     return () => cancelAnimationFrame(frame);
@@ -168,7 +174,7 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
         {drawn.warnings.length > 0 && (
           <ul class="catalog-warnings" aria-label={t('catalog.playground.warnings')}>
             {drawn.warnings.map((warning, i) => (
-              <li key={i}>{warning}</li>
+              <li key={i}>{messageText(warning)}</li>
             ))}
           </ul>
         )}

@@ -18,7 +18,7 @@ Para um bug, o agente procura antes uma issue igual ou que o agrupe e põe o ró
 Detalhe a issue #<roadmap ou bug> como etapa, com as fases e a tabela de modelos (linha Orquestrador e coluna Testador). Pergunte o que for decisão de produto. Ao terminar, ponha o rótulo `ready` e tire o `roadmap` (o `bug` e o `impact:` ficam).
 ```
 
-Para detalhar de uma vez todas as `roadmap` e `bug` que ainda não estão `ready` (num chat no modo Auto): `/detalhar-backlog`. O skill (`.claude/skills/detalhar-backlog/SKILL.md`) cria uma sessão Opus que propõe juntar issues num épico só, para ter menos versões do MCP e uma rodada do testador só. Depois cria até 3 sessões Opus de detalhamento por vez e traz as perguntas delas ao dono pelo seletor de perguntas, sempre com uma opção recomendada. Como `create_session` não escolhe o esforço, a unidade cujo detalhamento pede esforço high (schema ou formato, gravação do `mapping.json`, arquitetura transversal, plano grande) é perguntada ao dono, e o recomendado é o skill entregar um prompt pronto para ele abrir a sessão em Opus e esforço high (`alto=#a,#b` força, `alto=nenhum` desliga). Antes de gravar o plano, cada detalhamento o confere contra o código da `main` (arquivos, versões, roteiros, fases do tamanho de uma sessão e sobreposição com as outras `ready` e `in-progress`). Cada etapa sai com a linha `**Depende de:**`, que dá a ordem da implementação.
+Para detalhar de uma vez todas as `roadmap` e `bug` que ainda não estão `ready` (num chat no modo Auto): `/detalhar-backlog`. O skill (`.claude/skills/detalhar-backlog/SKILL.md`) cria um subagente Opus (ferramenta `Agent`, em segundo plano) que propõe juntar issues num épico só, para ter menos versões do MCP e uma rodada do testador só. Depois cria até 3 subagentes Opus de detalhamento por vez e traz as perguntas deles ao dono pelo seletor de perguntas, sempre com uma opção recomendada; as respostas voltam ao mesmo subagente por `SendMessage`. Como a ferramenta `Agent` aceita `effort`, cada unidade roda em esforço high quando os critérios da skill a apontam (schema ou formato, gravação do `mapping.json`, arquitetura transversal, plano grande) e em medium nos outros casos (`alto=#a,#b` força high, `alto=nenhum` põe tudo em medium), sem prompt manual para o dono. Antes de gravar o plano, cada detalhamento o confere contra o código da `main` (arquivos, versões, roteiros, fases do tamanho de uma sessão e sobreposição com as outras `ready` e `in-progress`). Cada etapa sai com a linha `**Depende de:**`, que dá a ordem da implementação.
 
 3. Implementação (no modelo da linha Orquestrador, no modo Auto):
 
@@ -48,6 +48,7 @@ Você é o agente da fase <código> — <título> da etapa #<etapa> do repositó
 7. Avise o coordenador por `send_message`: o link do PR mesclado, um resumo de 5 a 10 linhas, as decisões tomadas fora da sub-issue e os "Defeitos pendentes" (ou "Defeitos pendentes: nenhum").
 8. Decisão de produto que a sub-issue não cobre: não invente. Mande a pergunta e as opções ao coordenador por `send_message` e espere a resposta.
 9. Defeito achado no caminho, fora do plano (CLAUDE.md, "Defeito achado durante a etapa"): se não pede decisão do dono e cabe no que a fase toca, corrija neste PR, com teste primeiro, e cite-o em "Corrigido fora do plano" no Resumo; se não cabe, liste-o nos "Defeitos pendentes" do aviso (o que acontece, onde, como reproduzir). Não abra issue `bug`, salvo para o que pede decisão do dono.
+<Só quando a linha da fase pede coordenador high, xhigh ou max: 10. Revisão de código: depois dos gates e antes do push do PR, rode a skill `/code-review <nível da tabela> <base>..HEAD`, com `<base>` = `git merge-base origin/epic/<nome> HEAD`, sem `--comment` nem `--fix`. Cada achado segue esta regra: defeito que se confirma lendo o código, corrija no próprio PR, com teste primeiro (CLAUDE.md, "Defeito achado durante a etapa"); simplificação ou eficiência dentro do que a fase toca, aplique; o resto, descarte, com o motivo. Depois das correções, rode os gates de novo. O Resumo do PR ganha a linha "Revisão `/code-review <nível>`: N achados, X corrigidos, Y aplicados, Z descartados (motivos)".>
 <Só na última fase: ponha o rótulo `mcp-rc` no PR.>
 
 Coordenador: `<id da sessão do orquestrador>`
@@ -62,28 +63,46 @@ Com ❌ no relato **ou com defeito pendente** (os "Defeitos pendentes" dos aviso
 O orquestrador acha o ambiente "Mapping - testes" com `list_environments` e cria a sessão com `create_session`, `source_url` do repositório e `source_revision` = `epic/<nome>`:
 
 ```text
-Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: <roteiros da sub-issue da última fase>. Passada visual: <lista da sub-issue, ou "nenhuma">. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do orquestrador>`.
+Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: <roteiros da sub-issue da última fase>. Passada visual: <lista da sub-issue, ou "nenhuma">. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Tag da release: <mcp-v…-rc.n, ou "sem R21">. R0 inteiro primeiro. Coordenador: `<id da sessão do orquestrador>`.
 ```
 
-Se a lista traz o R21 (testa a release real), acrescente "Tag da release: `mcp-v<versão>-rc.<n>`" (a rc do épico) antes de "Coordenador".
+A lacuna da tag é sempre preenchida: se a lista traz o R21 (testa a release real), a rc do épico (`mcp-v<versão>-rc.<n>`); se não traz, `sem R21`.
 
-Reteste, depois da correção (R0 reduzido ao R0.1 e aos passos de que os achados dependem; passada visual só das janelas e dos diálogos dos achados). Os defeitos pendentes corrigidos entram pelos passos de roteiro que afetam; sem passo afetado, o teste automatizado da correção basta, e uma correção só de defeitos pendentes, sem passo de roteiro, dispensa o reteste:
+Reteste, depois da correção (R0 só o R0.1 e os passos de que os achados dependem; passada visual só das janelas e dos diálogos dos achados). Os defeitos pendentes corrigidos entram pelos passos de roteiro que afetam; sem passo afetado, o teste automatizado da correção basta, e uma correção só de defeitos pendentes, sem passo de roteiro, dispensa o reteste:
 
 ```text
-Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: os achados <números> do relato em <link do comentário><e os passos <lista> que as correções dos defeitos pendentes afetam>. Branch `epic/<nome>`, commit `<hash da correção>`. Relato na sub-issue #<fase de correção>. Coordenador: `<id da sessão do orquestrador>`.
+Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: os achados <números> do relato em <link do comentário><e os passos <lista> que as correções dos defeitos pendentes afetam>. Branch `epic/<nome>`, commit `<hash da correção>`. Relato na sub-issue #<fase de correção>. Tag da release: <mcp-v…-rc.n, ou "sem R21">. R0 só o R0.1 e os passos de que os achados dependem. Coordenador: `<id da sessão do orquestrador>`.
 ```
+
+## Rodada dirigida em grupos
+
+Quando a lista da seção **Testador** (ou do reteste), **sem o R0**, passa de **40 passos**, o orquestrador (o **coordenador**) a divide em grupos paralelos, em vez de uma sessão só ([`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md), "Rodada dirigida em grupos"). No clone do épico, ele roda `node scripts/testing/round-guide.mjs --grupos <roteiros>`: o comando conta os passos, respeita as cadeias que não se separam e imprime uma linha `grupo k de n: <roteiros>` por grupo (até 40 passos, imprime "uma sessão" e vale a mensagem dirigida acima). No máximo 5 grupos. O coordenador cria os n grupos de uma vez: `list_environments` ("Mapping - testes"), `create_session` com `source_url` do repositório, `source_revision` = `epic/<nome>`, o mesmo commit em todos e o título "Testador — <alvo>, grupo <k> de <n>". Mensagem do grupo `<k>`:
+
+```text
+Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido, grupo <k> de <n>: <roteiros da linha "grupo k de n" do round-guide.mjs>. Passada visual: <lista da sub-issue, em um grupo só; "nenhuma" nos outros>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Tag da release: <mcp-v…-rc.n, ou "sem R21">. <No grupo 1: R0 inteiro primeiro. Nos outros: R0 só o R0.1 e os passos de que os roteiros do grupo dependem.> Coordenador: `<id da sessão do coordenador>`.
+```
+
+- **Tag da release:** só o grupo que tem o R21 leva a rc do épico; nos outros a lacuna é `sem R21`.
+- **Conferência de reserva:** agenda um `send_later` de 60 min e só segue com os **n avisos** (um por grupo, cada um cita o grupo). Grupo que não avisou até lá: `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, chama o dono.
+- **Com os n avisos,** posta o resumo (o template de "Resumo da rodada em blocos", com "Grupo" no lugar de "Bloco" e o título "Rodada dirigida em grupos — resumo") na mesma sub-issue. O coordenador não reescreve os relatos.
+- **Com ❌,** o fluxo de sempre, e o reteste é **uma sessão só** (abaixo).
+
+## Reteste junto
+
+O reteste de uma etapa é **uma sessão só**, com os achados de **todos** os grupos ou blocos (códigos `k.n`, com o link do comentário de cada um) e os passos que as correções dos defeitos pendentes afetam, na mensagem de reteste de "Para o testador". Só se divide em grupos se a lista, sem o R0, passar de 40 passos (mesma regra acima). Se outra correção for mesclada no épico enquanto o reteste ainda não começou, ela entra no mesmo reteste: o commit da mensagem é o do épico depois dela, e os passos que ela afeta se somam à lista.
 
 ## Rodada completa em 5 blocos
 
 Quando a seção **Testador** da sub-issue da última fase pede a rodada completa, o orquestrador (o **coordenador**) cria **cinco** sessões do testador de uma vez, uma por bloco da tabela de [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md) ("Rodada completa em blocos"). Cada uma usa `list_environments` ("Mapping - testes"), `create_session` com `source_url` do repositório, `source_revision` = `epic/<nome>`, o mesmo commit nas cinco e o título "Testador — <alvo>, bloco <k> de 5". Mensagem do bloco `<k>` (1 a 5):
 
 ```text
-Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco <k> de 5. Passada visual: <lista da sub-issue, no bloco 4; "no bloco 4" nos blocos 1, 2, 3 e 5>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do coordenador>`.
+Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco <k> de 5. Passada visual: <lista da sub-issue, no bloco 4; "no bloco 4" nos blocos 1, 2, 3 e 5>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Tag da release: <mcp-v…-rc.n, ou "sem R21">. Coordenador: `<id da sessão do coordenador>`.
 ```
 
+- **Tag da release:** só o bloco 5 tem o R21; nos blocos 1 a 4 a lacuna é `sem R21`, e no 5 é a rc do épico (numa rodada na `main`, a última estável).
 - **Conferência de reserva:** agenda um `send_later` de 60 min e só segue com os **cinco avisos** (um por bloco, cada um cita o bloco). Bloco que não avisou até lá: `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, chama o dono.
 - **Com os cinco avisos,** posta o resumo (abaixo) na mesma sub-issue. O coordenador não reescreve os relatos.
-- **Com ❌,** o fluxo de sempre: uma fase de correção com os achados dos cinco blocos (códigos `k.n`, com o link do comentário de cada um) e o reteste dirigido numa sessão só, pelos achados `k.n`, na mensagem de reteste acima.
+- **Com ❌,** o fluxo de sempre: uma fase de correção com os achados dos cinco blocos (códigos `k.n`, com o link do comentário de cada um) e o reteste dirigido numa sessão só ("Reteste junto"), pelos achados `k.n` de todos os blocos, na mensagem de reteste acima.
 
 ### Rodada avulsa (do dono)
 
@@ -97,7 +116,7 @@ Esse chat é o coordenador: cria os cinco blocos como acima (relato na issue `#<
 
 ## Resumo da rodada em blocos
 
-Um comentário curto na mesma sub-issue (ou issue), depois dos cinco avisos. O coordenador não reescreve os relatos: só soma e aponta para eles.
+Um comentário curto na mesma sub-issue (ou issue), depois dos cinco avisos. Na rodada dirigida em grupos, o mesmo template vale com "Grupo" no lugar de "Bloco", as linhas dos n grupos e o título "Rodada dirigida em grupos — resumo". O coordenador não reescreve os relatos: só soma e aponta para eles.
 
 ```markdown
 ## Rodada completa em blocos — resumo

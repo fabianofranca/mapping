@@ -105,34 +105,30 @@ function typeDrawing(
   out: LibraryIssue[],
 ): void {
   const keys = new Set(type.fields.map((f) => f.key));
-  const sizes: { label: string; box: Box }[] = [
-    { label: 'tamanho inicial', box: { x: 0, y: 0, ...component.size } },
-  ];
+  const box: Box = { x: 0, y: 0, ...component.size };
   for (const drawCase of drawCases(type, component, componentPath, specPath, basePath)) {
-    for (const size of sizes) {
-      const where = `tipo "${type.id}", ${drawCase.label}, ${size.label} ${size.box.width}×${size.box.height}`;
-      try {
-        const { warnings } = instantiate(component, drawCase.values, size.box, {
-          measure: approximateMeasurer,
-        });
-        for (const warning of warnings) {
-          const missing = NOT_INFORMED.exec(warning);
-          if (missing !== null && !keys.has(missing[1] ?? '')) continue;
-          out.push({
-            file: drawCase.file,
-            path: drawCase.path,
-            message: `${where}: ${warning}${APPROXIMATE_SUFFIX}`,
-            severity: 'warning',
-          });
-        }
-      } catch (error) {
+    const where = `tipo "${type.id}", ${drawCase.label}, tamanho inicial ${box.width}×${box.height}`;
+    try {
+      const { warnings } = instantiate(component, drawCase.values, box, {
+        measure: approximateMeasurer,
+      });
+      for (const warning of warnings) {
+        const missing = NOT_INFORMED.exec(warning);
+        if (missing !== null && !keys.has(missing[1] ?? '')) continue;
         out.push({
           file: drawCase.file,
           path: drawCase.path,
-          message: `${where}: falha ao desenhar: ${messageOf(error)}`,
-          severity: 'error',
+          message: `${where}: ${warning}${APPROXIMATE_SUFFIX}`,
+          severity: 'warning',
         });
       }
+    } catch (error) {
+      out.push({
+        file: drawCase.file,
+        path: drawCase.path,
+        message: `${where}: falha ao desenhar: ${messageOf(error)}`,
+        severity: 'error',
+      });
     }
   }
 }

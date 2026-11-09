@@ -3,6 +3,7 @@ import {
   EMPTY_CATALOG,
   componentPaths,
   loadSpecComponents,
+  rawMessage,
   packageDirOf,
   type ComponentCatalog,
   type Project,
@@ -133,11 +134,13 @@ export function failedComponents(
   error: unknown,
 ): SpecComponents {
   reportError('components.load', error);
+  const message = error instanceof Error ? error.message : String(error);
   return {
     specId,
     version,
     byType: new Map(),
-    problems: [error instanceof Error ? error.message : String(error)],
+    problems: [message],
+    problemMessages: [rawMessage(message)],
   };
 }
 

@@ -3,6 +3,7 @@ import { canArrange } from '../model';
 import { showToast } from '../store/ui';
 import type { EditorContextValue } from './EditorContext';
 import { markingErrorMessage } from './labels';
+import { messageText } from './modelMessage';
 
 // "Arrumar" (etapa Biblioteca, B3): o botão de Detalhes, o item do menu do canvas e o
 // atalho chamam o mesmo caminho, que mostra o resultado num aviso curto.
@@ -29,7 +30,10 @@ export function arrangeMarking(editor: EditorContextValue, markingId: string): v
   const changed = review.derived.shownProject.peek() !== before;
   const [first] = warnings;
   if (first !== undefined) {
-    showToast(ui, t('arrange.doneWarnings', { count: warnings.length, first }));
+    showToast(
+      ui,
+      t('arrange.doneWarnings', { count: warnings.length, first: messageText(first) }),
+    );
   } else {
     showToast(ui, t(changed ? 'arrange.done' : 'arrange.nothing'));
   }

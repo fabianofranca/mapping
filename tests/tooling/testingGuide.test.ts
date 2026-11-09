@@ -779,14 +779,79 @@ describe('TR2 — R0 reduzido no reteste, passada visual e tempo real', () => {
   it('a mensagem de reteste do FLOW.md cita o R0 reduzido ao R0.1', () => {
     const retest = flow.slice(
       flow.indexOf('Reteste, depois da correção'),
-      flow.indexOf('## Notificação final'),
+      flow.indexOf('## Rodada completa em 5 blocos'),
     );
     expect(retest).toMatch(/R0\.1/);
+    // TR3 (decisão 13): a mensagem diz o R0 por extenso, para não divergir do guia.
+    expect(retest).toContain('R0 só o R0.1 e os passos de que os achados dependem');
   });
 
   it('o CLAUDE.md manda o orquestrador passar a passada visual ao testador e a sub-issue da última fase trazer a linha', () => {
     expect(claude).toMatch(/os roteiros e a passada visual/);
     expect(claude).toContain('Passada visual:');
+  });
+});
+
+// Etapa Testador mais rápido (TR3): preparos que não sobrescrevem e mensagens alinhadas.
+describe('TR3 — preparos que não sobrescrevem e mensagens alinhadas', () => {
+  const cloud = read('docs/TESTING-NUVEM.md');
+  const guide = read('docs/TESTING.md');
+  const flow = read('docs/FLOW.md');
+
+  /** Os blocos de código cercados da seção 8 (do "## 8." ao "## 9."). */
+  function section8Blocks(): string[] {
+    const start = guide.indexOf('## 8. Roteiros');
+    const end = guide.indexOf('## 9. ', start);
+    const blocks: string[] = [];
+    let current: string[] | null = null;
+    for (const line of guide.slice(start, end).split('\n')) {
+      if (/^\s*```/.test(line)) {
+        if (current) blocks.push(current.join('\n'));
+        current = current ? null : [];
+      } else if (current) current.push(line);
+    }
+    return blocks;
+  }
+
+  // Cria a pasta do projeto ou grava o `mapping.json` dela.
+  const CREATES_PROJECT =
+    /mkdir -p "\$PROJ"|> "\$PROJ\/mapping\.json"|v15\.py"? "\$PROJ"|unzip [^\n]*-d "\$PROJ"|cat > \w+\/mapping\.json/;
+
+  it('todo bloco de preparo que cria a pasta do projeto ou grava o mapping.json tem a guarda, sem rm (decisão 12)', () => {
+    const creators = section8Blocks().filter((b) => CREATES_PROJECT.test(b));
+    expect(creators.length).toBeGreaterThanOrEqual(3);
+    for (const block of creators) {
+      expect(block).toContain('já existe: o preparo já rodou; não rode de novo');
+      expect(block).toMatch(/if \[ -e [^\]]+\]; then/);
+      expect(block).not.toMatch(/\brm\b.*(\$PROJ|migracao13)/);
+    }
+  });
+
+  it('a mensagem da dirigida diz "R0 inteiro primeiro" e a do TESTING-NUVEM vale quando divergir do guia (decisão 13)', () => {
+    const tester = flow.slice(
+      flow.indexOf('## Para o testador'),
+      flow.indexOf('Reteste, depois da correção'),
+    );
+    expect(tester).toContain('R0 inteiro primeiro');
+    expect(cloud).toMatch(/mensagem[^\n]*vale[^\n]*diverg/i);
+  });
+
+  it('toda mensagem de dirigida, de grupo e de bloco traz a lacuna da tag da release, e o prompt diz o que fazer com "sem R21" (decisão 14)', () => {
+    const tester = flow.slice(
+      flow.indexOf('## Para o testador'),
+      flow.indexOf('### Rodada avulsa'),
+    );
+    const messages = tester.match(/```text\n[\s\S]*?```/g) ?? [];
+    expect(messages.length).toBe(4);
+    for (const m of messages) {
+      expect(m).toContain('Tag da release: <mcp-v…-rc.n, ou "sem R21">');
+    }
+    const r21 = cloud.slice(
+      cloud.indexOf('**R21 e a tag da release.**'),
+      cloud.indexOf('**Rodada dirigida.**'),
+    );
+    expect(r21).toContain('sem R21');
+    expect(r21).toMatch(/sem R21[^\n]*(não execute|pule|fora)/i);
   });
 });
 
@@ -826,6 +891,16 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
     expect(howTo).toContain('{ timeout }');
   });
 
+  it('todo script de passo vai pelo cloud.mjs run, com exemplo de heredoc, e a lista inclui run e help (#1148, decisão 6)', () => {
+    expect(howTo).toContain('cloud.mjs run');
+    expect(howTo).toContain("<<'JS'");
+    expect(howTo).toMatch(/`run`, `help`, `connect`/);
+    expect(howTo).toMatch(/O que atrapalhou/);
+    expect(guide).toContain("<<'JS'");
+    expect(cloud).toContain('apoio/env.sh');
+    expect(`${cloud}${guide}`).not.toMatch(/apoio\/env\b(?!\.sh)/);
+  });
+
   it('o aviso ao coordenador usa o send_message do claude-code-remote, não o SendMessage', () => {
     expect(cloud).toMatch(/`send_message`[^\n]*claude-code-remote/);
     expect(cloud).toMatch(/n[ãa]o o `SendMessage`/);
@@ -847,14 +922,14 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
       appendixA.indexOf('**Receita 4 (nuvem), a página'),
       appendixA.indexOf('**Receita 5 (nuvem), seletor'),
     );
-    expect(recipe4).toContain('apoio/env');
+    expect(recipe4).toContain('apoio/env.sh');
     expect(recipe4).toMatch(/5 s/);
     expect(recipe4).toContain('state(');
     const recipe2 = appendixA.slice(
       appendixA.indexOf('**Receita 2 (nuvem)'),
       appendixA.indexOf('**Receita 3 (nuvem)'),
     );
-    expect(recipe2).toMatch(/source "\$S\/env"[^\n]*(xdotool|shell)/);
+    expect(recipe2).toMatch(/source "\$S\/env\.sh"[^\n]*(xdotool|shell)/);
     expect(recipe2).toMatch(/auxiliares/);
   });
 
@@ -1020,5 +1095,59 @@ describe('GT2 — guia acertado com a app (etapa #482)', () => {
         new RegExp(`Ctrl\\+Shift\\+${n}\\b|\`${n}\`(?![\\d])`),
       );
     }
+  });
+});
+
+// Etapa #1148 (TR4, decisões 15 a 20): rodada dirigida em grupos e reteste junto.
+describe('TR4 — rodada dirigida em grupos e reteste junto', () => {
+  const cloud = read('docs/TESTING-NUVEM.md');
+  const flow = read('docs/FLOW.md');
+  const claude = read('CLAUDE.md');
+  const skill = read('.claude/skills/implementar-fila/SKILL.md');
+
+  it('o prompt tem o limite (40 passos sem o R0, até 5 sessões) e o modo "grupo k de n"', () => {
+    const section = cloud.slice(cloud.indexOf('## Rodada dirigida em grupos'));
+    expect(section).toMatch(/passa de \*\*40 passos\*\*/);
+    expect(section).toMatch(/no máximo \*\*5 sessões/);
+    expect(section).toContain('round-guide.mjs --grupos');
+    expect(cloud).toContain('execute no modo dirigido, grupo k de n');
+    expect(cloud).toContain('Modo: dirigido, grupo k de n (<roteiros>)');
+    expect(cloud).toContain('Rodada dirigida — grupo k de n');
+    expect(cloud).toMatch(/aviso ao coordenador[^\n]*grupo/i);
+    expect(section).toMatch(/grupo 1[^\n]*R0 inteiro/);
+    expect(section).toMatch(/R0\.1/);
+  });
+
+  it('o FLOW.md tem a mensagem por grupo, o título, a reserva de 60 min e o resumo com "Grupo"', () => {
+    expect(flow).toMatch(
+      /execute no modo dirigido, grupo <k> de <n>:[^\n]*Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+Tag da release:[^\n]+Coordenador: `/,
+    );
+    expect(flow).toContain('Testador — <alvo>, grupo <k> de <n>');
+    const section = flow.slice(
+      flow.indexOf('## Rodada dirigida em grupos'),
+      flow.indexOf('## Reteste junto'),
+    );
+    expect(section).toMatch(/60 min/);
+    expect(section).toMatch(/n avisos/);
+    expect(section).toMatch(/"Grupo" no lugar de "Bloco"/);
+  });
+
+  it('o reteste é uma sessão só, com os achados de todos os grupos ou blocos, e a correção mesclada entra', () => {
+    const section = flow.slice(flow.indexOf('## Reteste junto'));
+    expect(section).toMatch(/uma sessão só/);
+    expect(section).toMatch(/todos\*\* os grupos ou blocos/);
+    expect(section).toMatch(/enquanto o reteste ainda não começou/);
+  });
+
+  it('o CLAUDE.md e a skill implementar-fila citam a rodada em grupos e o reteste junto', () => {
+    expect(claude).toContain('round-guide.mjs --grupos');
+    expect(claude).toMatch(
+      /numa sessão só\*\* com os achados de todos os grupos ou blocos/,
+    );
+    expect(claude).toMatch(/grupo k de n/);
+    expect(skill).toContain('round-guide.mjs --grupos');
+    expect(skill).toMatch(
+      /numa sessão só\*\* com os achados de todos os grupos ou blocos/,
+    );
   });
 });

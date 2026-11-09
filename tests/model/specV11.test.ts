@@ -425,6 +425,27 @@ describe('formatVersion 11: requiresOwner no conjunto resolvido', () => {
     });
     expect(issuesOf(other)).toEqual([]);
   });
+
+  it('tipo que só lista a si mesmo como filho não satisfaz o próprio requiresOwner (CR #945, item 46)', () => {
+    const self = v11Json((s) => {
+      requires(s);
+      delete owner(s).allowedChildren;
+      event(s, 2).allowedChildren = ['navigate'];
+    }, 15);
+    expect(issuesOf(self)).toEqual([
+      {
+        path: NOT_OWNED.path,
+        message:
+          '"navigate" exige dono, mas nenhum outro tipo o aceita como filho (só ele mesmo o lista em allowedChildren)',
+      },
+    ]);
+    const viaLayer = v11Json((s) => {
+      requires(s);
+      delete owner(s).allowedChildren;
+      event(s, 2).allowedChildren = [{ layer: 'eventos', groups: ['navegacao'] }];
+    }, 15);
+    expect(issuesOf(viaLayer).map((i) => i.path)).toEqual([NOT_OWNED.path]);
+  });
 });
 
 describe('chaves novas numa versão anterior à 11', () => {

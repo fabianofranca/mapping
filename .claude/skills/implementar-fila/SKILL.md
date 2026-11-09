@@ -94,6 +94,7 @@ Siga o `CLAUDE.md` ("Fluxo automatizado", item 3) e as mensagens do `docs/FLOW.m
    A mensagem é a "Para a sessão da fase" do `docs/FLOW.md`, com estas linhas antes de "Coordenador":
    - sem `modelo=tabela`: "O dono decidiu rodar esta fase em Sonnet, mesmo que a tabela defina outro modelo: não recuse nem pare por modelo.";
    - "Não edite a seção **Testador** da sub-issue: ela é do coordenador.";
+   - quando a coluna Esforço da linha da fase na tabela é `high`, `xhigh` ou `max`, o item condicional da revisão `/code-review` de "Para a sessão da fase" do `docs/FLOW.md`, com o nível da tabela e `<base>` = `git merge-base origin/epic/<nome> HEAD`. Vale também sem `modelo=tabela`, porque o esforço sai da tabela de qualquer forma. A fase de correção não tem linha na tabela e segue sem o item;
    - só na última fase, e só se o épico muda o MCP: "ponha o rótulo `mcp-rc` no PR". Sem mudança no MCP não há rótulo; com ele, sairia uma rc espúria.
 
    Agende a conferência de reserva (`send_later`, 30 a 60 min). ▸ fase aberta.
@@ -102,12 +103,12 @@ Siga o `CLAUDE.md` ("Fluxo automatizado", item 3) e as mensagens do `docs/FLOW.m
 
 3. **Testador.**
    - `list_environments`: use o "Mapping - testes".
-   - A mensagem é a do `docs/FLOW.md`, com os roteiros e a passada visual da seção **Testador**. A rodada completa vai em 5 blocos.
-   - Agende a conferência de reserva (60 min na rodada completa). ▸ `stage: Testador`.
+   - A mensagem é a do `docs/FLOW.md`, com os roteiros e a passada visual da seção **Testador**. A rodada completa vai em 5 blocos; a dirigida com mais de 40 passos sem o R0 vai em grupos (`node scripts/testing/round-guide.mjs --grupos <roteiros>` no clone do épico, uma sessão por grupo, até 5; `docs/FLOW.md`, "Rodada dirigida em grupos").
+   - Agende a conferência de reserva (60 min na rodada completa e na dirigida em grupos, com os n avisos). ▸ `stage: Testador`.
    - Quando o testador avisar: ▸ log com o total de ✅/❌ e o tempo.
 4. **Correção** (regra 2), enquanto houver ❌, observação que é defeito ou defeito pendente:
    - crie a sub-issue `step` de correção (`issue_write` e depois `sub_issue_write` com a etapa como pai), com código próprio (por exemplo `CL3`, `CL4`…), os achados com o link do relato, os defeitos pendentes com a origem e o aceite;
-   - crie a sessão filha com a mensagem da fase e, depois dela, o reteste dirigido (`docs/FLOW.md`);
+   - crie a sessão filha com a mensagem da fase e, depois dela, o reteste dirigido (`docs/FLOW.md`), **numa sessão só** com os achados de todos os grupos ou blocos e os passos que as correções afetam; correção mesclada antes de o reteste começar entra nele ("Reteste junto");
    - ▸ `stage: Correção` e uma fase nova em `phases`.
 
    O que pede decisão do dono segue a regra 1.

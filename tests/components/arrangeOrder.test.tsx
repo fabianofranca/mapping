@@ -5,7 +5,7 @@ import type { EditorDialogs } from '../../src/app/useEditorDialogs';
 import type { ProjectCommands } from '../../src/app/useProjectCommands';
 import { useEditorShortcuts } from '../../src/app/useEditorShortcuts';
 import { t } from '../../src/i18n';
-import { siblingPosition } from '../../src/model';
+import { modelMessage, rawMessage, siblingPosition } from '../../src/model';
 import { locale } from '../../src/store/settings';
 import { CanvasContextMenu } from '../../src/ui/CanvasContextMenu';
 import { EditorContext } from '../../src/ui/EditorContext';
@@ -146,7 +146,7 @@ describe('Arrumar', () => {
     const { harness, column } = await scene();
     vi.spyOn(harness.actions, 'arrange').mockReturnValue({
       ok: true,
-      value: ['não cabe', 'outro'],
+      value: [rawMessage('não cabe'), rawMessage('outro')],
     });
     const user = renderPanel(harness, column);
     await user.click(
@@ -154,6 +154,31 @@ describe('Arrumar', () => {
     );
     expect(harness.ui.toast.value).toBe(
       t('arrange.doneWarnings', { count: 2, first: 'não cabe' }),
+    );
+  });
+
+  it('em en-US o aviso do Arrumar sai em inglês (#945)', async () => {
+    const { harness, column } = await scene();
+    vi.spyOn(harness.actions, 'arrange').mockReturnValue({
+      ok: true,
+      value: [
+        modelMessage(
+          'arrange.overflow',
+          { label: 'Coluna' },
+          'Coluna: conteúdo maior que o container',
+        ),
+      ],
+    });
+    locale.value = 'en-US';
+    const user = renderPanel(harness, column);
+    await user.click(
+      screen.getByRole('button', { name: new RegExp(t('arrange.action')) }),
+    );
+    expect(String(harness.ui.toast.value)).toBe(
+      t('arrange.doneWarnings', {
+        count: 1,
+        first: 'Coluna: content is larger than the container',
+      }),
     );
   });
 

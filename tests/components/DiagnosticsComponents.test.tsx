@@ -4,7 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CanvasController } from '../../src/canvas/CanvasController';
 import { t } from '../../src/i18n';
-import type { ComponentDrawing, ComponentDrawings } from '../../src/model';
+import {
+  rawMessage,
+  type ComponentDrawing,
+  type ComponentDrawings,
+  type ModelMessage,
+} from '../../src/model';
 import type { FontStatus } from '../../src/storage/fonts';
 import { locale } from '../../src/store/settings';
 import { DiagnosticsView } from '../../src/ui/DiagnosticsView';
@@ -31,7 +36,7 @@ function withInjected(
   harness: LibraryHarness,
   injected: {
     fonts?: readonly FontStatus[];
-    warnings?: readonly { markingId: string; warnings: readonly string[] }[];
+    warnings?: readonly { markingId: string; warnings: readonly ModelMessage[] }[];
     overflowing?: readonly string[];
   },
 ): EditorContextValue {
@@ -119,7 +124,9 @@ describe('Diagnóstico: Componentes', () => {
     } as unknown as CanvasController;
     renderView(
       withInjected(harness, {
-        warnings: [{ markingId: id, warnings: ['conteúdo maior que a caixa'] }],
+        warnings: [
+          { markingId: id, warnings: [rawMessage('conteúdo maior que a caixa')] },
+        ],
         overflowing: [id],
       }),
     );

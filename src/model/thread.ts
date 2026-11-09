@@ -113,6 +113,15 @@ export function compareThreadMessages(a: ThreadMessage, b: ThreadMessage): numbe
   return a.id < b.id ? -1 : 1;
 }
 
+/** A primeira mensagem na ordem canônica, sem ordenar todas (`undefined` numa conversa vazia). */
+export function firstThreadMessage(thread: Thread): ThreadMessage | undefined {
+  let first: ThreadMessage | undefined;
+  for (const m of thread.messages) {
+    if (first === undefined || compareThreadMessages(m, first) < 0) first = m;
+  }
+  return first;
+}
+
 /** Cópia ordenada (a entrada não muda). */
 export function sortThreadMessages(
   messages: readonly ThreadMessage[],

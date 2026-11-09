@@ -13,7 +13,8 @@
  * - Um componente com slot tem um `slot`; o layout do slot (row/column/none, gap, padding,
  *   align, justify) vem de `resolveSlotLayout`. O `hug` de um componente com slot mede os filhos
  *   arrumados (`slotContent` em `measureComponent`), então a altura do cartão cresce com o texto.
- * - `fill` no eixo principal de um pai `hug` não tem de onde tirar tamanho: cai em `hug`, com aviso.
+ * - `fill` no eixo principal de um pai `hug` não tem de onde tirar tamanho: cai em `hug`. Na
+ *   `column` o aviso é `fill dentro de hug: usando hug`; na `row` (largura) cai em `hug` sem aviso.
  * - A tela é uma coluna sem padding nem gap; as raízes sem `anchor` entram nela, as ancoradas
  *   ficam fora do fluxo (com `margin` nas bordas tocadas).
  */
@@ -41,7 +42,7 @@ export interface LayoutNode {
 }
 
 /** Âncora de uma raiz fora do fluxo, na tela (`start`/`end` = esquerda/direita). */
-export type ScreenAnchor =
+export type LayoutAnchor =
   | 'top-start'
   | 'top'
   | 'top-end'
@@ -52,7 +53,7 @@ export type ScreenAnchor =
   | 'bottom'
   | 'bottom-end';
 
-export const SCREEN_ANCHORS: readonly ScreenAnchor[] = [
+export const LAYOUT_ANCHORS: readonly LayoutAnchor[] = [
   'top-start',
   'top',
   'top-end',
@@ -67,7 +68,7 @@ export const SCREEN_ANCHORS: readonly ScreenAnchor[] = [
 export interface LayoutRoot {
   readonly node: LayoutNode;
   /** Ausente = no fluxo (coluna da tela); presente = fora do fluxo, ancorada na tela. */
-  readonly anchor?: ScreenAnchor;
+  readonly anchor?: LayoutAnchor;
   /** Distância das bordas da âncora (px; padrão 0). Só com `anchor`. */
   readonly margin?: number;
   /**
@@ -166,6 +167,31 @@ function mainPositions(
   });
 }
 
+/**
+ * Reparte `free` entre os `fill` (os índices de `fixed` sem tamanho) respeitando o `minSize` de
+ * cada um, como `distributeFill` do instanciador: quem não cabe na parte igual congela no
+ * mínimo e o resto é redistribuído. Devolve o tamanho por índice (0 onde não é `fill`).
+ */
+function shareWithMins(
+  fixed: readonly unknown[],
+  mins: readonly number[],
+  free: number,
+): number[] {
+  const sizes = fixed.map(() => 0);
+  let active = fixed.flatMap((f, i) => (f === undefined ? [i] : []));
+  let space = Math.max(0, free);
+  for (;;) {
+    const share = space / active.length;
+    const frozen = active.filter((i) => (mins[i] ?? 0) > share);
+    if (frozen.length === 0) {
+      for (const i of active) sizes[i] = share;
+      return sizes;
+    }
+    for (const i of frozen) space = Math.max(0, space - (sizes[i] = mins[i] ?? 0));
+    active = active.filter((i) => !frozen.includes(i));
+  }
+}
+
 function crossPosition(
   size: number,
   content: number,
@@ -178,7 +204,7 @@ function crossPosition(
 
 /** Posição de uma raiz ancorada num eixo: `margin` na borda tocada, ou centralizada. */
 function anchorOffset(
-  anchor: ScreenAnchor,
+  anchor: LayoutAnchor,
   axis: 'x' | 'y',
   screenSize: number,
   size: number,
@@ -382,10 +408,14 @@ export function layoutScreen(
       });
       const fills = fixed.filter((f) => f === undefined).length;
       const taken = sum(fixed.map((f) => f?.h ?? 0));
-      const share = fills > 0 && ch !== null ? Math.max(0, ch - taken - gaps) / fills : 0;
+      const shares = shareWithMins(
+        fixed,
+        kids.map((k) => k.component.minSize?.height ?? 0),
+        fills > 0 && ch !== null ? ch - taken - gaps : 0,
+      );
       const sized = kids.map((kid, i) => {
         const f = fixed[i];
-        return f ?? { h: withMin(kid, 'height', share), hug: false };
+        return f ?? { h: withMin(kid, 'height', shares[i] ?? 0), hug: false };
       });
       const heights = sized.map((s) => s.h);
       const usedH = sum(heights) + gaps;
@@ -416,10 +446,14 @@ export function layoutScreen(
       });
       const fills = fixed.filter((f) => f === undefined).length;
       const taken = sum(fixed.map((f) => f?.w ?? 0));
-      const share = fills > 0 && cw !== null ? Math.max(0, cw - taken - gaps) / fills : 0;
+      const shares = shareWithMins(
+        fixed,
+        kids.map((k) => k.component.minSize?.width ?? 0),
+        fills > 0 && cw !== null ? cw - taken - gaps : 0,
+      );
       const widths = kids.map((kid, i) => {
         const f = fixed[i];
-        return f ?? { w: withMin(kid, 'width', share), hug: false };
+        return f ?? { w: withMin(kid, 'width', shares[i] ?? 0), hug: false };
       });
       // Altura (eixo cruzado): com `ch` nulo, os `fill` recebem a maior altura dos demais.
       const heightOf = (kid: Prepared, i: number): { h: number; hug: boolean } => {

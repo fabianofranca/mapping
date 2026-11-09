@@ -225,7 +225,9 @@ export function annotationField(a: Annotation, field: string): JsonValue | undef
   if (field.startsWith(VALUES_FIELD_PREFIX)) {
     const key = field.slice(VALUES_FIELD_PREFIX.length);
     // Campo ausente vale como vazio (`null`), como na leitura das tipadas.
-    return a.values ? toJson(a.values[key] ?? null) : undefined;
+    return a.values
+      ? toJson(Object.hasOwn(a.values, key) ? (a.values[key] ?? null) : null)
+      : undefined;
   }
   if (field.startsWith(ENTRIES_FIELD_PREFIX)) {
     const entryId = field.slice(ENTRIES_FIELD_PREFIX.length);

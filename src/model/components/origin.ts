@@ -15,16 +15,17 @@
 import type { FieldValue, FieldValues } from './componentFormat';
 import type { TextMeasurer } from './instantiate';
 import {
-  SCREEN_ANCHORS,
+  LAYOUT_ANCHORS,
   layoutScreen,
   type LayoutNode,
   type LayoutRoot,
   type LayoutScreen,
-  type ScreenAnchor,
+  type LayoutAnchor,
 } from './layout';
 import type { FieldDef, Library, TypeDef } from './library';
 import type { Screen } from './screen';
 import { packagePathProblem } from '../packagePaths';
+import { isRecord } from '../isRecord';
 
 // ---------------------------------------------------------------------------------------
 // Tipos
@@ -219,10 +220,6 @@ export interface ReadResult {
 
 const NOT_FOUND: ReadResult = { found: false };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /** Lê o caminho em `root`. `[*]` e valor `null`/`undefined` contam como não encontrado. */
 export function readPath(
   root: unknown,
@@ -400,9 +397,9 @@ function parseRoot(
         : typeof anchor === 'object' && typeof anchor.default === 'string'
           ? anchor.default
           : undefined;
-    if (literal !== undefined && !SCREEN_ANCHORS.includes(literal as ScreenAnchor)) {
+    if (literal !== undefined && !LAYOUT_ANCHORS.includes(literal as LayoutAnchor)) {
       problems.push(
-        `${path}.anchor: âncora inválida: ${literal}; use ${SCREEN_ANCHORS.join(', ')}`,
+        `${path}.anchor: âncora inválida: ${literal}; use ${LAYOUT_ANCHORS.join(', ')}`,
       );
     }
   }
@@ -410,6 +407,9 @@ function parseRoot(
     raw.margin === undefined
       ? undefined
       : parseValueSource(raw.margin, `${path}.margin`, problems);
+  if (margin !== undefined && anchor === undefined) {
+    problems.push(`${path}.margin: margin só vale com anchor`);
+  }
   if (raw.scrim !== undefined && !nonEmptyString(raw.scrim)) {
     problems.push(`${path}.scrim: esperava o id de um tipo (texto não vazio)`);
   }
@@ -922,14 +922,14 @@ function translateRoot(
   raw: unknown,
   ctx: Context,
 ): LayoutRoot {
-  let anchor: ScreenAnchor | undefined;
+  let anchor: LayoutAnchor | undefined;
   let margin: number | undefined;
   if (source.anchor !== undefined) {
     const value = readSource(source.anchor, raw);
     if (value === undefined) {
       anchor = 'top-start';
-    } else if (SCREEN_ANCHORS.includes(value as ScreenAnchor)) {
-      anchor = value as ScreenAnchor;
+    } else if (LAYOUT_ANCHORS.includes(value as LayoutAnchor)) {
+      anchor = value as LayoutAnchor;
     } else {
       ctx.warnings.push(
         `${node.id}.${describeSourceKey(source.anchor, 'anchor')}: âncora inválida: ${String(value)}; usando top-start`,
@@ -962,23 +962,42 @@ function describeSourceKey(source: ValueSource, fallback: string): string {
   return typeof source === 'object' ? source.path : fallback;
 }
 
+/**
+ * A origem que traduz o JSON: a de `system`; sem ele, a primeira de `kind` `tree` (a `measured`
+ * não gera tela). Só com origens `measured`, o erro manda passar o `system`.
+ */
+function pickOrigin(
+  origins: readonly Origin[],
+  system: string | undefined,
+):
+  | { readonly origin: Origin; readonly error?: never }
+  | { readonly origin?: never; readonly error: string } {
+  if (system) {
+    const found = origins.find((o) => o.system === system);
+    return found
+      ? { origin: found }
+      : { error: `origem não declarada na especialização: ${system}` };
+  }
+  const tree = origins.find((o) => o.kind !== 'measured');
+  if (tree) return { origin: tree };
+  return {
+    error:
+      origins.length === 0
+        ? 'a especialização não declara origens'
+        : 'a especialização só declara origens measured (que não geram tela); passe o system da origem',
+  };
+}
+
 function translate(
   library: Library,
   json: unknown,
   options: SourceOptions,
 ): TranslateResult {
   const warnings: string[] = [];
-  const origin = options.system
-    ? library.origins.find((o) => o.system === options.system)
-    : library.origins[0];
-  if (!origin) {
-    return {
-      warnings,
-      error: options.system
-        ? `origem não declarada na especialização: ${options.system}`
-        : 'a especialização não declara origens',
-    };
-  }
+  const picked = pickOrigin(library.origins, options.system);
+  if (!picked.origin) return { warnings, error: picked.error };
+  const origin = picked.origin;
+
   const width = positiveNumber(readSource(origin.screen.width, json));
   if (width === undefined) {
     return {

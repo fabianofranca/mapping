@@ -40,8 +40,9 @@ import type {
 // Ordem da lista de `diffSpecs` (fixa, os testes dependem dela):
 //   1. o que existe na versão NOVA, na ordem do arquivo novo (camadas e tipos em ordem): em cada
 //      tipo já existente, primeiro os campos (por campo: tipo trocado, passou a obrigatório e
-//      depois as opções novas ou as colunas, recursivamente), depois `component`, `doc` e os
-//      exemplos novos e, por último, os papéis (`roles-required` ou os `added-role`, na ordem do
+//      depois as opções novas ou as colunas, recursivamente), depois `component`
+//      (`added-component` ou `changed-component`), `changed-applies-to`, `doc` e os exemplos
+//      novos e, por último, os papéis (`roles-required` ou os `added-role`, na ordem do
 //      arquivo novo); um tipo novo gera só `added-type`; por fim as fontes novas;
 //   2. o que DESAPARECEU, na ordem do arquivo ANTERIOR: tipos removidos e, nos tipos que
 //      continuam, campos (e colunas) e opções removidos, na ordem em que apareciam, e depois os
@@ -525,7 +526,15 @@ export function migrationFor(
   change: SpecChange,
 ): SpecMigrationStep | undefined {
   if (change.kind !== 'breaking') return undefined;
-  for (const migration of migrationChain(next, from) ?? []) {
+  return stepIn(migrationChain(next, from) ?? [], change);
+}
+
+/** O primeiro passo da cadeia que cobre a quebra `change`. */
+function stepIn(
+  chain: readonly SpecMigration[],
+  change: SpecChange,
+): SpecMigrationStep | undefined {
+  for (const migration of chain) {
     const step = migration.steps.find((s) => covers(s, change));
     if (step !== undefined) return step;
   }
@@ -538,7 +547,8 @@ export function migrationFor(
  * todas as quebras ficam faltando.
  */
 export function missingMigrations(previous: Spec, next: Spec): SpecChange[] {
+  const chain = migrationChain(next, previous.version) ?? [];
   return diffSpecs(previous, next).filter(
-    (c) => c.kind === 'breaking' && migrationFor(next, previous.version, c) === undefined,
+    (c) => c.kind === 'breaking' && stepIn(chain, c) === undefined,
   );
 }

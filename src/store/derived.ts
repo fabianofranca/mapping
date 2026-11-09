@@ -1,4 +1,5 @@
 import { computed, signal, untracked, type ReadonlySignal } from '@preact/signals';
+import { t } from '../i18n';
 import {
   EMPTY_CATALOG,
   NO_DRAWINGS,
@@ -48,6 +49,7 @@ import {
   type LayerDot,
   type Perspective,
   type LeftBehind,
+  type ModelMessage,
   type LevelSummary,
   type ListedImage,
   type MarkingLockState,
@@ -172,7 +174,10 @@ export interface EditorDerived {
   readonly componentTypes: ReadonlySignal<readonly ComponentType[]>;
   /** Avisos do desenho de cada marcação que tem algum (Diagnóstico). */
   readonly componentWarnings: ReadonlySignal<
-    readonly { readonly markingId: string; readonly warnings: readonly string[] }[]
+    readonly {
+      readonly markingId: string;
+      readonly warnings: readonly ModelMessage[];
+    }[]
   >;
 }
 
@@ -268,7 +273,7 @@ const NO_MIN_SIZES: ReadonlyMap<
 const NO_COMPONENT_TYPES: readonly ComponentType[] = [];
 const NO_COMPONENT_WARNINGS: readonly {
   readonly markingId: string;
-  readonly warnings: readonly string[];
+  readonly warnings: readonly ModelMessage[];
 }[] = [];
 const NO_COMPONENTS: ComponentSources = {
   catalog: signal<ComponentCatalog>(EMPTY_CATALOG),
@@ -364,7 +369,13 @@ export function createEditorDerived(
     const catalog = components.catalog.value;
     // Sem componentes (a maioria dos projetos) não há o que percorrer a cada edição.
     if (catalog.size === 0) return NO_DRAWINGS;
-    return drawingCache(p, catalog, textMeasurer.value, components.fontsEpoch.value);
+    return drawingCache(
+      p,
+      catalog,
+      textMeasurer.value,
+      components.fontsEpoch.value,
+      t('annotation.untitled'),
+    );
   };
   const scenes = computed((): ComponentDrawings => drawings(project.value));
   const drawingsOf = (p: Project | null): ComponentDrawings =>
@@ -642,7 +653,7 @@ export function createEditorDerived(
 
   let lastComponentWarnings = NO_COMPONENT_WARNINGS;
   const componentWarnings = computed(() => {
-    const next: { markingId: string; warnings: readonly string[] }[] = [];
+    const next: { markingId: string; warnings: readonly ModelMessage[] }[] = [];
     for (const [markingId, drawing] of scenes.value) {
       if (drawing.warnings.length > 0)
         next.push({ markingId, warnings: drawing.warnings });

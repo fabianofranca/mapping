@@ -215,6 +215,23 @@ describe('parseComponent: repeat', () => {
     );
   });
 
+  it('slot dentro de repeat aninhado é reportado uma vez', () => {
+    const errors = errorsOf(
+      raw(
+        {},
+        {
+          template: row([
+            { type: 'repeat', field: 'outro', template: row([{ type: 'slot' }]) },
+          ]),
+        },
+      ),
+    );
+    const slotPath =
+      'template.children[1].template.children[0].template.children[0].type';
+    const slotErrors = errors.filter((e) => e.startsWith(`${slotPath}:`));
+    expect(slotErrors).toEqual([`${slotPath}: slot não é permitido dentro de um repeat`]);
+  });
+
   it('o template do repeat é conferido como qualquer nó', () => {
     const errors = errorsOf(
       raw({}, { template: row([{ type: 'text', text: 3, bogus: 1 }]) }),

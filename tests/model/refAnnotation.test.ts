@@ -268,7 +268,9 @@ describe('rótulos nas exibições e no repeat do componente', () => {
       type,
     );
     expect(out.values.itens).toEqual([{ alvo: 'Cliente' }, { alvo: null }]);
-    expect(out.warnings).toEqual(['referência quebrada: itens[2].alvo']);
+    expect(out.warnings.map((w) => w.text)).toEqual([
+      'referência quebrada: itens[2].alvo',
+    ]);
   });
 });
 

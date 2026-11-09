@@ -23,12 +23,14 @@ export function createProject({
   now,
   firstLayer,
 }: NewProjectArgs): Project {
+  const trimmed = name.trim();
+  if (trimmed === '') fail('invalid-name');
   return {
     schemaVersion: SCHEMA_VERSION,
     revision: 0,
     app: APP_ID,
     coordinateSystem: COORDINATE_SYSTEM,
-    project: { id, name: name.trim(), createdAt: now, updatedAt: now },
+    project: { id, name: trimmed, createdAt: now, updatedAt: now },
     specializations: [],
     platformRepos: {},
     docRepos: {},

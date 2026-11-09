@@ -215,6 +215,21 @@ describe('pasteToParts', () => {
     }
   });
 
+  it('marcadores de ênfase colados em volta da URL não entram nela', () => {
+    for (const mark of ['**', '*', '_', '__', '`', '~~']) {
+      expect(pasteToParts(`${mark}${url('m/m2')}${mark}`, resolves)).toEqual([
+        text(mark),
+        chip('Botão vivo', url('m/m2')),
+        text(mark),
+      ]);
+    }
+  });
+
+  it('rótulo com *, _ e crase: round-trip pelo markdown do compositor', () => {
+    const doc: ComposerDoc = [chip('a*b_c`d', url('m/m1'))];
+    expect(markdownToComposer(composerToMarkdown(doc))).toEqual(doc);
+  });
+
   it('pontuação final da frase não entra na URL', () => {
     expect(pasteToParts(`Ver ${url('m/m2')}.`, resolves)).toEqual([
       text('Ver '),

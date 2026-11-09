@@ -6,9 +6,8 @@ import {
   type SpecNotice,
   type SpecNoticeKind,
 } from './spec';
-import { findSpecType } from './specLookup';
 import { isEmptyValue } from './typed';
-import type { Annotation, AnnotationTypeRef, Project } from './types';
+import type { Annotation, Project } from './types';
 
 // Avisos da especialização (`formatVersion` 10, etapa #486): `removed`, `deprecated`,
 // `diverges` e `pending` num tipo, campo ou coluna de `table`. Só informam: não geram
@@ -17,19 +16,6 @@ import type { Annotation, AnnotationTypeRef, Project } from './types';
 
 /** Tipos de aviso na ordem de exibição (da maior gravidade à menor; empate: deprecated antes). */
 export const NOTICE_KINDS: readonly SpecNoticeKind[] = SPEC_NOTICE_KINDS;
-
-/** Gravidade do tipo de aviso: quanto maior, mais grave (`deprecated` e `diverges` empatam). */
-export function noticeRank(kind: SpecNoticeKind): number {
-  switch (kind) {
-    case 'removed':
-      return 3;
-    case 'deprecated':
-    case 'diverges':
-      return 2;
-    default:
-      return 1;
-  }
-}
 
 /** Posição do tipo de aviso na ordem de exibição. */
 function displayOrder(kind: SpecNoticeKind): number {
@@ -66,12 +52,6 @@ export function typeNotices(type: SpecAnnotationType): SpecNotice[] {
  */
 export function highestNotice(type: SpecAnnotationType): SpecNotice | null {
   return sortNotices(typeNotices(type))[0] ?? null;
-}
-
-/** O aviso de maior gravidade do tipo `ref` da especialização carregada no projeto. */
-export function highestTypeNotice(p: Project, ref: AnnotationTypeRef): SpecNotice | null {
-  const resolved = findSpecType(p, ref);
-  return resolved ? highestNotice(resolved.type) : null;
 }
 
 export type NoticeScope = 'type' | 'field' | 'column';
@@ -131,8 +111,10 @@ function fieldUsages(
   annotations: readonly Annotation[],
 ): NoticeUsage[] {
   return type.fields.flatMap((field) => {
+    const notices = field.notices ?? [];
+    if (notices.length === 0) return [];
     const used = ids(annotations, (a) => hasValue(a, field.key));
-    return (field.notices ?? []).map((notice): NoticeUsage => ({
+    return notices.map((notice): NoticeUsage => ({
       ...base,
       scope: 'field',
       key: field.key,
@@ -151,8 +133,10 @@ function columnUsages(
   for (const field of type.fields) {
     if (field.type !== 'table') continue;
     for (const column of field.columns) {
+      const notices = column.notices ?? [];
+      if (notices.length === 0) continue;
       const used = ids(annotations, (a) => hasColumnValue(a, field.key, column.key));
-      for (const notice of column.notices ?? []) {
+      for (const notice of notices) {
         out.push({
           ...base,
           scope: 'column',
@@ -170,8 +154,9 @@ function columnUsages(
 function typeUsages(ctx: TypeContext): NoticeUsage[] {
   const { specId, layerId, type, annotations } = ctx;
   const base = { specId, layerId, typeId: type.id };
-  const all = ids(annotations, () => true);
-  const own = (type.notices ?? []).map((notice): NoticeUsage => ({
+  const typeNoticeList = type.notices ?? [];
+  const all = typeNoticeList.length > 0 ? ids(annotations, () => true) : [];
+  const own = typeNoticeList.map((notice): NoticeUsage => ({
     ...base,
     scope: 'type',
     notice,

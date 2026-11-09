@@ -31,7 +31,7 @@ import {
   requireUnlocked,
 } from './locks';
 import { findById } from './project';
-import { projectIndex } from './projectIndex';
+import { projectIndex, idInUse } from './projectIndex';
 import { countBrokenRefs } from './refs';
 import type { Arrow, Marking, Placement, Project, ProjectContainer, Rect } from './types';
 
@@ -404,16 +404,23 @@ export function selectionWithContents(p: Project, markingId: string): ItemRef[] 
     return byContainer.get(containerId) ?? [];
   };
 
-  const collect = (id: string): void => {
-    for (const child of index.children.get(id) ?? []) {
-      if (push('marking', child.id)) collect(child.id);
+  // Pilha explícita (hierarquia funda não estoura a pilha de chamadas). Cada quadro lê as filhas
+  // e depois os containers do mesmo item, na ordem da recursão: o `cursor` guarda onde parou.
+  const stack: { readonly id: string; cursor: number }[] = [{ id: root.id, cursor: 0 }];
+  while (stack.length > 0) {
+    const frame = stack[stack.length - 1] as { readonly id: string; cursor: number };
+    const kids = index.children.get(frame.id) ?? [];
+    if (frame.cursor < kids.length) {
+      const child = kids[frame.cursor++] as Marking;
+      if (push('marking', child.id)) stack.push({ id: child.id, cursor: 0 });
+      continue;
     }
-    for (const container of index.containersByParent.get(id) ?? []) {
+    stack.pop();
+    for (const container of index.containersByParent.get(frame.id) ?? []) {
       if (!push('image', container.id)) continue;
       for (const m of markingsOf(container.id)) push('marking', m.id);
     }
-  };
-  collect(root.id);
+  }
   out.push({ kind: 'marking', id: root.id });
   return out;
 }
@@ -473,7 +480,7 @@ export interface ItemsDeletionImpact {
   readonly arrows: number;
   /** Anotações que saem, as de todas as marcações e setas que saem. */
   readonly annotations: number;
-  /** Das marcações que saem junto (descendentes e as dos containers), quantas estão trancadas. */
+  /** Das marcações que saem junto (descendentes, as dos containers e as selecionadas que saem com a mãe ou o container), quantas estão trancadas. */
   readonly lockedMarkings: number;
   /** Containers que estavam dentro de uma marcação que sai e não foram selecionados: ficam. */
   readonly containersStay: number;
@@ -483,9 +490,9 @@ export interface ItemsDeletionImpact {
 
 /**
  * Impacto de excluir a seleção inteira, sem contar nada duas vezes (uma marcação e a filha dela
- * selecionadas, um container e uma marcação dele selecionados). `lockedMarkings` conta só as
- * trancadas que saem junto: uma marcação selecionada e trancada bloqueia a exclusão
- * (`canDeleteItems`) e não entra na conta. Itens inexistentes são ignorados. As setas presas a
+ * selecionadas, um container e uma marcação dele selecionados). `lockedMarkings` conta as
+ * trancadas que saem junto, selecionadas ou não: uma marcação selecionada e trancada que não
+ * sai com outra selecionada bloqueia a exclusão (`canDeleteItems`) e o diálogo nem abre. Itens inexistentes são ignorados. As setas presas a
  * uma marcação que sai entram na conta e levam as anotações delas.
  */
 export function itemsDeletionImpact(
@@ -503,7 +510,16 @@ export function itemsDeletionImpact(
   let lockedMarkings = 0;
   let containersStay = 0;
   for (const id of removed) {
-    if (!selected.markings.has(id) && index.markings.get(id)?.locked) lockedMarkings++;
+    const locked = index.markings.get(id)?.locked === true;
+    // A selecionada e trancada só chega aqui se sai com a mãe ou o container selecionados
+    // (senão `canDeleteItems` bloqueia): conta como as que saem sem ser selecionadas.
+    if (
+      locked &&
+      (!selected.markings.has(id) ||
+        leavesWithSelection(p, { kind: 'marking', id }, selected, () => removed))
+    ) {
+      lockedMarkings++;
+    }
     for (const c of index.containersByParent.get(id) ?? []) {
       if (!selected.containers.has(c.id)) containersStay++;
     }
@@ -648,20 +664,6 @@ export function canWrapItems(p: Project, items: readonly ItemRef[]): boolean {
   return markings.length + containers.length > 0;
 }
 
-/**
- * Espaço e retângulo da marcação pai que envolve a seleção (docs/ARCHITECTURE.md, "Marcação pai (Envolver)"):
- * o retângulo do conjunto mais `WRAP_MARGIN` de cada lado, cortado ao container (espaço de
- * container) e ao pai atual do conjunto, para a nova nunca tirá-lo de dentro dele. `null` se
- * nada entra.
- */
-export function wrapRect(
-  p: Project,
-  items: readonly ItemRef[],
-): { containerId: string | null; rect: Rect } | null {
-  const plan = planWrap(p, items);
-  return plan && { containerId: plan.containerId, rect: plan.rect };
-}
-
 interface WrapPlan {
   readonly containerId: string | null;
   readonly rect: Rect;
@@ -672,7 +674,12 @@ interface WrapPlan {
 /** O pai comum dos itens de topo da seleção (os que não estão dentro de outra selecionada); `null` se não há um só. */
 function commonParent(selected: ResolvedItems): string | null {
   const parents = new Set<string | null>();
-  for (const item of [...selected.markings.values(), ...selected.containers.values()]) {
+  const items = [
+    // A flutuante não tem pai de pertencimento (`wrappable` a exclui): não entra na conta.
+    ...[...selected.markings.values()].filter((m) => !m.floating),
+    ...selected.containers.values(),
+  ];
+  for (const item of items) {
     if (item.parentId === null || !selected.markings.has(item.parentId)) {
       parents.add(item.parentId);
     }
@@ -784,7 +791,7 @@ function planWrap(p: Project, items: readonly ItemRef[]): WrapPlan | null {
 /**
  * Cria uma marcação pai que envolve a seleção (docs/ARCHITECTURE.md, "Marcação pai (Envolver)"). Entram as
  * marcações não flutuantes e os containers; setas e notas são ignoradas, e sem nada que entre
- * falha com `invalid-parent`. O espaço e o retângulo saem de `wrapRect`. A nova entra no array
+ * falha com `invalid-parent`. O espaço e o retângulo saem de `planWrap`. A nova entra no array
  * antes da primeira marcação selecionada (ou no fim, se só há containers): ela não tem relação
  * com nenhuma selecionada, então o empate de retângulo igual com uma delas é novo e o array
  * decide (a de antes é a de fora). A nova nasce com o pai atual do conjunto de `parentId`
@@ -799,12 +806,7 @@ export function wrapItems(
   args: { readonly id: string; readonly items: readonly ItemRef[] },
   options?: SettleOptions,
 ): Project {
-  if (
-    p.markings.some((m) => m.id === args.id) ||
-    p.arrows.some((a) => a.id === args.id)
-  ) {
-    fail('duplicate-id', args.id);
-  }
+  if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   const target = planWrap(p, args.items);
   if (!target) fail('invalid-parent');
   const { rect, containerId, parentId } = target;

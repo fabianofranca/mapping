@@ -11,7 +11,7 @@ import { countBrokenRefs, type LabelTexts } from './refs';
 import type { Spec, SpecLayer, SpecMigrationStep } from './spec';
 import { isPackageFile } from './libraryPackage';
 import { pruneHiddenLayers } from './perspectiveReconcile';
-import { findTypeInSpec, getSpecialization } from './specLookup';
+import { getSpecialization } from './specLookup';
 import {
   diffSpecs,
   migrationChain,
@@ -167,9 +167,10 @@ function planSpecializationUpdate(
       s.id === spec.id ? { ...s, version: spec.version, spec } : s,
     ),
   };
+  const typeIds = new Set(spec.layers.flatMap((l) => l.annotationTypes.map((t) => t.id)));
   const annotations = migrated.annotations.map((a) => {
     if (!vanished.has(a.layerId) || !a.type) return a;
-    const inNew = a.type.specId === spec.id && findTypeInSpec(spec, a.type.typeId);
+    const inNew = a.type.specId === spec.id && typeIds.has(a.type.typeId);
     return freeVersionOf(inNew ? renewed : migrated, a, options);
   });
 
