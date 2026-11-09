@@ -228,8 +228,6 @@ export const ptBR = {
   'annotation.showLayer': 'Mostrar a camada {layer}',
 
   'window.stripLabel': 'Janelas de ferramenta',
-  'window.show': 'Mostrar {name}',
-  'window.hide': 'Esconder {name}',
   'window.resize': 'Arraste para redimensionar {name} (duplo clique volta ao padrão)',
   'window.closeWindow': 'Fechar a janela {name}',
   'window.bottomTabs': 'Janelas inferiores',
@@ -798,6 +796,9 @@ export const ptBR = {
   'home.colOrigin': 'Origem',
   'home.colUsed': 'Último uso',
   'home.forgetFolder': 'Remover da lista',
+  'home.openNamed': 'Abrir {name}',
+  'home.deleteNamed': 'Excluir {name}',
+  'home.forgetNamed': 'Remover da lista: {name}',
   'home.folderUnavailableTitle': 'Pasta indisponível',
   'home.folderDenied':
     'O navegador não deu acesso à pasta "{folder}". Clique em Abrir de novo e escolha Permitir, ou localize a pasta.',

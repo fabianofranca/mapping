@@ -48,7 +48,7 @@ export function checkRectSize(
 }
 
 /** Tolerância para comparar coordenadas do canvas (ponto flutuante). */
-const EPSILON = 1e-6;
+export const EPSILON = 1e-6;
 
 /**
  * Tira o ruído de ponto flutuante: perto de um inteiro (a menos de `eps`) devolve o inteiro,

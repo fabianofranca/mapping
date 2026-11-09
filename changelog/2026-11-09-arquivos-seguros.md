@@ -1,4 +1,4 @@
-# Arquivos seguros — [Não lançado] (épico `epic/arquivos-seguros`, PR #1141, MCP 0.28.7, schema v18)
+# Arquivos seguros — 2026-11-09 (épico `epic/arquivos-seguros`, PR #1141, MCP 0.28.7, schema v18)
 
 ## Corrigido
 

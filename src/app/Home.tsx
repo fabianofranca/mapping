@@ -703,56 +703,97 @@ function ProjectTable({ projects, busy, onOpen, onDelete, onForget }: ProjectLis
       </thead>
       <tbody>
         {projects.map((project) => (
-          <tr
+          <ProjectRow
             key={`${project.kind}:${project.id}`}
-            data-recent={`${project.kind}:${project.id}`}
-          >
-            <th scope="row">
-              <span class="project-name">{project.name}</span>
-              {project.kind === 'folder' && project.showFolderName && (
-                <span class="project-name muted">{project.folderName}</span>
-              )}
-              <Unexported project={project} />
-            </th>
-            <td>
-              <span class="badge">
-                {t(
-                  project.kind === 'folder'
-                    ? 'status.targetFolder'
-                    : 'status.targetLocal',
-                )}
-              </span>
-            </td>
-            <td>{formatDate(project.usedAt)}</td>
-            <td>
-              <div class="project-actions">
-                <Button
-                  size="sm"
-                  data-recent-open=""
-                  disabled={busy}
-                  onClick={() => onOpen(project)}
-                >
-                  {t('common.open')}
-                </Button>
-                {project.kind === 'local' ? (
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    disabled={busy}
-                    onClick={() => onDelete(project)}
-                  >
-                    {t('common.delete')}
-                  </Button>
-                ) : (
-                  <Button size="sm" disabled={busy} onClick={() => onForget(project)}>
-                    {t('home.forgetFolder')}
-                  </Button>
-                )}
-              </div>
-            </td>
-          </tr>
+            project={project}
+            busy={busy}
+            onOpen={onOpen}
+            onDelete={onDelete}
+            onForget={onForget}
+          />
         ))}
       </tbody>
     </table>
+  );
+}
+
+/** Id de elemento estável da linha, derivado de `kind:id` sem caracteres inválidos. */
+function rowDomId(project: RecentProject, part: string): string {
+  return `recent-${project.kind}-${project.id.replace(/[^A-Za-z0-9_-]/g, '_')}-${part}`;
+}
+
+/**
+ * Uma linha da lista. Os botões levam o nome do projeto no nome acessível (o texto visível
+ * vem primeiro, WCAG 2.5.3) e apontam por `aria-describedby` para a origem, a pasta (quando
+ * aparece) e o último uso, que já estão na tela: linhas de mesmo nome se distinguem.
+ */
+function ProjectRow({
+  project,
+  busy,
+  onOpen,
+  onDelete,
+  onForget,
+}: Omit<ProjectListProps, 'projects'> & { readonly project: RecentProject }) {
+  const showFolder = project.kind === 'folder' && project.showFolderName;
+  const describedBy = [
+    rowDomId(project, 'origin'),
+    ...(showFolder ? [rowDomId(project, 'folder')] : []),
+    rowDomId(project, 'used'),
+  ].join(' ');
+  const name = { name: project.name };
+  return (
+    <tr data-recent={`${project.kind}:${project.id}`}>
+      <th scope="row">
+        <span class="project-name">{project.name}</span>
+        {project.kind === 'folder' && showFolder && (
+          <span class="project-name muted" id={rowDomId(project, 'folder')}>
+            {project.folderName}
+          </span>
+        )}
+        <Unexported project={project} />
+      </th>
+      <td>
+        <span class="badge" id={rowDomId(project, 'origin')}>
+          {t(project.kind === 'folder' ? 'status.targetFolder' : 'status.targetLocal')}
+        </span>
+      </td>
+      <td id={rowDomId(project, 'used')}>{formatDate(project.usedAt)}</td>
+      <td>
+        <div class="project-actions">
+          <Button
+            size="sm"
+            data-recent-open=""
+            disabled={busy}
+            aria-label={t('home.openNamed', name)}
+            aria-describedby={describedBy}
+            onClick={() => onOpen(project)}
+          >
+            {t('common.open')}
+          </Button>
+          {project.kind === 'local' ? (
+            <Button
+              size="sm"
+              variant="danger"
+              disabled={busy}
+              aria-label={t('home.deleteNamed', name)}
+              aria-describedby={describedBy}
+              onClick={() => onDelete(project)}
+            >
+              {t('common.delete')}
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              disabled={busy}
+              aria-label={t('home.forgetNamed', name)}
+              aria-describedby={describedBy}
+              onClick={() => onForget(project)}
+            >
+              {t('home.forgetFolder')}
+            </Button>
+          )}
+        </div>
+      </td>
+    </tr>
   );
 }
