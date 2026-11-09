@@ -653,6 +653,25 @@ describe('mcp-prerelease.yml', () => {
     }
   });
 
+  it('os jobs que publicam conferem o conjunto exato de arquivos do artifact antes de publicar', () => {
+    for (const name of ['snapshot-publish', 'rc-publish']) {
+      const job = jobOf(pre, name);
+      expect(job, name).toContain('Conferir os arquivos baixados');
+      for (const file of [
+        'AGENTS.mapping.md',
+        'SKILL.md',
+        'mapping-mcp.js',
+        'setup.sh',
+        'watch-comments.mjs',
+      ]) {
+        expect(job, `${name} ${file}`).toContain(`${file} ${file}.sha256`);
+      }
+      expect(job.indexOf('Conferir os arquivos baixados'), name).toBeLessThan(
+        job.indexOf('gh release create'),
+      );
+    }
+  });
+
   it('o número do PR entra em run: só por env:', () => {
     for (const body of runBodies(pre)) expect(body).not.toContain('${{');
   });

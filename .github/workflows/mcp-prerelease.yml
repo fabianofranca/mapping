@@ -114,6 +114,18 @@ jobs:
           name: mcp-snapshot-assets
           path: release-assets
 
+      # O artifact vem de um job que roda código do PR: só publica se tiver exatamente os
+      # arquivos esperados (cada um com o seu `.sha256`).
+      - name: Conferir os arquivos baixados
+        run: |
+          expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
+          expected="$(printf '%s\n' $expected | LC_ALL=C sort | tr '\n' ' ')"
+          found="$(ls -1 release-assets | LC_ALL=C sort | tr '\n' ' ')"
+          if [ "$found" != "$expected" ]; then
+            echo "Arquivos inesperados em release-assets: $found (esperado: $expected)." >&2
+            exit 1
+          fi
+
       - name: Publicar no snapshot do PR
         run: |
           tag="mcp-snapshot-pr${PR}"
@@ -254,6 +266,18 @@ jobs:
         with:
           name: mcp-rc-assets
           path: release-assets
+
+      # O artifact vem de um job que roda código do PR: só publica se tiver exatamente os
+      # arquivos esperados (cada um com o seu `.sha256`).
+      - name: Conferir os arquivos baixados
+        run: |
+          expected="AGENTS.mapping.md AGENTS.mapping.md.sha256 SKILL.md SKILL.md.sha256 mapping-mcp.js mapping-mcp.js.sha256 setup.sh setup.sh.sha256 watch-comments.mjs watch-comments.mjs.sha256"
+          expected="$(printf '%s\n' $expected | LC_ALL=C sort | tr '\n' ' ')"
+          found="$(ls -1 release-assets | LC_ALL=C sort | tr '\n' ' ')"
+          if [ "$found" != "$expected" ]; then
+            echo "Arquivos inesperados em release-assets: $found (esperado: $expected)." >&2
+            exit 1
+          fi
 
       - name: Publicar a release candidate
         run: |
