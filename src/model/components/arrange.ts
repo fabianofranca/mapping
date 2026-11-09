@@ -30,6 +30,7 @@ import {
 import type { Library, TypeDef } from './library';
 import { type Instance, type Screen, childrenOf, renderOrder, updateBox } from './screen';
 import { type FrameNode, absoluteBoxes, walk } from './scene';
+import { applyTokens, resolveTokens } from './tokens';
 
 export interface ResolvedSlotLayout {
   readonly type: 'none' | 'row' | 'column';
@@ -59,6 +60,14 @@ export function findSlot(component: ComponentFile): SlotTemplate | undefined {
     return undefined;
   };
   return search(component.template);
+}
+
+/**
+ * O componente com os `$token` trocados pela tabela do desenho dele (`resolvedTokens`, ou só os
+ * embutidos), como o `instantiate` faz: o `gap` e o `padding` do slot só valem depois disso.
+ */
+export function tokenizedComponent(component: ComponentFile): ComponentFile {
+  return applyTokens(component, component.resolvedTokens ?? resolveTokens(undefined, {}));
 }
 
 /** Um tipo é um componente com slot quando o componente dele tem um slot. */
@@ -222,8 +231,9 @@ export function arrange(screen: Screen, library: Library, measure: TextMeasurer)
   for (const id of ids) {
     const instance = current.instances.find((i) => i.id === id);
     if (!instance) continue;
-    const component = types.get(instance.typeId)?.component;
-    if (!component) continue;
+    const raw = types.get(instance.typeId)?.component;
+    if (!raw) continue;
+    const component = tokenizedComponent(raw);
     const slot = findSlot(component);
     if (!slot) continue;
     const layout = resolveSlotLayout(slot, instance.values);

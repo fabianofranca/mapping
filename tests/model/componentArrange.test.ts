@@ -10,14 +10,21 @@ import {
   createMarking,
   loadSpecComponents,
   parseSpecText,
+  setContainerDrawingMode,
   setFieldValue,
+  setProjectDrawingMode,
   setMarkingLocked,
   type ComponentCatalog,
   type NewComponentArgs,
   type Project,
   type Rect,
 } from '../../src/model';
-import { SPEC_ID, componentProject, testCatalog } from './componentFixtures';
+import {
+  SPEC_ID,
+  componentProject,
+  testCatalog,
+  tokenSlotCatalog,
+} from './componentFixtures';
 import { emptyProject, expectValid, marking } from './fixtures';
 
 const catalog = testCatalog();
@@ -595,5 +602,56 @@ describe('arrangeMarking: Material 3', () => {
     // idempotente
     expect(arrange(short.project, 'Col', m3Catalog).project).toBe(short.project);
     expect(arrange(long.project, 'Col', m3Catalog).project).toBe(long.project);
+  });
+});
+
+describe('arrangeMarking: gap e padding do slot em $token (#948)', () => {
+  const tokenCatalog = tokenSlotCatalog();
+  const kids = [box(150, 150, 100, 40), box(150, 300, 100, 40)];
+
+  function tokenProject(typeId: string, rect: Rect, at: Rect[] = kids): Project {
+    let p = add(
+      componentProject(),
+      'C',
+      typeId,
+      rect,
+      null,
+      { name: 'Coluna' },
+      tokenCatalog,
+    );
+    at.forEach((kid, i) => {
+      p = add(p, `T${i + 1}`, 'text', kid, 'C', { name: `T${i + 1}` }, tokenCatalog);
+    });
+    return p;
+  }
+
+  it('grava as filhas com o gap e o padding do token do primeiro modo', () => {
+    const p = tokenProject('column', box(100, 100, 300, 300));
+    const { project } = arrange(p, 'C', tokenCatalog);
+    expect(rectOf(project, 'T1')).toEqual(box(110, 110, 100, 40));
+    expect(rectOf(project, 'T2')).toEqual(box(110, 154, 100, 40));
+  });
+
+  it('o modo do projeto e o do container mandam na tabela', () => {
+    const base = tokenProject('column', box(100, 100, 300, 300));
+    const dark = arrange(setProjectDrawingMode(base, 'dark'), 'C', tokenCatalog).project;
+    expect(rectOf(dark, 'T1')).toEqual(box(120, 120, 100, 40));
+    expect(rectOf(dark, 'T2')).toEqual(box(120, 172, 100, 40));
+    const fixed = arrange(
+      setContainerDrawingMode(base, 'I1', 'dark'),
+      'C',
+      tokenCatalog,
+    ).project;
+    expect(rectOf(fixed, 'T2')).toEqual(box(120, 172, 100, 40));
+  });
+
+  it('o hug do componente acompanha o gap e o padding do token', () => {
+    const p = tokenProject('columnhug', box(100, 100, 200, 100), [
+      box(110, 110, 100, 40),
+      box(110, 150, 100, 40),
+    ]);
+    const { project } = arrange(p, 'C', tokenCatalog);
+    // 10 + 40 + 4 + 40 + 10 de altura; 10 + 100 + 10 de largura.
+    expect(rectOf(project, 'C')).toEqual(box(100, 100, 120, 104));
   });
 });
