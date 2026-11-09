@@ -175,6 +175,14 @@ export interface ReviewState {
     target: ReviewTarget,
     state: 'accepted' | 'rejected' | null,
   ): Promise<DecisionResult>;
+  /**
+   * Decide vários alvos numa gravação só e numa entrada só de "Desfazer" (os botões dos
+   * avisos de dependência). `null` se não há proposta aberta.
+   */
+  decideMany(
+    targets: readonly ReviewTarget[],
+    state: 'accepted' | 'rejected' | null,
+  ): Promise<DecisionResult | null>;
   /** Decide o que a lista mostra (com filtros ativos, só as visíveis; sem filtros, a proposta toda). */
   decideVisible(state: 'accepted' | 'rejected' | null): Promise<DecisionResult | null>;
   /** Desfaz a última decisão numa única escrita. `false` se já não vale (alguém decidiu depois). */
@@ -603,8 +611,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
         filters.value = cleanFilters;
         knownAtOpen.value = known;
       });
-      // Abrir tira o aviso "Nova proposta" desta proposta para sempre (P4).
-      proposals.dismissNotice(id, 'added');
+      // Abrir tira da fila todos os avisos desta proposta (nova, revisada, alterada).
+      proposals.dismissNotice(id);
       remember([...known].slice(0, MAX_KNOWN_CONFLICTS));
       return {
         ok: true,
@@ -681,6 +689,13 @@ export function createReviewState(session: ProjectSession): ReviewState {
       withOpen((id) =>
         proposalActions.decide(id, target, state).then((r) => record(id, r, state)),
       ).then((result) => result ?? NOT_OPEN),
+
+    decideMany: (targets, state) =>
+      withOpen(async (id) =>
+        targets.length === 0
+          ? ({ ok: false, error: 'unknown-target' } as const)
+          : record(id, await proposalActions.decideMany(id, targets, state), state),
+      ),
 
     decideVisible: (state) =>
       withOpen(async (id) => {

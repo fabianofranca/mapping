@@ -1846,3 +1846,22 @@ describe('pedido da nota sugerida (rejeitar pelo marcador, fase 10.1)', () => {
     expect(review.noteRequest.value).toBeNull();
   });
 });
+
+describe('decideMany da revisão (etapa #950, item 6)', () => {
+  it('decide vários alvos numa gravação e um só Desfazer os devolve', async () => {
+    const { proposal, ids } = richScenario();
+    const { review } = await openHarness({ proposals: [proposal] });
+    review.open('P1');
+    const targets = [ids.name, ids.rect].map((id) => ({ level: 'change' as const, id }));
+    const result = await review.decideMany(targets, 'rejected');
+    expect(result?.ok).toBe(true);
+    for (const id of [ids.name, ids.rect]) {
+      expect(review.derived.proposal.value?.decisions[id]?.state).toBe('rejected');
+    }
+    expect(await review.undoLastDecision()).toBe(true);
+    for (const id of [ids.name, ids.rect]) {
+      expect(review.derived.proposal.value?.decisions[id]).toBeUndefined();
+    }
+    expect(await review.decideMany([], 'accepted')).toMatchObject({ ok: false });
+  });
+});

@@ -31,7 +31,7 @@ import { formatFullDate } from './format';
 import { NoteField, useHasNote } from './NoteField';
 import { OpenNewer } from './ReviewLevels';
 import { RevisionLine } from './RevisedFlag';
-import { useDecide, useReviewNames } from './useReview';
+import { useDecide, useDecideMany, useReviewNames } from './useReview';
 
 // Cabeçalho do que está selecionado nos Detalhes da revisão (HANDOFF-REVIEW-DETAILS 5.4, 5.5
 // e 5.7, fase 9.6): o que é (marcação alterada, criada, removida; imagem; proposta; grupo
@@ -138,6 +138,8 @@ export function issueText(names: ReviewNames, issue: ProposalIssue): string {
       return t('review.issue.doesNotFit', params);
     case 'proposal-closed':
       return t('review.issue.closed');
+    case 'missing-image':
+      return t('review.issue.missingImage', params);
     default:
       return t('review.issue.generic', { ...params, code: issue.code });
   }
@@ -168,7 +170,7 @@ function IssueNotices({
 }) {
   const { review } = useEditor();
   const names = useReviewNames();
-  const decide = useDecide();
+  const decideMany = useDecideMany();
   if (!names) return null;
   const inLevel = new Set(ids);
   const issues = (review.derived.validation.value?.issues ?? []).filter(
@@ -191,11 +193,7 @@ function IssueNotices({
                 <Button
                   size="sm"
                   disabled={!open}
-                  onClick={() =>
-                    issue.related.forEach((id) =>
-                      decide({ level: 'change', id }, 'accepted'),
-                    )
-                  }
+                  onClick={() => decideMany(issue.related, 'accepted')}
                 >
                   <Icon name="check" />
                   {exitLabel(
@@ -210,11 +208,7 @@ function IssueNotices({
                 <Button
                   size="sm"
                   disabled={!open}
-                  onClick={() =>
-                    issue.changeIds.forEach((id) =>
-                      decide({ level: 'change', id }, 'rejected'),
-                    )
-                  }
+                  onClick={() => decideMany(issue.changeIds, 'rejected')}
                 >
                   <Icon name="close" />
                   {exitLabel(

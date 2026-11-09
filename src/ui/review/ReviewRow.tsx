@@ -7,6 +7,7 @@ import { ChangeKind } from './ChangeKind';
 import { DecisionControl, type DecisionValue } from './DecisionControl';
 import { DecisionMark, type DecisionCounts } from './DecisionMark';
 import { badgeText, RevisedFlag, type RevisedBadge } from './RevisedFlag';
+import { rowDomId, type RowPosition } from './levelRows';
 
 // Linha dos níveis da revisão (HANDOFF-PROPOSALS 2.1, ReviewRow): um TreeRow de três
 // colunas — nome (chevron, decisão, tipo, rótulo e sinalizadores), resumo (contagens ou
@@ -23,6 +24,8 @@ export interface ReviewRowProps {
   readonly expandable: boolean;
   readonly expanded: boolean;
   readonly selected: boolean;
+  /** Posição entre as irmãs (`aria-posinset`/`aria-setsize`). */
+  readonly position?: RowPosition;
   /** Faz parte do conjunto que bloqueia "Aplicar" (`is-invalid`). */
   readonly invalid?: boolean;
   /** Sinalizadores depois do rótulo (Flag, cadeado, nota…). */
@@ -39,6 +42,32 @@ export interface ReviewRowProps {
   readonly onDecide: (state: DecisionValue) => void;
 }
 
+/** Atributos ARIA do `treeitem` (posição e total entre as irmãs, para a lista virtualizada). */
+function treeitemAttrs(
+  r: Pick<
+    ReviewRowProps,
+    | 'rowKey'
+    | 'depth'
+    | 'expandable'
+    | 'expanded'
+    | 'selected'
+    | 'label'
+    | 'revised'
+    | 'position'
+  >,
+) {
+  return {
+    id: rowDomId(r.rowKey),
+    role: 'treeitem' as const,
+    'aria-level': r.depth + 1,
+    'aria-setsize': r.position?.setsize,
+    'aria-posinset': r.position?.posinset,
+    'aria-expanded': r.expandable ? r.expanded : undefined,
+    'aria-selected': r.selected,
+    'aria-label': r.revised ? `${r.label}, ${badgeText(r.revised)}` : r.label,
+  };
+}
+
 export function ReviewRow({
   rowKey,
   depth,
@@ -49,6 +78,7 @@ export function ReviewRow({
   expandable,
   expanded,
   selected,
+  position,
   invalid,
   flags,
   revised,
@@ -68,11 +98,16 @@ export function ReviewRow({
         selected && 'review-row-selected',
         invalid && 'is-invalid',
       )}
-      role="treeitem"
-      aria-level={depth + 1}
-      aria-expanded={expandable ? expanded : undefined}
-      aria-selected={selected}
-      aria-label={revised ? `${label}, ${badgeText(revised)}` : label}
+      {...treeitemAttrs({
+        rowKey,
+        depth,
+        expandable,
+        expanded,
+        selected,
+        label,
+        revised,
+        position,
+      })}
       data-row={rowKey}
       style={{ '--depth': depth }}
       onClick={(e) => {
