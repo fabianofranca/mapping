@@ -263,6 +263,7 @@ export const reviewPtBR = {
   'review.compare.handle': 'Divisória entre antes e depois',
   'review.compare.blend': 'Mistura entre antes e depois',
   'review.compare.valueText': '{value}% do depois',
+  'review.compare.valueTextBefore': '{value}% do antes',
   'review.compare.names': 'Antes: {before} · Depois: {after}',
   'review.compare.unavailable': 'Imagem indisponível',
   'review.compare.decide': 'Troca do arquivo da imagem',
@@ -416,6 +417,7 @@ export const reviewPtBR = {
     'Esta proposta não está aberta: o que foi aceito não pode mais ser aplicado.',
   'review.issue.generic':
     'As mudanças aceitas deixariam o projeto inválido em {name} ({code}).',
+  'review.issue.missingImage': '{name} depende de uma imagem que não está no projeto.',
   'review.issue.acceptMissing': 'Aceitar a(s) que falta(m) ({count})',
   'review.issue.rejectCause': 'Rejeitar a(s) que causa(m) ({count})',
   'review.locked.title': 'Item trancado',
@@ -751,6 +753,7 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
   'review.compare.handle': 'Divider between before and after',
   'review.compare.blend': 'Blend between before and after',
   'review.compare.valueText': '{value}% of the after',
+  'review.compare.valueTextBefore': '{value}% of the before',
   'review.compare.names': 'Before: {before} · After: {after}',
   'review.compare.unavailable': 'Image unavailable',
   'review.compare.decide': 'Image file replacement',
@@ -903,6 +906,7 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
     'This proposal is not open: what was accepted can no longer be applied.',
   'review.issue.generic':
     'The accepted changes would make the project invalid at {name} ({code}).',
+  'review.issue.missingImage': '{name} depends on an image that is not in the project.',
   'review.issue.acceptMissing': 'Accept the missing one(s) ({count})',
   'review.issue.rejectCause': 'Reject the cause ({count})',
   'review.locked.title': 'Locked item',

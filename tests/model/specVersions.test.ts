@@ -947,6 +947,18 @@ describe('specializationUpdateImpact', () => {
     expect(impact.brokenRefs).toBe(0);
   });
 
+  it('camada que some (id trocado, mesmos tipos) não é aditiva: as anotações viram livres', () => {
+    const before = spec(1, [], { layers: [layerC([button(), badge])] });
+    const next = spec(2, [], {
+      layers: [{ ...layerC([button(), badge]), id: 'screens', name: 'Telas' }],
+    });
+    const impact = specializationUpdateImpact(projectWith(before), next);
+    expect(impact.comparable).toBe(true);
+    expect(impact.breaking).toEqual([]);
+    expect(impact.freedLayers.map((l) => l.spec?.layerId)).toEqual(['c']);
+    expect(impact.additive).toBe(false);
+  });
+
   it('quebra coberta: breaking cheio, missingMigrations vazio e os passos da cadeia', () => {
     const before = spec(1, [], { layers: [layerC([button(), badge])] });
     const steps: SpecMigrationStep[] = [
