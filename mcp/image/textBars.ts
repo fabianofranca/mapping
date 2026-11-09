@@ -110,11 +110,32 @@ function richBars(
   );
 }
 
+type LineStyle = TextNode['style'];
+
+/** Altura da linha do nó: a do estilo ou 1,2 vez o corpo. */
+export const lineHeightOf = (style: LineStyle): number =>
+  style.lineHeight ?? style.fontSize * 1.2;
+
+/** Topo do bloco de `count` linhas no nó, pelo `verticalAlign`. */
+export function blockTop(node: TextNode, count: number, lineHeight: number): number {
+  const total = count * lineHeight;
+  const { verticalAlign } = node.style;
+  if (verticalAlign === 'middle') return (node.height - total) / 2;
+  return verticalAlign === 'bottom' ? node.height - total : 0;
+}
+
+/** Posição horizontal de uma linha de largura `width` no nó, pelo `align`. */
+export function lineLeft(node: TextNode, width: number): number {
+  const { align } = node.style;
+  if (align === 'center') return (node.width - width) / 2;
+  return align === 'right' ? node.width - width : 0;
+}
+
 /** Barras do texto no espaço local do nó: uma por linha medida (uma por pedaço, no texto rico). */
 export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
   if (node.runLayout && node.runs) return richBars(node, node.runLayout, node.runs);
   const { style } = node;
-  const lineHeight = style.lineHeight ?? style.fontSize * 1.2;
+  const lineHeight = lineHeightOf(style);
   const font = {
     family: style.fontFamily,
     size: style.fontSize,
@@ -125,13 +146,7 @@ export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
   };
   const widthOf = (text: string) => measure(text, font).width;
   const lines = customLines(node, measure, font) ?? breakLines(node, widthOf);
-  const total = lines.length * lineHeight;
-  const top =
-    style.verticalAlign === 'middle'
-      ? (node.height - total) / 2
-      : style.verticalAlign === 'bottom'
-        ? node.height - total
-        : 0;
+  const top = blockTop(node, lines.length, lineHeight);
   const barHeight = lineHeight * BAR_RATIO;
   const bars: TextBar[] = [];
   lines.forEach((line, i) => {
@@ -140,14 +155,8 @@ export function textBars(node: TextNode, measure: TextMeasurer): TextBar[] {
     const width = justified
       ? node.width
       : Math.min(widthOf(line), node.width || Infinity);
-    const x =
-      style.align === 'center'
-        ? (node.width - width) / 2
-        : style.align === 'right'
-          ? node.width - width
-          : 0;
     bars.push({
-      x,
+      x: lineLeft(node, width),
       y: top + i * lineHeight + (lineHeight - barHeight) / 2,
       width,
       height: barHeight,

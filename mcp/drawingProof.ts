@@ -4,9 +4,10 @@ import {
   projectIndex,
   SLOT_OVERFLOW,
   type ComponentDrawing,
+  type DrawingCache,
   type Project,
 } from '../src/model';
-import { builtinFontBook, measurerFor } from './image/textMeasurer';
+import { builtinFontBook, measurerFor, type FontBook } from './image/textMeasurer';
 import type { Refs } from './items';
 
 // Prova de desenho por instância (etapa Componentes fiéis, CF10, decisão 27): o componente de
@@ -37,6 +38,12 @@ const KIND_OF_PREFIX: readonly [string, OverflowItem['kind']][] = [
 
 const json = (value: unknown) => JSON.stringify(value);
 
+/** Igualdade por referência primeiro: o mais comum é o objeto não ter mudado, e o `stringify` é caro. */
+const differs = (a: unknown, b: unknown) => a !== b && json(a) !== json(b);
+
+/** Um cache de desenhos por leitor de fontes: provas seguidas do mesmo projeto reaproveitam as instâncias. */
+const drawingCaches = new WeakMap<FontBook, DrawingCache>();
+
 /** Marcações que o lote criou ou alterou (retângulo, anotação, modo do desenho) e as donas delas. */
 function touchedMarkings(before: Project, after: Project): Set<string> {
   const old = projectIndex(before);
@@ -46,10 +53,10 @@ function touchedMarkings(before: Project, after: Project): Set<string> {
     const previous = old.markings.get(marking.id);
     const changed =
       previous === undefined ||
-      json(previous) !== json(marking) ||
+      differs(previous, marking) ||
       effectiveDrawingMode(before, marking.containerId) !==
         effectiveDrawingMode(after, marking.containerId) ||
-      annotationsChanged(old.annotations, next.annotations, after, marking.id);
+      annotationsChanged(old.annotations, next.annotationsByMarking, marking.id);
     if (changed) touched.add(marking.id);
   }
   // A filha que muda pode deixar de caber no slot da dona: a dona também entra na prova.
@@ -64,13 +71,10 @@ type Annotations = ReturnType<typeof projectIndex>['annotations'];
 
 function annotationsChanged(
   old: Annotations,
-  next: Annotations,
-  after: Project,
+  byMarking: ReturnType<typeof projectIndex>['annotationsByMarking'],
   markingId: string,
 ): boolean {
-  return after.annotations.some(
-    (a) => a.markingId === markingId && json(old.get(a.id)) !== json(next.get(a.id)),
-  );
+  return (byMarking.get(markingId) ?? []).some((a) => differs(old.get(a.id), a));
 }
 
 function itemOf(message: string, missing: number, approximate: boolean): OverflowItem {
@@ -110,12 +114,12 @@ export function overflowProof(
   if (touched.size === 0) return found;
   const fonts = refs.loaded.fonts ?? builtinFontBook();
   const approximate = !fonts.hasLibraryFonts;
-  const drawings = createDrawingCache()(
-    after,
-    refs.loaded.catalog,
-    measurerFor(fonts),
-    0,
-  );
+  let cache = drawingCaches.get(fonts);
+  if (cache === undefined) {
+    cache = createDrawingCache();
+    drawingCaches.set(fonts, cache);
+  }
+  const drawings = cache(after, refs.loaded.catalog, measurerFor(fonts), 0);
   for (const drawing of drawings.values()) {
     if (!drawing.overflow || !touched.has(drawing.markingId)) continue;
     found.set(drawing.annotationId, itemsOf(drawing, approximate));

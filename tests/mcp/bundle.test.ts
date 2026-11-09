@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -10,6 +10,17 @@ const bundle = resolve('dist-mcp/mapping-mcp.js');
 describe('dist-mcp/mapping-mcp.js (arquivo único, por stdio)', () => {
   it('gera o arquivo único', () => {
     expect(statSync(bundle).isFile()).toBe(true);
+  });
+
+  it('leva no fim os avisos de licença das dependências embutidas', () => {
+    const text = readFileSync(bundle, 'utf8');
+    const notices = text.slice(text.indexOf('THIRD-PARTY NOTICES'));
+    expect(notices.startsWith('THIRD-PARTY NOTICES')).toBe(true);
+    // Codec de imagem (Apache-2.0), SDK do MCP e zod (MIT): o texto da licença de cada um.
+    expect(notices).toContain('@jsquash/png');
+    expect(notices).toContain('Apache License');
+    expect(notices).toContain('@modelcontextprotocol/sdk');
+    expect(notices).toContain('Permission is hereby granted, free of charge');
   });
 
   it('inicia por stdio e responde list_projects', async () => {

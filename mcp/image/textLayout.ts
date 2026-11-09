@@ -2,7 +2,14 @@ import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { RunLayout, RunPiece } from '../../src/model/components/richText';
 import type { SceneTextRun, TextNode } from '../../src/model/components/scene';
 import { fontExtents, textPolygons, type Polygon } from './glyphs';
-import { breakLines, customLines, richShift } from './textBars';
+import {
+  blockTop,
+  breakLines,
+  customLines,
+  lineHeightOf,
+  lineLeft,
+  richShift,
+} from './textBars';
 import { textWidth, type FontBook } from './textMeasurer';
 
 // Disposição do texto de uma cena com fonte real: os contornos dos glifos de cada linha e trecho
@@ -71,7 +78,7 @@ function lineInk(
 
 function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextInk {
   const { style } = node;
-  const lineHeight = style.lineHeight ?? style.fontSize * 1.2;
+  const lineHeight = lineHeightOf(style);
   const spec: FontSpec = {
     family: style.fontFamily,
     size: style.fontSize,
@@ -82,25 +89,21 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
   const widthOf = (text: string) => textWidth(book, text, spec);
   const lines =
     customLines(node, measure, { ...spec, lineHeight }) ?? breakLines(node, widthOf);
-  const total = lines.length * lineHeight;
-  const top =
-    style.verticalAlign === 'middle'
-      ? (node.height - total) / 2
-      : style.verticalAlign === 'bottom'
-        ? node.height - total
-        : 0;
+  const top = blockTop(node, lines.length, lineHeight);
   const polygons: Polygon[] = [];
   lines.forEach((line, i) => {
     if (line === '') return;
     const width = Math.min(widthOf(line), node.width || Infinity);
-    const x =
-      style.align === 'center'
-        ? (node.width - width) / 2
-        : style.align === 'right'
-          ? node.width - width
-          : 0;
     polygons.push(
-      ...lineInk(book, line, spec, x, top + i * lineHeight, lineHeight, style.decoration),
+      ...lineInk(
+        book,
+        line,
+        spec,
+        lineLeft(node, width),
+        top + i * lineHeight,
+        lineHeight,
+        style.decoration,
+      ),
     );
   });
   return { glyphs: [{ polygons }], boxes: [] };

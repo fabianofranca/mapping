@@ -26,6 +26,7 @@ import { Refs } from './items';
 import {
   MAX_ISSUES,
   issueView,
+  ignoredPathsIssues,
   readSpecInput,
   type ReadPackage,
   type SpecInput,
@@ -111,11 +112,15 @@ export function parsePackage(pkg: ReadPackage): ParsedPackage {
 
 /** Os três níveis do validador, com `previous` (a cópia aplicada) ligando o contrato de versão. */
 export function validatePackage(pkg: ReadPackage, previous?: Spec): LibraryReport {
-  return validateLibrary({
+  const report = validateLibrary({
     files: pkg.files,
     ...(pkg.specPath === undefined ? {} : { specPath: pkg.specPath }),
     ...(previous === undefined ? {} : { previous }),
   });
+  const ignored = ignoredPathsIssues(pkg.ignoredPaths);
+  return ignored.length === 0
+    ? report
+    : { ...report, warnings: [...report.warnings, ...ignored] };
 }
 
 /** Erro do validador impede usar; aviso deixa usar e é devolvido. */
@@ -413,7 +418,9 @@ export async function planLibraryUpdate(
   const loaded = await loadProject(roots, location);
   const p = loaded.project;
   const refs = new Refs(loaded);
-  const input: SpecInput = await readSpecInput(roots, args.path);
+  const input: SpecInput = await readSpecInput(roots, args.path, undefined, {
+    raw: false,
+  });
   const base = { project: { name: location.name, path: location.path }, path: args.path };
 
   let spec: Spec;

@@ -60,27 +60,36 @@ export function fitSize(
 /**
  * Reduz a `width`×`height` pela média ponderada da área coberta por cada pixel de saída
  * (filtro de caixa, sem serrilhado). A cor é ponderada pela opacidade, então regiões
- * transparentes não escurecem as bordas.
+ * transparentes não escurecem as bordas. `area` (padrão: a imagem inteira, em pixels da origem,
+ * pode ser fracionária) é a janela que vira a saída.
  */
-export function resize(source: Raster, width: number, height: number): Raster {
-  if (width === source.width && height === source.height) return source;
+export function resize(
+  source: Raster,
+  width: number,
+  height: number,
+  area: PixelRect = { x: 0, y: 0, width: source.width, height: source.height },
+): Raster {
+  const whole = area.width === source.width && area.height === source.height;
+  if (whole && width === source.width && height === source.height) return source;
   const { data } = source;
   // Passada horizontal: colunas de saída × linhas de origem, com as cores já multiplicadas
   // pela opacidade (ponto flutuante).
   const mid = new Float32Array(width * source.height * 4);
-  const xRatio = source.width / width;
-  for (let y = 0; y < source.height; y++) {
+  const xRatio = area.width / width;
+  const rowFrom = Math.max(0, Math.floor(area.y));
+  const rowTo = Math.min(source.height, Math.ceil(area.y + area.height));
+  for (let y = rowFrom; y < rowTo; y++) {
     const rowStart = y * source.width * 4;
     for (let ox = 0; ox < width; ox++) {
-      const start = ox * xRatio;
-      const end = (ox + 1) * xRatio;
+      const start = area.x + ox * xRatio;
+      const end = area.x + (ox + 1) * xRatio;
       let r = 0;
       let g = 0;
       let b = 0;
       let a = 0;
       let weight = 0;
       const last = Math.min(source.width, Math.ceil(end));
-      for (let i = Math.floor(start); i < last; i++) {
+      for (let i = Math.max(0, Math.floor(start)); i < last; i++) {
         const w = Math.min(i + 1, end) - Math.max(i, start);
         if (w <= 0) continue;
         const at = rowStart + i * 4;
@@ -100,11 +109,11 @@ export function resize(source: Raster, width: number, height: number): Raster {
   }
   // Passada vertical, devolvendo as cores sem a multiplicação pela opacidade.
   const out = createRaster(width, height);
-  const yRatio = source.height / height;
+  const yRatio = area.height / height;
   for (let oy = 0; oy < height; oy++) {
-    const start = oy * yRatio;
-    const end = (oy + 1) * yRatio;
-    const first = Math.floor(start);
+    const start = area.y + oy * yRatio;
+    const end = area.y + (oy + 1) * yRatio;
+    const first = Math.max(0, Math.floor(start));
     const last = Math.min(source.height, Math.ceil(end));
     for (let ox = 0; ox < width; ox++) {
       let r = 0;
@@ -174,11 +183,14 @@ export const HALO_COLOR: Rgb = [0, 0, 0];
  * Desenha o contorno de `rect` (em pixels do `raster`, que o recorta nas bordas), por dentro
  * do retângulo, com um halo escuro de 1 px dos dois lados, para aparecer sobre qualquer fundo.
  */
+/** Espessura padrão (pixels) do contorno de `outlineRect`. */
+export const OUTLINE_THICKNESS = 2;
+
 export function outlineRect(
   raster: Raster,
   rect: PixelRect,
   color: Rgb,
-  thickness = 2,
+  thickness = OUTLINE_THICKNESS,
 ): void {
   const halo = 1;
   // Halo externo, linha colorida e halo interno: três contornos concêntricos.

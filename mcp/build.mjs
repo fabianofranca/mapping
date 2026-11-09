@@ -1,9 +1,9 @@
 // Gera dist-mcp/mapping-mcp.js: um arquivo só, com as dependências embutidas.
 // CommonJS de propósito: o `.js` roda com `node` em qualquer repositório, a menos que
 // ele declare `"type": "module"` (nesse caso, ponha um package.json `{"type":"commonjs"}` em tools/).
-import { readFile, writeFile } from 'node:fs/promises';
+import { appendFile, readFile, readdir, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { build } from 'esbuild';
 import { fontFiles } from './fontFiles.mjs';
 import { wasmFiles } from './wasmFiles.mjs';
@@ -71,7 +71,7 @@ if (suffix !== '' && !/^-(snapshot\.pr\d+\+[0-9a-f]{7,}|rc\.\d+)$/.test(suffix))
   );
 }
 
-await build({
+const result = await build({
   entryPoints: ['mcp/main.ts'],
   plugins: [rawText, wasmModules, fontModules],
   // A versão minificada do opentype.js (245 kB em vez de 495 kB): o limite do servidor é +500 kB.
@@ -81,11 +81,56 @@ await build({
   platform: 'node',
   format: 'cjs',
   target: 'node20',
-  legalComments: 'none',
+  // Os comentários legais que as dependências já trazem vão para o fim do arquivo; os avisos
+  // das que não os trazem (a maioria) são acrescentados abaixo, a partir dos arquivos LICENSE.
+  legalComments: 'eof',
+  metafile: true,
   banner: { js: '#!/usr/bin/env node' },
   define: { __MCP_BUILD_SUFFIX__: JSON.stringify(suffix) },
   logLevel: 'info',
 });
+
+/** Pasta de cada pacote de `node_modules` que entrou no bundle (inclusive os escopados). */
+function bundledPackages(inputs) {
+  const dirs = new Set();
+  for (const input of Object.keys(inputs)) {
+    // Os arquivos dos plugins levam o nome do namespace na frente (`wasm-bytes:<caminho>`).
+    const match = /^(?:[a-z-]+:)?(.*?node_modules\/(?:@[^/]+\/)?[^/]+)\//.exec(input);
+    if (match) dirs.add(resolve(match[1]));
+  }
+  return [...dirs].sort();
+}
+
+/** Textos de licença de um pacote: `LICENSE*` na raiz e o `LICENSE.codec.md` dos codecs. */
+async function licenseTexts(dir) {
+  const names = (await readdir(dir)).filter((n) => /^licen[cs]e(\.|$)/i.test(n)).sort();
+  const files = names.map((n) => join(dir, n));
+  if ((await readdir(dir)).includes('codec')) {
+    files.push(join(dir, 'codec', 'LICENSE.codec.md'));
+  }
+  const texts = [];
+  for (const file of files) {
+    try {
+      texts.push((await readFile(file, 'utf8')).trim());
+    } catch {
+      // Sem esse arquivo (só a pasta `codec` existe): o pacote fica com os que há.
+    }
+  }
+  return texts;
+}
+
+// Os avisos de licença (Apache-2.0, BSD, MIT) dos pacotes embutidos vão no fim do bundle.
+const notices = [];
+for (const dir of bundledPackages(result.metafile.inputs)) {
+  const name = dir.slice(dir.lastIndexOf('node_modules/') + 'node_modules/'.length);
+  const texts = await licenseTexts(dir);
+  if (texts.length === 0) continue;
+  notices.push(`== ${name} ==\n${texts.join('\n\n')}`);
+}
+if (notices.length > 0) {
+  const body = `THIRD-PARTY NOTICES\n\n${notices.join('\n\n')}`.replaceAll('*/', '* /');
+  await appendFile('dist-mcp/mapping-mcp.js', `\n/*!\n${body}\n*/\n`);
+}
 
 // Este repositório declara "type": "module": sem isto, o `node` leria o bundle como ESM.
 await writeFile('dist-mcp/package.json', '{ "type": "commonjs" }\n');

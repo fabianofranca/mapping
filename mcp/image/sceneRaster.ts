@@ -200,23 +200,43 @@ function ellipse(width: number, height: number): Point[] {
 
 const NUMBER = /[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/y;
 
+/** Lê um número SVG em `at`; devolve-o e a posição seguinte, ou `null` se não há número. */
+function readNumber(d: string, at: number): [number, number] | null {
+  NUMBER.lastIndex = at;
+  const found = NUMBER.exec(d);
+  return found ? [Number(found[0]), NUMBER.lastIndex] : null;
+}
+
+/** Os argumentos 4 e 5 (índices 3 e 4) de `A` são flags de um dígito, sem separador obrigatório. */
+function isArcFlag(command: string, argIndex: number): boolean {
+  return command.toUpperCase() === 'A' && (argIndex % 7 === 3 || argIndex % 7 === 4);
+}
+
 function tokenize(d: string): (string | number)[] {
   const tokens: (string | number)[] = [];
   let i = 0;
+  let command = '';
+  let argIndex = 0;
   while (i < d.length) {
     const ch = d[i]!;
     if (/[A-Za-z]/.test(ch)) {
       tokens.push(ch);
+      command = ch;
+      argIndex = 0;
       i++;
-      continue;
-    }
-    NUMBER.lastIndex = i;
-    const found = NUMBER.exec(d);
-    if (found) {
-      tokens.push(Number(found[0]));
-      i = NUMBER.lastIndex;
+    } else if (isArcFlag(command, argIndex) && (ch === '0' || ch === '1')) {
+      tokens.push(Number(ch));
+      argIndex++;
+      i++;
     } else {
-      i++;
+      const found = readNumber(d, i);
+      if (found) {
+        tokens.push(found[0]);
+        argIndex++;
+        i = found[1];
+      } else {
+        i++;
+      }
     }
   }
   return tokens;
@@ -573,6 +593,16 @@ function segmentPolygons(sub: Subpath, half: number, cap: StrokeStyle['cap']): P
   return out;
 }
 
+/** Caminho fechado cujo último ponto repete o primeiro: o ponto repetido sai (o fechamento já liga os dois). */
+function withoutClosingDuplicate(sub: Subpath): Subpath {
+  const { points } = sub;
+  const last = points[points.length - 1];
+  const first = points[0];
+  if (!sub.closed || points.length < 3 || !first || !last) return sub;
+  if (first.x !== last.x || first.y !== last.y) return sub;
+  return { ...sub, points: points.slice(0, -1) };
+}
+
 function cornerPolygons(
   sub: Subpath,
   half: number,
@@ -610,11 +640,13 @@ function strokePolygons(
   style: StrokeStyle = { cap: 'butt', join: 'miter' },
 ): Polygon[] {
   const half = width / 2;
-  return subpaths.flatMap((sub) => [
-    ...segmentPolygons(sub, half, style.cap),
-    ...cornerPolygons(sub, half, style.join),
-    ...capPolygons(sub, half, style.cap),
-  ]);
+  return subpaths
+    .map(withoutClosingDuplicate)
+    .flatMap((sub) => [
+      ...segmentPolygons(sub, half, style.cap),
+      ...cornerPolygons(sub, half, style.join),
+      ...capPolygons(sub, half, style.cap),
+    ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -831,7 +863,7 @@ class Painter {
     if (!node.stroke || node.stroke.width <= 0) return;
     const color = firstColor(node.stroke.paints);
     if (color === null) return;
-    const width = Math.max(node.stroke.width, 1 / this.scale);
+    const width = strokeWidth(node.stroke, matrix, this.scale);
     const style: StrokeStyle = {
       cap: node.stroke.cap ?? 'butt',
       join: node.stroke.join ?? 'miter',
@@ -1016,6 +1048,20 @@ function barPolygon(b: PixelRect): Polygon {
   ];
 }
 
+/**
+ * Largura do traço no espaço local, com o mínimo de 1 px de saída. `scale: false` fixa a largura
+ * em pixels de saída (como `strokeScaleEnabled(false)` na app), em qualquer escala ou transformação.
+ */
+function strokeWidth(
+  stroke: NonNullable<SceneNode['stroke']>,
+  matrix: Matrix,
+  scale: number,
+): number {
+  if (stroke.scale !== false) return Math.max(stroke.width, 1 / scale);
+  const unit = Math.sqrt(Math.abs(matrix[0] * matrix[3] - matrix[1] * matrix[2]));
+  return unit > 0 ? Math.max(stroke.width, 1) / unit : stroke.width;
+}
+
 function firstColor(paints: readonly Paint[]): Color | null {
   for (const paint of paints) {
     const color = paintColor(paint);
@@ -1024,12 +1070,19 @@ function firstColor(paints: readonly Paint[]): Color | null {
   return null;
 }
 
-function bounds(points: readonly Point[]): PixelRect {
-  const xs = points.map((p) => p.x);
-  const ys = points.map((p) => p.y);
-  const x = Math.min(...xs);
-  const y = Math.min(...ys);
-  return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+/** Caixa que contém os pontos; laço simples, porque `Math.min(...xs)` estoura a pilha com muitos pontos. */
+export function bounds(points: readonly Point[]): PixelRect {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
 }
 
 function intersect(a: PixelRect, b: PixelRect): PixelRect {
