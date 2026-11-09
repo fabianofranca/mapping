@@ -20,6 +20,7 @@ import type { Thread, ThreadAnchor } from './thread';
 import { typeOfAnnotation } from './specLookup';
 import { annotationTitle } from './typedDisplay';
 import type { Annotation, Project } from './types';
+import { fold } from './fold';
 
 // Alvos de citação para a interface (etapa Comentários, decisões 30 e 31): a URL de um alvo, o
 // rótulo que o chip grava e a busca do `@` no compositor. Puro: tudo chega por argumento.
@@ -173,11 +174,6 @@ interface Env {
   readonly excludeThreadId: string | undefined;
 }
 
-/** Minúsculas e sem acentos (o mesmo critério de `src/utils/search.ts`, que o modelo não importa). */
-function fold(text: string): string {
-  return text.normalize('NFD').replaceAll(/[̀-ͯ]/g, '').toLowerCase();
-}
-
 function join(env: Env, parts: readonly string[]): string {
   return parts.filter((part) => part !== '').join(env.separator);
 }
@@ -297,10 +293,9 @@ function fieldKeys(env: Env, a: Annotation): readonly string[] {
   return a.values === null ? [] : Object.keys(a.values);
 }
 
-function typedParts(env: Env, a: Annotation): CiteCandidate[] {
-  const out: CiteCandidate[] = [];
+function* typedParts(env: Env, a: Annotation): Iterable<CiteCandidate> {
   for (const key of fieldKeys(env, a)) {
-    out.push(candidate(env, { kind: 'field', annotationId: a.id, key }, 'here'));
+    yield candidate(env, { kind: 'field', annotationId: a.id, key }, 'here');
     for (const row of tableRows(a.values?.[key])) {
       const target: CitationTarget = {
         kind: 'row',
@@ -308,52 +303,52 @@ function typedParts(env: Env, a: Annotation): CiteCandidate[] {
         key,
         rowId: row._id,
       };
-      out.push(candidate(env, target, 'here'));
+      yield candidate(env, target, 'here');
     }
   }
-  return out;
 }
 
-function annotationParts(env: Env, a: Annotation): CiteCandidate[] {
-  if (a.type === null) {
-    return a.entries.map((e) =>
-      candidate(env, { kind: 'entry', annotationId: a.id, entryId: e.id }, 'here'),
-    );
+function* annotationParts(env: Env, a: Annotation): Iterable<CiteCandidate> {
+  if (a.type !== null) {
+    yield* typedParts(env, a);
+    return;
   }
-  return typedParts(env, a);
+  for (const e of a.entries) {
+    yield candidate(env, { kind: 'entry', annotationId: a.id, entryId: e.id }, 'here');
+  }
 }
 
-function hereCandidates(env: Env, here: ThreadAnchor | null): CiteCandidate[] {
-  return hostAnnotations(env, here).flatMap((a) => annotationParts(env, a));
+function* hereCandidates(env: Env, here: ThreadAnchor | null): Iterable<CiteCandidate> {
+  for (const a of hostAnnotations(env, here)) yield* annotationParts(env, a);
 }
 
 // ---- demais grupos
 
-function threadCandidates(env: Env): CiteCandidate[] {
-  return env.ctx.threads
-    .filter((t) => t.resolved === null && t.id !== env.excludeThreadId)
-    .map((t) => {
-      const target: CitationTarget = { kind: 'thread', id: t.id };
-      const anchor = t.anchor.kind === 'point' ? null : t.anchor;
-      return {
-        target,
-        label: labelOf(env, target),
-        group: 'thread' as const,
-        detail: anchor ? detailOf(env, anchor) : '',
-      };
-    });
+function* threadCandidates(env: Env): Iterable<CiteCandidate> {
+  for (const t of env.ctx.threads) {
+    if (t.resolved !== null || t.id === env.excludeThreadId) continue;
+    const target: CitationTarget = { kind: 'thread', id: t.id };
+    const anchor = t.anchor.kind === 'point' ? null : t.anchor;
+    yield {
+      target,
+      label: labelOf(env, target),
+      group: 'thread',
+      detail: anchor ? detailOf(env, anchor) : '',
+    };
+  }
 }
 
-function simpleGroup(
+function* simpleGroup(
   env: Env,
   group: CiteGroup,
   kind: 'marking' | 'container' | 'arrow' | 'annotation' | 'layer',
   ids: readonly { readonly id: string }[],
-): CiteCandidate[] {
-  return ids.map((item) => candidate(env, { kind, id: item.id }, group));
+): Iterable<CiteCandidate> {
+  for (const item of ids) yield candidate(env, { kind, id: item.id }, group);
 }
 
-type GroupBuilder = (env: Env, here: ThreadAnchor | null) => CiteCandidate[];
+/** Candidatos sob demanda: quem consome para quando já tem o bastante, sem montar o resto. */
+type GroupBuilder = (env: Env, here: ThreadAnchor | null) => Iterable<CiteCandidate>;
 
 /** Na ordem do `@`: o do item da conversa, marcações, containers, setas, anotações, camadas, conversas. */
 const GROUPS: readonly GroupBuilder[] = [
@@ -377,10 +372,14 @@ function score(words: readonly string[], c: CiteCandidate): 0 | 1 | null {
   return words.every((w) => full.includes(w)) ? 1 : null;
 }
 
-/** Os que casam, o casamento pelo nome antes do pelo caminho (estável dentro de cada um). */
+/**
+ * Até `room` dos que casam, o casamento pelo nome antes do pelo caminho (estável dentro de cada
+ * um). Para de montar candidatos assim que os que casam pelo nome enchem a vaga.
+ */
 function matching(
   words: readonly string[],
-  list: readonly CiteCandidate[],
+  list: Iterable<CiteCandidate>,
+  room: number,
 ): CiteCandidate[] {
   const byName: CiteCandidate[] = [];
   const byPath: CiteCandidate[] = [];
@@ -388,8 +387,9 @@ function matching(
     const s = score(words, c);
     if (s === 0) byName.push(c);
     else if (s === 1) byPath.push(c);
+    if (byName.length >= room) break;
   }
-  return [...byName, ...byPath];
+  return [...byName, ...byPath].slice(0, room);
 }
 
 /**
@@ -415,7 +415,7 @@ export function citeCandidates(
   const out: CiteCandidate[] = [];
   for (const build of GROUPS) {
     if (out.length >= limit) break;
-    out.push(...matching(words, build(env, here)));
+    out.push(...matching(words, build(env, here), limit - out.length));
   }
   return out.slice(0, limit);
 }

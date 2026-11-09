@@ -1,5 +1,4 @@
 import { formatCitation } from './citations';
-import { REF_SCHEME } from './itemRef';
 import { parseAnyRef, type ParsedAnyRef } from './refGrammar';
 
 // Documento do compositor de conversas (etapa Comentários, decisão 30): texto e chips. O chip é
@@ -56,17 +55,18 @@ export function composerToMarkdown(
  * como escapes (o que `escapeCitationLabel` grava), nenhum colchete solto e nenhuma quebra de
  * linha; o destino não tem espaço nem parênteses. Tudo o mais não casa e fica texto.
  */
-const LINK_SOURCE = String.raw`\[((?:[^\[\]\\\n]|\\[\[\]\\])+)\]\((mapping:\/\/[^\s()]*)\)`;
+const LINK_SOURCE = String.raw`\[((?:[^\[\]\\\n]|\\[\[\]\\*_\`])+)\]\((mapping:\/\/[^\s()]*)\)`;
 const LINK_AT = new RegExp(LINK_SOURCE, 'y');
 
 /** URL `mapping://` crua: vai até espaço, parêntese, colchete, aspas ou sinal de maior/menor. */
 const RAW_SOURCE = String.raw`mapping:\/\/[^\s()<>\[\]"]+`;
 const PASTE_SCAN = new RegExp(`${LINK_SOURCE}|${RAW_SOURCE}`, 'g');
 
-const TRAILING_PUNCTUATION = /[.,;:!?]+$/;
+/** Pontuação da frase e marcadores de ênfase/código que a colagem pode ter deixado colados no fim. */
+const TRAILING_PUNCTUATION = /[.,;:!?*_`~]+$/;
 
 function unescapeLabel(raw: string): string {
-  return raw.replace(/\\([[\]\\])/g, '$1');
+  return raw.replace(/\\([[\]\\*_`])/g, '$1');
 }
 
 interface LinkMatch {
@@ -137,7 +137,7 @@ export interface PastedChip {
 export type PasteResolver = (ref: ParsedAnyRef) => PastedChip | null;
 
 function resolveUrl(url: string, resolves: PasteResolver): PastedChip | null {
-  const parsed = url.startsWith(REF_SCHEME) ? parseAnyRef(url) : null;
+  const parsed = parseAnyRef(url);
   return parsed && resolves(parsed);
 }
 

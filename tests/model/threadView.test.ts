@@ -189,6 +189,13 @@ describe('threadSubject', () => {
     expect(threadSubject(t)).toBe('antes');
   });
 
+  it('o rótulo vivo do alvo não passa de novo pela limpeza do markdown (item 51)', () => {
+    expect(subject('veja [x](mapping://p/m/abc)', () => '__init__')).toBe(
+      'veja __init__',
+    );
+    expect(subject('**[x](mapping://p/m/abc)**', () => '_a_b\\*')).toBe('_a_b\\*');
+  });
+
   it('pula linhas em branco no começo', () => {
     expect(subject('\n  \nOlá')).toBe('Olá');
   });

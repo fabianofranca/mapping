@@ -129,7 +129,7 @@ function resolveValueRef(
     const row = rows[index];
     return row ? { kind: 'row', annotation, key: ref.key, row, index, field } : null;
   }
-  if (!field && !(ref.key in annotation.values)) return null;
+  if (!field && !Object.hasOwn(annotation.values, ref.key)) return null;
   return { kind: 'field', annotation, key: ref.key, field };
 }
 

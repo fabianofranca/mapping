@@ -3,6 +3,7 @@ import type { Thread, ThreadAnchor } from './thread';
 import { userKey } from './threadUsers';
 import { awaiting } from './threadView';
 import type { Project } from './types';
+import { fold } from './fold';
 
 // Filtros da janela Comentários (decisões 21 e 34): status, usuário, texto e "cita a seleção".
 // O padrão de status na interface é `open`, mas a função exige o status explícito.
@@ -27,11 +28,6 @@ export interface ThreadFilter {
   /** Todas as palavras, sem diferença de caixa nem de acento, no texto das mensagens. */
   readonly text?: string;
   readonly selection?: ThreadSelectionFilter;
-}
-
-/** Minúsculas e sem acentos (o mesmo critério de `src/utils/search.ts`, que o modelo não importa). */
-function fold(text: string): string {
-  return text.normalize('NFD').replaceAll(/[̀-ͯ]/g, '').toLowerCase();
 }
 
 function matchesStatus(thread: Thread, status: ThreadStatusFilter): boolean {
