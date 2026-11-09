@@ -2,6 +2,8 @@
 
 ## Adicionado
 
+- `Shift+1` enquadra tudo (o botão **Enquadrar tudo** mostra o atalho e a Ajuda o lista), no par do `Shift+2` (**Enquadrar seleção**), pela tecla física, e nunca com o foco num campo de texto.
+
 ## Alterado
 
 ## Corrigido

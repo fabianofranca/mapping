@@ -16,6 +16,8 @@ export type Shortcut =
   | { readonly kind: 'select-child' }
   | { readonly kind: 'zoom'; readonly factor: number }
   | { readonly kind: 'zoom-reset' }
+  /** Shift+1: enquadra tudo (zoom e centro da vista). */
+  | { readonly kind: 'fit-all' }
   /** Shift+2: enquadra a seleção (zoom e centro da vista). */
   | { readonly kind: 'fit-selection' }
   | { readonly kind: 'export' }
@@ -56,6 +58,7 @@ export const SHORTCUT_LABELS = {
   copyCrop: 'Ctrl+Alt+C',
   arrange: 'Alt+Shift+A',
   wrap: 'Ctrl+G',
+  fitAll: 'Shift+1',
   fitSelection: 'Shift+2',
 } as const;
 
@@ -221,7 +224,9 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
   if (nudge) return nudge;
   if (e.shiftKey) {
     // Pela tecla física: com Shift o `key` vira `@` ou `"` conforme o layout.
-    if (numberOf(e) === 2) return { kind: 'fit-selection' };
+    const digit = numberOf(e);
+    if (digit === 1) return { kind: 'fit-all' };
+    if (digit === 2) return { kind: 'fit-selection' };
     return key === 'escape' ? { kind: 'hide-window' } : null;
   }
   if (key === 'delete' || key === 'backspace') return { kind: 'delete' };
