@@ -6,7 +6,9 @@
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { applyCsp } from '../pwa/csp';
+import { ptBR } from '../src/i18n/pt-BR';
 import { deserialize } from '../src/model';
+import { TOOL_WINDOWS, WINDOW_NUMBER, type ToolWindowId } from '../src/store/toolWindows';
 import { renderTokensCss } from '../src/theme/tokens';
 
 export const GUIA_TEMPLATE = 'scripts/guia/template.html';
@@ -87,8 +89,8 @@ function guiaData(root: string): unknown {
 function inlineJson(value: unknown): string {
   return JSON.stringify(value)
     .replaceAll('<', '\\u003c')
-    .replaceAll(' ', '\\u2028')
-    .replaceAll(' ', '\\u2029');
+    .replaceAll('\u2028', '\\u2028')
+    .replaceAll('\u2029', '\\u2029');
 }
 
 /** Troca o marcador sem interpretar `$` do texto novo (o JSON e o CSS têm `$`). */
@@ -97,11 +99,50 @@ function fill(html: string, marker: string, text: string): string {
   return html.split(marker).join(text);
 }
 
+/** Nome de cada janela, como a app mostra (as chaves do pt-BR). */
+const WINDOW_TITLES: Readonly<Record<ToolWindowId, string>> = {
+  tree: ptBR['panel.tree'],
+  layers: ptBR['layer.title'],
+  details: ptBR['panel.details'],
+  list: ptBR['view.list'],
+  incomplete: ptBR['incomplete.title'],
+  notices: ptBR['notices.title'],
+  comments: ptBR['comments.title'],
+  diagnostics: ptBR['diagnostics.title'],
+  proposals: ptBR['proposals.title'],
+  catalog: ptBR['catalog.window.title'],
+};
+
+function escapeHtml(text: string): string {
+  return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+/** As linhas da tabela de atalhos: uma por janela (de `WINDOW_NUMBER`, o 0 por último) e o Arrumar. */
+function shortcutRows(): string {
+  const order = (id: ToolWindowId) => (WINDOW_NUMBER[id] === 0 ? 10 : WINDOW_NUMBER[id]);
+  const rows = [...TOOL_WINDOWS]
+    .sort((a, b) => order(a) - order(b))
+    .map(
+      (id) => [`Ctrl+Shift+${WINDOW_NUMBER[id]}`, WINDOW_TITLES[id]] as [string, string],
+    );
+  rows.push(['Alt+Shift+A', ptBR['shortcuts.arrange']]);
+  return rows
+    .map(
+      ([combo, label]) =>
+        `<tr><td><kbd>${combo}</kbd></td><td>${escapeHtml(label)}</td></tr>`,
+    )
+    .join('\n');
+}
+
 /** O HTML final do guia (com a CSP). `root`: a raiz do repositório. */
 export function guiaHtml(root = process.cwd()): string {
   const template = readFileSync(join(root, GUIA_TEMPLATE), 'utf8');
   const html = fill(
-    fill(template, '/*__TOKENS_CSS__*/', renderTokensCss()),
+    fill(
+      fill(template, '/*__TOKENS_CSS__*/', renderTokensCss()),
+      '<!--__SHORTCUT_ROWS__-->',
+      shortcutRows(),
+    ),
     '/*__DATA__*/ null',
     inlineJson(guiaData(root)),
   );

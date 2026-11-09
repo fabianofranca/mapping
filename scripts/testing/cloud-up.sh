@@ -19,7 +19,10 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
-RODADA="$1"
+# Resolve a pasta da rodada para absoluta antes de qualquer `cd` (um caminho relativo apontaria
+# para outro lugar depois do `cd "$REPO_DIR"`).
+mkdir -p "$1"
+RODADA="$(cd "$1" && pwd)"
 shift
 RESTART_CHROME=0
 if [ "${1:-}" = "--restart-chrome" ]; then
@@ -127,28 +130,35 @@ run_logged npm run build
 run_logged npm run build:mcp
 MCP_VERSION_OUTPUT=$(node dist-mcp/mapping-mcp.js --version)
 
-sleep 1
-STATUS=$(curl -sI http://localhost:8080/ | head -1 || true)
+# Espera o servidor estático com tentativas até um prazo de 15 s.
+STATUS=""
+for _ in $(seq 1 30); do
+  STATUS=$(curl -sI http://localhost:8080/ 2>/dev/null | head -1 || true)
+  printf '%s' "$STATUS" | grep -q '200' && break
+  sleep 0.5
+done
 if ! printf '%s' "$STATUS" | grep -q '200'; then
   echo "ERRO: item 4 (servidor estático) falhou: $STATUS" >&2
   exit 10
 fi
 
 SOURCE_VERSION=$(grep "SERVER_VERSION = '" "$REPO_DIR/mcp/version.ts" | sed -E "s/.*SERVER_VERSION = '([^']+)'.*/\1/")
-if ! printf '%s' "$MCP_VERSION_OUTPUT" | grep -q "$SOURCE_VERSION"; then
+if ! printf '%s' "$MCP_VERSION_OUTPUT" | grep -qF -- "$SOURCE_VERSION"; then
   echo "ERRO: item 5 (versão do MCP) falhou: esperava conter '$SOURCE_VERSION', recebi '$MCP_VERSION_OUTPUT'" >&2
   exit 11
 fi
 
 start_display_and_chrome
 
+# `|| true`: o `timeout` expirado (código 124) não pode abortar o script pelo `set -e`; o `if`
+# abaixo dá a mensagem do item 6 e o `exit 12`.
 JANELA=$(timeout 15 bash -c "
   while true; do
     W=\$(xdotool search --onlyvisible --name 'Mapping' 2>/dev/null | head -1)
     if [ -n \"\$W\" ]; then echo \"\$W\"; break; fi
     sleep 0.5
   done
-")
+" || true)
 if [ -z "$JANELA" ]; then
   echo "ERRO: item 6 (janela do Chrome) falhou: xdotool não achou janela 'Mapping'." >&2
   exit 12

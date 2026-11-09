@@ -7,6 +7,7 @@
 - Os diálogos "novo projeto" e "configurar pasta" da tela inicial agora são um componente só (`ProjectNameDialog`, `src/app/HomeDialogs.tsx`); a aparência é a mesma (`Dialog` com `TextField`, Cancelar e Criar).
 
 - **Token novo `opacity-viewer-hover` (`0.8`):** opacidade do contorno de hover do visualizador embutível (antes um `rgba(26, 99, 204, 0.8)` fixo em `viewer/viewer.ts`); a cor continua `color-accent`. Gravar a opacidade na seção de opacidades do artefato (hoje 8 tokens; passa a 9).
+- **Tokens novos do guia interativo (item 66):** `space-px` (`1px`, respiro fino de rótulos), `size-accent-bar` (`4px`, barra de cor da anotação) e `opacity-mark-fill` / `opacity-mark-fill-selected` (`0.07` / `0.28`, preenchimento da marcação). Gravar nas seções de espaço, tamanhos e opacidades do artefato (opacidades passam de 9 a 11).
 
 ## Sincronização
 

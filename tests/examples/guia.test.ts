@@ -66,6 +66,34 @@ describe('guia interativo', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('specId e typeId passam por esc() antes de entrar no innerHTML (item 64)', () => {
+    const script = blocks(html, 'script').find((b) => b.includes('const D =')) ?? '';
+    expect(script).not.toMatch(/\+\s*a\.type\.specId\s*\+/);
+    expect(script).not.toMatch(/\+\s*a\.type\.typeId\b(?!\s*:)/);
+    expect(script).toContain('esc(a.type.specId)');
+    expect(script).toContain('esc(a.type.typeId)');
+  });
+
+  it('o SVG com botões focáveis é um grupo, não uma imagem (item 65)', () => {
+    const svg = html.match(/<svg id="svg"[^>]*>/)?.[0] ?? '';
+    expect(svg).toContain('role="group"');
+    expect(svg).not.toContain('role="img"');
+    expect(svg).toContain('aria-label="Container com marcações"');
+  });
+
+  it('a tabela de atalhos é gerada de WINDOW_NUMBER, não escrita à mão (item 67)', () => {
+    const template = readFileSync('scripts/guia/template.html', 'utf8');
+    expect(template).not.toMatch(/<td><kbd>Ctrl\+Shift\+\d<\/kbd><\/td>/);
+    expect(template).toContain('<!--__SHORTCUT_ROWS__-->');
+    expect(html).not.toContain('__SHORTCUT_ROWS__');
+  });
+
+  it('scripts/guia.ts escreve os separadores de linha como escapes, não como caracteres (item 68)', () => {
+    const source = readFileSync('scripts/guia.ts', 'utf8');
+    expect(source).not.toMatch(/[\u2028\u2029]/);
+    expect(source).toContain("replaceAll('\\u2028', '\\\\u2028')");
+  });
+
   it('segue o tema escolhido na app (chave mapping.theme) e o do sistema', () => {
     expect(html).toContain("'mapping.theme'");
     expect(html).toContain("[data-theme='dark']");

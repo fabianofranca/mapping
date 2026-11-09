@@ -44,12 +44,16 @@ const compareSegments = (a, b) => {
   return x.length - y.length;
 };
 
+/** Lixo de sistema e de ferramenta que nunca entra no zip nem na vista do exemplo. */
+const IGNORED_NAMES = new Set(['.DS_Store', 'Thumbs.db', 'node_modules']);
+
 /** Caminho relativo (com `/`) → conteúdo de cada arquivo da pasta, em ordem alfabética. */
 export async function folderFiles(root, skip = () => false) {
   const files = new Map();
   const walk = async (dir) => {
     const entries = await readdir(join(root, dir), { withFileTypes: true });
     for (const entry of entries.sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      if (IGNORED_NAMES.has(entry.name)) continue;
       const relative = dir === '' ? entry.name : `${dir}/${entry.name}`;
       if (skip(relative)) continue;
       if (entry.isDirectory()) await walk(relative);
@@ -60,10 +64,19 @@ export async function folderFiles(root, skip = () => false) {
   return files;
 }
 
-/** Os arquivos do manifesto, já nos destinos (`specs/...`). */
-async function specFiles() {
+/**
+ * Os arquivos do manifesto, já nos destinos (`specs/...`). `root`: a raiz do repositório contra a
+ * qual as fontes do manifesto são resolvidas (padrão: a pasta atual).
+ */
+async function specFiles(root = '.') {
   const files = new Map();
-  for (const { target, source, exclude = [], indent = false } of EXAMPLE_SPECS) {
+  for (const {
+    target,
+    source: relativeSource,
+    exclude = [],
+    indent = false,
+  } of EXAMPLE_SPECS) {
+    const source = join(root, relativeSource);
     if ((await stat(source)).isDirectory()) {
       const skip = (relative) => exclude.includes(relative);
       for (const [path, bytes] of await folderFiles(source, skip))

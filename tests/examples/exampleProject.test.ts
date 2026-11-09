@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
@@ -24,6 +25,7 @@ import {
   EXAMPLE_SPECS,
   EXAMPLE_ZIP,
   exampleFiles,
+  folderFiles,
 } from '../../scripts/exampleProject.mjs';
 
 // `examples/exemplo-completo/` é o projeto de exemplo (a fonte); o zip e o guia (`public/guia/`)
@@ -271,5 +273,25 @@ describe('especializações do exemplo geradas das fontes', () => {
       .split('\n')
       .map((l) => l.trim());
     expect(lines).toContain('examples/exemplo-completo/specs/');
+  });
+});
+
+describe('folderFiles ignora lixo de sistema (item 69)', () => {
+  it('.DS_Store, Thumbs.db e node_modules não entram', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'folderfiles-'));
+    try {
+      writeFileSync(join(dir, 'mapping.json'), '{}');
+      writeFileSync(join(dir, '.DS_Store'), 'x');
+      writeFileSync(join(dir, 'Thumbs.db'), 'x');
+      mkdirSync(join(dir, 'sub'));
+      writeFileSync(join(dir, 'sub', '.DS_Store'), 'x');
+      writeFileSync(join(dir, 'sub', 'a.txt'), 'a');
+      mkdirSync(join(dir, 'node_modules'));
+      writeFileSync(join(dir, 'node_modules', 'm.js'), 'x');
+      const files = await folderFiles(dir);
+      expect([...files.keys()]).toEqual(['mapping.json', 'sub/a.txt']);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
