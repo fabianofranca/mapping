@@ -129,11 +129,17 @@ export function ancestorsOf(screen: Screen, id: string): string[] {
 export function renderOrder(screen: Screen): Instance[] {
   const out: Instance[] = [];
   const known = new Set(screen.instances.map((i) => i.id));
+  // Filhos por pai efetivo (pai ausente = raiz), na ordem da lista: um passo só, O(n).
+  const byParent = new Map<string | undefined, Instance[]>();
+  for (const child of screen.instances) {
+    const parent =
+      child.parentId && known.has(child.parentId) ? child.parentId : undefined;
+    const siblings = byParent.get(parent);
+    if (siblings) siblings.push(child);
+    else byParent.set(parent, [child]);
+  }
   const visit = (parentId: string | undefined) => {
-    for (const child of screen.instances) {
-      const parent =
-        child.parentId && known.has(child.parentId) ? child.parentId : undefined;
-      if (parent !== parentId) continue;
+    for (const child of byParent.get(parentId) ?? []) {
       out.push(child);
       visit(child.id);
     }
