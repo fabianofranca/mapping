@@ -70,14 +70,14 @@
       code {
         font: var(--t-code);
         background: var(--color-selection);
-        padding: 1px var(--space-1-5);
+        padding: var(--space-px) var(--space-1-5);
         border-radius: var(--radius-sm);
       }
       kbd {
         font: var(--t-code);
         background: var(--color-surface);
         border: 1px solid var(--color-border-control);
-        padding: 1px var(--space-1-5);
+        padding: var(--space-px) var(--space-1-5);
         border-radius: var(--radius-sm);
         white-space: nowrap;
       }
@@ -87,6 +87,7 @@
         gap: var(--space-4);
         align-items: start;
       }
+      /* Os breakpoints do @media ficam literais: CSS não aceita var() ali. */
       @media (max-width: 1020px) {
         .grid {
           grid-template-columns: minmax(0, 1fr);
@@ -288,7 +289,7 @@
       }
       .flag {
         font: var(--t-micro);
-        padding: 1px var(--space-2);
+        padding: var(--space-px) var(--space-2);
         border-radius: var(--radius-full);
         border: 1px solid currentColor;
       }
@@ -303,7 +304,7 @@
         color: var(--color-text-muted);
       }
       .ann {
-        border-left: 4px solid var(--c, var(--color-border));
+        border-left: var(--size-accent-bar) solid var(--c, var(--color-border));
         padding: var(--space-1) 0 var(--space-1) var(--space-3);
         margin: var(--space-3) 0;
       }
@@ -323,7 +324,7 @@
       dt {
         color: var(--color-text-muted);
         font: var(--t-code);
-        padding-top: 1px;
+        padding-top: var(--space-px);
       }
       dd {
         margin: 0;
@@ -386,12 +387,12 @@
       }
       .mk .box {
         fill: currentColor;
-        fill-opacity: 0.07;
+        fill-opacity: var(--opacity-mark-fill);
         stroke: currentColor;
         stroke-width: 1.5;
       }
       .mk.sel .box {
-        fill-opacity: 0.28;
+        fill-opacity: var(--opacity-mark-fill-selected);
         stroke-width: 3;
       }
       .mk.review .box {
@@ -450,7 +451,7 @@
         <main class="panel" aria-label="Container anotado">
           <div class="tabs" role="tablist" id="tabs"></div>
           <div class="stage">
-            <svg id="svg" role="img" aria-label="Container com marcações"></svg>
+            <svg id="svg" role="group" aria-label="Container com marcações"></svg>
           </div>
           <div class="layers" id="layers" aria-label="Camadas"></div>
           <div class="hint">
@@ -486,50 +487,7 @@
           <h2>Atalhos</h2>
           <table>
             <tbody>
-              <tr>
-                <td><kbd>Ctrl+Shift+1</kbd></td>
-                <td>Árvore</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl+Shift+2</kbd></td>
-                <td>Camadas</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl+Shift+3</kbd></td>
-                <td>Detalhes</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl+Shift+4</kbd></td>
-                <td>Lista</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl+Shift+5</kbd></td>
-                <td>Incompletas</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl+Shift+6</kbd></td>
-                <td>Diagnóstico</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl+Shift+7</kbd></td>
-                <td>Propostas</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl+Shift+8</kbd></td>
-                <td>Avisos</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl+Shift+9</kbd></td>
-                <td>Catálogo (Componentes e Paleta)</td>
-              </tr>
-              <tr>
-                <td><kbd>Ctrl+Shift+0</kbd></td>
-                <td>Comentários</td>
-              </tr>
-              <tr>
-                <td><kbd>Alt+Shift+A</kbd></td>
-                <td>Arrumar o container selecionado</td>
-              </tr>
+              <!--__SHORTCUT_ROWS__-->
             </tbody>
           </table>
           <p class="shortcut-note">
@@ -1001,7 +959,9 @@
             esc(a.name || (a.type ? kind(a) : 'Nota')) +
             '</div><div class="l">' +
             esc(l.name) +
-            (a.type ? ' · ' + a.type.specId + '/' + a.type.typeId : ' · camada livre') +
+            (a.type
+              ? ' · ' + esc(a.type.specId) + '/' + esc(a.type.typeId)
+              : ' · camada livre') +
             '</div>';
           const rows = [];
           if (a.values)

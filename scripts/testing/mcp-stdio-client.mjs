@@ -136,13 +136,26 @@ const server = spawn('node', serverArgs, {
   stdio: ['pipe', 'pipe', 'inherit'],
 });
 
+server.stdout.setEncoding('utf8');
 let buffer = '';
 let lastId = 0;
+let exited = null;
 const pending = new Map();
+
+/** Termina com uma mensagem curta, sem stack. */
+function fail(message) {
+  console.error(`[mcp-stdio-client] ${message}`);
+  process.exit(1);
+}
+
+server.on('error', (error) => {
+  fail(
+    `não consegui iniciar o servidor (${error.code ?? error.message}): node ${serverArgs.join(' ')}`,
+  );
+});
 server.on('exit', (code) => {
-  for (const resolve of pending.values()) {
-    resolve({ error: { message: `O servidor terminou (código ${code}).` } });
-  }
+  exited = `O servidor terminou (código ${code}).`;
+  for (const { reject } of pending.values()) reject(new Error(exited));
   pending.clear();
 });
 server.stdout.on('data', (chunk) => {
@@ -153,21 +166,29 @@ server.stdout.on('data', (chunk) => {
     buffer = buffer.slice(nl + 1);
     if (!line) continue;
     const message = JSON.parse(line);
-    const resolve = message.id && pending.get(message.id);
-    if (resolve) {
+    const waiter = message.id && pending.get(message.id);
+    if (waiter) {
       pending.delete(message.id);
-      resolve(message);
+      waiter.resolve(message);
     }
   }
 });
 
 const send = (message) => server.stdin.write(JSON.stringify(message) + '\n');
 const request = (method, params) =>
-  new Promise((resolve) => {
+  new Promise((resolve, reject) => {
+    if (exited) {
+      reject(new Error(exited));
+      return;
+    }
     const id = ++lastId;
-    pending.set(id, resolve);
+    pending.set(id, { resolve, reject });
     send({ jsonrpc: '2.0', id, method, params });
   });
+
+process.on('uncaughtException', (error) => {
+  fail(error instanceof Error ? error.message : String(error));
+});
 
 const init = await request('initialize', {
   protocolVersion: '2025-06-18',

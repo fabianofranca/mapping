@@ -17,6 +17,9 @@ await build({
   platform: 'node',
   format: 'esm',
   target: 'node20',
+  // `src/store/toolWindows` (a numeração dos atalhos) puxa o canal do build; o guia é o mesmo
+  // em qualquer canal.
+  define: { 'import.meta.env.VITE_CHANNEL': 'undefined' },
   logLevel: 'error',
 });
 

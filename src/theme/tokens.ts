@@ -205,6 +205,8 @@ const ROLES: Readonly<Record<string, string>> = {
 const SCALES: Readonly<Record<string, TokenValue>> = {
   // Espaço
   'space-0-5': '2px',
+  /** Respiro fino de um rótulo (`code`, `kbd`, marcador) do guia interativo. */
+  'space-px': '1px',
   'space-1': '4px',
   'space-1-5': '6px',
   'space-2': '8px',
@@ -235,6 +237,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-tw-header': '32px',
   'size-statusbar': '26px',
   'size-stripe': '40px',
+  /** Barra de cor à esquerda de uma anotação no guia interativo. */
+  'size-accent-bar': '4px',
   'size-icon': '16px',
   'size-handle': '10px',
   /** Emblema do cadeado no canvas (px de tela). */
@@ -290,6 +294,9 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   /** Painel "Mostrar no canvas" do modo visualização (`ViewModePanel`). */
   'size-view-panel': '280px',
   // Opacidades
+  /** Preenchimento de uma marcação do guia interativo, e o da selecionada. */
+  'opacity-mark-fill': '0.07',
+  'opacity-mark-fill-selected': '0.28',
   'opacity-disabled': '0.45',
   'opacity-dimmed': '0.35',
   'opacity-ancestor': '0.75',
