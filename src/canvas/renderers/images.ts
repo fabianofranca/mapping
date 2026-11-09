@@ -14,7 +14,7 @@ import {
 import type { DisplayImage } from '../../store/displayImages';
 import type { Frame, ViewFrame } from '../frame';
 import type { CanvasTokens } from '../theme';
-import { fontStyle } from './metrics';
+import { fontStyle, sameInputs } from './metrics';
 
 /** Rótulo da imagem (px de tela): distância da borda e largura mínima (a fonte é `t-cv-image`). */
 const IMAGE_TITLE_GAP = 4;
@@ -27,11 +27,13 @@ export interface ImageNode {
   readonly label: KonvaText;
   /** Nome da imagem, como rótulo acima dela. */
   readonly title: KonvaText;
+  /** Entradas do último `updateNode`: iguais, o nó já está certo. */
+  drawn: readonly unknown[] | null;
 }
 
 export type ImageFrame = Pick<
   Frame,
-  'project' | 'preview' | 'bitmaps' | 'tokens' | 'viewport' | 'view'
+  'project' | 'preview' | 'bitmaps' | 'tokens' | 'viewport' | 'view' | 'locale'
 >;
 
 /** Nós das imagens, reaproveitados entre quadros (um grupo por imagem). */
@@ -57,50 +59,92 @@ export class ImageRenderer {
     return this.titles;
   }
 
+  /** `true` se o último `render` mexeu em algum nó (criou, refez, reordenou ou removeu). */
+  changed = false;
+
+  /** `true` se o último `render` mexeu em algum nó levado ao grupo de arrasto. */
+  draggedChanged = false;
+
+  /** As imagens que se movem num gesto e o grupo em que ficam até soltar (decisões 5 e 6). */
+  private dragIds: ReadonlySet<string> | null = null;
+  private dragTarget: Konva.Container | null = null;
+
+  /**
+   * Leva as imagens de `ids` para o grupo de arrasto no próximo `render` (os nós são os mesmos,
+   * movidos com `moveTo`), ou as devolve à camada com `null`.
+   */
+  setDragged(ids: ReadonlySet<string> | null, target: Konva.Container): void {
+    this.dragIds = ids && ids.size > 0 ? ids : null;
+    this.dragTarget = target;
+  }
+
   /**
    * Desenha as imagens na ordem do projeto e devolve a posição de cada uma
-   * (com a prévia do gesto em andamento aplicada).
+   * (com a prévia do gesto em andamento aplicada). `changed` diz se algum nó mudou.
    */
   render(frame: ImageFrame): ReadonlyMap<string, Placement> {
-    const { project, preview, bitmaps, tokens, view } = frame;
-    const zoom = frame.viewport.scale;
-    const images = project?.containers ?? [];
+    let changed = false;
+    let draggedChanged = false;
+    // Posição na pilha da camada: as imagens que se movem num gesto não contam (saíram dela).
+    let position = 0;
+    const images = frame.project?.containers ?? [];
     const placements = new Map<string, Placement>();
     const titles = new Map<string, Rect>();
     const seen = new Set<string>();
-    images.forEach((image, index) => {
+    images.forEach((image) => {
       seen.add(image.id);
-      const placement =
-        preview?.containerId === image.id ? preview.placement : image.placement;
-      placements.set(image.id, placement);
-      const node = this.nodes.get(image.id) ?? this.createNode(image.id);
-      updateNode(
-        node,
-        image,
-        placement,
-        image.file === null ? undefined : bitmaps.get(image.file),
-        tokens,
-        zoom,
-        view,
-      );
-      if (node.group.zIndex() !== index) node.group.zIndex(index);
-      if (node.title.visible()) {
-        const rect = imageCanvasRect(image, placement);
-        titles.set(image.id, {
-          x: rect.x,
-          y: rect.y + node.title.y(),
-          width: Math.min(node.title.getTextWidth(), rect.width),
-          height: node.title.height(),
-        });
-      }
+      const one = this.renderOne(image, frame, position);
+      placements.set(image.id, one.placement);
+      if (one.title) titles.set(image.id, one.title);
+      if (!one.dragged) position++;
+      if (one.layer) changed = true;
+      if (one.drag) draggedChanged = true;
     });
     this.titles = titles;
     for (const [id, node] of this.nodes) {
       if (seen.has(id)) continue;
       node.group.destroy();
       this.nodes.delete(id);
+      changed = true;
     }
+    this.changed = changed;
+    this.draggedChanged = draggedChanged;
     return placements;
+  }
+
+  /** Onde o nó da imagem fica: o grupo de arrasto se ela se move num gesto, senão a camada. */
+  private homeOf(id: string): Konva.Container {
+    return this.dragTarget && this.dragIds?.has(id) ? this.dragTarget : this.layer;
+  }
+
+  /**
+   * Desenha uma imagem: põe o nó no grupo certo (a camada, ou o grupo de arrasto se ela se move), o
+   * refaz se as entradas mudaram e acerta a posição na pilha da camada. Devolve a posição dela
+   * (com a prévia do gesto), o retângulo do nome e o que mexeu.
+   */
+  private renderOne(
+    image: ProjectContainer,
+    frame: ImageFrame,
+    position: number,
+  ): OneImage {
+    const placement = placementOfImage(image, frame.preview);
+    const fresh = !this.nodes.has(image.id);
+    const node = this.nodes.get(image.id) ?? this.createNode(image.id);
+    const home = this.homeOf(image.id);
+    const dragged = home !== this.layer;
+    // Sai de uma e entra na outra: as duas se redesenham.
+    const moved = node.group.getParent() !== home;
+    if (moved) node.group.moveTo(home);
+    const redrawn = refreshNode(node, image, placement, frame);
+    const reordered = !dragged && node.group.zIndex() !== position;
+    if (reordered) node.group.zIndex(position);
+    const title = titleRect(node, image, placement);
+    return {
+      placement,
+      title,
+      dragged,
+      ...touchedBy(dragged, fresh, moved, redrawn, reordered),
+    };
   }
 
   private createNode(id: string): ImageNode {
@@ -110,12 +154,78 @@ export class ImageRenderer {
       placeholder: new KonvaRect(),
       label: new KonvaText({ align: 'center', verticalAlign: 'middle', wrap: 'char' }),
       title: new KonvaText({ wrap: 'none', ellipsis: true }),
+      drawn: null,
     };
     node.group.add(node.placeholder, node.bitmap, node.label, node.title);
     this.layer.add(node.group);
     this.nodes.set(id, node);
     return node;
   }
+}
+
+/** O que `renderOne` devolve de uma imagem. */
+interface OneImage {
+  readonly placement: Placement;
+  readonly title: Rect | null;
+  readonly dragged: boolean;
+  /** A camada das imagens mexeu. */
+  readonly layer: boolean;
+  /** O grupo de arrasto mexeu. */
+  readonly drag: boolean;
+}
+
+/** Posição da imagem: a da prévia do gesto, se é a dela, ou a do projeto. */
+function placementOfImage(
+  image: ProjectContainer,
+  preview: ImageFrame['preview'],
+): Placement {
+  return preview?.containerId === image.id ? preview.placement : image.placement;
+}
+
+/** Refaz o nó se as entradas mudaram; `true` se refez. */
+function refreshNode(
+  node: ImageNode,
+  image: ProjectContainer,
+  placement: Placement,
+  frame: ImageFrame,
+): boolean {
+  const zoom = frame.viewport.scale;
+  const state = image.file === null ? undefined : frame.bitmaps.get(image.file);
+  const inputs = [image, placement, state, frame.tokens, zoom, frame.view, frame.locale];
+  if (sameInputs(node.drawn, inputs)) return false;
+  node.drawn = inputs;
+  updateNode(node, image, placement, state, frame.tokens, zoom, frame.view);
+  return true;
+}
+
+/** Qual grupo mexeu: a camada (nó novo, trocado, refeito ou reordenado) e/ou o de arrasto. */
+function touchedBy(
+  dragged: boolean,
+  fresh: boolean,
+  moved: boolean,
+  redrawn: boolean,
+  reordered: boolean,
+): { layer: boolean; drag: boolean } {
+  return {
+    layer: fresh || reordered || moved || (redrawn && !dragged),
+    drag: moved || (redrawn && dragged),
+  };
+}
+
+/** Retângulo do texto do nome (canvas), ou `null` com o rótulo escondido pelo zoom. */
+function titleRect(
+  node: ImageNode,
+  image: ProjectContainer,
+  placement: Placement,
+): Rect | null {
+  if (!node.title.visible()) return null;
+  const rect = imageCanvasRect(image, placement);
+  return {
+    x: rect.x,
+    y: rect.y + node.title.y(),
+    width: Math.min(node.title.getTextWidth(), rect.width),
+    height: node.title.height(),
+  };
 }
 
 /**
