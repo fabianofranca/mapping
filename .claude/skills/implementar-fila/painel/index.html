@@ -217,8 +217,17 @@
       </div>
     </div>
     <div class="card">
-      <h2>Bugs e roadmaps por etapa</h2>
-      <div id="mp-issues" data-source="issues"></div>
+      <h2>Issues criadas pela fila</h2>
+      <p class="sub">
+        Os bugs e roadmaps que a fila abre levam a linha <code>Origem: etapa #n</code> no
+        corpo.
+        <a
+          href="https://github.com/fabianofranca/mapping/issues?q=is%3Aissue+is%3Aopen+%22Origem%3A+etapa%22"
+          target="_blank"
+          rel="noopener"
+          >Ver as abertas no GitHub</a
+        >
+      </p>
     </div>
     <div class="card">
       <h2>Registro</h2>
@@ -424,54 +433,6 @@
           ul.appendChild(li);
         }
         tick();
-      });
-      dash.onData(() => {
-        const box = document.getElementById('mp-issues');
-        if (!box) return;
-        box.replaceChildren();
-        const rows = q('issues');
-        if (!rows.length) {
-          const p = document.createElement('p');
-          p.className = 'sub';
-          p.textContent = 'Nenhum bug ou roadmap criado até agora.';
-          box.appendChild(p);
-          return;
-        }
-        const groups = new Map();
-        rows.forEach((r) => {
-          if (!groups.has(r.etapa))
-            groups.set(r.etapa, { title: r.etapaTitle, items: [] });
-          groups.get(r.etapa).items.push(r);
-        });
-        groups.forEach((g, etapa) => {
-          const h = document.createElement('h3');
-          h.textContent = etapa + ' — ' + (g.title || '');
-          h.style.margin = '12px 0 4px';
-          box.appendChild(h);
-          const ul = document.createElement('ul');
-          g.items.forEach((r) => {
-            const li = document.createElement('li');
-            li.style.display = 'block';
-            const top = document.createElement('div');
-            const a = document.createElement('a');
-            a.href = r.url;
-            a.target = '_blank';
-            a.rel = 'noopener';
-            a.textContent = r.number + ' · ' + r.title;
-            const pill = document.createElement('span');
-            pill.className = 'pill';
-            pill.style.marginLeft = '8px';
-            pill.textContent = r.kind + ' · ' + r.level + ' · ' + r.state;
-            top.append(a, pill);
-            const d = document.createElement('div');
-            d.className = 'sub';
-            d.style.margin = '2px 0 0';
-            d.textContent = r.detail || '';
-            li.append(top, d);
-            ul.appendChild(li);
-          });
-          box.appendChild(ul);
-        });
       });
       setInterval(tick, 1000);
     })();

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Mantém os 4 conjuntos de dados do painel "Fila de desenvolvimento".
+"""Mantém os 3 conjuntos de dados do painel "Fila de desenvolvimento".
 
-Arquivos numa pasta: queue.json, meta.json, log.json, issues.json (listas JSON).
+Arquivos numa pasta: queue.json, meta.json, log.json (listas JSON).
 Cada comando imprime, no fim, `alterados: <arquivos gravados>`.
 Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
 (o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
@@ -15,9 +15,7 @@ import sys
 STATUS = ["aguardando", "em andamento", "concluída", "falhou", "esperando dono"]
 KINDS = ["etapa", "bug", "patch"]
 STAGES = ["", "Fases", "Testador", "Correção", "Fechamento", "Mesclada"]
-ISSUE_KINDS = ["bug", "roadmap"]
-ISSUE_STATES = ["aberta", "fechada"]
-FILES = ["queue", "meta", "log", "issues"]
+FILES = ["queue", "meta", "log"]
 INT_FIELDS = ["order", "phasesTotal", "phasesDone"]
 QUEUE_EMPTY = {
     "order": 0, "issue": "", "title": "", "kind": "etapa", "step": "",
@@ -32,10 +30,6 @@ QUEUE_EMPTY = {
 }
 TIME_FIELDS = ["started", "ended", "childAt"]
 LATE_MINUTES = 60
-ISSUE_EMPTY = {
-    "etapa": "", "etapaTitle": "", "number": "", "title": "", "url": "",
-    "kind": "bug", "level": "", "state": "aberta", "detail": "",
-}
 
 NOW_OVERRIDE = None
 
@@ -162,7 +156,6 @@ def cmd_init(a):
     save(a.dir, "queue", [])
     save(a.dir, "meta", [{"runStart": "", "waitingSince": t, "updatedAt": t, "current": ""}])
     save(a.dir, "log", [])
-    save(a.dir, "issues", [])
     print("alterados: " + " ".join(n + ".json" for n in FILES))
 
 
@@ -311,31 +304,8 @@ def show_row(r):
             print(f"  {k}: {v}")
 
 
-def cmd_issue(a):
-    s = Sessao(a.dir)
-    rows = s.get("issues")
-    pairs = parse_pairs(a.pairs)
-    for k in pairs:
-        if k not in ISSUE_EMPTY:
-            raise Erro(f"campo desconhecido '{k}'; válidos: " + ", ".join(ISSUE_EMPTY))
-    if not pairs.get("number"):
-        raise Erro("falta number=#N")
-    pairs["number"] = norm_issue(pairs["number"])
-    if "kind" in pairs:
-        validate_choice("kind", pairs["kind"], ISSUE_KINDS)
-    if "state" in pairs:
-        validate_choice("state", pairs["state"], ISSUE_STATES)
-    row = next((r for r in rows if r["number"] == pairs["number"]), None)
-    if row is None:
-        row = dict(ISSUE_EMPTY)
-        rows.append(row)
-    row.update(pairs)
-    s.touch("issues")
-    s.commit()
-
-
 def cmd_show(a):
-    q, m, lg, iss = (load(a.dir, n) for n in FILES)
+    q, m, lg = (load(a.dir, n) for n in FILES)
     if a.issue:
         row = find_row(q, norm_issue(a.issue))
         if row is None:
@@ -355,7 +325,6 @@ def cmd_show(a):
     late = late_rows(q)
     print("atrasadas: " + ("; ".join(
         f"{r['issue']} {r['child']} ({minutes_since(r['childAt'])} min)" for r in late) or "nenhuma"))
-    print(f"issues registradas: {len(iss)}")
     print("últimas do log:")
     for e in lg[-5:]:
         print(f"  {e['at']}  {e['text']}")
@@ -372,7 +341,7 @@ def build_parser():
         sp.set_defaults(fn=fn)
         return sp
 
-    sp = add("init", cmd_init, "cria os 4 arquivos vazios")
+    sp = add("init", cmd_init, "cria os 3 arquivos vazios")
     sp.add_argument("--force", action="store_true")
     add("start", cmd_start, "marca o início da execução")
     sp = add("row", cmd_row, "insere ou atualiza uma linha da fila")
@@ -387,8 +356,6 @@ def build_parser():
     sp.add_argument("text")
     sp = add("current", cmd_current, "muda a linha 'atual' do painel")
     sp.add_argument("text")
-    sp = add("issue", cmd_issue, "insere ou atualiza um bug/roadmap")
-    sp.add_argument("pairs", nargs="+")
     sp = add("reserve", cmd_reserve, "guarda o id da conferência de reserva da sessão")
     sp.add_argument("trigger")
     sp = add("session", cmd_session, "registra uma sessão criada para a etapa (sem repetir)")
