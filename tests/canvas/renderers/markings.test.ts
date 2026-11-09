@@ -95,8 +95,9 @@ describe('MarkingRenderer', () => {
     const { renderer, render } = setup();
     render({ visibility: new Map([['M2', 'hidden' as const]]) });
     expect(node(renderer, 'M1').group.visible()).toBe(true);
-    expect(node(renderer, 'M2').group.visible()).toBe(false);
-    expect(node(renderer, 'M3').group.visible()).toBe(false);
+    // Sem nó: o nó só nasce no primeiro quadro em que a marcação é desenhada.
+    expect(renderer.node('M2')).toBeUndefined();
+    expect(renderer.node('M3')).toBeUndefined();
   });
 
   it('esmaecida e contorno de contexto (sem indicadores)', () => {
@@ -331,7 +332,7 @@ describe('MarkingRenderer', () => {
     render();
     render({ project: removeMarking(canvasProject(), 'M2') });
     expect(renderer.node('M2')).toBeUndefined();
-    expect(layer.getChildren()).toHaveLength(2);
+    expect(layer.getChildren()).toHaveLength(1);
   });
 });
 
@@ -483,10 +484,10 @@ describe('nível de detalhe pelo zoom', () => {
     expect(m1.badge.visible()).toBe(true);
   });
 
-  it('abaixo de 2 px nas duas medidas: o grupo fica invisível', () => {
+  it('abaixo de 2 px nas duas medidas: não ganha nó', () => {
     const { renderer, render } = setup();
     render({ ...fullDetail(), viewport: FARTHEST });
-    expect(node(renderer, 'M1').group.visible()).toBe(false);
+    expect(renderer.node('M1')).toBeUndefined();
   });
 
   it('selecionada, ou sob o mouse: completa em qualquer tamanho, mesmo abaixo de 2 px', () => {

@@ -83,7 +83,10 @@ export interface WholeProjectScenario {
  * Monta o cenário e desenha o primeiro quadro já enquadrado (Enquadrar tudo). Quem chama
  * precisa ter `installFakeCanvas()` e o stub de `requestAnimationFrame` (veja `openScenario`).
  */
-export function openWholeProject(size: ScenarioSize): WholeProjectScenario {
+export function openWholeProject(
+  size: ScenarioSize,
+  open: 'fit' | 'close' = 'fit',
+): WholeProjectScenario {
   installFakeCanvas();
   const flush = stubFrames();
 
@@ -108,7 +111,11 @@ export function openWholeProject(size: ScenarioSize): WholeProjectScenario {
   });
   projectIndex(project);
   projectIssues(project);
-  controller.fitAll();
+  if (open === 'fit') controller.fitAll();
+  else {
+    controller.zoomTo(1);
+    controller.centerOnPoint({ x: 0, y: 0 });
+  }
   const firstFrameMs = flush();
   const meter = layerDrawMeter(stageOf(container));
   meter.take();

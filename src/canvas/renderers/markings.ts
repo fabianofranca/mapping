@@ -179,6 +179,8 @@ export class MarkingRenderer {
   /** As marcações que se movem num gesto e onde elas ficam até soltar (decisões 5 e 6). */
   private dragIds: ReadonlySet<string> | null = null;
   private dragTargets: DragTargets | null = null;
+  /** Marcações desenhadas (com nó visível) no último quadro. */
+  shown = 0;
 
   constructor(layer: Konva.Container, floatingParent: Konva.Container = layer) {
     this.layer = layer;
@@ -218,7 +220,7 @@ export class MarkingRenderer {
    */
   readonly headers: HeaderLookup = { get: (id) => this.headerRect(id) };
 
-  /** Nó desenhado para a marcação (ou `undefined` se ela não está no canvas). */
+  /** Nó da marcação (ou `undefined` se ela nunca foi desenhada: nós nascem sob demanda). */
   node(id: string): MarkingNode | undefined {
     return this.nodes.get(id);
   }
@@ -253,22 +255,12 @@ export class MarkingRenderer {
     // A ordem de desenho é por pai: cada pilha (a normal e a das flutuantes) conta a sua.
     let index = 0;
     let floatingIndex = 0;
+    this.shown = 0;
     for (const marking of ordered) {
       const placement = placementOfSpace(placements, marking.containerId);
       if (!placement) continue;
       seen.add(marking.id);
       dragged = this.dragIds?.has(marking.id) ?? false;
-      let node = this.nodes.get(marking.id);
-      if (!node) {
-        node = this.createNode(marking.id);
-        touch(marking.floating);
-      }
-      const parent = this.parentFor(marking.id, marking.floating);
-      if (node.group.getParent() !== parent) {
-        this.touchParent(changes, node.group.getParent());
-        touch(marking.floating);
-        node.group.moveTo(parent);
-      }
       const markingRect = markingCanvasRect(placement, marking.rect);
       // Fora da tela: nem atualiza nem desenha (a camada não recebe toques, então é seguro).
       const visibility = frame.visibility.get(marking.id) ?? 'full';
@@ -293,6 +285,20 @@ export class MarkingRenderer {
         shown &&
         level !== 'hidden' &&
         intersectRects(markingRect, area) !== null;
+      // Nó sob demanda (decisão 8): só nasce no primeiro quadro em que a marcação é desenhada e
+      // fica até ela sair do projeto.
+      let node = this.nodes.get(marking.id);
+      if (!node) {
+        if (!onScreen) continue;
+        node = this.createNode(marking.id, this.parentFor(marking.id, marking.floating));
+        touch(marking.floating);
+      }
+      const parent = this.parentFor(marking.id, marking.floating);
+      if (node.group.getParent() !== parent) {
+        this.touchParent(changes, node.group.getParent());
+        touch(marking.floating);
+        node.group.moveTo(parent);
+      }
       if (node.group.visible() !== onScreen) {
         node.group.visible(onScreen);
         touch(marking.floating);
@@ -307,6 +313,7 @@ export class MarkingRenderer {
         }
       }
       if (!onScreen) continue;
+      this.shown++;
       // Cor da borda escolhida para a imagem (sem escolha, `cv-line`); a marcação do canvas não
       // tem container: usa o token dela e a borda tracejada.
       const canvasMarking = marking.containerId === null;
@@ -433,7 +440,7 @@ export class MarkingRenderer {
     };
   }
 
-  private createNode(id: string): MarkingNode {
+  private createNode(id: string, parent: Konva.Container): MarkingNode {
     const node: MarkingNode = {
       group: new Konva.Group(),
       halo: new KonvaRect(),
@@ -457,7 +464,7 @@ export class MarkingRenderer {
       node.alertClip,
       node.text.group,
     );
-    this.layer.add(node.group);
+    parent.add(node.group);
     this.nodes.set(id, node);
     return node;
   }
