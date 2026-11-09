@@ -199,6 +199,11 @@ export function PerspectiveMenuItems({
     openedByHover.current = false;
     setExpanded(false);
   };
+  // Sair do item (e do submenu, que fica dentro dele) fecha o que o hover abriu; aberto por
+  // clique ou tecla, o submenu fica.
+  const hoverLeave = () => {
+    if (openedByHover.current) hoverClose();
+  };
   const onKeyDown = (e: KeyboardEvent) => {
     const inSub = sub.current?.contains(e.target as Node) ?? false;
     if (e.key === 'ArrowRight' && e.target === parent.current && !locked) {
@@ -206,13 +211,14 @@ export function PerspectiveMenuItems({
       setExpanded(true);
     } else if (e.key === 'ArrowLeft' && inSub) {
       e.preventDefault();
+      openedByHover.current = false;
       setExpanded(false);
     }
   };
 
   return (
     <div class="menu-items menu-items-group" onKeyDown={onKeyDown}>
-      <div class="menu-sub-host" onPointerEnter={hoverOpen}>
+      <div class="menu-sub-host" onPointerEnter={hoverOpen} onPointerLeave={hoverLeave}>
         <Button
           role="menuitem"
           buttonRef={parent}

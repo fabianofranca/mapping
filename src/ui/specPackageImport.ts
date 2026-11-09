@@ -40,12 +40,37 @@ class Collector {
   readonly files = new Map<string, string | Blob>();
   private bytes = 0;
 
+  /** Mais um arquivo de `size` bytes ainda cabe? Serve para recusar antes de ler o conteúdo. */
+  fits(size: number): boolean {
+    return packageWithinLimits(this.files.size + 1, this.bytes + size);
+  }
+
   add(path: string, data: string | Blob, size: number): boolean {
+    if (!this.fits(size)) return false;
     this.bytes += size;
-    if (!packageWithinLimits(this.files.size + 1, this.bytes)) return false;
     this.files.set(path, data);
     return true;
   }
+}
+
+const encoder = new TextEncoder();
+
+/** Tamanho em bytes (UTF-8) de um texto lido de arquivo. */
+function textBytes(text: string): number {
+  return encoder.encode(text).length;
+}
+
+/**
+ * Tamanho descomprimido que o zip declara para a entrada (o diretório central), ou `null` se a
+ * versão do JSZip não o expõe. O JSZip confere o declarado ao descomprimir.
+ */
+function declaredSize(entry: JSZip.JSZipObject): number | null {
+  const data: unknown = Reflect.get(entry, '_data');
+  const size: unknown =
+    typeof data === 'object' && data !== null
+      ? Reflect.get(data, 'uncompressedSize')
+      : undefined;
+  return typeof size === 'number' && Number.isFinite(size) ? size : null;
 }
 
 /** Se todos os arquivos estão numa única pasta-raiz, tira esse prefixo. */
@@ -80,6 +105,8 @@ export async function readPackageFromDirectory(
         continue;
       }
       const file = await entry.getFile();
+      // O tamanho vem do arquivo: recusa antes de ler o conteúdo.
+      if (!collector.fits(file.size)) return false;
       const data = isTextPackageFile(path)
         ? await file.text()
         : new Blob([await file.arrayBuffer()]);
@@ -102,9 +129,14 @@ export async function readPackageFromZip(zipFile: Blob): Promise<PackageReadResu
   for (const name of names) {
     const entry = zip.files[name];
     if (!entry) continue;
+    // Recusa pelo tamanho declarado, antes de descomprimir (bomba de compressão).
+    const declared = declaredSize(entry);
+    if (declared !== null && !collector.fits(declared)) {
+      return { ok: false, reason: 'too-big' };
+    }
     if (isTextPackageFile(name)) {
       const text = await entry.async('string');
-      if (!collector.add(name, text, text.length))
+      if (!collector.add(name, text, textBytes(text)))
         return { ok: false, reason: 'too-big' };
     } else {
       const blob = await entry.async('blob');
