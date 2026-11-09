@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { specHelpSections } from '../../src/i18n/specHelp';
+import { SPEC_FORMAT_VERSION } from '../../src/model/spec';
 
 // A página "Ajuda → Especializações" (pt-BR) e o docs/SPEC-FORMAT.md descrevem o mesmo
 // formato. Para não divergirem, cada seção da ajuda precisa ter no documento uma seção
@@ -68,5 +69,52 @@ describe('ajuda de especializações × docs/SPEC-FORMAT.md', () => {
         }
       }
     }
+  });
+});
+
+describe('ajuda de especializações: versão e estrutura', () => {
+  type Locale = 'pt-BR' | 'en-US';
+  const range: Record<Locale, string> = {
+    'pt-BR': `1 a ${SPEC_FORMAT_VERSION}`,
+    'en-US': `1 to ${SPEC_FORMAT_VERSION}`,
+  };
+
+  /** Texto de todos os blocos de uma seção (parágrafos e itens de listas). */
+  function sectionText(locale: Locale, id: string): string {
+    const section = specHelpSections(locale).find((s) => s.id === id);
+    const parts: string[] = [];
+    for (const block of section?.blocks ?? []) {
+      if (block.kind === 'p') parts.push(block.text);
+      if (block.kind === 'list') parts.push(...block.items);
+    }
+    return parts.join('\n');
+  }
+
+  it.each(['pt-BR', 'en-US'] as const)(
+    '%s: a raiz e as regras citam o intervalo atual',
+    (locale) => {
+      const format = sectionText(locale, 'format');
+      expect(format).toContain(`formatVersion (${range[locale]})`);
+      const rules = sectionText(locale, 'validation');
+      expect(rules).toContain(`formatVersion (${range[locale]})`);
+    },
+  );
+
+  /** Forma da página: seções, tipo dos blocos e tamanho de cada lista. */
+  function shape(locale: Locale): unknown {
+    return specHelpSections(locale).map((s) => ({
+      id: s.id,
+      blocks: s.blocks.map((b) =>
+        b.kind === 'list'
+          ? ['list', b.items.length]
+          : b.kind === 'terms'
+            ? ['terms', b.items.length]
+            : [b.kind],
+      ),
+    }));
+  }
+
+  it('pt-BR e en-US têm a mesma estrutura', () => {
+    expect(shape('en-US')).toEqual(shape('pt-BR'));
   });
 });

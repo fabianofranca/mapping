@@ -1,0 +1,11 @@
+# CR de textos e tema — [Não lançado] (épico `epic/cr-i18n-tema`)
+
+## Pendências
+
+- Tokens (fase 1): `opacity-hidden-layer` (`0.6`, família `opacity`) saiu de `src/theme/tokens.ts`, sem uso no código. No fechamento, tirá-lo do `tokens.json` do artefato.
+- Tokens (fase 1): `size-indicator-min-marking` (`24px`, família `size`) saiu de `src/theme/tokens.ts` e de `src/canvas/theme.ts` (`indicatorMinMarking`), sem uso no desenho depois do canvas sem bolinhas (#799). No fechamento, tirá-lo do `tokens.json` do artefato. O registro `docs/design-system/2026-11-08-componentes-fieis.md` não muda (é histórico).
+- Tokens (fase 1): `color-card` e `cv-halo` agora montam o alfa a partir da mesma constante de `opacity-card` e `opacity-halo`; os valores não mudaram (`rgba(255, 255, 255, 0.92)`, `rgba(28, 32, 39, 0.92)`, `rgba(10, 12, 16, 0.72)`), então o artefato não muda.
+
+## Sincronização
+
+## Ficou sem gravar
