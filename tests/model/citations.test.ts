@@ -248,6 +248,20 @@ describe('resolveCitation', () => {
     expect(exact('p/prop2026')).toEqual({ found: false, reason: 'missing' });
   });
 
+  it('proposta resolve pelo código curto que o MCP emite (8 hex), nunca por prefixo livre', () => {
+    const proposals = [
+      { id: '3f2a9c1e-5b7d-4e21-9a10-0c8d2f6b7a44', title: 'Botões' },
+      { id: 'botoes-2', title: 'Outra' },
+    ];
+    const at = (path: string) => resolveCitation({ ...ctx, proposals }, refOf(path));
+    expect(at('p/3f2a9c1e')).toEqual({
+      found: true,
+      target: { kind: 'proposal', id: '3f2a9c1e-5b7d-4e21-9a10-0c8d2f6b7a44' },
+    });
+    expect(at('p/3f2a')).toEqual({ found: false, reason: 'missing' });
+    expect(at('p/botoes')).toEqual({ found: false, reason: 'missing' });
+  });
+
   it('campo de anotação sem tipo não vem do protótipo', () => {
     const p = ctx.project;
     const untyped: Project = {

@@ -190,6 +190,9 @@ const FENCE_RE = /^\s*(?:`{3,}|~{3,})/;
 const LIVE_OPEN = '\uE000';
 const LIVE_CLOSE = '\uE001';
 const LIVE_RE = /\uE000(\d+)\uE001/g;
+/** Caractere escapado (`\*`) vira um da área privada (`ESCAPED_BASE` + código): a ênfase não o lê. */
+const ESCAPED_BASE = 0xe100;
+const ESCAPED_RE = /[\uE100-\uE1FF]/g;
 
 /**
  * Link → rótulo. O rótulo vivo (de `resolveLabel`) já é texto final: entra como marcador e só
@@ -219,11 +222,12 @@ function plainLine(line: string, resolveLabel?: SubjectLabelResolver): string {
   if (FENCE_RE.test(line)) return '';
   const body = line.trim().replace(LINE_PREFIX_RE, '');
   const live: string[] = [];
-  const plain = stripEmphasis(stripLinks(body, resolveLabel, live)).replace(
+  const protectedText = stripLinks(body, resolveLabel, live).replace(
     UNESCAPE_RE,
-    '$1',
+    (_all, ch: string) => String.fromCharCode(ESCAPED_BASE + ch.charCodeAt(0)),
   );
-  return plain
+  return stripEmphasis(protectedText)
+    .replace(ESCAPED_RE, (ch) => String.fromCharCode(ch.charCodeAt(0) - ESCAPED_BASE))
     .replace(LIVE_RE, (_all, index: string) => live[Number(index)] ?? '')
     .trim();
 }

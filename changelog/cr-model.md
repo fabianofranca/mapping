@@ -39,3 +39,5 @@
 - Mover uma instância da tela uma posição para baixo (`moveSibling` com `delta` positivo) a coloca depois do irmão seguinte, em vez de pular outro.
 - As mensagens do catálogo (componente que não carregou, tipo fora da especialização), do Arrumar, das referências quebradas, em ciclo ou em mais de um nível e dos problemas de componentes e ícones da biblioteca aparecem no idioma da app; com a app em English (US) deixam de sair em português. A saída do MCP não muda.
 - O desenho de um componente reconhece o "não cabe" por um campo do motor, e não mais pelo início do texto do aviso.
+- O chip de uma proposta que o MCP liga à conversa (`mapping://<projeto>/p/<8 hex>`) volta a resolver na app em vez de mostrar "O item citado não existe mais"; o prefixo livre continua recusado (`p/botoes` apagada não cai em `botoes-2`).
+- A coluna **Última mensagem** da janela **Comentários** deixa de mostrar barras (`a\b\c`) no rótulo de uma citação com `*`, `_` ou crase escapados: mostra `a*b*c`.

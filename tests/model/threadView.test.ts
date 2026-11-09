@@ -310,6 +310,12 @@ describe('messagePlainText (coluna Última mensagem)', () => {
     );
   });
 
+  it('rótulo de citação com asteriscos escapados volta sem barras', () => {
+    expect(messagePlainText('Veja [a\\*b\\*c](mapping://x/m/8f9464dd).')).toBe(
+      'Veja a*b*c.',
+    );
+  });
+
   it('corta em 200 caracteres com reticências', () => {
     const out = messagePlainText('a'.repeat(300));
     expect(Array.from(out)).toHaveLength(200);

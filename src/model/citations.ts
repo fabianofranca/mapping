@@ -1,4 +1,4 @@
-import { REF_SCHEME, normalizeId, refImageLabel } from './itemRef';
+import { REF_SCHEME, normalizeId, refImageLabel, shortCodesFor } from './itemRef';
 import {
   parseAnyRef,
   type AnyRef,
@@ -265,6 +265,24 @@ const listById = memoByList<{ readonly id: string }, ReadonlyMap<string, unknown
   },
 );
 
+const proposalByShortCode = memoByList<
+  { readonly id: string },
+  ReadonlyMap<string, string>
+>((list) => {
+  const byCode = new Map<string, string>();
+  for (const [id, code] of shortCodesFor(list.map((x) => x.id))) byCode.set(code, id);
+  return byCode;
+});
+
+function proposalIdsFor(
+  proposals: readonly { readonly id: string }[],
+  code: string,
+): readonly string[] {
+  if (listById(proposals).has(code)) return [code];
+  const id = proposalByShortCode(proposals).get(code);
+  return id === undefined ? [] : [id];
+}
+
 function threadById(ctx: CitationContext, id: string): Thread | undefined {
   return listById(ctx.threads).get(id) as Thread | undefined;
 }
@@ -311,8 +329,9 @@ const ITEM_RESOLVERS: {
   c: (ctx, code) =>
     single(listMatcher(ctx.threads)(code), (id) => ({ kind: 'thread', id })),
   p: (ctx, code) =>
-    // Só o id exato (decisão 11): prefixo faria `p/botoes` apagada cair em `botoes-2`.
-    single(listById(ctx.proposals).has(code) ? [code] : [], (id) => ({
+    // Id exato ou o código curto que o MCP emite (`shortCodesFor`, 8 hex): nunca prefixo livre
+    // (decisão 11), senão `p/botoes` apagada cairia em `botoes-2`.
+    single(proposalIdsFor(ctx.proposals, code), (id) => ({
       kind: 'proposal',
       id,
     })),
