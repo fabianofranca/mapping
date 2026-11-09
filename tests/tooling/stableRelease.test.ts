@@ -169,6 +169,29 @@ describe('CLI', () => {
     );
   });
 
+  it('epic: entrada da release renomeada para fora da lista conta pelo caminho antigo', () => {
+    const dir = repo('docs/outro.md');
+    // `mcp/antigo.ts` entra no commit do tag e sai renomeado: sem `--no-renames` o diff
+    // só mostraria o caminho novo (fora da lista) e a mudança passaria sem subir a versão.
+    mkdirSync(join(dir, 'mcp'), { recursive: true });
+    writeFileSync(join(dir, 'mcp/antigo.ts'), 'export const a = 1;\n');
+    git(dir, 'add', '.');
+    git(dir, 'commit', '-q', '-m', 'tres');
+    git(dir, 'tag', '-f', 'mcp-v0.28.2');
+    git(dir, 'mv', 'mcp/antigo.ts', 'docs/antigo.md');
+    git(dir, 'commit', '-q', '-m', 'quatro');
+    const r = run(dir, 'epic', '--version-file', 'mcp/version.ts');
+    expect(r.status).toBe(1);
+    expect(r.stdout).toContain('mcp/antigo.ts');
+  });
+
+  it('version: imprime a SERVER_VERSION do arquivo, sem sed nos workflows', () => {
+    const dir = repo('docs/outro.md');
+    const r = run(dir, 'version', '--version-file', 'mcp/version.ts');
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).toBe('0.28.2\n');
+  });
+
   it('epic: passa com ::notice:: quando nada da release mudou', () => {
     const dir = repo('docs/outro.md');
     const r = run(dir, 'epic', '--version-file', 'mcp/version.ts');

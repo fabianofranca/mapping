@@ -3,6 +3,8 @@
 // usa a lista para exigir versão nova do MCP. Um teste (`tests/tooling/releaseInputs.test.ts`)
 // roda o esbuild com `metafile` e falha se algo empacotado ficar fora da lista.
 // Só Node, sem dependências. Termina em `/` = pasta inteira; sem `/` no fim = arquivo.
+import { WORKSPACE_SOURCES } from './workspaceAssets.mjs';
+
 export const RELEASE_INPUTS = [
   // Servidor (inclui o build, as fontes TTF e a lista dos wasm).
   'mcp/',
@@ -16,11 +18,8 @@ export const RELEASE_INPUTS = [
   'docs/SPEC-FORMAT.md',
   // Biblioteca de notas embutida.
   'libraries/notas/',
-  // Fontes dos arquivos do workspace (`workspaceAssets.mjs`).
-  'examples/workspace/setup.sh',
-  '.claude/skills/spec-author/SKILL.md',
-  'examples/workspace/AGENTS.md',
-  'examples/workspace/watch-comments.mjs',
+  // Fontes dos arquivos do workspace: a lista é a de `workspaceAssets.mjs`, sem cópia aqui.
+  ...WORKSPACE_SOURCES,
 ];
 
 /** O arquivo (caminho relativo à raiz, com `/`) é entrada da release? */

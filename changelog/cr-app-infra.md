@@ -4,6 +4,7 @@
 
 - Visualizador embutível (`mapping-viewer` 0.4.2): o pacote ficou ~52 kB menor (o Konva entra só com as formas usadas), `HostFonts` passou a ser exportado, o teto de pixel ratio é aplicado na criação do primeiro visualizador (não mais ao importar o módulo), as cores padrão do realce vêm dos tokens e o `dist-viewer/` é limpo antes de cada build (o aviso de licença do Konva fica no fim do bundle). `attachPinchZoom`, `freezeGroup` e `thawGroup`, código sem uso, saíram.
 - `loadLibraryFromUrl` pede cada arquivo uma vez só e no máximo 6 por vez.
+- Fluxo de entrega (workflows): o bloco de preparo do Node e das dependências do `ci.yml` virou a ação local `.github/actions/setup-deps` (o cache do npm deixou de ser restaurado à toa); o código do PR das pre-releases do MCP (snapshot e rc) é compilado num job só com leitura e sem credencial, e outro job, sem checkout, é o único que publica; os arquivos do workspace saem de uma passada só do script por job, e a versão do MCP vem de `stableRelease.mjs version`.
 
 ## Corrigido
 
@@ -15,3 +16,4 @@
 - Ao exportar o zip de um projeto sem nome, o arquivo usa o nome padrão do idioma (`project.zip` em inglês).
 - Ao importar imagens soltas na pasta do projeto, se a cópia para `images/` deu certo mas o original não pôde ser apagado, a imagem entra no projeto e a falha aparece no Diagnóstico (antes ela ficava duplicada e fora do projeto, sem aviso).
 - Visualizador embutível: a tela que some e volta com o mesmo tamanho depois de o contêiner mudar é reenquadrada; o stage e `clientToScreen` descontam o padding e a borda do contêiner; o redimensionamento redesenha uma vez por quadro; com mais imagens remotas distintas na tela do que o cache guarda (64), o visualizador não recarrega mais as imagens em laço (as expulsas voltam ao reservado até a tela pedi-las de novo); e o invólucro React repassa `fonts`, `measure`, `selectionColor` e `hoverColor`.
+- Fluxo de entrega: o Deploy tem `pages: write` e `id-token: write` só no job que publica, e um deploy em andamento não é cancelado por outro (o `build` superado continua sendo); o fechamento de um PR cancela o snapshot do MCP em andamento (nenhuma pre-release `mcp-snapshot-pr<N>` fica órfã); as rc do PR e do `workflow_dispatch` dividem o mesmo grupo de numeração; empurrar uma tag de rc à mão não dispara a estável do MCP; o job `epic` compara o nome do épico sem regex e mostra o erro do `gh api` em vez de culpar a falta do changelog; o `stableRelease.mjs epic` conta uma entrada da release renomeada pelo caminho antigo.

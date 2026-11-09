@@ -14,6 +14,11 @@ name: MCP pre-release
 #   no branch `epic/**`. As rc são apagadas pelo `mcp-release.yml` quando a estável da mesma
 #   versão é publicada.
 # Os testes do PR rodam no `ci.yml`; o snapshot não os repete. A rc os roda, como a estável.
+#
+# O código do PR (`npm ci`, build, testes) roda em jobs `*-build`, só com `contents: read` e sem
+# credencial persistida no checkout; o arquivo gerado passa por artifact a um job `*-publish`,
+# o único com `contents: write`, que não faz checkout nem roda código do PR (etapa #971,
+# decisão 11). O nome das pre-releases e os arquivos publicados não mudam.
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
@@ -21,27 +26,33 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+# Um grupo por PR: o fechamento (`cleanup`) cancela um snapshot em andamento, inclusive entre o
+# `snapshot-build` e o `snapshot-publish`, e nenhuma pre-release `mcp-snapshot-pr<N>` fica órfã.
+# O `workflow_dispatch` (só a rc) tem grupo próprio por execução; a rc serializa à parte.
+concurrency:
+  group: ${{ github.event.pull_request.number && format('mcp-snapshot-pr{0}', github.event.pull_request.number) || format('mcp-dispatch-{0}', github.run_id) }}
+  cancel-in-progress: true
 
 jobs:
-  snapshot:
+  snapshot-build:
     # PRs de fork não recebem token de escrita; só PRs do próprio repositório.
     if: >-
       github.event_name == 'pull_request' &&
       github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    concurrency:
-      group: mcp-snapshot-pr${{ github.event.pull_request.number }}
-      cancel-in-progress: true
+    permissions:
+      contents: read
     env:
       PR: ${{ github.event.pull_request.number }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -50,7 +61,7 @@ jobs:
 
       - name: Calcular a versão do snapshot
         run: |
-          code_version="$(sed -n "s/.*SERVER_VERSION = '\(.*\)';/\1/p" mcp/version.ts)"
+          code_version="$(node scripts/release/stableRelease.mjs version --version-file mcp/version.ts)"
           suffix="-snapshot.pr${PR}+${HEAD_SHA:0:7}"
           echo "SERVER_VERSION=$code_version" >> "$GITHUB_ENV"
           echo "MCP_BUILD_SUFFIX=$suffix" >> "$GITHUB_ENV"
@@ -73,25 +84,51 @@ jobs:
         working-directory: dist-mcp
         run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
 
-      - name: Arquivos do workspace
-        run: node scripts/release/workspaceAssets.mjs dist-mcp
+      # Os arquivos publicados ficam juntos em `release-assets/`: o servidor, o `.sha256` e os do
+      # workspace (o script dos arquivos do workspace roda uma vez).
+      - name: Arquivos da Release
+        run: |
+          mkdir release-assets
+          cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/
+          node scripts/release/workspaceAssets.mjs release-assets > /dev/null
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mcp-snapshot-assets
+          path: release-assets
+          if-no-files-found: error
+
+  snapshot-publish:
+    needs: snapshot-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      PR: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: mcp-snapshot-assets
+          path: release-assets
 
       - name: Publicar no snapshot do PR
         run: |
           tag="mcp-snapshot-pr${PR}"
           title="$tag"
-          assets="$(node scripts/release/workspaceAssets.mjs dist-mcp)"
-          mapfile -t assets <<< "$assets"
+          assets=(release-assets/*)
           notes="Build provisório do PR #${PR}, para testar antes de entrar no épico. Commit ${HEAD_SHA:0:7}. Sobrescrito a cada push e apagado quando o PR fecha. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace, cada um com o \`.sha256\`. Instalação: \`./setup.sh ${tag}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
           if gh release view "$tag" > /dev/null 2>&1; then
             # Já existe: move a tag para o commit novo e troca os arquivos.
             gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" \
               -f sha="$HEAD_SHA" -F force=true
-            gh release upload "$tag" dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" --clobber
+            gh release upload "$tag" "${assets[@]}" --clobber
             gh release edit "$tag" --title "$title" --notes "$notes" --prerelease
           else
             gh release create "$tag" \
-              dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" \
+              "${assets[@]}" \
               --prerelease --target "$HEAD_SHA" \
               --title "$title" --notes "$notes"
           fi
@@ -99,16 +136,19 @@ jobs:
   cleanup:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
     steps:
       - name: Apagar o snapshot do PR
         run: |
           # Sem checkout: `--repo` basta. Não falha se o snapshot não existe.
-          gh release delete "mcp-snapshot-pr${{ github.event.pull_request.number }}" \
+          gh release delete "mcp-snapshot-pr${PR}" \
             --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes || echo "Sem snapshot para apagar."
 
-  rc:
+  rc-build:
     if: >-
       (github.event_name == 'pull_request' &&
       github.event.action == 'closed' &&
@@ -118,18 +158,25 @@ jobs:
       (github.event_name == 'workflow_dispatch' &&
       startsWith(github.ref, 'refs/heads/epic/'))
     runs-on: ubuntu-latest
-    # Por épico e sem cancelar: uma rc na fila não pode perder o seu número.
+    permissions:
+      contents: read
+    # Por épico (o nome do branch, igual no PR e no `workflow_dispatch`, sem `refs/heads/`) e
+    # sem cancelar: uma rc na fila não pode perder o seu número. O `rc-publish` usa o mesmo
+    # grupo.
     concurrency:
-      group: mcp-rc-${{ github.event.pull_request.base.ref || github.ref }}
+      group: mcp-rc-${{ github.event.pull_request.base.ref || github.ref_name }}
       cancel-in-progress: false
+    outputs:
+      rc_tag: ${{ steps.number.outputs.rc_tag }}
+      version: ${{ steps.number.outputs.version }}
     env:
       GH_TOKEN: ${{ github.token }}
       TARGET_SHA: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
-      EPIC: ${{ github.event.pull_request.base.ref || github.ref_name }}
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -142,17 +189,19 @@ jobs:
       - run: PERF_BUDGETS=off npm test
 
       - name: Calcular o número da rc
+        id: number
         run: |
-          version="$(sed -n "s/.*SERVER_VERSION = '\(.*\)';/\1/p" mcp/version.ts)"
-          # Maior rc existente (tags no servidor) + 1.
-          last="$(git ls-remote --tags origin "refs/tags/mcp-v${version}-rc.*" |
-            sed -n "s#.*refs/tags/mcp-v${version}-rc\.\([0-9][0-9]*\)\$#\1#p" |
+          version="$(node scripts/release/stableRelease.mjs version --version-file mcp/version.ts)"
+          # Maior rc existente (tags no servidor) + 1. Pela API: o checkout não guarda credencial.
+          last="$(gh api "repos/${GITHUB_REPOSITORY}/git/matching-refs/tags/mcp-v${version}-rc." --paginate --jq '.[].ref' |
+            sed -n "s#^refs/tags/mcp-v${version}-rc\.\([0-9][0-9]*\)\$#\1#p" |
             sort -n | tail -1)"
           n=$(( ${last:-0} + 1 ))
           echo "SERVER_VERSION=$version" >> "$GITHUB_ENV"
-          echo "RC_TAG=mcp-v${version}-rc.${n}" >> "$GITHUB_ENV"
           echo "MCP_BUILD_SUFFIX=-rc.${n}" >> "$GITHUB_ENV"
           echo "EXPECTED=${version}-rc.${n}" >> "$GITHUB_ENV"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "rc_tag=mcp-v${version}-rc.${n}" >> "$GITHUB_OUTPUT"
 
       - run: npm run build:mcp
 
@@ -171,15 +220,51 @@ jobs:
         working-directory: dist-mcp
         run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
 
-      - name: Arquivos do workspace
-        run: node scripts/release/workspaceAssets.mjs dist-mcp
+      # Os arquivos publicados ficam juntos em `release-assets/` (o script dos arquivos do
+      # workspace roda uma vez).
+      - name: Arquivos da Release
+        run: |
+          mkdir release-assets
+          cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/
+          node scripts/release/workspaceAssets.mjs release-assets > /dev/null
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mcp-rc-assets
+          path: release-assets
+          if-no-files-found: error
+
+  rc-publish:
+    needs: rc-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: mcp-rc-${{ github.event.pull_request.base.ref || github.ref_name }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TARGET_SHA: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+      EPIC: ${{ github.event.pull_request.base.ref || github.ref_name }}
+      RC_TAG: ${{ needs.rc-build.outputs.rc_tag }}
+      SERVER_VERSION: ${{ needs.rc-build.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: mcp-rc-assets
+          path: release-assets
 
       - name: Publicar a release candidate
         run: |
-          assets="$(node scripts/release/workspaceAssets.mjs dist-mcp)"
-          mapfile -t assets <<< "$assets"
+          # Os valores vêm do job que compilou o código do PR: confere o formato antes de usar.
+          if ! printf '%s' "$RC_TAG" | grep -Eq '^mcp-v[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$'; then
+            echo "Tag de rc inválida: $RC_TAG." >&2
+            exit 1
+          fi
+          assets=(release-assets/*)
           gh release create "$RC_TAG" \
-            dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" \
+            "${assets[@]}" \
             --prerelease --target "$TARGET_SHA" \
             --title "$RC_TAG" \
             --notes "Release candidate do épico \`${EPIC}\`, commit ${TARGET_SHA:0:7}. Provisória: apagada quando a estável mcp-v${SERVER_VERSION} for publicada. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace, cada um com o \`.sha256\`. Instalação: \`./setup.sh ${RC_TAG}\` (examples/workspace/) ou baixe \`mapping-mcp.js\` e confira com o \`.sha256\`. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/download/${RC_TAG}/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."
