@@ -24,10 +24,20 @@ function maxExtent(a: Extent, b: Extent): Extent {
   };
 }
 
-/** Quanto o traço sai da caixa: `outside` o traço todo, `center` metade, `inside` nada. */
+/** Quanto a largura do traço passa do contorno: `outside` toda, `center` metade, `inside` nada. */
+function bandOf(stroke: Stroke): number {
+  if (stroke.align === 'outside') return stroke.width;
+  return stroke.align === 'center' ? stroke.width / 2 : 0;
+}
+
+/**
+ * Quanto o traço sai da caixa: o `offset` (o contorno afastado da forma) mais `outside` o traço
+ * todo, `center` metade, `inside` nada.
+ */
 function strokeExtent(stroke: Stroke | undefined): Extent {
-  if (!stroke || stroke.width <= 0 || stroke.align === 'inside') return NONE;
-  const out = stroke.align === 'outside' ? stroke.width : stroke.width / 2;
+  if (!stroke || stroke.width <= 0) return NONE;
+  const out = (stroke.offset ?? 0) + bandOf(stroke);
+  if (out <= 0) return NONE;
   const has = (side: 'top' | 'right' | 'bottom' | 'left'): boolean =>
     !stroke.sides || stroke.sides.includes(side);
   return {

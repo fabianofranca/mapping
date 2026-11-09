@@ -16,7 +16,50 @@ export const LAYOUT_JUSTIFIES: readonly LayoutJustify[] = [
   'center',
   'end',
   'space-between',
+  'space-around',
+  'space-evenly',
 ];
+
+/**
+ * Onde começa o primeiro filho (`offset`) e o vão a mais entre filhos (`extra`) no eixo principal,
+ * dada a folga `free` (≥ 0) e o número de filhos, como o `justify-content` do flexbox. Um filho
+ * só: `space-around` e `space-evenly` o centram, `space-between` o deixa no início.
+ */
+export function justifySpacing(
+  justify: LayoutJustify,
+  free: number,
+  count: number,
+): { offset: number; extra: number } {
+  if (count <= 0) return { offset: 0, extra: 0 };
+  switch (justify) {
+    case 'center':
+      return { offset: free / 2, extra: 0 };
+    case 'end':
+      return { offset: free, extra: 0 };
+    case 'space-between':
+      return { offset: 0, extra: count > 1 ? free / (count - 1) : 0 };
+    case 'space-around':
+      return { offset: free / (2 * count), extra: free / count };
+    case 'space-evenly':
+      return { offset: free / (count + 1), extra: free / (count + 1) };
+    default:
+      return { offset: 0, extra: 0 };
+  }
+}
+
+/**
+ * Espelha a posição de um filho no eixo principal do `reverse` (`row-reverse`/`column-reverse`):
+ * dentro de `[start, start + content]`, o filho de tamanho `size` em `position` passa a ficar à
+ * mesma distância do outro extremo.
+ */
+export function mirrorMain(
+  position: number,
+  size: number,
+  start: number,
+  content: number,
+): number {
+  return 2 * start + content - position - size;
+}
 
 const PERCENT = /^\d+(\.\d+)?%$/;
 const PLAIN_NUMBER = /^\s*\d+(\.\d+)?\s*$/;

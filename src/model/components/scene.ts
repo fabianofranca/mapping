@@ -90,6 +90,12 @@ export interface Stroke {
   /** Figma alinha o traço por dentro, no centro ou por fora; SVG é sempre `center`. */
   readonly align: 'inside' | 'center' | 'outside';
   readonly dash?: readonly number[];
+  /**
+   * Afastamento do traço da forma (px > 0; ausente = 0): o traço é desenhado sobre o contorno da
+   * forma crescida de `offset` de cada lado, com o raio de cada canto + `offset`, e o `align` vale
+   * em relação a esse contorno. Com `sides`, vale só nos lados pedidos.
+   */
+  readonly offset?: number;
   readonly cap?: 'butt' | 'round' | 'square';
   readonly join?: 'miter' | 'round' | 'bevel';
   /** `false`: a largura é em pixels de tela, em qualquer zoom; ausente = escala com o zoom. */

@@ -82,8 +82,11 @@ export type Expr<T> =
     }
   /** Só para texto: concatena as partes (números viram texto). */
   | { readonly $concat: readonly Expr<string | number>[] }
-  /** Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). */
-  | { readonly $token: string };
+  /**
+   * Valor nomeado da especialização, no modo do desenho (v4; ver `tokens.ts`). Em posição de cor,
+   * `alpha` (0 a 1, literal ou `$token` de número) multiplica o alfa da cor.
+   */
+  | { readonly $token: string; readonly alpha?: number | { readonly $token: string } };
 
 // ---------------------------------------------------------------------------------------
 // Estilo
@@ -105,7 +108,18 @@ export interface StrokeSpec {
   readonly color: Expr<Color>;
   readonly width?: Expr<number>;
   readonly align?: 'inside' | 'center' | 'outside';
-  readonly dash?: readonly number[];
+  /**
+   * Tracejado: lista de números ≥ 0. Na v4 aceita expressão (`$switch`/`$if`/`$field` que devolvem
+   * a lista) e `$token` de número em cada item; o valor resolvido inválido dá o aviso
+   * `valor inválido em stroke.dash` e nenhum tracejado.
+   */
+  readonly dash?: Expr<readonly (number | { readonly $token: string })[]>;
+  /**
+   * Afastamento do traço da forma (v4, px ≥ 0, em `frame`, `rect` e `ellipse`): o traço é
+   * desenhado sobre o contorno da forma crescida de `offset` de cada lado (como o `outline-offset`
+   * do CSS) e o `align` vale em relação a esse contorno.
+   */
+  readonly offset?: number | { readonly $token: string };
   /** Ponta do traço (v4); o padrão é `butt`. */
   readonly cap?: Expr<'butt' | 'round' | 'square'>;
   /** Canto do traço (v4); o padrão é `miter`. */
@@ -122,11 +136,15 @@ export interface StrokeSpec {
 export type StrokeSide = 'top' | 'right' | 'bottom' | 'left';
 export const STROKE_SIDES: readonly StrokeSide[] = ['top', 'right', 'bottom', 'left'];
 
+/** Um raio de canto: número ≥ 0 ou, na v4, `$token` de número. */
+type Radius = number | { readonly $token: string };
+
 export interface ShadowSpec {
   readonly color: Expr<Color>;
-  readonly x?: number;
-  readonly y?: number;
-  readonly blur?: number;
+  /** Na v4 cada medida também aceita `$token` de número. */
+  readonly x?: number | { readonly $token: string };
+  readonly y?: number | { readonly $token: string };
+  readonly blur?: number | { readonly $token: string };
 }
 
 export interface FontSpec {
@@ -175,7 +193,8 @@ export interface Anchors {
 /** Tipo de layout de um quadro ou slot. */
 export type LayoutType = 'none' | 'row' | 'column';
 export type LayoutAlign = 'start' | 'center' | 'end' | 'stretch';
-export type LayoutJustify = 'start' | 'center' | 'end' | 'space-between';
+export type LayoutJustify =
+  'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
 
 /**
  * Layout dos filhos. Na `formatVersion` 4, `type`, `align` e `justify` aceitam expressão (o valor
@@ -191,8 +210,13 @@ export interface LayoutSpec {
   >;
   /** No eixo cruzado. */
   readonly align?: Expr<LayoutAlign>;
-  /** No eixo principal. */
+  /** No eixo principal (`space-around` e `space-evenly` só na v4). */
   readonly justify?: Expr<LayoutJustify>;
+  /**
+   * Os filhos em ordem inversa no eixo principal e o `start` passa a ser o fim, como
+   * `row-reverse`/`column-reverse` do CSS (v4; booleano ou expressão; padrão `false`).
+   */
+  readonly reverse?: BoolExpr;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -221,7 +245,8 @@ interface TemplateNodeBase {
   readonly fill?: Expr<FillSpec>;
   readonly stroke?: StrokeSpec;
   readonly shadow?: ShadowSpec;
-  readonly cornerRadius?: Expr<number | readonly [number, number, number, number]>;
+  /** Na v4 cada item da lista também aceita `$token` de número. */
+  readonly cornerRadius?: Expr<number | readonly [Radius, Radius, Radius, Radius]>;
 }
 
 export interface FrameTemplate extends TemplateNodeBase {

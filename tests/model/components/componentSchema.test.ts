@@ -286,4 +286,62 @@ describe('component.schema.json', () => {
         ).toBeGreaterThan(0);
     });
   });
+
+  describe('chaves da etapa "extensões" (formatVersion 4)', () => {
+    const t = (name: string, extra: object = {}) => ({ $token: name, ...extra });
+    const v4 = (child: Record<string, unknown>, layout?: Record<string, unknown>) => ({
+      format: 'mapping-component',
+      formatVersion: 4,
+      id: 'c',
+      name: 'C',
+      size: { width: 100, height: 40 },
+      template: { type: 'frame', ...(layout ? { layout } : {}), children: [child] },
+    });
+
+    it('aceita $token em sombra, raios e tracejado, alpha, offset, justify e reverse (o parser também)', () => {
+      const cases = [
+        v4({
+          type: 'rect',
+          width: 10,
+          height: 10,
+          shadow: { color: '#000', x: t('a'), y: t('b'), blur: t('c') },
+          cornerRadius: [t('r'), 0, 0, t('r')],
+          fill: t('scrim', { alpha: 0.32 }),
+          stroke: {
+            color: t('scrim', { alpha: t('opacity') }),
+            dash: [t('on'), 2],
+            offset: t('focus-offset'),
+          },
+        }),
+        v4({
+          type: 'rect',
+          width: 10,
+          height: 10,
+          stroke: { color: '#000', dash: { $field: 'tracejado' }, offset: 2 },
+        }),
+        v4(
+          { type: 'rect', width: 10, height: 10 },
+          { type: 'row', justify: 'space-evenly', reverse: true },
+        ),
+        v4(
+          { type: 'rect', width: 10, height: 10 },
+          { type: 'column', justify: 'space-around', reverse: { $field: 'rtl' } },
+        ),
+      ];
+      for (const c of cases) {
+        expect(checkSchema(schema, c), JSON.stringify(c)).toEqual([]);
+        expect(parseComponent(c).ok, JSON.stringify(c)).toBe(true);
+      }
+    });
+
+    it('recusa alpha fora de 0..1, offset negativo e justify desconhecido', () => {
+      const bad = [
+        v4({ type: 'rect', width: 1, height: 1, fill: t('x', { alpha: 2 }) }),
+        v4({ type: 'rect', width: 1, height: 1, stroke: { color: '#000', offset: -1 } }),
+        v4({ type: 'rect', width: 1, height: 1 }, { type: 'row', justify: 'spread' }),
+      ];
+      for (const c of bad)
+        expect(checkSchema(schema, c).length, JSON.stringify(c)).toBeGreaterThan(0);
+    });
+  });
 });

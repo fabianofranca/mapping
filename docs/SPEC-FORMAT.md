@@ -951,6 +951,8 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 
 `tokens` (`formatVersion` 15, opcional, na raiz) guarda os **valores de design** da biblioteca com nome: cores, raios, espaçamentos e famílias de fonte. Os componentes de formato 4 leem cada valor com `{ "$token": "nome" }` (ver `docs/COMPONENT-FORMAT.md`), em vez de repetir o literal em cada nó. Trocar o valor num lugar só muda o desenho inteiro.
 
+Na cor, `{ "$token": "scrim", "alpha": 0.32 }` multiplica o alfa da cor do token (a opacidade sem duplicar o token na especialização; `alpha` é número de 0 a 1 ou `$token` de número). O token também vale em `shadow.x`/`y`/`blur`, em cada item de `cornerRadius` e de `stroke.dash` e em `stroke.offset` (ver `docs/COMPONENT-FORMAT.md`).
+
 ```json
 {
   "formatVersion": 15,
