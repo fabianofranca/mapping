@@ -130,3 +130,35 @@ export function temposFromDir(apoioDir: string): Tempos;
 /** A `apoio/` da rodada mais recente em `~/mapping-testes`, ou `null` (usada quando `APOIO` não está exportado). */
 export function defaultApoioDir(home?: string): string | null;
 export function formatTempos(tempos: Tempos): string;
+
+export function containerScreenPoint(args: {
+  mapping: {
+    markings?: {
+      id: string;
+      name: string;
+      containerId: string | null;
+      rect: { x: number; y: number };
+    }[];
+    containers?: {
+      id: string;
+      name: string;
+      placement: { x: number; y: number; scale: number };
+    }[];
+    perspectives?: { name: string; items: { root: string; x: number; y: number }[] }[];
+  };
+  container: string;
+  x: number;
+  y: number;
+  viewport: string;
+  host: { x: number; y: number };
+  perspective?: string;
+  marking?: boolean;
+}): { x: number; y: number };
+export function ponto(
+  page: unknown,
+  projectDir: string,
+  container: string,
+  x: number,
+  y: number,
+  options?: { perspective?: string; marking?: boolean },
+): Promise<{ x: number; y: number }>;

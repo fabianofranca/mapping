@@ -38,6 +38,7 @@ const EXPECTED_EXPORTS = [
   'clickNoWait',
   'connect',
   'connectGuide',
+  'containerScreenPoint',
   'defaultApoioDir',
   'diffJson',
   'formatState',
@@ -49,6 +50,7 @@ const EXPECTED_EXPORTS = [
   'parseEnvFile',
   'pickAppPage',
   'pickAutocompletePopup',
+  'ponto',
   'openButtonPoints',
   'saveFile',
   'screenshot',
@@ -100,6 +102,101 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       expect(line, line).toContain('setsid');
       expect(line, line).toContain('</dev/null');
     }
+  });
+
+  describe('containerScreenPoint (auxiliar ponto, etapa #841 RB2)', () => {
+    const mapping = {
+      containers: [
+        { id: 'c1', name: 'Cadastro', placement: { x: 100, y: 50, scale: 2 } },
+        { id: 'c2', name: 'Outro', placement: { x: 0, y: 0, scale: 1 } },
+      ],
+      markings: [
+        { id: 'm1', name: 'Botão', containerId: 'c1', rect: { x: 10, y: 20 } },
+        { id: 'm2', name: 'Solta', containerId: null, rect: { x: 5, y: 6 } },
+      ],
+      perspectives: [{ name: 'Dev mobile', items: [{ root: 'c1', x: 400, y: 300 }] }],
+    };
+    const host = { x: 10, y: 20 };
+
+    it('converte o ponto do container em ponto de tela e acompanha o zoom', async () => {
+      const mod = await import('../../scripts/testing/cloud.mjs');
+      // canvas = (100 + 5*2, 50 + 7*2) = (110, 64)
+      expect(
+        mod.containerScreenPoint({
+          mapping,
+          container: 'cadastro',
+          x: 5,
+          y: 7,
+          viewport: '30 40 1',
+          host,
+        }),
+      ).toEqual({ x: 10 + 110 + 30, y: 20 + 64 + 40 });
+      expect(
+        mod.containerScreenPoint({
+          mapping,
+          container: 'c1',
+          x: 5,
+          y: 7,
+          viewport: '-20 8.5 2.5',
+          host,
+        }),
+      ).toEqual({ x: 10 + 110 * 2.5 - 20, y: 20 + 64 * 2.5 + 8.5 });
+    });
+
+    it('com marcacao, soma o canto da marcação e a colocação do container dela', async () => {
+      const mod = await import('../../scripts/testing/cloud.mjs');
+      // canvas = (100 + (10+3)*2, 50 + (20+4)*2) = (126, 98)
+      expect(
+        mod.containerScreenPoint({
+          mapping,
+          container: 'Botão',
+          x: 3,
+          y: 4,
+          viewport: '0 0 2',
+          host,
+          marking: true,
+        }),
+      ).toEqual({ x: 10 + 252, y: 20 + 196 });
+      expect(
+        mod.containerScreenPoint({
+          mapping,
+          container: 'm2',
+          x: 1,
+          y: 1,
+          viewport: '0 0 1',
+          host: { x: 0, y: 0 },
+          marking: true,
+        }),
+      ).toEqual({ x: 6, y: 7 });
+    });
+
+    it('usa a posição da perspectiva e recusa container inexistente ou vista inválida', async () => {
+      const mod = await import('../../scripts/testing/cloud.mjs');
+      expect(
+        mod.containerScreenPoint({
+          mapping,
+          container: 'Cadastro',
+          x: 0,
+          y: 0,
+          viewport: '0 0 1',
+          host: { x: 0, y: 0 },
+          perspective: 'dev mobile',
+        }),
+      ).toEqual({ x: 400, y: 300 });
+      const bad = (over: object) => () =>
+        mod.containerScreenPoint({
+          mapping,
+          container: 'Cadastro',
+          x: 0,
+          y: 0,
+          viewport: '0 0 1',
+          host,
+          ...over,
+        });
+      expect(bad({ container: 'Nada' })).toThrow('container não encontrado');
+      expect(bad({ viewport: 'a b c' })).toThrow('data-viewport inválido');
+      expect(bad({ perspective: 'Nenhuma' })).toThrow('perspectiva não encontrada');
+    });
   });
 
   describe('mark (parte pura de cloud.mjs)', () => {
