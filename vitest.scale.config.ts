@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 import { fontBytes, wasmBytes } from './tests/support/mcpVitePlugins';
 
 /**
- * Testes de escala (#881): provam que o projeto grande cresce linear (n e 4n marcações, razão < 5×).
+ * Testes de escala (#881): provam que o projeto grande cresce linear (n e 4n marcações, razão < 6×, n e 4n intercalados; o mesmo auxiliar e o mesmo teto valem para os casos de crescimento do `npm run test:perf`).
  * Ficam fora do `npm test` e do `npm run test:coverage` (o `vite.config.ts` não os enxerga: os arquivos
  * são `tests/scale/*.scale.ts`, sem o sufixo `.test`) e não entram nos shards do CI nem em
  * `tests/support/durations.json`. `npm run test:scale` os roda, um arquivo por vez e sem cobertura
