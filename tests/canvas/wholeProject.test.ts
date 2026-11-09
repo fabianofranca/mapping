@@ -122,3 +122,66 @@ describe.each<ScenarioSize>(SIZES)('projeto inteiro à vista, %i marcações', (
     s.destroy();
   }, 120_000);
 });
+
+// Nível de detalhe (DA3, decisão 4): com o projeto inteiro à vista, a camada das marcações tem no
+// máximo uma forma visível por marcação e nenhuma nas menores que 2 px.
+describe('nível de detalhe com o projeto inteiro à vista (2.000 marcações)', () => {
+  it('no máximo uma forma visível por marcação; as menores que 2 px não têm nenhuma', () => {
+    const s = openWholeProject(2000);
+    const stage = stageOf(s.container);
+    const layer = stage.findOne<Konva.Layer>('.markings');
+    if (!layer) throw new Error('camada das marcações');
+    const scale = stage.scaleX();
+    // A camada tem o grupo das marcações (um grupo por marcação) e o das setas.
+    const stack = (layer.getChildren() as Konva.Group[]).find(
+      (g) => g.getChildren().length === s.project.markings.length,
+    );
+    if (!stack) throw new Error('grupo das marcações');
+    const groups = stack.getChildren() as Konva.Group[];
+    expect(groups.length).toBe(s.project.markings.length);
+    let hidden = 0;
+    for (const group of groups) {
+      if (!group.isVisible()) {
+        hidden++;
+        continue;
+      }
+      expect(visibleShapes(group)).toBeLessThanOrEqual(1);
+      expect(biggestSide(group) * scale).toBeGreaterThanOrEqual(2);
+    }
+    expect(hidden).toBe(0);
+    // Afastando até o mínimo do zoom, as marcações pequenas (e as que ficam menores que 2 px) somem.
+    s.controller.zoomBy(0.0001);
+    s.flush();
+    const far = stage.scaleX();
+    let still = 0;
+    for (const group of groups) {
+      if (!group.isVisible()) continue;
+      still++;
+      expect(biggestSide(group) * far).toBeGreaterThanOrEqual(2);
+    }
+    expect(still).toBeGreaterThan(0);
+    expect(still).toBeLessThan(groups.length);
+    expect(visibleShapes(stack)).toBeLessThanOrEqual(groups.length - hidden);
+    s.destroy();
+  }, 120_000);
+});
+
+function visibleShapes(node: Konva.Node): number {
+  if (!node.isVisible()) return 0;
+  if (node instanceof Konva.Shape) return 1;
+  if (node instanceof Konva.Container) {
+    return node.getChildren().reduce((sum, child) => sum + visibleShapes(child), 0);
+  }
+  return 0;
+}
+
+/** Maior lado (px do canvas) dos retângulos visíveis do grupo da marcação (borda, halo, ...). */
+function biggestSide(group: Konva.Group): number {
+  return Math.max(
+    0,
+    ...group
+      .getChildren()
+      .filter((c) => c.isVisible() && c instanceof Konva.Rect)
+      .map((c) => Math.max(c.width(), c.height())),
+  );
+}

@@ -100,6 +100,8 @@ export const TOKENS: CanvasTokens = {
   },
   handleSize: 10,
   indicatorMinMarking: 24,
+  lodMinMarking: 24,
+  lodHideMarking: 2,
   arrow: {
     stroke: '#0f766f',
     select: '#0057bb',

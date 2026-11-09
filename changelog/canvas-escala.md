@@ -3,3 +3,4 @@
 ## Alterado
 
 - Com o projeto grande à vista, arrastar, editar e navegar no canvas ficam mais rápidos (em construção: as fases seguintes do épico preenchem esta lista).
+- De longe, a marcação pequena aparece só com a borda (sem halo, linha dupla, selo "a revisar" nem ⚠) e a quase invisível, menor que 2 px, não aparece; a selecionada, a que está sob o mouse e a com marca da revisão aparecem sempre completas. Aproximado, nada muda.

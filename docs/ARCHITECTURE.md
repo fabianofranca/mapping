@@ -380,14 +380,23 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   atributo mudou; a marcação explícita cobre o que ele não enxerga. Efeito: editar o nome de uma marcação redesenha `markings` e
   `overlay` (não `images` nem `components`), mudar a seleção redesenha só essas duas, e um quadro sem mudança não redesenha
   nenhuma (`tests/canvas/dirtyLayers.test.ts`).
+- **Nível de detalhe pelo zoom** (`canvas/renderers/levelOfDetail.ts`, usado por `MarkingRenderer.render`): pelo tamanho da
+  marcação na tela, `full`, `border` ou `hidden`. Abaixo de 24 px na largura **ou** na altura (token `size-lod-min-marking`)
+  desenha só a borda (sem halo, linha dupla, selo "a revisar" nem ⚠); abaixo de 2 px nas **duas** medidas
+  (`size-lod-hide-marking`) o grupo fica invisível, como o de fora da tela. A selecionada (inclusive na seleção múltipla,
+  `frame.items`), a sob o mouse e a com marca da revisão ficam completas em qualquer tamanho; o nível entra nas entradas do nó
+  (`inputs`), então cruzar um limite refaz o nó. O Konva percorre todo filho de um grupo, visível ou não, então o nó só pendura
+  no grupo as partes visíveis (`syncParts`): de longe um grupo tem só a borda, e o `drawScene` da camada das marcações do cenário
+  de 2.000 caiu de ~21 para ~9 ms (18 mil para 4 mil nós). Aproximado (≥ 24 px) nada muda. O `size-indicator-min-marking`
+  continua como estava.
 - **Orçamentos** (medidos em testes, ligados por `npm run test:perf` e desligados com `--coverage` porque o código instrumentado
   é mais lento): índice, pendências, indicadores e visibilidade de um projeto grande (500 marcações, 1.500 anotações, metade
   tipadas, e 500 referências) em menos de 8 ms (`tests/model/performance.test.ts`, mediana de várias rodadas, cada uma numa versão
   nova do projeto); uma renderização do canvas com o projeto já indexado em menos de 16 ms (`tests/canvas/renderPerformance.test.ts`,
   Konva em jsdom com contexto 2D falso). Cada teste repete uma vez para separar ruído do runner de regressão real.
-  Com o projeto inteiro à vista (cenário de 2.000 marcações e 1.000 setas, `tests/canvas/wholeProjectScenario.ts`), o quadro de
-  edição tem a meta de 16 ms; hoje o teto é 50 ms (guarda contra regressão), porque o quadro é quase todo o `drawScene` da camada
-  das marcações (22 mil formas): a meta final depende do nível de detalhe da DA3, que troca o teto por 16 ms.
+  Com o projeto inteiro à vista (cenário de 2.000 marcações e 1.000 setas, `tests/canvas/wholeProjectScenario.ts`), pan e zoom
+  têm a meta de 33 ms e o quadro de edição, a de 16 ms. Depois do nível de detalhe o quadro de edição mede ~16 a 24 ms em jsdom
+  (antes ~22 a 28 ms): o teto do teste é 35 ms (guarda contra regressão) até a DA5 (nós sob demanda); a #888 registra o número.
   O teste do canvas com 200 setas mede como os irmãos: 3 rodadas de aquecimento descartadas e a mediana de 15, uma por métrica
   (pan, zoom, edição), com a métrica no `expect`. No `npm test` os 3 arquivos de orçamento (`tests/model/performance.test.ts`,
   `tests/canvas/renderPerformance.test.ts`, `tests/store/reviewPerf.test.ts`) rodam em projetos próprios do Vitest (`perf-model`
