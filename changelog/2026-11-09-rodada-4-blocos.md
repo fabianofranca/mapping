@@ -1,4 +1,4 @@
-# Rodada completa em 5 blocos — [Não lançado] (épico `epic/rodada-4-blocos`, PR #1145, MCP 0.28.6, schema v18)
+# Rodada completa em 5 blocos — 2026-11-09 (épico `epic/rodada-4-blocos`, PR #1145, MCP 0.28.6, schema v18)
 
 ## Adicionado
 
@@ -7,6 +7,7 @@
 ## Alterado
 
 - A rodada completa do testador roda em 5 blocos (antes, 3), com limite de 200 mil caracteres no guia gerado de cada bloco, conferido por teste; a passada visual fica no bloco 4.
+- Testador da nuvem: o auxiliar `ponto` do `cloud.mjs` converte um ponto em pixels de um container em ponto de tela (lendo o `data-viewport` do canvas), e os passos de gesto do R12, R22 e R23 passam a usá-lo em vez de calibrar por captura.
 
 ## Corrigido
 
