@@ -236,49 +236,196 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 - Como criar marcações e anotações, como adicionar imagem e a notação "**Marcação** › **Tipo** · campo = valor" estão na seção 5; "desenhe" é sempre no modo **Desenhar**.
 - _Itálico no fim do Esperado_ marca uma **regressão conhecida**: algo que já quebrou numa rodada anterior e é conferido de novo, não o objetivo do passo.
 - **[pessoa]** marca os passos que o agente da nuvem não faz sozinho (apêndice A); quem testa à mão pode ignorar a marca. O "ou `ação`" nomeia a receita que substitui a pessoa nos diálogos nativos (`select_folder`, `save_file`, `open_file`, `accept_permission_prompt`, `cancel_dialog`; cada nome é uma receita do apêndice A, "Diálogos nativos na nuvem (Xvfb)") e o cliente MCP por stdio nos pedidos ao Claude Code. Nos roteiros principais nenhum passo fica sem substituto (um teste confere).
+- **Quem altera o guia: trechos marcados.** O `round-guide.mjs` gera o guia só com os roteiros pedidos (também por faixa de passos, `R6.3-R6.7`). Um trecho desta introdução ou do apêndice A que só certos roteiros usam fica entre `<!-- roteiros: R12 R22 -->` e `<!-- /roteiros -->`, em linhas próprias; só entra no guia se um deles for pedido. Sem marca, vai em todos (na dúvida, não marque).
 - **Regra para quem altera os roteiros (agentes e pessoas).** Os roteiros principais (R0 a R25) são feitos para o agente da nuvem executar **sozinho**: todo passo novo ou alterado precisa ter um jeito de o agente da nuvem fazê-lo (receita da nuvem do apêndice A, Playwright por CDP, shell ou cliente MCP por stdio) e dizê-lo na Ação.
 - **Teste que precisa do dono.** Se um teste precisa de interação do dono (nenhuma receita da nuvem o faz) e **não é muito relevante**, ele vai para os **roteiros sob demanda (manuais)** (fim desta seção), que o dono faz à mão.
 - **Teste que precisa do dono e é muito relevante.** Se precisa de interação do dono e **é muito relevante** (risco de perda de dados, integridade do `mapping.json`, segurança), o agente **não decide sozinho**: avisa o dono, na conversa e na descrição do PR, para decidirem juntos; enquanto não decidirem, o passo fica onde está, marcado como **pendente de decisão**.
 
 **Dependências.** Os roteiros dependem uns dos outros assim:
 
+<!-- roteiros: R0 -->
+
 - R0 não depende de nada (o app instalado, antes R0.6, é o roteiro RP); R0.4a, R0.4b e R0.7 usam a pasta `fumaca-web` do R0.2 e R0.3.
+
+<!-- /roteiros -->
+<!-- roteiros: R0 R1 R2 -->
+
 - R1 usa só o `cadastro.png` do preparo do R0, não os passos dele (pasta nova `principal`). R2 é independente.
+
+<!-- /roteiros -->
+<!-- roteiros: R3 -->
+
 - R3.8, R3.8b, R3.8c, R3.8d, R3.8e e R3.9 usam pastas próprias (`migracao`, `migracao10`, `migracao11`, `migracao12`, `migracao13` e `antiga`), montadas como o texto antes da tabela do R3 diz; não dependem do `principal`.
+
+<!-- /roteiros -->
+<!-- roteiros: R3 -->
+
 - R3.10 a R3.17 usam o projeto próprio `biblioteca` (pasta nova com o `cadastro.png`) e o pacote `libraries/material3-compose/` (R3.14 a R3.17, em ordem, também as cópias `mat-v3` a `mat-v6` do preparo do R3.14); não dependem do `principal` nem do MCP.
+
+<!-- /roteiros -->
+<!-- roteiros: R1 R3 -->
+
 - R3 exige a seção 6 pronta (o repositório de teste; o MCP só no R3.6) e usa o projeto `principal` do R1 inteiro (com as duas especializações), movido para dentro desse repositório.
+
+<!-- /roteiros -->
+<!-- roteiros: R4 R6 R8 -->
+
 - R4.1 a R4.10 usam o projeto **Loja** neste dispositivo, aberto do zip no R4.1; R4.11 cria a pasta `loja`; R4.12 e R4.13 usam outra pasta, `loja-apagar`, só deles (apagam a proposta ali, então não mexem no R6 nem no R8).
+
+<!-- /roteiros -->
+<!-- roteiros: R3 R4 R6 -->
+
 - R6.3 a R6.7 usam o `principal` (depois do R3); R6.8a a R6.11 usam a pasta `loja` do R4.11, nessa ordem.
+
+<!-- /roteiros -->
+<!-- roteiros: R7 -->
+
 - R7.1 usa qualquer projeto em pasta; R7.2 copia o `principal`.
+
+<!-- /roteiros -->
+<!-- roteiros: R3 R5 -->
+
 - R5 usa o repositório de teste e o MCP do R3 e cria o projeto `importacao` (R5.2); R5.3 a R5.7 (com o R5.4c a R5.4e, a revisão pelo agente na mesma proposta) seguem em sequência sobre ele.
+
+<!-- /roteiros -->
+<!-- roteiros: R1 R4 R8 -->
+
 - R8 repete passos do R1 (no `principal`) e abre uma cópia nova da Loja pelo `proposta-exemplo.zip` (R8.1b), sem depender do R4.
+
+<!-- /roteiros -->
+
 - RP (roteiros sob demanda) não depende de nenhum outro roteiro e nenhum depende dele: usa a pasta própria `fumaca-pwa` e só roda numa sessão sob demanda.
+
+<!-- roteiros: R12 -->
+
 - R12 usa a pasta própria `espaco` (sem imagem até o R12.14, sem MCP até o R12.15, projeto em pasta porque lê o disco) e não depende de nenhum outro roteiro; o R12.8 a R12.11 seguem o estado do R12.1 a R12.7, o R12.12 aplica o pacote `libraries/material3-compose/`, o R12.13 a R12.16 seguem em sequência (a biblioteca de notas, aplicada por padrão no projeto novo) e só o R12.15 usa o MCP (`create_project`, seção 6) e duas pastas próprias, `espaco-v12` e `espaco-v13`.
+
+<!-- /roteiros -->
+<!-- roteiros: R12 -->
+
 - R12.17 a R12.22 usam outra pasta própria, `setas` (R12.17 a R12.19 em sequência, depois o R12.20, o R12.20a, o R12.20b, o R12.20c e o R12.20d com o MCP e a pasta movida para `design/mapeamentos/setas`, o R12.21 e o R12.22); sem o MCP, marque o R12.20, o R12.20a, o R12.20b, o R12.20c e o R12.20d "não executado (sem MCP)" e siga, ajustando as contagens do R12.22.
+
+<!-- /roteiros -->
+<!-- roteiros: R12 -->
+
 - R12.23 a R12.27 usam a pasta `setas` do R12.17 a R12.22 (R12.23 a R12.26, em sequência, com o MCP) e duas pastas novas criadas pelo MCP, `mcp-notas` e `mcp-sem-notas` (R12.27); sem o MCP, marque todos "não executado (sem MCP)".
+
+<!-- /roteiros -->
+<!-- roteiros: R13 -->
+
 - R13 usa só o `proposta-componentes.zip` (projeto **Telas** neste dispositivo, R13.1 a R13.10, em sequência) e, no R13.11, uma pasta própria `componentes`, descompactada do mesmo zip; não depende de nenhum outro roteiro nem do MCP. O R13.12 repete a revisão em inglês e vale depois do R13.1.
+
+<!-- /roteiros -->
+<!-- roteiros: R14 -->
+
 - R14 usa só o `sugestoes-kotlin.zip` (projeto **Sugestões Kotlin** neste dispositivo, R14.1 a R14.19, em sequência, sempre na célula **Tipo** da linha `ativo` de **Usuario**, que volta a ficar vazia, junto com o **Tipo mapeado**, a cada passo); não depende de nenhum outro roteiro nem do MCP.
+
+<!-- /roteiros -->
+<!-- roteiros: R15 -->
+
 - R15 usa a pasta própria `remotas` (projeto em pasta, pacote `libraries/material3-compose/`, tipo `image`), a imagem de teste do Pages e um servidor local (`scripts/servidor-imagens.mjs`) que sobe no computador do Chrome no R15.1; R15.2 a R15.12 seguem em sequência, não dependem de nenhum outro roteiro nem do MCP.
+
+<!-- /roteiros -->
+<!-- roteiros: R16 -->
+
 - R16 usa a pasta própria `variantes` (criada pelo MCP no R16.3), a especialização `mini-compose.json` que a shell escreve no R16.1, o MCP por stdio e, nos passos R16.4, R16.9 e R16.10, a app; R16.1 a R16.10 seguem em sequência, não dependem de nenhum outro roteiro. Sem o MCP, marque todos "não executado (sem MCP)".
+
+<!-- /roteiros -->
+<!-- roteiros: R17 -->
+
 - R17 usa a pasta própria `tela-m3` (criada pelo MCP no R17.2), o `material3-compose.zip` (conferido e descompactado em `RAIZ/m3` no R17.1, aplicado na app no R17.3), o MCP por stdio e, nos passos R17.3, R17.5 e R17.9, a app; R17.1 a R17.9 seguem em sequência, não dependem de nenhum outro roteiro. Sem o MCP, marque todos "não executado (sem MCP)".
+
+<!-- /roteiros -->
+<!-- roteiros: R18 -->
+
 - R18 usa a pasta própria `avisos` (criada pelo MCP no R18.3), a pasta `avisos-pacote` do R18.7, a especialização `avisos.json` que a shell escreve no R18.1, o MCP por stdio e, nos passos R18.4 a R18.10 e R18.12, a app; R18.1 a R18.12 seguem em sequência, não dependem de nenhum outro roteiro. Sem o MCP, marque todos "não executado (sem MCP)".
+
+<!-- /roteiros -->
+<!-- roteiros: R19 -->
+
 - R19 usa as pastas próprias `papeis`, `juntar` e `encadeia` (e as especializações `formatVersion` 11, 12 e 13 que o roteiro escreve), a shell, o MCP por stdio e a app; os passos seguem em sequência. Na rodada dirigida, o R19.19 precisa antes do R19.1, R19.5, R19.6 e R19.13; o R19.20 a R19.21a, do R19.1 ao R19.19 (Home e Ajuda em `click`, Tap e Perfil em `hold`), em ordem (R19.20, R19.20b, R19.20a, R19.20c, R19.21, R19.21a); o R19.22 a R19.29, só do R19.1, em ordem. Sem o MCP, marque os passos de MCP "não executado (sem MCP)".
+
+<!-- /roteiros -->
+<!-- roteiros: R20 -->
+
 - R20 usa a pasta própria `docext` (a especialização com `docRepos` e o clone com `git init` e `.md` que o roteiro escreve), a shell, o MCP por stdio e a app; não depende de nenhum outro roteiro. Sem o MCP, marque os passos de MCP "não executado (sem MCP)".
+
+<!-- /roteiros -->
+<!-- roteiros: R21 -->
+
 - R21 usa a pasta própria `release-ws` (`W21`) e a **release real** no GitHub, a da tag da mensagem (numa completa na `main`, a última estável), só com shell e o MCP por stdio, sem a app. R21.1 a R21.5 e R21.8 seguem em sequência sobre a `ws-novo` e a `ws-antigo`; R21.3, R21.6 e R21.7 copiam delas. R21.9 a R21.11 copiam a `ws-novo` e rodam o `setup.sh` do commit contra um servidor local (`mock-github-release.mjs`), sem depender de o GitHub falhar. Sem rede para a release, marque todos "não executado (sem rede para a release)".
+
+<!-- /roteiros -->
+<!-- roteiros: R22 -->
+
 - R22 usa a pasta própria `conversas` (o `examples/exemplo-completo.zip` descompactado em `design/mapeamentos/`, que o MCP lê), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. Sem identidade (perfil novo) no R22.2; o R22.3 a preenche. Sem o MCP, marque os passos de MCP "não executado (sem MCP)".
+
+<!-- /roteiros -->
+<!-- roteiros: R23 -->
+
 - R23 usa a pasta própria `perspectivas` (um `mapping.json` schema 15 que a shell escreve em `design/mapeamentos/` do repositório de teste, que o MCP lê), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. O R23.12 e o R23.13 são a passada visual própria das perspectivas. Sem o MCP, marque o R23.21 e o R23.24 "não executado (sem MCP)".
+
+<!-- /roteiros -->
+<!-- roteiros: R24 -->
+
 - R24 usa a pasta própria `fora` (criada pelo `create_project` do R24.3, com a especialização `fora-demo.json` que a shell grava em `design/mapeamentos/`), a shell, o cliente MCP por stdio e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. O R24.14 e o R24.15 são a passada visual própria do roteiro. Sem o MCP, marque o R24.1 a R24.3, o R24.10 e o R24.11 "não executado (sem MCP)" e pule o resto (o projeto `fora` nasce do R24.3).
+
+<!-- /roteiros -->
+<!-- roteiros: R25 -->
+
 - R25 usa a pasta própria `fiel` (projeto em pasta, criado pela app no R25.3) e as bibliotecas `m3-fiel` e `m3-fiel-v3` que a shell monta no R25.1 e no R25.2 a partir de `libraries/material3-compose/` (o `scripts/testing/fiel.mjs` do repositório), a shell com o ImageMagick, o cliente MCP por stdio (só no R25.1, no R25.2, no R25.22 e no R25.23) e a app; os passos seguem em sequência e não dependem de nenhum outro roteiro. Sem o MCP, marque o R25.1 e o R25.2 "não executado (sem MCP)" e monte a `m3-fiel` pela shell (o `node REPO/scripts/testing/fiel.mjs RAIZ/m3-fiel 4`) para seguir do R25.3.
+
+<!-- /roteiros -->
+<!-- roteiros: R25 -->
+
 - O R25.37 ao R25.42 (CF7) usam o pacote de teste `tests/fixtures/icons/` do repositório (copiado para `RAIZ/icones`, `RAIZ/icones-erro`, `RAIZ/icones-sem`, `RAIZ/icones-v14` e `RAIZ/icones-nuvem`, sem script de preparo) e a pasta própria `fiel-ic`; os passos do MCP (o R25.37 ao R25.39) seguem a regra do R25.22 (sem o MCP, marque "não executado (sem MCP)"); o R25.40 em diante não precisa do MCP.
+
+<!-- /roteiros -->
+<!-- roteiros: R25 -->
+
 - O R25.43 ao R25.48 (CF8) usam as pastas `m3-tela` (cópia de `libraries/material3-compose/` com o `divider` em formato 4 e `screen`), `m3-tela-v3`, `m3-tela-st`, `m3-tela-st9` e `m3-pino`, que a shell monta nos próprios passos, o cliente MCP por stdio (R25.43 a R25.45), o projeto `fiel-min` (criado pelo MCP) e o projeto `fiel-pino` (criado pela app no R25.46, com recorte PNG pelo Playwright por CDP); os passos seguem em sequência a partir do R25.43 e não dependem do `fiel` nem do `m3-fiel`.
+
+<!-- /roteiros -->
+<!-- roteiros: R25 -->
+
 - O R25.49 ao R25.53 (CF9) usam a pasta `m3-img` (a `m3-tokens` do R25.22 com o `card` trocado por um botão de formato 4, que a shell monta no R25.49), o projeto `fiel-img` (criado pela app no R25.50), o cliente MCP por stdio (R25.49, R25.51 a R25.53; sem o MCP, marque "não executado (sem MCP)") e o ImageMagick (`sonda` do apêndice A); os passos seguem em sequência e não dependem do `fiel`.
+
+<!-- /roteiros -->
+<!-- roteiros: R25 -->
+
 - O R25.54 ao R25.57 (CF10) continuam no projeto `fiel-img` do R25.50 (container `Telas` e o Card de 160 × 48), usam o cliente MCP por stdio (`plan_changes` e `propose_changes`; sem o MCP, marque "não executado (sem MCP)") e a shell para gravar o `lote.json` e o `quebrado.json` dentro das raízes (`RAIZ`) e o `lote-fora.json` fora delas; os passos seguem em sequência a partir do R25.54.
+
+<!-- /roteiros -->
+<!-- roteiros: R25 -->
+
 - O R25.58 ao R25.66 (CF11) usam a biblioteca `RAIZ/medido` (cópia de `REPO/examples/libraries/medido/`), a página `RAIZ/pagina.html` que a shell grava no R25.59 e o `RAIZ/medido-plana.json` do R25.60, o Playwright por CDP (R25.59), o cliente MCP por stdio (`create_project`, `propose_changes`, `plan_changes`, `validate_library`; sem o MCP, marque o R25.58 e o R25.61 a R25.66 "não executado (sem MCP)" e faça só o R25.59 e o R25.60), o projeto `medido-tela` (criado pelo MCP no R25.61 e aplicado pela app no R25.62) e o ImageMagick (`sonda`); os passos seguem em sequência e não dependem do `fiel`.
+
+<!-- /roteiros -->
+<!-- roteiros: R25 -->
+
 - O R25.28 ao R25.36 (CF6) continuam na pasta `fiel-tk` do R25.24 (e criam o container `Escuro` no R25.32), sem biblioteca nova; os passos do MCP deste grupo seguem a mesma regra do R25.22 (o R25.35 e o R25.36; sem o MCP, marque "não executado (sem MCP)").
+
+<!-- /roteiros -->
+<!-- roteiros: R25 -->
+
 - O R25.22 ao R25.27 (CF5) usam a pasta própria `fiel-tk` e as bibliotecas `m3-tokens`, `m3-tokens-erro` e `m3-tokens-v14` que a shell monta com o `tokens.mjs` do preparo. Sem o MCP, marque o R25.22 e o R25.23 "não executado (sem MCP)" e monte a `m3-tokens` pela shell (o `node tokens.mjs RAIZ/m3-tokens`) para seguir do R25.24.
+
+<!-- /roteiros -->
+<!-- roteiros: R11 -->
+
 - R11 não precisa de arquivo nem de MCP: o guia vem no build e o exemplo é o `examples/exemplo-completo.zip` do repositório; abri-lo cria uma cópia nova **Neste dispositivo** a cada vez, e o R11.8 a apaga.
+
+<!-- /roteiros -->
+<!-- roteiros: R9 R10 -->
+
 - R10 usa o pacote `libraries/material3-compose/` (R10.1 a R10.6, sem projeto, e uma cópia `mat-link` no R10.5); R10.7 usa o projeto `telas` do R9 (com o Material 3 (Compose) aplicado); R10.8 cria o projeto próprio `vazio`; nenhum passo precisa do MCP.
+
+<!-- /roteiros -->
+<!-- roteiros: R9 -->
+
 - R9 usa o projeto próprio `telas` (pasta nova, sem imagem) e o pacote `libraries/material3-compose/`; R9.1 a R9.12, R9.21 e R9.22 não precisam do MCP (o R9.22 usa o `validate_library` do cliente stdio, na parte do agente); R9.13 a R9.15, R9.18 a R9.20 e R9.23 usam a seção 6 e o MCP (o `add_container` existe a partir do épico Container), em `design/mapeamentos/telas` (mova a pasta `telas` para lá com o projeto fechado).
+
+<!-- /roteiros -->
 
 **Rodada completa ou dirigida.** A **rodada completa** executa todos os roteiros, na ordem do "Comece aqui"; é o portão antes do uso com pessoas. Na nuvem ela pode correr em 3 blocos ao mesmo tempo, cada um com seu relato (a divisão está em `docs/TESTING-NUVEM.md`, "Rodada completa em blocos"). A **rodada dirigida** confere um alvo: os achados de um relato anterior (o relato é um comentário numa issue), uma lista de roteiros ou as fases de uma etapa. Em todas, R0 inteiro primeiro, depois só os passos ligados ao alvo. O relato da dirigida usa o mesmo template (seção 10), com a coluna **Achado de origem** e a seção **Regressões fora do alvo**.
 
@@ -2153,16 +2300,58 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 - **Se um passo novo não funcionar sozinho** (o endereço não abre; o diálogo nativo não aparece), marque "não executado (vai para os roteiros sob demanda)", registre o que falhou e proponha mover o passo. Se o teste for relevante (perda de dados, integridade do `mapping.json`, segurança), **avise o dono** no relato, pela regra das convenções da seção 8; não decida sozinho.
 - **Os roteiros sob demanda (RP, o app instalado; RF, o `index.html` por `file://`; RA, fechar a aba no meio da gravação; RB, o Esc no meio de um arraste) são manuais, do dono, e nunca rodam na nuvem:** não fazem parte de rodada nenhuma e nem aparecem no relato.
 - **Continuam com a pessoa:** a confirmação de instalar o app (RP) e o arrastar do gerenciador de arquivos, que nenhum roteiro principal pede. Se algo da pessoa aparecer fora de um roteiro sob demanda, marque "não executado (precisa do dono)" em vez de parar a rodada.
+
+<!-- roteiros: R9 -->
+
 - **R9 (containers com componentes):** o canvas é desenhado, então confira por captura de tela, não só pelo texto da página. R9.1, R9.10 (o arquivo da imagem) e R9.12 (o "Salvar como") têm seletores de arquivo **[pessoa]** (as receitas da nuvem os substituem); R9.13, R9.15, R9.18 a R9.20 e R9.23 pedem ao Claude Code **[pessoa]** (o cliente stdio os substitui) e exigem o MCP do épico Container (`add_container`); sem ele, marque "não executado (sem MCP)". Digite nos campos X, Y, Largura e Altura com Enter em cada um.
+
+<!-- /roteiros -->
+<!-- roteiros: R12 -->
+
 - **R12.8 a R12.12 (seleção e gestos pelo Playwright):** `page.mouse.click` não aceita `modifiers`: para Shift+clique, use `page.keyboard.down('Shift')`, `page.mouse.click(x, y)` e `page.keyboard.up('Shift')`. O Shift+arrasto do R12.10c começa dentro da área visível do canvas (janela, barra ou minimapa em cima não iniciam o gesto; se o `C` sair da vista, use **Enquadrar tudo**). A cada tentativa, **Esc** até não sobrar seleção e comece a uns 30 px dos cantos do item selecionado: a alça pega a 22 px e o Shift+arrasto nela redimensiona (decisão 3 da #296).
+
+<!-- /roteiros -->
+<!-- roteiros: R12 -->
+
 - **R12.17 a R12.22 (setas):** o traço é desenhado no canvas, então confira por captura de tela e pelo `data-arrows` do canvas, a contagem de setas já desenhadas. O R12.17a, o R12.18a e o R12.18b pedem arrasto fino (a alça de ligação fica 14 px de tela fora da borda direita da marcação; a do ponto de passagem, no meio do traço da curva; no Canto, o segmento do meio todo pega): tente pelo `page.mouse` do Playwright e, se não pegar, marque "não executado (arrasto fino)". O R12.19 abre o seletor de pasta e o R12.20 pede ao Claude Code **[pessoa]** (o cliente stdio o substitui).
+
+<!-- /roteiros -->
+<!-- roteiros: R14 -->
+
 - **R14 (Sugestões no campo de texto e alvos mapeados):** a lista é DOM comum (`role="combobox"`, `aria-expanded`, `role="listbox"`, `role="option"`, `aria-selected`): confira pelo JavaScript da página (Playwright) e por captura de tela das 8 opções visíveis; o texto secundário do alvo mapeado está dentro do `role="option"`, e o **Tipo mapeado** se lê na célula da linha (pelo texto dela). O R14.1 abre o seletor de arquivo; nenhum outro passo precisa de seletor, shell ou MCP.
+
+<!-- /roteiros -->
+<!-- roteiros: R13 -->
+
 - **R13 (Proposto com componentes):** o canvas é desenhado, então confira por captura de tela e, para contar, pelo `data-components` do `.canvas-host` (JavaScript da página). O fantasma da rejeitada, a linha tracejada e os selos são desenhos do canvas: aproxime o zoom (`Ctrl+=`) e capture. O R13.1 e o R13.11 abrem seletores; o R13.11 usa a shell para descompactar o zip e conferir o disco, sem MCP.
+
+<!-- /roteiros -->
+<!-- roteiros: R15 -->
+
 - **R15 (Imagens remotas):** confira por captura de tela e pelo `data-component-images` do `.canvas-host` (fotos desenhadas; o reservado não conta). O R15.2 e o R15.5 abrem seletores de pasta e o R14.5 baixa o zip ("Salvar como"). Aceite o aviso de rede local do Chrome pela receita da permissão.
+
+<!-- /roteiros -->
+<!-- roteiros: R12 R13 -->
+
 - **R12.10 e R13.5 (encosto e `Esc`):** no R12.10 o último arrasto passa uns 600 px do canvas além do encosto, em passos pequenos, e o encosto se lê no disco (`placement.x` do `C` menos o `placement.x` do `B` mais a largura dele no canvas, entre 0 e 1 unidade, nunca negativo: o `Grupo 2` está na seleção, o deslocamento é inteiro e o `placement` do `C` vindo do arrasto do mouse é fracionário). No R13.5 aperte `Esc` com `page.keyboard.press('Escape')` e leia `document.activeElement` depois de cada aperto.
+
+<!-- /roteiros -->
+<!-- roteiros: R15 -->
+
 - **R15, pedidos à rede:** conte com `performance.getEntriesByType('resource').filter(e => e.name.includes('foto.png')).length` (JavaScript da página) e, no servidor local, `grep -c foto.png servidor.log` (a pasta de trabalho é a mesma da shell). Não edite o `localStorage` (consentimento e interruptores): use a **Privacidade**.
+
+<!-- /roteiros -->
+<!-- roteiros: R10 -->
+
 - **R10 (Catálogo):** o desenho do playground e da galeria é uma imagem: confira por captura de tela e compare o atributo `src` da imagem do playground antes e depois de mudar um campo. O R10.1 abre o seletor de pasta; sem pasta, o campo de zip da biblioteca é o `<input type="file" data-library-zip>`. No R10.2, as setas atuam com o foco num item da lista. O R10.5 usa uma cópia do pacote montada pela shell.
+
+<!-- /roteiros -->
+<!-- roteiros: R10 -->
+
 - **R10.4 (Experimentar):** o seletor `wrap`/`fill`/`fixed` e os campos numéricos têm o mesmo nome (**Largura**, **Altura**), mas papéis diferentes: o seletor é um `group` com esse nome e três botões (`wrap`, `fill`, `fixed`, com `aria-pressed`), e o campo numérico é um `spinbutton` (`getByRole('spinbutton', { name: 'Largura' })`, ou o `input` dentro de `.catalog-playground-size`); um `getByLabel('Largura')` solto pega os dois.
+
+<!-- /roteiros -->
+
 - **Seletor de pasta só na primeira abertura:** depois, a pasta fica em **Projetos recentes** e você a reabre com **Abrir** na linha; o pedido de permissão só volta se o navegador o fizer (reiniciar o Chrome apaga as permissões daquela visita). **Abrir pasta** e **Localizar pasta…** são dois diálogos seguidos: o seletor e a permissão de edição.
 - **O "Salvar como" sugere a última pasta usada** (num teste, o zip do R1.22 caiu dentro da pasta `principal`): em toda exportação, digite o caminho completo, que decide a pasta e o nome.
 
@@ -2250,10 +2439,26 @@ GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sand
 - **Receita 3 (nuvem), continuação.** O auxiliar faz isto: `cloud-up.sh <pasta> --restart-chrome`.
 - **Receita 4 (nuvem), a página pelo Playwright por CDP.** O auxiliar faz isto: `connect(apoioDir)`, `connectGuide(apoioDir)` (a aba do guia, ver abaixo), `clickNoWait(page, nome)` e `state(page, apoioDir, { projectDir })` de `scripts/testing/cloud.mjs`.
 - **Receita 4 (nuvem), o que o `connect()` faz.** Ele carrega o `apoio/env` (`DISPLAY`, D-Bus), escolhe a aba da app (`http://localhost:8080`, fora de `/guia/`; com duas abas falha com as URLs) e usa timeout de 5 s nas ações e 15 s nas navegações: localizador errado falha em 5 s, e espera longa passa `{ timeout }` na própria chamada.
+
+<!-- roteiros: R11 -->
+
 - **Receita 4 (nuvem), `connectGuide()`.** Para ler o guia interativo (R11.2, R11.5, R11.9, R11.10), abra a segunda aba por CDP (`app.context().newPage()` e `goto('http://localhost:8080/guia/')`) e conecte com `const { page } = await connectGuide(apoioDir)`: ele escolhe a aba cujo caminho começa por `/guia/` (o `connect()` a ignora), com os mesmos 5 s nas ações e 15 s nas navegações e o mesmo registro de console; sem a aba, ou com duas, falha com as URLs achadas. Feche a aba do guia ao terminar.
+
+<!-- /roteiros -->
+
 - **Receita 4 (nuvem), o `state()` no fim.** O script do passo termina com `console.log(formatState(await state(page, apoioDir, { projectDir })))`, que devolve numa chamada a tela (título, diálogos, avisos, gravação, foco, janelas nativas) e o disco (`revision` e o que mudou no `mapping.json`). Exemplo: `const { page } = await connect(apoioDir); await clickNoWait(page, 'Criar marcação'); console.log(formatState(await state(page, apoioDir, { projectDir }))); process.exit(0);`.
+
+<!-- roteiros: R12 R25 -->
+
 - **Receita 4 (nuvem), enquadrar sem gesto (R25 e R12.10d).** Selecione a peça **pela Árvore** (`page.locator('.tree-row').filter({ hasText: nome }).first().click()`), aperte `Shift+2` (**Enquadrar seleção**) e, se faltar largura, `Ctrl+=` ou `Ctrl+-` com o foco no canvas, esperando um quadro entre as ações. **Proibidos** para enquadrar: setas (`Shift+seta` anda 10 em 10, como o Card do relato da #747) e arrasto sobre o canvas (começando sobre uma marcação, a move); o pan que não move nada é `Espaço`+arrasto. O script que só enquadra termina com `state()`.
+
+<!-- /roteiros -->
+<!-- roteiros: R25 -->
+
 - **Receita 4 (nuvem), o disco confere a cada passo.** Passo cujo **Disco** diz "o `mapping.json` não muda": o `state()` do fim do script tem que mostrar o disco sem mudança; qualquer linha de `diffJson` é ❌ **desse passo**, e o relato copia as linhas e as teclas e gestos do script. Mudança vinda de ação do próprio roteiro (a adoção do Card no R25.8) vem dita no **Esperado** e não é ❌.
+
+<!-- /roteiros -->
+
 - **Receita 4 (nuvem), cliques.** Clique por papel e nome, com `noWaitAfter` em todo clique que abre um diálogo nativo (senão o Playwright espera e dá timeout). Encerre o script com `process.exit(0)`, não com `browser.close()`.
 
 - **Receita 4 (nuvem), nomes repetidos.** Nomes acessíveis se repetem na página ("Adicionar imagens", "Local", "Ajuda", "Rejeitar"): o `clickNoWait` conta os candidatos e **falha** se achar mais de um (ou nenhum), em vez de escolher um. Passe o container do passo em `scope` (`clickNoWait(page, 'Adicionar imagens', { scope: '.canvas-empty' })`, um seletor CSS ou um `Locator`) ou `{ exact: true }`; nunca use `.first()` num `getByRole` ambíguo, que clica no botão errado sem avisar (já clicou em **Rejeitar tudo** no lugar de **Rejeitar**).
@@ -2348,8 +2553,13 @@ WS=<pasta de trabalho> MAPPING_MCP_ARGS='["<clone>/dist-mcp/mapping-mcp.js","--r
   node scripts/testing/mcp-stdio-client.mjs calls.json
 ```
 
+<!-- roteiros: R15 -->
+
 - **Receita 10 (nuvem), R15 sem o preview.** Copie `scripts/servidor-imagens.mjs` e `public/imagens-teste/foto.png` para a mesma pasta e rode `nohup node servidor-imagens.mjs &` lá (o R15.1 não tem duplo clique na nuvem: é o mesmo computador do Chrome).
 - **Receita 10 (nuvem), continuação.** O log é o `servidor.log` da pasta; para parar, `curl -s http://127.0.0.1:8765/parar`. `PAGES` é `https://fabianofranca.github.io/mapping/` (a foto vem com `access-control-allow-origin: *`). Com a app em `http://localhost:8080`, a imagem de `http://127.0.0.1:8765/foto.png` carregou sem aviso de rede local: aceite o aviso só se ele aparecer (receita 6, com o nome do botão que aparecer).
+
+<!-- /roteiros -->
+
 - **Pasta de trabalho sem acento:** o `xdotool type` com acentos não foi testado; use caminhos sem acento. Com `LANGUAGE=pt_BR:pt` a app abre em pt-BR (o seletor GTK continua em inglês).
 
 **O que o guia supõe de você.** Você controla o Chrome pelo Playwright por CDP e tem uma **shell no mesmo computador** (o contêiner da sessão). Com a shell, você faz as operações de arquivo fora do navegador (criar, copiar, mover, renomear e descompactar, ler e regravar o `mapping.json`, mudar permissões no R6.8b, rodar o MCP) e todas as conferências de **Disco**; por isso esses passos não são [pessoa].
@@ -2382,8 +2592,18 @@ WS=<pasta de trabalho> MAPPING_MCP_ARGS='["<clone>/dist-mcp/mapping-mcp.js","--r
 - **Uma aba só da app.** Navegue a mesma aba com `page.goto`; uma aba antiga do Mapping pode segurar o projeto. Antes de cada ação que muda algo, confira que o título da aba ainda é o da app; se mudou, pare e reconecte pelo CDP. As decisões de uma revisão em andamento ficam gravadas na proposta e voltam com **Continuar**. Reabrir o projeto numa aba nova **perde o histórico de desfazer**: não reinicie o Chrome nem recarregue antes dos passos de desfazer.
 - **Atalhos de janela com o foco num campo:** antes de atalhos como `Ctrl+Shift+N` ou `Ctrl+Shift+6`, tire o foco dos campos de texto ou número (Esc ou um clique no canvas): o envio do atalho pode digitar o número no campo (Y 340 virou 760; Altura 56 virou 566).
 - **Atalhos de janela pelo Playwright:** `page.keyboard.press('Control+Shift+1')` não funciona (o `key` vira `!`); use `Control+Shift+Digit<n>` ou o auxiliar `windowShortcut(page, n)` de `scripts/testing/cloud.mjs`.
+
+<!-- roteiros: R11 -->
+
 - **R11 (guia interativo):** **Guia interativo** (R11.1) e **Abrir o guia interativo** (R11.3, na Ajuda) abrem numa aba nova; a regra de "uma aba só" é sobre a aba da **app**, não sobre essa. Abra uma segunda página do mesmo navegador por CDP (`browser.newPage()` e `page.goto` no endereço do link, ou `context.waitForEvent('page')` depois do clique) para ler o guia (R11.2, R11.5, R11.9, R11.10) e feche-a ao terminar, voltando a uma aba só. Com a aba do guia aberta, `connectGuide(apoioDir)` (receita 4) conecta nela, com os mesmos 5 s e 15 s do `connect()`: use-o no R11.9 e no R11.10.
+
+<!-- /roteiros -->
+<!-- roteiros: R11 -->
+
 - **R11 (guia interativo), duas abas e o seletor nativo.** Com a aba do guia aberta, feche-a antes do Abrir zip do R11.4 (e de qualquer passo com diálogo nativo) e abra de novo depois, se o passo seguinte precisar do guia: com outra aba ativa na janela o seletor GTK não abre, e `page.bringToFront()` não basta. `selectFolder`/`openFile` esperam até 5 s e, se esgotarem, dizem na mensagem qual é a janela ativa.
+
+<!-- /roteiros -->
+
 - **Exportação:** o diálogo "Exportar projeto" da app continua aberto depois do download; feche-o (**Cancelar**) antes do passo seguinte, ou a app parece travada.
 - **Console:** registre `page.on('console')` e `page.on('pageerror')` logo ao abrir a página, antes da primeira ação: o que veio antes se perde.
 - **Console, em cada script.** Cada script é um processo novo e o `state()` não lê o console: registre os dois listeners em todo script de passo e imprima o que vier depois do `state()`.

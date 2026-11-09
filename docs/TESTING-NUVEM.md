@@ -125,7 +125,7 @@ Por quê: as dependências da seção 8 do guia e a contagem de passos (a coluna
 
 **Modo "completo, bloco k de 3".** A mensagem "execute o modo completo, bloco k de 3" (k de 1 a 3) manda:
 
-1. Montar a lista da rodada com os roteiros do bloco k (R6 entra inteiro no guia da rodada; só execute os passos que a tabela dá ao bloco) e gerar o guia da rodada com eles: `node scripts/testing/round-guide.mjs <roteiros do bloco> --out …/apoio/guia.md`. O ambiente, as pastas de trabalho e o MCP são seus, de mais ninguém: três blocos não dividem pasta, perfil do Chrome nem porta.
+1. Montar a lista da rodada com os roteiros do bloco k e gerar o guia da rodada com eles: `node scripts/testing/round-guide.mjs <roteiros do bloco> --out …/apoio/guia.md`. Um roteiro que a tabela divide entre blocos entra pela **faixa de passos** que ela dá ao bloco (por exemplo `R6.3-R6.7` ou `R6.8a-R6.11`), sem o resto do roteiro; o guia já vem sem os trechos da introdução da seção 8 e do apêndice A que só roteiros de outros blocos usam. O ambiente, as pastas de trabalho e o MCP são seus, de mais ninguém: três blocos não dividem pasta, perfil do Chrome nem porta.
 2. Executar o **R0 inteiro primeiro** (ele está nos três blocos) e depois os roteiros do bloco, na ordem da tabela.
 3. Relatar no template da seção 10: `Modo: completo, bloco k de 3 (<roteiros>)`; a primeira linha do comentário é "Rodada completa — bloco k de 3"; os achados são numerados `k.1`, `k.2`… (o código do achado carrega o bloco, para o reteste dirigido achar de onde veio).
 4. O aviso ao coordenador (item 5 da "Entrega") cita o bloco: "Bloco k de 3: relato em <link>: …".
