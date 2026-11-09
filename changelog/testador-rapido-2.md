@@ -12,3 +12,5 @@
 ## Alterado
 
 - Testador da nuvem: o arquivo de ambiente da rodada passa a se chamar `apoio/env.sh` (o `source env` executava o `/usr/bin/env`); sem compatibilidade com o nome antigo.
+- Testador da nuvem: os blocos de preparo dos roteiros que criam a pasta de um projeto ou gravam o `mapping.json` (R3.8e, R22 e R23) não sobrescrevem mais: pasta existente imprime "já existe: o preparo já rodou; não rode de novo" e nada é apagado.
+- Testador da nuvem: as mensagens do `docs/FLOW.md` passam a dizer "R0 inteiro primeiro" na dirigida e "R0 só o R0.1 e os passos de que os achados dependem" no reteste, e a mensagem vale quando divergir do guia; toda mensagem de dirigida e de bloco traz a lacuna `Tag da release: <mcp-v…-rc.n, ou "sem R21">`.

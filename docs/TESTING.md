@@ -537,10 +537,12 @@ Use uma pasta vazia `principal` e o `cadastro.png`. Depois de cada passo que gra
 8. Para o R3.8e (projeto v13, o anterior aos papéis no vínculo), não precisa abrir a app: pela shell, a pasta `migracao13` com um `mapping.json` schema 13 pequeno (um container sem imagem, a marcação **Caixa** e duas anotações livres em camadas diferentes: **Dona** e, vinculada a ela, **Filha**):
 
    ```bash
+   if [ -e migracao13 ]; then echo 'migracao13 já existe: o preparo já rodou; não rode de novo'; else
    mkdir -p migracao13 && cat > migracao13/mapping.json <<'EOF'
    {"schemaVersion":13,"revision":0,"app":"mapping","coordinateSystem":"image-pixels-exif-oriented","project":{"name":"Migracao13","createdAt":"2026-11-05T12:00:00.000Z","updatedAt":"2026-11-05T12:00:00.000Z"},"specializations":[],"platformRepos":{},"layers":[{"id":"L1","name":"Camada 1","color":"#E53935","spec":null},{"id":"L2","name":"Camada 2","color":"#1E88E5","spec":null}],"containers":[{"id":"C1","name":"Tela","file":null,"width":400,"height":300,"placement":{"x":0,"y":0,"scale":1},"parentId":null,"markingColor":null,"locked":false,"source":null,"background":"#FFFFFF"}],"markings":[{"id":"M1","containerId":"C1","parentId":null,"name":"Caixa","rect":{"x":20,"y":20,"width":200,"height":100},"needsReview":false,"locked":false,"floating":false,"source":null}],"arrows":[],"annotations":[{"id":"A1","markingId":"M1","layerId":"L1","name":"Dona","parentAnnotationId":null,"type":null,"values":null,"entries":[{"id":"E1","key":"estilo","value":"primário"}]},{"id":"A2","markingId":"M1","layerId":"L2","name":"Filha","parentAnnotationId":"A1","type":null,"values":null,"entries":[{"id":"E2","key":"nota","value":"x"}]}]}
    EOF
    cp migracao13/mapping.json migracao13-original.json   # o "projeto v13"
+   fi
    ```
 
 **Preparo do R3.14 a R3.17** (versões novas do Material 3 (Compose), com migração). Salve o script abaixo como `evolve.py`, fora do repositório da app, e, com o shell na raiz dela e `python3` disponível, gere as quatro cópias em cadeia, `mat-v3` a `mat-v6` (cada uma parte da anterior, e a primeira, do pacote do repositório, que já está na versão 2; o pacote do repositório não muda):
@@ -1716,7 +1718,8 @@ cat saida-r11.txt; snap ws-r11 > depois-r11.txt && diff antes-r11.txt depois-r11
 ```bash
 export W22=<pasta de trabalho>/r22 && mkdir -p "$W22"
 export PROJ=<repositório de teste>/design/mapeamentos/conversas
-mkdir -p "$PROJ" && unzip -q "$REPO/examples/exemplo-completo.zip" -d "$PROJ"
+if [ -e "$PROJ" ]; then echo "$PROJ já existe: o preparo já rodou; não rode de novo"
+else mkdir -p "$PROJ" && unzip -q "$REPO/examples/exemplo-completo.zip" -d "$PROJ"; fi
 cat > "$W22/estado.py" <<'PY'
 import json, glob, os, sys
 raiz = sys.argv[1]
@@ -1788,7 +1791,8 @@ doc = {"schemaVersion": 15, "revision": 0, "app": "mapping", "coordinateSystem":
 os.makedirs(raiz, exist_ok=True)
 open(os.path.join(raiz, "mapping.json"), "w", encoding="utf-8").write(json.dumps(doc, ensure_ascii=False, indent=2) + "\n")
 PY
-python3 -I "$W23/v15.py" "$PROJ" && cp "$PROJ/mapping.json" "$W23/original.json"
+if [ -e "$PROJ" ]; then echo "$PROJ já existe: o preparo já rodou; não rode de novo"
+else python3 -I "$W23/v15.py" "$PROJ" && cp "$PROJ/mapping.json" "$W23/original.json"; fi
 cat > "$W23/estado.py" <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1] + '/mapping.json', encoding='utf-8'))

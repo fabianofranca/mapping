@@ -779,14 +779,79 @@ describe('TR2 — R0 reduzido no reteste, passada visual e tempo real', () => {
   it('a mensagem de reteste do FLOW.md cita o R0 reduzido ao R0.1', () => {
     const retest = flow.slice(
       flow.indexOf('Reteste, depois da correção'),
-      flow.indexOf('## Notificação final'),
+      flow.indexOf('## Rodada completa em 5 blocos'),
     );
     expect(retest).toMatch(/R0\.1/);
+    // TR3 (decisão 13): a mensagem diz o R0 por extenso, para não divergir do guia.
+    expect(retest).toContain('R0 só o R0.1 e os passos de que os achados dependem');
   });
 
   it('o CLAUDE.md manda o orquestrador passar a passada visual ao testador e a sub-issue da última fase trazer a linha', () => {
     expect(claude).toMatch(/os roteiros e a passada visual/);
     expect(claude).toContain('Passada visual:');
+  });
+});
+
+// Etapa Testador mais rápido (TR3): preparos que não sobrescrevem e mensagens alinhadas.
+describe('TR3 — preparos que não sobrescrevem e mensagens alinhadas', () => {
+  const cloud = read('docs/TESTING-NUVEM.md');
+  const guide = read('docs/TESTING.md');
+  const flow = read('docs/FLOW.md');
+
+  /** Os blocos de código cercados da seção 8 (do "## 8." ao "## 9."). */
+  function section8Blocks(): string[] {
+    const start = guide.indexOf('## 8. Roteiros');
+    const end = guide.indexOf('## 9. ', start);
+    const blocks: string[] = [];
+    let current: string[] | null = null;
+    for (const line of guide.slice(start, end).split('\n')) {
+      if (/^\s*```/.test(line)) {
+        if (current) blocks.push(current.join('\n'));
+        current = current ? null : [];
+      } else if (current) current.push(line);
+    }
+    return blocks;
+  }
+
+  // Cria a pasta do projeto ou grava o `mapping.json` dela.
+  const CREATES_PROJECT =
+    /mkdir -p "\$PROJ"|> "\$PROJ\/mapping\.json"|v15\.py"? "\$PROJ"|unzip [^\n]*-d "\$PROJ"|cat > \w+\/mapping\.json/;
+
+  it('todo bloco de preparo que cria a pasta do projeto ou grava o mapping.json tem a guarda, sem rm (decisão 12)', () => {
+    const creators = section8Blocks().filter((b) => CREATES_PROJECT.test(b));
+    expect(creators.length).toBeGreaterThanOrEqual(3);
+    for (const block of creators) {
+      expect(block).toContain('já existe: o preparo já rodou; não rode de novo');
+      expect(block).toMatch(/if \[ -e [^\]]+\]; then/);
+      expect(block).not.toMatch(/\brm\b.*(\$PROJ|migracao13)/);
+    }
+  });
+
+  it('a mensagem da dirigida diz "R0 inteiro primeiro" e a do TESTING-NUVEM vale quando divergir do guia (decisão 13)', () => {
+    const tester = flow.slice(
+      flow.indexOf('## Para o testador'),
+      flow.indexOf('Reteste, depois da correção'),
+    );
+    expect(tester).toContain('R0 inteiro primeiro');
+    expect(cloud).toMatch(/mensagem[^\n]*vale[^\n]*diverg/i);
+  });
+
+  it('toda mensagem de dirigida e de bloco traz a lacuna da tag da release, e o prompt diz o que fazer com "sem R21" (decisão 14)', () => {
+    const tester = flow.slice(
+      flow.indexOf('## Para o testador'),
+      flow.indexOf('### Rodada avulsa'),
+    );
+    const messages = tester.match(/```text\n[\s\S]*?```/g) ?? [];
+    expect(messages.length).toBe(3);
+    for (const m of messages) {
+      expect(m).toContain('Tag da release: <mcp-v…-rc.n, ou "sem R21">');
+    }
+    const r21 = cloud.slice(
+      cloud.indexOf('**R21 e a tag da release.**'),
+      cloud.indexOf('**Rodada dirigida.**'),
+    );
+    expect(r21).toContain('sem R21');
+    expect(r21).toMatch(/sem R21[^\n]*(não execute|pule|fora)/i);
   });
 });
 

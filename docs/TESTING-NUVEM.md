@@ -92,7 +92,9 @@ Siga o apêndice A do guia: a página pelo Playwright por CDP (receita 4), os di
 
 **Rodada completa (padrão).** Todos os roteiros, **R0 a R25** (sem o RP, o RF, o RA e o RB), na ordem do quadro "Comece aqui" do guia e com as dependências do começo da seção 8: R0, R1, R2, a seção 6 (repositório de teste e MCP), R3, R4, R6, R7, R5, R8, R9, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24 e R25. A seção 9 do guia (teste manual avançado) não entra, é do dono. Os roteiros principais são feitos para você executar **sozinho**; nenhum passo deles fica com o dono. Com "bloco k de 5" na mensagem, você roda só o bloco k (ver "Rodada completa em blocos"); sem bloco, uma sessão roda tudo.
 
-**R21 e a tag da release.** O R21 testa a **release real** no GitHub, não o build do commit: use a tag que a mensagem traz ("Tag da release: `mcp-v…-rc.n`", a rc do épico, numa rodada dirigida); numa rodada completa na `main`, sem tag na mensagem, use a última estável (`releases/latest`, como o Preparo do R21 mostra). Sem tag na mensagem de uma dirigida que pede o R21, marque o R21 "não executado (a mensagem não trouxe a tag da release)". O R21 não usa a app nem o Chrome.
+**R21 e a tag da release.** O R21 testa a **release real** no GitHub, não o build do commit: use a tag que a mensagem traz ("Tag da release: `mcp-v…-rc.n`", a rc do épico, numa rodada dirigida); numa rodada completa na `main`, sem tag na mensagem, use a última estável (`releases/latest`, como o Preparo do R21 mostra). A lacuna "Tag da release" vem sempre na mensagem: com `sem R21`, o R21 não faz parte da rodada (pule-o, sem marcá-lo como falha nem como não executado; o relato só cita que a mensagem disse `sem R21`). Sem a lacuna na mensagem de uma dirigida que pede o R21, marque o R21 "não executado (a mensagem não trouxe a tag da release)". O R21 não usa a app nem o Chrome.
+
+**A mensagem vale quando divergir do guia.** Se a mensagem e o guia disserem coisas diferentes (por exemplo, o R0 inteiro ou só o R0.1), vale a mensagem; registre a divergência no relato.
 
 **Rodada dirigida.** A mensagem aponta o alvo de um destes três jeitos:
 
