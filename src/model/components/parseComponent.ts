@@ -18,6 +18,7 @@ import { checkRemoteImageUrl } from '../remoteImages';
 import { isValidFontFamily } from './fontFamily';
 import { referencedFields } from './expressions';
 import { TOKEN_NAME_PATTERN, type TokenKind } from './tokens';
+import { isRecord } from '../isRecord';
 
 /** Um problema do arquivo: caminho JSON (vazio = arquivo inteiro) e mensagem. */
 export type ComponentIssue = { path: string; message: string };
@@ -97,10 +98,6 @@ const BASE_KEYS = [
   'shadow',
   'cornerRadius',
 ];
-
-function isRecord(value: unknown): value is Rec {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** Um objeto com algum operador `$…`: uma expressão, não um literal. */
 function isExprObject(value: unknown): value is Rec {

@@ -890,7 +890,7 @@ sdui-backend/
   fonts/Roboto-Regular.woff2   as fontes do desenho (opcional)
 ```
 
-Os nomes das pastas (`components/`, `docs/`, `examples/`, `fonts/`) são convenção; o que vale é o caminho citado. **Todo caminho citado** pela especialização é relativo ao arquivo dela, com `/`, **sem `..`**, sem `/` no começo e sem letra de unidade (a mesma regra do `path` do `code`), e termina na extensão esperada:
+Os nomes das pastas (`components/`, `docs/`, `examples/`, `fonts/`) são convenção; o que vale é o caminho citado. **Todo caminho citado** pela especialização é relativo ao arquivo dela, com `/`, **sem `..`**, sem `/` no começo e sem letra de unidade (a mesma regra do `path` do `code`), e termina na extensão esperada. Na leitura da biblioteca (componentes, fontes, ícones e `componentPaths`), um `..` que sai da pasta do pacote é problema da biblioteca, `caminho fora da biblioteca: <ref>`, no caminho de quem cita (`<tipo>`, `fonts[i]` ou `icons`), e não é mais descartado em silêncio. Uma raiz de `origins[].screen.roots` com `margin` e sem `anchor` é erro: `margin só vale com anchor` (caminho `…roots[i].margin`):
 
 | Chave                       | Onde             | Extensão                             |
 | --------------------------- | ---------------- | ------------------------------------ |

@@ -1,4 +1,5 @@
 import { removedFieldKeys } from './spec';
+import { isRecord } from './isRecord';
 import { SCHEMA_VERSION } from './types';
 
 /** O que uma migração pode consultar além do próprio `mapping.json`. */
@@ -18,16 +19,12 @@ export type Migration = (
   context?: MigrationContext,
 ) => Record<string, unknown>;
 
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 function mapItems(
   value: unknown,
   update: (item: Record<string, unknown>) => Record<string, unknown>,
 ): unknown {
   if (!Array.isArray(value)) return value;
-  return value.map((item) => (isObject(item) ? update(item) : item));
+  return value.map((item) => (isRecord(item) ? update(item) : item));
 }
 
 /**
@@ -105,7 +102,7 @@ export const migrateFrom8To9: Migration = (data, context = NO_CONTEXT) => {
   /** `specId` → `typeId` → chaves removidas. */
   const removed = new Map<string, Map<string, Set<string>>>();
   for (const ref of Array.isArray(data.specializations) ? data.specializations : []) {
-    if (!isObject(ref) || typeof ref.id !== 'string' || typeof ref.file !== 'string') {
+    if (!isRecord(ref) || typeof ref.id !== 'string' || typeof ref.file !== 'string') {
       continue;
     }
     const text = context.specs.get(ref.file);
@@ -117,7 +114,7 @@ export const migrateFrom8To9: Migration = (data, context = NO_CONTEXT) => {
       // Cópia ilegível: a leitura avisa (`SpecFileWarning`); os valores ficam.
       continue;
     }
-    if (!isObject(raw) || raw.id !== ref.id) continue;
+    if (!isRecord(raw) || raw.id !== ref.id) continue;
     const keys = removedFieldKeys(raw);
     if (keys.size > 0) removed.set(ref.id, keys);
   }
@@ -126,7 +123,7 @@ export const migrateFrom8To9: Migration = (data, context = NO_CONTEXT) => {
     ...data,
     annotations: mapItems(data.annotations, (a) => {
       const { type, values } = a;
-      if (!isObject(type) || !isObject(values)) return a;
+      if (!isRecord(type) || !isRecord(values)) return a;
       const specId = typeof type.specId === 'string' ? type.specId : '';
       const typeId = typeof type.typeId === 'string' ? type.typeId : '';
       const keys = removed.get(specId)?.get(typeId);
@@ -163,9 +160,9 @@ export function discardedOnMigrationTo11(
   data: Record<string, unknown>,
 ): readonly DiscardedUrlTemplate[] {
   const repos = data.platformRepos;
-  if (!isObject(repos)) return [];
+  if (!isRecord(repos)) return [];
   return Object.entries(repos).flatMap(([platform, repo]) => {
-    const raw = isObject(repo) ? repo.urlTemplate : undefined;
+    const raw = isRecord(repo) ? repo.urlTemplate : undefined;
     const urlTemplate = typeof raw === 'string' ? raw.trim() : '';
     return urlTemplate === '' ? [] : [{ platform, urlTemplate }];
   });
@@ -179,10 +176,10 @@ export function discardedOnMigrationTo11(
  */
 export const migrateFrom10To11: Migration = (data) => {
   const repos = data.platformRepos;
-  if (!isObject(repos)) return data;
+  if (!isRecord(repos)) return data;
   const kept: Record<string, unknown> = {};
   for (const [platform, repo] of Object.entries(repos)) {
-    const localPath = isObject(repo) ? repo.localPath : undefined;
+    const localPath = isRecord(repo) ? repo.localPath : undefined;
     if (typeof localPath === 'string' && localPath.trim() !== '') {
       kept[platform] = { localPath };
     }
@@ -227,13 +224,13 @@ export function discardedOnMigrationTo13(
   const names = new Map<string, string | null>();
   if (Array.isArray(data.markings)) {
     for (const m of data.markings as unknown[]) {
-      if (isObject(m) && typeof m.id === 'string') {
+      if (isRecord(m) && typeof m.id === 'string') {
         names.set(m.id, typeof m.name === 'string' && m.name !== '' ? m.name : null);
       }
     }
   }
   return (data.annotations as unknown[]).flatMap((a) =>
-    isObject(a) &&
+    isRecord(a) &&
     a.inherit === true &&
     typeof a.id === 'string' &&
     typeof a.markingId === 'string'
@@ -295,7 +292,7 @@ export const migrateFrom14To15: Migration = (data) => data;
  * antes. Valores já presentes são preservados (um id já gravado nunca é trocado).
  */
 export const migrateFrom15To16: Migration = (data) => {
-  const project = isObject(data.project) ? data.project : {};
+  const project = isRecord(data.project) ? data.project : {};
   return {
     ...data,
     project: { id: crypto.randomUUID(), ...project },

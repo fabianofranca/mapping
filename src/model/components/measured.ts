@@ -21,6 +21,7 @@ import {
   type Origin,
 } from './origin';
 import type { Spec, SpecAnnotationType, SpecField } from '../spec';
+import { isRecord } from '../isRecord';
 
 export interface MeasuredRect {
   readonly x: number;
@@ -77,10 +78,6 @@ interface Run {
   readonly offset: { readonly x: number; readonly y: number };
   readonly markings: MeasuredMarking[];
   readonly warnings: string[];
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 const isNumber = (value: unknown): value is number =>

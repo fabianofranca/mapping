@@ -4,9 +4,16 @@
 
 - Uma especialização com uma chave desconhecida em `tokens` (além de `modes` e `values`) passa a ser recusada, com o erro `chave desconhecida: <chave>` no caminho dela; antes a chave a mais passava em silêncio. A `formatVersion` continua 15.
 - Um tipo com `requiresOwner` cujo único dono possível é ele mesmo (na `formatVersion` 13, que aceita filhos da própria camada) passa a ser recusado, com o erro `nenhum outro tipo o aceita como filho`, no caminho `…requiresOwner`: nenhuma anotação poderia ser a dona. Uma biblioteca que passava assim antes pode ser recusada agora.
+- Uma biblioteca que cita componente, fonte, ícones ou `componentPaths` com `..` saindo da pasta do pacote passa a ter o problema `caminho fora da biblioteca: <ref>`, no caminho de quem cita; antes o `..` era descartado em silêncio
+- Uma raiz de `origins` com `margin` e sem `anchor` passa a ser recusada (`margin só vale com anchor`, no caminho `margin` da raiz); antes passava
 
 ## Corrigido
 
+- O rótulo de uma instância nunca mostra `[object Object]`: valor de tabela conta como vazio e cai no nome do tipo
+- Duas especializações com o mesmo `system` na importação de medidas (`measured`) usam cada uma os próprios `booleans`
+- A tradução de um JSON externo sem `system` usa a primeira origem `tree`; só com origens `measured`, o erro manda passar o `system`
+- O `padding` de um trecho de `runs` aceita `$token` de número, como o doc já dizia
+- Um `slot` dentro de `repeat` aninhado deixa de ser reportado duas vezes
 - Atualizar uma biblioteca com um passo `map-values` que mapeia um valor para ele mesmo, ou um `rename-field` com o mesmo nome nos dois lados, deixa de contar valores e anotações como alterados no relatório da migração.
 - O aviso `path-without-repo` (plataforma com `path` e sem `repo`) passa a contar também o `path` dos casos de `variants.cases`.
 

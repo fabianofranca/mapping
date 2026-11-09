@@ -20,6 +20,7 @@ import {
 import { parseIconsFile, type IconSet } from './icons';
 import { parseComponent } from './parseComponent';
 import { resolveTokens, type HostFonts, type SpecTokens } from './tokens';
+import { isRecord } from '../isRecord';
 
 export interface TextFile {
   /** Caminho relativo à raiz escolhida, com `/`. */
@@ -94,10 +95,6 @@ export interface Library {
   readonly icons?: IconSet;
   /** O que não carregou: arquivo ausente, componente inválido, tipo sem componente. */
   readonly problems: readonly string[];
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function parseJson(file: TextFile): unknown {

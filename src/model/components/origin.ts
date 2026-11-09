@@ -25,6 +25,7 @@ import {
 import type { FieldDef, Library, TypeDef } from './library';
 import type { Screen } from './screen';
 import { packagePathProblem } from '../packagePaths';
+import { isRecord } from '../isRecord';
 
 // ---------------------------------------------------------------------------------------
 // Tipos
@@ -218,10 +219,6 @@ export interface ReadResult {
 }
 
 const NOT_FOUND: ReadResult = { found: false };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** Lê o caminho em `root`. `[*]` e valor `null`/`undefined` contam como não encontrado. */
 export function readPath(
