@@ -168,6 +168,22 @@ describe('zip de exemplo com componentes novos na proposta', () => {
     expect(incomplete.has(idOf(SHOWCASE_NAMES.noLabel) ?? '')).toBe(true);
     expect(incomplete.has(idOf(SHOWCASE_NAMES.pending) ?? '')).toBe(false);
 
+    // R13.9: o Inválido tem as duas pendências (camada e "não cabe") e Incompletas o lista.
+    const invalidAnnotation = shown?.annotations.find(
+      (a) => a.markingId === idOf(SHOWCASE_NAMES.invalid),
+    );
+    expect(
+      derived.issues.value
+        .get(invalidAnnotation?.id ?? '')
+        ?.map((i) => ({ code: i.code })),
+    ).toEqual([{ code: 'layer-mismatch' }, { code: 'component-overflow' }]);
+    const listed = derived.incompleteList.value.flatMap((g) =>
+      g.items.map((i) => i.marking.id),
+    );
+    expect(listed).toContain(idOf(SHOWCASE_NAMES.invalid));
+    expect(listed).toContain(idOf(SHOWCASE_NAMES.noLabel));
+    expect(listed).not.toContain(idOf(SHOWCASE_NAMES.pending));
+
     // O existente aparece com o valor proposto.
     const existing = shown?.annotations.find(
       (a) => a.markingId === idOf(SHOWCASE_NAMES.existing),

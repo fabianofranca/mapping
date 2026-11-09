@@ -239,7 +239,7 @@ describe('assentar um espaço denso: crescimento', () => {
     return { ...dense, markings: dense.markings.map((m) => ({ ...m, parentId: null })) };
   };
 
-  it('500 → 2.000 marcações num container só: razão < 5×', GROWTH_OPTIONS, () => {
+  it('500 → 2.000 marcações num container só: razão < 6×', GROWTH_OPTIONS, () => {
     expectLinearGrowth('assentar espaço denso', {
       build: denseScrambled,
       run: (p) => settleHierarchy(p),
@@ -286,7 +286,7 @@ describe('edição: crescimento e orçamento', () => {
   const largeOf = (n: number): Project => buildLargeProject({ images: n / 25 });
 
   it(
-    'criar marcações uma a uma num container: 250 → 1.000 criações, razão < 5×',
+    'criar marcações uma a uma num container: 250 → 1.000 criações, razão < 6×',
     { ...GROWTH_OPTIONS, timeout: 60_000 },
     () => {
       // Num projeto de 20.000 marcações: cada criação sempre copia o array e confere o id (custo da
@@ -306,7 +306,7 @@ describe('edição: crescimento e orçamento', () => {
   );
 
   it(
-    'uma edição (criar, mover): 2.500 → 10.000 marcações, razão < 5×',
+    'uma edição (criar, mover): 2.500 → 10.000 marcações, razão < 6×',
     GROWTH_OPTIONS,
     () => {
       for (const [label, edit] of [

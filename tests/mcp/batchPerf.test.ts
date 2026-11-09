@@ -67,7 +67,7 @@ async function medianBatchMs(project: Project, count: number): Promise<number> {
 
 describe('lote do MCP em escala', () => {
   budgetIt(
-    'criações num container de um projeto de 10.000 marcações: 250 → 1.000, razão < 5×',
+    'criações num container de um projeto de 10.000 marcações: 250 → 1.000, razão < 6×',
     OPTIONS,
     async () => {
       const project = buildLargeProject({ images: 400 });
