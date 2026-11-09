@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/ho
 import { t } from '../../i18n';
 import { BREAKPOINTS } from '../../theme/breakpoints';
 import {
+  activeFilterConditions,
   CANVAS_FILTER,
   CHANGE_TYPES,
   hasActiveFilters,
@@ -62,22 +63,30 @@ function levelValue(summary: LevelSummary | undefined): DecisionValue {
   return null;
 }
 
-/** Janela das linhas à vista dentro do contêiner que rola. */
+/**
+ * Janela das linhas à vista dentro do contêiner que rola. Guarda só o índice da primeira
+ * linha visível: rolar dentro da mesma linha não renderiza de novo.
+ */
 function useVirtualWindow(count: number, scroller: { current: HTMLElement | null }) {
-  const [view, setView] = useState({ top: 0, height: 0, row: 0 });
+  const [view, setView] = useState({ first: 0, height: 0, row: 0 });
   const measureRef = useRef(() => {});
   useLayoutEffect(() => {
     const el = scroller.current;
     if (!el) return;
     const measure = () => {
-      const first = el.querySelector<HTMLElement>('[data-row]');
+      // A altura vem de uma linha de item: o cabeçalho de grupo (proposta substituída) tem
+      // outra altura.
+      const item = el.querySelector<HTMLElement>('[data-row]:not([data-group])');
+      const row = item?.offsetHeight ?? 0;
       const next = {
-        top: el.scrollTop,
+        first: row > 0 ? Math.floor(el.scrollTop / row) : 0,
         height: el.clientHeight,
-        row: first?.offsetHeight ?? 0,
+        row,
       };
       setView((v) =>
-        v.top === next.top && v.height === next.height && v.row === next.row ? v : next,
+        v.first === next.first && v.height === next.height && v.row === next.row
+          ? v
+          : next,
       );
     };
     measureRef.current = measure;
@@ -97,8 +106,11 @@ function useVirtualWindow(count: number, scroller: { current: HTMLElement | null
   if (view.row <= 0 || view.height <= 0) {
     return { start: 0, end: Math.min(count, UNMEASURED_ROWS), row: 0, measure };
   }
-  const start = Math.max(0, Math.floor(view.top / view.row) - OVERSCAN);
-  const end = Math.min(count, Math.ceil((view.top + view.height) / view.row) + OVERSCAN);
+  const start = Math.max(0, view.first - OVERSCAN);
+  const end = Math.min(
+    count,
+    view.first + Math.ceil(view.height / view.row) + 1 + OVERSCAN,
+  );
   return { start, end, row: view.row, measure };
 }
 
@@ -107,14 +119,7 @@ function useVirtualWindow(count: number, scroller: { current: HTMLElement | null
  * conta grupos, não valores.
  */
 export function activeFilterGroups(f: ReviewFiltersState): number {
-  return [
-    f.decision !== 'all',
-    f.types.length > 0,
-    f.imageId !== null,
-    f.layerId !== null,
-    f.onlyConflicts,
-    f.onlyRevised,
-  ].filter(Boolean).length;
+  return activeFilterConditions(f).filter(Boolean).length;
 }
 
 /**
@@ -268,6 +273,7 @@ function ShortcutFooter() {
   return (
     <div
       class={compact ? 'review-footer review-footer-compact' : 'review-footer'}
+      role="group"
       aria-label={t('review.shortcuts')}
     >
       {items.map(([key, label]) => (
@@ -374,14 +380,24 @@ export function ReviewLevels() {
   const count = flat ? flat.length : rows.length;
   const win = useVirtualWindow(count, scroller);
 
-  // Rola até a linha selecionada quando ela muda (teclado, N, canvas).
+  // Rola até a linha selecionada quando ela muda (teclado, N, canvas) e quando a medida da
+  // linha chega depois da primeira renderização. Rola uma vez por seleção: expandir ou
+  // recolher um grupo depois não faz a lista pular de volta.
+  const measured = win.row > 0;
+  const scrolledTo = useRef<string | null>(null);
   useEffect(() => {
     const el = scroller.current;
-    if (!el || !selectedKey) return;
+    if (!el || !selectedKey) {
+      scrolledTo.current = null;
+      return;
+    }
+    const scope = `${proposalId}|${selectedKey}`;
+    if (scrolledTo.current === scope) return;
     const index = flat
       ? flat.findIndex((r) => r.key === selectedKey)
       : rows.findIndex((r) => r.key === selectedKey);
-    if (index < 0 || win.row <= 0) return;
+    if (index < 0 || !measured) return;
+    scrolledTo.current = scope;
     const top = index * win.row;
     if (top < el.scrollTop) el.scrollTop = top;
     else if (top + win.row > el.scrollTop + el.clientHeight) {
@@ -390,7 +406,7 @@ export function ReviewLevels() {
     // A janela acompanha já: a linha selecionada fica desenhada (alvo do activedescendant).
     win.measure();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedKey, count]);
+  }, [selectedKey, proposalId, count, measured]);
 
   const positions = useMemo(
     () =>
@@ -722,6 +738,7 @@ export function ReviewLevels() {
                     class="review-group"
                     role="presentation"
                     data-row={r.key}
+                    data-group=""
                   >
                     <b>{r.label}</b>
                     <span>{r.count}</span>

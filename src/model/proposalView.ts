@@ -163,14 +163,23 @@ export const NO_FILTERS: ReviewFilters = {
 const NO_REVISED: ReadonlySet<string> = new Set();
 
 export function hasActiveFilters(f: ReviewFilters): boolean {
-  return (
-    f.types.length > 0 ||
-    f.imageId !== null ||
-    f.layerId !== null ||
-    f.decision !== 'all' ||
-    f.onlyConflicts ||
-    f.onlyRevised
-  );
+  return activeFilterConditions(f).some(Boolean);
+}
+
+/**
+ * Uma condição por grupo de filtro (decisão, tipos, imagem, camada, só conflitos, só
+ * revisadas): `true` quando o grupo está ativo. Fonte única de `hasActiveFilters` e da
+ * contagem de grupos do botão Filtros.
+ */
+export function activeFilterConditions(f: ReviewFilters): readonly boolean[] {
+  return [
+    f.decision !== 'all',
+    f.types.length > 0,
+    f.imageId !== null,
+    f.layerId !== null,
+    f.onlyConflicts,
+    f.onlyRevised,
+  ];
 }
 
 /**
