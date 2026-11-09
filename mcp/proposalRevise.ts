@@ -106,7 +106,7 @@ async function reservedFor(
     for (const file of reservedImages(stored.proposal)) reserved.add(file);
   }
   const prefix = `proposals/${proposalId}/`;
-  for (const file of await proposalFiles(location, proposalId)) {
+  for (const file of await proposalFiles(roots, location, proposalId)) {
     if (file.startsWith(prefix)) reserved.add(file.slice(prefix.length));
   }
   return reserved;

@@ -1,4 +1,11 @@
-import { existsSync, readFileSync, rmSync, writeFileSync, copyFileSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  rmSync,
+  truncateSync,
+  writeFileSync,
+  copyFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { threadFilePath } from '../../src/model';
@@ -218,6 +225,17 @@ describe('list_threads', () => {
     const listed = ok(await mcp.call<Listed>('list_threads', { project: 'cadastro' }));
     expect(listed.broken?.map((b) => b.id)).toContain('quebrada');
     rmSync(join(dir(), 'comments', 'quebrada.json'));
+  });
+
+  it('um arquivo grande demais vai para broken, sem derrubar a lista', async () => {
+    const big = join(dir(), 'comments', 'grande.json');
+    writeFileSync(big, '');
+    truncateSync(big, 17 * 1024 * 1024);
+    const listed = ok(await mcp.call<Listed>('list_threads', { project: 'cadastro' }));
+    const row = listed.broken?.find((b) => b.id === 'grande');
+    expect(row?.error).toContain('file-too-large');
+    expect(listed.threads.length).toBeGreaterThan(0);
+    rmSync(big);
   });
 
   it('as cópias da mesma conversa em duas pastas são juntadas', async () => {
