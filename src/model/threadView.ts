@@ -1,6 +1,7 @@
 import { projectIndex, type ProjectIndex } from './projectIndex';
 import {
   compareThreadMessages,
+  firstThreadMessage,
   type Thread,
   type ThreadAnchor,
   type ThreadMessage,
@@ -185,10 +186,24 @@ const EM_UNDERSCORE_RE = /(^|[^\p{L}\p{N}_])(__?)(?=\S)(.+?)(?<=\S)\2(?![\p{L}\p
 const CODE_RE = /(`+)([^`]+)\1/g;
 const FENCE_RE = /^\s*(?:`{3,}|~{3,})/;
 
-function stripLinks(line: string, resolveLabel?: SubjectLabelResolver): string {
+/** Marcadores (área de uso privado) que seguram o rótulo vivo de um link até o fim da limpeza. */
+const LIVE_OPEN = '\uE000';
+const LIVE_CLOSE = '\uE001';
+const LIVE_RE = /\uE000(\d+)\uE001/g;
+
+/**
+ * Link → rótulo. O rótulo vivo (de `resolveLabel`) já é texto final: entra como marcador e só
+ * volta no fim, para a ênfase e os escapes não o lerem de novo (`__init__` continua `__init__`).
+ */
+function stripLinks(
+  line: string,
+  resolveLabel: SubjectLabelResolver | undefined,
+  live: string[],
+): string {
   return line.replace(LINK_RE, (_all, bang: string, label: string, url: string) => {
     if (bang !== '' || !resolveLabel) return label;
-    return resolveLabel(label.replace(UNESCAPE_RE, '$1'), url);
+    live.push(resolveLabel(label.replace(UNESCAPE_RE, '$1'), url));
+    return `${LIVE_OPEN}${live.length - 1}${LIVE_CLOSE}`;
   });
 }
 
@@ -203,7 +218,14 @@ function stripEmphasis(line: string): string {
 function plainLine(line: string, resolveLabel?: SubjectLabelResolver): string {
   if (FENCE_RE.test(line)) return '';
   const body = line.trim().replace(LINE_PREFIX_RE, '');
-  return stripEmphasis(stripLinks(body, resolveLabel)).replace(UNESCAPE_RE, '$1').trim();
+  const live: string[] = [];
+  const plain = stripEmphasis(stripLinks(body, resolveLabel, live)).replace(
+    UNESCAPE_RE,
+    '$1',
+  );
+  return plain
+    .replace(LIVE_RE, (_all, index: string) => live[Number(index)] ?? '')
+    .trim();
 }
 
 /**
@@ -215,7 +237,7 @@ export function threadSubject(
   thread: Thread,
   resolveLabel?: SubjectLabelResolver,
 ): string {
-  const first = [...thread.messages].sort(compareThreadMessages)[0];
+  const first = firstThreadMessage(thread);
   if (!first) return '';
   for (const line of first.text.split(/\r?\n/)) {
     const plain = plainLine(line, resolveLabel);

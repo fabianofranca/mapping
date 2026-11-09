@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   inlinesToText,
   isSafeLinkTarget,
+  parseInlines,
   parseMarkdown,
   type MarkdownBlock,
   type MarkdownInline,
@@ -332,5 +333,51 @@ describe('markdown: quebra de linha no parágrafo (opção)', () => {
       inlines: readonly MarkdownInline[];
     };
     expect(inlinesToText(b.inlines)).toBe('a\nb');
+  });
+});
+
+describe('lista com recuo que volta (item 29)', () => {
+  it('"  - a\\n- b" continua na mesma lista raiz', () => {
+    const blocks = parseMarkdown('  - a\n- b');
+    expect(blocks).toHaveLength(1);
+    const list = blocks[0];
+    expect(list?.type).toBe('list');
+    if (list?.type !== 'list') return;
+    expect(list.items.map((i) => inlinesToText(i.inlines))).toEqual(['a', 'b']);
+  });
+});
+
+const LONE_SURROGATE =
+  /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+describe('texto longo fatiado em fronteira segura (item 30)', () => {
+  const CHUNK = 20000;
+
+  it('não parte um link que cruzaria o limite', () => {
+    const link = '[rótulo com espaços](mapping://pasta/m/abc12345)';
+    const text = 'a'.repeat(CHUNK - 10) + ' ' + link + ' fim';
+    const links: MarkdownInline[] = [];
+    walk(parseMarkdown(text), (i) => {
+      if (i.type === 'link') links.push(i);
+    });
+    expect(links).toHaveLength(1);
+  });
+
+  it('não parte uma ênfase que cruzaria o limite', () => {
+    const text = 'a'.repeat(CHUNK - 6) + ' **negrito com espaço** fim';
+    const strong: MarkdownInline[] = [];
+    walk(parseMarkdown(text), (i) => {
+      if (i.type === 'strong') strong.push(i);
+    });
+    expect(strong).toHaveLength(1);
+  });
+
+  it('não parte um par substituto', () => {
+    const text = 'a'.repeat(CHUNK - 1) + '😀' + 'b'.repeat(10);
+    const parts = parseInlines(text).flatMap((i) => (i.type === 'text' ? [i.text] : []));
+    for (const part of parts) {
+      expect(part).not.toMatch(LONE_SURROGATE);
+    }
+    expect(parts.join('')).toBe(text);
   });
 });

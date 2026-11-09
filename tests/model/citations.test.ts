@@ -164,6 +164,13 @@ describe('escapeCitationLabel / formatCitation', () => {
     expect(escapeCitationLabel('sem nada')).toBe('sem nada');
   });
 
+  it('escapa *, _ e crase: o rótulo relido não perde os caracteres', () => {
+    for (const label of ['a*b*c', '_x_ e __y__', 'use `code` aqui', '**negrito**']) {
+      const [c] = extractCitations(formatCitation(label, url('m/m2')));
+      expect(c!.label).toBe(label);
+    }
+  });
+
   it('formata [rótulo escapado](url)', () => {
     expect(formatCitation('Botão [x]', url('m/m2'))).toBe(
       `[Botão \\[x\\]](${url('m/m2')})`,
@@ -224,10 +231,35 @@ describe('resolveCitation', () => {
       found: true,
       target: { kind: 'thread', id: 'c1b2' },
     });
-    expect(found('p/prop2026')).toEqual({
+    expect(found('p/prop-20261106-ab')).toEqual({
       found: true,
       target: { kind: 'proposal', id: 'prop-20261106-ab' },
     });
+  });
+
+  it('proposta resolve só pelo id exato, nunca por prefixo (decisão 11)', () => {
+    const proposals = [{ id: 'botoes-2', title: 'Botões' }];
+    const exact = (path: string) => resolveCitation({ ...ctx, proposals }, refOf(path));
+    expect(exact('p/botoes-2')).toEqual({
+      found: true,
+      target: { kind: 'proposal', id: 'botoes-2' },
+    });
+    expect(exact('p/botoes')).toEqual({ found: false, reason: 'missing' });
+    expect(exact('p/prop2026')).toEqual({ found: false, reason: 'missing' });
+  });
+
+  it('campo de anotação sem tipo não vem do protótipo', () => {
+    const p = ctx.project;
+    const untyped: Project = {
+      ...p,
+      annotations: p.annotations.map((a) =>
+        a.id === 'AM' ? { ...a, type: { specId: 'nenhuma', typeId: 'nada' } } : a,
+      ),
+    };
+    const at = (path: string) =>
+      resolveCitation({ ...ctx, project: untyped }, refOf(path));
+    expect(at('a/am/f/constructor')).toEqual({ found: false, reason: 'missing' });
+    expect(at('a/am/f/toString')).toEqual({ found: false, reason: 'missing' });
   });
 
   it('campo tipado, par da anotação livre e linha de table', () => {
@@ -369,7 +401,7 @@ describe('liveLabel', () => {
     const ctx = ctxOf();
     const layer = ctx.project.layers.find((l) => l.spec !== null)!;
     expect(resolve(ctx, `l/${layer.id.toLowerCase()}`).label).toBe(layer.name);
-    expect(resolve(ctx, 'p/prop2026').label).toBe('Renomear o botão');
+    expect(resolve(ctx, 'p/prop-20261106-ab').label).toBe('Renomear o botão');
   });
 
   it('conversa: o assunto injetado (ou a primeira linha, sem injeção)', () => {
@@ -467,7 +499,7 @@ describe('citedTargets / citationTargetKey', () => {
     const t = thread('c1b2', [
       `Veja [Botão](${url('m/m2')}) e [titulo](${url('a/am/f/titulo')})`,
       `Outra vez [Botão](${url('m/m2')}), [linha](${url('a/am/f/campos/r/r1')}) e [c](${url('c/c9f0')})`,
-      `Quebrado [x](${url('m/zzz')}), biblioteca [Button](mapping://button), https [s](https://a.com) e [p](${url('p/prop2026')})`,
+      `Quebrado [x](${url('m/zzz')}), biblioteca [Button](mapping://button), https [s](https://a.com) e [p](${url('p/prop-20261106-ab')})`,
     ]);
     const targets = citedTargets(t, ctx);
     expect(targets).toEqual<CitationTarget[]>([

@@ -12,7 +12,8 @@ import { memoByProject, projectIndex } from './projectIndex';
 import { instanceLabel, tableRows } from './refs';
 import { fieldOf, typeOfAnnotation } from './specLookup';
 import { fieldLabel, typeName } from './typedDisplay';
-import type { Thread } from './thread';
+import type { Thread, ThreadMessage } from './thread';
+import { threadSubject } from './threadView';
 import type { Annotation, JsonValue, Project } from './types';
 
 // Citações das conversas (etapa Comentários, decisões 28, 29 e 33). A citação é um link
@@ -114,9 +115,9 @@ export function extractCitations(text: string): Citation[] {
 
 // ------------------------------------------------------------------ escrever
 
-/** Escapa `[`, `]` e `\` do rótulo, para ele caber entre os colchetes do link. */
+/** Escapa `[`, `]`, `\`, `*`, `_` e crase do rótulo: cabe entre os colchetes e relido sai igual. */
 export function escapeCitationLabel(label: string): string {
-  return label.replace(/[\\[\]]/g, (c) => `\\${c}`);
+  return label.replace(/[\\[\]*_`]/g, (c) => `\\${c}`);
 }
 
 /**
@@ -310,14 +311,18 @@ const ITEM_RESOLVERS: {
   c: (ctx, code) =>
     single(listMatcher(ctx.threads)(code), (id) => ({ kind: 'thread', id })),
   p: (ctx, code) =>
-    single(listMatcher(ctx.proposals)(code), (id) => ({ kind: 'proposal', id })),
+    // Só o id exato (decisão 11): prefixo faria `p/botoes` apagada cair em `botoes-2`.
+    single(listById(ctx.proposals).has(code) ? [code] : [], (id) => ({
+      kind: 'proposal',
+      id,
+    })),
 };
 
 /** O campo existe na anotação: o tipo o declara ou, sem tipo, há valor com essa key. */
 function hasField(p: Project, a: Annotation, key: string): boolean {
   if (a.values === null) return false;
   const type = typeOfAnnotation(p, a)?.type;
-  return type ? fieldOf(type, key) !== null : key in a.values;
+  return type ? fieldOf(type, key) !== null : Object.hasOwn(a.values, key);
 }
 
 /** O campo `key` é uma `table` (pelo tipo ou, sem tipo, pelo valor). */
@@ -382,13 +387,9 @@ export function citationTargetKey(target: CitationTarget): string {
 
 // ------------------------------------------------------------------ rótulo vivo
 
-/** Quantos caracteres tem o assunto padrão (o de `threadSubject`). */
-const DEFAULT_SUBJECT_MAX = 80;
-
+/** O assunto padrão é o de `threadSubject` (sem markdown, cortado por ponto de código). */
 function defaultSubject(thread: Thread): string {
-  const first = thread.messages[0]?.text ?? '';
-  const line = first.split('\n').find((l) => l.trim() !== '') ?? '';
-  return line.trim().slice(0, DEFAULT_SUBJECT_MAX);
+  return threadSubject(thread);
 }
 
 /** `undefined`: o alvo não existe mais (a resolução ficou velha). `null`: existe, sem nome. */
@@ -513,6 +514,18 @@ export function liveCitation(ctx: CitationContext, citation: Citation): LiveCita
 
 // ------------------------------------------------------------------ alvos e backlinks
 
+const CITATIONS_OF_MESSAGE = new WeakMap<ThreadMessage, readonly Citation[]>();
+
+/** As citações da mensagem, lidas uma vez (a mensagem é imutável e passa de revisão a revisão). */
+function messageCitations(message: ThreadMessage): readonly Citation[] {
+  let found = CITATIONS_OF_MESSAGE.get(message);
+  if (!found) {
+    found = extractCitations(message.text);
+    CITATIONS_OF_MESSAGE.set(message, found);
+  }
+  return found;
+}
+
 /**
  * Alvos que a conversa cita (as citações que resolvem), sem repetir, na ordem do texto, das
  * mensagens mais antigas às mais novas. Serve ao filtro "cita a seleção".
@@ -521,7 +534,7 @@ export function citedTargets(thread: Thread, ctx: CitationContext): CitationTarg
   const seen = new Set<string>();
   const targets: CitationTarget[] = [];
   for (const message of thread.messages) {
-    for (const citation of extractCitations(message.text)) {
+    for (const citation of messageCitations(message)) {
       if (!citation.ref) continue;
       const resolution = resolveCitation(ctx, citation.ref.ref);
       if (!resolution.found) continue;
@@ -538,7 +551,7 @@ export function citedTargets(thread: Thread, ctx: CitationContext): CitationTarg
 function citedThreadIds(thread: Thread, match: CodeMatcher): Set<string> {
   const ids = new Set<string>();
   for (const message of thread.messages) {
-    for (const citation of extractCitations(message.text)) {
+    for (const citation of messageCitations(message)) {
       const ref = citation.ref?.ref;
       if (ref?.type !== 'item' || ref.kind !== 'c') continue;
       const matches = match(ref.code);
@@ -562,8 +575,8 @@ export function backlinks(
     for (const cited of citedThreadIds(thread, match)) {
       if (cited === thread.id) continue;
       const list = result.get(cited);
-      if (!list) result.set(cited, [thread.id]);
-      else if (!list.includes(thread.id)) list.push(thread.id);
+      if (list) list.push(thread.id);
+      else result.set(cited, [thread.id]);
     }
   }
   return result;

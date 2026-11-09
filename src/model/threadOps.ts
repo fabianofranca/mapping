@@ -163,13 +163,38 @@ function latestResolved(a: Thread, b: Thread): ThreadResolved | null {
 }
 
 /**
+ * A resolução que vale na junção, ou `null` (aberta). Com as mesmas mensagens nas duas cópias e
+ * `revision` diferente, a cópia de maior `revision` (`base`) decide; senão a resolução mais
+ * recente vale só se for posterior à última mensagem da união.
+ */
+function joinedResolution(
+  open: Thread,
+  resolved: Thread,
+  base: Thread,
+  messages: readonly ThreadMessage[],
+): ThreadResolved | null {
+  const sameMessages =
+    open.revision !== resolved.revision &&
+    open.messages.length === messages.length &&
+    resolved.messages.length === messages.length;
+  if (sameMessages) return base.resolved;
+  const candidate = latestResolved(open, resolved);
+  const last = messages[messages.length - 1] as ThreadMessage;
+  return candidate !== null && Date.parse(candidate.at) > Date.parse(last.at)
+    ? candidate
+    : null;
+}
+
+/**
  * Junta as duas cópias da mesma conversa (uma em `comments/`, outra em `comments/resolved/`),
  * como fica depois de uma mesclagem do git ou de uma mudança de pasta que parou no meio
  * (decisão 7):
  * - uma cópia só: vale ela, e o campo `resolved` diz o lugar;
  * - duas: as mensagens são a união por `id` (a cópia aberta vence um id repetido, que é a
- *   mesma mensagem), a `revision` é a maior, e a conversa fica resolvida só se o `resolved.at`
- *   é posterior à última mensagem da união; senão fica aberta, com `resolved` `null`.
+ *   mesma mensagem) e a `revision` é a maior. Com as mesmas mensagens nas duas e `revision`
+ *   diferente, a cópia de maior `revision` decide se está resolvida (a reabertura interrompida
+ *   não se perde). Senão a conversa fica resolvida só se o `resolved.at` é posterior à última
+ *   mensagem da união; mensagem nova depois da resolução reabre, com `resolved` `null`.
  * A âncora e o `createdAt` vêm da cópia de maior `revision` (a aberta, no empate).
  * `invalid-thread` se não há cópia ou se os ids diferem.
  */
@@ -191,14 +216,12 @@ export function mergeThreadCopies(
   }
   const base = resolved.revision > open.revision ? resolved : open;
   const messages = mergedMessages(open, resolved);
-  const last = messages[messages.length - 1] as ThreadMessage;
-  const candidate = latestResolved(open, resolved);
-  const keep = candidate !== null && Date.parse(candidate.at) > Date.parse(last.at);
+  const candidate = joinedResolution(open, resolved, base, messages);
   const thread: Thread = {
     ...base,
     revision: Math.max(open.revision, resolved.revision),
-    resolved: keep ? candidate : null,
+    resolved: candidate,
     messages,
   };
-  return { thread, resolved: keep, location: threadLocation(thread) };
+  return { thread, resolved: candidate !== null, location: threadLocation(thread) };
 }

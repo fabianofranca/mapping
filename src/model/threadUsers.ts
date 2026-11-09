@@ -45,9 +45,15 @@ export interface ThreadUser {
   readonly count: number;
 }
 
+/** Locale fixo da ordenação: a mesma ordem em Node e no navegador, seja qual for o idioma da máquina. */
+const USER_LOCALE = 'pt-BR';
+
 function compareUsers(a: ThreadUser, b: ThreadUser): number {
   if (a.kind !== b.kind) return a.kind === 'human' ? -1 : 1;
-  return a.label.localeCompare(b.label) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+  return (
+    a.label.localeCompare(b.label, USER_LOCALE) ||
+    (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
+  );
 }
 
 /** Usuários distintos das conversas, com a contagem de conversas de cada um (filtro Usuário). */
@@ -57,15 +63,16 @@ export function threadUsers(threads: readonly Thread[]): readonly ThreadUser[] {
     const seen = new Set<string>();
     for (const m of t.messages) {
       const key = userKey(m.author);
-      if (seen.has(key)) continue;
-      seen.add(key);
       const prev = users.get(key);
+      // O rótulo acompanha a última mensagem; a conversa conta uma vez só.
+      const counted = seen.has(key) ? 0 : 1;
+      seen.add(key);
       users.set(key, {
         key,
         label: userLabel(m.author),
         kind: m.author.kind,
         email: m.author.kind === 'human' ? normalizeEmail(m.author.email) : null,
-        count: (prev?.count ?? 0) + 1,
+        count: (prev?.count ?? 0) + counted,
       });
     }
   }
