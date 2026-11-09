@@ -216,14 +216,17 @@ export interface CodeLocation {
   readonly path: string | null;
 }
 
-/** Sem linha: tira o fragmento final `#…{line}` (se não tiver `{path}`); senão, `{line}` vira vazio. */
+/**
+ * Sem linha: tira o fragmento final `#…{line}` (se não tiver `{path}`); em qualquer caso, o
+ * `{line}` que sobrar (na query, por exemplo) vira vazio.
+ */
 function withoutLine(template: string): string {
   if (!template.includes('{line}')) return template;
   const hash = template.lastIndexOf('#');
   if (hash >= 0) {
     const fragment = template.slice(hash);
     if (fragment.includes('{line}') && !fragment.includes('{path}')) {
-      return template.slice(0, hash);
+      return template.slice(0, hash).replaceAll('{line}', '');
     }
   }
   return template.replaceAll('{line}', '');

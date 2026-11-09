@@ -310,8 +310,9 @@ export function deserialize(
     }
     data = migrated.data;
     migratedFrom = version;
-    discardedUrlTemplates = discardedOnMigrationTo11(raw);
-    discardedInherit = discardedOnMigrationTo13(raw);
+    // Os campos descartados só existiam em arquivos antigos: um v15 editado à mão não ganha aviso.
+    if (version <= 10) discardedUrlTemplates = discardedOnMigrationTo11(raw);
+    if (version <= 12) discardedInherit = discardedOnMigrationTo13(raw);
   }
 
   const parsed = projectSchema.safeParse(data);

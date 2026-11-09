@@ -25,11 +25,18 @@ export type RemoteImageCheck =
   | { readonly ok: false; readonly reason: RemoteImageRejection };
 
 const IPV4_LITERAL = /^\d{1,3}(\.\d{1,3}){3}$/;
-const LOCAL_SUFFIXES = ['.local', '.localhost', '.internal'];
+const LOCAL_SUFFIXES = [
+  '.local',
+  '.localhost',
+  '.internal',
+  '.home.arpa',
+  '.lan',
+  '.intranet',
+];
 
 /**
  * Host da rede local (decisão 16): IP literal v4/v6, `localhost`, nome sem ponto
- * e sufixos `.local`, `.localhost`, `.internal`. Todo IP literal conta, inclusive público.
+ * e sufixos `.local`, `.localhost`, `.internal`, `.home.arpa`, `.lan`, `.intranet`. Todo IP literal conta, inclusive público.
  * Hostname vazio é tratado como local (recusa por segurança).
  */
 export function isLocalNetworkHost(hostname: string): boolean {

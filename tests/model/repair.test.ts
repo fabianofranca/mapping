@@ -46,6 +46,26 @@ describe('repairProject', () => {
     ]);
   });
 
+  it('par repetido só com anotação removida: o id não mudou, então não há new-id', () => {
+    const p = sampleProject();
+    // A1 sai por marcação inexistente; o E1 de A2 colidia só com o dela.
+    const broken: Project = {
+      ...p,
+      annotations: p.annotations.map((a) =>
+        a.id === 'A1'
+          ? { ...a, markingId: 'NAO-EXISTE' }
+          : a.id === 'A2'
+            ? { ...a, entries: [{ id: 'E1', key: 'tipo', value: 'trinca' }] }
+            : a,
+      ),
+    };
+    const result = repair(broken);
+    expect(result.repaired.some((r) => r.action === 'new-id')).toBe(false);
+    expect(result.project.annotations.find((a) => a.id === 'A2')?.entries[0]?.id).toBe(
+      'E1',
+    );
+  });
+
   it('rect fora da imagem é recortado aos limites', () => {
     const p = sampleProject();
     const broken: Project = {
