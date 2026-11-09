@@ -8,8 +8,6 @@ export interface SideSegment {
   readonly y2: number;
 }
 
-const ALL_SIDES = ['top', 'right', 'bottom', 'left'] as const;
-
 /**
  * Os `sides` que de fato recortam o traço: `undefined` quando `sides` falta ou pede os quatro
  * lados, que é o contorno inteiro com o raio dos cantos (decisão 21 da #896). Lados parciais
@@ -18,7 +16,8 @@ const ALL_SIDES = ['top', 'right', 'bottom', 'left'] as const;
 export function partialSides(stroke: Stroke): Stroke['sides'] {
   const { sides } = stroke;
   if (!sides) return undefined;
-  return ALL_SIDES.every((side) => sides.includes(side)) ? undefined : sides;
+  // Os lados são sem repetição (validado): quatro lados são os quatro.
+  return sides.length === 4 ? undefined : sides;
 }
 
 /**
