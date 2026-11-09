@@ -96,6 +96,18 @@ function isCondition(value: unknown): value is Condition {
   );
 }
 
+/** `$field` booleano: campo vazio vale o `default` (se houver; senão falso); preenchido, a veracidade. */
+function fieldBoolean(expr: Record<string, unknown>, values: FieldValues): boolean {
+  const value = values[expr.$field as string];
+  if (!isEmpty(value) || !('default' in expr)) return truthy(value);
+  const fallbackValue = expr.default;
+  if (typeof fallbackValue === 'boolean') return fallbackValue;
+  return (
+    (typeof fallbackValue === 'string' || typeof fallbackValue === 'number') &&
+    truthy(fallbackValue)
+  );
+}
+
 /**
  * Avalia uma expressão booleana (`visible`, `italic`): condição direta, `$field` por
  * veracidade (`"sim"`/`"não"`), `$if`/`$switch` com ramos booleanos ou o literal.
@@ -107,8 +119,7 @@ export function evaluateBoolean(
 ): boolean {
   if (typeof expr === 'boolean') return expr;
   if (isCondition(expr)) return evaluateCondition(expr, values);
-  if (isExprObject(expr) && '$field' in expr)
-    return truthy(values[expr.$field as string]);
+  if (isExprObject(expr) && '$field' in expr) return fieldBoolean(expr, values);
   const value: unknown = evaluate<unknown>(expr as Expr<unknown>, values, fallback);
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string' || typeof value === 'number') return truthy(value);

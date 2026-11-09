@@ -6,6 +6,7 @@ import {
   type ResolvedSlotLayout,
 } from './components/arrange';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
+import type { ResolvedTokens } from './components/tokens';
 import {
   instantiate,
   measureComponent,
@@ -13,6 +14,7 @@ import {
 } from './components/instantiate';
 import { markingComponent, type ComponentCatalog } from './componentCatalog';
 import { drawingValues } from './componentValues';
+import { componentForDrawing } from './drawingMode';
 import { fail } from './errors';
 import {
   MIN_STORED_MARKING_SIZE,
@@ -44,10 +46,16 @@ const MAX_PASSES = 4;
 interface Container {
   readonly id: string;
   readonly component: ComponentFile;
+  /** Tabela de tokens do modo do desenho (a mesma que o `component` já traz aplicada). */
+  readonly tokens: ResolvedTokens | undefined;
   readonly values: FieldValues;
   readonly layout: ResolvedSlotLayout;
   readonly kids: readonly Marking[];
   readonly label: string;
+}
+
+function tokensOption(tokens: ResolvedTokens | undefined): { tokens?: ResolvedTokens } {
+  return tokens === undefined ? {} : { tokens };
 }
 
 function containerOf(
@@ -57,17 +65,19 @@ function containerOf(
 ): Container | null {
   const mc = markingComponent(p, catalog, markingId);
   if (mc === null) return null;
-  const slot = findSlot(mc.component);
+  const marking = projectIndex(p).markings.get(markingId);
+  const drawn = componentForDrawing(p, mc.component, marking?.containerId ?? null);
+  const slot = findSlot(drawn.component);
   if (slot === undefined) return null;
   const values = drawingValues(p, mc.annotation, mc.type).values;
   const layout = resolveSlotLayout(slot, values);
   if (layout.type === 'none') return null;
   const kids = projectIndex(p).children.get(markingId) ?? [];
   if (kids.length === 0) return null;
-  const marking = projectIndex(p).markings.get(markingId);
   return {
     id: markingId,
-    component: mc.component,
+    component: drawn.component,
+    tokens: drawn.tokens,
     values,
     layout,
     kids,
@@ -202,11 +212,12 @@ export function arrangeMarking(
       if (!hugW && !hugH) continue;
       const rect = rects.get(kid.id) as Rect;
       const values = drawingValues(p, mc.annotation, mc.type).values;
+      const drawn = componentForDrawing(p, mc.component, kid.containerId);
       const measured = measureComponent(
-        mc.component,
+        drawn.component,
         values,
         { width: hugW ? null : rect.width, height: hugH ? null : rect.height },
-        { measure },
+        { measure, ...tokensOption(drawn.tokens) },
       );
       const min = mc.component.minSize;
       rects.set(kid.id, {
@@ -246,7 +257,7 @@ export function arrangeMarking(
         component,
         values,
         { width: hugW ? null : rect.width, height: hugH ? null : rect.height },
-        { measure, slotContent },
+        { measure, slotContent, ...tokensOption(info.tokens) },
       );
       const min = component.minSize;
       const width = hugW
@@ -263,6 +274,7 @@ export function arrangeMarking(
       measure,
       idPrefix: id,
       slotContent,
+      ...tokensOption(info.tokens),
     });
     const box = slotBoxOfScene(root);
     if (box === undefined) return;
