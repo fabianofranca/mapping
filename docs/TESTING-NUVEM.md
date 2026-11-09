@@ -9,6 +9,7 @@ A sessão é criada pelo **orquestrador** do fluxo automatizado (`CLAUDE.md`, "F
 - **Dirigido pelas fases de uma etapa:** "… no modo dirigido: as fases X e Y da etapa #301. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (o plano está na issue da etapa e nas sub-issues `step`)
 - **Completo:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (R0 a R25, sem os roteiros sob demanda; a ordem está em "O que executar")
 - **Completo, em bloco:** "Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco k de 5. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (só os roteiros do bloco k da tabela de "Rodada completa em blocos"; o coordenador cria os cinco blocos ao mesmo tempo)
+- **Dirigido, em grupo:** "Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido, grupo k de n: R12. Branch `epic/x`, commit `abc1234`. Relato na sub-issue #123. Coordenador: `session_…`." (só os roteiros do grupo k que o coordenador tirou do `round-guide.mjs --grupos`; ver "Rodada dirigida em grupos"; o coordenador cria os n grupos ao mesmo tempo)
 - **Só um link de PR do Mapping** ("Teste <link>"): trate como dirigida pelos roteiros que o PR toca; leia o corpo e os arquivos do PR, monte a lista e siga o modo comum.
 
 Em qualquer modo, a mensagem pode trazer a lista da **passada visual** ("passada visual: Detalhes, Propostas"); sem lista, vale a padrão (em "O que executar").
@@ -104,7 +105,7 @@ Siga o apêndice A do guia: a página pelo Playwright por CDP (receita 4), os di
 
 Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começo do relato (e na conversa). Siga a ordem do guia; se um passo depende de outro (ex.: R6.10 de R6.8a a R6.9; R4.9 de R4.1 a R4.8), execute também os anteriores necessários e marque-os com o mesmo achado de origem.
 
-**R0 no reteste (modo 1, achados de um relato anterior).** Execute só o **R0.1** (build id do commit) e, do resto do R0, só os passos de que os passos do achado dependem; não repita o R0 inteiro. Nos modos 2 e 3 (lista de roteiros/passos e fases de uma etapa) e na rodada completa, o **R0 inteiro** continua sendo o primeiro a rodar.
+**R0 no reteste (modo 1, achados de um relato anterior).** Execute só o **R0.1** (build id do commit) e, do resto do R0, só os passos de que os passos do achado dependem; não repita o R0 inteiro. Nos modos 2 e 3 (lista de roteiros/passos e fases de uma etapa) e na rodada completa, o **R0 inteiro** continua sendo o primeiro a rodar. **Em grupo ("grupo k de n"):** o grupo 1 roda o **R0 inteiro**; os grupos 2 em diante rodam só o **R0.1** e os passos do R0 de que os roteiros do grupo dependem, pela mesma regra do reteste (ver "Rodada dirigida em grupos").
 
 **Regra para o que não dá para automatizar.** Se um passo dos roteiros principais exigir interação do dono e **não for muito relevante**, proponha no relato movê-lo para os roteiros sob demanda. Se for **muito relevante** (perda de dados, integridade do `mapping.json`, segurança), não decida: avise o dono no relato e na conversa; o passo fica onde está, "pendente de decisão". O R0.5 (`index.html` por `file://`) e o R6.2 (fechar a aba no meio da gravação) não funcionaram sozinhos e já estão nos roteiros sob demanda RF e RA; o R6.2 tem o e2e `tests/e2e/folder.spec.ts` ("fechar a página logo depois de editar não perde a marcação") no CI. Não os tente.
 
@@ -113,6 +114,7 @@ Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começ
 - **Rodada dirigida** (modos 2 e 3: lista de roteiros/passos ou fases de uma etapa): a linha "passada visual: `<lista>`" da mensagem; "passada visual: nenhuma" pula a passada, e o relato diz "Passada visual: não pedida"; sem a linha na mensagem, a lista padrão (abaixo).
 - **Reteste** (modo 1, achados de um relato anterior): só as janelas e os diálogos citados nos achados do relato, nunca a lista padrão nem a da mensagem.
 - **Rodada completa:** a lista padrão; se a mensagem trouxer "passada visual: `<lista>`", use essa em vez da padrão.
+- **Rodada dirigida em grupos:** a linha "passada visual: `<lista>`" da mensagem vale para o grupo que a recebe; o coordenador a põe em um grupo só, e nos outros a mensagem diz "nenhuma" (o relato diz "Passada visual: não pedida").
 - **Rodada completa em blocos:** só o **bloco 4** faz a passada visual (lista padrão, ou a da mensagem); nos blocos 1, 2, 3 e 5, o relato diz "Passada visual: no bloco 4".
 
 **Lista padrão:** as oito janelas (**Árvore**, **Camadas**, **Detalhes**, **Lista**, **Incompletas**, **Diagnóstico**, **Propostas** e **Comentários**) e os diálogos **Configurações**, **Exportar**, **Especializações**, **Pasta indisponível** e **Sair da revisão?**. Entra também a barra dos breadcrumbs com o **Enquadrar seleção**, habilitado (com uma marcação selecionada) e desabilitado (sem seleção), com o tooltip do **Shift+2**, a 1280×720 e a 900×720.
@@ -152,6 +154,33 @@ Por quê: o limite é o **tamanho do guia gerado** de cada bloco: até 200 mil c
 
 "Bloco" não colide com o "Parte i de n" dos comentários acima de 65 mil caracteres: um bloco longo vira "Rodada completa — bloco k de 5 · Parte i de n". O "modo completo" sem bloco continua valendo: uma sessão roda tudo.
 
+## Rodada dirigida em grupos
+
+Uma rodada dirigida (inclusive um reteste) cuja lista, **sem o R0**, passa de **40 passos** é dividida em **grupos de até ~40 passos**, no máximo **5 sessões ao mesmo tempo** (decisão do dono, 2026-11-09, etapa [#1148](https://github.com/fabianofranca/mapping/issues/1148)). Um roteiro sozinho acima de 40 (R12, R19, R25) é um grupo só; até 40 passos, uma sessão, como sempre. A granularidade é o roteiro (ou a faixa de passos que a lista já pedia, como `R6.3-R6.7`): nunca se parte um roteiro entre grupos.
+
+**Quem divide é o coordenador**, não o testador: no clone do épico, `node scripts/testing/round-guide.mjs --grupos <roteiros>` conta os passos de cada item (sem o R0), soma e, acima do limite, imprime uma linha pronta para a mensagem por grupo, `grupo k de n: <roteiros>`, do maior para o menor; até o limite, imprime "uma sessão". O comando agrupa sozinho as cadeias abaixo e nunca passa de 5 grupos.
+
+**Cadeias que não se separam** (da seção 8 do guia e da tabela dos blocos; cada cadeia fica inteira no mesmo grupo, e um item pedido de uma cadeia leva consigo os outros itens dela que a lista também pedir):
+
+| Cadeia      | Itens                                           | Por quê                                                   |
+| ----------- | ----------------------------------------------- | --------------------------------------------------------- |
+| `principal` | R1, R3, R5, R6.3 a R6.7, R6.12 a R6.14, R7 e R8 | usam o projeto `principal` e o repositório de teste do R1 |
+| `loja`      | R4 e R6.8a a R6.11                              | o R6.8a a R6.11 usam a pasta `loja` do R4.11              |
+| `telas`     | R9 e R10                                        | o R10.7 usa o projeto `telas` do R9                       |
+
+Os outros roteiros usam pastas próprias e podem ir a qualquer grupo. O `tests/tooling/roundBlocks.test.ts` confere que cada item da tabela existe no guia e que os de uma cadeia estão no mesmo bloco da tabela dos 5 blocos.
+
+**Modo "dirigido, grupo k de n".** A mensagem "execute no modo dirigido, grupo k de n: `<roteiros>`" (k de 1 a n, n de 2 a 5) manda:
+
+1. Gerar o guia da rodada só com os roteiros do grupo: `node scripts/testing/round-guide.mjs <roteiros do grupo> --out …/apoio/guia.md`. O ambiente, as pastas de trabalho, o perfil do Chrome e o MCP são seus, de mais ninguém: os grupos não dividem pasta, perfil nem porta (como os blocos).
+2. **R0:** o **grupo 1** executa o **R0 inteiro** primeiro; os grupos 2 em diante executam só o **R0.1** (build id do commit) e, do resto do R0, os passos de que os roteiros do grupo dependem (a regra do reteste), nunca o R0 inteiro. Depois, os roteiros do grupo, na ordem do guia.
+3. Relatar no template da seção 10: `Modo: dirigido, grupo k de n (<roteiros>)`; a primeira linha do comentário é "Rodada dirigida — grupo k de n"; os achados são numerados `k.1`, `k.2`… (o código carrega o grupo, para o reteste achar de onde veio).
+4. O aviso ao coordenador (item 5 da "Entrega") cita o grupo: "Grupo k de n: relato em <link>: …".
+
+"Grupo" não colide com o "Parte i de n" dos comentários acima de 65 mil caracteres: um relato longo vira "Rodada dirigida — grupo k de n · Parte i de n".
+
+**Retestes juntos.** O reteste de uma etapa é **uma sessão só**, com os achados de **todos** os grupos (ou blocos) e os passos que as correções dos defeitos pendentes afetam; só se divide em grupos se passar do limite acima. Uma correção mesclada enquanto o reteste ainda não começou entra no mesmo reteste (mensagem em [`docs/FLOW.md`](FLOW.md)).
+
 ## Conferir e registrar
 
 - Para cada passo: faça o que ele diz, compare com o esperado **na tela** (captura) e **no disco** (leia o arquivo; se a leitura falhar ou o JSON vier cortado, espere 1 s e leia de novo) e marque ✅, ❌ ou "não executado (motivo)". Não interprete a intenção do passo: se o texto estiver ambíguo, escolha a leitura mais literal e registre a ambiguidade em "O que atrapalhou".
@@ -163,7 +192,7 @@ Por quê: o limite é o **tamanho do guia gerado** de cada bloco: até 200 mil c
 
 **Escreva o relato a cada roteiro concluído, não só no fim.** Ao terminar o R0, crie o `relato.md` na pasta de trabalho com o cabeçalho e os passos do R0; ao terminar cada roteiro seguinte, acrescente os passos e os achados dele e grave o arquivo (template da seção 10 do guia). Uma sessão interrompida não pode perder o que já foi observado, e o `relato.md` é gravado mesmo se a rodada parar no meio (ambiente incompleto, passo bloqueado): o motivo da parada vai no **Resumo**.
 
-No modo de bloco, o `relato.md` abre com `Modo: completo, bloco k de 5 (<roteiros>)` e os achados são `k.1`, `k.2`… (seção "Rodada completa em blocos"). O `relato.md` leva o cabeçalho inteiro (inclusive o **Tempo por roteiro**, ver abaixo), em **Ferramenta**: "Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)" e o MCP por stdio; o **Resumo** (obrigatório), os passos, os achados com a severidade da escala do guia, as **Observações (sem severidade)** e "O que atrapalhou", inclusive o que atrapalhou **você** como testador (passo ambíguo, esperado que não dá para observar, contorno que precisou usar). Essa última parte é a que mais importa para a etapa seguinte. As capturas e os `mapping.json` dos ❌ ficam em `anexos/`, com o número do achado no nome.
+No modo de grupo, o `relato.md` abre com `Modo: dirigido, grupo k de n (<roteiros>)` e os achados são `k.1`, `k.2`… (seção "Rodada dirigida em grupos"). No modo de bloco, o `relato.md` abre com `Modo: completo, bloco k de 5 (<roteiros>)` e os achados são `k.1`, `k.2`… (seção "Rodada completa em blocos"). O `relato.md` leva o cabeçalho inteiro (inclusive o **Tempo por roteiro**, ver abaixo), em **Ferramenta**: "Claude Code na nuvem (Xvfb, Playwright por CDP, xdotool, AT-SPI)" e o MCP por stdio; o **Resumo** (obrigatório), os passos, os achados com a severidade da escala do guia, as **Observações (sem severidade)** e "O que atrapalhou", inclusive o que atrapalhou **você** como testador (passo ambíguo, esperado que não dá para observar, contorno que precisou usar). Essa última parte é a que mais importa para a etapa seguinte. As capturas e os `mapping.json` dos ❌ ficam em `anexos/`, com o número do achado no nome.
 
 **✅ agrupados.** Na tabela de passos, passos seguidos do mesmo roteiro que passaram **sem observação** viram uma **faixa** de uma linha (`R11.1 a R11.10 | | ✅ |`). ❌, "não executado" e passo com observação têm linha própria, e a faixa recomeça depois deles. Na dirigida por achados, a faixa só junta passos do mesmo achado de origem. O **Resumo** continua contando por passo: dez passos numa faixa são dez ✅. A regra completa está no template da seção 10 do guia.
 
@@ -175,7 +204,7 @@ No modo de bloco, o `relato.md` abre com `Modo: completo, bloco k de 5 (<roteiro
 2. **Em partes se passar de 65 mil caracteres** (o limite do GitHub é 65.536; confira com `wc -m relato.md`): corte entre seções ou roteiros, nunca no meio de uma tabela ou de um achado, e ponha "Parte i de n" na primeira linha de cada comentário. O cabeçalho e o Resumo vão na parte 1.
 3. **Termine cada comentário com o rodapé de atribuição** que a sessão exige para o que ela escreve no GitHub.
 4. **Anexos:** comentário de issue não aceita anexo pela API. As capturas dos ❌ vão no branch `evidencias`, em `<sub-issue>/achado-<n>-<nome>.png`, pelo procedimento do `CLAUDE.md` ("Bugs e evidência visual"), num commit só, **antes** de postar o comentário. Cada ❌ no comentário mostra a imagem com `![…](…?raw=true)`, **descreve em texto o que ela mostra** e cola o trecho relevante do `mapping.json` num bloco de código. Se o push falhar, volta ao que era: a descrição em texto e os arquivos de `anexos/` enviados com a ferramenta de envio de arquivos da sessão, se houver.
-5. **Avise o coordenador** (o id do fim da mensagem) com a ferramenta `send_message` do servidor `claude-code-remote` (não o `SendMessage`, que falha): uma linha com o link do (primeiro) comentário, o total de ✅ e ❌, os achados por severidade e a duração total medida (ex.: "Relato em <link>: 212 ✅, 3 ❌; achados: alta 1, média 1, baixa 1; 19min32s" ou "; tempo não medido"). No modo de bloco, a linha começa com o bloco e traz também o total de "não executado" (ex.: "Bloco 2 de 5: relato em <link>: 88 ✅, 2 ❌, 2 não executado; achados: média 2 (2.1, 2.2); 38min10s"). Sem o id, pule este item.
+5. **Avise o coordenador** (o id do fim da mensagem) com a ferramenta `send_message` do servidor `claude-code-remote` (não o `SendMessage`, que falha): uma linha com o link do (primeiro) comentário, o total de ✅ e ❌, os achados por severidade e a duração total medida (ex.: "Relato em <link>: 212 ✅, 3 ❌; achados: alta 1, média 1, baixa 1; 19min32s" ou "; tempo não medido"). No modo de grupo, a linha começa com o grupo (ex.: "Grupo 2 de 3: relato em <link>: 27 ✅, 0 ❌; 11min40s"). No modo de bloco, a linha começa com o bloco e traz também o total de "não executado" (ex.: "Bloco 2 de 5: relato em <link>: 88 ✅, 2 ❌, 2 não executado; achados: média 2 (2.1, 2.2); 38min10s"). Sem o id, pule este item.
 6. **Cole o Resumo na conversa**, com o caminho completo do `relato.md`, e diga quais passos ficaram "não executado (precisa do dono)" e se algum achado impede o uso com pessoas.
 
 Você não cria branch, não faz commit nem abre PR, e não edita nada no repositório. Não apague a pasta de trabalho.

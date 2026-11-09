@@ -73,6 +73,23 @@ Reteste, depois da correção (R0 só o R0.1 e os passos de que os achados depen
 Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: os achados <números> do relato em <link do comentário><e os passos <lista> que as correções dos defeitos pendentes afetam>. Branch `epic/<nome>`, commit `<hash da correção>`. Relato na sub-issue #<fase de correção>. Tag da release: <mcp-v…-rc.n, ou "sem R21">. R0 só o R0.1 e os passos de que os achados dependem. Coordenador: `<id da sessão do orquestrador>`.
 ```
 
+## Rodada dirigida em grupos
+
+Quando a lista da seção **Testador** (ou do reteste), **sem o R0**, passa de **40 passos**, o orquestrador (o **coordenador**) a divide em grupos paralelos, em vez de uma sessão só ([`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md), "Rodada dirigida em grupos"). No clone do épico, ele roda `node scripts/testing/round-guide.mjs --grupos <roteiros>`: o comando conta os passos, respeita as cadeias que não se separam e imprime uma linha `grupo k de n: <roteiros>` por grupo (até 40 passos, imprime "uma sessão" e vale a mensagem dirigida acima). No máximo 5 grupos. O coordenador cria os n grupos de uma vez: `list_environments` ("Mapping - testes"), `create_session` com `source_url` do repositório, `source_revision` = `epic/<nome>`, o mesmo commit em todos e o título "Testador — <alvo>, grupo <k> de <n>". Mensagem do grupo `<k>`:
+
+```text
+Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido, grupo <k> de <n>: <roteiros da linha "grupo k de n" do round-guide.mjs>. Passada visual: <lista da sub-issue, em um grupo só; "nenhuma" nos outros>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Tag da release: <mcp-v…-rc.n, ou "sem R21">. <No grupo 1: R0 inteiro primeiro. Nos outros: R0 só o R0.1 e os passos de que os roteiros do grupo dependem.> Coordenador: `<id da sessão do coordenador>`.
+```
+
+- **Tag da release:** só o grupo que tem o R21 leva a rc do épico; nos outros a lacuna é `sem R21`.
+- **Conferência de reserva:** agenda um `send_later` de 60 min e só segue com os **n avisos** (um por grupo, cada um cita o grupo). Grupo que não avisou até lá: `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, chama o dono.
+- **Com os n avisos,** posta o resumo (o template de "Resumo da rodada em blocos", com "Grupo" no lugar de "Bloco" e o título "Rodada dirigida em grupos — resumo") na mesma sub-issue. O coordenador não reescreve os relatos.
+- **Com ❌,** o fluxo de sempre, e o reteste é **uma sessão só** (abaixo).
+
+## Reteste junto
+
+O reteste de uma etapa é **uma sessão só**, com os achados de **todos** os grupos ou blocos (códigos `k.n`, com o link do comentário de cada um) e os passos que as correções dos defeitos pendentes afetam, na mensagem de reteste de "Para o testador". Só se divide em grupos se a lista, sem o R0, passar de 40 passos (mesma regra acima). Se outra correção for mesclada no épico enquanto o reteste ainda não começou, ela entra no mesmo reteste: o commit da mensagem é o do épico depois dela, e os passos que ela afeta se somam à lista.
+
 ## Rodada completa em 5 blocos
 
 Quando a seção **Testador** da sub-issue da última fase pede a rodada completa, o orquestrador (o **coordenador**) cria **cinco** sessões do testador de uma vez, uma por bloco da tabela de [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md) ("Rodada completa em blocos"). Cada uma usa `list_environments` ("Mapping - testes"), `create_session` com `source_url` do repositório, `source_revision` = `epic/<nome>`, o mesmo commit nas cinco e o título "Testador — <alvo>, bloco <k> de 5". Mensagem do bloco `<k>` (1 a 5):
@@ -84,7 +101,7 @@ Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco <k> de 5. Passada 
 - **Tag da release:** só o bloco 5 tem o R21; nos blocos 1 a 4 a lacuna é `sem R21`, e no 5 é a rc do épico (numa rodada na `main`, a última estável).
 - **Conferência de reserva:** agenda um `send_later` de 60 min e só segue com os **cinco avisos** (um por bloco, cada um cita o bloco). Bloco que não avisou até lá: `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, chama o dono.
 - **Com os cinco avisos,** posta o resumo (abaixo) na mesma sub-issue. O coordenador não reescreve os relatos.
-- **Com ❌,** o fluxo de sempre: uma fase de correção com os achados dos cinco blocos (códigos `k.n`, com o link do comentário de cada um) e o reteste dirigido numa sessão só, pelos achados `k.n`, na mensagem de reteste acima.
+- **Com ❌,** o fluxo de sempre: uma fase de correção com os achados dos cinco blocos (códigos `k.n`, com o link do comentário de cada um) e o reteste dirigido numa sessão só ("Reteste junto"), pelos achados `k.n` de todos os blocos, na mensagem de reteste acima.
 
 ### Rodada avulsa (do dono)
 
@@ -98,7 +115,7 @@ Esse chat é o coordenador: cria os cinco blocos como acima (relato na issue `#<
 
 ## Resumo da rodada em blocos
 
-Um comentário curto na mesma sub-issue (ou issue), depois dos cinco avisos. O coordenador não reescreve os relatos: só soma e aponta para eles.
+Um comentário curto na mesma sub-issue (ou issue), depois dos cinco avisos. Na rodada dirigida em grupos, o mesmo template vale com "Grupo" no lugar de "Bloco", as linhas dos n grupos e o título "Rodada dirigida em grupos — resumo". O coordenador não reescreve os relatos: só soma e aponta para eles.
 
 ```markdown
 ## Rodada completa em blocos — resumo

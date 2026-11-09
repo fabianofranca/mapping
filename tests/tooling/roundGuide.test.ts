@@ -274,3 +274,83 @@ describe('round-guide.mjs: faixa de passos (RB1, decisão 1c)', () => {
     }
   });
 });
+
+// Etapa #1148 (TR4, decisões 15 a 17): `--grupos` divide a dirigida grande em grupos paralelos.
+interface GroupPlan {
+  items: { token: string; steps: number }[];
+  total: number;
+  single: boolean;
+  groups: { n: number; tokens: string[]; steps: number }[];
+}
+interface GroupsModule {
+  planGroups: (md: string, roteiros: string[], o?: { limit?: number }) => GroupPlan;
+  formatGroupPlan: (plan: GroupPlan) => string;
+  CHAINS: { name: string; items: string[] }[];
+}
+const loadGroups = (): Promise<GroupsModule> =>
+  import('../../scripts/testing/round-guide.mjs') as unknown as Promise<GroupsModule>;
+
+describe('round-guide.mjs --grupos (TR4, decisões 15 a 17)', () => {
+  it('R0 R12 R22 R23: o R0 não conta e saem três grupos, R12; R23; R22', async () => {
+    const { planGroups } = await loadGroups();
+    const plan = planGroups(GUIDE, ['R0', 'R12', 'R22', 'R23']);
+    expect(plan.single).toBe(false);
+    expect(plan.items.map((i) => i.token)).toEqual(['R12', 'R22', 'R23']);
+    expect(plan.total).toBeGreaterThan(40);
+    expect(plan.groups.map((g) => g.tokens)).toEqual([['R12'], ['R23'], ['R22']]);
+  });
+
+  it('R1 R3 R5 é uma cadeia só: um grupo, mesmo acima do limite', async () => {
+    const { planGroups } = await loadGroups();
+    const plan = planGroups(GUIDE, ['R1', 'R3', 'R5']);
+    expect(plan.groups).toHaveLength(1);
+    expect(plan.groups[0]?.tokens).toEqual(['R1', 'R3', 'R5']);
+  });
+
+  it('até o limite é uma sessão, e o R0 sozinho não gera grupo', async () => {
+    const { planGroups, formatGroupPlan } = await loadGroups();
+    const plan = planGroups(GUIDE, ['R0', 'R2']);
+    expect(plan.single).toBe(true);
+    expect(plan.groups).toEqual([]);
+    expect(formatGroupPlan(plan)).toContain('uma sessão');
+  });
+
+  it('as faixas pedidas ficam como pedidas e o roteiro nunca é separado', async () => {
+    const { planGroups } = await loadGroups();
+    const plan = planGroups(GUIDE, ['R6.3-R6.7', 'R6.8a-R6.11', 'R12']);
+    const all = plan.groups.flatMap((g) => g.tokens);
+    expect(all).toContain('R6.3-R6.7');
+    expect(all).toContain('R6.8a-R6.11');
+    expect(all.filter((t) => t === 'R12')).toHaveLength(1);
+  });
+
+  it('nunca passa de 5 grupos e cada grupo traz os passos somados', async () => {
+    const { planGroups } = await loadGroups();
+    const plan = planGroups(GUIDE, ['all']);
+    expect(plan.groups.length).toBeLessThanOrEqual(5);
+    const sum = plan.groups.reduce((n, g) => n + g.steps, 0);
+    expect(sum).toBe(plan.total);
+  });
+
+  it('o --grupos do CLI imprime uma linha "grupo k de n: <roteiros>" por grupo', () => {
+    const out = execFileSync('node', [SCRIPT, '--grupos', 'R0', 'R12', 'R22', 'R23'], {
+      encoding: 'utf8',
+    });
+    expect(out).toMatch(/^grupo 1 de 3: R12$/m);
+    expect(out).toMatch(/^grupo 2 de 3: R23$/m);
+    expect(out).toMatch(/^grupo 3 de 3: R22$/m);
+  });
+
+  it('a tabela de cadeias do TESTING-NUVEM.md traz cada item das cadeias do script', async () => {
+    const { CHAINS } = await loadGroups();
+    const nuvem = readFileSync('docs/TESTING-NUVEM.md', 'utf8');
+    const start = nuvem.indexOf('## Rodada dirigida em grupos');
+    expect(start).toBeGreaterThan(0);
+    const section = nuvem.slice(start, nuvem.indexOf('\n## ', start + 5));
+    for (const chain of CHAINS) {
+      for (const item of chain.items) {
+        expect(section, item).toContain(item.replace('-', ' a '));
+      }
+    }
+  });
+});
