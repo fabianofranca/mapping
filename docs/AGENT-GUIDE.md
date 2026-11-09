@@ -763,7 +763,7 @@ A especialização `formatVersion` 9 pode declarar `variants` no `code` de uma p
 
 ### `find_by_code`: de um arquivo ou símbolo para o mapeamento
 
-`find_by_code({ project?, path?, symbol? })` responde: **que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados**. Acha os **tipos** das especializações aplicadas cujo `code` tem esse `path` (`code.<plataforma>.path`) ou `symbol` (`code.<plataforma>.symbol`) e as **anotações desses tipos**. Serve para quem está num arquivo da biblioteca e quer saber o que dele aparece nas telas. `path` casa com o caminho inteiro ou com os **últimos segmentos inteiros** (`DSButton.kt` acha `app/…/DSButton.kt`; `Button.kt` não); `symbol`, por igualdade; informando os dois, a **mesma plataforma** precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Sem `path` nem `symbol` falha com `missing-query`.
+`find_by_code({ project?, path?, symbol? })` responde: **que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados**. Acha os **tipos** das especializações aplicadas cujo `code` tem esse `path` (`code.<plataforma>.path`) ou `symbol` (`code.<plataforma>.symbol`) e as **anotações desses tipos**. Serve para quem está num arquivo da biblioteca e quer saber o que dele aparece nas telas. `path` casa com o caminho inteiro ou com os **últimos segmentos inteiros** (`DSButton.kt` acha `app/…/DSButton.kt`; `Button.kt` não); `symbol`, por igualdade; informando os dois, a **mesma plataforma** precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Cada match traz `project` (o nome da pasta) e `path` (o caminho dela relativo à raiz, o mesmo de `list_projects`): com pastas homônimas, é o `path` que as distingue. Sem `path` nem `symbol` falha com `missing-query`.
 
 **Em especialização 9, a busca compara com o código resolvido de cada anotação.** Buscar `androidx.compose.material3.Button` traz só os botões da base (`filled`), e `androidx.compose.material3.OutlinedButton` só os `outlined`; o tipo `Button` aparece nos dois casos, e `annotations` lista só as anotações cujo código resolvido casa. Um tipo que casa por algum caso, mas não tem anotação nessa variante, aparece com `annotations` vazio. Buscar por `path` continua achando todos os casos que apontam para o arquivo (e o da base). O `code` do tipo no resultado é o cru, com `variants`. Nas versões 1 a 8 nada muda.
 
@@ -777,6 +777,7 @@ A especialização `formatVersion` 9 pode declarar `variants` no `code` de uma p
   "matches": [
     {
       "project": "cadastro",
+      "path": "cadastro",
       "type": { "specId": "sdui", "typeId": "button", "name": "Button" },
       "code": {
         "android": {

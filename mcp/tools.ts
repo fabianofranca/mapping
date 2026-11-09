@@ -51,7 +51,7 @@ interface ToolResult {
  * Resposta em JSON compacto, só no texto: o MCP recomenda repetir o conteúdo estruturado no
  * texto, e clientes que mostram os dois gastariam o dobro do contexto do agente.
  */
-async function respond(produce: () => Promise<Json>): Promise<ToolResult> {
+async function respondTo(produce: () => Promise<Json>): Promise<ToolResult> {
   try {
     return { content: [{ type: 'text', text: JSON.stringify(await produce()) }] };
   } catch (error) {
@@ -59,10 +59,8 @@ async function respond(produce: () => Promise<Json>): Promise<ToolResult> {
   }
 }
 
-/** Como `respond`, mas a tool devolve também uma imagem (o texto vem antes: descreve a imagem). */
-async function respondWithImage(
-  produce: () => Promise<ImageResult>,
-): Promise<ToolResult> {
+/** Como `respondTo`, mas a tool devolve também uma imagem (o texto vem antes: descreve a imagem). */
+async function respondImageTo(produce: () => Promise<ImageResult>): Promise<ToolResult> {
   try {
     const { json, image } = await produce();
     return {
@@ -200,6 +198,19 @@ export function registerTools(
   roots: Roots,
   images: ImageServer | null = null,
 ): void {
+  // Cada chamada de tool começa com as raízes zeradas: o `realpath` delas e a descoberta de
+  // projetos são feitos uma vez por chamada (`Roots.beginCall`).
+  const respond = (produce: () => Promise<Json>) =>
+    respondTo(() => {
+      roots.beginCall();
+      return produce();
+    });
+  const respondWithImage = (produce: () => Promise<ImageResult>) =>
+    respondImageTo(() => {
+      roots.beginCall();
+      return produce();
+    });
+
   server.registerTool(
     'list_projects',
     {
@@ -214,7 +225,9 @@ export function registerTools(
         const projects = await Promise.all(
           locations.map(async (location) => {
             try {
-              return projectSummary(await loadProject(roots, location));
+              return projectSummary(
+                await loadProject(roots, location, undefined, { fonts: false }),
+              );
             } catch (error) {
               if (!(error instanceof ToolError)) throw error;
               // Um projeto ilegível não esconde os outros: aparece com o motivo.
@@ -279,7 +292,7 @@ export function registerTools(
     'get_project',
     {
       description:
-        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com o `repo` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) o clone local por plataforma (`platformRepos`), os repositórios de documentos das especializações (`docRepos`: `id`, o `repos` que cada especialização declara e o `localPath` do clone do projeto, `null` sem clone), o modo do desenho do projeto (`drawingMode`, `null` sem modo; cada container traz o seu `drawingMode` fixado e o `effectiveDrawingMode`), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
+        'Resumo do projeto: containers (com `file`, `background` e `parent`), camadas, especializações (com a situação da cópia), plataformas de código (`platforms`, cada uma com os `repos` que as especializações declaram e o `localPath` do clone local; com `codeHint`: o `code` dos tipos é o código de instanciação, não o código gerado) o clone local por plataforma (`platformRepos`), os repositórios de documentos das especializações (`docRepos`: `id`, o `repos` que cada especialização declara e o `localPath` do clone do projeto, `null` sem clone), o modo do desenho do projeto (`drawingMode`, `null` sem modo; cada container traz o seu `drawingMode` fixado e o `effectiveDrawingMode`), contagens (`counts`: containers, marcações, `canvasMarkings`, `floatingMarkings`, `arrows`, anotações, camadas) e pendências (anotações incompletas).',
       inputSchema: { project: projectArg },
       annotations: READ_ONLY,
     },
@@ -430,7 +443,7 @@ export function registerTools(
     'find_by_code',
     {
       description:
-        'Do código para o mapeamento (que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados): os tipos das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) e/ou símbolo (`code.<plataforma>.symbol`), com as anotações desses tipos. `path` casa com o caminho inteiro ou com os últimos segmentos (`DSButton.kt` casa com `app/…/DSButton.kt`; `Button.kt` não); `symbol` casa por igualdade; com os dois, a mesma plataforma precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Em especialização 9 (`variants`), a busca compara com o código resolvido de cada anotação: o símbolo da base só traz as anotações da base e o de uma variante só as dela; `path` traz todas as que apontam para o arquivo. Devolve o tipo, o `code` cru (`symbol` e `definition`, com `variants`) das plataformas que casaram e as referências `mapping://` da anotação, da marcação e do container. Não abre arquivos de código.',
+        'Do código para o mapeamento (que tipos se instanciam com este arquivo ou símbolo, e onde estão marcados): os tipos das especializações aplicadas cujo `code` aponta para um arquivo (`code.<plataforma>.path`) e/ou símbolo (`code.<plataforma>.symbol`), com as anotações desses tipos. `path` casa com o caminho inteiro ou com os últimos segmentos (`DSButton.kt` casa com `app/…/DSButton.kt`; `Button.kt` não); `symbol` casa por igualdade; com os dois, a mesma plataforma precisa casar com ambos. Sem `project`, procura em todos os projetos das raízes. Em especialização 9 (`variants`), a busca compara com o código resolvido de cada anotação: o símbolo da base só traz as anotações da base e o de uma variante só as dela; `path` traz todas as que apontam para o arquivo. Devolve o projeto (`project`, o nome da pasta, e `path`, o caminho dela como em list_projects), o tipo, o `code` cru (`symbol` e `definition`, com `variants`) das plataformas que casaram e as referências `mapping://` da anotação, da marcação e do container. Não abre arquivos de código.',
       inputSchema: {
         project: projectArg
           .optional()
@@ -623,7 +636,7 @@ export function registerTools(
     'get_marking_image',
     {
       description:
-        'Devolve, como imagem, o recorte de uma marcação de container (a marcação do canvas e a seta falham com `canvas-marking` e `arrow`) (mode "crop", com `padding` opcional em pixels do container) ou o container inteiro com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Num container sem arquivo (só com fundo), o recorte mostra o desenho dos componentes (`drawing: "rendered"`, o mesmo de render_container: texto real, sombra, tracejado e ícones). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
+        'Devolve, como imagem, o recorte de uma marcação de container (a marcação do canvas e a seta falham com `canvas-marking` e `arrow`; mode "crop", com `padding` opcional em pixels do container) ou o container inteiro com a marcação contornada em magenta (mode "context"). Com `outlineChildren`, contorna as filhas diretas com cores diferentes e a resposta traz a legenda cor → nome → referência. O texto da resposta diz a região mostrada, a escala e onde a marcação ficou na imagem devolvida. Num container sem arquivo (só com fundo), o recorte mostra o desenho dos componentes (`drawing: "rendered"`, o mesmo de render_container: texto real, sombra, tracejado e ícones). A resposta traz `url` (HTTP local, só neste computador, válida enquanto este servidor roda) e `markdown`: cole o `markdown` na resposta quando o cliente não mostra o conteúdo `image` no chat (ex.: Cursor).',
       inputSchema: {
         ref: refArg,
         project: optionalProjectArg,
@@ -853,13 +866,13 @@ export function registerTools(
       },
       annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     },
-    ({ operations: _inline, operationsFile: _file, ...args }) =>
+    ({ operations: inline, operationsFile, ...args }) =>
       respond(async () =>
         proposals.propose({
           ...args,
           operations: await resolveOperations(roots, {
-            operations: _inline,
-            operationsFile: _file,
+            operations: inline,
+            operationsFile,
           }),
         }),
       ),

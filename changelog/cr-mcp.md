@@ -14,7 +14,15 @@
 - `import_measured`: um erro interno (que não é da tool nem do modelo) sobe como erro, em vez de virar aviso "não criada" do nó; os erros da tool e do modelo continuam virando aviso.
 - `plan_changes` e `propose_changes` leem o `mapping.json` uma vez só por chamada: uma gravação entre as duas leituras de antes não dá mais `revision-conflict` espúrio.
 
+- `create_project` não sobrescreve mais um `mapping.json` que apareceu na pasta entre a conferência e a gravação: a gravação é exclusiva e o erro é o `already-exists` de sempre.
+- Com várias raízes, um projeto citado por caminho (`apps/cadastro`) que só existe na segunda raiz é achado, mesmo que a pasta de mesmo caminho exista (sem projeto) na primeira.
+- O bundle `mapping-mcp.js` volta a levar os avisos de licença (Apache-2.0, MIT) das dependências embutidas, no fim do arquivo (`legalComments: 'eof'` e os `LICENSE` dos pacotes); a lista de arquivos da release não muda.
+- A descrição de `get_project` diz `repos` (como o código devolve), no lugar de `repo`.
+
 ## Alterado
+
+- `find_by_code`: cada match traz também `path` (o caminho da pasta do projeto relativo à raiz, como em `list_projects`), para distinguir pastas homônimas.
+- Menos trabalho repetido ao ler projetos: `loadProject` interpreta o `mapping.json` uma vez; o catálogo de componentes e as fontes das bibliotecas ficam em cache do processo (por caminho, tamanho e `mtime`: um arquivo trocado no disco invalida); `list_projects` não interpreta fontes; o `realpath` das raízes e a descoberta de projetos são feitos uma vez por chamada de tool.
 
 - `render_*` e `get_marking_image`: menos trabalho repetido (cache de fontes por família, peso e itálico; leitura da imagem confere o tamanho antes de ler e não copia os bytes; a prova do `component-overflow` reaproveita o cache de desenhos).
 - `plan_changes` e o lote: menos trabalho repetido (os valores de uma anotação resolvem o tipo uma vez por chamada, os tipos com componente são indexados uma vez e as mudanças são calculadas uma vez por `plan_changes`).

@@ -90,6 +90,7 @@ export async function findByCodeResult(
       returned += shown.length;
       matches.push({
         project: location.name,
+        path: location.path,
         type: {
           specId: hit.specId,
           typeId: hit.typeId,
