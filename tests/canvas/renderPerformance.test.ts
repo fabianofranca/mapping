@@ -780,6 +780,36 @@ describe('visão Proposto com 60 componentes novos', () => {
 // (nós sob demanda) e a #888 registra o número.
 const EDIT_FRAME_CEILING_MS = 35;
 
+// Decisões 5 a 7 e 9 da etapa canvas-escala: depois do quadro que leva os nós ao grupo de arrasto, cada
+// `pointermove` só redesenha a camada de sobreposições; o custo depende do que se arrasta, e não do
+// projeto. Meta da decisão 9: 16 ms no cenário de 2.000 marcações (jsdom, mediana de 15).
+describe('quadro de arrasto com o projeto inteiro à vista (2.000 marcações)', () => {
+  budgetIt(
+    `arrastar uma marcação cabe em ${RENDER_BUDGET_MS} ms por pointermove`,
+    { ...BUDGET_OPTIONS, timeout: 120_000 },
+    () => {
+      const s = openWholeProject(2000);
+      const target = s.project.markings.find((m) => m.parentId === null);
+      if (!target) throw new Error('fixture');
+      s.actions.beginGesture();
+      let step = 0;
+      const move = (): number => {
+        step++;
+        s.actions.previewMarkingMove(target.id, step, step);
+        return s.flush();
+      };
+      move(); // O quadro que leva os nós ao grupo de arrasto não conta.
+      for (let i = 0; i < 3; i++) move(); // Aquecimento.
+      const times = Array.from({ length: 15 }, move);
+      s.actions.cancelGesture();
+      s.flush();
+      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
+      expect(median).toBeLessThan(RENDER_BUDGET_MS);
+      s.destroy();
+    },
+  );
+});
+
 describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)', () => {
   budgetIt(
     `editar o nome de uma marcação cabe em ${EDIT_FRAME_CEILING_MS} ms (meta: ${RENDER_BUDGET_MS} ms)`,

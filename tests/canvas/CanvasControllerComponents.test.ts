@@ -67,9 +67,12 @@ describe('CanvasController: componentes', () => {
       markings: MarkingRenderer;
     };
     const componentLayer = () => internals.stage.getLayers()[1];
-    /** O nó do Konva de uma marcação desenhada (ou `undefined` se não está montado). */
+    /**
+     * O nó do Konva de uma marcação desenhada (ou `undefined` se não está montado). Procura no palco
+     * todo: durante um gesto o desenho de quem se move fica no grupo de arrasto (sobreposições).
+     */
     const drawing = (id: string) =>
-      componentLayer()?.find((n: Konva.Node) => n.getAttr('markingId') === id)[0];
+      internals.stage.find((n: Konva.Node) => n.getAttr('markingId') === id)[0];
     const border = (id: string) => internals.markings.node(id)?.border.visible();
     flush();
     return {
