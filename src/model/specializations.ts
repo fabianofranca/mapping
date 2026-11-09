@@ -307,7 +307,7 @@ export interface SpecUpdateImpact {
   readonly migrations: readonly SpecMigrationStep[];
   /** `false` quando a cópia aplicada não está disponível (`spec: null`): não dá para comparar. */
   readonly comparable: boolean;
-  /** Comparável e sem quebra: a atualização aplica direto, sem diálogo de impacto. */
+  /** Comparável, sem quebra e sem camada que vira livre: a atualização aplica direto, sem diálogo de impacto. */
   readonly additive: boolean;
   /** O contrato recusa: v4, comparável e com quebra sem migração (`spec-missing-migrations`). */
   readonly refused: boolean;
@@ -357,6 +357,13 @@ function newIssues(
   return pending;
 }
 
+/** Aditiva: comparável, sem quebra e sem camada que vira livre (as anotações dela virariam livres). */
+const isAdditive = (
+  comparable: boolean,
+  breaking: readonly SpecChange[],
+  freed: readonly Layer[],
+): boolean => comparable && breaking.length === 0 && freed.length === 0;
+
 /**
  * Efeito de atualizar para `spec` (que precisa ter `version` maior). Não lança por causa do
  * contrato: quando a atualização seria recusada, `refused` é `true` e o resto descreve o que
@@ -371,12 +378,13 @@ export function specializationUpdateImpact(p: Project, spec: Spec): SpecUpdateIm
   const applied = getSpecialization(p, spec.id)?.spec ?? null;
   const changes = applied ? diffSpecs(applied, spec) : [];
   const breaking = changes.filter((c) => c.kind === 'breaking');
+  const freedLayers = p.layers.filter(
+    (l) => l.spec?.specId === spec.id && !next.has(l.spec.layerId),
+  );
   const missing = applied ? missingMigrations(applied, spec) : [];
   return {
     addedLayers: spec.layers.filter((l) => !current.has(l.id)),
-    freedLayers: p.layers.filter(
-      (l) => l.spec?.specId === spec.id && !next.has(l.spec.layerId),
-    ),
+    freedLayers,
     brokenRefs: countBrokenRefs(p, after),
     changes,
     breaking,
@@ -385,7 +393,7 @@ export function specializationUpdateImpact(p: Project, spec: Spec): SpecUpdateIm
       ? (migrationChain(spec, applied.version) ?? []).flatMap((m) => m.steps)
       : [],
     comparable: applied !== null,
-    additive: applied !== null && breaking.length === 0,
+    additive: isAdditive(applied !== null, breaking, freedLayers),
     refused: applied !== null && spec.formatVersion >= 4 && missing.length > 0,
     steps: run.steps,
     losses: run.losses,

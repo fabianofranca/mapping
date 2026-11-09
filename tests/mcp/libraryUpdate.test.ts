@@ -238,6 +238,14 @@ function makeRename(dir: string, migration: boolean): void {
   writeFileSync(file, readFileSync(file, 'utf8').replaceAll('"supporting"', '"helper"'));
 }
 
+/** v2 que troca o id da camada (mesmos tipos, sem quebra): as anotações tipadas dela viram livres. */
+function makeLayerRename(dir: string): void {
+  editSpec(dir, (spec) => {
+    spec.version = 2;
+    spec.layers[0]!.id = 'telas';
+  });
+}
+
 /** v2 que remove o campo `supporting` (com `remove-field`): perde o valor da anotação. */
 function makeRemoval(dir: string): void {
   editSpec(dir, (spec) => {
@@ -288,6 +296,7 @@ beforeAll(async () => {
   makeRename(copyPackage('v2-renomeia'), true);
   makeRename(copyPackage('v2-sem-migracao'), false);
   makeRemoval(copyPackage('v2-remove'));
+  makeLayerRename(copyPackage('v2-camada'));
   // Uma especialização de arquivo único (formatVersion 3), para o caminho sem pacote.
   mkdirSync(join(root, 'legado'), { recursive: true });
   cpSync('tests/fixtures/sdui-v2.json', join(root, 'legado', 'sdui.json'));
@@ -347,6 +356,17 @@ describe('plan_library_update', () => {
       expect.arrayContaining(['added-type', 'added-field']),
     );
     expect(result.hint).toMatch(/aditiva/);
+    expect(result.hint).toMatch(/update_specialization/);
+  });
+
+  it('camada que some: não é aditiva e a hint pede confirmação da pessoa', async () => {
+    const result = await plan('v2-camada/material3');
+    expect(result).toMatchObject({ decision: 'update', additive: false, refused: false });
+    expect(result.validation.valid).toBe(true);
+    expect(result.freedLayers?.length).toBe(1);
+    expect(result.hint).not.toMatch(/sem diálogo de impacto/);
+    expect(result.hint).toMatch(/camadas viram livres/);
+    expect(result.hint).toMatch(/confirme com a pessoa/);
     expect(result.hint).toMatch(/update_specialization/);
   });
 

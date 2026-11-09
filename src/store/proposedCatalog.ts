@@ -58,6 +58,8 @@ interface ProposedPackage {
   /** Arquivo da especialização (`specs/<pasta>/x.spec.json`). */
   readonly file: string;
   readonly spec: Spec;
+  /** Identidade do conteúdo do `spec`: o `revise_proposal` que o muda sem mudar `id@versão` relê o pacote. */
+  readonly signature: string;
 }
 
 const keyOf = (s: { readonly specId: string; readonly version: number }): string =>
@@ -82,6 +84,7 @@ function proposedPackages(p: Proposal | null): ProposedPackage[] {
       dir,
       file,
       spec: spec as unknown as Spec,
+      signature: JSON.stringify(spec),
     });
   }
   return out;
@@ -121,7 +124,8 @@ export function createProposedComponents(
           before !== undefined &&
           pkg.proposalId === before.proposalId &&
           keyOf(pkg) === keyOf(before) &&
-          pkg.file === before.file
+          pkg.file === before.file &&
+          pkg.signature === before.signature
         );
       });
     if (!same) lastPackages = next;
@@ -131,6 +135,8 @@ export function createProposedComponents(
   /** O que já foi lido, por `id@versão`; esquece tudo quando outra proposta abre. */
   const entries = signal<ReadonlyMap<string, SpecComponents>>(new Map());
   const loading = new Set<string>();
+  /** A identidade do `spec` com que cada `id@versão` foi lido (ou está sendo lido) nesta proposta. */
+  const signatures = new Map<string, string>();
   let owner: string | null = null;
   /** Sobe a cada registro de fontes terminado. */
   const epoch = signal(0);
@@ -149,7 +155,7 @@ export function createProposedComponents(
     } finally {
       loading.delete(`${run}|${key}`);
     }
-    if (disposed || owner !== run) return;
+    if (disposed || owner !== run || signatures.get(key) !== pkg.signature) return;
     entries.value = new Map(entries.peek()).set(key, loaded);
   }
 
@@ -194,12 +200,15 @@ export function createProposedComponents(
     if (owner !== proposalId) {
       owner = proposalId;
       loading.clear();
+      signatures.clear();
       if (entries.peek().size > 0) entries.value = new Map();
     }
     const run = owner ?? '';
     for (const pkg of list) {
       const key = keyOf(pkg);
-      if (entries.peek().has(key) || loading.has(`${run}|${key}`)) continue;
+      const stale = signatures.get(key) !== pkg.signature;
+      if (!stale && (entries.peek().has(key) || loading.has(`${run}|${key}`))) continue;
+      signatures.set(key, pkg.signature);
       loading.add(`${run}|${key}`);
       void track(load(pkg, run));
     }

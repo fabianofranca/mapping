@@ -352,6 +352,14 @@ function issuesView(issues: readonly LibraryIssue[]): {
   };
 }
 
+/** Camadas que viram livres: as anotações tipadas delas viram pares de texto, e a pessoa precisa saber. */
+function freedLayersSteps(impact: SpecUpdateImpact): string[] {
+  if (impact.refused || impact.freedLayers.length === 0) return [];
+  return [
+    'camadas viram livres (`freedLayers`): as anotações tipadas delas viram pares de texto; confirme com a pessoa e diga na proposta',
+  ];
+}
+
 /** O que a pessoa e o agente fazem em seguida, conforme o impacto. */
 function updateHint(impact: SpecUpdateImpact, valid: boolean): string {
   const steps: string[] = [];
@@ -378,6 +386,7 @@ function updateHint(impact: SpecUpdateImpact, valid: boolean): string {
       'as migrações declaradas cobrem as quebras: proponha update_specialization com `file` desta pasta (propose_changes) e descreva o que muda na proposta',
     );
   }
+  steps.push(...freedLayersSteps(impact));
   const lost = valueLosses(impact.losses) > 0 || impact.deleted > 0;
   if (!impact.refused && lost) {
     steps.push(
