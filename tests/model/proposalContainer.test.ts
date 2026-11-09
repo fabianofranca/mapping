@@ -174,6 +174,30 @@ describe('proposta: container', () => {
     expect(previewProject(base, forged).project).toEqual(base);
   });
 
+  it('troca de arquivo pela proposta: a marcação que cresceu ao mínimo ganha needsReview, como pela app', () => {
+    // I2 (1000×1000) com M4 (100×100) e uma marcação já mínima de 40×40 sem componente.
+    const start = createMarking(sampleProject(), {
+      id: 'M5',
+      containerId: 'I2',
+      rect: { x: 400, y: 400, width: 200, height: 200 },
+    });
+    const next = { file: 'images/f2.jpg', width: 500, height: 500 };
+    const minSizeOf = (id: string) => (id === 'M4' ? { width: 80, height: 80 } : null);
+    const after = replaceContainer(start, 'I2', next, { minSizeOf });
+    const byId = (p: Project, id: string) => p.markings.find((m) => m.id === id)!;
+    // Pela app: M4 (50×50 reescalada) cresceu até o mínimo; M5 só foi reescalada.
+    expect(byId(after, 'M4').needsReview).toBe(true);
+    expect(byId(after, 'M5').needsReview).toBe(false);
+
+    const p = propose(start, after);
+    const result = applyAccepted(start, accept(start, p), AT);
+    if (!result.ok) throw new Error(JSON.stringify(result.issues));
+    expect(byId(result.project, 'M4').needsReview).toBe(true);
+    expect(byId(result.project, 'M5').needsReview).toBe(false);
+    expect(result.project).toEqual(after);
+    expect(byId(previewProject(start, p).project, 'M4').needsReview).toBe(true);
+  });
+
   it('o formato valida os campos novos', () => {
     const base = bgContainer(sampleProject());
     const p = propose(

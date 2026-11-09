@@ -40,7 +40,13 @@ export const konvaMeasurer: TextMeasurer = (text, font, maxWidth) => {
     probe.height(height);
   }
   const lines = probe.textArr.map((line) => line.text);
-  const metrics = { width: probe.width(), height, lines };
+  // `width()` devolve a largura fixada (o `maxWidth`); a do texto é a da linha mais larga.
+  const natural = probe.getTextWidth();
+  const metrics = {
+    width: maxWidth === undefined ? natural : Math.min(natural, maxWidth),
+    height,
+    lines,
+  };
   probe.destroy();
   return metrics;
 };

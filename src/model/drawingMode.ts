@@ -1,3 +1,5 @@
+import type { ComponentFile } from './components/componentFormat';
+import { applyTokens, type ResolvedTokens } from './components/tokens';
 import { fail } from './errors';
 import { updateById } from './project';
 import type { Project } from './types';
@@ -79,4 +81,25 @@ export function undeclaredDrawingMode(p: Project, declared: readonly string[]): 
     if (mode != null && !declared.includes(mode) && !out.includes(mode)) out.push(mode);
   }
   return out;
+}
+
+/**
+ * O componente como o desenho o usa: com cada `$token` trocado pela tabela do modo efetivo do
+ * espaço (`resolvedTokensByMode[modo]`; sem modo ou sem a tabela, a de `resolvedTokens`). Arrumar,
+ * posicionar e medir passam por aqui antes de ler o slot, para o `gap` e o `padding` em `$token`
+ * valerem o mesmo que na tela. `tokens` vai na opção `tokens` do `instantiate`.
+ */
+export function componentForDrawing(
+  p: Project,
+  component: ComponentFile,
+  containerId: string | null,
+): { readonly component: ComponentFile; readonly tokens: ResolvedTokens | undefined } {
+  const mode = effectiveDrawingMode(p, containerId);
+  const tokens =
+    (mode === undefined ? undefined : component.resolvedTokensByMode?.[mode]) ??
+    component.resolvedTokens;
+  return {
+    component: tokens === undefined ? component : applyTokens(component, tokens),
+    tokens,
+  };
 }
