@@ -5,11 +5,13 @@ import {
   bottom,
   clamp,
   containsRect,
+  effectiveMinSize,
   imageCanvasRect,
   imagePixelRect,
   rectsOverlap,
   right,
   snapPlacement,
+  type Size,
 } from './geometry';
 import { settleFrom, type SettleOptions } from './hierarchySettle';
 import {
@@ -551,47 +553,55 @@ function scaleSpan(start: number, size: number, factor: number): [number, number
 
 /**
  * Garante o tamanho mínimo aumentando o lado pequeno em volta do centro, sem sair
- * de [min, max). O resultado sempre contém o intervalo original.
+ * de [min, max). O resultado sempre contém o intervalo original; se o mínimo não cabe,
+ * o lado ocupa o intervalo inteiro.
  */
 function growSpan(
   start: number,
   size: number,
   min: number,
   max: number,
+  least: number,
 ): [number, number] {
-  if (size >= MIN_MARKING_SIZE) return [start, size];
-  const grown = clamp(
-    start - Math.floor((MIN_MARKING_SIZE - size) / 2),
-    min,
-    max - MIN_MARKING_SIZE,
-  );
-  return [grown, MIN_MARKING_SIZE];
+  if (size >= least) return [start, size];
+  if (least >= max - min) return [min, max - min];
+  const grown = clamp(start - Math.floor((least - size) / 2), min, max - least);
+  return [grown, least];
 }
 
 /**
- * Reescala cada marcação da imagem sozinha (bordas arredondadas, lado mínimo, presa à imagem
- * nova), sem depender do pai: o pai é derivado da geometria, e o assentar refaz o
- * pertencimento depois.
+ * Reescala cada marcação da imagem sozinha (bordas arredondadas, presa à imagem nova), sem
+ * depender do pai: o pai é derivado da geometria, e o assentar refaz o pertencimento depois.
+ * Na mesma escala o retângulo fica como está. O lado só cresce se a reescala o deixou abaixo do
+ * mínimo efetivo da marcação (`minSizeOf`: o `minSize` do componente, ou 8 px numa marcação
+ * comum); quem cresceu por isso deixou de ser proporcional e ganha `needsReview`.
  */
 function rescaleMarkings(
   markings: readonly Marking[],
   image: ProjectContainer,
   next: ImageFile,
   needsReview: boolean,
+  minSizeOf?: (markingId: string) => Size | null,
 ): Map<string, Marking> {
   const sx = next.width / image.width;
   const sy = next.height / image.height;
   const bounds = imagePixelRect(next);
   const result = new Map<string, Marking>();
   for (const m of markings) {
+    if (sx === 1 && sy === 1) {
+      result.set(m.id, { ...m, needsReview: needsReview || m.needsReview });
+      continue;
+    }
+    const least = effectiveMinSize(minSizeOf?.(m.id) ?? null);
     const [x0, w0] = scaleSpan(m.rect.x, m.rect.width, sx);
     const [y0, h0] = scaleSpan(m.rect.y, m.rect.height, sy);
-    const [x, width] = growSpan(x0, w0, bounds.x, right(bounds));
-    const [y, height] = growSpan(y0, h0, bounds.y, bottom(bounds));
+    const [x, width] = growSpan(x0, w0, bounds.x, right(bounds), least.width);
+    const [y, height] = growSpan(y0, h0, bounds.y, bottom(bounds), least.height);
+    const grew = width !== w0 || height !== h0;
     result.set(m.id, {
       ...m,
       rect: { x, y, width, height },
-      needsReview: needsReview || m.needsReview,
+      needsReview: needsReview || grew || m.needsReview,
     });
   }
   return result;
@@ -634,7 +644,7 @@ export function replaceContainer(
   ) {
     fail('image-too-small');
   }
-  const rescaled = rescaleMarkings(own, image, next, !sameAspect);
+  const rescaled = rescaleMarkings(own, image, next, !sameAspect, options.minSizeOf);
 
   const scale = (image.placement.scale * image.width) / next.width;
   let placement: Placement = snapPlacement({ ...image.placement, scale });

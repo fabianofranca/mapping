@@ -1668,7 +1668,10 @@ class Batch {
       p,
       id,
       { file: image.file, width: image.width, height: image.height },
-      { confirmAspectChange: op.confirmAspectChange === true },
+      {
+        confirmAspectChange: op.confirmAspectChange === true,
+        minSizeOf: (markingId) => componentMinSize(p, this.catalog, markingId),
+      },
     );
     if (op.source !== undefined) {
       project = setImageSource(project, id, toSource(op.source));
