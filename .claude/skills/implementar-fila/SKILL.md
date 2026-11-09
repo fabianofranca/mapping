@@ -156,14 +156,14 @@ Siga o `CLAUDE.md` ("Fluxo automatizado", item 3) e as mensagens do `docs/FLOW.m
    - ▸ `status: concluída`, `stage: Mesclada`, `ended: now`.
 7. **Entre etapas:**
    - liste as `ready` de novo e refaça a ordem das que aguardam (seção "Mudanças na fila durante a execução");
-   - confira o contexto ("Troca de sessão");
+   - confira o contexto e se o skill mudou na `main` ("Troca de sessão");
    - comece a próxima etapa livre.
 
 **Conferências de reserva:**
 
 - **Uma por sessão do coordenador**, não uma por filha: `create_trigger` sem `persistent_session_id` (dispara nesta sessão), `cron_expression: "0 * * * *"` (de hora em hora), `initiation: own_followup`, com o id guardado por `painel.py reserve`. Ela vale para todas as filhas e é apagada só na troca de sessão e no fim. Nada de `send_later` por filha, nada de `delete_trigger` a cada aviso, nunca `list_triggers`.
 - A mensagem guardada se sustenta sozinha: "Conferência da fila: rode `painel.py show` e confira as atrasadas; painel <url>; siga o skill implementar-fila".
-- Na conferência, `show` lista as **atrasadas** (filha sem aviso há mais de 60 min). Sem atrasadas (e sem conferência de Release pendente), não faça mais nada nesse ciclo: nem publicar o painel.
+- Na conferência, confira primeiro se o skill mudou na `main` ("Troca de sessão"); se mudou, passe a coordenação adiante e pare aqui. Depois, `show` lista as **atrasadas** (filha sem aviso há mais de 60 min). Sem atrasadas (e sem conferência de Release pendente), não faça mais nada nesse ciclo: nem publicar o painel.
 - Para cada atrasada, leia `get_session` (`status_bucket`) e, só se não estiver trabalhando, `list_events` com `kinds: ["assistant", "result"]` e `limit: 10`:
   - trabalhando: `row '#n' childAt=now` (volta a contar);
   - falhou, parou pedindo permissão ou morreu: crie a sessão de novo uma vez, com a mesma mensagem e mais "a sessão anterior (<id>) parou em: <o que os eventos mostram>";
@@ -266,6 +266,8 @@ Grave no `painel.py` **a cada passo** (fase aberta e mesclada, PR, testador, cor
 ## Troca de sessão
 
 O Madrugadão chegou a 90% do contexto em 14 horas. Leia `external_metadata.context_usage` no `get_session` desta sessão entre etapas e, depois de passar de 60%, também a cada aviso de filha. **Acima de 60%**, passe a coordenação adiante.
+
+**Skill novo na `main`** (decisão do dono de 2026-11-09, #1298): a fila passa para o skill novo assim que ele é entregue. Entre etapas e em cada conferência de reserva, rode `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila`. Saída diferente de zero quer dizer que o skill mudou: passe a coordenação adiante, **mesmo abaixo de 60%**. Antes do passo 1 abaixo, traga o skill novo para o seu clone (`git checkout origin/main -- .claude/skills/implementar-fila`), para gravar o painel com o `painel.py` novo, e a `PushNotification` do passo 5 diz "Fila passou para uma sessão nova (skill atualizado na main)". As filhas que estão rodando não mudam: só o coordenador é trocado.
 
 **Na sessão antiga:**
 
