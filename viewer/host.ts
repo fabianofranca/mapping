@@ -96,7 +96,7 @@ export async function loadLibraryFromUrl(
     spec = JSON.parse(specText);
   } catch {
     // JSON inválido: o loadLibrary relata o problema e lança por falta de especialização.
-    return loadLibrary(files);
+    return loadLibrary(files, { allowOutside: true });
   }
   const refs = collectRefs(spec);
 
@@ -131,7 +131,7 @@ export async function loadLibraryFromUrl(
     const bytes = fonts[index];
     if (bytes !== undefined) files.push({ path: resolvePath(specName, ref), bytes });
   });
-  return loadLibrary(files);
+  return loadLibrary(files, { allowOutside: true });
 }
 
 /**

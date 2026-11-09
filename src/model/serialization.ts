@@ -1,4 +1,5 @@
 import { validateProject, type InvariantIssue } from './invariants';
+import { isRecord } from './isRecord';
 import {
   discardedOnMigrationTo11,
   discardedOnMigrationTo13,
@@ -211,10 +212,6 @@ export interface RepairedLoad extends RepairResult {
   readonly specWarnings: readonly SpecFileWarning[];
   readonly discardedUrlTemplates: readonly DiscardedUrlTemplate[];
   readonly discardedInherit: readonly DiscardedInherit[];
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /** Junta ao `mapping.json` o conteúdo de cada `specs/<id>.json`. */

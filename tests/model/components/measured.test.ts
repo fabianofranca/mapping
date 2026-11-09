@@ -219,6 +219,69 @@ describe('importMeasured: casamento', () => {
   });
 });
 
+describe('importMeasured: booleans por especialização', () => {
+  function boolSpec(id: string, booleans: { true: string; false: string }): Spec {
+    return spec({
+      format: 'mapping-spec',
+      formatVersion: 15,
+      id,
+      name: id,
+      version: 1,
+      origins: [{ ...MEASURED, booleans }],
+      layers: [
+        {
+          id: 'l',
+          name: 'L',
+          color: '#112233',
+          annotationTypes: [
+            {
+              id: `${id}-switch`,
+              name: `Switch ${id}`,
+              sources: [{ system: 'dom', name: `switch-${id}` }],
+              fields: [
+                {
+                  key: 'state',
+                  type: 'string',
+                  sources: [{ system: 'dom', path: 'checked' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+  }
+
+  it('duas especializações com o mesmo system usam cada uma os próprios booleans', () => {
+    const a = boolSpec('a', { true: 'sim', false: 'não' });
+    const b = boolSpec('b', { true: 'yes', false: 'no' });
+    const node = (cls: string, checked: boolean) => ({
+      type: 'div',
+      classes: [cls],
+      rect: { x: 0, y: 0, width: 10, height: 10 },
+      props: { checked },
+    });
+    const r = importMeasured([a, b], {
+      system: 'dom',
+      tree: {
+        type: 'root',
+        rect: { x: 0, y: 0, width: 100, height: 100 },
+        children: [
+          node('switch-a', true),
+          node('switch-b', true),
+          node('switch-b', false),
+        ],
+      },
+    });
+    expect(r.error).toBeUndefined();
+    expect(r.markings.map((m) => [m.specId, m.values.state])).toEqual([
+      ['a', 'sim'],
+      ['b', 'yes'],
+      ['b', 'no'],
+    ]);
+  });
+});
+
 const NODE = { type: 'type', props: 'props', children: 'children' };
 const SCREEN = { width: 100, height: 100, roots: [{ path: 'root' }] };
 
