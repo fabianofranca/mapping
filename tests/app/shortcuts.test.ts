@@ -175,6 +175,23 @@ describe('atalhos do editor', () => {
     });
   });
 
+  // Enquadrar seleção: Shift+2 pela tecla física (com Shift o `key` vira `@` ou `"`).
+  it('Shift+2: enquadrar a seleção, pela tecla física', () => {
+    expect(shortcutFor(key('@', { shift: true }, 'Digit2'))).toEqual({
+      kind: 'fit-selection',
+    });
+    expect(shortcutFor(key('"', { shift: true }, 'Digit2'))).toEqual({
+      kind: 'fit-selection',
+    });
+    expect(shortcutFor(key('2', { shift: true }))).toEqual({ kind: 'fit-selection' });
+    // Sem Shift, ou com outro modificador, não é este atalho (Ctrl+Shift+2 abre uma janela).
+    expect(shortcutFor(key('2', {}, 'Digit2'))).toBeNull();
+    expect(shortcutFor(key('@', { shift: true, ctrl: true }, 'Digit2'))).not.toEqual({
+      kind: 'fit-selection',
+    });
+    expect(SHORTCUT_LABELS.fitSelection).toBe('Shift+2');
+  });
+
   it('zoom, exportar, camadas, ajuda e configurações', () => {
     expect(shortcutFor(key('=', { ctrl: true }))).toMatchObject({ kind: 'zoom' });
     expect(shortcutFor(key('-', { ctrl: true }))).toMatchObject({ kind: 'zoom' });

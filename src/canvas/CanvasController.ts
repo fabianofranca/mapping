@@ -20,10 +20,12 @@ import { locale, showArrows } from '../store/settings';
 import type { PerspectiveState } from '../store/perspectives';
 import { projectInPerspective } from '../store/perspectiveShown';
 import { textMeasurer } from '../store/textMeasure';
+import { selectionCanvasBounds } from './selectionBounds';
 import { formatSelectionBox, formatViewport, selectionScreenBox } from './selectionBox';
 import { composingAnchor, selectedThreadId } from '../store/threadUi';
 import {
   itemsOf,
+  peekSelectedItems,
   resolveSelection,
   type EditorUi,
   type SelectionItem,
@@ -552,6 +554,19 @@ export class CanvasController {
   /** Enquadra todas as imagens (ou uma área padrão, com o canvas vazio). */
   fitAll(): void {
     this.view.fitAll();
+  }
+
+  /**
+   * Enquadra todos os itens selecionados (zoom e centro), com a folga do `fitAll`. Só mexe na
+   * vista: sem seleção, ou no modo Visualizar, não faz nada.
+   */
+  fitSelection(): void {
+    if (this.ui.viewMode.peek()) return;
+    const bounds = selectionCanvasBounds(
+      this.drawnProject.peek(),
+      peekSelectedItems(this.ui),
+    );
+    if (bounds) this.view.fitTo(bounds);
   }
 
   /** Aplica o zoom `factor` no centro da área visível (campo de zoom e atalhos). */

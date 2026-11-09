@@ -263,3 +263,36 @@ describe('useImageIntake: soltar arquivos', () => {
     expect(s.canvas.setDropTarget).toHaveBeenLastCalledWith(null);
   });
 });
+
+function dragOverEvent(): DragEvent {
+  const event = new Event('dragover', { cancelable: true }) as DragEvent;
+  Object.defineProperty(event, 'dataTransfer', {
+    value: { files: [], types: ['Files'], items: { length: 1 }, dropEffect: 'copy' },
+  });
+  Object.defineProperty(event, 'clientX', { value: 10 });
+  Object.defineProperty(event, 'clientY', { value: 20 });
+  return event;
+}
+
+describe('useImageIntake: arquivo sobre o canvas sem poder importar (#972)', () => {
+  it.each([
+    ['somente leitura', { readOnly: true }],
+    ['ocupado', { busy: true }],
+  ])('%s: dragover cancela a ação padrão e não acende o alvo', (_nome, options) => {
+    const s = setup(options);
+    const event = dragOverEvent();
+    s.intake().dropHandlers.onDragOver(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(event.dataTransfer?.dropEffect).toBe('none');
+    expect(s.canvas.setDropTarget).not.toHaveBeenCalled();
+  });
+
+  it('com permissão: dragover copia e acende o alvo', () => {
+    const s = setup();
+    const event = dragOverEvent();
+    s.intake().dropHandlers.onDragOver(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(event.dataTransfer?.dropEffect).toBe('copy');
+    expect(s.canvas.setDropTarget).toHaveBeenCalledOnce();
+  });
+});

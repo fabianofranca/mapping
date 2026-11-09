@@ -108,8 +108,13 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
   };
 
   const onDragOver = (e: DragEvent) => {
-    if (!dragHasFiles(e.dataTransfer) || readOnly || busy) return;
+    if (!dragHasFiles(e.dataTransfer)) return;
+    // Sempre cancela a ação padrão com arquivo: senão o navegador abre o arquivo na aba (#972).
     e.preventDefault();
+    if (readOnly || busy) {
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+      return;
+    }
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
     canvas.current?.setDropTarget(dropTargetAt(e));
   };

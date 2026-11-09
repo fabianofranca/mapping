@@ -4,7 +4,7 @@ import { useEditor } from '../ui/EditorContext';
 import { viewModeButton } from '../ui/ViewModePanel';
 import { IconButton, Segmented } from '../ui/controls';
 import { armComment, cancelComment } from '../store/threadUi';
-import { setViewMode, showToast } from '../store/ui';
+import { selectedItems, setViewMode, showToast } from '../store/ui';
 import { proposalErrorMessage } from '../ui/labels';
 import { REVIEW_ERROR_MS } from '../ui/review/useReviewCommands';
 import type { ProposalActionError } from '../store/proposalActions';
@@ -157,6 +157,21 @@ export function FitButton() {
       icon="fit"
       label={t('editor.fitAll')}
       onClick={() => canvas.current?.fitAll()}
+    />
+  );
+}
+
+/** Enquadrar seleção: zoom e centro nos itens selecionados; desabilitado sem seleção. */
+export function FitSelectionButton() {
+  const { canvas, ui } = useEditor();
+  const empty = selectedItems(ui).length === 0;
+  return (
+    <IconButton
+      icon="fit-selection"
+      label={t('editor.fitSelection')}
+      shortcut={SHORTCUT_LABELS.fitSelection}
+      disabled={empty || ui.viewMode.value}
+      onClick={() => canvas.current?.fitSelection()}
     />
   );
 }

@@ -1,4 +1,4 @@
-import { cleanup, render, waitFor, within } from '@testing-library/preact';
+import { cleanup, fireEvent, render, waitFor, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
@@ -80,6 +80,25 @@ describe('Dialog', () => {
     );
     await userEvent.click(within(dialogEl()).getByText('Conteúdo'));
     expect(onCancel.mock.calls).toEqual([['cancel'], ['backdrop'], ['close-button']]);
+  });
+
+  // #957: só o clique inteiro no fundo fecha; um arrasto que começa no conteúdo não.
+  it('fundo: pointerdown no conteúdo + click no <dialog> não fecha; pointerdown e click no <dialog> fecham', () => {
+    const onCancel = vi.fn();
+    render(
+      <Dialog title="Título" onCancel={onCancel} actions={<button>Ação</button>}>
+        <p>Conteúdo</p>
+      </Dialog>,
+    );
+    const conteudo = within(dialogEl()).getByText('Conteúdo');
+    fireEvent.pointerDown(conteudo);
+    fireEvent.click(dialogEl());
+    expect(onCancel).not.toHaveBeenCalled();
+
+    fireEvent.pointerDown(dialogEl());
+    fireEvent.click(dialogEl());
+    expect(onCancel).toHaveBeenCalledOnce();
+    expect(onCancel).toHaveBeenCalledWith('backdrop');
   });
 
   // Etapa 6 (6.2), achado 9: um diálogo de escolha obrigatória não mostra um X que não faz nada.
