@@ -2443,7 +2443,7 @@ npm run build:mcp && node dist-mcp/mapping-mcp.js --version
 ```
 
 - **Receita 2 (nuvem), subir a tela, o D-Bus, o AT-SPI e o Chrome**, nesta ordem (o Chrome tem de subir já com o D-Bus). O auxiliar faz isto: `scripts/testing/cloud-up.sh <pasta-da-rodada>` (o mesmo comando da receita 1 já faz as duas). Conferência: `curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]'` lista exatamente uma linha, `http://localhost:8080/`. Erros de `system_bus_socket` no `chrome.log` são normais; a barra "Chrome for Testing é destinado apenas a testes automatizados" não atrapalha.
-- **Receita 2 (nuvem), `source` só na shell.** Os auxiliares de `cloud.mjs` leem o `apoio/env` sozinhos: o `source "$S/env"` só vale, em cada chamada nova de shell, para os comandos fora deles (`xdotool`, `import`, `curl` no CDP).
+- **Receita 2 (nuvem), `source` só na shell.** Os auxiliares de `cloud.mjs` leem o `apoio/env.sh` sozinhos: o `source "$S/env.sh"` só vale, em cada chamada nova de shell, para os comandos fora deles (`xdotool`, `import`, `curl` no CDP).
 
 ```bash
 export DISPLAY=:99
@@ -2451,7 +2451,7 @@ Xvfb :99 -screen 0 1600x1200x24 >/dev/null 2>&1 &
 sleep 1; openbox >/dev/null 2>&1 &
 export DBUS_SESSION_BUS_ADDRESS=$(dbus-daemon --session --fork --print-address=1)
 /usr/libexec/at-spi-bus-launcher --launch-immediately >/dev/null 2>&1 &
-echo "export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" > "$S/env"
+echo "export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" > "$S/env.sh"
 GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sandbox \
   --user-data-dir="$S/profile" --remote-debugging-port=9222 --force-renderer-accessibility \
   --no-first-run --no-default-browser-check --hide-crash-restore-bubble \
@@ -2461,7 +2461,8 @@ GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sand
 - **Receita 3 (nuvem), reiniciar o Chrome sem duplicar abas.** Nunca `pkill -f chrome`: o padrão casa com a linha de comando da própria shell e a mata, e o SIGTERM conta como "Crashed" e restaura abas. Feche limpo pelo CDP (`const s = await browser.newBrowserCDPSession(); await s.send('Browser.close')`), espere `pgrep -x chrome` ficar vazio, apague `"$S/profile/Default/Sessions"` (sem isso o Chrome voltou com 3 abas) e suba de novo com o comando da receita 2. Reiniciar perde as permissões de pasta daquela visita (o pedido volta ao reabrir) e o histórico de desfazer.
 - **Receita 3 (nuvem), continuação.** O auxiliar faz isto: `cloud-up.sh <pasta> --restart-chrome`.
 - **Receita 4 (nuvem), a página pelo Playwright por CDP.** O auxiliar faz isto: `connect(apoioDir)`, `connectGuide(apoioDir)` (a aba do guia, ver abaixo), `clickNoWait(page, nome)` e `state(page, apoioDir, { projectDir })` de `scripts/testing/cloud.mjs`.
-- **Receita 4 (nuvem), o que o `connect()` faz.** Ele carrega o `apoio/env` (`DISPLAY`, D-Bus), escolhe a aba da app (`http://localhost:8080`, fora de `/guia/`; com duas abas falha com as URLs) e usa timeout de 5 s nas ações e 15 s nas navegações: localizador errado falha em 5 s, e espera longa passa `{ timeout }` na própria chamada.
+- **Receita 4 (nuvem), o script de passo pelo `run`.** Mande o corpo pela entrada padrão: `node scripts/testing/cloud.mjs run [<pasta>] [--prazo=<s>] <<'JS' … JS`. Ele conecta, deixa `page`, `browser`, `apoioDir`, `projectDir` e os exports do `cloud.mjs` em escopo, imprime o `state()` no fim e sai com 0, 1 (erro) ou 124 (prazo de 90 s). `cloud.mjs help` lista tudo.
+- **Receita 4 (nuvem), o que o `connect()` faz.** Ele carrega o `apoio/env.sh` (`DISPLAY`, D-Bus), escolhe a aba da app (`http://localhost:8080`, fora de `/guia/`; com duas abas falha com as URLs) e usa timeout de 5 s nas ações e 15 s nas navegações: localizador errado falha em 5 s, e espera longa passa `{ timeout }` na própria chamada.
 
 <!-- roteiros: R11 -->
 
