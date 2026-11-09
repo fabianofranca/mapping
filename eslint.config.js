@@ -415,6 +415,10 @@ export default tseslint.config(
   { files: ['tests/mcp/**/*.mjs'], languageOptions: { globals: globals.node } },
   // Cliente MCP por stdio do agente testador (docs/TESTING.md, apêndice A): roda no Node.
   { files: ['scripts/testing/**/*.mjs'], languageOptions: { globals: globals.node } },
+  {
+    files: ['scripts/perf/*.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
   // Watcher de conversas do workspace de exemplo (etapa #645, CM6): roda no Node.
   { files: ['examples/workspace/*.mjs'], languageOptions: { globals: globals.node } },
   // Fase 8.5: os três módulos do servidor que gravam, e o script de build (`build.mjs`, que gera

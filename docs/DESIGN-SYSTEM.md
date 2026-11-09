@@ -12,7 +12,7 @@ Este arquivo é o registro dele no repositório. Ele diz o que o DS é, **quando
 - **Não é gerado do código.** A skill `/design-sync` do Claude Code **não se aplica** a este DS: ela espera o `dist/` de uma biblioteca de componentes publicada e transformaria o DS curado num espelho do build. Não a use aqui.
 - **O código é a fonte da verdade; o DS descreve.** Onde os dois divergirem, corrija o DS. Divergência que pareça defeito da app não se resolve aqui: registre em "Pendências" e leve ao dono.
 - **Nome.** O índice do artefato se chama **Mapping**. Se aparecer o nome antigo "Mapeador de Imagens 2.0", é o mesmo artefato.
-- **Tamanho hoje:** 70 componentes com guia (mais a capa `Cover`), 6 seções, 147 tokens e 89 ícones.
+- **Tamanho hoje:** 70 componentes com guia (mais a capa `Cover`), 6 seções, 149 tokens e 89 ícones.
 
 ## Quando verificar
 

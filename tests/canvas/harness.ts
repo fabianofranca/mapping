@@ -1,6 +1,7 @@
 // Apoio aos testes do canvas: Konva em jsdom com um contexto 2D falso, um
 // projeto pequeno com posições conhecidas e o quadro montado do estado real.
 import { signal, type Signal } from '@preact/signals';
+import Konva from 'konva';
 import { vi } from 'vitest';
 import {
   approximateMeasurer,
@@ -98,6 +99,8 @@ export const TOKENS: CanvasTokens = {
     image: { size: 12, line: 16, weight: 600 },
   },
   handleSize: 10,
+  lodMinMarking: 24,
+  lodHideMarking: 2,
   arrow: {
     stroke: '#0f766f',
     select: '#0057bb',
@@ -281,4 +284,63 @@ export function componentEditor() {
 export function setOnlyScreens(ui: EditorUi, on: boolean): void {
   if (on) onlyScreens(ui);
   setViewMode(ui, on);
+}
+
+/** O palco do Konva que o `CanvasController` montou em `container`. */
+export function stageOf(container: HTMLElement): Konva.Stage {
+  const stage = Konva.stages.find((s) => s.container() === container);
+  if (!stage) throw new Error('palco não encontrado');
+  return stage;
+}
+
+/**
+ * Medidor de camadas redesenhadas por quadro: espia o `drawScene` de cada `Konva.Layer`
+ * (identificada pelo `name`). `take()` devolve as contagens desde a última chamada e zera.
+ */
+export function layerDrawMeter(stage: Konva.Stage): {
+  take(): Record<string, number>;
+  restore(): void;
+} {
+  const counts: Record<string, number> = {};
+  const restores: (() => void)[] = [];
+  for (const layer of stage.getLayers()) {
+    const name = layer.name() || `layer${layer.zIndex()}`;
+    counts[name] = 0;
+    const original = layer.drawScene.bind(layer);
+    const wrapped = ((...args: Parameters<Konva.Layer['drawScene']>) => {
+      counts[name] = (counts[name] ?? 0) + 1;
+      return original(...args);
+    }) as Konva.Layer['drawScene'];
+    layer.drawScene = wrapped;
+    restores.push(() => {
+      layer.drawScene = original as Konva.Layer['drawScene'];
+    });
+  }
+  return {
+    take() {
+      const out = { ...counts };
+      for (const key of Object.keys(counts)) counts[key] = 0;
+      return out;
+    },
+    restore() {
+      for (const restore of restores) restore();
+    },
+  };
+}
+
+/** Formas (`Konva.Shape`) visíveis com todos os ancestrais visíveis, por nome de camada. */
+export function visibleShapesByLayer(stage: Konva.Stage): Record<string, number> {
+  const count = (node: Konva.Node): number => {
+    if (!node.isVisible()) return 0;
+    if (node instanceof Konva.Shape) return 1;
+    if (node instanceof Konva.Container) {
+      return node.getChildren().reduce((sum, child) => sum + count(child), 0);
+    }
+    return 0;
+  };
+  const out: Record<string, number> = {};
+  for (const layer of stage.getLayers()) {
+    out[layer.name() || `layer${layer.zIndex()}`] = count(layer);
+  }
+  return out;
 }

@@ -54,6 +54,10 @@ interface Mounted {
 
 type Parent = Konva.Group | Konva.Layer;
 
+/** Em que grupo `place` mexeu: o da imagem (a camada de sempre) ou o do arrasto. */
+const TOUCHED_GROUP = 1;
+const TOUCHED_MIRROR = 2;
+
 /**
  * Desenha os desenhos de componentes dentro de um grupo (ou camada) do Konva. Cada espaço tem um
  * grupo próprio, posicionado pelo `placement` dele (pixels da imagem → canvas; o canvas, com
@@ -63,6 +67,16 @@ type Parent = Konva.Group | Konva.Layer;
 export class ComponentLayerRenderer {
   private readonly imageGroups = new Map<string | null, Konva.Group>();
   private readonly mounted = new Map<string, Mounted>();
+  /** As marcações cujo desenho se move num gesto e o grupo em que ficam até soltar (decisões 5 e 6). */
+  private dragIds: ReadonlySet<string> | null = null;
+  private dragTarget: Konva.Container | null = null;
+  /**
+   * Um grupo por container no grupo de arrasto, com a mesma posição e escala do grupo da imagem: o
+   * desenho que se move fica nele, e o grupo da imagem (que o desenho de fora continua usando) não
+   * é tocado.
+   */
+  private readonly mirrors = new Map<string | null, Konva.Group>();
+  private dragChanged = false;
   /** Zoom do stage: o desenho em pixels de tela se contrai por ele (e pela escala da imagem). */
   private zoom = 1;
   private placements: ReadonlyMap<string, Placement> = new Map();
@@ -82,6 +96,22 @@ export class ComponentLayerRenderer {
     let total = 0;
     for (const entry of this.mounted.values()) total += entry.images;
     return total;
+  }
+
+  /**
+   * Leva os desenhos das marcações de `ids` para o grupo de arrasto no próximo `render` (os nós são
+   * os mesmos, movidos com `moveTo`, nunca refeitos), ou os devolve ao grupo da imagem com `null`.
+   */
+  setDragged(ids: ReadonlySet<string> | null, target: Konva.Container): void {
+    this.dragIds = ids && ids.size > 0 ? ids : null;
+    this.dragTarget = target;
+  }
+
+  /** `true` se algum desenho do grupo de arrasto mudou desde a última chamada (e zera). */
+  takeDragChanged(): boolean {
+    const changed = this.dragChanged;
+    this.dragChanged = false;
+    return changed;
   }
 
   /**
@@ -130,33 +160,36 @@ export class ComponentLayerRenderer {
       changed = true;
     }
 
+    const usedMirrors = new Set<string | null>();
     for (const [containerId, list] of wanted) {
       const placement = placementOf(placements, containerId);
       if (!placement) continue;
       const { group, created } = this.groupOf(containerId);
       if (created) changed = true;
       if (placeGroup(group, placement)) changed = true;
+      const moving = this.dragIds
+        ? list.filter((d) => this.dragIds?.has(d.markingId))
+        : [];
+      const mirror = moving.length > 0 ? this.mirrorOf(containerId, placement) : null;
+      if (mirror) usedMirrors.add(containerId);
       for (const drawing of list) {
-        const current = this.mounted.get(drawing.markingId);
-        if (
-          current &&
-          current.drawing === drawing &&
-          current.node.getParent() === group
-        ) {
-          continue;
+        const home = this.dragIds?.has(drawing.markingId) && mirror ? mirror : group;
+        const touched = this.place(drawing, home, group);
+        if ((touched & TOUCHED_GROUP) !== 0) changed = true;
+        if ((touched & TOUCHED_MIRROR) !== 0) this.dragChanged = true;
+      }
+      for (const drawing of list) {
+        const entry = this.mounted.get(drawing.markingId);
+        if (entry && placeScreen(entry.node, drawing, placement.scale, zoom)) {
+          if (this.inMirror(entry.node)) this.dragChanged = true;
+          else changed = true;
         }
-        current?.node.destroy();
-        const { node, imageUrls, images } = this.draw(drawing);
-        group.add(node);
-        this.mounted.set(drawing.markingId, { drawing, node, imageUrls, images });
-        changed = true;
       }
-      for (const drawing of list) {
-        const node = this.mounted.get(drawing.markingId)?.node;
-        if (node && placeScreen(node, drawing, placement.scale, zoom)) changed = true;
-      }
-      if (sortChildren(group, list, this.mounted)) changed = true;
+      const rest = moving.length > 0 ? list.filter((d) => !moving.includes(d)) : list;
+      if (sortChildren(group, rest, this.mounted)) changed = true;
+      if (mirror && sortChildren(mirror, moving, this.mounted)) this.dragChanged = true;
     }
+    if (this.dropMirrors(usedMirrors)) this.dragChanged = true;
     return changed;
   }
 
@@ -171,7 +204,8 @@ export class ComponentLayerRenderer {
     for (const entry of this.mounted.values()) {
       const placement = placementOf(this.placements, entry.drawing.containerId);
       if (placement && placeScreen(entry.node, entry.drawing, placement.scale, zoom)) {
-        changed = true;
+        if (this.inMirror(entry.node)) this.dragChanged = true;
+        else changed = true;
       }
     }
     return changed;
@@ -199,7 +233,8 @@ export class ComponentLayerRenderer {
         if (placement) placeScreen(node, entry.drawing, placement.scale, this.zoom);
       }
       this.mounted.set(markingId, { drawing: entry.drawing, node, imageUrls, images });
-      changed = true;
+      if (parent && this.isMirror(parent)) this.dragChanged = true;
+      else changed = true;
     }
     return changed;
   }
@@ -207,7 +242,9 @@ export class ComponentLayerRenderer {
   /** Destrói tudo o que o renderer criou (o grupo recebido fica a cargo de quem o criou). */
   destroy(): void {
     for (const group of this.imageGroups.values()) group.destroy();
+    for (const mirror of this.mirrors.values()) mirror.destroy();
     this.imageGroups.clear();
+    this.mirrors.clear();
     this.mounted.clear();
   }
 
@@ -219,6 +256,81 @@ export class ComponentLayerRenderer {
     this.parent.add(group);
     this.imageGroups.set(containerId, group);
     return { group, created: true };
+  }
+
+  /** O grupo do container no grupo de arrasto, com a posição e a escala do grupo da imagem. */
+  private mirrorOf(containerId: string | null, placement: Placement): Konva.Group {
+    let mirror = this.mirrors.get(containerId);
+    if (!mirror) {
+      mirror = new Konva.Group({ listening: false, name: 'component-layer-drag' });
+      this.dragTarget?.add(mirror);
+      this.mirrors.set(containerId, mirror);
+      this.dragChanged = true;
+    }
+    if (placeGroup(mirror, placement)) this.dragChanged = true;
+    return mirror;
+  }
+
+  /** Destrói os grupos de arrasto dos containers que não têm mais desenho se movendo. */
+  private dropMirrors(used: ReadonlySet<string | null>): boolean {
+    let dropped = false;
+    for (const [containerId, mirror] of this.mirrors) {
+      if (used.has(containerId)) continue;
+      mirror.destroy();
+      this.mirrors.delete(containerId);
+      dropped = true;
+    }
+    return dropped;
+  }
+
+  private isMirror(parent: Konva.Container): boolean {
+    for (const mirror of this.mirrors.values()) if (mirror === parent) return true;
+    return false;
+  }
+
+  private inMirror(node: Konva.Node): boolean {
+    const parent = node.getParent();
+    return parent !== null && this.isMirror(parent);
+  }
+
+  /**
+   * Põe o desenho de `drawing` em `home` (o grupo da imagem ou o do arrasto): o nó que já existe e
+   * está certo só muda de grupo (`moveTo`, o mesmo nó); o de objeto novo é refeito. Devolve em que
+   * grupo mexeu (`TOUCHED_*`), para o quadro redesenhar a camada certa.
+   */
+  private place(drawing: LayerDrawing, home: Konva.Group, group: Konva.Group): number {
+    const current = this.mounted.get(drawing.markingId);
+    const parent = current?.node.getParent() ?? null;
+    const into = this.touchedBy(home, group);
+    const reused = current ? this.reuse(current, drawing, home, group) : null;
+    if (reused !== null) return reused;
+    current?.node.destroy();
+    const { node, imageUrls, images } = this.draw(drawing);
+    home.add(node);
+    this.mounted.set(drawing.markingId, { drawing, node, imageUrls, images });
+    return parent === null ? into : this.touchedBy(parent, group) | into;
+  }
+
+  /**
+   * O nó montado serve se é do mesmo objeto de desenho e está num dos grupos deste renderizador:
+   * só muda de grupo. `null` se precisa ser refeito.
+   */
+  private reuse(
+    current: Mounted,
+    drawing: LayerDrawing,
+    home: Konva.Group,
+    group: Konva.Group,
+  ): number | null {
+    const parent = current.node.getParent();
+    if (current.drawing !== drawing || parent === null) return null;
+    if (parent === home) return 0;
+    if (parent !== group && !this.isMirror(parent)) return null;
+    current.node.moveTo(home);
+    return this.touchedBy(parent, group) | this.touchedBy(home, group);
+  }
+
+  private touchedBy(parent: Konva.Container, group: Konva.Group): number {
+    return parent === group ? TOUCHED_GROUP : TOUCHED_MIRROR;
   }
 
   private draw(drawing: LayerDrawing): {

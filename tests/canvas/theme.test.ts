@@ -111,3 +111,13 @@ describe('tokens do cadeado', () => {
     expect(canvasTokensFrom(reader('light')).lock.size).toBe(20);
   });
 });
+
+describe('nível de detalhe das marcações', () => {
+  it('os limites vêm dos tokens size-lod-min-marking (24) e size-lod-hide-marking (2) nos dois temas', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      const tokens = canvasTokensFrom(reader(theme));
+      expect(tokens.lodMinMarking).toBe(24);
+      expect(tokens.lodHideMarking).toBe(2);
+    }
+  });
+});

@@ -134,7 +134,11 @@ describe('CanvasController: imagens remotas', () => {
 
   it('imagem que carrega refaz só a marcação dela e pede um quadro', () => {
     const { controller, internals, resolve, states, emit, imagesOf } = setup();
-    const draw = vi.spyOn(internals.stage, 'batchDraw');
+    // O quadro redesenha só as camadas sujas: a dos componentes é a que as imagens remotas mexem
+    // (conta os desenhos dela, não os pedidos: o Konva agrupa os pedidos num desenho por quadro).
+    const componentsLayer = internals.stage.getLayers()[1];
+    if (!componentsLayer) throw new Error('camada dos componentes');
+    const draw = vi.spyOn(componentsLayer, 'drawScene');
     expect(imagesOf('m1')).toBeUndefined();
     states.set(A, {
       state: 'loaded',
@@ -156,7 +160,11 @@ describe('CanvasController: imagens remotas', () => {
 
   it('várias imagens no mesmo quadro geram um desenho só', () => {
     const { controller, internals, resolve, states, emit, imagesOf } = setup();
-    const draw = vi.spyOn(internals.stage, 'batchDraw');
+    // O quadro redesenha só as camadas sujas: a dos componentes é a que as imagens remotas mexem
+    // (conta os desenhos dela, não os pedidos: o Konva agrupa os pedidos num desenho por quadro).
+    const componentsLayer = internals.stage.getLayers()[1];
+    if (!componentsLayer) throw new Error('camada dos componentes');
+    const draw = vi.spyOn(componentsLayer, 'drawScene');
     const refresh = vi.spyOn(internals.componentLayer, 'refreshImages');
     for (const url of [A, B, C]) {
       states.set(url, {

@@ -66,6 +66,9 @@ export interface CanvasTokens {
   };
   /** Lado visível da alça (px de tela): `size-handle`. */
   readonly handleSize: number;
+  /** Nível de detalhe (px de tela): abaixo de `lodMinMarking` (largura ou altura) só a borda; abaixo de `lodHideMarking` nas duas medidas, nada. */
+  readonly lodMinMarking: number;
+  readonly lodHideMarking: number;
   /** Raios (px de tela): `sm` na etiqueta do nome, `md` nos demais cantos arredondados. */
   readonly radius: { readonly sm: number; readonly md: number };
   /** Seta (v13): cores do traço, da seleção e do rótulo; espessuras e ponta (px de tela). */
@@ -149,6 +152,8 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
       image: textStyle(read, 't-cv-image'),
     },
     handleSize: number(read, '--size-handle'),
+    lodMinMarking: number(read, '--size-lod-min-marking'),
+    lodHideMarking: number(read, '--size-lod-hide-marking'),
     radius: { sm: number(read, '--radius-sm'), md: number(read, '--radius-md') },
     arrow: {
       stroke: read('--cv-arrow'),
