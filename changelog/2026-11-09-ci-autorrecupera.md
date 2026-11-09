@@ -1,4 +1,4 @@
-# CI que se recupera sozinho — [Não lançado] (épico `epic/ci-autorrecupera`, PR #1353, MCP 0.28.15, schema v18)
+# CI que se recupera sozinho — 2026-11-09 (épico `epic/ci-autorrecupera`, PR #1353, MCP 0.28.15, schema v18)
 
 ## Adicionado
 
