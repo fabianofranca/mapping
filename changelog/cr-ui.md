@@ -25,3 +25,4 @@
 - Revisão, rodapé de atalhos: passa a ser um grupo nomeado, anunciado por leitor de tela.
 - Revisão, árvore: ao abrir uma proposta com a seleção além das primeiras linhas, a lista rola até a selecionada depois da medição; expandir ou recolher um grupo não faz a lista pular de volta.
 - Referência quebrada numa célula de tabela: o texto "(referência quebrada)" quebra de linha em vez de aparecer cortado com reticências, a 1280 e a 900 px.
+- Guia de testes (R3.14 a R3.17): o script `evolve.py` gera de novo as cópias `mat-v4` a `mat-v7` da biblioteca de exemplo (antes quebrava com `KeyError 'migrations'` e os passos estavam trocados), e o R3.15 diz que o Desfazer volta o `specs/` à versão 4.
