@@ -35,13 +35,26 @@ window.drawRich = (runs, width, height) => {
     .map((shape) => ({ kind: shape.className, text: shape.className === 'Text' ? shape.text() : '', x: shape.x(), y: shape.y(), width: shape.width(), height: shape.height() }));
   return { layout: text.runLayout, shapes };
 };
-window.inkCenter = (zoom) => {
+window.inkCenter = (zoom, align = 'middle') => {
   const W = 120, H = 28;
   const host = document.body.appendChild(document.createElement('div'));
   const stage = new Stage({ container: host, width: W * zoom, height: H * zoom, scaleX: zoom, scaleY: zoom });
   const layer = new Layer();
   stage.add(layer);
-  layer.add(new Text({ text: 'HHHH', width: W, height: H, verticalAlign: 'middle', fontFamily: 'sans-serif', fontSize: 13, lineHeight: 1.2, fill: '#000' }));
+  if (align === 'cap-middle') {
+    // O mesmo caminho do desenho: o nó da cena com cap-middle, pelo renderScene.
+    const component = {
+      format: 'mapping-component', formatVersion: 4, id: 'k', name: 'K', size: { width: W, height: H },
+      template: { type: 'frame', layout: { type: 'none' }, children: [{
+        type: 'text', name: 't', anchors: { left: 0, top: 0 }, width: W, height: H, text: 'HHHH',
+        font: { size: 13, lineHeight: 1.2, family: 'sans-serif', verticalAlign: 'cap-middle' }, color: '#000000',
+      }] },
+    };
+    const { root } = instantiate(component, {}, { x: 0, y: 0, width: W, height: H }, { measure: konvaMeasurer });
+    layer.add(renderScene({ root, warnings: [] }).root);
+  } else {
+    layer.add(new Text({ text: 'HHHH', width: W, height: H, verticalAlign: 'middle', fontFamily: 'sans-serif', fontSize: 13, lineHeight: 1.2, fill: '#000' }));
+  }
   layer.draw();
   const canvas = layer.getCanvas()._canvas;
   const { data } = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
@@ -161,6 +174,23 @@ test.describe('texto no Chromium', () => {
     // (medidas em px inteiros na fonte sem escala, multiplicadas pelo zoom): não vem de
     // arredondamento do `renderScene`. Aqui o limite documentado é 1 px (na escala do 100%).
     expect(Math.abs(zoomed - base)).toBeLessThanOrEqual(1);
+  });
+
+  test('FX1: cap-middle centra o texto pela maiúscula a ≤ 0,5 px do centro da caixa, a 100% e a 420%', async ({
+    page,
+  }) => {
+    await load(page);
+    const at = (zoom: number) =>
+      page.evaluate(
+        (z) =>
+          (window as never as { inkCenter: (z: number, a: string) => number }).inkCenter(
+            z,
+            'cap-middle',
+          ),
+        zoom,
+      );
+    expect(Math.abs(await at(1))).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(await at(4.2))).toBeLessThanOrEqual(0.5);
   });
 
   test('#941: com maxWidth a largura é a natural do texto, não o limite', async ({

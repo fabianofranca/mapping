@@ -29,8 +29,9 @@ import {
   type TextStyle,
   hasChildren,
 } from '../../model/components/scene';
-import type { RunPiece } from '../../model/components/richText';
+import type { RunLayout, RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
+import { capMetricsOf, capMiddleShift, konvaBaseline } from './capMiddle';
 import { cachedEmbeddedImage, loadEmbeddedImage } from './imageLoader';
 import { DEFAULT_PALETTE, type RenderPalette } from './palette';
 import type { RenderWarning, RenderWarningCode } from './renderWarnings';
@@ -266,7 +267,9 @@ class Renderer {
           fontSize: style.fontSize,
           fontStyle: fontStyle(style.fontWeight, style.italic),
           align: style.align,
-          verticalAlign: style.verticalAlign,
+          // `cap-middle` é do `capMiddleY`: o Konva desenha em `top` e o nó desce o deslocamento.
+          verticalAlign:
+            style.verticalAlign === 'cap-middle' ? 'top' : style.verticalAlign,
           lineHeight: style.lineHeight ? style.lineHeight / style.fontSize : 1.2,
           letterSpacing: style.letterSpacing ?? 0,
           textDecoration: style.decoration ?? '',
@@ -280,6 +283,8 @@ class Renderer {
           attrs.height = clipped.height;
           attrs.y = clipped.offsetY;
         }
+        if (style.verticalAlign === 'cap-middle')
+          attrs.y = capMiddleY(attrs, node, style);
         // Texto do SVG sem largura: o x é a âncora (`text-anchor`), então o texto centrado
         // ou à direita cresce para a esquerda a partir dela.
         const anchor = (shape: KonvaText): KonvaText => {
@@ -334,7 +339,10 @@ class Renderer {
     const shapes: Konva.Shape[] = [];
     const layout = node.runLayout;
     if (!layout) return shapes;
-    const shift = verticalShift(node, layout.height);
+    const shift =
+      node.style.verticalAlign === 'cap-middle'
+        ? capMiddleRunsShift(node, layout)
+        : verticalShift(node, layout.height);
     for (const line of layout.lines) {
       for (const piece of line.pieces) {
         const run = runs[piece.run];
@@ -554,6 +562,55 @@ function verticalShift(node: TextNode, contentHeight: number): number {
     default:
       return 0;
   }
+}
+
+/**
+ * `cap-middle` no texto simples: o `y` do nó para o bloco (topo da maiúscula da primeira linha à
+ * base da última) ficar no centro da caixa. `attrs` já traz a largura, a altura (a do `maxLines`,
+ * se cortou) e `verticalAlign: top`; as linhas são as que o Konva desenha com eles.
+ */
+function capMiddleY(attrs: TextConfig, node: TextNode, style: TextStyle): number {
+  if (node.height <= 0) return 0;
+  const probe = new KonvaText(attrs);
+  const metrics = capMetricsOf(probe, style.fontSize);
+  const lines = Math.max(1, probe.textArr.length);
+  probe.destroy();
+  const lineHeight = (attrs.lineHeight ?? 1.2) * style.fontSize;
+  const first = konvaBaseline(0, lineHeight, metrics);
+  return capMiddleShift({
+    boxHeight: node.height,
+    capHeight: metrics.capHeight,
+    firstBaseline: first,
+    lastBaseline: first + (lines - 1) * lineHeight,
+  });
+}
+
+/**
+ * `cap-middle` nos trechos: a mesma regra com o `capHeight` da fonte base do nó e as linhas de
+ * base da primeira e da última linha do `runLayout` (o pedaço fica centrado na altura da linha,
+ * então a base é a do pedaço com a fonte base).
+ */
+function capMiddleRunsShift(node: TextNode, layout: RunLayout): number {
+  const first = layout.lines[0];
+  const last = layout.lines[layout.lines.length - 1];
+  if (node.height <= 0 || !first || !last) return 0;
+  const { style } = node;
+  const sample = new KonvaText({
+    text: 'M',
+    fontFamily: canvasFontFamily(style.fontFamily),
+    fontSize: style.fontSize,
+    fontStyle: fontStyle(style.fontWeight, style.italic),
+  });
+  const metrics = capMetricsOf(sample, style.fontSize);
+  sample.destroy();
+  const baseline = (line: { y: number; height: number }): number =>
+    konvaBaseline(line.y, line.height, metrics);
+  return capMiddleShift({
+    boxHeight: node.height,
+    capHeight: metrics.capHeight,
+    firstBaseline: baseline(first),
+    lastBaseline: baseline(last),
+  });
 }
 
 /** A cor do trecho como preenchimento do Konva (`none` = sem preenchimento). */

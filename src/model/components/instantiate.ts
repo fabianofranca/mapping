@@ -1393,7 +1393,14 @@ function createEngine(
       lineHeight: font.lineHeight,
       letterSpacing: font.letterSpacing,
       align: oneOf(font0.align, ['left', 'center', 'right'], 'left'),
-      verticalAlign: oneOf(font0.verticalAlign, ['top', 'middle', 'bottom'], 'top'),
+      verticalAlign: oneOf(
+        font0.verticalAlign,
+        // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
+        original.formatVersion >= 4
+          ? ['top', 'middle', 'bottom', 'cap-middle']
+          : ['top', 'middle', 'bottom'],
+        'top',
+      ),
       ...(decoration === 'none' ? {} : { decoration }),
       ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
       ...(font.ellipsis === true ? { ellipsis: true } : {}),
