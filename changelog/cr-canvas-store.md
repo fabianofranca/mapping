@@ -20,6 +20,7 @@
 - Propostas: o Diagnóstico das propostas atualiza quando o problema muda (um arquivo quebrado que some e outro que quebra, ou o mesmo arquivo com outro erro), mesmo com o número de problemas igual.
 - Propostas: uma falha de disco ao aplicar (ler a imagem ou o pacote, copiar a imagem) mostra o erro de gravação e tira as imagens já copiadas, em vez de falhar sem aviso e deixá-las soltas; se o projeto mudou durante uma gravação que falhou, as cópias que ele cita ficam.
 - Comentários: a conversa escolhida (ou o rascunho de conversa nova) não volta sozinha ao clicar num item e depois no vazio; o texto não enviado continua guardado e reaparece ao abrir o rascunho no mesmo ponto.
+- Comentários: ao reposicionar um rascunho de conversa já aberto (Comentar e clique em outro ponto), o foco vai ao compositor, em vez de o texto digitado ir ao canvas.
 - Comentários: as marcações de "lida" não se perdem quando o Mapping está aberto em duas abas, e o aparelho guarda as 20 cópias de projeto mais recentes.
 - Catálogo: a especialização cujo catálogo falhou ao carregar é tentada de novo no próximo pedido (antes ficava sem catálogo até trocar o projeto).
 
