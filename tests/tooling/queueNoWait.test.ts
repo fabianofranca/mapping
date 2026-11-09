@@ -194,3 +194,21 @@ describe('painel sem a tabela de issues (decisão 10)', () => {
     expect(porEtapa).toContain('files/index.html');
   });
 });
+
+describe('implementar-fila: skill novo na main (decisão 11)', () => {
+  const troca = section(fila, '## Troca de sessão');
+
+  it('mudança grande vira troca de sessão, com a linhagem conferida antes', () => {
+    expect(troca).toContain('mais de 30 linhas');
+    expect(troca).toContain('seções de regra');
+    expect(troca).toContain('git diff --numstat');
+    expect(troca).toMatch(
+      /linhagem[\s\S]*antes dessa troca|antes dessa troca[\s\S]*linhagem/,
+    );
+  });
+
+  it('mudança pequena é releitura do SKILL.md inteiro, com prova no log', () => {
+    expect(troca).toContain('`SKILL.md` inteiro, nunca só o diff');
+    expect(troca).toContain('skill <commit>: <regra> → <o que faço agora>');
+  });
+});

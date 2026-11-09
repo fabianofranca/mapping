@@ -190,7 +190,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 
 - **Uma por sessão do coordenador**, não uma por filha: `create_trigger` sem `persistent_session_id` (dispara nesta sessão), `cron_expression: "0 * * * *"` (de hora em hora), `initiation: own_followup`, com o id guardado por `painel.py reserve`. Ela vale para todas as filhas e é apagada só na troca de sessão e no fim. Nada de `send_later` por filha, nada de `delete_trigger` a cada aviso, nunca `list_triggers`.
 - A mensagem guardada se sustenta sozinha: "Conferência da fila: rode `painel.py show` e confira as atrasadas; painel <url>; siga o skill implementar-fila".
-- Na conferência, confira primeiro se o skill mudou na `main` ("Troca de sessão"); se mudou, dê o `git pull` e releia o `SKILL.md`, sem trocar de sessão. Depois, `show` lista as **atrasadas** (filha sem aviso há mais de 60 min). Sem atrasadas (e sem conferência de Release pendente), não faça mais nada nesse ciclo: nem publicar o painel.
+- Na conferência, confira primeiro se o skill mudou na `main` ("Troca de sessão"); se mudou, dê o `git pull` e aplique a regra de "Troca de sessão" › "Skill novo na `main`" (grande: troca de sessão; pequena: releitura do `SKILL.md` inteiro com prova no `log`). Depois, `show` lista as **atrasadas** (filha sem aviso há mais de 60 min). Sem atrasadas (e sem conferência de Release pendente), não faça mais nada nesse ciclo: nem publicar o painel.
 - Para cada atrasada, leia `get_session` (`status_bucket`) e, só se não estiver trabalhando, `list_events` com `kinds: ["assistant", "result"]` e `limit: 10`:
   - trabalhando: `row '#n' childAt=now` (volta a contar);
   - falhou, parou pedindo permissão ou morreu: crie a sessão de novo uma vez, com a mesma mensagem e mais "a sessão anterior (<id>) parou em: <o que os eventos mostram>";
@@ -298,9 +298,13 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 
 ## Troca de sessão
 
-**Troca de sessão só por contexto.** Leia `external_metadata.context_usage` no `get_session` desta sessão entre etapas e, depois de passar de 60%, também a cada aviso de filha. **Acima de 60%**, passe a coordenação adiante: é o único motivo para criar um sucessor.
+**Troca de sessão por contexto ou por skill grande.** Leia `external_metadata.context_usage` no `get_session` desta sessão entre etapas e, depois de passar de 60%, também a cada aviso de filha. **Acima de 60%**, passe a coordenação adiante: é o motivo de sempre para criar um sucessor (o outro é o skill novo grande, abaixo).
 
-**Skill novo na `main`: não há troca de sessão por mudança de skill** (#1315). Entre etapas e em cada conferência de reserva, rode `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md`. Saída diferente de zero quer dizer que o `SKILL.md` mudou: faça `git pull -q --ff-only origin main` e relê o `SKILL.md` inteiro na própria sessão. O `painel.py` novo vale a partir do próximo comando. Uma mudança só em `painel/` não dispara nada: a página nova do painel é publicada por quem a mudou.
+**Skill novo na `main`.** Entre etapas e em cada conferência de reserva, rode `git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md`. Saída diferente de zero quer dizer que o `SKILL.md` mudou: faça `git pull -q --ff-only origin main` e meça a mudança com `git diff --numstat <HEAD de antes> HEAD -- .claude/skills/implementar-fila/SKILL.md`.
+
+- **Grande** (mais de 30 linhas mudadas, ou qualquer mudança nas seções de regra: "Regras desta fila", "Economia de contexto", "Por etapa", "Merge", "Paralelo", "Fim"): troque de sessão, depois de conferir a linhagem ("Limite de linhagem", antes dessa troca). Sem espaço na linhagem, vale o caminho do dono daquela seção.
+- **Pequena:** releia o `SKILL.md` inteiro, nunca só o diff, na própria sessão, e grave no `log` do painel a prova: "skill <commit>: <regra> → <o que faço agora>".
+  O `painel.py` novo vale a partir do próximo comando. Uma mudança só em `painel/` não dispara nada: a página nova do painel é publicada por quem a mudou.
 
 **Limite de linhagem.** Cada sucessor é uma sessão criada por `create_session` dentro de outra, e o ambiente para num nível de linhagem. Antes de criar o sucessor, leia `lineage.depth` e `lineage.limit` no próprio `get_session`. Se `depth + 2 > limit`, **não crie o sucessor**: ele não conseguiria criar fases. Nesse caso, publique o painel, mande ao dono uma `PushNotification` com o comando de retomada completo (`/implementar-fila retomar anterior=<id desta sessão> painel=<url>` e os mesmos argumentos), para ele abrir num chat novo, que começa no nível 0, e diga no `current` "aguardando o dono abrir a sessão nova da fila". Siga trabalhando enquanto o contexto deixar.
 

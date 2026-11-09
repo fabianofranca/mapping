@@ -89,25 +89,24 @@ describe('painel.py (FC1)', () => {
   });
 });
 
-// Etapa #1298 (FT1) e #1315 (FC2): skill novo na main não troca de sessão; troca só por contexto.
+// Etapa #1298 (FT1) e #1315 (FC2); a decisão 11 da #1322 (FS1) troca só o critério: skill grande troca de sessão.
 describe('implementar-fila: skill novo na main e troca de sessão (FT1, FC2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const troca = skill.slice(skill.indexOf('## Troca de sessão'));
   const CHECK =
     'git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md';
 
-  it('"Troca de sessão" manda dar pull e reler o SKILL.md, sem trocar de sessão (decisão 5)', () => {
+  it('"Troca de sessão" manda dar pull e reler o SKILL.md inteiro (decisão 5; decisão 11 da #1322)', () => {
     expect(troca).toContain(CHECK);
     expect(troca).toContain('git pull -q --ff-only origin main');
-    expect(troca).toMatch(/relê o `SKILL.md` inteiro/);
-    expect(troca).toMatch(/não há troca de sessão por mudança de skill/i);
+    expect(troca).toMatch(/releia o `SKILL.md` inteiro/);
     expect(troca).not.toContain('mesmo abaixo de 60%');
     expect(troca).not.toContain('skill atualizado na main');
   });
 
-  it('a troca é só por contexto acima de 60% (decisão 6)', () => {
-    expect(troca).toMatch(/Troca de sessão só por contexto/);
-    expect(troca).toMatch(/único motivo para criar um sucessor/);
+  it('a troca é por contexto acima de 60% ou por skill grande (decisão 6; decisão 11 da #1322)', () => {
+    expect(troca).toMatch(/Troca de sessão por contexto ou por skill grande/);
+    expect(troca).toMatch(/Acima de 60%/);
   });
 
   it('antes de criar o sucessor confere lineage.depth + 2 > limit (decisão 7)', () => {
