@@ -1,4 +1,4 @@
-# Esforço sob controle da fila — [Não lançado] (épico `epic/esforco-subagentes`, PR #0, MCP 0.28.12, schema v18)
+# Esforço sob controle da fila — 2026-11-09 (épico `epic/esforco-subagentes`, PR #1278, MCP 0.28.12, schema v18)
 
 ## Alterado
 
