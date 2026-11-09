@@ -81,6 +81,7 @@ import {
   parseSizeSpec,
 } from './layoutValues';
 import { expandRepeats } from './repeat';
+import { WRAP_SLACK } from './textWrap';
 import {
   applyTokens,
   defaultFontFamily,
@@ -198,7 +199,7 @@ function wrapWords(
   let current = words[0] ?? '';
   for (const word of words.slice(1)) {
     const candidate = `${current} ${word}`;
-    if (widthOf(candidate) > maxWidth + 1e-9) {
+    if (widthOf(candidate) > maxWidth + WRAP_SLACK) {
       lines.push(current);
       current = word;
     } else {
@@ -219,7 +220,7 @@ function withEllipsis(
   while (
     maxWidth !== undefined &&
     kept.length > 0 &&
-    widthOf(`${kept}…`) > maxWidth + 1e-9
+    widthOf(`${kept}…`) > maxWidth + WRAP_SLACK
   )
     kept = dropLastChar(kept).trimEnd();
   return `${kept}…`;
@@ -238,7 +239,7 @@ function clipLines(
   if (font.ellipsis !== true) return kept;
   const last = kept.length - 1;
   return kept.map((line, i) => {
-    const tooWide = maxWidth !== undefined && widthOf(line) > maxWidth + 1e-9;
+    const tooWide = maxWidth !== undefined && widthOf(line) > maxWidth + WRAP_SLACK;
     return (cut && i === last) || tooWide ? withEllipsis(line, widthOf, maxWidth) : line;
   });
 }

@@ -132,6 +132,31 @@ describe('texto de verdade', () => {
     expect(ink(raster, 10, 5, 70, 25)).toBeGreaterThan(10);
   });
 
+  it.each(['left', 'center', 'right'] as const)(
+    'wrap none sem ellipsis, align %s: a letra que passa da caixa sai cortada no meio (FX4)',
+    (align) => {
+      const raster = canvas(160, 40);
+      const node = label('Pagar fatura do cartão de crédito', 400, {
+        style: {
+          fontFamily: 'sans-serif',
+          fontSize: 14,
+          fontWeight: 400,
+          italic: false,
+          lineHeight: 20,
+          align,
+          verticalAlign: 'middle',
+          wrap: 'none',
+        },
+      });
+      paint(raster, frame([node], 160, 40));
+      // A caixa vai de x = 10 a 70: há tinta até a borda e nenhuma depois dela.
+      expect(ink(raster, 10 + 60 - 4, 5, 70, 25)).toBeGreaterThan(0);
+      expect(ink(raster, 70, 0, 160, 40)).toBe(0);
+      // Uma linha mais larga que a caixa começa na borda esquerda (como na app), em qualquer align.
+      expect(ink(raster, 10, 5, 16, 25)).toBeGreaterThan(0);
+    },
+  );
+
   it('trechos: o chip pinta o fundo e o texto de cada trecho', () => {
     const raster = canvas(160, 40);
     const runs = [

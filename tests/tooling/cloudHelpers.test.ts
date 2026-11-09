@@ -503,6 +503,7 @@ describe('scripts/testing/ listado no repositório', () => {
         'cloud.d.mts',
         'cloud.mjs',
         'fiel.mjs',
+        'fx.mjs',
         'large-project.mjs',
         'mcp-stdio-client.mjs',
         'mock-github-release.mjs',

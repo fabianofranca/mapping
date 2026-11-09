@@ -1,6 +1,7 @@
 import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { RunLayout, RunPiece } from '../../src/model/components/richText';
 import type { SceneTextRun, TextNode } from '../../src/model/components/scene';
+import { WRAP_SLACK } from '../../src/model/components/textWrap';
 import type { PixelRect } from './raster';
 
 // Barras do texto de uma cena no servidor (o desenho simplificado, sem fonte): uma por linha medida.
@@ -20,7 +21,7 @@ export function breakLines(node: TextNode, widthOf: (text: string) => number): s
     let line = '';
     for (const word of words) {
       const candidate = line === '' ? word : `${line} ${word}`;
-      if (line !== '' && node.width > 0 && widthOf(candidate) > node.width + 1e-6) {
+      if (line !== '' && node.width > 0 && widthOf(candidate) > node.width + WRAP_SLACK) {
         lines.push(line);
         line = word;
       } else {

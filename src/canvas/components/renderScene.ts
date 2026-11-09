@@ -7,7 +7,12 @@
  * shape e todo contêiner levam o atributo `sceneId`, para o visualizador achar o nó da cena
  * a partir do alvo de um evento do Konva.
  */
-import { sideSegments } from '../../model/components/strokeSides';
+import {
+  growRadius,
+  partialSides,
+  sideSegments,
+} from '../../model/components/strokeSides';
+import { CUT_REACH, WRAP_SLACK, cutsText } from '../../model/components/textWrap';
 import { canvasFontFamily } from '../../model/components/fontFamily';
 import Konva from 'konva/lib/Core';
 import { Ellipse as KonvaEllipse } from 'konva/lib/shapes/Ellipse';
@@ -135,6 +140,16 @@ class Renderer {
       });
     }
 
+    if (node.type === 'text' && cutsText(node)) {
+      const { width } = node;
+      // Recorte só na horizontal (a caixa do texto); na vertical, o que o texto desenha fica.
+      container.clipFunc((ctx) => {
+        ctx.beginPath();
+        ctx.rect(0, -CUT_REACH, width, 2 * CUT_REACH);
+        ctx.closePath();
+      });
+    }
+
     const shapes = this.shapesOf(node);
     // A área clicável invisível de um quadro transparente não pinta: não é dona da sombra.
     const shadowOwner = shadow
@@ -194,7 +209,8 @@ class Renderer {
           shapes.push(...this.fillShape(shape, paint, box));
         }
         if (node.stroke) {
-          if (node.stroke.sides) shapes.push(...this.sideStrokes(node.stroke, box));
+          if (partialSides(node.stroke))
+            shapes.push(...this.sideStrokes(node.stroke, box));
           else shapes.push(this.rectStroke(node.stroke, box, node.cornerRadius));
         }
         if (node.fills.length === 0 && !node.stroke && node.type === 'frame') {
@@ -222,7 +238,7 @@ class Renderer {
           shapes.push(...this.fillShape(new KonvaEllipse(geometry), paint, box));
         }
         if (node.stroke) {
-          const inset = strokeInset(node.stroke);
+          const inset = strokeInset(node.stroke) - (node.stroke.offset ?? 0);
           const shape = new KonvaEllipse({
             ...geometry,
             radiusX: Math.max(0, geometry.radiusX - inset),
@@ -276,7 +292,14 @@ class Renderer {
           wrap: style.wrap === 'none' ? 'none' : 'word',
           ellipsis: style.ellipsis === true,
         };
-        if (node.width > 0) attrs.width = node.width;
+        // `wrap: none` sem `ellipsis` numa caixa fixa: o Text não leva `width` (o Konva tiraria a
+        // letra inteira) e o grupo recorta por pixel na caixa; o `align` é do `x` (decisão 19).
+        const cut = cutsText(node);
+        if (node.width > 0 && !cut) {
+          // A folga da quebra (0,5 px), a mesma do medidor; o `x` desfaz o deslocamento do `align`.
+          attrs.width = node.width + WRAP_SLACK;
+          attrs.x = slackShift(style.align);
+        }
         if (node.height > 0) attrs.height = node.height;
         const clipped = maxLinesBox(attrs, node, style);
         if (clipped) {
@@ -288,6 +311,10 @@ class Renderer {
         // Texto do SVG sem largura: o x é a âncora (`text-anchor`), então o texto centrado
         // ou à direita cresce para a esquerda a partir dela.
         const anchor = (shape: KonvaText): KonvaText => {
+          if (cut) {
+            shape.x(cutLeft(style.align, node.width, shape.width()));
+            return shape;
+          }
           if (node.width > 0 || style.align === 'left' || style.align === 'justify')
             return shape;
           shape.offsetX(style.align === 'center' ? shape.width() / 2 : shape.width());
@@ -496,13 +523,16 @@ class Renderer {
   }
 
   private rectStroke(stroke: Stroke, box: Box, radius: CornerRadius): Konva.Shape {
-    const inset = strokeInset(stroke);
+    // `offset`: o contorno afastado da forma (o anel cresce de cada lado, com o raio + offset).
+    const offset = stroke.offset ?? 0;
+    const align = strokeInset(stroke);
+    const inset = align - offset;
     const shape = new KonvaRect({
       x: inset,
       y: inset,
       width: Math.max(0, box.width - inset * 2),
       height: Math.max(0, box.height - inset * 2),
-      cornerRadius: konvaRadius(shrinkRadius(radius, inset)),
+      cornerRadius: konvaRadius(shrinkRadius(growRadius(radius, offset), align)),
     });
     this.applyStroke(shape, stroke);
     return shape;
@@ -785,6 +815,19 @@ function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
   shape.shadowOffset(shadow.offset);
   shape.shadowOpacity(1);
   shape.shadowEnabled(true);
+}
+
+/** Onde começa a linha de largura `text` numa caixa `box` (uma linha que passa da caixa começa na borda). */
+function cutLeft(align: TextStyle['align'], box: number, text: number): number {
+  if (text >= box) return 0;
+  if (align === 'center') return (box - text) / 2;
+  return align === 'right' ? box - text : 0;
+}
+
+/** A largura do Text leva a folga da quebra; o `x` volta o que o `align` desloca por causa dela. */
+function slackShift(align: TextStyle['align']): number {
+  if (align === 'center') return -WRAP_SLACK / 2;
+  return align === 'right' ? -WRAP_SLACK : 0;
 }
 
 /** Metade do traço que entra na caixa: por dentro, o traço inteiro fica dentro; por fora, nada. */
