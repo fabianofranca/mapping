@@ -27,11 +27,7 @@ function mapItems(
   update: (item: Record<string, unknown>) => Record<string, unknown>,
 ): unknown {
   if (!Array.isArray(value)) return value;
-  return value.map((item) =>
-    typeof item === 'object' && item !== null && !Array.isArray(item)
-      ? update(item as Record<string, unknown>)
-      : item,
-  );
+  return value.map((item) => (isObject(item) ? update(item) : item));
 }
 
 /**

@@ -12,7 +12,7 @@ import {
 } from './refs';
 import type { SpecAnnotationType, SpecColumn, SpecField, SpecSimpleColumn } from './spec';
 import { findSpecType, getSpec, ownerTypeIds, typeOfAnnotation } from './specLookup';
-import { checkSimpleValue, isEmptyValue } from './typed';
+import { checkSimpleValue, isEmptyValue, valueText } from './typed';
 import type { Annotation, AnnotationTypeRef, JsonValue, Project } from './types';
 
 // Como uma anotação tipada aparece no painel, na lista e no zoom semântico
@@ -78,10 +78,7 @@ export function annotationShortLabel(
 }
 
 function cellText(value: JsonValue | undefined): string {
-  if (value === undefined || value === null) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  return JSON.stringify(value);
+  return value === undefined || value === null ? '' : valueText(value);
 }
 
 export interface DisplayValueLine {

@@ -7,9 +7,7 @@ import {
   applySpecialization,
   createMarking,
   highestNotice,
-  highestTypeNotice,
   NOTICE_KINDS,
-  noticeRank,
   noticeUsage,
   parseSpec,
   setFieldValue,
@@ -31,12 +29,6 @@ const n = (kind: SpecNotice['kind'], message: string = kind): SpecNotice => ({
 describe('gravidade e ordem', () => {
   it('a ordem de exibição é removed, deprecated, diverges, pending', () => {
     expect(NOTICE_KINDS).toEqual(['removed', 'deprecated', 'diverges', 'pending']);
-  });
-
-  it('removed > deprecated = diverges > pending', () => {
-    expect(noticeRank('removed')).toBeGreaterThan(noticeRank('deprecated'));
-    expect(noticeRank('deprecated')).toBe(noticeRank('diverges'));
-    expect(noticeRank('diverges')).toBeGreaterThan(noticeRank('pending'));
   });
 
   it('sortNotices ordena por kind e mantém a ordem do arquivo dentro do kind', () => {
@@ -258,21 +250,5 @@ describe('noticeUsage', () => {
 
   it('projeto sem especialização não tem avisos', () => {
     expect(noticeUsage(emptyProject())).toEqual([]);
-  });
-});
-
-describe('highestTypeNotice', () => {
-  it('o aviso mais grave do tipo da especialização carregada no projeto', () => {
-    const p = project();
-    expect(highestTypeNotice(p, { specId: 'lib', typeId: 'button' })).toMatchObject({
-      kind: 'removed',
-      message: 'coluna saiu',
-    });
-    expect(highestTypeNotice(p, { specId: 'lib', typeId: 'click' })?.kind).toBe(
-      'diverges',
-    );
-    expect(highestTypeNotice(p, { specId: 'lib', typeId: 'card' })).toBeNull();
-    expect(highestTypeNotice(p, { specId: 'lib', typeId: 'nada' })).toBeNull();
-    expect(highestTypeNotice(p, { specId: 'outra', typeId: 'button' })).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import type { AnnotationIssue } from './issues';
-import { projectIndex } from './projectIndex';
+import { projectIndex, type ProjectIndex } from './projectIndex';
 import type {
   Annotation,
   Arrow,
@@ -46,7 +46,9 @@ export function layerSections(
 }
 
 /** As marcações sem pai por container (`null` = o canvas), na ordem do projeto: uma passada, não uma por container. */
-function groupRootsByContainer(roots: readonly Marking[]): Map<string | null, Marking[]> {
+export function groupRootsByContainer(
+  roots: readonly Marking[],
+): Map<string | null, Marking[]> {
   const byContainer = new Map<string | null, Marking[]>();
   for (const root of roots) {
     const group = byContainer.get(root.containerId);
@@ -114,17 +116,18 @@ export function buildListing(
     const markings: ListedMarking[] = [];
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
-      const sections = layerSections(byMarking, marking.id, layers);
-      if (showEmpty || sections.length > 0) {
-        markings.push({ marking, path, sections });
-      }
+      const emit = (arrow?: Arrow) => {
+        const sections = layerSections(byMarking, arrow?.id ?? marking.id, layers);
+        if (showEmpty || sections.length > 0) {
+          markings.push(
+            arrow ? { marking, path, sections, arrow } : { marking, path, sections },
+          );
+        }
+      };
+      emit();
       // As setas que saem da marcação, logo depois dela (as anotações são da seta).
       for (const arrow of index.arrowsByMarking.get(marking.id) ?? []) {
-        if (arrow.from !== marking.id) continue;
-        const arrowSections = layerSections(byMarking, arrow.id, layers);
-        if (showEmpty || arrowSections.length > 0) {
-          markings.push({ marking, path, sections: arrowSections, arrow });
-        }
+        if (arrow.from === marking.id) emit(arrow);
       }
       for (const child of children.get(marking.id) ?? []) visit(child, path);
     };
@@ -156,6 +159,29 @@ export interface IncompleteImage {
   readonly items: readonly IncompleteItem[];
 }
 
+/** Anotações com pendência do dono (a marcação, ou a seta `arrow` que sai dela), na ordem do projeto. */
+function collectPending(
+  index: ProjectIndex,
+  issues: ReadonlyMap<string, readonly AnnotationIssue[]>,
+  allowed: ReadonlySet<string> | undefined,
+  items: IncompleteItem[],
+  marking: Marking,
+  path: readonly Marking[],
+  arrow?: Arrow,
+): void {
+  for (const annotation of index.annotationsByMarking.get(arrow?.id ?? marking.id) ??
+    []) {
+    const found = issues.get(annotation.id);
+    const layer = index.layers.get(annotation.layerId);
+    if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
+    items.push(
+      arrow
+        ? { annotation, marking, path, layer, issues: found, arrow }
+        : { annotation, marking, path, layer, issues: found },
+    );
+  }
+}
+
 /**
  * Pendências agrupadas por imagem (janela "Incompletas"): imagens na ordem do projeto,
  * marcações em profundidade (o pai antes das filhas) e, em cada uma, as anotações na
@@ -177,20 +203,10 @@ export function buildIncompleteList(
     const items: IncompleteItem[] = [];
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
-      for (const annotation of index.annotationsByMarking.get(marking.id) ?? []) {
-        const found = issues.get(annotation.id);
-        const layer = index.layers.get(annotation.layerId);
-        if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
-        items.push({ annotation, marking, path, layer, issues: found });
-      }
+      collectPending(index, issues, allowed, items, marking, path);
       for (const arrow of index.arrowsByMarking.get(marking.id) ?? []) {
         if (arrow.from !== marking.id) continue;
-        for (const annotation of index.annotationsByMarking.get(arrow.id) ?? []) {
-          const found = issues.get(annotation.id);
-          const layer = index.layers.get(annotation.layerId);
-          if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
-          items.push({ annotation, marking, path, layer, issues: found, arrow });
-        }
+        collectPending(index, issues, allowed, items, marking, path, arrow);
       }
       for (const child of index.children.get(marking.id) ?? []) visit(child, path);
     };

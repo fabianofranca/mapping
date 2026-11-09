@@ -13,7 +13,7 @@ import {
   findRefTargets,
   getAnnotationIssues,
   getBacklinks,
-  getProjectIssues,
+  projectIssues,
   layerAnnotationTypes,
   migrations,
   moveTableRow,
@@ -210,7 +210,7 @@ describe('anotações tipadas', () => {
       ],
     });
     expectValid(p);
-    expect(getProjectIssues(p)).toEqual(
+    expect(projectIssues(p)).toEqual(
       new Map([['AT', [{ code: 'required-empty', key: 'id' }]]]),
     );
   });
@@ -641,7 +641,7 @@ describe('remover especialização', () => {
       'acao: track',
       'duracaoMs: 500',
     ]);
-    expect(getProjectIssues(after).size).toBe(0);
+    expect(projectIssues(after).size).toBe(0);
   });
 });
 

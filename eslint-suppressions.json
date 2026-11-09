@@ -356,7 +356,7 @@
   },
   "src/model/listing.ts": {
     "complexity": {
-      "count": 2
+      "count": 1
     }
   },
   "src/model/markdown.ts": {

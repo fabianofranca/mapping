@@ -2,7 +2,7 @@
 
 ## Pendências
 
-Pendências: nenhuma até agora. A fase 1 muda só funções de `src/model/` (marcações, containers, travas, seleção); nenhum componente, token, ícone, texto visível nem layout muda.
+Pendências: nenhuma até agora. As fases 1 e 2 mudam só funções de `src/model/` (marcações, containers, travas, seleção, leitura do projeto, listas, avisos e código); nenhum componente, token, ícone, texto visível nem layout muda.
 
 ## Sincronização
 

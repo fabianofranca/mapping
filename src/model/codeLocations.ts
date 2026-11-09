@@ -2,7 +2,7 @@ import { fail } from './errors';
 import { memoByProject, projectIndex } from './projectIndex';
 import { resolveCode } from './codeVariants';
 import type { SpecCode, SpecField, SpecRepo } from './spec';
-import type { DocRepo, PlatformRepo, PlatformRepos, Project } from './types';
+import type { DocRepo, PlatformRepo, Project } from './types';
 
 // Código de instanciação das especializações (etapa 3b; schema v11): o `code` de um tipo diz
 // com que código se cria uma instância dele em cada plataforma (`symbol` é o que se chama),
@@ -166,8 +166,21 @@ export interface PlatformRepoInput {
   readonly localPath: string | null;
 }
 
-function withoutRepo(repos: PlatformRepos, platformId: string): PlatformRepos {
-  return Object.fromEntries(Object.entries(repos).filter(([id]) => id !== platformId));
+/** Sobreposições sem a entrada `id` (plataformas e repositórios de documentos). */
+function withoutRepo<T>(
+  repos: { readonly [id: string]: T },
+  id: string,
+): { readonly [id: string]: T } {
+  return Object.fromEntries(Object.entries(repos).filter(([key]) => key !== id));
+}
+
+/** Caminho local normalizado e validado; `null` = remover a entrada. */
+function checkedLocalPath(raw: string | null): string | null {
+  const localPath = raw === null ? null : normalizeLocalPath(raw);
+  if (localPath !== null && !isValidLocalPath(localPath)) {
+    fail('invalid-local-path', localPath);
+  }
+  return localPath;
 }
 
 /**
@@ -181,10 +194,7 @@ export function setPlatformRepo(
 ): Project {
   if (!findPlatform(p, platformId)) fail('unknown-platform', platformId);
   const current = platformRepoOf(p, platformId);
-  const localPath = input.localPath === null ? null : normalizeLocalPath(input.localPath);
-  if (localPath !== null && !isValidLocalPath(localPath)) {
-    fail('invalid-local-path', localPath);
-  }
+  const localPath = checkedLocalPath(input.localPath);
   if (localPath === null) {
     return current
       ? { ...p, platformRepos: withoutRepo(p.platformRepos, platformId) }
@@ -486,13 +496,6 @@ export function docRepoOf(p: Project, docRepoId: string): DocRepo | null {
   return Object.hasOwn(p.docRepos, docRepoId) ? (p.docRepos[docRepoId] ?? null) : null;
 }
 
-function withoutDocRepo(
-  repos: Project['docRepos'],
-  docRepoId: string,
-): Project['docRepos'] {
-  return Object.fromEntries(Object.entries(repos).filter(([id]) => id !== docRepoId));
-}
-
 /**
  * Informa onde está o clone local de um repositório de documentos declarado por alguma
  * especialização aplicada. Texto vazio ou `null` remove a entrada.
@@ -504,12 +507,9 @@ export function setDocRepo(
 ): Project {
   if (!declaredDocRepoIds(p).has(docRepoId)) fail('unknown-doc-repo', docRepoId);
   const current = docRepoOf(p, docRepoId);
-  const localPath = input.localPath === null ? null : normalizeLocalPath(input.localPath);
-  if (localPath !== null && !isValidLocalPath(localPath)) {
-    fail('invalid-local-path', localPath);
-  }
+  const localPath = checkedLocalPath(input.localPath);
   if (localPath === null) {
-    return current ? { ...p, docRepos: withoutDocRepo(p.docRepos, docRepoId) } : p;
+    return current ? { ...p, docRepos: withoutRepo(p.docRepos, docRepoId) } : p;
   }
   if (current?.localPath === localPath) return p;
   return { ...p, docRepos: { ...p.docRepos, [docRepoId]: { localPath } } };
@@ -518,5 +518,5 @@ export function setDocRepo(
 /** Remove o clone local do repositório de documentos (declarado ou não). */
 export function removeDocRepo(p: Project, docRepoId: string): Project {
   if (!Object.hasOwn(p.docRepos, docRepoId)) fail('not-found', docRepoId);
-  return { ...p, docRepos: withoutDocRepo(p.docRepos, docRepoId) };
+  return { ...p, docRepos: withoutRepo(p.docRepos, docRepoId) };
 }
