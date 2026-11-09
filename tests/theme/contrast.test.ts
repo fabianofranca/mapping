@@ -41,6 +41,9 @@ const PAIRS: readonly [string, string, number][] = [
   ['danger', 'bg', 4.5],
   ['warning', 'warning-bg', 4.5],
   ['success', 'success-bg', 4.5],
+  ['thread-human', 'thread-human-bg', 4.5],
+  ['thread-agent', 'thread-agent-bg', 4.5],
+  ['thread-resolved', 'thread-resolved-bg', 4.5],
   ['tooltip-text', 'tooltip', 4.5],
   // Limite de controle (campos, botões, selos): 3:1 sobre os fundos onde aparece.
   ['border-control', 'surface', 3],

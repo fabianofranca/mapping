@@ -1184,6 +1184,8 @@ export const ptBR = {
   'drawingMode.intro':
     'Escolhe o modo (claro, escuro…) dos tokens das especializações com que os componentes são desenhados. Não muda o tema da interface.',
   'drawingMode.label': 'Modo do desenho',
+  'drawingMode.light': 'Claro',
+  'drawingMode.dark': 'Escuro',
   'drawingMode.followProject': 'Seguir o projeto',
   'drawingMode.undeclared': '{mode} (não declarado)',
   'drawingMode.containerHint':

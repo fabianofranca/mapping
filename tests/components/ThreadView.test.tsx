@@ -67,6 +67,13 @@ describe('ThreadView', () => {
     expect(badge?.textContent).toBe(t('thread.state.awaitingHuman'));
   });
 
+  it('o selo de cada estado usa a classe do estado (a cor do pino)', () => {
+    view(['oi', 'ok']);
+    expect(
+      document.querySelector('.thread-state')?.classList.contains('thread-state-human'),
+    ).toBe(true);
+  });
+
   it('mensagem com proposta é renderizada normalmente', () => {
     view(['texto da mensagem'], 'p-1');
     expect(screen.getByText('texto da mensagem')).toBeTruthy();

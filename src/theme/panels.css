@@ -1094,13 +1094,19 @@ button.tree-toggle:hover {
   border-radius: var(--radius-full);
 }
 
+.comments-badge-human {
+  color: var(--color-thread-human);
+  background: var(--color-thread-human-bg);
+}
+
 .comments-badge-agent {
-  color: var(--color-warning);
-  background: var(--color-warning-bg);
+  color: var(--color-thread-agent);
+  background: var(--color-thread-agent-bg);
 }
 
 .comments-badge-resolved {
-  color: var(--color-success);
+  color: var(--color-thread-resolved);
+  background: var(--color-thread-resolved-bg);
 }
 
 .comments-unread-dot {
