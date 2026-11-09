@@ -127,6 +127,19 @@ describe('divisão da rodada completa em 5 blocos (etapas #424 e #841)', () => {
     together(['R9', 'R10']);
   });
 
+  it('cada cadeia da rodada em grupos (TR4, decisão 16) existe no guia e fica num só bloco', async () => {
+    const mod: { CHAINS: { name: string; items: string[] }[] } =
+      await import('../../scripts/testing/round-guide.mjs');
+    expect(mod.CHAINS.length).toBeGreaterThan(2);
+    for (const chain of mod.CHAINS) {
+      const ids = chain.items.flatMap((t) => expand(t.replace('-', ' a '), steps));
+      expect(ids.length, chain.name).toBeGreaterThan(0);
+      const where = new Set(ids.map((s) => blockOf(s)[0]));
+      expect(where.has(undefined), `${chain.name} fora da tabela`).toBe(false);
+      expect([...where], chain.name).toHaveLength(1);
+    }
+  });
+
   it('a seção 6 está em todo bloco com R3, R5, R9, R12, R16 ou R17', () => {
     for (const b of blocks) {
       const needs = b.roteiros.some((r) =>

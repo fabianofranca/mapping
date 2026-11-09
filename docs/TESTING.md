@@ -542,10 +542,12 @@ Use uma pasta vazia `principal` e o `cadastro.png`. Depois de cada passo que gra
 8. Para o R3.8e (projeto v13, o anterior aos papéis no vínculo), não precisa abrir a app: pela shell, a pasta `migracao13` com um `mapping.json` schema 13 pequeno (um container sem imagem, a marcação **Caixa** e duas anotações livres em camadas diferentes: **Dona** e, vinculada a ela, **Filha**):
 
    ```bash
+   if [ -e migracao13 ]; then echo 'migracao13 já existe: o preparo já rodou; não rode de novo'; else
    mkdir -p migracao13 && cat > migracao13/mapping.json <<'EOF'
    {"schemaVersion":13,"revision":0,"app":"mapping","coordinateSystem":"image-pixels-exif-oriented","project":{"name":"Migracao13","createdAt":"2026-11-05T12:00:00.000Z","updatedAt":"2026-11-05T12:00:00.000Z"},"specializations":[],"platformRepos":{},"layers":[{"id":"L1","name":"Camada 1","color":"#E53935","spec":null},{"id":"L2","name":"Camada 2","color":"#1E88E5","spec":null}],"containers":[{"id":"C1","name":"Tela","file":null,"width":400,"height":300,"placement":{"x":0,"y":0,"scale":1},"parentId":null,"markingColor":null,"locked":false,"source":null,"background":"#FFFFFF"}],"markings":[{"id":"M1","containerId":"C1","parentId":null,"name":"Caixa","rect":{"x":20,"y":20,"width":200,"height":100},"needsReview":false,"locked":false,"floating":false,"source":null}],"arrows":[],"annotations":[{"id":"A1","markingId":"M1","layerId":"L1","name":"Dona","parentAnnotationId":null,"type":null,"values":null,"entries":[{"id":"E1","key":"estilo","value":"primário"}]},{"id":"A2","markingId":"M1","layerId":"L2","name":"Filha","parentAnnotationId":"A1","type":null,"values":null,"entries":[{"id":"E2","key":"nota","value":"x"}]}]}
    EOF
    cp migracao13/mapping.json migracao13-original.json   # o "projeto v13"
+   fi
    ```
 
 **Preparo do R3.14 a R3.17** (versões novas do Material 3 (Compose), com migração). Salve o script abaixo como `evolve.py`, fora do repositório da app, e, com o shell na raiz dela e `python3` disponível, gere as quatro cópias em cadeia, `mat-v3` a `mat-v6` (cada uma parte da anterior, e a primeira, do pacote do repositório, que já está na versão 2; o pacote do repositório não muda):
@@ -1722,7 +1724,8 @@ cat saida-r11.txt; snap ws-r11 > depois-r11.txt && diff antes-r11.txt depois-r11
 ```bash
 export W22=<pasta de trabalho>/r22 && mkdir -p "$W22"
 export PROJ=<repositório de teste>/design/mapeamentos/conversas
-mkdir -p "$PROJ" && unzip -q "$REPO/examples/exemplo-completo.zip" -d "$PROJ"
+if [ -e "$PROJ" ]; then echo "$PROJ já existe: o preparo já rodou; não rode de novo"
+else mkdir -p "$PROJ" && unzip -q "$REPO/examples/exemplo-completo.zip" -d "$PROJ"; fi
 cat > "$W22/estado.py" <<'PY'
 import json, glob, os, sys
 raiz = sys.argv[1]
@@ -1794,7 +1797,8 @@ doc = {"schemaVersion": 15, "revision": 0, "app": "mapping", "coordinateSystem":
 os.makedirs(raiz, exist_ok=True)
 open(os.path.join(raiz, "mapping.json"), "w", encoding="utf-8").write(json.dumps(doc, ensure_ascii=False, indent=2) + "\n")
 PY
-python3 -I "$W23/v15.py" "$PROJ" && cp "$PROJ/mapping.json" "$W23/original.json"
+if [ -e "$PROJ" ]; then echo "$PROJ já existe: o preparo já rodou; não rode de novo"
+else python3 -I "$W23/v15.py" "$PROJ" && cp "$PROJ/mapping.json" "$W23/original.json"; fi
 cat > "$W23/estado.py" <<'PY'
 import json, sys
 d = json.load(open(sys.argv[1] + '/mapping.json', encoding='utf-8'))
@@ -2322,7 +2326,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 
 - **O que é:** o passo usa um diálogo do sistema ou do navegador que a página não opera: o seletor de pasta ou de arquivo, a permissão da pasta ("Permitir que o site veja/edite os arquivos?"), o "Salvar como" da exportação, a confirmação de instalar o app e o "Sair da página?". Nos roteiros principais (R0 a R25), todo passo [pessoa] tem um substituto para o agente (receita da nuvem abaixo, shell ou cliente por stdio), e um teste do repositório impede passo "sem substituto" ali. A marca **[pessoa]** fica no guia para quem testa à mão.
 - **Nome da ação nos roteiros:** o "ou `select_folder`", "ou `open_file`", "ou `save_file`", "ou `accept_permission_prompt`" e "ou `cancel_dialog`" que acompanham a marca [pessoa] nomeiam a receita da nuvem que faz o papel da pessoa (tabela em "Diálogos nativos na nuvem (Xvfb)", mais abaixo).
-- **`data-arrows`, `data-components`, `data-viewport` e `data-selection-box` do `.canvas-host` atualizam um quadro depois da ação** (clique, atalho, gravação): leia depois de esperar um quadro (`requestAnimationFrame`, como na receita abaixo; `waitForTimeout(100)` também serve); a leitura imediata devolve o valor anterior.
+- **`data-arrows`, `data-components`, `data-viewport` e `data-selection-box` do `.canvas-host` atualizam um quadro depois da ação** (clique, atalho, gravação): leia depois de `await settle(page)` (auxiliar de `scripts/testing/cloud.mjs`: sem "Salvando…", dois quadros e 200 ms sem mutação do DOM; o `state()` já o chama antes de ler); a leitura imediata devolve o valor anterior. Não use `waitForTimeout`.
 - **Atalhos de uma letra** (V, R, A…) só valem com **nenhum campo focado**: com o foco num campo de texto a letra é digitada. Clique no canvas ou no título de uma janela antes de usar o atalho.
 - **Nenhum passo dos roteiros principais é inteiro da pessoa.** O R0.5 (`index.html` por `file://`) e o R6.2 (fechar a aba no meio da gravação) não funcionaram sozinhos e foram para os roteiros sob demanda RF e RA, por decisão do dono. O R6.2 ganhou o e2e `tests/e2e/folder.spec.ts` no lugar.
 - **Se um passo novo não funcionar sozinho** (o endereço não abre; o diálogo nativo não aparece), marque "não executado (vai para os roteiros sob demanda)", registre o que falhou e proponha mover o passo. Se o teste for relevante (perda de dados, integridade do `mapping.json`, segurança), **avise o dono** no relato, pela regra das convenções da seção 8; não decida sozinho.
@@ -2393,13 +2397,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 // page: Playwright por CDP; a marcação aparece na Árvore (Ctrl+Shift+1) como "Marcação sem nome" ou pelo nome dela
 const host = page.locator('.canvas-host');
 await page.getByText('Marcação sem nome').first().click(); // 1. seleciona pela Árvore
-await page.evaluate(
-  () =>
-    new Promise((ok) =>
-      // 2. espera um quadro (sem tempo fixo)
-      requestAnimationFrame(() => requestAnimationFrame(ok)),
-    ),
-);
+await settle(page); // 2. espera a app assentar (sem tempo fixo)
 const [l, t, w, h] = (await host.getAttribute('data-selection-box'))
   .split(' ')
   .map(Number);
@@ -2450,7 +2448,7 @@ npm run build:mcp && node dist-mcp/mapping-mcp.js --version
 ```
 
 - **Receita 2 (nuvem), subir a tela, o D-Bus, o AT-SPI e o Chrome**, nesta ordem (o Chrome tem de subir já com o D-Bus). O auxiliar faz isto: `scripts/testing/cloud-up.sh <pasta-da-rodada>` (o mesmo comando da receita 1 já faz as duas). Conferência: `curl -s localhost:9222/json/list | grep '"url"' | grep -v 'chrome[:-]'` lista exatamente uma linha, `http://localhost:8080/`. Erros de `system_bus_socket` no `chrome.log` são normais; a barra "Chrome for Testing é destinado apenas a testes automatizados" não atrapalha.
-- **Receita 2 (nuvem), `source` só na shell.** Os auxiliares de `cloud.mjs` leem o `apoio/env` sozinhos: o `source "$S/env"` só vale, em cada chamada nova de shell, para os comandos fora deles (`xdotool`, `import`, `curl` no CDP).
+- **Receita 2 (nuvem), `source` só na shell.** Os auxiliares de `cloud.mjs` leem o `apoio/env.sh` sozinhos: o `source "$S/env.sh"` só vale, em cada chamada nova de shell, para os comandos fora deles (`xdotool`, `import`, `curl` no CDP).
 
 ```bash
 export DISPLAY=:99
@@ -2458,7 +2456,7 @@ Xvfb :99 -screen 0 1600x1200x24 >/dev/null 2>&1 &
 sleep 1; openbox >/dev/null 2>&1 &
 export DBUS_SESSION_BUS_ADDRESS=$(dbus-daemon --session --fork --print-address=1)
 /usr/libexec/at-spi-bus-launcher --launch-immediately >/dev/null 2>&1 &
-echo "export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" > "$S/env"
+echo "export DISPLAY=:99 DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" > "$S/env.sh"
 GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sandbox \
   --user-data-dir="$S/profile" --remote-debugging-port=9222 --force-renderer-accessibility \
   --no-first-run --no-default-browser-check --hide-crash-restore-bubble \
@@ -2468,7 +2466,8 @@ GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sand
 - **Receita 3 (nuvem), reiniciar o Chrome sem duplicar abas.** Nunca `pkill -f chrome`: o padrão casa com a linha de comando da própria shell e a mata, e o SIGTERM conta como "Crashed" e restaura abas. Feche limpo pelo CDP (`const s = await browser.newBrowserCDPSession(); await s.send('Browser.close')`), espere `pgrep -x chrome` ficar vazio, apague `"$S/profile/Default/Sessions"` (sem isso o Chrome voltou com 3 abas) e suba de novo com o comando da receita 2. Reiniciar perde as permissões de pasta daquela visita (o pedido volta ao reabrir) e o histórico de desfazer.
 - **Receita 3 (nuvem), continuação.** O auxiliar faz isto: `cloud-up.sh <pasta> --restart-chrome`.
 - **Receita 4 (nuvem), a página pelo Playwright por CDP.** O auxiliar faz isto: `connect(apoioDir)`, `connectGuide(apoioDir)` (a aba do guia, ver abaixo), `clickNoWait(page, nome)` e `state(page, apoioDir, { projectDir })` de `scripts/testing/cloud.mjs`.
-- **Receita 4 (nuvem), o que o `connect()` faz.** Ele carrega o `apoio/env` (`DISPLAY`, D-Bus), escolhe a aba da app (`http://localhost:8080`, fora de `/guia/`; com duas abas falha com as URLs) e usa timeout de 5 s nas ações e 15 s nas navegações: localizador errado falha em 5 s, e espera longa passa `{ timeout }` na própria chamada.
+- **Receita 4 (nuvem), o script de passo pelo `run`.** Mande o corpo pela entrada padrão: `node scripts/testing/cloud.mjs run [<pasta>] [--prazo=<s>] <<'JS' … JS`. Ele conecta, deixa `page`, `browser`, `apoioDir`, `projectDir` e os exports do `cloud.mjs` em escopo, imprime o `state()` no fim e sai com 0, 1 (erro) ou 124 (prazo de 90 s). `cloud.mjs help` lista tudo.
+- **Receita 4 (nuvem), o que o `connect()` faz.** Ele carrega o `apoio/env.sh` (`DISPLAY`, D-Bus), escolhe a aba da app (`http://localhost:8080`, fora de `/guia/`; com duas abas falha com as URLs) e usa timeout de 5 s nas ações e 15 s nas navegações: localizador errado falha em 5 s, e espera longa passa `{ timeout }` na própria chamada.
 
 <!-- roteiros: R11 -->
 
@@ -2497,6 +2496,13 @@ GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sand
 ### Seletores e nomes que enganam
 
 - **Janelas:** cada janela de ferramenta é uma `section` com `[data-window=tree|layers|details|list|incomplete|notices|diagnostics|proposals|catalog]` (use um valor por vez: `[data-window="tree"]`). As janelas da coluna esquerda são exclusivas: `Ctrl+Shift+1` e `Ctrl+Shift+9` trocam a Árvore e as Camadas pelo Catálogo, que volta na aba **Componentes**.
+- **Nomes repetidos e o localizador que funciona** (conferidos em `src/ui/`; `cloud.mjs find <texto>` lista os candidatos):
+  - **Revisar:** o botão do aviso "Nova proposta" é `Revisar` (`getByRole('button', { name: 'Revisar', exact: true })`); o da linha em Propostas é `Revisar: <título>` (`locator('[data-window="proposals"]').getByRole('button', { name: /^Revisar: / })`).
+  - **Mostrar todas:** o ícone de olho de Camadas (`locator('[data-window="layers"]').getByRole('button', { name: 'Mostrar todas' })`) e o botão do aviso de camadas ocultas na Lista (`[data-window="list"]`, mesmo `getByRole`).
+  - **Conversas:** o botão da barra que liga os marcadores (`getByRole('button', { name: 'Conversas', exact: true })`); a janela é **Comentários** (`openWindow(page, 'comments')`). `getByText('Conversas')` casa também os títulos de seção.
+  - **Árvore sem `treeitem`:** a linha é `button.tree-item` em `ul.tree`; use `locator('.tree-item', { hasText: 'Nome' })`.
+  - **Compositor `contenteditable`:** `getByRole('textbox', { name: /^(Comentar|Responder) como / })`, com `click()` e `keyboard.type(...)`, não `fill()`.
+  - **Dois `dialog[open]`:** `getByRole('dialog')` viola o modo estrito; use `getByRole('dialog', { name: 'Configurações' })` ou `locator('dialog[open]').last()`.
 - **Diálogos:** são `<dialog>` (`getByRole('dialog')`). A confirmação de exclusão tem `role="alertdialog"` (`getByRole('alertdialog')`, não `dialog`). A linha da Árvore é `button.tree-item`, sem `role=treeitem`.
 - **Página local sem o app (R25.59):** o headless-shell do Playwright não está na imagem; abra a `pagina.html` com o Chrome for Testing (`--headless=new --no-sandbox`, `executablePath` do `chromium` do `/opt/pw-browsers`) e rode o trecho do guia nele.
 - **Coordenadas:** as de `page.mouse` são do viewport, não da captura (`import -window root` inclui a moldura do Chrome, que desloca cerca de (4, 144)).
@@ -2622,7 +2628,12 @@ WS=<pasta de trabalho> MAPPING_MCP_ARGS='["<clone>/dist-mcp/mapping-mcp.js","--r
 - **Capturas que falham** logo depois de abrir um diálogo ou recarregar: espere e tente de novo antes de registrar.
 - **Uma aba só da app.** Navegue a mesma aba com `page.goto`; uma aba antiga do Mapping pode segurar o projeto. Antes de cada ação que muda algo, confira que o título da aba ainda é o da app; se mudou, pare e reconecte pelo CDP. As decisões de uma revisão em andamento ficam gravadas na proposta e voltam com **Continuar**. Reabrir o projeto numa aba nova **perde o histórico de desfazer**: não reinicie o Chrome nem recarregue antes dos passos de desfazer.
 - **Atalhos de janela com o foco num campo:** antes de atalhos como `Ctrl+Shift+N` ou `Ctrl+Shift+6`, tire o foco dos campos de texto ou número (Esc ou um clique no canvas): o envio do atalho pode digitar o número no campo (Y 340 virou 760; Altura 56 virou 566).
-- **Atalhos de janela pelo Playwright:** `page.keyboard.press('Control+Shift+1')` não funciona (o `key` vira `!`); use `Control+Shift+Digit<n>` ou o auxiliar `windowShortcut(page, n)` de `scripts/testing/cloud.mjs`.
+- **Atalhos de janela pelo Playwright:** `page.keyboard.press('Control+Shift+1')` não funciona (o `key` vira `!`); use `Control+Shift+Digit<n>`. O atalho **alterna** a janela (aberta, ela fecha): para abrir ou fechar de forma segura use `openWindow(page, id)` e `closeWindow(page, id)` de `scripts/testing/cloud.mjs`, idempotentes (só clicam quando o estado é outro; ids e atalhos na tabela abaixo).
+
+  Ids e atalhos: `tree` 1, `layers` 2, `details` 3, `list` 4, `incomplete` 5, `diagnostics` 6, `proposals` 7, `notices` 8, `catalog` 9, `comments` 0 (todos `Ctrl+Shift+<n>`).
+
+- **Arrastar e redimensionar a janela:** `drag(page, de, para, { select, steps })` (pontos de `ponto`) avisa se `de` cair a até 8 px de uma alça da seleção: parta do centro da marcação. `setViewport(page, largura, altura)` põe a janela em `innerWidth × innerHeight` (soma a moldura): use-o nas passadas a 1280×720 e 900×720.
+- **Localizador que falhou:** o `cloud.mjs run` lista até 10 candidatos (papel, nome, região) depois do erro; fora dele, `cloud.mjs find <texto>`.
 
 <!-- roteiros: R11 -->
 
