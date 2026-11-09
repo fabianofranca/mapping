@@ -197,6 +197,25 @@ describe('instantiate: botão', () => {
     expect(root.children).toHaveLength(1);
   });
 
+  it('visible com $field e default: instância sem o campo mostra o nó (#951)', () => {
+    const tpl: FrameTemplate = {
+      type: 'frame',
+      layout: { type: 'row' },
+      children: [
+        {
+          type: 'rect',
+          name: 'badge',
+          width: 5,
+          height: 5,
+          visible: { $field: 'badge', default: true },
+        },
+      ],
+    };
+    expect(run(tpl, {}, BOX).root.children).toHaveLength(1);
+    expect(run(tpl, { badge: 'não' }, BOX).root.children).toHaveLength(0);
+    expect(run(tpl, { badge: 'sim' }, BOX).root.children).toHaveLength(1);
+  });
+
   it('visible com $has esconde o nó quando o campo está vazio; $field esconde com "não"', () => {
     const tpl: FrameTemplate = {
       type: 'frame',

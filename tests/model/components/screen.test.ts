@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest';
 import {
   addInstance,
   bringToFront,
+  descendantsOf,
   newScreen,
   parseScreen,
   removeInstance,
   resize,
+  type Instance,
+  type Screen,
   serializeScreen,
   setValue,
   updateBox,
@@ -58,5 +61,78 @@ describe('screen', () => {
         instances: [{ typeId: 1 }],
       }),
     ).toThrow(/typeId/);
+  });
+});
+
+const BOX = { x: 0, y: 0, width: 10, height: 10 };
+
+function screenWith(...instances: Instance[]): Screen {
+  return { id: 's', name: 'T', width: 100, height: 100, background: '#FFF', instances };
+}
+
+function roundTrip(screen: Screen): Screen {
+  return parseScreen(JSON.parse(serializeScreen(screen)));
+}
+
+describe('parseScreen: tabelas (#952)', () => {
+  it('o round-trip mantém a tabela, com células de texto, número e null', () => {
+    const screen = screenWith({
+      id: 'a',
+      typeId: 't',
+      box: BOX,
+      values: { rows: [{ a: 'x', n: 1, z: null }], title: 'oi' },
+    });
+    expect(roundTrip(screen).instances[0]?.values).toEqual({
+      rows: [{ a: 'x', n: 1, z: null }],
+      title: 'oi',
+    });
+  });
+
+  it('descarta só a linha que não é objeto e a célula de outro tipo', () => {
+    const raw = JSON.parse(
+      serializeScreen(screenWith({ id: 'a', typeId: 't', box: BOX, values: {} })),
+    );
+    raw.instances[0].values = {
+      rows: [{ a: 'x', bad: { deep: 1 }, flag: true }, 'texto', 7, null, ['x'], { n: 2 }],
+    };
+    expect(parseScreen(raw).instances[0]?.values).toEqual({
+      rows: [{ a: 'x' }, { n: 2 }],
+    });
+  });
+});
+
+describe('parseScreen: parentId (#952)', () => {
+  const inst = (id: string, parentId?: string): Instance => ({
+    id,
+    typeId: 't',
+    box: BOX,
+    values: {},
+    ...(parentId === undefined ? {} : { parentId }),
+  });
+
+  it('recusa auto-referência, ciclo, pai inexistente e id repetido', () => {
+    expect(() => roundTrip(screenWith(inst('a', 'a')))).toThrow(
+      /Tela inválida: instances\[0\]\.parentId/,
+    );
+    expect(() => roundTrip(screenWith(inst('a', 'b'), inst('b', 'a')))).toThrow(
+      /Tela inválida: instances\[\d\]\.parentId/,
+    );
+    expect(() => roundTrip(screenWith(inst('a'), inst('b', 'nada')))).toThrow(
+      /Tela inválida: instances\[1\]\.parentId/,
+    );
+    expect(() => roundTrip(screenWith(inst('a'), inst('a')))).toThrow(
+      /Tela inválida: instances\[1\]\.id/,
+    );
+  });
+
+  it('aceita uma hierarquia válida, em qualquer ordem da lista', () => {
+    const screen = screenWith(inst('b', 'a'), inst('a'), inst('c', 'b'));
+    expect(roundTrip(screen)).toEqual(screen);
+  });
+
+  it('descendantsOf termina mesmo com um ciclo montado à mão', () => {
+    const cyclic = screenWith(inst('a', 'b'), inst('b', 'a'));
+    expect(() => descendantsOf(cyclic, 'a')).not.toThrow();
+    expect(descendantsOf(cyclic, 'a').sort()).toEqual(['a', 'b']);
   });
 });

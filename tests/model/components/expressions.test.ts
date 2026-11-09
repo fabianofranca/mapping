@@ -262,3 +262,21 @@ describe('evaluateBoolean', () => {
     expect(evaluateBoolean(expr, { variant: 'x' }, true)).toBe(false);
   });
 });
+
+describe('evaluateBoolean com $field e default (#951)', () => {
+  it('campo vazio usa o default; preenchido usa a veracidade; sem default, falso', () => {
+    expect(evaluateBoolean({ $field: 'f', default: true }, {}, false)).toBe(true);
+    expect(evaluateBoolean({ $field: 'f', default: false }, {}, true)).toBe(false);
+    expect(evaluateBoolean({ $field: 'f', default: true }, { f: '  ' }, false)).toBe(
+      true,
+    );
+    expect(evaluateBoolean({ $field: 'f', default: true }, { f: 'não' }, false)).toBe(
+      false,
+    );
+    expect(evaluateBoolean({ $field: 'f', default: false }, { f: 'sim' }, false)).toBe(
+      true,
+    );
+    expect(evaluateBoolean({ $field: 'f' }, {}, true)).toBe(false);
+    expect(evaluateBoolean({ $field: 'f' }, { f: 'sim' }, false)).toBe(true);
+  });
+});

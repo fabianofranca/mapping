@@ -9,7 +9,7 @@ import {
   slotBox,
 } from '../../../src/model/components/arrange';
 import { approximateMeasurer } from '../../../src/model/components/instantiate';
-import { loadLibrary } from '../../../src/model/components/library';
+import { loadLibrary, withHostTokens } from '../../../src/model/components/library';
 import {
   type Box,
   type Instance,
@@ -526,5 +526,82 @@ describe('dropIndex', () => {
     const none = resolveSlotLayout(findSlot(typeOf('box').component)!, {});
     expect(dropIndex(arranged, 'c', none, { x: 0, y: 0 })).toBe(3);
     expect(dropIndex(arranged, 'c', none, { x: 0, y: 0 }, 'a')).toBe(2);
+  });
+});
+
+const withVersion4 = <T extends object>(c: T) => ({ ...c, formatVersion: 4 });
+
+describe('arrange: gap e padding do slot em $token (#948)', () => {
+  const tokenComponent = withVersion4(
+    component('tk', [
+      {
+        type: 'slot',
+        width: 'fill',
+        height: 'fill',
+        layout: {
+          type: 'row',
+          gap: { $token: 'space-2' },
+          padding: { $token: 'space-4' },
+          align: 'start',
+        },
+      },
+    ]),
+  );
+  const tokenSpec = {
+    format: 'mapping-spec',
+    formatVersion: 4,
+    id: 'token-test',
+    name: 'Token',
+    tokens: {
+      modes: ['light', 'dark'],
+      values: { 'space-2': { light: 6, dark: 12 }, 'space-4': { light: 10, dark: 20 } },
+    },
+    layers: [
+      {
+        id: 'ui',
+        name: 'UI',
+        color: '#1E88E5',
+        annotationTypes: [
+          { id: 'tk', name: 'tk', component: 'components/tk.json', fields: [] },
+          { id: 'leaf', name: 'leaf', component: 'components/leaf.json', fields: [] },
+        ],
+      },
+    ],
+  };
+  const leafComponent = COMPONENTS.find((c) => c.id === 'leaf');
+  const tokenLibrary = (mode?: string) =>
+    withHostTokens(
+      loadLibrary([
+        { path: 'spec.json', text: JSON.stringify(tokenSpec) },
+        { path: 'components/tk.json', text: JSON.stringify(tokenComponent) },
+        { path: 'components/leaf.json', text: JSON.stringify(leafComponent) },
+      ]),
+      {},
+      mode,
+    );
+  it('a biblioteca carrega', () => {
+    const l = tokenLibrary();
+    expect(l.problems ?? []).toEqual([]);
+    expect(l.types.map((t) => t.id)).toEqual(['tk', 'leaf']);
+  });
+  const screen = screenOf(
+    host('c', 'tk', CONTAINER_BOX, {}),
+    leaf('a', 40, 'c'),
+    leaf('b', 60, 'c'),
+  );
+
+  it('slotBox e arrange usam o gap e o padding dos tokens do desenho', () => {
+    const result = arrange(screen, tokenLibrary(), measure);
+    expect(boxOf(result, 'a')).toMatchObject({
+      x: CONTAINER_BOX.x + 10,
+      y: CONTAINER_BOX.y + 10,
+    });
+    expect(boxOf(result, 'b').x).toBe(CONTAINER_BOX.x + 10 + 40 + 6);
+  });
+
+  it('com a tabela de outro modo, vale o valor desse modo', () => {
+    const result = arrange(screen, tokenLibrary('dark'), measure);
+    expect(boxOf(result, 'a').x).toBe(CONTAINER_BOX.x + 20);
+    expect(boxOf(result, 'b').x).toBe(CONTAINER_BOX.x + 20 + 40 + 12);
   });
 });
