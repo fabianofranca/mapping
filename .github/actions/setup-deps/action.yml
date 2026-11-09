@@ -1,0 +1,28 @@
+name: Preparar Node e dependências
+description: >-
+  Node (versão do .nvmrc; Node 22 em refs anteriores à fase 5.6, que não o têm), cache de
+  node_modules e `npm ci` só sem hit. Exige o checkout feito antes. Sem `cache: npm` do
+  setup-node: o cache de node_modules já dispensa o `npm ci` na maioria das execuções.
+
+outputs:
+  node-version:
+    description: Versão do Node instalada
+    value: ${{ steps.node.outputs.node-version }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      id: node
+      with:
+        node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
+        node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
+    # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
+    - uses: actions/cache@v5
+      id: modules
+      with:
+        path: node_modules
+        key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+    - if: steps.modules.outputs.cache-hit != 'true'
+      shell: bash
+      run: npm ci

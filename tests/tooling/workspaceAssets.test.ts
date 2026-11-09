@@ -180,42 +180,50 @@ describe('os workflows de release publicam os arquivos do workspace', () => {
       .filter((chunk) => new RegExp(`^\\s*gh release ${verb}`).test(chunk))
       .map((chunk) => chunk.split(/\n\s*\n|\n {6,8}- /)[0] ?? '');
 
-  const cases: [string, string, string[]][] = [
-    ['snapshot', '.github/workflows/mcp-prerelease.yml', ['create', 'upload']],
-    ['rc', '.github/workflows/mcp-prerelease.yml', ['create']],
-    ['estável', '.github/workflows/mcp-release.yml', ['create', 'upload']],
+  const cases: [string, string, string, string[]][] = [
+    [
+      'snapshot',
+      '.github/workflows/mcp-prerelease.yml',
+      'snapshot-publish',
+      ['create', 'upload'],
+    ],
+    ['rc', '.github/workflows/mcp-prerelease.yml', 'rc-publish', ['create']],
+    ['estável', '.github/workflows/mcp-release.yml', 'release', ['create', 'upload']],
   ];
 
-  it('os três jobs rodam o script depois do passo Checksum', () => {
+  const jobOf = (yaml: string, name: string): string => {
+    const start = yaml.indexOf(`\n  ${name}:\n`);
+    const rest = yaml.slice(start + 1);
+    const end = rest.slice(1).search(/\n {2}[a-z0-9-]+:\n/);
+    return end < 0 ? rest : rest.slice(0, end + 1);
+  };
+
+  it('cada job que compila roda o script uma vez, depois do Checksum, em release-assets/', () => {
+    const call = 'node scripts/release/workspaceAssets.mjs release-assets';
     const prerelease = read('.github/workflows/mcp-prerelease.yml');
     const release = read('.github/workflows/mcp-release.yml');
-    const call = 'node scripts/release/workspaceAssets.mjs dist-mcp';
-    expect(prerelease.split(call).length - 1).toBeGreaterThanOrEqual(4); // 2 jobs × (passo + publicação)
-    expect(release.split(call).length - 1).toBeGreaterThanOrEqual(2);
-    for (const yaml of [prerelease, release]) {
-      expect(yaml.indexOf('name: Checksum')).toBeLessThan(yaml.indexOf(call));
+    const jobs = [
+      jobOf(prerelease, 'snapshot-build'),
+      jobOf(prerelease, 'rc-build'),
+      jobOf(release, 'release'),
+    ];
+    for (const job of jobs) {
+      expect(job.split(call).length - 1).toBe(1);
+      expect(job.indexOf('name: Checksum')).toBeLessThan(job.indexOf(call));
+      expect(job).toContain(
+        'cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/',
+      );
     }
   });
 
-  for (const [job, file, verbs] of cases) {
+  for (const [job, file, name, verbs] of cases) {
     for (const verb of verbs) {
-      it(`${job}: gh release ${verb} leva mapping-mcp.js, o .sha256 e os arquivos do script`, () => {
-        const yaml = read(file);
-        const start =
-          job === 'snapshot'
-            ? yaml.indexOf('  snapshot:')
-            : job === 'rc'
-              ? yaml.indexOf('\n  rc:')
-              : 0;
-        const end = job === 'snapshot' ? yaml.indexOf('  cleanup:') : yaml.length;
-        const chunk = yaml.slice(start, end);
+      it(`${job}: gh release ${verb} leva tudo o que está em release-assets/`, () => {
+        const chunk = jobOf(read(file), name);
         const commands = commandsOf(chunk, verb);
         expect(commands.length).toBeGreaterThan(0);
-        for (const command of commands) {
-          expect(command).toContain('dist-mcp/mapping-mcp.js');
-          expect(command).toContain('dist-mcp/mapping-mcp.js.sha256');
-          expect(command).toContain('"${assets[@]}"');
-        }
+        expect(chunk).toContain('assets=(release-assets/*)');
+        for (const command of commands) expect(command).toContain('"${assets[@]}"');
       });
     }
   }
