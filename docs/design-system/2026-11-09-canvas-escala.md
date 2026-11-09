@@ -1,4 +1,4 @@
-# Canvas em projeto grande — [Não lançado] (épico `epic/canvas-escala`)
+# Canvas em projeto grande — 2026-11-09 (épico `epic/canvas-escala`)
 
 ## Pendências
 
@@ -8,8 +8,14 @@
 
 ## Sincronização
 
-Preenchida no fechamento do épico.
+Gravado no artefato Mapping do Claude Design em 2026-11-09 (versão 64, `lastChange` "Fechamento do epic/canvas-escala"):
+
+- `tokens.json`: `size-lod-min-marking` (24px) e `size-lod-hide-marking` (2px), na família `size` (147 para 149 tokens).
+- `Canvas.md`: os dois tokens na linha "Medida" da tabela de tokens que o canvas lê, a linha "De longe (nível de detalhe)" na tabela de marcações e o parágrafo "Durante um gesto".
+- `components/CanvasMarking/README.md`: o parágrafo "Nível de detalhe" e a frase do gesto em "Estados".
+
+Sem componente, ícone ou preview novo; as prévias (`preview.html`) não mudaram.
 
 ## Ficou sem gravar
 
-Preenchida no fechamento do épico.
+Nada.
