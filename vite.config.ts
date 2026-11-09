@@ -56,6 +56,8 @@ const perfAppFiles = [
   'tests/canvas/renderPerformance.test.ts',
   'tests/store/reviewPerf.test.ts',
 ];
+/** Orçamento do lote do MCP (#882, fase 3): o servidor em processo, sozinho e sem cobertura. */
+const perfMcpFiles = ['tests/mcp/batchPerf.test.ts'];
 const perfGroupOrder = 1;
 
 const base = {
@@ -107,6 +109,18 @@ export default defineConfig({
         },
       },
       {
+        // Orçamento do lote do MCP, sozinho e por último (ver `perfModelFiles`): o mesmo ambiente do projeto `mcp`.
+        plugins: [wasmBytes(), fontBytes()],
+        test: {
+          name: 'perf-mcp',
+          environment: 'node',
+          env: testEnv,
+          include: perfMcpFiles,
+          fileParallelism: false,
+          sequence: { groupOrder: perfGroupOrder },
+        },
+      },
+      {
         // Roda o `vite build` (rolldown nativo) de verdade: precisa de Node puro, em processos
         // comuns (o `vmThreads` do jsdom isola objetos que o binding do rolldown rejeita).
         test: {
@@ -125,6 +139,7 @@ export default defineConfig({
           environment: 'node',
           env: testEnv,
           include: ['tests/mcp/**/*.test.ts'],
+          exclude: perfMcpFiles,
           // Gera dist-mcp/mapping-mcp.js uma vez: os testes de integração sobem esse arquivo por stdio.
           globalSetup: ['tests/mcp/globalSetup.ts'],
           testTimeout: 30_000,
