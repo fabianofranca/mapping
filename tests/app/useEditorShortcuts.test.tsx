@@ -54,6 +54,8 @@ interface Fake {
     centerSelection: ReturnType<typeof vi.fn>;
     zoomBy: ReturnType<typeof vi.fn>;
     zoomTo: ReturnType<typeof vi.fn>;
+    fitAll: ReturnType<typeof vi.fn>;
+    fitSelection: ReturnType<typeof vi.fn>;
   };
   readonly press: (key: string, mods?: Mods, init?: KeyboardEventInit) => KeyboardEvent;
   readonly rerender: (dialogs: EditorDialogs) => void;
@@ -85,6 +87,8 @@ function setup({
     centerSelection: vi.fn(),
     zoomBy: vi.fn(),
     zoomTo: vi.fn(),
+    fitAll: vi.fn(),
+    fitSelection: vi.fn(),
   };
   harness.context.canvas.current = canvas as unknown as CanvasController;
   const dialogs = {
@@ -511,6 +515,35 @@ describe('useEditorShortcuts: setas movem a seleção', () => {
 });
 
 describe('useEditorShortcuts: zoom, ajuda, configurações e projeto', () => {
+  it('Shift+1 enquadra tudo e Shift+2 a seleção, mas num campo de texto a tecla é do campo', () => {
+    const s = setup();
+    s.press('!', { shift: true }, { code: 'Digit1' });
+    s.press('@', { shift: true }, { code: 'Digit2' });
+    expect(s.canvas.fitAll).toHaveBeenCalledTimes(1);
+    expect(s.canvas.fitSelection).toHaveBeenCalledTimes(1);
+    const input = document.createElement('input');
+    document.body.append(input);
+    const typed = new KeyboardEvent('keydown', {
+      key: '@',
+      code: 'Digit2',
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    input.dispatchEvent(typed);
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: '!',
+        code: 'Digit1',
+        shiftKey: true,
+        bubbles: true,
+      }),
+    );
+    expect(typed.defaultPrevented).toBe(false);
+    expect(s.canvas.fitAll).toHaveBeenCalledTimes(1);
+    expect(s.canvas.fitSelection).toHaveBeenCalledTimes(1);
+  });
+
   it('Ctrl+= e Ctrl+− dão zoom por passo, e Ctrl+0 volta a 100%', () => {
     const s = setup();
     s.press('=', { ctrl: true });

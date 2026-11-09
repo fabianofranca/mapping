@@ -79,6 +79,7 @@ export function shortcutGroups(): readonly ShortcutGroup[] {
         row('shortcuts.zoomIn', ['Ctrl', '=']),
         row('shortcuts.zoomOut', ['Ctrl', '−']),
         row('shortcuts.zoomReset', ['Ctrl', '0']),
+        row('shortcuts.fitAll', combo(SHORTCUT_LABELS.fitAll)),
         row('shortcuts.fitSelection', combo(SHORTCUT_LABELS.fitSelection)),
       ],
     },

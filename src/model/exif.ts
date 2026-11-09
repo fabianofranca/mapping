@@ -50,8 +50,3 @@ function readApp1(view: DataView, start: number, length: number): ExifOrientatio
   }
   return null;
 }
-
-/** Orientações que trocam largura e altura (rotação de 90° ou 270°). */
-export function swapsAxes(orientation: ExifOrientation): boolean {
-  return orientation >= 5;
-}

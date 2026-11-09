@@ -11,7 +11,7 @@ import {
   canEditArrow,
   createArrow,
   createMarking,
-  getProjectIssues,
+  projectIssues,
   projectIndex,
   removeArrow,
   setArrowEndpoint,
@@ -232,12 +232,12 @@ describe('anotação tipada numa seta', () => {
       layerId,
       type: { specId: 'sdui', typeId: 'text' },
     });
-    expect(getProjectIssues(p).get('AX')).not.toContainEqual({
+    expect(projectIssues(p).get('AX')).not.toContainEqual({
       code: 'type-not-applicable',
     });
     const narrowed = withTextOn(p, ['marking']);
     expect(validateProject(narrowed)).toEqual([]);
-    expect(getProjectIssues(narrowed).get('AX')).toContainEqual({
+    expect(projectIssues(narrowed).get('AX')).toContainEqual({
       code: 'type-not-applicable',
     });
   });
@@ -265,7 +265,7 @@ describe('anotação tipada numa seta', () => {
         ?.map((a) => a.id),
     ).toEqual(['AX']);
     // Os campos obrigatórios vazios do Text são pendências da anotação da seta.
-    expect(getProjectIssues(p).get('AX')).toEqual(
+    expect(projectIssues(p).get('AX')).toEqual(
       expect.arrayContaining([{ code: 'required-empty', key: 'conteudo' }]),
     );
     // Dona inexistente continua falhando.

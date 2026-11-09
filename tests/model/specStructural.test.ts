@@ -5,7 +5,6 @@ import {
   addTypedAnnotation,
   applySpecialization,
   createMarking,
-  isStructuralMarking,
   parseSpec,
   projectIssues,
   structuralMarkingIds,
@@ -90,8 +89,6 @@ describe('marcação de tipo estrutural', () => {
   it('structuralMarkingIds lista só as marcações de tipo estrutural', () => {
     expect([...structuralMarkingIds(withInstance(true))]).toEqual(['M1']);
     expect(structuralMarkingIds(withInstance(false)).size).toBe(0);
-    expect(isStructuralMarking(withInstance(true), 'M1')).toBe(true);
-    expect(isStructuralMarking(withInstance(false), 'M1')).toBe(false);
   });
 
   it('não entra em pendência por falta de componente', () => {

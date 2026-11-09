@@ -135,6 +135,9 @@ describe('checkRemoteImageUrl: recusadas', () => {
       'printer.local',
       'app.localhost',
       'api.internal',
+      'nas.home.arpa',
+      'impressora.lan',
+      'wiki.intranet',
     ];
     for (const host of hosts) {
       expect(reason(`https://${host}/x.png`), host).toBe('private-host');

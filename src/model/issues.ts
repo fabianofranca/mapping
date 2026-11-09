@@ -193,14 +193,9 @@ export function getAnnotationIssues(p: Project, annotationId: string): Annotatio
   return issues ? [...issues] : [];
 }
 
-/** Pendências de todas as anotações incompletas (filtro "Incompletas" e alertas). */
-export function getProjectIssues(p: Project): Map<string, AnnotationIssue[]> {
-  return new Map([...projectIssues(p)].map(([id, issues]) => [id, [...issues]]));
-}
-
 /**
  * Pendências do projeto, calculadas uma vez por versão do projeto (o mesmo mapa
- * para a mesma versão). Só leitura: use `getProjectIssues` para uma cópia.
+ * para a mesma versão). Só leitura.
  */
 export const projectIssues: (
   p: Project,

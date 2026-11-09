@@ -3,7 +3,7 @@ import {
   annotationShortLabel,
   annotationTitle,
   buildListing,
-  getProjectIssues,
+  projectIssues,
   ownerTypesOf,
   removeTableRow,
   renameAnnotation,
@@ -103,7 +103,7 @@ describe('exibição tipada', () => {
 describe('Lista: filtro Incompletas', () => {
   it('só as anotações incompletas, sem herdadas nem marcações vazias', () => {
     const p = cadastroProject();
-    const only = new Set(getProjectIssues(p).keys());
+    const only = new Set(projectIssues(p).keys());
     expect([...only]).toEqual(['AT']);
     const listing = buildListing(p, p.layers, { showEmpty: true, onlyAnnotations: only });
     expect(listing).toHaveLength(1);

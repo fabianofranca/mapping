@@ -41,7 +41,10 @@ export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
         </p>
       ) : (
         <div class="list-scroll">
-          <table class="list-table list-table-fixed" aria-label={t('incomplete.title')}>
+          <table
+            class="list-table list-table-fixed incomplete-table"
+            aria-label={t('incomplete.title')}
+          >
             <thead>
               <tr>
                 <th scope="col" class="list-col-marking">

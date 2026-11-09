@@ -403,7 +403,7 @@ export interface ConvertOptions {
   readonly texts?: LabelTexts;
 }
 
-function valueText(value: JsonValue): string {
+export function valueText(value: JsonValue): string {
   if (typeof value === 'string') return value;
   if (typeof value === 'number' || typeof value === 'boolean') return String(value);
   return JSON.stringify(value);
@@ -512,6 +512,7 @@ export function annotationsOfSpec(p: Project, specId: string): Set<string> {
   );
   for (const a of p.annotations) {
     if (a.type?.specId !== specId && !layerIds.has(a.layerId)) continue;
+    if (ids.has(a.id)) continue; // já veio na subárvore de outra
     for (const id of annotationWithLinked(p, a.id)) ids.add(id);
   }
   return ids;

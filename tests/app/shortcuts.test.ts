@@ -192,6 +192,17 @@ describe('atalhos do editor', () => {
     expect(SHORTCUT_LABELS.fitSelection).toBe('Shift+2');
   });
 
+  // Enquadrar tudo: Shift+1 pela tecla física (com Shift o `key` vira `!` ou `1`).
+  it('Shift+1: enquadrar tudo, pela tecla física', () => {
+    expect(shortcutFor(key('!', { shift: true }, 'Digit1'))).toEqual({ kind: 'fit-all' });
+    expect(shortcutFor(key('1', { shift: true }, 'Digit1'))).toEqual({ kind: 'fit-all' });
+    expect(shortcutFor(key('1', {}, 'Digit1'))).toBeNull();
+    expect(shortcutFor(key('!', { shift: true, ctrl: true }, 'Digit1'))).not.toEqual({
+      kind: 'fit-all',
+    });
+    expect(SHORTCUT_LABELS.fitAll).toBe('Shift+1');
+  });
+
   it('zoom, exportar, camadas, ajuda e configurações', () => {
     expect(shortcutFor(key('=', { ctrl: true }))).toMatchObject({ kind: 'zoom' });
     expect(shortcutFor(key('-', { ctrl: true }))).toMatchObject({ kind: 'zoom' });

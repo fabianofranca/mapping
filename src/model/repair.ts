@@ -268,6 +268,7 @@ function repairRound(
       continue;
     }
     // O primeiro par com o id fica com ele (as referências seguem apontando para ele).
+    let renewed = false;
     const entries = a.entries.map((e) => {
       if (!seenEntries.has(e.id)) {
         seenEntries.add(e.id);
@@ -276,10 +277,12 @@ function repairRound(
       let id = newId();
       while (seenEntries.has(id)) id = newId();
       seenEntries.add(id);
+      renewed = true;
       return { ...e, id };
     });
-    record(out, 'new-id', 'duplicate-entry-id', 'annotation', a);
-    kept.push({ ...a, entries });
+    // O id de entrada pode ter colidido só com uma anotação removida: então nada mudou.
+    if (renewed) record(out, 'new-id', 'duplicate-entry-id', 'annotation', a);
+    kept.push(renewed ? { ...a, entries } : a);
   }
 
   // Imagens sobrepostas: cada uma que encosta numa anterior vai para a direita de todas elas.
