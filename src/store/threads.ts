@@ -460,15 +460,22 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
     }
   };
 
+  /** Identifica o conjunto de problemas (ids e erros), para publicar só quando ele muda. */
+  const problemsKey = () =>
+    JSON.stringify([...problemMap.values()].map((p) => [p.problem.id, p.problem.errors]));
+
   const scanNow = async (): Promise<ThreadScan> => {
     const scan: MutableScan = { added: [], changed: [], removed: [] };
     const ids = await listIds(false);
     if (ids === null) return scan;
+    const problemsBefore = problemsKey();
     const present = new Set(ids);
     await scanOpenFiles(ids, scan);
     await scanVanished(present, scan);
     dropProblems(false, present);
-    publish();
+    if (scan.added.length > 0 || scan.changed.length > 0 || scan.removed.length > 0)
+      publish();
+    else if (problemsKey() !== problemsBefore) publish();
     return scan;
   };
 
