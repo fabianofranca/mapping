@@ -27,6 +27,8 @@ QUEUE_EMPTY = {
     "plan": "",
     # Filhas que ainda devem aviso (ids separados por espaço) e desde quando.
     "child": "", "childAt": "",
+    # Sessões criadas para a etapa (ids separados por espaço), para arquivar no fim.
+    "sessions": "",
 }
 TIME_FIELDS = ["started", "ended", "childAt"]
 LATE_MINUTES = 60
@@ -278,6 +280,19 @@ def cmd_reserve(a):
     s.commit()
 
 
+def cmd_session(a):
+    s = Sessao(a.dir)
+    row = find_row(s.get("queue"), norm_issue(a.issue))
+    if row is None:
+        raise Erro(f"{a.issue} não está na fila")
+    ids = row.get("sessions", "").split()
+    if a.session not in ids:
+        ids.append(a.session)
+    row["sessions"] = " ".join(ids)
+    s.touch("queue")
+    s.commit()
+
+
 def minutes_since(iso):
     t = datetime.datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ")
     n = datetime.datetime.strptime(now(), "%Y-%m-%dT%H:%M:%SZ")
@@ -376,6 +391,9 @@ def build_parser():
     sp.add_argument("pairs", nargs="+")
     sp = add("reserve", cmd_reserve, "guarda o id da conferência de reserva da sessão")
     sp.add_argument("trigger")
+    sp = add("session", cmd_session, "registra uma sessão criada para a etapa (sem repetir)")
+    sp.add_argument("issue")
+    sp.add_argument("session")
     sp = add("show", cmd_show, "resumo legível; com '#n', a linha inteira (com a ficha)")
     sp.add_argument("issue", nargs="?")
     return p
