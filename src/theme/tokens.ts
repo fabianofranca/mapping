@@ -231,6 +231,10 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-lock-badge': '20px',
   /** Marcação com componente menor que isto na tela (largura ou altura) esconde as bolinhas de camada e o "+N" (3× o diâmetro da bolinha, 8px). */
   'size-indicator-min-marking': '24px',
+  /** Nível de detalhe do canvas: marcação menor que isto na tela (largura ou altura) desenha só a borda (sem halo, linha dupla, selo nem ⚠). */
+  'size-lod-min-marking': '24px',
+  /** Nível de detalhe do canvas: marcação menor que isto na tela nas duas medidas não é desenhada. */
+  'size-lod-hide-marking': '2px',
   /** Seta no canvas (px de tela, constantes com o zoom): traço, traço selecionado e ponta. */
   'size-arrow-stroke': '2px',
   'size-arrow-stroke-selected': '3px',
