@@ -8,6 +8,7 @@ import {
 } from './locks';
 import type {
   Change,
+  ChangeEntity,
   DecisionState,
   Proposal,
   ProposalDecisions,
@@ -463,30 +464,33 @@ export interface ChangeStatus {
  * da pessoa e pode ter mudado depois da proposta).
  */
 function sameRemoved(c: Change, current: JsonValue): boolean {
-  if (c.entity === 'marking' && isRecord(current) && isRecord(c.from)) {
-    return jsonEqual(
-      { ...current, needsReview: false },
-      { ...c.from, needsReview: false },
-    );
+  const normalize = REMOVED_NORMALIZERS[c.entity];
+  if (!normalize || !isRecord(current) || !isRecord(c.from)) {
+    return jsonEqual(current, c.from);
   }
-  if (c.entity === 'image' && isRecord(current) && isRecord(c.from)) {
-    // `parentId` é derivado da geometria (schema 13): a leitura da proposta o completa só
-    // no `from`, então não entra na comparação, de nenhum dos lados.
-    const { parentId: ignoredCurrent, ...ownCurrent } = current;
-    const { parentId: ignoredFrom, ...ownFrom } = c.from;
-    void ignoredCurrent;
-    void ignoredFrom;
-    return jsonEqual(ownCurrent, ownFrom);
-  }
-  if (c.entity === 'arrow' && isRecord(current) && isRecord(c.from)) {
-    const { points: ignoredCurrent, ...ownCurrent } = current;
-    const { points: ignoredFrom, ...ownFrom } = c.from;
-    void ignoredCurrent;
-    void ignoredFrom;
-    return jsonEqual(ownCurrent, ownFrom);
-  }
-  return jsonEqual(current, c.from);
+  return jsonEqual(normalize(current), normalize(c.from));
 }
+
+type JsonRecord = Record<string, JsonValue>;
+
+const without = (r: JsonRecord, key: string): JsonRecord => {
+  const { [key]: ignored, ...own } = r;
+  void ignored;
+  return own;
+};
+
+/**
+ * O que a comparação da remoção deixa de lado, por entidade: `parentId` do container é derivado
+ * da geometria (schema 13) e a leitura da proposta o completa só no `from`; a rota da seta é da
+ * pessoa; `parentRole` ausente (proposta anterior à v14) vale `null`, dos dois lados.
+ */
+const REMOVED_NORMALIZERS: Partial<Record<ChangeEntity, (r: JsonRecord) => JsonRecord>> =
+  {
+    marking: (r) => ({ ...r, needsReview: false }),
+    image: (r) => without(r, 'parentId'),
+    arrow: (r) => without(r, 'points'),
+    annotation: (r) => ({ ...r, parentRole: r.parentRole ?? null }),
+  };
 
 function lockWarning(c: Change, project: Project): boolean {
   const index = projectIndex(project);
@@ -501,10 +505,7 @@ function lockWarning(c: Change, project: Project): boolean {
   }
   if (c.entity === 'image' && index.containers.has(c.entityId)) {
     if (c.kind === 'remove') return !canDeleteImage(project, c.entityId);
-    if (c.kind === 'update' && c.field === 'placement') {
-      return !canEditImagePlacement(project, c.entityId);
-    }
-    if (c.kind === 'update' && c.field === 'size') {
+    if (c.kind === 'update' && (c.field === 'placement' || c.field === 'size')) {
       return !canEditImagePlacement(project, c.entityId);
     }
     if (c.kind === 'update' && c.field === 'file' && isRecord(c.to)) {

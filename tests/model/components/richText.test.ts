@@ -553,6 +553,22 @@ describe('wrap, ellipsis e maxLines nos trechos', () => {
     expect(layout.width).toBeLessThanOrEqual(100 + 1e-6);
   });
 
+  it('o corte do … é por ponto de código: emoji não vira surrogate solto', () => {
+    for (let limit = 8; limit <= 60; limit += 1) {
+      const layout = layoutRuns(
+        [run('😀😀😀😀😀😀')],
+        { ...BASE, wrap: 'none', ellipsis: true },
+        approximateMeasurer,
+        limit,
+      );
+      const text = lineTexts(layout)[0] ?? '';
+      expect(text.endsWith('…'), `limit ${limit}`).toBe(true);
+      expect(LONE_SURROGATE.test(text), `limit ${limit}: ${JSON.stringify(text)}`).toBe(
+        false,
+      );
+    }
+  });
+
   it('o chip que não cabe com o … sai inteiro', () => {
     const layout = layoutRuns(
       [run('ab '), run('vencida', {}, CHIP)],
@@ -643,3 +659,7 @@ describe('component.schema.json: runs', () => {
     expect(accepts({ type: 'text', text: 'oi' })).toBe(true);
   });
 });
+
+/** Surrogate sem par (alto sem baixo, ou baixo sem alto). */
+const LONE_SURROGATE =
+  /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;

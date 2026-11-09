@@ -19,6 +19,7 @@ import { declaredDrawingModes } from './drawingModes';
 import { LibraryIssueList } from './LibraryIssueList';
 import { markingLabel } from './labels';
 import { useCopyResult } from './useCopyResult';
+import { messageText } from './modelMessage';
 
 function formatTime(iso: string): string {
   try {
@@ -205,7 +206,7 @@ export function DiagnosticsComponents() {
   const { session, derived, ui, canvas } = editor;
   const fonts = session.components.fonts.value.filter((f) => f.status !== 'loaded');
   const problems = [...derived.catalog.value.values()].flatMap((c) =>
-    c.problems.map((problem) => ({ specId: c.specId, problem })),
+    c.problemMessages.map((problem) => ({ specId: c.specId, problem })),
   );
   const warnings = derived.componentWarnings.value;
   if (fonts.length === 0 && problems.length === 0 && warnings.length === 0) return null;
@@ -258,8 +259,8 @@ export function DiagnosticsComponents() {
           <h4>{t('diagnostics.catalogProblems')}</h4>
           <ul>
             {problems.map(({ specId, problem }) => (
-              <li key={`${specId}|${problem}`}>
-                <code>{specId}</code> {problem}
+              <li key={`${specId}|${problem.text}`}>
+                <code>{specId}</code> {messageText(problem)}
               </li>
             ))}
           </ul>
@@ -282,7 +283,7 @@ export function DiagnosticsComponents() {
                 >
                   {nameOf(markingId)}
                 </Button>{' '}
-                {list.join('; ')}
+                {list.map(messageText).join('; ')}
               </li>
             ))}
           </ul>

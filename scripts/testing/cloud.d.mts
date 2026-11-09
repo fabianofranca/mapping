@@ -162,3 +162,51 @@ export function ponto(
   y: number,
   options?: { perspective?: string; marking?: boolean },
 ): Promise<{ x: number; y: number }>;
+
+export interface Candidate {
+  role: string;
+  name: string;
+  region: string;
+}
+export function settle(
+  page: unknown,
+  options?: { timeoutMs?: number; warn?: (message: string) => void },
+): Promise<string | null>;
+export const TOOL_WINDOW_IDS: string[];
+export function openWindow(page: unknown, id: string): Promise<void>;
+export function closeWindow(page: unknown, id: string): Promise<void>;
+export function nearHandle(
+  box: { x: number; y: number; width: number; height: number },
+  point: { x: number; y: number },
+): string | null;
+export function drag(
+  page: unknown,
+  de: { x: number; y: number },
+  para: { x: number; y: number },
+  options?: { select?: boolean; steps?: number; warn?: (message: string) => void },
+): Promise<void>;
+export function setViewport(
+  page: unknown,
+  largura: number,
+  altura: number,
+): Promise<void>;
+export function find(page: unknown, texto: string): Promise<Candidate[]>;
+export function formatCandidates(candidates: Candidate[], texto: string): string;
+export function locatorTextFromError(message: string): string | null;
+
+export interface HelpEntry {
+  sig: string;
+  desc: string;
+}
+export const HELP: Record<string, HelpEntry>;
+export function formatHelp(): string;
+export function runStep(
+  body: string,
+  options?: {
+    apoioDir?: string;
+    projectDir?: string;
+    prazoSeconds?: number;
+    connectFn?: (apoioDir?: string) => Promise<{ browser: unknown; page: unknown }>;
+    io?: { log: (message: string) => void; error: (message: string) => void };
+  },
+): Promise<number>;

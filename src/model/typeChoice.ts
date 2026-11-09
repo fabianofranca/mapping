@@ -27,7 +27,10 @@ export function normalizeSearch(text: string): string {
 
 /** O tipo casa pelo nome, id ou descrição; busca vazia casa tudo. */
 export function typeMatchesQuery(type: SpecAnnotationType, query: string): boolean {
-  const q = normalizeSearch(query);
+  return matchesNormalized(type, normalizeSearch(query));
+}
+
+function matchesNormalized(type: SpecAnnotationType, q: string): boolean {
   if (q === '') return true;
   return [type.name, type.id, type.description ?? ''].some((text) =>
     normalizeSearch(text).includes(q),
@@ -47,8 +50,10 @@ export function chooseTypes(
 ): TypeChoice {
   const declared = groups ?? [];
   const known = new Set(declared.map((g) => g.id));
-  const headers = types.some((t) => knownGroups(t, known).length > 0);
-  const kept = types.filter((t) => typeMatchesQuery(t, query));
+  const typeGroups = new Map(types.map((t) => [t, knownGroups(t, known)]));
+  const headers = types.some((t) => typeGroups.get(t)!.length > 0);
+  const q = normalizeSearch(query);
+  const kept = types.filter((t) => matchesNormalized(t, q));
   if (!headers) {
     const flat: TypeChoiceSection = {
       key: 'all',
@@ -67,9 +72,9 @@ export function chooseTypes(
     key: group.id,
     group,
     others: false,
-    types: kept.filter((t) => knownGroups(t, known).includes(group.id)),
+    types: kept.filter((t) => typeGroups.get(t)!.includes(group.id)),
   }));
-  const loose = kept.filter((t) => knownGroups(t, known).length === 0);
+  const loose = kept.filter((t) => typeGroups.get(t)!.length === 0);
   if (loose.length > 0)
     sections.push({ key: 'others', group: null, others: true, types: loose });
   return {

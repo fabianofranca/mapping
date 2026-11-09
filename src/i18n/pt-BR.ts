@@ -1,4 +1,5 @@
 import { catalogPtBR } from './catalog';
+import { modelMessagesPtBR } from './modelMessages';
 import { reviewPtBR } from './review';
 import { perspectivesPtBR } from './perspectives';
 
@@ -6,6 +7,7 @@ export const ptBR = {
   ...reviewPtBR,
   ...perspectivesPtBR,
   ...catalogPtBR,
+  ...modelMessagesPtBR,
   'app.title': 'Mapping',
   'app.loading': 'Carregando…',
   'narrow.title': 'Abra numa janela maior',

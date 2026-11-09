@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PIN_GLYPH_EXTRA,
-  PIN_HEIGHT,
+  pinGlyphExtra,
   pinBox,
   pinHit,
   pinPlaces,
@@ -21,7 +20,9 @@ import {
 } from '../../src/model';
 import { arrowProject } from '../model/arrowFixtures';
 import { AGENT, HUMAN, T0, T1, message, sampleThread } from '../model/threadFixtures';
-import { canvasProject } from './harness';
+import { TOKENS, canvasProject } from './harness';
+
+const PIN = TOKENS.pin;
 
 // Derivação dos pinos das conversas (CM4, decisão 24): onde cada grupo fica no canvas, o acerto do
 // clique e o ponto de uma conversa nova. Funções puras, sem Konva.
@@ -56,8 +57,8 @@ describe('pinPlaces: o lugar de cada pino', () => {
     // M1 está em (100,100,600,500) no container I1, que está em (0,0), escala 1.
     expect(places[0]?.origin).toEqual({ x: 700, y: 100 });
     const m1: Rect = { x: 100, y: 100, width: 600, height: 500 };
-    const box = pinBox(places[0]!, 1);
-    expect(box.height).toBe(PIN_HEIGHT);
+    const box = pinBox(places[0]!, 1, PIN);
+    expect(box.height).toBe(PIN.height);
     expect(intersects(box, m1)).toBe(false);
   });
 
@@ -68,8 +69,8 @@ describe('pinPlaces: o lugar de cada pino', () => {
       groupsOf(p, [thread('c1', { kind: 'marking', id: 'M1' })]),
       FULL,
     );
-    const one = pinBox(place!, 1);
-    const two = pinBox(place!, 2);
+    const one = pinBox(place!, 1, PIN);
+    const two = pinBox(place!, 2, PIN);
     expect(two.width).toBeCloseTo(one.width / 2);
     expect(two.height).toBeCloseTo(one.height / 2);
   });
@@ -87,7 +88,7 @@ describe('pinPlaces: o lugar de cada pino', () => {
     const size = 20;
     const spot = lockBadgeSpot(m2, view, zoom, size);
     const lock: Rect = { x: spot.x, y: spot.y, width: size / zoom, height: size / zoom };
-    expect(intersects(pinBox(place!, zoom), lock)).toBe(false);
+    expect(intersects(pinBox(place!, zoom, PIN), lock)).toBe(false);
   });
 
   it('container: o canto de cima à direita da imagem', () => {
@@ -172,10 +173,10 @@ describe('pinHit: o clique no pino ganha da marcação embaixo', () => {
       groupsOf(p, [thread('c1', { kind: 'marking', id: 'M1' })]),
       FULL,
     );
-    const box = pinBox(places[0]!, 2);
+    const box = pinBox(places[0]!, 2, PIN);
     const inside = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-    expect(pinHit(places, inside, 2)?.group.threadIds).toEqual(['c1']);
-    expect(pinHit(places, { x: box.x - 50, y: box.y - 50 }, 2)).toBeNull();
+    expect(pinHit(places, inside, 2, PIN)?.group.threadIds).toEqual(['c1']);
+    expect(pinHit(places, { x: box.x - 50, y: box.y - 50 }, 2, PIN)).toBeNull();
   });
 });
 
@@ -239,9 +240,20 @@ describe('o ponto de uma conversa nova', () => {
 
 describe('pinWidth: o glifo de estado entra na largura do pino', () => {
   it('conta o glifo e a folga até o rótulo; o rascunho (sem glifo) fica como era', () => {
-    expect(PIN_GLYPH_EXTRA).toBeGreaterThan(0);
-    expect(pinWidth('MA 2')).toBe(4 * 7 + 16 + PIN_GLYPH_EXTRA);
-    expect(pinWidth('+', false)).toBe(7 + 16);
+    expect(pinGlyphExtra(PIN)).toBeGreaterThan(0);
+    expect(pinWidth('MA 2', PIN)).toBe(4 * 7 + 16 + pinGlyphExtra(PIN));
+    expect(pinWidth('+', PIN, false)).toBe(7 + 16);
+  });
+
+  it('a largura e a altura seguem os tokens (nada fixo no código)', () => {
+    const wide = { ...PIN, charWidth: 10, height: 30 };
+    expect(pinWidth('MA 2', wide)).toBe(4 * 10 + 16 + pinGlyphExtra(wide));
+    const place = pinPlaces(
+      canvasProject(),
+      groupsOf(canvasProject(), [thread('c1', { kind: 'marking', id: 'M1' })]),
+      FULL,
+    )[0]!;
+    expect(pinBox(place, 1, wide).height).toBe(30);
   });
 
   it('pinBox e pinHit seguem a largura nova (o alvo de clique cresce junto)', () => {
@@ -252,9 +264,9 @@ describe('pinWidth: o glifo de estado entra na largura do pino', () => {
       FULL,
     );
     const place = places[0]!;
-    const box = pinBox(place, 1);
-    expect(box.width).toBe(pinWidth(place.group.label));
+    const box = pinBox(place, 1, PIN);
+    expect(box.width).toBe(pinWidth(place.group.label, PIN));
     const insideGlyph = { x: box.x + 4, y: box.y + box.height / 2 };
-    expect(pinHit(places, insideGlyph, 1)?.group.threadIds).toEqual(['c1']);
+    expect(pinHit(places, insideGlyph, 1, PIN)?.group.threadIds).toEqual(['c1']);
   });
 });

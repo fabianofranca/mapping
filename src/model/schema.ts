@@ -1,3 +1,4 @@
+import { HEX_COLOR_RE } from './hexColor';
 import { z } from 'zod';
 import { PLATFORM_ID_RE } from './spec';
 import {
@@ -9,13 +10,13 @@ import {
   type ProjectFile,
 } from './types';
 
-// Schema zod do mapping.json v17. Valida a forma; os invariantes entre coleções
+// Schema zod do mapping.json na versão atual (`SCHEMA_VERSION`, em `types.ts`). Valida a forma; os invariantes entre coleções
 // (referências, contenção, sobreposição) ficam em `invariants.ts`. Os valores das
 // anotações tipadas são JSON livre aqui: a conferência contra o tipo vira pendência
 // (`issues.ts`).
 
 const id = z.string().min(1);
-const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
+const hexColor = z.string().regex(HEX_COLOR_RE);
 const finite = z.number().finite();
 
 /** Data ISO 8601 como gravada pela app: UTC com `Z`; com fuso, normalizada para UTC. */

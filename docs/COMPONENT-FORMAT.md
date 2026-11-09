@@ -424,7 +424,7 @@ Uma raiz da tela pode ficar **fora do fluxo**, ancorada na tela (a barra de baix
 | `start`, `center`, `end`               | No meio da altura, à esquerda, no centro, à direita. |
 | `bottom-start`, `bottom`, `bottom-end` | Embaixo, à esquerda, no centro, à direita.           |
 
-- `margin` (px, padrão 0) é a distância das bordas tocadas pela âncora.
+- `margin` (px, padrão 0) é a distância das bordas tocadas pela âncora. Raiz com `margin` e sem `anchor` é problema da origem: `margin só vale com anchor`, no caminho `margin` da raiz.
 - Na raiz ancorada, `fill` ocupa a tela **menos a margem nos dois lados**; `hug` usa o conteúdo; px é px.
 - Uma raiz pode ter uma **película** (`scrim`): o tipo de um componente (`sdui-scrim`) desenhado por baixo da raiz, cobrindo a tela inteira. A instância dele entra logo antes da raiz, com o id `<id da raiz>#scrim`, com os valores padrão dos campos.
 - Quem declara as raízes, as âncoras e a película é a **origem** da especialização (`origins`, ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md)).
@@ -500,7 +500,7 @@ Uma expressão que cita um campo que o **tipo não declara** é erro do validado
 }
 ```
 
-- **Onde vale:** cor (`fill`, `color`, `stroke.color`, `shadow.color`, a cor de cada stop do gradiente, `background` e `color` de um trecho de `runs`), número (`gap`, `padding`, `font.size`, `font.weight`, `cornerRadius`, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `width`/`height`, `opacity`…) e família de fonte (`font.family`, `family` de um trecho). Em enum, booleano ou texto (`layout.type`, `visible`, `text`…) é o erro `$token só vale onde se espera cor, número ou família de fonte`.
+- **Onde vale:** cor (`fill`, `color`, `stroke.color`, `shadow.color`, a cor de cada stop do gradiente, `background` e `color` de um trecho de `runs`), número (`gap`, `padding` (também o `padding` de um trecho de `runs`), `font.size`, `font.weight`, `cornerRadius`, `minWidth`/`maxWidth`/`minHeight`/`maxHeight`, `width`/`height`, `opacity`…) e família de fonte (`font.family`, `family` de um trecho). Em enum, booleano ou texto (`layout.type`, `visible`, `text`…) é o erro `$token só vale onde se espera cor, número ou família de fonte`.
 - **Versão:** só na `formatVersion` 4 do componente; nas versões 1 a 3 o erro é `só é permitido com formatVersion 4`, no caminho da chave. O nome segue `[a-z0-9][a-z0-9-]*` e o objeto não aceita outra chave.
 - **Tokens embutidos:** `font-sans` e `font-mono` (família) existem em toda biblioteca e valem a fonte do hospedeiro: a app usa o `--font-sans` e o `--font-mono` do tema, o visualizador usa a pilha dos tokens da app ou a opção `fonts` do `createViewer`, e o MCP usa `sans-serif`. A especialização pode redefini-los em `tokens.values`, e a definição dela vence a do hospedeiro. O texto sem `font.family` usa `font-sans`.
 - **Modo:** nesta versão o desenho usa sempre o **primeiro** modo de `tokens.modes`; um modo não declarado cai no primeiro, sem aviso. Ligar o modo (claro/escuro) ao projeto é trabalho da fase seguinte.

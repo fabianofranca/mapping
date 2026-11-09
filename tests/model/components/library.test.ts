@@ -1,12 +1,14 @@
 // Laboratório Componentes: a especialização aponta para um arquivo por componente.
 import { describe, expect, it } from 'vitest';
 import { findSlot } from '../../../src/model/components/arrange';
+import type { FieldValue } from '../../../src/model/components/componentFormat';
 import {
   type TextFile,
   initialValues,
   instanceLabel,
   loadLibrary,
   resolvePath,
+  resolvePathChecked,
 } from '../../../src/model/components/library';
 import {
   SAMPLE_COMPONENTS,
@@ -25,6 +27,76 @@ describe('library', () => {
     expect(resolvePath('design/specs/spec.json', '../components/x.json')).toBe(
       'design/components/x.json',
     );
+  });
+
+  it('resolvePathChecked devolve undefined quando o `..` sai da raiz da biblioteca', () => {
+    expect(resolvePathChecked('spec.json', '../x.json')).toBeUndefined();
+    expect(resolvePathChecked('a/spec.json', '../../x.json')).toBeUndefined();
+    expect(resolvePathChecked('a/spec.json', '../x.json')).toBe('x.json');
+    expect(resolvePathChecked('spec.json', './components/b.json')).toBe(
+      'components/b.json',
+    );
+  });
+
+  describe('caminho que sai da biblioteca', () => {
+    const specFiles = (spec: Record<string, unknown>): TextFile[] => [
+      ...SAMPLE_FILES.filter((f) => !f.path.endsWith('spec.json')),
+      { path: 'spec.json', text: JSON.stringify({ ...SAMPLE_SPEC, ...spec }) },
+    ];
+
+    it('componente: problema no caminho do tipo, sem "não encontrado" redundante', () => {
+      const layers = SAMPLE_SPEC.layers.map((layer) => ({
+        ...layer,
+        annotationTypes: layer.annotationTypes.map((t) =>
+          t.id === 'button' ? { ...t, component: '../x.json' } : t,
+        ),
+      }));
+      const lib = loadLibrary(specFiles({ layers }));
+      expect(lib.problems).toContain('button: caminho fora da biblioteca: ../x.json');
+      expect(lib.problems.some((p) => p.includes('não encontrado'))).toBe(false);
+      expect(lib.types.find((t) => t.id === 'button')?.component).toBeUndefined();
+    });
+
+    it('allowOutside: o `..` que sai da raiz é descartado, como no carregamento por URL', () => {
+      const layers = SAMPLE_SPEC.layers.map((layer) => ({
+        ...layer,
+        annotationTypes: layer.annotationTypes.map((t) =>
+          t.id === 'button' ? { ...t, component: '../components/button.json' } : t,
+        ),
+      }));
+      const lib = loadLibrary(specFiles({ layers }), { allowOutside: true });
+      expect(lib.problems).toEqual([]);
+      expect(lib.types.find((t) => t.id === 'button')?.component).toBeDefined();
+    });
+
+    it('fonte: problema em fonts[i] e a fonte não é carregada', () => {
+      const lib = loadLibrary(
+        specFiles({
+          fonts: [
+            { family: 'Roboto', file: 'fonts/R.ttf' },
+            { family: 'Fora', file: '../R.ttf' },
+          ],
+        }),
+      );
+      expect(lib.problems).toEqual(['fonts[1]: caminho fora da biblioteca: ../R.ttf']);
+      expect(lib.fonts.map((f) => f.family)).toEqual(['Roboto']);
+    });
+
+    it('ícones: problema `icons` com o texto citado', () => {
+      const lib = loadLibrary(specFiles({ icons: '../icons.json' }));
+      expect(lib.problems).toEqual(['icons: caminho fora da biblioteca: ../icons.json']);
+      expect(lib.icons).toBeUndefined();
+    });
+  });
+
+  it('instanceLabel: valor de tabela (array/objeto) conta como vazio, nunca [object Object]', () => {
+    const button = loadLibrary(SAMPLE_FILES).types.find((t) => t.id === 'button')!;
+    const label = button.labelField!;
+    expect(instanceLabel(button, { [label]: [{ a: 'x' }] })).toBe('Botão');
+    expect(instanceLabel(button, { [label]: { a: 'x' } as unknown as FieldValue })).toBe(
+      'Botão',
+    );
+    expect(instanceLabel(button, { [label]: 42 })).toBe('42');
   });
 
   it('carrega os exemplos: todo tipo com componente válido e sem problemas', () => {

@@ -13,9 +13,16 @@ export type { AllowOrigin } from './allowOrigin';
 export { ScreenRenderer } from '../src/canvas/components/screenRenderer';
 export type {
   InstanceWarnings,
+  ScreenRendererLabels,
   ScreenRendererOptions,
   ScreenRendererUpdateOptions,
 } from '../src/canvas/components/screenRenderer';
+export type { RenderPalette } from '../src/canvas/components/palette';
+export type {
+  RenderWarning,
+  RenderWarningCode,
+} from '../src/canvas/components/renderWarnings';
+export { VIEWER_LABELS } from './labels';
 export { konvaMeasurer } from '../src/canvas/components/konvaMeasurer';
 export { instanceLabel, loadLibrary, resolvePath } from '../src/model/components/library';
 export type {
@@ -47,13 +54,16 @@ export type {
   SourceResult,
   TranslateResult,
 } from '../src/model/components/origin';
-export { SCREEN_ANCHORS, layoutScreen } from '../src/model/components/layout';
+export {
+  LAYOUT_ANCHORS as SCREEN_ANCHORS,
+  layoutScreen,
+} from '../src/model/components/layout';
 export type {
   LayoutNode,
   LayoutResult,
   LayoutRoot,
   LayoutScreen,
-  ScreenAnchor,
+  LayoutAnchor as ScreenAnchor,
 } from '../src/model/components/layout';
 export { loadLibraryFromUrl, registerLibraryFonts } from './host';
 export type { FontHost, FontStatus, LoadFromUrlOptions } from './host';

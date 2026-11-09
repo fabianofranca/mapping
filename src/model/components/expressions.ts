@@ -75,7 +75,9 @@ export function evaluate<T>(expr: Expr<T>, values: FieldValues, fallback: T): T 
       default?: Expr<T>;
     };
     const key = values[e.$switch];
-    const chosen = isEmpty(key) ? undefined : e.cases[String(key)];
+    const name = String(key);
+    const chosen =
+      !isEmpty(key) && Object.hasOwn(e.cases, name) ? e.cases[name] : undefined;
     if (chosen !== undefined) return evaluate(chosen, values, fallback);
     return e.default === undefined ? fallback : evaluate(e.default, values, fallback);
   }

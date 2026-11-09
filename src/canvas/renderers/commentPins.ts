@@ -12,11 +12,10 @@ import type { PinColor } from '../../model';
 import type { Frame } from '../frame';
 import { THREAD_STATE_GLYPHS } from '../../utils/threadStateGlyph';
 import {
-  PIN_GLYPH_EXTRA,
-  PIN_GLYPH_SIZE,
-  PIN_HEIGHT,
   pinBox,
+  pinGlyphExtra,
   pinWidth,
+  type PinMetrics,
   type PinPlace,
 } from '../commentPins';
 import type { CanvasTokens } from '../theme';
@@ -51,13 +50,8 @@ interface PinNode {
 }
 
 function createGlyph(): Konva.Group {
-  const glyph = new Konva.Group({
-    x: (PIN_HEIGHT - PIN_GLYPH_SIZE) / 2,
-    y: (PIN_HEIGHT - PIN_GLYPH_SIZE) / 2,
-    scaleX: PIN_GLYPH_SIZE / GLYPH_GRID,
-    scaleY: PIN_GLYPH_SIZE / GLYPH_GRID,
-    visible: false,
-  });
+  // Posição e escala do glifo vêm das medidas do token e são postas a cada desenho (`paint`).
+  const glyph = new Konva.Group({ visible: false });
   for (let i = 0; i < MAX_GLYPH_PATHS; i++) {
     glyph.add(
       new KonvaPath({
@@ -155,7 +149,7 @@ export class CommentPinRenderer {
   ): void {
     const node = this.nodeFor(place.key);
     const { group } = place;
-    const box = pinBox(place, zoom);
+    const box = pinBox(place, zoom, tokens.pin);
     const isSelected = selected !== null && group.threadIds.includes(selected);
     node.group.setAttrs({ x: box.x, y: box.y, scaleX: 1 / zoom, scaleY: 1 / zoom });
     this.paint(node, group.label, fillOf(group.color, tokens), tokens, {
@@ -165,7 +159,7 @@ export class CommentPinRenderer {
     });
     node.unread.visible(group.hasUnread);
     node.unread.setAttrs({
-      x: pinWidth(group.label),
+      x: pinWidth(group.label, tokens.pin),
       y: 0,
       fill: tokens.pin.unread,
       stroke: tokens.pin.halo,
@@ -177,10 +171,10 @@ export class CommentPinRenderer {
   private drawDraft(at: Point, zoom: number, tokens: CanvasTokens): void {
     const node = this.nodeFor(DRAFT_KEY);
     const label = '+';
-    const width = pinWidth(label, false) / zoom;
+    const width = pinWidth(label, tokens.pin, false) / zoom;
     node.group.setAttrs({
       x: at.x - width / 2,
-      y: at.y - PIN_HEIGHT / zoom / 2,
+      y: at.y - tokens.pin.height / zoom / 2,
       scaleX: 1 / zoom,
       scaleY: 1 / zoom,
     });
@@ -204,13 +198,21 @@ export class CommentPinRenderer {
       readonly glyph: PinColor | null;
     },
   ): void {
+    const metrics: PinMetrics = tokens.pin;
+    const { height } = metrics;
     const withGlyph = style.glyph !== null;
-    const width = pinWidth(label, withGlyph);
-    const extra = withGlyph ? PIN_GLYPH_EXTRA : 0;
+    const width = pinWidth(label, metrics, withGlyph);
+    const extra = withGlyph ? pinGlyphExtra(metrics) : 0;
+    node.glyph.setAttrs({
+      x: (height - metrics.glyph) / 2,
+      y: (height - metrics.glyph) / 2,
+      scaleX: metrics.glyph / GLYPH_GRID,
+      scaleY: metrics.glyph / GLYPH_GRID,
+    });
     node.box.setAttrs({
       width,
-      height: PIN_HEIGHT,
-      cornerRadius: PIN_HEIGHT / 2,
+      height,
+      cornerRadius: height / 2,
       fill,
       stroke: style.selected ? tokens.pin.selected : tokens.pin.halo,
       strokeWidth: style.selected ? SELECTED_STROKE : HALO_WIDTH,
@@ -220,7 +222,7 @@ export class CommentPinRenderer {
     node.label.setAttrs({
       x: extra,
       width: width - extra,
-      height: PIN_HEIGHT,
+      height,
       text: label,
       fontSize: tokens.type.name.size,
       fontFamily: tokens.fontFamily,

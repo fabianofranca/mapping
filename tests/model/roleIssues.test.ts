@@ -1,6 +1,6 @@
 // Pendências de papel (etapa #559, PD2, decisão 12): `missing-role` e `unknown-role`.
 import { describe, expect, it } from 'vitest';
-import { getAnnotationIssues, getProjectIssues, type Project } from '../../src/model';
+import { getAnnotationIssues, projectIssues, type Project } from '../../src/model';
 import { addChild, roleProject, withRoles } from './roleFixtures';
 
 const codes = (p: Project, id: string) => getAnnotationIssues(p, id).map((i) => i.code);
@@ -80,7 +80,7 @@ describe('contagem de Incompletas', () => {
         a.id === 'E2' ? { ...a, parentRole: 'sumiu' } : a,
       ),
     };
-    const issues = getProjectIssues(p);
+    const issues = projectIssues(p);
     expect([...issues.keys()].sort()).toEqual(['E1', 'E2']);
     expect(issues.get('E1')?.map((i) => i.code)).toEqual(['missing-role']);
     expect(issues.get('E2')?.map((i) => i.code)).toEqual(['unknown-role']);

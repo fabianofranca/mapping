@@ -10,9 +10,7 @@ import {
   type Spec,
   type SpecComponents,
 } from '../model';
-import type { LoadedFont } from '../model/components/library';
 import { createFontRegistry, type FontRegistry } from '../storage/fonts';
-import { reportError } from '../utils/report';
 import {
   failedComponents,
   fontDeclaration,
@@ -21,6 +19,8 @@ import {
   type ComponentLibrary,
 } from './componentLibrary';
 import type { ComponentSources, ReviewView } from './derived';
+import { createFontSync } from './fontSync';
+import { createPendingTracker } from './pendingTracker';
 
 // O catálogo de componentes da visão Proposto (etapa Proposto com componentes, PC1): o da
 // biblioteca aplicada mais os pacotes que a proposta aberta cria ou atualiza, lidos de
@@ -101,15 +101,8 @@ export function createProposedComponents(
 ): ProposedComponents {
   const { base } = deps;
   const registry = deps.fonts ?? createFontRegistry();
-  const pending = new Set<Promise<unknown>>();
+  const { track, whenIdle } = createPendingTracker();
   let disposed = false;
-
-  const track = <T>(promise: Promise<T>): Promise<T> => {
-    pending.add(promise);
-    const done = () => void pending.delete(promise);
-    promise.then(done, done);
-    return promise;
-  };
 
   // Os pacotes da proposta aberta. A lista só muda quando muda o que há para ler (proposta
   // aberta, mudança de especialização nova, aplicada): decidir não troca a lista.
@@ -159,40 +152,21 @@ export function createProposedComponents(
     entries.value = new Map(entries.peek()).set(key, loaded);
   }
 
-  let fontRun = 0;
   let fontsRegistered = false;
-  // Os registros correm um depois do outro: o de uma rodada velha nem começa.
-  let registerChain: Promise<unknown> = Promise.resolve();
+  const fontSync = createFontSync({
+    registry,
+    isDisposed: () => disposed,
+    onRegistered: () => void epoch.value++,
+  });
 
-  async function syncFonts(list: readonly ProposedPackage[], run: number): Promise<void> {
-    await Promise.resolve();
-    try {
-      const fonts: LoadedFont[] = [];
-      for (const pkg of list) {
-        for (const declared of pkg.spec.fonts ?? []) {
-          const font = fontDeclaration(pkg.file, declared);
-          const staged = stagedPath(pkg, font.path);
-          let bytes: ArrayBuffer | undefined;
-          try {
-            const blob = staged === null ? null : await deps.read(staged);
-            bytes = blob === null ? undefined : await blob.arrayBuffer();
-          } catch (error) {
-            reportError('components.font', error);
-          }
-          fonts.push(bytes ? { ...font, bytes } : font);
-        }
-      }
-      const task = registerChain.then(() =>
-        disposed || run !== fontRun ? null : registry.register(fonts),
-      );
-      registerChain = task.catch(() => undefined);
-      const status = await task;
-      if (status === null || disposed || run !== fontRun) return;
-      epoch.value++;
-    } catch (error) {
-      reportError('components.fonts', error);
-    }
-  }
+  /** Fontes declaradas pelos pacotes da lista, com o pacote que as guarda. */
+  const packageFonts = (list: readonly ProposedPackage[]) =>
+    list.flatMap((pkg) =>
+      (pkg.spec.fonts ?? []).map((declared) => ({
+        pkg,
+        font: fontDeclaration(pkg.file, declared),
+      })),
+    );
 
   const stop = effect(() => {
     const list = packages.value;
@@ -217,8 +191,17 @@ export function createProposedComponents(
     const declares = list.some((pkg) => (pkg.spec.fonts ?? []).length > 0);
     if (!declares && !fontsRegistered) return;
     fontsRegistered = declares;
-    fontRun += 1;
-    void track(syncFonts(declares ? list : [], fontRun));
+    void track(
+      fontSync.start(
+        declares ? packageFonts(list) : [],
+        ({ font }) => font,
+        async ({ pkg, font }) => {
+          const staged = stagedPath(pkg, font.path);
+          const blob = staged === null ? null : await deps.read(staged);
+          return blob === null ? null : blob.arrayBuffer();
+        },
+      ),
+    );
   });
 
   let lastCatalog: ComponentCatalog = EMPTY_CATALOG;
@@ -249,9 +232,7 @@ export function createProposedComponents(
   return {
     catalog,
     fontsEpoch,
-    async whenIdle() {
-      while (pending.size > 0) await Promise.allSettled([...pending]);
-    },
+    whenIdle,
     dispose() {
       disposed = true;
       stop();

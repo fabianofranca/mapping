@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   addInstance,
   bringToFront,
+  childrenOf,
   descendantsOf,
+  moveSibling,
   newScreen,
   parseScreen,
   removeInstance,
@@ -134,5 +136,16 @@ describe('parseScreen: parentId (#952)', () => {
     const cyclic = screenWith(inst('a', 'b'), inst('b', 'a'));
     expect(() => descendantsOf(cyclic, 'a')).not.toThrow();
     expect(descendantsOf(cyclic, 'a').sort()).toEqual(['a', 'b']);
+  });
+});
+
+describe('moveSibling', () => {
+  it('move um só: [A,B,C] com A +1 vira [B,A,C]', () => {
+    const inst = (id: string): Instance => ({ id, typeId: 't', box: BOX, values: {} });
+    const s = screenWith(inst('A'), inst('B'), inst('C'));
+    const ids = (x: Screen) => childrenOf(x, undefined).map((i) => i.id);
+    expect(ids(moveSibling(s, 'A', 1))).toEqual(['B', 'A', 'C']);
+    expect(ids(moveSibling(s, 'C', -1))).toEqual(['A', 'C', 'B']);
+    expect(ids(moveSibling(s, 'B', 1))).toEqual(['A', 'C', 'B']);
   });
 });

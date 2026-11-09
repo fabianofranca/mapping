@@ -141,6 +141,8 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'cv-component-placeholder': 'rgba(128, 128, 128, 0.25)',
   'cv-component-placeholder-line': 'rgba(128, 128, 128, 0.8)',
   'cv-component-unknown': '#d81b60',
+  /** Preenchimento da caixa de uma instância cujo tipo não tem componente ou não existe (o contorno e o texto são `cv-component-unknown`). */
+  'cv-component-unknown-fill': 'rgba(216, 27, 96, 0.06)',
   // Espelho do DS, sem uso no código: as cores `layer-NN` vêm de `LAYER_COLORS` (o código de camadas usa a paleta de `src/model/layers.ts`).
   ...Object.fromEntries(
     LAYER_COLORS.map((c, i) => [`layer-${String(i + 1).padStart(2, '0')}`, c]),
@@ -239,6 +241,19 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-handle': '10px',
   /** Emblema do cadeado no canvas (px de tela). */
   'size-lock-badge': '20px',
+  /** Pino de conversa no canvas (px de tela): altura, respiro dos lados, glifo do estado e vão entre o glifo e o rótulo. A largura é estimada: `size-cv-pin-char` por letra do rótulo. */
+  'size-cv-pin-height': '20px',
+  'size-cv-pin-pad': '8px',
+  'size-cv-pin-glyph': '12px',
+  'size-cv-pin-glyph-gap': '2px',
+  'size-cv-pin-char': '7px',
+  /** Selo "Veio de <nome>" no canvas (px de tela): altura, respiro dos lados, vão até o canto da raiz (e, abaixo de uma raiz pequena, `gap-below`), faixa do nome do container que o selo evita e largura estimada por letra. */
+  'size-cv-arrival-height': '20px',
+  'size-cv-arrival-pad': '8px',
+  'size-cv-arrival-gap': '4px',
+  'size-cv-arrival-gap-below': '10px',
+  'size-cv-arrival-name-band': '24px',
+  'size-cv-arrival-char': '7px',
   /** Nível de detalhe do canvas: marcação menor que isto na tela (largura ou altura) desenha só a borda (sem halo, linha dupla, selo nem ⚠). */
   'size-lod-min-marking': '24px',
   /** Nível de detalhe do canvas: marcação menor que isto na tela nas duas medidas não é desenhada. */
@@ -297,6 +312,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'opacity-dimmed': '0.35',
   'opacity-ancestor': '0.75',
   'opacity-inherited': '0.7',
+  /** Contorno do `slot` (espaço reservado) do desenho dos componentes. */
+  'opacity-slot': '0.6',
   'opacity-card': String(CARD_ALPHA),
   /** Retângulo da vista no minimapa. */
   'opacity-grabbed': '0.25',

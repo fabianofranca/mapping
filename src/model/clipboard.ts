@@ -1,7 +1,7 @@
 import { descendantsOf } from './hierarchy';
 import { fail } from './errors';
 import type { ItemKind } from './itemRef';
-import type { Annotation, Marking, Project, ProjectContainer } from './types';
+import type { Annotation, Arrow, Marking, Project, ProjectContainer } from './types';
 
 // Dados que o Ctrl+C grava na área de transferência além do texto da referência, num formato
 // próprio da app (formato web personalizado, ignorado por outros programas; os dados vão junto
@@ -23,7 +23,7 @@ export interface ItemClipboardData {
   readonly ref: string;
   readonly kind: ItemKind;
   /** O item copiado. */
-  readonly item: ProjectContainer | Marking | Annotation;
+  readonly item: ProjectContainer | Marking | Arrow | Annotation;
   /** Imagem: todas as suas marcações. Marcação: as descendentes dela. */
   readonly markings: readonly Marking[];
   /** Anotações do item copiado e de tudo o que ele leva consigo. */
@@ -32,7 +32,8 @@ export interface ItemClipboardData {
 
 /**
  * O item e o que ele carrega: uma imagem leva as marcações e anotações dela; uma marcação,
- * as descendentes e as anotações de todas; uma anotação, só ela.
+ * as descendentes e as anotações de todas; uma seta (ela divide o `kind` `m` com as marcações),
+ * ela e as anotações dela; uma anotação, só ela.
  */
 export function itemClipboardData(
   p: Project,
@@ -49,6 +50,15 @@ export function itemClipboardData(
     const item = p.containers.find((i) => i.id === id) ?? fail('not-found', id);
     const markings = p.markings.filter((m) => m.containerId === id);
     return { ...base, item, markings, annotations: annotationsOf(p, markings) };
+  }
+  const arrow = p.arrows.find((a) => a.id === id);
+  if (arrow) {
+    return {
+      ...base,
+      item: arrow,
+      markings: [],
+      annotations: p.annotations.filter((a) => a.markingId === id),
+    };
   }
   const item = p.markings.find((m) => m.id === id) ?? fail('not-found', id);
   const markings = descendantsOf(p, id);

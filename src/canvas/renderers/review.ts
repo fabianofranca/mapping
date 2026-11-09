@@ -174,6 +174,48 @@ function placeBadges(
   });
 }
 
+/**
+ * Hachura da marcação removida: diagonais de período fixo (\\x + y = c\\), só as que cruzam a
+ * interseção do retângulo com a área visível (`view`, canvas), e não as do retângulo inteiro:
+ * com zoom alto e uma marcação enorme seriam milhares de traços a cada quadro de pan.
+ */
+function hatchRemoved(
+  ctx: Konva.Context,
+  rect: Rect,
+  view: Rect,
+  zoom: number,
+  light: string,
+  dark: string,
+): void {
+  // A janela visível em coordenadas locais da forma (origem no canto dela).
+  const x0 = Math.max(0, view.x - rect.x);
+  const y0 = Math.max(0, view.y - rect.y);
+  const x1 = Math.min(rect.width, view.x + view.width - rect.x);
+  const y1 = Math.min(rect.height, view.y + view.height - rect.y);
+  if (x1 <= x0 || y1 <= y0) return;
+  const period = (HATCH_LIGHT + HATCH_DARK) / zoom;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x0, y0, x1 - x0, y1 - y0);
+  ctx.clip();
+  for (const [color, width, shift] of [
+    [dark, HATCH_DARK / zoom, 0],
+    [light, HATCH_LIGHT / zoom, (HATCH_DARK + HATCH_LIGHT) / 2 / zoom],
+  ] as const) {
+    ctx.beginPath();
+    // Diagonais `x + y = c`, com `c = k·período + shift` (a mesma grade de sempre).
+    const first = Math.ceil((x0 + y0 - width - shift) / period);
+    for (let c = first * period + shift; c <= x1 + y1 + width; c += period) {
+      ctx.moveTo(c - y1, y1);
+      ctx.lineTo(c - y0, y0);
+    }
+    ctx.setAttr('strokeStyle', color);
+    ctx.setAttr('lineWidth', width);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 export class ReviewRenderer {
   private readonly layer: Konva.Container;
   private readonly shapes = new Map<string, ShapeNode>();
@@ -196,11 +238,16 @@ export class ReviewRenderer {
     if (review && project) {
       const index = projectIndex(project);
       // Removidas (hachura) por baixo dos fantasmas.
-      for (const shape of [...review.removed, ...review.ghosts]) {
-        const rect = markingCanvasRect(shape.placement, shape.rect);
-        if (!intersectRects(rect, view)) continue;
-        seenShapes.add(shape.key);
-        this.drawShape(shape, rect, review.removed.includes(shape), zoom, tokens);
+      for (const [shapes, removed] of [
+        [review.removed, true],
+        [review.ghosts, false],
+      ] as const) {
+        for (const shape of shapes) {
+          const rect = markingCanvasRect(shape.placement, shape.rect);
+          if (!intersectRects(rect, view)) continue;
+          seenShapes.add(shape.key);
+          this.drawShape(shape, rect, removed, zoom, tokens, view);
+        }
       }
       for (const [id, mark] of review.markings) {
         const marking = index.markings.get(id);
@@ -281,6 +328,7 @@ export class ReviewRenderer {
     removed: boolean,
     zoom: number,
     tokens: CanvasTokens,
+    view: Rect,
   ): void {
     let node = this.shapes.get(shape.key);
     if (!node) {
@@ -329,29 +377,8 @@ export class ReviewRenderer {
         width: rect.width,
         height: rect.height,
         opacity: tokens.opacity.ancestor,
-        sceneFunc: (ctx: Konva.Context) => {
-          const w = rect.width;
-          const h = rect.height;
-          const period = (HATCH_LIGHT + HATCH_DARK) / zoom;
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(0, 0, w, h);
-          ctx.clip();
-          for (const [color, width, shift] of [
-            [dark, HATCH_DARK / zoom, 0],
-            [light, HATCH_LIGHT / zoom, (HATCH_DARK + HATCH_LIGHT) / 2 / zoom],
-          ] as const) {
-            ctx.beginPath();
-            for (let s = -h; s < w + h; s += period) {
-              ctx.moveTo(s + shift, h);
-              ctx.lineTo(s + shift + h, 0);
-            }
-            ctx.setAttr('strokeStyle', color);
-            ctx.setAttr('lineWidth', width);
-            ctx.stroke();
-          }
-          ctx.restore();
-        },
+        sceneFunc: (ctx: Konva.Context) =>
+          hatchRemoved(ctx, rect, view, zoom, light, dark),
       });
     } else {
       node.hatch.visible(false);

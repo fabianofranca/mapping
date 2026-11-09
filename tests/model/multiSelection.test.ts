@@ -523,11 +523,13 @@ describe('itemsDeletionImpact', () => {
     });
   });
 
-  it('conta as trancadas que saem junto, não as selecionadas', () => {
+  it('conta as trancadas que saem junto, selecionadas ou não, menos a selecionada que bloquearia', () => {
     const locked = setMarkingLocked(p, 'a2', true);
     expect(itemsDeletionImpact(locked, [img('A')]).lockedMarkings).toBe(1);
     expect(itemsDeletionImpact(locked, [mark('a1')]).lockedMarkings).toBe(1);
-    expect(itemsDeletionImpact(locked, [mark('a1'), mark('a2')]).lockedMarkings).toBe(0);
+    // a2 selecionada e trancada sai com a mãe a1 (também selecionada): o diálogo conta.
+    expect(itemsDeletionImpact(locked, [mark('a1'), mark('a2')]).lockedMarkings).toBe(1);
+    // Sozinha, a2 trancada bloqueia a exclusão (canDeleteItems): não entra na conta.
     expect(itemsDeletionImpact(locked, [mark('a2')]).lockedMarkings).toBe(0);
     expect(itemsDeletionImpact(locked, [img('B')]).lockedMarkings).toBe(0);
   });

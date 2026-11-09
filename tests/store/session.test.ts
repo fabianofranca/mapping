@@ -1149,6 +1149,34 @@ describe('sessão de projeto', () => {
       ]);
     });
 
+    it('arquivo migrado regravado no schema atual por fora antes da primeira edição: não cria backup nem avisa', async () => {
+      const root = new MemoryDirectory('p');
+      const log: string[] = [];
+      session = openV1(root, log);
+      const current = session.store.project.value;
+      if (!current) throw new Error('projeto');
+      // Outro programa grava o arquivo já no schema atual.
+      root.put(
+        'mapping.json',
+        serialize({
+          ...current,
+          revision: current.revision + 1,
+          project: { ...current.project, name: 'De fora' },
+        }),
+      );
+      session.actions.renameProject('Meu');
+      await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_MS);
+      expect(session.conflict.value).not.toBeNull();
+      await session.resolveConflict('reload');
+      expect(session.store.project.value?.project.name).toBe('De fora');
+
+      session.actions.renameProject('Depois');
+      await session.flush();
+      expect(log.filter((entry) => entry.startsWith('backup'))).toEqual([]);
+      expect(root.dirs.has('backups')).toBe(false);
+      expect(session.backupSaved.value).toBeNull();
+    });
+
     it('se o backup falhar, o mapping original não é sobrescrito', async () => {
       const root = new MemoryDirectory('p');
       session = openV1(root);

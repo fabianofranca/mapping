@@ -296,29 +296,40 @@ function withField(
 function placeAmongSiblings(markings: Marking[], changes: readonly Change[]): void {
   const byGroup = new Map<string, Change[]>();
   const byId = new Map(markings.map((m) => [m.id, m]));
+  // As irmãs de cada grupo e as casas que elas ocupam, numa passada só.
+  const slotsOf = new Map<string, number[]>();
+  markings.forEach((m, slot) => {
+    const key = siblingKey(m);
+    const slots = slotsOf.get(key);
+    if (slots) slots.push(slot);
+    else slotsOf.set(key, [slot]);
+  });
   for (const c of changes) {
     const m = byId.get(c.entityId);
     if (!m) continue;
-    const key = `${m.containerId ?? ''}|${m.parentId ?? ''}`;
-    byGroup.set(key, [...(byGroup.get(key) ?? []), c]);
+    const key = siblingKey(m);
+    const list = byGroup.get(key);
+    if (list) list.push(c);
+    else byGroup.set(key, [c]);
   }
-  for (const group of byGroup.values()) placeGroup(markings, group, byId);
+  for (const [key, group] of byGroup) {
+    placeGroup(markings, group, byId, slotsOf.get(key) ?? []);
+  }
 }
+
+const siblingKey = (m: Marking) => `${m.containerId ?? ''}|${m.parentId ?? ''}`;
 
 function placeGroup(
   markings: Marking[],
   group: readonly Change[],
   byId: ReadonlyMap<string, Marking>,
+  slots: readonly number[],
 ): void {
   // Duas mudanças para a mesma marcação: vale a última, como na aplicação uma a uma; sem isso
   // ela entraria duas vezes e outra irmã sairia do array.
   const latest = new Map(group.map((c) => [c.entityId, c]));
-  const first = byId.get((group[0] as Change).entityId) as Marking;
-  const moved = new Set(latest.keys());
-  const siblings = markings.filter(
-    (m) => m.parentId === first.parentId && m.containerId === first.containerId,
-  );
-  const order = siblings.filter((m) => !moved.has(m.id));
+  const siblings = slots.map((slot) => markings[slot] as Marking);
+  const order = siblings.filter((m) => !latest.has(m.id));
   for (const c of [...latest.values()].sort(
     (a, b) => (a.to as number) - (b.to as number),
   )) {
@@ -328,7 +339,6 @@ function placeGroup(
       byId.get(c.entityId) as Marking,
     );
   }
-  const slots = siblings.map((m) => markings.indexOf(m));
   slots.forEach((slot, i) => {
     markings[slot] = order[i] as Marking;
   });
@@ -400,6 +410,8 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
   const layers = [...maps.layer.values()] as Layer[];
   for (const c of [...positions].sort((a, b) => (a.to as number) - (b.to as number))) {
     const from = layers.findIndex((l) => l.id === c.entityId);
+    // A camada que a mesma proposta remove não se reposiciona (`splice(-1, 1)` tiraria outra).
+    if (from < 0) continue;
     const [layer] = layers.splice(from, 1);
     if (layer) layers.splice(Math.min(c.to as number, layers.length), 0, layer);
   }
@@ -484,9 +496,13 @@ export interface ProposalIssue {
 
 /** Mudanças que "Aplicar aceitas" efetiva: aceitas e ainda não aplicadas. */
 export function acceptedPending(p: Proposal): Change[] {
-  return p.changes.filter(
-    (c) => p.decisions[c.id]?.state === 'accepted' && !Object.hasOwn(p.applied, c.id),
-  );
+  return p.changes.filter(isAcceptedPending(p));
+}
+
+/** O filtro das aceitas ainda não aplicadas (usado também por `acceptedPendingIds`). */
+export function isAcceptedPending(p: Proposal): (c: Change) => boolean {
+  return (c) =>
+    p.decisions[c.id]?.state === 'accepted' && !Object.hasOwn(p.applied, c.id);
 }
 
 /** Camadas e anotações tipadas que citam uma especialização que não está no projeto. */
@@ -513,6 +529,61 @@ export interface AcceptedValidation {
   readonly project: Project;
 }
 
+interface Outcome {
+  readonly project: Project;
+  readonly problems: readonly PatchProblem[];
+  /** Problemas de invariante do resultado que o projeto atual ainda não tinha. */
+  readonly fresh: ReturnType<typeof validateProject>;
+  /** Especializações citadas e ausentes no resultado que o projeto atual ainda não tinha. */
+  readonly freshSpecs: ReturnType<typeof specializationIssues>;
+}
+
+let lastOutcome: {
+  project: Project;
+  pending: readonly Change[];
+  outcome: Outcome;
+} | null = null;
+
+/**
+ * Aplica as pendentes e valida o resultado contra o projeto atual. Cada decisão da revisão
+ * revalida, mas o projeto atual e as mudanças aceitas quase sempre são os mesmos (aceitar
+ * ou rejeitar outra mudança, desfazer uma nota): a última conta fica guardada por identidade do
+ * projeto e das mudanças (o projeto é imutável), e `validateProject` não roda de novo.
+ */
+function validateOutcome(project: Project, pending: readonly Change[]): Outcome {
+  const last = lastOutcome;
+  if (
+    last &&
+    last.project === project &&
+    last.pending.length === pending.length &&
+    last.pending.every((c, i) => c === pending[i])
+  ) {
+    return last.outcome;
+  }
+  // Nada a aplicar: o mesmo projeto (o store não cria entrada de desfazer).
+  const { project: result, problems } =
+    pending.length === 0 ? { project, problems: [] } : patchProject(project, pending);
+  const key = (code: string, id: string, otherId?: string) =>
+    `${code}|${id}|${otherId ?? ''}`;
+  const before = new Set(
+    validateProject(project).map((i) => key(i.code, i.id, i.otherId)),
+  );
+  const fresh = validateProject(result).filter(
+    (i) => !before.has(key(i.code, i.id, i.otherId)),
+  );
+  const specBefore = new Set(
+    specializationIssues(project).map((i) =>
+      key('missing-specialization', i.id, i.otherId),
+    ),
+  );
+  const freshSpecs = specializationIssues(result).filter(
+    (i) => !specBefore.has(key('missing-specialization', i.id, i.otherId)),
+  );
+  const outcome = { project: result, problems, fresh, freshSpecs };
+  lastOutcome = { project, pending, outcome };
+  return outcome;
+}
+
 /**
  * Aplica as aceitas pendentes a uma cópia e valida: invariantes do modelo, especializações
  * citadas e mudanças que não puderam ser aplicadas. Só contam os problemas novos (os que o
@@ -532,9 +603,12 @@ export function validateAccepted(project: Project, p: Proposal): AcceptedValidat
       project,
     };
   }
-  // Nada a aplicar: o mesmo projeto (o store não cria entrada de desfazer).
-  const { project: result, problems } =
-    pending.length === 0 ? { project, problems: [] } : patchProject(project, pending);
+  const {
+    project: result,
+    problems,
+    fresh,
+    freshSpecs,
+  } = validateOutcome(project, pending);
   const byEntity = new Map<string, Change[]>();
   for (const c of p.changes) {
     if (Object.hasOwn(p.applied, c.id)) continue;
@@ -564,13 +638,7 @@ export function validateAccepted(project: Project, p: Proposal): AcceptedValidat
       related: [],
     });
   }
-  const key = (code: string, id: string, otherId?: string) =>
-    `${code}|${id}|${otherId ?? ''}`;
-  const before = new Set(
-    validateProject(project).map((i) => key(i.code, i.id, i.otherId)),
-  );
-  for (const issue of validateProject(result)) {
-    if (before.has(key(issue.code, issue.id, issue.otherId))) continue;
+  for (const issue of fresh) {
     issues.push({
       code: issue.code,
       id: issue.id,
@@ -578,13 +646,7 @@ export function validateAccepted(project: Project, p: Proposal): AcceptedValidat
       ...involved(issue.id, issue.otherId),
     });
   }
-  const specBefore = new Set(
-    specializationIssues(project).map((i) =>
-      key('missing-specialization', i.id, i.otherId),
-    ),
-  );
-  for (const issue of specializationIssues(result)) {
-    if (specBefore.has(key('missing-specialization', issue.id, issue.otherId))) continue;
+  for (const issue of freshSpecs) {
     issues.push({
       code: 'missing-specialization',
       ...issue,

@@ -55,6 +55,17 @@ describe('canvasTokensFrom', () => {
     expect(t.fontFamily).toBe(tokenValue('font-sans', 'light'));
   });
 
+  it('o desenho dos componentes lê cor, preenchimento, opacidade do slot e fonte do tema', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      const { component } = canvasTokensFrom(reader(theme));
+      expect(component.unknownLine).toBe(tokenValue('cv-component-unknown', theme));
+      expect(component.unknownFill).toBe(tokenValue('cv-component-unknown-fill', theme));
+      expect(component.slotOpacity).toBe(Number(tokenValue('opacity-slot', theme)));
+      expect(component.labelFontSize).toBe(12);
+      expect(component.labelFontFamily).toBe(tokenValue('font-sans', theme));
+    }
+  });
+
   it('nenhum valor vazio ou NaN, nos dois temas', () => {
     for (const theme of ['light', 'dark'] as const) {
       for (const [path, value] of leaves(canvasTokensFrom(reader(theme)))) {
@@ -118,6 +129,29 @@ describe('nível de detalhe das marcações', () => {
       const tokens = canvasTokensFrom(reader(theme));
       expect(tokens.lodMinMarking).toBe(24);
       expect(tokens.lodHideMarking).toBe(2);
+    }
+  });
+});
+
+describe('medidas dos pinos de conversa e do selo de chegada', () => {
+  it('vêm de tokens, com os valores de antes, nos dois temas', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      const { pin, arrival } = canvasTokensFrom(reader(theme));
+      expect(pin).toMatchObject({
+        height: 20,
+        pad: 8,
+        glyph: 12,
+        glyphGap: 2,
+        charWidth: 7,
+      });
+      expect(arrival).toEqual({
+        height: 20,
+        pad: 8,
+        gap: 4,
+        gapBelow: 10,
+        nameBand: 24,
+        charWidth: 7,
+      });
     }
   });
 });

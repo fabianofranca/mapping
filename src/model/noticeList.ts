@@ -3,6 +3,7 @@ import { memoByProject, projectIndex } from './projectIndex';
 import { VALUES_FIELD_PREFIX, type Change } from './proposal';
 import { tableRows } from './refs';
 import type { SpecNoticeKind } from './spec';
+import { groupRootsByContainer } from './listing';
 import { isEmptyValue } from './typed';
 import type { Annotation, Arrow, JsonValue, Layer, Marking, Project } from './types';
 
@@ -45,19 +46,19 @@ const annotationPlaces: (p: Project) => ReadonlyMap<string, Place> = memoByProje
     };
     const visit = (marking: Marking, parents: readonly Marking[]) => {
       const path = [...parents, marking];
-      for (const a of index.annotationsByMarking.get(marking.id) ?? [])
-        add(a, marking, path);
-      for (const arrow of index.arrowsByMarking.get(marking.id) ?? []) {
-        if (arrow.from !== marking.id) continue;
-        for (const a of index.annotationsByMarking.get(arrow.id) ?? [])
+      const addAll = (ownerId: string, arrow?: Arrow) => {
+        for (const a of index.annotationsByMarking.get(ownerId) ?? [])
           add(a, marking, path, arrow);
+      };
+      addAll(marking.id);
+      for (const arrow of index.arrowsByMarking.get(marking.id) ?? []) {
+        if (arrow.from === marking.id) addAll(arrow.id, arrow);
       }
       for (const child of index.children.get(marking.id) ?? []) visit(child, path);
     };
+    const rootsByContainer = groupRootsByContainer(index.children.get(null) ?? []);
     for (const image of [null, ...p.containers]) {
-      for (const root of index.children.get(null) ?? []) {
-        if (root.containerId === (image?.id ?? null)) visit(root, []);
-      }
+      for (const root of rootsByContainer.get(image?.id ?? null) ?? []) visit(root, []);
     }
     return places;
   },
@@ -128,20 +129,36 @@ function usageValue(usage: NoticeUsage, a: Annotation): JsonValue | undefined {
   return cells;
 }
 
+/** Lugares das anotações que o aviso afeta (e que passam pelo filtro de camadas), na ordem da janela. */
+function placesOf(
+  usage: NoticeUsage,
+  places: ReadonlyMap<string, Place>,
+  allowed?: Set<string>,
+): Place[] {
+  const found: Place[] = [];
+  for (const id of usage.annotationIds) {
+    const place = places.get(id);
+    if (!place || (allowed && !allowed.has(place.layer.id))) continue;
+    found.push(place);
+  }
+  return found.sort((a, b) => a.order - b.order);
+}
+
 function rowsOf(
   usage: NoticeUsage,
   places: ReadonlyMap<string, Place>,
   allowed?: Set<string>,
-) {
-  const rows: { readonly order: number; readonly row: NoticeRow }[] = [];
-  for (const id of usage.annotationIds) {
-    const place = places.get(id);
-    if (!place || (allowed && !allowed.has(place.layer.id))) continue;
-    const { annotation, marking, path, layer, arrow, order } = place;
-    const value = usageValue(usage, annotation);
-    rows.push({ order, row: { annotation, marking, path, layer, arrow, value } });
-  }
-  return rows.sort((a, b) => a.order - b.order).map(({ row }) => row);
+): NoticeRow[] {
+  return placesOf(usage, places, allowed).map(
+    ({ annotation, marking, path, layer, arrow }) => ({
+      annotation,
+      marking,
+      path,
+      layer,
+      arrow,
+      value: usageValue(usage, annotation),
+    }),
+  );
 }
 
 /** Prefere a gravidade; dentro do `kind`, a ordem do arquivo (a ordenação é estável). */
@@ -182,14 +199,18 @@ export interface NoticeCounts {
  * (o `kind` não conta: os botões do `Segmented` mostram todos).
  */
 export function noticeCounts(p: Project, filters: NoticeFilters): NoticeCounts {
-  const groups = buildNoticeList(p, { ...filters, kind: null });
+  const { inUseOnly = true, onlyLayers } = filters;
+  const places = annotationPlaces(p);
+  const allowed = onlyLayers && new Set(onlyLayers.map((l) => l.id));
   const all = new Set<string>();
   const perKind = new Map<SpecNoticeKind, Set<string>>();
-  for (const { usage, rows } of groups) {
+  for (const usage of noticeUsage(p)) {
+    const found = placesOf(usage, places, allowed);
+    if (inUseOnly && found.length === 0) continue;
     const set = perKind.get(usage.notice.kind) ?? new Set<string>();
-    for (const row of rows) {
-      set.add(row.annotation.id);
-      all.add(row.annotation.id);
+    for (const place of found) {
+      set.add(place.annotation.id);
+      all.add(place.annotation.id);
     }
     perKind.set(usage.notice.kind, set);
   }

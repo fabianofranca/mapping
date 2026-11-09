@@ -17,6 +17,7 @@ import {
   approximateMeasurer,
   buildCatalog,
   fittedSize,
+  modelMessage,
   type Project,
 } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
@@ -203,7 +204,11 @@ describe('página', () => {
   it('avisa quando o componente não carregou', () => {
     const catalog = patched(base, 'm3-button', {
       component: null,
-      componentProblem: 'arquivo ausente (x.json)',
+      componentProblem: modelMessage(
+        'catalog.fileMissing',
+        { path: 'x.json' },
+        'arquivo ausente (x.json)',
+      ),
       previewValues: null,
     });
     view({ initialTypeId: 'm3-button' }, catalog);
@@ -213,6 +218,20 @@ describe('página', () => {
       ),
     ).toBeTruthy();
     expect(screen.getByText(t('catalog.playground.noComponent'))).toBeTruthy();
+  });
+
+  it('em en-US o problema de um componente ausente sai em inglês (#945)', () => {
+    locale.value = 'en-US';
+    const component = base.layers
+      .flatMap((l) => l.entries)
+      .find((e) => e.type.id === 'm3-button')?.type.component;
+    expect(component).toBeTruthy();
+    const missing = files.filter((f) => !f.path.endsWith(String(component)));
+    expect(missing.length).toBe(files.length - 1);
+    view({ initialTypeId: 'm3-button' }, buildCatalog(missing));
+    const page = screen.getByText(/The component did not load/);
+    expect(page.textContent).toMatch(/missing file/);
+    expect(page.textContent).not.toMatch(/arquivo ausente/);
   });
 
   it('origens aparecem agrupadas por sistema', () => {
@@ -359,6 +378,32 @@ describe('galeria', () => {
     expect(images[0]?.getAttribute('alt')).toBe(t('catalog.gallery.preview'));
     const entry = base.layers[0]?.entries.find((e) => e.type.id === 'm3-button');
     expect(images[1]?.getAttribute('alt')).toBe(entry?.examples[0]?.name);
+  });
+
+  describe('avisos do desenho', () => {
+    // O rasterizador de teste avisa como o `renderSceneToDataUrl` faz depois de desenhar.
+    const warning = { code: 'unknown-node', params: { type: 'STICKY' } } as const;
+    const warningRenderer = () =>
+      createCatalogRenderer(approximateMeasurer, (_root, options) => {
+        options.onWarnings?.([warning]);
+        return 'data:image/png;base64,fake';
+      });
+
+    it('saem no idioma da app: em en-US não há texto em português', () => {
+      locale.value = 'en-US';
+      view({ initialTypeId: 'm3-button', renderer: warningRenderer() });
+      const gallery = screen.getByRole('region', { name: t('catalog.gallery.title') });
+      const text = gallery.textContent ?? '';
+      expect(text).toContain('Node not drawn (STICKY): only its box is shown');
+      expect(text).not.toContain('nó não desenhado');
+      expect(text).not.toContain('Nó não desenhado');
+    });
+
+    it('em pt-BR saem em português', () => {
+      view({ initialTypeId: 'm3-button', renderer: warningRenderer() });
+      const gallery = screen.getByRole('region', { name: t('catalog.gallery.title') });
+      expect(gallery.textContent).toContain('Nó não desenhado (STICKY): só a caixa');
+    });
   });
 
   it('usa o cache: reabrir a mesma página não rasteriza de novo', async () => {

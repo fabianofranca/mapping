@@ -322,6 +322,9 @@ describe('RemoteImageLoader', () => {
       const ctx = await fill(REMOTE_IMAGE_LIMITS.cacheEntries);
       const heard: string[] = [];
       ctx.loader.subscribe((u) => heard.push(u));
+      // Passam dois quadros: nenhuma URL conta mais como "à vista".
+      ctx.flushFrames();
+      ctx.flushFrames();
       // Reler a 0 a torna a mais recente: a 1 é despejada.
       expect(ctx.loader.request(url(0), CORS).state).toBe('loaded');
       ctx.loader.request(url(100), CORS);
@@ -335,8 +338,50 @@ describe('RemoteImageLoader', () => {
       expect(ctx.images).toHaveLength(before + 1);
     });
 
+    it('com mais URLs à vista que o limite, nenhuma é recarregada em ciclo (65 URLs, 65 cargas)', async () => {
+      const total = REMOTE_IMAGE_LIMITS.cacheEntries + 1;
+      const ctx = setup();
+      // Todas as URLs ficam à vista: cada "quadro" pede todas de novo.
+      const frame = () => {
+        for (let i = 0; i < total; i += 1) ctx.loader.request(url(i), CORS);
+      };
+      frame();
+      for (let i = 0; i < total; i += 1) {
+        ctx.images[i]?.load();
+        await settle();
+      }
+      for (let round = 0; round < 3; round += 1) {
+        ctx.flushFrames();
+        frame();
+        await settle();
+      }
+      expect(ctx.images).toHaveLength(total);
+      for (let i = 0; i < total; i += 1) {
+        expect(ctx.loader.request(url(i), CORS).state).toBe('loaded');
+      }
+    });
+
+    it('a URL que saiu de vista é despejada quando o cache passa do limite', async () => {
+      const total = REMOTE_IMAGE_LIMITS.cacheEntries + 1;
+      const ctx = setup();
+      for (let i = 0; i < total; i += 1) ctx.loader.request(url(i), CORS);
+      for (let i = 0; i < total; i += 1) {
+        ctx.images[i]?.load();
+        await settle();
+      }
+      // Dois quadros sem pedir nada: tudo saiu de vista; a próxima carga despeja a mais antiga.
+      ctx.flushFrames();
+      ctx.flushFrames();
+      ctx.loader.request(url(500), CORS);
+      ctx.images.at(-1)?.load();
+      await settle();
+      expect(ctx.loader.request(url(0), CORS).state).toBe('loading');
+    });
+
     it('o close() do bitmap despejado espera o quadro seguinte', async () => {
       const ctx = await fill(REMOTE_IMAGE_LIMITS.cacheEntries);
+      ctx.flushFrames();
+      ctx.flushFrames();
       ctx.loader.request(url(100), CORS);
       ctx.images.at(-1)?.load();
       await settle();

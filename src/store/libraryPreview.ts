@@ -35,16 +35,15 @@ export function openLibraryPreview(
     const specPath = packageSpecNameOf(files, spec.id);
     void (async () => {
       try {
-        const fonts = [];
-        for (const declared of spec.fonts ?? []) {
-          const font = fontDeclaration(specPath, declared);
-          const data = files.get(font.path);
-          fonts.push(
-            data === undefined || typeof data === 'string'
+        const fonts = await Promise.all(
+          (spec.fonts ?? []).map(async (declared) => {
+            const font = fontDeclaration(specPath, declared);
+            const data = files.get(font.path);
+            return data === undefined || typeof data === 'string'
               ? font
-              : { ...font, bytes: await data.arrayBuffer() },
-          );
-        }
+              : { ...font, bytes: await data.arrayBuffer() };
+          }),
+        );
         if (disposed) return;
         await registry.register(fonts);
         if (!disposed) epoch.value++;

@@ -320,6 +320,28 @@ describe('discardedOnMigrationTo13', () => {
   });
 });
 
+describe('aviso de herança só para quem migra', () => {
+  it('um v15 editado à mão com `inherit` não ganha o aviso falso', () => {
+    const data = JSON.parse(serialize(sampleProject())) as Raw;
+    data.schemaVersion = 15;
+    data.annotations = data.annotations.map((a: Raw) => ({ ...a, inherit: true }));
+    const result = load(JSON.stringify(data));
+    expect(result.migratedFrom).toBe(15);
+    expect(result.discardedInherit).toEqual([]);
+  });
+
+  it('um v14 com `urlTemplate` em platformRepos não ganha o aviso do v11', () => {
+    const data = JSON.parse(serialize(sampleProject())) as Raw;
+    data.schemaVersion = 14;
+    data.platformRepos = {
+      android: { localPath: '..', urlTemplate: 'https://x/{path}' },
+    };
+    const result = load(JSON.stringify(data));
+    expect(result.migratedFrom).toBe(14);
+    expect(result.discardedUrlTemplates).toEqual([]);
+  });
+});
+
 describe('v13 cru com `inherit` extra', () => {
   it('é lido sem falhar, ignora a chave e não regrava', () => {
     const data = JSON.parse(serialize(sampleProject())) as Raw;

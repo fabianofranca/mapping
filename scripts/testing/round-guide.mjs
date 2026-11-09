@@ -2,6 +2,7 @@
 //
 // Uso:
 //   node scripts/testing/round-guide.mjs <roteiro…> [--out <arquivo>]   (ex.: R0 R2 R4 R11; `all` = todos)
+//   node scripts/testing/round-guide.mjs --grupos <roteiro…>            (divide a dirigida em grupos; ver abaixo)
 //
 // Um roteiro pode ser pedido por faixa de passos (`R6.3-R6.7`): o guia leva só as linhas da tabela
 // do roteiro nessa faixa (mais o cabeçalho e o texto de preparo). Duas faixas do mesmo roteiro se
@@ -189,6 +190,172 @@ export function buildRoundGuide(markdown, roteiros, { commit = 'desconhecido' } 
   return `${note}\n\n${applyMarks(kept.join('\n'), wanted, existing)}`;
 }
 
+// --- Rodada dirigida em grupos paralelos (etapa #1148, TR4, decisões 15 a 17) ---
+
+/** Passos por grupo: acima disso (sem o R0), a dirigida se divide em sessões paralelas. */
+export const GROUP_LIMIT = 40;
+/** No máximo 5 sessões por rodada. */
+export const MAX_GROUPS = 5;
+
+/**
+ * Cadeias de dependência que nunca se separam entre grupos (decisão 16; docs/TESTING-NUVEM.md,
+ * "Rodada dirigida em grupos"). Cada item é um roteiro (`R1`) ou uma faixa (`R6.3-R6.7`).
+ */
+export const CHAINS = [
+  {
+    name: 'principal',
+    items: ['R1', 'R3', 'R5', 'R6.3-R6.7', 'R6.12-R6.14', 'R7', 'R8'],
+  },
+  { name: 'loja', items: ['R4', 'R6.8a-R6.11'] },
+  { name: 'telas', items: ['R9', 'R10'] },
+];
+
+/** Códigos dos passos de cada roteiro principal (fora de bloco de código), na ordem do guia. */
+function stepsByRoteiro(markdown) {
+  const map = new Map();
+  for (const section of splitSections(markdown)) {
+    const id = section.level === 3 ? ROTEIRO.exec(section.title)?.[1] : undefined;
+    if (!id) continue;
+    let fence = false;
+    const codes = [];
+    for (const line of section.lines) {
+      if (/^\s*(`{3,}|~{3,})/.test(line)) {
+        fence = !fence;
+        continue;
+      }
+      const code = fence ? undefined : STEP_ROW.exec(line)?.[1];
+      if (code) codes.push(code);
+    }
+    map.set(id, codes);
+  }
+  return map;
+}
+
+/** Os códigos de um item (`R12` ou `R6.3-R6.7`). */
+function itemCodes(token, byRoteiro) {
+  const range = RANGE.exec(token);
+  if (!range) return byRoteiro.get(token.toUpperCase()) ?? [];
+  const id = range[1].toUpperCase();
+  const codes = byRoteiro.get(id) ?? [];
+  const a = codes.indexOf(`${id}.${range[2]}`);
+  const b = codes.indexOf(`${id}.${range[4]}`);
+  if (a < 0 || b < 0 || b < a) {
+    throw new Error(`Faixa inválida: ${token}. Passos: ${codes.join(', ')}.`);
+  }
+  return codes.slice(a, b + 1);
+}
+
+/**
+ * Divide os roteiros pedidos em grupos de até `limit` passos (sem o R0), no máximo 5, sem separar
+ * uma cadeia nem um roteiro. Devolve os passos de cada item, o total e os grupos propostos.
+ */
+export function planGroups(markdown, roteiros, { limit = GROUP_LIMIT } = {}) {
+  const existing = listRoteiros(markdown);
+  const byRoteiro = stepsByRoteiro(markdown);
+  const { whole, ranges } = parseRequest(roteiros, existing);
+  const order = (code) => existing.indexOf(code.split('.')[0]);
+  // Um token por roteiro inteiro ou faixa pedida; o inteiro vence a faixa; o R0 fica de fora.
+  const tokens = [];
+  for (const id of existing) {
+    if (id === 'R0') continue;
+    if (whole.has(id)) tokens.push(id);
+    else
+      for (const r of ranges.get(id) ?? []) tokens.push(`${id}.${r.from}-${id}.${r.to}`);
+  }
+  const chainOf = new Map();
+  for (const chain of CHAINS) {
+    for (const item of chain.items) {
+      for (const code of itemCodes(item, byRoteiro)) chainOf.set(code, chain.name);
+    }
+  }
+  const items = tokens.map((token) => ({ token, codes: itemCodes(token, byRoteiro) }));
+  // União das chaves (cadeia, ou o próprio roteiro) que um mesmo item toca.
+  const parent = new Map();
+  const find = (k) => {
+    if (!parent.has(k)) parent.set(k, k);
+    let root = k;
+    while (parent.get(root) !== root) root = parent.get(root);
+    parent.set(k, root);
+    return root;
+  };
+  const keysOf = (item) =>
+    new Set(item.codes.map((c) => chainOf.get(c) ?? c.split('.')[0]));
+  for (const item of items) {
+    const [first, ...rest] = [...keysOf(item)];
+    if (first === undefined) continue;
+    for (const k of rest) parent.set(find(k), find(first));
+    find(first);
+  }
+  const units = new Map();
+  for (const item of items) {
+    const [first] = [...keysOf(item)];
+    if (first === undefined) continue;
+    const root = find(first);
+    const unit = units.get(root) ?? { items: [], codes: new Set() };
+    unit.items.push(item);
+    for (const c of item.codes) unit.codes.add(c);
+    units.set(root, unit);
+  }
+  const list = [...units.values()].map((u) => ({
+    tokens: u.items.map((i) => i.token),
+    steps: u.codes.size,
+    first: Math.min(...u.items.map((i) => order(i.codes[0] ?? 'R0.0'))),
+  }));
+  const total = list.reduce((n, u) => n + u.steps, 0);
+  const planItems = items.map((i) => ({ token: i.token, steps: i.codes.length }));
+  if (total <= limit) return { items: planItems, total, single: true, groups: [] };
+  // Maior primeiro; cada unidade vai ao grupo mais cheio onde ainda cabe, senão abre um grupo.
+  const groups = [];
+  for (const unit of [...list].sort((a, b) => b.steps - a.steps || a.first - b.first)) {
+    const fits = groups
+      .filter((g) => g.steps + unit.steps <= limit)
+      .sort((a, b) => b.steps - a.steps)[0];
+    if (fits) {
+      fits.units.push(unit);
+      fits.steps += unit.steps;
+    } else if (groups.length < MAX_GROUPS) {
+      groups.push({ units: [unit], steps: unit.steps });
+    } else {
+      // Passou de 5 grupos: o excedente vai ao grupo mais leve (passa de ~40, nunca de 5 sessões).
+      const lightest = groups.reduce((a, b) => (b.steps < a.steps ? b : a));
+      lightest.units.push(unit);
+      lightest.steps += unit.steps;
+    }
+  }
+  groups.sort((a, b) => b.steps - a.steps);
+  return {
+    items: planItems,
+    total,
+    single: false,
+    groups: groups.map((g, i) => ({
+      n: i + 1,
+      steps: g.steps,
+      tokens: g.units
+        .sort((a, b) => a.first - b.first)
+        .flatMap((u) => u.tokens)
+        .sort(
+          (a, b) => existing.indexOf(a.split('.')[0]) - existing.indexOf(b.split('.')[0]),
+        ),
+    })),
+  };
+}
+
+/** O texto que o `--grupos` imprime: passos por item, total e uma linha `grupo k de n` por grupo. */
+export function formatGroupPlan(plan, { limit = GROUP_LIMIT } = {}) {
+  const lines = ['Passos por item (sem o R0):'];
+  for (const i of plan.items) lines.push(`  ${i.token}: ${i.steps}`);
+  lines.push(`Total: ${plan.total} (limite por grupo: ${limit})`, '');
+  if (plan.single) {
+    lines.push('uma sessão');
+  } else {
+    for (const g of plan.groups) lines.push(`# grupo ${g.n}: ${g.steps} passos`);
+    for (const g of plan.groups) {
+      lines.push(`grupo ${g.n} de ${plan.groups.length}: ${g.tokens.join(' ')}`);
+    }
+  }
+  return lines.join('\n');
+}
+
 function currentCommit() {
   try {
     return execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
@@ -200,7 +367,26 @@ function currentCommit() {
   }
 }
 
+function runGroupsCli(roteiros) {
+  if (roteiros.length === 0) {
+    console.error('Uso: node scripts/testing/round-guide.mjs --grupos <roteiro|faixa…>');
+    process.exitCode = 2;
+    return;
+  }
+  try {
+    const plan = planGroups(fs.readFileSync(GUIDE_FILE, 'utf8'), roteiros);
+    process.stdout.write(`${formatGroupPlan(plan)}\n`);
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 2;
+  }
+}
+
 function runCli(argv) {
+  if (argv.includes('--grupos')) {
+    runGroupsCli(argv.filter((a) => a !== '--grupos'));
+    return;
+  }
   const roteiros = [];
   let out = null;
   for (let i = 0; i < argv.length; i += 1) {

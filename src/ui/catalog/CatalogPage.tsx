@@ -5,6 +5,8 @@ import {
   type CatalogCodeVariants,
   type CatalogEntry,
   type CatalogField,
+  type ModelMessage,
+  rawMessage,
   type Project,
   codeLink,
   exampleDrawing,
@@ -12,9 +14,11 @@ import {
 import { docFolderAccess, type DocFolderAccess } from '../../storage/docRepoFolders';
 import { ContainerMark } from '../ContainerMark';
 import { Button } from '../controls';
+import { messageText } from '../modelMessage';
 import { Markdown } from '../markdown/Markdown';
 import { ExternalDoc } from './ExternalDoc';
 import { Playground } from './Playground';
+import { drawWarningText } from './drawWarnings';
 import type { CatalogRenderer } from './renderer';
 
 // Página de um componente do Catálogo: cabeçalho, documento, propriedades, código por
@@ -298,7 +302,7 @@ interface GalleryItem {
   readonly name: string;
   readonly description?: string;
   readonly url: string | null;
-  readonly warnings: readonly string[];
+  readonly warnings: readonly ModelMessage[];
 }
 
 function Gallery({
@@ -329,24 +333,25 @@ function Gallery({
       const base = { key, name, ...(description === undefined ? {} : { description }) };
       if (drawing === null) return { ...base, url: null, warnings: [] };
       let url: string | null;
+      const cacheKey = {
+        specId,
+        version,
+        typeId: entry.type.id,
+        example: example?.name ?? 'preview',
+        width: drawing.root.width,
+        height: drawing.root.height,
+        fontsEpoch,
+        imagesEpoch,
+      };
       try {
-        url = renderer.cache.get(
-          {
-            specId,
-            version,
-            typeId: entry.type.id,
-            example: example?.name ?? 'preview',
-            width: drawing.root.width,
-            height: drawing.root.height,
-            fontsEpoch,
-            imagesEpoch,
-          },
-          () => drawing.root,
-        );
+        url = renderer.cache.get(cacheKey, () => drawing.root);
       } catch {
         url = null;
       }
-      return { ...base, url, warnings: drawing.warnings };
+      const renderWarnings = renderer.cache
+        .warnings(cacheKey)
+        .map((w) => rawMessage(drawWarningText(w)));
+      return { ...base, url, warnings: [...drawing.warnings, ...renderWarnings] };
     };
     const list: GalleryItem[] = [];
     if (entry.component !== null) {
@@ -377,7 +382,7 @@ function Gallery({
           {item.warnings.length > 0 && (
             <ul class="catalog-warnings">
               {item.warnings.map((warning, i) => (
-                <li key={i}>{warning}</li>
+                <li key={i}>{messageText(warning)}</li>
               ))}
             </ul>
           )}
@@ -429,7 +434,9 @@ export function CatalogPage({
         {entry.type.description !== undefined && <p>{entry.type.description}</p>}
         {entry.componentProblem !== undefined && (
           <p class="field-error" role="alert">
-            {t('catalog.page.componentProblem', { problem: entry.componentProblem })}
+            {t('catalog.page.componentProblem', {
+              problem: messageText(entry.componentProblem),
+            })}
           </p>
         )}
       </header>

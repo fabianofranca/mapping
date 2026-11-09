@@ -439,6 +439,38 @@ describe('map-values', () => {
   });
 });
 
+describe('passos sem efeito (CR #945, item 27)', () => {
+  it('map-values com mapeamento identidade não conta valores nem anotações', () => {
+    const p = libProject(libSpec(1), [
+      { id: 'B1', type: 'button', values: { style: 'primary' } },
+    ]);
+    const out = run(
+      p,
+      nextWith({
+        op: 'map-values',
+        type: 'button',
+        field: 'style',
+        values: { primary: 'primary' },
+      }),
+    );
+    expect(out.steps[0]).toMatchObject({ annotations: 0, values: 0 });
+    expect(out.project).toBe(p);
+  });
+
+  it('rename-field com from igual a to não conta valores nem anotações', () => {
+    const p = libProject(libSpec(1), [
+      { id: 'B1', type: 'button', values: { label: 'OK' } },
+    ]);
+    const out = run(
+      p,
+      nextWith({ op: 'rename-field', type: 'button', from: 'label', to: 'label' }),
+    );
+    expect(out.steps[0]).toMatchObject({ annotations: 0, values: 0, refs: 0 });
+    expect(valuesOf(out.project, 'B1').label).toBe('OK');
+    expect(out.losses).toEqual([]);
+  });
+});
+
 describe('fill-field', () => {
   const nextFill = (default_: string | number, field = 'size') =>
     libSpec(2, undefined, {

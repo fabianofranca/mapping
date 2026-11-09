@@ -1,5 +1,6 @@
 import type { Dictionary } from './pt-BR';
 import { catalogEnUS } from './catalog';
+import { modelMessagesEnUS } from './modelMessages';
 import { reviewEnUS } from './review';
 import { perspectivesEnUS } from './perspectives';
 
@@ -7,6 +8,7 @@ export const enUS: Dictionary = {
   ...reviewEnUS,
   ...perspectivesEnUS,
   ...catalogEnUS,
+  ...modelMessagesEnUS,
   'app.title': 'Mapping',
   'app.loading': 'Loading…',
   'narrow.title': 'Open in a larger window',

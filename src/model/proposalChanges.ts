@@ -199,6 +199,66 @@ function annotationChanges(
   );
 }
 
+/** As chaves de depois e, no fim, as que só existiam antes. */
+function recordKeys(before: object, after: object): string[] {
+  return [
+    ...Object.keys(after),
+    ...Object.keys(before).filter((k) => !Object.hasOwn(after, k)),
+  ];
+}
+
+/** O valor da chave própria do registro, ou `undefined`. */
+function ownValue<T>(record: Readonly<Record<string, T>>, key: string): T | undefined {
+  return Object.hasOwn(record, key) ? record[key] : undefined;
+}
+
+/**
+ * Mudanças de uma entidade inteira do projeto (sem campos): atualizada com um `update` de
+ * `field` nulo, criada e removida como qualquer entidade.
+ */
+function wholeEntityDiff<T>(
+  diff: Diff,
+  entity: 'specialization' | 'platformRepo' | 'docRepo',
+  spec: {
+    keys: readonly string[];
+    before: (key: string) => T | undefined;
+    next: (key: string) => T | undefined;
+    value: (item: T) => JsonValue;
+  },
+): void {
+  const projectLevel = { imageId: null, markingId: null };
+  for (const key of spec.keys) {
+    const before = spec.before(key);
+    const next = spec.next(key);
+    if (before && next) {
+      const from = spec.value(before);
+      const to = spec.value(next);
+      if (!jsonEqual(from, to)) {
+        diff.push({
+          entity,
+          entityId: key,
+          ...projectLevel,
+          kind: 'update',
+          field: null,
+          from,
+          to,
+        });
+      }
+    } else {
+      diff.entity(
+        entity,
+        key,
+        projectLevel,
+        before,
+        next,
+        spec.value,
+        [],
+        () => undefined,
+      );
+    }
+  }
+}
+
 /**
  * Compara o projeto antes e depois das operações e devolve as mudanças, com ids
  * `c1`, `c2`… na ordem: grupo Projeto (especializações, repositórios, camadas), imagens,
@@ -213,124 +273,32 @@ export function computeChanges(base: Project, after: Project): Change[] {
   const diff = new Diff();
   const projectLevel = { imageId: null, markingId: null };
 
-  // Especializações.
+  // Especializações, repositórios por plataforma e repositórios de documentos (schema v14):
+  // entidades inteiras, sem campos.
   const baseSpecs = byId(base.specializations);
   const afterSpecs = byId(after.specializations);
-  for (const s of [
-    ...after.specializations,
-    ...base.specializations.filter((s) => !afterSpecs.has(s.id)),
-  ]) {
-    const before = baseSpecs.get(s.id);
-    const next = afterSpecs.get(s.id);
-    if (before && next) {
-      const from = specializationValue(before);
-      const to = specializationValue(next);
-      if (!jsonEqual(from, to)) {
-        diff.push({
-          entity: 'specialization',
-          entityId: s.id,
-          ...projectLevel,
-          kind: 'update',
-          field: null,
-          from,
-          to,
-        });
-      }
-    } else {
-      diff.entity(
-        'specialization',
-        s.id,
-        projectLevel,
-        before,
-        next,
-        specializationValue,
-        [],
-        () => undefined,
-      );
-    }
-  }
-
-  // Repositórios por plataforma.
-  const platforms = [
-    ...Object.keys(after.platformRepos),
-    ...Object.keys(base.platformRepos).filter(
-      (k) => !Object.hasOwn(after.platformRepos, k),
-    ),
-  ];
-  for (const platform of platforms) {
-    const before = Object.hasOwn(base.platformRepos, platform)
-      ? base.platformRepos[platform]
-      : undefined;
-    const next = Object.hasOwn(after.platformRepos, platform)
-      ? after.platformRepos[platform]
-      : undefined;
-    if (before && next) {
-      const from = platformRepoValue(before);
-      const to = platformRepoValue(next);
-      if (!jsonEqual(from, to)) {
-        diff.push({
-          entity: 'platformRepo',
-          entityId: platform,
-          ...projectLevel,
-          kind: 'update',
-          field: null,
-          from,
-          to,
-        });
-      }
-    } else {
-      diff.entity(
-        'platformRepo',
-        platform,
-        projectLevel,
-        before,
-        next,
-        platformRepoValue,
-        [],
-        () => undefined,
-      );
-    }
-  }
-
-  // Repositórios de documentos (schema v14): o clone local por id.
-  const docRepoIds = [
-    ...Object.keys(after.docRepos),
-    ...Object.keys(base.docRepos).filter((k) => !Object.hasOwn(after.docRepos, k)),
-  ];
-  for (const docRepo of docRepoIds) {
-    const before = Object.hasOwn(base.docRepos, docRepo)
-      ? base.docRepos[docRepo]
-      : undefined;
-    const next = Object.hasOwn(after.docRepos, docRepo)
-      ? after.docRepos[docRepo]
-      : undefined;
-    if (before && next) {
-      const from = docRepoValue(before);
-      const to = docRepoValue(next);
-      if (!jsonEqual(from, to)) {
-        diff.push({
-          entity: 'docRepo',
-          entityId: docRepo,
-          ...projectLevel,
-          kind: 'update',
-          field: null,
-          from,
-          to,
-        });
-      }
-    } else {
-      diff.entity(
-        'docRepo',
-        docRepo,
-        projectLevel,
-        before,
-        next,
-        docRepoValue,
-        [],
-        () => undefined,
-      );
-    }
-  }
+  wholeEntityDiff(diff, 'specialization', {
+    keys: [
+      ...after.specializations.map((s) => s.id),
+      ...base.specializations.filter((s) => !afterSpecs.has(s.id)).map((s) => s.id),
+    ],
+    before: (k) => baseSpecs.get(k),
+    next: (k) => afterSpecs.get(k),
+    value: specializationValue,
+  });
+  wholeEntityDiff(diff, 'platformRepo', {
+    keys: recordKeys(base.platformRepos, after.platformRepos),
+    before: (k) => ownValue(base.platformRepos, k),
+    next: (k) => ownValue(after.platformRepos, k),
+    value: platformRepoValue,
+  });
+  // O clone local por id.
+  wholeEntityDiff(diff, 'docRepo', {
+    keys: recordKeys(base.docRepos, after.docRepos),
+    before: (k) => ownValue(base.docRepos, k),
+    next: (k) => ownValue(after.docRepos, k),
+    value: docRepoValue,
+  });
 
   // Modo do desenho do projeto (formatVersion 6): a entidade `project`, só alterada.
   const modeFrom = projectValue(base);

@@ -231,7 +231,7 @@
   },
   "src/model/catalog.ts": {
     "complexity": {
-      "count": 5
+      "count": 4
     }
   },
   "src/model/codeBlueprint.ts": {
@@ -351,7 +351,7 @@
   },
   "src/model/listing.ts": {
     "complexity": {
-      "count": 2
+      "count": 1
     }
   },
   "src/model/markdown.ts": {
@@ -391,7 +391,7 @@
   },
   "src/model/proposalChanges.ts": {
     "complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "src/model/proposalCompare.ts": {
@@ -486,7 +486,7 @@
   },
   "src/store/proposedCatalog.ts": {
     "complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "src/store/review.ts": {

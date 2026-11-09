@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { locale } from '../../src/store/settings';
 import {
   setFieldValue,
   setTableCell,
@@ -38,5 +39,21 @@ describe('valueParts com o campo ref para a anotação inteira', () => {
     expect(valueParts(names, change, { annotationId: 'AM' })).toEqual([
       { text: 'Cliente' },
     ]);
+  });
+});
+
+describe('referência quebrada na revisão segue o idioma (#945, item 41)', () => {
+  afterEach(() => {
+    locale.value = 'pt-BR';
+  });
+
+  it('em en-US a célula e o campo ref quebrados saem em inglês', () => {
+    locale.value = 'en-US';
+    const names = { current: world(), preview: null, proposal: {} as Proposal };
+    const change = { kind: 'update', field: 'values.item' } as unknown as Change;
+    const [part] = valueParts(names, change, { annotationId: 'NAO-EXISTE' });
+    expect(part?.text).toBe('(broken reference)');
+    const rows = tableLines(names, [{ _id: 'R1', alvo: { annotationId: 'NAO-EXISTE' } }]);
+    expect(rows?.[0]?.text).toBe('alvo: (broken reference)');
   });
 });

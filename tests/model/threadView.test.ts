@@ -189,6 +189,13 @@ describe('threadSubject', () => {
     expect(threadSubject(t)).toBe('antes');
   });
 
+  it('o rótulo vivo do alvo não passa de novo pela limpeza do markdown (item 51)', () => {
+    expect(subject('veja [x](mapping://p/m/abc)', () => '__init__')).toBe(
+      'veja __init__',
+    );
+    expect(subject('**[x](mapping://p/m/abc)**', () => '_a_b\\*')).toBe('_a_b\\*');
+  });
+
   it('pula linhas em branco no começo', () => {
     expect(subject('\n  \nOlá')).toBe('Olá');
   });
@@ -300,6 +307,12 @@ describe('messagePlainText (coluna Última mensagem)', () => {
       'Use **estilo** e `primary` no [Cadastrar](mapping://x/m/8f9464dd).\n\n- um item\n> citado';
     expect(messagePlainText(text)).toBe(
       'Use estilo e primary no Cadastrar. um item citado',
+    );
+  });
+
+  it('rótulo de citação com asteriscos escapados volta sem barras', () => {
+    expect(messagePlainText('Veja [a\\*b\\*c](mapping://x/m/8f9464dd).')).toBe(
+      'Veja a*b*c.',
     );
   });
 

@@ -1,4 +1,5 @@
 import { validateProject, type InvariantIssue } from './invariants';
+import { isRecord } from './isRecord';
 import {
   discardedOnMigrationTo11,
   discardedOnMigrationTo13,
@@ -13,20 +14,10 @@ import { projectSchema } from './schema';
 import { parseSpecText, type Spec } from './spec';
 import {
   SCHEMA_VERSION,
-  type JsonValue,
   type Project,
   type ProjectFile,
   type ProjectSpecialization,
 } from './types';
-
-/** Cópia profunda com as chaves na ordem em que estão (valores das anotações tipadas). */
-function cloneJson(value: JsonValue): JsonValue {
-  if (Array.isArray(value)) return value.map(cloneJson);
-  if (typeof value === 'object' && value !== null) {
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, cloneJson(v)]));
-  }
-  return value;
-}
 
 /**
  * Gera o texto do `mapping.json`: chaves sempre na mesma ordem, indentação de
@@ -124,9 +115,7 @@ export function serialize(p: Project): string {
       parentAnnotationId: a.parentAnnotationId,
       parentRole: a.parentRole,
       type: a.type && { specId: a.type.specId, typeId: a.type.typeId },
-      values:
-        a.values &&
-        Object.fromEntries(Object.entries(a.values).map(([k, v]) => [k, cloneJson(v)])),
+      values: a.values,
       entries: a.entries.map((e) => ({ id: e.id, key: e.key, value: e.value })),
     })),
   };
@@ -225,10 +214,6 @@ export interface RepairedLoad extends RepairResult {
   readonly discardedInherit: readonly DiscardedInherit[];
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 /** Junta ao `mapping.json` o conteúdo de cada `specs/<id>.json`. */
 function attachSpecs(
   data: ProjectFile,
@@ -310,8 +295,9 @@ export function deserialize(
     }
     data = migrated.data;
     migratedFrom = version;
-    discardedUrlTemplates = discardedOnMigrationTo11(raw);
-    discardedInherit = discardedOnMigrationTo13(raw);
+    // Os campos descartados só existiam em arquivos antigos: um v15 editado à mão não ganha aviso.
+    if (version <= 10) discardedUrlTemplates = discardedOnMigrationTo11(raw);
+    if (version <= 12) discardedInherit = discardedOnMigrationTo13(raw);
   }
 
   const parsed = projectSchema.safeParse(data);

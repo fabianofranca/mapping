@@ -1,7 +1,8 @@
 /**
  * Imagens estáticas da galeria do Catálogo: a cena de um exemplo desenhada pelo motor numa Stage
- * fora da tela e entregue como PNG `data:`. Gera-se uma vez e guarda-se em cache pela chave
- * (especialização@versão, tipo, exemplo, tamanho, época das fontes e das imagens). Konva fica aqui,
+ * fora da tela e entregue como PNG `data:`. Gera-se uma vez e guarda-se em cache, uma entrada por
+ * cena (especialização@versão, tipo, exemplo, tamanho); a época das fontes e a das imagens só dizem
+ * se a imagem guardada ainda vale (se mudaram, ela é refeita no lugar, sem acumular as antigas). Konva fica aqui,
  * não na UI.
  *
  * Auditoria das leituras de pixel (docs/ARCHITECTURE.md, "Imagens remotas: política, consentimento e carregador"): `stage.toDataURL` abaixo é a única
@@ -15,7 +16,12 @@
 import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import type { FrameNode } from '../../model/components/scene';
-import { type RemoteImageResult, type RenderPalette, renderScene } from './renderScene';
+import {
+  type RemoteImageResult,
+  type RenderPalette,
+  type RenderWarning,
+  renderScene,
+} from './renderScene';
 
 export interface ExampleImageOptions {
   /** Padrão 2 (nítido em telas comuns). */
@@ -28,6 +34,8 @@ export interface ExampleImageOptions {
    * Sem ela, toda imagem remota é o reservado. O resultado `opaque` nunca é desenhado aqui.
    */
   readonly remoteImage?: (url: string) => RemoteImageResult;
+  /** Recebe os avisos do desenho (com código e parâmetros) logo depois de a cena ser desenhada. */
+  readonly onWarnings?: (warnings: readonly RenderWarning[]) => void;
 }
 
 /** Rasteriza a cena; injetável para os testes (sem canvas real no jsdom). */
@@ -60,6 +68,7 @@ export const renderSceneToDataUrl: SceneRasterizer = (root, options = {}) => {
       },
     );
     layer.add(rendered.root);
+    options.onWarnings?.(rendered.warnings);
     layer.draw();
     return stage.toDataURL({
       pixelRatio: options.pixelRatio ?? 2,
@@ -84,35 +93,61 @@ export interface ExampleImageKey {
   readonly imagesEpoch: number;
 }
 
-export function exampleImageKey(key: ExampleImageKey): string {
-  return `${key.specId}@${key.version}|${key.typeId}|${key.example}|${key.width}×${key.height}|${key.fontsEpoch}|${key.imagesEpoch}`;
+/** A cena: o que identifica a imagem, sem as épocas (que só dizem se a guardada ainda vale). */
+function sceneKey(key: ExampleImageKey): string {
+  return `${key.specId}@${key.version}|${key.typeId}|${key.example}|${key.width}×${key.height}`;
+}
+
+function stampOf(key: ExampleImageKey): string {
+  return `${key.fontsEpoch}|${key.imagesEpoch}`;
 }
 
 export interface ExampleImageCache {
-  /** O `data:` da imagem; gera na primeira chamada e devolve a mesma string nas seguintes. */
+  /** O `data:` da imagem; gera na primeira chamada e devolve a mesma string enquanto as épocas valem. */
   get(
     key: ExampleImageKey,
     draw: () => FrameNode | null,
     options?: ExampleImageOptions,
   ): string | null;
+  /** Os avisos do desenho da imagem guardada (vazio se a cena não foi desenhada). */
+  warnings(key: ExampleImageKey): readonly RenderWarning[];
   clear(): void;
   readonly size: number;
 }
 
+interface CachedImage {
+  readonly stamp: string;
+  readonly url: string;
+  readonly warnings: readonly RenderWarning[];
+}
+
+const NO_WARNINGS: readonly RenderWarning[] = [];
+
 export function createExampleImageCache(
   rasterize: SceneRasterizer = renderSceneToDataUrl,
 ): ExampleImageCache {
-  const images = new Map<string, string>();
+  const images = new Map<string, CachedImage>();
   return {
     get(key, draw, options = {}) {
-      const id = exampleImageKey(key);
+      const id = sceneKey(key);
+      const stamp = stampOf(key);
       const cached = images.get(id);
-      if (cached !== undefined) return cached;
+      if (cached?.stamp === stamp) return cached.url;
       const root = draw();
       if (root === null) return null;
-      const url = rasterize(root, options);
-      images.set(id, url);
+      let warnings = NO_WARNINGS;
+      const url = rasterize(root, {
+        ...options,
+        onWarnings: (found) => {
+          warnings = found;
+          options.onWarnings?.(found);
+        },
+      });
+      images.set(id, { stamp, url, warnings });
       return url;
+    },
+    warnings(key) {
+      return images.get(sceneKey(key))?.warnings ?? NO_WARNINGS;
     },
     clear() {
       images.clear();

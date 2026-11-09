@@ -331,6 +331,16 @@ describe('instantiate: cartão', () => {
     expect(warnings).toContain('conteúdo maior que a caixa: card');
   });
 
+  it('overflowWarnings lista exatamente os avisos de "não cabe", sem os outros', () => {
+    const { warnings, overflowWarnings } = run(
+      card,
+      {},
+      { x: 0, y: 0, width: 300, height: 40 },
+    );
+    expect(overflowWarnings).toEqual(['conteúdo maior que a caixa: card']);
+    expect(warnings.length).toBeGreaterThan(overflowWarnings?.length ?? 0);
+  });
+
   it('space-between com dois filhos de largura fixa os afasta para as pontas', () => {
     const row: FrameTemplate = {
       type: 'frame',
@@ -807,3 +817,52 @@ describe('instantiate: slotContent e measureComponent', () => {
     expect(tx(child(root, 0))).toBeCloseTo(16);
   });
 });
+
+describe('padding vindo de campo (#CR-11)', () => {
+  const padded = (padding: unknown): FrameTemplate =>
+    ({
+      type: 'frame',
+      layout: { type: 'column', padding },
+      children: [{ type: 'rect', width: 10, height: 10 }],
+    }) as FrameTemplate;
+  const at = (padding: unknown, values: Values) => {
+    const { root } = run(padded(padding), values, {
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+    });
+    return [tx(child(root, 0)), ty(child(root, 0))];
+  };
+
+  it('texto numérico vira número; não numérico vira 0; negativo vira 0', () => {
+    expect(at({ $field: 'p' }, { p: '16' })).toEqual([16, 16]);
+    expect(at({ $field: 'p' }, { p: 'abc' })).toEqual([0, 0]);
+    expect(at({ $field: 'p' }, { p: -8 })).toEqual([0, 0]);
+  });
+
+  it('em lista, cada lado é normalizado', () => {
+    expect(at({ $field: 'p' }, { p: ['4', 'x', -2, '6'] as never })).toEqual([6, 4]);
+  });
+});
+
+describe('reticências por ponto de código (#CR-12)', () => {
+  it('não deixa surrogate solto ao cortar texto terminando em emoji', () => {
+    for (let limit = 8; limit <= 60; limit += 1) {
+      const result = approximateMeasurer(
+        '😀😀😀😀😀😀',
+        { ...FONT, wrap: 'none', ellipsis: true },
+        limit,
+      );
+      const line = result.lines?.[0] ?? '';
+      expect(line.endsWith('…'), `limit ${limit}`).toBe(true);
+      expect(LONE_SURROGATE.test(line), `limit ${limit}: ${JSON.stringify(line)}`).toBe(
+        false,
+      );
+    }
+  });
+});
+
+/** Surrogate sem par (alto sem baixo, ou baixo sem alto). */
+const LONE_SURROGATE =
+  /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
