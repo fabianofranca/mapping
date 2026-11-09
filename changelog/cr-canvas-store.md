@@ -4,6 +4,9 @@
 
 - Canvas: ao rejeitar a remoção proposta da marcação selecionada, o risco da etiqueta do nome some no mesmo quadro (antes ficava até um pan ou outra seleção), e o risco não passa mais da largura da etiqueta quando o nome é longo e aparece cortado.
 - Canvas: o selo "Veio de <nome>" deixa de sair cortado no primeiro desenho (a largura passa a ser medida com a fonte do tema).
+- Canvas: o clique curto do botão do meio não seleciona, não limpa a seleção nem põe o pino do Comentar.
+- Canvas: soltar o Espaço com o foco num campo não deixa mais o arrasto preso no pan; o Espaço também não é cancelado em links e botões.
+- Canvas: Ctrl+clique abre o menu de contexto (no macOS), sem virar um clique de seleção.
 
 ## Alterado
 

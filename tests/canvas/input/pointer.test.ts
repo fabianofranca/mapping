@@ -415,6 +415,51 @@ describe('PointerInput: rótulo do nome do container', () => {
   });
 });
 
+describe('PointerInput: botão do meio e Ctrl+clique (CR canvas/store, itens 16 e 17)', () => {
+  it('clique curto do botão do meio não seleciona, não limpa a seleção', () => {
+    const s = setup();
+    s.ui.selection.value = { kind: 'marking', id: 'M1' };
+    s.fire('pointerdown', 250, 250, { button: 1 });
+    s.fire('pointerup', 250, 250, { button: 1 });
+    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    s.fire('pointerdown', 1050, 50, { button: 1 });
+    s.fire('pointerup', 1050, 50, { button: 1 });
+    expect(s.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
+    s.cleanup();
+  });
+
+  it('clique curto do botão do meio não consome o Comentar armado nem põe o pino', () => {
+    const s = setup();
+    s.ui.commentArm.value = { mode: 'navigate' };
+    s.fire('pointerdown', 250, 250, { button: 1 });
+    s.fire('pointerup', 250, 250, { button: 1 });
+    expect(s.ui.commentArm.value).toEqual({ mode: 'navigate' });
+    expect(s.ui.composing.value).toBeNull();
+    s.cleanup();
+  });
+
+  it('Ctrl+clique: o contextmenu com o gesto pendente o cancela, abre o menu e o pointerup não vira clique', () => {
+    const s = setup();
+    s.fire('pointerdown', 250, 250, { ctrl: true });
+    s.container.dispatchEvent(
+      new MouseEvent('contextmenu', {
+        clientX: 250,
+        clientY: 250,
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    expect(s.ui.canvasMenu.value?.target).toEqual({ kind: 'm', id: 'M2' });
+    const before = s.ui.selection.value;
+    s.fire('pointerup', 250, 250, { ctrl: true });
+    // Sem `tap`: a seleção com Ctrl não alterna o item que o menu selecionou.
+    expect(s.ui.selection.value).toEqual(before);
+    expect(s.input.isInteracting()).toBe(false);
+    s.cleanup();
+  });
+});
+
 describe('PointerInput: menu de contexto (etapa 3a.2)', () => {
   const contextMenu = (s: ReturnType<typeof setup>, x: number, y: number) => {
     const event = new MouseEvent('contextmenu', {
