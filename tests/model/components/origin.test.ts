@@ -117,6 +117,10 @@ describe('parseOrigins', () => {
         'origins[0].screen.roots[0].anchor: âncora inválida: meio',
       ],
       [
+        [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', margin: 8 }] } }],
+        'origins[0].screen.roots[0].margin: margin só vale com anchor',
+      ],
+      [
         [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', scrim: '' }] } }],
         'origins[0].screen.roots[0].scrim',
       ],

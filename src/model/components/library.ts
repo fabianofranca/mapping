@@ -141,6 +141,17 @@ export function resolvePath(from: string, ref: string): string {
   return parts.join('/');
 }
 
+type PathResolver = (from: string, ref: string) => string | undefined;
+
+/** Opções de `loadLibrary`. */
+export interface LoadLibraryOptions {
+  /**
+   * Um `..` que sai da raiz é descartado em vez de virar problema (`resolvePath`). Só para
+   * quem carrega por URL, onde `../` é relativo à URL da especialização e não à biblioteca.
+   */
+  readonly allowOutside?: boolean;
+}
+
 const outsideLibrary = (ref: string): string => `caminho fora da biblioteca: ${ref}`;
 
 function readField(
@@ -217,12 +228,59 @@ function checkTypeSources(
   });
 }
 
+/** O componente do tipo: arquivo fora da biblioteca, ausente ou inválido vira problema. */
+function loadComponent(
+  typeId: string,
+  componentPath: string,
+  specPath: string,
+  parsed: ReadonlyMap<string, unknown>,
+  problems: string[],
+  resolve: PathResolver,
+): ComponentFile | undefined {
+  const full = resolve(specPath, componentPath);
+  if (full === undefined) {
+    problems.push(`${typeId}: ${outsideLibrary(componentPath)}`);
+    return undefined;
+  }
+  const json = parsed.get(full);
+  if (json === undefined) {
+    problems.push(`${typeId}: arquivo do componente não encontrado: ${full}`);
+    return undefined;
+  }
+  const result = parseComponent(json);
+  if (result.ok) return result.component;
+  for (const issue of result.issues)
+    problems.push(`${full}: ${issue.path ? `${issue.path}: ` : ''}${issue.message}`);
+  return undefined;
+}
+
+/** O `scrim` de cada raiz de tela precisa ser um tipo da biblioteca. */
+function checkScrims(
+  origins: readonly Origin[],
+  typeIds: ReadonlySet<string>,
+  problems: string[],
+): void {
+  origins.forEach((origin, oi) => {
+    origin.screen.roots.forEach((root, ri) => {
+      if (root.scrim !== undefined && !typeIds.has(root.scrim)) {
+        problems.push(
+          `origins[${oi}].screen.roots[${ri}].scrim: tipo inexistente: ${root.scrim}`,
+        );
+      }
+    });
+  });
+}
+
 /**
  * Monta a biblioteca a partir dos arquivos. Acha a especialização (o arquivo com
  * `"format": "mapping-spec"`; se houver mais de uma, usa a primeira e avisa) e carrega cada
  * componente referenciado. Lança só quando não há especialização.
  */
-export function loadLibrary(files: readonly TextFile[]): Library {
+export function loadLibrary(
+  files: readonly TextFile[],
+  options: LoadLibraryOptions = {},
+): Library {
+  const resolve = options.allowOutside ? resolvePath : resolvePathChecked;
   const problems: string[] = [];
   const parsed = new Map<string, unknown>();
   for (const file of files) {
@@ -272,24 +330,9 @@ export function loadLibrary(files: readonly TextFile[]): Library {
         .filter((f): f is FieldDef => f !== undefined);
       const componentPath =
         typeof type.component === 'string' ? type.component : undefined;
-      let component: ComponentFile | undefined;
-      if (componentPath) {
-        const full = resolvePathChecked(specPath, componentPath);
-        const json = full === undefined ? undefined : parsed.get(full);
-        if (full === undefined) {
-          problems.push(`${type.id}: ${outsideLibrary(componentPath)}`);
-        } else if (json === undefined) {
-          problems.push(`${type.id}: arquivo do componente não encontrado: ${full}`);
-        } else {
-          const result = parseComponent(json);
-          if (result.ok) component = result.component;
-          else
-            for (const issue of result.issues)
-              problems.push(
-                `${full}: ${issue.path ? `${issue.path}: ` : ''}${issue.message}`,
-              );
-        }
-      }
+      const component = componentPath
+        ? loadComponent(type.id, componentPath, specPath, parsed, problems, resolve)
+        : undefined;
       const sources = parseTypeSources(type.sources, `${type.id}.sources`, problems);
       checkTypeSources(type.id, sources, component, problems);
       types.push({
@@ -306,17 +349,8 @@ export function loadLibrary(files: readonly TextFile[]): Library {
       });
     });
   });
-  const typeIds = new Set(types.map((t) => t.id));
-  origins.forEach((origin, oi) => {
-    origin.screen.roots.forEach((root, ri) => {
-      if (root.scrim !== undefined && !typeIds.has(root.scrim)) {
-        problems.push(
-          `origins[${oi}].screen.roots[${ri}].scrim: tipo inexistente: ${root.scrim}`,
-        );
-      }
-    });
-  });
-  const fonts = readFonts(spec.fonts, specPath, files, problems);
+  checkScrims(origins, new Set(types.map((t) => t.id)), problems);
+  const fonts = readFonts(spec.fonts, specPath, files, problems, resolve);
   return withHostTokens(
     {
       specId: typeof spec.id === 'string' ? spec.id : 'spec',
@@ -326,7 +360,7 @@ export function loadLibrary(files: readonly TextFile[]): Library {
       fonts,
       origins,
       tokens: readTokens(spec.tokens),
-      icons: readIcons(spec.icons, specPath, parsed, problems),
+      icons: readIcons(spec.icons, specPath, parsed, problems, resolve),
       problems,
     },
     {},
@@ -339,9 +373,10 @@ function readIcons(
   specPath: string,
   parsed: ReadonlyMap<string, unknown>,
   problems: string[],
+  resolve: PathResolver,
 ): IconSet | undefined {
   if (typeof raw !== 'string') return undefined;
-  const path = resolvePathChecked(specPath, raw);
+  const path = resolve(specPath, raw);
   if (path === undefined) {
     problems.push(`icons: ${outsideLibrary(raw)}`);
     return undefined;
@@ -406,6 +441,7 @@ function readFonts(
   specPath: string,
   files: readonly TextFile[],
   problems: string[],
+  resolve: PathResolver,
 ): LoadedFont[] {
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) {
@@ -436,7 +472,7 @@ function readFonts(
           ? entry.weight.trim()
           : '400';
     const style = entry.style === 'italic' ? 'italic' : 'normal';
-    const path = resolvePathChecked(specPath, entry.file);
+    const path = resolve(specPath, entry.file);
     if (path === undefined) {
       problems.push(`fonts[${index}]: ${outsideLibrary(entry.file)}`);
       return;

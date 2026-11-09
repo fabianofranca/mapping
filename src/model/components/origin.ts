@@ -410,6 +410,9 @@ function parseRoot(
     raw.margin === undefined
       ? undefined
       : parseValueSource(raw.margin, `${path}.margin`, problems);
+  if (margin !== undefined && anchor === undefined) {
+    problems.push(`${path}.margin: margin só vale com anchor`);
+  }
   if (raw.scrim !== undefined && !nonEmptyString(raw.scrim)) {
     problems.push(`${path}.scrim: esperava o id de um tipo (texto não vazio)`);
   }

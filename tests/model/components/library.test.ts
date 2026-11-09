@@ -57,6 +57,18 @@ describe('library', () => {
       expect(lib.types.find((t) => t.id === 'button')?.component).toBeUndefined();
     });
 
+    it('allowOutside: o `..` que sai da raiz é descartado, como no carregamento por URL', () => {
+      const layers = SAMPLE_SPEC.layers.map((layer) => ({
+        ...layer,
+        annotationTypes: layer.annotationTypes.map((t) =>
+          t.id === 'button' ? { ...t, component: '../components/button.json' } : t,
+        ),
+      }));
+      const lib = loadLibrary(specFiles({ layers }), { allowOutside: true });
+      expect(lib.problems).toEqual([]);
+      expect(lib.types.find((t) => t.id === 'button')?.component).toBeDefined();
+    });
+
     it('fonte: problema em fonts[i] e a fonte não é carregada', () => {
       const lib = loadLibrary(
         specFiles({
