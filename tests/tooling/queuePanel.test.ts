@@ -89,19 +89,32 @@ describe('painel.py (FC1)', () => {
   });
 });
 
-// Etapa #1298 (FT1): a fila troca de coordenador assim que o skill muda na main.
-describe('implementar-fila: troca de coordenador por skill novo (FT1)', () => {
+// Etapa #1298 (FT1) e #1315 (FC2): skill novo na main não troca de sessão; troca só por contexto.
+describe('implementar-fila: skill novo na main e troca de sessão (FT1, FC2)', () => {
   const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
   const troca = skill.slice(skill.indexOf('## Troca de sessão'));
-  const CHECK = 'git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila';
+  const CHECK =
+    'git fetch -q origin main && git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila/SKILL.md';
 
-  it('"Troca de sessão" manda conferir o skill da main e trocar quando ele mudou', () => {
+  it('"Troca de sessão" manda dar pull e reler o SKILL.md, sem trocar de sessão (decisão 5)', () => {
     expect(troca).toContain(CHECK);
-    expect(troca).toMatch(/mesmo abaixo de 60%/);
-    expect(troca).toContain(
-      'git checkout origin/main -- .claude/skills/implementar-fila',
-    );
-    expect(troca).toContain('skill atualizado na main');
+    expect(troca).toContain('git pull -q --ff-only origin main');
+    expect(troca).toMatch(/relê o `SKILL.md` inteiro/);
+    expect(troca).toMatch(/não há troca de sessão por mudança de skill/i);
+    expect(troca).not.toContain('mesmo abaixo de 60%');
+    expect(troca).not.toContain('skill atualizado na main');
+  });
+
+  it('a troca é só por contexto acima de 60% (decisão 6)', () => {
+    expect(troca).toMatch(/Troca de sessão só por contexto/);
+    expect(troca).toMatch(/único motivo para criar um sucessor/);
+  });
+
+  it('antes de criar o sucessor confere lineage.depth + 2 > limit (decisão 7)', () => {
+    expect(troca).toContain('lineage.depth');
+    expect(troca).toContain('lineage.limit');
+    expect(troca).toContain('depth + 2 > limit');
+    expect(troca).toMatch(/aguardando o dono abrir a sessão nova da fila/);
   });
 
   it('a conferência de reserva e o passo "Entre etapas" fazem a mesma conferência', () => {
@@ -115,5 +128,113 @@ describe('implementar-fila: troca de coordenador por skill novo (FT1)', () => {
       skill.indexOf('**CI vermelho'),
     );
     expect(conferencia).toMatch(/skill mudou na `main`/);
+  });
+});
+
+// Etapa #1315 (FC2): ajustes finos de contexto, arquivamento das sessões e espera por workflow.
+describe('implementar-fila: ajustes finos do coordenador (FC2)', () => {
+  const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const flow = readFileSync('docs/FLOW.md', 'utf8');
+  const detalhar = readFileSync('.claude/skills/detalhar-backlog/SKILL.md', 'utf8');
+  const TITLES = [
+    'Para a sessão da fase',
+    'Fase de correção',
+    'Para o testador',
+    'Rodada dirigida em grupos',
+    'Reteste junto',
+    'Rodada completa em 5 blocos',
+  ];
+
+  it('lista os títulos exatos das mensagens do FLOW.md e o comando de leitura (decisão 2)', () => {
+    for (const title of TITLES) {
+      expect(skill).toContain(`"${title}"`);
+      expect(flow).toMatch(new RegExp(`^## ${title}$`, 'm'));
+    }
+    expect(skill).toContain(
+      "awk '/^## <título>$/{f=1;print;next} /^## /{f=0} f' docs/FLOW.md",
+    );
+    expect(skill).toMatch(/nunca por `grep`/);
+  });
+
+  it('o painel é publicado uma vez por ciclo, a cada avanço (decisão 1)', () => {
+    expect(skill).toMatch(/Nunca há duas publicações no mesmo ciclo/);
+    expect(skill).toMatch(/só com os arquivos alterados/);
+    expect(skill).toMatch(/conferência de hora em hora sem atrasadas não publica/i);
+  });
+
+  it('o chat fica quase mudo (decisão 3)', () => {
+    expect(skill).toMatch(/O chat fica quase mudo/);
+    expect(skill).toMatch(/não escreve resumo/);
+  });
+
+  it('um subagente por ciclo para as tarefas de GitHub (decisão 4)', () => {
+    expect(skill).toMatch(/Um subagente por ciclo/);
+    expect(skill).toMatch(/uma linha por tarefa/);
+  });
+
+  it('arquiva cada filha ao terminar, registra as sessões e arquiva a anterior (decisão 8)', () => {
+    expect(skill).toContain('archive_session');
+    expect(skill).toContain("painel.py session <pasta> '#n' <id>");
+    expect(skill).toMatch(/<código> arquivada/);
+    expect(skill).toMatch(/não se arquiva/i);
+    expect(skill).toMatch(/arquiva a `anterior`/);
+    expect(skill).toMatch(/não arquiva a si mesmo/);
+  });
+
+  it('a espera por workflow segue a duração medida (decisão 10)', () => {
+    expect(skill).toMatch(/no mesmo ciclo do merge/);
+    expect(skill).toMatch(/job `release` pulado/);
+    expect(skill).toMatch(/5 min depois do merge/);
+    expect(skill).toMatch(/a cada 1 min/);
+    expect(skill).toMatch(/Não segure o merge de outro épico/);
+  });
+
+  it('a troca de rótulo manda a lista completa (decisão 11), no skill e no detalhar-backlog', () => {
+    for (const text of [skill, detalhar]) {
+      expect(text).toMatch(/substitui todos os rótulos/);
+      expect(text).toMatch(/lista completa/);
+      expect(text).toMatch(/`severity:`/);
+    }
+  });
+
+  it('o detalhar-backlog arquiva cada subagente de detalhamento ou agrupamento (decisão 9)', () => {
+    expect(detalhar).toContain('archive_session');
+    expect(detalhar).toMatch(/arquiva/i);
+    expect(detalhar).toMatch(/resumo final/);
+  });
+
+  it('o FLOW.md diz como fica a troca e o arquivamento', () => {
+    const linha = flow
+      .split('\n')
+      .find((l) => l.startsWith('Para implementar em sequência'));
+    expect(linha).toMatch(/só por contexto/);
+    expect(linha).toMatch(/limite de linhagem/);
+    expect(linha).toMatch(/arquivadas/);
+  });
+});
+
+describe('painel.py: sessions por etapa (FC2, decisão 8)', () => {
+  beforeEach(() => {
+    dir = mkdtempSync(path.join(tmpdir(), 'painel-'));
+    runAt('2026-11-09T10:00:00Z', 'init', dir);
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('session acrescenta o id em sessions sem repetir, e show da etapa o mostra', () => {
+    run('row', dir, '#10', 'title=Etapa dez');
+    run('session', dir, '#10', 'session_a');
+    run('session', dir, '#10', 'session_b');
+    const out = run('session', dir, '#10', 'session_a');
+    expect(out).toContain('queue.json');
+    const queue = json('queue') as Array<Record<string, unknown>>;
+    expect(queue[0]?.sessions).toBe('session_a session_b');
+    expect(run('show', dir, '#10')).toContain('sessions: session_a session_b');
+  });
+
+  it('session numa etapa fora da fila é recusado', () => {
+    expect(() => run('session', dir, '#99', 'session_a')).toThrow();
   });
 });
