@@ -439,16 +439,17 @@ export class CanvasController {
     if (textMeasurer.peek() !== konvaMeasurer) textMeasurer.value = konvaMeasurer;
 
     this.stage = new Konva.Stage({ container, width: 1, height: 1 });
-    const imageLayer = new Konva.Layer({ listening: false });
-    this.componentGroup = new Konva.Layer({ listening: false });
+    // O `name` das camadas só serve para identificá-las (medidores dos testes e do perf:canvas).
+    const imageLayer = new Konva.Layer({ listening: false, name: 'images' });
+    this.componentGroup = new Konva.Layer({ listening: false, name: 'components' });
     // Setas e marcações dividem uma camada (o Konva avisa no console a partir de seis): elas se
     // redesenham juntas a cada edição, e um `Group` para cada mantém a ordem (setas por baixo).
-    const arrowMarkingLayer = new Konva.Layer({ listening: false });
+    const arrowMarkingLayer = new Konva.Layer({ listening: false, name: 'markings' });
     const arrowLayer = new Konva.Group({ listening: false });
     const markingLayer = new Konva.Group({ listening: false });
     arrowMarkingLayer.add(arrowLayer, markingLayer);
-    const overlayLayer = new Konva.Layer({ listening: false });
-    const floatingTop = new Konva.Layer({ listening: false });
+    const overlayLayer = new Konva.Layer({ listening: false, name: 'overlay' });
+    const floatingTop = new Konva.Layer({ listening: false, name: 'floating' });
     this.stage.add(
       imageLayer,
       this.componentGroup,
