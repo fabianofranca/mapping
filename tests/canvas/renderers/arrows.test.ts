@@ -107,8 +107,8 @@ describe('ArrowRenderer', () => {
     render();
     const first = paint();
     const spy = vi.spyOn(
-      renderer as unknown as { strokesFor(h: number): unknown },
-      'strokesFor',
+      (renderer as unknown as { strokes: { get(...args: unknown[]): unknown } }).strokes,
+      'get',
     );
     render({ viewport: { x: -300, y: 40, scale: 1 } }); // pan
     expect(paint()).toEqual(first);

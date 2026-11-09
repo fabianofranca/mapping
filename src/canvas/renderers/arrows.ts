@@ -19,6 +19,43 @@ const LABEL_MAX_WIDTH = 200;
 
 export type ArrowsFrame = Pick<Frame, 'arrows' | 'tokens' | 'viewport'>;
 
+/** O que um quadro mexeu: a camada das marcações (onde ficam as setas) e/ou o grupo de arrasto. */
+export interface ArrowChanges {
+  readonly main: boolean;
+  readonly drag: boolean;
+}
+
+const NO_SHAPES: readonly ArrowShape[] = [];
+
+function sameShapes(a: readonly ArrowShape[], b: readonly ArrowShape[]): boolean {
+  return a.length === b.length && a.every((shape, i) => shape === b[i]);
+}
+
+/** O desenho calculado para (`shapes`, `zoom`, ponta): quadros iguais o reaproveitam. */
+class StrokeCache {
+  private entry: {
+    readonly shapes: readonly ArrowShape[];
+    readonly zoom: number;
+    readonly head: number;
+    readonly value: ArrowStrokes;
+  } | null = null;
+
+  get(shapes: readonly ArrowShape[], zoom: number, head: number): ArrowStrokes {
+    const cached = this.entry;
+    if (
+      cached &&
+      cached.shapes === shapes &&
+      cached.zoom === zoom &&
+      cached.head === head
+    ) {
+      return cached.value;
+    }
+    const value = arrowStrokes(shapes, zoom, head);
+    this.entry = { shapes, zoom, head, value };
+    return value;
+  }
+}
+
 /** As operações de pintura que o desenho usa (o contexto do Konva as tem; os testes gravam). */
 export interface ArrowPainter {
   beginPath(): void;
@@ -47,13 +84,19 @@ export class ArrowRenderer {
   private shapes: readonly ArrowShape[] = [];
   private tokens: CanvasTokens | null = null;
   private zoom = 1;
-  /** O desenho calculado para (`shapes`, `zoom`, ponta): pan e quadros iguais o reaproveitam. */
-  private strokes: {
-    readonly shapes: readonly ArrowShape[];
-    readonly zoom: number;
-    readonly head: number;
-    readonly value: ArrowStrokes;
-  } | null = null;
+  private readonly strokes = new StrokeCache();
+  /**
+   * As setas que se movem num gesto (decisões 5 e 7): têm um corpo e um grupo de rótulos próprios,
+   * no grupo de arrasto, e `shapes` fica só com as paradas (o mesmo array enquanto elas não mudam,
+   * então o corpo das paradas não é refeito nem repintado).
+   */
+  private dragIds: ReadonlySet<string> | null = null;
+  private dragGroup: Konva.Group | null = null;
+  private dragBody: Konva.Shape | null = null;
+  private dragLabels: Konva.Group | null = null;
+  private dragShapes: readonly ArrowShape[] = NO_SHAPES;
+  private readonly dragStrokes = new StrokeCache();
+  private wasDragging = false;
 
   constructor(parent: Konva.Container) {
     this.body = new Konva.Shape({
@@ -78,24 +121,61 @@ export class ArrowRenderer {
     return this.shapes.length;
   }
 
+  /** As setas que se movem num gesto, desenhadas no grupo de arrasto (vazio fora dele). */
+  get liftedDrawn(): readonly ArrowShape[] {
+    return this.dragShapes;
+  }
+
   /** O nó do rótulo da seta (`undefined` se ela não tem nome ou não está à vista). */
   label(id: string): LabelNode | undefined {
     return this.labels.get(id);
   }
 
-  render(frame: ArrowsFrame): void {
+  /**
+   * Leva as setas de `ids` para o grupo de arrasto no próximo `render` (o corpo e os rótulos delas
+   * saem do desenho das paradas), ou as devolve com `null`.
+   */
+  setDragged(ids: ReadonlySet<string> | null, target: Konva.Container): void {
+    const next = ids && ids.size > 0 ? ids : null;
+    if (next && !this.dragGroup) this.mountDragGroup(target);
+    if (!next && this.dragGroup) this.unmountDragGroup();
+    this.dragIds = next;
+  }
+
+  /**
+   * Refaz os rótulos e guarda o que as passagens de pintura desenham. Devolve o que mexeu: com um
+   * gesto em andamento, a camada das paradas só quando as setas paradas, o zoom ou o tema mudam.
+   */
+  render(frame: ArrowsFrame): ArrowChanges {
     const { arrows, tokens } = frame;
+    const before = { shapes: this.shapes, zoom: this.zoom, tokens: this.tokens };
     this.zoom = frame.viewport.scale;
-    this.shapes = arrows;
     this.tokens = tokens;
-    this.renderLabels(frame);
+    const dragging = this.dragIds !== null;
+    if (this.dragIds) this.splitShapes(arrows, this.dragIds);
+    else {
+      this.shapes = arrows;
+      this.dragShapes = NO_SHAPES;
+    }
+    const labelsMain = this.renderLabels(frame);
     // O desenho é função de `shapes`, `zoom` e `tokens`, que o Konva não enxerga: quem pede o
-    // quadro (`CanvasController`) repinta o stage depois de renderizar.
+    // quadro (`CanvasController`) repinta a camada depois de renderizar.
+    const main =
+      !dragging ||
+      labelsMain ||
+      before.shapes !== this.shapes ||
+      before.zoom !== this.zoom ||
+      before.tokens !== tokens;
+    const drag = dragging || this.wasDragging;
+    this.wasDragging = dragging;
+    return { main, drag };
   }
 
   destroy(): void {
     this.body.destroy();
     this.labelsGroup.destroy();
+    this.dragGroup?.destroy();
+    this.dragGroup = null;
     this.labels.clear();
   }
 
@@ -104,11 +184,24 @@ export class ArrowRenderer {
    * caminho. A espessura, o halo e a ponta são de tela, divididos pelo zoom.
    */
   paint(painter: ArrowPainter): void {
+    this.paintShapes(painter, this.shapes, this.strokes);
+  }
+
+  /** Pinta as setas que se movem (o corpo do grupo de arrasto). */
+  paintDragged(painter: ArrowPainter): void {
+    this.paintShapes(painter, this.dragShapes, this.dragStrokes);
+  }
+
+  private paintShapes(
+    painter: ArrowPainter,
+    shapes: readonly ArrowShape[],
+    cache: StrokeCache,
+  ): void {
     const tokens = this.tokens;
-    if (!tokens || this.shapes.length === 0) return;
+    if (!tokens || shapes.length === 0) return;
     const zoom = this.zoom;
     const { arrow: style } = tokens;
-    const strokes = this.strokesFor(style.head);
+    const strokes = cache.get(shapes, zoom, style.head);
     painter.setAttr('lineCap', 'round');
     // Halo: o traço mais largo e a ponta com um contorno, na cor do halo.
     strokeBodies(painter, strokes, tokens.halo, (style.width + 2 * HALO_WIDTH) / zoom);
@@ -127,49 +220,92 @@ export class ArrowRenderer {
     painter.fill();
   }
 
-  /** O desenho das setas atuais no zoom atual (calculado de novo só quando eles mudam). */
-  private strokesFor(head: number): ArrowStrokes {
-    const cached = this.strokes;
-    if (
-      cached &&
-      cached.shapes === this.shapes &&
-      cached.zoom === this.zoom &&
-      cached.head === head
-    ) {
-      return cached.value;
-    }
-    const value = arrowStrokes(this.shapes, this.zoom, head);
-    this.strokes = { shapes: this.shapes, zoom: this.zoom, head, value };
-    return value;
+  /** Separa as setas que se movem das paradas; as paradas mantêm o array se nenhuma mudou. */
+  private splitShapes(arrows: readonly ArrowShape[], ids: ReadonlySet<string>): void {
+    const parked: ArrowShape[] = [];
+    const moving: ArrowShape[] = [];
+    for (const shape of arrows) (ids.has(shape.arrow.id) ? moving : parked).push(shape);
+    if (!sameShapes(this.shapes, parked)) this.shapes = parked;
+    this.dragShapes = moving;
   }
 
-  /** Rótulos: um nó por seta com nome, reaproveitado; os das setas que saíram do quadro somem. */
-  private renderLabels(frame: ArrowsFrame): void {
+  private mountDragGroup(target: Konva.Container): void {
+    const group = new Konva.Group({ listening: false });
+    this.dragBody = new Konva.Shape({
+      listening: false,
+      sceneFunc: (context) => this.paintDragged(context),
+    });
+    this.dragLabels = new Konva.Group({ listening: false });
+    group.add(this.dragBody, this.dragLabels);
+    target.add(group);
+    this.dragGroup = group;
+  }
+
+  /** Devolve os rótulos ao grupo de sempre e desfaz o grupo de arrasto. */
+  private unmountDragGroup(): void {
+    for (const node of this.labels.values()) {
+      if (node.group.getParent() === this.dragLabels) this.labelsGroup.add(node.group);
+    }
+    this.dragGroup?.destroy();
+    this.dragGroup = null;
+    this.dragBody = null;
+    this.dragLabels = null;
+    this.dragShapes = NO_SHAPES;
+  }
+
+  /**
+   * Rótulos: um nó por seta com nome, reaproveitado; os das setas que saíram do quadro somem. O da
+   * seta que se move fica no grupo de arrasto. Devolve `true` se mexeu num rótulo das paradas.
+   */
+  private renderLabels(frame: ArrowsFrame): boolean {
     const { arrows, tokens } = frame;
     const zoom = frame.viewport.scale;
     const seen = new Set<string>();
+    let main = false;
     for (const shape of arrows) {
       const name = shape.arrow.name;
       if (name === null || name === '') continue;
-      const id = shape.arrow.id;
-      seen.add(id);
-      const node = this.labels.get(id) ?? this.createLabel(id);
-      if (node.shape === shape && node.zoom === zoom && node.tokens === tokens) continue;
-      this.updateLabel(node, shape, name, zoom, tokens);
+      seen.add(shape.arrow.id);
+      if (this.syncLabel(shape, name, zoom, tokens)) main = true;
     }
     for (const [id, node] of this.labels) {
       if (seen.has(id)) continue;
       node.group.destroy();
       this.labels.delete(id);
+      main = true;
     }
+    return main;
   }
 
-  private createLabel(id: string): LabelNode {
+  /** O grupo do rótulo: o de arrasto se a seta se move, senão o de sempre. */
+  private labelHome(id: string): Konva.Group {
+    const lifted = this.dragIds?.has(id) === true;
+    return lifted && this.dragLabels ? this.dragLabels : this.labelsGroup;
+  }
+
+  /** Põe o rótulo da seta no grupo certo e o refaz se mudou. `true` se mexeu num rótulo das paradas. */
+  private syncLabel(
+    shape: ArrowShape,
+    name: string,
+    zoom: number,
+    tokens: CanvasTokens,
+  ): boolean {
+    const id = shape.arrow.id;
+    const home = this.labelHome(id);
+    const node = this.labels.get(id) ?? this.createLabel(id, home);
+    const moved = node.group.getParent() !== home;
+    if (moved) node.group.moveTo(home);
+    const same = node.shape === shape && node.zoom === zoom && node.tokens === tokens;
+    if (!same) this.updateLabel(node, shape, name, zoom, tokens);
+    return moved || (!same && home === this.labelsGroup);
+  }
+
+  private createLabel(id: string, home: Konva.Group): LabelNode {
     const group = new Konva.Group({ listening: false, name: `arrow-label:${id}` });
     const box = new KonvaRect({ listening: false });
     const text = new KonvaText({ listening: false, wrap: 'none', ellipsis: true });
     group.add(box, text);
-    this.labelsGroup.add(group);
+    home.add(group);
     const node: LabelNode = { group, box, text, shape: null, zoom: 0, tokens: null };
     this.labels.set(id, node);
     return node;
