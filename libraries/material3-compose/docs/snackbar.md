@@ -6,12 +6,12 @@ Tipo de anotação: `snackbar` (camada Componentes).
 
 ## Campos
 
-| Chave             | Rótulo             | Tipo   | Obrigatório | Opções          | Padrão  | Descrição                                                                                           |
-| ----------------- | ------------------ | ------ | ----------- | --------------- | ------- | --------------------------------------------------------------------------------------------------- |
-| `message`         | Mensagem           | string | sim         |                 |         | Texto do snackbar.                                                                                  |
-| `actionLabel`     | Ação               | string | não         |                 |         | Texto do botão de ação. Vazio = sem ação.                                                           |
-| `dismissAction`   | Botão de fechar    | enum   | não         | `true`, `false` | `false` | true mostra o botão de fechar (ícone Close) depois da ação.                                         |
-| `actionOnNewLine` | Ação em nova linha | enum   | não         | `true`, `false` | `false` | true põe a ação abaixo da mensagem, para textos longos (a altura do retângulo passa de 48 para 68). |
+| Chave             | Rótulo             | Tipo   | Obrigatório | Opções          | Padrão  | Descrição                                                                                                                                                          |
+| ----------------- | ------------------ | ------ | ----------- | --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `message`         | Mensagem           | string | sim         |                 |         | Texto do snackbar.                                                                                                                                                 |
+| `actionLabel`     | Ação               | string | não         |                 |         | Texto do botão de ação. Vazio = sem ação.                                                                                                                          |
+| `dismissAction`   | Botão de fechar    | enum   | não         | `true`, `false` | `false` | true mostra o botão de fechar (ícone Close) depois da ação.                                                                                                        |
+| `actionOnNewLine` | Ação em nova linha | enum   | não         | `true`, `false` | `false` | true põe a ação abaixo da mensagem, para textos longos (com uma linha de texto a altura do retângulo passa de 48 para 92; os 68 são a linha única de duas linhas). |
 
 ## Compose
 
@@ -80,7 +80,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 **O que ainda difere do Compose**
 
 - O Compose decide entre 48 e 68 pelo número de linhas reais do texto (`isOneLine`), com o texto a 30 da linha de base nas várias linhas; o formato não conhece o número de linhas na hora de arrumar. O respiro de 14 em cima e embaixo dá 48 com uma linha e 68 com duas, mas com três linhas o desenho mede 88 e o Compose 81, e na de duas linhas o texto fica a 14 do topo e no Compose a 15.
-- Com a ação em nova linha a altura é a do código (92 com uma linha de texto), e não os 68 que o campo `actionOnNewLine` diz: os 68 são o `TwoLinesContainerHeight` da linha única de duas linhas. A descrição do campo na especialização não mudou nesta fase.
+- Com a ação em nova linha a altura é a do código (92 com uma linha de texto); os 68 são o `TwoLinesContainerHeight` da linha única de duas linhas, e a descrição do campo diz isso desde a versão 4 da biblioteca.
 - A posição vertical vem da linha de base do Compose (30, 12, `FirstBaseline`); o motor não alinha por linha de base, então o 15 e o 7 são estimados para o Roboto 14/20 e valem para essa fonte e esse tamanho.
 - O limite de 600 vale só quando o componente é medido sem retângulo (`hug`), e o `sizing` deste componente é `fill` na largura; com a marcação desenhada a largura é a dela.
 - A sombra é uma só, em preto a 30%, com o `y` e o `blur` em números no componente (o `shadow` só aceita `$token` na cor); o Compose compõe a sombra ambiente e a do ponto.

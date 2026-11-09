@@ -69,7 +69,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 **O que ainda difere do Compose**
 
 - Sem estados de pressionado, foco e passar o mouse e sem a animação do traço do check (`checkDrawFraction`); o desenho é o estado final.
-- O raio 2 é literal: a especialização não tem token de raio de 2 (`corner-extra-small` vale 4).
+- O raio 2 vem do token `corner-checkbox` (`compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/CheckboxTokens.kt`, linha 26: `ContainerShape = RoundedCornerShape(2.0.dp)`); `corner-extra-small` vale 4.
 - A área é de 48 por 40: a altura de 40 vem do `sizing` do tipo, abaixo dos 48 do toque mínimo. Com `onClick = null` o Compose desenha só 24.
 - O rótulo a 0,38 quando desabilitado é convenção do desenho: o `Text` do Compose herda a cor do conteúdo e não diminui sozinho.
 - `CheckboxColors` próprio, os `Stroke` trocáveis e o estado de erro não são campos do tipo.

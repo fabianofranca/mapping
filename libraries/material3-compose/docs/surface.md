@@ -64,4 +64,4 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - A elevação tonal é uma tabela por inteiro de 1 a 12 dp (a fórmula usa `ln`, que o formato de expressões não calcula); outro valor usa 0,14.
 - O Compose provê `contentColorFor(color)` aos filhos (`LocalContentColor`): os filhos do desenho não herdam a cor do conteúdo, cada um escolhe a sua.
 - `shadowElevation`, `border` e `onClick` do `Surface` não são campos do tipo.
-- A etapa pede, na decisão 8, que a elevação tonal use os papéis `surface-container-*`; este componente segue o `Surface.kt` do commit fixado (o `surface-tint` sobre `surface`), que é o que o Compose 1.4.0 faz (decisão 1: fiel ao Compose fixado).
+- Decisão da etapa Material 3 com estados de interação (decisão 12, 2026-11-08): fica a leitura do `Surface.kt` do commit fixado (o `surface-tint` sobre `surface`, pela `tonalElevation`), que a M1 seguiu. A decisão 8 da etapa Material 3 fiel (os papéis `surface-container-*`) vale para os componentes que usam esses papéis (`card`, `list-item`, `navigation-bar`, entre outros), não para a elevação tonal do `surface`. O componente não muda.
