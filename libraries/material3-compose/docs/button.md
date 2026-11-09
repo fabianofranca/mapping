@@ -6,15 +6,16 @@ Tipo de anotação: `button` (camada Componentes).
 
 ## Campos
 
-| Chave     | Rótulo        | Tipo   | Obrigatório | Opções                                                         | Padrão   | Descrição                                                                                             |
-| --------- | ------------- | ------ | ----------- | -------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
-| `label`   | Rótulo        | string | sim         |                                                                |          | Texto do botão.                                                                                       |
-| `style`   | Estilo        | enum   | não         | `filled`, `tonal`, `outlined`, `text`, `elevated`              | `filled` | filled (Button), tonal (FilledTonalButton), outlined, text ou elevated.                               |
-| `enabled` | Habilitado    | enum   | não         | `true`, `false`                                                | `true`   | false desabilita o botão.                                                                             |
-| `icon`    | Ícone         | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |          | Ícone antes do texto. Vazio = só texto.                                                               |
-| `width`   | Largura       | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp). |
-| `height`  | Altura        | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).   |
-| `weight`  | Peso (weight) | number | não         |                                                                |          | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                     |
+| Chave         | Rótulo        | Tipo   | Obrigatório | Opções                                                         | Padrão   | Descrição                                                                                                                                                                                                                                |
+| ------------- | ------------- | ------ | ----------- | -------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `label`       | Rótulo        | string | sim         |                                                                |          | Texto do botão.                                                                                                                                                                                                                          |
+| `style`       | Estilo        | enum   | não         | `filled`, `tonal`, `outlined`, `text`, `elevated`              | `filled` | filled (Button), tonal (FilledTonalButton), outlined, text ou elevated.                                                                                                                                                                  |
+| `enabled`     | Habilitado    | enum   | não         | `true`, `false`                                                | `true`   | false desabilita o botão.                                                                                                                                                                                                                |
+| `interaction` | Interação     | enum   | não         | `none`, `hovered`, `focused`, `pressed`                        | `none`   | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence). |
+| `icon`        | Ícone         | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |          | Ícone antes do texto. Vazio = só texto.                                                                                                                                                                                                  |
+| `width`       | Largura       | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).                                                                                                                                    |
+| `height`      | Altura        | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).                                                                                                                                      |
+| `weight`      | Peso (weight) | number | não         |                                                                |          | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                                                                                                                                                        |
 
 ## Compose
 
@@ -53,6 +54,9 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Preenchido**: label=Salvar, style=filled
 - **Contornado**: label=Cancelar, style=outlined
 - **Com ícone**: label=Adicionar, style=tonal, icon=Add
+- **Mouse sobre**: label=Salvar, style=filled, interaction=hovered
+- **Com foco**: label=Salvar, style=elevated, interaction=focused
+- **Pressionado**: label=Salvar, style=tonal, interaction=pressed
 
 ## Fidelidade
 
@@ -70,12 +74,20 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Padding do conteúdo: 24 dos lados e 8 em cima e embaixo (16 no início com ícone); no `text`, 12 (12 no início e 16 no fim com ícone).
 - Ícone de 18 desenhado pelo nó `icon` (nome do Compose para o nome do conjunto, como no `icon`), 8 de espaço até o rótulo. O rótulo usa os tokens `label-large-*` (14, peso 500, linha 20, espaçamento 0,1) e a fonte do tema (`font-sans`), sem `family` no arquivo.
 - Cores (iguais nos dois modos, com os valores de cada um): filled `primary` / `on-primary`; tonal `secondary-container` / `on-secondary-container`; elevated `surface-container-low` / `primary`, com a sombra do nível 1 (`elevation-shadow`, y 1, blur 2); outlined sem fundo, conteúdo `on-surface-variant` e contorno de 1 em `outline-variant`; text sem fundo e conteúdo `primary` (o `defaultTextButtonColors` do commit usa `Primary`, não o token `OnSurfaceVariant`).
-- Desabilitado: o contêiner vira `on-surface` a 0,1 (0,12 no tonal, `state-disabled-container`) e o conteúdo, a 0,38 (`state-disabled-content`), em `on-surface-variant` (em `on-surface` no tonal); o outlined tem o contorno a 0,1; o elevated perde a sombra.
+- Desabilitado: o contêiner vira `on-surface` a 0,1 (`state-disabled-container-filled`; 0,12 no tonal, `state-disabled-container`) e o conteúdo, a 0,38 (`state-disabled-content`), em `on-surface-variant` (em `on-surface` no tonal); o outlined tem o contorno a 0,1; o elevated perde a sombra.
+
+**Estado de interação (campo `interaction`)**
+
+O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que os `*ButtonTokens.kt` do commit definem para o botão: `hovered`, `focused` e `pressed` (não há `Dragged*` nos tokens do botão, então não há `dragged`).
+
+- **Camada de estado:** o nó `estado` é um `rect` da forma do botão (`corner-full`), entre o contorno e o conteúdo, com a cor do conteúdo do estilo (`on-primary` no filled, `on-secondary-container` no tonal, `primary` no elevated e no text, `on-surface-variant` no outlined; as `*ButtonTokens.kt` repetem a cor do conteúdo em `Hovered*`, `Focused*` e `Pressed*`) e `opacity` pelos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- **Elevação por estado** (`$if` sobre o `interaction` na sombra do contêiner, `FilledButtonTokens.kt`, `FilledTonalButtonTokens.kt` e `ElevatedButtonTokens.kt`, linhas `*ContainerElevation`): filled e tonal sobem para o nível 1 com o mouse (`HoveredContainerElevation`) e ficam no 0 no foco e pressionado; o elevated vai de 1 para 2 com o mouse e fica em 1 no foco e pressionado; outlined e text não têm sombra.
+- **Desabilitado vence:** com `enabled` `false` o nó `estado` fica invisível e a elevação some, então o desenho é o do desabilitado, qualquer que seja o `interaction`.
+- **Cor do contorno** (outlined): `OutlineVariant` nos três estados, igual ao padrão.
 
 **O que ainda difere do Compose**
 
-- Sem estados de pressionado, foco e passar o mouse (o desenho é estático) e sem a forma `pressed` do Material expressivo.
-- A sombra tem y e blur literais (1 e 2, os valores de `elevation-1-y` e `elevation-1-blur`): o `shadow` do formato só aceita número literal, não `$token`.
-- O desabilitado de 0,1 no filled e no elevated é literal no componente: o token `state-disabled-container` vale 0,12 (o do tonal).
+- Sem a forma `pressed` do Material expressivo, sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O anel de foco por fora do botão não é desenhado: a raiz recorta (#896).
+- A sombra tem y e blur literais (1 e 2, os de `elevation-1-y` e `elevation-1-blur`; no nível 2 do elevated com o mouse, 2 e 6, os de `elevation-2-*`): o `shadow` do formato só aceita número literal, não `$token`. Por isso a sombra do nível 2 é de um nó à parte (`sombra elevada`), visível só no elevated com o mouse sobre.
 - O rótulo longo quebra em linhas; o botão do Compose também, mas aqui a altura de 40 do `sizing` não cresce com as linhas.
 - `ButtonDefaults.shape` é redondo; o `shape` trocável e o `contentPadding` próprio de uma chamada não são campos do tipo.

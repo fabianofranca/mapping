@@ -3,7 +3,7 @@
   "formatVersion": 15,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 3,
+  "version": 4,
   "description": "Material Design 3 (baseline, tema claro e escuro) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
   "platforms": [
     {
@@ -337,6 +337,12 @@
       },
       "state-disabled-content": 0.38,
       "state-disabled-container": 0.12,
+      "state-disabled-container-filled": 0.1,
+      "state-hover": 0.08,
+      "state-focus": 0.1,
+      "state-pressed": 0.1,
+      "state-dragged": 0.16,
+      "corner-checkbox": 2,
       "font-sans": "Roboto, sans-serif"
     }
   },
@@ -3185,6 +3191,14 @@
               "description": "false desabilita o botão."
             },
             {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence)."
+            },
+            {
               "key": "icon",
               "label": "Ícone",
               "type": "string",
@@ -3428,6 +3442,22 @@
                 "style": "tonal",
                 "icon": "Add"
               }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": { "label": "Salvar", "style": "filled", "interaction": "hovered" }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "label": "Salvar",
+                "style": "elevated",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": { "label": "Salvar", "style": "tonal", "interaction": "pressed" }
             }
           ]
         },
@@ -7145,7 +7175,7 @@
               "key": "steps",
               "label": "Passos",
               "type": "number",
-              "description": "Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 5 e 9."
+              "description": "Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 9; de 10 em diante desenha como 9."
             },
             {
               "key": "enabled",
@@ -7985,7 +8015,7 @@
               "type": "enum",
               "default": "false",
               "options": ["true", "false"],
-              "description": "true põe a ação abaixo da mensagem, para textos longos (a altura do retângulo passa de 48 para 68)."
+              "description": "true põe a ação abaixo da mensagem, para textos longos (com uma linha de texto a altura do retângulo passa de 48 para 92; os 68 são a linha única de duas linhas)."
             }
           ],
           "code": {
@@ -10470,7 +10500,7 @@
                 "primary-scrollable",
                 "secondary-scrollable"
               ],
-              "description": "primary (indicador de 3 no tamanho do rótulo), secondary (indicador de 2 na largura da aba) ou a versão rolável de cada um (abas com a largura do conteúdo, no mínimo 90, e recuo inicial de 52)."
+              "description": "primary (indicador de 3 no tamanho do rótulo), secondary (indicador de 3 na largura da aba) ou a versão rolável de cada um (abas com a largura do conteúdo, no mínimo 90, e recuo inicial de 52)."
             },
             {
               "key": "iconPosition",

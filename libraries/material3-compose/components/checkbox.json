@@ -50,7 +50,7 @@
                 "name": "caixa",
                 "width": 20,
                 "height": 20,
-                "cornerRadius": 2,
+                "cornerRadius": { "$token": "corner-checkbox" },
                 "fill": {
                   "$if": {
                     "$or": [

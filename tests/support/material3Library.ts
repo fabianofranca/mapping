@@ -129,3 +129,51 @@ export const MIGRATED = [
   'pull-to-refresh',
   'swipe-to-dismiss',
 ];
+
+type Raw = { key?: string; description?: string; values?: Record<string, unknown> };
+
+/** Descrições de campo que a etapa Material 3 com estados (#869, ME1) corrigiu em relação à v1 (decisão 10). */
+const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
+  slider: {
+    steps:
+      'Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 9; de 10 em diante desenha como 9.',
+  },
+  tabs: {
+    style:
+      'primary (indicador de 3 no tamanho do rótulo), secondary (indicador de 3 na largura da aba) ou a versão rolável de cada um (abas com a largura do conteúdo, no mínimo 90, e recuo inicial de 52).',
+  },
+  snackbar: {
+    actionOnNewLine:
+      'true põe a ação abaixo da mensagem, para textos longos (com uma linha de texto a altura do retângulo passa de 48 para 92; os 68 são a linha única de duas linhas).',
+  },
+};
+
+/**
+ * Os campos e os exemplos de um tipo iguais aos da v1, mais o que a etapa Material 3 com estados acrescentou:
+ * o campo `interaction` e os exemplos com `interaction` (cada fase que dá o campo a um tipo), e as descrições
+ * corrigidas de `V1_DESCRIPTION_FIXES`. Devolve o que se espera de `fields` e `examples` agora.
+ */
+export function v1WithEstados(
+  id: string,
+  nowType: unknown,
+  beforeType: unknown,
+): { fields: unknown; examples: unknown } {
+  const now = nowType as { fields: Raw[]; examples?: Raw[] };
+  const before = beforeType as { fields: Raw[]; examples?: Raw[] };
+  const fixes = V1_DESCRIPTION_FIXES[id] ?? {};
+  const base = before.fields.map((f) =>
+    f.key !== undefined && fixes[f.key] !== undefined
+      ? { ...f, description: fixes[f.key] }
+      : f,
+  );
+  const hasInteraction = now.fields.some((f) => f.key === 'interaction');
+  const field = now.fields.find((f) => f.key === 'interaction');
+  const insertAt = now.fields.findIndex((f) => f.key === 'interaction');
+  const fields = hasInteraction
+    ? [...base.slice(0, insertAt), field, ...base.slice(insertAt)]
+    : base;
+  const stateExamples = (now.examples ?? []).filter(
+    (e) => e.values?.interaction !== undefined,
+  );
+  return { fields, examples: [...(before.examples ?? []), ...stateExamples] };
+}

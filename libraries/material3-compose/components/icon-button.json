@@ -66,7 +66,7 @@
           "$if": {
             "$eq": ["enabled", "false"]
           },
-          "then": 0.1,
+          "then": { "$token": "state-disabled-container-filled" },
           "else": 1
         },
         "cornerRadius": {
