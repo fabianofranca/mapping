@@ -46,6 +46,7 @@ import {
   type ViewFrame,
 } from './frame';
 import { arrowShape, visibleArrowShapes, type ArrowShape } from './arrowGeometry';
+import { EMPTY_DRAG, dragSetOf, mergeDrag, type DragSet } from './dragSet';
 import { ComponentLayerRenderer } from './components/componentLayer';
 import { konvaMeasurer } from './components/konvaMeasurer';
 import {
@@ -192,6 +193,23 @@ export class CanvasController {
   };
   /** Camadas que algum renderizador mexeu no quadro em andamento (zeradas ao desenhar). */
   private readonly dirty = new Set<Konva.Layer>();
+  /**
+   * Grupo de arrasto (decisões 5 a 7): no fundo da camada de sobreposições, leva os nós do que se
+   * move num gesto, cada pilha no seu subgrupo e na ordem de desenho de sempre. O palco continua
+   * com 5 camadas.
+   */
+  private readonly dragRoot: Konva.Group;
+  private readonly dragGroups: {
+    readonly images: Konva.Group;
+    readonly components: Konva.Group;
+    readonly arrows: Konva.Group;
+    readonly markings: Konva.Group;
+    readonly floatingComponents: Konva.Group;
+    readonly floating: Konva.Group;
+  };
+  /** O que se move no gesto em andamento (só cresce até soltar) e o projeto desenhado de antes dele. */
+  private drag: DragSet = EMPTY_DRAG;
+  private dragBase: Project | null = null;
   private componentLayer: ComponentLayerRenderer;
   /**
    * Desenhos das marcações flutuantes (v13): camada acima das marcações, para ficarem sobre
@@ -501,6 +519,24 @@ export class CanvasController {
     overlayLayer.add(arrivalGroup);
     arrivalGroup.moveToBottom();
     this.arrivalLayer = new ArrivalRenderer(arrivalGroup);
+    // O grupo de arrasto fica por baixo de tudo da camada (faixa de chegada, marcas da revisão,
+    // pinos e alças); ao soltar, os nós voltam às camadas de onde saíram.
+    this.dragRoot = new Konva.Group({ listening: false, name: 'drag' });
+    const dragGroup = () => {
+      const group = new Konva.Group({ listening: false });
+      this.dragRoot.add(group);
+      return group;
+    };
+    this.dragGroups = {
+      images: dragGroup(),
+      components: dragGroup(),
+      arrows: dragGroup(),
+      markings: dragGroup(),
+      floatingComponents: dragGroup(),
+      floating: dragGroup(),
+    };
+    overlayLayer.add(this.dragRoot);
+    this.dragRoot.moveToBottom();
 
     this.view = new ViewportController(container, () => this.drawnProject.peek());
     const space = watchSpaceKey(() => this.pointer.updateCursor(null));
@@ -542,6 +578,11 @@ export class CanvasController {
       // O effect só agenda: várias mudanças no mesmo quadro geram um desenho só.
       effect(() => {
         void this.frame.value;
+        this.requestRender();
+      }),
+      // Soltar sem mudar nada não muda o quadro, mas os nós do grupo de arrasto precisam voltar.
+      effect(() => {
+        void this.store.gestureActive.value;
         this.requestRender();
       }),
       // Espelha o viewport para a interface (barra de status, minimapa, campo de zoom).
@@ -814,6 +855,8 @@ export class CanvasController {
     this.drawn = frame;
     const { size, viewport: v } = frame;
     const scaleChanged = last?.viewport.scale !== v.scale;
+    // Levar ou devolver nós ao grupo de arrasto: todos os renderizadores passam pelo quadro.
+    const dragChanged = this.syncDrag(frame, last);
 
     this.stage.size({ width: Math.max(1, size.width), height: Math.max(1, size.height) });
     // Posição e escala numa chamada só: o Konva agrupa os atributos de transformação numa
@@ -826,9 +869,10 @@ export class CanvasController {
     this.refreshRemoteImages();
 
     let placementsChanged = last === null;
-    if (scaleChanged || !sameFrame(last, frame, IMAGE_KEYS)) {
+    if (scaleChanged || dragChanged || !sameFrame(last, frame, IMAGE_KEYS)) {
       const next = this.images.render(frame);
       this.mark(this.layers.images, this.images.changed);
+      this.mark(this.layers.overlay, this.images.draggedChanged);
       placementsChanged ||= !samePlacements(this.placements, next);
       this.placements = next;
       this.readyImages =
@@ -838,7 +882,7 @@ export class CanvasController {
     }
     // Os desenhos dos componentes só se refazem quando eles, o conjunto visível, as posições
     // das imagens ou o tema mudam: pan e zoom não passam por aqui.
-    if (placementsChanged || !sameFrame(last, frame, COMPONENT_KEYS)) {
+    if (placementsChanged || dragChanged || !sameFrame(last, frame, COMPONENT_KEYS)) {
       this.renderComponents(frame);
     }
     // Os desenhos em pixels de tela (`screen`) só reajustam escala e posição com o zoom.
@@ -847,14 +891,20 @@ export class CanvasController {
       this.mark(this.layers.floating, this.floatingLayer.setZoom(v.scale));
     }
     // As setas só se refazem com elas, o tema ou o zoom (a espessura e a ponta são de tela).
-    if (scaleChanged || !sameFrame(last, frame, ARROW_KEYS)) {
-      this.dirty.add(this.layers.markings);
-      this.arrows.render(frame);
-      this.drawnArrows = this.arrows.size;
+    if (scaleChanged || dragChanged || !sameFrame(last, frame, ARROW_KEYS)) {
+      const changes = this.arrows.render(frame);
+      this.mark(this.layers.markings, changes.main);
+      this.mark(this.layers.overlay, changes.drag);
+      this.drawnArrows = this.arrows.size + this.arrows.liftedDrawn.length;
     }
     const marked = this.markings.render(frame, this.placements);
     this.mark(this.layers.markings, marked.main);
     this.mark(this.layers.floating, marked.floating);
+    this.mark(this.layers.overlay, marked.drag);
+    // Os desenhos de componente que se movem também ficam no grupo de arrasto.
+    this.mark(this.layers.overlay, this.componentLayer.takeDragChanged());
+    this.mark(this.layers.overlay, this.floatingLayer.takeDragChanged());
+    if (this.drag !== EMPTY_DRAG && this.dragRoot.zIndex() !== 0) this.dragRoot.zIndex(0);
     this.renderOverlayMarks(frame, last, moved || placementsChanged);
     // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela;
     // e desvia do rótulo do pai, que muda com o zoom semântico e as camadas visíveis.
@@ -898,6 +948,47 @@ export class CanvasController {
       host.dataset.pins = String(pins);
       host.dataset.pinStates = pinStates;
     }
+  }
+
+  /**
+   * Gesto em andamento: o que a prévia move (comparada ao projeto desenhado de antes do gesto) vai
+   * para o grupo de arrasto; ao soltar ou cancelar, tudo volta. Devolve `true` quando o conjunto
+   * mudou (levou nós novos ou devolveu todos), para o quadro passar por todos os renderizadores.
+   * O pertencimento e a posição final continuam do modelo: aqui só se decide onde o nó fica.
+   */
+  private syncDrag(frame: Frame, last: Frame | null): boolean {
+    if (!this.store.gestureActive.peek()) {
+      this.dragBase = null;
+      if (this.drag === EMPTY_DRAG) return false;
+      this.drag = EMPTY_DRAG;
+      this.applyDrag(EMPTY_DRAG);
+      return true;
+    }
+    this.dragBase ??= last?.project ?? frame.project;
+    const found = dragSetOf(
+      this.dragBase,
+      frame.project,
+      frame.preview?.containerId ?? null,
+    );
+    const next = mergeDrag(this.drag, found);
+    if (next === this.drag) return false;
+    this.drag = next;
+    this.applyDrag(next);
+    return true;
+  }
+
+  /** Diz a cada renderizador quais nós ficam no grupo de arrasto (o conjunto vazio devolve tudo). */
+  private applyDrag(set: DragSet): void {
+    const on = set !== EMPTY_DRAG;
+    const groups = this.dragGroups;
+    this.images.setDragged(on ? set.containers : null, groups.images);
+    this.componentLayer.setDragged(on ? set.markings : null, groups.components);
+    this.floatingLayer.setDragged(on ? set.markings : null, groups.floatingComponents);
+    this.markings.setDragged(on ? set.markings : null, {
+      main: groups.markings,
+      floating: groups.floating,
+    });
+    this.arrows.setDragged(on ? set.arrows : null, groups.arrows);
   }
 
   /** Suja a camada se o renderizador mexeu em algum nó dela. */
@@ -967,6 +1058,7 @@ export class CanvasController {
       this.componentPalette = frame.tokens.component;
       this.componentLayer = this.newComponentLayer(this.componentGroup);
       this.floatingLayer = this.newComponentLayer(this.floatingDrawings);
+      this.applyDrag(this.drag);
     }
     const { drawn, floating } = frame;
     const zoom = frame.viewport.scale;

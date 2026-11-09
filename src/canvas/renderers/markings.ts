@@ -77,6 +77,14 @@ export interface MarkingNode {
 export interface MarkingChanges {
   main: boolean;
   floating: boolean;
+  /** Algum nó levado ao grupo de arrasto mudou (a camada de sobreposições se redesenha). */
+  drag: boolean;
+}
+
+/** Onde os nós das marcações que se movem num gesto ficam: um grupo para cada pilha. */
+export interface DragTargets {
+  readonly main: Konva.Container;
+  readonly floating: Konva.Container;
 }
 
 export type MarkingFrame = Pick<
@@ -168,10 +176,40 @@ export class MarkingRenderer {
   private readonly layer: Konva.Container;
   private readonly floatingParent: Konva.Container;
   private readonly nodes = new Map<string, MarkingNode>();
+  /** As marcações que se movem num gesto e onde elas ficam até soltar (decisões 5 e 6). */
+  private dragIds: ReadonlySet<string> | null = null;
+  private dragTargets: DragTargets | null = null;
 
   constructor(layer: Konva.Container, floatingParent: Konva.Container = layer) {
     this.layer = layer;
     this.floatingParent = floatingParent;
+  }
+
+  /**
+   * Leva as marcações de `ids` para os grupos de arrasto no próximo `render` (os nós são os mesmos,
+   * movidos com `moveTo`), ou as devolve às pilhas de sempre com `null`. Nenhum nó é clonado: o
+   * `render` de sempre continua atualizando cada um onde ele estiver.
+   */
+  setDragged(ids: ReadonlySet<string> | null, targets: DragTargets): void {
+    this.dragIds = ids && ids.size > 0 ? ids : null;
+    this.dragTargets = targets;
+  }
+
+  /** O pai do nó: o grupo de arrasto, se ele se move, senão a pilha de sempre. */
+  private parentFor(id: string, floating: boolean): Konva.Container {
+    const targets = this.dragTargets;
+    if (targets && this.dragIds?.has(id))
+      return floating ? targets.floating : targets.main;
+    return floating ? this.floatingParent : this.layer;
+  }
+
+  /** Qual pilha o pai é: marca no `changes` a camada (ou o grupo de arrasto) que ele mexe. */
+  private touchParent(changes: MarkingChanges, parent: Konva.Container | null): void {
+    const targets = this.dragTargets;
+    if (targets && (parent === targets.main || parent === targets.floating)) {
+      changes.drag = true;
+    } else if (parent === this.floatingParent) changes.floating = true;
+    else changes.main = true;
   }
 
   /**
@@ -193,9 +231,12 @@ export class MarkingRenderer {
     frame: MarkingFrame,
     placements: ReadonlyMap<string, Placement>,
   ): MarkingChanges {
-    const changes: MarkingChanges = { main: false, floating: false };
+    const changes: MarkingChanges = { main: false, floating: false, drag: false };
+    // O nó que se move num gesto está num grupo de arrasto: mexer nele redesenha só esse grupo.
+    let dragged = false;
     const touch = (floating: boolean) => {
-      if (floating) changes.floating = true;
+      if (dragged) changes.drag = true;
+      else if (floating) changes.floating = true;
       else changes.main = true;
     };
     const { project, selection, incomplete, tokens, review, drawn } = frame;
@@ -216,14 +257,15 @@ export class MarkingRenderer {
       const placement = placementOfSpace(placements, marking.containerId);
       if (!placement) continue;
       seen.add(marking.id);
+      dragged = this.dragIds?.has(marking.id) ?? false;
       let node = this.nodes.get(marking.id);
       if (!node) {
         node = this.createNode(marking.id);
         touch(marking.floating);
       }
-      const parent = marking.floating ? this.floatingParent : this.layer;
+      const parent = this.parentFor(marking.id, marking.floating);
       if (node.group.getParent() !== parent) {
-        touch(node.group.getParent() === this.floatingParent);
+        this.touchParent(changes, node.group.getParent());
         touch(marking.floating);
         node.group.moveTo(parent);
       }
@@ -255,11 +297,14 @@ export class MarkingRenderer {
         node.group.visible(onScreen);
         touch(marking.floating);
       }
-      // Reordenar custa caro no Konva: só quando a posição na pilha mudou.
-      const position = marking.floating ? floatingIndex++ : index++;
-      if (node.group.zIndex() !== position) {
-        node.group.zIndex(position);
-        touch(marking.floating);
+      // Reordenar custa caro no Konva: só quando a posição na pilha mudou. O nó no grupo de arrasto
+      // fica na ordem em que chegou (a de cima para baixo), e não conta na pilha de onde saiu.
+      if (!dragged) {
+        const position = marking.floating ? floatingIndex++ : index++;
+        if (node.group.zIndex() !== position) {
+          node.group.zIndex(position);
+          touch(marking.floating);
+        }
       }
       if (!onScreen) continue;
       // Cor da borda escolhida para a imagem (sem escolha, `cv-line`); a marcação do canvas não
@@ -368,7 +413,7 @@ export class MarkingRenderer {
     }
     for (const [id, node] of this.nodes) {
       if (seen.has(id)) continue;
-      touch(node.group.getParent() === this.floatingParent);
+      this.touchParent(changes, node.group.getParent());
       node.group.destroy();
       this.nodes.delete(id);
     }
