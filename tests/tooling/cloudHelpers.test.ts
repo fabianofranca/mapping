@@ -59,6 +59,9 @@ const EXPECTED_EXPORTS = [
   'temposFromDir',
   'temposFromLog',
   'formatTempos',
+  'formatHelp',
+  'HELP',
+  'runStep',
   'waitForWindow',
   'windowShortcut',
 ].sort();
@@ -516,7 +519,7 @@ describe('ambiente e aba dos auxiliares (etapa #421, TS1, decisões 3 e 4)', () 
     const { loadEnv } = await import('../../scripts/testing/cloud.mjs');
     const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-env-'));
     try {
-      writeFileSync(path.join(dir, 'env'), ENV_LINE);
+      writeFileSync(path.join(dir, 'env.sh'), ENV_LINE);
       const env: Record<string, string | undefined> = { DISPLAY: ':7' };
       loadEnv(dir, env);
       expect(env.DISPLAY).toBe(':7');
@@ -535,7 +538,9 @@ describe('ambiente e aba dos auxiliares (etapa #421, TS1, decisões 3 e 4)', () 
     const { loadEnv } = await import('../../scripts/testing/cloud.mjs');
     const dir = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-env-'));
     try {
-      expect(() => loadEnv(dir, {})).toThrow('apoio/env não existe: rode o cloud-up.sh');
+      expect(() => loadEnv(dir, {})).toThrow(
+        'apoio/env.sh não existe: rode o cloud-up.sh',
+      );
       expect(() => loadEnv(dir, { DISPLAY: ':1' })).not.toThrow();
     } finally {
       rmSync(dir, { recursive: true, force: true });
@@ -937,5 +942,152 @@ describe('cloud.mjs sem APOIO exportado (RB1, decisão 3)', () => {
     const none = run(['mark', 'R1', 'start']);
     expect(none.status).toBe(2);
     expect(none.stderr).toMatch(/APOIO/);
+  });
+});
+
+// Etapa #1148 (TR1, decisões 1 a 3): `cloud.mjs run`, `--prazo` e `help`.
+describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
+  let apoio: string;
+
+  afterEach(() => {
+    if (apoio) rmSync(apoio, { recursive: true, force: true });
+  });
+
+  const fakePage = {
+    evaluate: async () => ({
+      title: 'Mapping',
+      url: 'http://localhost:8080/',
+      dialogs: [],
+      notices: [],
+      saveStatus: null,
+      focus: null,
+    }),
+  };
+  const fakeConnect = async () => ({
+    browser: { close: async () => {} },
+    page: fakePage,
+  });
+
+  function capture() {
+    const out: string[] = [];
+    const err: string[] = [];
+    return {
+      out,
+      err,
+      io: { log: (m: string) => out.push(m), error: (m: string) => err.push(m) },
+    };
+  }
+
+  it('run: o corpo vê page, browser, apoioDir, projectDir e os exports; imprime o state() e sai 0', async () => {
+    apoio = mkdtempSync(path.join(tmpdir(), 'mapping-run-'));
+    process.env.DISPLAY ??= ':99';
+    const mod = await import('../../scripts/testing/cloud.mjs');
+    const c = capture();
+    const code = await mod.runStep(
+      `globalThis.__runSeen = ([typeof page.evaluate, typeof browser.close, apoioDir === ${JSON.stringify(apoio)}, projectDir, typeof formatState, typeof ponto, typeof settleLike].join('|'))`,
+      { apoioDir: apoio, connectFn: fakeConnect, io: c.io },
+    );
+    expect(code).toBe(0);
+    // `typeof settleLike` é undefined: só os exports reais estão em escopo.
+    const logged = String((globalThis as { __runSeen?: string }).__runSeen);
+    expect(logged).toMatch(/function\|function\|true\|\|function\|function\|/);
+    expect(c.out.join('\n')).toContain('Mapping');
+  });
+
+  it('run: erro no corpo imprime a mensagem e o estado e sai 1', async () => {
+    apoio = mkdtempSync(path.join(tmpdir(), 'mapping-run-'));
+    process.env.DISPLAY ??= ':99';
+    const mod = await import('../../scripts/testing/cloud.mjs');
+    const c = capture();
+    const code = await mod.runStep(`throw new Error('deu ruim no passo')`, {
+      apoioDir: apoio,
+      connectFn: fakeConnect,
+      io: c.io,
+    });
+    expect(code).toBe(1);
+    expect(c.err.join('\n')).toContain('deu ruim no passo');
+    expect(c.out.join('\n')).toContain('Mapping');
+  });
+
+  it('run --prazo: script preso sai 124 com "prazo de <n> s esgotado no passo"', async () => {
+    apoio = mkdtempSync(path.join(tmpdir(), 'mapping-run-'));
+    process.env.DISPLAY ??= ':99';
+    const mod = await import('../../scripts/testing/cloud.mjs');
+    const c = capture();
+    const code = await mod.runStep(`await new Promise(() => {})`, {
+      apoioDir: apoio,
+      connectFn: fakeConnect,
+      prazoSeconds: 0.05,
+      io: c.io,
+    });
+    expect(code).toBe(124);
+    expect(c.err.join('\n')).toContain('prazo de 0.05 s esgotado no passo');
+    expect(c.out.join('\n')).toContain('Mapping');
+  });
+
+  it('run pela CLI sem corpo na entrada falha com o uso', () => {
+    const r = spawnSync('node', ['scripts/testing/cloud.mjs', 'run'], {
+      input: '',
+      encoding: 'utf8',
+      env: { ...process.env, APOIO: tmpdir() },
+    });
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/Uso: .*cloud\.mjs run/);
+  });
+
+  it('help lista todo export (tabela única) e o cloud.d.mts declara os mesmos nomes', async () => {
+    const mod: Record<string, unknown> = await import('../../scripts/testing/cloud.mjs');
+    const help = mod.HELP as Record<string, { sig: string; desc: string }>;
+    const names = Object.keys(mod).sort();
+    expect(Object.keys(help).sort()).toEqual(names);
+    for (const name of names) {
+      expect(help[name]?.desc, name).toMatch(/\S/);
+    }
+    const r = spawnSync('node', ['scripts/testing/cloud.mjs', 'help'], {
+      encoding: 'utf8',
+    });
+    expect(r.status).toBe(0);
+    for (const name of names) expect(r.stdout, name).toContain(name);
+    for (const cmd of ['mark', 'state', 'tempos', 'ponto', 'run', 'help']) {
+      expect(r.stdout, cmd).toMatch(new RegExp(`cloud\\.mjs ${cmd}\\b`));
+    }
+    const dts = read('scripts/testing/cloud.d.mts');
+    const declared = [
+      ...dts.matchAll(/^export (?:async )?(?:function|const|interface) (\w+)/gm),
+    ]
+      .map((m) => m[1] ?? '')
+      .filter(
+        (n) =>
+          ![
+            'ConnectOptions',
+            'X11Window',
+            'PageInfo',
+            'TesterState',
+            'TempoItem',
+            'HelpEntry',
+            'Tempos',
+          ].includes(n),
+      );
+    expect(declared.sort()).toEqual(names);
+  });
+});
+
+// Etapa #1148 (TR1, decisões 4 e 5): `env.sh` e o log do build.
+describe('cloud-up.sh: env.sh e build.log (etapa #1148, TR1)', () => {
+  it('grava e lê apoio/env.sh (sem o nome antigo)', () => {
+    const up = read(CLOUD_UP);
+    expect(up).toContain('"$S/env.sh"');
+    expect(up).not.toMatch(/\$S\/env["\s]/);
+    expect(read(CLOUD_MJS)).toContain("'env.sh'");
+    expect(read(CLOUD_MJS)).not.toMatch(/apoio\/env\b(?!\.sh)/);
+  });
+
+  it('manda npm ci, build e build:mcp para apoio/build.log e mostra as últimas 40 linhas ao falhar', () => {
+    const up = read(CLOUD_UP);
+    expect(up).toContain('build.log');
+    expect(up).toMatch(/tail -n 40/);
+    for (const cmd of ['npm ci', 'npm run build', 'npm run build:mcp']) {
+      expect(up, cmd).toMatch(new RegExp(`run_logged ${cmd}`));
+    }
   });
 });

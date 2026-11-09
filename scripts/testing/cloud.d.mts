@@ -162,3 +162,20 @@ export function ponto(
   y: number,
   options?: { perspective?: string; marking?: boolean },
 ): Promise<{ x: number; y: number }>;
+
+export interface HelpEntry {
+  sig: string;
+  desc: string;
+}
+export const HELP: Record<string, HelpEntry>;
+export function formatHelp(): string;
+export function runStep(
+  body: string,
+  options?: {
+    apoioDir?: string;
+    projectDir?: string;
+    prazoSeconds?: number;
+    connectFn?: (apoioDir?: string) => Promise<{ browser: unknown; page: unknown }>;
+    io?: { log: (message: string) => void; error: (message: string) => void };
+  },
+): Promise<number>;

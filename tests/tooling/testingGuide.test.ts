@@ -826,6 +826,16 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
     expect(howTo).toContain('{ timeout }');
   });
 
+  it('todo script de passo vai pelo cloud.mjs run, com exemplo de heredoc, e a lista inclui run e help (#1148, decisão 6)', () => {
+    expect(howTo).toContain('cloud.mjs run');
+    expect(howTo).toContain("<<'JS'");
+    expect(howTo).toMatch(/`run`, `help`, `connect`/);
+    expect(howTo).toMatch(/O que atrapalhou/);
+    expect(guide).toContain("<<'JS'");
+    expect(cloud).toContain('apoio/env.sh');
+    expect(`${cloud}${guide}`).not.toMatch(/apoio\/env\b(?!\.sh)/);
+  });
+
   it('o aviso ao coordenador usa o send_message do claude-code-remote, não o SendMessage', () => {
     expect(cloud).toMatch(/`send_message`[^\n]*claude-code-remote/);
     expect(cloud).toMatch(/n[ãa]o o `SendMessage`/);
@@ -847,14 +857,14 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
       appendixA.indexOf('**Receita 4 (nuvem), a página'),
       appendixA.indexOf('**Receita 5 (nuvem), seletor'),
     );
-    expect(recipe4).toContain('apoio/env');
+    expect(recipe4).toContain('apoio/env.sh');
     expect(recipe4).toMatch(/5 s/);
     expect(recipe4).toContain('state(');
     const recipe2 = appendixA.slice(
       appendixA.indexOf('**Receita 2 (nuvem)'),
       appendixA.indexOf('**Receita 3 (nuvem)'),
     );
-    expect(recipe2).toMatch(/source "\$S\/env"[^\n]*(xdotool|shell)/);
+    expect(recipe2).toMatch(/source "\$S\/env\.sh"[^\n]*(xdotool|shell)/);
     expect(recipe2).toMatch(/auxiliares/);
   });
 

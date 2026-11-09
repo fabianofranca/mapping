@@ -9,6 +9,8 @@
 //   node scripts/testing/cloud.mjs mark <roteiro> <start|end>   (o cloud-up.sh chama)
 //   node scripts/testing/cloud.mjs tempos <apoio>               (duração por roteiro, do tempos.log)
 //   node scripts/testing/cloud.mjs state [<pasta-do-projeto>]    (conecta, imprime o estado, sai)
+//   node scripts/testing/cloud.mjs run [<pasta-do-projeto>] [--prazo=<s>] < corpo.js   (corpo do passo pela entrada padrão)
+//   node scripts/testing/cloud.mjs help                          (comandos e exports, da tabela HELP)
 //
 // Pasta de apoio: toda função que precisa de disco recebe `apoioDir` (a pasta `apoio/` da
 // pasta de trabalho da rodada, docs/TESTING-NUVEM.md item 3) como argumento explícito; a CLI
@@ -34,7 +36,7 @@ const execFileAsync = promisify(execFile);
 const HEADLESS_CHROMIUM = '/opt/pw-browsers/chromium';
 
 /**
- * Lê o formato que o `cloud-up.sh` grava em `apoio/env` (`export A=1 B=2`, uma ou mais linhas;
+ * Lê o formato que o `cloud-up.sh` grava em `apoio/env.sh` (`export A=1 B=2`, uma ou mais linhas;
  * aspas simples ou duplas em volta do valor são tiradas). Pura.
  */
 export function parseEnvFile(text) {
@@ -53,18 +55,18 @@ export function parseEnvFile(text) {
 
 /**
  * Carrega o ambiente da rodada (`DISPLAY`, `DBUS_SESSION_BUS_ADDRESS`, `APOIO`) de
- * `<apoioDir>/env`, preenchendo só o que falta em `env` (padrão `process.env`). Sem o arquivo e
- * sem `DISPLAY`, lança. O script do passo não precisa mais de `source apoio/env`.
+ * `<apoioDir>/env.sh`, preenchendo só o que falta em `env` (padrão `process.env`). Sem o arquivo e
+ * sem `DISPLAY`, lança. O script do passo não precisa mais de `source apoio/env.sh`.
  */
 export function loadEnv(apoioDir, env = process.env) {
-  const file = path.join(apoioDir, 'env');
+  const file = path.join(apoioDir, 'env.sh');
   if (fs.existsSync(file)) {
     const values = parseEnvFile(fs.readFileSync(file, 'utf8'));
     for (const key of ['DISPLAY', 'DBUS_SESSION_BUS_ADDRESS']) {
       if (!env[key] && values[key]) env[key] = values[key];
     }
   } else if (!env.DISPLAY) {
-    throw new Error('apoio/env não existe: rode o cloud-up.sh');
+    throw new Error('apoio/env.sh não existe: rode o cloud-up.sh');
   }
   if (!env.APOIO) env.APOIO = apoioDir;
   return env;
@@ -1061,6 +1063,254 @@ export function defaultApoioDir(home = os.homedir()) {
   return dirs[0]?.dir ?? null;
 }
 
+/** Prazo padrão (s) do `cloud.mjs run`: abaixo dos 120 s padrão do Bash (etapa #1148, decisão 2). */
+const RUN_DEADLINE_SECONDS = 90;
+
+/**
+ * Executa o corpo de um script de passo (etapa #1148, decisão 1): conecta (`connectFn`, padrão
+ * `connect`), roda `body` como corpo de uma função assíncrona com `page`, `browser`, `apoioDir`,
+ * `projectDir` e todos os exports deste módulo em escopo, e imprime `formatState(...)` no fim.
+ * Devolve o código de saída (0 sucesso, 1 erro, 124 prazo esgotado); quem chama faz o `process.exit`.
+ * Em erro ou prazo imprime a mensagem (`io.error`) e o estado, se a conexão ainda responder.
+ */
+export async function runStep(
+  body,
+  {
+    apoioDir,
+    projectDir,
+    prazoSeconds = RUN_DEADLINE_SECONDS,
+    connectFn = connect,
+    io = { log: console.log, error: console.error },
+  } = {},
+) {
+  const { browser, page } = await connectFn(apoioDir);
+  const printState = async () => {
+    try {
+      const snapshot = await Promise.race([
+        state(page, apoioDir, { projectDir }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('estado')), 3000).unref(),
+        ),
+      ]);
+      io.log(formatState(snapshot));
+    } catch {
+      // Conexão sem resposta: o estado não sai.
+    }
+  };
+  let timer;
+  const deadline = new Promise((resolve) => {
+    timer = setTimeout(() => resolve('prazo'), prazoSeconds * 1000);
+  });
+  let code = 0;
+  try {
+    const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
+    const scope = { page, browser, apoioDir, projectDir, ...exportsOf() };
+    const fn = new AsyncFunction(...Object.keys(scope), body);
+    const outcome = await Promise.race([
+      fn(...Object.values(scope)).then(() => 'ok'),
+      deadline,
+    ]);
+    if (outcome === 'prazo') {
+      io.error(`prazo de ${prazoSeconds} s esgotado no passo`);
+      code = 124;
+    }
+  } catch (error) {
+    io.error(error instanceof Error ? error.message : String(error));
+    code = 1;
+  } finally {
+    clearTimeout(timer);
+  }
+  await printState();
+  return code;
+}
+
+/** Os exports de função e valor deste módulo (menos o próprio `runStep`), para o escopo do corpo. */
+function exportsOf() {
+  return {
+    connect,
+    connectGuide,
+    clickNoWait,
+    OPEN_DIALOG_TITLES,
+    pickAutocompletePopup,
+    openButtonPoints,
+    pickAppPage,
+    parseEnvFile,
+    loadEnv,
+    diffJson,
+    formatState,
+    state,
+    waitForWindow,
+    selectFolder,
+    openFile,
+    saveFile,
+    cancelDialog,
+    allowPermission,
+    screenshot,
+    windowShortcut,
+    makeCadastroPng,
+    mark,
+    temposFromLog,
+    temposFromDir,
+    defaultApoioDir,
+    formatTempos,
+    containerScreenPoint,
+    ponto,
+    HELP,
+    formatHelp,
+  };
+}
+
+/**
+ * Tabela única (etapa #1148, decisão 3): cada comando da CLI e cada export deste módulo, com a
+ * assinatura e uma linha de descrição. O `cloud.mjs help` imprime daqui; um teste confere que todo
+ * export está na tabela e que o `cloud.d.mts` declara os mesmos nomes.
+ */
+export const HELP = {
+  connect: {
+    sig: 'connect(apoioDir, cdpUrl?, options?)',
+    desc: 'conecta no Chrome por CDP, acha a aba da app, timeout de 5 s',
+  },
+  connectGuide: {
+    sig: 'connectGuide(apoioDir, cdpUrl?, options?)',
+    desc: 'como o connect, mas na aba do guia (/guia/)',
+  },
+  clickNoWait: {
+    sig: 'clickNoWait(page, nome, { scope?, exact? })',
+    desc: 'clique por papel e nome sem esperar depois (abre diálogo nativo)',
+  },
+  OPEN_DIALOG_TITLES: {
+    sig: 'OPEN_DIALOG_TITLES',
+    desc: 'títulos dos seletores de arquivo/pasta do GTK',
+  },
+  pickAutocompletePopup: {
+    sig: 'pickAutocompletePopup(windows, geometryOf, dialogWindowId)',
+    desc: 'acha a lista de autocompletar do GTK',
+  },
+  openButtonPoints: {
+    sig: 'openButtonPoints(geometry)',
+    desc: 'pontos candidatos do botão Abrir do seletor',
+  },
+  pickAppPage: {
+    sig: 'pickAppPage(pages, { origin? })',
+    desc: 'escolhe a aba da app entre as abertas',
+  },
+  parseEnvFile: {
+    sig: 'parseEnvFile(texto)',
+    desc: 'lê o formato do apoio/env.sh (export A=1 B=2)',
+  },
+  loadEnv: {
+    sig: 'loadEnv(apoioDir, env?)',
+    desc: 'carrega DISPLAY e D-Bus do apoio/env.sh',
+  },
+  diffJson: {
+    sig: 'diffJson(antes, depois, { limit? })',
+    desc: 'linhas de diferença entre dois JSON',
+  },
+  formatState: { sig: 'formatState(estado)', desc: 'texto do estado (tela e disco)' },
+  state: {
+    sig: 'state(page, apoioDir, { projectDir? })',
+    desc: 'estado da tela (título, diálogos, avisos, foco, janelas) e do disco',
+  },
+  waitForWindow: {
+    sig: 'waitForWindow(nomes, { timeoutMs? })',
+    desc: 'espera um diálogo nativo pelo título',
+  },
+  selectFolder: {
+    sig: 'selectFolder(apoioDir, caminho, { timeoutMs? })',
+    desc: 'escolhe uma pasta no seletor nativo',
+  },
+  openFile: {
+    sig: 'openFile(apoioDir, caminho, { timeoutMs? })',
+    desc: 'abre um arquivo no seletor nativo',
+  },
+  saveFile: {
+    sig: 'saveFile(apoioDir, caminho, { timeoutMs? })',
+    desc: 'salva num "Salvar como" nativo',
+  },
+  cancelDialog: {
+    sig: 'cancelDialog(apoioDir, { timeoutMs? })',
+    desc: 'cancela o diálogo nativo aberto',
+  },
+  allowPermission: {
+    sig: 'allowPermission(apoioDir)',
+    desc: 'aceita o pedido de permissão do Chrome',
+  },
+  screenshot: {
+    sig: 'screenshot(apoioDir, nome)',
+    desc: 'captura de tela em apoio/anexos',
+  },
+  windowShortcut: {
+    sig: 'windowShortcut(page, n)',
+    desc: 'atalho Ctrl+Shift+N da janela de ferramenta (alterna)',
+  },
+  makeCadastroPng: {
+    sig: 'makeCadastroPng(destino)',
+    desc: 'gera a imagem de teste "Cadastro"',
+  },
+  mark: {
+    sig: 'mark(apoioDir, roteiro, "start"|"end")',
+    desc: 'marca início ou fim de um roteiro no tempos.log',
+  },
+  temposFromLog: {
+    sig: 'temposFromLog(texto)',
+    desc: 'durações por roteiro a partir do texto do tempos.log',
+  },
+  temposFromDir: {
+    sig: 'temposFromDir(apoioDir)',
+    desc: 'durações por roteiro da pasta de apoio',
+  },
+  defaultApoioDir: {
+    sig: 'defaultApoioDir(home?)',
+    desc: 'apoio/ da rodada mais recente em ~/mapping-testes',
+  },
+  formatTempos: { sig: 'formatTempos(tempos)', desc: 'texto do Tempo por roteiro' },
+  containerScreenPoint: {
+    sig: 'containerScreenPoint({ mapping, container, x, y, viewport, host, ... })',
+    desc: 'ponto de tela de um ponto em pixels do container (parte pura)',
+  },
+  ponto: {
+    sig: 'ponto(page, projectDir, container, x, y, { perspective?, marking? })',
+    desc: 'ponto de tela de um ponto do container, lendo o data-viewport',
+  },
+  runStep: {
+    sig: 'runStep(corpo, { apoioDir, projectDir?, prazoSeconds?, connectFn?, io? })',
+    desc: 'executa o corpo de um script de passo (o que o comando run usa)',
+  },
+  HELP: {
+    sig: 'HELP',
+    desc: 'esta tabela: comandos e exports com assinatura e descrição',
+  },
+  formatHelp: { sig: 'formatHelp()', desc: 'texto que o comando help imprime' },
+};
+
+/** Comandos da CLI, para o `help`. */
+const CLI_HELP = [
+  ['mark <roteiro> <start|end>', 'marca início ou fim de um roteiro no tempos.log'],
+  ['tempos [<apoio>]', 'duração por roteiro, do tempos.log'],
+  ['state [<pasta-do-projeto>]', 'conecta, imprime o estado da tela e do disco e sai'],
+  [
+    'ponto <container> <x> <y> <pasta-do-projeto> [--perspectiva=<nome>] [--marcacao]',
+    'ponto de tela de um ponto do container',
+  ],
+  [
+    'run [<pasta-do-projeto>] [--prazo=<s>]',
+    "executa o corpo do script lido da entrada padrão (heredoc <<'JS'), com page, browser, apoioDir, projectDir e os exports em escopo; imprime o estado; prazo 90 s",
+  ],
+  ['help', 'esta lista'],
+];
+
+/** Texto do `cloud.mjs help`: os comandos da CLI e a assinatura de cada export, uma linha cada. */
+export function formatHelp() {
+  const lines = ['Comandos (node scripts/testing/cloud.mjs <comando>):'];
+  for (const [usage, desc] of CLI_HELP) lines.push(`  cloud.mjs ${usage}\n      ${desc}`);
+  lines.push(
+    '',
+    'Exports (import { ... } de cloud.mjs; todos em escopo no corpo do run):',
+  );
+  for (const { sig, desc } of Object.values(HELP)) lines.push(`  ${sig}\n      ${desc}`);
+  return lines.join('\n');
+}
+
 /** `APOIO`, ou a pasta padrão com um aviso; `null` (e a explicação no stderr) se não achar. */
 function resolveApoio(explicit) {
   const apoioDir = explicit ?? process.env.APOIO;
@@ -1078,7 +1328,7 @@ function resolveApoio(explicit) {
   return null;
 }
 
-/** Roda a CLI (`mark`, `state`, `tempos` e `ponto`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
+/** Roda a CLI (`mark`, `state`, `tempos`, `ponto`, `run` e `help`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
 async function runCli(argv) {
   const [command, ...rest] = argv;
   if (command === 'mark') {
@@ -1148,6 +1398,31 @@ async function runCli(argv) {
     }
     return;
   }
+  if (command === 'help') {
+    console.log(formatHelp());
+    return;
+  }
+  if (command === 'run') {
+    const prazoArg = rest.find((a) => a.startsWith('--prazo='));
+    const prazo = prazoArg ? Number(prazoArg.slice(8)) : undefined;
+    const projectDir = rest.find((a) => !a.startsWith('--'));
+    const apoioDir = resolveApoio();
+    const usage =
+      "Uso: node cloud.mjs run [<pasta-do-projeto>] [--prazo=<s>] <<'JS' ... JS";
+    if (!apoioDir || (prazoArg && !(prazo > 0))) {
+      if (apoioDir) console.error(usage);
+      process.exitCode = 2;
+      return;
+    }
+    const body = fs.readFileSync(0, 'utf8');
+    if (!body.trim()) {
+      console.error(usage);
+      process.exitCode = 2;
+      return;
+    }
+    const code = await runStep(body, { apoioDir, projectDir, prazoSeconds: prazo });
+    process.exit(code);
+  }
   if (command === 'tempos') {
     const apoioDir = resolveApoio(rest[0]);
     if (!apoioDir) {
@@ -1159,7 +1434,7 @@ async function runCli(argv) {
     return;
   }
   console.error(
-    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto.`,
+    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto, run, help.`,
   );
   process.exitCode = 2;
 }
