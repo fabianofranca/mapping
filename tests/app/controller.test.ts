@@ -356,6 +356,38 @@ describe('projeto em pasta', () => {
     expect(root.files.has('.gitignore')).toBe(false);
   });
 
+  it('pasta que ganhou um mapping.json depois do diálogo: não grava e abre o existente', async () => {
+    const existing = serialize(emptyProject());
+    const root = folderWith({ 'mapping.json': existing, 'foto.jpg': 'x' });
+    const result = await app.createFolderProject(root, 'Novo', [
+      { path: 'foto.jpg', name: 'foto.jpg' },
+    ]);
+    expect(result).toEqual({ ok: true, value: { skipped: [], existing: true } });
+    expect(await root.files.get('mapping.json')?.text()).toBe(existing);
+    expect(root.files.has('foto.jpg')).toBe(true);
+    expect(root.files.has('.gitignore')).toBe(false);
+    const opened = await openedOf(app);
+    expect(opened.kind).toBe('folder');
+    expect(opened.session.store.project.value?.project.name).toBe('Teste');
+  });
+
+  it('mapping.json que aparece entre a importação e a gravação não é sobrescrito', async () => {
+    const existing = serialize(emptyProject());
+    const root = new MemoryDirectory('minha-pasta');
+    const getFileHandle = root.getFileHandle.bind(root);
+    let reads = 0;
+    vi.spyOn(root, 'getFileHandle').mockImplementation(async (name, options) => {
+      if (name === 'mapping.json' && !options?.create && ++reads === 2) {
+        root.files.set('mapping.json', new Blob([existing]));
+      }
+      return getFileHandle(name, options);
+    });
+    const result = await app.createFolderProject(root, 'Novo', []);
+    expect(result).toEqual({ ok: true, value: { skipped: [], existing: true } });
+    expect(await root.files.get('mapping.json')?.text()).toBe(existing);
+    expect((await openedOf(app)).session.store.project.value?.project.name).toBe('Teste');
+  });
+
   it('cria o projeto na pasta usando o nome da pasta quando o nome vem vazio', async () => {
     const root = new MemoryDirectory('minha-pasta');
     const result = await app.createFolderProject(root, ' ', []);
