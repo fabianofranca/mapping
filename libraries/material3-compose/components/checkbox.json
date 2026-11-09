@@ -46,11 +46,70 @@
             },
             "children": [
               {
+                "type": "ellipse",
+                "name": "estado",
+                "width": 40,
+                "height": 40,
+                "fill": {
+                  "$if": {
+                    "$or": [
+                      {
+                        "$eq": ["state", "checked"]
+                      },
+                      {
+                        "$eq": ["state", "indeterminate"]
+                      }
+                    ]
+                  },
+                  "then": {
+                    "$token": "primary"
+                  },
+                  "else": {
+                    "$token": "on-surface"
+                  }
+                },
+                "opacity": {
+                  "$switch": "interaction",
+                  "cases": {
+                    "hovered": {
+                      "$token": "state-hover"
+                    },
+                    "focused": {
+                      "$token": "state-focus"
+                    },
+                    "pressed": {
+                      "$token": "state-pressed"
+                    }
+                  },
+                  "default": 0
+                },
+                "visible": {
+                  "$and": [
+                    {
+                      "$not": {
+                        "$eq": ["enabled", "false"]
+                      }
+                    },
+                    {
+                      "$not": {
+                        "$eq": ["interaction", "none"]
+                      }
+                    }
+                  ]
+                },
+                "anchors": {
+                  "centerX": true,
+                  "centerY": true
+                }
+              },
+              {
                 "type": "rect",
                 "name": "caixa",
                 "width": 20,
                 "height": 20,
-                "cornerRadius": 2,
+                "cornerRadius": {
+                  "$token": "corner-checkbox"
+                },
                 "fill": {
                   "$if": {
                     "$or": [
@@ -96,7 +155,25 @@
                         "$token": "on-surface"
                       },
                       "else": {
-                        "$token": "on-surface-variant"
+                        "$if": {
+                          "$or": [
+                            {
+                              "$eq": ["interaction", "hovered"]
+                            },
+                            {
+                              "$eq": ["interaction", "focused"]
+                            },
+                            {
+                              "$eq": ["interaction", "pressed"]
+                            }
+                          ]
+                        },
+                        "then": {
+                          "$token": "on-surface"
+                        },
+                        "else": {
+                          "$token": "on-surface-variant"
+                        }
                       }
                     }
                   },

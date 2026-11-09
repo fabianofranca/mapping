@@ -1,13 +1,14 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 import { basename } from 'node:path';
 import {
   isBackgroundContainer,
   projectIndex,
+  type ExifOrientation,
   type Marking,
   type ProjectContainer,
 } from '../src/model';
 import { ToolError } from './errors';
-import { decodeImage, encodeImage } from './image/codecs';
+import { assertFileSize, decodeImage, encodeImage } from './image/codecs';
 import {
   CHILD_COLORS,
   DEFAULT_MAX_SIZE,
@@ -21,6 +22,7 @@ import { MIME, type ImageFormat } from './image/formats';
 import {
   clampRect,
   createRaster,
+  OUTLINE_THICKNESS,
   fitSize,
   resize,
   type PixelRect,
@@ -56,6 +58,8 @@ export interface LoadedImage {
   readonly raster: Raster;
   readonly bytes: Uint8Array;
   readonly format: ImageFormat;
+  /** Orientação EXIF do arquivo (1 = sem rotação); o `raster` já está girado. */
+  readonly orientation: ExifOrientation;
   readonly file: string | null;
   /** Razão arquivo / projeto: ≠ 1 se o arquivo não tem as dimensões gravadas no `mapping.json`. */
   readonly scaleX: number;
@@ -117,6 +121,7 @@ function backgroundImage(image: ProjectContainer): LoadedImage {
     raster,
     bytes: new Uint8Array(),
     format: 'png',
+    orientation: 1,
     file: null,
     scaleX: raster.width / image.width,
     scaleY: raster.height / image.height,
@@ -137,12 +142,14 @@ export async function loadImage(
       { image: refs.ref('i', image.id), file: image.file },
     );
   }
-  const bytes = new Uint8Array(await readFile(absolute));
-  const { format, raster } = await decodeImage(bytes);
+  assertFileSize((await stat(absolute)).size);
+  const bytes = await readFile(absolute);
+  const { format, raster, orientation } = await decodeImage(bytes);
   return {
     raster,
     bytes,
     format,
+    orientation,
     file: basename(absolute),
     scaleX: raster.width / image.width,
     scaleY: raster.height / image.height,
@@ -163,7 +170,7 @@ export function scaleRect(rect: PixelRect, loaded: LoadedImage): PixelRect {
   };
 }
 
-const sizeWarning = (loaded: LoadedImage, image: ProjectContainer) =>
+export const sizeWarning = (loaded: LoadedImage, image: ProjectContainer) =>
   (loaded.scaleX === 1 && loaded.scaleY === 1) || loaded.file === null
     ? {}
     : {
@@ -304,7 +311,7 @@ export async function markingImage(
       // Onde a marcação ficou na saída (pixels da imagem devolvida).
       markingInOutput: rectJson(markingInOutput),
       ...(mode === 'context'
-        ? { markingOutline: { color: MARKING_OUTLINE, thickness: 2 } }
+        ? { markingOutline: { color: MARKING_OUTLINE, thickness: OUTLINE_THICKNESS } }
         : {}),
       ...(options.outlineChildren
         ? {
@@ -344,8 +351,11 @@ export async function imageFile(
   const { raster } = loaded;
   const target = fitSize(raster.width, raster.height, maxSize);
 
+  // Com orientação EXIF os bytes do arquivo contradizem as dimensões já giradas do JSON: recodifica.
   const same =
-    target.scale === 1 && (!options.format || options.format === loaded.format);
+    target.scale === 1 &&
+    loaded.orientation === 1 &&
+    (!options.format || options.format === loaded.format);
   const format = outputFormat(options.format, loaded.format);
   // Cabe e o formato não mudou: devolve o arquivo como está, sem recodificar.
   const bytes = same

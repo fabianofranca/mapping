@@ -3,7 +3,14 @@
 import { describe, expect, it } from 'vitest';
 import { validateLibrary } from '../../src/model/library';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
-import { SPEC_FILE, drawIn, files, text } from '../support/material3Library';
+import {
+  SPEC_FILE,
+  drawIn,
+  files,
+  text,
+  v1WithEstados,
+  COMPOSE_SIZES,
+} from '../support/material3Library';
 import v1 from '../fixtures/material3-m5-v1.json';
 
 const M5 = [
@@ -44,11 +51,11 @@ describe('M5 — superfícies e seletores no formato 4', () => {
     const before = (v1.components as Record<string, Rec>)[id]!;
     const type = rawTypes[id]!;
     const now = component(id);
-    expect(type.fields).toEqual(before.fields);
-    expect(type.examples).toEqual(before.examples);
+    const { actual, expected } = v1WithEstados(id, type, before);
+    expect(actual).toEqual(expected);
     expect(now.preview).toEqual(before.preview);
     expect(now.minSize).toEqual(before.minSize);
-    expect(now.size).toEqual(before.size);
+    expect(now.size).toEqual(COMPOSE_SIZES[id] ?? before.size);
   });
 
   it.each(M5)('%s: o padrão e os exemplos desenham sem aviso em light e dark', (id) => {

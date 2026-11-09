@@ -284,8 +284,15 @@ export function componentMinSize(
   markingId: string,
 ): { width: number; height: number } | null {
   const drawn = markingComponent(p, catalog, markingId);
-  if (drawn === null) return null;
-  const { minSize } = drawn.component;
+  return drawn === null ? null : componentFileMinSize(drawn.component);
+}
+
+/** O tamanho mínimo de uma instância do componente: o `minSize` dele ou o menor armazenável. */
+export function componentFileMinSize(component: ComponentFile): {
+  width: number;
+  height: number;
+} {
+  const { minSize } = component;
   return {
     width: minSize?.width ?? MIN_STORED_MARKING_SIZE,
     height: minSize?.height ?? MIN_STORED_MARKING_SIZE,

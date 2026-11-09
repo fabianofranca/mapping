@@ -17,6 +17,7 @@ export const MCP_ERROR_CODES = [
   'ambiguous-type',
   'anchor-not-found',
   'arrow',
+  'cancelled',
   'canvas-marking',
   'change-frozen',
   'change-not-found',

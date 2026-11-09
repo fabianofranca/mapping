@@ -101,17 +101,64 @@
                 },
                 "else": {
                   "$if": {
-                    "$eq": ["isError", "true"]
+                    "$eq": ["interaction", "focused"]
                   },
                   "then": {
-                    "$token": "error"
+                    "$if": {
+                      "$eq": ["isError", "true"]
+                    },
+                    "then": {
+                      "$token": "error"
+                    },
+                    "else": {
+                      "$token": "primary"
+                    }
                   },
                   "else": {
-                    "$token": "on-surface-variant"
+                    "$if": {
+                      "$eq": ["interaction", "hovered"]
+                    },
+                    "then": {
+                      "$if": {
+                        "$eq": ["isError", "true"]
+                      },
+                      "then": {
+                        "$token": "on-error-container"
+                      },
+                      "else": {
+                        "$token": "on-surface"
+                      }
+                    },
+                    "else": {
+                      "$if": {
+                        "$eq": ["isError", "true"]
+                      },
+                      "then": {
+                        "$token": "error"
+                      },
+                      "else": {
+                        "$token": "on-surface-variant"
+                      }
+                    }
                   }
                 }
               },
-              "width": 1,
+              "width": {
+                "$if": {
+                  "$and": [
+                    {
+                      "$eq": ["interaction", "focused"]
+                    },
+                    {
+                      "$not": {
+                        "$eq": ["enabled", "false"]
+                      }
+                    }
+                  ]
+                },
+                "then": 2,
+                "else": 1
+              },
               "align": "inside",
               "sides": ["bottom"]
             },
@@ -153,17 +200,64 @@
                 },
                 "else": {
                   "$if": {
-                    "$eq": ["isError", "true"]
+                    "$eq": ["interaction", "focused"]
                   },
                   "then": {
-                    "$token": "error"
+                    "$if": {
+                      "$eq": ["isError", "true"]
+                    },
+                    "then": {
+                      "$token": "error"
+                    },
+                    "else": {
+                      "$token": "primary"
+                    }
                   },
                   "else": {
-                    "$token": "outline"
+                    "$if": {
+                      "$eq": ["interaction", "hovered"]
+                    },
+                    "then": {
+                      "$if": {
+                        "$eq": ["isError", "true"]
+                      },
+                      "then": {
+                        "$token": "on-error-container"
+                      },
+                      "else": {
+                        "$token": "on-surface"
+                      }
+                    },
+                    "else": {
+                      "$if": {
+                        "$eq": ["isError", "true"]
+                      },
+                      "then": {
+                        "$token": "error"
+                      },
+                      "else": {
+                        "$token": "outline"
+                      }
+                    }
                   }
                 }
               },
-              "width": 1,
+              "width": {
+                "$if": {
+                  "$and": [
+                    {
+                      "$eq": ["interaction", "focused"]
+                    },
+                    {
+                      "$not": {
+                        "$eq": ["enabled", "false"]
+                      }
+                    }
+                  ]
+                },
+                "then": 2,
+                "else": 1
+              },
               "align": "inside"
             },
             "opacity": {
@@ -215,17 +309,64 @@
                 },
                 "else": {
                   "$if": {
-                    "$eq": ["isError", "true"]
+                    "$eq": ["interaction", "focused"]
                   },
                   "then": {
-                    "$token": "error"
+                    "$if": {
+                      "$eq": ["isError", "true"]
+                    },
+                    "then": {
+                      "$token": "error"
+                    },
+                    "else": {
+                      "$token": "primary"
+                    }
                   },
                   "else": {
-                    "$token": "outline"
+                    "$if": {
+                      "$eq": ["interaction", "hovered"]
+                    },
+                    "then": {
+                      "$if": {
+                        "$eq": ["isError", "true"]
+                      },
+                      "then": {
+                        "$token": "on-error-container"
+                      },
+                      "else": {
+                        "$token": "on-surface"
+                      }
+                    },
+                    "else": {
+                      "$if": {
+                        "$eq": ["isError", "true"]
+                      },
+                      "then": {
+                        "$token": "error"
+                      },
+                      "else": {
+                        "$token": "outline"
+                      }
+                    }
                   }
                 }
               },
-              "width": 1,
+              "width": {
+                "$if": {
+                  "$and": [
+                    {
+                      "$eq": ["interaction", "focused"]
+                    },
+                    {
+                      "$not": {
+                        "$eq": ["enabled", "false"]
+                      }
+                    }
+                  ]
+                },
+                "then": 2,
+                "else": 1
+              },
               "align": "inside",
               "sides": ["left", "bottom", "right"]
             },
@@ -604,13 +745,53 @@
                           },
                           "else": {
                             "$if": {
-                              "$eq": ["isError", "true"]
+                              "$eq": ["interaction", "focused"]
                             },
                             "then": {
-                              "$token": "error"
+                              "$if": {
+                                "$eq": ["isError", "true"]
+                              },
+                              "then": {
+                                "$token": "error"
+                              },
+                              "else": {
+                                "$token": "primary"
+                              }
                             },
                             "else": {
-                              "$token": "on-surface-variant"
+                              "$if": {
+                                "$eq": ["interaction", "hovered"]
+                              },
+                              "then": {
+                                "$if": {
+                                  "$eq": ["isError", "true"]
+                                },
+                                "then": {
+                                  "$token": "on-error-container"
+                                },
+                                "else": {
+                                  "$if": {
+                                    "$eq": ["style", "outlined"]
+                                  },
+                                  "then": {
+                                    "$token": "on-surface"
+                                  },
+                                  "else": {
+                                    "$token": "on-surface-variant"
+                                  }
+                                }
+                              },
+                              "else": {
+                                "$if": {
+                                  "$eq": ["isError", "true"]
+                                },
+                                "then": {
+                                  "$token": "error"
+                                },
+                                "else": {
+                                  "$token": "on-surface-variant"
+                                }
+                              }
                             }
                           }
                         },
@@ -961,7 +1142,15 @@
                           "$eq": ["isError", "true"]
                         },
                         "then": {
-                          "$token": "error"
+                          "$if": {
+                            "$eq": ["interaction", "hovered"]
+                          },
+                          "then": {
+                            "$token": "on-error-container"
+                          },
+                          "else": {
+                            "$token": "error"
+                          }
                         },
                         "else": {
                           "$token": "on-surface-variant"
@@ -1035,17 +1224,64 @@
                     },
                     "else": {
                       "$if": {
-                        "$eq": ["isError", "true"]
+                        "$eq": ["interaction", "focused"]
                       },
                       "then": {
-                        "$token": "error"
+                        "$if": {
+                          "$eq": ["isError", "true"]
+                        },
+                        "then": {
+                          "$token": "error"
+                        },
+                        "else": {
+                          "$token": "primary"
+                        }
                       },
                       "else": {
-                        "$token": "outline"
+                        "$if": {
+                          "$eq": ["interaction", "hovered"]
+                        },
+                        "then": {
+                          "$if": {
+                            "$eq": ["isError", "true"]
+                          },
+                          "then": {
+                            "$token": "on-error-container"
+                          },
+                          "else": {
+                            "$token": "on-surface"
+                          }
+                        },
+                        "else": {
+                          "$if": {
+                            "$eq": ["isError", "true"]
+                          },
+                          "then": {
+                            "$token": "error"
+                          },
+                          "else": {
+                            "$token": "outline"
+                          }
+                        }
                       }
                     }
                   },
-                  "width": 1,
+                  "width": {
+                    "$if": {
+                      "$and": [
+                        {
+                          "$eq": ["interaction", "focused"]
+                        },
+                        {
+                          "$not": {
+                            "$eq": ["enabled", "false"]
+                          }
+                        }
+                      ]
+                    },
+                    "then": 2,
+                    "else": 1
+                  },
                   "align": "inside",
                   "sides": ["top"]
                 },
@@ -1098,13 +1334,53 @@
                       },
                       "else": {
                         "$if": {
-                          "$eq": ["isError", "true"]
+                          "$eq": ["interaction", "focused"]
                         },
                         "then": {
-                          "$token": "error"
+                          "$if": {
+                            "$eq": ["isError", "true"]
+                          },
+                          "then": {
+                            "$token": "error"
+                          },
+                          "else": {
+                            "$token": "primary"
+                          }
                         },
                         "else": {
-                          "$token": "on-surface-variant"
+                          "$if": {
+                            "$eq": ["interaction", "hovered"]
+                          },
+                          "then": {
+                            "$if": {
+                              "$eq": ["isError", "true"]
+                            },
+                            "then": {
+                              "$token": "on-error-container"
+                            },
+                            "else": {
+                              "$if": {
+                                "$eq": ["style", "outlined"]
+                              },
+                              "then": {
+                                "$token": "on-surface"
+                              },
+                              "else": {
+                                "$token": "on-surface-variant"
+                              }
+                            }
+                          },
+                          "else": {
+                            "$if": {
+                              "$eq": ["isError", "true"]
+                            },
+                            "then": {
+                              "$token": "error"
+                            },
+                            "else": {
+                              "$token": "on-surface-variant"
+                            }
+                          }
                         }
                       }
                     },
@@ -1136,17 +1412,64 @@
                     },
                     "else": {
                       "$if": {
-                        "$eq": ["isError", "true"]
+                        "$eq": ["interaction", "focused"]
                       },
                       "then": {
-                        "$token": "error"
+                        "$if": {
+                          "$eq": ["isError", "true"]
+                        },
+                        "then": {
+                          "$token": "error"
+                        },
+                        "else": {
+                          "$token": "primary"
+                        }
                       },
                       "else": {
-                        "$token": "outline"
+                        "$if": {
+                          "$eq": ["interaction", "hovered"]
+                        },
+                        "then": {
+                          "$if": {
+                            "$eq": ["isError", "true"]
+                          },
+                          "then": {
+                            "$token": "on-error-container"
+                          },
+                          "else": {
+                            "$token": "on-surface"
+                          }
+                        },
+                        "else": {
+                          "$if": {
+                            "$eq": ["isError", "true"]
+                          },
+                          "then": {
+                            "$token": "error"
+                          },
+                          "else": {
+                            "$token": "outline"
+                          }
+                        }
                       }
                     }
                   },
-                  "width": 1,
+                  "width": {
+                    "$if": {
+                      "$and": [
+                        {
+                          "$eq": ["interaction", "focused"]
+                        },
+                        {
+                          "$not": {
+                            "$eq": ["enabled", "false"]
+                          }
+                        }
+                      ]
+                    },
+                    "then": 2,
+                    "else": 1
+                  },
                   "align": "inside",
                   "sides": ["top"]
                 },

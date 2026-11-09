@@ -79,6 +79,51 @@
           },
           "children": [
             {
+              "type": "rect",
+              "name": "estado",
+              "anchors": {
+                "left": 0,
+                "right": 0,
+                "top": 0,
+                "bottom": 0
+              },
+              "fill": {
+                "$token": "on-secondary-container"
+              },
+              "opacity": {
+                "$switch": "interaction",
+                "cases": {
+                  "hovered": {
+                    "$token": "state-hover"
+                  },
+                  "focused": {
+                    "$token": "state-focus"
+                  },
+                  "pressed": {
+                    "$token": "state-pressed"
+                  }
+                },
+                "default": 0
+              },
+              "visible": {
+                "$and": [
+                  {
+                    "$field": "selected"
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["enabled", "false"]
+                    }
+                  },
+                  {
+                    "$not": {
+                      "$eq": ["interaction", "none"]
+                    }
+                  }
+                ]
+              }
+            },
+            {
               "type": "frame",
               "name": "conteúdo",
               "width": "fill",

@@ -62,6 +62,65 @@
     },
     "children": [
       {
+        "type": "rect",
+        "name": "estado",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0
+        },
+        "height": 56,
+        "cornerRadius": {
+          "$if": {
+            "$and": [
+              {
+                "$eq": ["expanded", "true"]
+              },
+              {
+                "$eq": ["style", "bar"]
+              }
+            ]
+          },
+          "then": {
+            "$token": "corner-none"
+          },
+          "else": {
+            "$if": {
+              "$eq": ["style", "bar"]
+            },
+            "then": {
+              "$token": "corner-full"
+            },
+            "else": {
+              "$token": "corner-extra-large"
+            }
+          }
+        },
+        "fill": {
+          "$token": "on-surface"
+        },
+        "opacity": {
+          "$switch": "interaction",
+          "cases": {
+            "hovered": {
+              "$token": "state-hover"
+            },
+            "focused": {
+              "$token": "state-focus"
+            },
+            "pressed": {
+              "$token": "state-pressed"
+            }
+          },
+          "default": 0
+        },
+        "visible": {
+          "$not": {
+            "$eq": ["interaction", "none"]
+          }
+        }
+      },
+      {
         "type": "frame",
         "name": "campo de entrada",
         "clip": false,

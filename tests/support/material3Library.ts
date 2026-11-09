@@ -129,3 +129,87 @@ export const MIGRATED = [
   'pull-to-refresh',
   'swipe-to-dismiss',
 ];
+
+type Raw = {
+  key?: string;
+  name?: string;
+  description?: string;
+  values?: Record<string, unknown>;
+};
+
+/** Descrições de campo que a etapa Material 3 com estados (#869, ME1) corrigiu em relação à v1 (decisão 10). */
+const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
+  slider: {
+    steps:
+      'Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 9; de 10 em diante desenha como 9.',
+  },
+  tabs: {
+    style:
+      'primary (indicador de 3 no tamanho do rótulo), secondary (indicador de 3 na largura da aba) ou a versão rolável de cada um (abas com a largura do conteúdo, no mínimo 90, e recuo inicial de 52).',
+  },
+  snackbar: {
+    actionOnNewLine:
+      'true põe a ação abaixo da mensagem, para textos longos (com uma linha de texto a altura do retângulo passa de 48 para 92; os 68 são a linha única de duas linhas).',
+  },
+};
+
+/** Exemplos que a ME2 (#913) acrescentou para mostrar limites conhecidos, por tipo. */
+export const LIMIT_EXAMPLES: Record<string, string> = {
+  button: 'Rótulo longo',
+  'time-picker': '24 horas, campos',
+  'date-picker': 'Intervalo até o fim do mês',
+};
+
+/** Tamanhos que a ME2 (#913) subiu aos do Compose (decisão 9); os demais ficam os da v1. */
+export const COMPOSE_SIZES: Record<string, { width: number; height: number }> = {
+  'top-app-bar': { width: 412, height: 152 },
+  'date-picker': { width: 360, height: 512 },
+  'time-picker': { width: 328, height: 528 },
+  'alert-dialog': { width: 312, height: 248 },
+  slider: { width: 328, height: 48 },
+};
+
+/** Colunas de tabela que a etapa acrescentou a um tipo (a ME4 deu `selected` aos itens do `dropdown-menu`). */
+const ADDED_COLUMNS: Record<string, Record<string, string[]>> = {
+  'dropdown-menu': { items: ['selected'] },
+};
+function withoutAddedColumns(id: string, field: Raw): Raw {
+  const drop = field.key === undefined ? undefined : ADDED_COLUMNS[id]?.[field.key];
+  const columns = (field as { columns?: Raw[] }).columns;
+  if (drop === undefined || columns === undefined) return field;
+  return {
+    ...field,
+    columns: columns.filter((c) => !drop.includes(c.key as string)),
+  } as Raw;
+}
+
+/**
+ * Compara os campos e os exemplos de um tipo com os da v1, sem o que a etapa Material 3 com estados acrescentou
+ * (o campo `interaction` e os exemplos que o usam, e os exemplos dos limites da ME2) e com as descrições corrigidas de `V1_DESCRIPTION_FIXES`.
+ */
+export function v1WithEstados(
+  id: string,
+  nowType: unknown,
+  beforeType: unknown,
+): { actual: unknown; expected: unknown } {
+  const now = nowType as { fields: Raw[]; examples?: Raw[] };
+  const before = beforeType as { fields: Raw[]; examples?: Raw[] };
+  const fixes = V1_DESCRIPTION_FIXES[id] ?? {};
+  const expectedFields = before.fields.map((f) =>
+    f.key !== undefined && fixes[f.key] !== undefined
+      ? { ...f, description: fixes[f.key] }
+      : f,
+  );
+  const isState = (e: Raw): boolean => e.values?.interaction !== undefined;
+  return {
+    actual: {
+      fields: now.fields
+        .filter((f) => f.key !== 'interaction')
+        .map((f) => withoutAddedColumns(id, f)),
+      examples: (now.examples ?? []).filter(
+        (e) => !isState(e) && e.name !== LIMIT_EXAMPLES[id],
+      ),
+    },
+    expected: { fields: expectedFields, examples: before.examples ?? [] },
+  };
+}

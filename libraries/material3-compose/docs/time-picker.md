@@ -54,6 +54,7 @@ Variante `input`: Exige o mesmo @OptIn(ExperimentalMaterial3Api::class). `TimeIn
 - **Relógio, horas**: title=Selecionar horário, mode=picker, hour=14, minute=30, is24Hour=true, selection=hour
 - **Relógio, minutos em 12 horas**: title=Selecionar horário, mode=picker, hour=9, minute=45, is24Hour=false, selection=minute
 - **Campos**: title=Informe o horário, mode=input, hour=8, minute=5, is24Hour=false
+- **24 horas, campos**: title=Informe o horário, mode=input, hour=18, minute=5, is24Hour=true
 
 ## Fidelidade
 
@@ -80,8 +81,8 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - Posição do ponteiro: o formato 4 não tem seno e cosseno nem rotação, então a posição da alça e o trilho vêm de tabelas por valor (60 minutos, e 24 horas nos dois formatos de hora, escritas por `$switch` no `padding` do quadro da alça e no `d` do trilho). Mudar o raio do relógio pede refazer as tabelas. Os números do mostrador também têm âncoras fixas, porque o `repeat` só percorre campos `table` (não há tabela de valores aqui).
 - Número sobreposto à alça: o Compose desenha por cima da alça, em `on-primary`, a parte dos números vizinhos que ela cobre (`drawSelector`, `BlendMode.DstOver`); aqui a alça cobre esses números, e só o número do valor escolhido aparece dentro dela.
-- Largura do diálogo: o `size` do componente é 328, o de 12 horas (conteúdo de 280 mais o padding de 24). Em 24 horas o Compose mede 304 no relógio (o mostrador de 256 é o mais largo) e 264 nos campos; aqui a largura fica em 328 e o conteúdo vai centrado.
-- Sem a linha de ações do diálogo: o botão que alterna entre relógio e campos (`TimePickerDialogDefaults.DisplayModeToggle`, ícones `Keyboard` e `Schedule`), o cancelar e o confirmar não são desenhados, nem a margem de 24 abaixo do relógio (`ClockFaceBottomMargin`); o componente continua com o `size` 328 × 456 da versão anterior (decisão 15 da etapa). O `TimePicker` em si não tem essa linha, só o `TimePickerDialog`.
+- Largura do diálogo: o `size` do componente é 328, o de 12 horas (conteúdo de 280 mais o padding de 24). Em 24 horas o Compose mede 304 no relógio (o mostrador de 256 é o mais largo) e 264 nos campos; aqui a largura fica em 328 e o conteúdo vai centrado. O exemplo "24 horas, campos" mostra o limite; a roadmap #898 (medida pelo conteúdo) o resolve.
+- Altura do diálogo: o `size` é 328 × 528 (456 do conteúdo e do padding, mais 24 de `ClockFaceBottomMargin`, `TimePicker.kt` linha 2069, e mais 48 da linha de ações do `TimePickerDialog`, `TimePickerDialog.kt` linhas 189 a 193, com o `TextButton` em `MinimumInteractiveSize` 48, `TimePicker.kt` linha 2075). A linha de ações em si não é desenhada: o botão que alterna entre relógio e campos (`TimePickerDialogDefaults.DisplayModeToggle`, ícones `Keyboard` e `Schedule`), o cancelar e o confirmar ficam de fora, então a margem e a linha reservadas sobram embaixo, só com o fundo (efeito aceito, como na #863). O `TimePicker` em si não tem essa linha, só o `TimePickerDialog`.
 - Só o layout vertical do `TimePicker`: o horizontal (`HorizontalTimePicker`, em janela baixa) e os relógios de 238 e 200 (`ClockFaceSizeModifier`) não existem.
 - O separador dos campos usa `display-medium`, a fonte do `LocalTextStyle` do `TimeInputImpl`; o token `TimeFieldSeparatorFont` diz `display-large`, mas o `DisplaySeparator` lê o estilo local.
 - Sem estados de foco real, cursor, passar o mouse, pressionado, animação do relógio nem `Crossfade`: o desenho é uma imagem de um estado só (`selection` e os valores dizem qual).
