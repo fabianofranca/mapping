@@ -1,4 +1,4 @@
-# Canvas em projeto grande — [Não lançado] (épico `epic/canvas-escala`, PR #0, MCP 0.28.9 sem versão nova, schema v18)
+# Canvas em projeto grande — [Não lançado] (épico `epic/canvas-escala`, PR #1195, MCP 0.28.9 sem versão nova, schema v18)
 
 ## Alterado
 
