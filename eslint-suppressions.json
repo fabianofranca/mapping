@@ -6,7 +6,7 @@
   },
   "mcp/batch.ts": {
     "complexity": {
-      "count": 11
+      "count": 10
     }
   },
   "mcp/codeViews.ts": {

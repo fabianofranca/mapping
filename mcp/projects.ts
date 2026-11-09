@@ -180,7 +180,11 @@ function describeError(error: DeserializeError): string {
   }
 }
 
-async function readText(roots: Roots, dir: string, file: string): Promise<string | null> {
+export async function readText(
+  roots: Roots,
+  dir: string,
+  file: string,
+): Promise<string | null> {
   const real = await resolveProjectFile(roots, dir, file);
   if (real === null) return null;
   if ((await stat(real)).size > MAX_PROJECT_BYTES) {
@@ -253,8 +257,10 @@ async function loadFontBook(
 export async function loadProject(
   roots: Roots,
   location: ProjectLocation,
+  /** O texto do `mapping.json` já lido pelo chamador (não lê de novo). */
+  given?: string,
 ): Promise<LoadedProject> {
-  const text = await readText(roots, location.dir, MAPPING_FILE);
+  const text = given ?? (await readText(roots, location.dir, MAPPING_FILE));
   if (text === null) {
     throw new ToolError(
       'invalid-project',
