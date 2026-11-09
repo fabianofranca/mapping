@@ -234,7 +234,7 @@ export interface Showcase {
 /**
  * O projeto "Telas" (uma tela em branco 360 × 800 e o componente existente "Existente") e a
  * proposta aberta "Componentes novos": um Button novo pendente, um aceito, um rejeitado, um
- * aceito e inválido (anotação criada numa camada que não existe), um sem o rótulo obrigatório, um de um tipo
+ * aceito e inválido (um `chip` pequeno que não cabe, com a anotação criada numa camada que não existe), um sem o rótulo obrigatório, um de um tipo
  * do pacote da proposta (`m3novo`) e o "Existente" com o rótulo alterado. As decisões já estão
  * gravadas em `proposal.json`.
  */
@@ -254,6 +254,7 @@ export function showcase(): Showcase {
     y: number,
     values: Record<string, string>,
     x = 180,
+    typeId = 'button',
   ): Project =>
     addComponentMarking(
       p,
@@ -264,7 +265,7 @@ export function showcase(): Showcase {
         containerId: 'B1',
         parentId: null,
         specId,
-        typeId: 'button',
+        typeId,
         center: { x, y },
         values,
       },
@@ -286,12 +287,20 @@ export function showcase(): Showcase {
     ['N1', SHOWCASE_NAMES.pending, 'material3-compose', 140, { label: 'Pendente' }],
     ['N2', SHOWCASE_NAMES.accepted, 'material3-compose', 220, { label: 'Aceito' }],
     ['N3', SHOWCASE_NAMES.rejected, 'material3-compose', 300, { label: 'Rejeitado' }],
-    ['N4', SHOWCASE_NAMES.invalid, 'material3-compose', 380, { label: 'Inválido' }],
+    [
+      'N4',
+      SHOWCASE_NAMES.invalid,
+      'material3-compose',
+      380,
+      { label: 'Inválido', style: 'filter', selected: 'true', enabled: 'true' },
+    ],
     ['N5', SHOWCASE_NAMES.noLabel, 'material3-compose', 460, { label: '' }],
     ['N6', SHOWCASE_NAMES.package, 'm3novo', 540, { label: 'Do pacote' }],
   ];
   for (const [id, name, specId, y, values] of creations) {
-    after = renameMarking(button(after, id, specId, y, values), id, name);
+    // O Inválido é um `chip` (o `button` nunca dá "não cabe"); o retângulo é encolhido abaixo.
+    const typeId = id === 'N4' ? 'chip' : 'button';
+    after = renameMarking(button(after, id, specId, y, values, 180, typeId), id, name);
   }
   const built = buildProposal(base, after, {
     id: SHOWCASE_PROPOSAL_ID,
@@ -299,9 +308,10 @@ export function showcase(): Showcase {
     createdAt: NOW,
   });
 
-  // O "Inválido": com o mínimo de 1 px (decisão 24) o retângulo pequeno vale e o assentar da
-  // hierarquia conserta pai e container; a anotação criada fica numa camada que não existe
-  // (`missing-layer`), o que a revisão marca como inválido.
+  // O "Inválido": um `chip` (Rótulo `Inválido`) de 40×32 no canto superior esquerdo, menor que o
+  // conteúdo (`component-overflow`: o componente não cabe); a anotação criada fica numa camada que
+  // não existe (`missing-layer`), o que a revisão marca como inválido. Incompletas lista os dois
+  // motivos (R13.9).
   const createOf = (markingId: string) => {
     const found = built.changes.find(
       (c) => c.entity === 'marking' && c.entityId === markingId && c.kind === 'create',
@@ -319,16 +329,18 @@ export function showcase(): Showcase {
     if (!found) throw new Error(`sem mudança de criação da anotação de ${markingId}`);
     return found;
   };
+  const isRecord = (v: unknown): v is Record<string, unknown> =>
+    typeof v === 'object' && v !== null && !Array.isArray(v);
   const tampered: Proposal = {
     ...built,
-    changes: built.changes.map((c) =>
-      c.id === annotationOf('N4').id &&
-      typeof c.to === 'object' &&
-      c.to !== null &&
-      !Array.isArray(c.to)
-        ? { ...c, to: { ...c.to, layerId: 'GHOST' } }
-        : c,
-    ),
+    changes: built.changes.map((c) => {
+      if (!isRecord(c.to)) return c;
+      if (c.id === annotationOf('N4').id)
+        return { ...c, to: { ...c.to, layerId: 'GHOST' } };
+      if (c.id === createOf('N4').id)
+        return { ...c, to: { ...c.to, rect: { x: 20, y: 364, width: 40, height: 32 } } };
+      return c;
+    }),
   };
 
   let proposal = tampered;
