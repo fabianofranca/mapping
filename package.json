@@ -17,6 +17,7 @@
     "test:perf": "vitest run tests/model/performance.test.ts tests/canvas/renderPerformance.test.ts tests/store/reviewPerf.test.ts tests/mcp/batchPerf.test.ts",
     "test:scale": "vitest run --config vitest.scale.config.ts --reporter=verbose",
     "test:e2e": "playwright test",
+    "perf:canvas": "node scripts/perf/canvas.mjs",
     "lint": "eslint . && prettier --check .",
     "lint:ci": "eslint . --cache --cache-location .cache/eslint/ && prettier --check . --cache --cache-location .cache/prettier",
     "format": "prettier --write .",
