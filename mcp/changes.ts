@@ -6,6 +6,7 @@ import {
   MAPPING_FILE,
   computeChanges,
   projectIndex,
+  type Change,
   type ItemKind,
   type Project,
 } from '../src/model';
@@ -122,6 +123,8 @@ export interface PreparedBatch {
   readonly operations: readonly Operation[];
   /** Referências do projeto depois do lote (as definitivas dos itens criados). */
   readonly refs: Refs;
+  /** As mudanças do lote (as da revisão da proposta), calculadas uma vez só. */
+  readonly changes: () => readonly Change[];
   readonly valid: boolean;
 }
 
@@ -150,7 +153,8 @@ export async function prepareBatch(
   if (baseText === null) {
     throw new ToolError('invalid-project', `não foi possível ler ${MAPPING_FILE}`);
   }
-  const loaded = await loadProject(roots, location);
+  // Uma leitura só: o hash e o projeto saem do mesmo texto, mesmo que o arquivo mude no meio.
+  const loaded = await loadProject(roots, location, baseText);
   if (loaded.readOnly) {
     throw new ToolError(
       'read-only',
@@ -163,10 +167,12 @@ export async function prepareBatch(
     readSource: (path) => readSource(roots, location.dir, path),
     readSpecInput: (path) => readSpec(roots, location.dir, path),
     takenImageFiles: taken,
+    diskProject: loaded.project,
     now: () => new Date(options.now()),
   };
   const start = options.startFrom?.(loaded.project) ?? loaded.project;
   const result = await runBatch({ ...loaded, project: start }, operations, io);
+  let changes: readonly Change[] | undefined;
   return {
     location,
     loaded,
@@ -174,6 +180,7 @@ export async function prepareBatch(
     result,
     operations,
     refs: new Refs({ ...loaded, project: result.project }),
+    changes: () => (changes ??= computeChanges(result.before, result.project)),
     valid: result.errors.length === 0 && result.invariantIssues.length === 0,
   };
 }
@@ -239,7 +246,7 @@ export function batchReport(prepared: PreparedBatch): Record<string, unknown> {
     summary: result.steps.map((s) => `${s.index}. ${s.description}`),
     changes: changeCounts(result.before, result.project),
     issues: withOverflow(issueChanges(refs, result.before), refs, result.before),
-    notices: noticeChanges(refs, result.before),
+    notices: noticeChanges(refs, result.before, prepared.changes()),
     ...(membership.length > 0 ? { membership } : {}),
     ...(warnings.length > 0 ? { warnings } : {}),
     created: createdRefs(refs, result),
@@ -261,7 +268,7 @@ export async function planChanges(
       hint: 'nada foi guardado: corrija as operações com erro e chame plan_changes de novo com o lote inteiro',
     };
   }
-  const proposed = computeChanges(prepared.loaded.project, prepared.result.project);
+  const proposed = prepared.changes();
   return {
     ...report,
     reviewChanges: proposed.length,

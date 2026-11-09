@@ -3,8 +3,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
+  ModelError,
   addContainer,
   applySpecialization,
   createProject,
@@ -255,5 +256,40 @@ describe('import_measured', () => {
   it('origem que não é measured falha com not-found/invalid-arguments e mensagem clara', async () => {
     const reply = await plan([SCREEN, imp({ tree, system: 'zzz' })]);
     expect(reply.data.errors?.[0]?.message).toContain('zzz');
+  });
+});
+
+// Achado 12 (CR do MCP): o `catch` por nó pega só `ToolError` e `ModelError`; um erro interno sobe.
+describe('import_measured: erro por nó', () => {
+  const failInCreate = (error: Error) => {
+    const original = crypto.randomUUID.bind(crypto);
+    return vi.spyOn(crypto, 'randomUUID').mockImplementation(() => {
+      if (new Error().stack?.includes('createMarkingOp')) throw error;
+      return original();
+    });
+  };
+
+  it('um erro do modelo vira aviso do nó e o lote segue', async () => {
+    const spy = failInCreate(new ModelError('rect-too-small'));
+    try {
+      const result = await run([SCREEN, imp({ tree: btn(10, 10, 120, 40, 'Ok') })]);
+      expect(result.errors).toEqual([]);
+      expect(result.deprecations.map((d) => d.message).join('\n')).toContain(
+        'não criada',
+      );
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('um erro que não é do modelo nem da tool sobe (não vira aviso do nó)', async () => {
+    const spy = failInCreate(new TypeError('bug interno'));
+    try {
+      await expect(
+        run([SCREEN, imp({ tree: btn(10, 10, 120, 40, 'Ok') })]),
+      ).rejects.toThrow('bug interno');
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

@@ -253,8 +253,10 @@ async function loadFontBook(
 export async function loadProject(
   roots: Roots,
   location: ProjectLocation,
+  /** O texto do `mapping.json` já lido pelo chamador (não lê de novo). */
+  given?: string,
 ): Promise<LoadedProject> {
-  const text = await readText(roots, location.dir, MAPPING_FILE);
+  const text = given ?? (await readText(roots, location.dir, MAPPING_FILE));
   if (text === null) {
     throw new ToolError(
       'invalid-project',
