@@ -62,12 +62,16 @@ jobs:
           RUN_ID: ${{ github.event.workflow_run.id }}
         run: gh run rerun "$RUN_ID" --failed --repo "$REPO"
       - name: Resumo
+        if: always()
         env:
+          OUTCOME: ${{ steps.decide.outcome }}
           RERUN: ${{ steps.decide.outputs.rerun }}
           ABANDONED: ${{ steps.decide.outputs.abandoned }}
           REASON: ${{ steps.decide.outputs.reason }}
         run: |
-          if [ "$RERUN" = "true" ]; then
+          if [ "$OUTCOME" != "success" ]; then
+            echo "não reexecuta: a decisão falhou ($OUTCOME); veja o log do passo anterior" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$RERUN" = "true" ]; then
             echo "reexecuta: abandonados $ABANDONED" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "não reexecuta: $REASON" >> "$GITHUB_STEP_SUMMARY"

@@ -19,7 +19,7 @@ function jobBlocks(yaml) {
   const lines = yaml.slice(start).split('\n').slice(1);
   const blocks = [];
   for (const line of lines) {
-    if (/^\S/.test(line)) break;
+    if (/^[^\s#]/.test(line)) break;
     const key = /^ {2}([A-Za-z0-9_-]+):\s*$/.exec(line);
     if (key) blocks.push([key[1], []]);
     else if (blocks.length > 0) blocks[blocks.length - 1][1].push(line);

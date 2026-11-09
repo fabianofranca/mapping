@@ -47,6 +47,16 @@ describe('jobs esperados, lidos do ci.yml', () => {
     ]);
   });
 
+  it('comentário na coluna 0 entre jobs não trunca a lista', () => {
+    const yaml = 'jobs:\n  a:\n    runs-on: x\n# solto\n\n  b:\n    runs-on: x\n';
+    expect(expectedOf(yaml)).toEqual(['a', 'b']);
+  });
+
+  it('chave de topo depois de jobs: encerra a lista', () => {
+    const yaml = 'jobs:\n  a:\n    runs-on: x\nenv:\n  b:\n';
+    expect(expectedOf(yaml)).toEqual(['a']);
+  });
+
   it('job com name: próprio faz o script falhar', () => {
     const yaml = 'jobs:\n  static:\n    name: Estático\n    runs-on: ubuntu-latest\n';
     expect(() => expectedOf(yaml)).toThrow(/name:/);

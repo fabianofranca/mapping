@@ -831,6 +831,12 @@ describe('ci-rerun.yml', () => {
     expect(rerun).toContain('não reexecuta:');
   });
 
+  it('o resumo sai sempre, mesmo quando o decide falha', () => {
+    const summary = rerun.slice(rerun.indexOf('- name: Resumo'));
+    expect(summary).toMatch(/^ {8}if: always\(\)$/m);
+    expect(summary).toContain('OUTCOME: ${{ steps.decide.outcome }}');
+  });
+
   it('timeout de 3 min e concurrency por execução, sem cancelar', () => {
     expect(rerun).toMatch(/^ {4}timeout-minutes: 3$/m);
     expect(rerun).toMatch(/group: ci-rerun-\$\{\{ github\.event\.workflow_run\.id \}\}/);
