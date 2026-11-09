@@ -11,7 +11,7 @@ describe('activeFilterConditions', () => {
     expect(hasActiveFilters(NO_FILTERS)).toBe(false);
     const ativos = [
       { decision: 'accepted' as const },
-      { types: ['marking' as const] },
+      { types: ['created' as const] },
       { imageId: 'I1' },
       { layerId: 'L1' },
       { onlyConflicts: true },
