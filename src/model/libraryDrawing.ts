@@ -3,6 +3,7 @@ import { type Box, approximateMeasurer, instantiate } from './components/instant
 import { type Library, type TextFile, loadLibrary } from './components/library';
 import { type Origin, screenFromSource } from './components/origin';
 import type { IconSet } from './components/icons';
+import { type ResolvedTokens, resolveTokens } from './components/tokens';
 import type { LibraryIssue } from './library';
 import type { Spec, SpecAnnotationType } from './spec';
 
@@ -96,39 +97,54 @@ function drawCases(
   return cases;
 }
 
+/**
+ * Os modos em que a prova roda: cada modo de `tokens` com a tabela resolvida dele (como o desenho
+ * faz com `resolvedTokensByMode`); sem `tokens`, uma passada só, sem modo na mensagem.
+ */
+function drawingModes(spec: Spec): { mode?: string; tokens?: ResolvedTokens }[] {
+  const tokens = spec.tokens;
+  if (tokens === undefined || tokens.modes.length === 0) return [{}];
+  return tokens.modes.map((mode) => ({ mode, tokens: resolveTokens(tokens, {}, mode) }));
+}
+
 function typeDrawing(
   type: SpecAnnotationType,
   component: ComponentFile,
   componentPath: string,
   specPath: string,
   basePath: string,
+  spec: Spec,
   out: LibraryIssue[],
 ): void {
   const keys = new Set(type.fields.map((f) => f.key));
   const box: Box = { x: 0, y: 0, ...component.size };
   for (const drawCase of drawCases(type, component, componentPath, specPath, basePath)) {
-    const where = `tipo "${type.id}", ${drawCase.label}, tamanho inicial ${box.width}×${box.height}`;
-    try {
-      const { warnings } = instantiate(component, drawCase.values, box, {
-        measure: approximateMeasurer,
-      });
-      for (const warning of warnings) {
-        const missing = NOT_INFORMED.exec(warning);
-        if (missing !== null && !keys.has(missing[1] ?? '')) continue;
+    for (const { mode, tokens } of drawingModes(spec)) {
+      const at = mode === undefined ? '' : `, modo ${mode}`;
+      const where = `tipo "${type.id}", ${drawCase.label}${at}, tamanho inicial ${box.width}×${box.height}`;
+      try {
+        const { warnings } = instantiate(component, drawCase.values, box, {
+          measure: approximateMeasurer,
+          ...(tokens === undefined ? {} : { tokens }),
+        });
+        for (const warning of warnings) {
+          const missing = NOT_INFORMED.exec(warning);
+          if (missing !== null && !keys.has(missing[1] ?? '')) continue;
+          out.push({
+            file: drawCase.file,
+            path: drawCase.path,
+            message: `${where}: ${warning}${APPROXIMATE_SUFFIX}`,
+            severity: 'warning',
+          });
+        }
+      } catch (error) {
         out.push({
           file: drawCase.file,
           path: drawCase.path,
-          message: `${where}: ${warning}${APPROXIMATE_SUFFIX}`,
-          severity: 'warning',
+          message: `${where}: falha ao desenhar: ${messageOf(error)}`,
+          severity: 'error',
         });
       }
-    } catch (error) {
-      out.push({
-        file: drawCase.file,
-        path: drawCase.path,
-        message: `${where}: falha ao desenhar: ${messageOf(error)}`,
-        severity: 'error',
-      });
     }
   }
 }
@@ -194,7 +210,7 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
       if (loaded === undefined) return;
       const component =
         ctx.icons === undefined ? loaded : { ...loaded, resolvedIcons: ctx.icons };
-      typeDrawing(type, component, componentPath, specPath, basePath, out);
+      typeDrawing(type, component, componentPath, specPath, basePath, spec, out);
 
       (type.examples ?? []).forEach((example, index) => {
         if (example.system === undefined || example.file === undefined) return;

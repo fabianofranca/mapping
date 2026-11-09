@@ -208,6 +208,62 @@ test.describe('texto no Chromium', () => {
     expect(wrapped.width).toBeGreaterThan(0);
   });
 
+  test('FX4: um parágrafo com a largura medida do DOM quebra nas mesmas palavras (folga de 0,5 px)', async ({
+    page,
+  }) => {
+    await load(page);
+    const text = 'Pagar fatura do cartão de crédito com vencimento amanhã cedo';
+    const words = text.split(' ');
+    // Para cada prefixo de palavras, a largura do DOM (sem quebra) vira a largura da caixa: o
+    // DOM mantém tudo numa linha, e o medidor do Konva tem de fazer o mesmo (sem tirar a palavra
+    // por uma fração de pixel). Depois, a mesma caixa 3 px menor quebra igual nos dois.
+    const domLines = (width: number) =>
+      page.evaluate(
+        ([t, w]) => {
+          const div = document.body.appendChild(document.createElement('div'));
+          div.style.cssText = `font:13px sans-serif;width:${w}px;position:absolute;left:0;top:0`;
+          div.textContent = String(t);
+          const node = div.firstChild as Text;
+          const lines: string[][] = [];
+          let top = -1;
+          let start = 0;
+          for (const word of String(t).split(' ')) {
+            const range = document.createRange();
+            range.setStart(node, start);
+            range.setEnd(node, start + word.length);
+            const y = Math.round(range.getBoundingClientRect().top);
+            if (y !== top) lines.push([]);
+            top = y;
+            lines[lines.length - 1]!.push(word);
+            start += word.length + 1;
+          }
+          div.remove();
+          return lines.map((l) => l.join(' '));
+        },
+        [text, width] as const,
+      );
+    const domWidth = (prefix: string) =>
+      page.evaluate((t) => {
+        const span = document.body.appendChild(document.createElement('span'));
+        span.style.cssText = 'font:13px sans-serif;white-space:nowrap;position:absolute';
+        span.textContent = t;
+        const w = span.getBoundingClientRect().width;
+        span.remove();
+        return w;
+      }, prefix);
+    for (let n = 2; n <= words.length; n++) {
+      const prefix = words.slice(0, n).join(' ');
+      const width = await domWidth(prefix);
+      const konva = await measure(page, 16, text, width);
+      const dom = await domLines(width);
+      expect(konva.lines, `largura ${width} (${n} palavras)`).toEqual(dom);
+      // Uma fração de pixel a menos (a soma das larguras das palavras difere do DOM na ponta
+      // do float) não tira a última palavra da linha: é a folga de 0,5 px.
+      const slack = await measure(page, 16, text, width - 0.3);
+      expect(slack.lines, `largura ${width} − 0,3 (${n} palavras)`).toEqual(dom);
+    }
+  });
+
   test('C1: wrap none é uma linha só; com ellipsis termina em … e cabe na largura', async ({
     page,
   }) => {

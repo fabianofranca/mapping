@@ -1,4 +1,4 @@
-import type { Stroke } from './scene';
+import type { CornerRadius, Stroke } from './scene';
 
 /** Um segmento reto de traço, no espaço local da caixa. */
 export interface SideSegment {
@@ -8,21 +8,49 @@ export interface SideSegment {
   readonly y2: number;
 }
 
+const ALL_SIDES = ['top', 'right', 'bottom', 'left'] as const;
+
+/**
+ * Os `sides` que de fato recortam o traço: `undefined` quando `sides` falta ou pede os quatro
+ * lados, que é o contorno inteiro com o raio dos cantos (decisão 21 da #896). Lados parciais
+ * continuam como linhas retas.
+ */
+export function partialSides(stroke: Stroke): Stroke['sides'] {
+  const { sides } = stroke;
+  if (!sides) return undefined;
+  return ALL_SIDES.every((side) => sides.includes(side)) ? undefined : sides;
+}
+
+/**
+ * O raio de um canto afastado `by` px (`stroke.offset`, como o `outline-offset` do CSS): o canto
+ * reto continua reto; o arredondado cresce `by`.
+ */
+export function growRadius(radius: CornerRadius, by: number): CornerRadius {
+  if (by === 0) return radius;
+  const grow = (r: number): number => (r > 0 ? r + by : 0);
+  return typeof radius === 'number'
+    ? grow(radius)
+    : [grow(radius[0]), grow(radius[1]), grow(radius[2]), grow(radius[3])];
+}
+
 /**
  * Os segmentos do traço de `stroke.sides` numa caixa `width` × `height`: um por lado pedido, reto
  * de ponta a ponta (sem arco no canto, mesmo com `cornerRadius`), com a linha deslocada pelo
- * `align` (por dentro, a metade da largura para dentro; por fora, para fora). Sem `sides`,
- * devolve lista vazia: o traço é o contorno.
+ * `align` (por dentro, a metade da largura para dentro; por fora, para fora) e afastada para fora
+ * pelo `offset`. Sem `sides` (ou com os quatro lados), devolve lista vazia: o traço é o contorno.
  */
 export function sideSegments(
   stroke: Stroke,
   width: number,
   height: number,
 ): SideSegment[] {
-  if (!stroke.sides) return [];
+  const sides = partialSides(stroke);
+  if (!sides) return [];
   const half = stroke.width / 2;
-  const inset = stroke.align === 'inside' ? half : stroke.align === 'outside' ? -half : 0;
-  return stroke.sides.map((side) => {
+  const aligned =
+    stroke.align === 'inside' ? half : stroke.align === 'outside' ? -half : 0;
+  const inset = aligned - (stroke.offset ?? 0);
+  return sides.map((side) => {
     switch (side) {
       case 'top':
         return { x1: 0, y1: inset, x2: width, y2: inset };
