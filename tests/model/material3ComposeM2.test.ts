@@ -9,6 +9,7 @@ import {
   files,
   text,
   v1WithEstados,
+  COMPOSE_SIZES,
 } from '../support/material3Library';
 import v1 from '../fixtures/material3-m2-v1.json';
 
@@ -64,7 +65,7 @@ describe('M2 — layout e ações no formato 4', () => {
     expect(actual).toEqual(expected);
     expect(now.preview).toEqual(before.preview);
     expect(now.minSize).toEqual(before.minSize);
-    expect(now.size).toEqual(before.size);
+    expect(now.size).toEqual(COMPOSE_SIZES[id] ?? before.size);
   });
 
   it.each(M2)('%s: o padrão e os exemplos desenham sem aviso em light e dark', (id) => {

@@ -6,11 +6,11 @@
   "description": "Barra do topo: small e center com 64 de altura; medium (112) e large (152) com o título grande embaixo.",
   "size": {
     "width": 412,
-    "height": 64
+    "height": 152
   },
   "sizing": {
     "width": "fill",
-    "height": 64
+    "height": 152
   },
   "preview": {
     "title": "Início",

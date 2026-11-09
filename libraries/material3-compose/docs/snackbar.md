@@ -79,7 +79,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **O que ainda difere do Compose**
 
-- O Compose decide entre 48 e 68 pelo número de linhas reais do texto (`isOneLine`), com o texto a 30 da linha de base nas várias linhas; o formato não conhece o número de linhas na hora de arrumar. O respiro de 14 em cima e embaixo dá 48 com uma linha e 68 com duas, mas com três linhas o desenho mede 88 e o Compose 81, e na de duas linhas o texto fica a 14 do topo e no Compose a 15.
+- O Compose decide entre 48 e 68 pelo número de linhas reais do texto (`isOneLine`), com o texto a 30 da linha de base nas várias linhas; o formato não conhece o número de linhas na hora de arrumar. O respiro de 14 em cima e embaixo dá 48 com uma linha e 68 com duas, mas com três linhas o desenho mede 88 e o Compose 81, e na de duas linhas o texto fica a 14 do topo e no Compose a 15. Não há exemplo de três linhas: a biblioteca desenha todo exemplo na caixa do `size` (344 × 48) e o motor avisa `conteúdo maior que a caixa: snackbar`; o exemplo entra quando a roadmap #898 (altura pelas linhas medidas) existir.
 - Com a ação em nova linha a altura é a do código (92 com uma linha de texto); os 68 são o `TwoLinesContainerHeight` da linha única de duas linhas, e a descrição do campo diz isso desde a versão 4 da biblioteca.
 - A posição vertical vem da linha de base do Compose (30, 12, `FirstBaseline`); o motor não alinha por linha de base, então o 15 e o 7 são estimados para o Roboto 14/20 e valem para essa fonte e esse tamanho.
 - O limite de 600 vale só quando o componente é medido sem retângulo (`hug`), e o `sizing` deste componente é `fill` na largura; com a marcação desenhada a largura é a dela.

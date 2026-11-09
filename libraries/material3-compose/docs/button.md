@@ -57,6 +57,7 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Mouse sobre**: label=Salvar, style=filled, interaction=hovered
 - **Com foco**: label=Salvar, style=elevated, interaction=focused
 - **Pressionado**: label=Salvar, style=tonal, interaction=pressed
+- **Rótulo longo**: label=Salvar alterações e continuar editando, style=filled
 
 ## Fidelidade
 
@@ -89,5 +90,5 @@ O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o des
 
 - Sem a forma `pressed` do Material expressivo, sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O anel de foco por fora do botão não é desenhado: a raiz recorta (#896).
 - A sombra tem y e blur literais (1 e 2, os de `elevation-1-y` e `elevation-1-blur`; no nível 2 do elevated com o mouse, 2 e 6, os de `elevation-2-*`): o `shadow` do formato só aceita número literal, não `$token`. Por isso a sombra do nível 2 é de um nó à parte (`sombra elevada`), visível só no elevated com o mouse sobre.
-- O rótulo longo quebra em linhas; o botão do Compose também, mas aqui a altura de 40 do `sizing` não cresce com as linhas.
+- O rótulo longo quebra em linhas; o botão do Compose também, mas aqui a altura de 40 do `sizing` não cresce com as linhas e a largura vem do retângulo, não do texto: o exemplo "Rótulo longo" mostra o limite (o texto passa da caixa de 136) e a roadmap #898 (medida pelo conteúdo) o resolve.
 - `ButtonDefaults.shape` é redondo; o `shape` trocável e o `contentPadding` próprio de uma chamada não são campos do tipo.

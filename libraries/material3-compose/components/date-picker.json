@@ -6,7 +6,7 @@
   "description": "Seletor de data de 360 de largura em surface container high, com cantos de 28: cabeçalho (título, manchete e o botão que alterna o modo), o mês com as setas (single) ou o subtítulo do mês (range), os dias da semana e a grade de dias de 48 com o dia escolhido em primary (single) ou o intervalo em secondary container com as pontas em primary (range). A grade é sempre um mês de 31 dias que começa numa quarta-feira.",
   "size": {
     "width": 360,
-    "height": 469
+    "height": 512
   },
   "sizing": {
     "width": 360,
