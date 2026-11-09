@@ -66,4 +66,26 @@ describe('importExistingImages', () => {
     expect(await root.read('images/foto-2.jpg')).toBe('ruim');
     expect(await root.read('images/foto-3.jpg')).toBe('200x100');
   });
+
+  it('a colisão ignora a caixa: foto.jpg da raiz não cai em cima de images/Foto.jpg', async () => {
+    const root = new MemoryDirectory('carro');
+    root.put('images/Foto.jpg', '100x100');
+    root.put('foto.jpg', '200x100');
+    const storage = createFolderStorage(root);
+
+    const { project, skipped } = await importExistingImages(
+      storage,
+      emptyProject(),
+      await findExistingImages(root),
+      { readSize, newId: ids() },
+    );
+
+    expect(skipped).toEqual([]);
+    expect(project.containers.map((i) => i.file)).toEqual([
+      'images/Foto.jpg',
+      'images/foto-2.jpg',
+    ]);
+    expect(await root.read('images/Foto.jpg')).toBe('100x100');
+    expect(await root.read('images/foto-2.jpg')).toBe('200x100');
+  });
 });

@@ -18,6 +18,7 @@ import {
   type ProposalStatus,
   type ReviewTarget,
   droppedEntryOf,
+  fileNameKey,
   unseenRevisedIds,
   withDroppedNote,
 } from '../model';
@@ -175,6 +176,12 @@ export interface ProposalActionsDeps {
   readonly newId: () => string;
   /** Grava a imagem no projeto e a registra como gravada pela sessão (`stored`). */
   readonly putProjectImage: (path: string, data: Blob) => Promise<void>;
+  /**
+   * Tudo que ocupa um nome em `images/` agora: os arquivos da pasta (citados ou não) e o que a
+   * sessão guarda (histórico de desfazer, lixeira, gravações em curso). Comparado por
+   * `fileNameKey`, sem diferenciar maiúsculas e minúsculas.
+   */
+  readonly takenImageFiles: () => Promise<ReadonlySet<string>>;
   /** Desfaz `putProjectImage` (a aplicação falhou no meio). */
   readonly dropProjectImage: (path: string) => Promise<void>;
   /**
@@ -473,8 +480,13 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
             deps.stagePackage({ id: pkg.specId, version: pkg.version }, read);
           }
           // 1. As imagens vão para o lugar definitivo (copiadas; a origem só sai no fim).
+          const taken = new Set<string>();
+          for (const file of await deps.takenImageFiles()) taken.add(fileNameKey(file));
+          for (const image of base.containers) {
+            if (image.file !== null) taken.add(fileNameKey(image.file));
+          }
           for (const move of applying.files) {
-            if (base.containers.some((image) => image.file === move.to)) {
+            if (taken.has(fileNameKey(move.to))) {
               failedPath = move.to;
               await rollback();
               return 'image-exists';
@@ -491,6 +503,7 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
             });
             await deps.putProjectImage(move.to, blob);
             moved.push({ from: move.from, to: move.to, blob });
+            taken.add(fileNameKey(move.to));
           }
           // 2. O projeto, numa entrada de desfazer. Se mudou enquanto copiávamos, desiste.
           if (store.project.peek() !== base) {

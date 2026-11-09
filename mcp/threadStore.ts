@@ -148,6 +148,17 @@ function mergeCopies(id: string, copies: Copies): MergedThread | { error: string
   }
 }
 
+/** O erro de leitura de um item, com o código, para a lista `broken`. */
+function readFailure(error: unknown): string {
+  if (error instanceof ToolError) return `${error.code}: ${error.message}`;
+  const code = (error as { code?: unknown } | null)?.code;
+  return typeof code === 'string'
+    ? code
+    : error instanceof Error
+      ? error.message
+      : String(error);
+}
+
 /** Todas as conversas do projeto; as ilegíveis vêm em `broken`. Ordem de criação. */
 export async function listStoredThreads(
   roots: Roots,
@@ -156,7 +167,14 @@ export async function listStoredThreads(
   const threads: StoredThread[] = [];
   const broken: BrokenThread[] = [];
   for (const id of await listThreadIds(location)) {
-    const merged = mergeCopies(id, await readCopies(roots, location, id));
+    let copies: Copies;
+    try {
+      copies = await readCopies(roots, location, id);
+    } catch (error) {
+      broken.push({ id, error: readFailure(error) });
+      continue;
+    }
+    const merged = mergeCopies(id, copies);
     if ('error' in merged) broken.push({ id, error: merged.error });
     else threads.push({ id, thread: merged.thread });
   }

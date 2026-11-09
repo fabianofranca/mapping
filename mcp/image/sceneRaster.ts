@@ -278,6 +278,8 @@ export function flattenPath(d: string): Subpath[] {
         }
         lastCubic = null;
         lastQuad = null;
+        // Número solto depois de Z não tem comando: termina o caminho.
+        command = '';
         continue;
       }
     } else if (command === '') {

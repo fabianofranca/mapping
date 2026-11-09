@@ -3,6 +3,8 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  symlinkSync,
+  truncateSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -23,6 +25,7 @@ import { Roots } from '../../mcp/paths';
 import {
   listStored,
   reservedImages,
+  reviseStored,
   updateStored,
   writeNewProposal,
 } from '../../mcp/proposalStore';
@@ -214,5 +217,57 @@ describe('reservedImages', () => {
     for (const status of ['applied', 'withdrawn'] as const) {
       expect(reservedImages({ ...withImages(), status })).toEqual([]);
     }
+  });
+});
+
+describe('link simbólico em proposals/<id>/images e specs (etapa #942, fase 2)', () => {
+  it('reviseStored recusa a pasta que aponta para fora das raízes e não apaga nem grava nela', async () => {
+    const { roots, dir, location, proposal } = setup();
+    await writeNewProposal(roots, location, proposal, new Map());
+    const outside = mkdtempSync(join(tmpdir(), 'mapping-out-'));
+    writeFileSync(join(outside, 'segredo.txt'), 'não apague');
+    symlinkSync(outside, join(dir, 'proposals', 'prop-1', 'images'), 'dir');
+    await expect(
+      reviseStored(roots, location, 'prop-1', true, async (p) => ({
+        proposal: p,
+        images: new Map([['images/nova.webp', new Uint8Array([1])]]),
+        check: async () => {},
+        result: null,
+      })),
+    ).rejects.toMatchObject({ code: 'outside-roots' });
+    expect(readdirSync(outside)).toEqual(['segredo.txt']);
+  });
+
+  it('o mesmo para specs', async () => {
+    const { roots, dir, location, proposal } = setup();
+    await writeNewProposal(roots, location, proposal, new Map());
+    const outside = mkdtempSync(join(tmpdir(), 'mapping-out-'));
+    writeFileSync(join(outside, 'segredo.txt'), 'não apague');
+    symlinkSync(outside, join(dir, 'proposals', 'prop-1', 'specs'), 'dir');
+    await expect(
+      reviseStored(roots, location, 'prop-1', true, async (p) => ({
+        proposal: p,
+        images: new Map(),
+        check: async () => {},
+        result: null,
+      })),
+    ).rejects.toMatchObject({ code: 'outside-roots' });
+    expect(readdirSync(outside)).toEqual(['segredo.txt']);
+  });
+});
+
+describe('listStored tolerante (etapa #942, fase 2)', () => {
+  it('proposal.json grande demais vai para broken e as demais seguem', async () => {
+    const { roots, dir, location, proposal } = setup();
+    await writeNewProposal(roots, location, proposal, new Map());
+    mkdirSync(join(dir, 'proposals', 'grande'));
+    const big = join(dir, 'proposals', 'grande', 'proposal.json');
+    writeFileSync(big, '');
+    truncateSync(big, 65 * 1024 * 1024);
+    const listed = await listStored(roots, location);
+    expect(listed.proposals.map((p) => p.id)).toEqual(['prop-1']);
+    expect(listed.broken).toHaveLength(1);
+    expect(listed.broken[0]).toMatchObject({ id: 'grande' });
+    expect(listed.broken[0]!.error).toContain('file-too-large');
   });
 });

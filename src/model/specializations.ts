@@ -1,4 +1,5 @@
 import { fail } from './errors';
+import { fileNameKey } from './containers';
 import { projectIssues, type AnnotationIssue } from './issues';
 import {
   runLibraryMigrations,
@@ -49,18 +50,22 @@ export function specFileFor(
   specId: string,
   packageSpecName?: string,
 ): string {
+  // Nomes de arquivo comparados sem diferenciar a caixa (`Material` e `material` são o mesmo).
+  const key = (f: string | undefined) => (f === undefined ? f : fileNameKey(f));
   const base = specId.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^\.+/, '') || 'spec';
   const others = p.specializations.filter((s) => s.id !== specId).map((s) => s.file);
   if (packageSpecName !== undefined) {
     const name = packageSpecName.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^\.+/, '');
-    const takenDirs = new Set(others.map((f) => /^specs\/([^/]+)\//.exec(f)?.[1]));
+    const takenDirs = new Set(
+      others.map((f) => /^specs\/([^/]+)\//.exec(f)?.[1]).map((d) => key(d)),
+    );
     let dir = base;
-    for (let n = 2; takenDirs.has(dir); n++) dir = `${base}-${n}`;
+    for (let n = 2; takenDirs.has(key(dir)); n++) dir = `${base}-${n}`;
     return `${SPECS_DIR}/${dir}/${name || 'spec.json'}`;
   }
-  const taken = new Set(others);
+  const taken = new Set(others.map(key));
   let file = `${SPECS_DIR}/${base}.json`;
-  for (let n = 2; taken.has(file); n++) file = `${SPECS_DIR}/${base}-${n}.json`;
+  for (let n = 2; taken.has(key(file)); n++) file = `${SPECS_DIR}/${base}-${n}.json`;
   return file;
 }
 

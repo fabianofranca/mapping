@@ -5,6 +5,7 @@ import type { ProjectFiles } from './zip';
 import { PROPOSAL_ID_RE, proposalDir, proposalFilePath, threadFilePath } from '../model';
 import {
   BACKUPS_DIR,
+  IMAGES_DIR,
   assertSpecPath,
   assertThreadId,
   backupTimestamp,
@@ -181,6 +182,16 @@ function createLibrary(db: Db): LocalLibrary {
         },
         async writeImage(path, data) {
           await db.put('files', await toStoredFile(id, path, data));
+        },
+        async listImages() {
+          const prefix = `${IMAGES_DIR}/`;
+          const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
+          return keys
+            .map(([, path]) => path)
+            .filter(
+              (path) => path.startsWith(prefix) && !path.includes('/', prefix.length),
+            )
+            .sort();
         },
         async removeImage(path) {
           await db.delete('files', [id, path]);

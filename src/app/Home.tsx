@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
 import { locale } from '../store/settings';
+import { projectNotice } from '../store/banners';
 import { Button, TextField } from '../ui/controls';
 import { Dialog } from '../ui/Dialog';
 import { DialogSlotContext, FOCUSABLE, useDialogSlot } from '../ui/focus';
@@ -121,6 +122,7 @@ export function Home() {
   const run = async <T,>(action: () => Promise<AppResult<T>>): Promise<T | null> => {
     setBusy(true);
     setMessage(null);
+    projectNotice.value = null;
     try {
       const result = await action();
       if (result.ok) return result.value;
@@ -483,7 +485,8 @@ export function Home() {
                   closeDialog();
                   void run(() => createFolderProject(handle, name, images)).then(
                     (result) => {
-                      if (result && result.skipped.length > 0) {
+                      if (result?.existing) projectNotice.value = 'home.folderHasProject';
+                      else if (result && result.skipped.length > 0) {
                         setMessage(
                           t('home.folderSkipped', { count: result.skipped.length }),
                         );

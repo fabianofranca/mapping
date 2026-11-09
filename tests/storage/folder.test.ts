@@ -35,6 +35,21 @@ describe('FolderStorage', () => {
     await storage.removeImage('outra/b.jpg');
   });
 
+  it('lista os arquivos de images/ (citados ou não), sem as subpastas', async () => {
+    const root = new MemoryDirectory('projeto');
+    const storage = createFolderStorage(root);
+    expect(await storage.listImages()).toEqual([]);
+    await storage.writeImage('images/b.jpg', new Blob(['B']));
+    await storage.writeImage('images/A.png', new Blob(['A']));
+    root.put('images/notas.txt', 'solto');
+    root.put('foto.jpg', 'na raiz');
+    expect(await storage.listImages()).toEqual([
+      'images/A.png',
+      'images/b.jpg',
+      'images/notas.txt',
+    ]);
+  });
+
   it('grava, lê e remove as cópias de specs/', async () => {
     const root = new MemoryDirectory('projeto');
     const storage = createFolderStorage(root);

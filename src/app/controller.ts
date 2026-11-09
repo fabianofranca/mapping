@@ -481,13 +481,22 @@ export const openRecentFolder = (id: string, trace?: recents.ReopenSteps) =>
 export const relocateFolder = (id: string) =>
   recents.relocateFolder(id, openFolderHandle);
 
-/** Cria o projeto na pasta, importando as imagens que já estavam nela. */
+/**
+ * Cria o projeto na pasta, importando as imagens que já estavam nela. Se um `mapping.json`
+ * apareceu depois do diálogo (antes de importar ou antes de gravar), não cria nada: abre o
+ * projeto que já está lá e devolve `existing: true` para a tela avisar.
+ */
 export function createFolderProject(
   handle: DirectoryHandleLike,
   name: string,
   images: readonly ExistingImage[],
-): Promise<AppResult<{ skipped: readonly string[] }>> {
+): Promise<AppResult<{ skipped: readonly string[]; existing?: true }>> {
   return guarded(async () => {
+    const openExisting = async () => {
+      const opened = await openFolderHandle(handle);
+      return opened.ok ? ok({ skipped: [], existing: true as const }) : opened;
+    };
+    if (await hasMappingFile(handle)) return openExisting();
     const storage = createFolderStorage(handle);
     const imported = await importExistingImages(
       storage,
@@ -496,6 +505,8 @@ export function createFolderProject(
       { readSize: readImageSize, newId: () => crypto.randomUUID() },
     );
     const mappingText = serialize(imported.project);
+    // A janela do diálogo e da importação: reconfere antes de gravar qualquer coisa.
+    if (await hasMappingFile(handle)) return openExisting();
     // O pacote da biblioteca de notas antes do `mapping.json` que o cita.
     for (const [path, text] of newProjectSpecFiles(imported.project)) {
       await storage.writeSpecFile(path, text);
