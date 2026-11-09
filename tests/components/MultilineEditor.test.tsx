@@ -85,3 +85,21 @@ describe('MultilineEditor — foco só ao montar (#955)', () => {
     expect(document.activeElement).not.toBe(area);
   });
 });
+
+describe('MultilineEditor — Shift+Enter com texto não confirmado (CE4, #956)', () => {
+  it('digita no campo de uma linha, Shift+Enter e continua: as duas linhas ficam', async () => {
+    const { user } = setup('');
+    const input = screen.getByLabelText('texto');
+    await user.click(input);
+    await user.keyboard('Linha 1');
+    await user.keyboard('{Shift>}{Enter}{/Shift}');
+    // O Chrome dispara o change do input que saiu do DOM: o campo de uma linha grava o texto.
+    act(() => {
+      fireEvent.change(input);
+    });
+    await user.keyboard('Linha 2');
+    const area = screen.getByLabelText('texto') as HTMLTextAreaElement;
+    expect(area.tagName).toBe('TEXTAREA');
+    expect(area.value).toBe('Linha 1\nLinha 2');
+  });
+});

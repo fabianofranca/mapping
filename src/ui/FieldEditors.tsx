@@ -107,10 +107,13 @@ function MultilineEditor({
   const [draft, setDraft] = useState<{ base: string; text: string } | null>(
     startText === undefined ? null : { base: initial, text: startText },
   );
-  const current =
-    draft !== null && draft.base === initial && draft.text !== initial
-      ? draft.text
-      : initial;
+  // A troca por Shift+Enter grava o texto do campo de uma linha (o `change` do input que sai
+  // do DOM) e o valor do projeto passa a ser o início do rascunho: ele segue valendo.
+  const draftHolds =
+    draft !== null &&
+    (draft.base === initial ||
+      (startText !== undefined && draft.text === `${initial}\n`));
+  const current = draftHolds && draft.text !== initial ? draft.text : initial;
   const area = useRef<HTMLTextAreaElement>(null);
   // Foco e cursor no fim só ao montar: renderizar por digitação não os move.
   useLayoutEffect(() => {
