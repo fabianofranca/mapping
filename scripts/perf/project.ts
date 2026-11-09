@@ -4,10 +4,14 @@
 import { createArrow, serialize, type Project } from '../../src/model';
 import { buildLargeProject } from '../../tests/model/largeProject';
 
-const IMAGES = 20;
+// 100 marcações por imagem (maior que isso a receita gera marcações de largura 0).
+const PER_IMAGE = 100;
 
 export function perfProject(size: number): Project {
-  const base = buildLargeProject({ images: IMAGES, markingsPerImage: size / IMAGES });
+  const base = buildLargeProject({
+    images: size / PER_IMAGE,
+    markingsPerImage: PER_IMAGE,
+  });
   let project: Project = {
     ...base,
     containers: base.containers.map((c) => ({ ...c, file: null, background: '#FFFFFF' })),

@@ -45,7 +45,10 @@ const browser = await chromium.launch({
 const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? NaN;
 const rows = [];
 try {
-  for (const size of sizes) rows.push(await measure(size));
+  for (const size of sizes) {
+    rows.push(await measure(size));
+    console.log(JSON.stringify(rows.at(-1)));
+  }
 } finally {
   await browser.close();
   server.kill();

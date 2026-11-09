@@ -41,11 +41,15 @@ export function stubFrames(): () => number {
 /** Tamanhos medidos: número de marcações (as setas são metade). */
 export type ScenarioSize = 500 | 2000 | 5000;
 
-const IMAGES = 20;
+// 100 marcações por imagem (maior que isso a receita gera marcações de largura 0).
+const PER_IMAGE = 100;
 
 /** Projeto grande com `size` marcações e `size / 2` setas entre marcações vizinhas. */
 export function wholeProject(size: ScenarioSize): Project {
-  const base = buildLargeProject({ images: IMAGES, markingsPerImage: size / IMAGES });
+  const base = buildLargeProject({
+    images: size / PER_IMAGE,
+    markingsPerImage: PER_IMAGE,
+  });
   const arrows = size / 2;
   const roots = base.markings.filter((m) => m.parentId === null);
   let project = base;
