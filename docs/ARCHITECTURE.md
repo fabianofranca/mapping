@@ -369,11 +369,25 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   agrupa os atributos numa cascata só, e cada atributo de transformação aplicado à parte limparia o cache de transformação de todos
   os nós (milhares, num projeto grande) e dispararia `absoluteTransformChange` neles; o zoom passou de 3 cascatas por quadro para 1
   (`tests/canvas/CanvasController.test.ts` conta: zoom 1, pan 1, edição 0).
+- **Camadas sujas** (`CanvasController.render`): o palco tem 5 camadas (`images`, `components`, `markings`, `floating`,
+  `overlay`) e o quadro redesenha só as que mudaram, com `layer.batchDraw()` em cada uma, no lugar de `stage.batchDraw()`. Cada
+  renderizador diz se mexeu em algum nó: `ImageRenderer.changed` e `MarkingRenderer.render` (devolve `main` e `floating`, a pilha da
+  camada das marcações e a da flutuante) reaproveitam o `sameInputs` e não refazem o nó cujas entradas não mudaram (nem o texto do
+  nome); `ComponentLayerRenderer.render`, `setZoom` e `refreshImages` já devolviam o booleano; as setas (o traçado sai de dados, não
+  de atributos do Konva), as marcas da revisão, os pinos, as marcas de chegada e as sobreposições só rodam, e só sujam a camada
+  deles, quando o que leem mudou (`REVIEW_KEYS`, `PIN_KEYS`, `ARRIVAL_KEYS`, `OVERLAY_KEYS`). Pan, zoom e mudança de tamanho
+  mexem na transformação do palco e sujam todas (`stage.batchDraw()`). O Konva também agenda o desenho da camada de um nó cujo
+  atributo mudou; a marcação explícita cobre o que ele não enxerga. Efeito: editar o nome de uma marcação redesenha `markings` e
+  `overlay` (não `images` nem `components`), mudar a seleção redesenha só essas duas, e um quadro sem mudança não redesenha
+  nenhuma (`tests/canvas/dirtyLayers.test.ts`).
 - **Orçamentos** (medidos em testes, ligados por `npm run test:perf` e desligados com `--coverage` porque o código instrumentado
   é mais lento): índice, pendências, indicadores e visibilidade de um projeto grande (500 marcações, 1.500 anotações, metade
   tipadas, e 500 referências) em menos de 8 ms (`tests/model/performance.test.ts`, mediana de várias rodadas, cada uma numa versão
   nova do projeto); uma renderização do canvas com o projeto já indexado em menos de 16 ms (`tests/canvas/renderPerformance.test.ts`,
   Konva em jsdom com contexto 2D falso). Cada teste repete uma vez para separar ruído do runner de regressão real.
+  Com o projeto inteiro à vista (cenário de 2.000 marcações e 1.000 setas, `tests/canvas/wholeProjectScenario.ts`), o quadro de
+  edição tem a meta de 16 ms; hoje o teto é 50 ms (guarda contra regressão), porque o quadro é quase todo o `drawScene` da camada
+  das marcações (22 mil formas): a meta final depende do nível de detalhe da DA3, que troca o teto por 16 ms.
   O teste do canvas com 200 setas mede como os irmãos: 3 rodadas de aquecimento descartadas e a mediana de 15, uma por métrica
   (pan, zoom, edição), com a métrica no `expect`. No `npm test` os 3 arquivos de orçamento (`tests/model/performance.test.ts`,
   `tests/canvas/renderPerformance.test.ts`, `tests/store/reviewPerf.test.ts`) rodam em projetos próprios do Vitest (`perf-model`

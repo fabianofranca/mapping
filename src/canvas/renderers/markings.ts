@@ -59,6 +59,19 @@ export interface MarkingNode {
   readonly text: SemanticNode;
   /** Entradas do último `updateMarkingNode`: iguais, o nó já está certo. */
   drawn: readonly unknown[] | null;
+  /** Entradas do último `updateSemanticText`: iguais, o nome já está certo. */
+  textDrawn: readonly unknown[] | null;
+  /** Faixa do nome devolvida pelo último `updateSemanticText` (para as filhas desviarem). */
+  band: HeaderBand | null;
+}
+
+/**
+ * O que um quadro mexeu em cada pilha de nós: `main` (camada das marcações) e `floating` (camada
+ * das flutuantes). O `CanvasController` só redesenha as camadas que mudaram.
+ */
+export interface MarkingChanges {
+  main: boolean;
+  floating: boolean;
 }
 
 export type MarkingFrame = Pick<
@@ -109,8 +122,19 @@ export class MarkingRenderer {
     return this.nodes.get(id);
   }
 
-  /** Marcações de cima para baixo na hierarquia: as filhas ficam por cima dos pais. */
-  render(frame: MarkingFrame, placements: ReadonlyMap<string, Placement>): void {
+  /**
+   * Marcações de cima para baixo na hierarquia: as filhas ficam por cima dos pais. Devolve em
+   * qual das duas pilhas algum nó mudou (criado, movido, mostrado, escondido, refeito, removido).
+   */
+  render(
+    frame: MarkingFrame,
+    placements: ReadonlyMap<string, Placement>,
+  ): MarkingChanges {
+    const changes: MarkingChanges = { main: false, floating: false };
+    const touch = (floating: boolean) => {
+      if (floating) changes.floating = true;
+      else changes.main = true;
+    };
     const { project, selection, incomplete, tokens, review, drawn } = frame;
     // Modo visualização (`null` fora dele): sem seleção, hover, alerta nem marcas da revisão.
     const mode = frame.view;
@@ -128,9 +152,17 @@ export class MarkingRenderer {
       const placement = placementOfSpace(placements, marking.containerId);
       if (!placement) continue;
       seen.add(marking.id);
-      const node = this.nodes.get(marking.id) ?? this.createNode(marking.id);
+      let node = this.nodes.get(marking.id);
+      if (!node) {
+        node = this.createNode(marking.id);
+        touch(marking.floating);
+      }
       const parent = marking.floating ? this.floatingParent : this.layer;
-      if (node.group.getParent() !== parent) node.group.moveTo(parent);
+      if (node.group.getParent() !== parent) {
+        touch(node.group.getParent() === this.floatingParent);
+        touch(marking.floating);
+        node.group.moveTo(parent);
+      }
       const markingRect = markingCanvasRect(placement, marking.rect);
       // Fora da tela: nem atualiza nem desenha (a camada não recebe toques, então é seguro).
       const visibility = frame.visibility.get(marking.id) ?? 'full';
@@ -138,10 +170,16 @@ export class MarkingRenderer {
       const shown = mode === null || mode.outline || mode.names;
       const onScreen =
         visibility !== 'hidden' && shown && intersectRects(markingRect, area) !== null;
-      node.group.visible(onScreen);
+      if (node.group.visible() !== onScreen) {
+        node.group.visible(onScreen);
+        touch(marking.floating);
+      }
       // Reordenar custa caro no Konva: só quando a posição na pilha mudou.
       const position = marking.floating ? floatingIndex++ : index++;
-      if (node.group.zIndex() !== position) node.group.zIndex(position);
+      if (node.group.zIndex() !== position) {
+        node.group.zIndex(position);
+        touch(marking.floating);
+      }
       if (!onScreen) continue;
       const selected =
         mode === null && selection?.kind === 'marking' && selection.id === marking.id;
@@ -194,6 +232,7 @@ export class MarkingRenderer {
           canvasMarking,
           mode === null,
         );
+        touch(marking.floating);
       }
       // Ancestral de contexto (modo Ocultar): só a borda, sem nome. O desenho ocupa o
       // lugar do nome das marcações com componente à vista.
@@ -206,32 +245,54 @@ export class MarkingRenderer {
             })
           : 'none';
       const parentHeader = marking.parentId ? headers.get(marking.parentId) : undefined;
-      const header = updateSemanticText(
-        node.text,
-        {
-          marking,
-          markingRect,
-          view: area,
-          mode: textMode,
-          incomplete: markingIncomplete,
-          // Filha começando sob o nome do pai: o dela desce uma linha.
-          headerFloor:
-            parentHeader &&
-            markingRect.y < parentHeader.bottom &&
-            markingRect.x < parentHeader.right
-              ? parentHeader.bottom
-              : null,
-        },
+      // Filha começando sob o nome do pai: o dela desce uma linha.
+      const headerFloor =
+        parentHeader &&
+        markingRect.y < parentHeader.bottom &&
+        markingRect.x < parentHeader.right
+          ? parentHeader.bottom
+          : null;
+      // O nome só se refaz quando algo que ele usa mudou (o recorte da tela entra: pan o refaz).
+      const textInputs = [
+        marking,
+        placement,
+        markingIncomplete,
         tokens,
         zoom,
-      );
+        textMode,
+        headerFloor,
+        area.x,
+        area.y,
+        area.width,
+        area.height,
+      ];
+      if (!sameInputs(node.textDrawn, textInputs)) {
+        node.textDrawn = textInputs;
+        node.band = updateSemanticText(
+          node.text,
+          {
+            marking,
+            markingRect,
+            view: area,
+            mode: textMode,
+            incomplete: markingIncomplete,
+            headerFloor,
+          },
+          tokens,
+          zoom,
+        );
+        touch(marking.floating);
+      }
+      const header = node.band;
       if (header) headers.set(marking.id, header);
     }
     for (const [id, node] of this.nodes) {
       if (seen.has(id)) continue;
+      touch(node.group.getParent() === this.floatingParent);
       node.group.destroy();
       this.nodes.delete(id);
     }
+    return changes;
   }
 
   private headerRect(id: string): Rect | undefined {
@@ -258,6 +319,8 @@ export class MarkingRenderer {
       alert: new KonvaText({ text: ALERT_GLYPH }),
       text: createSemanticNode(),
       drawn: null,
+      textDrawn: null,
+      band: null,
     };
     node.alertClip.add(node.alert);
     node.group.add(
