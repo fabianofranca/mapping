@@ -46,6 +46,7 @@ import { openHarness } from '../store/proposalHarness';
 import { buildLargeTypedProject } from '../model/largeTypedProject';
 import { material3Spec } from '../storage/packageFixture';
 import { componentSources, installFakeCanvas } from './harness';
+import { openWholeProject } from './wholeProjectScenario';
 
 // Orçamento de uma renderização do canvas (docs/ARCHITECTURE.md, "Desempenho") com o projeto grande já
 // indexado: Konva de verdade em jsdom, com um contexto 2D falso (nada é pintado;
@@ -766,6 +767,35 @@ describe('visão Proposto com 60 componentes novos', () => {
       for (const [id, scene] of before) expect(shown().get(id)).toBe(scene);
       render.mockRestore();
       controller.destroy();
+    },
+  );
+});
+
+// Decisão 3 e 9 da etapa canvas-escala: o quadro de edição com o projeto inteiro à vista só
+// redesenha as camadas que mudaram (marcações e sobreposições), não as cinco. A meta da etapa é
+// 16 ms (`RENDER_BUDGET_MS`), mas o quadro é quase todo o `drawScene` da camada das marcações
+// (~23 ms de ~25 ms em jsdom, 22 mil formas): só o nível de detalhe da DA3 (menos formas por
+// marcação) a alcança. Até lá o teto é este, que guarda contra regressão; a DA3 o troca por 16 ms.
+const EDIT_FRAME_INTERIM_BUDGET_MS = 50;
+
+describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)', () => {
+  budgetIt(
+    `editar o nome de uma marcação cabe em ${EDIT_FRAME_INTERIM_BUDGET_MS} ms (meta final: ${RENDER_BUDGET_MS} ms, DA3)`,
+    { ...BUDGET_OPTIONS, timeout: 120_000 },
+    () => {
+      const s = openWholeProject(2000);
+      const target = s.project.markings.find((m) => m.parentId === null);
+      if (!target) throw new Error('fixture');
+      let step = 0;
+      const edit = (): number => {
+        s.actions.renameMarking(target.id, `Nome ${step++}`);
+        return s.flush();
+      };
+      for (let i = 0; i < 3; i++) edit(); // Aquecimento.
+      const times = Array.from({ length: 15 }, edit);
+      const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
+      expect(median).toBeLessThan(EDIT_FRAME_INTERIM_BUDGET_MS);
+      s.destroy();
     },
   );
 });

@@ -14,7 +14,7 @@ import {
 import type { DisplayImage } from '../../store/displayImages';
 import type { Frame, ViewFrame } from '../frame';
 import type { CanvasTokens } from '../theme';
-import { fontStyle } from './metrics';
+import { fontStyle, sameInputs } from './metrics';
 
 /** Rótulo da imagem (px de tela): distância da borda e largura mínima (a fonte é `t-cv-image`). */
 const IMAGE_TITLE_GAP = 4;
@@ -27,11 +27,13 @@ export interface ImageNode {
   readonly label: KonvaText;
   /** Nome da imagem, como rótulo acima dela. */
   readonly title: KonvaText;
+  /** Entradas do último `updateNode`: iguais, o nó já está certo. */
+  drawn: readonly unknown[] | null;
 }
 
 export type ImageFrame = Pick<
   Frame,
-  'project' | 'preview' | 'bitmaps' | 'tokens' | 'viewport' | 'view'
+  'project' | 'preview' | 'bitmaps' | 'tokens' | 'viewport' | 'view' | 'locale'
 >;
 
 /** Nós das imagens, reaproveitados entre quadros (um grupo por imagem). */
@@ -57,11 +59,15 @@ export class ImageRenderer {
     return this.titles;
   }
 
+  /** `true` se o último `render` mexeu em algum nó (criou, refez, reordenou ou removeu). */
+  changed = false;
+
   /**
    * Desenha as imagens na ordem do projeto e devolve a posição de cada uma
-   * (com a prévia do gesto em andamento aplicada).
+   * (com a prévia do gesto em andamento aplicada). `changed` diz se algum nó mudou.
    */
   render(frame: ImageFrame): ReadonlyMap<string, Placement> {
+    let changed = false;
     const { project, preview, bitmaps, tokens, view } = frame;
     const zoom = frame.viewport.scale;
     const images = project?.containers ?? [];
@@ -73,17 +79,20 @@ export class ImageRenderer {
       const placement =
         preview?.containerId === image.id ? preview.placement : image.placement;
       placements.set(image.id, placement);
+      const fresh = !this.nodes.has(image.id);
       const node = this.nodes.get(image.id) ?? this.createNode(image.id);
-      updateNode(
-        node,
-        image,
-        placement,
-        image.file === null ? undefined : bitmaps.get(image.file),
-        tokens,
-        zoom,
-        view,
-      );
-      if (node.group.zIndex() !== index) node.group.zIndex(index);
+      const state = image.file === null ? undefined : bitmaps.get(image.file);
+      const inputs = [image, placement, state, tokens, zoom, view, frame.locale];
+      if (!sameInputs(node.drawn, inputs)) {
+        node.drawn = inputs;
+        updateNode(node, image, placement, state, tokens, zoom, view);
+        changed = true;
+      }
+      if (fresh) changed = true;
+      if (node.group.zIndex() !== index) {
+        node.group.zIndex(index);
+        changed = true;
+      }
       if (node.title.visible()) {
         const rect = imageCanvasRect(image, placement);
         titles.set(image.id, {
@@ -99,7 +108,9 @@ export class ImageRenderer {
       if (seen.has(id)) continue;
       node.group.destroy();
       this.nodes.delete(id);
+      changed = true;
     }
+    this.changed = changed;
     return placements;
   }
 
@@ -110,6 +121,7 @@ export class ImageRenderer {
       placeholder: new KonvaRect(),
       label: new KonvaText({ align: 'center', verticalAlign: 'middle', wrap: 'char' }),
       title: new KonvaText({ wrap: 'none', ellipsis: true }),
+      drawn: null,
     };
     node.group.add(node.placeholder, node.bitmap, node.label, node.title);
     this.layer.add(node.group);

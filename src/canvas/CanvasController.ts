@@ -150,6 +150,10 @@ const NO_OVERLAYS: Overlays = {
 
 /** O que move o rótulo de nome das marcações (a etiqueta da selecionada desvia do do pai). */
 const LABEL_KEYS = ['visibility', 'incomplete', 'view'] as const;
+/** O que muda as marcas da revisão, os pinos e as marcas de chegada (além do viewport e da tela). */
+const REVIEW_KEYS = ['review', 'project', 'tokens', 'locale'] as const;
+const PIN_KEYS = ['pins', 'pinSelected', 'draftPin', 'tokens', 'locale'] as const;
+const ARRIVAL_KEYS = ['arrivals', 'tokens', 'locale'] as const;
 
 export class CanvasController {
   private readonly store: ProjectStore;
@@ -178,6 +182,16 @@ export class CanvasController {
   private readonly images: ImageRenderer;
   /** Camada dos desenhos de componentes, entre as imagens e as marcações. */
   private readonly componentGroup: Konva.Layer;
+  /** Camadas do palco por nome: o quadro redesenha só as que mudaram (`dirty`). */
+  private readonly layers: {
+    readonly images: Konva.Layer;
+    readonly components: Konva.Layer;
+    readonly markings: Konva.Layer;
+    readonly floating: Konva.Layer;
+    readonly overlay: Konva.Layer;
+  };
+  /** Camadas que algum renderizador mexeu no quadro em andamento (zeradas ao desenhar). */
+  private readonly dirty = new Set<Konva.Layer>();
   private componentLayer: ComponentLayerRenderer;
   /**
    * Desenhos das marcações flutuantes (v13): camada acima das marcações, para ficarem sobre
@@ -457,6 +471,13 @@ export class CanvasController {
       floatingTop,
       overlayLayer,
     );
+    this.layers = {
+      images: imageLayer,
+      components: this.componentGroup,
+      markings: arrowMarkingLayer,
+      floating: floatingTop,
+      overlay: overlayLayer,
+    };
     this.images = new ImageRenderer(imageLayer);
     this.componentPalette = this.tokens.peek().component;
     this.componentLayer = this.newComponentLayer(this.componentGroup);
@@ -781,6 +802,12 @@ export class CanvasController {
    * Desenha o quadro. Pan e zoom só mudam o viewport: as imagens são refeitas só
    * quando muda a escala (espessuras e textos), e as marcações reaproveitam os
    * dados derivados e os cartões; só o recorte da parte visível é refeito.
+   *
+   * Camadas sujas: cada renderizador diz se mexeu em algum nó (ou só roda quando o seu quadro
+   * mudou) e o quadro redesenha só as camadas assim marcadas (`dirty`), com `layer.batchDraw()`.
+   * Pan, zoom e mudança de tamanho sujam todas (a transformação é do palco). O Konva também
+   * agenda o desenho da camada de um nó cujo atributo mudou; a marcação explícita cobre o que ele
+   * não enxerga (o traçado das setas, que sai de dados e não de atributos).
    */
   private render(frame: Frame): void {
     const last = this.drawn;
@@ -794,11 +821,14 @@ export class CanvasController {
     // transformação de todos os nós do stage e dispara `absoluteTransformChange` neles.
     this.stage.setAttrs({ x: v.x, y: v.y, scaleX: v.scale, scaleY: v.scale });
 
+    // Pan, zoom e tamanho mexem na transformação do palco: todas as camadas se redesenham.
+    const moved = last === null || last.viewport !== v || last.size !== size;
     this.refreshRemoteImages();
 
     let placementsChanged = last === null;
     if (scaleChanged || !sameFrame(last, frame, IMAGE_KEYS)) {
       const next = this.images.render(frame);
+      this.mark(this.layers.images, this.images.changed);
       placementsChanged ||= !samePlacements(this.placements, next);
       this.placements = next;
       this.readyImages =
@@ -813,18 +843,19 @@ export class CanvasController {
     }
     // Os desenhos em pixels de tela (`screen`) só reajustam escala e posição com o zoom.
     if (scaleChanged) {
-      this.componentLayer.setZoom(v.scale);
-      this.floatingLayer.setZoom(v.scale);
+      this.mark(this.layers.components, this.componentLayer.setZoom(v.scale));
+      this.mark(this.layers.floating, this.floatingLayer.setZoom(v.scale));
     }
     // As setas só se refazem com elas, o tema ou o zoom (a espessura e a ponta são de tela).
     if (scaleChanged || !sameFrame(last, frame, ARROW_KEYS)) {
+      this.dirty.add(this.layers.markings);
       this.arrows.render(frame);
       this.drawnArrows = this.arrows.size;
     }
-    this.markings.render(frame, this.placements);
-    this.reviewLayer.render(frame, this.placements);
-    this.pinLayer.render(frame);
-    this.arrivalLayer.render(frame);
+    const marked = this.markings.render(frame, this.placements);
+    this.mark(this.layers.markings, marked.main);
+    this.mark(this.layers.floating, marked.floating);
+    this.renderOverlayMarks(frame, last, moved || placementsChanged);
     // A etiqueta do nome se ancora na parte visível: acompanha pan e tamanho da tela;
     // e desvia do rótulo do pai, que muda com o zoom semântico e as camadas visíveis.
     const viewMoved =
@@ -834,9 +865,10 @@ export class CanvasController {
       !sameFrame(last, frame, OVERLAY_KEYS) ||
       (viewMoved && this.overlay.followsView)
     ) {
+      this.dirty.add(this.layers.overlay);
       this.overlay.render(frame, this.placements, this.markings.headers);
     }
-    this.stage.batchDraw();
+    this.drawDirtyLayers(moved);
     // Para os testes e2e esperarem o quadro, e não um tempo fixo: enquadramentos e
     // imagens com bitmap já desenhados (o DOM só é tocado quando eles mudam).
     const canvasMarkings = this.countCanvasMarkings(frame.project);
@@ -868,14 +900,47 @@ export class CanvasController {
     }
   }
 
+  /** Suja a camada se o renderizador mexeu em algum nó dela. */
+  private mark(layer: Konva.Layer, changed: boolean): void {
+    if (changed) this.dirty.add(layer);
+  }
+
+  /**
+   * As marcas da revisão, os pinos e as marcas de chegada (camada de sobreposições): só se
+   * refazem quando os dados delas, a tela ou as posições das imagens mudaram.
+   */
+  private renderOverlayMarks(frame: Frame, last: Frame | null, stale: boolean): void {
+    const redo = (keys: readonly (keyof Frame)[]) =>
+      stale || !sameFrame(last, frame, keys);
+    if (redo(REVIEW_KEYS)) {
+      this.reviewLayer.render(frame, this.placements);
+      this.dirty.add(this.layers.overlay);
+    }
+    if (redo(PIN_KEYS)) {
+      this.pinLayer.render(frame);
+      this.dirty.add(this.layers.overlay);
+    }
+    if (redo(ARRIVAL_KEYS)) {
+      this.arrivalLayer.render(frame);
+      this.dirty.add(this.layers.overlay);
+    }
+  }
+
+  /** Desenha o quadro: o palco inteiro se ele se moveu, senão só as camadas sujas. */
+  private drawDirtyLayers(all: boolean): void {
+    if (all) this.stage.batchDraw();
+    else for (const layer of this.dirty) layer.batchDraw();
+    this.dirty.clear();
+  }
+
   /** Refaz as marcações cujas imagens remotas mudaram desde o último quadro. */
   private refreshRemoteImages(): void {
     if (!this.allImagesChanged && this.changedImageUrls.size === 0) return;
     const urls = this.allImagesChanged ? null : new Set(this.changedImageUrls);
     this.allImagesChanged = false;
     this.changedImageUrls.clear();
-    this.componentLayer.refreshImages(urls);
-    this.floatingLayer.refreshImages(urls);
+    this.mark(this.layers.components, this.componentLayer.refreshImages(urls));
+    this.mark(this.layers.floating, this.floatingLayer.refreshImages(urls));
   }
 
   /** Quantas marcações do canvas (sem container) o quadro tem; recontado só quando o projeto muda. */
@@ -897,23 +962,31 @@ export class CanvasController {
       // As cores do reservado são fixadas ao montar o desenho: tema novo, desenhos novos.
       this.componentLayer.destroy();
       this.floatingLayer.destroy();
+      this.dirty.add(this.layers.components);
+      this.dirty.add(this.layers.floating);
       this.componentPalette = frame.tokens.component;
       this.componentLayer = this.newComponentLayer(this.componentGroup);
       this.floatingLayer = this.newComponentLayer(this.floatingDrawings);
     }
     const { drawn, floating } = frame;
     const zoom = frame.viewport.scale;
-    this.componentLayer.render(
-      frame.drawings,
-      (drawing) => drawn.has(drawing.markingId) && !floating.has(drawing.markingId),
-      this.placements,
-      zoom,
+    this.mark(
+      this.layers.components,
+      this.componentLayer.render(
+        frame.drawings,
+        (drawing) => drawn.has(drawing.markingId) && !floating.has(drawing.markingId),
+        this.placements,
+        zoom,
+      ),
     );
-    this.floatingLayer.render(
-      frame.drawings,
-      (drawing) => drawn.has(drawing.markingId) && floating.has(drawing.markingId),
-      this.placements,
-      zoom,
+    this.mark(
+      this.layers.floating,
+      this.floatingLayer.render(
+        frame.drawings,
+        (drawing) => drawn.has(drawing.markingId) && floating.has(drawing.markingId),
+        this.placements,
+        zoom,
+      ),
     );
     this.drawnComponents = this.componentLayer.size + this.floatingLayer.size;
   }
