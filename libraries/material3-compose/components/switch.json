@@ -208,34 +208,114 @@
                 "children": [
                   {
                     "type": "ellipse",
+                    "name": "estado",
+                    "width": 40,
+                    "height": 40,
+                    "fill": {
+                      "$if": {
+                        "$field": "checked"
+                      },
+                      "then": {
+                        "$token": "primary"
+                      },
+                      "else": {
+                        "$token": "on-surface"
+                      }
+                    },
+                    "opacity": {
+                      "$switch": "interaction",
+                      "cases": {
+                        "hovered": {
+                          "$token": "state-hover"
+                        },
+                        "focused": {
+                          "$token": "state-focus"
+                        },
+                        "pressed": {
+                          "$token": "state-pressed"
+                        }
+                      },
+                      "default": 0
+                    },
+                    "visible": {
+                      "$and": [
+                        {
+                          "$not": {
+                            "$eq": ["enabled", "false"]
+                          }
+                        },
+                        {
+                          "$not": {
+                            "$eq": ["interaction", "none"]
+                          }
+                        }
+                      ]
+                    },
+                    "anchors": {
+                      "centerX": true,
+                      "centerY": true
+                    }
+                  },
+                  {
+                    "type": "ellipse",
                     "name": "alça",
                     "width": {
                       "$if": {
-                        "$or": [
+                        "$and": [
                           {
-                            "$field": "checked"
+                            "$not": {
+                              "$eq": ["enabled", "false"]
+                            }
                           },
                           {
-                            "$eq": ["thumbIcon", "true"]
+                            "$eq": ["interaction", "pressed"]
                           }
                         ]
                       },
-                      "then": 24,
-                      "else": 16
+                      "then": 28,
+                      "else": {
+                        "$if": {
+                          "$or": [
+                            {
+                              "$field": "checked"
+                            },
+                            {
+                              "$eq": ["thumbIcon", "true"]
+                            }
+                          ]
+                        },
+                        "then": 24,
+                        "else": 16
+                      }
                     },
                     "height": {
                       "$if": {
-                        "$or": [
+                        "$and": [
                           {
-                            "$field": "checked"
+                            "$not": {
+                              "$eq": ["enabled", "false"]
+                            }
                           },
                           {
-                            "$eq": ["thumbIcon", "true"]
+                            "$eq": ["interaction", "pressed"]
                           }
                         ]
                       },
-                      "then": 24,
-                      "else": 16
+                      "then": 28,
+                      "else": {
+                        "$if": {
+                          "$or": [
+                            {
+                              "$field": "checked"
+                            },
+                            {
+                              "$eq": ["thumbIcon", "true"]
+                            }
+                          ]
+                        },
+                        "then": 24,
+                        "else": 16
+                      }
                     },
                     "fill": {
                       "$if": {
@@ -249,10 +329,46 @@
                           "$field": "checked"
                         },
                         "then": {
-                          "$token": "on-primary"
+                          "$if": {
+                            "$or": [
+                              {
+                                "$eq": ["interaction", "hovered"]
+                              },
+                              {
+                                "$eq": ["interaction", "focused"]
+                              },
+                              {
+                                "$eq": ["interaction", "pressed"]
+                              }
+                            ]
+                          },
+                          "then": {
+                            "$token": "primary-container"
+                          },
+                          "else": {
+                            "$token": "on-primary"
+                          }
                         },
                         "else": {
-                          "$token": "outline"
+                          "$if": {
+                            "$or": [
+                              {
+                                "$eq": ["interaction", "hovered"]
+                              },
+                              {
+                                "$eq": ["interaction", "focused"]
+                              },
+                              {
+                                "$eq": ["interaction", "pressed"]
+                              }
+                            ]
+                          },
+                          "then": {
+                            "$token": "on-surface-variant"
+                          },
+                          "else": {
+                            "$token": "outline"
+                          }
                         }
                       }
                     },

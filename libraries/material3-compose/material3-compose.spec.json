@@ -3,7 +3,7 @@
   "formatVersion": 15,
   "id": "material3-compose",
   "name": "Material 3 (Compose)",
-  "version": 3,
+  "version": 4,
   "description": "Material Design 3 (baseline, tema claro e escuro) para Jetpack Compose, com o composable de cada tipo no `code`. Os símbolos e os parâmetros vêm do código do androidx na versão compose.material3 1.4.0 (commit 5113b82a4ed6416d6344efa50e41db8cb65928ff). Padrões: os espaços (lambdas) de cada composable ficam no `notes`; o tamanho vem de width, height e weight; os ícones são sugestões de Icons.Filled; a imagem remota usa o carregador de imagens do app; o Scaffold coloca cada filha no espaço certo pelo tipo dela.",
   "platforms": [
     {
@@ -337,6 +337,12 @@
       },
       "state-disabled-content": 0.38,
       "state-disabled-container": 0.12,
+      "state-disabled-container-filled": 0.1,
+      "state-hover": 0.08,
+      "state-focus": 0.1,
+      "state-pressed": 0.1,
+      "state-dragged": 0.16,
+      "corner-checkbox": 2,
       "font-sans": "Roboto, sans-serif"
     }
   },
@@ -3185,6 +3191,14 @@
               "description": "false desabilita o botão."
             },
             {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence)."
+            },
+            {
               "key": "icon",
               "label": "Ícone",
               "type": "string",
@@ -3427,6 +3441,37 @@
                 "label": "Adicionar",
                 "style": "tonal",
                 "icon": "Add"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "label": "Salvar",
+                "style": "filled",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "label": "Salvar",
+                "style": "elevated",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "label": "Salvar",
+                "style": "tonal",
+                "interaction": "pressed"
+              }
+            },
+            {
+              "name": "Rótulo longo",
+              "values": {
+                "label": "Salvar alterações e continuar editando",
+                "style": "filled"
               }
             }
           ]
@@ -3671,6 +3716,14 @@
                 "surfaceContainerHighest"
               ],
               "description": "Papel de cor do tema usado no fundo do botão."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O FAB não tem desabilitado (sem enabled): o estado sempre desenha."
             }
           ],
           "code": {
@@ -3756,6 +3809,31 @@
               "values": {
                 "icon": "Add",
                 "size": "large"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "icon": "Add",
+                "size": "regular",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "icon": "Edit",
+                "size": "small",
+                "containerColor": "tertiaryContainer",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "icon": "Add",
+                "size": "large",
+                "interaction": "pressed"
               }
             }
           ]
@@ -3999,6 +4077,14 @@
                 "surfaceContainerHighest"
               ],
               "description": "Papel de cor do tema usado no fundo do botão."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O FAB estendido não tem desabilitado (sem enabled): o estado sempre desenha."
             }
           ],
           "code": {
@@ -4068,6 +4154,33 @@
                 "expanded": "false",
                 "containerColor": "secondaryContainer"
               }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "text": "Criar",
+                "icon": "Add",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "text": "Editar",
+                "icon": "Edit",
+                "containerColor": "secondaryContainer",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "text": "Editar",
+                "icon": "Edit",
+                "expanded": "false",
+                "containerColor": "tertiaryContainer",
+                "interaction": "pressed"
+              }
             }
           ]
         },
@@ -4119,6 +4232,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false desabilita o campo."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered) ou foco (focused: indicador ou contorno de 2 em primary e rótulo em primary); none = sem destaque. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence)."
             },
             {
               "key": "isError",
@@ -4560,6 +4681,24 @@
                 "isError": "true",
                 "trailingIcon": "Lock"
               }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "label": "Nome",
+                "value": "Maria Silva",
+                "style": "filled",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "label": "E-mail",
+                "value": "nome@exemplo.com",
+                "style": "outlined",
+                "interaction": "focused"
+              }
             }
           ]
         },
@@ -4592,6 +4731,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false desabilita a chave."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed, a alça vai a 28); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence)."
             },
             {
               "key": "thumbIcon",
@@ -4628,6 +4775,31 @@
                 "checked": "true",
                 "thumbIcon": "true"
               }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "label": "Wi-Fi",
+                "checked": "false",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "label": "Wi-Fi",
+                "checked": "true",
+                "thumbIcon": "true",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "label": "Wi-Fi",
+                "checked": "true",
+                "interaction": "pressed"
+              }
             }
           ]
         },
@@ -4660,6 +4832,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false desabilita a caixa."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence)."
             }
           ],
           "code": {
@@ -4717,6 +4897,30 @@
                 "label": "Selecionar tudo",
                 "state": "indeterminate"
               }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "label": "Aceito os termos",
+                "state": "unchecked",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "label": "Lembrar de mim",
+                "state": "checked",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "label": "Selecionar tudo",
+                "state": "indeterminate",
+                "interaction": "pressed"
+              }
             }
           ]
         },
@@ -4766,6 +4970,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false desabilita o chip."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed", "dragged"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused), pressionado (pressed) ou arrastado (dragged); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence)."
             },
             {
               "key": "leadingIcon",
@@ -5183,6 +5395,41 @@
                 "style": "input",
                 "trailingIcon": "Close"
               }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "label": "Aberto agora",
+                "style": "filter-elevated",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "label": "Adicionar ao calendário",
+                "style": "assist",
+                "leadingIcon": "DateRange",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "label": "Aberto agora",
+                "style": "filter",
+                "selected": "true",
+                "interaction": "pressed"
+              }
+            },
+            {
+              "name": "Arrastado",
+              "values": {
+                "label": "ana@exemplo.com",
+                "style": "input",
+                "trailingIcon": "Close",
+                "interaction": "dragged"
+              }
             }
           ]
         },
@@ -5226,6 +5473,14 @@
               "default": "filled",
               "options": ["filled", "elevated", "outlined"],
               "description": "filled (Card), elevated ou outlined."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed", "dragged"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused), pressionado (pressed) ou arrastado (dragged); none = sem camada de estado. Só muda o desenho, não entra no código. Este tipo não tem enabled, então não há desabilitado que vença."
             },
             {
               "key": "width",
@@ -5295,6 +5550,45 @@
                 "title": "Plano gratuito",
                 "style": "outlined",
                 "width": "fill"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "title": "Resumo da semana",
+                "subtitle": "12 a 18 de outubro",
+                "style": "elevated",
+                "width": "fill",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "title": "Plano gratuito",
+                "style": "outlined",
+                "width": "fill",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "title": "Resumo da semana",
+                "subtitle": "12 a 18 de outubro",
+                "style": "filled",
+                "width": "fill",
+                "interaction": "pressed"
+              }
+            },
+            {
+              "name": "Arrastado",
+              "values": {
+                "title": "Praia do Rosa",
+                "supportingText": "Fim de semana de sol.",
+                "style": "elevated",
+                "width": "fill",
+                "interaction": "dragged"
               }
             }
           ]
@@ -5681,6 +5975,14 @@
                 "EditCalendar"
               ],
               "description": "Ícone à direita. Vazio = sem ícone."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed", "dragged"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused), pressionado (pressed) ou arrastado (dragged, com a sombra do nível 4); none = sem camada de estado. Só muda o desenho, não entra no código. O item não tem desabilitado (sem enabled): o estado sempre desenha."
             }
           ],
           "code": {
@@ -5714,6 +6016,43 @@
                 "headlineContent": "Reunião de planejamento",
                 "supportingContent": "Sala 3, com a equipe de produto.",
                 "trailingIcon": "KeyboardArrowRight"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "headlineContent": "Ana Souza",
+                "supportingContent": "Vamos almoçar?",
+                "leadingIcon": "Person",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "headlineContent": "Ana Souza",
+                "overlineContent": "Hoje",
+                "supportingContent": "Vamos almoçar?",
+                "trailingContent": "12:30",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "headlineContent": "Ana Souza",
+                "supportingContent": "Vamos almoçar?",
+                "leadingIcon": "Person",
+                "interaction": "pressed"
+              }
+            },
+            {
+              "name": "Arrastado",
+              "values": {
+                "headlineContent": "Ana Souza",
+                "supportingContent": "Vamos almoçar?",
+                "leadingIcon": "Person",
+                "interaction": "dragged"
               }
             }
           ]
@@ -5928,6 +6267,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false mostra o rótulo só no destino selecionado."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda."
             }
           ],
           "code": {
@@ -5948,6 +6295,27 @@
               "name": "Rótulo só no ativo",
               "values": {
                 "alwaysShowLabel": "false"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "alwaysShowLabel": "true",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "alwaysShowLabel": "true",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "alwaysShowLabel": "true",
+                "interaction": "pressed"
               }
             }
           ]
@@ -6416,6 +6784,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false desabilita o botão."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence)."
             }
           ],
           "code": {
@@ -6466,6 +6842,33 @@
                 "contentDescription": "Ajustes",
                 "style": "outlined",
                 "enabled": "false"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "icon": "Edit",
+                "contentDescription": "Editar",
+                "style": "standard",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "icon": "Settings",
+                "contentDescription": "Ajustes",
+                "style": "outlined",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "icon": "Add",
+                "contentDescription": "Adicionar",
+                "style": "tonal",
+                "interaction": "pressed"
               }
             }
           ]
@@ -6681,6 +7084,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false desabilita o botão."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence)."
             }
           ],
           "code": {
@@ -6734,6 +7145,36 @@
                 "contentDescription": "Notificações",
                 "style": "outlined",
                 "checked": "true"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "icon": "Favorite",
+                "contentDescription": "Favoritar",
+                "style": "filled",
+                "checked": "true",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "icon": "Notifications",
+                "contentDescription": "Notificações",
+                "style": "outlined",
+                "checked": "false",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "icon": "Favorite",
+                "contentDescription": "Favoritar",
+                "style": "tonal",
+                "checked": "true",
+                "interaction": "pressed"
               }
             }
           ]
@@ -6956,6 +7397,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false desabilita os segmentos."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Vale para o segmento selecionado (cada um dos selecionados, na seleção múltipla). Com enabled false não desenha nada (o desabilitado vence)."
             }
           ],
           "code": {
@@ -6996,6 +7445,27 @@
                 "selection": "single",
                 "enabled": "false"
               }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "selection": "single",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "selection": "multi",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "selection": "single",
+                "interaction": "pressed"
+              }
             }
           ]
         },
@@ -7028,6 +7498,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false desabilita a opção."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence)."
             }
           ],
           "code": {
@@ -7062,6 +7540,30 @@
                 "label": "Pix",
                 "selected": "false",
                 "enabled": "false"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "label": "Boleto",
+                "selected": "false",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "label": "Cartão de crédito",
+                "selected": "true",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "label": "Boleto",
+                "selected": "false",
+                "interaction": "pressed"
               }
             }
           ]
@@ -7145,7 +7647,7 @@
               "key": "steps",
               "label": "Passos",
               "type": "number",
-              "description": "Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 5 e 9."
+              "description": "Número de pontos intermediários entre as pontas (Slider.steps). Vazio ou 0 = contínuo. O desenho mostra as marcas de 1 a 9; de 10 em diante desenha como 9."
             },
             {
               "key": "enabled",
@@ -7154,6 +7656,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false desabilita o slider."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: foco (focused) ou pressionado (pressed) estreitam a alça de 4 para 2; mouse sobre (hovered) mantém a largura de 4 e não muda o desenho; none = sem estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence). No range vale para a alça do fim."
             },
             {
               "key": "width",
@@ -7212,6 +7722,32 @@
                 "type": "range",
                 "valueStart": "0.2",
                 "valueEnd": "0.8"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "type": "single",
+                "value": "0.5",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "type": "single",
+                "value": "0.4",
+                "steps": 4,
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "type": "range",
+                "valueStart": "0.2",
+                "valueEnd": "0.8",
+                "interaction": "pressed"
               }
             }
           ]
@@ -7617,6 +8153,14 @@
               "label": "Peso (weight)",
               "type": "number",
               "description": "Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. A barra não tem desabilitado (sem enabled): o estado sempre desenha."
             }
           ],
           "code": {
@@ -7666,6 +8210,31 @@
                 "trailingIcon": "Close",
                 "expanded": "true",
                 "style": "docked"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "placeholder": "Pesquisar",
+                "leadingIcon": "Search",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "query": "café",
+                "leadingIcon": "Search",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "placeholder": "Pesquisar",
+                "leadingIcon": "Search",
+                "trailingIcon": "Mic",
+                "interaction": "pressed"
               }
             }
           ]
@@ -7778,6 +8347,16 @@
                 "selection": "single",
                 "showModeToggle": "false"
               }
+            },
+            {
+              "name": "Intervalo até o fim do mês",
+              "values": {
+                "headline": "27 out – 31 out",
+                "displayedMonth": "Outubro de 2025",
+                "selection": "range",
+                "rangeStartDay": 27,
+                "rangeEndDay": 31
+              }
             }
           ]
         },
@@ -7885,6 +8464,16 @@
                 "minute": 5,
                 "is24Hour": "false"
               }
+            },
+            {
+              "name": "24 horas, campos",
+              "values": {
+                "title": "Informe o horário",
+                "mode": "input",
+                "hour": 18,
+                "minute": 5,
+                "is24Hour": "true"
+              }
             }
           ]
         },
@@ -7985,7 +8574,7 @@
               "type": "enum",
               "default": "false",
               "options": ["true", "false"],
-              "description": "true põe a ação abaixo da mensagem, para textos longos (a altura do retângulo passa de 48 para 68)."
+              "description": "true põe a ação abaixo da mensagem, para textos longos (com uma linha de texto a altura do retângulo passa de 48 para 92; os 68 são a linha única de duas linhas)."
             }
           ],
           "code": {
@@ -8215,6 +8804,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false desabilita o campo."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused"],
+              "description": "Aparência parada do estado de interação: mouse sobre (hovered) ou foco (focused: indicador ou contorno de 2 em primary e rótulo em primary); none = sem destaque. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence)."
             },
             {
               "key": "isError",
@@ -8636,6 +9233,24 @@
                 "supportingText": "Senha incorreta",
                 "style": "outlined",
                 "isError": "true"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "label": "Senha",
+                "hasText": "true",
+                "style": "outlined",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "label": "Senha",
+                "hasText": "true",
+                "style": "filled",
+                "interaction": "focused"
               }
             }
           ]
@@ -9359,6 +9974,14 @@
                   "default": "true",
                   "options": ["true", "false"],
                   "description": "false desabilita o item (texto esmaecido)."
+                },
+                {
+                  "key": "selected",
+                  "label": "Selecionado",
+                  "type": "enum",
+                  "default": "false",
+                  "options": ["true", "false"],
+                  "description": "true marca o item (fundo secondary-container). É o item que recebe o estado de interação do menu."
                 }
               ],
               "description": "Um item por linha, na ordem em que aparecem no menu."
@@ -9382,6 +10005,14 @@
               "label": "Valor do campo",
               "type": "string",
               "description": "Opção escolhida, mostrada no campo de texto do exposed. Só vale em exposed."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused"],
+              "description": "Aparência parada do estado de interação, no campo exposto (mouse sobre ou foco: indicador de 2 em primary e rótulo em primary) e no item selecionado do menu aberto (camada de estado); none = sem destaque. Só muda o desenho, não entra no código. O menu não tem enabled no tipo (sem enabled): o campo sempre desenha; o item desabilitado não ganha a camada."
             }
           ],
           "code": {
@@ -9428,6 +10059,26 @@
                 "expanded": "true",
                 "label": "Idioma",
                 "value": "Português"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "style": "exposed",
+                "expanded": "false",
+                "label": "País",
+                "value": "Brasil",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "style": "exposed",
+                "expanded": "true",
+                "label": "Idioma",
+                "value": "Português",
+                "interaction": "focused"
               }
             }
           ]
@@ -9658,6 +10309,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "Só para rail: false mostra o rótulo só no destino selecionado."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda."
             }
           ],
           "code": {
@@ -9720,6 +10379,30 @@
               "values": {
                 "style": "modal-wide",
                 "initialValue": "Expanded"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "style": "rail",
+                "alwaysShowLabel": "true",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "style": "rail",
+                "alwaysShowLabel": "true",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "style": "rail",
+                "alwaysShowLabel": "true",
+                "interaction": "pressed"
               }
             }
           ]
@@ -9942,6 +10625,14 @@
               "default": "Top",
               "options": ["Top", "Start"],
               "description": "Top põe o ícone acima do rótulo; Start põe o ícone ao lado dele (parâmetro do item, o mesmo em todos)."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda."
             }
           ],
           "code": {
@@ -9984,6 +10675,30 @@
               "values": {
                 "arrangement": "Centered",
                 "iconPosition": "Top"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "arrangement": "EqualWeight",
+                "iconPosition": "Top",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "arrangement": "EqualWeight",
+                "iconPosition": "Top",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "arrangement": "EqualWeight",
+                "iconPosition": "Top",
+                "interaction": "pressed"
               }
             }
           ]
@@ -10211,6 +10926,14 @@
                 }
               ],
               "description": "Um destino por linha, na ordem em que aparecem na folha."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda."
             }
           ],
           "code": {
@@ -10252,6 +10975,30 @@
               "name": "Permanente sem cabeçalho",
               "values": {
                 "style": "permanent"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "style": "modal",
+                "headline": "Mapping",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "style": "modal",
+                "headline": "Mapping",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "style": "modal",
+                "headline": "Mapping",
+                "interaction": "pressed"
               }
             }
           ]
@@ -10470,7 +11217,7 @@
                 "primary-scrollable",
                 "secondary-scrollable"
               ],
-              "description": "primary (indicador de 3 no tamanho do rótulo), secondary (indicador de 2 na largura da aba) ou a versão rolável de cada um (abas com a largura do conteúdo, no mínimo 90, e recuo inicial de 52)."
+              "description": "primary (indicador de 3 no tamanho do rótulo), secondary (indicador de 3 na largura da aba) ou a versão rolável de cada um (abas com a largura do conteúdo, no mínimo 90, e recuo inicial de 52)."
             },
             {
               "key": "iconPosition",
@@ -10479,6 +11226,14 @@
               "default": "top",
               "options": ["top", "leading"],
               "description": "top (Tab) põe o ícone acima do texto, e a fileira passa de 48 para 72; leading (LeadingIconTab) põe o ícone à esquerda do texto, em 48. Só vale para as abas com ícone e texto."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda."
             }
           ],
           "code": {
@@ -10522,6 +11277,30 @@
               "values": {
                 "style": "primary-scrollable",
                 "iconPosition": "leading"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "style": "primary",
+                "iconPosition": "top",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "style": "primary",
+                "iconPosition": "top",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "style": "primary",
+                "iconPosition": "top",
+                "interaction": "pressed"
               }
             }
           ]

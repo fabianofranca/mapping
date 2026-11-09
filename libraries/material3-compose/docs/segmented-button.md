@@ -6,11 +6,12 @@ Tipo de anotação: `segmented-button` (camada Componentes).
 
 ## Campos
 
-| Chave       | Rótulo     | Tipo  | Obrigatório | Opções             | Padrão   | Descrição                                                                                                       |
-| ----------- | ---------- | ----- | ----------- | ------------------ | -------- | --------------------------------------------------------------------------------------------------------------- |
-| `options`   | Opções     | table | sim         | ver Colunas abaixo |          | Um segmento por linha, na ordem em que aparecem (de dois a cinco).                                              |
-| `selection` | Seleção    | enum  | não         | `single`, `multi`  | `single` | single (SingleChoiceSegmentedButtonRow) marca um segmento; multi (MultiChoiceSegmentedButtonRow) aceita vários. |
-| `enabled`   | Habilitado | enum  | não         | `true`, `false`    | `true`   | false desabilita os segmentos.                                                                                  |
+| Chave         | Rótulo     | Tipo  | Obrigatório | Opções                                  | Padrão   | Descrição                                                                                                                                                                                                                                                                                                                  |
+| ------------- | ---------- | ----- | ----------- | --------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `options`     | Opções     | table | sim         | ver Colunas abaixo                      |          | Um segmento por linha, na ordem em que aparecem (de dois a cinco).                                                                                                                                                                                                                                                         |
+| `selection`   | Seleção    | enum  | não         | `single`, `multi`                       | `single` | single (SingleChoiceSegmentedButtonRow) marca um segmento; multi (MultiChoiceSegmentedButtonRow) aceita vários.                                                                                                                                                                                                            |
+| `enabled`     | Habilitado | enum  | não         | `true`, `false`                         | `true`   | false desabilita os segmentos.                                                                                                                                                                                                                                                                                             |
+| `interaction` | Interação  | enum  | não         | `none`, `hovered`, `focused`, `pressed` | `none`   | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Vale para o segmento selecionado (cada um dos selecionados, na seleção múltipla). Com enabled false não desenha nada (o desabilitado vence). |
 
 Colunas de `options` (uma linha por opção):
 
@@ -67,6 +68,9 @@ Variante `multi`: Um `SegmentedButton` por linha de `options`, dentro de `MultiC
 - **Seleção única**: selection=single
 - **Seleção múltipla**: selection=multi
 - **Desabilitado**: selection=single, enabled=false
+- **Mouse sobre**: selection=single, interaction=hovered
+- **Com foco**: selection=multi, interaction=focused
+- **Pressionado**: selection=single, interaction=pressed
 
 ## Fidelidade
 
@@ -86,10 +90,19 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Contorno de 1 em `outline`, dentro da caixa e com a forma full; o `clip` da raiz arredonda as pontas do fundo do selecionado. Entre os segmentos há um divisor de 1 em `outline` (a borda dupla do Compose, sobreposta em 1).
 - Desabilitado: contorno e divisores `outline` a `state-disabled-container` (0,12, como `disabledActiveBorderColor` e `disabledInactiveBorderColor`: o código usa `OutlineColor`, não o `on-surface` que o token cita), rótulo e ícone `on-surface` a `state-disabled-content` (0,38) e o fundo do selecionado continua `secondary-container` (`disabledActiveContainerColor`).
 
+**Estado de interação (campo `interaction`)**
+
+O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que os `OutlinedSegmentedButtonTokens.kt` do commit definem: `hovered`, `focused` e `pressed` (não há `Dragged*` nos tokens do segmentado, então não há `dragged`).
+
+- **Camada de estado:** o nó `estado` é um `rect` do tamanho do segmento, entre o fundo e o conteúdo, com a cor do conteúdo do segmento selecionado, `on-secondary-container` (`SelectedHoverLabelTextColor`, `SelectedFocusLabelTextColor`, `SelectedPressedLabelTextColor` e os `Selected*IconColor`, linhas 36 a 42 de `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedSegmentedButtonTokens.kt`) e `opacity` pelos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25). As pontas da linha ficam arredondadas porque a raiz recorta.
+- **Qual segmento:** a camada cai no segmento **selecionado**; na seleção múltipla, em cada um dos selecionados. Não há campo de índice para escolher outro. Sem nenhum segmento selecionado o estado não desenha nada: o formato do componente não tem índice da linha nem consulta ao conjunto das linhas, então "o primeiro, se nenhum estiver selecionado" não é expressável.
+- **Cor do conteúdo:** o rótulo e o ícone do segmento mantêm a cor parada em todos os estados (os tokens repetem `on-secondary-container` no selecionado e `on-surface` no desmarcado). Elevação e contorno não mudam com o estado nos tokens do segmentado.
+- **Desabilitado vence:** com `enabled` `false` o nó `estado` fica invisível, então o desenho é o do desabilitado, qualquer que seja o `interaction`.
+
 **O que ainda difere do Compose**
 
 - Os segmentos se encostam e o divisor é o lado esquerdo de cada um (o do primeiro fica fora da caixa), em vez de se sobrepor em 1: a largura de cada segmento é `(largura + 1) / n`, e não `(largura + n - 1) / n`, então a fronteira cai a menos de 1 do Compose.
 - A linha ocupa a largura da marcação (`fill`); o Compose usa `width(IntrinsicSize.Min)` e mede os segmentos pelo conteúdo.
 - O rótulo não corta nem quebra de propósito; um rótulo maior que o segmento avisa `texto maior que a caixa`. O Compose só limita pelo `Row`.
-- Sem estados de pressionado, foco e passar o mouse e sem o movimento da troca do check e do deslocamento do rótulo (`SegmentedButtonContentMeasurePolicy` anima o `offsetX`).
+- Os estados de interação são quadros parados: sem ripple animado, sem transição e sem o movimento da troca do check e do deslocamento do rótulo (`SegmentedButtonContentMeasurePolicy` anima o `offsetX`). O anel de foco por fora do segmento não é desenhado: a raiz recorta (#896). O estado vale só para o segmento selecionado (ver "Qual segmento").
 - O `selection` não muda o desenho (single e multi usam o mesmo check); só muda o símbolo do código.

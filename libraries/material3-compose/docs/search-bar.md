@@ -6,17 +6,18 @@ Tipo de anotação: `search-bar` (camada Componentes).
 
 ## Campos
 
-| Chave          | Rótulo        | Tipo   | Obrigatório | Opções                                                         | Padrão  | Descrição                                                                                              |
-| -------------- | ------------- | ------ | ----------- | -------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
-| `query`        | Consulta      | string | não         |                                                                |         | Texto digitado na busca. Vazio = mostra a dica (placeholder).                                          |
-| `placeholder`  | Dica          | string | não         |                                                                |         | Texto de dica quando a consulta está vazia.                                                            |
-| `leadingIcon`  | Ícone inicial | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         | Ícone antes do texto (costuma ser Search). Vazio = sem ícone.                                          |
-| `trailingIcon` | Ícone final   | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         | Ícone depois do texto (por exemplo Close para limpar). Vazio = sem ícone.                              |
-| `expanded`     | Expandida     | enum   | não         | `true`, `false`                                                | `false` | true abre a busca: o container ganha o divisor dos resultados (as marcações filhas são os resultados). |
-| `style`        | Estilo        | enum   | não         | `bar`, `docked`                                                | `bar`   | bar (SearchBar) ou docked (DockedSearchBar).                                                           |
-| `width`        | Largura       | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`  | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).  |
-| `height`       | Altura        | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`  | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).    |
-| `weight`       | Peso (weight) | number | não         |                                                                |         | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                      |
+| Chave          | Rótulo        | Tipo   | Obrigatório | Opções                                                         | Padrão  | Descrição                                                                                                                                                                                                                                          |
+| -------------- | ------------- | ------ | ----------- | -------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `query`        | Consulta      | string | não         |                                                                |         | Texto digitado na busca. Vazio = mostra a dica (placeholder).                                                                                                                                                                                      |
+| `placeholder`  | Dica          | string | não         |                                                                |         | Texto de dica quando a consulta está vazia.                                                                                                                                                                                                        |
+| `leadingIcon`  | Ícone inicial | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         | Ícone antes do texto (costuma ser Search). Vazio = sem ícone.                                                                                                                                                                                      |
+| `trailingIcon` | Ícone final   | string | não         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) |         | Ícone depois do texto (por exemplo Close para limpar). Vazio = sem ícone.                                                                                                                                                                          |
+| `expanded`     | Expandida     | enum   | não         | `true`, `false`                                                | `false` | true abre a busca: o container ganha o divisor dos resultados (as marcações filhas são os resultados).                                                                                                                                             |
+| `style`        | Estilo        | enum   | não         | `bar`, `docked`                                                | `bar`   | bar (SearchBar) ou docked (DockedSearchBar).                                                                                                                                                                                                       |
+| `width`        | Largura       | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`  | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).                                                                                                                                              |
+| `height`       | Altura        | enum   | não         | `wrap`, `fill`, `fixed`                                        | `wrap`  | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).                                                                                                                                                |
+| `weight`       | Peso (weight) | number | não         |                                                                |         | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                                                                                                                                                                  |
+| `interaction`  | Interação     | enum   | não         | `none`, `hovered`, `focused`, `pressed`                        | `none`  | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. A barra não tem desabilitado (sem enabled): o estado sempre desenha. |
 
 ## Compose
 
@@ -67,6 +68,9 @@ Variante `docked`: Exige o mesmo @OptIn(ExperimentalMaterial3Api::class). `Docke
 - **Barra com dica**: placeholder=Pesquisar músicas, leadingIcon=Search, style=bar
 - **Com consulta**: query=jazz, placeholder=Pesquisar músicas, leadingIcon=Search, trailingIcon=Close, style=bar
 - **Docked expandida**: query=jaz, placeholder=Pesquisar, leadingIcon=Search, trailingIcon=Close, expanded=true, style=docked
+- **Mouse sobre**: placeholder=Pesquisar, leadingIcon=Search, interaction=hovered
+- **Com foco**: query=café, leadingIcon=Search, interaction=focused
+- **Pressionado**: placeholder=Pesquisar, leadingIcon=Search, trailingIcon=Mic, interaction=pressed
 
 ## Fidelidade
 
@@ -76,6 +80,8 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/SearchBar.kt` (linhas 1023 a 1048: `TonalElevation` e `ShadowElevation` no nível 0, `InputFieldHeight`, `inputFieldShape` e `dockedShape`; 1178 a 1240: `inputFieldColors`; 1340 a 1410: o campo com `sizeIn(minHeight = 56)`, `TextFieldLineLimits.SingleLine`, `contentPaddingWithoutLabel` e os ícones deslocados de `SearchBarIconOffsetX`; 2118 a 2150: a `bar` expandida com o `HorizontalDivider`; 2199 a 2290: o `SearchBarLayout`, com 8 de respiro em cima e embaixo do campo; 2315 a 2350: o `DockedSearchBarLayout`, com o divisor logo abaixo do campo; 2711 a 2716: `SearchBarMinWidth` 360, `SearchBarMaxWidth` 720, `SearchBarVerticalPadding` 8 e `SearchBarIconOffsetX` 4).
 - `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SearchBarTokens.kt` (`ContainerColor` `SurfaceContainerHigh`, `ContainerHeight` 56, `ContainerShape` `CornerFull`, `InputTextColor`, `LeadingIconColor`, `TrailingIconColor`, `SupportingTextColor`, fontes `BodyLarge`) e `tokens/SearchViewTokens.kt` (`DividerColor` `Outline`, `DockedContainerShape` `CornerExtraLarge`, `FullScreenHeaderContainerHeight` 72).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/SearchBarTokens.kt` (linhas 28 a 35: `ContainerShape`, `FocusIndicatorColor`, `HoverSupportingTextColor` e `PressedSupportingTextColor`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
 
 **Como o desenho segue o Compose**
 
@@ -85,9 +91,17 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Expandida `docked`: raio `corner-extra-large` e divisor de 1 em `outline` logo abaixo do campo, em y = 56 (`HorizontalDivider` do `DockedSearchBarLayout`).
 - Expandida `bar` (tela cheia): raio `corner-none`, campo a 8 do topo e divisor em y = 72 (8 + 56 + 8, o cabeçalho de 72 de `FullScreenHeaderContainerHeight`).
 
+**Estado de interação (campo `interaction`)**
+
+O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que o `SearchBarTokens.kt` nomeia: `hovered` (`HoverSupportingTextColor`, linha 31), `focused` (`FocusIndicatorColor`, linha 30) e `pressed` (`PressedSupportingTextColor`, linha 35). **Este tipo não tem `enabled`**, então não existe um desabilitado que vença: o estado sempre desenha.
+
+- **Camada de estado:** o nó `estado` é um `rect` do tamanho da barra (56) e do raio do componente, atrás do conteúdo, na cor do texto digitado, `on-surface` (`InputTextColor`, linha 32), com `opacity` pelos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10). Os tokens da barra **não nomeiam** cor nem opacidade de camada: é a convenção do `card` (a cor do conteúdo) e o desenho do M3, não um quadro que o `SearchBar` do Compose 1.4.0 desenhe.
+- **Cores do conteúdo:** `HoverSupportingTextColor` e `PressedSupportingTextColor` repetem `on-surface-variant`, o papel de sempre; nada mais muda no texto nem nos ícones.
+- **Expandida:** a camada cobre só a linha de entrada (56), não a lista abaixo.
+
 **O que ainda difere do Compose**
 
-- Sem foco, pressionado, passar o mouse, cursor e animação de expandir.
+- O `interaction` é um quadro parado: sem cursor e sem animação de expandir. O `FocusIndicatorColor` (`secondary`) é o anel de foco por fora da forma, que não é desenhado (#896); com `focused` só aparece a camada de estado. Na barra expandida do estilo `docked` a camada leva o raio do componente, não só os cantos de cima.
 - A `bar` expandida do Compose ocupa a tela e soma os `WindowInsets` ao respiro de cima; aqui o tamanho é o da marcação e o respiro é só o 8 fixo.
 - Os limites de largura (360 a 720; `docked` fixa em 360) valem pelo `minSize`: a raiz sempre tem o tamanho da marcação, então `minWidth` e `maxWidth` na raiz não agiriam, e o teto de 720 e os 360 fixos do docked não são impostos.
 - O tamanho inicial de 56 não comporta a barra expandida: o divisor fica logo abaixo da caixa (docked) e a marcação tem de crescer para os resultados.

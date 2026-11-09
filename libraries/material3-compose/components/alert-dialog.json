@@ -6,7 +6,7 @@
   "description": "Diálogo em surface container high com a forma extra-large (28) e margem de 24: ícone (24, em secondary, centralizado) opcional, título em headline small, texto em body medium e os botões de texto à direita; 280 a 560 de largura.",
   "size": {
     "width": 312,
-    "height": 240
+    "height": 248
   },
   "sizing": {
     "width": 312,
@@ -324,7 +324,7 @@
         "type": "frame",
         "name": "botões",
         "width": "fill",
-        "height": 40,
+        "height": 48,
         "layout": {
           "type": "row",
           "gap": 8,

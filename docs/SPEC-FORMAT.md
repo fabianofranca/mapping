@@ -129,7 +129,7 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `15`), `id`,
 - `string`: texto.
 - `number`: número, inteiro ou decimal.
 - `date`: data ISO `AAAA-MM-DD`.
-- `enum`: uma das `options`. Booleanos são `enum` (ex: `["sim", "não"]`).
+- `enum`: uma das `options`. Booleanos são `enum` (ex: `["sim", "não"]`). **Estados de um componente:** o desenho é um quadro parado: sem animação, ripple animado nem troca de estado pelo mouse. A **aparência** de um estado de interação (hover, foco, pressionado, arrastado) é desenhável e, quando a origem a define (tokens de estado do design system), entra como um campo `enum` opcional do tipo, fora do `code`, como o desabilitado e o selecionado. Ao listar o que fica fora num plano ou na Fidelidade, separe movimento (fora) de aparência de estado (campo).
 - `table`: lista de linhas; cada linha é um objeto com as chaves das `columns` (mais o id interno `_id`).
 - `ref`: **referência forte** a uma tupla de outra anotação. O valor do campo é a referência.
 
@@ -970,9 +970,9 @@ O formato do arquivo de componente está no [`COMPONENT-FORMAT.md`](COMPONENT-FO
 - `modes`: lista **não vazia** de nomes distintos no formato `[a-z0-9][a-z0-9-]*`. A convenção é `["light", "dark"]`.
 - `values`: o nome do token (`[a-z0-9][a-z0-9-]*`) aponta para um valor, que é **texto** (cor `#rrggbb`, `rgba(…)`, ou família de fonte) ou **número** (raio, espaçamento, tamanho, peso).
 - Um valor **simples** vale em todos os modos (`"radius-md": 12`). Um valor **por modo** é um objeto com **todos** os modos de `modes` (e só eles) e todos do **mesmo tipo**: misturar cor num modo e número no outro é erro.
-- **Embutidos:** `font-sans` e `font-mono` (famílias de fonte) existem em toda biblioteca, mesmo sem `tokens`, e valem a fonte do hospedeiro (na app, o `--font-sans` e o `--font-mono` do tema; no visualizador, a pilha dos tokens da app ou a opção `fonts`; no MCP, `sans-serif`). A especialização pode redefini-los em `values`, e a definição dela vence a do hospedeiro. O texto sem `font.family` usa `font-sans`.
+- **Embutidos:** `font-sans` e `font-mono` (famílias de fonte) existem em toda biblioteca, mesmo sem `tokens`, e valem a fonte do hospedeiro (na app, o `--font-sans` e o `--font-mono` do tema; no visualizador, a pilha dos tokens da app ou a opção `fonts`; no MCP, a Mapping Sans embutida). A especialização pode redefini-los em `values`, e a definição dela vence a do hospedeiro. O texto sem `font.family` usa `font-sans`.
 - **Chaves de `tokens`:** só `modes` e `values` existem. Qualquer outra chave é erro de validação, no caminho dela: `tokens.<chave>: chave desconhecida: <chave>`. Como o `tokens` já era lido pelo validador, uma biblioteca que trazia uma chave a mais e passava antes agora é recusada (a `formatVersion` continua 15).
-- **Modo do desenho:** nesta versão o desenho usa sempre o **primeiro** modo de `modes`; um modo não declarado cai no primeiro, sem aviso. Ligar o modo ao projeto é trabalho da fase seguinte.
+- **Modo do desenho:** o desenho segue o modo do projeto e do container (`drawingMode`, ver `docs/FORMAT.md`); sem modo escolhido, usa o **primeiro** de `modes`, e um modo não declarado cai no primeiro, sem aviso.
 - Erros de validação, com o caminho em `tokens`: `só é permitido com formatVersion 15`, nome fora do padrão, `modes` vazio ou com nome repetido, valor por modo sem algum modo (ou com modo que não existe em `modes`) e valores de tipos diferentes entre os modos. No `validate_library` (nível 2), `$token` com nome inexistente é `o token "x" não existe nos tokens da especialização` e com tipo errado é `o token "primary" é cor, mas aqui se espera número`.
 
 ## Conjunto de ícones

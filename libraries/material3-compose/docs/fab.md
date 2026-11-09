@@ -6,12 +6,13 @@ Tipo de anotação: `fab` (camada Componentes).
 
 ## Campos
 
-| Chave                | Rótulo       | Tipo   | Obrigatório | Opções                                                         | Padrão             | Descrição                                        |
-| -------------------- | ------------ | ------ | ----------- | -------------------------------------------------------------- | ------------------ | ------------------------------------------------ |
-| `icon`               | Ícone        | string | sim         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) | `Add`              | Ícone do botão.                                  |
-| `contentDescription` | Descrição    | string | não         |                                                                |                    | Texto de acessibilidade do botão.                |
-| `size`               | Tamanho      | enum   | não         | `small`, `regular`, `large`                                    | `regular`          | small (40 dp), regular (56 dp) ou large (96 dp). |
-| `containerColor`     | Cor do botão | enum   | não         | papéis do `ColorScheme`                                        | `primaryContainer` | Papel de cor do tema usado no fundo do botão.    |
+| Chave                | Rótulo       | Tipo   | Obrigatório | Opções                                                         | Padrão             | Descrição                                                                                                                                                                                                                                        |
+| -------------------- | ------------ | ------ | ----------- | -------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `icon`               | Ícone        | string | sim         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) | `Add`              | Ícone do botão.                                                                                                                                                                                                                                  |
+| `contentDescription` | Descrição    | string | não         |                                                                |                    | Texto de acessibilidade do botão.                                                                                                                                                                                                                |
+| `size`               | Tamanho      | enum   | não         | `small`, `regular`, `large`                                    | `regular`          | small (40 dp), regular (56 dp) ou large (96 dp).                                                                                                                                                                                                 |
+| `containerColor`     | Cor do botão | enum   | não         | papéis do `ColorScheme`                                        | `primaryContainer` | Papel de cor do tema usado no fundo do botão.                                                                                                                                                                                                    |
+| `interaction`        | Interação    | enum   | não         | `none`, `hovered`, `focused`, `pressed`                        | `none`             | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O FAB não tem desabilitado (sem enabled): o estado sempre desenha. |
 
 ## Compose
 
@@ -45,6 +46,9 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Adicionar**: icon=Add, contentDescription=Adicionar, size=regular
 - **Pequeno terciário**: icon=Edit, size=small, containerColor=tertiaryContainer
 - **Grande**: icon=Add, size=large
+- **Mouse sobre**: icon=Add, size=regular, interaction=hovered
+- **Com foco**: icon=Edit, size=small, containerColor=tertiaryContainer, interaction=focused
+- **Pressionado**: icon=Add, size=large, interaction=pressed
 
 ## Fidelidade
 
@@ -65,9 +69,16 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - O ícone é o nó `icon` do conjunto da biblioteca, com o nome do Compose (`Add`) trocado pelo nome do conjunto (`add`) num `$switch` que cobre as sugestões do campo; tem 24, e 36 no large (`LargeIconSize` dos `Defaults`, que o próprio `.kt` marca como diferente do token de 32).
 - A sombra é a do nível 3 de elevação (`ContainerElevation`, 6 dp), na cor `elevation-shadow`.
 
+**Estado de interação (campo `interaction`)**
+
+O campo escolhe a aparência parada de um estado, como o `size` escolhe o tamanho; não entra no `code` nem nas `variants`. As opções são `none` e os estados que o `FabPrimaryContainerTokens.kt` do commit define: `hovered`, `focused` e `pressed` (não há `Dragged*` nos tokens do FAB, então não há `dragged`). O FAB do Compose não tem `enabled`, então não há desabilitado: o estado sempre desenha.
+
+- **Camada de estado:** o nó `estado` é um `rect` da forma do botão (a mesma de cada `size`: `corner-medium`, `corner-large` ou `corner-extra-large`), entre o fundo e o ícone, com a cor de conteúdo do `containerColor` (a mesma do ícone: `on-primary-container` no padrão; `FocusedIconColor`, `HoveredIconColor` e `PressedIconColor` repetem `OnPrimaryContainer` nas linhas 25, 27 e 30 de `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FabPrimaryContainerTokens.kt`) e `opacity` pelos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- **Elevação por estado** (`FabPrimaryContainerTokens.kt`, linhas 23 a 29): o mouse sobre sobe do nível 3 para o 4 (`HoveredContainerElevation = Level4`, linha 26; `ElevationTokens.kt`, linha 28: 8 dp); foco e pressionado ficam no nível 3 (`FocusedContainerElevation` e `PressedContainerElevation`, linhas 24 e 29). A sombra do formato só aceita número literal, então a do nível 4 (y 4, blur 16, os de `elevation-4-y` e `elevation-4-blur`) é de um nó à parte (`sombra elevada`, com o mesmo fundo e a mesma forma, visível só no mouse sobre) e a sombra do contêiner some nesse estado. Foco e pressionado desenham iguais (mesma opacidade, 0,10, e mesmo nível).
+
 **O que ainda difere do Compose**
 
 - O `y` (3) e o `blur` (12) da sombra são números no componente, os mesmos de `elevation-3-y` e `elevation-3-blur`: o formato 4 só aceita `$token` na **cor** da sombra, não em `shadow.y` nem em `shadow.blur`. Uma troca desses tokens na especialização não chega ao desenho.
 - A sombra do Compose usa duas luzes (ambiente e direta) e a tonal da elevação sobre `surface`; o formato tem uma sombra só, e a elevação tonal do `FloatingActionButton` sobre o contêiner não é desenhada.
-- Sem camadas de estado (hover, foco, pressionado) nem movimento: o desenho é o do estado em repouso, com a elevação padrão (a de pressionado e a de hover ficam de fora).
+- Sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O anel de foco por fora do botão não é desenhado: a raiz recorta (#896).
 - O ícone vem de uma lista fixa de nomes; o `FloatingActionButton` aceita qualquer `@Composable` no conteúdo.

@@ -22,19 +22,22 @@
         "text": "Editar",
         "leadingIcon": "Edit",
         "trailingIcon": "",
-        "enabled": "true"
+        "enabled": "true",
+        "selected": "false"
       },
       {
         "text": "Compartilhar",
         "leadingIcon": "Share",
         "trailingIcon": "",
-        "enabled": "true"
+        "enabled": "true",
+        "selected": "false"
       },
       {
         "text": "Excluir",
         "leadingIcon": "Delete",
         "trailingIcon": "",
-        "enabled": "true"
+        "enabled": "true",
+        "selected": "false"
       }
     ]
   },
@@ -87,9 +90,31 @@
             "fill": "none",
             "stroke": {
               "color": {
-                "$token": "on-surface-variant"
+                "$if": {
+                  "$eq": ["interaction", "focused"]
+                },
+                "then": {
+                  "$token": "primary"
+                },
+                "else": {
+                  "$if": {
+                    "$eq": ["interaction", "hovered"]
+                  },
+                  "then": {
+                    "$token": "on-surface"
+                  },
+                  "else": {
+                    "$token": "on-surface-variant"
+                  }
+                }
               },
-              "width": 1,
+              "width": {
+                "$if": {
+                  "$eq": ["interaction", "focused"]
+                },
+                "then": 2,
+                "else": 1
+              },
               "align": "inside",
               "sides": ["bottom"]
             }
@@ -173,7 +198,15 @@
                       }
                     },
                     "color": {
-                      "$token": "on-surface-variant"
+                      "$if": {
+                        "$eq": ["interaction", "focused"]
+                      },
+                      "then": {
+                        "$token": "primary"
+                      },
+                      "else": {
+                        "$token": "on-surface-variant"
+                      }
                     },
                     "visible": {
                       "$has": "label"
@@ -298,270 +331,240 @@
               "name": "item",
               "width": "fill",
               "height": "hug",
-              "minHeight": 48,
               "layout": {
-                "type": "row",
-                "padding": {
-                  "$if": {
-                    "$eq": ["style", "exposed"]
-                  },
-                  "then": [0, 16],
-                  "else": [0, 12]
+                "type": "none"
+              },
+              "fill": {
+                "$if": {
+                  "$and": [
+                    {
+                      "$eq": ["selected", "true"]
+                    },
+                    {
+                      "$not": {
+                        "$eq": ["enabled", "false"]
+                      }
+                    }
+                  ]
                 },
-                "align": "center"
+                "then": {
+                  "$token": "secondary-container"
+                },
+                "else": "none"
               },
               "children": [
                 {
-                  "type": "icon",
-                  "name": {
-                    "$switch": "leadingIcon",
-                    "cases": {
-                      "Home": "home",
-                      "Search": "search",
-                      "Person": "person",
-                      "Menu": "menu",
-                      "MoreVert": "more_vert",
-                      "Add": "add",
-                      "Check": "check",
-                      "Close": "close",
-                      "ArrowBack": "arrow_back",
-                      "Favorite": "favorite",
-                      "Edit": "edit",
-                      "Delete": "delete",
-                      "Share": "share",
-                      "Notifications": "notifications",
-                      "Settings": "settings",
-                      "Info": "info",
-                      "Star": "star",
-                      "Email": "email",
-                      "Phone": "phone",
-                      "Place": "place",
-                      "DateRange": "date_range",
-                      "ShoppingCart": "shopping_cart",
-                      "AccountCircle": "account_circle",
-                      "KeyboardArrowRight": "keyboard_arrow_right",
-                      "KeyboardArrowDown": "keyboard_arrow_down",
-                      "Refresh": "refresh",
-                      "Clear": "clear",
-                      "Done": "done",
-                      "Lock": "lock",
-                      "List": "list",
-                      "AccountBox": "account_box",
-                      "AddCircle": "add_circle",
-                      "ArrowDropDown": "arrow_drop_down",
-                      "ArrowDropUp": "arrow_drop_up",
-                      "ArrowForward": "arrow_forward",
-                      "ArrowUpward": "arrow_upward",
-                      "ArrowDownward": "arrow_downward",
-                      "Build": "build",
-                      "Call": "call",
-                      "CheckCircle": "check_circle",
-                      "Create": "create",
-                      "Face": "face",
-                      "FavoriteBorder": "favorite_border",
-                      "ExitToApp": "exit_to_app",
-                      "KeyboardArrowLeft": "keyboard_arrow_left",
-                      "KeyboardArrowUp": "keyboard_arrow_up",
-                      "LocationOn": "location_on",
-                      "MailOutline": "mail_outline",
-                      "PlayArrow": "play_arrow",
-                      "Send": "send",
-                      "ThumbUp": "thumb_up",
-                      "Warning": "warning",
-                      "Cancel": "cancel",
-                      "ExpandMore": "expand_more",
-                      "ExpandLess": "expand_less",
-                      "ChevronLeft": "chevron_left",
-                      "ChevronRight": "chevron_right",
-                      "FirstPage": "first_page",
-                      "LastPage": "last_page",
-                      "MoreHoriz": "more_horiz",
-                      "Apps": "apps",
-                      "Dashboard": "dashboard",
-                      "Folder": "folder",
-                      "FolderOpen": "folder_open",
-                      "InsertDriveFile": "insert_drive_file",
-                      "Description": "description",
-                      "Image": "image",
-                      "Mic": "mic",
-                      "Videocam": "videocam",
-                      "Chat": "chat",
-                      "Comment": "comment",
-                      "Forum": "forum",
-                      "NotificationsNone": "notifications_none",
-                      "Visibility": "visibility",
-                      "VisibilityOff": "visibility_off",
-                      "Language": "language",
-                      "Public": "public",
-                      "Link": "link",
-                      "Attachment": "attachment",
-                      "ContentCopy": "content_copy",
-                      "ContentPaste": "content_paste",
-                      "ContentCut": "content_cut",
-                      "Save": "save",
-                      "Download": "download",
-                      "Upload": "upload",
-                      "CloudUpload": "cloud_upload",
-                      "CloudDownload": "cloud_download",
-                      "Cloud": "cloud",
-                      "Sync": "sync",
-                      "Schedule": "schedule",
-                      "AccessTime": "access_time",
-                      "CalendarToday": "calendar_today",
-                      "Event": "event",
-                      "Today": "today",
-                      "Timer": "timer",
-                      "Alarm": "alarm",
-                      "History": "history",
-                      "Bookmark": "bookmark",
-                      "BookmarkBorder": "bookmark_border",
-                      "Label": "label",
-                      "Flag": "flag",
-                      "Help": "help",
-                      "HelpOutline": "help_outline",
-                      "Error": "error",
-                      "ErrorOutline": "error_outline",
-                      "Report": "report",
-                      "Block": "block",
-                      "Tune": "tune",
-                      "FilterList": "filter_list",
-                      "Sort": "sort",
-                      "Fullscreen": "fullscreen",
-                      "Wifi": "wifi",
-                      "Bluetooth": "bluetooth",
-                      "LightMode": "light_mode",
-                      "DarkMode": "dark_mode",
-                      "Palette": "palette",
-                      "ShoppingBag": "shopping_bag",
-                      "Store": "store",
-                      "Payment": "payment",
-                      "CreditCard": "credit_card",
-                      "AttachMoney": "attach_money",
-                      "Receipt": "receipt",
-                      "Map": "map",
-                      "Navigation": "navigation",
-                      "DirectionsCar": "directions_car",
-                      "Flight": "flight",
-                      "MenuOpen": "menu_open",
-                      "Logout": "logout",
-                      "Login": "login",
-                      "People": "people",
-                      "Group": "group",
-                      "PersonAdd": "person_add",
-                      "LockOpen": "lock_open",
-                      "Security": "security",
-                      "VerifiedUser": "verified_user",
-                      "Key": "key",
-                      "Pause": "pause",
-                      "Stop": "stop",
-                      "SkipNext": "skip_next",
-                      "SkipPrevious": "skip_previous",
-                      "VolumeUp": "volume_up",
-                      "VolumeOff": "volume_off",
-                      "ThumbDown": "thumb_down",
-                      "Reply": "reply",
-                      "Inbox": "inbox",
-                      "Archive": "archive",
-                      "Undo": "undo",
-                      "Redo": "redo",
-                      "ZoomIn": "zoom_in",
-                      "ZoomOut": "zoom_out",
-                      "Keyboard": "keyboard",
-                      "CheckBox": "check_box",
-                      "CheckBoxOutlineBlank": "check_box_outline_blank",
-                      "RadioButtonChecked": "radio_button_checked",
-                      "RadioButtonUnchecked": "radio_button_unchecked",
-                      "ToggleOn": "toggle_on",
-                      "ToggleOff": "toggle_off",
-                      "StarBorder": "star_border",
-                      "StarHalf": "star_half",
-                      "Lightbulb": "lightbulb",
-                      "Code": "code",
-                      "Terminal": "terminal",
-                      "Bolt": "bolt",
-                      "EditCalendar": "edit_calendar"
-                    },
-                    "default": {
-                      "$field": "leadingIcon"
-                    }
-                  },
-                  "width": 24,
-                  "height": 24,
-                  "color": {
-                    "$if": {
-                      "$eq": ["enabled", "false"]
-                    },
-                    "then": {
-                      "$token": "on-surface"
-                    },
-                    "else": {
-                      "$token": "on-surface-variant"
-                    }
-                  },
-                  "opacity": {
-                    "$if": {
-                      "$eq": ["enabled", "false"]
-                    },
-                    "then": {
-                      "$token": "state-disabled-content"
-                    },
-                    "else": 1
-                  },
-                  "visible": {
-                    "$has": "leadingIcon"
-                  }
-                },
-                {
                   "type": "frame",
-                  "name": "texto (caixa)",
+                  "name": "conteúdo",
                   "width": "fill",
                   "height": "hug",
+                  "minHeight": 48,
                   "layout": {
                     "type": "row",
                     "padding": {
                       "$if": {
-                        "$has": "leadingIcon"
+                        "$eq": ["style", "exposed"]
                       },
-                      "then": {
-                        "$if": {
-                          "$has": "trailingIcon"
-                        },
-                        "then": [0, 12, 0, 12],
-                        "else": [0, 0, 0, 12]
-                      },
-                      "else": {
-                        "$if": {
-                          "$has": "trailingIcon"
-                        },
-                        "then": [0, 12, 0, 0],
-                        "else": 0
-                      }
-                    }
+                      "then": [0, 16],
+                      "else": [0, 12]
+                    },
+                    "align": "center"
                   },
                   "children": [
                     {
-                      "type": "text",
-                      "name": "texto",
-                      "text": {
-                        "$field": "text"
-                      },
-                      "width": "fill",
-                      "font": {
-                        "size": {
-                          "$token": "label-large-size"
+                      "type": "icon",
+                      "name": {
+                        "$switch": "leadingIcon",
+                        "cases": {
+                          "Home": "home",
+                          "Search": "search",
+                          "Person": "person",
+                          "Menu": "menu",
+                          "MoreVert": "more_vert",
+                          "Add": "add",
+                          "Check": "check",
+                          "Close": "close",
+                          "ArrowBack": "arrow_back",
+                          "Favorite": "favorite",
+                          "Edit": "edit",
+                          "Delete": "delete",
+                          "Share": "share",
+                          "Notifications": "notifications",
+                          "Settings": "settings",
+                          "Info": "info",
+                          "Star": "star",
+                          "Email": "email",
+                          "Phone": "phone",
+                          "Place": "place",
+                          "DateRange": "date_range",
+                          "ShoppingCart": "shopping_cart",
+                          "AccountCircle": "account_circle",
+                          "KeyboardArrowRight": "keyboard_arrow_right",
+                          "KeyboardArrowDown": "keyboard_arrow_down",
+                          "Refresh": "refresh",
+                          "Clear": "clear",
+                          "Done": "done",
+                          "Lock": "lock",
+                          "List": "list",
+                          "AccountBox": "account_box",
+                          "AddCircle": "add_circle",
+                          "ArrowDropDown": "arrow_drop_down",
+                          "ArrowDropUp": "arrow_drop_up",
+                          "ArrowForward": "arrow_forward",
+                          "ArrowUpward": "arrow_upward",
+                          "ArrowDownward": "arrow_downward",
+                          "Build": "build",
+                          "Call": "call",
+                          "CheckCircle": "check_circle",
+                          "Create": "create",
+                          "Face": "face",
+                          "FavoriteBorder": "favorite_border",
+                          "ExitToApp": "exit_to_app",
+                          "KeyboardArrowLeft": "keyboard_arrow_left",
+                          "KeyboardArrowUp": "keyboard_arrow_up",
+                          "LocationOn": "location_on",
+                          "MailOutline": "mail_outline",
+                          "PlayArrow": "play_arrow",
+                          "Send": "send",
+                          "ThumbUp": "thumb_up",
+                          "Warning": "warning",
+                          "Cancel": "cancel",
+                          "ExpandMore": "expand_more",
+                          "ExpandLess": "expand_less",
+                          "ChevronLeft": "chevron_left",
+                          "ChevronRight": "chevron_right",
+                          "FirstPage": "first_page",
+                          "LastPage": "last_page",
+                          "MoreHoriz": "more_horiz",
+                          "Apps": "apps",
+                          "Dashboard": "dashboard",
+                          "Folder": "folder",
+                          "FolderOpen": "folder_open",
+                          "InsertDriveFile": "insert_drive_file",
+                          "Description": "description",
+                          "Image": "image",
+                          "Mic": "mic",
+                          "Videocam": "videocam",
+                          "Chat": "chat",
+                          "Comment": "comment",
+                          "Forum": "forum",
+                          "NotificationsNone": "notifications_none",
+                          "Visibility": "visibility",
+                          "VisibilityOff": "visibility_off",
+                          "Language": "language",
+                          "Public": "public",
+                          "Link": "link",
+                          "Attachment": "attachment",
+                          "ContentCopy": "content_copy",
+                          "ContentPaste": "content_paste",
+                          "ContentCut": "content_cut",
+                          "Save": "save",
+                          "Download": "download",
+                          "Upload": "upload",
+                          "CloudUpload": "cloud_upload",
+                          "CloudDownload": "cloud_download",
+                          "Cloud": "cloud",
+                          "Sync": "sync",
+                          "Schedule": "schedule",
+                          "AccessTime": "access_time",
+                          "CalendarToday": "calendar_today",
+                          "Event": "event",
+                          "Today": "today",
+                          "Timer": "timer",
+                          "Alarm": "alarm",
+                          "History": "history",
+                          "Bookmark": "bookmark",
+                          "BookmarkBorder": "bookmark_border",
+                          "Label": "label",
+                          "Flag": "flag",
+                          "Help": "help",
+                          "HelpOutline": "help_outline",
+                          "Error": "error",
+                          "ErrorOutline": "error_outline",
+                          "Report": "report",
+                          "Block": "block",
+                          "Tune": "tune",
+                          "FilterList": "filter_list",
+                          "Sort": "sort",
+                          "Fullscreen": "fullscreen",
+                          "Wifi": "wifi",
+                          "Bluetooth": "bluetooth",
+                          "LightMode": "light_mode",
+                          "DarkMode": "dark_mode",
+                          "Palette": "palette",
+                          "ShoppingBag": "shopping_bag",
+                          "Store": "store",
+                          "Payment": "payment",
+                          "CreditCard": "credit_card",
+                          "AttachMoney": "attach_money",
+                          "Receipt": "receipt",
+                          "Map": "map",
+                          "Navigation": "navigation",
+                          "DirectionsCar": "directions_car",
+                          "Flight": "flight",
+                          "MenuOpen": "menu_open",
+                          "Logout": "logout",
+                          "Login": "login",
+                          "People": "people",
+                          "Group": "group",
+                          "PersonAdd": "person_add",
+                          "LockOpen": "lock_open",
+                          "Security": "security",
+                          "VerifiedUser": "verified_user",
+                          "Key": "key",
+                          "Pause": "pause",
+                          "Stop": "stop",
+                          "SkipNext": "skip_next",
+                          "SkipPrevious": "skip_previous",
+                          "VolumeUp": "volume_up",
+                          "VolumeOff": "volume_off",
+                          "ThumbDown": "thumb_down",
+                          "Reply": "reply",
+                          "Inbox": "inbox",
+                          "Archive": "archive",
+                          "Undo": "undo",
+                          "Redo": "redo",
+                          "ZoomIn": "zoom_in",
+                          "ZoomOut": "zoom_out",
+                          "Keyboard": "keyboard",
+                          "CheckBox": "check_box",
+                          "CheckBoxOutlineBlank": "check_box_outline_blank",
+                          "RadioButtonChecked": "radio_button_checked",
+                          "RadioButtonUnchecked": "radio_button_unchecked",
+                          "ToggleOn": "toggle_on",
+                          "ToggleOff": "toggle_off",
+                          "StarBorder": "star_border",
+                          "StarHalf": "star_half",
+                          "Lightbulb": "lightbulb",
+                          "Code": "code",
+                          "Terminal": "terminal",
+                          "Bolt": "bolt",
+                          "EditCalendar": "edit_calendar"
                         },
-                        "weight": {
-                          "$token": "label-large-weight"
-                        },
-                        "lineHeight": {
-                          "$token": "label-large-line-height"
-                        },
-                        "letterSpacing": {
-                          "$token": "label-large-tracking"
+                        "default": {
+                          "$field": "leadingIcon"
                         }
                       },
+                      "width": 24,
+                      "height": 24,
                       "color": {
-                        "$token": "on-surface"
+                        "$if": {
+                          "$eq": ["enabled", "false"]
+                        },
+                        "then": {
+                          "$token": "on-surface"
+                        },
+                        "else": {
+                          "$if": {
+                            "$eq": ["selected", "true"]
+                          },
+                          "then": {
+                            "$token": "on-secondary-container"
+                          },
+                          "else": {
+                            "$token": "on-surface-variant"
+                          }
+                        }
                       },
                       "opacity": {
                         "$if": {
@@ -571,208 +574,327 @@
                           "$token": "state-disabled-content"
                         },
                         "else": 1
+                      },
+                      "visible": {
+                        "$has": "leadingIcon"
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "name": "texto (caixa)",
+                      "width": "fill",
+                      "height": "hug",
+                      "layout": {
+                        "type": "row",
+                        "padding": {
+                          "$if": {
+                            "$has": "leadingIcon"
+                          },
+                          "then": {
+                            "$if": {
+                              "$has": "trailingIcon"
+                            },
+                            "then": [0, 12, 0, 12],
+                            "else": [0, 0, 0, 12]
+                          },
+                          "else": {
+                            "$if": {
+                              "$has": "trailingIcon"
+                            },
+                            "then": [0, 12, 0, 0],
+                            "else": 0
+                          }
+                        }
+                      },
+                      "children": [
+                        {
+                          "type": "text",
+                          "name": "texto",
+                          "text": {
+                            "$field": "text"
+                          },
+                          "width": "fill",
+                          "font": {
+                            "size": {
+                              "$token": "label-large-size"
+                            },
+                            "weight": {
+                              "$token": "label-large-weight"
+                            },
+                            "lineHeight": {
+                              "$token": "label-large-line-height"
+                            },
+                            "letterSpacing": {
+                              "$token": "label-large-tracking"
+                            }
+                          },
+                          "color": {
+                            "$if": {
+                              "$eq": ["selected", "true"]
+                            },
+                            "then": {
+                              "$token": "on-secondary-container"
+                            },
+                            "else": {
+                              "$token": "on-surface"
+                            }
+                          },
+                          "opacity": {
+                            "$if": {
+                              "$eq": ["enabled", "false"]
+                            },
+                            "then": {
+                              "$token": "state-disabled-content"
+                            },
+                            "else": 1
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "icon",
+                      "name": {
+                        "$switch": "trailingIcon",
+                        "cases": {
+                          "Home": "home",
+                          "Search": "search",
+                          "Person": "person",
+                          "Menu": "menu",
+                          "MoreVert": "more_vert",
+                          "Add": "add",
+                          "Check": "check",
+                          "Close": "close",
+                          "ArrowBack": "arrow_back",
+                          "Favorite": "favorite",
+                          "Edit": "edit",
+                          "Delete": "delete",
+                          "Share": "share",
+                          "Notifications": "notifications",
+                          "Settings": "settings",
+                          "Info": "info",
+                          "Star": "star",
+                          "Email": "email",
+                          "Phone": "phone",
+                          "Place": "place",
+                          "DateRange": "date_range",
+                          "ShoppingCart": "shopping_cart",
+                          "AccountCircle": "account_circle",
+                          "KeyboardArrowRight": "keyboard_arrow_right",
+                          "KeyboardArrowDown": "keyboard_arrow_down",
+                          "Refresh": "refresh",
+                          "Clear": "clear",
+                          "Done": "done",
+                          "Lock": "lock",
+                          "List": "list",
+                          "AccountBox": "account_box",
+                          "AddCircle": "add_circle",
+                          "ArrowDropDown": "arrow_drop_down",
+                          "ArrowDropUp": "arrow_drop_up",
+                          "ArrowForward": "arrow_forward",
+                          "ArrowUpward": "arrow_upward",
+                          "ArrowDownward": "arrow_downward",
+                          "Build": "build",
+                          "Call": "call",
+                          "CheckCircle": "check_circle",
+                          "Create": "create",
+                          "Face": "face",
+                          "FavoriteBorder": "favorite_border",
+                          "ExitToApp": "exit_to_app",
+                          "KeyboardArrowLeft": "keyboard_arrow_left",
+                          "KeyboardArrowUp": "keyboard_arrow_up",
+                          "LocationOn": "location_on",
+                          "MailOutline": "mail_outline",
+                          "PlayArrow": "play_arrow",
+                          "Send": "send",
+                          "ThumbUp": "thumb_up",
+                          "Warning": "warning",
+                          "Cancel": "cancel",
+                          "ExpandMore": "expand_more",
+                          "ExpandLess": "expand_less",
+                          "ChevronLeft": "chevron_left",
+                          "ChevronRight": "chevron_right",
+                          "FirstPage": "first_page",
+                          "LastPage": "last_page",
+                          "MoreHoriz": "more_horiz",
+                          "Apps": "apps",
+                          "Dashboard": "dashboard",
+                          "Folder": "folder",
+                          "FolderOpen": "folder_open",
+                          "InsertDriveFile": "insert_drive_file",
+                          "Description": "description",
+                          "Image": "image",
+                          "Mic": "mic",
+                          "Videocam": "videocam",
+                          "Chat": "chat",
+                          "Comment": "comment",
+                          "Forum": "forum",
+                          "NotificationsNone": "notifications_none",
+                          "Visibility": "visibility",
+                          "VisibilityOff": "visibility_off",
+                          "Language": "language",
+                          "Public": "public",
+                          "Link": "link",
+                          "Attachment": "attachment",
+                          "ContentCopy": "content_copy",
+                          "ContentPaste": "content_paste",
+                          "ContentCut": "content_cut",
+                          "Save": "save",
+                          "Download": "download",
+                          "Upload": "upload",
+                          "CloudUpload": "cloud_upload",
+                          "CloudDownload": "cloud_download",
+                          "Cloud": "cloud",
+                          "Sync": "sync",
+                          "Schedule": "schedule",
+                          "AccessTime": "access_time",
+                          "CalendarToday": "calendar_today",
+                          "Event": "event",
+                          "Today": "today",
+                          "Timer": "timer",
+                          "Alarm": "alarm",
+                          "History": "history",
+                          "Bookmark": "bookmark",
+                          "BookmarkBorder": "bookmark_border",
+                          "Label": "label",
+                          "Flag": "flag",
+                          "Help": "help",
+                          "HelpOutline": "help_outline",
+                          "Error": "error",
+                          "ErrorOutline": "error_outline",
+                          "Report": "report",
+                          "Block": "block",
+                          "Tune": "tune",
+                          "FilterList": "filter_list",
+                          "Sort": "sort",
+                          "Fullscreen": "fullscreen",
+                          "Wifi": "wifi",
+                          "Bluetooth": "bluetooth",
+                          "LightMode": "light_mode",
+                          "DarkMode": "dark_mode",
+                          "Palette": "palette",
+                          "ShoppingBag": "shopping_bag",
+                          "Store": "store",
+                          "Payment": "payment",
+                          "CreditCard": "credit_card",
+                          "AttachMoney": "attach_money",
+                          "Receipt": "receipt",
+                          "Map": "map",
+                          "Navigation": "navigation",
+                          "DirectionsCar": "directions_car",
+                          "Flight": "flight",
+                          "MenuOpen": "menu_open",
+                          "Logout": "logout",
+                          "Login": "login",
+                          "People": "people",
+                          "Group": "group",
+                          "PersonAdd": "person_add",
+                          "LockOpen": "lock_open",
+                          "Security": "security",
+                          "VerifiedUser": "verified_user",
+                          "Key": "key",
+                          "Pause": "pause",
+                          "Stop": "stop",
+                          "SkipNext": "skip_next",
+                          "SkipPrevious": "skip_previous",
+                          "VolumeUp": "volume_up",
+                          "VolumeOff": "volume_off",
+                          "ThumbDown": "thumb_down",
+                          "Reply": "reply",
+                          "Inbox": "inbox",
+                          "Archive": "archive",
+                          "Undo": "undo",
+                          "Redo": "redo",
+                          "ZoomIn": "zoom_in",
+                          "ZoomOut": "zoom_out",
+                          "Keyboard": "keyboard",
+                          "CheckBox": "check_box",
+                          "CheckBoxOutlineBlank": "check_box_outline_blank",
+                          "RadioButtonChecked": "radio_button_checked",
+                          "RadioButtonUnchecked": "radio_button_unchecked",
+                          "ToggleOn": "toggle_on",
+                          "ToggleOff": "toggle_off",
+                          "StarBorder": "star_border",
+                          "StarHalf": "star_half",
+                          "Lightbulb": "lightbulb",
+                          "Code": "code",
+                          "Terminal": "terminal",
+                          "Bolt": "bolt",
+                          "EditCalendar": "edit_calendar"
+                        },
+                        "default": {
+                          "$field": "trailingIcon"
+                        }
+                      },
+                      "width": 24,
+                      "height": 24,
+                      "color": {
+                        "$if": {
+                          "$eq": ["enabled", "false"]
+                        },
+                        "then": {
+                          "$token": "on-surface"
+                        },
+                        "else": {
+                          "$if": {
+                            "$eq": ["selected", "true"]
+                          },
+                          "then": {
+                            "$token": "on-secondary-container"
+                          },
+                          "else": {
+                            "$token": "on-surface-variant"
+                          }
+                        }
+                      },
+                      "opacity": {
+                        "$if": {
+                          "$eq": ["enabled", "false"]
+                        },
+                        "then": {
+                          "$token": "state-disabled-content"
+                        },
+                        "else": 1
+                      },
+                      "visible": {
+                        "$has": "trailingIcon"
                       }
                     }
                   ]
                 },
                 {
-                  "type": "icon",
-                  "name": {
-                    "$switch": "trailingIcon",
-                    "cases": {
-                      "Home": "home",
-                      "Search": "search",
-                      "Person": "person",
-                      "Menu": "menu",
-                      "MoreVert": "more_vert",
-                      "Add": "add",
-                      "Check": "check",
-                      "Close": "close",
-                      "ArrowBack": "arrow_back",
-                      "Favorite": "favorite",
-                      "Edit": "edit",
-                      "Delete": "delete",
-                      "Share": "share",
-                      "Notifications": "notifications",
-                      "Settings": "settings",
-                      "Info": "info",
-                      "Star": "star",
-                      "Email": "email",
-                      "Phone": "phone",
-                      "Place": "place",
-                      "DateRange": "date_range",
-                      "ShoppingCart": "shopping_cart",
-                      "AccountCircle": "account_circle",
-                      "KeyboardArrowRight": "keyboard_arrow_right",
-                      "KeyboardArrowDown": "keyboard_arrow_down",
-                      "Refresh": "refresh",
-                      "Clear": "clear",
-                      "Done": "done",
-                      "Lock": "lock",
-                      "List": "list",
-                      "AccountBox": "account_box",
-                      "AddCircle": "add_circle",
-                      "ArrowDropDown": "arrow_drop_down",
-                      "ArrowDropUp": "arrow_drop_up",
-                      "ArrowForward": "arrow_forward",
-                      "ArrowUpward": "arrow_upward",
-                      "ArrowDownward": "arrow_downward",
-                      "Build": "build",
-                      "Call": "call",
-                      "CheckCircle": "check_circle",
-                      "Create": "create",
-                      "Face": "face",
-                      "FavoriteBorder": "favorite_border",
-                      "ExitToApp": "exit_to_app",
-                      "KeyboardArrowLeft": "keyboard_arrow_left",
-                      "KeyboardArrowUp": "keyboard_arrow_up",
-                      "LocationOn": "location_on",
-                      "MailOutline": "mail_outline",
-                      "PlayArrow": "play_arrow",
-                      "Send": "send",
-                      "ThumbUp": "thumb_up",
-                      "Warning": "warning",
-                      "Cancel": "cancel",
-                      "ExpandMore": "expand_more",
-                      "ExpandLess": "expand_less",
-                      "ChevronLeft": "chevron_left",
-                      "ChevronRight": "chevron_right",
-                      "FirstPage": "first_page",
-                      "LastPage": "last_page",
-                      "MoreHoriz": "more_horiz",
-                      "Apps": "apps",
-                      "Dashboard": "dashboard",
-                      "Folder": "folder",
-                      "FolderOpen": "folder_open",
-                      "InsertDriveFile": "insert_drive_file",
-                      "Description": "description",
-                      "Image": "image",
-                      "Mic": "mic",
-                      "Videocam": "videocam",
-                      "Chat": "chat",
-                      "Comment": "comment",
-                      "Forum": "forum",
-                      "NotificationsNone": "notifications_none",
-                      "Visibility": "visibility",
-                      "VisibilityOff": "visibility_off",
-                      "Language": "language",
-                      "Public": "public",
-                      "Link": "link",
-                      "Attachment": "attachment",
-                      "ContentCopy": "content_copy",
-                      "ContentPaste": "content_paste",
-                      "ContentCut": "content_cut",
-                      "Save": "save",
-                      "Download": "download",
-                      "Upload": "upload",
-                      "CloudUpload": "cloud_upload",
-                      "CloudDownload": "cloud_download",
-                      "Cloud": "cloud",
-                      "Sync": "sync",
-                      "Schedule": "schedule",
-                      "AccessTime": "access_time",
-                      "CalendarToday": "calendar_today",
-                      "Event": "event",
-                      "Today": "today",
-                      "Timer": "timer",
-                      "Alarm": "alarm",
-                      "History": "history",
-                      "Bookmark": "bookmark",
-                      "BookmarkBorder": "bookmark_border",
-                      "Label": "label",
-                      "Flag": "flag",
-                      "Help": "help",
-                      "HelpOutline": "help_outline",
-                      "Error": "error",
-                      "ErrorOutline": "error_outline",
-                      "Report": "report",
-                      "Block": "block",
-                      "Tune": "tune",
-                      "FilterList": "filter_list",
-                      "Sort": "sort",
-                      "Fullscreen": "fullscreen",
-                      "Wifi": "wifi",
-                      "Bluetooth": "bluetooth",
-                      "LightMode": "light_mode",
-                      "DarkMode": "dark_mode",
-                      "Palette": "palette",
-                      "ShoppingBag": "shopping_bag",
-                      "Store": "store",
-                      "Payment": "payment",
-                      "CreditCard": "credit_card",
-                      "AttachMoney": "attach_money",
-                      "Receipt": "receipt",
-                      "Map": "map",
-                      "Navigation": "navigation",
-                      "DirectionsCar": "directions_car",
-                      "Flight": "flight",
-                      "MenuOpen": "menu_open",
-                      "Logout": "logout",
-                      "Login": "login",
-                      "People": "people",
-                      "Group": "group",
-                      "PersonAdd": "person_add",
-                      "LockOpen": "lock_open",
-                      "Security": "security",
-                      "VerifiedUser": "verified_user",
-                      "Key": "key",
-                      "Pause": "pause",
-                      "Stop": "stop",
-                      "SkipNext": "skip_next",
-                      "SkipPrevious": "skip_previous",
-                      "VolumeUp": "volume_up",
-                      "VolumeOff": "volume_off",
-                      "ThumbDown": "thumb_down",
-                      "Reply": "reply",
-                      "Inbox": "inbox",
-                      "Archive": "archive",
-                      "Undo": "undo",
-                      "Redo": "redo",
-                      "ZoomIn": "zoom_in",
-                      "ZoomOut": "zoom_out",
-                      "Keyboard": "keyboard",
-                      "CheckBox": "check_box",
-                      "CheckBoxOutlineBlank": "check_box_outline_blank",
-                      "RadioButtonChecked": "radio_button_checked",
-                      "RadioButtonUnchecked": "radio_button_unchecked",
-                      "ToggleOn": "toggle_on",
-                      "ToggleOff": "toggle_off",
-                      "StarBorder": "star_border",
-                      "StarHalf": "star_half",
-                      "Lightbulb": "lightbulb",
-                      "Code": "code",
-                      "Terminal": "terminal",
-                      "Bolt": "bolt",
-                      "EditCalendar": "edit_calendar"
-                    },
-                    "default": {
-                      "$field": "trailingIcon"
-                    }
-                  },
-                  "width": 24,
-                  "height": 24,
-                  "color": {
-                    "$if": {
-                      "$eq": ["enabled", "false"]
-                    },
-                    "then": {
-                      "$token": "on-surface"
-                    },
-                    "else": {
-                      "$token": "on-surface-variant"
-                    }
+                  "type": "rect",
+                  "name": "estado",
+                  "fill": {
+                    "$token": "on-secondary-container"
                   },
                   "opacity": {
-                    "$if": {
-                      "$eq": ["enabled", "false"]
+                    "$switch": "interaction",
+                    "cases": {
+                      "hovered": {
+                        "$token": "state-hover"
+                      },
+                      "focused": {
+                        "$token": "state-focus"
+                      }
                     },
-                    "then": {
-                      "$token": "state-disabled-content"
-                    },
-                    "else": 1
+                    "default": 0
                   },
                   "visible": {
-                    "$has": "trailingIcon"
+                    "$and": [
+                      {
+                        "$eq": ["selected", "true"]
+                      },
+                      {
+                        "$not": {
+                          "$eq": ["enabled", "false"]
+                        }
+                      },
+                      {
+                        "$not": {
+                          "$eq": ["interaction", "none"]
+                        }
+                      }
+                    ]
                   }
                 }
               ]

@@ -287,3 +287,21 @@ write(
   },
   { preview: { label: 'novo' } },
 );
+
+// Os componentes mínimos acima não desenham o `interaction`: sem tirar o campo e os exemplos que o
+// usam, o validador avisa "campo não usado" (R25.1).
+const specFile = process.argv[2] + '/material3-compose.spec.json';
+const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
+for (const layer of spec.layers)
+  for (const type of layer.annotationTypes)
+    if (
+      ['card', 'checkbox', 'chip', 'list-item', 'navigation-bar', 'text-field'].includes(
+        type.id,
+      )
+    ) {
+      type.fields = type.fields.filter((f) => f.key !== 'interaction');
+      type.examples = (type.examples ?? []).filter(
+        (e) => e.values?.interaction === undefined,
+      );
+    }
+fs.writeFileSync(specFile, JSON.stringify(spec, null, 2));
