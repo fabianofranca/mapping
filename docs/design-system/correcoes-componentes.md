@@ -2,7 +2,7 @@
 
 ## Pendências
 
-Nenhuma até agora.
+Nenhuma: a etapa não toca em componente, token nem ícone do design system.
 
 ## Sincronização
 

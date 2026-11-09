@@ -163,6 +163,21 @@ test.describe('texto no Chromium', () => {
     expect(Math.abs(zoomed - base)).toBeLessThanOrEqual(1);
   });
 
+  test('#941: com maxWidth a largura é a natural do texto, não o limite', async ({
+    page,
+  }) => {
+    await load(page);
+    const natural = await measure(page, 16, 'OK');
+    const bounded = await measure(page, 16, 'OK', 400);
+    expect(bounded.width).toBeLessThan(100);
+    expect(Math.abs(bounded.width - natural.width)).toBeLessThanOrEqual(1);
+    // Quebrado em várias linhas: a largura é a da linha mais larga, e cabe no limite.
+    const wrapped = await measure(page, 16, 'Texto longo demais para a caixa', 80);
+    expect(wrapped.lines.length).toBeGreaterThan(1);
+    expect(wrapped.width).toBeLessThanOrEqual(80);
+    expect(wrapped.width).toBeGreaterThan(0);
+  });
+
   test('C1: wrap none é uma linha só; com ellipsis termina em … e cabe na largura', async ({
     page,
   }) => {

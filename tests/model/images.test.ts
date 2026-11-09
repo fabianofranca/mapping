@@ -212,6 +212,127 @@ describe('imagens: trocar', () => {
   });
 });
 
+describe('imagens: trocar preserva o tamanho e respeita o mínimo da marcação (#953)', () => {
+  /** Container 100×100 com uma marcação de `rect`; `minSizeOf` simula o componente que a desenha. */
+  function small(rect: { x: number; y: number; width: number; height: number }) {
+    let p = emptyProject();
+    p = addContainer(p, { id: 'C', file: 'images/a.jpg', width: 100, height: 100 });
+    return createMarking(
+      p,
+      { id: 'K', containerId: 'C', rect, name: 'K' },
+      { minSize: { width: 1, height: 1 } },
+    );
+  }
+  const comp = (min: { width: number; height: number } | null) => ({
+    minSizeOf: (id: string) => (id === 'K' ? min : null),
+  });
+
+  it('mesma escala: marcação de componente de 4×4 fica como está, sem revisão', () => {
+    const p = small({ x: 10, y: 10, width: 4, height: 4 });
+    const next = expectValid(
+      replaceContainer(
+        p,
+        'C',
+        { file: 'images/b.jpg', width: 100, height: 100 },
+        comp({ width: 4, height: 4 }),
+      ),
+    );
+    expect(marking(next, 'K').rect).toEqual({ x: 10, y: 10, width: 4, height: 4 });
+    expect(marking(next, 'K').needsReview).toBe(false);
+  });
+
+  it('mesma escala: marcação comum de 8×8 ou mais não muda', () => {
+    const p = small({ x: 10, y: 10, width: 8, height: 12 });
+    const next = replaceContainer(p, 'C', {
+      file: 'images/b.jpg',
+      width: 100,
+      height: 100,
+    });
+    expect(marking(next, 'K').rect).toEqual({ x: 10, y: 10, width: 8, height: 12 });
+    expect(marking(next, 'K').needsReview).toBe(false);
+  });
+
+  it('reescala de componente sem minSize: o mínimo é 1 px, não 8', () => {
+    let p = emptyProject();
+    p = addContainer(p, { id: 'C', file: 'images/a.jpg', width: 200, height: 200 });
+    p = createMarking(
+      p,
+      {
+        id: 'K',
+        containerId: 'C',
+        rect: { x: 20, y: 20, width: 2, height: 2 },
+        name: 'K',
+      },
+      { minSize: { width: 1, height: 1 } },
+    );
+    const next = expectValid(
+      replaceContainer(
+        p,
+        'C',
+        { file: 'images/b.jpg', width: 100, height: 100 },
+        comp({
+          width: 0,
+          height: 0,
+        }),
+      ),
+    );
+    expect(marking(next, 'K').rect).toEqual({ x: 10, y: 10, width: 1, height: 1 });
+    expect(marking(next, 'K').needsReview).toBe(false);
+  });
+
+  it('reescala abaixo do minSize do componente: cresce em volta do centro e ganha revisão', () => {
+    let p = emptyProject();
+    p = addContainer(p, { id: 'C', file: 'images/a.jpg', width: 200, height: 200 });
+    p = createMarking(p, {
+      id: 'K',
+      containerId: 'C',
+      rect: { x: 60, y: 60, width: 80, height: 80 },
+      name: 'K',
+    });
+    const next = expectValid(
+      replaceContainer(
+        p,
+        'C',
+        { file: 'images/b.jpg', width: 100, height: 100 },
+        comp({ width: 40, height: 40 }),
+      ),
+    );
+    // 80×80 viraria 40×40 em (30,30): já cabe. Com minSize 60×60 cresce em volta do centro.
+    expect(marking(next, 'K').rect).toEqual({ x: 30, y: 30, width: 40, height: 40 });
+    const grown = expectValid(
+      replaceContainer(
+        p,
+        'C',
+        { file: 'images/c.jpg', width: 100, height: 100 },
+        comp({ width: 60, height: 60 }),
+      ),
+    );
+    expect(marking(grown, 'K').rect).toEqual({ x: 20, y: 20, width: 60, height: 60 });
+    expect(marking(grown, 'K').needsReview).toBe(true);
+  });
+
+  it('mínimo maior que a imagem nova: o lado ocupa a imagem inteira e ganha revisão', () => {
+    let p = emptyProject();
+    p = addContainer(p, { id: 'C', file: 'images/a.jpg', width: 200, height: 200 });
+    p = createMarking(p, {
+      id: 'K',
+      containerId: 'C',
+      rect: { x: 60, y: 60, width: 80, height: 80 },
+      name: 'K',
+    });
+    const next = expectValid(
+      replaceContainer(
+        p,
+        'C',
+        { file: 'images/b.jpg', width: 100, height: 100 },
+        comp({ width: 150, height: 150 }),
+      ),
+    );
+    expect(marking(next, 'K').rect).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+    expect(marking(next, 'K').needsReview).toBe(true);
+  });
+});
+
 // Nomes da pasta do projeto, num só lugar para a app (`src/storage/`) e o servidor MCP (fase 8.5, M10).
 describe('arquivos da pasta do projeto', () => {
   it('mapping.json e images/', () => {
