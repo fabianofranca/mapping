@@ -113,6 +113,22 @@ export function textPolygons(
   return style.italic ? slant(polygons, baseline) : polygons;
 }
 
+/** Sem `sCapHeight` nem glifo `H`, a maiúscula vale esta fração do corpo (a mesma da app). */
+const CAP_HEIGHT_FALLBACK = 0.7;
+
+/**
+ * Altura da maiúscula no tamanho dado (px, positivo), para o `cap-middle`. É o único lugar que a lê:
+ * `OS/2.sCapHeight`; sem ele, o topo da caixa do glifo `H`; sem `H`, 0,7 do corpo.
+ */
+export function capHeightOf(face: Font, size: number): number {
+  const k = size / face.unitsPerEm;
+  const declared = face.tables?.os2?.sCapHeight;
+  if (typeof declared === 'number' && declared > 0) return declared * k;
+  const glyph = face.charToGlyph('H');
+  const top = glyph.index > 0 ? glyph.getBoundingBox().y2 : 0;
+  return top > 0 ? top * k : CAP_HEIGHT_FALLBACK * size;
+}
+
 /** Ascendente e descendente da fonte no tamanho dado (px, ambos positivos). */
 export function fontExtents(
   face: Font,
