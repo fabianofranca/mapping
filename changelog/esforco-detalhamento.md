@@ -1,4 +1,4 @@
-# Esforço high no detalhamento — [Não lançado] (épico `epic/esforco-detalhamento`, PR #PENDENTE, MCP 0.28.6, schema v18)
+# Esforço high no detalhamento — [Não lançado] (épico `epic/esforco-detalhamento`, PR #1161, MCP 0.28.6, schema v18)
 
 ## Alterado
 
