@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  addContainer,
   deserialize,
   proposalFilePath,
   serialize,
@@ -9,6 +10,7 @@ import {
 } from '../../src/model';
 import { clearReportedErrors, reportedErrors } from '../../src/utils/report';
 import { sampleProject } from '../model/fixtures';
+import { propose } from '../model/proposalFixtures';
 import {
   NEW_IMAGE_PATH,
   diskProposal,
@@ -238,6 +240,25 @@ describe('ProposalStore: conferência da pasta', () => {
       removed: [],
     });
     expect(session.proposals.problems.value).toEqual([]);
+  });
+
+  it('problems republica quando o conjunto muda sem mudar de tamanho (item 37)', async () => {
+    const { session, root } = await openHarness();
+    root.put(proposalFilePath('P7'), '{ não é json');
+    await session.proposals.scan();
+    expect(session.proposals.problems.value.map((p) => p.id)).toEqual(['P7']);
+
+    // O P7 some e outro arquivo quebra: continua um problema, mas é outro.
+    root.dirs.get('proposals')?.dirs.delete('P7');
+    root.put(proposalFilePath('P8'), '{ também quebrado');
+    await session.proposals.scan();
+    expect(session.proposals.problems.value.map((p) => p.id)).toEqual(['P8']);
+
+    // O mesmo arquivo continua quebrado, com outro erro.
+    const before = session.proposals.problems.value[0]?.errors;
+    root.put(proposalFilePath('P8'), '[1, 2]');
+    await session.proposals.scan();
+    expect(session.proposals.problems.value[0]?.errors).not.toEqual(before);
   });
 
   it('uma proposta conhecida que fica ilegível um instante (editor escrevendo) é ignorada', async () => {
@@ -770,5 +791,70 @@ describe('aplicar aceitas só conclui se o mapping.json gravou (fase 5.2)', () =
     await expectNothingApplied(h);
     expectNoWarnings(h);
     expect(h.review.derived.canApply.value).toBe(true);
+  });
+});
+
+describe('aplicar: falhas de armazenamento no before (itens 39 e 40)', () => {
+  /** Uma proposta com duas imagens novas, tudo aceito. */
+  async function twoImages(): Promise<Harness> {
+    const base = sampleProject();
+    let after = addContainer(base, {
+      id: 'I3',
+      file: 'images/a.webp',
+      width: 8,
+      height: 6,
+    });
+    after = addContainer(after, { id: 'I4', file: 'images/b.webp', width: 8, height: 6 });
+    const proposal = propose(base, after, { id: 'P1' });
+    const h = await openHarness({
+      proposals: [proposal],
+      files: { 'proposals/P1/images/a.webp': 'A', 'proposals/P1/images/b.webp': 'B' },
+    });
+    h.review.open('P1');
+    await h.review.decide({ level: 'proposal', id: null }, 'accepted');
+    expect(h.review.derived.canApply.value).toBe(true);
+    return h;
+  }
+
+  it('falha ao gravar a segunda imagem: write-failed, a primeira cópia sai e a proposta continua aberta (39)', async () => {
+    const h = await twoImages();
+    const original = h.storage.writeImage.bind(h.storage);
+    let calls = 0;
+    vi.spyOn(h.storage, 'writeImage').mockImplementation((path, data) => {
+      calls++;
+      return calls === 2
+        ? Promise.reject(new Error('disco cheio'))
+        : original(path, data);
+    });
+
+    const result = await h.review.apply();
+    expect(result).toEqual({ ok: false, error: 'write-failed' });
+    expect(await h.root.read('images/a.webp')).toBeNull();
+    expect(await h.root.read('images/b.webp')).toBeNull();
+    expect(await h.root.read('proposals/P1/images/a.webp')).toBe('A');
+    expect(h.session.store.project.value?.containers.map((i) => i.id)).not.toContain(
+      'I3',
+    );
+    expect((await diskProposal(h.root)).status).toBe('open');
+  });
+
+  it('save-failed com o projeto já mudado (undo pulado): as cópias ficam, porque o projeto as cita (40)', async () => {
+    const h = await twoImages();
+    vi.spyOn(h.storage, 'saveMapping').mockImplementation(async () => {
+      // O projeto é trocado enquanto grava (recarga por fora): deixa de ser o aplicado.
+      const current = h.session.store.project.peek();
+      if (current)
+        h.session.store.load({
+          ...current,
+          project: { ...current.project, name: 'Outro' },
+        });
+      throw new Error('quota');
+    });
+
+    const result = await h.review.apply();
+    expect(result).toEqual({ ok: false, error: 'save-failed' });
+    expect(h.session.store.project.value?.containers.map((i) => i.id)).toContain('I3');
+    expect(await h.root.read('images/a.webp')).toBe('A');
+    expect(await h.root.read('images/b.webp')).toBe('B');
   });
 });
