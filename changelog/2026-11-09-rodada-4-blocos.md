@@ -1,4 +1,4 @@
-# Rodada completa em 5 blocos — 2026-11-09 (épico `epic/rodada-4-blocos`, PR #1145, MCP 0.28.6, schema v18)
+# Rodada completa em 5 blocos — 2026-11-09 (épico `epic/rodada-4-blocos`, PR #1145, MCP 0.28.10, schema v18)
 
 ## Adicionado
 
