@@ -128,22 +128,56 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   const expected = useRef<string | null>(null);
   const folders = canPickDirectory();
 
-  const start = (specId: string | null) => {
-    expected.current = specId;
+  const reset = () => {
     setMessage(null);
     setIgnored(null);
   };
+  // Arquivo e zip: a escolha vem num evento seguinte, que lê `expected`.
   const pick = (specId: string | null) => {
-    start(specId);
+    expected.current = specId;
+    reset();
     input.current?.click();
   };
   const pickZip = (specId: string | null) => {
-    start(specId);
+    expected.current = specId;
+    reset();
     zipInput.current?.click();
   };
 
+  /**
+   * Confere o pacote ou arquivo lido: o `id` esperado (a especialização que se atualiza) e se
+   * a versão é mais nova. Devolve a decisão, ou `null` depois de mostrar o aviso.
+   */
+  const gate = (
+    spec: Spec,
+    expectedId: string | null,
+    beforeDecision?: () => boolean,
+  ): 'apply' | 'update' | null => {
+    if (expectedId !== null && spec.id !== expectedId) {
+      info(t('spec.invalidTitle'), [
+        t('spec.otherId', { found: spec.id, expected: expectedId }),
+      ]);
+      return null;
+    }
+    if (beforeDecision?.()) return null;
+    const decision = checkSpecApply(project, spec);
+    if (decision !== 'not-newer') return decision;
+    const current = project.specializations.find((s) => s.id === spec.id);
+    info(t('spec.notNewerTitle'), [
+      t('spec.notNewer', {
+        name: spec.name,
+        current: current?.version ?? 0,
+        next: spec.version,
+      }),
+    ]);
+    return null;
+  };
+
   /** Lê, valida (três níveis) e abre a revisão do pacote; nada muda no projeto ainda. */
-  const reviewPackage = async (read: () => Promise<PackageReadResult>) => {
+  const reviewPackage = async (
+    read: () => Promise<PackageReadResult>,
+    expectedId: string | null = expected.current,
+  ) => {
     setBusy(true);
     try {
       await nextFrame();
@@ -171,24 +205,8 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
         });
         return;
       }
-      if (expected.current !== null && spec.id !== expected.current) {
-        info(t('spec.invalidTitle'), [
-          t('spec.otherId', { found: spec.id, expected: expected.current }),
-        ]);
-        return;
-      }
-      const decision = checkSpecApply(project, spec);
-      if (decision === 'not-newer') {
-        const current = project.specializations.find((s) => s.id === spec.id);
-        info(t('spec.notNewerTitle'), [
-          t('spec.notNewer', {
-            name: spec.name,
-            current: current?.version ?? 0,
-            next: spec.version,
-          }),
-        ]);
-        return;
-      }
+      const decision = gate(spec, expectedId);
+      if (decision === null) return;
       const previous =
         decision === 'update'
           ? (project.specializations.find((s) => s.id === spec.id)?.spec ?? undefined)
@@ -207,7 +225,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
   };
 
   const pickFolder = async (specId: string | null) => {
-    start(specId);
+    reset();
     let handle;
     try {
       handle = await pickPackageDirectory();
@@ -216,7 +234,7 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
       setMessage({ tone: 'error', text: t('spec.packageReadFailed') });
       return;
     }
-    if (handle) await reviewPackage(() => readPackageFromDirectory(handle));
+    if (handle) await reviewPackage(() => readPackageFromDirectory(handle), specId);
   };
 
   const info = (title: string, lines: string[]) =>
@@ -244,38 +262,24 @@ export function SpecsDialog({ project, readOnly, onClose }: SpecsDialogProps) {
       return;
     }
     const spec = parsed.spec;
-    if (expected.current !== null && spec.id !== expected.current) {
-      info(t('spec.invalidTitle'), [
-        t('spec.otherId', { found: spec.id, expected: expected.current }),
-      ]);
-      return;
-    }
-    if (usesPackageFiles(spec)) {
+    const decision = gate(spec, expected.current, () => {
+      if (!usesPackageFiles(spec)) return false;
       info(t('spec.invalidTitle'), [t('spec.v4NeedsPackage', { name: spec.name })]);
-      return;
-    }
-    const decision = checkSpecApply(project, spec);
+      return true;
+    });
+    if (decision === null) return;
     if (decision === 'update') {
       setStep({ kind: 'update', spec, ignored: parsed.ignored });
-    } else if (decision === 'not-newer') {
-      const current = project.specializations.find((s) => s.id === spec.id);
-      info(t('spec.notNewerTitle'), [
-        t('spec.notNewer', {
-          name: spec.name,
-          current: current?.version ?? 0,
-          next: spec.version,
-        }),
-      ]);
-    } else {
-      const result = actions.applySpecialization(spec);
-      if (result.ok) setIgnored(ignoredText(parsed.ignored));
-      setMessage(
-        feedback(
-          result,
-          t('spec.appliedMessage', { name: spec.name, layers: spec.layers.length }),
-        ),
-      );
+      return;
     }
+    const result = actions.applySpecialization(spec);
+    if (result.ok) setIgnored(ignoredText(parsed.ignored));
+    setMessage(
+      feedback(
+        result,
+        t('spec.appliedMessage', { name: spec.name, layers: spec.layers.length }),
+      ),
+    );
   };
 
   /** Resultado de uma atualização: com pendências novas, abre Incompletas e conta quantas. */

@@ -1,5 +1,5 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t, type TranslationKey } from '../i18n';
 import { specHelpSections, type HelpBlock } from '../i18n/specHelp';
 import { locale } from '../store/settings';
@@ -268,7 +268,11 @@ export function HelpDialog({ onClose, section }: HelpDialogProps) {
     if (section) scrollToTopic(content.current, section);
   }, [section]);
 
-  const shown = topics().filter((topic) =>
+  // As seções só mudam com o idioma: a busca (a cada tecla) não as recria.
+  const language = locale.value;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `topics` lê o idioma por `t()`.
+  const all = useMemo(() => topics(), [language]);
+  const shown = all.filter((topic) =>
     matchesSearch(`${topic.title} ${topic.text}`, query),
   );
 

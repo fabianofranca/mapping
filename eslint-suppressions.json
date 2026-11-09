@@ -606,7 +606,7 @@
   },
   "src/ui/SpecsDialog.tsx": {
     "complexity": {
-      "count": 5
+      "count": 3
     }
   },
   "src/ui/TableField.tsx": {

@@ -1,56 +1,15 @@
 import { t } from '../i18n';
-import { perspectiveRootSet, type Perspective, type Project } from '../model';
 import { showToast } from '../store/ui';
 import type { ActionResult } from '../store/history';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
 import { MenuPopover } from './MenuPopover';
+import { perspectiveRows, type PerspectiveRow } from './perspectiveRows';
 
 // "Enviar para perspectiva…" dos Detalhes (etapa #659, PE3): um menu com a Principal e as
 // perspectivas do projeto em caixas. A Principal e a aberta ficam marcadas e travadas; marcar
 // uma outra envia a raiz, desmarcar a tira. Mesmo comportamento do submenu do botão direito.
-
-interface Row {
-  readonly id: string | null;
-  readonly name: string;
-  readonly note: string | null;
-  readonly checked: boolean;
-  readonly locked: boolean;
-}
-
-/** As linhas do menu para a raiz `rootId`: a Principal e uma por perspectiva do projeto. */
-export function sendRows(
-  project: Project,
-  localIds: ReadonlySet<string>,
-  openId: string | null,
-  rootId: string,
-): readonly Row[] {
-  const principal: Row = {
-    id: null,
-    name: t('perspective.principal'),
-    note: t('perspective.menu.always'),
-    checked: true,
-    locked: true,
-  };
-  return [
-    principal,
-    ...project.perspectives.map((x: Perspective): Row => {
-      const current = x.id === openId;
-      return {
-        id: x.id,
-        name: x.name,
-        note: current
-          ? t('perspective.menu.current')
-          : localIds.has(x.id)
-            ? t('perspective.menu.mine')
-            : null,
-        checked: perspectiveRootSet(x).has(rootId),
-        locked: current,
-      };
-    }),
-  ];
-}
 
 export function PerspectiveSendMenu({
   rootId,
@@ -69,25 +28,26 @@ export function PerspectiveSendMenu({
       </Button>
     );
   }
-  const rows = sendRows(
+  const rows = perspectiveRows(
     project,
-    session.perspective.localIds.value,
     session.perspective.id.value,
-    rootId,
+    session.perspective.localIds.value,
+    [rootId],
+    false,
   );
-  const toggle = (row: Row) => {
-    if (row.id === null) return;
+  const toggle = (row: PerspectiveRow) => {
+    if (!row.perspective) return;
     const { perspectiveActions } = session;
     const result: ActionResult = row.checked
-      ? perspectiveActions.removeRootsFromPerspective(row.id, [rootId])
-      : perspectiveActions.sendRootsToPerspective(row.id, [rootId]);
+      ? perspectiveActions.removeRootsFromPerspective(row.perspective.id, [rootId])
+      : perspectiveActions.sendRootsToPerspective(row.perspective.id, [rootId]);
     if (!result.ok) showToast(ui, t('perspective.error'));
   };
   return (
     <MenuPopover label={label} buttonLabel={label}>
       {rows.map((row) => (
         <Button
-          key={row.id ?? 'principal'}
+          key={row.perspective?.id ?? 'principal'}
           role="menuitemcheckbox"
           aria-checked={row.checked}
           disabled={row.locked}
@@ -96,7 +56,9 @@ export function PerspectiveSendMenu({
           <span class="perspective-check" aria-hidden="true">
             {row.checked && <Icon name="check" />}
           </span>
-          <span class="perspective-row-name">{row.name}</span>
+          <span class="perspective-row-name">
+            {row.perspective?.name ?? t('perspective.principal')}
+          </span>
           {row.note && <span class="perspective-row-note muted">{row.note}</span>}
         </Button>
       ))}
