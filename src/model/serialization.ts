@@ -142,16 +142,20 @@ export function specFiles(p: Project): Map<string, string> {
  */
 export function referencedSpecFiles(text: string): string[] {
   try {
-    const raw: unknown = JSON.parse(text);
-    const list: unknown = isRecord(raw) ? raw.specializations : null;
-    if (!Array.isArray(list)) return [];
-    return list.flatMap((s: unknown) =>
-      isRecord(s) && typeof s.file === 'string' ? [s.file] : [],
-    );
+    return referencedSpecFilesOf(JSON.parse(text));
   } catch {
     // Só descobre quais cópias de `specs/` ler; o JSON inválido é tratado em `deserialize`.
     return [];
   }
+}
+
+/** Como `referencedSpecFiles`, para quem já interpretou o JSON (`deserializeParsed`). */
+export function referencedSpecFilesOf(raw: unknown): string[] {
+  const list: unknown = isRecord(raw) ? raw.specializations : null;
+  if (!Array.isArray(list)) return [];
+  return list.flatMap((s: unknown) =>
+    isRecord(s) && typeof s.file === 'string' ? [s.file] : [],
+  );
 }
 
 /** Problema com a cópia de uma especialização em `specs/` (não impede a abertura). */
@@ -266,6 +270,15 @@ export function deserialize(
   } catch {
     return { ok: false, error: { code: 'invalid-json' } };
   }
+  return deserializeParsed(raw, registry, specs);
+}
+
+/** `deserialize` para o JSON já interpretado (quem o leu para outra coisa não o lê de novo). */
+export function deserializeParsed(
+  raw: unknown,
+  registry: ReadonlyMap<number, Migration> = defaultMigrations,
+  specs: ReadonlyMap<string, string> = new Map(),
+): DeserializeResult {
   if (!isRecord(raw)) {
     return {
       ok: false,

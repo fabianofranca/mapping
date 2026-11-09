@@ -14,6 +14,7 @@ import {
 } from '../src/model';
 import { ToolError } from './errors';
 import { Roots, writeFileAtomic } from './paths';
+import { errnoCode, writeNewFile } from './proposalStore';
 
 const DEFAULT_FIRST_LAYER = 'Camada 1';
 
@@ -45,6 +46,21 @@ async function ensureGitignore(dir: string): Promise<void> {
     (await exists(file)) ? await readFile(file, 'utf8') : '',
   );
   if (next !== null) await writeFileAtomic(file, next);
+}
+
+/**
+ * Grava o `mapping.json` sem sobrescrever: um que apareceu desde a conferência de `already-exists`
+ * (outro processo, a app) fica como está e a tool devolve o mesmo erro da pasta com projeto.
+ */
+async function writeMappingFile(dir: string, text: string, shown: string): Promise<void> {
+  try {
+    await writeNewFile(join(dir, MAPPING_FILE), text);
+  } catch (error) {
+    if (errnoCode(error) !== 'EEXIST') throw error;
+    throw new ToolError('already-exists', `já existe um projeto em ${shown}`, {
+      path: shown,
+    });
+  }
 }
 
 export interface CreateProjectArgs {
@@ -115,7 +131,7 @@ export async function createProjectFolder(
     await mkdir(dirname(target), { recursive: true });
     await writeFileAtomic(target, text);
   }
-  await writeFileAtomic(join(dir, MAPPING_FILE), serialize(project));
+  await writeMappingFile(dir, serialize(project), args.path);
   return {
     name: basename(dir),
     path: relative(inside.realRoot, inside.real).split('\\').join('/') || '.',

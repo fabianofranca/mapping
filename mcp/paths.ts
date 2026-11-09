@@ -29,8 +29,8 @@ export function isWithin(parent: string, child: string, api: PathApi = path): bo
 }
 
 /** Algum segmento é `..`. Barras invertidas contam como separador (Windows). */
-export function hasParentSegment(path: string): boolean {
-  return path.split(/[\\/]/).some((segment) => segment === '..');
+export function hasParentSegment(value: string): boolean {
+  return value.split(/[\\/]/).some((segment) => segment === '..');
 }
 
 function isNotFound(error: unknown): boolean {
@@ -71,9 +71,36 @@ export class Roots {
     readonly workDir: string = process.cwd(),
   ) {}
 
+  /** Dentro de uma chamada de tool (`beginCall`), o que já foi resolvido fica aqui. */
+  private scoped = false;
+  private readonly memo = new Map<string, Promise<unknown>>();
+
+  /**
+   * Começa uma chamada de tool: o que as raízes resolveram na chamada anterior (caminhos reais,
+   * descoberta de projetos) é descartado e, até a próxima chamada, cada coisa é resolvida uma
+   * vez só. Sem `beginCall` nada fica em cache.
+   */
+  beginCall(): void {
+    this.scoped = true;
+    this.memo.clear();
+  }
+
+  /** Resolve `compute` uma vez por chamada de tool (a cada vez, sem `beginCall`). */
+  perCall<T>(key: string, compute: () => Promise<T>): Promise<T> {
+    if (!this.scoped) return compute();
+    let hit = this.memo.get(key) as Promise<T> | undefined;
+    if (hit === undefined) {
+      hit = compute();
+      this.memo.set(key, hit);
+    }
+    return hit;
+  }
+
   /** Caminho real de cada raiz; `null` para a que não existe (ela pode ser criada depois da partida). */
   realRoots(): Promise<readonly (string | null)[]> {
-    return Promise.all(this.roots.map((root) => realpath(root).catch(() => null)));
+    return this.perCall('realRoots', () =>
+      Promise.all(this.roots.map((root) => realpath(root).catch(() => null))),
+    );
   }
 
   /** O caminho real está dentro de alguma raiz? Devolve qual. */
@@ -105,8 +132,17 @@ export class Roots {
    * dentro de uma. Recusa `..`, absolutos fora das raízes e links simbólicos que saem delas.
    */
   async resolveExisting(input: string): Promise<InsideRoot> {
+    return (await this.resolveExistingAll(input))[0]!;
+  }
+
+  /**
+   * Como `resolveExisting`, mas devolve o caminho de cada raiz em que ele existe (na ordem das
+   * raízes): com várias raízes, quem procura algo específico (um projeto) tenta todas.
+   */
+  async resolveExistingAll(input: string): Promise<InsideRoot[]> {
     assertPlainPath(input);
     const candidates = await this.candidates(input);
+    const found: InsideRoot[] = [];
     let leftRoots = false;
     for (const candidate of candidates) {
       let real: string;
@@ -116,10 +152,11 @@ export class Roots {
         if (isNotFound(error)) continue;
         throw error;
       }
-      const found = await this.locate(real);
-      if (found) return found;
-      leftRoots = true;
+      const inside = await this.locate(real);
+      if (inside) found.push(inside);
+      else leftRoots = true;
     }
+    if (found.length > 0) return found;
     if (leftRoots) {
       throw new ToolError(
         'outside-roots',

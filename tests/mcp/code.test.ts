@@ -71,6 +71,7 @@ interface Hints {
 }
 interface Match {
   project: string;
+  path: string;
   type: { specId: string; typeId: string; name: string };
   code: Record<string, CodeEntry>;
   annotationCount: number;
@@ -588,6 +589,25 @@ describe('find_by_code', () => {
     expect(hit!.marking).toMatch(/^mapping:\/\/cadastro\/m\/[0-9a-f]{8}$/);
     expect(hit!.annotation).toMatch(/^mapping:\/\/cadastro\/a\/[0-9a-f]{8}/);
     expect(hit!.container).toMatch(/^mapping:\/\/cadastro\/i\/[0-9a-f]{8}/);
+  });
+
+  it('cada match traz o path do projeto, como list_projects, para distinguir pastas homônimas', async () => {
+    const listed = ok(
+      await mcp.call<{ projects: { name: string; path: string }[] }>('list_projects', {}),
+    );
+    const found = ok(await mcp.call<Found>('find_by_code', { path: 'DSButton.kt' }));
+    expect(found.matches.length).toBeGreaterThan(0);
+    for (const match of found.matches) {
+      const project = listed.projects.find((p) => p.name === match.project)!;
+      expect(match.path).toBe(project.path);
+    }
+  });
+
+  it('a descrição de get_project diz `repos`, como o código devolve', async () => {
+    const { tools } = await mcp.client.listTools();
+    const description = tools.find((t) => t.name === 'get_project')!.description!;
+    expect(description).toContain('`repos` que as especializações declaram');
+    expect(description).not.toContain('cada uma com o `repo`');
   });
 
   it('a referência devolvida leva de volta à anotação e à marcação', async () => {
