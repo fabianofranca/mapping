@@ -1,3 +1,4 @@
+import { isSameAspect, scaleRect } from './containers';
 import { setProjectDrawingMode } from './drawingMode';
 import { clearArrowRoutes, settleHierarchy } from './hierarchySettle';
 import { reconcilePerspectives } from './perspectiveReconcile';
@@ -151,6 +152,30 @@ function typeHasField(
     ?.spec;
   const resolved = spec ? findTypeInSpec(spec, type.typeId) : null;
   return resolved === null || fieldOf(resolved.type, key) !== null;
+}
+
+/**
+ * Troca de arquivo na mesma proposta: `needsReview` não vira mudança, então a marcação cuja
+ * `rect` não é a reescala pura (cresceu até o mínimo) ou cuja proporção mudou o recebe aqui,
+ * como `replaceContainer` faz pela app.
+ */
+function flagResized(
+  p: Project,
+  containers: ReadonlyMap<string, Entity>,
+  before: Marking,
+  after: Marking,
+): Marking {
+  const id = before.containerId;
+  const old = id === null ? undefined : projectIndex(p).containers.get(id);
+  const now = id === null ? undefined : (containers.get(id) as ProjectContainer);
+  if (!old || !now || old.file === now.file || after.needsReview) return after;
+  const plain =
+    isSameAspect(old, now) && sameRect(scaleRect(before.rect, old, now), after.rect);
+  return plain ? after : { ...after, needsReview: true };
+}
+
+function sameRect(a: Rect, b: Rect): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
 /** A entidade com o campo da mudança aplicado; `null` se o campo não cabe nela. */
@@ -362,7 +387,10 @@ export function patchProject(p: Project, changes: readonly Change[]): PatchResul
       else markingPositions.push(c);
     } else {
       const current = map.get(c.entityId);
-      const next = current && withField(c.entity, current, c, maps.specialization);
+      let next = current && withField(c.entity, current, c, maps.specialization);
+      if (next && c.entity === 'marking' && c.field === 'rect') {
+        next = flagResized(p, maps.image, current as Marking, next as Marking);
+      }
       if (!current) problems.push({ code: 'entity-missing', changeId: c.id });
       else if (!next) problems.push({ code: 'field-mismatch', changeId: c.id });
       else map.set(c.entityId, next);

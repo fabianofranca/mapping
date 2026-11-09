@@ -551,6 +551,13 @@ function scaleSpan(start: number, size: number, factor: number): [number, number
   return [a, b - a];
 }
 
+/** O retângulo reescalado de `from` para `to`, sem o mínimo (a proposta compara com ele). */
+export function scaleRect(r: Rect, from: Size, to: Size): Rect {
+  const [x, width] = scaleSpan(r.x, r.width, to.width / from.width);
+  const [y, height] = scaleSpan(r.y, r.height, to.height / from.height);
+  return { x, y, width, height };
+}
+
 /**
  * Garante o tamanho mínimo aumentando o lado pequeno em volta do centro, sem sair
  * de [min, max). O resultado sempre contém o intervalo original; se o mínimo não cabe,
