@@ -1,4 +1,4 @@
-# CR de textos e tema — [Não lançado] (épico `epic/cr-i18n-tema`, PR #0, MCP sem mudança, schema v18)
+# CR de textos e tema — [Não lançado] (épico `epic/cr-i18n-tema`, PR #1226, MCP sem mudança, schema v18)
 
 ## Adicionado
 
