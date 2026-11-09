@@ -545,7 +545,7 @@ O motor **avisa**, não recorta nem recusa: conteúdo maior que o slot ou que a 
 
 **Ao traduzir um JSON externo** (origem): tipo externo sem tipo de anotação (o nó e a subárvore ficam de fora), propriedade desconhecida (que não é caminho de um campo nem está em `ignore`), valor fora das `options` de um `enum`, objeto onde se esperava um valor simples, âncora inválida (usa `top-start`) e margem inválida. Os avisos levam o caminho do nó (`content.children[1].props.foo`). Ver [`SPEC-FORMAT.md`](SPEC-FORMAT.md), "Origens".
 
-Os avisos não se repetem. A mesma regra vale na prova de desenho do validador da biblioteca (nível 3), onde cada aviso do motor vira um aviso do pacote. A prova roda cada caso **em cada modo** de `tokens` da especialização, com os tokens do modo resolvidos (o tamanho e a família do texto vêm do token); o aviso cita o modo (`tipo "card", o preview, modo dark, tamanho inicial 300×120: …`) e, sem `tokens`, a mensagem não traz modo.
+Os avisos não se repetem. A mesma regra vale na prova de desenho do validador da biblioteca (nível 3), onde cada aviso do motor vira um aviso do pacote. A prova roda cada caso **em cada modo** de `tokens` da especialização, com os tokens do modo resolvidos (o tamanho e a família do texto vêm do token); o aviso cita o modo (`tipo "card", o preview, modo dark, tamanho inicial 300×120: …`) o aviso igual em todos os modos sai uma vez, sem modo, e, sem `tokens`, a mensagem não traz modo.
 
 ## Texto de uma linha, reticências e `maxLines`
 

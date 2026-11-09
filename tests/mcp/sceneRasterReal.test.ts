@@ -152,6 +152,8 @@ describe('texto de verdade', () => {
       // A caixa vai de x = 10 a 70: há tinta até a borda e nenhuma depois dela.
       expect(ink(raster, 10 + 60 - 4, 5, 70, 25)).toBeGreaterThan(0);
       expect(ink(raster, 70, 0, 160, 40)).toBe(0);
+      // Uma linha mais larga que a caixa começa na borda esquerda (como na app), em qualquer align.
+      expect(ink(raster, 10, 5, 16, 25)).toBeGreaterThan(0);
     },
   );
 

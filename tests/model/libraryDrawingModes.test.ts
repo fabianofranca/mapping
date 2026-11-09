@@ -73,11 +73,10 @@ describe('prova de desenho por modo (FX4)', () => {
     ]);
   });
 
-  it('o caso que não cabe em nenhum modo avisa uma vez por modo', () => {
+  it('o aviso que vale em todos os modos sai uma vez, sem modo', () => {
     const both = { modes: ['light', 'dark'], values: { size: 40 } };
     expect(warnings({ $token: 'size' }, both)).toEqual([
-      'tipo "t", os valores padrão, modo light, tamanho inicial 100×50: conteúdo maior que a caixa: frame (aproximado)',
-      'tipo "t", os valores padrão, modo dark, tamanho inicial 100×50: conteúdo maior que a caixa: frame (aproximado)',
+      'tipo "t", os valores padrão, tamanho inicial 100×50: conteúdo maior que a caixa: frame (aproximado)',
     ]);
   });
 

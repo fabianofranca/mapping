@@ -101,11 +101,13 @@ function drawCases(
  * Os modos em que a prova roda: cada modo de `tokens` com a tabela resolvida dele (como o desenho
  * faz com `resolvedTokensByMode`); sem `tokens`, uma passada só, sem modo na mensagem.
  */
-function drawingModes(spec: Spec): { mode?: string; tokens?: ResolvedTokens }[] {
+function drawingModes(spec: Spec): DrawingMode[] {
   const tokens = spec.tokens;
   if (tokens === undefined || tokens.modes.length === 0) return [{}];
   return tokens.modes.map((mode) => ({ mode, tokens: resolveTokens(tokens, {}, mode) }));
 }
+
+type DrawingMode = { mode?: string; tokens?: ResolvedTokens };
 
 function typeDrawing(
   type: SpecAnnotationType,
@@ -113,37 +115,59 @@ function typeDrawing(
   componentPath: string,
   specPath: string,
   basePath: string,
-  spec: Spec,
+  modes: readonly DrawingMode[],
   out: LibraryIssue[],
 ): void {
   const keys = new Set(type.fields.map((f) => f.key));
   const box: Box = { x: 0, y: 0, ...component.size };
   for (const drawCase of drawCases(type, component, componentPath, specPath, basePath)) {
-    for (const { mode, tokens } of drawingModes(spec)) {
-      const at = mode === undefined ? '' : `, modo ${mode}`;
-      const where = `tipo "${type.id}", ${drawCase.label}${at}, tamanho inicial ${box.width}×${box.height}`;
+    const where = (mode: string | undefined): string =>
+      `tipo "${type.id}", ${drawCase.label}${mode === undefined ? '' : `, modo ${mode}`}, tamanho inicial ${box.width}×${box.height}`;
+    const issue = (
+      mode: string | undefined,
+      text: string,
+      severity: 'warning' | 'error',
+    ) => ({
+      file: drawCase.file,
+      path: drawCase.path,
+      message: `${where(mode)}: ${text}`,
+      severity,
+    });
+    // O aviso que vale em todos os modos sai uma vez, sem modo; o que depende do modo cita o modo.
+    const perMode = modes.map(({ mode, tokens }) => {
       try {
         const { warnings } = instantiate(component, drawCase.values, box, {
           measure: approximateMeasurer,
           ...(tokens === undefined ? {} : { tokens }),
         });
-        for (const warning of warnings) {
-          const missing = NOT_INFORMED.exec(warning);
-          if (missing !== null && !keys.has(missing[1] ?? '')) continue;
-          out.push({
-            file: drawCase.file,
-            path: drawCase.path,
-            message: `${where}: ${warning}${APPROXIMATE_SUFFIX}`,
-            severity: 'warning',
-          });
-        }
+        return {
+          mode,
+          texts: warnings
+            .filter((w) => {
+              const missing = NOT_INFORMED.exec(w);
+              return missing === null || keys.has(missing[1] ?? '');
+            })
+            .map((w) => `${w}${APPROXIMATE_SUFFIX}`),
+          error: undefined as string | undefined,
+        };
       } catch (error) {
-        out.push({
-          file: drawCase.file,
-          path: drawCase.path,
-          message: `${where}: falha ao desenhar: ${messageOf(error)}`,
-          severity: 'error',
-        });
+        return { mode, texts: [] as string[], error: messageOf(error) };
+      }
+    });
+    const common =
+      modes.length > 1
+        ? (perMode[0]?.texts ?? []).filter((t) =>
+            perMode.every((m) => m.error === undefined && m.texts.includes(t)),
+          )
+        : [];
+    for (const text of common) out.push(issue(undefined, text, 'warning'));
+    for (const { mode, texts, error } of perMode) {
+      if (error !== undefined) {
+        out.push(issue(mode, `falha ao desenhar: ${error}`, 'error'));
+        continue;
+      }
+      for (const text of texts) {
+        if (!common.includes(text)) out.push(issue(mode, text, 'warning'));
       }
     }
   }
@@ -181,6 +205,7 @@ export const withoutNodePrefix = (message: string): string =>
 export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
   const { spec, specPath } = ctx;
   const out: LibraryIssue[] = [];
+  const modes = drawingModes(spec);
   let built: { library?: Library; reason?: string } | undefined;
   const library = (): { library?: Library; reason?: string } => {
     built ??= buildLibrary(ctx);
@@ -210,7 +235,7 @@ export function drawingIssues(ctx: DrawingContext): LibraryIssue[] {
       if (loaded === undefined) return;
       const component =
         ctx.icons === undefined ? loaded : { ...loaded, resolvedIcons: ctx.icons };
-      typeDrawing(type, component, componentPath, specPath, basePath, spec, out);
+      typeDrawing(type, component, componentPath, specPath, basePath, modes, out);
 
       (type.examples ?? []).forEach((example, index) => {
         if (example.system === undefined || example.file === undefined) return;

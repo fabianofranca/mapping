@@ -12,7 +12,7 @@ import {
   partialSides,
   sideSegments,
 } from '../../model/components/strokeSides';
-import { WRAP_SLACK } from '../../model/components/textWrap';
+import { CUT_REACH, WRAP_SLACK, cutsText } from '../../model/components/textWrap';
 import { canvasFontFamily } from '../../model/components/fontFamily';
 import Konva from 'konva/lib/Core';
 import { Ellipse as KonvaEllipse } from 'konva/lib/shapes/Ellipse';
@@ -815,15 +815,6 @@ function applyShadow(shape: Konva.Shape, shadow: Shadow): void {
   shape.shadowOffset(shadow.offset);
   shape.shadowOpacity(1);
   shape.shadowEnabled(true);
-}
-
-/** Alcance vertical do recorte horizontal de um texto cortado (px; bem além de qualquer texto). */
-const CUT_REACH = 10000;
-
-/** `wrap: none` sem `ellipsis` numa caixa de largura fixa: a linha é recortada por pixel na caixa. */
-function cutsText(node: TextNode): boolean {
-  const { style } = node;
-  return style.wrap === 'none' && style.ellipsis !== true && node.width > 0;
 }
 
 /** Onde começa a linha de largura `text` numa caixa `box` (uma linha que passa da caixa começa na borda). */

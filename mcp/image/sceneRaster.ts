@@ -1,5 +1,6 @@
 import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { ScreenAnchor } from '../../src/model/components/componentFormat';
+import { CUT_REACH, cutsText } from '../../src/model/components/textWrap';
 import {
   growRadius,
   partialSides,
@@ -1047,7 +1048,7 @@ class Painter {
 
   /** O recorte do texto cortado: a largura da caixa, na horizontal; na vertical nada se corta. */
   private cutClip(node: TextNode, matrix: Matrix, clip: PixelRect): PixelRect {
-    const reach = 10000;
+    const reach = CUT_REACH;
     const box = [
       { x: 0, y: -reach },
       { x: node.width, y: -reach },
@@ -1070,12 +1071,6 @@ class Painter {
         this.fill([barPolygon(bar)], matrix, 'nonzero', color, opacity, clip);
     }
   }
-}
-
-/** `wrap: none` sem `ellipsis` numa caixa de largura fixa: a linha é recortada por pixel na caixa. */
-function cutsText(node: TextNode): boolean {
-  const { style } = node;
-  return style.wrap === 'none' && style.ellipsis !== true && node.width > 0;
 }
 
 function barPolygon(b: PixelRect): Polygon {
