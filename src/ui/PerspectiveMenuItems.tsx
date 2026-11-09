@@ -1,11 +1,12 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
-import { projectIndex, type Perspective, type Project } from '../model';
+import { projectIndex, type Project } from '../model';
 import { principalOnly, type PrincipalOnlyCommand } from '../store/perspectiveGestures';
 import { showToast } from '../store/ui';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
+import { perspectiveRows, type PerspectiveRow } from './perspectiveRows';
 
 // Itens do menu do botão direito ligados às perspectivas (etapa #659, PE3): Enviar para
 // perspectiva (submenu de caixas), Tirar desta perspectiva e a dica dos comandos que só valem na
@@ -75,46 +76,6 @@ export function PrincipalOnlyItem({
   );
 }
 
-interface Row {
-  readonly perspective: Perspective | null;
-  readonly checked: boolean;
-  readonly locked: boolean;
-  readonly note: string | null;
-}
-
-/** As linhas do submenu: a Principal, a aberta e as demais, cada uma marcada ou não. */
-function rowsOf(
-  project: Project,
-  openId: string | null,
-  localIds: ReadonlySet<string>,
-  roots: readonly string[],
-): readonly Row[] {
-  const rows: Row[] = [
-    {
-      perspective: null,
-      checked: true,
-      locked: true,
-      note: t('perspective.menu.always'),
-    },
-  ];
-  for (const perspective of project.perspectives) {
-    const open = perspective.id === openId;
-    const has = new Set(perspective.items.map((i) => i.root));
-    const note = open
-      ? t('perspective.menu.current')
-      : localIds.has(perspective.id)
-        ? t('perspective.menu.mine')
-        : null;
-    rows.push({
-      perspective,
-      checked: open || (roots.length > 0 && roots.every((r) => has.has(r))),
-      locked: open,
-      note,
-    });
-  }
-  return rows;
-}
-
 /**
  * "Enviar para perspectiva ›" e "Tirar desta perspectiva". `ids` são os itens (container ou
  * marcação) do alvo do menu; as ações usam a raiz de cada um. Marcar uma caixa envia, desmarcar
@@ -173,7 +134,7 @@ export function PerspectiveMenuItems({
   const locked = store.locked.value;
   const actions = session.perspectiveActions;
   const fail = () => showToast(ui, t('perspective.error'));
-  const toggle = (row: Row) => {
+  const toggle = (row: PerspectiveRow) => {
     if (!row.perspective) return;
     const result = row.checked
       ? actions.removeRootsFromPerspective(row.perspective.id, roots)
@@ -242,7 +203,7 @@ export function PerspectiveMenuItems({
           >
             <div class="menu-items">
               <div class="menu-heading">{t('perspective.menu.sendHeading')}</div>
-              {rowsOf(project, openId, localIds, roots).map((row) => (
+              {perspectiveRows(project, openId, localIds, roots, true).map((row) => (
                 <Button
                   key={row.perspective?.id ?? 'main'}
                   role="menuitemcheckbox"
