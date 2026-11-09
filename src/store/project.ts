@@ -673,8 +673,8 @@ export function createProjectActions(store: ProjectStore, deps: ActionDeps = {})
       return result.ok ? { ok: true, value: markingId } : result;
     },
     /** Arruma as filhas do container pelo layout do slot; devolve os avisos. Sem mudança, não há entrada. */
-    arrange: (markingId: string): ActionResult<readonly string[]> => {
-      let warnings: readonly string[] = [];
+    arrange: (markingId: string): ActionResult<readonly model.ModelMessage[]> => {
+      let warnings: readonly model.ModelMessage[] = [];
       const result = guarded(() =>
         store.apply((p) => {
           view.requirePrincipal(viewFor(p));

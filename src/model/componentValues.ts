@@ -1,6 +1,9 @@
 import type { FieldRow, FieldValue, FieldValues } from './components/componentFormat';
+import { modelMessage, type ModelMessage } from './modelMessage';
 import {
   annotationRefLabel,
+  DEFAULT_LABEL_TEXTS,
+  type LabelTexts,
   isRecord,
   parseRefValue,
   resolveRef,
@@ -18,7 +21,7 @@ import type { Annotation, JsonValue, Project } from './types';
 export interface DrawingValues {
   readonly values: FieldValues;
   /** Referências que não deram valor: quebrada, em ciclo ou em mais de um nível. */
-  readonly warnings: readonly string[];
+  readonly warnings: readonly ModelMessage[];
 }
 
 /** Valor simples (texto, número) de um campo ou coluna; qualquer outra coisa é vazio. */
@@ -53,21 +56,24 @@ function refValue(
   annotation: Annotation,
   key: string,
   value: JsonValue,
-  warnings: string[],
+  warnings: ModelMessage[],
+  texts: LabelTexts,
 ): FieldValue {
   const ref = parseRefValue(value);
   const target = ref === null ? null : resolveRef(p, ref);
   if (target === null) {
-    warnings.push(`referência quebrada: ${key}`);
+    warnings.push(
+      modelMessage('value.refBroken', { key }, `referência quebrada: ${key}`),
+    );
     return null;
   }
   if (target.annotation.id === annotation.id) {
-    warnings.push(`referência em ciclo: ${key}`);
+    warnings.push(modelMessage('value.refCycle', { key }, `referência em ciclo: ${key}`));
     return null;
   }
   switch (target.kind) {
     case 'annotation':
-      return annotationRefLabel(p, target.annotation);
+      return annotationRefLabel(p, target.annotation, texts);
     case 'entry':
       return target.entry.value === '' ? null : target.entry.value;
     case 'row':
@@ -79,7 +85,13 @@ function refValue(
         target.field?.type === 'ref' ||
         (isRecord(raw) && parseRefValue(raw) !== null)
       ) {
-        warnings.push(`referência em mais de um nível: ${key}`);
+        warnings.push(
+          modelMessage(
+            'value.refDeep',
+            { key },
+            `referência em mais de um nível: ${key}`,
+          ),
+        );
         return null;
       }
       return simpleValue(target.field, raw);
@@ -99,7 +111,8 @@ function tableValue(
   annotation: Annotation,
   field: Extract<SpecField, { type: 'table' }>,
   value: JsonValue | undefined,
-  warnings: string[],
+  warnings: ModelMessage[],
+  texts: LabelTexts,
 ): readonly FieldRow[] {
   return tableRows(value).map((row, index) => {
     const out: Record<string, string | number | null> = {};
@@ -115,6 +128,7 @@ function tableValue(
                 `${field.key}[${index + 1}].${column.key}`,
                 cell,
                 warnings,
+                texts,
               ) as string | number | null)
           : (simpleValue(column, cell) as string | number | null);
     }
@@ -136,19 +150,20 @@ export function drawingValues(
   p: Project,
   annotation: Annotation,
   type: SpecAnnotationType,
+  texts: LabelTexts = DEFAULT_LABEL_TEXTS,
 ): DrawingValues {
   const raw = annotation.values ?? {};
   const values: Record<string, FieldValue> = {};
-  const warnings: string[] = [];
+  const warnings: ModelMessage[] = [];
   for (const field of type.fields) {
     const value = raw[field.key];
     if (field.type === 'table') {
-      values[field.key] = tableValue(p, annotation, field, value, warnings);
+      values[field.key] = tableValue(p, annotation, field, value, warnings, texts);
     } else if (field.type === 'ref') {
       values[field.key] =
         value === undefined || isEmptyValue(value)
           ? null
-          : refValue(p, annotation, field.key, value, warnings);
+          : refValue(p, annotation, field.key, value, warnings, texts);
     } else {
       values[field.key] = simpleValue(field, value);
     }

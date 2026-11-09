@@ -1,5 +1,6 @@
 import type { Dictionary } from './pt-BR';
 import { catalogEnUS } from './catalog';
+import { modelMessagesEnUS } from './modelMessages';
 import { reviewEnUS } from './review';
 import { perspectivesEnUS } from './perspectives';
 
@@ -7,6 +8,7 @@ export const enUS: Dictionary = {
   ...reviewEnUS,
   ...perspectivesEnUS,
   ...catalogEnUS,
+  ...modelMessagesEnUS,
   'app.title': 'Mapping',
   'app.loading': 'Loading…',
   'narrow.title': 'Open in a larger window',
@@ -240,8 +242,6 @@ export const enUS: Dictionary = {
 
   'zoom.value': '{percent}%',
   'zoom.reset': '{percent}%: current zoom; click to go back to 100%',
-  'zoom.in': 'Zoom in',
-  'zoom.out': 'Zoom out',
 
   'minimap.label': 'Canvas minimap',
   'minimap.goTo': 'Click to move the view',
@@ -262,7 +262,6 @@ export const enUS: Dictionary = {
 
   'editor.projectMenuName': '{name}: project actions',
   'editor.appName': 'Mapping',
-  'editor.fitAllShort': 'Fit',
 
   'view.viewMode': 'View',
   'view.viewModeHint':
@@ -664,7 +663,6 @@ export const enUS: Dictionary = {
   'comments.pins': 'Conversations',
   'comments.pinsTip': 'Show or hide the conversations on the canvas',
   'comments.pinsAwaiting': '{count} waiting for you',
-  'comments.pinsUnread': 'has an unread message',
   'comments.add': 'Comment',
   'comments.addTip': 'Click an item or an empty spot to comment',
   'comments.addDisabled': 'Commenting is not available now',
@@ -1249,8 +1247,6 @@ export const enUS: Dictionary = {
   'arrow.pickerEmpty': 'There is no other marking to link to.',
   'arrow.pickerNoMatches': 'No marking found.',
   'arrow.treeItem': 'Arrow to {name}',
-  'arrow.treeLock': 'Lock arrow to {name}',
-  'arrow.treeUnlock': 'Unlock arrow to {name}',
   'crumbs.arrow': 'Arrow {name}',
   'marking.deleteArrows': '{arrows} arrow(s) attached to it also go away.',
   'image.deleteArrows': '{arrows} arrow(s) attached to its markings also go away.',

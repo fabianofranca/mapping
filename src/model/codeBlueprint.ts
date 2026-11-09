@@ -119,6 +119,7 @@ export interface CodeBlueprint {
 function refText(p: Project, value: JsonValue | undefined): JsonValue {
   if (value === undefined || isEmptyValue(value)) return null;
   const ref = parseRefValue(value);
+  // O rótulo usa os textos padrão (pt-BR): este módulo só é usado pelo MCP.
   return ref && resolveRef(p, ref) ? refLabel(p, ref) : null;
 }
 
@@ -293,6 +294,7 @@ export function codeBlueprint(
       field: site.field,
       row: site.row,
       column: site.column,
+      // Textos padrão (pt-BR): só o MCP usa este módulo.
       label: refLabel(p, site.ref),
     };
     if (path.has(target.id)) {

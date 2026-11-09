@@ -17,6 +17,7 @@ import {
   approximateMeasurer,
   buildCatalog,
   fittedSize,
+  modelMessage,
   type Project,
 } from '../../../src/model';
 import { locale } from '../../../src/store/settings';
@@ -203,7 +204,11 @@ describe('página', () => {
   it('avisa quando o componente não carregou', () => {
     const catalog = patched(base, 'm3-button', {
       component: null,
-      componentProblem: 'arquivo ausente (x.json)',
+      componentProblem: modelMessage(
+        'catalog.fileMissing',
+        { path: 'x.json' },
+        'arquivo ausente (x.json)',
+      ),
       previewValues: null,
     });
     view({ initialTypeId: 'm3-button' }, catalog);
@@ -213,6 +218,20 @@ describe('página', () => {
       ),
     ).toBeTruthy();
     expect(screen.getByText(t('catalog.playground.noComponent'))).toBeTruthy();
+  });
+
+  it('em en-US o problema de um componente ausente sai em inglês (#945)', () => {
+    locale.value = 'en-US';
+    const component = base.layers
+      .flatMap((l) => l.entries)
+      .find((e) => e.type.id === 'm3-button')?.type.component;
+    expect(component).toBeTruthy();
+    const missing = files.filter((f) => !f.path.endsWith(String(component)));
+    expect(missing.length).toBe(files.length - 1);
+    view({ initialTypeId: 'm3-button' }, buildCatalog(missing));
+    const page = screen.getByText(/The component did not load/);
+    expect(page.textContent).toMatch(/missing file/);
+    expect(page.textContent).not.toMatch(/arquivo ausente/);
   });
 
   it('origens aparecem agrupadas por sistema', () => {

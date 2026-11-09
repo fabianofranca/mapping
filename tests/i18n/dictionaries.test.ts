@@ -58,6 +58,9 @@ describe('dicionários', () => {
       'perspective.count.containers',
       'language.en-US',
       'image.dimensions',
+      // Só {parâmetros}: o texto vem do parser.
+      'model.components.invalid',
+      'model.icons.invalid',
       'marking.pathSeparator',
       'arrow.label',
       'marking.x',
