@@ -42,7 +42,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # A `main` só recebe PR de um branch `epic/*` (CLAUDE.md, "Fluxo de trabalho"): o ruleset
+  # A `main` só recebe PR de um branch `epic/*` (docs/PROCESS.md, "Fluxo de trabalho"): o ruleset
   # "main protegida" exige este check, que falha para qualquer outra origem. Exceção: os PRs
   # do Dependabot (`dependabot/*`), pequenos e aprovados pelo dono. No deploy
   # (`workflow_call`) não há PR: o job é pulado, o que o GitHub conta como sucesso.
@@ -66,7 +66,7 @@ jobs:
           echo "PR de $HEAD para $BASE: permitido."
       # Toda entrega de epic/<nome> para a main traz changelog/<nome>.md (ou
       # changelog/AAAA-MM-DD-<nome>.md) no próprio PR do épico
-      # (CLAUDE.md, "Fluxo de trabalho"). Dependabot e PRs para outro branch não entram.
+      # (docs/PROCESS.md, "Fluxo de trabalho"). Dependabot e PRs para outro branch não entram.
       - name: Changelog atualizado
         env:
           BASE: ${{ github.base_ref }}
@@ -98,7 +98,7 @@ jobs:
           fi
       # O fechamento de todo épico aplica as pendências no design system e registra a
       # sincronização em docs/design-system/<nome>.md (ou docs/design-system/AAAA-MM-DD-<nome>.md)
-      # (CLAUDE.md, "Fluxo de trabalho"). O artefato do DS vive fora do repositório e o CI não
+      # (docs/PROCESS.md, "Fluxo de trabalho"). O artefato do DS vive fora do repositório e o CI não
       # o alcança; o registro aqui, sim. Um épico sem impacto no DS também cria o arquivo, para
       # dizer que não houve.
       - name: Design system registrado

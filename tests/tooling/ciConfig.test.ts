@@ -269,8 +269,8 @@ describe('ci.yml exige o changelog do épico nos PRs de épico para a main', () 
     expect(step).toContain('changelog/AAAA-MM-DD-$name.md');
   });
 
-  it('o CLAUDE.md descreve a regra e a pasta changelog/ existe', () => {
-    const claude = read('CLAUDE.md');
+  it('o docs/PROCESS.md descreve a regra e a pasta changelog/ existe', () => {
+    const claude = read('docs/PROCESS.md');
     expect(claude).toContain('**Changelog por épico:**');
     expect(claude).toContain('`changelog/<nome>.md`');
     expect(existsSync('changelog/README.md')).toBe(true);
@@ -299,8 +299,8 @@ describe('ci.yml exige o registro do DS do épico nos PRs de épico para a main'
     expect(step).toContain('docs/design-system/AAAA-MM-DD-$name.md');
   });
 
-  it('o CLAUDE.md descreve a regra e a pasta existe', () => {
-    const claude = read('CLAUDE.md');
+  it('o docs/PROCESS.md descreve a regra e a pasta existe', () => {
+    const claude = read('docs/PROCESS.md');
     expect(claude).toContain('`docs/design-system/<nome>.md`');
     expect(existsSync('docs/design-system')).toBe(true);
   });

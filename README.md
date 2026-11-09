@@ -121,6 +121,7 @@ Sem projeto aberto, a versão fica em **Configurações → Sobre**, que também
 - [`viewer/README.md`](viewer/README.md): visualizador embutível (pacote `mapping-viewer`): estrutura, comandos e a demonstração em React.
 - **Planejamento nas issues do GitHub** ([github.com/fabianofranca/mapping/issues](https://github.com/fabianofranca/mapping/issues)): os itens futuros são issues com o rótulo `roadmap` (cada uma com um rótulo de impacto, `impact: high`, `medium` ou `low`, que fica quando ela vira etapa), e os defeitos com o `bug` (tipo que acompanha a issue até fechar, com um rótulo de severidade `severity: high`, `medium` ou `low`; antes de abrir um, procura-se uma issue igual ou que o agrupe; as capturas ficam no branch `evidencias`); a etapa detalhada, pronta para desenvolver, é uma issue com o rótulo `ready`, com uma sub-issue (rótulo `step`) por fase; quando o épico começa, ela passa a `in-progress`; as concluídas ficam nas issues fechadas com esse rótulo. O que veio antes delas está no histórico do git.
 - [`CLAUDE.md`](CLAUDE.md): regras de trabalho para o Claude Code.
+- [`docs/PROCESS.md`](docs/PROCESS.md): processo de entrega (issues, épicos, fases, testador, revisão de código, uso de modelos).
 
 ## Stack
 

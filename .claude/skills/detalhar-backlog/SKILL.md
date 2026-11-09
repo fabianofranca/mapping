@@ -5,9 +5,9 @@ description: Coordena subagentes Opus (ferramenta `Agent`, com esforço high ou 
 
 # Detalhar o backlog
 
-Esta sessão é o **coordenador**. Ela não detalha nada sozinha: cria os subagentes Opus (ferramenta `Agent`), leva as perguntas deles ao dono, devolve as respostas e confere o resultado. Quem detalha segue o `CLAUDE.md` ("Detalhar uma etapa", "Impacto", "Bugs e evidência visual", "Uso de modelos" e "Fluxo automatizado", item 2).
+Esta sessão é o **coordenador**. Ela não detalha nada sozinha: cria os subagentes Opus (ferramenta `Agent`), leva as perguntas deles ao dono, devolve as respostas e confere o resultado. Quem detalha segue o `docs/PROCESS.md` ("Detalhar uma etapa", "Impacto", "Bugs e evidência visual", "Uso de modelos" e "Fluxo automatizado", item 2).
 
-Rode este chat no modo **Auto**: um subagente que pede permissão fica parado, porque ninguém está olhando (`CLAUDE.md`, "Limitações"). O coordenador pode rodar em Sonnet; o julgamento fica com os subagentes, que rodam em Opus.
+Rode este chat no modo **Auto**: um subagente que pede permissão fica parado, porque ninguém está olhando (`docs/PROCESS.md`, "Limitações"). O coordenador pode rodar em Sonnet; o julgamento fica com os subagentes, que rodam em Opus.
 
 A ferramenta `Agent` aceita `model` e `effort` (uma sessão filha só aceitaria o modelo). **Esta skill é o pedido explícito de esforço:** todo subagente nasce com `subagent_type: general-purpose`, `model: opus`, `run_in_background: true` e `effort` explícito, `medium` no agrupamento e `high` ou `medium` por unidade, pelos critérios de "Esforço do detalhamento". Cada subagente faz a unidade inteira (lê, rascunha, confere, pergunta pelo coordenador e grava as issues), então todo o julgamento fica no esforço pedido. Nenhum prompt manual para o dono abrir sessão.
 
@@ -42,14 +42,14 @@ O detalhamento de uma unidade roda em `effort: high` quando o plano depende de j
 - deve passar de umas 5 fases, ou junta 4 ou mais issues;
 - inclui uma `ready` cujo plano muda (replanejamento), ou é uma rodada `code-review` com muitos achados a planejar.
 
-O resto roda em `effort: medium`. Na dúvida, recomende high (`CLAUDE.md`: na dúvida, vale o maior), com o motivo. O argumento `alto=` soma unidades ou desliga a regra.
+O resto roda em `effort: medium`. Na dúvida, recomende high (`docs/PROCESS.md`: na dúvida, vale o maior), com o motivo. O argumento `alto=` soma unidades ou desliga a regra.
 
 ## 1. Candidatas
 
 1. `list_issues` (`state: OPEN`, `fields: [number, title, labels]`, sem `body`, porque o corpo de todas passa do limite) uma vez com `labels: [roadmap]` e uma com `labels: [bug]`.
 2. Fique só com as que **não** têm `ready`, `in-progress` nem `step`. Com a lista `#n ...`, use a interseção dela com as candidatas e diga quais números ficaram de fora e por quê.
 3. Ordem: `severity: high` e `impact: high` primeiro, depois `medium`, depois `low`; no empate, o menor número vem antes. A ordem do Project "Mapping - Backlog" é do dono, e as ferramentas não alcançam o Project.
-4. Issues do revisor de código (rótulo `code-review`, `CLAUDE.md` "Revisão de código"): a da rodada (`roadmap`, título "CR base …" ou "CR épico …") lista muitos achados, e cada defeito high ou medium dela já tem a sua issue `bug`, citada no corpo. O detalhamento da rodada cobre só os achados que **não** apontam para um `bug`. Passe isso ao subagente de agrupamento, para ela juntar cada `bug` com a rodada ou com outras candidatas da mesma área, ou separar a rodada por área, sem detalhar o mesmo achado duas vezes.
+4. Issues do revisor de código (rótulo `code-review`, `docs/PROCESS.md` "Revisão de código"): a da rodada (`roadmap`, título "CR base …" ou "CR épico …") lista muitos achados, e cada defeito high ou medium dela já tem a sua issue `bug`, citada no corpo. O detalhamento da rodada cobre só os achados que **não** apontam para um `bug`. Passe isso ao subagente de agrupamento, para ela juntar cada `bug` com a rodada ou com outras candidatas da mesma área, ou separar a rodada por área, sem detalhar o mesmo achado duas vezes.
 5. Sem candidatas, diga isso e termine.
 
 ## 2. Agrupamento (um subagente Opus)
@@ -66,7 +66,7 @@ Mensagem:
 ```text
 Você é um subagente do coordenador: não pergunte nada ao dono, e o seu relatório final é a mensagem ao coordenador. Você é o agente de agrupamento do backlog do `fabianofranca/mapping`. Não edite issue, não crie branch nem PR.
 
-1. Leia o `CLAUDE.md`, as candidatas <lista #n — título — rótulos> (corpo e comentários) e as issues `ready` abertas (corpo; as sub-issues `step` só quando precisar). Não proponha mexer nas `in-progress`.
+1. Leia o `CLAUDE.md`, o `docs/PROCESS.md`, as candidatas <lista #n — título — rótulos> (corpo e comentários) e as issues `ready` abertas (corpo; as sub-issues `step` só quando precisar). Não proponha mexer nas `in-progress`.
 2. Proponha grupos: candidatas que valem mais num épico só do que em épicos separados. Nas issues `code-review`, um achado da rodada que aponta para um `bug` pertence a esse `bug`; a rodada, que é uma lista longa, pode ser dividida por área entre vários grupos (diga quais itens vão para cada um). Pese:
    - versão do MCP: várias etapas que subiriam o MCP cada uma (minor ou patch) viram uma versão só;
    - rodada do testador: roteiros iguais ou próximos rodam numa rodada só (`docs/TESTING-NUVEM.md`);
@@ -113,9 +113,9 @@ Siga a `ORDEM`. A dependência não segura o detalhamento: o `Depende de` ordena
 Mensagem:
 
 ```text
-Você é um subagente do coordenador: não pergunte nada ao dono, e o seu relatório final é a mensagem ao coordenador. Você é o agente de detalhamento <da issue #n | do grupo #a (principal), #b, #c> do `fabianofranca/mapping` (CLAUDE.md, "Detalhar uma etapa" e "Fluxo automatizado", item 2). Não use a ferramenta de perguntas. Não crie branch, commit nem PR: o detalhamento só mexe em issues ("Nenhum PR existe só para mexer em plano").
+Você é um subagente do coordenador: não pergunte nada ao dono, e o seu relatório final é a mensagem ao coordenador. Você é o agente de detalhamento <da issue #n | do grupo #a (principal), #b, #c> do `fabianofranca/mapping` (docs/PROCESS.md, "Detalhar uma etapa" e "Fluxo automatizado", item 2). Não use a ferramenta de perguntas. Não crie branch, commit nem PR: o detalhamento só mexe em issues ("Nenhum PR existe só para mexer em plano").
 
-1. Leia o `CLAUDE.md`, as issues da unidade com os comentários, as que elas citam e os títulos das `ready` e `in-progress` abertas, para achar sobreposição. Leia o código e os docs que o plano vai tocar: o "Toca em:" de cada fase cita arquivos que existem.
+1. Leia o `CLAUDE.md`, o `docs/PROCESS.md`, as issues da unidade com os comentários, as que elas citam e os títulos das `ready` e `in-progress` abertas, para achar sobreposição. Leia o código e os docs que o plano vai tocar: o "Toca em:" de cada fase cita arquivos que existem.
 <Só em grupo: 2. O grupo foi aprovado pelo dono: <decisão, com as palavras do dono se ele escreveu>. A #a vira a etapa. O conteúdo de cada outra entra no corpo como item numerado, com a origem, o rótulo e a severidade ou o impacto. As outras fecham como duplicadas da #a (`state_reason: duplicate`, `duplicate_of`), cada uma com um comentário que diz para onde foi. Grupo com algum `bug`: a etapa é `bug`, com a maior severidade do grupo e sem `impact:`; se um absorvido tem severidade maior que a da principal, troque o `severity:` dela e diga por quê no comentário; o impacto de cada `roadmap` absorvida fica em "Absorvidas". Grupo sem `bug`: a etapa fica com o tipo e o rótulo da #a. Em "Absorvidas", o corpo lista a severidade ou o impacto de cada uma. Um `bug` absorvido mantém os passos para reproduzir e a evidência. <Se o grupo traz uma `ready`: o plano dela muda; diga isso num comentário nela, com o porquê e a decisão do dono. Sub-issues `step` abertas: (a) de uma `ready` absorvida, a fase que continua no plano novo passa para a principal (`sub_issue_write` `add` com `replace_parent: true`) e tem o corpo atualizado, e a que sai fecha `not_planned` com um comentário que aponta a principal; (b) de uma `ready` principal cujo plano muda, a fase que continua tem o corpo atualizado, a que sai fecha `not_planned` com o comentário, e as novas são criadas e postas na ordem (`sub_issue_write` `reprioritize`). No fim, nenhuma `step` aberta fica pendurada numa issue fechada.>>
 3. Rascunhe o plano inteiro antes de criar qualquer coisa: objetivo, o que fica fora, decisões numeradas, épico (`epic/<nome>`), versões (schema, formatos e MCP: **uma** versão do MCP para a etapa toda, escrita como o tipo da subida — `MCP: minor`, `MCP: patch` ou `MCP: sem mudança` — e nunca como número, porque outras etapas detalhadas em paralelo pegariam o mesmo; o número é fixado quando o épico começa), registros (changelog e DS), a linha `Impacto:` (ou a severidade) e a tabela de modelos e esforço (linha Orquestrador, uma linha por fase e a coluna Testador). Para cada fase: a linha da tabela, o "Toca em:", os checkboxes e o aceite. A última fase traz a seção **Testador**, com os roteiros e a linha "Passada visual: <lista>" (ou "nenhuma"). Com várias issues, junte os roteiros numa rodada só.
    Antes de seguir, confira o rascunho contra o código da `main` (Grep e Read), item por item, e corrija o que não bater:
@@ -125,7 +125,7 @@ Você é um subagente do coordenador: não pergunte nada ao dono, e o seu relat�
    - roteiro novo é "o próximo número livre", entra num bloco da rodada completa (`docs/TESTING-NUVEM.md`) e o testador da nuvem consegue executá-lo sozinho;
    - a "Sobreposição" cita as `ready` e `in-progress` que mexem nos mesmos arquivos, roteiros ou versões, com o estado atual delas (não o de quando foram citadas).
 4. Acrescente no corpo a linha `**Depende de:** #x, #y` (ou `**Depende de:** nenhuma`): a etapa ou o que precisa estar na `main` antes de ela começar. O skill que implementa as etapas em sequência lê essa linha.
-5. Decisão de produto (CLAUDE.md: o esperado não está em issue, doc nem spec; há mais de uma leitura razoável; muda uma decisão já tomada; mexe em schema ou formato): não decida sozinho. Junte as perguntas num relatório final, neste formato, e termine. A resposta chega depois, como uma mensagem "RESPOSTAS #<principal>", e você retoma daí, com o contexto que já tem.
+5. Decisão de produto (docs/PROCESS.md: o esperado não está em issue, doc nem spec; há mais de uma leitura razoável; muda uma decisão já tomada; mexe em schema ou formato): não decida sozinho. Junte as perguntas num relatório final, neste formato, e termine. A resposta chega depois, como uma mensagem "RESPOSTAS #<principal>", e você retoma daí, com o contexto que já tem.
 
 PERGUNTAS #<principal>
 P1. #<principal> — <pergunta autossuficiente, com o contexto que o dono precisa> | Cabeçalho: <até 12 caracteres>
