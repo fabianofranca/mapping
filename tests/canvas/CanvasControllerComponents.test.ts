@@ -280,6 +280,9 @@ describe('CanvasController: componentes', () => {
       expect(markingNodes(layers[3], regular.value)).toHaveLength(0);
       // T1, T2 e as duas do canvas (a do canvas desenha sempre: não há foto por baixo).
       expect(container.dataset.components).toBe('4');
+      // Os nós das bordas nascem sob demanda: leva as duas à vista.
+      controller.centerOnPoint({ x: 3000, y: 250 });
+      flush();
       // As bordas da flutuante ficam no grupo de cima, depois do desenho dela.
       const floatingLayer = layers[3] as Konva.Layer;
       expect(floatingLayer.getChildren()).toHaveLength(2);

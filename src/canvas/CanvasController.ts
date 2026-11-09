@@ -932,7 +932,7 @@ export class CanvasController {
     const boxText = formatSelectionBox(
       selectionScreenBox(frame.project, frame.selection, this.placements, v),
     );
-    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${componentImages}:${pins}:${pinStates}:${viewportText}:${boxText ?? ''}`;
+    const drawn = `${this.view.fits}:${this.readyImages}:${this.drawnComponents}:${canvasMarkings}:${this.drawnArrows}:${this.markings.shown}:${componentImages}:${pins}:${pinStates}:${viewportText}:${boxText ?? ''}`;
     if (drawn !== this.published) {
       this.published = drawn;
       const host = this.stage.container();
@@ -944,6 +944,7 @@ export class CanvasController {
       host.dataset.components = String(this.drawnComponents);
       host.dataset.canvasMarkings = String(canvasMarkings);
       host.dataset.arrows = String(this.drawnArrows);
+      host.dataset.drawnMarkings = String(this.markings.shown);
       host.dataset.componentImages = String(componentImages);
       host.dataset.pins = String(pins);
       host.dataset.pinStates = pinStates;

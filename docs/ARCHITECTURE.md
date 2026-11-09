@@ -395,6 +395,20 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   no grupo as partes visíveis (`syncParts`): de longe um grupo tem só a borda, e o `drawScene` da camada das marcações do cenário
   de 2.000 caiu de ~21 para ~9 ms (18 mil para 4 mil nós). Aproximado (≥ 24 px) nada muda. O `size-indicator-min-marking`
   continua como estava.
+- **Nós sob demanda** (`MarkingRenderer.render`, decisão 8 da etapa canvas-escala): o nó do Konva de uma marcação só é criado
+  no primeiro quadro em que ela é desenhada (visível, nível de detalhe ≠ `hidden`, dentro da área da tela); fora disso não há
+  nó, e `node(id)` e `headers.get(id)` devolvem `undefined` (o overlay e quem mais lê tratam o `undefined`). O nó criado
+  fica até a marcação sair do projeto (não é destruído ao sair da tela), é criado já no pai certo (`parentFor`, o grupo de
+  arrasto se ela se move) e só os nós existentes contam na ordem da pilha. Selecionar uma marcação sem nó (Árvore, Lista) leva
+  o canvas até ela (`centerSelection`), e o quadro seguinte a cria. `MarkingRenderer.shown` conta as desenhadas e o
+  `CanvasController` o publica em `data-drawn-markings` no `.canvas-host`. Efeito: abrir já aproximado cria só os nós à vista
+  (65 de 2.000 no cenário de teste, ~50 ms contra ~175 a 285 ms de quadro); com **Enquadrar tudo** todas passam de 2 px e
+  todas ganham nó, então abrir inteiro à vista não encurta (`tests/canvas/lazyNodes.test.ts`).
+- **Orçamentos da etapa canvas-escala (conferência final, DA5):** arrasto ≤ 16 ms (atingido: ~3 a 4 ms em jsdom, 2 camadas
+  redesenhadas); pan e zoom inteiro à vista ≤ 33 ms (jsdom: atingido; Chromium com 2.000: ~42 e ~45 ms, não atingido); edição ≤
+  16 ms (jsdom 16 a 24 ms com teto de 35 ms em `renderPerformance.test.ts`; Chromium com 2.000: ~17 ms); abrir ≤ metade da linha
+  de base (atingido aproximado; não atingido em **Enquadrar tudo**). Medições e linha de base na issue #888; `npm run perf:canvas`
+  gera a tabela do Chromium.
 - **Grupo de arrasto** (`CanvasController.syncDrag`/`applyDrag`, `canvas/dragSet.ts`; decisões 5 a 7 da etapa canvas-escala):
   durante um gesto do store (`store.gestureActive`: mover ou redimensionar marcação, mover itens ou container, rota e ponta de
   seta), o que se move vai para um **grupo no fundo da camada de sobreposições** (abaixo da faixa de chegada, das marcas da
