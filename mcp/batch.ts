@@ -2,7 +2,6 @@ import {
   ModelError,
   NOTICE_KINDS,
   changeNotices,
-  computeChanges,
   type Change,
   type SpecNotice,
   addAnnotation,
@@ -1120,9 +1119,12 @@ class Batch {
     if (cached?.specs === p.specializations && cached.catalog === catalog) {
       return cached.map;
     }
-    const map = new Map(
-      componentTypes(p, catalog).map((t) => [`${t.specId}/${t.typeId}`, t] as const),
-    );
+    const map = new Map<string, ComponentType>();
+    for (const t of componentTypes(p, catalog)) {
+      // O primeiro vence, como o `find` por especialização e tipo.
+      const key = `${t.specId}/${t.typeId}`;
+      if (!map.has(key)) map.set(key, t);
+    }
     this.componentTypes = { specs: p.specializations, catalog, map };
     return map;
   }
@@ -2378,7 +2380,7 @@ export function issueChanges(refs: Refs, before: Project): Record<string, unknow
 export function noticeChanges(
   refs: Refs,
   before: Project,
-  changes: readonly Change[] = computeChanges(before, refs.project),
+  changes: readonly Change[],
 ): Record<string, unknown> {
   const after = refs.project;
   const seen = new Set<string>();

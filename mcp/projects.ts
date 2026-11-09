@@ -180,7 +180,11 @@ function describeError(error: DeserializeError): string {
   }
 }
 
-async function readText(roots: Roots, dir: string, file: string): Promise<string | null> {
+export async function readText(
+  roots: Roots,
+  dir: string,
+  file: string,
+): Promise<string | null> {
   const real = await resolveProjectFile(roots, dir, file);
   if (real === null) return null;
   if ((await stat(real)).size > MAX_PROJECT_BYTES) {

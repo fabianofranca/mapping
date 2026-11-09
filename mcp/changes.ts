@@ -25,7 +25,12 @@ import { membershipView } from './membership';
 import type { Operation } from './operations';
 import { Roots, resolveProjectFile } from './paths';
 import { readSpecInput } from './library';
-import { loadProject, type LoadedProject, type ProjectLocation } from './projects';
+import {
+  loadProject,
+  readText,
+  type LoadedProject,
+  type ProjectLocation,
+} from './projects';
 
 // Operações em lote sobre uma cópia do projeto (etapa 3a.5), agora só para ler: o
 // `plan_changes` valida e resume sem gravar nada, e o `propose_changes` (proposals.ts) calcula
@@ -38,8 +43,8 @@ export const sha256 = (text: string) => createHash('sha256').update(text).digest
 
 /** Lê o `mapping.json` como está no disco (para a conferência antes de gravar a proposta). */
 export async function readMapping(roots: Roots, dir: string): Promise<string | null> {
-  const real = await resolveProjectFile(roots, dir, MAPPING_FILE);
-  return real === null ? null : readFile(real, 'utf8');
+  // Com o limite de tamanho das demais leituras do projeto (`loadProject`).
+  return readText(roots, dir, MAPPING_FILE);
 }
 
 /** Lê um arquivo citado numa operação: relativo à pasta do projeto, a uma raiz, ou absoluto. */

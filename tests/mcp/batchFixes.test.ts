@@ -1,4 +1,11 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  truncateSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -203,5 +210,19 @@ describe('achado 13: mapping.json lido uma vez por chamada', () => {
     expect(mappingReads.count).toBe(1);
     const text = readFileSync(join(base, 'telas', 'mapping.json'), 'utf8');
     expect(prepared.baseHash).toBe(sha256(text));
+  });
+});
+
+describe('mapping.json grande demais', () => {
+  it('prepareBatch recusa com file-too-large antes de ler o arquivo', async () => {
+    const big = join(base, 'grande');
+    mkdirSync(big);
+    writeFileSync(join(big, 'mapping.json'), '{}');
+    truncateSync(join(big, 'mapping.json'), 64 * 1024 * 1024 + 1);
+    const both = new Roots([join(base, 'telas'), big]);
+    const location = { ...(await findProject(roots, 'telas')), dir: big };
+    await expect(
+      prepareBatch(both, location, [], { now: () => Date.parse(NOW) }),
+    ).rejects.toMatchObject({ code: 'file-too-large' });
   });
 });

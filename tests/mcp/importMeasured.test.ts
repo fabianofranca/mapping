@@ -261,10 +261,15 @@ describe('import_measured', () => {
 
 // Achado 12 (CR do MCP): o `catch` por nó pega só `ToolError` e `ModelError`; um erro interno sobe.
 describe('import_measured: erro por nó', () => {
+  let thrown = 0;
   const failInCreate = (error: Error) => {
+    thrown = 0;
     const original = crypto.randomUUID.bind(crypto);
     return vi.spyOn(crypto, 'randomUUID').mockImplementation(() => {
-      if (new Error().stack?.includes('createMarkingOp')) throw error;
+      if (new Error().stack?.includes('createMarkingOp')) {
+        thrown += 1;
+        throw error;
+      }
       return original();
     });
   };
@@ -274,6 +279,7 @@ describe('import_measured: erro por nó', () => {
     try {
       const result = await run([SCREEN, imp({ tree: btn(10, 10, 120, 40, 'Ok') })]);
       expect(result.errors).toEqual([]);
+      expect(thrown).toBeGreaterThan(0);
       expect(result.deprecations.map((d) => d.message).join('\n')).toContain(
         'não criada',
       );
@@ -288,6 +294,7 @@ describe('import_measured: erro por nó', () => {
       await expect(
         run([SCREEN, imp({ tree: btn(10, 10, 120, 40, 'Ok') })]),
       ).rejects.toThrow('bug interno');
+      expect(thrown).toBeGreaterThan(0);
     } finally {
       spy.mockRestore();
     }
