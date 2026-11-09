@@ -138,6 +138,8 @@ export function issueText(names: ReviewNames, issue: ProposalIssue): string {
       return t('review.issue.doesNotFit', params);
     case 'proposal-closed':
       return t('review.issue.closed');
+    case 'missing-image':
+      return t('review.issue.missingImage', params);
     default:
       return t('review.issue.generic', { ...params, code: issue.code });
   }

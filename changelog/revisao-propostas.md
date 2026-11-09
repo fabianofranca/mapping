@@ -13,3 +13,7 @@
 - Revisão de propostas: o leitor de tela anuncia a linha selecionada da árvore (`aria-activedescendant`, com posição e total do nível, também na lista virtualizada).
 - Revisão de propostas: "Aceitar as N que faltam" e "Rejeitar as N que causam" decidem tudo numa gravação só, e o Desfazer do aviso devolve todas ao estado anterior; um erro é relatado uma vez.
 - Revisão de propostas, comparação de imagem no modo Deslizar: a alça anuncia "{N}% do antes" (era "do depois", que contradizia o recorte); `Home` mostra só o depois e `End` só o antes. O modo Sobrepor continua "do depois".
+- Revisão de propostas: o aviso "O agente revisou…" (e o de proposta alterada) deixou de ficar na tela depois de abrir a revisão pela janela Propostas; abrir a revisão tira da fila todos os avisos daquela proposta.
+- Revisão de propostas: o título dos Detalhes não quebra mais no meio da palavra a 900×720 (os botões descem para a linha de baixo).
+- Revisão de propostas, comparação de imagem no modo Deslizar: a alça aparece inteira com a divisória em 0% e em 100%, em vez de cortada pela metade.
+- Revisão de propostas: o aviso "Aplicar bloqueado" por marcação sem imagem diz "depende de uma imagem que não está no projeto", sem o código interno.
