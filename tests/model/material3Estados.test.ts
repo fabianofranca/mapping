@@ -33,6 +33,11 @@ const INTERACTION_OPTIONS: Record<string, string[]> = {
   switch: ['none', 'hovered', 'focused', 'pressed'],
   slider: ['none', 'hovered', 'focused', 'pressed'],
   'segmented-button': ['none', 'hovered', 'focused', 'pressed'],
+  'text-field': ['none', 'hovered', 'focused'],
+  'secure-text-field': ['none', 'hovered', 'focused'],
+  'search-bar': ['none', 'hovered', 'focused', 'pressed'],
+  'dropdown-menu': ['none', 'hovered', 'focused'],
+  'list-item': ['none', 'hovered', 'focused', 'pressed', 'dragged'],
 };
 
 describe('tokens de estado (StateTokens.kt)', () => {

@@ -169,6 +169,20 @@ export const COMPOSE_SIZES: Record<string, { width: number; height: number }> = 
   slider: { width: 328, height: 48 },
 };
 
+/** Colunas de tabela que a etapa acrescentou a um tipo (a ME4 deu `selected` aos itens do `dropdown-menu`). */
+const ADDED_COLUMNS: Record<string, Record<string, string[]>> = {
+  'dropdown-menu': { items: ['selected'] },
+};
+function withoutAddedColumns(id: string, field: Raw): Raw {
+  const drop = field.key === undefined ? undefined : ADDED_COLUMNS[id]?.[field.key];
+  const columns = (field as { columns?: Raw[] }).columns;
+  if (drop === undefined || columns === undefined) return field;
+  return {
+    ...field,
+    columns: columns.filter((c) => !drop.includes(c.key as string)),
+  } as Raw;
+}
+
 /**
  * Compara os campos e os exemplos de um tipo com os da v1, sem o que a etapa Material 3 com estados acrescentou
  * (o campo `interaction` e os exemplos que o usam, e os exemplos dos limites da ME2) e com as descrições corrigidas de `V1_DESCRIPTION_FIXES`.
@@ -189,7 +203,9 @@ export function v1WithEstados(
   const isState = (e: Raw): boolean => e.values?.interaction !== undefined;
   return {
     actual: {
-      fields: now.fields.filter((f) => f.key !== 'interaction'),
+      fields: now.fields
+        .filter((f) => f.key !== 'interaction')
+        .map((f) => withoutAddedColumns(id, f)),
       examples: (now.examples ?? []).filter(
         (e) => !isState(e) && e.name !== LIMIT_EXAMPLES[id],
       ),

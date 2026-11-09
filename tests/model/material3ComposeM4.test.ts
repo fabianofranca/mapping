@@ -47,13 +47,25 @@ describe('M4 — navegação e listas no formato 4', () => {
     expect(text(`components/${id}.json`)).not.toMatch(/"M\d[^"]{40,}"/);
   });
 
+  // A ME4 deu a coluna `selected` aos itens do `dropdown-menu`: o preview a traz (senão o desenho avisa "campo não informado").
+  const withoutAddedPreview = (id: string, preview: unknown): unknown => {
+    const p = preview as { items?: Rec[] } | undefined;
+    if (id !== 'dropdown-menu' || p?.items === undefined) return preview;
+    return {
+      ...p,
+      items: p.items.map((row) =>
+        Object.fromEntries(Object.entries(row).filter(([k]) => k !== 'selected')),
+      ),
+    };
+  };
+
   it.each(M4)('%s: campos, exemplos, preview, minSize e size iguais aos da v1', (id) => {
     const before = (v1.components as Record<string, Rec>)[id]!;
     const type = rawTypes[id]!;
     const now = component(id);
     const { actual, expected } = v1WithEstados(id, type, before);
     expect(actual).toEqual(expected);
-    expect(now.preview).toEqual(before.preview);
+    expect(withoutAddedPreview(id, now.preview)).toEqual(before.preview);
     expect(now.minSize).toEqual(before.minSize);
     expect(now.size).toEqual(COMPOSE_SIZES[id] ?? before.size);
   });
