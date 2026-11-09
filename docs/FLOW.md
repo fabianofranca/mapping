@@ -62,15 +62,15 @@ Com ❌ no relato **ou com defeito pendente** (os "Defeitos pendentes" dos aviso
 O orquestrador acha o ambiente "Mapping - testes" com `list_environments` e cria a sessão com `create_session`, `source_url` do repositório e `source_revision` = `epic/<nome>`:
 
 ```text
-Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: <roteiros da sub-issue da última fase>. Passada visual: <lista da sub-issue, ou "nenhuma">. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do orquestrador>`.
+Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: <roteiros da sub-issue da última fase>. Passada visual: <lista da sub-issue, ou "nenhuma">. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Tag da release: <mcp-v…-rc.n, ou "sem R21">. R0 inteiro primeiro. Coordenador: `<id da sessão do orquestrador>`.
 ```
 
-Se a lista traz o R21 (testa a release real), acrescente "Tag da release: `mcp-v<versão>-rc.<n>`" (a rc do épico) antes de "Coordenador".
+A lacuna da tag é sempre preenchida: se a lista traz o R21 (testa a release real), a rc do épico (`mcp-v<versão>-rc.<n>`); se não traz, `sem R21`.
 
-Reteste, depois da correção (R0 reduzido ao R0.1 e aos passos de que os achados dependem; passada visual só das janelas e dos diálogos dos achados). Os defeitos pendentes corrigidos entram pelos passos de roteiro que afetam; sem passo afetado, o teste automatizado da correção basta, e uma correção só de defeitos pendentes, sem passo de roteiro, dispensa o reteste:
+Reteste, depois da correção (R0 só o R0.1 e os passos de que os achados dependem; passada visual só das janelas e dos diálogos dos achados). Os defeitos pendentes corrigidos entram pelos passos de roteiro que afetam; sem passo afetado, o teste automatizado da correção basta, e uma correção só de defeitos pendentes, sem passo de roteiro, dispensa o reteste:
 
 ```text
-Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: os achados <números> do relato em <link do comentário><e os passos <lista> que as correções dos defeitos pendentes afetam>. Branch `epic/<nome>`, commit `<hash da correção>`. Relato na sub-issue #<fase de correção>. Coordenador: `<id da sessão do orquestrador>`.
+Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: os achados <números> do relato em <link do comentário><e os passos <lista> que as correções dos defeitos pendentes afetam>. Branch `epic/<nome>`, commit `<hash da correção>`. Relato na sub-issue #<fase de correção>. Tag da release: <mcp-v…-rc.n, ou "sem R21">. R0 só o R0.1 e os passos de que os achados dependem. Coordenador: `<id da sessão do orquestrador>`.
 ```
 
 ## Rodada completa em 5 blocos
@@ -78,9 +78,10 @@ Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: os achados <números> d
 Quando a seção **Testador** da sub-issue da última fase pede a rodada completa, o orquestrador (o **coordenador**) cria **cinco** sessões do testador de uma vez, uma por bloco da tabela de [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md) ("Rodada completa em blocos"). Cada uma usa `list_environments` ("Mapping - testes"), `create_session` com `source_url` do repositório, `source_revision` = `epic/<nome>`, o mesmo commit nas cinco e o título "Testador — <alvo>, bloco <k> de 5". Mensagem do bloco `<k>` (1 a 5):
 
 ```text
-Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco <k> de 5. Passada visual: <lista da sub-issue, no bloco 4; "no bloco 4" nos blocos 1, 2, 3 e 5>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do coordenador>`.
+Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco <k> de 5. Passada visual: <lista da sub-issue, no bloco 4; "no bloco 4" nos blocos 1, 2, 3 e 5>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Tag da release: <mcp-v…-rc.n, ou "sem R21">. Coordenador: `<id da sessão do coordenador>`.
 ```
 
+- **Tag da release:** só o bloco 5 tem o R21; nos blocos 1 a 4 a lacuna é `sem R21`, e no 5 é a rc do épico (numa rodada na `main`, a última estável).
 - **Conferência de reserva:** agenda um `send_later` de 60 min e só segue com os **cinco avisos** (um por bloco, cada um cita o bloco). Bloco que não avisou até lá: `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, chama o dono.
 - **Com os cinco avisos,** posta o resumo (abaixo) na mesma sub-issue. O coordenador não reescreve os relatos.
 - **Com ❌,** o fluxo de sempre: uma fase de correção com os achados dos cinco blocos (códigos `k.n`, com o link do comentário de cada um) e o reteste dirigido numa sessão só, pelos achados `k.n`, na mensagem de reteste acima.
