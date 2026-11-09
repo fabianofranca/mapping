@@ -41,6 +41,12 @@ concurrency:
   group: ci-${{ github.event_name }}-${{ github.ref }}-${{ inputs.ref }}${{ github.event.action == 'edited' && !github.event.changes.base && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
+# `timeout-minutes` em cada job (etapa #1325): perto do dobro do maior tempo medido nas 10
+# últimas execuções verdes de 2026-11-09, com cache (epic 11 s, static 105 s, test 175 s por
+# shard, coverage 31 s, build 186 s, check 4 s, e2e 179 s + 1 min do `playwright install` sem
+# cache). Job que passa do tempo para com a anotação de tempo máximo excedido e o `check` (ou o
+# `e2e`) fica vermelho: o check obrigatório termina em vez de ficar pendente. Timeout não é
+# reexecutado (`ci-rerun.yml`): é defeito real. Revise estes valores com medidas novas.
 jobs:
   # A `main` só recebe PR de um branch `epic/*` (docs/PROCESS.md, "Fluxo de trabalho"): o ruleset
   # "main protegida" exige este check, que falha para qualquer outra origem. Exceção: os PRs
@@ -49,6 +55,7 @@ jobs:
   epic:
     if: github.event_name == 'pull_request' && (github.event.action != 'edited' || github.event.changes.base)
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Origem do PR
         env:
@@ -148,6 +155,7 @@ jobs:
   static:
     if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v7
         with:
@@ -170,6 +178,7 @@ jobs:
   test:
     if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
+    timeout-minutes: 6
     strategy:
       fail-fast: false
       matrix:
@@ -196,6 +205,7 @@ jobs:
     needs: test
     if: ${{ !cancelled() && needs.test.result != 'skipped' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@v7
         with:
@@ -229,6 +239,7 @@ jobs:
   build:
     if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
+    timeout-minutes: 7
     env:
       # Orçamento do dist/index.html (autocontido; 1.376.757 bytes, ~1,38 MB em 2026-10-19, com o exemplo embutido: ~80 KB em base64). Só aqui. Subido para 1.703.936 (1,625 MiB) na etapa #559 (decisão do dono, 2026-11-05): o épico estava a 151 bytes do teto e a PD5 soma ~7,4 KB de código real. Subido para 1.769.472 (1.728 KiB) na CM5 da etapa #645: o compositor com chips, o `@`, os menus de citação e o chip vivo somam ~38 KB de código real (1.738.403 bytes), com ~31 KB de folga. Subido para 1.867.776 (1.824 KiB) na PE3 da etapa #659: a interface das perspectivas (seletor, três diálogos, submenu, seção e aviso nos Detalhes, selo e área de chegada no canvas) soma ~66 KB de código real (1.804.237 bytes), com ~63 KB de folga. Subido para 1.884.160 (1.840 KiB) na etapa #842 (decisão do dono, 2026-11-08): a `main` já estava a ~300 bytes do teto e os atributos `data-viewport` e `data-selection-box` somam ~700 bytes. Subido para 1.900.544 (1.856 KiB) na etapa revisao-propostas (decisão do dono, 2026-11-09): o épico, com a `main` trazida, passou 227 bytes do teto antigo. Subido para 1.933.312 (1.888 KiB) na etapa #964 (decisão do dono, 2026-11-09): a Ajuda da formatVersion 15 (`src/i18n/specHelp.ts`, +156 linhas) levou o épico, com a `main` trazida, a 1.905.789 bytes.
       INDEX_HTML_MAX_BYTES: 1933312
@@ -244,28 +255,37 @@ jobs:
       - run: npm run test:scale
       # Os tipos ficam só no `typecheck` (job `static`): `build` e `build:mcp` não repetem o `tsc`.
       - run: npm run build
+      - run: npm run build:mcp
+      # `--if-present`: o deploy roda este ci.yml (o do branch) também contra a `main`
+      # (`checks-main`), que pode ainda não ter o script do visualizador (fase L1).
+      - run: npm run build:viewer --if-present
+      # Último passo do job (etapa #1325, decisão 7): um `dist` acima do teto não esconde uma falha
+      # do `build:mcp` ou do `build:viewer`, e o `::error` abaixo é a única falha quando só o tamanho passa.
       - name: Tamanho do dist/index.html
         run: |
           size=$(stat -c %s dist/index.html)
+          margin=$((INDEX_HTML_MAX_BYTES - size))
           {
             echo "### dist/index.html"
             echo ""
             echo "$size bytes ($((size / 1024)) KiB) de $INDEX_HTML_MAX_BYTES bytes ($((INDEX_HTML_MAX_BYTES / 1024)) KiB) do orçamento."
+            echo ""
+            echo "Margem: $margin bytes ($((margin / 1024)) KiB)."
           } >> "$GITHUB_STEP_SUMMARY"
           if [ "$size" -gt "$INDEX_HTML_MAX_BYTES" ]; then
             echo "::error file=dist/index.html::$size bytes, acima do orçamento de $INDEX_HTML_MAX_BYTES bytes."
             exit 1
           fi
-      - run: npm run build:mcp
-      # `--if-present`: o deploy roda este ci.yml (o do branch) também contra a `main`
-      # (`checks-main`), que pode ainda não ter o script do visualizador (fase L1).
-      - run: npm run build:viewer --if-present
+          if [ "$margin" -lt 2048 ]; then
+            echo "::warning file=dist/index.html::Margem de $margin bytes até o orçamento de $INDEX_HTML_MAX_BYTES bytes, abaixo de 2 KiB: enxugue antes de subir o teto."
+          fi
 
   # Agregador: o check obrigatório `check` falha se algum dos quatro jobs não terminou em sucesso.
   check:
     needs: [static, test, coverage, build]
     if: ${{ always() && (github.event.action != 'edited' || github.event.changes.base) }}
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     steps:
       - name: Todos os jobs em sucesso
         env:
@@ -284,6 +304,7 @@ jobs:
   e2e:
     if: github.event.action != 'edited' || github.event.changes.base
     runs-on: ubuntu-latest
+    timeout-minutes: 7
     steps:
       - uses: actions/checkout@v7
         with:

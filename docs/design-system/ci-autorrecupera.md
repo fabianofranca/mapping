@@ -2,4 +2,4 @@
 
 ## Pendências
 
-Nenhuma.
+Nenhuma. Impacto no design system: nenhum (só CI e ferramentas do fluxo de entrega).
