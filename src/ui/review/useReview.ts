@@ -31,6 +31,21 @@ export function useDecide(): (target: ReviewTarget, state: DecisionValue) => voi
   };
 }
 
+/** Decide várias mudanças numa decisão só (um "Desfazer"); um erro é relatado uma vez. */
+export function useDecideMany(): (
+  ids: readonly string[],
+  state: 'accepted' | 'rejected',
+) => void {
+  const { review } = useEditor();
+  const { report } = useReviewCommands();
+  return (ids, state) => {
+    const targets = ids.map((id): ReviewTarget => ({ level: 'change', id }));
+    void review.decideMany(targets, state).then((result) => {
+      if (result && !result.ok) report(result.error);
+    });
+  };
+}
+
 /**
  * Seleciona um nível da revisão e o mostra no canvas (a seleção do canvas acompanha a da
  * revisão por `useReviewSync`). `center` centraliza a vista.

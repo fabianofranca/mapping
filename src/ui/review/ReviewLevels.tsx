@@ -32,6 +32,8 @@ import {
   buildLevelRows,
   initiallyCollapsed,
   levelParents,
+  rowDomId,
+  rowPositions,
   type LevelRow,
 } from './levelRows';
 import { useDecide, useReviewNames, useReviewNavigate } from './useReview';
@@ -91,12 +93,13 @@ function useVirtualWindow(count: number, scroller: { current: HTMLElement | null
   }, [scroller]);
   // Linhas novas (ou a primeira vez com linhas): mede de novo a altura da linha.
   useLayoutEffect(() => measureRef.current(), [count]);
+  const measure = () => measureRef.current();
   if (view.row <= 0 || view.height <= 0) {
-    return { start: 0, end: Math.min(count, UNMEASURED_ROWS), row: 0 };
+    return { start: 0, end: Math.min(count, UNMEASURED_ROWS), row: 0, measure };
   }
   const start = Math.max(0, Math.floor(view.top / view.row) - OVERSCAN);
   const end = Math.min(count, Math.ceil((view.top + view.height) / view.row) + OVERSCAN);
-  return { start, end, row: view.row };
+  return { start, end, row: view.row, measure };
 }
 
 /**
@@ -384,8 +387,25 @@ export function ReviewLevels() {
     else if (top + win.row > el.scrollTop + el.clientHeight) {
       el.scrollTop = top + win.row - el.clientHeight;
     }
+    // A janela acompanha já: a linha selecionada fica desenhada (alvo do activedescendant).
+    win.measure();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedKey, count]);
+
+  const positions = useMemo(
+    () =>
+      rowPositions(
+        flat ? flat.filter((r) => r.kind === 'change') : rows,
+        flat ? new Map<string, string>() : parents,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, parents, superseded],
+  );
+  const selectedIndex = selectedKey
+    ? flat
+      ? flat.findIndex((r) => r.key === selectedKey)
+      : rows.findIndex((r) => r.key === selectedKey)
+    : -1;
 
   if (!p || !tree || !names) return null;
 
@@ -434,6 +454,7 @@ export function ReviewLevels() {
         expandable={false}
         expanded={false}
         selected={selectedKey === key}
+        position={positions.get(key)}
         invalid={invalid.changeIds.has(c.id)}
         revised={changeBadge(p, revisedIds, c.id)}
         conflict={conflict}
@@ -510,6 +531,7 @@ export function ReviewLevels() {
         expandable={row.expandable}
         expanded={row.expanded}
         selected={selectedKey === row.key}
+        position={positions.get(row.key)}
         invalid={isInvalid}
         revised={levelBadge(row.target.level, revisedIds, ids)}
         decision={levelValue(summary)}
@@ -565,7 +587,8 @@ export function ReviewLevels() {
     : rows.map((r) => r.key);
 
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    // Só com o foco na própria árvore: nos botões da linha as teclas são deles.
+    if (e.target !== e.currentTarget || e.altKey || e.ctrlKey || e.metaKey) return;
     const at = selectedKey ? keys.indexOf(selectedKey) : -1;
     const go = (index: number) => {
       const key = keys[index];
@@ -682,6 +705,11 @@ export function ReviewLevels() {
         role="tree"
         aria-label={t('review.levels')}
         tabIndex={0}
+        aria-activedescendant={
+          selectedKey && selectedIndex >= win.start && selectedIndex < win.end
+            ? rowDomId(selectedKey)
+            : undefined
+        }
         onKeyDown={onKeyDown}
       >
         <div style={{ height: `${win.start * win.row}px` }} aria-hidden="true" />
