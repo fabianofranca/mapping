@@ -12,6 +12,7 @@ import {
   moveContainer,
   moveMarking,
   notesOf,
+  parseProposalText,
   removeContainer,
   removeMarking,
   removeNote,
@@ -19,6 +20,7 @@ import {
   replaceContainer,
   reviewProgress,
   reviewTree,
+  serializeProposal,
   setAnnotationParent,
   setFieldValue,
   setImageLocked,
@@ -345,6 +347,24 @@ describe('conflitos', () => {
     expect(
       changeStatus(renamed, renamed.changes[0]!, removeContainer(base, 'I2')).conflict,
     ).toBe(true);
+  });
+
+  it('remover imagem lida do disco não vira conflito (parentId derivado dos dois lados)', () => {
+    const base = sampleProject();
+    const removed = propose(base, removeContainer(base, 'I1'));
+    const removal = changeOf(removed, 'image', 'I1');
+    expect(changeStatus(removed, removal, base).conflict).toBe(false);
+    const parsed = parseProposalText(serializeProposal(removed));
+    if (!parsed.ok) throw new Error('proposta não lida');
+    const reread = parsed.proposal;
+    expect(changeStatus(reread, changeOf(reread, 'image', 'I1'), base).conflict).toBe(
+      false,
+    );
+    // Um valor realmente diferente continua sendo conflito.
+    const moved = setImageLocked(base, 'I1', true);
+    expect(changeStatus(reread, changeOf(reread, 'image', 'I1'), moved).conflict).toBe(
+      true,
+    );
   });
 
   it('alterar algo criado pela mesma proposta não é conflito, e as decisões das outras ficam', () => {
