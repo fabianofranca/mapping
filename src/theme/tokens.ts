@@ -63,6 +63,18 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'color-warning-bg': { light: '#fff4d6', dark: '#3a2f14' },
   'color-success': { light: '#1e7a46', dark: '#7ad3a0' },
   'color-success-bg': { light: '#e3f4ea', dark: '#163325' },
+  /**
+   * Selo de estado da conversa (janela Comentários e seção Conversas dos Detalhes): texto e fundo por
+   * estado, do mesmo matiz do `cv-pin-*` do estado (laranja = aguardando você, ciano = aguardando
+   * agente, cinza = resolvida), escurecidos no claro e clareados no escuro para o texto passar de
+   * 4,5:1 sobre o fundo. O pino do canvas (`cv-pin-*`) não muda.
+   */
+  'color-thread-human': { light: '#84590b', dark: '#f0b242' },
+  'color-thread-human-bg': { light: '#fcf2de', dark: '#413215' },
+  'color-thread-agent': { light: '#136c5e', dark: '#52e0ca' },
+  'color-thread-agent-bg': { light: '#e1faf6', dark: '#193e38' },
+  'color-thread-resolved': { light: '#4f5e72', dark: '#9fabbc' },
+  'color-thread-resolved-bg': { light: '#eaedf0', dark: '#272b30' },
   'color-backdrop': { light: 'rgba(0, 0, 0, 0.45)', dark: 'rgba(0, 0, 0, 0.6)' },
   'color-tooltip': { light: '#1b1f24', dark: '#e8eaed' },
   'color-tooltip-text': { light: '#ffffff', dark: '#12151a' },
