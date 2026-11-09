@@ -6267,6 +6267,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "false mostra o rótulo só no destino selecionado."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda."
             }
           ],
           "code": {
@@ -6287,6 +6295,27 @@
               "name": "Rótulo só no ativo",
               "values": {
                 "alwaysShowLabel": "false"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "alwaysShowLabel": "true",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "alwaysShowLabel": "true",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "alwaysShowLabel": "true",
+                "interaction": "pressed"
               }
             }
           ]
@@ -10280,6 +10309,14 @@
               "default": "true",
               "options": ["true", "false"],
               "description": "Só para rail: false mostra o rótulo só no destino selecionado."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda."
             }
           ],
           "code": {
@@ -10342,6 +10379,30 @@
               "values": {
                 "style": "modal-wide",
                 "initialValue": "Expanded"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "style": "rail",
+                "alwaysShowLabel": "true",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "style": "rail",
+                "alwaysShowLabel": "true",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "style": "rail",
+                "alwaysShowLabel": "true",
+                "interaction": "pressed"
               }
             }
           ]
@@ -10564,6 +10625,14 @@
               "default": "Top",
               "options": ["Top", "Start"],
               "description": "Top põe o ícone acima do rótulo; Start põe o ícone ao lado dele (parâmetro do item, o mesmo em todos)."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda."
             }
           ],
           "code": {
@@ -10606,6 +10675,30 @@
               "values": {
                 "arrangement": "Centered",
                 "iconPosition": "Top"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "arrangement": "EqualWeight",
+                "iconPosition": "Top",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "arrangement": "EqualWeight",
+                "iconPosition": "Top",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "arrangement": "EqualWeight",
+                "iconPosition": "Top",
+                "interaction": "pressed"
               }
             }
           ]
@@ -10833,6 +10926,14 @@
                 }
               ],
               "description": "Um destino por linha, na ordem em que aparecem na folha."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda."
             }
           ],
           "code": {
@@ -10874,6 +10975,30 @@
               "name": "Permanente sem cabeçalho",
               "values": {
                 "style": "permanent"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "style": "modal",
+                "headline": "Mapping",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "style": "modal",
+                "headline": "Mapping",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "style": "modal",
+                "headline": "Mapping",
+                "interaction": "pressed"
               }
             }
           ]
@@ -11101,6 +11226,14 @@
               "default": "top",
               "options": ["top", "leading"],
               "description": "top (Tab) põe o ícone acima do texto, e a fileira passa de 48 para 72; leading (LeadingIconTab) põe o ícone à esquerda do texto, em 48. Só vale para as abas com ícone e texto."
+            },
+            {
+              "key": "interaction",
+              "label": "Interação",
+              "type": "enum",
+              "default": "none",
+              "options": ["none", "hovered", "focused", "pressed"],
+              "description": "Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda."
             }
           ],
           "code": {
@@ -11144,6 +11277,30 @@
               "values": {
                 "style": "primary-scrollable",
                 "iconPosition": "leading"
+              }
+            },
+            {
+              "name": "Mouse sobre",
+              "values": {
+                "style": "primary",
+                "iconPosition": "top",
+                "interaction": "hovered"
+              }
+            },
+            {
+              "name": "Com foco",
+              "values": {
+                "style": "primary",
+                "iconPosition": "top",
+                "interaction": "focused"
+              }
+            },
+            {
+              "name": "Pressionado",
+              "values": {
+                "style": "primary",
+                "iconPosition": "top",
+                "interaction": "pressed"
               }
             }
           ]

@@ -38,6 +38,11 @@ const INTERACTION_OPTIONS: Record<string, string[]> = {
   'search-bar': ['none', 'hovered', 'focused', 'pressed'],
   'dropdown-menu': ['none', 'hovered', 'focused'],
   'list-item': ['none', 'hovered', 'focused', 'pressed', 'dragged'],
+  tabs: ['none', 'hovered', 'focused', 'pressed'],
+  'navigation-bar': ['none', 'hovered', 'focused', 'pressed'],
+  'short-navigation-bar': ['none', 'hovered', 'focused', 'pressed'],
+  'navigation-rail': ['none', 'hovered', 'focused', 'pressed'],
+  'navigation-drawer': ['none', 'hovered', 'focused', 'pressed'],
 };
 
 describe('tokens de estado (StateTokens.kt)', () => {
@@ -199,6 +204,43 @@ describe('button: campo interaction', () => {
       draw({ style: 'elevated', interaction: 'pressed' }, 'light').root,
     );
     expect(a).not.toBe(b);
+  });
+});
+
+describe('teste final: os tipos com o interaction (ME1 a ME5)', () => {
+  const types = spec.layers.flatMap((l) => l.annotationTypes);
+  const withField = types.filter((t) => t.fields.some((f) => f.key === 'interaction'));
+
+  it('são os 22 tipos da etapa, cada um com as opções e o padrão', () => {
+    expect(withField.map((t) => t.id).sort()).toEqual(
+      Object.keys(INTERACTION_OPTIONS).sort(),
+    );
+    expect(withField).toHaveLength(22);
+    for (const t of withField) {
+      const f = t.fields.find((x) => x.key === 'interaction');
+      expect(f, t.id).toMatchObject({
+        type: 'enum',
+        default: 'none',
+        options: INTERACTION_OPTIONS[t.id],
+      });
+      expect(f?.required, t.id).not.toBe(true);
+    }
+  });
+
+  it('nenhum docs/<tipo>.md de quem tem o interaction diz que o desenho é estático', () => {
+    for (const t of withField) {
+      const doc = readFileSync(join(ROOT, 'docs', `${t.id}.md`), 'utf8');
+      expect(doc, t.id).not.toMatch(/o desenho é estático/i);
+      expect(doc, t.id).not.toMatch(
+        /Sem estados? de pressionado, foco e passar o mouse/i,
+      );
+    }
+  });
+
+  it('a biblioteca valida com 0 erros e 0 avisos', () => {
+    const report = validateLibrary({ files, specPath: SPEC_FILE });
+    expect(report.errors).toEqual([]);
+    expect(report.warnings).toEqual([]);
   });
 });
 

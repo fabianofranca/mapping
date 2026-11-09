@@ -6,12 +6,13 @@ Tipo de anotação: `navigation-rail` (camada Componentes).
 
 ## Campos
 
-| Chave             | Rótulo                  | Tipo  | Obrigatório | Opções                       | Padrão     | Descrição                                                                                                                                                  |
-| ----------------- | ----------------------- | ----- | ----------- | ---------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `items`           | Itens                   | table | sim         | ver Colunas abaixo           |            | Um destino por linha, na ordem em que aparecem na rail, de cima para baixo.                                                                                |
-| `style`           | Estilo                  | enum  | não         | `rail`, `wide`, `modal-wide` | `rail`     | rail (NavigationRail, 80 de largura), wide (WideNavigationRail, recolhida ou expandida) ou modal-wide (ModalWideNavigationRail, que expande sobre a tela). |
-| `initialValue`    | Estado inicial          | enum  | não         | `Collapsed`, `Expanded`      | `Expanded` | Só para wide e modal-wide: Expanded mostra o ícone ao lado do rótulo; Collapsed, o ícone acima (rememberWideNavigationRailState).                          |
-| `alwaysShowLabel` | Sempre mostrar o rótulo | enum  | não         | `true`, `false`              | `true`     | Só para rail: false mostra o rótulo só no destino selecionado.                                                                                             |
+| Chave             | Rótulo                  | Tipo  | Obrigatório | Opções                                  | Padrão     | Descrição                                                                                                                                                                                                                                                                                              |
+| ----------------- | ----------------------- | ----- | ----------- | --------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `items`           | Itens                   | table | sim         | ver Colunas abaixo                      |            | Um destino por linha, na ordem em que aparecem na rail, de cima para baixo.                                                                                                                                                                                                                            |
+| `style`           | Estilo                  | enum  | não         | `rail`, `wide`, `modal-wide`            | `rail`     | rail (NavigationRail, 80 de largura), wide (WideNavigationRail, recolhida ou expandida) ou modal-wide (ModalWideNavigationRail, que expande sobre a tela).                                                                                                                                             |
+| `initialValue`    | Estado inicial          | enum  | não         | `Collapsed`, `Expanded`                 | `Expanded` | Só para wide e modal-wide: Expanded mostra o ícone ao lado do rótulo; Collapsed, o ícone acima (rememberWideNavigationRailState).                                                                                                                                                                      |
+| `alwaysShowLabel` | Sempre mostrar o rótulo | enum  | não         | `true`, `false`                         | `true`     | Só para rail: false mostra o rótulo só no destino selecionado.                                                                                                                                                                                                                                         |
+| `interaction`     | Interação               | enum  | não         | `none`, `hovered`, `focused`, `pressed` | `none`     | Aparência parada do estado de interação do item selecionado: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. O tipo não tem desabilitado (sem enabled): o estado sempre desenha. Sem item selecionado, nada muda. |
 
 Colunas de `items` (uma linha por item):
 
@@ -73,6 +74,9 @@ Variante `modal-wide`: Estável, sem opt-in. `ModalWideNavigationRail(state = re
 - **Rail estreita**: style=rail, alwaysShowLabel=true
 - **Wide expandida**: style=wide, initialValue=Expanded
 - **Modal expandida**: style=modal-wide, initialValue=Expanded
+- **Mouse sobre**: style=rail, alwaysShowLabel=true, interaction=hovered
+- **Com foco**: style=rail, alwaysShowLabel=true, interaction=focused
+- **Pressionado**: style=rail, alwaysShowLabel=true, interaction=pressed
 
 ## Fidelidade
 
@@ -84,6 +88,8 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRail.kt` (linhas 209 a 415: `WideNavigationRailLayout`; 230 a 252: a largura mínima 96 ou 220, o espaço entre itens 4 ou 0 e a altura mínima do item 64 ou 48; 264: o topo de 44; 317 a 336: a medida dos itens (`fitPrioritizingWidth`) e a largura do rail pelo item mais largo mais 20; 410: a posição dos itens; 788 a 814: `WideNavigationRailDefaults`, as formas; 855 a 860: `containerColor` e `modalContainerColor`; 993 a 1000: o `Surface` do rail modal expandido; 1135 a 1157: `ItemHorizontalPadding` 20, `WNRVerticalPadding` 44, `CollapsedRailWidth`, `ExpandedRailMinWidth` 220, `ExpandedRailMaxWidth` 360, `TopIconItemMinHeight` 64).
 - `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationItem.kt` (linhas 895 a 975: `placeLabelAndTopIcon`; 978 a 1075: `placeAnimatedLabelAndIcon`, o item do rail wide: indicador no topo, ícone a 4, rótulo a 36; a pílula do ícone ao lado a 20 da borda, com ícone a 16 do início e 8 até o rótulo).
 - `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/`: `NavigationRailCollapsedTokens.kt` (24 a 31: largura 96, 80 estreita, `TopSpace` 44, `ItemVerticalSpace` 4, cor surface), `NavigationRailExpandedTokens.kt` (24 a 32: largura 220 a 360, `ModalContainerShape` CornerLarge, `ModalContainerColor` surface container), `NavigationRailVerticalItemTokens.kt` (24 a 30: indicador 56 × 32, `IconLabelSpace` 4, label medium), `NavigationRailHorizontalItemTokens.kt` (24 a 30: indicador de 56 de altura, `IconLabelSpace` 8, label large), `NavigationRailBaselineItemTokens.kt` (24 a 32: `ContainerHeight` 64, `IconSize` 24) e `NavigationRailColorTokens.kt` (24 a 31: ícone `on-secondary-container`, indicador `secondary-container`, rótulo `secondary` ou `on-surface-variant`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/NavigationRail.kt` (linhas 112 a 123: `contentColor`; 274 a 302: a camada de estado só no indicador, `ripple()` do item da rail estreita) e `NavigationItem.kt` (linhas 1102 a 1108: o mesmo `IndicatorRipple` dos itens da wide).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
 
 **Como o desenho segue o Compose**
 
@@ -92,8 +98,15 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Wide expandida: largura de no mínimo 220 e no máximo 360, que cresce com a pílula mais larga mais 20 (`hug` com `minWidth` e `maxWidth`); itens de 56 sem espaço entre eles; a pílula de 56 de altura em `corner-full` fica a 20 da borda e mede `16 + ícone 24 + 8 + rótulo + 16`, com o rótulo em `label-large` (14 / 20, peso 500, 0,1).
 - Modal expandida: `surface-container` com os quatro cantos de 16 (`corner-large`); recolhida, igual à wide recolhida. Cores como no Compose: ícone `on-secondary-container` selecionado e `on-surface-variant` nos demais, rótulo `secondary` selecionado, indicador `secondary-container`.
 
+**Estado de interação (campo `interaction`)**
+
+O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `variants`. As opções são `none`, `hovered`, `focused` e `pressed`: os tokens da rail **não nomeiam** estados do item; a camada é o ripple do indicador (`StateTokens.kt`). **Este tipo não tem `enabled`**, então não existe um desabilitado que vença: o estado sempre desenha.
+
+- **Camada de estado:** o nó `estado` é um `rect` do tamanho do indicador do estilo (56 × 32 sob o ícone na rail e na wide recolhida, a pílula de 56 de altura na wide expandida e na modal), por cima dele e com o raio `corner-full`, na cor do ripple sem cor própria, o `contentColor` da folha, `on-surface`. A opacidade vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10).
+- **Item do estado:** vale para o item selecionado (decisão 6 da etapa); com nenhum item selecionado nada muda. O Compose desenha o estado no item que o mouse, o foco ou o toque alcança; escolher "o primeiro" pediria o índice do item no `repeat` (#897), e um campo de índice do item fica fora.
+
 **O que ainda difere do Compose**
 
 - O scrim, a elevação do rail modal (Level2 nos tokens, sem sombra no composable), a animação de expandir e recolher, o cabeçalho (`header`) e o botão do rail não fazem parte do desenho; o estilo `modal-wide` desenha só a folha.
 - A largura do rail estreito é `hug` com mínimo de 80 (o `widthIn(min = 80)` do Compose); a wide recolhida é limitada a 96 mesmo com rótulo mais largo, como o `actualMinWidth` do Compose.
-- Sem estados de pressionado, foco e passar o mouse, sem o ripple, sem `enabled` e sem o ícone sozinho (item sem rótulo, de indicador redondo de 56 × 56): o tipo exige o rótulo.
+- O `interaction` é um quadro parado: sem o ripple animado nem o anel de foco por fora da forma (#896), sem `enabled` e sem o ícone sozinho (item sem rótulo, de indicador redondo de 56 × 56): o tipo exige o rótulo.
