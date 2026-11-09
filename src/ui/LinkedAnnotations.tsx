@@ -116,10 +116,17 @@ function LayerLinks({
   ...rest
 }: ItemProps & { readonly annotation: Annotation }) {
   const linked = getLinkedAnnotations(project, annotation.id);
+  // Agrupa uma vez por camada, em vez de um `filter` por camada.
+  const byLayer = new Map<string, Annotation[]>();
+  for (const a of linked) {
+    const group = byLayer.get(a.layerId);
+    if (group) group.push(a);
+    else byLayer.set(a.layerId, [a]);
+  }
   return (
     <>
       {project.layers.map((layer) => {
-        const items = linked.filter((a) => a.layerId === layer.id);
+        const items = byLayer.get(layer.id) ?? [];
         return items.length > 0 ? (
           <LayerGroup
             key={layer.id}

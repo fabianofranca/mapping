@@ -7,6 +7,7 @@ import {
 import { t } from '../i18n';
 import { detectPlatform, isStandalone } from '../utils/platform';
 import { Button } from './controls';
+import { Notice } from './Notice';
 
 /**
  * Orientação para instalar a app (Android/iOS/desktop) e, no iOS, o aviso de que
@@ -21,8 +22,21 @@ export function InstallHint() {
   if (platform === 'other' && !canPrompt) return null;
 
   return (
-    <section class="notice notice-info install-hint" aria-labelledby="install-hint-title">
-      <h2 id="install-hint-title">{t('pwa.installTitle')}</h2>
+    <Notice
+      tone="info"
+      title={t('pwa.installTitle')}
+      class="install-hint"
+      actions={
+        <>
+          {canPrompt && (
+            <Button variant="primary" onClick={() => void promptInstall()}>
+              {t('pwa.install')}
+            </Button>
+          )}
+          <Button onClick={dismissInstallHint}>{t('pwa.dismiss')}</Button>
+        </>
+      }
+    >
       {platform === 'ios' && (
         <>
           <p>{t('pwa.installIos')}</p>
@@ -31,14 +45,6 @@ export function InstallHint() {
       )}
       {platform !== 'ios' && !canPrompt && <p>{t('pwa.installAndroid')}</p>}
       {platform !== 'ios' && canPrompt && <p>{t('pwa.installOffline')}</p>}
-      <div class="row">
-        {canPrompt && (
-          <Button variant="primary" onClick={() => void promptInstall()}>
-            {t('pwa.install')}
-          </Button>
-        )}
-        <Button onClick={dismissInstallHint}>{t('pwa.dismiss')}</Button>
-      </div>
-    </section>
+    </Notice>
   );
 }

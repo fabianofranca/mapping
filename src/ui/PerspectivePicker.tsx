@@ -32,6 +32,7 @@ interface RowProps {
 
 function Row({ name, note, selected, onPick }: RowProps) {
   return (
+    /* Exceção ao Button: opção da lista (role="option") (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
     <button
       type="button"
       role="option"
@@ -167,6 +168,7 @@ export function PerspectivePicker({ dialogs }: { readonly dialogs: EditorDialogs
       label={t('perspective.picker.list')}
       trigger={({ open, toggle }) => {
         const button = (
+          /* Exceção ao Button: gatilho com cara de select (menu-trigger) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
           <button
             type="button"
             class="menu-trigger perspective-trigger"

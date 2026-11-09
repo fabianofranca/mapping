@@ -1,5 +1,11 @@
 import { t } from '../i18n';
-import { canDeleteItems, canWrapItems, type ItemRef, type Project } from '../model';
+import {
+  canDeleteItems,
+  canWrapItems,
+  projectIndex,
+  type ItemRef,
+  type Project,
+} from '../model';
 import { SHORTCUT_LABELS, ariaKeys } from '../app/shortcuts';
 import { wrapItemsNow } from '../app/wrapSelection';
 import { useEditor } from './EditorContext';
@@ -27,13 +33,14 @@ export function MultiSelectionPanel({
   const containers = items.filter((i) => i.kind === 'image').length;
   const arrows = items.filter((i) => i.kind === 'arrow').length;
   const markings = items.length - containers - arrows;
-  const index = new Map(
-    [...project.containers, ...project.markings, ...project.arrows].map((x) => [
-      x.id,
-      x.locked,
-    ]),
-  );
-  const locked = items.filter((i) => index.get(i.id) === true).length;
+  const index = projectIndex(project);
+  const locked = items.filter((i) => {
+    const target =
+      i.kind === 'image'
+        ? index.containers.get(i.id)
+        : (index.markings.get(i.id) ?? index.arrows.get(i.id));
+    return target?.locked === true;
+  }).length;
   const deletable = canDeleteItems(project, items);
   const wrappable = canWrapItems(project, items);
   const wrapBlockedHint = !readOnly ? t('multi.wrapBlocked') : undefined;

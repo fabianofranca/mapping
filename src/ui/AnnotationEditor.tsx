@@ -157,6 +157,11 @@ export function AnnotationEditor({
   /** Sem dono e sem ninguém que possa sê-lo: a lista só teria "Nenhuma". */
   const noOwnerOptions = owners.length === 0 && annotation.parentAnnotationId === null;
   const name = (a: Annotation) => annotationDisplayName(project, a);
+  // O dono gravado que deixou de ser válido segue no select (como o modo do desenho do
+  // container): a pessoa vê o valor real e pode trocá-lo.
+  const storedOwnerInvalid =
+    annotation.parentAnnotationId !== null &&
+    !owners.some((a) => a.id === annotation.parentAnnotationId);
   const ownerIssue = issuesOf(project, annotation.id).find(
     (i) => i.code === 'missing-owner' || i.code === 'owner-not-allowed',
   );
@@ -359,6 +364,14 @@ export function AnnotationEditor({
                       })}
                     </option>
                   ))}
+                  {storedOwnerInvalid && (
+                    <option value={annotation.parentAnnotationId ?? ''}>
+                      {t('annotation.ownerOptionInvalid', {
+                        layer: owner ? (layerOf(owner.layerId)?.name ?? '') : '',
+                        name: owner ? name(owner) : (annotation.parentAnnotationId ?? ''),
+                      })}
+                    </option>
+                  )}
                 </Select>
               </Property>
               <OwnerRoleField

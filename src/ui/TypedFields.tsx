@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from 'preact/hooks';
-import { SHORTCUT_LABELS } from '../app/shortcuts';
+import { SHORTCUT_LABELS, ariaKeys } from '../app/shortcuts';
 import { t } from '../i18n';
 import {
   fieldLabel,
@@ -183,6 +183,7 @@ function RefField({
         open();
       }}
     >
+      {/* Exceção ao Button: campo de referência (cara de select) (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
       <button
         ref={button}
         id={id}
@@ -204,7 +205,7 @@ function RefField({
               ? { kind: 'broken' }
               : { kind: 'value', value: text, layer: layer?.name },
         )}
-        aria-keyshortcuts="Control+B"
+        aria-keyshortcuts={ariaKeys(SHORTCUT_LABELS.pickRef)}
         // O valor pode sair cortado no campo ("→ User.no…"): inteiro na dica.
         title={`${tip}${layer ? ` (${layer.name})` : ''}\n${t('ref.choose')}  ${SHORTCUT_LABELS.pickRef}`}
         disabled={readOnly}

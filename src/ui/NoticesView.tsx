@@ -12,8 +12,8 @@ import type { AnnotationLocation } from '../store/ui';
 import { AnnotationTitle } from './AnnotationSummary';
 import { Choice, Segmented, type SegmentedItem } from './controls';
 import { useEditor } from './EditorContext';
-import { Icon } from './icons';
-import { arrowShort, arrowText, markingLabel } from './labels';
+import { LayerCell, MarkingCell, markingPathLabel } from './ListView';
+import { arrowText } from './labels';
 import { NoticeBadge, noticeKindLabel } from './NoticeBadge';
 
 interface NoticesViewProps {
@@ -159,10 +159,7 @@ export function NoticesView({ onGoToAnnotation }: NoticesViewProps) {
                   </tr>
                 )}
                 {group.rows.map(({ annotation, path, layer, arrow, value }) => {
-                  const label = [
-                    ...path.map((m) => markingLabel(project, m)),
-                    ...(arrow ? [arrowShort(project, arrow)] : []),
-                  ].join(t('marking.pathSeparator'));
+                  const label = markingPathLabel(project, path, arrow);
                   return (
                     <tr
                       key={annotation.id}
@@ -173,28 +170,19 @@ export function NoticesView({ onGoToAnnotation }: NoticesViewProps) {
                         class="list-cell list-cell-marking"
                         data-label={t('list.col.marking')}
                       >
-                        <button
-                          type="button"
-                          class="list-marking"
-                          aria-label={t('notices.go', {
+                        <MarkingCell
+                          label={label}
+                          name={t('notices.go', {
                             name: arrow ? arrowText(project, arrow) : label,
                           })}
-                        >
-                          {arrow && <Icon name="arrow" />}
-                          {label}
-                        </button>
+                          arrow={arrow !== undefined}
+                        />
                       </td>
                       <td
                         class="list-cell list-cell-layer"
                         data-label={t('list.col.layer')}
                       >
-                        <span
-                          class="list-layer-tag"
-                          style={{ '--layer-color': layer.color }}
-                        >
-                          <span class="layer-dot" aria-hidden="true" />
-                          <span class="list-layer-name">{layer.name}</span>
-                        </span>
+                        <LayerCell layer={layer} />
                       </td>
                       <td class="list-cell" data-label={t('list.col.annotation')}>
                         <AnnotationTitle

@@ -5,6 +5,7 @@ import { Button, IconButton, Select, TextField } from './controls';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
 import { perspectiveContentText } from './perspectiveContentText';
+import { perspectiveNameMessage } from './perspectiveNameMessage';
 
 /** Onde o foco abre quando o Gerenciar volta de uma confirmação de apagar (etapa #764, AP1). */
 export type ManageFocus =
@@ -29,12 +30,6 @@ function copyName(project: Project, source: string): string {
     candidate = `${base} ${n}`;
   }
   return candidate;
-}
-
-function nameMessage(issue: 'empty' | 'taken', name: string): string {
-  return issue === 'empty'
-    ? t('perspective.new.nameEmpty')
-    : t('perspective.new.nameTaken', { name: name.trim() });
 }
 
 function MainRow() {
@@ -69,13 +64,22 @@ interface RowProps {
   readonly perspective: Perspective;
   readonly onDelete: (id: string) => void;
   readonly onError: () => void;
+  /** Uma operação deu certo: o erro da tabela some. */
+  readonly onOk: () => void;
 }
 
-function WhoSelect({ perspective, onError }: Pick<RowProps, 'perspective' | 'onError'>) {
+function WhoSelect({
+  perspective,
+  onError,
+  onOk,
+}: Pick<RowProps, 'perspective' | 'onError' | 'onOk'>) {
   const { session } = useEditor();
+  // Muda quando a gravação falha: remonta o <select> para ele voltar ao valor da perspectiva.
+  const [revert, setRevert] = useState(0);
   const local = session.perspective.localIds.value.has(perspective.id);
   return (
     <Select
+      key={revert}
       size="sm"
       aria-label={t('perspective.manage.who', { name: perspective.name })}
       value={local ? 'mine' : 'all'}
@@ -84,7 +88,12 @@ function WhoSelect({ perspective, onError }: Pick<RowProps, 'perspective' | 'onE
         void session.perspectiveActions
           .setPerspectiveLocal(perspective.id, toLocal)
           .then((r) => {
-            if (!r.ok) onError();
+            if (r.ok) {
+              onOk();
+            } else {
+              setRevert((n) => n + 1);
+              onError();
+            }
           });
       }}
     >
@@ -106,9 +115,30 @@ function NameCell({
   readonly editing: boolean;
   readonly onDone: () => void;
 }) {
+  if (!editing) return <>{perspective.name}</>;
+  // `key` pelo nome: se ele muda por fora (desfazer, recarga), o rascunho recomeça dele.
+  return (
+    <RenameForm
+      key={perspective.name}
+      project={project}
+      perspective={perspective}
+      onDone={onDone}
+      onError={onError}
+    />
+  );
+}
+
+/** O formulário de renomear; existe só enquanto edita, então o rascunho nasce do nome atual. */
+function RenameForm({
+  project,
+  perspective,
+  onDone,
+  onError,
+}: Pick<RowProps, 'project' | 'perspective' | 'onError'> & {
+  readonly onDone: () => void;
+}) {
   const { session } = useEditor();
   const [draft, setDraft] = useState(perspective.name);
-  if (!editing) return <>{perspective.name}</>;
   const issue = perspectiveNameIssue(
     project.perspectives.map((p) => p.name),
     draft,
@@ -152,7 +182,7 @@ function NameCell({
       />
       {issue !== null && (
         <p class="field-error" role="alert">
-          {nameMessage(issue, draft)}
+          {perspectiveNameMessage(issue, draft)}
         </p>
       )}
     </form>
@@ -160,7 +190,7 @@ function NameCell({
 }
 
 function PerspectiveRow(props: RowProps) {
-  const { project, perspective, onDelete, onError } = props;
+  const { project, perspective, onDelete, onError, onOk } = props;
   const { session } = useEditor();
   const [editing, setEditing] = useState(false);
   const { name } = perspective;
@@ -183,7 +213,7 @@ function PerspectiveRow(props: RowProps) {
         />
       </th>
       <td>
-        <WhoSelect perspective={perspective} onError={onError} />
+        <WhoSelect perspective={perspective} onError={onError} onOk={onOk} />
       </td>
       <td class="muted">{perspectiveContentText(project, perspective)}</td>
       <td class="perspective-actions">
@@ -268,6 +298,7 @@ export function ManagePerspectivesDialog({
               perspective={perspective}
               onDelete={onDelete}
               onError={() => setFailed(true)}
+              onOk={() => setFailed(false)}
             />
           ))}
         </tbody>

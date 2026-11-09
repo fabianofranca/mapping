@@ -106,16 +106,23 @@ function creationRows(names: ReviewNames, c: Change, before: JsonValue): DiffRow
 }
 
 /** As linhas do que o agente tinha proposto antes da revisão. */
-export function beforeRows(names: ReviewNames, c: Change, before: JsonValue): DiffRow[] {
+export function beforeRows(
+  names: ReviewNames,
+  c: Change,
+  before: JsonValue,
+): { readonly rows: DiffRow[]; readonly perField: boolean } {
   const fields = c.kind === 'create' ? creationRows(names, c, before) : [];
-  if (fields.length > 0) return fields;
-  return [
-    {
-      kind: 'before',
-      label: t('review.revised.beforeTo'),
-      parts: valueParts(names, c, before, c.to),
-    },
-  ];
+  if (fields.length > 0) return { rows: fields, perField: true };
+  return {
+    rows: [
+      {
+        kind: 'before',
+        label: t('review.revised.beforeTo'),
+        parts: valueParts(names, c, before, c.to),
+      },
+    ],
+    perField: false,
+  };
 }
 
 export function RevisedBefore({ change }: { readonly change: Change }) {
@@ -124,8 +131,7 @@ export function RevisedBefore({ change }: { readonly change: Change }) {
   if (!names || !review.derived.revisedIds.value.has(change.id)) return null;
   const previous = revisionMark(names.proposal, change.id)?.previous;
   if (!previous) return null;
-  const rows = beforeRows(names, change, previous.to);
-  const perField = rows.length > 0 && rows[0]?.label !== t('review.revised.beforeTo');
+  const { rows, perField } = beforeRows(names, change, previous.to);
   return (
     <section class="revised-before" aria-label={t('review.revised.before')}>
       <strong class="revised-before-title">{t('review.revised.before')}</strong>
