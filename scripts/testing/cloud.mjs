@@ -23,6 +23,7 @@ import { chromium } from 'playwright';
 import { createHash } from 'node:crypto';
 import { execFile, execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { promisify } from 'node:util';
@@ -934,14 +935,156 @@ export async function state(page, apoioDir, { projectDir } = {}) {
   return result;
 }
 
-/** Roda a CLI (`mark` e `state`); lê a pasta de apoio da variável de ambiente `APOIO`. */
+/**
+ * Ponto de tela de um ponto em pixels de um container (etapa #841, decisão 5; parte pura, sem CDP).
+ * `mapping` é o `mapping.json` já lido; `container` é o nome (sem diferença de caixa) ou o id;
+ * `viewport` é o `data-viewport` do `.canvas-host` (`"x y escala"`, px CSS relativos ao canto do
+ * host); `host` é o canto do host na página (`boundingBox()`); `perspective`, opcional, é o nome
+ * de uma perspectiva cujo item para o container (raiz) troca a posição `x`, `y` dele no canvas;
+ * `marking` (opcional): `container` é o nome ou id de uma marcação e (x, y) são deslocamentos a partir do
+ * canto dela.
+ * A fórmula é a da receita "Onde está uma marcação na tela": canvas = placement + ponto × escala
+ * do container; tela = host + canvas × escala da vista + (x, y) da vista.
+ */
+export function containerScreenPoint({
+  mapping,
+  container,
+  x,
+  y,
+  viewport,
+  host,
+  perspective,
+  marking,
+}) {
+  const wanted = String(container).trim().toLowerCase();
+  const byName = (list) =>
+    (list ?? []).filter(
+      (c) => c.id === container || (c.name ?? '').toLowerCase() === wanted,
+    );
+  let found;
+  let origin = { x: 0, y: 0 };
+  if (marking) {
+    // (x, y) são deslocamentos a partir do canto de cima à esquerda da marcação, nos pixels do
+    // container dela (no canvas, com a colocação identidade, se `containerId` for nulo).
+    const marks = byName(mapping.markings);
+    if (marks.length === 0) throw new Error(`marcação não encontrada: ${container}`);
+    if (marks.length > 1) throw new Error(`mais de uma marcação se chama ${container}`);
+    const mark = marks[0];
+    origin = { x: mark.rect.x, y: mark.rect.y };
+    found = mark.containerId
+      ? (mapping.containers ?? []).find((c) => c.id === mark.containerId)
+      : { id: null, placement: { x: 0, y: 0, scale: 1 } };
+    if (!found) throw new Error(`container da marcação não encontrado: ${container}`);
+  } else {
+    const matches = byName(mapping.containers);
+    if (matches.length === 0) throw new Error(`container não encontrado: ${container}`);
+    if (matches.length > 1) throw new Error(`mais de um container se chama ${container}`);
+    found = matches[0];
+  }
+  let { x: px, y: py, scale } = found.placement;
+  if (perspective) {
+    const named = (mapping.perspectives ?? []).find(
+      (q) => q.name.toLowerCase() === String(perspective).toLowerCase(),
+    );
+    if (!named) throw new Error(`perspectiva não encontrada: ${perspective}`);
+    const item = named.items.find((i) => i.root === found.id);
+    if (item) {
+      px = item.x;
+      py = item.y;
+    }
+  }
+  const [vx, vy, vs] = String(viewport).trim().split(/\s+/).map(Number);
+  if (![vx, vy, vs].every(Number.isFinite) || vs <= 0) {
+    throw new Error(`data-viewport inválido: ${viewport}`);
+  }
+  const canvasX = px + (origin.x + x) * scale;
+  const canvasY = py + (origin.y + y) * scale;
+  return {
+    x: Math.round((host.x + canvasX * vs + vx) * 100) / 100,
+    y: Math.round((host.y + canvasY * vs + vy) * 100) / 100,
+  };
+}
+
+/** Lê o `data-viewport` e o canto do `.canvas-host` pela página (CDP) e converte (ver acima). */
+export async function ponto(
+  page,
+  projectDir,
+  container,
+  x,
+  y,
+  { perspective, marking } = {},
+) {
+  const read = await readMapping(projectDir);
+  if (read.error) throw new Error(read.error);
+  const host = page.locator('.canvas-host');
+  // espera um quadro, para a vista lida ser a desenhada
+  await page.evaluate(
+    () =>
+      new Promise((ok) =>
+        globalThis.requestAnimationFrame(() => globalThis.requestAnimationFrame(ok)),
+      ),
+  );
+  const viewport = await host.getAttribute('data-viewport');
+  const box = await host.boundingBox();
+  if (!viewport || !box)
+    throw new Error('o .canvas-host não tem data-viewport (a app abriu o projeto?)');
+  return containerScreenPoint({
+    mapping: read.json,
+    container,
+    x,
+    y,
+    viewport,
+    host: { x: box.x, y: box.y },
+    perspective,
+    marking,
+  });
+}
+
+/**
+ * A pasta de apoio quando `APOIO` não está exportado (etapa #841, decisão 3): a `apoio/` da rodada
+ * mais recente em `~/mapping-testes/<AAAA-MM-DD>-<alvo>/apoio`, o mesmo caminho que o `cloud-up.sh`
+ * monta. `null` se não houver nenhuma.
+ */
+export function defaultApoioDir(home = os.homedir()) {
+  const root = path.join(home, 'mapping-testes');
+  let entries;
+  try {
+    entries = fs.readdirSync(root);
+  } catch {
+    return null;
+  }
+  const dirs = entries
+    .map((name) => path.join(root, name, 'apoio'))
+    .filter((dir) => fs.existsSync(dir))
+    .map((dir) => ({ dir, mtime: fs.statSync(dir).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime);
+  return dirs[0]?.dir ?? null;
+}
+
+/** `APOIO`, ou a pasta padrão com um aviso; `null` (e a explicação no stderr) se não achar. */
+function resolveApoio(explicit) {
+  const apoioDir = explicit ?? process.env.APOIO;
+  if (apoioDir) return apoioDir;
+  const found = defaultApoioDir();
+  if (found) {
+    console.error(
+      `Aviso: APOIO não está definido; usando ${found} (a rodada mais recente).`,
+    );
+    return found;
+  }
+  console.error(
+    'APOIO (a pasta apoio/ da rodada) não está definido e não há ~/mapping-testes/*/apoio.',
+  );
+  return null;
+}
+
+/** Roda a CLI (`mark`, `state`, `tempos` e `ponto`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
 async function runCli(argv) {
   const [command, ...rest] = argv;
   if (command === 'mark') {
     const [roteiro, fase] = rest;
-    const apoioDir = process.env.APOIO;
+    const apoioDir = resolveApoio();
     if (!apoioDir) {
-      console.error('APOIO (a pasta apoio/ da rodada) precisa estar definida.');
       process.exitCode = 2;
       return;
     }
@@ -955,9 +1098,8 @@ async function runCli(argv) {
     return;
   }
   if (command === 'state') {
-    const apoioDir = process.env.APOIO;
+    const apoioDir = resolveApoio();
     if (!apoioDir) {
-      console.error('APOIO (a pasta apoio/ da rodada) precisa estar definida.');
       process.exitCode = 2;
       return;
     }
@@ -969,17 +1111,56 @@ async function runCli(argv) {
     }
     return;
   }
-  if (command === 'tempos') {
-    const apoioDir = rest[0] ?? process.env.APOIO;
+  if (command === 'ponto') {
+    const marking = rest.includes('--marcacao');
+    const args = rest.filter((a) => !a.startsWith('--'));
+    const perspective = rest.find((a) => a.startsWith('--perspectiva='))?.slice(14);
+    const [container, x, y, projectDir] = args;
+    if (
+      !container ||
+      !Number.isFinite(Number(x)) ||
+      !Number.isFinite(Number(y)) ||
+      !projectDir
+    ) {
+      console.error(
+        'Uso: node cloud.mjs ponto <container> <x> <y> <pasta-do-projeto> [--perspectiva=<nome>] [--marcacao]',
+      );
+      process.exitCode = 2;
+      return;
+    }
+    const apoioDir = resolveApoio();
     if (!apoioDir) {
-      console.error('Uso: node cloud.mjs tempos <apoio>');
+      process.exitCode = 2;
+      return;
+    }
+    const { browser, page } = await connect(apoioDir);
+    try {
+      const at = await ponto(page, projectDir, container, Number(x), Number(y), {
+        perspective,
+        marking,
+      });
+      console.log(`${at.x} ${at.y}`);
+    } catch (error) {
+      console.error(error.message);
+      process.exitCode = 1;
+    } finally {
+      await browser.close();
+    }
+    return;
+  }
+  if (command === 'tempos') {
+    const apoioDir = resolveApoio(rest[0]);
+    if (!apoioDir) {
+      console.error('Uso: node cloud.mjs tempos [<apoio>]');
       process.exitCode = 2;
       return;
     }
     console.log(formatTempos(temposFromDir(apoioDir)));
     return;
   }
-  console.error(`Comando desconhecido: ${command}. Comandos: mark, state, tempos.`);
+  console.error(
+    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto.`,
+  );
   process.exitCode = 2;
 }
 

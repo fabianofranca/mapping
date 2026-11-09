@@ -2,12 +2,15 @@
 // Fase TR1 (etapa #359): os auxiliares da nuvem em `scripts/testing/` (decisão 2) existem, o
 // `cloud.mjs` importa sem efeito colateral e exporta os nomes certos, o guia aponta para eles
 // (decisão 4) e a parte pura de `cloud.mjs` (`mark`) tem teste unitário.
+import { spawnSync } from 'node:child_process';
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -35,6 +38,8 @@ const EXPECTED_EXPORTS = [
   'clickNoWait',
   'connect',
   'connectGuide',
+  'containerScreenPoint',
+  'defaultApoioDir',
   'diffJson',
   'formatState',
   'loadEnv',
@@ -45,6 +50,7 @@ const EXPECTED_EXPORTS = [
   'parseEnvFile',
   'pickAppPage',
   'pickAutocompletePopup',
+  'ponto',
   'openButtonPoints',
   'saveFile',
   'screenshot',
@@ -96,6 +102,126 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       expect(line, line).toContain('setsid');
       expect(line, line).toContain('</dev/null');
     }
+  });
+
+  describe('containerScreenPoint (auxiliar ponto, etapa #841 RB2)', () => {
+    const mapping = {
+      containers: [
+        { id: 'c1', name: 'Cadastro', placement: { x: 100, y: 50, scale: 2 } },
+        { id: 'c2', name: 'Outro', placement: { x: 0, y: 0, scale: 1 } },
+      ],
+      markings: [
+        { id: 'm1', name: 'Botão', containerId: 'c1', rect: { x: 10, y: 20 } },
+        { id: 'm2', name: 'Solta', containerId: null, rect: { x: 5, y: 6 } },
+      ],
+      perspectives: [{ name: 'Dev mobile', items: [{ root: 'c1', x: 400, y: 300 }] }],
+    };
+    const host = { x: 10, y: 20 };
+
+    it('converte o ponto do container em ponto de tela e acompanha o zoom', async () => {
+      const mod = await import('../../scripts/testing/cloud.mjs');
+      // canvas = (100 + 5*2, 50 + 7*2) = (110, 64)
+      expect(
+        mod.containerScreenPoint({
+          mapping,
+          container: 'cadastro',
+          x: 5,
+          y: 7,
+          viewport: '30 40 1',
+          host,
+        }),
+      ).toEqual({ x: 10 + 110 + 30, y: 20 + 64 + 40 });
+      expect(
+        mod.containerScreenPoint({
+          mapping,
+          container: 'c1',
+          x: 5,
+          y: 7,
+          viewport: '-20 8.5 2.5',
+          host,
+        }),
+      ).toEqual({ x: 10 + 110 * 2.5 - 20, y: 20 + 64 * 2.5 + 8.5 });
+    });
+
+    it('container com name nulo (imagem do seletor) não derruba a busca por id ou nome', async () => {
+      const mod = await import('../../scripts/testing/cloud.mjs');
+      const withNull = {
+        ...mapping,
+        containers: [
+          { id: 'c3', name: null, placement: { x: 0, y: 0, scale: 1 } },
+          ...mapping.containers,
+        ],
+        markings: [{ id: 'm3', name: null, containerId: 'c1', rect: { x: 0, y: 0 } }],
+      };
+      const point = (container: string, marking?: boolean) =>
+        mod.containerScreenPoint({
+          mapping: withNull as never,
+          container,
+          x: 1,
+          y: 1,
+          viewport: '0 0 1',
+          host,
+          ...(marking ? { marking: true } : {}),
+        });
+      expect(point('c3')).toEqual({ x: 11, y: 21 });
+      expect(point('cadastro')).toEqual({ x: 10 + 102, y: 20 + 52 });
+      expect(point('m3', true)).toEqual({ x: 10 + 102, y: 20 + 52 });
+    });
+
+    it('com marcacao, soma o canto da marcação e a colocação do container dela', async () => {
+      const mod = await import('../../scripts/testing/cloud.mjs');
+      // canvas = (100 + (10+3)*2, 50 + (20+4)*2) = (126, 98)
+      expect(
+        mod.containerScreenPoint({
+          mapping,
+          container: 'Botão',
+          x: 3,
+          y: 4,
+          viewport: '0 0 2',
+          host,
+          marking: true,
+        }),
+      ).toEqual({ x: 10 + 252, y: 20 + 196 });
+      expect(
+        mod.containerScreenPoint({
+          mapping,
+          container: 'm2',
+          x: 1,
+          y: 1,
+          viewport: '0 0 1',
+          host: { x: 0, y: 0 },
+          marking: true,
+        }),
+      ).toEqual({ x: 6, y: 7 });
+    });
+
+    it('usa a posição da perspectiva e recusa container inexistente ou vista inválida', async () => {
+      const mod = await import('../../scripts/testing/cloud.mjs');
+      expect(
+        mod.containerScreenPoint({
+          mapping,
+          container: 'Cadastro',
+          x: 0,
+          y: 0,
+          viewport: '0 0 1',
+          host: { x: 0, y: 0 },
+          perspective: 'dev mobile',
+        }),
+      ).toEqual({ x: 400, y: 300 });
+      const bad = (over: object) => () =>
+        mod.containerScreenPoint({
+          mapping,
+          container: 'Cadastro',
+          x: 0,
+          y: 0,
+          viewport: '0 0 1',
+          host,
+          ...over,
+        });
+      expect(bad({ container: 'Nada' })).toThrow('container não encontrado');
+      expect(bad({ viewport: 'a b c' })).toThrow('data-viewport inválido');
+      expect(bad({ perspective: 'Nenhuma' })).toThrow('perspectiva não encontrada');
+    });
   });
 
   describe('mark (parte pura de cloud.mjs)', () => {
@@ -756,5 +882,60 @@ describe('janela da nuvem passa do mínimo da app (etapa #604, GN1, decisão 1)'
 
   it('o cloud-up.sh e a receita 2 usam o mesmo tamanho', () => {
     expect(sizes(read(CLOUD_UP)).xvfb).toEqual(sizes(recipe2).xvfb);
+  });
+});
+
+// Etapa #841 (RB1, decisão 3): `mark` e `tempos` sem `APOIO` exportado acham a pasta padrão.
+describe('cloud.mjs sem APOIO exportado (RB1, decisão 3)', () => {
+  let home: string;
+
+  afterEach(() => {
+    if (home) rmSync(home, { recursive: true, force: true });
+  });
+
+  function run(args: string[]): {
+    status: number | null;
+    stdout: string;
+    stderr: string;
+  } {
+    const env: Record<string, string | undefined> = { ...process.env, HOME: home };
+    delete env.APOIO;
+    const r = spawnSync('node', ['scripts/testing/cloud.mjs', ...args], {
+      env,
+      encoding: 'utf8',
+    });
+    return { status: r.status, stdout: r.stdout, stderr: r.stderr };
+  }
+
+  it('mark grava na pasta apoio/ da rodada mais recente e avisa', () => {
+    home = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-home-'));
+    const old = path.join(home, 'mapping-testes', '2026-01-01-velha', 'apoio');
+    const recent = path.join(home, 'mapping-testes', '2026-02-02-nova', 'apoio');
+    mkdirSync(old, { recursive: true });
+    mkdirSync(recent, { recursive: true });
+    utimesSync(old, new Date('2026-01-01'), new Date('2026-01-01'));
+    const r = run(['mark', 'R1', 'start']);
+    expect(r.status ?? 0).toBe(0);
+    expect(r.stderr).toMatch(/APOIO/);
+    expect(r.stderr).toContain(recent);
+    expect(read(path.join(recent, 'tempos.log'))).toMatch(/^R1 start \d{4}-/);
+  });
+
+  it('tempos sem APOIO lê a mesma pasta; sem nenhuma pasta, falha com a explicação', () => {
+    home = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-home-'));
+    const apoio = path.join(home, 'mapping-testes', '2026-02-02-nova', 'apoio');
+    mkdirSync(apoio, { recursive: true });
+    writeFileSync(
+      path.join(apoio, 'tempos.log'),
+      'R1 start 2026-02-02T10:00:00.000Z\nR1 end 2026-02-02T10:01:00.000Z\n',
+    );
+    const ok = run(['tempos']);
+    expect(ok.status ?? 0).toBe(0);
+    expect(ok.stdout).toContain('R1');
+    expect(ok.stderr).toMatch(/APOIO/);
+    rmSync(path.join(home, 'mapping-testes'), { recursive: true, force: true });
+    const none = run(['mark', 'R1', 'start']);
+    expect(none.status).toBe(2);
+    expect(none.stderr).toMatch(/APOIO/);
   });
 });

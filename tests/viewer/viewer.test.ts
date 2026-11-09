@@ -487,7 +487,7 @@ describe('createViewer', () => {
     expect(() => viewer.setSelection(['i-bar'])).not.toThrow();
   });
   // O custo de atualizar uma instância e de montar a cena deixou de ser só impresso aqui: o teste de
-  // crescimento (n e 4n instâncias, razão < 5×) está em tests/scale/app/viewerGrowth.scale.ts (npm run test:scale).
+  // crescimento (n e 4n instâncias, razão < 6×) está em tests/scale/app/viewerGrowth.scale.ts (npm run test:scale).
 });
 
 describe('createViewer com source (JSON externo)', () => {

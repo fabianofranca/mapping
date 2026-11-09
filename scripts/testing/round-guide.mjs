@@ -1,7 +1,16 @@
 // Guia da rodada (etapa #421, decisão 7): gera o docs/TESTING.md só com os roteiros pedidos.
 //
 // Uso:
-//   node scripts/testing/round-guide.mjs <roteiro…> [--out <arquivo>]   (ex.: R0 R2 R4 R11; `all` = R0 a R17)
+//   node scripts/testing/round-guide.mjs <roteiro…> [--out <arquivo>]   (ex.: R0 R2 R4 R11; `all` = todos)
+//
+// Um roteiro pode ser pedido por faixa de passos (`R6.3-R6.7`): o guia leva só as linhas da tabela
+// do roteiro nessa faixa (mais o cabeçalho e o texto de preparo). Duas faixas do mesmo roteiro se
+// somam; o roteiro inteiro (`R6`) vence a faixa.
+//
+// Trechos marcados (etapa #841, RB1): no docs/TESTING.md, um trecho que só alguns roteiros usam fica
+// entre `<!-- roteiros: R12 R22 -->` e `<!-- /roteiros -->` (cada marca em linha própria, sem
+// aninhar). O trecho só entra no guia se um desses roteiros for pedido; trecho sem marca vai em
+// todos os guias. A marca é um comentário HTML: não aparece no guia lido por gente.
 //
 // Tira do guia os roteiros não pedidos, os "Roteiros sob demanda (manuais)", a seção 9 e o
 // "Registro do marco Uso real"; mantém o resto na ordem do guia ("Comece aqui", seções 1 a 7, a
@@ -50,17 +59,100 @@ export function listRoteiros(markdown) {
     .map((section) => ROTEIRO.exec(section.title)[1]);
 }
 
-/** O guia sem os roteiros não pedidos, os sob demanda, a seção 9 e o registro do Uso real. */
-export function buildRoundGuide(markdown, roteiros, { commit = 'desconhecido' } = {}) {
-  const existing = listRoteiros(markdown);
-  const wanted = new Set(
-    roteiros.includes('all') ? existing : roteiros.map((r) => r.toUpperCase()),
-  );
-  for (const id of wanted) {
+const MARK_OPEN = /^<!-- roteiros: ([^>]*?) -->$/;
+const MARK_CLOSE = '<!-- /roteiros -->';
+const STEP_ROW = /^\|\s*(?:\*\*)?(R\d+\.\d+[a-z]?)(?:\*\*)?[^|]*\|/;
+const RANGE = /^(R\d+)\.(\d+[a-z]?)-(R\d+)\.(\d+[a-z]?)$/i;
+
+/** Tira as marcas de trecho: o trecho fica se um dos roteiros citados é pedido. */
+function applyMarks(text, wanted, existing) {
+  const out = [];
+  let open = null;
+  for (const line of text.split('\n')) {
+    const mark = MARK_OPEN.exec(line);
+    if (mark) {
+      if (open) throw new Error('Marca <!-- roteiros --> aninhada no guia.');
+      const ids = mark[1].trim().split(/\s+/).filter(Boolean);
+      for (const id of ids) {
+        if (!existing.includes(id)) {
+          throw new Error(
+            `Marca cita roteiro inexistente: ${id}. Existem: ${existing.join(', ')}.`,
+          );
+        }
+      }
+      open = { keep: ids.some((id) => wanted.has(id)) };
+    } else if (line === MARK_CLOSE) {
+      if (!open) throw new Error('Marca <!-- /roteiros --> sem abertura no guia.');
+      open = null;
+    } else if (!open || open.keep) {
+      out.push(line);
+    }
+  }
+  if (open)
+    throw new Error('Marca <!-- roteiros --> sem o <!-- /roteiros --> de fechamento.');
+  return out.join('\n');
+}
+
+/** Códigos dos passos (`R6.3`, `R6.8a`…) da tabela de um trecho de roteiro, na ordem. */
+function stepCodes(lines) {
+  return lines.map((line) => STEP_ROW.exec(line)?.[1]).filter(Boolean);
+}
+
+/** O trecho do roteiro só com as linhas de passo dentro das faixas (`from`/`to` sem o roteiro). */
+function cutRanges(lines, ranges, id) {
+  const codes = stepCodes(lines);
+  const allowed = new Set();
+  for (const { from, to } of ranges) {
+    const a = codes.indexOf(`${id}.${from}`);
+    const b = codes.indexOf(`${id}.${to}`);
+    if (a < 0 || b < 0 || b < a) {
+      throw new Error(
+        `Faixa inválida: ${id}.${from}-${id}.${to}. Passos: ${codes.join(', ')}.`,
+      );
+    }
+    for (const code of codes.slice(a, b + 1)) allowed.add(code);
+  }
+  return lines.filter((line) => {
+    const code = STEP_ROW.exec(line)?.[1];
+    return !code || allowed.has(code);
+  });
+}
+
+/** Separa os argumentos em roteiros inteiros e faixas por roteiro. */
+function parseRequest(roteiros, existing) {
+  const whole = new Set();
+  const ranges = new Map();
+  for (const raw of roteiros) {
+    if (raw === 'all') {
+      for (const id of existing) whole.add(id);
+      continue;
+    }
+    const range = RANGE.exec(raw);
+    if (range) {
+      const id = range[1].toUpperCase();
+      if (id !== range[3].toUpperCase()) {
+        throw new Error(`Faixa de passos de roteiros diferentes: ${raw}.`);
+      }
+      const list = ranges.get(id) ?? [];
+      list.push({ from: range[2], to: range[4] });
+      ranges.set(id, list);
+    } else {
+      whole.add(raw.toUpperCase());
+    }
+  }
+  for (const id of [...whole, ...ranges.keys()]) {
     if (!existing.includes(id)) {
       throw new Error(`Roteiro inexistente: ${id}. Existem: ${existing.join(', ')}.`);
     }
   }
+  return { whole, ranges };
+}
+
+/** O guia sem os roteiros não pedidos, os sob demanda, a seção 9 e o registro do Uso real. */
+export function buildRoundGuide(markdown, roteiros, { commit = 'desconhecido' } = {}) {
+  const existing = listRoteiros(markdown);
+  const { whole, ranges } = parseRequest(roteiros, existing);
+  const wanted = new Set([...whole, ...ranges.keys()]);
   let dropParent = false;
   const kept = [];
   for (const section of splitSections(markdown)) {
@@ -75,11 +167,26 @@ export function buildRoundGuide(markdown, roteiros, { commit = 'desconhecido' } 
           (roteiro && !wanted.has(roteiro)) ||
           /^Roteiros sob demanda/.test(section.title) ||
           /^Registro do marco/.test(section.title)));
-    if (!drop) kept.push(section.lines.join('\n'));
+    if (drop) continue;
+    const cut = roteiro && !whole.has(roteiro) && ranges.has(roteiro);
+    kept.push(
+      (cut ? cutRanges(section.lines, ranges.get(roteiro), roteiro) : section.lines).join(
+        '\n',
+      ),
+    );
   }
-  const ids = existing.filter((id) => wanted.has(id));
+  const ids = existing
+    .filter((id) => wanted.has(id))
+    .map((id) =>
+      whole.has(id)
+        ? id
+        : `${id} (${ranges
+            .get(id)
+            .map((r) => `${id}.${r.from}-${id}.${r.to}`)
+            .join(', ')})`,
+    );
   const note = `> Guia da rodada (commit ${commit}): roteiros ${ids.join(', ')}. O guia inteiro é o docs/TESTING.md; consulte-o por trecho (Grep) para o que faltar aqui.`;
-  return `${note}\n\n${kept.join('\n')}`;
+  return `${note}\n\n${applyMarks(kept.join('\n'), wanted, existing)}`;
 }
 
 function currentCommit() {
@@ -105,7 +212,7 @@ function runCli(argv) {
   }
   if (roteiros.length === 0 || (argv.includes('--out') && !out)) {
     console.error(
-      'Uso: node scripts/testing/round-guide.mjs <roteiro…|all> [--out <arquivo>]',
+      'Uso: node scripts/testing/round-guide.mjs <roteiro|faixa…|all> [--out <arquivo>]',
     );
     process.exitCode = 2;
     return;

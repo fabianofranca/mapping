@@ -17,7 +17,7 @@ import { buildScaleProject, buildScaleThreads } from '../../model/scaleProject';
 import { GROWTH_OPTIONS, expectLinearGrowthAsync } from '../../support/growth';
 
 // Tools de leitura do MCP em processo (createServer + InMemoryTransport) sobre o projeto de escala gravado
-// numa pasta temporária (#881): a mesma chamada com 1.250 e 5.000 marcações, razão < 5×. O servidor lê o
+// numa pasta temporária (#881): a mesma chamada com 1.250 e 5.000 marcações, razão < 6×. O servidor lê o
 // projeto do disco a cada chamada; é esse o custo de uma chamada num projeto grande.
 const PROJECT = 'escala';
 const roots: string[] = [];
@@ -150,7 +150,7 @@ describe('crescimento das tools de leitura do MCP (n = 1.250, 4n = 5.000 marcaç
         build: setup,
         run: (ctx) => call(ctx, c.tool, c.args(ctx)),
         warmup: 2,
-        runs: 7,
+        runs: 21,
       });
     },
   );

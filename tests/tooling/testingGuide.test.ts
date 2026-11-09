@@ -876,14 +876,14 @@ describe('TS2 — prompt com o guia da rodada, primeiro plano, state() e relato 
   });
 });
 
-describe('rodada completa em 3 blocos (etapa #424, PL1)', () => {
+describe('rodada completa em 5 blocos (etapas #424 e #841)', () => {
   const cloud = read('docs/TESTING-NUVEM.md');
   const flow = read('docs/FLOW.md');
   const claude = read('CLAUDE.md');
   const guide = read('docs/TESTING.md');
 
-  it('o prompt tem o modo "completo, bloco k de 3", o R0 inteiro primeiro e o guia da rodada do bloco', () => {
-    expect(cloud).toContain('execute o modo completo, bloco k de 3');
+  it('o prompt tem o modo "completo, bloco k de 5", o R0 inteiro primeiro e o guia da rodada do bloco', () => {
+    expect(cloud).toContain('execute o modo completo, bloco k de 5');
     expect(cloud).toMatch(/## Rodada completa em blocos/);
     expect(cloud).toMatch(/R0 inteiro/);
     expect(cloud).toMatch(/guia da rodada[^\n]*roteiros do bloco/);
@@ -891,24 +891,24 @@ describe('rodada completa em 3 blocos (etapa #424, PL1)', () => {
   });
 
   it('o relato do bloco: Modo, primeira linha, achados k.n e aviso ao coordenador com o bloco', () => {
-    expect(cloud).toContain('Modo: completo, bloco k de 3 (<roteiros>)');
-    expect(cloud).toContain('Rodada completa — bloco k de 3');
+    expect(cloud).toContain('Modo: completo, bloco k de 5 (<roteiros>)');
+    expect(cloud).toContain('Rodada completa — bloco k de 5');
     expect(cloud).toMatch(/`k\.1`, `k\.2`/);
     expect(cloud).toMatch(/aviso ao coordenador[^\n]*bloco/i);
     expect(cloud).toMatch(/Parte i de n/);
   });
 
   it('o template do relato (seção 10) aceita o modo de bloco e a numeração k.n', () => {
-    expect(guide).toContain('completo, bloco k de 3');
+    expect(guide).toContain('completo, bloco k de 5');
     expect(guide).toMatch(/k\.n/);
     expect(guide).toMatch(/TESTING-NUVEM\.md`, "Rodada completa em blocos"/);
   });
 
   it('o FLOW.md tem a mensagem do testador por bloco, a avulsa e o template do resumo', () => {
     expect(flow).toMatch(
-      /execute o modo completo, bloco <k> de 3\.[^\n]*Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+\. Coordenador: `/,
+      /execute o modo completo, bloco <k> de 5\.[^\n]*Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+\. Coordenador: `/,
     );
-    expect(flow).toContain('Testador — <alvo>, bloco <k> de 3');
+    expect(flow).toContain('Testador — <alvo>, bloco <k> de 5');
     expect(flow).toContain(
       'Rode a rodada completa do testador em blocos no branch `<branch>`, commit `<hash>`. Resumo e relatos na issue #<N>.',
     );
@@ -925,16 +925,16 @@ describe('rodada completa em 3 blocos (etapa #424, PL1)', () => {
     expect(flow).toMatch(/não reescreve os relatos/i);
   });
 
-  it('o FLOW.md: conferência de reserva de 60 min, 3 avisos, reteste numa sessão só e a avulsa abre bug por ❌', () => {
+  it('o FLOW.md: conferência de reserva de 60 min, 5 avisos, reteste numa sessão só e a avulsa abre bug por ❌', () => {
     expect(flow).toMatch(/60 min/);
-    expect(flow).toMatch(/três avisos/i);
+    expect(flow).toMatch(/cinco avisos/i);
     expect(flow).toMatch(/uma sessão só/i);
     expect(flow).toMatch(/issue `bug`[^\n]*duplicadas/i);
   });
 
-  it('o CLAUDE.md: o orquestrador cria as 3 sessões quando a sub-issue pede a rodada completa', () => {
-    expect(claude).toMatch(/rodada completa[^\n]*3 sessões/);
-    expect(claude).toContain('bloco k de 3');
+  it('o CLAUDE.md: o orquestrador cria as 5 sessões quando a sub-issue pede a rodada completa', () => {
+    expect(claude).toMatch(/rodada completa[^\n]*5 sessões/);
+    expect(claude).toContain('bloco k de 5');
     expect(claude).toMatch(/\bk\.n\b/);
   });
 });
