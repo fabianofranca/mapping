@@ -84,3 +84,29 @@ describe('não lida: lastReadAt por cópia do projeto', () => {
     expect(reads.lastReadAt('c', 'T1')).toBe(AT);
   });
 });
+
+describe('duas abas e o limite de cópias (decisão 15)', () => {
+  it('duas abas não apagam a lida uma da outra', async () => {
+    const tabA = await load();
+    const tabB = await load();
+    tabA.markThreadRead('copia-a', 'T1', AT);
+    tabB.markThreadRead('copia-b', 'T2', LATER);
+    const stored = JSON.parse(localStorage.getItem(KEY) ?? '{}') as {
+      reads: Record<string, Record<string, string>>;
+    };
+    expect(stored.reads['copia-a']).toEqual({ T1: AT });
+    expect(stored.reads['copia-b']).toEqual({ T2: LATER });
+    expect(tabB.lastReadAt('copia-a', 'T1')).toBe(AT);
+  });
+
+  it('guarda as 20 cópias mais recentes: a 21ª tira a mais antiga', async () => {
+    const reads = await load();
+    for (let i = 0; i < 21; i++) reads.markThreadRead(`c${i}`, 'T', AT);
+    const stored = JSON.parse(localStorage.getItem(KEY) ?? '{}') as {
+      reads: Record<string, unknown>;
+    };
+    expect(Object.keys(stored.reads)).toHaveLength(20);
+    expect(stored.reads.c0).toBeUndefined();
+    expect(stored.reads.c20).toBeDefined();
+  });
+});

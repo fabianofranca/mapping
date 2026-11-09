@@ -5,6 +5,7 @@ import { computed, type ReadonlySignal } from '@preact/signals';
 import { allowNoCors, remoteImageGate } from '../../store/imagePermissions';
 import { reportRemoteImageIssue, resolveRemoteImageIssue } from '../../store/diagnostics';
 import {
+  REMOTE_IMAGE_LIMITS,
   type RemoteImageLoader,
   type RemoteImageView,
   sharedRemoteImageLoader,
@@ -42,7 +43,20 @@ export function createRemoteImageSource(
   const report = deps.report ?? reportRemoteImageIssue;
   const resolved = deps.resolved ?? resolveRemoteImageIssue;
   // O carregador usa a URL normalizada pela política; o desenho, a do campo: o aviso traduz.
+  // Limitado como as falhas do carregador (as mais antigas saem; uma URL fora do mapa avisa com a
+  // normalizada).
   const rawUrls = new Map<string, Set<string>>();
+  const remember = (normalized: string, raw: string): void => {
+    const known = rawUrls.get(normalized) ?? new Set<string>();
+    known.add(raw);
+    rawUrls.delete(normalized);
+    rawUrls.set(normalized, known);
+    while (rawUrls.size > REMOTE_IMAGE_LIMITS.failureEntries) {
+      const oldest = rawUrls.keys().next();
+      if (oldest.done) break;
+      rawUrls.delete(oldest.value);
+    }
+  };
   return {
     resolve(url) {
       // `peek`: o desenho roda fora de `effect`; quem precisa reagir lê `gate`.
@@ -51,9 +65,7 @@ export function createRemoteImageSource(
         report(url, gate.state);
         return { state: gate.state };
       }
-      const known = rawUrls.get(gate.url);
-      if (known) known.add(url);
-      else rawUrls.set(gate.url, new Set([url]));
+      remember(gate.url, url);
       const view = loader.request(gate.url, { allowNoCors: noCorsSignal.peek() });
       if (view.state === 'failed')
         report(url, view.reason === 'timeout' ? 'timeout' : 'failed');

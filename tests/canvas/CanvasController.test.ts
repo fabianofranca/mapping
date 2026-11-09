@@ -29,16 +29,18 @@ describe('CanvasController', () => {
   function setup() {
     const editor = editorFor();
     const ensure = vi.fn();
+    const retain = vi.fn();
     const display = {
       ...createDisplayImages<ImageBitmap>(() => new Promise(() => undefined)),
       ensure,
+      retain,
     };
     const container = document.createElement('div');
     Object.defineProperty(container, 'clientWidth', { value: 380 });
     Object.defineProperty(container, 'clientHeight', { value: 700 });
     document.body.append(container);
     const controller = new CanvasController({ container, display, ...editor });
-    return { ...editor, container, controller, ensure };
+    return { ...editor, container, controller, ensure, retain };
   }
 
   it('monta o stage com no máximo cinco camadas (o Konva avisa no console a partir de seis) e pede os bitmaps das imagens', () => {
@@ -52,6 +54,33 @@ describe('CanvasController', () => {
     ]);
     controller.destroy();
     expect(container.querySelectorAll('canvas')).toHaveLength(0);
+  });
+
+  it('um gesto de arrasto não chama ensure nem retain: o conjunto de arquivos não mudou', () => {
+    const { controller, ensure, retain, store } = setup();
+    flush();
+    expect(ensure).toHaveBeenCalled();
+    ensure.mockClear();
+    retain.mockClear();
+    expect(store.beginGesture().ok).toBe(true);
+    const image = store.project.peek()?.containers[0];
+    expect(image).toBeDefined();
+    for (let step = 1; step <= 3; step++) {
+      store.updateGesture((p) => ({
+        ...p,
+        containers: p.containers.map((c) =>
+          c.id === image!.id
+            ? { ...c, placement: { ...c.placement, x: c.placement.x + 10 * step } }
+            : c,
+        ),
+      }));
+      flush();
+    }
+    store.cancelGesture();
+    flush();
+    expect(ensure).not.toHaveBeenCalled();
+    expect(retain).not.toHaveBeenCalled();
+    controller.destroy();
   });
 
   it('a ordem de desenho segue a mesma: imagens, componentes, setas, marcações, flutuantes, sobreposições', () => {

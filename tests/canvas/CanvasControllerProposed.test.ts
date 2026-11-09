@@ -10,6 +10,7 @@ import {
   vi,
 } from 'vitest';
 import { CanvasController } from '../../src/canvas/CanvasController';
+import type { OverlayRenderer } from '../../src/canvas/renderers/overlay';
 import type { ReviewCanvas } from '../../src/canvas/reviewMarks';
 import { createCanvasViewState } from '../../src/canvas/viewState';
 import {
@@ -25,6 +26,7 @@ import {
   type Project,
   type Proposal,
   markingTypeName,
+  removeMarking,
 } from '../../src/model';
 import { createEditorDerived } from '../../src/store/derived';
 import { createDisplayImages } from '../../src/store/displayImages';
@@ -210,6 +212,8 @@ describe('CanvasController: visão Proposto com componentes', () => {
       session,
       review,
       derived,
+      ui,
+      overlay: (controller as unknown as { overlay: OverlayRenderer }).overlay,
       container,
       controller,
       drawing,
@@ -328,6 +332,29 @@ describe('CanvasController: visão Proposto com componentes', () => {
         ['rejected:N1', typeName, ['rejected']],
       ]);
     }
+    t.controller.destroy();
+  });
+
+  it('remoção rejeitada da selecionada: o risco da etiqueta do nome some no mesmo quadro', async () => {
+    const plain = baseProject();
+    const { catalog } = plain;
+    const base: Project = {
+      ...plain.base,
+      markings: plain.base.markings.map((m) =>
+        m.id === 'T1' ? { ...m, name: 'Antigo texto' } : m,
+      ),
+    };
+    const proposal = propose(base, removeMarking(base, 'T1'));
+    const changeId = changeOf(proposal, 'marking', 'T1').id;
+    const t = await setup(base, catalog, proposal);
+    t.ui.selection.value = { kind: 'marking', id: 'T1' };
+    t.show('current');
+    const strike = () => t.overlay.nameTag.findOne('.name-tag-strike');
+    expect(t.overlay.nameTag.visible()).toBe(true);
+    expect(strike()?.visible()).toBe(true);
+    await t.review.decide({ level: 'change', id: changeId }, 'rejected');
+    flush();
+    expect(strike()?.visible()).toBe(false);
     t.controller.destroy();
   });
 

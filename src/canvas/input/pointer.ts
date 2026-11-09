@@ -316,7 +316,13 @@ export class PointerInput {
       return;
     }
     const intent = this.pressIntent(e, p);
-    this.gesture = { kind: 'pending', pointerId: e.pointerId, start: p, intent };
+    this.gesture = {
+      kind: 'pending',
+      pointerId: e.pointerId,
+      start: p,
+      button: e.button,
+      intent,
+    };
     this.gestureState = stepGesture(IDLE, {
       type: 'down',
       point: p,
@@ -667,7 +673,8 @@ export class PointerInput {
     const step = stepGesture(this.gestureState, { type: cancelled ? 'cancel' : 'up' });
     this.gestureState = step.state;
     if (g.kind === 'pending' && step.effect.kind === 'tap') {
-      this.tap(step.effect.at, this.pressShift);
+      // O clique curto do botão do meio é só o começo de um pan: não seleciona nem põe o pino.
+      if (g.button !== 1) this.tap(step.effect.at, this.pressShift);
     } else {
       // Um arrasto (ou cancelamento) no meio de um duplo clique o desfaz e recomeça o ciclo.
       this.selectionBeforeTap = null;
@@ -926,9 +933,7 @@ export class PointerInput {
   private openContextMenu(e: MouseEvent): void {
     const { ui, derived, viewport } = this.o;
     ui.canvasMenu.value = null;
-    if (this.lastPointerType === 'touch' || this.gesture !== null) return;
-    // Na revisão o menu (copiar, trancar) não vale: o projeto está somente leitura.
-    if (this.o.reviewing?.()) return;
+    if (!this.canOpenContextMenu()) return;
     const picked = tapSelection(
       this.project(),
       ui.selection.peek(),
@@ -944,6 +949,24 @@ export class PointerInput {
     const c = viewport.toCanvas(viewport.screenPoint(e));
     const menu = canvasMenuAt(this.project(), picked, c, { x: e.clientX, y: e.clientY });
     if (menu) ui.canvasMenu.value = menu;
+  }
+
+  /** Toque demorado, gesto em andamento e revisão (somente leitura) não abrem o menu. */
+  private canOpenContextMenu(): boolean {
+    if (this.lastPointerType === 'touch') return false;
+    // Ctrl+clique (macOS) chega como `pointerdown` e `contextmenu`: o gesto ainda pendente é
+    // cancelado, para o `pointerup` seguinte não virar clique. Um arrasto em andamento segue.
+    if (this.gesture?.kind === 'pending') this.dropPendingGesture();
+    return this.gesture === null && !(this.o.reviewing?.() ?? false);
+  }
+
+  /** Descarta o gesto pendente (nada começou): o `pointerup` do ponteiro é ignorado. */
+  private dropPendingGesture(): void {
+    const g = this.gesture;
+    if (g?.kind !== 'pending') return;
+    this.pointers.delete(g.pointerId);
+    this.gesture = null;
+    this.gestureState = IDLE;
   }
 
   private onWheel(e: WheelEvent): void {

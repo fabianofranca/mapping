@@ -1,4 +1,4 @@
-import { batch, signal, type Signal } from '@preact/signals';
+import { batch, effect, signal, type Signal } from '@preact/signals';
 import {
   projectIndex,
   spaceOf,
@@ -163,6 +163,21 @@ export interface CanvasMenu {
 }
 
 export function createEditorUi(): EditorUi {
+  const ui = buildEditorUi();
+  // Mudar a seleção esquece a conversa escolhida e o rascunho de conversa nova (etapa #940,
+  // decisão 3): sem isso, a seleção vazia que volta faria a comparação valer de novo. O texto
+  // do rascunho continua em `threadDrafts`. A instância vive o tempo da app, sem desinscrever.
+  effect(() => {
+    const selection = ui.selection.value;
+    const chosen = ui.thread.peek();
+    if (chosen !== null && chosen.selection !== selection) ui.thread.value = null;
+    const draft = ui.composing.peek();
+    if (draft !== null && draft.selection !== selection) ui.composing.value = null;
+  });
+  return ui;
+}
+
+function buildEditorUi(): EditorUi {
   return {
     selection: signal<Selection>(null),
     selectionGroup: signal<SelectionGroup | null>(null),
@@ -205,6 +220,9 @@ export function sameItem(a: SelectionItem | null, b: SelectionItem | null): bool
   return a !== null && b !== null && a.kind === b.kind && a.id === b.id;
 }
 
+/** Chave de um item para `Set`/`Map` (`kind:id`). */
+const itemKey = (item: SelectionItem): string => `${item.kind}:${item.id}`;
+
 /** A seleção inteira a partir do primário e do grupo: os outros primeiro, o primário por último. */
 export function itemsOf(
   selection: Selection,
@@ -239,9 +257,12 @@ export function isItemSelected(
  */
 export function selectItems(ui: EditorUi, items: readonly SelectionItem[]): void {
   const unique: SelectionItem[] = [];
+  const keys = new Set<string>();
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i] as SelectionItem;
-    if (!isItemSelected(unique, item)) unique.unshift(item);
+    if (keys.has(itemKey(item))) continue;
+    keys.add(itemKey(item));
+    unique.unshift(item);
   }
   const primary = unique.at(-1);
   batch(() => {
@@ -281,10 +302,13 @@ export function toggleSelectedItem(ui: EditorUi, item: SelectionItem): void {
  */
 export function addSelectedItems(ui: EditorUi, items: readonly SelectionItem[]): void {
   const current = peekSelectedItems(ui);
-  const fresh = items.filter(
-    (item, i) =>
-      !isItemSelected(current, item) && items.findIndex((o) => sameItem(o, item)) === i,
-  );
+  const known = new Set(current.map(itemKey));
+  const fresh = items.filter((item) => {
+    const key = itemKey(item);
+    if (known.has(key)) return false;
+    known.add(key);
+    return true;
+  });
   const [first, ...rest] = fresh;
   if (!first) return;
   selectItems(ui, current.length > 0 ? [...fresh, ...current] : [...rest, first]);
@@ -474,7 +498,7 @@ export function resolveSelection(
 ): ResolvedSelection {
   if (!project || !selection) return null;
   if (selection.kind === 'image') {
-    const image = project.containers.find((i) => i.id === selection.id);
+    const image = projectIndex(project).containers.get(selection.id);
     return image ? { kind: 'image', image } : null;
   }
   const index = projectIndex(project);

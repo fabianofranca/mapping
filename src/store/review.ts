@@ -443,6 +443,37 @@ export function createReviewState(session: ProjectSession): ReviewState {
   };
 
   /**
+   * O blob com o que ainda não foi gravado: `remember` roda a cada tecla de seta, então ele
+   * guarda o resultado em memória e a gravação sai agrupada, uma por quadro (e já, ao
+   * fechar a revisão). Sem pendência, relê o armazenamento: o que outra aba gravou fica.
+   */
+  let pendingBlob: ResumeBlob | null = null;
+  let resumeFrame: number | null = null;
+  let resumeTimer: ReturnType<typeof setTimeout> | null = null;
+  const currentBlob = (): ResumeBlob => pendingBlob ?? readBlob();
+  const flushResume = () => {
+    if (resumeFrame !== null && typeof cancelAnimationFrame === 'function')
+      cancelAnimationFrame(resumeFrame);
+    if (resumeTimer !== null) clearTimeout(resumeTimer);
+    resumeFrame = null;
+    resumeTimer = null;
+    if (pendingBlob === null) return;
+    const blob = pendingBlob;
+    pendingBlob = null;
+    writeBlob(blob);
+  };
+  const scheduleResumeWrite = () => {
+    if (resumeFrame !== null || resumeTimer !== null) return;
+    if (typeof requestAnimationFrame === 'function') {
+      resumeFrame = requestAnimationFrame(flushResume);
+      // A aba em segundo plano pausa os quadros: o relógio garante a gravação.
+      resumeTimer = setTimeout(flushResume, 500);
+    } else {
+      resumeTimer = setTimeout(flushResume, 0);
+    }
+  };
+
+  /**
    * Grava o ponto onde a revisão está. Relê o blob e troca só a entrada desta proposta
    * nesta cópia (o que outra aba ou outra cópia gravou fica). `known`: os conflitos que
    * passam a ser conhecidos; sem ele, os que a entrada já tinha. Se o `localStorage`
@@ -451,7 +482,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
   const remember = (known?: readonly string[]) => {
     const id = proposalId.peek();
     if (id === null) return;
-    const blob = readBlob();
+    const blob = currentBlob();
     const key = keyOf(scope, id);
     const entry: ReviewResume = {
       selected: selected.peek(),
@@ -459,7 +490,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
       filters: filters.peek(),
       knownConflicts: known ?? blob.resume[key]?.knownConflicts ?? [],
     };
-    writeBlob(withEntry(blob, scope, key, entry));
+    pendingBlob = withEntry(blob, scope, key, entry);
+    scheduleResumeWrite();
     mergeSeen(blob, id);
   };
 
@@ -470,6 +502,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
     if (id === null) return;
     const p = derived.proposal.value;
     if (p === null) {
+      // Apagada por fora: não deixa uma entrada de retomar para uma proposta que não existe.
+      pendingBlob = null;
       closeReview();
       return;
     }
@@ -491,6 +525,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
       }
       remember([...known].slice(0, MAX_KNOWN_CONFLICTS));
     }
+    flushResume();
     batch(() => {
       proposalId.value = null;
       selected.value = null;
@@ -561,7 +596,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
       if (!store.committed.peek()) return { ok: false, error: 'no-project' };
       if (proposalId.peek() !== null && proposalId.peek() !== id) closeReview();
       // Relido agora: outra aba pode ter gravado depois de esta abrir.
-      const blob = readBlob();
+      const blob = currentBlob();
       const entry = blob.resume[keyOf(scope, id)];
       batch(() => {
         // A revisão mostra só a Principal (decisão 12): abre-a e trava a troca.
@@ -753,7 +788,8 @@ export function createReviewState(session: ProjectSession): ReviewState {
       if (!result.ok) return result;
       // Esquece o que esta cópia guardava da proposta: uma de mesmo id que chegue depois é
       // nova de verdade, e a entrada do retomar não fica órfã no blob.
-      const blob = readBlob();
+      const blob = currentBlob();
+      pendingBlob = null;
       const trimmed = withoutEntry(blob, keyOf(scope, id));
       if (trimmed) writeBlob(trimmed);
       if (seen.peek().has(id)) {
@@ -794,6 +830,7 @@ export function createReviewState(session: ProjectSession): ReviewState {
     dispose() {
       stopWatching();
       closeReview();
+      flushResume();
       components.dispose();
     },
   };

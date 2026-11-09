@@ -380,6 +380,32 @@ describe('galeria', () => {
     expect(images[1]?.getAttribute('alt')).toBe(entry?.examples[0]?.name);
   });
 
+  describe('avisos do desenho', () => {
+    // O rasterizador de teste avisa como o `renderSceneToDataUrl` faz depois de desenhar.
+    const warning = { code: 'unknown-node', params: { type: 'STICKY' } } as const;
+    const warningRenderer = () =>
+      createCatalogRenderer(approximateMeasurer, (_root, options) => {
+        options.onWarnings?.([warning]);
+        return 'data:image/png;base64,fake';
+      });
+
+    it('saem no idioma da app: em en-US não há texto em português', () => {
+      locale.value = 'en-US';
+      view({ initialTypeId: 'm3-button', renderer: warningRenderer() });
+      const gallery = screen.getByRole('region', { name: t('catalog.gallery.title') });
+      const text = gallery.textContent ?? '';
+      expect(text).toContain('Node not drawn (STICKY): only its box is shown');
+      expect(text).not.toContain('nó não desenhado');
+      expect(text).not.toContain('Nó não desenhado');
+    });
+
+    it('em pt-BR saem em português', () => {
+      view({ initialTypeId: 'm3-button', renderer: warningRenderer() });
+      const gallery = screen.getByRole('region', { name: t('catalog.gallery.title') });
+      expect(gallery.textContent).toContain('Nó não desenhado (STICKY): só a caixa');
+    });
+  });
+
   it('usa o cache: reabrir a mesma página não rasteriza de novo', async () => {
     const engine = renderer();
     const { user } = view({ initialTypeId: 'm3-button', renderer: engine });

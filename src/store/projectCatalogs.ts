@@ -8,6 +8,7 @@ import {
 } from '../model';
 import type { LibraryFile } from '../model/library';
 import { reportError } from '../utils/report';
+import { createPendingTracker } from './pendingTracker';
 
 // Catálogos (página de cada componente) das especializações com pacote do projeto aberto
 // (etapa Biblioteca, B5). Estado em memória da sessão, nunca do projeto, e sob demanda: nada
@@ -50,7 +51,7 @@ const keyOf = (owners: readonly ProjectSpecialization[]): string =>
 export function createProjectCatalogs(deps: ProjectCatalogsDeps): ProjectCatalogs {
   const entries = signal<readonly ProjectCatalog[] | null>(null);
   const stamp = signal(0);
-  const pending = new Set<Promise<unknown>>();
+  const { track, whenIdle } = createPendingTracker();
   let doneKey: string | null = null;
   let run = 0;
   let disposed = false;
@@ -58,26 +59,42 @@ export function createProjectCatalogs(deps: ProjectCatalogsDeps): ProjectCatalog
   const withPackage = (p: Project): ProjectSpecialization[] =>
     p.specializations.filter((s) => s.spec !== null && packageDirOf(s.file) !== null);
 
-  async function load(owners: readonly ProjectSpecialization[], mine: number) {
+  async function loadOwner(
+    owner: ProjectSpecialization,
+  ): Promise<ProjectCatalog | null | 'failed'> {
+    try {
+      const files = await deps.read(owner);
+      if (files === null) return null;
+      const catalog = buildCatalog(files);
+      return {
+        specId: owner.id,
+        name: catalog.spec?.name ?? owner.spec?.name ?? owner.id,
+        version: owner.version,
+        catalog,
+      };
+    } catch (error) {
+      reportError('catalog.load', error);
+      return 'failed';
+    }
+  }
+
+  async function load(
+    owners: readonly ProjectSpecialization[],
+    mine: number,
+    current: string,
+  ) {
     // Deixa a interface pintar antes do trabalho síncrono de montar o catálogo.
     await Promise.resolve();
     const out: ProjectCatalog[] = [];
+    let failed = false;
     for (const owner of owners) {
-      try {
-        const files = await deps.read(owner);
-        if (files === null) continue;
-        const catalog = buildCatalog(files);
-        out.push({
-          specId: owner.id,
-          name: catalog.spec?.name ?? owner.spec?.name ?? owner.id,
-          version: owner.version,
-          catalog,
-        });
-      } catch (error) {
-        reportError('catalog.load', error);
-      }
+      const result = await loadOwner(owner);
+      if (result === 'failed') failed = true;
+      else if (result !== null) out.push(result);
     }
     if (disposed || mine !== run) return;
+    // Um dono que falhou não marca a chave: o próximo pedido tenta de novo (decisão 16).
+    if (failed && doneKey === current) doneKey = null;
     entries.value = out;
   }
 
@@ -98,18 +115,13 @@ export function createProjectCatalogs(deps: ProjectCatalogsDeps): ProjectCatalog
       if (current === doneKey) return;
       doneKey = current;
       run += 1;
-      const task = load(owners, run);
-      pending.add(task);
-      const done = () => void pending.delete(task);
-      task.then(done, done);
+      void track(load(owners, run, current));
     },
     invalidate() {
       doneKey = null;
       stamp.value++;
     },
-    async whenIdle() {
-      while (pending.size > 0) await Promise.allSettled([...pending]);
-    },
+    whenIdle,
     dispose() {
       disposed = true;
       entries.value = null;

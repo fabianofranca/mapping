@@ -53,9 +53,7 @@ export class ViewportController {
 
   /** Lê o tamanho do container; na primeira vez com tamanho, enquadra tudo. */
   measure(): void {
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
-    this.size.value = { width, height };
+    const { width, height } = this.readSize();
     if (!this.fitted && width > 0 && height > 0) {
       this.fitted = true;
       this.fitAll();

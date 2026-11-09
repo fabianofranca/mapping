@@ -54,7 +54,7 @@ export function Composer({ target, onOpenSettings, autoFocus, onCancel }: Compos
   const replyAnchor = useReplyAnchor(target);
   useEffect(() => {
     if (autoFocus) field.current?.focus();
-  }, [autoFocus]);
+  }, [autoFocus, key]);
 
   if (!writable) return null;
   if (me === null) {
