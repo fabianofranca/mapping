@@ -87,16 +87,56 @@ describe('Diagnóstico: Componentes', () => {
       withInjected(harness, {
         fonts: [
           { font: font('400'), status: 'loaded' },
-          { font: font('500'), status: 'missing' },
-          { font: font('700', 'italic'), status: 'failed', detail: 'arquivo corrompido' },
+          {
+            font: font('500'),
+            status: 'missing',
+            problem: { code: 'missing', path: 'specs/material3/fonts/Roboto-500.ttf' },
+          },
+          {
+            font: font('700', 'italic'),
+            status: 'failed',
+            problem: { code: 'load-failed', message: 'arquivo corrompido' },
+          },
         ],
       }),
     );
     const items = within(section() as HTMLElement).getAllByRole('listitem');
     expect(items.map((li) => li.textContent)).toEqual([
-      `Roboto · peso 500 · normal: ${t('diagnostics.fontMissing')}`,
+      `Roboto · peso 500 · normal: ${t('diagnostics.fontMissing', { path: 'specs/material3/fonts/Roboto-500.ttf' })}`,
       `Roboto · peso 700 · itálico: ${t('diagnostics.fontFailed', { detail: 'arquivo corrompido' })}`,
     ]);
+  });
+
+  it('em en-US, o estado de cada fonte aparece em inglês', async () => {
+    locale.value = 'en-US';
+    const harness = await libraryHarness();
+    renderView(
+      withInjected(harness, {
+        fonts: [
+          {
+            font: font('500'),
+            status: 'missing',
+            problem: { code: 'missing', path: 'specs/material3/fonts/Roboto-500.ttf' },
+          },
+          { font: font('600'), status: 'failed', problem: { code: 'no-fontface' } },
+          {
+            font: font('700'),
+            status: 'failed',
+            problem: { code: 'load-failed', message: 'corrupted' },
+          },
+        ],
+      }),
+    );
+    const text = within(section() as HTMLElement)
+      .getAllByRole('listitem')
+      .map((li) => li.textContent)
+      .join('\n');
+    expect(text).not.toMatch(
+      /arquivo não encontrado|não tem FontFace|ausente|não carregou/,
+    );
+    expect(text).toContain('specs/material3/fonts/Roboto-500.ttf');
+    expect(text).toContain('corrupted');
+    expect(text.toLowerCase()).toContain('fontface');
   });
 
   it('componente que não carregou aparece com a especialização', async () => {

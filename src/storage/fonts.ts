@@ -12,8 +12,15 @@ import type { LoadedFont } from '../model/components/library';
 export interface FontStatus {
   readonly font: LoadedFont;
   readonly status: 'loaded' | 'missing' | 'failed';
-  readonly detail?: string;
+  /** Por que a fonte não carregou; a interface monta o texto por `t()`. */
+  readonly problem?: FontProblem;
 }
+
+/** Código e parâmetros do motivo (sem texto: o idioma é da interface). */
+export type FontProblem =
+  | { readonly code: 'missing'; readonly path: string }
+  | { readonly code: 'no-fontface' }
+  | { readonly code: 'load-failed'; readonly message: string };
 
 /** `FontFace` e `document.fonts`, injetáveis nos testes (o jsdom não os tem). */
 export interface FontHost {
@@ -60,12 +67,12 @@ export function createFontRegistry(host: FontHost = defaultHost()): FontRegistry
         out.push({
           font,
           status: 'missing',
-          detail: `arquivo não encontrado: ${font.path}`,
+          problem: { code: 'missing', path: font.path },
         });
         continue;
       }
       if (!FontFace || !set) {
-        out.push({ font, status: 'failed', detail: 'este navegador não tem FontFace' });
+        out.push({ font, status: 'failed', problem: { code: 'no-fontface' } });
         continue;
       }
       try {
@@ -81,7 +88,10 @@ export function createFontRegistry(host: FontHost = defaultHost()): FontRegistry
         out.push({
           font,
           status: 'failed',
-          detail: error instanceof Error ? error.message : String(error),
+          problem: {
+            code: 'load-failed',
+            message: error instanceof Error ? error.message : String(error),
+          },
         });
       }
     }
@@ -89,9 +99,4 @@ export function createFontRegistry(host: FontHost = defaultHost()): FontRegistry
   };
 
   return { register, clear };
-}
-
-export function describeFont(font: LoadedFont): string {
-  const style = font.style === 'italic' ? ' itálico' : '';
-  return `${font.family} ${font.weight}${style}`;
 }

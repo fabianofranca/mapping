@@ -47,6 +47,68 @@ export type ReadZipResult =
   | { readonly ok: true; readonly files: ProjectFiles }
   | { readonly ok: false; readonly error: 'invalid-zip' | 'missing-mapping' };
 
+async function imageBlob(entry: JSZip.JSZipObject, relative: string): Promise<Blob> {
+  return new Blob([await entry.async('arraybuffer')], { type: imageMimeType(relative) });
+}
+
+/**
+ * Lê, em paralelo, os arquivos de `<root><dir>/` do zip. `read` recebe o caminho relativo à
+ * raiz do projeto e devolve `null` para o que não interessa; o resultado mantém a ordem do zip.
+ */
+async function readUnder<T>(
+  zip: JSZip,
+  root: string,
+  dir: string,
+  read: (relative: string, entry: JSZip.JSZipObject) => Promise<T | null>,
+): Promise<T[]> {
+  const prefix = `${root}${dir}/`;
+  const rows = await Promise.all(
+    Object.entries(zip.files)
+      .filter(([path, entry]) => !entry.dir && path.startsWith(prefix))
+      .map(([path, entry]) => read(path.slice(root.length), entry)),
+  );
+  return rows.filter((row): row is Awaited<T> => row !== null);
+}
+
+type JSZipEntry = JSZip.JSZipObject;
+
+async function readSpecRow(relative: string, entry: JSZipEntry) {
+  return {
+    relative,
+    // Todo `.json` de `specs/` entra em `specs` (a leitura do projeto precisa do texto das
+    // especializações, inclusive a de dentro do pacote); o que está em pasta de pacote entra
+    // também em `specAssets`, com os bytes.
+    text: isSpecPath(relative) ? await entry.async('string') : null,
+    asset: isSpecPackagePath(relative)
+      ? new Blob([await entry.async('arraybuffer')])
+      : null,
+  };
+}
+
+async function readProposalRow(relative: string, entry: JSZipEntry) {
+  if (isProposalFilePath(relative)) {
+    return { relative, text: await entry.async('string'), image: null };
+  }
+  if (isProposalImagePath(relative)) {
+    return { relative, text: null, image: await imageBlob(entry, relative) };
+  }
+  if (!isProposalPackagePath(relative)) return null;
+  return { relative, text: null, image: new Blob([await entry.async('arraybuffer')]) };
+}
+
+/** O `mapping.json` mais raso do zip (ignora `__MACOSX/`), com a pasta onde ele está. */
+function findMapping(
+  zip: JSZip,
+): { mappingPath: string; mappingEntry: JSZipEntry } | null {
+  const mappingPath = Object.keys(zip.files)
+    .filter((path) => !zip.files[path]?.dir)
+    .filter((path) => path === MAPPING_FILE || path.endsWith(`/${MAPPING_FILE}`))
+    .filter((path) => !path.startsWith('__MACOSX/'))
+    .sort((a, b) => a.split('/').length - b.split('/').length)[0];
+  const mappingEntry = mappingPath ? zip.file(mappingPath) : null;
+  return mappingPath && mappingEntry ? { mappingPath, mappingEntry } : null;
+}
+
 /**
  * Lê um zip de projeto. Aceita o conteúdo na raiz ou dentro de uma pasta
  * (zip feito a partir de "meu-projeto/"): vale o `mapping.json` mais raso.
@@ -59,61 +121,39 @@ export async function readProjectZip(data: Blob): Promise<ReadZipResult> {
     reportError('zip.read', e);
     return { ok: false, error: 'invalid-zip' };
   }
-  const mappingPaths = Object.keys(zip.files)
-    .filter((path) => !zip.files[path]?.dir)
-    .filter((path) => path === MAPPING_FILE || path.endsWith(`/${MAPPING_FILE}`))
-    .filter((path) => !path.startsWith('__MACOSX/'))
-    .sort((a, b) => a.split('/').length - b.split('/').length);
-  const mappingPath = mappingPaths[0];
-  const mappingEntry = mappingPath ? zip.file(mappingPath) : null;
-  if (!mappingPath || !mappingEntry) return { ok: false, error: 'missing-mapping' };
+  const found = findMapping(zip);
+  if (!found) return { ok: false, error: 'missing-mapping' };
+  const { mappingPath, mappingEntry } = found;
   const root = mappingPath.slice(0, -MAPPING_FILE.length);
 
-  const images = new Map<string, Blob>();
-  const prefix = `${root}${IMAGES_DIR}/`;
-  for (const [path, entry] of Object.entries(zip.files)) {
-    if (entry.dir || !path.startsWith(prefix)) continue;
-    const relative = path.slice(root.length);
-    if (!isImageFileName(relative)) continue;
-    const bytes = await entry.async('arraybuffer');
-    images.set(relative, new Blob([bytes], { type: imageMimeType(relative) }));
-  }
+  const [imageRows, specRows, proposalRows, threadRows] = await Promise.all([
+    readUnder(zip, root, IMAGES_DIR, async (relative, entry) =>
+      isImageFileName(relative)
+        ? ([relative, await imageBlob(entry, relative)] as const)
+        : null,
+    ),
+    readUnder(zip, root, SPECS_DIR, readSpecRow),
+    readUnder(zip, root, PROPOSALS_DIR, readProposalRow),
+    readUnder(zip, root, COMMENTS_DIR, async (relative, entry) =>
+      isThreadFilePath(relative)
+        ? ([relative, await entry.async('string')] as const)
+        : null,
+    ),
+  ]);
+  const images = new Map(imageRows);
   const specs = new Map<string, string>();
   const specAssets = new Map<string, Blob>();
-  const specsPrefix = `${root}${SPECS_DIR}/`;
-  for (const [path, entry] of Object.entries(zip.files)) {
-    if (entry.dir || !path.startsWith(specsPrefix)) continue;
-    const relative = path.slice(root.length);
-    // Todo `.json` de `specs/` entra em `specs` (a leitura do projeto precisa do texto das
-    // especializações, inclusive a de dentro do pacote); o que está em pasta de pacote entra
-    // também em `specAssets`, com os bytes.
-    if (isSpecPath(relative)) specs.set(relative, await entry.async('string'));
-    if (isSpecPackagePath(relative)) {
-      specAssets.set(relative, new Blob([await entry.async('arraybuffer')]));
-    }
+  for (const { relative, text, asset } of specRows) {
+    if (text !== null) specs.set(relative, text);
+    if (asset !== null) specAssets.set(relative, asset);
   }
   const proposals = new Map<string, string>();
   const proposalImages = new Map<string, Blob>();
-  const proposalsPrefix = `${root}${PROPOSALS_DIR}/`;
-  for (const [path, entry] of Object.entries(zip.files)) {
-    if (entry.dir || !path.startsWith(proposalsPrefix)) continue;
-    const relative = path.slice(root.length);
-    if (isProposalFilePath(relative)) {
-      proposals.set(relative, await entry.async('string'));
-    } else if (isProposalImagePath(relative)) {
-      const bytes = await entry.async('arraybuffer');
-      proposalImages.set(relative, new Blob([bytes], { type: imageMimeType(relative) }));
-    } else if (isProposalPackagePath(relative)) {
-      proposalImages.set(relative, new Blob([await entry.async('arraybuffer')]));
-    }
+  for (const { relative, text, image } of proposalRows) {
+    if (text !== null) proposals.set(relative, text);
+    if (image !== null) proposalImages.set(relative, image);
   }
-  const threads = new Map<string, string>();
-  const commentsPrefix = `${root}${COMMENTS_DIR}/`;
-  for (const [path, entry] of Object.entries(zip.files)) {
-    if (entry.dir || !path.startsWith(commentsPrefix)) continue;
-    const relative = path.slice(root.length);
-    if (isThreadFilePath(relative)) threads.set(relative, await entry.async('string'));
-  }
+  const threads = new Map(threadRows);
   return {
     ok: true,
     files: {
@@ -150,12 +190,12 @@ export async function writeProjectZip(files: ProjectFiles): Promise<Blob> {
   return new Blob([bytes], { type: 'application/zip' });
 }
 
-/** Nome de arquivo seguro para o zip exportado. */
-export function zipFileName(projectName: string): string {
+/** Nome de arquivo seguro para o zip exportado; `fallback` é o nome quando o do projeto é vazio. */
+export function zipFileName(projectName: string, fallback: string): string {
   const safe = [...projectName]
     .map((c) => (c < ' ' || '\\/:*?"<>|'.includes(c) ? '-' : c))
     .join('')
     .trim()
     .replace(/^\.+/, '');
-  return `${safe || 'projeto'}.zip`;
+  return `${safe || fallback}.zip`;
 }

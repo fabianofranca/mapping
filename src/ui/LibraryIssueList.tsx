@@ -45,7 +45,10 @@ export function LibraryIssueList({
                 >
                   {t(issue.severity === 'error' ? 'library.error' : 'library.warning')}
                 </span>{' '}
-                {issue.path !== '' && <code>{issue.path}</code>} {issue.message}
+                {issue.path !== '' && <code>{issue.path}</code>}{' '}
+                {issue.code === 'package-too-big'
+                  ? t('library.packageTooBig')
+                  : issue.message}
               </li>
             ))}
           </ul>

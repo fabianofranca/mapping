@@ -4,6 +4,7 @@ import { validateProject } from '../../src/model';
 import { importExistingImages } from '../../src/storage/existingImages';
 import { createFolderStorage, findExistingImages } from '../../src/storage/folder';
 import { emptyProject } from '../model/fixtures';
+import { reportedErrors } from '../../src/utils/report';
 import { MemoryDirectory } from './memoryFs';
 
 /** Tamanho fake: o conteúdo do arquivo é "LxA"; "ruim" não decodifica. */
@@ -87,5 +88,38 @@ describe('importExistingImages', () => {
     ]);
     expect(await root.read('images/Foto.jpg')).toBe('100x100');
     expect(await root.read('images/foto-2.jpg')).toBe('200x100');
+  });
+
+  it('removeImage falha depois de writeImage: o container entra com a cópia, a falha vai ao Diagnóstico e não é "skipped"', async () => {
+    const root = new MemoryDirectory('carro');
+    root.put('foto.jpg', '200x100');
+    root.put('foto-2.jpg', '10x10');
+    const storage = createFolderStorage(root);
+    const failing = {
+      ...storage,
+      removeImage: async (path: string) => {
+        if (path === 'foto.jpg') throw new Error('sem permissão');
+        return storage.removeImage(path);
+      },
+    };
+    const before = reportedErrors.value.length;
+
+    const { project, skipped } = await importExistingImages(
+      failing,
+      emptyProject(),
+      await findExistingImages(root),
+      { readSize, newId: ids() },
+    );
+
+    expect(skipped).toEqual([]);
+    expect(project.containers.map((i) => i.file).sort()).toEqual([
+      'images/foto-2.jpg',
+      'images/foto.jpg',
+    ]);
+    expect(await root.read('images/foto.jpg')).toBe('200x100');
+    expect(await root.read('foto.jpg')).toBe('200x100');
+    expect(reportedErrors.value.slice(before).map((e) => e.context)).toContain(
+      'folder.importExisting.remove',
+    );
   });
 });

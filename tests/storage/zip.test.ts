@@ -137,9 +137,10 @@ describe('zip do projeto', () => {
   });
 
   it('gera um nome de arquivo seguro', () => {
-    expect(zipFileName('Vistoria Carro A')).toBe('Vistoria Carro A.zip');
-    expect(zipFileName('a/b:c*?')).toBe('a-b-c--.zip');
-    expect(zipFileName('   ')).toBe('projeto.zip');
+    expect(zipFileName('Vistoria Carro A', 'projeto')).toBe('Vistoria Carro A.zip');
+    expect(zipFileName('a/b:c*?', 'projeto')).toBe('a-b-c--.zip');
+    expect(zipFileName('   ', 'projeto')).toBe('projeto.zip');
+    expect(zipFileName('   ', 'project')).toBe('project.zip');
   });
 
   it('round-trip do pacote da biblioteca: arquivos e bytes preservados', async () => {

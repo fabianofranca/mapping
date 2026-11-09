@@ -17,7 +17,10 @@ interface Schema extends DBSchema {
   perspectives: { key: string; value: readonly Perspective[] };
 }
 
-/** As "Só eu" guardadas neste navegador. Nunca rejeita: falhas vão para o Diagnóstico. */
+/**
+ * As "Só eu" guardadas neste navegador. `load` nunca rejeita (falhas vão para o Diagnóstico e
+ * a lista volta vazia); `save` registra a falha e rejeita, e quem chama decide o que fazer.
+ */
 export interface LocalPerspectiveStore {
   /** As perspectivas do projeto; o que não valida é descartado. Vazio se não há nada ou se falhar. */
   load(projectId: string): Promise<readonly Perspective[]>;
