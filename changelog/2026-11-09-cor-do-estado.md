@@ -1,4 +1,4 @@
-# Cor do estado da conversa — [Não lançado] (épico `epic/cor-do-estado`, PR #1304, MCP 0.28.12, schema v18)
+# Cor do estado da conversa — 2026-11-09 (épico `epic/cor-do-estado`, PR #1304, MCP 0.28.12, schema v18)
 
 ## Alterado
 
