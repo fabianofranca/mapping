@@ -1,11 +1,10 @@
 import { fail } from './errors';
+import { HEX_COLOR_RE } from './hexColor';
 import { annotationWithLinked } from './links';
 import { pruneHiddenLayers } from './perspectiveReconcile';
 import { findById, moveItem, updateById } from './project';
 import { countBrokenRefs } from './refs';
 import type { Layer, Project } from './types';
-
-const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
 
 /** Cor da primeira camada de um projeto novo. */
 export const DEFAULT_LAYER_COLOR = '#D32F2F';
@@ -45,7 +44,7 @@ function checkName(name: string): string {
 }
 
 function checkColor(color: string): string {
-  if (!HEX_COLOR.test(color)) fail('invalid-color');
+  if (!HEX_COLOR_RE.test(color)) fail('invalid-color');
   return color.toUpperCase();
 }
 

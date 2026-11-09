@@ -8,7 +8,7 @@ import {
 } from './hierarchySettle';
 import { canEditArrow, requireUnlocked } from './locks';
 import { findById, normalizeOptionalName, updateById } from './project';
-import { projectIndex } from './projectIndex';
+import { projectIndex, idInUse } from './projectIndex';
 import { countBrokenRefs } from './refs';
 import {
   ARROW_SIDES,
@@ -18,7 +18,6 @@ import {
   type ArrowPoint,
   type ArrowSide,
   type ArrowStyle,
-  type Marking,
   type Project,
   type Rect,
 } from './types';
@@ -73,29 +72,6 @@ export function arrowLinksOf(p: Project, markingId: string): ArrowLink[] {
       otherId: arrow.from,
     })),
   ];
-}
-
-/**
- * Os dados do rótulo de uma seta, para a interface montar o texto traduzido: o `name` dela e as
- * marcações das pontas ("Origem → Destino" quando não há `name`). Ponta inexistente (projeto
- * inválido) vem `null`.
- */
-export interface ArrowLabel {
-  readonly name: string | null;
-  readonly from: Marking | null;
-  readonly to: Marking | null;
-}
-
-export function arrowLabel(
-  p: Project,
-  arrow: Pick<Arrow, 'name' | 'from' | 'to'>,
-): ArrowLabel {
-  const markings = projectIndex(p).markings;
-  return {
-    name: arrow.name,
-    from: markings.get(arrow.from) ?? null,
-    to: markings.get(arrow.to) ?? null,
-  };
 }
 
 /**
@@ -379,10 +355,7 @@ export interface NewArrowArgs {
  * são permitidas.
  */
 export function createArrow(p: Project, args: NewArrowArgs): Project {
-  const index = projectIndex(p);
-  if (index.markings.has(args.id) || index.arrows.has(args.id)) {
-    fail('duplicate-id', args.id);
-  }
+  if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   checkEndpoint(p, args.from);
   checkEndpoint(p, args.to);
   if (args.from === args.to) fail('arrow-self', args.from);

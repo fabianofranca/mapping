@@ -1,3 +1,4 @@
+import { HEX_COLOR_RE } from './hexColor';
 import { z } from 'zod';
 import { isValidCodePath, isValidUrlTemplate } from './codeLocations';
 import { MAX_CONTAINER_SIZE } from './containers';
@@ -425,11 +426,10 @@ const KEY_RE = /^[A-Za-z0-9_]+$/;
 const TAG_RE = /^[a-z0-9-]+$/;
 /** Formato do id de uma plataforma (`platforms[].id`, chaves de `code` e de `platformRepos`). */
 export const PLATFORM_ID_RE = /^[a-z0-9-]+$/;
-const COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const nonEmpty = z.string().min(1, 'não pode ser vazio');
-const color = z.string().regex(COLOR_RE, 'cor inválida; use o formato #RRGGBB');
+const color = z.string().regex(HEX_COLOR_RE, 'cor inválida; use o formato #RRGGBB');
 const tag = z.string().regex(TAG_RE, 'etiqueta inválida; use [a-z0-9-]+');
 const tags = z.array(tag);
 

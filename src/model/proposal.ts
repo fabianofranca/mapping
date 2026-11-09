@@ -1,3 +1,4 @@
+import { HEX_COLOR_RE } from './hexColor';
 import { z } from 'zod';
 import {
   annotationSchema,
@@ -326,7 +327,7 @@ const proposalId = z
 const isoDate = z.iso
   .datetime({ offset: true, error: 'data inválida; use ISO 8601 (UTC)' })
   .transform(normalizeIsoDate);
-const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'cor inválida; use #RRGGBB');
+const hexColor = z.string().regex(HEX_COLOR_RE, 'cor inválida; use #RRGGBB');
 const optionalText = z.string().nullable();
 
 const imageFileValue = z.object({

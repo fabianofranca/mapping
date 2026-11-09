@@ -26,7 +26,7 @@ import {
 } from './hierarchySettle';
 import { canDeleteMarking, canEditMarkingGeometry, requireUnlocked } from './locks';
 import { findById, normalizeOptionalName, updateById } from './project';
-import { projectIndex } from './projectIndex';
+import { projectIndex, idInUse } from './projectIndex';
 import { countBrokenRefs } from './refs';
 import type { Marking, Project, Rect } from './types';
 
@@ -96,13 +96,8 @@ export function createMarking(
   args: NewMarkingArgs,
   options?: RectOptions,
 ): Project {
-  // Marcações e setas dividem o espaço de ids.
-  if (
-    p.markings.some((m) => m.id === args.id) ||
-    p.arrows.some((a) => a.id === args.id)
-  ) {
-    fail('duplicate-id', args.id);
-  }
+  // Marcações, setas e containers dividem o espaço de ids.
+  if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   const floating = args.floating ?? false;
   if (floating && args.containerId !== null) fail('invalid-space', args.id);
   const container =
@@ -195,6 +190,8 @@ export function setMarkingSpace(
   const marking = findById(p.markings, markingId);
   if (marking.floating && containerId !== null) fail('invalid-space', markingId);
   const container = containerId === null ? null : findById(p.containers, containerId);
+  // O espaço e o retângulo atuais não são mudança: devolve `p` sem conferir a trava.
+  if (marking.containerId === containerId && sameRect(marking.rect, rect)) return p;
   checkRectShape(rect, options);
   requireUnlocked(canEditMarkingGeometry(p, markingId));
   if (container && !containsRect(imagePixelRect(container), rect)) {

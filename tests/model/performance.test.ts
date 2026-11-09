@@ -14,8 +14,10 @@ import {
   markingVisibility,
   moveItems,
   moveMarking,
+  nearestFreeSpot,
   projectIndex,
   projectIssues,
+  type Rect,
   refsOf,
   removeItems,
   serialize,
@@ -373,4 +375,30 @@ describe('edição: crescimento e orçamento', () => {
       expect(medianEditMs(project, move)).toBeLessThan(16);
     },
   );
+});
+
+describe('nearestFreeSpot', () => {
+  budgetIt('600 obstáculos em grade cerrada abaixo de 200 ms', BUDGET_OPTIONS, () => {
+    // Grade 25 × 24 de retângulos 100×100 com vão de 10: o ponto pedido cai no meio dela e o
+    // lugar livre mais próximo é na borda (o pior caso para quem testa candidato por obstáculo).
+    const obstacles: Rect[] = [];
+    for (let i = 0; i < 25; i++) {
+      for (let j = 0; j < 24; j++) {
+        obstacles.push({ x: i * 110, y: j * 110, width: 100, height: 100 });
+      }
+    }
+    const { value, ms } = time(() =>
+      nearestFreeSpot(obstacles, 100, 100, { x: 1300, y: 1300 }),
+    );
+    expect(
+      obstacles.some(
+        (o) =>
+          o.x < value.x + 100 &&
+          value.x < o.x + 100 &&
+          o.y < value.y + 100 &&
+          value.y < o.y + 100,
+      ),
+    ).toBe(false);
+    expect(ms).toBeLessThan(200);
+  });
 });
