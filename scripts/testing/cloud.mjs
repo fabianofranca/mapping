@@ -958,7 +958,9 @@ export function containerScreenPoint({
 }) {
   const wanted = String(container).trim().toLowerCase();
   const byName = (list) =>
-    (list ?? []).filter((c) => c.id === container || c.name.toLowerCase() === wanted);
+    (list ?? []).filter(
+      (c) => c.id === container || (c.name ?? '').toLowerCase() === wanted,
+    );
   let found;
   let origin = { x: 0, y: 0 };
   if (marking) {
