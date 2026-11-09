@@ -1,4 +1,4 @@
-# CR do canvas e do store — [Não lançado] (épico `epic/cr-canvas-store`, PR #1238, MCP 0.28.11, schema v18)
+# CR do canvas e do store — 2026-11-09 (épico `epic/cr-canvas-store`, PR #1238, MCP 0.28.12, schema v18)
 
 ## Corrigido
 

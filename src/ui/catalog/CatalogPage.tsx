@@ -6,6 +6,7 @@ import {
   type CatalogEntry,
   type CatalogField,
   type ModelMessage,
+  rawMessage,
   type Project,
   codeLink,
   exampleDrawing,
@@ -347,7 +348,9 @@ function Gallery({
       } catch {
         url = null;
       }
-      const renderWarnings = renderer.cache.warnings(cacheKey).map(drawWarningText);
+      const renderWarnings = renderer.cache
+        .warnings(cacheKey)
+        .map((w) => rawMessage(drawWarningText(w)));
       return { ...base, url, warnings: [...drawing.warnings, ...renderWarnings] };
     };
     const list: GalleryItem[] = [];

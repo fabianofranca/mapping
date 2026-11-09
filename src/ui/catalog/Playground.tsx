@@ -73,9 +73,10 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
           setDrawn({ url: null, warnings: [] });
           return;
         }
-        const renderWarnings: string[] = [];
+        const renderWarnings: ModelMessage[] = [];
         const url = renderer.rasterize(drawing.root, {
-          onWarnings: (found) => renderWarnings.push(...found.map(drawWarningText)),
+          onWarnings: (found) =>
+            renderWarnings.push(...found.map((w) => rawMessage(drawWarningText(w)))),
         });
         setDrawn({ url, warnings: [...drawing.warnings, ...renderWarnings] });
       } catch {
