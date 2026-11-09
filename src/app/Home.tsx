@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
-import { locale } from '../store/settings';
 import { projectNotice } from '../store/banners';
 import { Button, TextField } from '../ui/controls';
 import { Dialog } from '../ui/Dialog';
@@ -35,12 +34,11 @@ import {
   type LibraryOpenResult,
   type RecentProject,
 } from './controller';
+import { ProjectNameDialog } from './HomeDialogs';
+import { ProjectTable, type FolderRecent, type LocalRecent } from './HomeProjectTable';
 import { NarrowWindowNotice, useNarrowWindow } from './NarrowWindow';
 import { recentRowIndex, recentRowTarget } from './recentRows';
 import { useReopenTrace } from './reopenTrace';
-
-type LocalRecent = Extract<RecentProject, { kind: 'local' }>;
-type FolderRecent = Extract<RecentProject, { kind: 'folder' }>;
 
 type HomeDialog =
   | { readonly kind: 'new' }
@@ -60,18 +58,6 @@ type HomeDialog =
   | { readonly kind: 'inconsistent'; readonly inconsistent: InconsistentProject }
   | { readonly kind: 'help'; readonly section?: string }
   | { readonly kind: 'settings' };
-
-function formatDate(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat(locale.value, {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    }).format(new Date(iso));
-  } catch {
-    // Data ilegível: mostra o texto como está.
-    return iso;
-  }
-}
 
 export function Home() {
   const narrow = useNarrowWindow();
@@ -346,6 +332,11 @@ export function Home() {
             <h1>{t('app.title')}</h1>
             <PreviewBadge />
           </div>
+          {/*
+           * Itens de navegação da faixa lateral (papel próprio, com `aria-current`): ficam
+           * como `<button class="home-nav-item">`, e não como `Button`, que é de ação comum
+           * (exceção registrada em `docs/DESIGN-SYSTEM.md`, "Botões avulsos").
+           */}
           <nav class="home-nav">
             <button type="button" class="home-nav-item" aria-current="page">
               <Icon name="folder" />
@@ -425,91 +416,54 @@ export function Home() {
           )}
 
           {dialog?.kind === 'new' && (
-            <Dialog
+            <ProjectNameDialog
               title={t('home.newProject')}
+              formId="new-project-form"
+              busy={busy}
+              name={name}
+              placeholder={t('project.untitled')}
+              onName={setName}
               onCancel={closeDialog}
-              actions={
-                <>
-                  <Button onClick={closeDialog}>{t('common.cancel')}</Button>
-                  <Button
-                    type="submit"
-                    form="new-project-form"
-                    variant="primary"
-                    disabled={busy}
-                  >
-                    {t('common.create')}
-                  </Button>
-                </>
-              }
-            >
-              <form
-                id="new-project-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  closeDialog();
-                  void run(() => createLocalProject(name));
-                }}
-              >
-                <NameField
-                  value={name}
-                  placeholder={t('project.untitled')}
-                  onInput={setName}
-                />
-              </form>
-            </Dialog>
+              onSubmit={() => {
+                closeDialog();
+                void run(() => createLocalProject(name));
+              }}
+            />
           )}
 
           {dialog?.kind === 'folder-setup' && (
-            <Dialog
+            <ProjectNameDialog
               title={t('home.folderSetupTitle')}
+              formId="folder-setup-form"
+              busy={busy}
+              name={name}
+              placeholder={dialog.handle.name}
+              onName={setName}
               onCancel={closeDialog}
-              actions={
-                <>
-                  <Button onClick={closeDialog}>{t('common.cancel')}</Button>
-                  <Button
-                    type="submit"
-                    form="folder-setup-form"
-                    variant="primary"
-                    disabled={busy}
-                  >
-                    {t('common.create')}
-                  </Button>
-                </>
-              }
+              onSubmit={() => {
+                const { handle, images } = dialog;
+                closeDialog();
+                void run(() => createFolderProject(handle, name, images)).then(
+                  (result) => {
+                    if (result?.existing) projectNotice.value = 'home.folderHasProject';
+                    else if (result && result.skipped.length > 0) {
+                      setMessage(
+                        t('home.folderSkipped', { count: result.skipped.length }),
+                      );
+                    }
+                  },
+                );
+              }}
             >
-              <form
-                id="folder-setup-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const { handle, images } = dialog;
-                  closeDialog();
-                  void run(() => createFolderProject(handle, name, images)).then(
-                    (result) => {
-                      if (result?.existing) projectNotice.value = 'home.folderHasProject';
-                      else if (result && result.skipped.length > 0) {
-                        setMessage(
-                          t('home.folderSkipped', { count: result.skipped.length }),
-                        );
-                      }
-                    },
-                  );
-                }}
-              >
-                <p>
-                  {dialog.images.length === 0
-                    ? t('home.folderSetupEmpty', { folder: dialog.handle.name })
-                    : t('home.folderSetupImages', {
-                        folder: dialog.handle.name,
-                        count: dialog.images.length,
-                      })}
-                </p>
-                <NameField
-                  value={name}
-                  placeholder={dialog.handle.name}
-                  onInput={setName}
-                />
-              </form>
-            </Dialog>
+              <p>
+                {dialog.images.length === 0
+                  ? t('home.folderSetupEmpty', { folder: dialog.handle.name })
+                  : t('home.folderSetupImages', {
+                      folder: dialog.handle.name,
+                      count: dialog.images.length,
+                    })}
+              </p>
+            </ProjectNameDialog>
           )}
 
           {dialog?.kind === 'folder-unavailable' && (
@@ -589,28 +543,6 @@ export function Home() {
   );
 }
 
-/** Campo de nome: vazio usa o `placeholder` como nome (ver controller). */
-function NameField({
-  value,
-  placeholder,
-  onInput,
-}: {
-  readonly value: string;
-  readonly placeholder: string;
-  readonly onInput: (value: string) => void;
-}) {
-  // Sem foco próprio: o diálogo dá o foco inicial ao primeiro controle do corpo (F9).
-  return (
-    <TextField
-      label={t('project.name')}
-      type="text"
-      value={value}
-      placeholder={placeholder}
-      onInput={(e) => onInput(e.currentTarget.value)}
-    />
-  );
-}
-
 interface HomeActions {
   readonly busy: boolean;
   readonly available: NonNullable<typeof features.value>;
@@ -668,132 +600,4 @@ function FolderReason({ available }: HomeActions) {
   if (available.folder) return <p class="muted home-reason">{t('home.gitHint')}</p>;
   if (!available.local) return null;
   return <p class="muted home-reason">{t('home.folderUnavailable')}</p>;
-}
-
-interface ProjectListProps {
-  readonly projects: readonly RecentProject[];
-  readonly busy: boolean;
-  readonly onOpen: (project: RecentProject) => void;
-  readonly onDelete: (project: LocalRecent) => void;
-  readonly onForget: (project: FolderRecent) => void;
-}
-
-function Unexported({ project }: { readonly project: RecentProject }) {
-  return project.kind === 'local' && project.unexported ? (
-    <span class="status status-warning">{t('status.unexported')}</span>
-  ) : null;
-}
-
-/**
- * Lista única (projetos deste dispositivo e pastas), do uso mais recente ao mais antigo:
- * Nome | Origem (selo) | Último uso, com Abrir e Excluir (ou Remover da lista) na linha.
- */
-function ProjectTable({ projects, busy, onOpen, onDelete, onForget }: ProjectListProps) {
-  return (
-    <table class="project-table">
-      <thead>
-        <tr>
-          <th scope="col">{t('home.colName')}</th>
-          <th scope="col">{t('home.colOrigin')}</th>
-          <th scope="col">{t('home.colUsed')}</th>
-          <th scope="col">
-            <span class="visually-hidden">{t('home.colActions')}</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {projects.map((project) => (
-          <ProjectRow
-            key={`${project.kind}:${project.id}`}
-            project={project}
-            busy={busy}
-            onOpen={onOpen}
-            onDelete={onDelete}
-            onForget={onForget}
-          />
-        ))}
-      </tbody>
-    </table>
-  );
-}
-
-/** Id de elemento estável da linha, derivado de `kind:id` sem caracteres inválidos. */
-function rowDomId(project: RecentProject, part: string): string {
-  return `recent-${project.kind}-${project.id.replace(/[^A-Za-z0-9_-]/g, '_')}-${part}`;
-}
-
-/**
- * Uma linha da lista. Os botões levam o nome do projeto no nome acessível (o texto visível
- * vem primeiro, WCAG 2.5.3) e apontam por `aria-describedby` para a origem, a pasta (quando
- * aparece) e o último uso, que já estão na tela: linhas de mesmo nome se distinguem.
- */
-function ProjectRow({
-  project,
-  busy,
-  onOpen,
-  onDelete,
-  onForget,
-}: Omit<ProjectListProps, 'projects'> & { readonly project: RecentProject }) {
-  const showFolder = project.kind === 'folder' && project.showFolderName;
-  const describedBy = [
-    rowDomId(project, 'origin'),
-    ...(showFolder ? [rowDomId(project, 'folder')] : []),
-    rowDomId(project, 'used'),
-  ].join(' ');
-  const name = { name: project.name };
-  return (
-    <tr data-recent={`${project.kind}:${project.id}`}>
-      <th scope="row">
-        <span class="project-name">{project.name}</span>
-        {project.kind === 'folder' && showFolder && (
-          <span class="project-name muted" id={rowDomId(project, 'folder')}>
-            {project.folderName}
-          </span>
-        )}
-        <Unexported project={project} />
-      </th>
-      <td>
-        <span class="badge" id={rowDomId(project, 'origin')}>
-          {t(project.kind === 'folder' ? 'status.targetFolder' : 'status.targetLocal')}
-        </span>
-      </td>
-      <td id={rowDomId(project, 'used')}>{formatDate(project.usedAt)}</td>
-      <td>
-        <div class="project-actions">
-          <Button
-            size="sm"
-            data-recent-open=""
-            disabled={busy}
-            aria-label={t('home.openNamed', name)}
-            aria-describedby={describedBy}
-            onClick={() => onOpen(project)}
-          >
-            {t('common.open')}
-          </Button>
-          {project.kind === 'local' ? (
-            <Button
-              size="sm"
-              variant="danger"
-              disabled={busy}
-              aria-label={t('home.deleteNamed', name)}
-              aria-describedby={describedBy}
-              onClick={() => onDelete(project)}
-            >
-              {t('common.delete')}
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              disabled={busy}
-              aria-label={t('home.forgetNamed', name)}
-              aria-describedby={describedBy}
-              onClick={() => onForget(project)}
-            >
-              {t('home.forgetFolder')}
-            </Button>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
 }

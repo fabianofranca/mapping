@@ -205,6 +205,13 @@ describe('atalhos do editor', () => {
 
   it('zoom, exportar, camadas, ajuda e configurações', () => {
     expect(shortcutFor(key('=', { ctrl: true }))).toMatchObject({ kind: 'zoom' });
+    // Ctrl+Shift+= (Ctrl++ no teclado americano) também aproxima (#971, item 5).
+    expect(shortcutFor(key('+', { ctrl: true, shift: true }))).toMatchObject({
+      kind: 'zoom',
+    });
+    expect(shortcutFor(key('=', { ctrl: true, shift: true }))).toMatchObject({
+      kind: 'zoom',
+    });
     expect(shortcutFor(key('-', { ctrl: true }))).toMatchObject({ kind: 'zoom' });
     expect(shortcutFor(key('0', { ctrl: true }))).toEqual({ kind: 'zoom-reset' });
     expect(shortcutFor(key('e', { ctrl: true }))).toEqual({ kind: 'export' });
