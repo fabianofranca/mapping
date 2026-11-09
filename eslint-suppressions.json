@@ -64,11 +64,6 @@
       "count": 1
     }
   },
-  "mcp/proposalRefs.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "mcp/proposalViews.ts": {
     "complexity": {
       "count": 2

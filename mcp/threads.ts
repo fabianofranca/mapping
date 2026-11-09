@@ -46,6 +46,7 @@ import {
 import { ProposalRefs } from './proposalRefs';
 import { listStored, type StoredProposals } from './proposalStore';
 import { progressView } from './proposalViews';
+import { BARE_ID } from './shared';
 import {
   commentsSignature,
   listStoredThreads,
@@ -81,7 +82,6 @@ const ANCHOR_ACCEPTED = [
   'mapping://projeto/a/3f2a9c1e/f/<campo> (campo), …/a/3f2a9c1e/e/<código> (par), …/a/3f2a9c1e/f/<campo>/r/<código> (linha)',
   '{ point: { container: "mapping://projeto/i/3f2a9c1e" | null, x, y } } (ponto solto, em pixels do container; null = canvas)',
 ];
-const BARE_ID = /^[0-9a-zA-Z][0-9a-zA-Z._-]*$/;
 
 // ---------------------------------------------------------------------------
 // Texto e autoria
@@ -135,9 +135,12 @@ interface Env {
 }
 
 async function buildEnv(roots: Roots, location: ProjectLocation): Promise<Env> {
-  const loaded = await loadProject(roots, location);
-  const stored = await listStoredThreads(roots, location);
-  const proposals = await listStored(roots, location);
+  const ids = await listThreadIds(location);
+  const [loaded, stored, proposals] = await Promise.all([
+    loadProject(roots, location),
+    listStoredThreads(roots, location, ids),
+    listStored(roots, location),
+  ]);
   const threads = stored.threads.map((s) => s.thread);
   return {
     location,
@@ -145,7 +148,7 @@ async function buildEnv(roots: Roots, location: ProjectLocation): Promise<Env> {
     project: loaded.project,
     threads,
     stored,
-    codes: threadShortCodes(await listThreadIds(location)),
+    codes: threadShortCodes(ids),
     proposals,
     proposalRefs: new ProposalRefs(location.name, proposals),
     ctx: {
@@ -158,6 +161,29 @@ async function buildEnv(roots: Roots, location: ProjectLocation): Promise<Env> {
       subjectOf: (thread) => threadSubject(thread),
     },
   };
+}
+
+type Rebuilt = { readonly env: Env } | { readonly env: null; readonly warning: Json };
+
+/** Remonta o ambiente depois de gravar; a falha vira o aviso `reply-incomplete`, não erro. */
+async function rebuildEnv(roots: Roots, location: ProjectLocation): Promise<Rebuilt> {
+  try {
+    return { env: await buildEnv(roots, location) };
+  } catch (error) {
+    return {
+      env: null,
+      warning: {
+        code: 'reply-incomplete',
+        message: `a mensagem foi gravada, mas o projeto não pôde ser relido para montar a resposta (${error instanceof Error ? error.message : String(error)})`,
+        hint: 'não repita o post_message nem a proposta: confira com get_thread',
+      },
+    };
+  }
+}
+
+function fallbackRef(location: ProjectLocation, id: string): string {
+  const code = normalizeId(id).slice(0, 8);
+  return formatAnyRef(location.name, { type: 'item', kind: 'c', code });
 }
 
 function threadRef(env: Env, id: string): string {
@@ -563,14 +589,20 @@ export interface ListThreadsArgs {
   readonly offset?: number | undefined;
 }
 
-/** Sem filtro nenhum: as abertas que aguardam o agente (a caixa de entrada). */
+/**
+ * Sem filtro nenhum (nem `text` nem `anchor`): as abertas que aguardam o agente (a caixa de
+ * entrada). Com qualquer filtro, o que faltar é `status: open` e `awaiting: any`.
+ */
 function effectiveFilters(args: ListThreadsArgs): {
   status: ThreadStatusArg;
   awaiting: ThreadAwaitingArg;
 } {
-  if (args.status === undefined && args.awaiting === undefined) {
-    return { status: 'open', awaiting: 'agent' };
-  }
+  const unfiltered =
+    args.status === undefined &&
+    args.awaiting === undefined &&
+    args.text === undefined &&
+    args.anchor === undefined;
+  if (unfiltered) return { status: 'open', awaiting: 'agent' };
   return { status: args.status ?? 'open', awaiting: args.awaiting ?? 'any' };
 }
 
@@ -609,7 +641,7 @@ function anchoredAt(env: Env, thread: Thread, anchor: ThreadAnchor): boolean {
 function selectThreads(env: Env, args: ListThreadsArgs): readonly Thread[] {
   const { status, awaiting: wanted } = effectiveFilters(args);
   const filter = {
-    status: status === 'all' ? ('all' as const) : status,
+    status,
     ...(args.text === undefined ? {} : { text: args.text }),
   };
   let threads = filterThreads(env.threads, env.project, filter);
@@ -697,6 +729,7 @@ export class Threads {
 
   private threadView(env: Env, thread: Thread): Json {
     const cited = backlinks(env.threads).get(thread.id) ?? [];
+    const byId = new Map(env.threads.map((t) => [t.id, t]));
     const linked = new Map(env.proposals.proposals.map((p) => [p.id, p.proposal]));
     const proposalIds = [
       ...new Set(
@@ -722,7 +755,7 @@ export class Threads {
       anchor: anchorView(env, thread.anchor),
       messages: thread.messages.map((m) => messageView(env, m)),
       citedIn: cited.map((id) => {
-        const other = env.threads.find((t) => t.id === id) as Thread;
+        const other = byId.get(id) as Thread;
         return {
           ref: threadRef(env, id),
           subject: threadSubject(other),
@@ -792,11 +825,13 @@ export class Threads {
       posted = newMessage(thread, author, text, this.now());
       return translate(() => appendMessage(thread, posted as ThreadMessage));
     });
-    const env = await buildEnv(this.roots, location);
-    const warnings = brokenCites(env, text);
+    // A mensagem já está gravada: se o projeto não puder ser relido, a resposta diz isso (sucesso
+    // com aviso), em vez de um erro que levaria o agente a repetir o `post_message`.
+    const rebuilt = await rebuildEnv(this.roots, location);
+    const warnings = rebuilt.env ? brokenCites(rebuilt.env, text) : [rebuilt.warning];
     return {
       posted: true,
-      ref: threadRef(env, id),
+      ref: rebuilt.env ? threadRef(rebuilt.env, id) : fallbackRef(location, id),
       message: {
         id: (posted as ThreadMessage | null)?.id,
         at: (posted as ThreadMessage | null)?.at,
@@ -840,11 +875,14 @@ export class Threads {
         return translate(() => appendMessage(thread, posted as ThreadMessage));
       },
     );
-    const env = await buildEnv(this.roots, found.location);
+    const rebuilt = await rebuildEnv(this.roots, found.location);
     return {
-      ref: threadRef(env, found.id),
+      ref: rebuilt.env
+        ? threadRef(rebuilt.env, found.id)
+        : fallbackRef(found.location, found.id),
       message: { id: (posted as ThreadMessage | null)?.id },
       revision: next.revision,
+      ...(rebuilt.env ? {} : { warnings: [rebuilt.warning] }),
     };
   }
 
@@ -857,8 +895,10 @@ export class Threads {
       Math.max(args.timeoutSeconds ?? WAIT_DEFAULT_SECONDS, 1),
       WAIT_MAX_SECONDS,
     );
-    const baseline = awaitingMap((await listStoredThreads(this.roots, location)).threads);
+    // A assinatura vem antes do baseline: uma mensagem gravada depois do baseline muda a
+    // assinatura em relação a esta e é devolvida na mesma espera.
     let signature = await commentsSignature(location);
+    const baseline = awaitingMap((await listStoredThreads(this.roots, location)).threads);
     const started = this.now();
     let nextProgress = started + WAIT_PROGRESS_MS;
     while (this.now() - started < seconds * 1000) {
@@ -907,18 +947,18 @@ function awaitingMap(threads: readonly { thread: Thread }[]): Map<string, string
 }
 
 function sleep(ms: number, signal: AbortSignal | undefined): Promise<void> {
+  const cancelled = () => new ToolError('cancelled', 'a espera foi cancelada');
   return new Promise((resolve, reject) => {
-    if (signal?.aborted)
-      return reject(new ToolError('not-open', 'a espera foi cancelada'));
-    const timer = setTimeout(resolve, ms);
-    signal?.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timer);
-        reject(new ToolError('not-open', 'a espera foi cancelada'));
-      },
-      { once: true },
-    );
+    if (signal?.aborted) return reject(cancelled());
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(cancelled());
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
   });
 }
 
