@@ -1,4 +1,4 @@
-# CR da app, armazenamento, visualizador, scripts e CI — 2026-11-09 (épico `epic/cr-app-infra`, PR #1287, MCP sem mudança, schema v18)
+# CR da app, armazenamento, visualizador, scripts e CI — 2026-11-09 (épico `epic/cr-app-infra`, PR #1287, MCP 0.28.15, schema v18)
 
 ## Alterado
 
@@ -20,3 +20,4 @@
 - Guia interativo: o `<svg>` com marcações focáveis deixou de ser uma imagem para leitores de tela (vira grupo com o mesmo nome, e os botões são anunciados); o tipo da anotação passa por escape ao entrar na página; a tabela de atalhos vem da numeração das janelas da app (fonte única), e os valores de design do CSS do guia vêm dos tokens.
 - Scripts de teste da nuvem (`cloud-up.sh`, `cloud.mjs`, `mcp-stdio-client.mjs`, `round-guide.mjs`): `cloud-up.sh` termina com a mensagem do item 6 quando a janela não aparece, aceita pasta da rodada relativa, espera o servidor estático até um prazo e confere a versão do MCP por texto exato; `cloud.mjs` e `round-guide.mjs` rodam em caminho com acento e espaço e `round-guide.mjs` aceita `ALL`; `saveFile` diz quando o diálogo de salvar não aparece; `listWindows` lê os nomes das janelas num comando só; `mcp-stdio-client.mjs` não corta caracteres multibyte, rejeita na hora o pedido depois da saída do servidor e dá mensagem curta quando o servidor não inicia; o servidor de imagens do R15 responde 404 sem `foto.png`; o zip do exemplo ignora `.DS_Store`, `Thumbs.db` e `node_modules`.
 - A faixa de problemas da biblioteca mostra "arquivo não encontrado" traduzido ("file not found" em English (US)); antes saía sempre em português.
+- MCP 0.28.15: o problema "arquivo não encontrado" da validação de biblioteca (`validate_library` e os avisos dos lotes) ganha os campos opcionais `code` (`file-not-found`) e `target`; o texto de `message` não muda.
