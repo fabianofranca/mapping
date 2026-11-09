@@ -955,6 +955,16 @@ const conflictCache = new WeakMap<
   { project: Project; applied: ProposalApplied; ids: ReadonlySet<string> }
 >();
 
+/** Proposta aberta que ninguém decidiu, anotou nem viu. */
+function isFresh(p: Proposal, seen: ReadonlySet<string>): boolean {
+  return (
+    p.status === 'open' &&
+    Object.keys(p.decisions).length === 0 &&
+    p.notes.length === 0 &&
+    !seen.has(p.id)
+  );
+}
+
 function conflictsOf(p: Proposal, project: Project): ReadonlySet<string> {
   const cached = conflictCache.get(p.changes);
   if (cached && cached.project === project && cached.applied === p.applied) {
@@ -1007,20 +1017,19 @@ export function createReviewDerived(
       proposal: p,
       progress: reviewProgress(p),
       conflicts: current ? conflictsOf(p, current).size : 0,
-      fresh:
-        p.status === 'open' &&
-        Object.keys(p.decisions).length === 0 &&
-        p.notes.length === 0 &&
-        !seen.has(p.id),
+      fresh: isFresh(p, seen),
       revised: p.status === 'open' ? visibleRevisedChanges(p).length : 0,
       leftBehind: p.status === 'superseded' ? leftBehind(p) : null,
       supersededBy: successors.get(p.id) ?? null,
     }));
   });
 
-  const freshIds = computed(() =>
-    rows.value.filter((r) => r.fresh).map((r) => r.proposal.id),
-  );
+  // Sem `rows`: ela calcula os conflitos de todas as propostas, e `freshIds` é lido
+  // (faixa, barra de status) com a janela Propostas fechada, a cada edição.
+  const freshIds = computed(() => {
+    const seen = sources.seen.value;
+    return sources.proposals.value.filter((p) => isFresh(p, seen)).map((p) => p.id);
+  });
 
   const tree = computed((): ReviewTree | null => {
     const changes = changesOf.value;

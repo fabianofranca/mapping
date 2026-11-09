@@ -187,7 +187,12 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
     try {
       pending = run();
     } catch (e) {
+      // Falha síncrona: igual à assíncrona, devolve o passo e deixa o erro à vista.
       reportError('history.link', e);
+      batch(() => {
+        revert();
+        linkFailure.value = { seq: ++linkSeq, error: 'failed' };
+      });
       return;
     }
     if (!pending) return;
@@ -209,10 +214,12 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
   };
 
   const commit = (before: Project, after: Project, link: HistoryLink | null = null) => {
-    past.value = [...past.value, { project: before, link }].slice(-HISTORY_LIMIT);
-    future.value = [];
-    project.value = touchProject(after, now());
-    revision.value++;
+    batch(() => {
+      past.value = [...past.value, { project: before, link }].slice(-HISTORY_LIMIT);
+      future.value = [];
+      project.value = touchProject(after, now());
+      revision.value++;
+    });
   };
 
   const committed = computed(() => gestureBase.value ?? project.value);
@@ -322,10 +329,12 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       if (linkPending.value) return false;
       if (reviewTag.value !== null && previous.link?.tag !== reviewTag.value)
         return false;
-      past.value = past.value.slice(0, -1);
-      future.value = [{ project: current, link: previous.link }, ...future.value];
-      project.value = touchProject(previous.project, now());
-      revision.value++;
+      batch(() => {
+        past.value = past.value.slice(0, -1);
+        future.value = [{ project: current, link: previous.link }, ...future.value];
+        project.value = touchProject(previous.project, now());
+        revision.value++;
+      });
       const link = previous.link;
       if (link) {
         runLink(link.undo, () => {
@@ -344,12 +353,14 @@ export function createProjectStore(deps: ProjectStoreDeps = {}): ProjectStore {
       if (!next || !current || gestureBase.value || readOnly.value) return false;
       if (linkPending.value) return false;
       if (reviewTag.value !== null && next.link?.tag !== reviewTag.value) return false;
-      future.value = rest;
-      past.value = [...past.value, { project: current, link: next.link }].slice(
-        -HISTORY_LIMIT,
-      );
-      project.value = touchProject(next.project, now());
-      revision.value++;
+      batch(() => {
+        future.value = rest;
+        past.value = [...past.value, { project: current, link: next.link }].slice(
+          -HISTORY_LIMIT,
+        );
+        project.value = touchProject(next.project, now());
+        revision.value++;
+      });
       const link = next.link;
       if (link) {
         runLink(link.redo, () => {

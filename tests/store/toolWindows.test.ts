@@ -215,6 +215,24 @@ describe('layout guardado com o id antigo da Biblioteca', () => {
   });
 });
 
+describe('recolhimento do Detalhes na janela compacta', () => {
+  it('só vale na primeira visita: reaberto o Detalhes, uma nova chamada (outro projeto) não o recolhe', async () => {
+    localStorage.removeItem('mapping.toolWindows');
+    vi.resetModules();
+    try {
+      const fresh = await import('../../src/store/toolWindows');
+      fresh.collapseDetailsOnCompact();
+      expect(fresh.isToolWindowOpen('details')).toBe(false);
+      fresh.showToolWindow('details');
+      fresh.collapseDetailsOnCompact();
+      expect(fresh.isToolWindowOpen('details')).toBe(true);
+    } finally {
+      localStorage.removeItem('mapping.toolWindows');
+      vi.resetModules();
+    }
+  });
+});
+
 describe('altura guardada da janela inferior na revisão', () => {
   async function loadWith(bottomReview: number) {
     localStorage.setItem('mapping.toolWindows', JSON.stringify({ bottomReview }));

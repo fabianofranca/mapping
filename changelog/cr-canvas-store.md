@@ -13,8 +13,13 @@
 - Catálogo: as imagens dos exemplos saem com as imagens embutidas (antes saíam com o reservado) e a galeria guarda uma imagem por exemplo, sem acumular as de épocas antigas.
 - Componentes: com mais de 64 imagens remotas à vista, elas não piscam mais nem são baixadas de novo em ciclo.
 - Catálogo e Playground: os avisos do desenho aparecem no idioma da app (antes saíam sempre em português); o texto e as cores da caixa de tipo sem componente vêm do tema.
+- Projeto: um arquivo migrado que outro programa regrava no schema atual antes da primeira edição não gera mais um "backup do original" obsoleto nem o aviso de backup.
+- Janelas: o Detalhes recolhido na janela compacta só vale na primeira visita; reaberto, não recolhe de novo ao trocar de projeto.
+- Desfazer/refazer: uma falha imediata do efeito ligado à proposta (não só a assíncrona) devolve o passo e mostra o erro.
+- Diagnóstico: a URL de imagem inválida (`data:`, `file:` etc.) aparece com o esquema (e só o tipo no `data:`), em vez de `null…`.
 
 ## Alterado
 
 - Canvas: menos trabalho por quadro e por gesto: arrastar não recalcula mais a lista de imagens a carregar, medir o tamanho do canvas sem mudança não agenda quadro à toa, a hachura da marcação removida desenha só a parte visível e o selo de chegada não força o layout da página a cada quadro. O desenho não muda.
 - Visualizador embutível (`mapping-viewer`): o `ScreenRenderer` recebe os textos da caixa de tipo ausente e dos avisos do chamador (`labels`); o `createViewer` passa os dele, em português, como antes. Quem cria um `ScreenRenderer` direto precisa passar `labels` (há `VIEWER_LABELS` para o padrão).
+- Store: desfazer, refazer e cada edição notificam os painéis uma vez só; a faixa e a barra de status não recalculam os conflitos das propostas a cada edição; a conferência de arquivos externos lê imagens, propostas e conversas em paralelo; a seleção por retângulo e a troca de seleção não crescem de forma quadrática. O comportamento não muda.
