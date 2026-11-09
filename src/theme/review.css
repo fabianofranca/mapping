@@ -807,6 +807,15 @@
   white-space: nowrap;
 }
 
+.review-row-summary .review-counts {
+  flex: none;
+  gap: var(--space-1);
+}
+
+.review-row-summary .review-count {
+  min-width: 0;
+}
+
 .review-row-text {
   overflow: hidden;
   font-family: var(--font-mono);
