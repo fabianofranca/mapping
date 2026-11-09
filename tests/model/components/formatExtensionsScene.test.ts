@@ -495,3 +495,41 @@ describe('A15: stroke.offset na cena e no recorte', () => {
     });
   });
 });
+
+describe('A10: alpha em cores funcionais (rgb/hsl) lidas do token', () => {
+  const colorFor = (value: string, alpha: number) => {
+    const tokens = resolveTokens({ modes: ['light'], values: { c: value } }, {}, 'light');
+    const component = parse({
+      type: 'frame',
+      children: [{ type: 'rect', width: 5, height: 5, fill: t('c', { alpha }) }],
+    });
+    const { root } = instantiate(
+      applyTokens(component, tokens),
+      {},
+      { x: 0, y: 0, width: 5, height: 5 },
+      { measure: approximateMeasurer, tokens },
+    );
+    const fills = (root as FrameNode).children[0]?.fills ?? [];
+    return fills[0] && 'color' in fills[0] ? fills[0].color : undefined;
+  };
+
+  it('rgb com vírgulas e rgba', () => {
+    expect(colorFor('rgb(255, 0, 0)', 0.5)).toBe('#ff000080');
+    expect(colorFor('rgba(0, 0, 0, 0.5)', 0.5)).toBe('#00000040');
+  });
+
+  it('alfa e canais em porcentagem (sintaxe moderna com barra)', () => {
+    expect(colorFor('rgb(0 0 0 / 50%)', 0.5)).toBe('#00000040');
+    expect(colorFor('rgb(100% 0% 0%)', 1)).toBe('#ff0000ff');
+  });
+
+  it('hsl, com hue negativo e com unidade', () => {
+    expect(colorFor('hsl(330, 100%, 50%)', 1)).toBe(colorFor('hsl(-30, 100%, 50%)', 1));
+    expect(colorFor('hsl(0.5turn 100% 50%)', 1)).toBe(colorFor('hsl(180, 100%, 50%)', 1));
+    expect(colorFor('hsl(120, 100%, 50%)', 1)).toBe('#00ff00ff');
+  });
+
+  it('uma cor que não se entende fica como está', () => {
+    expect(colorFor('rebeccapurple', 0.5)).toBe('rebeccapurple');
+  });
+});

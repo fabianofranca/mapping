@@ -110,38 +110,76 @@ function parseHex(text: string): Rgba | undefined {
   };
 }
 
-/** Converte `hsl(h, s%, l%)` em RGB (0 a 255). */
+/** Converte `hsl(h, s, l)` (h em graus, s e l de 0 a 1) em RGB (0 a 255). */
 function hslToRgb(h: number, s: number, l: number): [number, number, number] {
-  const k = (n: number): number => (n + h / 30) % 12;
+  const hue = ((h % 360) + 360) % 360;
+  const k = (n: number): number => (n + hue / 30) % 12;
   const a = s * Math.min(l, 1 - l);
   const f = (n: number): number =>
     Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1))));
   return [f(0), f(8), f(4)];
 }
 
-/** Os números de `rgb()`/`hsl()` (3 ou 4); nenhum se faltar, sobrar ou não for número. */
-function functionalNumbers(args: string): number[] | undefined {
-  const nums = args
-    .split(/[\s,/]+/)
-    .filter((p) => p !== '')
-    .map((p) => parseFloat(p));
-  const valid = nums.length >= 3 && nums.length <= 4 && nums.every(Number.isFinite);
-  return valid ? nums : undefined;
+const NUMBER_PART = '[+-]?(?:\\d+\\.?\\d*|\\.\\d+)';
+const WITH_PERCENT = new RegExp(`^(${NUMBER_PART})(%?)$`);
+const WITH_ANGLE_UNIT = new RegExp(`^(${NUMBER_PART})(deg|grad|rad|turn)?$`);
+const DEGREES_PER_UNIT: Readonly<Record<string, number>> = {
+  deg: 1,
+  grad: 0.9,
+  rad: 180 / Math.PI,
+  turn: 360,
+};
+
+/** Um argumento numérico de cor; `50%` vale `percentOf × 0,5`. */
+function colorNumber(text: string, percentOf: number): number | undefined {
+  const match = WITH_PERCENT.exec(text);
+  if (!match) return undefined;
+  const n = parseFloat(match[1] ?? '');
+  return match[2] === '%' ? (n / 100) * percentOf : n;
 }
 
-/** `rgb`/`rgba` ou `hsl`/`hsla` com os números já lidos. */
-function functionalToRgba(fn: string, nums: readonly number[]): Rgba {
-  const [c1 = 0, c2 = 0, c3 = 0, a = 1] = nums;
-  if (fn.toLowerCase() !== 'hsl') return { r: c1, g: c2, b: c3, a };
-  const [r, g, b] = hslToRgb(c1, c2 / 100, c3 / 100);
+/** O matiz de um `hsl()` em graus (aceita `deg`, `grad`, `rad` e `turn`). */
+function hueDegrees(text: string): number | undefined {
+  const match = WITH_ANGLE_UNIT.exec(text);
+  if (!match) return undefined;
+  return parseFloat(match[1] ?? '') * (DEGREES_PER_UNIT[match[2] ?? 'deg'] ?? 1);
+}
+
+/** Os argumentos de `rgb()`/`hsl()` separados (vírgula, espaço ou barra); 3 ou 4, senão nenhum. */
+function functionalParts(args: string): string[] | undefined {
+  const parts = args.split(/[\s,/]+/).filter((p) => p !== '');
+  return parts.length === 3 || parts.length === 4 ? parts : undefined;
+}
+
+function hslArgs(parts: readonly string[], a: number): Rgba | undefined {
+  const [h, sat, light] = [
+    hueDegrees(parts[0] ?? ''),
+    colorNumber(parts[1] ?? '', 100),
+    colorNumber(parts[2] ?? '', 100),
+  ];
+  if (h === undefined || sat === undefined || light === undefined) return undefined;
+  const [r, g, b] = hslToRgb(h, sat / 100, light / 100);
   return { r, g, b, a };
+}
+
+function rgbArgs(parts: readonly string[], a: number): Rgba | undefined {
+  const [r, g, b] = parts.slice(0, 3).map((p) => colorNumber(p, 255));
+  return r === undefined || g === undefined || b === undefined
+    ? undefined
+    : { r, g, b, a };
+}
+
+/** `rgb`/`rgba` ou `hsl`/`hsla` com os argumentos já separados; nenhum se algum não for número. */
+function functionalToRgba(fn: string, parts: readonly string[]): Rgba | undefined {
+  const a = parts[3] === undefined ? 1 : colorNumber(parts[3], 1);
+  if (a === undefined) return undefined;
+  return fn.toLowerCase() === 'hsl' ? hslArgs(parts, a) : rgbArgs(parts, a);
 }
 
 function parseFunctional(text: string): Rgba | undefined {
   const match = FUNCTIONAL_COLOR.exec(text);
-  if (!match) return undefined;
-  const nums = functionalNumbers(match[2] ?? '');
-  return nums ? functionalToRgba(match[1] ?? '', nums) : undefined;
+  const parts = match ? functionalParts(match[2] ?? '') : undefined;
+  return match && parts ? functionalToRgba(match[1] ?? '', parts) : undefined;
 }
 
 const toByte = (n: number): string =>
