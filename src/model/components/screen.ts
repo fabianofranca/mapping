@@ -3,14 +3,10 @@
  * instâncias; cada instância é um retângulo (como uma marcação) com o tipo da especialização
  * e os valores dos campos (como uma anotação). Funções puras e imutáveis.
  */
+import type { Box } from './box';
 import type { FieldRow, FieldValue, FieldValues } from './componentFormat';
 
-export interface Box {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
+export type { Box };
 
 export interface Instance {
   readonly id: string;
@@ -92,17 +88,36 @@ export function removeSubtree(screen: Screen, id: string): Screen {
   return { ...screen, instances: screen.instances.filter((i) => !gone.has(i.id)) };
 }
 
+/** Filhos por pai (ausente = raiz), na ordem da lista; um passo só, memoizado pela lista (imutável). */
+const childIndexCache = new WeakMap<
+  readonly Instance[],
+  Map<string | undefined, Instance[]>
+>();
+
+function childIndex(screen: Screen): Map<string | undefined, Instance[]> {
+  const cached = childIndexCache.get(screen.instances);
+  if (cached) return cached;
+  const index = new Map<string | undefined, Instance[]>();
+  for (const instance of screen.instances) {
+    const parent = instance.parentId ?? undefined;
+    if (index.get(parent)?.push(instance) === undefined) index.set(parent, [instance]);
+  }
+  childIndexCache.set(screen.instances, index);
+  return index;
+}
+
 export function childrenOf(screen: Screen, parentId: string | undefined): Instance[] {
-  return screen.instances.filter((i) => (i.parentId ?? undefined) === parentId);
+  return (childIndex(screen).get(parentId) ?? []).slice();
 }
 
 /** Ids dos descendentes, em pré-ordem. */
 export function descendantsOf(screen: Screen, id: string): string[] {
+  const index = childIndex(screen);
   const out: string[] = [];
   // Defesa: uma tela montada à mão com ciclo não trava (cada instância entra uma vez).
   const seen = new Set<string>();
   const visit = (parent: string) => {
-    for (const child of childrenOf(screen, parent)) {
+    for (const child of index.get(parent) ?? []) {
       if (seen.has(child.id)) continue;
       seen.add(child.id);
       out.push(child.id);
@@ -182,12 +197,8 @@ export function moveSibling(screen: Screen, id: string, delta: -1 | 1): Screen {
   const index = siblings.findIndex((i) => i.id === id);
   const target = index + delta;
   if (index < 0 || target < 0 || target >= siblings.length) return screen;
-  return setParent(
-    screen,
-    id,
-    instance.parentId ?? undefined,
-    delta > 0 ? target + 1 : target,
-  );
+  // `setParent` indexa entre os irmãos sem a própria instância: `target` serve aos dois sentidos.
+  return setParent(screen, id, instance.parentId ?? undefined, target);
 }
 
 function withoutParent(instance: Instance): Instance {

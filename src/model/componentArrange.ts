@@ -24,7 +24,7 @@ import {
   right,
 } from './geometry';
 import { settleFrom, type SettleOptions } from './hierarchySettle';
-import { isMarkingGeometryLocked } from './locks';
+import { markingLockStates } from './locks';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
 
@@ -206,7 +206,7 @@ export function arrangeMarking(
       if (containerAt(kid.id) !== null) continue;
       const mc = markingComponent(p, catalog, kid.id);
       const sizing = mc?.component.sizing;
-      if (mc === undefined || mc === null || sizing === undefined) continue;
+      if (mc === null || sizing === undefined) continue;
       const hugW = sizing.width === 'hug' && !stretchedByParent(kid.id, 'width');
       const hugH = sizing.height === 'hug' && !stretchedByParent(kid.id, 'height');
       if (!hugW && !hugH) continue;
@@ -339,7 +339,8 @@ export function arrangeMarking(
     (id) => !sameRect(rects.get(id) as Rect, (index.markings.get(id) as Marking).rect),
   );
   if (changed.length === 0) return { project: p, warnings: [...warnings] };
-  if (changed.some((id) => isMarkingGeometryLocked(p, id))) fail('locked');
+  const locks = markingLockStates(p);
+  if (changed.some((id) => locks.has(id))) fail('locked');
   const next = new Set(changed);
   return {
     project: settleFrom(

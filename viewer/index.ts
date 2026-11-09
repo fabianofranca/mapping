@@ -47,13 +47,16 @@ export type {
   SourceResult,
   TranslateResult,
 } from '../src/model/components/origin';
-export { SCREEN_ANCHORS, layoutScreen } from '../src/model/components/layout';
+export {
+  LAYOUT_ANCHORS as SCREEN_ANCHORS,
+  layoutScreen,
+} from '../src/model/components/layout';
 export type {
   LayoutNode,
   LayoutResult,
   LayoutRoot,
   LayoutScreen,
-  ScreenAnchor,
+  LayoutAnchor as ScreenAnchor,
 } from '../src/model/components/layout';
 export { loadLibraryFromUrl, registerLibraryFonts } from './host';
 export type { FontHost, FontStatus, LoadFromUrlOptions } from './host';

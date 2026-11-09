@@ -21,14 +21,8 @@ import {
   type Origin,
 } from './origin';
 import type { Spec, SpecAnnotationType, SpecField } from '../spec';
+import type { Box } from './box';
 import { isRecord } from '../isRecord';
-
-export interface MeasuredRect {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
 
 export interface MeasuredInput {
   /** O `system` de uma origem `measured` declarada pela especialização. */
@@ -45,7 +39,7 @@ export interface MeasuredInput {
 export interface MeasuredMarking {
   readonly specId: string;
   readonly typeId: string;
-  readonly rect: MeasuredRect;
+  readonly rect: Box;
   /** Só os campos que o nó trouxe (os outros ficam com o `preview` do componente). */
   readonly values: Readonly<Record<string, FieldValue>>;
   /** Onde o nó está na árvore (`root.children[0]`), para as mensagens. */
@@ -147,7 +141,7 @@ function findCandidate(run: Run, node: Record<string, unknown>): Candidate | und
   return type === undefined ? undefined : byName.get(type);
 }
 
-function rectOf(raw: unknown, run: Run): MeasuredRect | undefined {
+function rectOf(raw: unknown, run: Run): Box | undefined {
   if (!isRecord(raw)) return undefined;
   const { x, y, width, height } = raw;
   if (![x, y, width, height].every(isNumber)) return undefined;
@@ -213,12 +207,7 @@ function visit(raw: unknown, path: string, run: Run): void {
   }
 }
 
-function place(
-  raw: Record<string, unknown>,
-  rect: MeasuredRect,
-  path: string,
-  run: Run,
-): void {
+function place(raw: Record<string, unknown>, rect: Box, path: string, run: Run): void {
   const found = findCandidate(run, raw);
   if (found === undefined) {
     const label = describe(raw);

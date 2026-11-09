@@ -15,12 +15,12 @@
 import type { FieldValue, FieldValues } from './componentFormat';
 import type { TextMeasurer } from './instantiate';
 import {
-  SCREEN_ANCHORS,
+  LAYOUT_ANCHORS,
   layoutScreen,
   type LayoutNode,
   type LayoutRoot,
   type LayoutScreen,
-  type ScreenAnchor,
+  type LayoutAnchor,
 } from './layout';
 import type { FieldDef, Library, TypeDef } from './library';
 import type { Screen } from './screen';
@@ -397,9 +397,9 @@ function parseRoot(
         : typeof anchor === 'object' && typeof anchor.default === 'string'
           ? anchor.default
           : undefined;
-    if (literal !== undefined && !SCREEN_ANCHORS.includes(literal as ScreenAnchor)) {
+    if (literal !== undefined && !LAYOUT_ANCHORS.includes(literal as LayoutAnchor)) {
       problems.push(
-        `${path}.anchor: âncora inválida: ${literal}; use ${SCREEN_ANCHORS.join(', ')}`,
+        `${path}.anchor: âncora inválida: ${literal}; use ${LAYOUT_ANCHORS.join(', ')}`,
       );
     }
   }
@@ -922,14 +922,14 @@ function translateRoot(
   raw: unknown,
   ctx: Context,
 ): LayoutRoot {
-  let anchor: ScreenAnchor | undefined;
+  let anchor: LayoutAnchor | undefined;
   let margin: number | undefined;
   if (source.anchor !== undefined) {
     const value = readSource(source.anchor, raw);
     if (value === undefined) {
       anchor = 'top-start';
-    } else if (SCREEN_ANCHORS.includes(value as ScreenAnchor)) {
-      anchor = value as ScreenAnchor;
+    } else if (LAYOUT_ANCHORS.includes(value as LayoutAnchor)) {
+      anchor = value as LayoutAnchor;
     } else {
       ctx.warnings.push(
         `${node.id}.${describeSourceKey(source.anchor, 'anchor')}: âncora inválida: ${String(value)}; usando top-start`,
