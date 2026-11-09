@@ -347,6 +347,8 @@ function renameField(
   specId: string,
   step: Extract<SpecMigrationStep, { op: 'rename-field' }>,
 ): StepResult {
+  // Renomear para o mesmo nome não muda nada (e não conta valores nem referências).
+  if (step.from === step.to) return { project: p, counts: NO_COUNTS };
   const from = parseTarget(step.from);
   const to = parseTarget(step.to);
   const topLevel = from.kind === 'field' && to.kind === 'field';
@@ -391,7 +393,7 @@ function renameField(
         current = withValues(a, result.values);
       }
     }
-    if (topLevel && current.values) {
+    if (ids.size > 0 && current.values) {
       const rewritten = rewriteRefs(current.values, ids, step.from, step.to);
       if (rewritten.refs > 0) {
         refs += rewritten.refs;
@@ -489,7 +491,9 @@ function mapValues(
   const target = parseTarget(step.field);
   return mapAnnotations(p, specId, step.type, [], (a) =>
     editCells(a.values ?? {}, target, (value) =>
-      typeof value === 'string' && Object.hasOwn(step.values, value)
+      typeof value === 'string' &&
+      Object.hasOwn(step.values, value) &&
+      step.values[value] !== value
         ? { set: step.values[value] as string }
         : undefined,
     ),

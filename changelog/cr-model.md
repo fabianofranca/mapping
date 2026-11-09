@@ -1,6 +1,14 @@
 # CR do modelo — [Não lançado] (épico `epic/cr-model`, PR #1191, MCP 0.28.12, schema v18)
 
+## Alterado
+
+- Uma especialização com uma chave desconhecida em `tokens` (além de `modes` e `values`) passa a ser recusada, com o erro `chave desconhecida: <chave>` no caminho dela; antes a chave a mais passava em silêncio. A `formatVersion` continua 15.
+- Um tipo com `requiresOwner` cujo único dono possível é ele mesmo (na `formatVersion` 13, que aceita filhos da própria camada) passa a ser recusado, com o erro `nenhum outro tipo o aceita como filho`, no caminho `…requiresOwner`: nenhuma anotação poderia ser a dona. Uma biblioteca que passava assim antes pode ser recusada agora.
+
 ## Corrigido
+
+- Atualizar uma biblioteca com um passo `map-values` que mapeia um valor para ele mesmo, ou um `rename-field` com o mesmo nome nos dois lados, deixa de contar valores e anotações como alterados no relatório da migração.
+- O aviso `path-without-repo` (plataforma com `path` e sem `repo`) passa a contar também o `path` dos casos de `variants.cases`.
 
 - Um rótulo de citação com `*`, `_` ou crase (`a*b*c`) volta igual ao ser relido do texto da conversa: antes os marcadores eram lidos como ênfase e sumiam.
 - Citar uma proposta apagada (`p/botoes`) deixa de apontar para outra proposta de id parecido (`botoes-2`): a citação de proposta só resolve pelo id exato.

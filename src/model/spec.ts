@@ -37,8 +37,10 @@ export { isPackagePath };
 // (`docRepos` na raiz e `doc` como objeto `{ repo, path }`); a versão 12 é a 11 mais os passos
 // de papel em `migrations` (`rename-role`, `remove-role` e `set-role`); a versão 13 é a 12 mais
 // `allowedChildren` com tipos da camada do próprio dono (vínculo entre anotações da mesma camada).
-// A versão 15 traz ainda `origins[].kind` (`tree` ou `measured`: a origem medida, só com `system`, `kind`,
-// `name` e `booleans`; a árvore vem da op `import_measured` do MCP), além de tokens, ícones e `structural`.
+// a versão 14 é a 13 mais `accepts.annotations` (a anotação inteira como alvo de um campo ou coluna
+// `ref`); a versão 15 é a 14 mais tokens, ícones, `structural` e `origins[].kind` (`tree` ou
+// `measured`: a origem medida, só com `system`, `kind`, `name` e `booleans`; a árvore vem da op
+// `import_measured` do MCP).
 // O zod daqui é a fonte da verdade; `docs/spec.schema.json` o espelha para quem
 // não usa TypeScript. Sem APIs de navegador: reutilizável pelo servidor MCP.
 //
@@ -740,6 +742,20 @@ function checkField(
 }
 
 /** Valida e normaliza os campos de um tipo (inclusive colunas de table). */
+type ColumnParse = ReturnType<typeof fieldShape.safeParse>;
+let columnParses = new WeakMap<object, ColumnParse>();
+
+/** Lê uma coluna de `table` pela forma dos campos; a mesma coluna é lida uma vez só. */
+function parseColumn(raw: unknown): ColumnParse {
+  if (typeof raw !== 'object' || raw === null) return fieldShape.safeParse(raw);
+  let hit = columnParses.get(raw);
+  if (hit === undefined) {
+    hit = fieldShape.safeParse(raw);
+    columnParses.set(raw, hit);
+  }
+  return hit;
+}
+
 function checkFields(
   fields: RawField[],
   ctx: z.RefinementCtx,
@@ -779,7 +795,7 @@ function checkFields(
     }
     cols.forEach((raw, j) => {
       const cp = [...p, 'columns', j];
-      const parsed = fieldShape.safeParse(raw);
+      const parsed = parseColumn(raw);
       if (!parsed.success) {
         for (const issue of parsed.error.issues) {
           ctx.addIssue({
@@ -1061,12 +1077,12 @@ const childClauseShape = z
   })
   .strict();
 
-/** Reemite no `ctx` os problemas de um objeto lido por outro schema, no mesmo caminho relativo. */
 /** Propriedade a mais (`.strict()` do zod) em português, no molde dos outros erros da spec. */
 function unknownKeysMessage(issue: { readonly keys: readonly string[] }): string {
   return `propriedade desconhecida: ${issue.keys.map((k) => `"${k}"`).join(', ')}`;
 }
 
+/** Reemite no `ctx` os problemas de um objeto lido por outro schema, no mesmo caminho relativo. */
 function forwardIssues(
   result: { success: boolean; error?: { issues: readonly z.core.$ZodIssue[] } },
   ctx: z.RefinementCtx,
@@ -1649,7 +1665,7 @@ function checkSources(
         const fp = [...tp, 'fields', fi];
         checkFieldSources(field.sources, fp, version, executable, ctx);
         (field.columns ?? []).forEach((raw, ci) => {
-          const column = fieldShape.safeParse(raw);
+          const column = parseColumn(raw);
           if (column.success) {
             checkFieldSources(
               column.data.sources,
@@ -1715,7 +1731,7 @@ function checkFonts(
 /** Coluna `key` de um campo `table` (lida pela mesma forma dos campos); `undefined` se não há. */
 function columnOf(table: RawField, key: string): RawField | undefined {
   for (const raw of table.columns ?? []) {
-    const parsed = fieldShape.safeParse(raw);
+    const parsed = parseColumn(raw);
     if (parsed.success && parsed.data.key === key) return parsed.data;
   }
   return undefined;
@@ -1837,6 +1853,96 @@ function rolesByType(
   return roles;
 }
 
+type StepAdd = (key: string | PathKeys, message: string) => void;
+type FieldsByKey = ReadonlyMap<string, RawField>;
+
+/** O tipo existe nesta versão (o passo trata de um campo dele). */
+function typeHere(
+  types: ReadonlyMap<string, FieldsByKey>,
+  id: string,
+  stepAdd: StepAdd,
+): FieldsByKey | undefined {
+  const fields = types.get(id);
+  if (!fields) stepAdd('type', `tipo "${id}" não existe nesta versão`);
+  return fields;
+}
+
+/** O campo (ou a coluna `tabela.coluna`) existe no tipo (lado novo). */
+function fieldHere(
+  fields: FieldsByKey,
+  typeId: string,
+  key: string,
+  where: string,
+  stepAdd: StepAdd,
+): RawField | undefined {
+  const ref = parseFieldRef(key);
+  if (ref.kind === 'invalid') {
+    stepAdd(where, ref.message);
+    return undefined;
+  }
+  if (ref.kind === 'field') {
+    const field = fields.get(key);
+    if (!field) stepAdd(where, `"${key}" não é um campo do tipo "${typeId}"`);
+    return field;
+  }
+  const table = fields.get(ref.table);
+  if (!table) {
+    stepAdd(where, `"${ref.table}" não é um campo do tipo "${typeId}"`);
+    return undefined;
+  }
+  if (table.type !== 'table') {
+    stepAdd(where, `"${ref.table}" não é uma tabela do tipo "${typeId}"`);
+    return undefined;
+  }
+  const column = columnOf(table, ref.column);
+  if (!column) {
+    stepAdd(
+      where,
+      `"${key}" não é uma coluna da tabela "${ref.table}" do tipo "${typeId}"`,
+    );
+  }
+  return column;
+}
+
+/** O campo (ou a coluna `tabela.coluna`) não existe mais no tipo (lado antigo). */
+function fieldGone(
+  fields: FieldsByKey,
+  typeId: string,
+  key: string,
+  where: string,
+  stepAdd: StepAdd,
+): void {
+  const ref = parseFieldRef(key);
+  if (ref.kind === 'invalid') {
+    stepAdd(where, ref.message);
+  } else if (ref.kind === 'field') {
+    if (fields.has(key)) {
+      stepAdd(where, `campo "${key}" ainda existe no tipo "${typeId}" nesta versão`);
+    }
+  } else {
+    // Tabela que não existe mais: a coluna foi junto, e é isso que o passo declara.
+    const table = fields.get(ref.table);
+    if (!table) return;
+    if (table.type !== 'table') {
+      stepAdd(where, `"${ref.table}" não é uma tabela do tipo "${typeId}"`);
+    } else if (columnOf(table, ref.column)) {
+      stepAdd(
+        where,
+        `coluna "${ref.column}" ainda existe na tabela "${ref.table}" do tipo "${typeId}" nesta versão`,
+      );
+    }
+  }
+}
+
+function typeGone(
+  types: ReadonlyMap<string, FieldsByKey>,
+  id: string,
+  where: string,
+  stepAdd: StepAdd,
+): void {
+  if (types.has(id)) stepAdd(where, `tipo "${id}" ainda existe nesta versão`);
+}
+
 /**
  * Conferências das `migrations` que um arquivo só permite: versões, `from` único e, em cada
  * passo, o lado novo existe e o lado antigo não existe mais nesta versão. A chave de campo de um
@@ -1891,109 +1997,33 @@ function checkMigrations(
 
     migration.steps.forEach((step, si) => {
       const sp: PathKeys = ['steps', si];
-      const stepAdd = (key: string | PathKeys, message: string) =>
+      const stepAdd: StepAdd = (key, message) =>
         add([...sp, ...(typeof key === 'string' ? [key] : key)], message);
-      /** O tipo existe nesta versão (o passo trata de um campo dele). */
-      const typeHere = (id: string): Map<string, RawField> | undefined => {
-        const fields = types.get(id);
-        if (!fields) stepAdd('type', `tipo "${id}" não existe nesta versão`);
-        return fields;
-      };
-      /** O campo (ou a coluna `tabela.coluna`) existe no tipo (lado novo). */
-      const fieldHere = (
-        fields: Map<string, RawField>,
-        typeId: string,
-        key: string,
-        where: string,
-      ): RawField | undefined => {
-        const ref = parseFieldRef(key);
-        if (ref.kind === 'invalid') {
-          stepAdd(where, ref.message);
-          return undefined;
-        }
-        if (ref.kind === 'field') {
-          const field = fields.get(key);
-          if (!field) stepAdd(where, `"${key}" não é um campo do tipo "${typeId}"`);
-          return field;
-        }
-        const table = fields.get(ref.table);
-        if (!table) {
-          stepAdd(where, `"${ref.table}" não é um campo do tipo "${typeId}"`);
-          return undefined;
-        }
-        if (table.type !== 'table') {
-          stepAdd(where, `"${ref.table}" não é uma tabela do tipo "${typeId}"`);
-          return undefined;
-        }
-        const column = columnOf(table, ref.column);
-        if (!column) {
-          stepAdd(
-            where,
-            `"${key}" não é uma coluna da tabela "${ref.table}" do tipo "${typeId}"`,
-          );
-        }
-        return column;
-      };
-      /** O campo (ou a coluna `tabela.coluna`) não existe mais no tipo (lado antigo). */
-      const fieldGone = (
-        fields: Map<string, RawField>,
-        typeId: string,
-        key: string,
-        where: string,
-      ): void => {
-        const ref = parseFieldRef(key);
-        if (ref.kind === 'invalid') {
-          stepAdd(where, ref.message);
-        } else if (ref.kind === 'field') {
-          if (fields.has(key)) {
-            stepAdd(
-              where,
-              `campo "${key}" ainda existe no tipo "${typeId}" nesta versão`,
-            );
-          }
-        } else {
-          // Tabela que não existe mais: a coluna foi junto, e é isso que o passo declara.
-          const table = fields.get(ref.table);
-          if (!table) return;
-          if (table.type !== 'table') {
-            stepAdd(where, `"${ref.table}" não é uma tabela do tipo "${typeId}"`);
-          } else if (columnOf(table, ref.column)) {
-            stepAdd(
-              where,
-              `coluna "${ref.column}" ainda existe na tabela "${ref.table}" do tipo "${typeId}" nesta versão`,
-            );
-          }
-        }
-      };
-      const typeGone = (id: string, where: string): void => {
-        if (types.has(id)) stepAdd(where, `tipo "${id}" ainda existe nesta versão`);
-      };
-
       switch (step.op) {
         case 'rename-type':
           if (!types.has(step.to))
             stepAdd('to', `tipo "${step.to}" não existe nesta versão`);
-          typeGone(step.from, 'from');
+          typeGone(types, step.from, 'from', stepAdd);
           break;
         case 'remove-type':
-          typeGone(step.type, 'type');
+          typeGone(types, step.type, 'type', stepAdd);
           break;
         case 'rename-field': {
-          const fields = typeHere(step.type);
+          const fields = typeHere(types, step.type, stepAdd);
           if (!fields) break;
-          fieldHere(fields, step.type, step.to, 'to');
-          fieldGone(fields, step.type, step.from, 'from');
+          fieldHere(fields, step.type, step.to, 'to', stepAdd);
+          fieldGone(fields, step.type, step.from, 'from', stepAdd);
           break;
         }
         case 'remove-field': {
-          const fields = typeHere(step.type);
-          if (fields) fieldGone(fields, step.type, step.field, 'field');
+          const fields = typeHere(types, step.type, stepAdd);
+          if (fields) fieldGone(fields, step.type, step.field, 'field', stepAdd);
           break;
         }
         case 'map-values': {
-          const fields = typeHere(step.type);
+          const fields = typeHere(types, step.type, stepAdd);
           if (!fields) break;
-          const field = fieldHere(fields, step.type, step.field, 'field');
+          const field = fieldHere(fields, step.type, step.field, 'field', stepAdd);
           if (!field) break;
           if (field.type !== 'enum') {
             stepAdd(
@@ -2012,9 +2042,9 @@ function checkMigrations(
           break;
         }
         case 'fill-field': {
-          const fields = typeHere(step.type);
+          const fields = typeHere(types, step.type, stepAdd);
           if (!fields) break;
-          const field = fieldHere(fields, step.type, step.field, 'field');
+          const field = fieldHere(fields, step.type, step.field, 'field', stepAdd);
           if (!field) break;
           const problem = valueProblem(field.type, field.options, step.default);
           if (problem !== undefined) stepAdd('default', problem);
@@ -2036,6 +2066,26 @@ function checkMigrations(
 }
 
 /** Cada problema `"caminho: mensagem"` do `parseOrigins` vira uma issue no caminho exato. */
+type OriginsParse = ReturnType<typeof parseOrigins>;
+let originParses = new WeakMap<object, OriginsParse>();
+
+/** Zera as leituras guardadas: valem só dentro de uma validação (o JSON pode mudar entre elas). */
+function resetParseCaches(): void {
+  columnParses = new WeakMap();
+  originParses = new WeakMap();
+}
+
+/** `parseOrigins(raw)` com o caminho padrão, lido uma vez por lista de origens. */
+function originsOf(raw: unknown): OriginsParse {
+  if (typeof raw !== 'object' || raw === null) return parseOrigins(raw);
+  let hit = originParses.get(raw);
+  if (hit === undefined) {
+    hit = parseOrigins(raw);
+    originParses.set(raw, hit);
+  }
+  return hit;
+}
+
 function addOriginIssues(
   raw: unknown,
   ctx: z.RefinementCtx,
@@ -2053,7 +2103,7 @@ function addOriginIssues(
       }
     });
   }
-  for (const problem of parseOrigins(raw, 'origins').problems) {
+  for (const problem of originsOf(raw).problems) {
     const cut = problem.indexOf(': ');
     ctx.addIssue({
       code: 'custom',
@@ -2178,14 +2228,14 @@ function checkChildClause(
   layers: ReadonlyMap<string, { index: number; groups: ReadonlySet<string> }>,
   path: (string | number)[],
   add: IssueAdder,
-  formatVersion: number,
+  sameLayerAllowed: boolean,
 ): void {
   const target = layers.get(clause.layer);
   if (target === undefined) {
     add([...path, 'layer'], `camada "${clause.layer}" não existe na especialização`);
     return;
   }
-  if (target.index === li && formatVersion < SAME_LAYER_VERSION) {
+  if (target.index === li && !sameLayerAllowed) {
     add(
       [...path, 'layer'],
       `camada "${clause.layer}" é a do próprio tipo; filhos devem estar em outra camada`,
@@ -2208,12 +2258,12 @@ function checkChildId(
   typeLayer: ReadonlyMap<string, number>,
   path: (string | number)[],
   add: IssueAdder,
-  formatVersion: number,
+  sameLayerAllowed: boolean,
 ): void {
   const childLayer = typeLayer.get(childId);
   if (childLayer === undefined) {
     add(path, `tipo "${childId}" não existe na especialização`);
-  } else if (childLayer === li && formatVersion < SAME_LAYER_VERSION) {
+  } else if (childLayer === li && !sameLayerAllowed) {
     add(
       path,
       `tipo "${childId}" está na mesma camada; filhos devem estar em outra camada`,
@@ -2233,13 +2283,27 @@ function checkAllowedChildren(
     (type.allowedChildren ?? []).forEach((item, ci) => {
       const itemPath = [...path, 'allowedChildren', ci];
       if (typeof item === 'string')
-        checkChildId(item, li, typeLayer, itemPath, add, spec.formatVersion);
+        checkChildId(
+          item,
+          li,
+          typeLayer,
+          itemPath,
+          add,
+          spec.formatVersion >= SAME_LAYER_VERSION,
+        );
       else if (
         spec.formatVersion >= 11 &&
         isRecord(item) &&
         typeof item.layer === 'string'
       ) {
-        checkChildClause(item, li, layers, itemPath, add, spec.formatVersion);
+        checkChildClause(
+          item,
+          li,
+          layers,
+          itemPath,
+          add,
+          spec.formatVersion >= SAME_LAYER_VERSION,
+        );
       }
     });
   });
@@ -2290,10 +2354,10 @@ function checkAcceptsAnnotations(
       items.forEach((item, ii) => {
         const itemPath = [...itemsPath, ii];
         if (typeof item === 'string') {
-          checkChildId(item, li, typeLayer, itemPath, add, spec.formatVersion);
+          checkChildId(item, li, typeLayer, itemPath, add, true);
         } else if (isRecord(item) && typeof item.layer === 'string') {
           const clause: SpecChildClause = { ...item, layer: item.layer };
-          checkChildClause(clause, li, layers, itemPath, add, spec.formatVersion);
+          checkChildClause(clause, li, layers, itemPath, add, true);
         }
       });
     });
@@ -2344,7 +2408,10 @@ function checkDocRepos(
   });
 }
 
-/** `requiresOwner`: o tipo precisa estar no conjunto resolvido de filhos de algum tipo. */
+/**
+ * `requiresOwner`: o tipo precisa estar no conjunto resolvido de filhos de algum **outro** tipo
+ * (ele ser o único dono de si mesmo não atende: nenhuma anotação poderia ser a dona).
+ */
 function checkRequiresOwner(
   spec: { layers: readonly V11Layer[] },
   ctx: z.RefinementCtx,
@@ -2353,17 +2420,21 @@ function checkRequiresOwner(
   const add = issueAdder(ctx);
   spec.layers.forEach((layer, li) => {
     layer.annotationTypes.forEach((type, ti) => {
-      if (type.requiresOwner && !owners.has(type.id)) {
+      if (!type.requiresOwner) return;
+      const list = owners.get(type.id);
+      const path = ['layers', li, 'annotationTypes', ti, 'requiresOwner'];
+      if (list === undefined) {
+        add(path, `"${type.id}" exige dono, mas nenhum tipo o lista em allowedChildren`);
+      } else if (list.every((id) => id === type.id)) {
         add(
-          ['layers', li, 'annotationTypes', ti, 'requiresOwner'],
-          `"${type.id}" exige dono, mas nenhum tipo o lista em allowedChildren`,
+          path,
+          `"${type.id}" exige dono, mas nenhum outro tipo o aceita como filho (só ele mesmo o lista em allowedChildren)`,
         );
       }
     });
   });
 }
 
-const TOKEN_NAME_RE = TOKEN_NAME_PATTERN;
 const TOKEN_MODE_RE = /^[a-z0-9][a-z0-9-]*$/;
 
 /** `tokens.modes`: lista não vazia de nomes distintos. Devolve os modos válidos (ou `null`). */
@@ -2420,6 +2491,15 @@ function checkTokenValue(
   }
 }
 
+/** Só `modes` e `values` valem em `tokens`: o resto é chave desconhecida. */
+function checkTokenKeys(tokens: Record<string, unknown>, add: IssueAdder): void {
+  for (const key of Object.keys(tokens)) {
+    if (key !== 'modes' && key !== 'values') {
+      add(['tokens', key], `chave desconhecida: ${key}`);
+    }
+  }
+}
+
 /** `tokens` (só `formatVersion` 15): `modes` e `values` por nome `^[a-z0-9][a-z0-9-]*$`. */
 function checkTokens(
   spec: { formatVersion: number; tokens?: unknown },
@@ -2433,11 +2513,12 @@ function checkTokens(
   }
   if (!isRecord(spec.tokens))
     return add(['tokens'], 'deve ser um objeto com modes e values');
+  checkTokenKeys(spec.tokens, add);
   const modes = tokenModes(spec.tokens, add);
   const values = spec.tokens.values;
   if (!isRecord(values)) return add(['tokens', 'values'], 'deve ser um objeto');
   for (const [name, value] of Object.entries(values)) {
-    if (!TOKEN_NAME_RE.test(name)) {
+    if (!TOKEN_NAME_PATTERN.test(name)) {
       add(['tokens', 'values', name], 'nome inválido; use [a-z0-9][a-z0-9-]*');
     } else if (modes !== null) {
       checkTokenValue(name, value, modes, add);
@@ -2467,22 +2548,10 @@ export const specSchema = z
       error: `deve ser "${SPEC_FORMAT}"`,
     }),
     formatVersion: z.union(
-      [
-        z.literal(1),
-        z.literal(2),
-        z.literal(3),
-        z.literal(4),
-        z.literal(5),
-        z.literal(6),
-        z.literal(7),
-        z.literal(8),
-        z.literal(9),
-        z.literal(10),
-        z.literal(11),
-        z.literal(12),
-        z.literal(13),
-        z.literal(14),
-        z.literal(15),
+      SPEC_FORMAT_VERSIONS.map((v) => z.literal(v)) as unknown as [
+        z.ZodLiteral<SpecFormatVersion>,
+        z.ZodLiteral<SpecFormatVersion>,
+        ...z.ZodLiteral<SpecFormatVersion>[],
       ],
       {
         error: `deve ser ${SPEC_FORMAT_VERSIONS.slice(0, -1).join(', ')} ou ${String(SPEC_FORMAT_VERSIONS.at(-1))}`,
@@ -2507,6 +2576,7 @@ export const specSchema = z
   })
   .strict()
   .superRefine((spec, ctx) => {
+    resetParseCaches();
     if (spec.platforms !== undefined && spec.formatVersion < 2) {
       ctx.addIssue({
         code: 'custom',
@@ -2816,7 +2886,7 @@ function dropRemovedFields(parsed: ParsedSpec): {
   const origins =
     rawOrigins === undefined
       ? {}
-      : { origins: parseOrigins(rawOrigins).origins.map(toSpecOrigin) };
+      : { origins: originsOf(rawOrigins).origins.map(toSpecOrigin) };
   return { spec: { ...rest, ...origins, layers } as Spec, ignored };
 }
 
@@ -2827,16 +2897,14 @@ function dropRemovedFields(parsed: ParsedSpec): {
  */
 export function removedFieldKeys(data: unknown): Map<string, Set<string>> {
   const result = new Map<string, Set<string>>();
-  const isObject = (v: unknown): v is Record<string, unknown> =>
-    typeof v === 'object' && v !== null && !Array.isArray(v);
   const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
-  if (!isObject(data)) return result;
+  if (!isRecord(data)) return result;
   for (const layer of list(data.layers)) {
-    if (!isObject(layer)) continue;
+    if (!isRecord(layer)) continue;
     for (const type of list(layer.annotationTypes)) {
-      if (!isObject(type) || typeof type.id !== 'string') continue;
+      if (!isRecord(type) || typeof type.id !== 'string') continue;
       for (const field of list(type.fields)) {
-        if (!isObject(field) || field.type !== REMOVED_FIELD_TYPE) continue;
+        if (!isRecord(field) || field.type !== REMOVED_FIELD_TYPE) continue;
         if (typeof field.key !== 'string') continue;
         const keys = result.get(type.id) ?? new Set<string>();
         keys.add(field.key);

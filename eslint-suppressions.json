@@ -236,7 +236,7 @@
   },
   "src/model/catalog.ts": {
     "complexity": {
-      "count": 5
+      "count": 4
     }
   },
   "src/model/codeBlueprint.ts": {

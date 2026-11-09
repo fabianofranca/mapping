@@ -74,6 +74,50 @@ describe('specWarnings', () => {
       expect(only(v5({ android: repo, ios: repo }))).toEqual([]);
     });
 
+    it('conta também o path de variants.cases (CR #945, item 47)', () => {
+      const parsed = parseSpecText(
+        JSON.stringify({
+          format: 'mapping-spec',
+          formatVersion: 9,
+          id: 's',
+          name: 'S',
+          version: 1,
+          platforms: [{ id: 'android', name: 'Android' }],
+          layers: [
+            {
+              id: 'l',
+              name: 'L',
+              color: '#112233',
+              annotationTypes: [
+                {
+                  id: 'btn',
+                  name: 'Btn',
+                  fields: [
+                    { key: 'kind', label: 'Kind', type: 'enum', options: ['a', 'b'] },
+                  ],
+                  code: {
+                    android: {
+                      symbol: 'Button',
+                      variants: {
+                        field: 'kind',
+                        cases: { a: { path: 'app/A.kt' }, b: { path: 'app/B.kt' } },
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+      );
+      if (!parsed.ok) throw new Error(parsed.errors.join('\n'));
+      const warnings = specWarnings(parsed.spec).filter(
+        (w) => w.code === 'path-without-repo',
+      );
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]?.message).toContain('tem tipos com `path` (2)');
+    });
+
     it('plataforma sem tipos com path não avisa (o bff do exemplo)', () => {
       expect(only(v5({})).some((w) => w.path === 'platforms[2]')).toBe(false);
     });
