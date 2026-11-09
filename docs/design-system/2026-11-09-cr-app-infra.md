@@ -1,4 +1,4 @@
-# CR da app, armazenamento, visualizador, scripts e CI — [Não lançado] (épico `epic/cr-app-infra`)
+# CR da app, armazenamento, visualizador, scripts e CI — 2026-11-09 (épico `epic/cr-app-infra`)
 
 ## Pendências
 
@@ -11,8 +11,13 @@
 
 ## Sincronização
 
-A preencher no fechamento do épico.
+Gravado no artefato Mapping em 2026-11-09 (versão 66):
+
+- `tokens.json`: `space-px` (1px), `size-accent-bar` (4px), `opacity-mark-fill` (0.07), `opacity-mark-fill-selected` (0.28) e `opacity-viewer-hover` (0.8); as opacidades passam de 7 a 10 (o épico `cr-i18n-tema` tinha removido dois tokens, por isso a contagem de partida era 7, não 8).
+- `components/Home/README.md`: nota do `ProjectNameDialog` (novo projeto e nome da pasta, um componente só).
+- Índice (`design-system.json`): `lastChange` atualizado.
+- "Botões avulsos": já está em `docs/DESIGN-SYSTEM.md`; nada a gravar no artefato.
 
 ## Ficou sem gravar
 
-A preencher no fechamento do épico.
+- **`Button` com `button-link` dentro de `.notice`** (Dispensar e Tentar de novo de `CanvasNotices`): o preview do `Notice` do artefato só mostra o aviso em caixa e o parágrafo `.notice`, sem os botões de ação sobre o canvas; precisa de um preview novo, renderizado da app, com o `Button` `size="sm"` `button-link` (a cor herdada e o sublinhado vêm de `.notice .button-link`, `src/theme/base.css`).

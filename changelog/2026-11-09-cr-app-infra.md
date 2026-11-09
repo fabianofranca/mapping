@@ -1,4 +1,4 @@
-# CR da app, armazenamento, visualizador, scripts e CI — [Não lançado] (épico `epic/cr-app-infra`, PR #1287, MCP sem mudança, schema v18)
+# CR da app, armazenamento, visualizador, scripts e CI — 2026-11-09 (épico `epic/cr-app-infra`, PR #1287, MCP sem mudança, schema v18)
 
 ## Alterado
 
