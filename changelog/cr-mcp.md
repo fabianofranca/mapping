@@ -19,10 +19,17 @@
 - O bundle `mapping-mcp.js` volta a levar os avisos de licença (Apache-2.0, MIT) das dependências embutidas, no fim do arquivo (`legalComments: 'eof'` e os `LICENSE` dos pacotes); a lista de arquivos da release não muda.
 - A descrição de `get_project` diz `repos` (como o código devolve), no lugar de `repo`.
 
+- `wait_for_comment`: uma mensagem de pessoa gravada logo depois de a espera começar é devolvida na mesma espera (antes só aparecia com outra mudança); a espera cancelada pelo cliente sai com o código `cancelled`, e não `not-open`.
+- `post_message` e o `thread` de `propose_changes`: se o projeto não puder ser relido depois de a mensagem ser gravada, a resposta é um sucesso com o aviso `reply-incomplete` (antes era um erro, que levava o agente a repetir a mensagem, e a proposta dizia que a mensagem não foi gravada).
+- Proposta com `proposal.json` ilegível dá `invalid-proposal` (como o guia diz), e não `proposal-not-found`.
+
 - `validate_library`, `plan_library_update` e o lote que aplica ou atualiza uma biblioteca avisam (`ignored-paths`) quais pastas do pacote a leitura pulou (subpastas além de 8 níveis, ocultas e `node_modules`); antes ficavam de fora sem aviso.
 - `plan_library_update` lê o pacote como `validate_library` (sem ler os binários e sem o limite de 500 arquivos da app): um pacote que `validate_library` aceita não é mais recusado pela prévia com `package-too-large`.
 
 ## Alterado
+
+- `list_threads` com `text` ou `anchor` e sem `status`/`awaiting` lista as conversas abertas de qualquer `awaiting`, e não mais só as que aguardam o agente (antes omitia conversas sem avisar); sem filtro nenhum continua a caixa de entrada.
+- Conversas e propostas: menos trabalho repetido (`list_threads` e `wait_for_comment` leem projeto, conversas e propostas em paralelo e a lista de conversas uma vez só).
 
 - `find_by_code`: cada match traz também `path` (o caminho da pasta do projeto relativo à raiz, como em `list_projects`), para distinguir pastas homônimas.
 - Menos trabalho repetido ao ler projetos: `loadProject` interpreta o `mapping.json` uma vez; o catálogo de componentes e as fontes das bibliotecas ficam em cache do processo (por caminho, tamanho e `mtime`: um arquivo trocado no disco invalida); `list_projects` não interpreta fontes; o `realpath` das raízes e a descoberta de projetos são feitos uma vez por chamada de tool.

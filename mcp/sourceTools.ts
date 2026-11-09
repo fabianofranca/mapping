@@ -17,6 +17,7 @@ import {
 import { ProposalRefs } from './proposalRefs';
 import { listStored } from './proposalStore';
 import { stateOf } from './proposalViews';
+import { isRecord } from './shared';
 
 // Identidade externa (etapa 4.2): do elemento de um sistema de origem para o que o projeto já
 // tem (`find_by_source`) e para o tipo de anotação que o representa (`find_types_by_source`).
@@ -31,10 +32,6 @@ async function locationsOf(roots: Roots, project?: string): Promise<ProjectLocat
     throw new ToolError('project-not-found', 'nenhum projeto nas raízes configuradas');
   }
   return all;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function sameSource(value: unknown, system: string, id: string): boolean {
