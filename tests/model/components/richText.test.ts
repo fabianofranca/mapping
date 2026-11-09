@@ -231,6 +231,25 @@ describe('runs por instância', () => {
     expect(a.runs?.[0]?.background).toBeUndefined();
   });
 
+  it('um trecho literal só de espaços fica (o vão entre o negrito e o chip); o de campo vazio some', () => {
+    const spaced = richFile({
+      font: { size: 14 },
+      runs: [
+        { text: 'Mmmm' },
+        { text: ' ' },
+        { text: { $field: 'dias' }, background: '#00ACC1', padding: [3, 6] },
+      ],
+    });
+    const node = textOf(spaced, { dias: 'novo' }, 200);
+    expect(node.runs?.map((r) => r.text)).toEqual(['Mmmm', ' ', 'novo']);
+    const [word, space, chip] = node.runLayout?.lines[0]?.pieces ?? [];
+    expect(space?.width).toBeGreaterThan(0);
+    expect(chip?.x).toBeCloseTo((word?.width ?? 0) + (space?.width ?? 0), 6);
+    // Campo cheio de espaços continua vazio (cai no fallback).
+    const blank = textOf(spaced, { dias: '   ' }, 200);
+    expect(blank.runs?.map((r) => r.text)).toEqual(['Mmmm', ' ', '']);
+  });
+
   it('nó sem runs não ganha runs nem runLayout', () => {
     const plain = textOf(richFile({ text: 'oi' }), {});
     expect(plain.runs).toBeUndefined();
