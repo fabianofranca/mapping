@@ -139,7 +139,8 @@ export interface FontSpec {
   readonly lineHeight?: Expr<number>;
   readonly letterSpacing?: Expr<number>;
   readonly align?: Expr<'left' | 'center' | 'right'>;
-  readonly verticalAlign?: Expr<'top' | 'middle' | 'bottom'>;
+  /** `cap-middle` centra pela altura da maiúscula (só formatVersion 4). */
+  readonly verticalAlign?: Expr<'top' | 'middle' | 'bottom' | 'cap-middle'>;
   readonly decoration?: Expr<'none' | 'underline' | 'line-through'>;
   /** `word` (padrão) quebra por palavra; `none` é uma linha por parágrafo. Só formatVersion 4. */
   readonly wrap?: Expr<'word' | 'none'>;

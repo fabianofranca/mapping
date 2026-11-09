@@ -193,7 +193,7 @@
       "enum": ["left", "center", "right"]
     },
     "lit_verticalAlign": {
-      "enum": ["top", "middle", "bottom"]
+      "enum": ["top", "middle", "bottom", "cap-middle"]
     },
     "lit_decoration": {
       "enum": ["none", "underline", "line-through"]

@@ -455,7 +455,7 @@ function checkFont(value: unknown, path: string, out: Ctx): void {
     lineHeight: checkNumber,
     letterSpacing: checkNumber,
     align: oneOf(['left', 'center', 'right']),
-    verticalAlign: oneOf(['top', 'middle', 'bottom']),
+    verticalAlign: oneOf(['top', 'middle', 'bottom', 'cap-middle']),
     decoration: oneOf(['none', 'underline', 'line-through']),
     wrap: oneOf(['word', 'none']),
     ellipsis: checkBoolean,
@@ -792,6 +792,11 @@ const V4_EXPR_KEYS: readonly (readonly string[])[] = [
   ['layout', 'justify'],
 ];
 
+/** Valores literais que só existem na formatVersion 4: a cadeia da chave e o valor. */
+const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
+  [['font', 'verticalAlign'], 'cap-middle'],
+];
+
 /** `$token` em qualquer ponto do template, numa versão anterior à 4: `só é permitido com formatVersion 4`. */
 function tokenVersionIssues(version: unknown, template: unknown): ComponentIssue[] {
   const out: ComponentIssue[] = [];
@@ -822,7 +827,9 @@ function iconVersionIssues(version: unknown, template: unknown): ComponentIssue[
  * das chaves de `keys` (cadeias como `['stroke', 'cap']`), numa versão anterior à 4, devolve
  * `só é permitido com formatVersion 4` no caminho da chave. As fases seguintes só acrescentam
  * cadeias a `V4_NODE_KEYS`. As cadeias de `exprKeys` só contam quando o valor é uma expressão
- * (objeto com operador `$…`): o literal continua valendo em todas as versões.
+ * (objeto com operador `$…`): o literal continua valendo em todas as versões. `literals` são
+ * valores literais novos de uma chave que já existia (`font.verticalAlign: "cap-middle"`); o mesmo
+ * valor vindo de expressão não tem caso especial (fica fora do conjunto da versão no desenho).
  */
 export function v4OnlyKeyIssues(
   version: unknown,
@@ -830,6 +837,7 @@ export function v4OnlyKeyIssues(
   path: string,
   keys: readonly (readonly string[])[],
   exprKeys: readonly (readonly string[])[] = [],
+  literals: readonly (readonly [readonly string[], string])[] = [],
 ): ComponentIssue[] {
   const out: ComponentIssue[] = [];
   if (typeof version === 'number' && version >= COMPONENT_FORMAT_VERSION_FIDELITY)
@@ -844,6 +852,12 @@ export function v4OnlyKeyIssues(
     };
     keys.forEach((chain) => flag(chain, false));
     exprKeys.forEach((chain) => flag(chain, true));
+    for (const [chain, value] of literals) {
+      let cursor: unknown = n;
+      for (const key of chain) cursor = isRecord(cursor) ? cursor[key] : undefined;
+      if (cursor === value)
+        addIssue(out, [at, ...chain].filter((x) => x !== '').join('.'), V4_ONLY_MESSAGE);
+    }
     if (Array.isArray(n.children))
       n.children.forEach((c: unknown, i) => walk(c, `${join(at, 'children')}[${i}]`));
     if (n.type === 'repeat') walk(n.template, join(at, 'template'));
@@ -1003,7 +1017,14 @@ function collectIssues(input: unknown, refs: TokenRef[] | null): ComponentIssue[
       }
     }
     issues.push(
-      ...v4OnlyKeyIssues(version, input.template, 'template', V4_NODE_KEYS, V4_EXPR_KEYS),
+      ...v4OnlyKeyIssues(
+        version,
+        input.template,
+        'template',
+        V4_NODE_KEYS,
+        V4_EXPR_KEYS,
+        V4_LITERAL_VALUES,
+      ),
     );
     issues.push(...tokenVersionIssues(version, input.template));
     if (version === 1 || version === 2) {

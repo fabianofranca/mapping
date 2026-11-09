@@ -1393,7 +1393,11 @@ function createEngine(
       lineHeight: font.lineHeight,
       letterSpacing: font.letterSpacing,
       align: oneOf(font0.align, ['left', 'center', 'right'], 'left'),
-      verticalAlign: oneOf(font0.verticalAlign, ['top', 'middle', 'bottom'], 'top'),
+      verticalAlign: oneOf(
+        font0.verticalAlign,
+        ['top', 'middle', 'bottom', 'cap-middle'],
+        'top',
+      ),
       ...(decoration === 'none' ? {} : { decoration }),
       ...(font.wrap === 'none' ? { wrap: 'none' as const } : {}),
       ...(font.ellipsis === true ? { ellipsis: true } : {}),

@@ -126,7 +126,7 @@ export interface TextStyle {
   /** Espaçamento entre letras em px. */
   readonly letterSpacing?: number;
   readonly align: 'left' | 'center' | 'right' | 'justify';
-  readonly verticalAlign: 'top' | 'middle' | 'bottom';
+  readonly verticalAlign: 'top' | 'middle' | 'bottom' | 'cap-middle';
   readonly decoration?: 'underline' | 'line-through';
   /** `none` = uma linha por parágrafo (ausente = quebra por palavra). */
   readonly wrap?: 'none';
