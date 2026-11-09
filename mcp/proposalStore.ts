@@ -71,6 +71,13 @@ async function readProposalText(
   return { real, text: await readFile(real, 'utf8') };
 }
 
+/** O erro de leitura de um item, com o código, para a lista `broken`. */
+function readFailure(error: unknown): string {
+  if (error instanceof ToolError) return `${error.code}: ${error.message}`;
+  const code = errnoCode(error);
+  return code ?? (error instanceof Error ? error.message : String(error));
+}
+
 function parseStored(id: string, text: string): StoredProposal | BrokenProposal {
   const parsed = parseProposalText(text);
   if (!parsed.ok) {
@@ -113,7 +120,13 @@ export async function listStored(
   const proposals: StoredProposal[] = [];
   const broken: BrokenProposal[] = [];
   for (const id of names) {
-    const read = await readProposalText(roots, location, id);
+    let read;
+    try {
+      read = await readProposalText(roots, location, id);
+    } catch (error) {
+      broken.push({ id, error: readFailure(error) });
+      continue;
+    }
     if (read === null) {
       broken.push({ id, error: `sem ${PROPOSAL_FILE}` });
       continue;
@@ -341,6 +354,25 @@ export interface RevisionStop<R> {
   readonly stop: R;
 }
 
+/**
+ * Confere que a subpasta da proposta (`images`, `specs`), se existe, resolve para dentro de uma
+ * raiz: um link simbólico para fora é recusado (`outside-roots`) antes de listar, apagar ou gravar.
+ */
+async function assertSubfolderInside(
+  roots: Roots,
+  location: ProjectLocation,
+  relative: string,
+): Promise<void> {
+  let real: string;
+  try {
+    real = await realpath(join(location.dir, relative));
+  } catch (error) {
+    if (errnoCode(error) === 'ENOENT') return;
+    throw error;
+  }
+  await roots.assertInside(real, relative);
+}
+
 async function listFilesUnder(root: string, relative: string): Promise<string[]> {
   let entries;
   try {
@@ -359,11 +391,15 @@ async function listFilesUnder(root: string, relative: string): Promise<string[]>
 
 /** Arquivos de `images/` e das pastas de pacote que a proposta guarda, relativos ao projeto. */
 export async function proposalFiles(
+  roots: Roots,
   location: ProjectLocation,
   proposalId: string,
 ): Promise<string[]> {
   const base = proposalDir(proposalId);
   const subfolders = ['images', 'specs'];
+  for (const sub of subfolders) {
+    await assertSubfolderInside(roots, location, `${base}/${sub}`);
+  }
   const lists = await Promise.all(
     subfolders.map((sub) => listFilesUnder(location.dir, `${base}/${sub}`)),
   );
@@ -387,9 +423,13 @@ function citedFiles(p: Proposal): { files: Set<string>; packageDirs: string[] } 
 }
 
 /** Apaga, em melhor esforço, o que nenhuma mudança cita mais; a falha vira aviso no stderr. */
-async function removeUncited(location: ProjectLocation, next: Proposal): Promise<void> {
+async function removeUncited(
+  roots: Roots,
+  location: ProjectLocation,
+  next: Proposal,
+): Promise<void> {
   const { files, packageDirs } = citedFiles(next);
-  for (const file of await proposalFiles(location, next.id)) {
+  for (const file of await proposalFiles(roots, location, next.id)) {
     if (files.has(file) || packageDirs.some((dir) => file.startsWith(dir))) continue;
     try {
       await rm(join(location.dir, file), { force: true });
@@ -404,6 +444,7 @@ async function removeUncited(location: ProjectLocation, next: Proposal): Promise
 }
 
 async function writeRevisionImages(
+  roots: Roots,
   location: ProjectLocation,
   next: Proposal,
   images: ReadonlyMap<string, Uint8Array>,
@@ -417,6 +458,7 @@ async function writeRevisionImages(
       if (!wanted.has(file)) continue;
       const relative = proposalImagePath(next.id, file);
       await mkdir(dirname(join(location.dir, relative)), { recursive: true });
+      await assertSubfolderInside(roots, location, `${proposalDir(next.id)}/images`);
       try {
         await writeNewFile(join(location.dir, relative), data);
       } catch (error) {
@@ -470,7 +512,7 @@ export async function reviseStored<R>(
     await plan.check();
     const again = await readProposalText(roots, location, id);
     if (again === null || again.text !== read.text) continue;
-    const written = await writeRevisionImages(location, next, plan.images);
+    const written = await writeRevisionImages(roots, location, next, plan.images);
     try {
       await writeFileAtomic(read.real, serializeProposal(next));
     } catch (error) {
@@ -478,7 +520,7 @@ export async function reviseStored<R>(
         await rm(join(location.dir, relative), { force: true });
       throw error;
     }
-    await removeUncited(location, next);
+    await removeUncited(roots, location, next);
     return { proposal: next, result: plan.result };
   }
   throw new ToolError(
