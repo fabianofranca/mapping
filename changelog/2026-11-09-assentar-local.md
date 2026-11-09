@@ -1,4 +1,4 @@
-# Assentar só o espaço afetado — [Não lançado] (épico `epic/assentar-local`, PR #1112, MCP 0.28.6, schema v18)
+# Assentar só o espaço afetado — 2026-11-09 (épico `epic/assentar-local`, PR #1112, MCP 0.28.6, schema v18)
 
 ## Alterado
 
