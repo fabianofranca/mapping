@@ -1,4 +1,4 @@
-# Inválido também não cabe — [Não lançado] (épico `epic/invalido-nao-cabe`, PR #0, MCP 0.28.10 sem versão nova, schema v18)
+# Inválido também não cabe — [Não lançado] (épico `epic/invalido-nao-cabe`, PR #1214, MCP 0.28.10 sem versão nova, schema v18)
 
 ## Corrigido
 
