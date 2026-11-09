@@ -14,6 +14,8 @@ import { readHostFonts } from '../canvas/theme';
 import { resolvePath, type LoadedFont } from '../model/components/library';
 import { createFontRegistry, type FontRegistry, type FontStatus } from '../storage/fonts';
 import { reportError } from '../utils/report';
+import { createFontSync } from './fontSync';
+import { createPendingTracker } from './pendingTracker';
 
 // A biblioteca de componentes de um projeto aberto (etapa Biblioteca, B3): o catálogo e as
 // fontes das especializações aplicadas, lidos dos pacotes `specs/<id>/` e guardados em
@@ -113,10 +115,12 @@ export async function readSpecComponents(
   read: (path: string) => Promise<string | null>,
 ): Promise<SpecComponents> {
   const texts = new Map<string, string>();
-  for (const path of componentPaths(spec, specFile)) {
-    const text = await read(path);
-    if (text !== null) texts.set(path, text);
-  }
+  const paths = componentPaths(spec, specFile);
+  const contents = await Promise.all(paths.map((path) => read(path)));
+  paths.forEach((path, i) => {
+    const text = contents[i];
+    if (text !== null && text !== undefined) texts.set(path, text);
+  });
   return loadSpecComponents(spec, specFile, version, (path) => texts.get(path), {
     fonts: readHostFonts(),
   });
@@ -154,16 +158,9 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
   const loading = new Set<string>();
   /** Entradas lidas antes do último `invalidate`: valem até a nova chegar. */
   const stale = new Set<string>();
-  const pending = new Set<Promise<unknown>>();
+  const { track, whenIdle } = createPendingTracker();
   let disposed = false;
   let current = 0;
-
-  const track = <T>(promise: Promise<T>): Promise<T> => {
-    pending.add(promise);
-    const done = () => void pending.delete(promise);
-    promise.then(done, done);
-    return promise;
-  };
 
   /** Lê um arquivo do pacote: da cópia em memória da sessão e, senão, do armazenamento. */
   async function readText(
@@ -261,41 +258,17 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
       ]),
     ),
   );
-  let fontRun = 0;
   let fontsRegistered = false;
-  // Os registros correm um depois do outro: o de uma rodada velha nem começa.
-  let registerChain: Promise<unknown> = Promise.resolve();
-
-  async function syncFonts(
-    declared: readonly DeclaredFont[],
-    run: number,
-  ): Promise<void> {
-    await Promise.resolve();
-    try {
-      const fonts: LoadedFont[] = [];
-      for (const { owner, font } of declared) {
-        let bytes: ArrayBuffer | undefined;
-        try {
-          bytes = (await readBytes(owner, font.path)) ?? undefined;
-        } catch (error) {
-          reportError('components.font', error);
-        }
-        fonts.push(bytes ? { ...font, bytes } : font);
-      }
-      const task = registerChain.then(() =>
-        disposed || run !== fontRun ? null : registry.register(fonts),
-      );
-      registerChain = task.catch(() => undefined);
-      const status = await task;
-      if (status === null || disposed || run !== fontRun) return;
+  const fontSync = createFontSync({
+    registry,
+    isDisposed: () => disposed,
+    onRegistered(status) {
       batch(() => {
         fontStatus.value = status;
         epoch.value++;
       });
-    } catch (error) {
-      reportError('components.fonts', error);
-    }
-  }
+    },
+  });
 
   const stopFonts = effect(() => {
     void fontsKey.value;
@@ -304,17 +277,20 @@ export function createComponentLibrary(deps: ComponentLibraryDeps): ComponentLib
     // Sem fontes e sem nada registrado antes: não há o que fazer nem o que remedir.
     if (declared.length === 0 && !fontsRegistered) return;
     fontsRegistered = declared.length > 0;
-    fontRun += 1;
-    void track(syncFonts(declared, fontRun));
+    void track(
+      fontSync.start(
+        declared,
+        ({ font }) => font,
+        ({ owner, font }) => readBytes(owner, font.path),
+      ),
+    );
   });
 
   return {
     catalog,
     fontsEpoch: epoch,
     fonts: fontStatus,
-    async whenIdle() {
-      while (pending.size > 0) await Promise.allSettled([...pending]);
-    },
+    whenIdle,
     invalidate() {
       current += 1;
       loading.clear();

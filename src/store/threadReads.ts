@@ -12,6 +12,8 @@ const READS_KEY = 'mapping.threadReads';
 const READS_VERSION = 1;
 /** Conversas lembradas por cópia (as lidas mais recentemente). */
 export const MAX_READS_PER_COPY = 500;
+/** Cópias de projeto lembradas (as tocadas mais recentemente; etapa #940, decisão 15). */
+export const MAX_COPIES = 20;
 
 const blobSchema = z.object({
   v: z.literal(READS_VERSION),
@@ -42,7 +44,22 @@ export const threadReads: { readonly value: Reads } = {
   },
 };
 
-function persist(next: Reads): void {
+/**
+ * Aplica `change` à cópia sobre o blob relido do armazenamento (etapa #940, decisão 15): outra
+ * aba pode ter gravado desde a nossa leitura, e juntar por chave não apaga a lida dela. Sem
+ * armazenamento legível, parte do que a sessão já sabe. A cópia tocada vai para o fim e o limite
+ * tira as mais antigas.
+ */
+function update(
+  copyId: string,
+  change: (copy: Readonly<Record<string, string>>) => Readonly<Record<string, string>>,
+): void {
+  const raw = readSetting(READS_KEY);
+  const base = raw === null ? reads.peek() : parseBlob(raw);
+  const others = Object.entries(base).filter(([id]) => id !== copyId);
+  const next = Object.fromEntries(
+    [...others, [copyId, change(base[copyId] ?? {})] as const].slice(-MAX_COPIES),
+  );
   reads.value = next;
   writeSetting(READS_KEY, JSON.stringify({ v: READS_VERSION, reads: next }));
 }
@@ -54,19 +71,22 @@ export function lastReadAt(copyId: string, threadId: string): string | null {
 
 /** Marca a conversa como lida em `at`. Nunca recua: uma data anterior à guardada é ignorada. */
 export function markThreadRead(copyId: string, threadId: string, at: string): void {
-  const copy = reads.peek()[copyId] ?? {};
-  const previous = copy[threadId];
+  const previous = reads.peek()[copyId]?.[threadId];
   if (previous !== undefined && Date.parse(previous) >= Date.parse(at)) return;
-  // Reinsere no fim: a ordem das chaves é a da leitura mais recente, e o limite tira as mais antigas.
-  const others = Object.entries(copy).filter(([id]) => id !== threadId);
-  const entries = [...others, [threadId, at] as const].slice(-MAX_READS_PER_COPY);
-  persist({ ...reads.peek(), [copyId]: Object.fromEntries(entries) });
+  update(copyId, (copy) => {
+    // Reinsere no fim: a ordem das chaves é a da leitura mais recente, e o limite tira as mais antigas.
+    const others = Object.entries(copy).filter(([id]) => id !== threadId);
+    return Object.fromEntries(
+      [...others, [threadId, at] as const].slice(-MAX_READS_PER_COPY),
+    );
+  });
 }
 
 /** Esquece a conversa (apagada): ela não deixa entrada no blob. */
 export function forgetThreadRead(copyId: string, threadId: string): void {
   const copy = reads.peek()[copyId];
   if (copy === undefined || !(threadId in copy)) return;
-  const rest = Object.fromEntries(Object.entries(copy).filter(([id]) => id !== threadId));
-  persist({ ...reads.peek(), [copyId]: rest });
+  update(copyId, (current) =>
+    Object.fromEntries(Object.entries(current).filter(([id]) => id !== threadId)),
+  );
 }

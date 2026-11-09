@@ -95,13 +95,16 @@ function assertNoViewOverlap(
   }
   if (moved.size === 0) return;
   const view = model.perspectiveView(p, perspectiveIn(p, perspectiveId));
-  const footprint = (c: ProjectContainer) => model.imageCanvasRect(c, c.placement);
-  for (const c of view.containers) {
-    if (!moved.has(c.id)) continue;
-    const other = view.containers.find(
-      (o) => !moved.has(o.id) && model.rectsOverlap(footprint(c), footprint(o)),
-    );
-    if (other) model.fail('image-overlap', undefined, { containerId: other.id });
+  const footprints = view.containers.map((c) => ({
+    container: c,
+    rect: model.imageCanvasRect(c, c.placement),
+  }));
+  const fixed = footprints.filter((f) => !moved.has(f.container.id));
+  for (const m of footprints) {
+    if (!moved.has(m.container.id)) continue;
+    const other = fixed.find((f) => model.rectsOverlap(m.rect, f.rect));
+    if (other)
+      model.fail('image-overlap', undefined, { containerId: other.container.id });
   }
 }
 
@@ -244,7 +247,11 @@ export function placementInView(
       options,
     );
   }
-  if (isRoot || !rescaled) next = moveRootOf(next, perspective, containerId, dx, dy);
+  if (isRoot || !rescaled) {
+    // `moveRootOf` já confere a sobreposição quando anda; só o que não andou confere aqui.
+    const moved = moveRootOf(next, perspective, containerId, dx, dy);
+    if (moved !== next) return moved;
+  }
   if (next !== p)
     assertNoViewOverlap(next, perspective.id, [rootOrFail(next, containerId)]);
   return next;

@@ -1,4 +1,4 @@
-import { batch, signal, type Signal } from '@preact/signals';
+import { batch, effect, signal, type Signal } from '@preact/signals';
 import {
   projectIndex,
   spaceOf,
@@ -163,6 +163,21 @@ export interface CanvasMenu {
 }
 
 export function createEditorUi(): EditorUi {
+  const ui = buildEditorUi();
+  // Mudar a seleção esquece a conversa escolhida e o rascunho de conversa nova (etapa #940,
+  // decisão 3): sem isso, a seleção vazia que volta faria a comparação valer de novo. O texto
+  // do rascunho continua em `threadDrafts`. A instância vive o tempo da app, sem desinscrever.
+  effect(() => {
+    const selection = ui.selection.value;
+    const chosen = ui.thread.peek();
+    if (chosen !== null && chosen.selection !== selection) ui.thread.value = null;
+    const draft = ui.composing.peek();
+    if (draft !== null && draft.selection !== selection) ui.composing.value = null;
+  });
+  return ui;
+}
+
+function buildEditorUi(): EditorUi {
   return {
     selection: signal<Selection>(null),
     selectionGroup: signal<SelectionGroup | null>(null),

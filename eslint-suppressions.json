@@ -491,7 +491,7 @@
   },
   "src/store/proposedCatalog.ts": {
     "complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "src/store/review.ts": {

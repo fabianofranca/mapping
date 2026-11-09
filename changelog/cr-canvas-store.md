@@ -19,6 +19,9 @@
 - Diagnóstico: a URL de imagem inválida (`data:`, `file:` etc.) aparece com o esquema (e só o tipo no `data:`), em vez de `null…`.
 - Propostas: o Diagnóstico das propostas atualiza quando o problema muda (um arquivo quebrado que some e outro que quebra, ou o mesmo arquivo com outro erro), mesmo com o número de problemas igual.
 - Propostas: uma falha de disco ao aplicar (ler a imagem ou o pacote, copiar a imagem) mostra o erro de gravação e tira as imagens já copiadas, em vez de falhar sem aviso e deixá-las soltas; se o projeto mudou durante uma gravação que falhou, as cópias que ele cita ficam.
+- Comentários: a conversa escolhida (ou o rascunho de conversa nova) não volta sozinha ao clicar num item e depois no vazio; o texto não enviado continua guardado e reaparece ao abrir o rascunho no mesmo ponto.
+- Comentários: as marcações de "lida" não se perdem quando o Mapping está aberto em duas abas, e o aparelho guarda as 20 cópias de projeto mais recentes.
+- Catálogo: a especialização cujo catálogo falhou ao carregar é tentada de novo no próximo pedido (antes ficava sem catálogo até trocar o projeto).
 
 ## Alterado
 
@@ -26,3 +29,4 @@
 - Visualizador embutível (`mapping-viewer`): o `ScreenRenderer` recebe os textos da caixa de tipo ausente e dos avisos do chamador (`labels`); o `createViewer` passa os dele, em português, como antes. Quem cria um `ScreenRenderer` direto precisa passar `labels` (há `VIEWER_LABELS` para o padrão).
 - Store: desfazer, refazer e cada edição notificam os painéis uma vez só; a faixa e a barra de status não recalculam os conflitos das propostas a cada edição; a conferência de arquivos externos lê imagens, propostas e conversas em paralelo; a seleção por retângulo e a troca de seleção não crescem de forma quadrática. O comportamento não muda.
 - Revisão: segurar a seta para percorrer as mudanças grava o ponto de retomada no máximo uma vez por quadro (antes, a cada tecla), e a revisão fechada o grava na hora; a lista de arquivos de pacote de cada proposta é lida uma vez.
+- Store: as conversas só republicam a lista quando algo mudou; o posicionamento de perspectivas confere a sobreposição de imagens uma vez por raiz; as leituras de componentes e fontes rodam em paralelo; a sincronia de fontes, o rastreio de pendências e a fila serial dos catálogos, propostas e conversas saem de helpers comuns. O comportamento não muda.

@@ -324,6 +324,16 @@ describe('conversas: varredura da pasta (a conferência de ~3 s)', () => {
     expect(calls.read).toEqual(['o:B']);
   });
 
+  it('o scan sem mudança não republica a lista nem os problemas', async () => {
+    const { store } = await setup([sampleThread({ id: 'A' })]);
+    const list = store.list.value;
+    const problems = store.problems.value;
+    await store.scan();
+    await store.scan();
+    expect(store.list.value).toBe(list);
+    expect(store.problems.value).toBe(problems);
+  });
+
   it('um arquivo desconhecido e ilegível vira problema (uma vez); o conhecido, ainda sendo escrito, fica como está', async () => {
     const { root, store } = await setup([sampleThread({ id: 'A' })]);
     root.put(threadFilePath('X', false), '{ meio');
