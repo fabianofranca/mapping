@@ -24,6 +24,8 @@ import {
   applySpecialization,
   checkSpecApply,
   MIN_STORED_MARKING_SIZE,
+  SHORT_CODE_LENGTH,
+  normalizeId,
   componentMinSize,
   componentPlacement,
   componentTypes,
@@ -101,6 +103,7 @@ import {
   type ItemKind,
   type JsonValue,
   type Layer,
+  type Marking,
   type Project,
   type RefValue,
   type Spec,
@@ -1053,6 +1056,57 @@ class Batch {
     return this.refs(p).markingPath(id).join(' › ');
   }
 
+  /**
+   * Rótulo da marcação recém-criada (`Container › Nome`), igual ao de `markingLabel`, sem montar o
+   * índice nem ordenar os códigos de todo o projeto: o custo não cresce com ele, e um lote de
+   * mil criações fica linear. Só vale para a marcação sem pai e sem outro id começando igual;
+   * nos outros casos cai no `markingLabel` (que decide o nome e o código pelo projeto inteiro).
+   */
+  private createdMarkingLabel(
+    before: Project,
+    project: Project,
+    marking: Marking,
+    typeName: string | null,
+  ): string {
+    const fast =
+      marking.parentId === null && project.arrows === before.arrows
+        ? this.freshCode(before, project, marking.id)
+        : null;
+    if (fast === null) return this.markingLabel(project, marking.id);
+    const name = marking.name ?? `${typeName ?? 'Marcação'} ${fast}`;
+    return [this.refs(project).imageLabelNoIndex(marking.containerId), name].join(' › ');
+  }
+
+  /** Contagem dos 8 primeiros caracteres (normalizados) dos ids de marcações e setas, da versão em `project`. */
+  private prefixCounts: { project: Project; counts: Map<string, number> } | null = null;
+
+  /**
+   * Código curto do id novo se nenhum outro id de marcação ou seta começa com os mesmos 8
+   * caracteres (o código é então o prefixo de 8, como `shortCode` daria); `null` se houver
+   * colisão ou se o projeto não é o anterior mais uma marcação.
+   */
+  private freshCode(before: Project, project: Project, id: string): string | null {
+    if (project.markings.length !== before.markings.length + 1) {
+      this.prefixCounts = null;
+      return null;
+    }
+    if (this.prefixCounts?.project !== before) {
+      const counts = new Map<string, number>();
+      for (const item of [...before.markings, ...before.arrows]) {
+        const prefix = normalizeId(item.id).slice(0, SHORT_CODE_LENGTH);
+        counts.set(prefix, (counts.get(prefix) ?? 0) + 1);
+      }
+      this.prefixCounts = { project: before, counts };
+    }
+    const { counts } = this.prefixCounts;
+    const norm = normalizeId(id);
+    const prefix = norm.slice(0, SHORT_CODE_LENGTH);
+    const taken = norm.length < SHORT_CODE_LENGTH || counts.has(prefix);
+    counts.set(prefix, (counts.get(prefix) ?? 0) + 1);
+    this.prefixCounts = { project, counts };
+    return taken ? null : prefix;
+  }
+
   private annotationLabel(p: Project, id: string): string {
     const a = projectIndex(p).annotations.get(id);
     return a
@@ -1995,11 +2049,20 @@ class Batch {
     if (op.source !== undefined) {
       project = setMarkingSource(project, markingId, toSource(op.source));
     }
-    const { rect } = projectIndex(project).markings.get(markingId)!;
+    // A marcação nova está no fim do array (o assentar não reordena): a busca de trás para frente é O(1).
+    let created!: Marking;
+    for (let i = project.markings.length - 1; i >= 0; i--) {
+      if (project.markings[i]!.id === markingId) {
+        created = project.markings[i]!;
+        break;
+      }
+    }
+    const { rect } = created;
+    const label = this.createdMarkingLabel(p, project, created, component?.name ?? null);
     return {
       project,
       ...(notes.length > 0 ? { notes } : {}),
-      description: `Criar a marcação "${this.markingLabel(project, markingId)}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
+      description: `Criar a marcação "${label}" (x ${rect.x}, y ${rect.y}, ${rect.width}×${rect.height}${
         op.rect === undefined ? ', tamanho inicial do componente' : ''
       }${op.source ? `, ${sourceLabel(toSource(op.source))}` : ''})${
         typeRef ? ` com a anotação ${typeRef.specId}/${typeRef.typeId}` : ''
