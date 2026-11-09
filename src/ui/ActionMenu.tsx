@@ -17,6 +17,8 @@ export interface ActionMenuItem {
   /** Dica do item, em especial a de por que ele está desabilitado. */
   readonly title?: string;
   readonly danger?: boolean;
+  /** O item que marca onde se está (`aria-current`), como o último trecho do caminho. */
+  readonly current?: boolean;
 }
 
 interface ActionMenuProps {
@@ -24,11 +26,25 @@ interface ActionMenuProps {
   readonly label: string;
   readonly items: readonly ActionMenuItem[];
   readonly disabled?: boolean;
+  /** Ícone do botão; o padrão é o ⋯ vertical das linhas. */
+  readonly icon?: 'moreVertical' | 'more';
+  /** Nome do menu aberto, se for outro que o do botão. */
+  readonly menuLabel?: string;
+  /** Classe extra da raiz (o CSS que mostra ou esconde o menu inteiro). */
+  readonly className?: string;
   /** O botão que abre o menu (ex.: alvo do foco depois de um diálogo aberto pelo item). */
   readonly triggerRef?: Ref<HTMLButtonElement>;
 }
 
-export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuProps) {
+export function ActionMenu({
+  label,
+  items,
+  disabled,
+  icon = 'moreVertical',
+  menuLabel,
+  className,
+  triggerRef,
+}: ActionMenuProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLSpanElement>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
@@ -67,9 +83,13 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
   const onKeyDown = menuKeyDown(root, open, close);
 
   return (
-    <span class="action-menu" ref={root} onKeyDown={onKeyDown}>
+    <span
+      class={className ? `action-menu ${className}` : 'action-menu'}
+      ref={root}
+      onKeyDown={onKeyDown}
+    >
       <IconButton
-        icon="moreVertical"
+        icon={icon}
         label={label}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -81,15 +101,21 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
         onClick={() => setOpen(!open)}
       />
       {open && (
-        <span class="action-menu-list" role="menu" aria-label={label} ref={list}>
-          {items.map((item) => (
+        <span
+          class="action-menu-list"
+          role="menu"
+          aria-label={menuLabel ?? label}
+          ref={list}
+        >
+          {items.map((item, i) => (
             <button
-              key={item.label}
+              key={i}
               type="button"
               role="menuitem"
               class={item.danger ? 'action-menu-item danger' : 'action-menu-item'}
               disabled={item.disabled}
               title={item.title}
+              aria-current={item.current ? 'location' : undefined}
               onClick={() => {
                 close();
                 item.onSelect();

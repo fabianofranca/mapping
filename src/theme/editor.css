@@ -496,11 +496,52 @@
   .canvas-bar:has(.review-canvas-controls) .canvas-bar-low {
     display: none;
   }
+}
 
-  /* A seleção (último trecho) fica com a sobra; os de antes recolhem, sem pintar fora. */
-  .canvas-bar:has(.review-canvas-controls) .crumb-item:not(:last-child) {
+/*
+ * Barra estreita (BC1; o mesmo limiar da BS3, 470 px, dentro e fora da revisão): o caminho de 3 ou
+ * mais trechos vira "Canvas › … › seleção". Os trechos do meio saem (0 px) e o "…" (que o
+ * Breadcrumbs sempre desenha com 3 ou mais) aparece e abre o caminho inteiro; o último fica
+ * com a sobra, com reticências e dica. Na barra larga o "…" não aparece e nada muda.
+ */
+.crumb-more {
+  display: none;
+  align-items: center;
+  gap: var(--space-0-5);
+}
+
+@container (max-width: 470px) {
+  .crumb-more {
+    display: inline-flex;
+  }
+
+  .crumbs .crumb-mid {
+    display: none;
+  }
+
+  /* Cada palavra conta: sem o ícone do último e com folga menor, a seleção ganha letras. */
+  .crumbs:has(.crumb-more) .crumb {
+    padding: 0 var(--space-1);
+  }
+
+  .crumb-more ~ .crumb-item .crumb .icon {
+    display: none;
+  }
+
+  /* O Canvas cede antes da seleção (o menu do "…" tem o nome inteiro de cada nível). */
+  .crumbs:has(.crumb-more) .crumb-item:first-child {
     flex-shrink: 20;
     overflow: hidden;
+  }
+
+  /* Na revisão sobram ~95 px: ali o Canvas cede tudo à seleção. */
+  .canvas-bar:not(:has(.review-canvas-controls)) .crumb-item:first-child {
+    min-width: 32px;
+  }
+
+  .crumb-more .icon-button {
+    min-width: 0;
+    padding: 0 var(--space-0-5);
   }
 }
 
