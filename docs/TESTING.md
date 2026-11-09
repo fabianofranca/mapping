@@ -427,7 +427,7 @@ Também conta como achado: lentidão perceptível (mais de um segundo para respo
 
 <!-- /roteiros -->
 
-**Rodada completa ou dirigida.** A **rodada completa** executa todos os roteiros, na ordem do "Comece aqui"; é o portão antes do uso com pessoas. Na nuvem ela pode correr em 3 blocos ao mesmo tempo, cada um com seu relato (a divisão está em `docs/TESTING-NUVEM.md`, "Rodada completa em blocos"). A **rodada dirigida** confere um alvo: os achados de um relato anterior (o relato é um comentário numa issue), uma lista de roteiros ou as fases de uma etapa. Em todas, R0 inteiro primeiro, depois só os passos ligados ao alvo. O relato da dirigida usa o mesmo template (seção 10), com a coluna **Achado de origem** e a seção **Regressões fora do alvo**.
+**Rodada completa ou dirigida.** A **rodada completa** executa todos os roteiros, na ordem do "Comece aqui"; é o portão antes do uso com pessoas. Na nuvem ela pode correr em 5 blocos ao mesmo tempo, cada um com seu relato (a divisão está em `docs/TESTING-NUVEM.md`, "Rodada completa em blocos"). A **rodada dirigida** confere um alvo: os achados de um relato anterior (o relato é um comentário numa issue), uma lista de roteiros ou as fases de uma etapa. Em todas, R0 inteiro primeiro, depois só os passos ligados ao alvo. O relato da dirigida usa o mesmo template (seção 10), com a coluna **Achado de origem** e a seção **Regressões fora do alvo**.
 
 ### R0 — Preparação e fumaça
 
@@ -2193,12 +2193,12 @@ Para quem mantém o projeto, depois de uma rodada completa sem achados altos ou 
 
 ### Relato de uma rodada de teste
 
-Um template só, para a rodada completa, a dirigida e o teste avançado. Quem testa por agente grava o `relato.md` na pasta de trabalho e o entrega como comentário na sub-issue da fase testada (o conteúdo do comentário é este template; ver `docs/TESTING-NUVEM.md`). Na dirigida, use a coluna **Achado de origem** e a seção **Regressões fora do alvo**; nas outras, apague-as. No modo "completo, bloco k de 3", a primeira linha do comentário é "Rodada completa — bloco k de 3" e os achados levam o código `k.n` (bloco k, achado n).
+Um template só, para a rodada completa, a dirigida e o teste avançado. Quem testa por agente grava o `relato.md` na pasta de trabalho e o entrega como comentário na sub-issue da fase testada (o conteúdo do comentário é este template; ver `docs/TESTING-NUVEM.md`). Na dirigida, use a coluna **Achado de origem** e a seção **Regressões fora do alvo**; nas outras, apague-as. No modo "completo, bloco k de 5", a primeira linha do comentário é "Rodada completa — bloco k de 5" e os achados levam o código `k.n` (bloco k, achado n).
 
 ```markdown
 # Relato de teste — Mapping
 
-- Modo: completo | completo, bloco k de 3 (<roteiros do bloco>) | dirigido — <alvo: achados de um relato, lista de passos ou fases de um plano> | avançado
+- Modo: completo | completo, bloco k de 5 (<roteiros do bloco>) | dirigido — <alvo: achados de um relato, lista de passos ou fases de um plano> | avançado
 - Build id: abc1234 · AAAA-MM-DD
 - Canal (como a app mostra): estável | prévia
 - Forma de abrir: versão principal | preview | index.html avulso (file://) | app instalado
