@@ -10,12 +10,13 @@ import { describe, expect, it } from 'vitest';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { multiply, IDENTITY } from '../../src/model/components/scene';
 import type { Matrix, SceneNode } from '../../src/model/components/scene';
-import { drawIn, files, text } from '../support/material3Library';
+import { COMPOSE_SIZES, drawIn, files, text } from '../support/material3Library';
 
 /** Maior `y` (px, no espaço da raiz) que algum nó visível ocupa, pela caixa de cada nó. */
 function bottomOf(node: SceneNode, parent: Matrix = IDENTITY, isRoot = true): number {
+  if (!isRoot && !node.visible) return 0;
   const m = isRoot ? IDENTITY : multiply(parent, node.transform);
-  let bottom = node.visible && !isRoot ? m[5] + m[3] * node.height : 0;
+  let bottom = !isRoot ? m[5] + m[3] * node.height : 0;
   if ('children' in node) {
     for (const child of node.children)
       bottom = Math.max(bottom, bottomOf(child, m, false));
@@ -23,26 +24,24 @@ function bottomOf(node: SceneNode, parent: Matrix = IDENTITY, isRoot = true): nu
   return bottom;
 }
 
-const SIZES: Record<
-  string,
-  { size: { width: number; height: number }; sizingHeight: number | 'hug' }
-> = {
-  'top-app-bar': { size: { width: 412, height: 152 }, sizingHeight: 152 },
-  'date-picker': { size: { width: 360, height: 512 }, sizingHeight: 'hug' },
-  'time-picker': { size: { width: 328, height: 528 }, sizingHeight: 'hug' },
-  'alert-dialog': { size: { width: 312, height: 248 }, sizingHeight: 'hug' },
-  slider: { size: { width: 328, height: 48 }, sizingHeight: 48 },
+/** Altura do `sizing` de cada tipo (o `size` vem de `COMPOSE_SIZES`, a fonte única dos testes da biblioteca). */
+const SIZING_HEIGHT: Record<string, number | 'hug'> = {
+  'top-app-bar': 152,
+  'date-picker': 'hug',
+  'time-picker': 'hug',
+  'alert-dialog': 'hug',
+  slider: 48,
 };
 
 const catalog = buildCatalog(files);
 
-describe.each(Object.keys(SIZES))('%s: tamanho do Compose', (id) => {
+describe.each(Object.keys(SIZING_HEIGHT))('%s: tamanho do Compose', (id) => {
   const entry = findEntry(catalog, id)!;
-  const expected = SIZES[id]!;
+  const size = COMPOSE_SIZES[id]!;
 
   it('o size e o sizing são os do Compose', () => {
-    expect(entry.component!.size).toEqual(expected.size);
-    expect(entry.component!.sizing?.height).toBe(expected.sizingHeight);
+    expect(entry.component!.size).toEqual(size);
+    expect(entry.component!.sizing?.height).toBe(SIZING_HEIGHT[id]);
   });
 
   it.each(['light', 'dark'] as const)(
@@ -54,8 +53,8 @@ describe.each(Object.keys(SIZES))('%s: tamanho do Compose', (id) => {
         expect(drawing.warnings, example.name).toEqual([]);
         expect(
           bottomOf(drawing.root),
-          `${example.name}: fundo do conteúdo (size ${expected.size.height})`,
-        ).toBeLessThanOrEqual(expected.size.height);
+          `${example.name}: fundo do conteúdo (size ${size.height})`,
+        ).toBeLessThanOrEqual(size.height);
       }
     },
   );

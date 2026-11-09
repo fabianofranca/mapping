@@ -153,10 +153,6 @@ const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
   },
 };
 
-/**
- * Compara os campos e os exemplos de um tipo com os da v1, sem o que a etapa Material 3 com estados acrescentou
- * (o campo `interaction` e os exemplos que o usam, e os exemplos dos limites da ME2) e com as descrições corrigidas de `V1_DESCRIPTION_FIXES`.
- */
 /** Exemplos que a ME2 (#913) acrescentou para mostrar limites conhecidos, por tipo. */
 export const LIMIT_EXAMPLES: Record<string, string> = {
   button: 'Rótulo longo',
@@ -173,6 +169,10 @@ export const COMPOSE_SIZES: Record<string, { width: number; height: number }> = 
   slider: { width: 328, height: 48 },
 };
 
+/**
+ * Compara os campos e os exemplos de um tipo com os da v1, sem o que a etapa Material 3 com estados acrescentou
+ * (o campo `interaction` e os exemplos que o usam, e os exemplos dos limites da ME2) e com as descrições corrigidas de `V1_DESCRIPTION_FIXES`.
+ */
 export function v1WithEstados(
   id: string,
   nowType: unknown,
