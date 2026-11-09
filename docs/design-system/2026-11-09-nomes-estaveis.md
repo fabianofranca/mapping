@@ -1,4 +1,4 @@
-# Nomes acessíveis estáveis — [Não lançado] (épico `epic/nomes-estaveis`)
+# Nomes acessíveis estáveis — 2026-11-09 (épico `epic/nomes-estaveis`)
 
 ## Pendências
 
@@ -6,7 +6,7 @@ Pendências: nenhuma. Mudam só nomes acessíveis (`aria-label`, `aria-described
 
 ## Sincronização
 
-_A preencher no fechamento do épico._ Esperado: Sem impacto, pelo motivo acima.
+Sem impacto: sem pendência, nada foi gravado no artefato Mapping (nenhum componente, token, ícone, texto visível ou layout mudou).
 
 ## Ficou sem gravar
 

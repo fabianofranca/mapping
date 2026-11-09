@@ -1,4 +1,4 @@
-# Nomes acessíveis estáveis — [Não lançado] (épico `epic/nomes-estaveis`, PR #1140, MCP 0.28.5 sem mudança, schema v18)
+# Nomes acessíveis estáveis — 2026-11-09 (épico `epic/nomes-estaveis`, PR #1140, MCP 0.28.6 sem mudança, schema v18)
 
 ## Corrigido
 
