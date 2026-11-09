@@ -17,7 +17,7 @@ import {
   type SpecCode,
   type SpecRepo,
 } from '../src/model';
-import type { LocalFileChecker } from './codeFiles';
+import type { LocalFile, LocalFileChecker } from './codeFiles';
 import { ToolError } from './errors';
 import type { Refs } from './items';
 
@@ -54,13 +54,7 @@ export function assertPlatform(refs: Refs, platformId: string): void {
 }
 
 /** Onde o arquivo está no clone local do cliente (`null`s sem `localPath` configurado). */
-interface LocalPlace {
-  readonly localFile: string | null;
-  readonly exists: boolean | null;
-  readonly problem?: string | undefined;
-}
-
-const NO_LOCAL: LocalPlace = { localFile: null, exists: null };
+const NO_LOCAL: LocalFile = { localFile: null, exists: null };
 
 /**
  * `definition` de uma entrada de `code`: o arquivo que define o `symbol`, com a `url` e o
@@ -70,7 +64,7 @@ const NO_LOCAL: LocalPlace = { localFile: null, exists: null };
 function definitionJson(
   path: string | null | undefined,
   repo: SpecRepo | null,
-  local: LocalPlace,
+  local: LocalFile,
 ): Json | null {
   if (path === null || path === undefined) return null;
   return {

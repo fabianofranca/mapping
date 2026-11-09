@@ -34,6 +34,7 @@ import {
   type ProjectContainer,
   type ResolvedRef,
 } from '../src/model';
+import { memoByProject } from '../src/model/projectIndex';
 import { annotationCode, assertPlatform, CODE_HINT, type CodeContext } from './codeViews';
 import { ToolError } from './errors';
 import { Refs } from './items';
@@ -99,6 +100,23 @@ export function effectiveModeOf(p: Project, containerId: string | null): string 
   return drawingModesOf(p.specializations.map((s) => s.spec?.tokens))[0] ?? null;
 }
 
+/**
+ * Posição de cada marcação entre as irmãs (mesmo pai e mesmo espaço, na ordem do array),
+ * montada uma vez por versão do projeto: uma lista com centenas de linhas não varre as irmãs
+ * a cada uma.
+ */
+const siblingIndexes = memoByProject((p: Project): ReadonlyMap<string, number> => {
+  const counters = new Map<string, number>();
+  const indexes = new Map<string, number>();
+  for (const m of p.markings) {
+    const key = `${m.parentId ?? ''}|${m.containerId ?? ''}`;
+    const next = counters.get(key) ?? 0;
+    indexes.set(m.id, next);
+    counters.set(key, next + 1);
+  }
+  return indexes;
+});
+
 /** Marcação numa linha compacta (listas e filhas). */
 export function markingRow(refs: Refs, marking: Marking): Json {
   const index = projectIndex(refs.project);
@@ -115,7 +133,7 @@ export function markingRow(refs: Refs, marking: Marking): Json {
     parent: marking.parentId === null ? null : refs.ref('m', marking.parentId),
     rect: rectOf(marking),
     // Posição entre as irmãs (0 = primeira, desenhada por baixo).
-    order: siblingPosition(refs.project, marking.id).index,
+    order: siblingIndexes(refs.project).get(marking.id) ?? 0,
     ...componentInfo(refs, marking),
     locked: marking.locked,
     needsReview: marking.needsReview,
@@ -303,6 +321,11 @@ export async function markingView(
   const issues = projectIssues(p);
   const tree = linkTree(refs, own);
   const children = index.children.get(marking.id) ?? [];
+  const childRows = children.slice(0, LIST_LIMIT).map((c) => ({
+    ref: refs.ref('m', c.id),
+    name: c.name,
+    rect: rectOf(c),
+  }));
   const memberContainers = index.containersByParent.get(marking.id) ?? [];
   const attachedArrows = arrowsOf(p, marking.id);
   return {
@@ -324,7 +347,8 @@ export async function markingView(
     floating: marking.floating,
     ...rootInfo(refs, marking.id),
     rect: rectOf(marking),
-    // Ordem entre as irmãs (mesmo container e mesmo pai): 0 = primeira, desenhada por baixo.
+    // Posição entre as irmãs (mesmo pai e mesmo espaço) e quantas são: `index` 0 = a primeira,
+    // desenhada por baixo.
     order: siblingPosition(p, marking.id),
     ...componentInfo(refs, marking),
     lock: {
@@ -334,20 +358,12 @@ export async function markingView(
     },
     needsReview: marking.needsReview,
     parent: marking.parentId === null ? null : refs.ref('m', marking.parentId),
-    children: children.slice(0, LIST_LIMIT).map((c) => ({
-      ref: refs.ref('m', c.id),
-      name: c.name,
-      rect: rectOf(c),
-    })),
+    children: childRows,
     ...(children.length > LIST_LIMIT ? { childrenTotal: children.length } : {}),
     // Quem tem esta marcação como pai (derivado da geometria): marcações do mesmo espaço e,
     // numa marcação do canvas, os containers que ela contém.
     members: {
-      markings: children.slice(0, LIST_LIMIT).map((c) => ({
-        ref: refs.ref('m', c.id),
-        name: c.name,
-        rect: rectOf(c),
-      })),
+      markings: childRows,
       containers: memberContainers.slice(0, LIST_LIMIT).map((c) => ({
         ref: refs.ref('i', c.id),
         name: c.name,
