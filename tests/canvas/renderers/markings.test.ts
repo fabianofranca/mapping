@@ -202,12 +202,12 @@ describe('MarkingRenderer', () => {
     const SMALL = { x: 0, y: 0, scale: 0.02 };
     const BIG = { x: 0, y: 0, scale: 0.2 };
 
-    it('aparece nos dois tamanhos', () => {
+    it('aparece a partir de 24 px na tela; abaixo, só a borda (nível de detalhe)', () => {
       const { renderer, render } = setup();
       const incomplete = new Set(['M1']);
       render({ drawn, incomplete, viewport: SMALL });
       const m1 = node(renderer, 'M1');
-      expect(m1.alert.visible()).toBe(true);
+      expect(m1.alert.visible()).toBe(false);
       render({ drawn, incomplete, viewport: BIG });
       expect(m1.alert.visible()).toBe(true);
     });
@@ -439,5 +439,99 @@ describe('MarkingRenderer: marcações do canvas', () => {
       PLACEMENTS,
     );
     expect(node(renderer, 'C2').text.header.text()).toBe('Grupo');
+  });
+});
+
+describe('nível de detalhe pelo zoom', () => {
+  const LOD_SIZE = { width: 1000, height: 800 };
+  /** M1 (600×500) na tela: 18×15 px (só a borda). */
+  const FAR = { x: 0, y: 0, scale: 0.03 };
+  /** M1 na tela: 0,6×0,5 px (não aparece). */
+  const FARTHEST = { x: 0, y: 0, scale: 0.001 };
+  const fullDetail = (incomplete = new Set(['M1'])) => ({
+    project: withReview(canvasProject(), 'M1'),
+    incomplete,
+    size: LOD_SIZE,
+  });
+
+  it('de longe: borda visível; halo, linha dupla, selo e ⚠ invisíveis', () => {
+    const { renderer, render } = setup();
+    render({ ...fullDetail(), viewport: FAR });
+    const m1 = node(renderer, 'M1');
+    expect(m1.group.visible()).toBe(true);
+    expect(m1.border.visible()).toBe(true);
+    expect(m1.halo.visible()).toBe(false);
+    expect(m1.inner.visible()).toBe(false);
+    expect(m1.badge.visible()).toBe(false);
+    expect(m1.alertClip.visible()).toBe(false);
+    expect(m1.alert.visible()).toBe(false);
+  });
+
+  it('de longe, com marca "alterada" da revisão: a linha dupla continua (completa)', () => {
+    const { renderer, render } = setup();
+    const review = {
+      view: 'proposed' as const,
+      markings: new Map([['M1', { line: 'changed' as const, dim: false, badges: [] }]]),
+      images: new Map(),
+      ghosts: [],
+      removed: [],
+    };
+    render({ ...fullDetail(), review, viewport: FAR });
+    const m1 = node(renderer, 'M1');
+    expect(m1.halo.visible()).toBe(true);
+    expect(m1.inner.visible()).toBe(true);
+    expect(m1.badge.visible()).toBe(true);
+  });
+
+  it('abaixo de 2 px nas duas medidas: o grupo fica invisível', () => {
+    const { renderer, render } = setup();
+    render({ ...fullDetail(), viewport: FARTHEST });
+    expect(node(renderer, 'M1').group.visible()).toBe(false);
+  });
+
+  it('selecionada, ou sob o mouse: completa em qualquer tamanho, mesmo abaixo de 2 px', () => {
+    const { renderer, render } = setup();
+    render({
+      ...fullDetail(),
+      viewport: FARTHEST,
+      selection: { kind: 'marking', id: 'M1' },
+    });
+    const m1 = node(renderer, 'M1');
+    expect(m1.group.visible()).toBe(true);
+    expect(m1.halo.visible()).toBe(true);
+    expect(m1.badge.visible()).toBe(true);
+    expect(m1.alert.visible()).toBe(true);
+
+    const other = setup();
+    other.render({ ...fullDetail(), viewport: FAR, hoverMarking: 'M1' });
+    expect(node(other.renderer, 'M1').halo.visible()).toBe(true);
+    expect(node(other.renderer, 'M1').badge.visible()).toBe(true);
+  });
+
+  it('seleção múltipla: cada marcação selecionada aparece completa', () => {
+    const { renderer, render } = setup();
+    render({
+      ...fullDetail(new Set(['M1', 'M2'])),
+      viewport: FAR,
+      selection: { kind: 'marking', id: 'M2' },
+      items: [
+        { kind: 'marking', id: 'M1' },
+        { kind: 'marking', id: 'M2' },
+      ],
+    });
+    expect(node(renderer, 'M1').halo.visible()).toBe(true);
+    expect(node(renderer, 'M1').alert.visible()).toBe(true);
+    expect(node(renderer, 'M2').halo.visible()).toBe(true);
+    expect(node(renderer, 'M2').alert.visible()).toBe(true);
+  });
+
+  it('voltando ao zoom aproximado, o detalhe volta', () => {
+    const { renderer, render } = setup();
+    render({ ...fullDetail(), viewport: FAR });
+    render({ ...fullDetail(), viewport: { x: 0, y: 0, scale: 1 } });
+    const m1 = node(renderer, 'M1');
+    expect(m1.halo.visible()).toBe(true);
+    expect(m1.badge.visible()).toBe(true);
+    expect(m1.alert.visible()).toBe(true);
   });
 });

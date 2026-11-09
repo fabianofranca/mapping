@@ -15,6 +15,7 @@ import {
 } from '../../model';
 import { visibleArea, type Frame } from '../frame';
 import { semanticMode } from '../semanticText';
+import { levelOfDetail, type LevelOfDetail } from './levelOfDetail';
 import type { MarkingReviewMark } from '../reviewMarks';
 import { markingCanvasRect, placementOfSpace } from '../markingGeometry';
 import type { CanvasTokens } from '../theme';
@@ -42,6 +43,8 @@ const MARKING_SELECTED_STROKE = 2;
 /** Linha dupla da marcação alterada na revisão (px de tela). */
 const REVIEW_DOUBLE_STROKE = 3;
 /** Traço da borda da marcação do canvas (px de tela): traço longo e vão, para não lembrar a "a revisar". */
+/** Máscara de todas as partes do nó penduradas (6 partes em `partsOf`). */
+const ALL_PARTS = 0b111111;
 const CANVAS_DASH: readonly [number, number] = [10, 6];
 
 export interface MarkingNode {
@@ -63,6 +66,8 @@ export interface MarkingNode {
   textDrawn: readonly unknown[] | null;
   /** Faixa do nome devolvida pelo último `updateSemanticText` (para as filhas desviarem). */
   band: HeaderBand | null;
+  /** Partes hoje penduradas no grupo (máscara de `parts`): o Konva percorre todo filho, visível ou não. */
+  attached: number;
 }
 
 /**
@@ -86,12 +91,70 @@ export type MarkingFrame = Pick<
   | 'review'
   | 'drawn'
   | 'hoverMarking'
+  | 'items'
   | 'view'
 >;
 
 /** Consulta do rótulo de nome desenhado de uma marcação (canvas). */
 export interface HeaderLookup {
   get(id: string): Rect | undefined;
+}
+
+/**
+ * Nível de detalhe da marcação pelo tamanho na tela (decisão 4 da etapa canvas-escala). A
+ * selecionada (inclusive na seleção múltipla), a sob o mouse e a com marca da revisão são sempre
+ * completas. No modo visualização (`picked` vazio, sem hover nem revisão) vale só o tamanho.
+ */
+function detailOf(
+  marking: Marking,
+  pxPerUnit: number,
+  tokens: CanvasTokens,
+  always: boolean,
+): LevelOfDetail {
+  return levelOfDetail({
+    screenWidth: marking.rect.width * pxPerUnit,
+    screenHeight: marking.rect.height * pxPerUnit,
+    always,
+    minFull: tokens.lodMinMarking,
+    hide: tokens.lodHideMarking,
+  });
+}
+
+/** Ids das marcações selecionadas (seleção múltipla incluída). */
+function selectedMarkingIds(frame: MarkingFrame): ReadonlySet<string> {
+  const ids = new Set<string>();
+  if (frame.view !== null) return ids;
+  for (const item of frame.items) if (item.kind === 'marking') ids.add(item.id);
+  return ids;
+}
+
+/** Partes do nó na ordem de desenho. */
+function partsOf(node: MarkingNode): readonly (Konva.Group | Konva.Shape)[] {
+  return [
+    node.halo,
+    node.border,
+    node.inner,
+    node.badge,
+    node.alertClip,
+    node.text.group,
+  ];
+}
+
+/**
+ * Só as partes visíveis ficam penduradas no grupo: o `drawScene` do Konva percorre todo filho,
+ * mesmo escondido, e de longe (nível de detalhe) quase todas estão escondidas. Mexe na árvore só
+ * quando o conjunto muda.
+ */
+function syncParts(node: MarkingNode): void {
+  const parts = partsOf(node);
+  let mask = 0;
+  parts.forEach((part, i) => {
+    if (part.visible()) mask |= 1 << i;
+  });
+  if (mask === node.attached) return;
+  node.attached = mask;
+  node.group.removeChildren();
+  node.group.add(...parts.filter((_, i) => (mask & (1 << i)) !== 0));
 }
 
 /** Marcações de cima para baixo na hierarquia, uma vez por versão do projeto. */
@@ -143,6 +206,7 @@ export class MarkingRenderer {
     const lookup = project ? projectIndex(project) : null;
     const ordered = project ? topDownMarkings(project) : [];
     const seen = new Set<string>();
+    const picked = selectedMarkingIds(frame);
     // Cabeçalho de cada marcação já desenhada (pais antes das filhas).
     const headers = new Map<string, HeaderBand>();
     // A ordem de desenho é por pai: cada pilha (a normal e a das flutuantes) conta a sua.
@@ -168,8 +232,25 @@ export class MarkingRenderer {
       const visibility = frame.visibility.get(marking.id) ?? 'full';
       // Modo visualização: a marcação só aparece se o contorno ou o nome estão ligados.
       const shown = mode === null || mode.outline || mode.names;
+      const selected =
+        mode === null && selection?.kind === 'marking' && selection.id === marking.id;
+      const reviewMark =
+        mode === null ? (review?.markings.get(marking.id) ?? null) : null;
+      const pxPerUnit = placement.scale * zoom;
+      const level = detailOf(
+        marking,
+        pxPerUnit,
+        tokens,
+        selected ||
+          picked.has(marking.id) ||
+          (mode === null && frame.hoverMarking === marking.id) ||
+          reviewMark !== null,
+      );
       const onScreen =
-        visibility !== 'hidden' && shown && intersectRects(markingRect, area) !== null;
+        visibility !== 'hidden' &&
+        shown &&
+        level !== 'hidden' &&
+        intersectRects(markingRect, area) !== null;
       if (node.group.visible() !== onScreen) {
         node.group.visible(onScreen);
         touch(marking.floating);
@@ -181,8 +262,6 @@ export class MarkingRenderer {
         touch(marking.floating);
       }
       if (!onScreen) continue;
-      const selected =
-        mode === null && selection?.kind === 'marking' && selection.id === marking.id;
       // Cor da borda escolhida para a imagem (sem escolha, `cv-line`); a marcação do canvas não
       // tem container: usa o token dela e a borda tracejada.
       const canvasMarking = marking.containerId === null;
@@ -190,8 +269,6 @@ export class MarkingRenderer {
         ? tokens.canvasMarking
         : (lookup?.containers.get(marking.containerId ?? '')?.markingColor ?? null);
       const markingIncomplete = mode === null && incomplete.has(marking.id);
-      const reviewMark =
-        mode === null ? (review?.markings.get(marking.id) ?? null) : null;
       // Marcação com o desenho à vista: a borda só aparece sob o mouse ou selecionada (a
       // revisão de propostas, que marca a mudança na própria borda, a mantém).
       const withDrawing = drawn.has(marking.id);
@@ -214,6 +291,7 @@ export class MarkingRenderer {
         lineColor,
         zoom,
         mode === null,
+        level,
       ];
       if (!sameInputs(node.drawn, inputs)) {
         node.drawn = inputs;
@@ -231,12 +309,13 @@ export class MarkingRenderer {
           reviewMark,
           canvasMarking,
           mode === null,
+          level,
         );
+        syncParts(node);
         touch(marking.floating);
       }
       // Ancestral de contexto (modo Ocultar): só a borda, sem nome. O desenho ocupa o
       // lugar do nome das marcações com componente à vista.
-      const pxPerUnit = placement.scale * zoom;
       const textMode =
         visibility !== 'outline' && !withDrawing && (mode?.names ?? true)
           ? semanticMode({
@@ -281,6 +360,7 @@ export class MarkingRenderer {
           tokens,
           zoom,
         );
+        syncParts(node);
         touch(marking.floating);
       }
       const header = node.band;
@@ -321,6 +401,7 @@ export class MarkingRenderer {
       drawn: null,
       textDrawn: null,
       band: null,
+      attached: ALL_PARTS,
     };
     node.alertClip.add(node.alert);
     node.group.add(
@@ -351,6 +432,7 @@ function updateMarkingNode(
   review: MarkingReviewMark | null = null,
   canvasMarking = false,
   indicators = true,
+  detail: LevelOfDetail = 'full',
 ): void {
   const rect = markingCanvasRect(placement, marking.rect);
   // Sem anotação (própria ou herdada) nas camadas visíveis: esmaecida (a selecionada, nunca).
@@ -383,9 +465,11 @@ function updateMarkingNode(
           : [];
   // Halo por fora e por dentro da linha (um traço mais largo por baixo), em toda marcação:
   // a linha aparece sobre fotos claras e escuras.
+  // De longe (`border`): só a borda, sem halo, linha dupla, selo nem ⚠.
+  const full = detail === 'full';
   node.halo.setAttrs({
     ...rect,
-    visible: showBorder,
+    visible: showBorder && full,
     stroke: tokens.halo,
     strokeWidth: stroke + (2 * HALO_WIDTH) / zoom,
     dash,
@@ -398,7 +482,7 @@ function updateMarkingNode(
     dash,
   });
   // Alterada: linha dupla (o traço de 3px com um fio do halo no meio).
-  if (line === 'changed' && showBorder) {
+  if (line === 'changed' && showBorder && full) {
     node.inner.setAttrs({
       ...rect,
       visible: true,
@@ -411,7 +495,7 @@ function updateMarkingNode(
   }
   // Texto do Konva remede a cada mudança de atributo: só mexe nos que aparecem.
   // Ancestral de contexto (modo Ocultar): só a borda, sem alerta.
-  const outline = visibility === 'outline' || !indicators;
+  const outline = visibility === 'outline' || !indicators || !full;
   if (marking.needsReview && !outline) {
     const badge = REVIEW_BADGE_SIZE / zoom;
     node.badge.setAttrs({

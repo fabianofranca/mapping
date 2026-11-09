@@ -771,16 +771,18 @@ describe('visão Proposto com 60 componentes novos', () => {
   );
 });
 
-// Decisão 3 e 9 da etapa canvas-escala: o quadro de edição com o projeto inteiro à vista só
-// redesenha as camadas que mudaram (marcações e sobreposições), não as cinco. A meta da etapa é
-// 16 ms (`RENDER_BUDGET_MS`), mas o quadro é quase todo o `drawScene` da camada das marcações
-// (~23 ms de ~25 ms em jsdom, 22 mil formas): só o nível de detalhe da DA3 (menos formas por
-// marcação) a alcança. Até lá o teto é este, que guarda contra regressão; a DA3 o troca por 16 ms.
-const EDIT_FRAME_INTERIM_BUDGET_MS = 50;
+// Decisões 3, 4 e 9 da etapa canvas-escala: o quadro de edição com o projeto inteiro à vista só
+// redesenha as camadas que mudaram (marcações e sobreposições) e, de longe, cada marcação desenha
+// só a borda e pendura no grupo só o que está visível (nível de detalhe). A meta da decisão 9 é
+// `RENDER_BUDGET_MS` (16 ms), mas em jsdom o quadro de edição mede ~16 a 24 ms (mediana de 15; o
+// `drawScene` das marcações caiu de ~21 para ~9 ms, de 18 mil para 4 mil nós, e sobram ~6 ms do
+// `CanvasController.render` e as sobreposições): o teto abaixo guarda contra regressão até a DA5
+// (nós sob demanda) e a #888 registra o número.
+const EDIT_FRAME_CEILING_MS = 35;
 
 describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)', () => {
   budgetIt(
-    `editar o nome de uma marcação cabe em ${EDIT_FRAME_INTERIM_BUDGET_MS} ms (meta final: ${RENDER_BUDGET_MS} ms, DA3)`,
+    `editar o nome de uma marcação cabe em ${EDIT_FRAME_CEILING_MS} ms (meta: ${RENDER_BUDGET_MS} ms)`,
     { ...BUDGET_OPTIONS, timeout: 120_000 },
     () => {
       const s = openWholeProject(2000);
@@ -794,7 +796,30 @@ describe('quadro de edição com o projeto inteiro à vista (2.000 marcações)'
       for (let i = 0; i < 3; i++) edit(); // Aquecimento.
       const times = Array.from({ length: 15 }, edit);
       const median = [...times].sort((a, b) => a - b)[7] ?? Number.NaN;
-      expect(median).toBeLessThan(EDIT_FRAME_INTERIM_BUDGET_MS);
+      expect(median).toBeLessThan(EDIT_FRAME_CEILING_MS);
+      s.destroy();
+    },
+  );
+
+  budgetIt(
+    `pan e zoom com o projeto inteiro à vista cabem em 33 ms`,
+    { ...BUDGET_OPTIONS, timeout: 120_000 },
+    () => {
+      const s = openWholeProject(2000);
+      let step = 0;
+      const round = (): { pan: number; zoom: number } => {
+        step++;
+        s.controller.centerOnPoint({ x: 500 + 20 * (step % 5), y: 500 });
+        const pan = s.flush();
+        s.controller.zoomBy(step % 2 ? 1.1 : 1 / 1.1);
+        return { pan, zoom: s.flush() };
+      };
+      for (let i = 0; i < 3; i++) round();
+      const samples = Array.from({ length: 15 }, round);
+      const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[7] ?? Number.NaN;
+      // Meta da decisão 9: 33 ms.
+      expect(median(samples.map((r) => r.pan)), 'pan').toBeLessThan(33);
+      expect(median(samples.map((r) => r.zoom)), 'zoom').toBeLessThan(33);
       s.destroy();
     },
   );
