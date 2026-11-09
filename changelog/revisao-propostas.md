@@ -17,3 +17,5 @@
 - Revisão de propostas: o título dos Detalhes não quebra mais no meio da palavra a 900×720 (os botões descem para a linha de baixo).
 - Revisão de propostas, comparação de imagem no modo Deslizar: a alça aparece inteira com a divisória em 0% e em 100%, em vez de cortada pela metade.
 - Revisão de propostas: o aviso "Aplicar bloqueado" por marcação sem imagem diz "depende de uma imagem que não está no projeto", sem o código interno.
+- Revisão de propostas: a coluna Resumo da lista mostra os três contadores inteiros a 900×720 (os contadores ficam mais compactos e a coluna do nome cede espaço).
+- Revisão de propostas, diálogo Comparar: "Aceitar a troca" e "Rejeitar a troca" ficam no rodapé fixo do diálogo, sem precisar rolar o corpo.
