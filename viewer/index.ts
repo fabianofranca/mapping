@@ -60,3 +60,4 @@ export type {
 } from '../src/model/components/layout';
 export { loadLibraryFromUrl, registerLibraryFonts } from './host';
 export type { FontHost, FontStatus, LoadFromUrlOptions } from './host';
+export type { HostFonts } from '../src/model/components/tokens';

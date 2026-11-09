@@ -298,6 +298,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   /** Retângulo da vista no minimapa. */
   'opacity-grabbed': '0.25',
   'opacity-halo': String(HALO_ALPHA),
+  /** Contorno de hover do visualizador embutível (`viewer/viewer.ts`). */
+  'opacity-viewer-hover': '0.8',
   // Movimento
   'duration-instant': '0ms',
   'duration-fast': '100ms',

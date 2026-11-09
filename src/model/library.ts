@@ -72,11 +72,6 @@ export interface LibraryIssue {
   readonly path: string;
   readonly message: string;
   readonly severity: 'error' | 'warning';
-  /**
-   * Problema que a app (não o `validateLibrary`) levanta e mostra traduzido; `message` fica
-   * como texto de reserva (MCP, logs).
-   */
-  readonly code?: 'package-too-big';
 }
 
 export interface LibraryInput {

@@ -1,11 +1,11 @@
 import { t } from '../i18n';
-import type { LibraryIssue } from '../model/library';
+import type { AppLibraryIssue } from '../storage/specPackage';
 
 /** Agrupa por arquivo, na ordem em que cada arquivo aparece pela primeira vez. */
 function groupByFile(
-  issues: readonly LibraryIssue[],
-): readonly (readonly [string, readonly LibraryIssue[]])[] {
-  const groups = new Map<string, LibraryIssue[]>();
+  issues: readonly AppLibraryIssue[],
+): readonly (readonly [string, readonly AppLibraryIssue[]])[] {
+  const groups = new Map<string, AppLibraryIssue[]>();
   for (const issue of issues) {
     const list = groups.get(issue.file);
     if (list) list.push(issue);
@@ -22,7 +22,7 @@ function groupByFile(
 export function LibraryIssueList({
   issues,
 }: {
-  readonly issues: readonly LibraryIssue[];
+  readonly issues: readonly AppLibraryIssue[];
 }) {
   if (issues.length === 0) return null;
   return (

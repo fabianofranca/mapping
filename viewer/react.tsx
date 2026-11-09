@@ -14,6 +14,7 @@
  *   avisa `onHover`/`onClick`; `selection` e `hover` do hospedeiro continuam valendo.
  * - `remoteImages` e `allowOrigin` valem só na criação (imagens remotas, desligadas por padrão;
  *   `allowOrigin` é lida por ref, então uma função nova a cada render não recria o viewer).
+ * - `measure`, `fonts`, `selectionColor` e `hoverColor` valem só na criação (como `fit` e `padding`).
  * - `fit` e `padding` valem só na criação (mudá-los depois não reenquadra). Para reenquadrar
  *   a pedido, use `createViewer` direto e chame `viewer.fit()`.
  */
@@ -40,6 +41,13 @@ export interface MappingViewerProps {
   readonly onWarnings?: ViewerOptions['onWarnings'];
   /** Padrão `true`; `false` = o canvas é só imagem (seleção e hover só pelas props). */
   readonly interactive?: boolean;
+  /** Só na criação do viewer: medidor de texto (padrão: `konvaMeasurer`). */
+  readonly measure?: ViewerOptions['measure'];
+  /** Só na criação do viewer: fonte padrão dos textos sem `family`. */
+  readonly fonts?: ViewerOptions['fonts'];
+  /** Só na criação do viewer: cores do realce de seleção e de hover (CSS). */
+  readonly selectionColor?: string;
+  readonly hoverColor?: string;
   /** Só na criação do viewer (mudar depois não tem efeito). */
   readonly fit?: ViewerOptions['fit'];
   /** Só na criação do viewer (mudar depois não tem efeito). */
@@ -91,6 +99,10 @@ export function MappingViewer(props: MappingViewerProps): JSX.Element {
       source: initial.source,
       sourceSystem: initial.sourceSystem,
       drawingMode: initial.drawingMode,
+      measure: initial.measure,
+      fonts: initial.fonts,
+      selectionColor: initial.selectionColor,
+      hoverColor: initial.hoverColor,
       fit: initial.fit,
       padding: initial.padding,
       interactive: initial.interactive,

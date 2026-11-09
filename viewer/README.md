@@ -6,12 +6,11 @@ Ferramenta do Mapping para quem desenvolve o `mapping-viewer`: um **visualizador
 
 - Núcleo, na raiz da pasta:
   - `index.ts`: entrada pública do núcleo (`createViewer` e os reexports do motor).
-  - `viewer.ts`: `createViewer`, `Viewer`, `ViewerOptions`.
+  - `viewer.ts`: `createViewer`, `Viewer`, `ViewerOptions`; aplica o teto do pixel ratio do Konva (2) na criação do primeiro visualizador.
   - `react.tsx`: invólucro `<MappingViewer/>`, um `<div>` que hospeda um `createViewer`.
   - `tree.ts`: `screenTree` e `flattenTree` (árvore das instâncias, pura).
   - `host.ts`: `loadLibraryFromUrl` e `registerLibraryFonts`, funções do hospedeiro (rede e fontes); o núcleo não faz nenhuma das duas.
   - `remoteImages.ts`: imagens remotas, desligadas por padrão e sempre `pixelSafe`.
-  - `pinch.ts`: pinça com dois dedos no palco Konva e teto do pixel ratio.
   - `build.mjs`, `packageManifest.mjs` e `tsconfig.json`: build do pacote, o manifesto dele (versão e dependências; o teste das declarações o lê) e as declarações de tipo.
 - `demo/`: página de demonstração em React 19 de verdade (sem `preact/compat`), com CSS próprio (`--demo-*`, sem os tokens da app). É um exemplo copiável de hospedeiro.
 - `samples/`: exemplos embutidos (`samples.ts`, `samplesMaterial3.ts`, `settings.sdui.json`), usados pela demo e pelos testes do modelo e do canvas.
@@ -29,7 +28,8 @@ A demo não entra no `npm run build` nem no deploy. `npm run build:viewer` gera 
 
 ## API em resumo
 
-- `createViewer(container, { library, screen, drawingMode, onHover, onClick, onWarnings, measure, fit, padding, interactive, selectionColor, hoverColor, remoteImages, allowOrigin })` devolve `{ update, redraw, setSelection, setHover, setInteractive, fit, scale, boxOf, instanceAt, clientToScreen, warnings, toDataURL, dispose }`.
+- `createViewer(container, { library, screen, source, sourceSystem, onSource, drawingMode, onHover, onClick, onWarnings, measure, fonts, fit, padding, interactive, selectionColor, hoverColor, remoteImages, allowOrigin })` devolve `{ update, redraw, setSelection, setHover, setInteractive, fit, scale, boxOf, instanceAt, clientToScreen, warnings, screen, toDataURL, dispose }`. `source` (JSON externo) vence `screen`, `sourceSystem` escolhe a origem da especialização, `onSource` recebe cada tela calculada, `fonts` define a fonte padrão dos textos e `screen()` devolve a tela desenhada.
+- O contêiner pode ter padding e borda: o stage ocupa a área útil e `clientToScreen` os desconta. O redimensionamento é aplicado no quadro seguinte, uma vez, por mais avisos do `ResizeObserver` que cheguem.
 - `update` faz o diff por identidade (`===`): só as instâncias novas ou com objeto novo são re-instanciadas. O desenho roda no `requestAnimationFrame`, no máximo uma vez por quadro.
 - `drawingMode` escolhe o modo dos `tokens` da especialização (`light`, `dark`…); sem ele (ou com um modo que a especialização não declara) vale o primeiro modo. O visualizador não tem projeto nem container: o modo é só o da opção. Mudá-lo em tempo de execução (`update({ drawingMode })`, ou a prop `drawingMode` do invólucro) redesenha sem recarregar a biblioteca nem a tela (a biblioteca com os tokens do modo é guardada por modo). Os tokens embutidos `font-sans` e `font-mono` valem a fonte do hospedeiro (`fonts`, ou a pilha do tema da app) em qualquer modo, a menos que a especialização os redefina.
 - `<MappingViewer library screen selection hover interactive ... />` lê os callbacks por ref e sobrevive ao `<StrictMode>`.
@@ -42,7 +42,7 @@ Os detalhes de cada opção e de cada exportação estão no `PACKAGE-README.md`
 
 - **Arrastar e redimensionar**: é edição. O núcleo dá seleção pelo clique, hover e o modo sem interação (`interactive: false`); `boxOf`, `scale` e `clientToScreen` deixam o hospedeiro desenhar alças próprias em DOM. Quem precisar de arrasto liga o gesto nos grupos via `ScreenRenderer` (exportado).
 - Rede e fontes no núcleo: ficam em `host.ts`, para o site que instala o pacote.
-- Tokens e i18n da app: a demo e o pacote não os usam.
+- Tokens e i18n da app: a demo não os usa. O pacote usa só `tokenValue` (`src/theme/tokens.ts`, tema claro) para as cores padrão do realce (`color-accent` e `opacity-viewer-hover`) e para a pilha de fontes padrão; não usa `t()` nem CSS.
 
 ## Pontos em aberto
 
@@ -52,4 +52,4 @@ Os detalhes de cada opção e de cada exportação estão no `PACKAGE-README.md`
 
 ## Regras da pasta
 
-TypeScript strict, sem `any`, sem requisição de rede; React é dependência só de desenvolvimento e só da demo; a demo usa a CSP de perfil `static`. Imagem por URL só pelo carregador de `src/canvas/components/` (regra de lint também vale em `viewer/**`).
+TypeScript strict, sem `any`, sem requisição de rede; React é dependência só de desenvolvimento e só da demo; a demo usa a CSP de perfil `static` só no build da demo (`vite build --config vite.viewer.config.ts`, saída em `dist-viewer-demo/`); no `npm run dev:viewer` o servidor do Vite não aplica essa CSP. Imagem por URL só pelo carregador de `src/canvas/components/` (regra de lint também vale em `viewer/**`).

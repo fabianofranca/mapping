@@ -5,14 +5,14 @@ import { readFileSync } from 'node:fs';
 import { URL } from 'node:url';
 
 // Versão do pacote: sobe junto com mudanças da API (exports, assinaturas, comportamento).
-export const VIEWER_VERSION = '0.4.1';
+export const VIEWER_VERSION = '0.4.2';
 
 // A faixa do Konva vem do package.json da raiz, nunca escrita à mão.
 const rootPackage = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
 );
 
-// Sem `sideEffects: false` de propósito: o núcleo ajusta `Konva.pixelRatio` ao carregar.
+// Sem `sideEffects: false` de propósito: o Konva embutido registra classes ao carregar.
 // Sem `license`: o repositório ainda não tem arquivo LICENSE.
 export const packageJson = {
   name: 'mapping-viewer',

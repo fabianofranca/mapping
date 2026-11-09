@@ -10,8 +10,18 @@ import { validateLibrary, type LibraryIssue } from '../model/library';
 import { reportError } from '../utils/report';
 import type { ProjectStorage } from './types';
 
+/**
+ * Problema da biblioteca como a app o mostra: o do `validateLibrary` mais, opcionalmente, um
+ * código para os que a própria app levanta. Com `code`, a interface mostra o texto traduzido e
+ * `message` fica como reserva (logs). O código vive aqui e não em `src/model/` porque o modelo
+ * é entrada da release do MCP.
+ */
+export interface AppLibraryIssue extends LibraryIssue {
+  readonly code?: 'package-too-big';
+}
+
 /** Problemas da biblioteca aplicada (níveis 1 e 2) por id de especialização. */
-export type LibraryIssues = ReadonlyMap<string, readonly LibraryIssue[]>;
+export type LibraryIssues = ReadonlyMap<string, readonly AppLibraryIssue[]>;
 
 /** Lê todos os arquivos de `specs/<id>/`: texto dos `.json` e `.md`, os demais só em presença. */
 export async function readSpecPackage(
@@ -32,7 +42,7 @@ export async function readSpecPackage(
   return { entries, bytes };
 }
 
-const TOO_BIG: LibraryIssue = {
+const TOO_BIG: AppLibraryIssue = {
   file: '',
   path: '',
   message: 'pacote grande demais para conferir (limite de arquivos ou de bytes)',
@@ -51,7 +61,7 @@ export async function loadLibraryIssues(
   storage: ProjectStorage,
   project: Pick<Project, 'specializations'>,
 ): Promise<LibraryIssues> {
-  const result = new Map<string, readonly LibraryIssue[]>();
+  const result = new Map<string, readonly AppLibraryIssue[]>();
   // Os pacotes são lidos em paralelo; o resultado segue a ordem das especializações.
   const found = await Promise.all(
     project.specializations.map(async (s) => {
