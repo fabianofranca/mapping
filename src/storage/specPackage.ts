@@ -37,6 +37,8 @@ const TOO_BIG: LibraryIssue = {
   path: '',
   message: 'pacote grande demais para conferir (limite de arquivos ou de bytes)',
   severity: 'error',
+  // A interface mostra o texto traduzido (`library.packageTooBig`), não esta mensagem.
+  code: 'package-too-big',
 };
 
 /**
@@ -50,24 +52,26 @@ export async function loadLibraryIssues(
   project: Pick<Project, 'specializations'>,
 ): Promise<LibraryIssues> {
   const result = new Map<string, readonly LibraryIssue[]>();
-  for (const s of project.specializations) {
-    const dir = packageDirOf(s.file);
-    if (dir === null) continue;
-    try {
-      const pkg = await readSpecPackage(storage, dir);
-      if (pkg === null) {
-        result.set(s.id, [TOO_BIG]);
-        continue;
+  // Os pacotes são lidos em paralelo; o resultado segue a ordem das especializações.
+  const found = await Promise.all(
+    project.specializations.map(async (s) => {
+      const dir = packageDirOf(s.file);
+      if (dir === null) return null;
+      try {
+        const pkg = await readSpecPackage(storage, dir);
+        if (pkg === null) return [s.id, [TOO_BIG]] as const;
+        const report = validateLibrary({
+          files: toLibraryFiles(dir, pkg.entries),
+          specPath: s.file.slice(dir.length + 1),
+          level: 2,
+        });
+        return [s.id, report.issues] as const;
+      } catch (e) {
+        reportError('open.libraryIssues', e);
+        return null;
       }
-      const report = validateLibrary({
-        files: toLibraryFiles(dir, pkg.entries),
-        specPath: s.file.slice(dir.length + 1),
-        level: 2,
-      });
-      result.set(s.id, report.issues);
-    } catch (e) {
-      reportError('open.libraryIssues', e);
-    }
-  }
+    }),
+  );
+  for (const entry of found) if (entry) result.set(entry[0], entry[1]);
   return result;
 }

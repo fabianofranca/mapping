@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { SCHEMA_VERSION, undeclaredDrawingMode } from '../model';
+import type { FontProblem } from '../storage/fonts';
 import { markDiagnosticsSeen, remoteImageIssues } from '../store/diagnostics';
 import { allowedOrigins } from '../store/imagePermissions';
 import { locale, theme } from '../store/settings';
@@ -188,6 +189,18 @@ export function DiagnosticsLibrary() {
   );
 }
 
+/** O motivo de uma fonte que não carregou, no idioma da interface. */
+function fontProblemText(problem: FontProblem): string {
+  switch (problem.code) {
+    case 'missing':
+      return t('diagnostics.fontMissing', { path: problem.path });
+    case 'no-fontface':
+      return t('diagnostics.fontNoFontFace');
+    case 'load-failed':
+      return t('diagnostics.fontFailed', { detail: problem.message });
+  }
+}
+
 /**
  * Componentes (etapa Biblioteca, B3): fontes que faltam ou não carregaram, componentes das
  * especializações que não carregaram e os avisos do desenho por marcação (com um botão para
@@ -226,7 +239,7 @@ export function DiagnosticsComponents() {
         <>
           <h4>{t('diagnostics.fonts')}</h4>
           <ul>
-            {fonts.map(({ font, status, detail }) => (
+            {fonts.map(({ font, problem }) => (
               <li key={`${font.family}|${font.weight}|${font.style}|${font.path}`}>
                 {t('diagnostics.fontItem', {
                   family: font.family,
@@ -238,9 +251,7 @@ export function DiagnosticsComponents() {
                   ),
                 })}
                 {': '}
-                {status === 'missing'
-                  ? t('diagnostics.fontMissing')
-                  : t('diagnostics.fontFailed', { detail: detail ?? '' })}
+                {problem ? fontProblemText(problem) : ''}
               </li>
             ))}
           </ul>

@@ -45,8 +45,13 @@ export async function importExistingImages(
       const next = addContainer(p, { id: deps.newId(), file, ...size });
       if (!inImages) {
         await storage.writeImage(file, data);
-        await storage.removeImage(image.path);
+        // A cópia já está em `images/`: o container entra no projeto mesmo que o original não
+        // possa ser apagado (sem perda; o original fica onde estava e a falha vai ao Diagnóstico).
+        await storage.removeImage(image.path).catch((e: unknown) => {
+          reportError('folder.importExisting.remove', e);
+        });
       }
+      taken.add(file);
       p = next;
     } catch (e) {
       reportError('folder.importExisting', e);

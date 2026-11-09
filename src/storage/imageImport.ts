@@ -11,6 +11,9 @@ import {
 } from '../model';
 import { reportError } from '../utils/report';
 
+/** Fundo do JPEG (que não tem transparência): papel branco, não uma cor de design. */
+const JPEG_BACKGROUND = '#fff';
+
 /** Lado maior do bitmap usado para exibir a imagem (as coordenadas não mudam). */
 export const DISPLAY_MAX_SIDE = 2048;
 
@@ -47,7 +50,7 @@ function drawToCanvas(
   if (!ctx) throw new Error('2d context unavailable');
   if (mime === 'image/jpeg') {
     // JPEG não tem transparência: sem fundo, ela viraria preto.
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = JPEG_BACKGROUND;
     ctx.fillRect(0, 0, width, height);
   }
   ctx.imageSmoothingQuality = 'high';

@@ -13,6 +13,7 @@ import {
   useCopyErrors,
 } from '../../src/ui/DiagnosticsView';
 import { SCHEMA_VERSION } from '../../src/model';
+import { locale } from '../../src/store/settings';
 import { EditorContext } from '../../src/ui/EditorContext';
 import { BUILD_ID } from '../../src/utils/build';
 import { clearReportedErrors, reportError } from '../../src/utils/report';
@@ -265,5 +266,35 @@ describe('Diagnóstico: imagens remotas', () => {
     expect(rows[0]).not.toContain(t('diagnostics.imageReason.invalid'));
     expect(rows[1]).toContain('https://b.com/y.png');
     clearRemoteImageIssues();
+  });
+});
+
+describe('Diagnóstico: pacote grande demais em en-US', () => {
+  it('o problema TOO_BIG aparece traduzido', () => {
+    locale.value = 'en-US';
+    const issues = new Map([
+      [
+        'sdui',
+        [
+          {
+            file: '',
+            path: '',
+            message:
+              'pacote grande demais para conferir (limite de arquivos ou de bytes)',
+            severity: 'error' as const,
+            code: 'package-too-big' as const,
+          },
+        ],
+      ],
+    ]);
+    const harness = createHarness(sampleProject(), false, { libraryIssues: issues });
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Diagnostics />
+      </EditorContext.Provider>,
+    );
+    expect(screen.getByText(/package too big to check/)).toBeTruthy();
+    expect(screen.queryByText(/grande demais/)).toBeNull();
+    locale.value = 'pt-BR';
   });
 });

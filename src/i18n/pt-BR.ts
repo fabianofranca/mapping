@@ -302,6 +302,7 @@ export const ptBR = {
   'canvas.imageError': 'Não foi possível exibir',
 
   'export.title': 'Exportar projeto',
+  'export.defaultZipName': 'projeto',
   'export.ready': '{file} está pronto.',
   'export.share': 'Compartilhar',
   'export.download': 'Baixar',
@@ -509,6 +510,8 @@ export const ptBR = {
   'library.error': 'erro',
   'library.warning': 'aviso',
   'library.package': 'Pacote',
+  'library.packageTooBig':
+    'pacote grande demais para conferir (limite de arquivos ou de bytes)',
   'library.issues': 'Problemas do pacote',
   'spec.removeTitle': 'Remover "{name}"?',
   'spec.removeChoose': 'O que fazer com as camadas e anotações da especialização?',
@@ -1190,7 +1193,8 @@ export const ptBR = {
   'diagnostics.fontItem': '{family} · peso {weight} · {style}',
   'diagnostics.fontStyle.normal': 'normal',
   'diagnostics.fontStyle.italic': 'itálico',
-  'diagnostics.fontMissing': 'ausente: usando a fonte do sistema',
+  'diagnostics.fontMissing': 'ausente ({path}): usando a fonte do sistema',
+  'diagnostics.fontNoFontFace': 'este navegador não tem FontFace',
   'diagnostics.fontFailed': 'não carregou: {detail}',
   'diagnostics.catalogProblems': 'Componentes que não carregaram',
   'diagnostics.drawWarnings': 'Avisos do desenho',

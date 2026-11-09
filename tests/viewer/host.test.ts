@@ -244,7 +244,10 @@ describe('registerLibraryFonts', () => {
       fonts: { add: (f) => added.push(f), delete: () => true },
     });
     expect(status.map((s) => s.status)).toEqual(['loaded', 'missing']);
-    expect(status[1]?.detail).toContain('fonts/Roboto-Medium.ttf');
+    expect(status[1]?.problem).toEqual({
+      code: 'missing',
+      path: expect.stringContaining('fonts/Roboto-Medium.ttf'),
+    });
     expect(added).toHaveLength(1);
     expect((added[0] as FakeFace).family).toBe('Roboto');
     expect((added[0] as FakeFace).source).toBe(fontBytes);

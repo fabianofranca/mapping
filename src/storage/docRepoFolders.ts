@@ -2,6 +2,7 @@ import { openDB, type DBSchema } from 'idb';
 import { channelDbName } from '../utils/channel';
 import { reportError } from '../utils/report';
 import type { FolderPermission } from './folder';
+import { withTimeout } from './local';
 
 // Pastas dos repositórios de documentos (`docRepos` da especialização, schema v14): o `doc` de
 // um tipo pode apontar um `.md` que vive num repositório externo. A app lê esse arquivo da
@@ -12,8 +13,6 @@ import type { FolderPermission } from './folder';
 
 const DB_NAME = channelDbName('mapping-doc-folders');
 const DB_VERSION = 1;
-/** Tempo máximo para abrir o banco (em `file://` alguns navegadores nunca respondem). */
-const OPEN_TIMEOUT_MS = 3000;
 
 /** Subconjunto do `FileSystemDirectoryHandle` que a leitura de documentos usa. */
 export interface DocDirectoryHandle {
@@ -69,23 +68,9 @@ interface DocFoldersSchema extends DBSchema {
   folders: { key: string; value: DocDirectoryHandle };
 }
 
-/** A abertura do banco, ou `null` se demorar mais que `OPEN_TIMEOUT_MS`. */
-async function openWithTimeout<T extends { close(): void }>(
-  open: Promise<T>,
-): Promise<T | null> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<null>((resolve) => {
-    timer = setTimeout(() => resolve(null), OPEN_TIMEOUT_MS);
-  });
-  const db = await Promise.race([open, timeout]);
-  clearTimeout(timer);
-  if (!db) void open.then((late) => late.close()).catch(() => undefined);
-  return db;
-}
-
 async function openIdbStore(): Promise<DocFolderStore | null> {
   // Sem IndexedDB o `openDB` lança: `getStore` registra e segue só com a memória.
-  const db = await openWithTimeout(
+  const db = await withTimeout(
     openDB<DocFoldersSchema>(DB_NAME, DB_VERSION, {
       upgrade(upgrading) {
         upgrading.createObjectStore('folders');
