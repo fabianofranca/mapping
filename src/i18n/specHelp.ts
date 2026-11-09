@@ -494,6 +494,43 @@ const SOURCES_EXCERPT = `{
 }`;
 
 /** Trecho da declaração de origem executável (`origins`, v4). */
+const TOKENS_EXCERPT = `{
+  "formatVersion": 15,
+  "tokens": {
+    "modes": ["light", "dark"],
+    "values": {
+      "primary": { "light": "#6750A4", "dark": "#D0BCFF" },
+      "on-primary": { "light": "#FFFFFF", "dark": "#381E72" },
+      "radius-md": 12,
+      "space-4": 16,
+      "font-sans": "Roboto, sans-serif"
+    }
+  }
+}`;
+
+const ICONS_EXCERPT = `{
+  "format": "mapping-icons",
+  "formatVersion": 1,
+  "viewBox": [24, 24],
+  "icons": {
+    "check": {
+      "paths": [
+        {
+          "d": "M5 12l5 5L20 7",
+          "stroke": true,
+          "width": 2,
+          "cap": "round",
+          "join": "round"
+        }
+      ]
+    },
+    "dot": {
+      "viewBox": [10, 10],
+      "paths": [{ "d": "M5 1a4 4 0 1 0 0 8a4 4 0 1 0 0-8z", "fill": true }]
+    }
+  }
+}`;
+
 const ORIGINS_EXCERPT = `{
   "origins": [
     {
@@ -637,6 +674,7 @@ const ptBR: readonly HelpSection[] = [
           'A formatVersion 12 acrescenta três passos de migração dos papéis em migrations: rename-role, remove-role e set-role (seções "Contrato de versão" e "Papéis no vínculo (childRoles)"). Tirar um papel de childRoles passa a ser quebra, e só sobe para a 12 quem declara um desses passos. As versões 1 a 11 continuam aceitas.',
           'A formatVersion 13 deixa allowedChildren listar tipos da camada do próprio dono: a cláusula { layer } da própria camada e o id de um tipo da mesma camada, inclusive o do próprio tipo (seção "Filhos por camada e grupo"). Assim um evento pode ser dono de outros eventos, cada filho no papel em que se liga. Só sobe para a 13 quem usa isso; as versões 1 a 12 continuam aceitas, e a cláusula da própria camada numa versão anterior é o erro de sempre: filhos devem estar em outra camada.',
           'A formatVersion 14 deixa o accepts de um campo ou coluna ref listar anotações inteiras como alvo, em accepts.annotations: ids de tipo ou cláusulas { layer, groups } da mesma especialização, com a sintaxe de allowedChildren (seção "Referências e etiquetas"). Só sobe para a 14 quem usa isso; as versões 1 a 13 continuam aceitas, e a chave numa versão anterior é o erro só é permitido com formatVersion 14.',
+          'A formatVersion 15 acrescenta quatro recursos opcionais: tokens na raiz, os valores de design com nome, simples ou por modo (seção "Tokens de design"); icons na raiz, o arquivo de ícones do pacote (seção "Conjunto de ícones"); structural no tipo de anotação, o tipo que agrupa e não desenha (seção "Formato do arquivo"); e kind em origins, que escolhe a origem tree (padrão) ou measured (seção "Origens (sources)"). Só sobe para a 15 quem usa algum deles; as versões 1 a 14 continuam aceitas, e a chave numa versão anterior é o erro só é permitido com formatVersion 15.',
           'A formatVersion 4 acrescenta a biblioteca: componentes que desenham os tipos, documentos, exemplos, fontes, origens executáveis e o contrato de versão (seções "Biblioteca: o pacote", "Contrato de versão" e "Validação da biblioteca").',
           'A formatVersion 5 é a 4 mais o repo nas plataformas: o repositório da biblioteca em cada plataforma, de onde vêm o link e a revisão do arquivo de cada symbol (seção "Plataformas e code").',
           'A formatVersion 6 é a 5 mais containers: os tamanhos prontos que o diálogo Novo container oferece quando a especialização está aplicada (seção "Containers (tamanhos prontos)"). O núcleo só tem Personalizado e Tamanho da seleção; as versões 1 a 5 continuam aceitas.',
@@ -655,7 +693,7 @@ const ptBR: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 14), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
+        text: 'Na raiz: format (sempre "mapping-spec"), formatVersion (1 a 15), id, name e version (inteiro ≥ 1) são obrigatórios; description, platforms (com repo na versão 5), containers (a partir da versão 6), docRepos (a partir da versão 11) e, a partir da versão 4, fonts, origins e migrations são opcionais. Cada camada tem id (único), name, color (#RRGGBB) e annotationTypes, e, a partir da versão 11, groups opcional.',
       },
       { kind: 'p', text: 'Tipo de anotação (annotationTypes):' },
       {
@@ -712,6 +750,10 @@ const ptBR: readonly HelpSection[] = [
           {
             term: 'appliesTo',
             text: 'Opcional (formatVersion 7). Lista de "marking" e/ou "arrow"; o padrão é ["marking"]. Diz a que a anotação se aplica (seção "Onde o tipo se aplica").',
+          },
+          {
+            term: 'structural',
+            text: 'Opcional (formatVersion 15). Padrão false. true: o tipo agrupa e não desenha (sem component); a marcação não mostra o nome e o contorno só aparece com o mouse ou selecionada.',
           },
         ],
       },
@@ -1216,6 +1258,10 @@ const ptBR: readonly HelpSection[] = [
             term: 'origins',
             text: 'Na raiz: a declaração executável de cada sistema, com node (chaves do nó), screen (largura, altura, fundo e raízes com âncora e película), booleans e examples (telas de exemplo). O app executa a declaração, nunca código da especialização.',
           },
+          {
+            term: 'kind',
+            text: 'Opcional na origem (formatVersion 15). tree (padrão) lê o JSON de um backend por node e screen; measured recebe uma árvore de retângulos medidos pela op import_measured do MCP e aceita só system, kind, name e booleans.',
+          },
         ],
       },
       { kind: 'code', code: ORIGINS_EXCERPT },
@@ -1259,6 +1305,48 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'p',
         text: 'No app, Especializações › Aplicar pasta… (Chrome e Edge) ou Aplicar zip… confere o pacote pelos três níveis: erros bloqueiam, avisos deixam aplicar. Aplicar copia a pasta inteira para specs/<id>/ no projeto; Atualizar de pasta… ou de zip… regrava a cópia e Remover a apaga. Uma especialização v4 ou v5 que não cita nenhum arquivo do pacote (sem component, doc, examples, fonts nem origins) vale como arquivo .json isolado; a que cita é recusada em .json: a biblioteca precisa da pasta inteira. O repositório traz bibliotecas completas em libraries/ (por exemplo, a material3-compose, com 50 tipos do Material 3 para Jetpack Compose e a fonte Roboto) e, em examples/libraries/sdui-backend/, o exemplo da origem executável.',
+      },
+    ],
+  },
+  {
+    id: 'tokens',
+    title: 'Tokens de design',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'tokens (formatVersion 15, opcional, na raiz) guarda os valores de design da biblioteca com nome: cores, raios, espaçamentos e famílias de fonte. Os componentes de formato 4 leem cada valor com { "$token": "nome" }, em vez de repetir o literal em cada nó. Trocar o valor num lugar só muda o desenho inteiro.',
+      },
+      { kind: 'code', code: TOKENS_EXCERPT },
+      {
+        kind: 'list',
+        items: [
+          'modes: lista não vazia de nomes distintos no formato [a-z0-9][a-z0-9-]*. A convenção é ["light", "dark"].',
+          'values: o nome do token ([a-z0-9][a-z0-9-]*) aponta para um valor, que é texto (cor #rrggbb, rgba(…) ou família de fonte) ou número (raio, espaçamento, tamanho, peso).',
+          'Um valor simples vale em todos os modos. Um valor por modo é um objeto com todos os modos de modes (e só eles), todos do mesmo tipo: misturar cor num modo e número no outro é erro.',
+          'Embutidos: font-sans e font-mono existem em toda biblioteca, mesmo sem tokens, e valem a fonte do hospedeiro; a especialização pode redefini-los em values. O texto sem font.family usa font-sans.',
+          'Nesta versão o desenho usa sempre o primeiro modo de modes; um modo não declarado cai no primeiro, sem aviso.',
+          'Erros de validação, com o caminho em tokens: só é permitido com formatVersion 15, nome fora do padrão, modes vazio ou com nome repetido, valor por modo sem algum modo (ou com modo que não existe em modes) e valores de tipos diferentes entre os modos. Na validação da biblioteca (nível 2), $token com nome inexistente ou com tipo errado também é erro.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'icons',
+    title: 'Conjunto de ícones',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'icons (formatVersion 15, opcional, na raiz) é o caminho de um arquivo .json do pacote, relativo ao arquivo da especialização (sem ., .. nem unidade, com /). O arquivo guarda os ícones da biblioteca; o nó icon dos componentes de formato 4 escolhe um pelo nome.',
+      },
+      { kind: 'code', code: ICONS_EXCERPT },
+      {
+        kind: 'list',
+        items: [
+          'format é mapping-icons e formatVersion é 1 (a única versão do arquivo). viewBox ([largura, altura] positivos) é obrigatório e vale para todos os ícones que não trazem o seu.',
+          'icons: o nome do ícone (^[a-z0-9][a-z0-9-_]*$) aponta para { viewBox?, paths }. paths é uma lista não vazia de { d, fill?, stroke?, width?, cap?, join? }: d são os dados SVG; fill e stroke são true (a cor do nó icon), false (nada) ou uma cor própria; width é a largura do traço em unidades do viewBox (padrão 1); cap (butt, round, square) e join (miter, round, bevel) como em stroke do componente.',
+          'O arquivo faz parte do pacote: a app o copia com a pasta, e a especialização que declara icons não vale como arquivo isolado.',
+          'Validação da biblioteca: nível 1, o arquivo existe e é um mapping-icons válido; nível 2, todo nome literal de um nó icon existe no conjunto; nível 3, a opção de um campo enum lido pelo name de um nó icon que não está no conjunto gera aviso.',
+        ],
       },
     ],
   },
@@ -1365,7 +1453,7 @@ const ptBR: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 a 13), id, name e version obrigatórios; version inteiro ≥ 1;',
+          'format, formatVersion (1 a 15), id, name e version obrigatórios; version inteiro ≥ 1;',
           'ids de camada únicos; ids de tipo únicos na especialização inteira; key única no tipo e nas colunas; nenhuma key começando com _;',
           'allowedChildren só referencia tipos existentes, em outra camada (a partir da formatVersion 13, também na camada do próprio dono);',
           'todo tipo com requiresOwner: true aparece no allowedChildren de algum tipo (na formatVersion 11, no conjunto resolvido dos filhos de algum dono: por id, por camada inteira ou por grupo);',
@@ -1374,6 +1462,10 @@ const ptBR: readonly HelpSection[] = [
           'labelField aponta para um campo string do tipo;',
           'accepts com pelo menos uma etiqueta, free: true ou annotations; etiquetas no formato [a-z0-9-]+;',
           'formatVersion 14, accepts.annotations: só na versão 14 (antes dela o erro é só é permitido com formatVersion 14, no caminho …accepts.annotations do campo ou da coluna); lista não vazia de ids de tipo ou cláusulas { layer, groups } da mesma especialização; erros iguais aos de allowedChildren: camada, grupo ou tipo inexistente;',
+          'formatVersion 15, tokens: só na versão 15 (antes dela o erro é só é permitido com formatVersion 15, no caminho tokens); modes lista não vazia de nomes distintos [a-z0-9][a-z0-9-]*; nome de token no mesmo padrão; cada valor é texto ou número, simples ou com todos os modos (e só eles) do mesmo tipo;',
+          'formatVersion 15, icons: só na versão 15 (no caminho icons); caminho relativo do pacote, terminando em .json, sem ., .. nem unidade; o arquivo apontado é conferido pela validação da biblioteca;',
+          'formatVersion 15, structural: só na versão 15 (no caminho …annotationTypes[n].structural); booleano; true com component no mesmo tipo é erro;',
+          'formatVersion 15, origins[].kind: só na versão 15 (no caminho origins[n].kind); tree (padrão) ou measured; a measured aceita só system, kind, name e booleans (node, screen e examples são erro, com o caminho);',
           'platforms: id no formato [a-z0-9-]+, único, e name obrigatório; platforms e code a partir da formatVersion 2; sources (origens externas) a partir da formatVersion 3;',
           'formatVersion 11, filhos por camada e grupo: só na versão 11 (antes dela o erro é só é permitido com formatVersion 11, no caminho exato); cada item de allowedChildren é um id de tipo ou uma cláusula { layer, groups } estrita (outra propriedade é erro, e groups vazio também); erros: layer que não é camada da especialização ou é a do próprio dono antes da formatVersion 13 (filhos devem estar em outra camada) e grupo inexistente na camada da cláusula; requiresOwner conferido no conjunto resolvido; groups da camada com id não vazio e único na camada e name não vazio; groups do tipo não vazio, sem repetição e só da própria camada; avisos: 20 ids ou mais em texto no mesmo allowedChildren e grupo que nenhum tipo usa;',
           'formatVersion 12, passos de papel em migrations: rename-role, remove-role e set-role só na versão 12 (de 4 a 11 o erro é só é permitido com formatVersion 12, no caminho migrations[i].steps[j].op); chaves estritas; rename-role: type é tipo desta versão com childRoles, to é papel dele e from não é; remove-role: type é tipo desta versão, role não é papel dele e mode é clear ou unlink; set-role: type tem childRoles, role é papel dele e childType só confere o formato de id; aviso: rename-role.from ou remove-role.role que não era papel do tipo na versão anterior;',
@@ -1432,6 +1524,7 @@ const enUS: readonly HelpSection[] = [
           'formatVersion 12 adds three role migration steps to migrations: rename-role, remove-role and set-role (sections "Version contract" and "Roles on the link (childRoles)"). Removing a role from childRoles is now a breaking change, and only a specialization that declares one of these steps goes up to 12. Versions 1 to 11 are still accepted.',
           'formatVersion 13 lets allowedChildren list types of the owner’s own layer: the { layer } clause of its own layer and the id of a type in the same layer, including the owner’s own type (section "Children by layer and group"). So an event can own other events, each child in the role it attaches in. Only a specialization that uses this goes up to 13; versions 1 to 12 are still accepted, and the own-layer clause in an earlier version is the usual error: children must be in another layer.',
           'formatVersion 14 lets the accepts of a ref field or column list whole annotations as targets, in accepts.annotations: type ids or { layer, groups } clauses of the same specialization, with the allowedChildren syntax (section "References and tags"). Only a specialization that uses this goes up to 14; versions 1 to 13 are still accepted, and the key in an earlier version is the error only allowed with formatVersion 14.',
+          'formatVersion 15 adds four optional features: tokens at the root, the named design values, simple or per mode (section "Design tokens"); icons at the root, the package icon file (section "Icon set"); structural on the annotation type, the type that groups and does not draw (section "File format"); and kind in origins, which picks the tree (default) or measured origin (section "Sources (sources)"). Only a specialization that uses one of them goes up to 15; versions 1 to 14 are still accepted, and the key in an earlier version is the error only allowed with formatVersion 15.',
           'formatVersion 4 adds the library: components that draw the types, documents, examples, fonts, executable origins and the version contract (sections "Library: the package", "Version contract" and "Library validation").',
           'formatVersion 5 is 4 plus repo on the platforms: the library repository on each platform, where the link and the revision of the file of each symbol come from (section "Platforms and code").',
           'formatVersion 6 is 5 plus containers: the ready-made sizes the New container dialog offers when the specialization is applied (section "Containers (ready-made sizes)"). The core only has Custom and Selection size; versions 1 to 5 are still accepted.',
@@ -1450,7 +1543,7 @@ const enUS: readonly HelpSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 14), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
+        text: 'At the root: format (always "mapping-spec"), formatVersion (1 to 15), id, name and version (integer ≥ 1) are required; description, platforms (with repo in version 5), containers (from version 6), docRepos (from version 11) and, from version 4 on, fonts, origins and migrations are optional. Each layer has id (unique), name, color (#RRGGBB) and annotationTypes and, from version 11, optional groups.',
       },
       { kind: 'p', text: 'Annotation type (annotationTypes):' },
       {
@@ -1510,6 +1603,10 @@ const enUS: readonly HelpSection[] = [
           {
             term: 'appliesTo',
             text: 'Optional (formatVersion 7). List of "marking" and/or "arrow"; defaults to ["marking"]. Says what the annotation applies to (section "What the type applies to").',
+          },
+          {
+            term: 'structural',
+            text: 'Optional (formatVersion 15). Defaults to false. true: the type groups and does not draw (no component); the marking does not show the name and the outline only appears on hover or when selected.',
           },
         ],
       },
@@ -2014,6 +2111,10 @@ const enUS: readonly HelpSection[] = [
             term: 'origins',
             text: 'At the root: the executable declaration of each system, with node (node keys), screen (width, height, background and roots with anchor and scrim), booleans and examples (example screens). The app runs the declaration, never code from the specialization.',
           },
+          {
+            term: 'kind',
+            text: 'Optional on an origin (formatVersion 15). tree (default) reads a backend JSON through node and screen; measured takes a tree of measured rectangles through the import_measured op of the MCP and accepts only system, kind, name and booleans.',
+          },
         ],
       },
       { kind: 'code', code: ORIGINS_EXCERPT },
@@ -2057,6 +2158,48 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'p',
         text: 'In the app, Specializations › Apply folder… (Chrome and Edge) or Apply zip… checks the package through the three levels: errors block, warnings let you apply. Applying copies the whole folder to specs/<id>/ in the project; Update from folder… or from zip… rewrites the copy and Remove deletes it. A v4 or v5 specialization that cites no package file (no component, doc, examples, fonts or origins) works as a lone .json file; one that does is refused as a .json: the library needs the whole folder. The repository ships complete libraries in libraries/ (for example material3-compose, with 50 Material 3 types for Jetpack Compose and the Roboto font) and, in examples/libraries/sdui-backend/, the example of the executable origin.',
+      },
+    ],
+  },
+  {
+    id: 'tokens',
+    title: 'Design tokens',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'tokens (formatVersion 15, optional, at the root) holds the named design values of the library: colors, radii, spacings and font families. Format 4 components read each value with { "$token": "name" } instead of repeating the literal in every node. Changing the value in one place changes the whole drawing.',
+      },
+      { kind: 'code', code: TOKENS_EXCERPT },
+      {
+        kind: 'list',
+        items: [
+          'modes: a non-empty list of distinct names in the format [a-z0-9][a-z0-9-]*. The convention is ["light", "dark"].',
+          'values: the token name ([a-z0-9][a-z0-9-]*) points to a value, which is text (a #rrggbb color, rgba(…) or a font family) or a number (radius, spacing, size, weight).',
+          'A simple value applies in every mode. A per-mode value is an object with all the modes of modes (and only them), all of the same type: mixing a color in one mode and a number in another is an error.',
+          'Built-in: font-sans and font-mono exist in every library, even without tokens, and use the host font; the specialization can redefine them in values. Text without font.family uses font-sans.',
+          'In this version the drawing always uses the first mode of modes; an undeclared mode falls back to the first, without a warning.',
+          'Validation errors, with the path in tokens: only allowed with formatVersion 15, a name outside the pattern, empty modes or with a repeated name, a per-mode value missing a mode (or with a mode that is not in modes) and values of different types across modes. In library validation (level 2), a $token with a missing name or the wrong type is also an error.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'icons',
+    title: 'Icon set',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'icons (formatVersion 15, optional, at the root) is the path of one .json file of the package, relative to the specialization file (without ., .. or a drive, with /). The file holds the library icons; the icon node of format 4 components picks one by name.',
+      },
+      { kind: 'code', code: ICONS_EXCERPT },
+      {
+        kind: 'list',
+        items: [
+          'format is mapping-icons and formatVersion is 1 (the only version of the file). viewBox (positive [width, height]) is required and applies to every icon that does not bring its own.',
+          'icons: the icon name (^[a-z0-9][a-z0-9-_]*$) points to { viewBox?, paths }. paths is a non-empty list of { d, fill?, stroke?, width?, cap?, join? }: d is the SVG data; fill and stroke are true (the color of the icon node), false (nothing) or a color of their own; width is the stroke width in viewBox units (default 1); cap (butt, round, square) and join (miter, round, bevel) as in the component stroke.',
+          'The file is part of the package: the app copies it with the folder, and a specialization that declares icons is not valid as an isolated file.',
+          'Library validation: level 1, the file exists and is a valid mapping-icons; level 2, every literal name of an icon node exists in the set; level 3, an option of an enum field read by the name of an icon node that is not in the set raises a warning.',
+        ],
       },
     ],
   },
@@ -2163,7 +2306,7 @@ const enUS: readonly HelpSection[] = [
       {
         kind: 'list',
         items: [
-          'format, formatVersion (1 to 13), id, name and version required; version an integer ≥ 1;',
+          'format, formatVersion (1 to 15), id, name and version required; version an integer ≥ 1;',
           'unique layer ids; type ids unique across the whole specialization; key unique in the type and in the columns; no key starting with _;',
           'allowedChildren only references existing types, in another layer (from formatVersion 13, also in the owner’s own layer);',
           'every type with requiresOwner: true appears in the allowedChildren of some type (in formatVersion 11, in the resolved set of children of some owner: by id, by whole layer or by group);',
@@ -2172,13 +2315,16 @@ const enUS: readonly HelpSection[] = [
           'labelField points to a string field of the type;',
           'accepts with at least one tag, free: true or annotations; tags in the [a-z0-9-]+ format;',
           'formatVersion 14, accepts.annotations: version 14 only (before it the error is only allowed with formatVersion 14, at the …accepts.annotations path of the field or column); a non-empty list of type ids or { layer, groups } clauses of the same specialization; the errors are those of allowedChildren: a layer, group or type that does not exist;',
+          'formatVersion 15, tokens: only in version 15 (before it the error is only allowed with formatVersion 15, at the path tokens); modes a non-empty list of distinct names [a-z0-9][a-z0-9-]*; token names in the same pattern; each value is text or a number, simple or with all the modes (and only them) of the same type;',
+          'formatVersion 15, icons: only in version 15 (at the path icons); a relative package path ending in .json, without ., .. or a drive; the file it points to is checked by library validation;',
+          'formatVersion 15, structural: only in version 15 (at the path …annotationTypes[n].structural); boolean; true with component in the same type is an error;',
+          'formatVersion 15, origins[].kind: only in version 15 (at the path origins[n].kind); tree (default) or measured; measured accepts only system, kind, name and booleans (node, screen and examples are an error, with the path);',
           'platforms: id in the [a-z0-9-]+ format, unique, and name required; platforms and code from formatVersion 2 on; sources (external origins) from formatVersion 3 on;',
           'formatVersion 11, children by layer and group: version 11 only (before it the error is only allowed with formatVersion 11, at the exact path); each allowedChildren item is a type id or a strict { layer, groups } clause (any other property is an error, and so is an empty groups); errors: a layer that is not a layer of the specialization or is the owner’s own before formatVersion 13 (children must be in another layer) and a group that does not exist in the clause’s layer; requiresOwner is checked against the resolved set; layer groups with a non-empty id unique in the layer and a non-empty name; type groups non-empty, without repetition and only from its own layer; warnings: 20 ids or more in text in the same allowedChildren and a group no type uses;',
           'formatVersion 12, role steps in migrations: rename-role, remove-role and set-role in version 12 only (from 4 to 11 the error is only allowed with formatVersion 12, at migrations[i].steps[j].op); strict keys; rename-role: type is a type of this version with childRoles, to is one of its roles and from is not; remove-role: type is a type of this version, role is not one of its roles and mode is clear or unlink; set-role: type has childRoles, role is one of its roles and childType only checks the id format; warning: a rename-role.from or remove-role.role that was not a role of the type in the previous version;',
           'formatVersion 11, childRoles and childRolesLabel: version 11 only; childRoles non-empty, of strict { id, name, description? }, with a non-empty id unique in the type and a non-empty name; only on a type with allowedChildren; childRolesLabel non-empty text and only with childRoles; without it the app uses "Role";',
           'formatVersion 11, docRepos and doc object: version 11 only; docRepos[n] with the rules of a platform repo (url required, http(s):// without spaces, urlTemplate optional with {path}, ref optional non-empty) and an id in the [a-z0-9-]+ format, unique; doc object { repo, path } strict: repo must be in docRepos, path relative (no ., .. or leading /), ending in .md and without #; the text doc is still valid from version 4 on; warning: a docRepos repository no doc uses;',
           'formatVersion 10, notices: only in version 10 (before it the error is only allowed with formatVersion 10, at the type, field or column path); a list of strict objects with kind (pending, deprecated, diverges or removed) and message (not empty or only spaces) required, since (a real YYYY-MM-DD date) and ref (non-empty text) optional; two notices with the same kind and message are the error repeated notice (aviso repetido), at the path of the second; any other property is refused;',
-          'formatVersion 10, notices: only in version 10 (before it the error is only allowed with formatVersion 10, at the type, field or column path); a list of strict objects with kind (pending, deprecated, diverges or removed) and message (not empty or only spaces) required, since (a real YYYY-MM-DD date) and ref (non-empty text) optional; two notices with the same kind and message are the error aviso repetido, at the path of the second; any other property is refused;',
           'formatVersion 7, floating, appliesTo and ref column: version 7 only (before it the error is only allowed with formatVersion 7); floating is boolean; appliesTo is non-empty, without repetition, with "marking" and "arrow" only, and an arrow-only type has no component or floating;',
           'formatVersion 6, containers: version 6 only (before it the error is only allowed with formatVersion 6); id in the [a-z0-9-]+ format and unique in the list; name non-empty; width and height integers from 1 to 20000; background optional, #RRGGBB; any other property is rejected;',
           'formatVersion 5, repo: version 5 only, inside a platforms entry (before it the error is only allowed with formatVersion 5); url required, starting with http:// or https://; urlTemplate optional, http(s):// and containing {path}; ref optional, non-empty text; any other property is rejected. A platform with a path on some type and no repo is only a warning (path-without-repo);',

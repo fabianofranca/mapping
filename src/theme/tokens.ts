@@ -21,6 +21,10 @@ function isThemed(value: TokenValue): value is Themed {
   return typeof value !== 'string';
 }
 
+/** Alfa do cartão (`color-card`, `opacity-card`) e do halo (`cv-halo`, `opacity-halo`): uma fonte só para a cor e a opacidade. */
+const CARD_ALPHA = 0.92;
+const HALO_ALPHA = 0.72;
+
 /** Paleta padrão das camadas, em ordem. É dado do projeto: `src/model/layers.ts` a espelha. */
 export const LAYER_COLORS: readonly string[] = [
   '#d32f2f',
@@ -62,10 +66,13 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'color-backdrop': { light: 'rgba(0, 0, 0, 0.45)', dark: 'rgba(0, 0, 0, 0.6)' },
   'color-tooltip': { light: '#1b1f24', dark: '#e8eaed' },
   'color-tooltip-text': { light: '#ffffff', dark: '#12151a' },
-  'color-card': { light: 'rgba(255, 255, 255, 0.92)', dark: 'rgba(28, 32, 39, 0.92)' },
+  'color-card': {
+    light: `rgba(255, 255, 255, ${CARD_ALPHA})`,
+    dark: `rgba(28, 32, 39, ${CARD_ALPHA})`,
+  },
   // Canvas: iguais nos dois temas, porque ficam sobre a imagem.
   'cv-line': '#ffffff',
-  'cv-halo': 'rgba(10, 12, 16, 0.72)',
+  'cv-halo': `rgba(10, 12, 16, ${HALO_ALPHA})`,
   'cv-select': '#4d8dff',
   /**
    * Preenchimento do retângulo de seleção (Shift+arrasto): o azul de `cv-select` translúcido, igual
@@ -134,6 +141,7 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'cv-component-placeholder': 'rgba(128, 128, 128, 0.25)',
   'cv-component-placeholder-line': 'rgba(128, 128, 128, 0.8)',
   'cv-component-unknown': '#d81b60',
+  // Espelho do DS, sem uso no código: as cores `layer-NN` vêm de `LAYER_COLORS` (o código de camadas usa a paleta de `src/model/layers.ts`).
   ...Object.fromEntries(
     LAYER_COLORS.map((c, i) => [`layer-${String(i + 1).padStart(2, '0')}`, c]),
   ),
@@ -162,6 +170,7 @@ const TEXT_STYLES: readonly TextStyle[] = [
   { name: 't-body', size: 13, line: 20, weight: 400 },
   { name: 't-body-strong', size: 13, line: 20, weight: 600 },
   { name: 't-small', size: 12, line: 16, weight: 400 },
+  // Espelho do DS, sem uso no código.
   { name: 't-label', size: 12, line: 16, weight: 400 },
   { name: 't-micro', size: 11, line: 16, weight: 600 },
   { name: 't-cv-name', size: 11, line: 16, weight: 600, parts: true },
@@ -208,6 +217,7 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'radius-sm': '4px',
   'radius-md': '6px',
   'radius-lg': '8px',
+  // Espelho do DS, sem uso no código.
   'radius-xl': '12px',
   'radius-full': '999px',
   // Sombras
@@ -229,8 +239,6 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-handle': '10px',
   /** Emblema do cadeado no canvas (px de tela). */
   'size-lock-badge': '20px',
-  /** Marcação com componente menor que isto na tela (largura ou altura) esconde as bolinhas de camada e o "+N" (3× o diâmetro da bolinha, 8px). */
-  'size-indicator-min-marking': '24px',
   /** Seta no canvas (px de tela, constantes com o zoom): traço, traço selecionado e ponta. */
   'size-arrow-stroke': '2px',
   'size-arrow-stroke-selected': '3px',
@@ -282,11 +290,10 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'opacity-dimmed': '0.35',
   'opacity-ancestor': '0.75',
   'opacity-inherited': '0.7',
-  'opacity-hidden-layer': '0.6',
-  'opacity-card': '0.92',
+  'opacity-card': String(CARD_ALPHA),
   /** Retângulo da vista no minimapa. */
   'opacity-grabbed': '0.25',
-  'opacity-halo': '0.72',
+  'opacity-halo': String(HALO_ALPHA),
   // Movimento
   'duration-instant': '0ms',
   'duration-fast': '100ms',
@@ -299,6 +306,7 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'duration-hover-intent': '300ms',
   'easing-standard': 'cubic-bezier(0.2, 0, 0, 1)',
   // Camadas de empilhamento
+  // Espelho do DS, sem uso no código: `z-canvas`, `z-picker` e `z-dialog`.
   'z-canvas': '0',
   'z-canvas-overlay': '10',
   'z-toolwindow': '20',

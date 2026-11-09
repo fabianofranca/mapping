@@ -1,0 +1,10 @@
+# CR de textos e tema — [Não lançado] (épico `epic/cr-i18n-tema`, PR #0, MCP sem mudança, schema v18)
+
+## Adicionado
+
+## Alterado
+
+## Corrigido
+
+- Ajuda → Especializações passa a descrever a `formatVersion` 15: o intervalo "1 a 15" na raiz e nas regras de validação, `tokens`, `icons`, `structural` e `origins[].kind` (seções novas "Tokens de design" e "Conjunto de ícones", além dos itens das regras de validação).
+- Ajuda → Especializações em inglês: o item repetido da lista de regras de validação (`formatVersion 10, notices`) saiu, e as duas listas têm o mesmo número de itens.
