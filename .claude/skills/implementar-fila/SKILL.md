@@ -28,17 +28,20 @@ Rode este chat em **Sonnet**, no modo **Auto**. Uma sessão filha que pede permi
 O dono definiu estas regras ao rodar a fila no chat "Madrugadão" (2026-11-08), e elas valem mais que o padrão do `docs/PROCESS.md`:
 
 1. **A fila não para esperando o dono.**
-   - Decisão de produto vira uma issue `bug` com a decisão e as opções no corpo, ou entra numa issue igual que já exista ("Bugs e evidência visual"). Ela vai para o painel, com `PushNotification`, e a etapa segue sem esse ponto.
+   - Decisão de produto vira uma issue `bug` com a decisão e as opções no corpo, ou entra numa issue igual que já exista ("Bugs e evidência visual"). Ela leva no corpo a linha `Origem: etapa #<n>`, o dono é avisado com `PushNotification`, e a etapa segue sem esse ponto.
    - A exceção é um achado de **perda de dados, integridade do `mapping.json` ou segurança**. Esse épico não é levado ao merge: fica `esperando dono` no painel, o dono é notificado na hora e a fila passa para a próxima etapa.
 2. **Corrige-se tudo.**
    - Não se abre `bug` para defeito que não pede decisão do dono.
    - Entram numa fase de correção, com reteste: cada ❌ do testador, cada observação do relato que é defeito e cada "Defeito pendente" das fases.
    - São quantas rodadas forem precisas, até cinco (o `docs/PROCESS.md` permite uma).
    - Se a quinta rodada não zerar, a etapa vira `falhou`: o épico fica aberto, o dono é notificado e a fila segue.
-3. **Uma versão do MCP por épico, fixada ao começar.**
+3. **Uma versão do MCP por épico, provisória ao começar e escolhida no fechamento.**
    - A versão escrita na issue veio do detalhamento, talvez feito em paralelo com outras.
-   - Ao criar o épico, leia `mcp/version.ts` na `origin/main`. Se a etapa muda o que vai na release (`scripts/release/releaseInputs.mjs`), use a próxima versão livre do tipo que a issue pede (minor ou patch).
-   - Se o número mudou, registre num comentário na issue.
+   - Ao criar o épico, leia `mcp/version.ts` na `origin/main`. Se a etapa muda o que vai na release (`scripts/release/releaseInputs.mjs`), use a próxima versão livre do tipo que a issue pede (minor ou patch). Ela é **provisória**: serve aos snapshots, à rc da última fase (`mcp-v<versão>-rc.<n>`) e ao título do changelog.
+   - No fechamento, antes do push, o coordenador faz `git fetch origin main`. Se o `SERVER_VERSION` da `origin/main` já é maior ou igual à versão do épico, traz a `main` (`git merge origin/main`, nunca rebase) e sobe a versão para a próxima livre do mesmo tipo sobre a da `origin/main`. Muda junto `mcp/version.ts`, cada citação em `docs/MCP.md` (e no `docs/AGENT-GUIDE.md`, se houver) e a primeira linha do `changelog/<nome>.md`, e roda `npx vitest run tests/mcp/version.test.ts` além do `npx vitest run tests/tooling`.
+   - Número trocado: um comentário na issue da etapa diz o antigo e o novo (no subagente do fechamento, passo 5 de "Por etapa").
+   - A rc gerada com a versão provisória não precisa ser refeita: o `mcp-release.yml` apaga as rc da versão que publica, e a estável sai do merge.
+   - Se dois épicos fecham perto, o segundo traz a `main` e sobe a versão: por isso a conferência antes do merge (seção "Merge") também lê o `SERVER_VERSION` da `origin/main`.
 
 ## Economia de contexto
 
@@ -89,7 +92,7 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
    1. Dependências primeiro: uma etapa só começa quando cada "Depende de" já foi mesclado na `main`. Uma dependência fora da fila e ainda aberta deixa a etapa `aguardando`, com o motivo no passo.
    2. Depois, as mudanças do próprio fluxo de entrega (`.github/`, `CLAUDE.md`, `docs/PROCESS.md`, `docs/FLOW.md`, `.claude/`), que valem para as etapas seguintes.
    3. Depois, `severity: high`/`impact: high`, depois `medium`, depois `low`.
-   4. No empate, as que mexem nos mesmos arquivos ficam juntas e em sequência (menos merge da `main` no épico), e as que sobem o MCP ficam na ordem das versões.
+   4. No empate, as que mexem nos mesmos arquivos ficam juntas e em sequência (menos merge da `main` no épico).
    5. Por fim, o menor número vem antes.
 5. Painel: crie ou abra (seção "Painel") e grave a fila, com `status: aguardando` e as fases `open`.
 6. Sem `sem-confirmar`:
@@ -105,7 +108,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 1. **Épico.**
    - Troque `ready` por `in-progress` na issue, com a lista completa de rótulos (item 12 de "Economia de contexto").
    - `git fetch origin main && git switch -C epic/<nome> origin/main`. Use sempre a `origin/main`, porque a `main` local pode ter divergido.
-   - Fixe a versão do MCP (regra 3).
+   - Use a versão provisória do MCP (regra 3); ela só é escolhida de verdade no fechamento.
    - Faça o push do épico.
    - Abra o PR do épico para a `main` assim que houver diferença, com `PR #0` no título do changelog. **Nunca preveja o número de um PR**: depois de abrir, troque `#0` pelo número real.
    - ▸ `status: em andamento`, `stage: Fases`, `started: now`.
@@ -146,19 +149,30 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 
    O que pede decisão do dono segue a regra 1.
 
-5. **Fechamento:**
+   **Achado que depende de código de outro épico** (de uma etapa `ready`, `in-progress` ou parada, ainda fora da `main`) não segura o épico:
+   - o briefing do subagente da correção manda separar esses achados, cada um com o número da etapa (#N). Uma sessão de fase ou de correção que descobre isso no caminho o põe nos "Defeitos pendentes" do aviso, com "depende de #N", e não espera;
+   - no mesmo subagente (ou no do ciclo seguinte), um `bug` já `ready` por achado ou por grupo de achados com o mesmo #N. O épico atual segue sem esse ponto; a sub-issue de correção não o leva, e sem outro achado não há correção;
+   - formato do `bug`: rótulos `bug`, `ready` e `severity: <nível>` (o do achado; vários, o maior); título "Etapa: <defeito curto> (correção que depende de #N)"; corpo do `bug` (o que acontece, o esperado, passos, branch e commit, origem com o link do relato, a severidade e o porquê, "Duplicadas: …"), mais o objetivo, o épico `epic/<nome>`, a versão (`MCP: patch` se a correção muda o que vai na release, senão `MCP: sem mudança`; schema sem mudança), a tabela de modelos (Orquestrador Sonnet; correção em Sonnet medium; Testador Sonnet medium, ou "nenhum" sem passo de roteiro afetado), a linha `Origem: etapa #<n>` e a linha `**Depende de:** #N`;
+   - uma sub-issue `step` de correção no formato da "Fase de correção" do `docs/FLOW.md`, com o "Toca em:" provável e a seção **Testador** com os roteiros e passos que falharam e "Passada visual: nenhuma";
+   - painel: o `bug` entra como linha `kind=bug`, `status: aguardando`, com a ficha (`plan`) que o subagente devolve. Entra mesmo com a fila chamada com a lista `#n ...` (seção "Mudanças na fila durante a execução");
+   - como a fila relê as `ready` entre etapas, o `bug` começa sozinho quando o #N for mesclado, pela "Ordem" de sempre;
+   - **exceção:** achado de `severity: high` (perda de dados, integridade do `mapping.json`, segurança) segue a regra 1: o épico fica `esperando dono`.
+
+5. **Fechamento** (o que corre durante o CI):
    - antes do push, rode `npx vitest run tests/tooling`: o registro do DS com data precisa das seções `## Sincronização` e `## Ficou sem gravar`;
-   - confira o passo "Versão do MCP": se `git diff --name-only origin/main...HEAD` toca algum arquivo de `scripts/release/releaseInputs.mjs`, a versão em `mcp/version.ts` precisa ser nova;
-   - o resto segue o `docs/PROCESS.md`:
+   - **escolha a versão do MCP** (regra 3): se `git diff --name-only origin/main...HEAD` toca algum arquivo de `scripts/release/releaseInputs.mjs`, confira o `SERVER_VERSION` da `origin/main` e, se alcançou o do épico, traga a `main` e suba a versão antes do push; a versão em `mcp/version.ts` precisa ser nova;
+   - o coordenador faz o que vai no commit ou no PR, antes do push:
      - changelog e registro do DS renomeados com a data (`git mv`);
      - pendências aplicadas no artefato do DS;
-     - descrição final do PR do épico, com "Closes #<etapa>";
-     - comentário de fechamento na issue;
-   - cada item que ficou para depois vira uma `roadmap` (com o impacto), ou um `bug` se pedir decisão;
-   - ▸ `stage: Fechamento`, e cada issue nova no dataset `issues`. A sessão do fechamento, se houver, é registrada e arquivada como a da fase.
+     - descrição final do PR do épico, com "Closes #<etapa>" (editar o corpo do PR não roda o CI);
+   - no mesmo ciclo do push, **um** subagente (item 11 de "Economia de contexto") cria as issues do que ficou para depois e posta o comentário de fechamento na issue (e o da versão trocada, se houver), e devolve uma linha com os números das issues e o id do comentário. Isso corre **durante o CI** do épico; o merge não espera o retorno dele, e se ele falhar o coordenador o refaz no ciclo seguinte;
+   - cada item que ficou para depois vira uma `roadmap` (com o impacto), ou um `bug` se pedir decisão. **Toda issue que a fila cria** (esses `bug` e `roadmap`, o `bug` de decisão do dono e o `bug` `ready` da correção dependente) leva no corpo a linha `Origem: etapa #<n>`; o painel só aponta para a busca dessa linha no GitHub, sem tabela de issues;
+   - ▸ `stage: Fechamento`. A sessão do fechamento, se houver, é registrada e arquivada como a da fase.
 6. **Merge** (seção "Merge"). Depois do merge:
    - confira o "MCP release" por um subagente (`model: "haiku"`), com o briefing "Confira, só lendo, a execução do workflow MCP release do commit `<sha do merge>` em fabianofranca/mapping (`actions_list` com `perPage: 1`) e, se a versão `<v>` é nova, a release `mcp-v<v>` (não é pre-release; tem `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` e `watch-comments.mjs`, cada um com o `.sha256`; as rc da versão sumiram); sem versão nova, que o job `release` foi pulado. Devolva uma linha: ok, ainda rodando, ou falhou com o motivo e o link." Esse subagente é o do ciclo do merge (item 11 de "Economia de contexto") e faz a **primeira conferência no mesmo ciclo do merge**: lê os jobs `decide` e `release`. Com o job `release` pulado (sem versão nova, 8–15 s), a Release está conferida e acabou ali. Com `release` rodando (versão nova, 265–391 s, mediana ~330 s), a próxima conferência é um `send_later` de **5 min depois do merge** e as seguintes, **a cada 1 min**. Ignore a execução `skipped` e, com `cancelled`, vale a mais nova do commit da cabeça. Passou de 3 min (pulado) ou de 9 min (versão nova) sem terminar, o workflow está travado: leia a execução, rode de novo uma vez se morreu antes de testar e chame o dono se falhar de novo. A conferência pendente não segura o merge do próximo épico (seção "Merge");
    - **arquive o que sobrou** da etapa: cada id ainda aberto em `sessions` da linha dela (`archive_session`), numa só passagem do subagente do ciclo; log "#<n> sessões arquivadas";
+   - o resultado da conferência da Release do MCP é acrescentado ao comentário de fechamento (editado pelo id) pelo subagente do ciclo do merge;
+   - **painel publicado:** depois do merge do épico, quem fecha a etapa troca o `files/index.html` do painel pela página nova desta pasta e apaga o `datasets/issues` (`ArtifactData` com `if_version`), se ainda existir. A página não quebra se o dataset `issues` existir num painel antigo;
    - ▸ `status: concluída`, `stage: Mesclada`, `ended: now`.
 7. **Entre etapas:**
    - liste as `ready` de novo e refaça a ordem das que aguardam (seção "Mudanças na fila durante a execução");
@@ -189,6 +203,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 A fila é refeita sempre que algo muda, sem parar o que está rodando.
 
 - **Entre etapas** (passo 7 de "Por etapa"), o coordenador lista as `ready` de novo por conta própria.
+- **`bug` da própria fila.** O `bug` `ready` da correção dependente (passo 4 de "Por etapa") entra na fila como linha `kind=bug`, `status: aguardando`, mesmo quando a fila foi chamada com a lista `#n ...`, porque é pendência da própria fila. Ele começa quando o #N de que depende for mesclado.
 - **Nova `ready`.** Pode aparecer na releitura (só `list_issues`; peça a ficha só das que não estão no painel) ou porque o dono avisou ("tem uma ready nova", "entraram mais ready"). Leia-a como no passo 3 de "Fila" e aplique a "Ordem" de novo a **todas** as etapas que estão `aguardando`. Uma `bug` `severity: high` nova passa à frente das `medium` e `low` que ainda não começaram.
   - ▸ `row` da nova, `reorder` com a ordem nova e log "Nova ready #n incluída depois da #m (porquê)".
   - Se a ordem das que já estavam mudou, diga no chat em uma linha.
@@ -201,7 +216,7 @@ A fila é refeita sempre que algo muda, sem parar o que está rodando.
 
 ## Merge
 
-Com o fechamento feito e o CI verde. Quem confere o CI e se o PR pode ser mesclado é um subagente (`model: "haiku"`, "Confira, só lendo, o PR #<n> de fabianofranca/mapping: os checks do último commit e se ele é mesclável. Devolva uma linha: verde e mesclável, ou o que falta, com o nome do check que falhou"):
+Com o fechamento feito e o CI verde. Antes de mesclar, confira também o `SERVER_VERSION` da `origin/main`: se ele alcançou o do épico (outro épico foi mesclado no meio), o coordenador refaz a escolha da versão (regra 3), faz o push e espera o CI de novo antes de mesclar. Quem confere o CI e se o PR pode ser mesclado é um subagente (`model: "haiku"`, "Confira, só lendo, o PR #<n> de fabianofranca/mapping: os checks do último commit e se ele é mesclável. Devolva uma linha: verde e mesclável, ou o que falta, com o nome do check que falhou"):
 
 - **Padrão:**
   - mande `PushNotification` "Etapa #<n> pronta: <resumo>. PR do épico: <link>" e pergunte pelo `AskUserQuestion` ("#<n> — mesclar o épico na main?"), com as opções "Mesclar (Recomendado)" e "Ainda não";
@@ -209,6 +224,7 @@ Com o fechamento feito e o CI verde. Quem confere o CI e se o PR pode ser mescla
   - enquanto a resposta não chega, a próxima etapa livre já pode começar;
   - com "Mesclar", mescle (`merge_pull_request`, `merge_method: merge`).
 - **Com `mesclar=auto`** (escrito pelo dono na chamada): mescle direto e mande `PushNotification` "#<n> mesclada: <resumo>".
+- O merge, ou a pergunta ao dono, vem logo depois do CI verde e **não espera** o retorno do subagente do fechamento (passo 5 de "Por etapa").
 
 **Não segure o merge de outro épico** à espera da Release do anterior: um épico pronto cuja Release não depende da anterior é mesclado sem esperar. A ordem das versões estáveis é garantida pela ordem dos merges, não pela espera.
 
@@ -219,14 +235,16 @@ Pode haver algo que o agente não consegue fazer: uma aprovação que o ruleset 
 Com `paralelo=2`, uma segunda etapa só começa ao lado da que está rodando quando:
 
 - todas as dependências dela estão na `main`;
-- os "Toca em:" das duas não têm arquivo em comum;
-- as duas não mudam o MCP nem o schema ao mesmo tempo, porque duas versões em paralelo colidem.
+- os "Toca em:" das duas não têm arquivo em comum (`mcp/version.ts` não conta: a versão do MCP é escolhida no fechamento);
+- as duas não mudam o schema ao mesmo tempo, porque o número da migração está no código.
+
+**Vaga:** só as etapas `em andamento` ocupam vaga (a contagem do `painel.py show`). Não ocupa vaga a etapa `esperando dono` (merge pedido, achado da regra 1, aprovação do ruleset) nem a já começada que espera outra etapa (fica `aguardando`, com o passo "espera #N"). A etapa parada que volta (o dono respondeu, a dependência entrou na `main`) continua de onde parou, sem esperar vaga. Os "Toca em:" e o schema de uma etapa nova são comparados com **todas** as etapas começadas e ainda não mescladas, paradas inclusive, porque o código delas ainda não está na `main`.
 
 Cada etapa tem o seu épico, as suas filhas e as suas conferências. Os avisos das filhas citam a fase, e é por ela que se sabe de que etapa é o aviso. Quando uma das duas é mesclada, a outra traz a `main` antes do fechamento se houver conflito (merge, nunca rebase).
 
 ## Painel
 
-O painel é um artifact do tipo **Dashboard**. Tem 4 datasets de arquivo JSON e usa a página `painel/index.html` desta pasta. É o estado durável da fila: uma sessão nova o lê para retomar.
+O painel é um artifact do tipo **Dashboard**. Tem 3 datasets de arquivo JSON e usa a página `painel/index.html` desta pasta. É o estado durável da fila: uma sessão nova o lê para retomar.
 
 **Arquivos:** mantenha-os numa pasta do scratchpad com o script desta pasta. O subcomando vem **antes** da pasta. Os comandos são (`painel.py` = `python3 .claude/skills/implementar-fila/painel/painel.py`):
 
@@ -240,7 +258,6 @@ painel.py phase <pasta> '#n' CL3=ok
 painel.py reorder <pasta> '#a' '#b' …
 painel.py log <pasta> "texto"
 painel.py current <pasta> "texto"
-painel.py issue <pasta> number=#m etapa=#n …
 painel.py reserve <pasta> <trig_id>                  # a conferência de reserva da sessão
 painel.py session <pasta> '#n' <id>                  # sessão criada para a etapa (sem repetir)
 painel.py show <pasta>          # resumo: em andamento, filhas, atrasadas, reserva, últimas do log
@@ -259,7 +276,7 @@ O script diz quais arquivos mudou. Vários comandos seguidos vão numa só chama
    - `if_version`: a versão que o resultado anterior devolveu (na primeira vez, faça um `list` de `datasets`). Se a versão mudou no meio, leia de novo e refaça.
 3. Diga em `current`, numa frase, o que está acontecendo agora.
 
-Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, correção, fechamento, merge, nova `ready`, issue criada), cada um com a sua linha no `log` e o `current` atualizado, e **publique uma vez por ciclo**, no fim, só os arquivos que mudaram ("Economia de contexto", item 7). Nunca há duas publicações no mesmo ciclo; a conferência de hora em hora sem atrasadas não publica. Se um blob voltar 404, envie de novo e repõe o dataset.
+Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, correção, fechamento, merge, nova `ready`), cada um com a sua linha no `log` e o `current` atualizado, e **publique uma vez por ciclo**, no fim, só os arquivos que mudaram ("Economia de contexto", item 7). Nunca há duas publicações no mesmo ciclo; a conferência de hora em hora sem atrasadas não publica. Se um blob voltar 404, envie de novo e repõe o dataset.
 
 **Achar ou criar** (sem `painel=<url>`):
 
@@ -274,7 +291,7 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 1. `Artifact` `quickstart` com `intent: "other"`, que indica o tipo Dashboard. Publique com o `type_url` dele, `title: "Fila de desenvolvimento"` e `auto_open: "after_first_write"`.
 2. Siga as instruções do tipo que vierem no resultado. Num `batch`, grave:
    - `dash/meta` `{title: "Fila de desenvolvimento", lang: "pt-BR"}`;
-   - os 4 `datasets`, com `fixed: true` e os títulos "Fila de issues", "Estado da execução", "Registro de passos" e "Bugs e roadmaps por etapa";
+   - os 3 `datasets`, com `fixed: true` e os títulos "Fila de issues", "Estado da execução" e "Registro de passos";
    - `files/index.html` `{text}`, com a página desta pasta.
 3. Faça o `check` que o tipo pede.
 4. Diga o link ao dono.
@@ -310,9 +327,15 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 
 ## Fim
 
-Quando nenhuma etapa está aguardando nem em andamento:
+Quando nenhuma etapa está aguardando nem em andamento, confira antes as linhas `kind=bug` que a própria fila criou (passo 4 de "Por etapa"):
 
-1. Responda no chat com uma tabela, com uma linha por etapa: a issue com link, o resultado (concluída, falhou ou esperando dono), o PR do épico, a duração, o número de fases e de correções, e a versão do MCP. Depois liste as issues criadas, com link, e o que espera o dono.
+- dependência já mesclada e o `bug` ainda `aguardando`: roda antes de encerrar;
+- dependência ainda em andamento ou `esperando dono`: a fila não encerra; segue com a conferência de hora em hora até a dependência entrar;
+- dependência `falhou`: a fila encerra, e a tabela abaixo lista o `bug` em "o que espera o dono", com o #N.
+
+Sem pendência dela:
+
+1. Responda no chat com uma tabela, com uma linha por etapa: a issue com link, o resultado (concluída, falhou ou esperando dono), o PR do épico, a duração, o número de fases e de correções, e a versão do MCP. Depois liste as issues criadas (a busca `Origem: etapa` do GitHub as reúne), com link, e o que espera o dono.
 2. Atualize o painel (`current` "Fila concluída") e apague a conferência de reserva (`delete_trigger` com o `reserve`).
 3. Mande `PushNotification` com o total, por exemplo "Fila concluída: 8 mescladas, 1 esperando você".
 4. Arquive o que sobrou nas `sessions` das etapas entregues (`archive_session`), mas não as de etapa `falhou` ou `esperando dono`. O coordenador não arquiva a si mesmo: o dono arquiva o chat quando quiser.
