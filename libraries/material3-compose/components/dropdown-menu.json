@@ -336,7 +336,16 @@
               },
               "fill": {
                 "$if": {
-                  "$eq": ["selected", "true"]
+                  "$and": [
+                    {
+                      "$eq": ["selected", "true"]
+                    },
+                    {
+                      "$not": {
+                        "$eq": ["enabled", "false"]
+                      }
+                    }
+                  ]
                 },
                 "then": {
                   "$token": "secondary-container"
@@ -866,9 +875,6 @@
                       },
                       "focused": {
                         "$token": "state-focus"
-                      },
-                      "pressed": {
-                        "$token": "state-pressed"
                       }
                     },
                     "default": 0
@@ -886,11 +892,6 @@
                       {
                         "$not": {
                           "$eq": ["interaction", "none"]
-                        }
-                      },
-                      {
-                        "$not": {
-                          "$eq": ["interaction", "pressed"]
                         }
                       }
                     ]

@@ -432,4 +432,16 @@ describe('dropdown-menu (MenuTokens.kt)', () => {
       expect(layers).toHaveLength(0);
     }
   });
+
+  it('o item selecionado e desabilitado não ganha o fundo secondary-container', () => {
+    for (const mode of MODES) {
+      const its = [{ ...row('Editar', 'Edit', 'true'), enabled: 'false' }];
+      const on = json(
+        'dropdown-menu',
+        { style: 'menu', expanded: 'true', items: its },
+        mode,
+      );
+      expect(on.toLowerCase()).not.toContain(hex('secondary-container', mode));
+    }
+  });
 });
