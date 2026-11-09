@@ -142,6 +142,24 @@ describe('foco ao fechar a faixa de consentimento', () => {
     expect(document.activeElement).toBe(canvas);
   });
 
+  // CL1 (#1144): URL com mais de 60 caracteres troca o campo de `input` para `textarea`
+  // (mesmo id) enquanto a faixa está aberta; o foco volta ao campo novo, não ao canvas.
+  it.each([
+    ['com o foco já no campo novo', true],
+    ['com o campo novo ainda sem foco', false],
+  ] as const)('campo trocado por um textarea %s', async (_name, focusNew) => {
+    const user = userEvent.setup();
+    field.id = 'url-da-imagem';
+    appear();
+    const area = document.createElement('textarea');
+    area.id = 'url-da-imagem';
+    field.replaceWith(area);
+    if (focusNew) area.focus();
+    await user.click(screen.getByRole('button', { name: t('imageConsent.dismiss') }));
+    expect(document.activeElement).toBe(area);
+    area.remove();
+  });
+
   it('se o foco não estava na faixa, nada é mexido', () => {
     appear();
     const other = document.createElement('input');
