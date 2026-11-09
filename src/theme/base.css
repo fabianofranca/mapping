@@ -37,6 +37,12 @@ body {
   border: none;
 }
 
+/* Botão de ação dentro de um aviso (`Button` com `button-link`): herda a cor do aviso e fica sublinhado, como o `.link`. */
+.notice .button-link {
+  color: inherit;
+  text-decoration: underline;
+}
+
 .notice {
   padding: var(--space-2) var(--space-4);
   color: var(--color-warning);

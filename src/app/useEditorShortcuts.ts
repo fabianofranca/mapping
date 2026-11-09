@@ -117,6 +117,7 @@ export function useEditorShortcuts(
   dialogs: EditorDialogs,
   commands: ProjectCommands,
   enabled = true,
+  busy = false,
 ): void {
   const editor = useEditor();
   const { store, ui, canvas, actions, review } = editor;
@@ -133,6 +134,9 @@ export function useEditorShortcuts(
   dialogsRef.current = dialogs;
   const commandsRef = useRef(commands);
   commandsRef.current = commands;
+  // Importação ou troca em curso: exportar apagaria o progresso (os botões também esperam).
+  const busyRef = useRef(busy);
+  busyRef.current = busy;
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
 
@@ -333,6 +337,7 @@ export function useEditorShortcuts(
         case 'zoom-reset':
           return canvas.current?.zoomTo(1);
         case 'export':
+          if (busyRef.current) return;
           return void commandsRef.current.exportProject();
         case 'layers':
           return showAndFocusToolWindow('layers');
@@ -383,7 +388,8 @@ export function useEditorShortcuts(
 
     const onKeyDown = (e: KeyboardEvent) => {
       // Qualquer outra tecla (o Shift solto no meio, Ctrl+Z...) fecha o gesto das setas.
-      if (shortcutFor(e, altNumbers)?.kind !== 'nudge') nudge.end();
+      const shortcut = shortcutFor(e, altNumbers);
+      if (shortcut?.kind !== 'nudge') nudge.end();
       if (e.defaultPrevented || !enabledRef.current) return;
       if (modalOpen.peek() > 0) return;
       if (review.proposalId.peek() !== null && !isTextInput(e.target)) {
@@ -394,7 +400,6 @@ export function useEditorShortcuts(
           return;
         }
       }
-      const shortcut = shortcutFor(e, altNumbers);
       if (!shortcut) return;
       if (shortcut.kind === 'nudge') return onNudge(e, shortcut.dx, shortcut.dy);
       if (fieldOwnsKey(shortcut, e.target)) return;

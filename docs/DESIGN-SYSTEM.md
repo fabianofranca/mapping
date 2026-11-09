@@ -201,6 +201,14 @@ Levantado em 2026-11-02. Estes arquivos aparecem na tela e nenhum guia do DS os 
 
 Composições e lógica sem forma própria (não precisam de componente): `src/ui/SelectionPanel.tsx`, `src/ui/review/ReviewPanel.tsx`, `ReviewDetails.tsx`, `ProposalsWindow.tsx`, `reviewExtension.tsx`, `changeText.ts`, `levelRows.ts`, `src/canvas/reviewMarks.ts`, `src/store/proposedCatalog.ts`, `src/canvas/frame.ts`, `containment.ts`, `gestureMachine.ts`, `input/`, `viewportController.ts`.
 
+## Botões avulsos (exceções ao `Button`)
+
+Botão de ação comum é `Button` (ou `IconButton`); só tem `<button>` próprio o que tem papel próprio, com um comentário no código apontando para esta lista (decisão do dono de 2026-11-08, "Converter só os comuns").
+
+| Onde | Papel próprio |
+| --- | --- |
+| `src/app/Home.tsx`, `.home-nav-item` (Projetos, Ajuda, Configurações) | Item de navegação da faixa lateral, com `aria-current="page"` no atual. |
+
 ## Pendências
 
 O que o código já tem e o DS ainda não descreve e **não é de um épico** em particular. As pendências de cada épico ficam em `docs/design-system/<nome>.md` (ver "Quando atualizar").

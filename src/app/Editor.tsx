@@ -62,7 +62,7 @@ export function EditorScreen() {
   const componentDrop = useComponentDrop(notices);
   const commands = useProjectCommands(dialogs, notices);
   // Com o editor escondido atrás do aviso, o teclado não age sobre o que não se vê.
-  useEditorShortcuts(dialogs, commands, !narrow);
+  useEditorShortcuts(dialogs, commands, !narrow, notices.busy);
   useExternalChanges();
   useReviewSync();
   const reviewing = review.proposalId.value !== null;

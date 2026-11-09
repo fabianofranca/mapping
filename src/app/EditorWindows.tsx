@@ -77,11 +77,7 @@ function Window({
         </ToolWindow>
       );
     case 'incomplete': {
-      // Ir até a anotação precisa do painel de Detalhes à vista.
-      const goTo: EditorPanelProps['onGoToAnnotation'] = (annotation) => {
-        openToolWindow('details');
-        panel.onGoToAnnotation(annotation);
-      };
+      const goTo = goToAnnotationIn(panel);
       return (
         <ToolWindow id={id}>
           <IncompleteView onGoToAnnotation={goTo} />
@@ -91,6 +87,14 @@ function Window({
     default:
       return <MoreWindow id={id} panel={panel} />;
   }
+}
+
+/** Ir até a anotação precisa do painel de Detalhes à vista (Incompletas e Avisos). */
+function goToAnnotationIn(panel: EditorPanelProps): EditorPanelProps['onGoToAnnotation'] {
+  return (annotation) => {
+    openToolWindow('details');
+    panel.onGoToAnnotation(annotation);
+  };
 }
 
 /** As janelas inferiores que não são a Lista nem a Incompletas (a `Window` delega a elas). */
@@ -103,11 +107,7 @@ function MoreWindow({
 }) {
   switch (id) {
     case 'notices': {
-      // Ir até a anotação precisa do painel de Detalhes à vista (como em Incompletas).
-      const goTo: EditorPanelProps['onGoToAnnotation'] = (annotation) => {
-        openToolWindow('details');
-        panel.onGoToAnnotation(annotation);
-      };
+      const goTo = goToAnnotationIn(panel);
       return (
         <ToolWindow id={id}>
           <NoticesView onGoToAnnotation={goTo} />
@@ -146,7 +146,7 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
   const left = openWindowsOf('left');
   const right = openWindowOf('right');
   const bottom = openWindowOf('bottom');
-  const window = (id: ToolWindowId, stacked = false) => (
+  const toolWindow = (id: ToolWindowId, stacked = false) => (
     <Window key={id} id={id} stacked={stacked} panel={panel} onSelect={onSelect} />
   );
 
@@ -174,7 +174,7 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
             data-tool-column
             style={{ width: `${sideWidth('left')}px` }}
           >
-            {left.map((id, i) => window(id, i > 0))}
+            {left.map((id, i) => toolWindow(id, i > 0))}
           </div>
         )}
         <div class="editor-center">
@@ -197,9 +197,9 @@ export function EditorWindows({ panel, onSelect, canvas }: EditorWindowsProps) {
             </div>
           </div>
           {canvas}
-          {bottom && window(bottom)}
+          {bottom && toolWindow(bottom)}
         </div>
-        {right && window(right)}
+        {right && toolWindow(right)}
       </div>
       <ToolStrip side="right" />
     </div>

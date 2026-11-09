@@ -66,20 +66,28 @@ function Probe({
   dialogs,
   commands,
   enabled,
+  busy,
 }: {
   readonly dialogs: EditorDialogs;
   readonly commands: ProjectCommands;
   readonly enabled: boolean;
+  readonly busy: boolean;
 }) {
-  useEditorShortcuts(dialogs, commands, enabled);
+  useEditorShortcuts(dialogs, commands, enabled, busy);
   return null;
 }
 
 function setup({
   enabled = true,
   readOnly = false,
+  busy = false,
   project = sampleProject(),
-}: { enabled?: boolean; readOnly?: boolean; project?: Project } = {}): Fake {
+}: {
+  enabled?: boolean;
+  readOnly?: boolean;
+  busy?: boolean;
+  project?: Project;
+} = {}): Fake {
   const harness = createHarness(project, readOnly);
   const canvas = {
     cancelInteraction: vi.fn(() => false),
@@ -105,7 +113,7 @@ function setup({
   };
   const tree = (d: EditorDialogs) => (
     <EditorContext.Provider value={harness.context}>
-      <Probe dialogs={d} commands={commands} enabled={enabled} />
+      <Probe dialogs={d} commands={commands} enabled={enabled} busy={busy} />
     </EditorContext.Provider>
   );
   const view = render(tree(dialogs as unknown as EditorDialogs));
@@ -566,6 +574,12 @@ describe('useEditorShortcuts: zoom, ajuda, configurações e projeto', () => {
     const s = setup();
     s.press('e', { ctrl: true });
     expect(s.commands.exportProject).toHaveBeenCalledOnce();
+  });
+
+  it('Ctrl+E com importação em curso (busy) não exporta, como os botões (#971, item 4)', () => {
+    const s = setup({ busy: true });
+    s.press('e', { ctrl: true });
+    expect(s.commands.exportProject).not.toHaveBeenCalled();
   });
 
   it('Ctrl+L abre Camadas', () => {

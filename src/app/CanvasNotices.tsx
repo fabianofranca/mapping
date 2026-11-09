@@ -1,6 +1,7 @@
 import { useComputed } from '@preact/signals';
 import { useState } from 'preact/hooks';
 import { t } from '../i18n';
+import { Button } from '../ui/controls';
 import { useEditor } from '../ui/EditorContext';
 import { ProposalNotices } from '../ui/review/ProposalNotices';
 import type { EditorNotices } from './useEditorNotices';
@@ -39,33 +40,45 @@ export function CanvasNotices({ notices }: { readonly notices: EditorNotices }) 
             {backupSaved === null
               ? t('editor.repairBackupPending')
               : t('editor.repairBackupSaved')}{' '}
-            <button type="button" class="link" onClick={() => setBackupDismissed(true)}>
+            <Button
+              size="sm"
+              class="button-link"
+              onClick={() => setBackupDismissed(true)}
+            >
               {t('editor.dismiss')}
-            </button>
+            </Button>
           </p>
         )}
         {repairs === 0 && backupSaved !== null && !backupDismissed && (
           <p class="notice notice-info" role="status">
             {t('editor.migrationBackup', { version: backupSaved })}{' '}
-            <button type="button" class="link" onClick={() => setBackupDismissed(true)}>
+            <Button
+              size="sm"
+              class="button-link"
+              onClick={() => setBackupDismissed(true)}
+            >
               {t('editor.dismiss')}
-            </button>
+            </Button>
           </p>
         )}
         {saveFailed && (
           <p class="notice notice-error" role="alert">
             {t('status.error')}{' '}
-            <button type="button" class="link" onClick={() => void session.flush()}>
+            <Button size="sm" class="button-link" onClick={() => void session.flush()}>
               {t('status.retry')}
-            </button>
+            </Button>
           </p>
         )}
         {message && (
           <p class="notice notice-error" role="alert">
             {message}{' '}
-            <button type="button" class="link" onClick={() => notices.setMessage(null)}>
+            <Button
+              size="sm"
+              class="button-link"
+              onClick={() => notices.setMessage(null)}
+            >
               {t('editor.dismiss')}
-            </button>
+            </Button>
           </p>
         )}
         {ui.mode.value === 'draw' && !locked && hasImages && (
