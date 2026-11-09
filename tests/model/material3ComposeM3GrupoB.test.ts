@@ -72,7 +72,7 @@ describe('M3 grupo B — text-field', () => {
   it('filled: 56 de altura, fundo surface-container-highest com raio superior 4 e indicador de 1 só embaixo', () => {
     const base = { label: 'Nome', value: 'Maria', supportingText: 'Obrigatório' };
     const { light, dark } = both('text-field', base);
-    // 76 = 56 do TextFieldDefaults.MinHeight + 4 do SupportingTopPadding + 16 do apoio
+    // o contêiner fica em 56 (altura fixa); o desenho tem a altura do size (84) e os 8 que sobram ficam vazios embaixo
     expect(boxOf(light, 'contêiner')?.height).toBe(56);
     expect(boxOf(light, 'contêiner')?.width).toBe(280);
     const fundo = named(light.root, 'fundo');
