@@ -1,4 +1,4 @@
-# CR do modelo — [Não lançado] (épico `epic/cr-model`, PR #1191, MCP 0.28.11, schema v18)
+# CR do modelo — [Não lançado] (épico `epic/cr-model`, PR #1191, MCP 0.28.12, schema v18)
 
 ## Corrigido
 
