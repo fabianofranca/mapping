@@ -212,3 +212,40 @@ describe('implementar-fila: skill novo na main (decisão 11)', () => {
     expect(troca).toContain('skill <commit>: <regra> → <o que faço agora>');
   });
 });
+
+describe('revisão /code-review high do épico (fechamento da etapa #1322)', () => {
+  it('o FLOW.md não diz mais que a troca é só por contexto e cita o skill grande', () => {
+    const linha = flow
+      .split('\n')
+      .find((l) => l.startsWith('Para implementar em sequência'))!;
+    expect(linha).not.toMatch(/é só por contexto/);
+    expect(linha).toMatch(/skill novo na `main` grande/);
+  });
+
+  it('versão trocada no fechamento: a rc antiga não some sozinha e o número novo refaz a rc', () => {
+    const regras = section(fila, '## Regras desta fila');
+    expect(regras).not.toMatch(/não precisa ser refeita/);
+    expect(regras).toMatch(/rc do número antigo/);
+    expect(regras).toMatch(/MCP pre-release/);
+  });
+
+  it('o merge sem o id do comentário de fechamento posta um comentário novo', () => {
+    const por = section(fila, '## 3. Por etapa');
+    expect(por).toMatch(/sem o id do comentário[^\n]*comentário novo/);
+  });
+
+  it('o Fim não exige "nenhuma aguardando" cega e trata o `bug` da fila', () => {
+    const fim = section(fila, '## Fim');
+    expect(fim).not.toMatch(/Quando nenhuma etapa está aguardando nem em andamento/);
+    expect(fim).toMatch(/fora os `bug` da própria fila/);
+  });
+
+  it('o detalhar-backlog confere ciclos antes de acrescentar Depende de', () => {
+    expect(detalhar).toMatch(/dependência transitiva|ciclo/);
+  });
+
+  it('o PROCESS.md mantém o gatilho do check e o título do changelog na versão provisória', () => {
+    expect(process).toMatch(/mudou o que vai na release sem subir a versão/);
+    expect(process).toMatch(/título do changelog/);
+  });
+});

@@ -206,7 +206,7 @@ describe('implementar-fila: ajustes finos do coordenador (FC2)', () => {
     const linha = flow
       .split('\n')
       .find((l) => l.startsWith('Para implementar em sequência'));
-    expect(linha).toMatch(/só por contexto/);
+    expect(linha).toMatch(/por contexto/);
     expect(linha).toMatch(/limite de linhagem/);
     expect(linha).toMatch(/arquivadas/);
   });

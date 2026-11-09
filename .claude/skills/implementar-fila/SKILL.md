@@ -40,7 +40,8 @@ O dono definiu estas regras ao rodar a fila no chat "Madrugadão" (2026-11-08), 
    - Ao criar o épico, leia `mcp/version.ts` na `origin/main`. Se a etapa muda o que vai na release (`scripts/release/releaseInputs.mjs`), use a próxima versão livre do tipo que a issue pede (minor ou patch). Ela é **provisória**: serve aos snapshots, à rc da última fase (`mcp-v<versão>-rc.<n>`) e ao título do changelog.
    - No fechamento, antes do push, o coordenador faz `git fetch origin main`. Se o `SERVER_VERSION` da `origin/main` já é maior ou igual à versão do épico, traz a `main` (`git merge origin/main`, nunca rebase) e sobe a versão para a próxima livre do mesmo tipo sobre a da `origin/main`. Muda junto `mcp/version.ts`, cada citação em `docs/MCP.md` (e no `docs/AGENT-GUIDE.md`, se houver) e a primeira linha do `changelog/<nome>.md`, e roda `npx vitest run tests/mcp/version.test.ts` além do `npx vitest run tests/tooling`.
    - Número trocado: um comentário na issue da etapa diz o antigo e o novo (no subagente do fechamento, passo 5 de "Por etapa").
-   - A rc gerada com a versão provisória não precisa ser refeita: o `mcp-release.yml` apaga as rc da versão que publica, e a estável sai do merge.
+   - Versão sem troca no fechamento: a rc gerada com a provisória vale, e o `mcp-release.yml` apaga as rc da versão que publica.
+   - Versão trocada no fechamento: o `mcp-release.yml` só apaga rc do número que publica, então a rc do número antigo (`mcp-v<antiga>-rc.<n>`) fica solta e o número novo não tem rc. Rode o workflow MCP pre-release no `epic/<nome>` depois da troca (`actions_run_trigger`) e cite a rc do número antigo no comentário da troca, para o dono apagá-la.
    - Se dois épicos fecham perto, o segundo traz a `main` e sobe a versão: por isso a conferência antes do merge (seção "Merge") também lê o `SERVER_VERSION` da `origin/main`.
 
 ## Economia de contexto
@@ -171,7 +172,7 @@ Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o q
 6. **Merge** (seção "Merge"). Depois do merge:
    - confira o "MCP release" por um subagente (`model: "haiku"`), com o briefing "Confira, só lendo, a execução do workflow MCP release do commit `<sha do merge>` em fabianofranca/mapping (`actions_list` com `perPage: 1`) e, se a versão `<v>` é nova, a release `mcp-v<v>` (não é pre-release; tem `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` e `watch-comments.mjs`, cada um com o `.sha256`; as rc da versão sumiram); sem versão nova, que o job `release` foi pulado. Devolva uma linha: ok, ainda rodando, ou falhou com o motivo e o link." Esse subagente é o do ciclo do merge (item 11 de "Economia de contexto") e faz a **primeira conferência no mesmo ciclo do merge**: lê os jobs `decide` e `release`. Com o job `release` pulado (sem versão nova, 8–15 s), a Release está conferida e acabou ali. Com `release` rodando (versão nova, 265–391 s, mediana ~330 s), a próxima conferência é um `send_later` de **5 min depois do merge** e as seguintes, **a cada 1 min**. Ignore a execução `skipped` e, com `cancelled`, vale a mais nova do commit da cabeça. Passou de 3 min (pulado) ou de 9 min (versão nova) sem terminar, o workflow está travado: leia a execução, rode de novo uma vez se morreu antes de testar e chame o dono se falhar de novo. A conferência pendente não segura o merge do próximo épico (seção "Merge");
    - **arquive o que sobrou** da etapa: cada id ainda aberto em `sessions` da linha dela (`archive_session`), numa só passagem do subagente do ciclo; log "#<n> sessões arquivadas";
-   - o resultado da conferência da Release do MCP é acrescentado ao comentário de fechamento (editado pelo id) pelo subagente do ciclo do merge;
+   - o resultado da conferência da Release do MCP é acrescentado ao comentário de fechamento (editado pelo id) pelo subagente do ciclo do merge; sem o id do comentário de fechamento (o subagente do fechamento ainda não devolveu, ou falhou), o resultado vai num comentário novo na issue, nunca em outro comentário;
    - **painel publicado:** depois do merge do épico, quem fecha a etapa troca o `files/index.html` do painel pela página nova desta pasta e apaga o `datasets/issues` (`ArtifactData` com `if_version`), se ainda existir. A página não quebra se o dataset `issues` existir num painel antigo;
    - ▸ `status: concluída`, `stage: Mesclada`, `ended: now`.
 7. **Entre etapas:**
@@ -331,7 +332,7 @@ Grave no `painel.py` **a cada avanço** (fase aberta e mesclada, PR, testador, c
 
 ## Fim
 
-Quando nenhuma etapa está aguardando nem em andamento, confira antes as linhas `kind=bug` que a própria fila criou (passo 4 de "Por etapa"):
+Quando nenhuma etapa está em andamento nem aguardando (fora os `bug` da própria fila que esperam a dependência), confira antes as linhas `kind=bug` que a própria fila criou (passo 4 de "Por etapa"):
 
 - dependência já mesclada e o `bug` ainda `aguardando`: roda antes de encerrar;
 - dependência ainda em andamento ou `esperando dono`: a fila não encerra; segue com a conferência de hora em hora até a dependência entrar;
