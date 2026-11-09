@@ -26,6 +26,7 @@ import {
   instantiate,
   measureComponent,
 } from './instantiate';
+import { justifySpacing, mirrorMain } from './layoutValues';
 import type { Library } from './library';
 import type { Instance, Screen } from './screen';
 import { absoluteBoxes, walk } from './scene';
@@ -135,6 +136,7 @@ const NONE_LAYOUT: ResolvedSlotLayout = {
   padding: { top: 0, right: 0, bottom: 0, left: 0 },
   align: 'start',
   justify: 'start',
+  reverse: false,
 };
 
 /** A tela é uma coluna: sem padding, sem gap, filhos no início. */
@@ -150,20 +152,16 @@ function mainPositions(
   gap: number,
   content: number | null,
   justify: ResolvedSlotLayout['justify'],
+  reverse: boolean,
 ): number[] {
   const used = sum(sizes) + gap * Math.max(0, sizes.length - 1);
   const free = content === null ? 0 : Math.max(0, content - used);
-  let offset = 0;
-  let extra = 0;
-  if (justify === 'center') offset = free / 2;
-  else if (justify === 'end') offset = free;
-  else if (justify === 'space-between' && sizes.length > 1)
-    extra = free / (sizes.length - 1);
+  const { offset, extra } = justifySpacing(justify, free, sizes.length);
   let cursor = offset;
   return sizes.map((size) => {
     const position = cursor;
     cursor += size + gap + extra;
-    return position;
+    return reverse ? mirrorMain(position, size, 0, content ?? used) : position;
   });
 }
 
@@ -420,7 +418,7 @@ export function layoutScreen(
       const heights = sized.map((s) => s.h);
       const usedH = sum(heights) + gaps;
       const usedW = maxOf(widths.map((x) => x.w));
-      const ys = mainPositions(heights, layout.gap, ch, layout.justify);
+      const ys = mainPositions(heights, layout.gap, ch, layout.justify, layout.reverse);
       return {
         rects: kids.map((_, i) => {
           const wi = widths[i] ?? { w: 0, hug: false };
@@ -482,6 +480,7 @@ export function layoutScreen(
         layout.gap,
         cw,
         layout.justify,
+        layout.reverse,
       );
       return {
         rects: kids.map((_, i) => {

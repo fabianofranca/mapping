@@ -222,6 +222,7 @@ describe('findSlot / hasSlot / resolveSlotLayout', () => {
       padding: { top: 6, right: 6, bottom: 6, left: 6 },
       align: 'start',
       justify: 'center',
+      reverse: false,
     });
     // Sem valores: `default` da expressão no gap; padding sem padrão vale 0.
     expect(resolveSlotLayout(slot, {})).toMatchObject({

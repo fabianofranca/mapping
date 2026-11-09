@@ -17,6 +17,7 @@ import {
 import { checkRemoteImageUrl } from '../remoteImages';
 import { isValidFontFamily } from './fontFamily';
 import { referencedFields } from './expressions';
+import { LAYOUT_JUSTIFIES } from './layoutValues';
 import { TOKEN_NAME_PATTERN, type TokenKind } from './tokens';
 import { isRecord } from '../isRecord';
 
@@ -176,10 +177,27 @@ function oneOf(options: readonly string[]): Check {
   };
 }
 
+/** Um `{ "$token": … }` solto (sem nenhuma outra expressão): para as posições que só aceitavam literal. */
+function isTokenObject(value: unknown): value is Rec {
+  return isRecord(value) && '$token' in value;
+}
+
+/** Confere um literal que na v4 também aceita `$token` (e só `$token`: nenhuma outra expressão). */
+function checkLiteralOrToken(value: unknown, path: string, check: Check, out: Ctx): void {
+  if (isTokenObject(value)) checkTokenExpr(value, path, check, out);
+  else check(value, path, out);
+}
+
 const checkCornerRadius = tokenCheck('number', (v, p, out) => {
-  const isRadius = (n: unknown): boolean => isFiniteNumber(n) && n >= 0;
-  if (isRadius(v)) return;
-  if (Array.isArray(v) && v.length === 4 && v.every(isRadius)) return;
+  const isRadius = (n: unknown): boolean =>
+    (isFiniteNumber(n) && n >= 0) || isTokenObject(n);
+  if (isFiniteNumber(v) && v >= 0) return;
+  if (Array.isArray(v) && v.length === 4 && v.every(isRadius)) {
+    v.forEach((item: unknown, i) => {
+      if (isTokenObject(item)) checkTokenExpr(item, `${p}[${i}]`, checkNonNegative, out);
+    });
+    return;
+  }
   add(out, p, 'esperava número maior ou igual a 0 ou lista de 4 números');
 });
 
@@ -256,7 +274,7 @@ function checkFieldKey(value: unknown, path: string, out: Ctx): void {
 }
 
 function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void {
-  checkKeys(value, ['$token'], path, out);
+  checkKeys(value, ['$token', 'alpha'], path, out);
   const at = join(path, '$token');
   const kind = check.tokenKind;
   if (kind === undefined)
@@ -265,6 +283,20 @@ function checkTokenExpr(value: Rec, path: string, check: Check, out: Ctx): void 
   if (typeof name !== 'string' || !TOKEN_NAME_PATTERN.test(name))
     add(out, at, 'esperava nome de token ([a-z0-9][a-z0-9-]*)');
   else if (kind !== undefined) out.refs?.push({ path, name, kind });
+  if ('alpha' in value) checkTokenAlpha(value.alpha, path, kind, out);
+}
+
+/** `alpha` de um `$token`: só em posição de cor; número de 0 a 1, literal ou `$token` de número. */
+function checkTokenAlpha(
+  alpha: unknown,
+  path: string,
+  kind: TokenKind | undefined,
+  out: Ctx,
+): void {
+  if (kind === undefined) return;
+  if (kind !== 'color')
+    return add(out, join(path, '$token'), 'alpha só vale em $token de cor');
+  checkLiteralOrToken(alpha, join(path, 'alpha'), checkUnit, out);
 }
 
 /** Confere uma expressão: operador (`$field`, `$if`…) ou o literal conferido por `check`. */
@@ -388,7 +420,15 @@ const checkSides: Check = (v, p, out) => {
   });
 };
 
-/** As chaves da v4 do traço (`cap`, `join`, `sides`); o `sides` só vale em `frame` e `rect`. */
+/** `stroke.dash`: lista de números ≥ 0, cada item literal ou `$token` de número. */
+const checkDash: Check = (v, p, out) => {
+  if (!Array.isArray(v)) return add(out, p, 'esperava lista de números');
+  v.forEach((n: unknown, i) =>
+    checkLiteralOrToken(n, `${p}[${i}]`, checkNonNegative, out),
+  );
+};
+
+/** As chaves da v4 do traço (`cap`, `join`, `sides`, `offset`); `sides` só em `frame` e `rect`, `offset` também em `ellipse`. */
 function checkStrokeV4(
   value: Rec,
   path: string,
@@ -400,6 +440,7 @@ function checkStrokeV4(
   if ('join' in value)
     checkExpr(value.join, join(path, 'join'), oneOf(['miter', 'round', 'bevel']), out);
   if ('scale' in value) checkBoolean(value.scale, join(path, 'scale'), out);
+  if ('offset' in value) checkOffset(value.offset, join(path, 'offset'), nodeType, out);
   if (!('sides' in value)) return;
   const at = join(path, 'sides');
   if (nodeType !== undefined && nodeType !== 'frame' && nodeType !== 'rect')
@@ -407,11 +448,23 @@ function checkStrokeV4(
   else checkExpr(value.sides, at, checkSides, out);
 }
 
+/** `stroke.offset`: px ≥ 0 (literal ou `$token` de número), só em `frame`, `rect` e `ellipse`. */
+function checkOffset(
+  value: unknown,
+  path: string,
+  nodeType: string | undefined,
+  out: Ctx,
+): void {
+  if (nodeType !== undefined && !['frame', 'rect', 'ellipse'].includes(nodeType))
+    add(out, path, `só vale em frame, rect e ellipse (este é ${nodeType})`);
+  else checkLiteralOrToken(value, path, checkNonNegative, out);
+}
+
 function checkStroke(value: unknown, path: string, out: Ctx, nodeType?: string): void {
   if (!isRecord(value)) return add(out, path, 'esperava objeto');
   checkKeys(
     value,
-    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale'],
+    ['color', 'width', 'align', 'dash', 'cap', 'join', 'sides', 'scale', 'offset'],
     path,
     out,
   );
@@ -421,11 +474,7 @@ function checkStroke(value: unknown, path: string, out: Ctx, nodeType?: string):
     checkExpr(value.width, join(path, 'width'), checkNonNegative, out);
   if ('align' in value)
     oneOf(['inside', 'center', 'outside'])(value.align, join(path, 'align'), out);
-  if ('dash' in value) {
-    const dash = join(path, 'dash');
-    if (!Array.isArray(value.dash)) add(out, dash, 'esperava lista de números');
-    else value.dash.forEach((n: unknown, i) => checkNonNegative(n, `${dash}[${i}]`, out));
-  }
+  if ('dash' in value) checkExpr(value.dash, join(path, 'dash'), checkDash, out);
   checkStrokeV4(value, path, nodeType, out);
 }
 
@@ -434,9 +483,10 @@ function checkShadow(value: unknown, path: string, out: Ctx): void {
   checkKeys(value, ['color', 'x', 'y', 'blur'], path, out);
   if (!('color' in value)) add(out, join(path, 'color'), 'campo obrigatório');
   else checkExpr(value.color, join(path, 'color'), checkColor, out);
-  if ('x' in value) checkNumber(value.x, join(path, 'x'), out);
-  if ('y' in value) checkNumber(value.y, join(path, 'y'), out);
-  if ('blur' in value) checkNonNegative(value.blur, join(path, 'blur'), out);
+  if ('x' in value) checkLiteralOrToken(value.x, join(path, 'x'), checkNumber, out);
+  if ('y' in value) checkLiteralOrToken(value.y, join(path, 'y'), checkNumber, out);
+  if ('blur' in value)
+    checkLiteralOrToken(value.blur, join(path, 'blur'), checkNonNegative, out);
 }
 
 /** `font.maxLines`: inteiro maior ou igual a 1. */
@@ -493,7 +543,7 @@ const checkLayoutType: Check = (v, p, out) => {
 
 /** As chaves de um layout `row`/`column` (ou de `type` por expressão), na v4 também por expressão. */
 function checkLayoutFlow(value: Rec, path: string, out: Ctx): void {
-  checkKeys(value, ['type', 'gap', 'padding', 'align', 'justify'], path, out);
+  checkKeys(value, ['type', 'gap', 'padding', 'align', 'justify', 'reverse'], path, out);
   if ('gap' in value) checkExpr(value.gap, join(path, 'gap'), checkNonNegative, out);
   if ('padding' in value)
     checkExpr(value.padding, join(path, 'padding'), checkPadding, out);
@@ -505,12 +555,8 @@ function checkLayoutFlow(value: Rec, path: string, out: Ctx): void {
       out,
     );
   if ('justify' in value)
-    checkExpr(
-      value.justify,
-      join(path, 'justify'),
-      oneOf(['start', 'center', 'end', 'space-between']),
-      out,
-    );
+    checkExpr(value.justify, join(path, 'justify'), oneOf(LAYOUT_JUSTIFIES), out);
+  if ('reverse' in value) checkBoolExpr(value.reverse, join(path, 'reverse'), out);
 }
 
 function checkLayout(value: unknown, path: string, out: Ctx): void {
@@ -772,6 +818,8 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
   ['stroke', 'join'],
   ['stroke', 'sides'],
   ['stroke', 'scale'],
+  ['stroke', 'offset'],
+  ['layout', 'reverse'],
   ['minWidth'],
   ['maxWidth'],
   ['minHeight'],
@@ -785,6 +833,7 @@ const V4_NODE_KEYS: readonly (readonly string[])[] = [
 
 /** Chaves que valem em qualquer versão como literal, mas só com expressão na formatVersion 4. */
 const V4_EXPR_KEYS: readonly (readonly string[])[] = [
+  ['stroke', 'dash'],
   ['width'],
   ['height'],
   ['layout', 'type'],
@@ -795,6 +844,8 @@ const V4_EXPR_KEYS: readonly (readonly string[])[] = [
 /** Valores literais que só existem na formatVersion 4: a cadeia da chave e o valor. */
 const V4_LITERAL_VALUES: readonly (readonly [readonly string[], string])[] = [
   [['font', 'verticalAlign'], 'cap-middle'],
+  [['layout', 'justify'], 'space-around'],
+  [['layout', 'justify'], 'space-evenly'],
 ];
 
 /** `$token` em qualquer ponto do template, numa versão anterior à 4: `só é permitido com formatVersion 4`. */
