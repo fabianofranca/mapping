@@ -74,6 +74,6 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **O que ainda difere do Compose**
 
-- As mesmas diferenças do `text-field`: sem foco, cursor e animação; dica mostrada com o rótulo minimizado; cantos quadrados no vão do contorno do outlined; raio superior do filled por um retângulo recortado (a lista de 4 raios não aceita `$token`); contêiner desabilitado do filled como no código (`ContainerColor`), não o 0,04 do token; outlined com apoio pede 84 de altura e o tamanho inicial é 76.
+- As mesmas diferenças do `text-field`: sem foco, cursor e animação; dica mostrada com o rótulo minimizado; cantos quadrados no vão do contorno do outlined; raio superior do filled por um retângulo recortado (a lista de 4 raios não aceita `$token`); contêiner desabilitado do filled como no código (`ContainerColor`), não o 0,04 do token; o tamanho inicial é 84, que comporta o outlined com apoio; o filled com apoio fica com 8 vazios embaixo e o filled sem apoio com 28.
 - Os oito `•` são fixos: o Compose desenha um por caractere digitado e, com `RevealLastTyped`, mostra o último por um instante.
 - Sem o ícone de mostrar ou esconder a senha: ele é o `trailingIcon` que a tela escolhe.
