@@ -50,7 +50,9 @@ describe('M3 — seleção e entrada no formato 4', () => {
     expect(now.minSize).toEqual(before.minSize);
     // #863: o text-field e o secure-text-field passam de 76 (v1) a 84, que comporta o outlined com apoio.
     const heightFixed = id === 'text-field' || id === 'secure-text-field';
-    expect(now.size).toEqual(heightFixed ? { ...before.size, height: 84 } : before.size);
+    expect(now.size).toEqual(
+      heightFixed ? { ...(before.size as object), height: 84 } : before.size,
+    );
   });
 
   it.each(M3)('%s: o padrão e os exemplos desenham sem aviso em light e dark', (id) => {
