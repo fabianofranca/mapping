@@ -5,7 +5,7 @@ description: Coordena a implementação em sequência das issues `ready` do fabi
 
 # Implementar a fila
 
-Esta sessão é o **coordenador** de uma fila de etapas. Ela não escreve código. Para cada issue `ready`, faz o papel do orquestrador do `docs/PROCESS.md` ("Fluxo automatizado", item 3), com as mensagens prontas do `docs/FLOW.md`, e encadeia uma etapa na outra. O detalhamento (`roadmap`/`bug` → `ready`) não é daqui: é do `/detalhar-backlog`.
+Esta sessão é o **coordenador** de uma fila de etapas. Ela não escreve código. Para cada issue `ready`, faz o papel do orquestrador (`docs/PROCESS.md`, "Fluxo automatizado", item 3; passo a passo e mensagens prontas no `docs/FLOW.md`, "Orquestrador — passo a passo"), e encadeia uma etapa na outra. O detalhamento (`roadmap`/`bug` → `ready`) não é daqui: é do `/detalhar-backlog`.
 
 Rode este chat em **Sonnet**, no modo **Auto**. Uma sessão filha que pede permissão fica parada, porque ninguém está olhando (`docs/PROCESS.md`, "Limitações").
 
@@ -96,7 +96,7 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
 
 ## 3. Por etapa
 
-Siga o `docs/PROCESS.md` ("Fluxo automatizado", item 3) e as mensagens do `docs/FLOW.md`, com o que esta seção acrescenta. Atualize o painel em cada passo marcado com ▸ (seção "Painel").
+Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o que esta seção acrescenta. Atualize o painel em cada passo marcado com ▸ (seção "Painel").
 
 1. **Épico.**
    - Troque `ready` por `in-progress` na issue.

@@ -28,4 +28,31 @@ describe('CLAUDE.md enxuto', () => {
       expect(process, title).toContain(title);
     }
   });
+
+  it('o docs/PROCESS.md tem até 25 mil bytes e o passo a passo movido está no docs/FLOW.md (etapa #1306, LC2)', () => {
+    expect(Buffer.byteLength(read('docs/PROCESS.md'))).toBeLessThanOrEqual(25000);
+    const flow = read('docs/FLOW.md');
+    for (const title of [
+      '## Orquestrador — passo a passo',
+      '## Bug: busca de duplicadas',
+      '## Bug: corpo e evidência',
+      '## Evidência de bug',
+      '## CI e preview',
+    ]) {
+      expect(flow, title).toContain(title);
+    }
+    const process = read('docs/PROCESS.md');
+    expect(process).not.toContain('git worktree add');
+    expect(process).toContain('docs/FLOW.md');
+    // cada ponteiro do PROCESS.md aponta para um título que existe no FLOW.md
+    for (const title of [
+      'Orquestrador — passo a passo',
+      'Bug: busca de duplicadas',
+      'Bug: corpo e evidência',
+      'Evidência de bug',
+      'CI e preview',
+    ]) {
+      expect(process, title).toContain(title);
+    }
+  });
 });
