@@ -290,6 +290,25 @@ describe('list_markings', () => {
     expect(list.markings.every((m) => REF.test(m.ref))).toBe(true);
   });
 
+  it('container aceita a referência completa de get_project; a de outro projeto não casa', async () => {
+    const project = ok(
+      await mcp.call<{ containers: { ref: string }[] }>('get_project', {
+        project: 'cadastro',
+      }),
+    );
+    const ref = project.containers[0]!.ref;
+    expect(REF.test(ref)).toBe(true);
+    const viaRef = await listRows({ container: ref });
+    expect(viaRef.total).toBeGreaterThan(0);
+    expect(names(viaRef)).toEqual(names(await listRows({ container: 'cadastro.png' })));
+    const other = ref.replace('mapping://cadastro/', 'mapping://outro/');
+    expect(
+      errorCode(
+        await mcp.call('list_markings', { project: 'cadastro', container: other }),
+      ),
+    ).toBe('not-found');
+  });
+
   it('filtra por camada, tipo de anotação e incompletas', async () => {
     expect(names(await listRows({ layer: 'Eventos' }))).toEqual(['E-mail', 'Cadastrar']);
     expect(names(await listRows({ layer: 'eventos' }))).toEqual(['E-mail', 'Cadastrar']);
