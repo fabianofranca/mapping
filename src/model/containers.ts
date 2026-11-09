@@ -194,21 +194,35 @@ export const MAPPING_FILE = 'mapping.json';
 export const IMAGES_DIR = 'images';
 
 /**
- * Nome livre em `images/`: `foto.jpg`, `foto-2.jpg`, `foto-3.jpg`…
- * `taken` lista caminhos ocupados fora do projeto (arquivos já existentes na pasta).
+ * Chave de comparação de nomes de arquivo: NFC e minúsculas. Em NTFS/APFS `Foto.jpg` e
+ * `foto.jpg` são o mesmo arquivo, e o nome decomposto (`é` = `e` + acento) vira o composto
+ * ao gravar; a unicidade dos nomes que a app e o MCP criam é decidida por esta chave. O nome
+ * gravado mantém a caixa que veio.
+ */
+export function fileNameKey(path: string): string {
+  return path.normalize('NFC').toLowerCase();
+}
+
+const sameFile = (a: string, b: string): boolean => fileNameKey(a) === fileNameKey(b);
+
+/**
+ * Nome livre em `images/`: `foto.jpg`, `foto-2.jpg`, `foto-3.jpg`… sem diferenciar maiúsculas
+ * e minúsculas (`fileNameKey`). `taken` lista caminhos ocupados fora do projeto (arquivos já
+ * existentes na pasta).
  */
 export function uniqueImageFile(
   p: Project,
   fileName: string,
   taken: ReadonlySet<string> = new Set(),
 ): string {
-  const used = new Set<string>(taken);
-  for (const i of p.containers) if (i.file !== null) used.add(i.file);
+  const used = new Set<string>();
+  for (const path of taken) used.add(fileNameKey(path));
+  for (const i of p.containers) if (i.file !== null) used.add(fileNameKey(i.file));
   const dot = fileName.lastIndexOf('.');
   const base = dot > 0 ? fileName.slice(0, dot) : fileName;
   const ext = dot > 0 ? fileName.slice(dot) : '';
   let candidate = `${IMAGES_DIR}/${fileName}`;
-  for (let n = 2; used.has(candidate); n++) {
+  for (let n = 2; used.has(fileNameKey(candidate)); n++) {
     candidate = `${IMAGES_DIR}/${base}-${n}${ext}`;
   }
   return candidate;
@@ -230,7 +244,7 @@ export function addContainer(
 ): Project {
   if (p.containers.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
   checkDimensions(args);
-  if (p.containers.some((i) => i.file !== null && i.file === args.file)) {
+  if (p.containers.some((i) => i.file !== null && sameFile(i.file, args.file))) {
     fail('duplicate-file');
   }
   const scale = INITIAL_IMAGE_SIZE / Math.max(args.width, args.height);
@@ -606,7 +620,7 @@ export function replaceContainer(
   requireUnlocked(canReplaceImage(p, containerId, next));
   if (
     p.containers.some(
-      (i) => i.id !== containerId && i.file !== null && i.file === next.file,
+      (i) => i.id !== containerId && i.file !== null && sameFile(i.file, next.file),
     )
   )
     fail('duplicate-file');

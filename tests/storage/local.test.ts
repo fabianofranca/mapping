@@ -160,6 +160,24 @@ describe('LocalLibrary (IndexedDB)', () => {
     expect(await (await library.open('p2').readImage('images/a.jpg'))?.text()).toBe('A2');
   });
 
+  it('lista só os arquivos de images/ do projeto', async () => {
+    const mapping = serialize(emptyProject());
+    await library.create('p', {
+      mapping,
+      images: noImages,
+      specs: noSpecs,
+      proposals: noSpecs,
+      proposalImages: noImages,
+    });
+    const s = library.open('p');
+    expect(await s.listImages()).toEqual([]);
+    await s.writeImage('images/b.jpg', new Blob(['B']));
+    await s.writeImage('images/A.png', new Blob(['A']));
+    await s.writeImage('proposals/x/images/c.png', new Blob(['C']));
+    await library.open('outro').writeImage('images/z.png', new Blob(['Z']));
+    expect(await s.listImages()).toEqual(['images/A.png', 'images/b.jpg']);
+  });
+
   it('excluir apaga o projeto e as imagens dele', async () => {
     const mapping = serialize(emptyProject());
     await library.create('p', {
