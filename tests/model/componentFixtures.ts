@@ -261,3 +261,39 @@ export function componentProject(): Project {
   });
   return addContainer(p, { id: 'I1', file: 'images/tela.png', width: 1000, height: 800 });
 }
+
+/**
+ * Catálogo de teste em que o slot de `column` e `columnhug` leva `gap` e `padding` como `$token`
+ * (`space-2`/`space-4`), com tabelas diferentes por modo: `light` (o primeiro) 4/10, `dark` 12/20.
+ */
+export function tokenSlotCatalog(): ComponentCatalog {
+  const base = testCatalog();
+  const loaded = base.get(SPEC_ID);
+  if (loaded === undefined) throw new Error('sem especialização de teste');
+  const byType = new Map(loaded.byType);
+  const light = { 'space-2': 4, 'space-4': 10 };
+  const dark = { 'space-2': 12, 'space-4': 20 };
+  for (const id of ['column', 'columnhug']) {
+    const component = byType.get(id);
+    if (component === undefined || component.template.type !== 'frame') continue;
+    const children = (component.template.children ?? []).map((child) =>
+      child.type === 'slot' && child.layout !== undefined
+        ? {
+            ...child,
+            layout: {
+              ...child.layout,
+              gap: { $token: 'space-2' },
+              padding: { $token: 'space-4' },
+            },
+          }
+        : child,
+    );
+    byType.set(id, {
+      ...component,
+      template: { ...component.template, children } as typeof component.template,
+      resolvedTokens: light,
+      resolvedTokensByMode: { light, dark },
+    });
+  }
+  return new Map([[SPEC_ID, { ...loaded, byType }]]);
+}

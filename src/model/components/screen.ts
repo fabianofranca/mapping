@@ -3,7 +3,7 @@
  * instâncias; cada instância é um retângulo (como uma marcação) com o tipo da especialização
  * e os valores dos campos (como uma anotação). Funções puras e imutáveis.
  */
-import type { FieldValue, FieldValues } from './componentFormat';
+import type { FieldRow, FieldValue, FieldValues } from './componentFormat';
 
 export interface Box {
   readonly x: number;
@@ -99,8 +99,12 @@ export function childrenOf(screen: Screen, parentId: string | undefined): Instan
 /** Ids dos descendentes, em pré-ordem. */
 export function descendantsOf(screen: Screen, id: string): string[] {
   const out: string[] = [];
+  // Defesa: uma tela montada à mão com ciclo não trava (cada instância entra uma vez).
+  const seen = new Set<string>();
   const visit = (parent: string) => {
     for (const child of childrenOf(screen, parent)) {
+      if (seen.has(child.id)) continue;
+      seen.add(child.id);
       out.push(child.id);
       visit(child.id);
     }
@@ -237,6 +241,60 @@ export function serializeScreen(screen: Screen): string {
   return JSON.stringify({ format: SCREEN_FORMAT, formatVersion: 1, ...screen }, null, 2);
 }
 
+function isCell(v: unknown): v is string | number | null {
+  return typeof v === 'string' || typeof v === 'number' || v === null;
+}
+
+/** Uma linha de tabela: só as células de texto, número ou `null` ficam; o resto da célula é descartado. */
+function parseRow(raw: object): FieldRow {
+  const row: Record<string, string | number | null> = {};
+  for (const [k, v] of Object.entries(raw)) if (isCell(v)) row[k] = v;
+  return row;
+}
+
+/** Valores de uma instância: texto, número, `null` ou tabela (lista de objetos; item que não é objeto é descartado). */
+function parseValues(raw: unknown): Record<string, FieldValue> {
+  const values: Record<string, FieldValue> = {};
+  if (typeof raw !== 'object' || raw === null) return values;
+  for (const [k, v] of Object.entries(raw)) {
+    if (isCell(v)) values[k] = v;
+    else if (Array.isArray(v))
+      values[k] = v.flatMap((row: unknown) =>
+        typeof row === 'object' && row !== null && !Array.isArray(row)
+          ? [parseRow(row)]
+          : [],
+      );
+  }
+  return values;
+}
+
+/** Recusa `id` repetido, `parentId` que é a própria instância, que não existe ou que fecha um ciclo. */
+function checkHierarchy(instances: readonly Instance[]): void {
+  const byId = new Map<string, Instance>();
+  instances.forEach((inst, index) => {
+    if (byId.has(inst.id))
+      throw new Error(`Tela inválida: instances[${index}].id repetido (${inst.id})`);
+    byId.set(inst.id, inst);
+  });
+  instances.forEach((inst, index) => {
+    if (inst.parentId === undefined) return;
+    const where = `Tela inválida: instances[${index}].parentId`;
+    if (inst.parentId === inst.id)
+      throw new Error(`${where} aponta para a própria instância`);
+    if (!byId.has(inst.parentId))
+      throw new Error(`${where} não existe na tela (${inst.parentId})`);
+    const seen = new Set<string>([inst.id]);
+    for (
+      let up = byId.get(inst.parentId);
+      up !== undefined;
+      up = up.parentId === undefined ? undefined : byId.get(up.parentId)
+    ) {
+      if (seen.has(up.id)) throw new Error(`${where} forma um ciclo`);
+      seen.add(up.id);
+    }
+  });
+}
+
 export function parseScreen(input: unknown): Screen {
   if (typeof input !== 'object' || input === null)
     throw new Error('Tela inválida: não é um objeto');
@@ -262,12 +320,7 @@ export function parseScreen(input: unknown): Screen {
       string,
       unknown
     >;
-    const values: Record<string, FieldValue> = {};
-    if (typeof i.values === 'object' && i.values !== null) {
-      for (const [k, v] of Object.entries(i.values as Record<string, unknown>)) {
-        if (typeof v === 'string' || typeof v === 'number' || v === null) values[k] = v;
-      }
-    }
+    const values = parseValues(i.values);
     return {
       id: typeof i.id === 'string' ? i.id : crypto.randomUUID(),
       typeId: str(i.typeId, `instances[${index}].typeId`),
@@ -281,6 +334,7 @@ export function parseScreen(input: unknown): Screen {
       values,
     };
   });
+  checkHierarchy(instances);
   return {
     id: typeof r.id === 'string' ? r.id : crypto.randomUUID(),
     name: typeof r.name === 'string' ? r.name : 'Tela',

@@ -5,6 +5,7 @@ import {
   addContainer,
   componentPlacement,
   componentTypes,
+  setContainerDrawingMode,
   setFieldValue,
   settleHierarchy,
   approximateMeasurer,
@@ -13,7 +14,13 @@ import {
   type Project,
   type Rect,
 } from '../../src/model';
-import { COMPONENTS, SPEC_ID, componentProject, testCatalog } from './componentFixtures';
+import {
+  COMPONENTS,
+  SPEC_ID,
+  componentProject,
+  testCatalog,
+  tokenSlotCatalog,
+} from './componentFixtures';
 import { expectValid, marking } from './fixtures';
 import { NOTES_SPEC_ID, notesCatalog, notesProject } from './notesFixtures';
 
@@ -209,6 +216,38 @@ describe('componentPlacement: dentro de um container', () => {
     expect(rectOf(p, 'T1')).toEqual({ x: 50, y: 50, width: 100, height: 40 });
     expect(rectOf(p, 'T2')).toEqual({ x: 50, y: 98, width: 100, height: 40 });
     expectValid(p);
+  });
+
+  it('gap e padding do slot em $token valem os da tabela do modo do desenho (#948)', () => {
+    const tokens = tokenSlotCatalog();
+    let p = add(
+      componentProject(),
+      'C',
+      'column',
+      { rect: { x: 50, y: 50, width: 300, height: 300 } },
+      tokens,
+    );
+    p = add(p, 'T1', 'text', { parentId: 'C' }, tokens);
+    p = add(p, 'T2', 'text', { parentId: 'C' }, tokens);
+    // Primeiro modo: padding 10, gap 4.
+    expect(rectOf(p, 'T1')).toEqual({ x: 60, y: 60, width: 100, height: 40 });
+    expect(rectOf(p, 'T2')).toEqual({ x: 60, y: 104, width: 100, height: 40 });
+    // O container no modo `dark`: padding 20, gap 12.
+    let dark = setContainerDrawingMode(
+      add(
+        componentProject(),
+        'C',
+        'column',
+        { rect: { x: 50, y: 50, width: 300, height: 300 } },
+        tokens,
+      ),
+      'I1',
+      'dark',
+    );
+    dark = add(dark, 'T1', 'text', { parentId: 'C' }, tokens);
+    dark = add(dark, 'T2', 'text', { parentId: 'C' }, tokens);
+    expect(rectOf(dark, 'T1')).toEqual({ x: 70, y: 70, width: 100, height: 40 });
+    expect(rectOf(dark, 'T2')).toEqual({ x: 70, y: 122, width: 100, height: 40 });
   });
 
   it('layout none: sempre no início do slot', () => {

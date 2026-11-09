@@ -7,6 +7,7 @@ import {
   type ComponentCatalog,
 } from './componentCatalog';
 import { drawingValues } from './componentValues';
+import { componentForDrawing } from './drawingMode';
 import { fail, ModelError } from './errors';
 import {
   MIN_STORED_MARKING_SIZE,
@@ -147,12 +148,15 @@ function slotArea(
   const none = { left: 0, top: 0 };
   const whole = { area: container.rect, padding: none, gap: 0, flow: 'none' as const };
   const mc = markingComponent(p, catalog, containerId);
-  const slot = mc === null ? undefined : findSlot(mc.component);
-  if (mc === null || slot === undefined) return whole;
+  const drawn =
+    mc === null ? null : componentForDrawing(p, mc.component, container.containerId);
+  const slot = drawn === null ? undefined : findSlot(drawn.component);
+  if (mc === null || drawn === null || slot === undefined) return whole;
   const values = drawingValues(p, mc.annotation, mc.type).values;
-  const { root } = instantiate(mc.component, values, container.rect, {
+  const { root } = instantiate(drawn.component, values, container.rect, {
     measure,
     idPrefix: container.id,
+    ...(drawn.tokens === undefined ? {} : { tokens: drawn.tokens }),
   });
   const box = slotBoxOfScene(root);
   if (box === undefined) return whole;

@@ -27,6 +27,7 @@ import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
 import { markingRow } from '../../mcp/views';
 import { NOW } from '../model/fixtures';
+import { encodePng, quadrants } from './images';
 
 // Container com componentes do Material 3 no MCP: o catálogo é lido ao carregar o projeto,
 // as operações novas (add_container, create_marking com annotation, move_marking) e o
@@ -411,5 +412,27 @@ describe('marcação do canvas e pai pela geometria (ME1)', () => {
     await expect(markingImage(roots, new Refs(next), marking, {})).rejects.toThrow(
       /canvas/,
     );
+  });
+});
+
+describe('replace_container respeita o minSize do componente (#953)', () => {
+  it('a marcação do botão (48×40) não encolhe abaixo do mínimo ao trocar por imagem menor', async () => {
+    const half = (await encodePng(quadrants(100, 50))).toString('base64');
+    const result = await run([
+      {
+        op: 'create_marking',
+        container: PHOTO,
+        rect: { x: 40, y: 20, width: 100, height: 60 },
+        annotation: { type: 'material3/m3-button' },
+        as: '$btn',
+      },
+      { op: 'replace_container', container: PHOTO, base64: half },
+    ]);
+    expect(result.errors).toEqual([]);
+    const button = result.project.markings.find((m) => m.containerId === PHOTO);
+    // 100×60 em (40,20) viraria 50×30: o botão pede 48×40, então cresce em volta do centro.
+    expect(button?.rect.width).toBeGreaterThanOrEqual(48);
+    expect(button?.rect.height).toBeGreaterThanOrEqual(40);
+    expect(button?.needsReview).toBe(true);
   });
 });
