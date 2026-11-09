@@ -1,6 +1,7 @@
 import Konva from 'konva/lib/Core';
+import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { arrivalMarks, ARRIVAL_BADGE_HEIGHT } from '../../../src/canvas/arrivals';
+import { arrivalMarks } from '../../../src/canvas/arrivals';
 import { ArrivalRenderer } from '../../../src/canvas/renderers/arrivals';
 import { t } from '../../../src/i18n';
 import type { Arrival, Project } from '../../../src/model';
@@ -50,12 +51,33 @@ describe('ArrivalRenderer', () => {
     expect(badge?.label.fill()).toBe(TOKENS.line);
   });
 
+  it('o primeiro desenho do selo mede o texto com a fonte do token', () => {
+    const { renderer, frame } = setup();
+    const widths: { fontSize: unknown; fontFamily: unknown }[] = [];
+    const original = KonvaText.prototype.getTextWidth;
+    const spy = vi
+      .spyOn(KonvaText.prototype, 'getTextWidth')
+      .mockImplementation(function (this: KonvaText) {
+        widths.push({
+          fontSize: this.getAttr('fontSize'),
+          fontFamily: this.getAttr('fontFamily'),
+        });
+        return original.call(this);
+      });
+    renderer.render(frame());
+    spy.mockRestore();
+    expect(widths[0]).toEqual({
+      fontSize: TOKENS.type.name.size,
+      fontFamily: TOKENS.fontFamily,
+    });
+  });
+
   it('o selo tem tamanho fixo na tela: a escala do nó é o inverso do zoom', () => {
     const { renderer, frame } = setup();
     renderer.render(frame(2));
     const badge = renderer.badge('I2');
     expect(badge?.group.scaleX()).toBeCloseTo(0.5);
-    expect(badge?.box.height()).toBe(ARRIVAL_BADGE_HEIGHT);
+    expect(badge?.box.height()).toBe(TOKENS.arrival.height);
     renderer.render(frame(0.25));
     expect(badge?.group.scaleX()).toBeCloseTo(4);
   });

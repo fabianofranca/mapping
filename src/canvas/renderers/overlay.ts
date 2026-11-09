@@ -503,7 +503,8 @@ export class OverlayRenderer {
     const { project, items, selection, arrows, tokens } = frame;
     const zoom = frame.viewport.scale;
     const entries: { readonly shape: ArrowShape; readonly primary: boolean }[] = [];
-    const shapeOf = (id: string) => arrows.find((shape) => shape.arrow.id === id);
+    const byId = new Map(arrows.map((shape) => [shape.arrow.id, shape] as const));
+    const shapeOf = (id: string) => byId.get(id);
     for (const item of items) {
       if (item.kind !== 'arrow' || sameItem(item, selection)) continue;
       const shape = shapeOf(item.id);
@@ -700,14 +701,14 @@ export class OverlayRenderer {
     // Removida na revisão: o nome vai riscado também na etiqueta (que cobre o da revisão).
     const struck = markingId !== null && isRemovedInReview(frame.review, markingId);
     const strikeY = (height - size) / 2 + size * STRIKE_HEIGHT;
+    // O risco acompanha o texto visível: nunca passa da largura da etiqueta (texto cortado).
+    const strikeWidth = Math.min(
+      this.nameTagText.measureSize(name).width,
+      width - 2 * NAME_TAG_PADDING,
+    );
     this.nameTagStrike.visible(struck);
     this.nameTagStrike.setAttrs({
-      points: [
-        NAME_TAG_PADDING,
-        strikeY,
-        NAME_TAG_PADDING + this.nameTagText.measureSize(name).width,
-        strikeY,
-      ],
+      points: [NAME_TAG_PADDING, strikeY, NAME_TAG_PADDING + strikeWidth, strikeY],
       stroke: tokens.nameTagText,
       strokeWidth: STRIKE_WIDTH,
     });

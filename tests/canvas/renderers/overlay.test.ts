@@ -154,6 +154,41 @@ describe('OverlayRenderer', () => {
       expect(overlay.nameTag.findOne('.name-tag-strike')?.visible()).toBe(false);
     });
 
+    it('nome longo removido na revisão: o risco não passa da etiqueta (largura cortada)', () => {
+      const long =
+        'Um nome de marcação muito comprido que passa do limite da etiqueta ok';
+      expect(long.length).toBeGreaterThan(60);
+      const { overlay, render } = setup();
+      const base = editorFor().store.project.peek();
+      render({
+        selection: SELECTED,
+        viewport: at(100),
+        project: base && {
+          ...base,
+          markings: base.markings.map((m) => (m.id === 'M2' ? { ...m, name: long } : m)),
+        },
+        review: {
+          view: 'current',
+          markings: new Map(),
+          images: new Map(),
+          ghosts: [],
+          removed: [
+            {
+              key: 'marking:M2',
+              placement: { x: 0, y: 0, scale: 1 },
+              rect: { x: 200, y: 200, width: 50, height: 50 },
+              name: long,
+              badges: ['removed' as const],
+            },
+          ],
+        },
+      });
+      const points = overlay.nameTag.findOne('.name-tag-strike')?.getAttr('points') as
+        number[] | undefined;
+      expect(points?.[2]).toBeLessThanOrEqual(overlay.nameTagBox.width());
+      expect(overlay.nameTagText.text()).toBe(long);
+    });
+
     it('mantém o tamanho em px de tela com zoom', () => {
       const { overlay, render } = setup();
       render({ selection: SELECTED, viewport: at(100, 2) });

@@ -156,6 +156,22 @@ const REVIEW_KEYS = ['review', 'project', 'tokens', 'locale'] as const;
 const PIN_KEYS = ['pins', 'pinSelected', 'draftPin', 'tokens', 'locale'] as const;
 const ARRIVAL_KEYS = ['arrivals', 'tokens', 'locale'] as const;
 
+/** Põe em `into` os arquivos dos containers (o de fundo, sem arquivo, não tem bitmap). */
+function addFiles(
+  into: Set<string>,
+  containers: readonly { readonly file: string | null }[] | undefined,
+): void {
+  for (const image of containers ?? []) {
+    if (image.file !== null) into.add(image.file);
+  }
+}
+
+function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  if (a.size !== b.size) return false;
+  for (const value of a) if (!b.has(value)) return false;
+  return true;
+}
+
 export class CanvasController {
   private readonly store: ProjectStore;
   private readonly display: DisplayImages<ImageBitmap>;
@@ -226,6 +242,8 @@ export class CanvasController {
   private readonly reviewLayer: ReviewRenderer;
   private readonly pinLayer: CommentPinRenderer;
   private readonly arrivalLayer: ArrivalRenderer;
+  /** O minimapa mudou de tamanho: o selo de chegada se refaz no próximo quadro. */
+  private arrivalsStale = false;
 
   /**
    * Projeto desenhado, derivado do projeto à vista (`review.derived.shownProject`, fase
@@ -518,7 +536,10 @@ export class CanvasController {
     const arrivalGroup = new Konva.Group({ listening: false });
     overlayLayer.add(arrivalGroup);
     arrivalGroup.moveToBottom();
-    this.arrivalLayer = new ArrivalRenderer(arrivalGroup);
+    this.arrivalLayer = new ArrivalRenderer(arrivalGroup, () => {
+      this.arrivalsStale = true;
+      this.requestRender();
+    });
     // O grupo de arrasto fica por baixo de tudo da camada (faixa de chegada, marcas da revisão,
     // pinos e alças); ao soltar, os nós voltam às camadas de onde saíram.
     this.dragRoot = new Konva.Group({ listening: false, name: 'drag' });
@@ -552,7 +573,10 @@ export class CanvasController {
       project: () => this.drawnProject.peek(),
       reviewing: () => this.review?.proposalId.peek() != null,
       perspectiveOpen: () => this.perspective?.openId() != null,
-      pinAt: (c) => pinHit(this.frame.peek().pins, c, this.view.scale),
+      pinAt: (c) => {
+        const { pins, tokens } = this.frame.peek();
+        return pinHit(pins, c, this.view.scale, tokens.pin);
+      },
       containerTitles: () => this.images.titleRects(),
     });
 
@@ -719,6 +743,7 @@ export class CanvasController {
     for (const cleanup of this.cleanups.splice(0)) cleanup();
     this.componentLayer.destroy();
     this.floatingLayer.destroy();
+    this.arrivalLayer.destroy();
     this.arrows.destroy();
     this.stage.destroy();
   }
@@ -815,16 +840,26 @@ export class CanvasController {
       this.state.hoverMarking.value = marking;
   }
 
+  /**
+   * Os arquivos das imagens do projeto e, na revisão, das novas ou trocadas que esperam em
+   * `proposals/`. Container sem arquivo (fundo) não tem bitmap. Devolve a mesma lista enquanto o
+   * conteúdo é igual: um passo de gesto não muda os arquivos e não reacende o `loadBitmaps`.
+   */
+  private readonly bitmapFiles = computed((): ReadonlySet<string> => {
+    const files = new Set<string>();
+    addFiles(files, this.store.project.value?.containers);
+    addFiles(files, this.drawnProject.value?.containers);
+    if (this.lastBitmapFiles && sameSet(this.lastBitmapFiles, files)) {
+      return this.lastBitmapFiles;
+    }
+    this.lastBitmapFiles = files;
+    return files;
+  });
+  private lastBitmapFiles: ReadonlySet<string> | null = null;
+
   private loadBitmaps(): void {
-    const images = this.store.project.value?.containers ?? [];
-    // Na revisão, também as imagens novas ou trocadas que esperam em `proposals/`.
-    const drawn = this.drawnProject.value?.containers ?? [];
+    const files = this.bitmapFiles.value;
     untracked(() => {
-      // Container sem arquivo (sem arquivo) não tem bitmap.
-      const files = new Set<string>();
-      for (const image of [...images, ...drawn]) {
-        if (image.file !== null) files.add(image.file);
-      }
       for (const file of files) this.display.ensure(file);
       // Arquivos que saíram do projeto (imagem excluída ou trocada) não ficam na memória.
       this.display.retain(files);
@@ -1012,7 +1047,8 @@ export class CanvasController {
       this.pinLayer.render(frame);
       this.dirty.add(this.layers.overlay);
     }
-    if (redo(ARRIVAL_KEYS)) {
+    if (redo(ARRIVAL_KEYS) || this.arrivalsStale) {
+      this.arrivalsStale = false;
       this.arrivalLayer.render(frame);
       this.dirty.add(this.layers.overlay);
     }

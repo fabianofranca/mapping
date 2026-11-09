@@ -229,6 +229,19 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-handle': '10px',
   /** Emblema do cadeado no canvas (px de tela). */
   'size-lock-badge': '20px',
+  /** Pino de conversa no canvas (px de tela): altura, respiro dos lados, glifo do estado e vão entre o glifo e o rótulo. A largura é estimada: `size-cv-pin-char` por letra do rótulo. */
+  'size-cv-pin-height': '20px',
+  'size-cv-pin-pad': '8px',
+  'size-cv-pin-glyph': '12px',
+  'size-cv-pin-glyph-gap': '2px',
+  'size-cv-pin-char': '7px',
+  /** Selo "Veio de <nome>" no canvas (px de tela): altura, respiro dos lados, vão até o canto da raiz (e, abaixo de uma raiz pequena, `gap-below`), faixa do nome do container que o selo evita e largura estimada por letra. */
+  'size-cv-arrival-height': '20px',
+  'size-cv-arrival-pad': '8px',
+  'size-cv-arrival-gap': '4px',
+  'size-cv-arrival-gap-below': '10px',
+  'size-cv-arrival-name-band': '24px',
+  'size-cv-arrival-char': '7px',
   /** Marcação com componente menor que isto na tela (largura ou altura) esconde as bolinhas de camada e o "+N" (3× o diâmetro da bolinha, 8px). */
   'size-indicator-min-marking': '24px',
   /** Nível de detalhe do canvas: marcação menor que isto na tela (largura ou altura) desenha só a borda (sem halo, linha dupla, selo nem ⚠). */

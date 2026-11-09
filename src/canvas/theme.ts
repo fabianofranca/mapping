@@ -98,6 +98,21 @@ export interface CanvasTokens {
     readonly halo: string;
     readonly selected: string;
     readonly unread: string;
+    /** Medidas (px de tela): altura, respiro dos lados, glifo do estado, vão glifo-rótulo e largura estimada por letra. */
+    readonly height: number;
+    readonly pad: number;
+    readonly glyph: number;
+    readonly glyphGap: number;
+    readonly charWidth: number;
+  };
+  /** Selo de chegada (`size-cv-arrival-*`, px de tela): altura, respiro, vãos, faixa do nome e largura por letra. */
+  readonly arrival: {
+    readonly height: number;
+    readonly pad: number;
+    readonly gap: number;
+    readonly gapBelow: number;
+    readonly nameBand: number;
+    readonly charWidth: number;
   };
 }
 
@@ -180,6 +195,19 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
       halo: read('--cv-pin-halo'),
       selected: read('--cv-pin-selected'),
       unread: read('--cv-pin-unread'),
+      height: number(read, '--size-cv-pin-height'),
+      pad: number(read, '--size-cv-pin-pad'),
+      glyph: number(read, '--size-cv-pin-glyph'),
+      glyphGap: number(read, '--size-cv-pin-glyph-gap'),
+      charWidth: number(read, '--size-cv-pin-char'),
+    },
+    arrival: {
+      height: number(read, '--size-cv-arrival-height'),
+      pad: number(read, '--size-cv-arrival-pad'),
+      gap: number(read, '--size-cv-arrival-gap'),
+      gapBelow: number(read, '--size-cv-arrival-gap-below'),
+      nameBand: number(read, '--size-cv-arrival-name-band'),
+      charWidth: number(read, '--size-cv-arrival-char'),
     },
   };
 }
