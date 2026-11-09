@@ -271,9 +271,7 @@ function parseJsonOrUndefined(text: string | undefined): unknown {
 }
 
 /** Caminho do arquivo da especialização dentro do pacote. */
-function locateSpecPath(files: readonly LibraryFile[], spec: Spec): string {
-  const texts = new Map<string, unknown>();
-  for (const file of files) if (file.text !== undefined) texts.set(file.path, file.text);
+function locateSpecPath(texts: ReadonlyMap<string, unknown>, spec: Spec): string {
   const root = packageSpecNameOf(texts, spec.id);
   if (texts.has(root)) return root;
   for (const [path, text] of texts) {
@@ -296,9 +294,9 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
   const spec = report.spec ?? null;
   if (spec === null) return { spec: null, report, layers: [], library: null };
 
-  const specPath = locateSpecPath(files, spec);
   const texts = new Map<string, string>();
   for (const file of files) if (file.text !== undefined) texts.set(file.path, file.text);
+  const specPath = locateSpecPath(texts, spec);
   const resolve = (ref: string): string => resolvePath(specPath, ref);
 
   const library = ((): Library | null => {
@@ -388,12 +386,21 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
 
 /** A entrada do tipo `typeId` (em qualquer camada), ou `undefined`. */
 export function findEntry(catalog: Catalog, typeId: string): CatalogEntry | undefined {
-  for (const layer of catalog.layers) {
-    const found = layer.entries.find((entry) => entry.type.id === typeId);
-    if (found !== undefined) return found;
+  let byId = entryIndexes.get(catalog);
+  if (byId === undefined) {
+    byId = new Map();
+    for (const layer of catalog.layers) {
+      for (const entry of layer.entries) {
+        if (!byId.has(entry.type.id)) byId.set(entry.type.id, entry);
+      }
+    }
+    entryIndexes.set(catalog, byId);
   }
-  return undefined;
+  return byId.get(typeId);
 }
+
+/** Entradas por id de tipo, uma vez por catálogo (o catálogo é imutável). */
+const entryIndexes = new WeakMap<Catalog, Map<string, CatalogEntry>>();
 
 // ---------------------------------------------------------------------------------------
 // Desenho

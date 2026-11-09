@@ -72,6 +72,8 @@ export interface ProjectIndex {
   readonly types: ReadonlyMap<string, ResolvedType>;
   /** Camadas das especializações carregadas, por `typeKey(specId, layerId)`. */
   readonly specLayers: ReadonlyMap<string, SpecLayer>;
+  /** Camada do projeto criada de cada camada de especialização, por `typeKey(specId, layerId)`. */
+  readonly layersBySpecLayer: ReadonlyMap<string, Layer>;
 }
 
 /** Chave composta especialização + id (tipo ou camada) dos mapas do índice. */
@@ -200,6 +202,12 @@ function buildIndex(p: Project): ProjectIndex {
   const annotationsByOwner = new Map<string, Annotation[]>();
   const types = new Map<string, ResolvedType>();
   const specLayers = new Map<string, SpecLayer>();
+  const layersBySpecLayer = new Map<string, Layer>();
+  for (const l of p.layers) {
+    if (!l.spec) continue;
+    const key = typeKey(l.spec.specId, l.spec.layerId);
+    if (!layersBySpecLayer.has(key)) layersBySpecLayer.set(key, l);
+  }
   const containersById = byId(p.containers);
   const markingsById = byId(p.markings);
 
@@ -238,6 +246,7 @@ function buildIndex(p: Project): ProjectIndex {
     specializations: byId(p.specializations),
     types,
     specLayers,
+    layersBySpecLayer,
   };
 }
 
