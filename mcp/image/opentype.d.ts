@@ -16,10 +16,18 @@ declare module 'opentype.js' {
     readonly kerning?: boolean;
     readonly letterSpacing?: number;
   }
+  export interface Glyph {
+    /** 0 = `.notdef` (a fonte não tem o caractere). */
+    readonly index: number;
+    getBoundingBox(): { x1: number; y1: number; x2: number; y2: number };
+  }
   export interface Font {
     readonly unitsPerEm: number;
     readonly ascender: number;
     readonly descender: number;
+    /** Tabelas lidas; `os2.sCapHeight` só existe na versão 2 ou mais da tabela. */
+    readonly tables?: { readonly os2?: { readonly sCapHeight?: number } };
+    charToGlyph(char: string): Glyph;
     getAdvanceWidth(text: string, fontSize: number, options?: GlyphOptions): number;
     getPath(
       text: string,

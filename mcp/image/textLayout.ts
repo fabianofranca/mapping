@@ -1,9 +1,10 @@
 import type { TextMeasurer } from '../../src/model/components/instantiate';
 import type { RunLayout, RunPiece } from '../../src/model/components/richText';
 import type { SceneTextRun, TextNode } from '../../src/model/components/scene';
-import { fontExtents, textPolygons, type Polygon } from './glyphs';
+import { capHeightOf, fontExtents, textPolygons, type Polygon } from './glyphs';
 import {
   blockTop,
+  type CapMetrics,
   breakLines,
   customLines,
   lineHeightOf,
@@ -55,6 +56,12 @@ const rectPolygon = (x: number, y: number, w: number, h: number): Polygon => [
   { x, y: y + h },
 ];
 
+/** As medidas verticais da fonte do nó (a base do `cap-middle`), lidas da mesma fonte que desenha. */
+function capMetricsOf(book: FontBook, spec: FontSpec): CapMetrics {
+  const face = book.fontFor(spec.family, spec.weight, spec.italic);
+  return { ...fontExtents(face, spec.size), capHeight: capHeightOf(face, spec.size) };
+}
+
 /** Contornos de uma linha de texto cujo topo está em `top` e altura `lineHeight`, mais a decoração. */
 function lineInk(
   book: FontBook,
@@ -89,7 +96,7 @@ function plainInk(node: TextNode, measure: TextMeasurer, book: FontBook): TextIn
   const widthOf = (text: string) => textWidth(book, text, spec);
   const lines =
     customLines(node, measure, { ...spec, lineHeight }) ?? breakLines(node, widthOf);
-  const top = blockTop(node, lines.length, lineHeight);
+  const top = blockTop(node, lines.length, lineHeight, capMetricsOf(book, spec));
   const polygons: Polygon[] = [];
   lines.forEach((line, i) => {
     if (line === '') return;
@@ -150,7 +157,14 @@ function pieceInk(
 
 function richInk(node: TextNode, layout: RunLayout, book: FontBook): TextInk {
   const runs = node.runs ?? [];
-  const shift = richShift(node, layout.height);
+  const base: FontSpec = {
+    family: node.style.fontFamily,
+    size: node.style.fontSize,
+    weight: node.style.fontWeight,
+    italic: node.style.italic,
+    letterSpacing: 0,
+  };
+  const shift = richShift(node, layout, capMetricsOf(book, base));
   const out: TextInk = { glyphs: [], boxes: [] };
   for (const line of layout.lines) {
     for (const piece of line.pieces) {
