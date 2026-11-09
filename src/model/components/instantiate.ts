@@ -511,7 +511,8 @@ function createEngine(
     );
     const background = str(run.background, 'none');
     return {
-      text: evaluateText(run.text, values, ''),
+      // Texto literal vale como está, também só de espaços (o vão entre trechos); o de campo vazio cai no fallback.
+      text: typeof run.text === 'string' ? run.text : evaluateText(run.text, values, ''),
       fontFamily: str(run.family, font.family),
       fontSize: Math.max(0, num(run.size, font.size)),
       fontWeight: num(run.weight, font.weight),

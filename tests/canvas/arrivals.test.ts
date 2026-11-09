@@ -136,6 +136,27 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
     expect(at1.y - 230).toBeCloseTo(2 * (at2.y - 230));
   });
 
+  it('raiz pequena: o vão cobre as alças da seleção (10 px de tela abaixo do canto)', () => {
+    const spot = arrivalBadgeSpot(small, 2, 100);
+    expect(spot.y - (200 + 30)).toBeGreaterThanOrEqual(10 / 2 - 1e-9);
+  });
+
+  it('raiz pequena com outra raiz logo abaixo: o selo não cai no nome dela, vai para o lado', () => {
+    const zoom = 0.22;
+    const below = { x: 100, y: 200 + 30 + 5, width: 40, height: 30 };
+    const width = 100;
+    const spot = arrivalBadgeSpot(small, zoom, width, undefined, undefined, [below]);
+    const nameBand = 24 / zoom;
+    const hits =
+      spot.x < below.x + below.width &&
+      spot.x + width / zoom > below.x &&
+      spot.y < below.y + below.height &&
+      spot.y + ARRIVAL_BADGE_HEIGHT / zoom > below.y - nameBand;
+    expect(hits).toBe(false);
+    // Sem obstáculo, o lugar de sempre: abaixo do canto.
+    expect(arrivalBadgeSpot(small, zoom, width).x).toBe(100);
+  });
+
   it('o selo não sai da área visível: encosta na borda direita e na de baixo', () => {
     const zoom = 0.16;
     const width = 220;
