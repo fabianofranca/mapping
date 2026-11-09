@@ -1,4 +1,4 @@
-# Testes de crescimento estáveis — [Não lançado] (épico `epic/escala-estavel`, PR #1212, MCP 0.28.11, schema v18)
+# Testes de crescimento estáveis — 2026-11-09 (épico `epic/escala-estavel`, PR #1212, MCP 0.28.11, schema v18)
 
 ## Alterado
 
