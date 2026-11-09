@@ -763,6 +763,31 @@ describe('instantiate: slotContent e measureComponent', () => {
     expect(slot.width).toBe(100);
   });
 
+  // Raiz `none` hug com um filho esticado por âncoras (o chip do Material 3): o filho sem
+  // largura é `fill`, e num pai sem limite ele vale o que abraçaria, não 0 (era a largura 1 do Arrumar).
+  it('measureComponent: raiz none hug com filho esticado por âncoras mede o conteúdo', () => {
+    const chip: FrameTemplate = {
+      type: 'frame',
+      layout: { type: 'none' },
+      children: [
+        {
+          type: 'frame',
+          anchors: { left: 0, right: 0, top: 0, bottom: 0 },
+          layout: { type: 'row', gap: 8, padding: [0, 16, 0, 16], align: 'center' },
+          children: [{ type: 'text', text: 'Wi-Fi', font: FONT }],
+        },
+      ],
+    };
+    const measured = measureComponent(
+      component(chip),
+      {},
+      { width: null, height: 32 },
+      { measure: approximateMeasurer },
+    );
+    const text = approximateMeasurer('Wi-Fi', FONT, undefined).width;
+    expect(measured.width).toBeCloseTo(16 * 2 + text);
+  });
+
   it('measureComponent mede o plano da raiz (hug nos dois eixos)', () => {
     const values = { label: 'Salvar', variant: 'primary', icon: 'não' };
     const measured = measureComponent(

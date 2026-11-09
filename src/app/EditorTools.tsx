@@ -156,6 +156,7 @@ export function FitButton() {
     <IconButton
       icon="fit"
       label={t('editor.fitAll')}
+      shortcut={SHORTCUT_LABELS.fitAll}
       onClick={() => canvas.current?.fitAll()}
     />
   );

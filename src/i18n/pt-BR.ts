@@ -581,6 +581,7 @@ export const ptBR = {
   'shortcuts.zoomIn': 'Aproximar',
   'shortcuts.zoomOut': 'Afastar',
   'shortcuts.zoomReset': 'Zoom em 100%',
+  'shortcuts.fitAll': 'Enquadrar tudo',
   'shortcuts.fitSelection': 'Enquadrar a seleção',
   'shortcuts.export': 'Exportar o projeto',
   'shortcuts.layers': 'Abrir as camadas',

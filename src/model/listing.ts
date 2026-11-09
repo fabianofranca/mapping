@@ -172,14 +172,32 @@ function collectPending(
   for (const annotation of index.annotationsByMarking.get(arrow?.id ?? marking.id) ??
     []) {
     const found = issues.get(annotation.id);
-    const layer = index.layers.get(annotation.layerId);
-    if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
+    const layer = layerOrOrphan(index.layers, annotation);
+    if (!found || (allowed && !allowed.has(layer.id))) continue;
     items.push(
       arrow
         ? { annotation, marking, path, layer, issues: found, arrow }
         : { annotation, marking, path, layer, issues: found },
     );
   }
+}
+
+/**
+ * A camada da anotação; se ela não existe (`missing-layer`), uma camada de mentira com o id, para a
+ * pendência aparecer na lista e o contador e a lista concordarem.
+ */
+function layerOrOrphan(
+  layers: ReadonlyMap<string, Layer>,
+  annotation: Annotation,
+): Layer {
+  return (
+    layers.get(annotation.layerId) ?? {
+      id: annotation.layerId,
+      name: annotation.layerId,
+      color: 'currentColor',
+      spec: null,
+    }
+  );
 }
 
 /**
