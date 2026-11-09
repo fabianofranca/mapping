@@ -2,7 +2,7 @@
 
 ## Pendências
 
-Nenhuma até agora (a árvore e a comparação da revisão não mudam de visual; cada fase confere com os gatilhos de `docs/DESIGN-SYSTEM.md`).
+- `ReviewRow` (fase 2): o `treeitem` ganhou `id`, `aria-setsize` e `aria-posinset`, e a árvore (`ReviewLevels`) `aria-activedescendant`. Só semântica acessível, sem mudança visual: o preview do `ReviewRow` não precisa mudar; anotar no guia se ele descreve os atributos ARIA.
 
 ## Sincronização
 

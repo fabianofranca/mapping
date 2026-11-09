@@ -114,3 +114,36 @@ export function allNodeKeys(tree: ReviewTree): Set<string> {
   visit(tree.root);
   return keys;
 }
+
+/** Posição da linha entre as irmãs que aparecem (`aria-posinset`/`aria-setsize`, de 1). */
+export interface RowPosition {
+  readonly posinset: number;
+  readonly setsize: number;
+}
+
+/**
+ * Posição de cada linha no nível dela: irmãs são as linhas visíveis com o mesmo pai. A
+ * proposta (sem pai) é a única do nível dela.
+ */
+export function rowPositions(
+  rows: readonly Pick<LevelRow, 'key'>[],
+  parents: ReadonlyMap<string, string>,
+): ReadonlyMap<string, RowPosition> {
+  const groups = new Map<string, string[]>();
+  for (const { key } of rows) {
+    const parent = parents.get(key) ?? '';
+    const list = groups.get(parent);
+    if (list) list.push(key);
+    else groups.set(parent, [key]);
+  }
+  const out = new Map<string, RowPosition>();
+  for (const keys of groups.values()) {
+    keys.forEach((key, i) => out.set(key, { posinset: i + 1, setsize: keys.length }));
+  }
+  return out;
+}
+
+/** `id` do `treeitem` de uma linha (alvo do `aria-activedescendant` da árvore). */
+export function rowDomId(key: string): string {
+  return `review-row-${key.replace(/[^\w-]/g, '_')}`;
+}
