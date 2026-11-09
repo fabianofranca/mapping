@@ -60,26 +60,28 @@ describe('faixas e janelas', () => {
     withContext(harness, <ToolStrip side="left" />);
     const user = userEvent.setup();
     const tree = t('panel.treeTitle');
-    await user.click(
-      screen.getByRole('button', { name: t('window.hide', { name: tree }) }),
-    );
+    // O nome é fixo (o título da janela); o estado fica só no aria-pressed (NE1).
+    const treeButton = () => screen.getByRole('button', { name: tree });
+    expect(treeButton().getAttribute('aria-pressed')).toBe('true');
+    await user.click(treeButton());
     expect(isToolWindowOpen('tree')).toBe(false);
-    await user.click(
-      screen.getByRole('button', { name: t('window.show', { name: tree }) }),
-    );
+    expect(treeButton().getAttribute('aria-pressed')).toBe('false');
+    await user.click(treeButton());
     expect(isToolWindowOpen('tree')).toBe(true);
+    expect(treeButton().getAttribute('aria-pressed')).toBe('true');
     // A faixa da esquerda também abre a janela inferior (Lista).
-    await user.click(
-      screen.getByRole('button', { name: t('window.show', { name: t('list.title') }) }),
-    );
+    const listButton = screen.getByRole('button', { name: t('list.title') });
+    expect(listButton.getAttribute('aria-pressed')).toBe('false');
+    await user.click(listButton);
     expect(isToolWindowOpen('list')).toBe(true);
+    expect(listButton.getAttribute('aria-pressed')).toBe('true');
   });
 
   it('o botão aberto fica pressionado', () => {
     const harness = createHarness(sampleProject());
     withContext(harness, <ToolStrip side="right" />);
     const button = screen.getByRole('button', {
-      name: t('window.hide', { name: t('panel.details') }),
+      name: t('panel.details'),
     });
     expect(button.getAttribute('aria-pressed')).toBe('true');
   });
@@ -125,11 +127,11 @@ describe('Camadas como janela (B3)', () => {
     withContext(harness, <ToolStrip side="left" />);
     const name = t('layer.title');
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: t('window.hide', { name }) }));
+    await user.click(screen.getByRole('button', { name }));
     expect(isToolWindowOpen('layers')).toBe(false);
     // Esconder as Camadas não esconde a Árvore: elas dividem a coluna da esquerda.
     expect(isToolWindowOpen('tree')).toBe(true);
-    await user.click(screen.getByRole('button', { name: t('window.show', { name }) }));
+    await user.click(screen.getByRole('button', { name }));
     expect(isToolWindowOpen('layers')).toBe(true);
     expect(isToolWindowOpen('tree')).toBe(true);
   });
