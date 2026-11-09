@@ -166,6 +166,22 @@ describe('Home', () => {
     );
   });
 
+  it('pasta que ganhou projeto: abre o existente e mostra o aviso (sem erro)', async () => {
+    const handle = { name: 'minha-pasta' };
+    controller.openFolder.mockReturnValue(
+      ok({ kind: 'needs-setup', handle, images: [] }),
+    );
+    controller.createFolderProject.mockReturnValue(ok({ skipped: [], existing: true }));
+    render(<Home />);
+    const user = userEvent.setup();
+    await user.click(screen.getByText(t('home.openFolder')));
+    await user.click(await screen.findByRole('button', { name: t('common.create') }));
+    const notice = await screen.findByText(t('home.folderHasProject'));
+    expect(notice.getAttribute('role')).toBe('status');
+    expect(notice.classList.contains('notice-error')).toBe(false);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('abrir zip chama importZip com o arquivo escolhido', async () => {
     controller.importZip.mockReturnValue(ok());
     const { container } = render(<Home />);
