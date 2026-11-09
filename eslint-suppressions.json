@@ -6,7 +6,7 @@
   },
   "mcp/batch.ts": {
     "complexity": {
-      "count": 11
+      "count": 10
     }
   },
   "mcp/codeViews.ts": {
@@ -60,11 +60,6 @@
     }
   },
   "mcp/markingList.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "mcp/proposalRefs.ts": {
     "complexity": {
       "count": 1
     }

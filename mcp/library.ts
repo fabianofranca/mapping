@@ -45,18 +45,29 @@ interface Walked {
   readonly size: number;
 }
 
+interface WalkResult {
+  readonly files: Walked[];
+  /** Pastas puladas (ocultas, `node_modules` e além de `MAX_DEPTH` níveis), relativas à pasta. */
+  readonly ignored: string[];
+}
+
 /** Arquivos regulares da pasta (recursivo, em ordem de caminho); ignora links e entradas ocultas. */
-async function walkFiles(dir: string): Promise<Walked[]> {
+async function walkFiles(dir: string): Promise<WalkResult> {
   const found: Walked[] = [];
+  const ignored: string[] = [];
   const visit = async (current: string, prefix: string, depth: number) => {
     const entries = await readdir(current, { withFileTypes: true });
     entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     for (const entry of entries) {
-      if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
       const path = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
+      if (entry.name.startsWith('.') || entry.name === 'node_modules') {
+        if (entry.isDirectory()) ignored.push(path);
+        continue;
+      }
       const real = join(current, entry.name);
       if (entry.isDirectory()) {
         if (depth < MAX_DEPTH) await visit(real, path, depth + 1);
+        else ignored.push(path);
       } else if (entry.isFile()) {
         if (found.length >= MAX_PACKAGE_FILES) {
           throw new ToolError(
@@ -70,7 +81,28 @@ async function walkFiles(dir: string): Promise<Walked[]> {
     }
   };
   await visit(dir, '', 0);
-  return found;
+  return { files: found, ignored };
+}
+
+/** Quantas pastas puladas o aviso cita pelo nome. */
+const MAX_IGNORED_LISTED = 20;
+
+/** Aviso `ignored-paths`: o pacote tem pastas que a leitura pulou (nunca é erro). */
+export function ignoredPathsIssues(ignored: readonly string[]): LibraryIssue[] {
+  if (ignored.length === 0) return [];
+  const shown = ignored.slice(0, MAX_IGNORED_LISTED).join(', ');
+  const more =
+    ignored.length > MAX_IGNORED_LISTED
+      ? ` e mais ${ignored.length - MAX_IGNORED_LISTED}`
+      : '';
+  return [
+    {
+      file: '',
+      path: 'ignored-paths',
+      message: `pastas ignoradas na leitura do pacote (ocultas, node_modules ou além de ${MAX_DEPTH} níveis): ${shown}${more}`,
+      severity: 'warning',
+    },
+  ];
 }
 
 /** O pacote lido do disco, pronto para `validateLibrary`. */
@@ -78,6 +110,8 @@ export interface ReadPackage {
   /** Caminho real da pasta do pacote. */
   readonly dir: string;
   readonly files: readonly LibraryFile[];
+  /** Pastas puladas na leitura (ver `ignoredPathsIssues`). */
+  readonly ignoredPaths: readonly string[];
   /** Arquivo da especialização, quando o pedido o indicou (relativo à pasta). */
   readonly specPath?: string;
   /** Com `raw`: o conteúdo cru de TODOS os arquivos (binários inclusive), por caminho relativo. */
@@ -114,7 +148,7 @@ export async function readPackage(
     });
   }
   await roots.assertInside(dir, path);
-  const walked = await walkFiles(dir);
+  const { files: walked, ignored } = await walkFiles(dir);
   if (options.raw) {
     const bytes = walked.reduce((sum, file) => sum + file.size, 0);
     if (walked.length > MODEL_PACKAGE_FILES || bytes > MAX_PACKAGE_BYTES) {
@@ -130,7 +164,7 @@ export async function readPackage(
   const files: LibraryFile[] = [];
   for (const file of walked) {
     if (!isTextPath(file.path)) {
-      if (options.raw) raw.set(file.path, new Uint8Array(await readFile(file.real)));
+      if (options.raw) raw.set(file.path, await readFile(file.real));
       files.push({ path: file.path, binary: true });
       continue;
     }
@@ -149,12 +183,13 @@ export async function readPackage(
       );
     }
     const content = await readFile(file.real);
-    if (options.raw) raw.set(file.path, new Uint8Array(content));
+    if (options.raw) raw.set(file.path, content);
     files.push({ path: file.path, text: content.toString('utf8') });
   }
   return {
     dir,
     files,
+    ignoredPaths: ignored,
     ...(specPath === undefined ? {} : { specPath }),
     ...(options.raw ? { bytes: raw } : {}),
   };
@@ -249,7 +284,11 @@ export async function validateLibraryTool(
     pkg.specPath,
     args.docClones,
   );
-  const warnings = [...report.warnings, ...docWarnings].map(issueView);
+  const warnings = [
+    ...report.warnings,
+    ...docWarnings,
+    ...ignoredPathsIssues(pkg.ignoredPaths),
+  ].map(issueView);
   const hint = report.ok
     ? warnings.length > 0
       ? 'a biblioteca é válida; os avisos deixam usar, mas costumam apontar descuidos (fonte ausente, conteúdo maior que a caixa, arquivo sem uso)'
@@ -393,7 +432,7 @@ export async function listPackageFiles(
     return null;
   }
   const walked = await walkFiles(real);
-  return { dir: dir.split('\\').join('/'), files: walked.map((f) => f.path) };
+  return { dir: dir.split('\\').join('/'), files: walked.files.map((f) => f.path) };
 }
 
 /** Fonte de um pacote aplicado: lê dentro de `specs/<id>/` do projeto. */
@@ -427,19 +466,22 @@ export type SpecInput =
 /**
  * Lê o que `path` aponta (pasta do pacote, ou arquivo da especialização, de qualquer
  * `formatVersion`). Um arquivo v4 leva a pasta dele junto; um arquivo v1 a v3, só ele.
- * `real` é o caminho já resolvido (o lote procura antes na pasta do projeto).
+ * `real` é o caminho já resolvido (o lote procura antes na pasta do projeto). `raw: false`
+ * (só leitura, como `plan_library_update`) não lê os binários nem aplica os limites da app.
  */
 export async function readSpecInput(
   roots: Roots,
   path: string,
   real?: string,
+  options: { raw?: boolean } = {},
 ): Promise<SpecInput> {
+  const raw = options.raw ?? true;
   const resolved = real ?? (await roots.resolveExisting(path)).real;
   const info = await stat(resolved);
   if (info.isDirectory()) {
     return {
       kind: 'package',
-      pkg: await readPackage(roots, path, { raw: true, real: resolved }),
+      pkg: await readPackage(roots, path, { raw, real: resolved }),
     };
   }
   if (!info.isFile()) {
@@ -460,6 +502,6 @@ export async function readSpecInput(
   if (!usesPackageFiles(parsed.spec)) return { kind: 'file', spec: parsed.spec };
   return {
     kind: 'package',
-    pkg: await readPackage(roots, path, { raw: true, real: resolved }),
+    pkg: await readPackage(roots, path, { raw, real: resolved }),
   };
 }

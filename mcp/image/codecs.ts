@@ -50,16 +50,30 @@ function once<T>(key: string, start: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Cópia dos bytes como `ArrayBuffer` (o que os decodificadores do @jsquash aceitam). `new
- * Uint8Array(bytes)` copia sempre; o `slice()` de um `Buffer` do Node não copia e o `.buffer`
- * seria o pool inteiro de memória compartilhada, com bytes de outros dados em volta.
+ * Os bytes como `ArrayBuffer` (o que os decodificadores do @jsquash aceitam). Quando o
+ * `Uint8Array` ocupa o buffer inteiro (um `readFile` grande), o próprio buffer serve, sem cópia;
+ * senão (um `Buffer` do pool do Node, que tem bytes de outros dados em volta) copia só os bytes.
  */
 const toArrayBuffer = (bytes: Uint8Array): ArrayBuffer =>
-  new Uint8Array(bytes).buffer as ArrayBuffer;
+  bytes.buffer instanceof ArrayBuffer &&
+  bytes.byteOffset === 0 &&
+  bytes.byteLength === bytes.buffer.byteLength
+    ? bytes.buffer
+    : (new Uint8Array(bytes).buffer as ArrayBuffer);
 
 type Encoded = { data: Uint8ClampedArray; width: number; height: number };
 // Os tipos dos pacotes referenciam `ImageData` do DOM, que o tsconfig do `mcp/` não tem.
 const asImageData = (r: Raster) => r as unknown as Parameters<typeof encodePng>[0];
+
+/** Recusa arquivo de imagem acima de `MAX_FILE_BYTES` (conferido antes de ler, pelo `stat`, e ao decodificar). */
+export function assertFileSize(size: number): void {
+  if (size > MAX_FILE_BYTES) {
+    throw new ToolError(
+      'image-too-large',
+      `arquivo de imagem grande demais (${size} bytes; máximo ${MAX_FILE_BYTES})`,
+    );
+  }
+}
 
 /**
  * Decodifica PNG, JPEG ou WebP para RGBA, recusando arquivos grandes ou com pixels demais. No
@@ -70,12 +84,7 @@ const asImageData = (r: Raster) => r as unknown as Parameters<typeof encodePng>[
 export async function decodeImage(
   bytes: Uint8Array,
 ): Promise<{ format: ImageFormat; raster: Raster; orientation: ExifOrientation }> {
-  if (bytes.length > MAX_FILE_BYTES) {
-    throw new ToolError(
-      'image-too-large',
-      `arquivo de imagem grande demais (${bytes.length} bytes; máximo ${MAX_FILE_BYTES})`,
-    );
-  }
+  assertFileSize(bytes.length);
   const format = detectFormat(bytes);
   if (!format) {
     throw new ToolError(
@@ -94,19 +103,20 @@ export async function decodeImage(
     );
   }
   try {
+    const buffer = toArrayBuffer(bytes);
     let decoded: Encoded;
     if (format === 'png') {
       await once('png', () => initPngDecoder(compiled(pngWasm)));
-      decoded = (await decodePng(toArrayBuffer(bytes))) as Encoded;
+      decoded = (await decodePng(buffer)) as Encoded;
     } else if (format === 'jpeg') {
       await once('jpeg-dec', async () => initJpegDecoder(compiled(jpegDecoderWasm)));
-      decoded = (await decodeJpeg(toArrayBuffer(bytes))) as Encoded;
+      decoded = (await decodeJpeg(buffer)) as Encoded;
     } else {
       await once('webp-dec', async () => initWebpDecoder(compiled(webpDecoderWasm)));
-      decoded = (await decodeWebp(toArrayBuffer(bytes))) as Encoded;
+      decoded = (await decodeWebp(buffer)) as Encoded;
     }
     const raster = { width: decoded.width, height: decoded.height, data: decoded.data };
-    const orientation = format === 'jpeg' ? readExifOrientation(toArrayBuffer(bytes)) : 1;
+    const orientation = format === 'jpeg' ? readExifOrientation(buffer) : 1;
     return { format, raster: orient(raster, orientation), orientation };
   } catch (error) {
     throw new ToolError(

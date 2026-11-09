@@ -16,6 +16,7 @@ import { ToolError } from './errors';
 import { Roots, resolveProjectFile, writeFileAtomic } from './paths';
 import type { ProjectLocation } from './projects';
 import { writeNewFile } from './proposalStore';
+import { compareByCreated } from './shared';
 
 // Conversas em disco (etapa Comentários, CM6): `comments/<id>.json` (aberta) e
 // `comments/resolved/<id>.json` (resolvida). O servidor lê as duas pastas e junta as cópias da
@@ -163,10 +164,11 @@ function readFailure(error: unknown): string {
 export async function listStoredThreads(
   roots: Roots,
   location: ProjectLocation,
+  ids?: readonly string[],
 ): Promise<StoredThreads> {
   const threads: StoredThread[] = [];
   const broken: BrokenThread[] = [];
-  for (const id of await listThreadIds(location)) {
+  for (const id of ids ?? (await listThreadIds(location))) {
     let copies: Copies;
     try {
       copies = await readCopies(roots, location, id);
@@ -179,13 +181,10 @@ export async function listStoredThreads(
     else threads.push({ id, thread: merged.thread });
   }
   threads.sort((a, b) =>
-    a.thread.createdAt === b.thread.createdAt
-      ? a.id < b.id
-        ? -1
-        : 1
-      : a.thread.createdAt < b.thread.createdAt
-        ? -1
-        : 1,
+    compareByCreated(
+      { createdAt: a.thread.createdAt, id: a.id },
+      { createdAt: b.thread.createdAt, id: b.id },
+    ),
   );
   return { threads, broken };
 }

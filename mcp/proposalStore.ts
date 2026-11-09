@@ -27,6 +27,7 @@ import {
 import { ToolError } from './errors';
 import { Roots, hasParentSegment, resolveProjectFile, writeFileAtomic } from './paths';
 import type { ProjectLocation } from './projects';
+import { compareByCreated, failureReason, warnStderr } from './shared';
 
 // Propostas em disco (etapa 4.2): `proposals/<id>/proposal.json` e `proposals/<id>/images/…`.
 // O servidor só grava aqui; o `mapping.json` é da sessão da app. O arquivo da proposta tem
@@ -136,13 +137,10 @@ export async function listStored(
     else broken.push(stored);
   }
   proposals.sort((a, b) =>
-    a.proposal.createdAt === b.proposal.createdAt
-      ? a.id < b.id
-        ? -1
-        : 1
-      : a.proposal.createdAt < b.proposal.createdAt
-        ? -1
-        : 1,
+    compareByCreated(
+      { createdAt: a.proposal.createdAt, id: a.id },
+      { createdAt: b.proposal.createdAt, id: b.id },
+    ),
   );
   return { proposals, broken };
 }
@@ -194,10 +192,8 @@ async function removeTemp(temp: string): Promise<void> {
   try {
     await rm(temp, { force: true });
   } catch (error) {
-    const code =
-      errnoCode(error) ?? (error instanceof Error ? error.message : String(error));
-    process.stderr.write(
-      `mapping-mcp: aviso: não foi possível apagar o temporário ${temp} (${code}); ele pode ser apagado à mão\n`,
+    warnStderr(
+      `não foi possível apagar o temporário ${temp} (${failureReason(error)}); ele pode ser apagado à mão`,
     );
   }
 }
@@ -434,10 +430,8 @@ async function removeUncited(
     try {
       await rm(join(location.dir, file), { force: true });
     } catch (error) {
-      const code =
-        errnoCode(error) ?? (error instanceof Error ? error.message : String(error));
-      process.stderr.write(
-        `mapping-mcp: aviso: não foi possível apagar ${file} (${code}); ele pode ser apagado à mão\n`,
+      warnStderr(
+        `não foi possível apagar ${file} (${failureReason(error)}); ele pode ser apagado à mão`,
       );
     }
   }

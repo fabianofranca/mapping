@@ -1,9 +1,15 @@
 import { formatAnyRef, normalizeId, parseAnyRef, shortCodesFor } from '../src/model';
 import { ToolError } from './errors';
-import { INVALID_REF_HINT } from './items';
-import { discoverProjects, findProject, type ProjectLocation } from './projects';
-import { listStored, type StoredProposal, type StoredProposals } from './proposalStore';
+import { INVALID_REF_HINT, candidateLocations } from './items';
+import type { ProjectLocation } from './projects';
+import {
+  listStored,
+  type BrokenProposal,
+  type StoredProposal,
+  type StoredProposals,
+} from './proposalStore';
 import type { Roots } from './paths';
+import { BARE_ID } from './shared';
 
 // Referência de proposta: `mapping://<projeto>/p/<código>` (o código são os 8 primeiros
 // caracteres hexadecimais do id, como nos itens; cresce de 4 em 4 se houver colisão entre as
@@ -15,8 +21,6 @@ interface ParsedProposalRef {
   readonly code: string;
 }
 
-const BARE = /^[0-9a-zA-Z][0-9a-zA-Z._-]*$/;
-
 export function parseProposalRef(text: string): ParsedProposalRef | null {
   const input = text.trim();
   const parsed = parseAnyRef(input);
@@ -27,7 +31,7 @@ export function parseProposalRef(text: string): ParsedProposalRef | null {
       ? { project: parsed.project, code: ref.code }
       : null;
   }
-  return BARE.test(input) ? { project: null, code: input } : null;
+  return BARE_ID.test(input) ? { project: null, code: input } : null;
 }
 
 /** Códigos curtos das propostas do projeto (únicos entre elas). */
@@ -66,7 +70,10 @@ export interface ResolvedProposal {
   readonly refs: ProposalRefs;
 }
 
-function matches(stored: readonly StoredProposal[], code: string): StoredProposal[] {
+function matches<T extends { readonly id: string }>(
+  stored: readonly T[],
+  code: string,
+): T[] {
   const exactId = stored.filter((s) => s.id === code);
   if (exactId.length === 1) return exactId;
   const wanted = normalizeId(code);
@@ -107,6 +114,8 @@ export function lookupStored(
   const found = matches(all.proposals, parsed.code);
   if (found.length === 1) return found[0]!;
   if (found.length === 0) {
+    const unreadable = matches(all.broken, parsed.code);
+    if (unreadable.length > 0) throw unreadableProposal(unreadable);
     throw new ToolError(
       'proposal-not-found',
       `nenhuma proposta corresponde a ${refText}`,
@@ -117,6 +126,15 @@ export function lookupStored(
     );
   }
   throw ambiguous(refText, location, all, found);
+}
+
+/** O código só acha propostas ilegíveis: `invalid-proposal` (o guia), não `proposal-not-found`. */
+function unreadableProposal(broken: readonly BrokenProposal[]): ToolError {
+  const first = broken[0]!;
+  return new ToolError('invalid-proposal', `proposta ilegível: ${first.error}`, {
+    proposal: first.id,
+    hint: 'o proposal.json está ilegível; list_proposals mostra as ilegíveis em `broken`',
+  });
 }
 
 function ambiguous(
@@ -154,44 +172,26 @@ export async function resolveProposal(
       hint: INVALID_REF_HINT,
     });
   }
-  let locations: ProjectLocation[];
-  const named = parsed.project ?? projectArg;
-  if (parsed.project !== null && projectArg !== undefined) {
-    const [fromRef, fromArg] = [
-      await findProject(roots, parsed.project),
-      await findProject(roots, projectArg),
-    ];
-    if (fromRef.dir !== fromArg.dir) {
-      throw new ToolError(
-        'project-mismatch',
-        `a referência é do projeto "${fromRef.name}", mas \`project\` indica "${fromArg.name}"`,
-      );
-    }
-    locations = [fromRef];
-  } else if (named !== undefined) {
-    locations = [await findProject(roots, named)];
-  } else {
-    locations = await discoverProjects(roots);
-    if (locations.length === 0) {
-      throw new ToolError('project-not-found', 'nenhum projeto nas raízes configuradas');
-    }
-  }
+  const locations = await candidateLocations(roots, parsed.project, projectArg);
 
   const found: {
     location: ProjectLocation;
     all: StoredProposals;
     stored: StoredProposal;
   }[] = [];
+  const unreadable: BrokenProposal[] = [];
   for (const location of locations) {
     const all = await listStored(roots, location);
     for (const stored of matches(all.proposals, parsed.code)) {
       found.push({ location, all, stored });
     }
+    unreadable.push(...matches(all.broken, parsed.code));
   }
   if (found.length === 1) {
     const [only] = found;
     return { ...only!, refs: new ProposalRefs(only!.location.name, only!.all) };
   }
+  if (found.length === 0 && unreadable.length > 0) throw unreadableProposal(unreadable);
   if (found.length === 0) {
     throw new ToolError(
       'proposal-not-found',

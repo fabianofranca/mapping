@@ -2,7 +2,7 @@ import {
   ModelError,
   NOTICE_KINDS,
   changeNotices,
-  computeChanges,
+  type Change,
   type SpecNotice,
   addAnnotation,
   addBackgroundContainer,
@@ -23,15 +23,16 @@ import {
   annotationShortLabel,
   applySpecialization,
   checkSpecApply,
-  MIN_STORED_MARKING_SIZE,
   SHORT_CODE_LENGTH,
   normalizeId,
+  componentFileMinSize,
   componentMinSize,
   componentPlacement,
   componentTypes,
   findSpecType,
   loadSpecComponents,
   type ComponentCatalog,
+  type ComponentType,
   type TextMeasurer,
   confirmMarkingReview,
   createMarking,
@@ -155,6 +156,11 @@ export interface BatchIo {
   readSpecInput(path: string): Promise<SpecInput>;
   /** Arquivos que já existem em `images/` no disco (`images/…`), para não sobrescrever. */
   readonly takenImageFiles: ReadonlySet<string>;
+  /**
+   * Projeto lido da pasta, quando o lote parte de outro (a revisão da proposta parte do proposto
+   * inteiro): o aviso das setas compara com ele, não com o que já foi proposto.
+   */
+  readonly diskProject?: Project;
   now(): Date;
 }
 
@@ -394,6 +400,15 @@ type CreateMarkingValues = NonNullable<
 class Batch {
   private p: Project;
   private readonly aliases = new Map<string, AliasTarget>();
+  /** Contagem dos 8 primeiros caracteres (normalizados) dos ids de marcações e setas, da versão em `project`. */
+  private prefixCounts: { project: Project; counts: Map<string, number> } | null = null;
+
+  private componentTypes: {
+    specs: Project['specializations'];
+    catalog: ComponentCatalog;
+    map: ReadonlyMap<string, ComponentType>;
+  } | null = null;
+
   /** Apelidos de operações que falharam: as que dependem delas dizem o porquê. */
   private readonly failedAliases = new Map<string, number>();
   private readonly imageFiles = new Map<string, Uint8Array>();
@@ -448,6 +463,7 @@ class Batch {
           throw new ToolError('duplicate-alias', `apelido repetido no lote: ${alias}`);
         }
         const step = await this.apply(op);
+        this.checkRowAliases(step, [alias, secondAlias]);
         this.p = step.project;
         this.steps.push({ index, description: step.description });
         const deprecated = DEPRECATED_OPS[op.op];
@@ -533,6 +549,15 @@ class Batch {
     };
   }
 
+  /** O apelido da operação não pode repetir um `_as` de linha da mesma operação. */
+  private checkRowAliases(step: Step, names: readonly (string | undefined)[]): void {
+    for (const [rowAlias] of step.rowAliases ?? []) {
+      if (names.includes(rowAlias)) {
+        throw new ToolError('duplicate-alias', `apelido repetido no lote: ${rowAlias}`);
+      }
+    }
+  }
+
   /**
    * Refaz a entrada do catálogo da especialização que a operação mexeu, com o pacote que ela
    * já leu (sem ler o disco de novo): as operações seguintes veem os componentes da versão nova.
@@ -559,8 +584,10 @@ class Batch {
     const first = files[0];
     if (first !== undefined) {
       const dir = packageDirOf(first[0]);
-      for (const key of [...this.packageFiles.keys()]) {
-        if (dir !== null && packageDirOf(key) === dir) this.packageFiles.delete(key);
+      if (dir !== null) {
+        for (const key of [...this.packageFiles.keys()]) {
+          if (packageDirOf(key) === dir) this.packageFiles.delete(key);
+        }
       }
     }
     for (const [path, data] of files) this.packageFiles.set(path, data);
@@ -621,7 +648,6 @@ class Batch {
     );
   }
 
-  /** Id de uma marcação, container ou anotação deste projeto: apelido, referência ou id. */
   /**
    * Container por referência/id ou, se não achar, pelo nome ou arquivo (como `list_markings`);
    * nome em mais de um container → `ambiguous-image`.
@@ -650,6 +676,7 @@ class Batch {
     }
   }
 
+  /** Id de uma marcação, container ou anotação deste projeto: apelido, referência ou id. */
   private item(text: string, kind: ItemKind, p: Project = this.p): string {
     const wanted = text.trim();
     if (wanted.startsWith('$')) {
@@ -947,10 +974,13 @@ class Batch {
     values: Record<string, JsonValue>,
     rowAliases: [string, AliasTarget][],
   ): Project {
+    const entries = Object.entries(values);
+    if (entries.length === 0) return p;
+    // O tipo da anotação não muda ao definir os valores: resolvido uma vez, não por campo.
+    const annotation = projectIndex(p).annotations.get(annotationId)!;
+    const resolved = typeOfAnnotation(p, annotation);
     let next = p;
-    for (const [key, value] of Object.entries(values)) {
-      const annotation = projectIndex(next).annotations.get(annotationId)!;
-      const resolved = typeOfAnnotation(next, annotation);
+    for (const [key, value] of entries) {
       const field: SpecField | null = resolved ? fieldOf(resolved.type, key) : null;
       if (field?.type === 'table') {
         next = this.setTable(next, annotationId, field, value, rowAliases);
@@ -1013,8 +1043,8 @@ class Batch {
         if (column === '_id' || column === '_as') continue;
         const isRef = tableField.columns.find((c) => c.key === column)?.type === 'ref';
         // Célula `ref`: o mesmo valor do campo `ref` (apelidos incluídos) ou o formato gravado.
-        const value = isRef ? this.refValue(cell, column, next) : cell;
-        next = setTableCell(next, annotationId, key, rowId, column, value);
+        const cellValue = isRef ? this.refValue(cell, column, next) : cell;
+        next = setTableCell(next, annotationId, key, rowId, column, cellValue);
       }
       next = moveTableRow(next, annotationId, key, rowId, position);
       const alias = row._as;
@@ -1077,8 +1107,27 @@ class Batch {
     return [this.refs(project).imageLabelNoIndex(marking.containerId), name].join(' › ');
   }
 
-  /** Contagem dos 8 primeiros caracteres (normalizados) dos ids de marcações e setas, da versão em `project`. */
-  private prefixCounts: { project: Project; counts: Map<string, number> } | null = null;
+  /**
+   * Tipos com componente por `especialização/tipo`, montados uma vez por versão das
+   * especializações e do catálogo (o `import_measured` cria uma marcação por nó).
+   */
+  private componentTypeMap(
+    p: Project,
+    catalog: ComponentCatalog,
+  ): ReadonlyMap<string, ComponentType> {
+    const cached = this.componentTypes;
+    if (cached?.specs === p.specializations && cached.catalog === catalog) {
+      return cached.map;
+    }
+    const map = new Map<string, ComponentType>();
+    for (const t of componentTypes(p, catalog)) {
+      // O primeiro vence, como o `find` por especialização e tipo.
+      const key = `${t.specId}/${t.typeId}`;
+      if (!map.has(key)) map.set(key, t);
+    }
+    this.componentTypes = { specs: p.specializations, catalog, map };
+    return map;
+  }
 
   /**
    * Código curto do id novo se nenhum outro id de marcação ou seta começa com os mesmos 8
@@ -1768,7 +1817,9 @@ class Batch {
     }
     // A proposta só leva a criação e a remoção da seta: nome, estilo e trava de uma seta que já
     // existe no projeto são da pessoa e não viram mudança.
-    const existing = this.loaded.project.arrows.some((a) => a.id === id);
+    const existing = (this.io.diskProject ?? this.loaded.project).arrows.some(
+      (a) => a.id === id,
+    );
     return {
       project,
       description: `Alterar a seta "${label}": ${changes.join(', ') || 'nada'}`,
@@ -1807,7 +1858,7 @@ class Batch {
     } else {
       const parsed = parseRef(wanted);
       if (parsed?.kind === 'i') return { kind: 'container', id: this.item(wanted, 'i') };
-      if (parsed?.kind === null || parsed === null) {
+      if (parsed === null || parsed.kind === null) {
         if (index.containers.has(wanted)) return { kind: 'container', id: wanted };
       }
     }
@@ -1896,8 +1947,8 @@ class Batch {
         rowAliases.push(...(step.rowAliases ?? []));
         notes.push(...(step.notes ?? []));
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        notes.push(`${marking.path}: não criada (${message})`);
+        if (!(error instanceof ToolError || error instanceof ModelError)) throw error;
+        notes.push(`${marking.path}: não criada (${error.message})`);
       }
     }
     const made = created.filter((c) => c.kind === 'm').length;
@@ -1939,9 +1990,8 @@ class Batch {
     const component =
       typeRef === null
         ? null
-        : (componentTypes(p, catalog).find(
-            (t) => t.specId === typeRef.specId && t.typeId === typeRef.typeId,
-          ) ?? null);
+        : (this.componentTypeMap(p, catalog).get(`${typeRef.specId}/${typeRef.typeId}`) ??
+          null);
     if (op.rect === undefined && component === null) {
       throw new ToolError(
         'invalid-arguments',
@@ -1949,13 +1999,7 @@ class Batch {
       );
     }
     // Com componente o mínimo é o `minSize` dele ou 1×1; sem componente, o de qualquer marcação (8).
-    const minSize =
-      component === null
-        ? null
-        : (component.component.minSize ?? {
-            width: MIN_STORED_MARKING_SIZE,
-            height: MIN_STORED_MARKING_SIZE,
-          });
+    const minSize = component === null ? null : componentFileMinSize(component.component);
     // `near` (ME4): só um tipo flutuante; o lugar sai de `placeFloatingNear` e o `rect`, se vier,
     // dá só o tamanho. Nos outros casos o argumento é ignorado, com aviso.
     const notes: string[] = [];
@@ -2015,7 +2059,7 @@ class Batch {
           {
             markingId,
             annotationId: newAnnotationId,
-            containerId: containerId,
+            containerId,
             parentId: null,
             ...typeRef,
             rect,
@@ -2033,7 +2077,7 @@ class Batch {
     } else {
       project = createMarking(p, {
         id: markingId,
-        containerId: containerId,
+        containerId,
         rect: op.rect!,
         name: op.name ?? null,
       });
@@ -2333,11 +2377,15 @@ export function issueChanges(refs: Refs, before: Project): Record<string, unknow
  * (etapa #486, decisão 11), pelas mesmas mudanças que a revisão da proposta mostra
  * (`changeNotices`), do mais grave ao menos e, no mesmo `kind`, na ordem em que surgem.
  */
-export function noticeChanges(refs: Refs, before: Project): Record<string, unknown> {
+export function noticeChanges(
+  refs: Refs,
+  before: Project,
+  changes: readonly Change[],
+): Record<string, unknown> {
   const after = refs.project;
   const seen = new Set<string>();
   const entries: { kind: SpecNotice['kind']; view: Record<string, unknown> }[] = [];
-  for (const change of computeChanges(before, after)) {
+  for (const change of changes) {
     for (const usage of changeNotices(after, change, change.field ?? '')) {
       const id = JSON.stringify([
         change.entityId,

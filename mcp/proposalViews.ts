@@ -20,15 +20,12 @@ import {
 } from '../src/model';
 import { Refs } from './items';
 import type { LoadedProject } from './projects';
+import { isRecord } from './shared';
 
 // Visões compactas das propostas para o agente (etapa 4.2): estado de cada mudança, níveis da
 // revisão, progresso e notas. Toda regra (níveis, decisões, conflitos) vem de `src/model/`.
 
 type Json = Record<string, unknown>;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /**
  * Rótulos e referências `mapping://` das entidades de uma proposta. Usa o projeto "como
@@ -215,14 +212,17 @@ function countItems(node: ReviewNode): number {
   return node.children.reduce((sum, child) => sum + 1 + countItems(child), 0);
 }
 
-function imageKind(
-  p: Proposal,
-  imageId: string,
-): 'new' | 'removed' | 'changed' | 'items' {
-  const own = p.changes.filter((c) => c.entity === 'image' && c.entityId === imageId);
-  if (own.some((c) => c.kind === 'create')) return 'new';
-  if (own.some((c) => c.kind === 'remove')) return 'removed';
-  return own.length > 0 ? 'changed' : 'items';
+/** O tipo de mudança de cada container, de uma varredura só das mudanças da proposta. */
+function imageKinds(p: Proposal): Map<string, 'new' | 'removed' | 'changed'> {
+  const kinds = new Map<string, 'new' | 'removed' | 'changed'>();
+  for (const c of p.changes) {
+    if (c.entity !== 'image') continue;
+    const current = kinds.get(c.entityId);
+    if (c.kind === 'create') kinds.set(c.entityId, 'new');
+    else if (c.kind === 'remove' && current !== 'new') kinds.set(c.entityId, 'removed');
+    else if (current === undefined) kinds.set(c.entityId, 'changed');
+  }
+  return kinds;
 }
 
 /** Resumo por nível: Projeto e cada container (nível `image` no `proposal.json`), com o estado de decisão e as contagens. */
@@ -241,6 +241,7 @@ export function levelsView(p: Proposal, tree: ReviewTree, labels: ProposalLabels
       applied: summary.applied,
     };
   };
+  const kinds = imageKinds(p);
   const project = tree.nodes.get('project:');
   return {
     ...(project ? { project: summarize(project) } : {}),
@@ -248,7 +249,7 @@ export function levelsView(p: Proposal, tree: ReviewTree, labels: ProposalLabels
       .filter((node) => node.level === 'image')
       .map((node) => ({
         container: labels.ref('i', node.id!) ?? node.id,
-        change: imageKind(p, node.id!),
+        change: kinds.get(node.id!) ?? 'items',
         items: countItems(node),
         ...summarize(node),
       })),
