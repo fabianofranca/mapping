@@ -221,6 +221,8 @@ export const OVERLAY_KEYS = [
   'arrows',
   'arrowDraft',
   'marquee',
+  // A etiqueta do nome da selecionada leva o risco da remoção proposta (`overlay.ts`).
+  'review',
 ] as const;
 
 /** Parte do canvas visível na tela, em coordenadas do canvas. */

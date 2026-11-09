@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ARRIVAL_BADGE_HEIGHT,
   ARRIVAL_BAND_PAD,
-  arrivalBadgeSpot,
-  arrivalBandLabelSpot,
-  arrivalBadgeWidth,
+  arrivalBadgeSpot as spotOf,
+  arrivalBandLabelSpot as bandSpotOf,
+  arrivalBadgeWidth as widthOf,
   arrivalMarks,
 } from '../../src/canvas/arrivals';
 import {
@@ -15,8 +14,27 @@ import {
   setContainerPlacement,
   type Arrival,
   type Project,
+  type Rect,
 } from '../../src/model';
-import { canvasProject } from './harness';
+import { TOKENS, canvasProject } from './harness';
+
+const A = TOKENS.arrival;
+const badgeWidth = (text: string) => widthOf(text, A);
+const badgeSpot = (
+  rect: Rect,
+  zoom: number,
+  width: number,
+  view?: Rect,
+  avoid?: Rect,
+  roots?: readonly Rect[],
+) => spotOf(rect, zoom, width, A, view, avoid, roots);
+const bandLabelSpot = (
+  band: Rect,
+  zoom: number,
+  size: { readonly width: number; readonly height: number },
+  view: Rect,
+  nameClear: number,
+) => bandSpotOf(band, zoom, size, view, nameClear, A);
 
 // As marcas de chegada no canvas (etapa #659, PE3, decisão 8): o selo "Veio de <nome>" sobre cada
 // raiz com marca e a faixa "Área de chegada". Funções puras sobre o projeto, sem Konva.
@@ -118,26 +136,26 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
   const small = { x: 100, y: 200, width: 40, height: 30 };
 
   it('raiz grande: por dentro, no canto de baixo à esquerda (o nome do container fica em cima)', () => {
-    const spot = arrivalBadgeSpot(big, 1, 100);
+    const spot = badgeSpot(big, 1, 100);
     expect(spot.x).toBeGreaterThan(100);
-    expect(spot.y).toBeGreaterThan(200 + 600 - 2 * ARRIVAL_BADGE_HEIGHT);
-    expect(spot.y + ARRIVAL_BADGE_HEIGHT).toBeLessThanOrEqual(200 + 600);
+    expect(spot.y).toBeGreaterThan(200 + 600 - 2 * A.height);
+    expect(spot.y + A.height).toBeLessThanOrEqual(200 + 600);
   });
 
   it('raiz pequena: por fora, abaixo do canto de baixo à esquerda (nunca sobre o nome nem a faixa)', () => {
-    const spot = arrivalBadgeSpot(small, 1, 100);
+    const spot = badgeSpot(small, 1, 100);
     expect(spot.x).toBe(100);
     expect(spot.y).toBeGreaterThanOrEqual(200 + 30);
   });
 
   it('o tamanho do selo na tela não muda com o zoom: o vão em unidades do canvas encolhe', () => {
-    const at1 = arrivalBadgeSpot(small, 1, 100);
-    const at2 = arrivalBadgeSpot(small, 2, 100);
+    const at1 = badgeSpot(small, 1, 100);
+    const at2 = badgeSpot(small, 2, 100);
     expect(at1.y - 230).toBeCloseTo(2 * (at2.y - 230));
   });
 
   it('raiz pequena: o vão cobre as alças da seleção (10 px de tela abaixo do canto)', () => {
-    const spot = arrivalBadgeSpot(small, 2, 100);
+    const spot = badgeSpot(small, 2, 100);
     expect(spot.y - (200 + 30)).toBeGreaterThanOrEqual(10 / 2 - 1e-9);
   });
 
@@ -145,16 +163,16 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
     const zoom = 0.22;
     const below = { x: 100, y: 200 + 30 + 5, width: 40, height: 30 };
     const width = 100;
-    const spot = arrivalBadgeSpot(small, zoom, width, undefined, undefined, [below]);
+    const spot = badgeSpot(small, zoom, width, undefined, undefined, [below]);
     const nameBand = 24 / zoom;
     const hits =
       spot.x < below.x + below.width &&
       spot.x + width / zoom > below.x &&
       spot.y < below.y + below.height &&
-      spot.y + ARRIVAL_BADGE_HEIGHT / zoom > below.y - nameBand;
+      spot.y + A.height / zoom > below.y - nameBand;
     expect(hits).toBe(false);
     // Sem obstáculo, o lugar de sempre: abaixo do canto.
-    expect(arrivalBadgeSpot(small, zoom, width).x).toBe(100);
+    expect(badgeSpot(small, zoom, width).x).toBe(100);
   });
 
   it('o selo não sai da área visível: encosta na borda direita e na de baixo', () => {
@@ -162,18 +180,24 @@ describe('arrivalBadgeSpot: o lugar do selo', () => {
     const width = 220;
     const view = { x: 0, y: 0, width: 880 / zoom, height: 660 / zoom };
     const edge = { x: 5300, y: 3900, width: 400, height: 300 };
-    const spot = arrivalBadgeSpot(edge, zoom, width, view);
+    const spot = badgeSpot(edge, zoom, width, view);
     expect(spot.x + width / zoom).toBeLessThanOrEqual(view.x + view.width);
-    expect(spot.y + ARRIVAL_BADGE_HEIGHT / zoom).toBeLessThanOrEqual(
-      view.y + view.height,
-    );
+    expect(spot.y + A.height / zoom).toBeLessThanOrEqual(view.y + view.height);
     expect(spot.x).toBeGreaterThanOrEqual(view.x);
   });
 
   it('a largura cresce com o nome', () => {
-    expect(arrivalBadgeWidth('Veio de Frente longa')).toBeGreaterThan(
-      arrivalBadgeWidth('Veio de A'),
-    );
+    expect(badgeWidth('Veio de Frente longa')).toBeGreaterThan(badgeWidth('Veio de A'));
+  });
+});
+
+describe('medidas do selo vêm dos tokens', () => {
+  it('largura, altura e vão seguem as medidas passadas', () => {
+    expect(widthOf('abc', { ...A, charWidth: 10, pad: 4 })).toBe(38);
+    const rect = { x: 0, y: 0, width: 1000, height: 1000 };
+    const tall = spotOf(rect, 1, 100, { ...A, height: 40, gap: 10 });
+    expect(tall.y).toBe(1000 - 10 - 40);
+    expect(tall.x).toBe(10);
   });
 });
 
@@ -183,7 +207,7 @@ describe('arrivalBandLabelSpot: o lugar do rótulo da faixa', () => {
 
   it('com espaço em cima: acima da faixa, sem encostar nela', () => {
     const band = { x: 300, y: 300, width: 200, height: 200 };
-    const spot = arrivalBandLabelSpot(band, 1, size, view, 20);
+    const spot = bandLabelSpot(band, 1, size, view, 20);
     expect(spot.x).toBe(300);
     expect(spot.y + size.height).toBeLessThanOrEqual(300);
   });
@@ -200,20 +224,20 @@ describe('arrivalBandLabelSpot: o lugar do rótulo da faixa', () => {
 
     function arrivalBadgeSpotless(b: typeof band, z: number) {
       const v = { x: 0, y: 0, width: 6000, height: 6000 };
-      return arrivalBandLabelSpot(b, z, size, v, 20);
+      return bandLabelSpot(b, z, size, v, 20);
     }
   });
 
   it('sem espaço em cima: vai para baixo da faixa, dentro da área visível', () => {
     const band = { x: 100, y: 5, width: 200, height: 300 };
-    const spot = arrivalBandLabelSpot(band, 1, size, view, 20);
+    const spot = bandLabelSpot(band, 1, size, view, 20);
     expect(spot.y).toBeGreaterThanOrEqual(305);
     expect(spot.y + size.height).toBeLessThanOrEqual(view.y + view.height);
   });
 
   it('não sai pela direita nem pela esquerda da área visível', () => {
     const band = { x: 820, y: 300, width: 60, height: 100 };
-    const spot = arrivalBandLabelSpot(band, 1, size, view, 20);
+    const spot = bandLabelSpot(band, 1, size, view, 20);
     expect(spot.x + size.width).toBeLessThanOrEqual(view.x + view.width);
     expect(spot.x).toBeGreaterThanOrEqual(view.x);
   });
@@ -226,12 +250,12 @@ describe('arrivalBadgeSpot: sem cair sob o minimapa', () => {
 
   it('selo que cairia sob o minimapa vai para a esquerda dele', () => {
     const rect = { x: 480, y: 250, width: 60, height: 40 };
-    const spot = arrivalBadgeSpot(rect, 1, width, view, minimap);
+    const spot = badgeSpot(rect, 1, width, view, minimap);
     const overlaps =
       spot.x < minimap.x + minimap.width &&
       spot.x + width > minimap.x &&
       spot.y < minimap.y + minimap.height &&
-      spot.y + ARRIVAL_BADGE_HEIGHT > minimap.y;
+      spot.y + A.height > minimap.y;
     expect(overlaps).toBe(false);
     expect(spot.x).toBeGreaterThanOrEqual(view.x);
   });
@@ -240,14 +264,14 @@ describe('arrivalBadgeSpot: sem cair sob o minimapa', () => {
     const narrow = { x: 0, y: 0, width: 600, height: 400 };
     const mini = { x: 20, y: 300, width: 570, height: 90 };
     const rect = { x: 480, y: 250, width: 60, height: 40 };
-    const spot = arrivalBadgeSpot(rect, 1, width, narrow, mini);
-    expect(spot.y + ARRIVAL_BADGE_HEIGHT).toBeLessThanOrEqual(mini.y);
+    const spot = badgeSpot(rect, 1, width, narrow, mini);
+    expect(spot.y + A.height).toBeLessThanOrEqual(mini.y);
   });
 
   it('longe do minimapa, nada muda', () => {
     const rect = { x: 100, y: 100, width: 60, height: 40 };
-    expect(arrivalBadgeSpot(rect, 1, width, view, minimap)).toEqual(
-      arrivalBadgeSpot(rect, 1, width, view),
+    expect(badgeSpot(rect, 1, width, view, minimap)).toEqual(
+      badgeSpot(rect, 1, width, view),
     );
   });
 });

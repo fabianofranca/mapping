@@ -143,6 +143,51 @@ describe('ReviewRenderer', () => {
     expect(layer.getChildren()).toHaveLength(0);
   });
 
+  it('removida enorme com zoom alto: a hachura só percorre a área visível', () => {
+    const { frame } = setup();
+    const layer = new Konva.Layer();
+    const renderer = new ReviewRenderer(layer);
+    const zoom = 8;
+    // 40.000 × 40.000 unidades, com a tela (1800 × 900 px a 8×) vendo só um canto dela.
+    renderer.render(
+      frame(
+        review({
+          removed: [
+            {
+              key: 'marking:M9',
+              placement: { x: 0, y: 0, scale: 1 },
+              rect: { x: 0, y: 0, width: 40000, height: 40000 },
+              name: null,
+              badges: ['removed'],
+            },
+          ],
+        }),
+        { viewport: { x: 0, y: 0, scale: zoom } },
+      ),
+      PLACEMENTS,
+    );
+    const hatch = layer.find('Shape').find((n) => n.getAttr('sceneFunc'));
+    let strokes = 0;
+    let lines = 0;
+    const ctx = {
+      save: () => undefined,
+      restore: () => undefined,
+      beginPath: () => undefined,
+      rect: () => undefined,
+      clip: () => undefined,
+      moveTo: () => undefined,
+      lineTo: () => (lines += 1),
+      setAttr: () => undefined,
+      stroke: () => (strokes += 1),
+    };
+    (hatch?.getAttr('sceneFunc') as (c: unknown) => void)(ctx);
+    expect(strokes).toBe(2);
+    // Só as diagonais da tela (cerca de mil, o período é fixo em px de tela), e não as ~320 mil
+    // do retângulo inteiro.
+    expect(lines).toBeGreaterThan(0);
+    expect(lines).toBeLessThan(2000);
+  });
+
   it.each([0.56, 1.1])(
     'removida: o risco do nome é um traço próprio, visível sobre o texto, a %s de zoom',
     (zoom) => {

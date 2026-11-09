@@ -129,3 +129,26 @@ describe('nível de detalhe das marcações', () => {
     }
   });
 });
+
+describe('medidas dos pinos de conversa e do selo de chegada', () => {
+  it('vêm de tokens, com os valores de antes, nos dois temas', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      const { pin, arrival } = canvasTokensFrom(reader(theme));
+      expect(pin).toMatchObject({
+        height: 20,
+        pad: 8,
+        glyph: 12,
+        glyphGap: 2,
+        charWidth: 7,
+      });
+      expect(arrival).toEqual({
+        height: 20,
+        pad: 8,
+        gap: 4,
+        gapBelow: 10,
+        nameBand: 24,
+        charWidth: 7,
+      });
+    }
+  });
+});

@@ -1,6 +1,7 @@
 // Contas do minimapa (proposta P3): área das imagens → caixa do minimapa e de volta.
 // Funções puras, testadas em `tests/canvas/minimap.test.ts`.
-import type { Rect } from '../model';
+import { boundingBox, type Rect } from '../model';
+import { visibleArea } from './frame';
 import type { Point, Size, Viewport } from './viewport';
 
 export interface MinimapLayout {
@@ -14,24 +15,12 @@ export interface MinimapLayout {
 
 /** Retângulo que contém `a` e `b`. */
 export function unionRect(a: Rect, b: Rect): Rect {
-  const x = Math.min(a.x, b.x);
-  const y = Math.min(a.y, b.y);
-  return {
-    x,
-    y,
-    width: Math.max(a.x + a.width, b.x + b.width) - x,
-    height: Math.max(a.y + a.height, b.y + b.height) - y,
-  };
+  return boundingBox([a, b]) ?? a;
 }
 
 /** Parte visível do canvas (unidades do canvas) para um viewport e um tamanho de tela. */
 export function visibleRect(viewport: Viewport, size: Size): Rect {
-  return {
-    x: -viewport.x / viewport.scale,
-    y: -viewport.y / viewport.scale,
-    width: size.width / viewport.scale,
-    height: size.height / viewport.scale,
-  };
+  return visibleArea(size, viewport);
 }
 
 /**

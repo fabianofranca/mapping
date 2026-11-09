@@ -120,7 +120,13 @@ export const TOKENS: CanvasTokens = {
     halo: 'rgba(10, 12, 16, 0.72)',
     selected: '#0057bb',
     unread: '#ff6b6b',
+    height: 20,
+    pad: 8,
+    glyph: 12,
+    glyphGap: 2,
+    charWidth: 7,
   },
+  arrival: { height: 20, pad: 8, gap: 4, gapBelow: 10, nameBand: 24, charWidth: 7 },
   radius: { sm: 4, md: 6 },
 };
 
