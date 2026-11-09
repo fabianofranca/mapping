@@ -3445,7 +3445,11 @@
             },
             {
               "name": "Mouse sobre",
-              "values": { "label": "Salvar", "style": "filled", "interaction": "hovered" }
+              "values": {
+                "label": "Salvar",
+                "style": "filled",
+                "interaction": "hovered"
+              }
             },
             {
               "name": "Com foco",
@@ -3457,7 +3461,18 @@
             },
             {
               "name": "Pressionado",
-              "values": { "label": "Salvar", "style": "tonal", "interaction": "pressed" }
+              "values": {
+                "label": "Salvar",
+                "style": "tonal",
+                "interaction": "pressed"
+              }
+            },
+            {
+              "name": "Rótulo longo",
+              "values": {
+                "label": "Salvar alterações e continuar editando",
+                "style": "filled"
+              }
             }
           ]
         },
@@ -7808,6 +7823,16 @@
                 "selection": "single",
                 "showModeToggle": "false"
               }
+            },
+            {
+              "name": "Intervalo até o fim do mês",
+              "values": {
+                "headline": "27 out – 31 out",
+                "displayedMonth": "Outubro de 2025",
+                "selection": "range",
+                "rangeStartDay": 27,
+                "rangeEndDay": 31
+              }
             }
           ]
         },
@@ -7914,6 +7939,16 @@
                 "hour": 8,
                 "minute": 5,
                 "is24Hour": "false"
+              }
+            },
+            {
+              "name": "24 horas, campos",
+              "values": {
+                "title": "Informe o horário",
+                "mode": "input",
+                "hour": 18,
+                "minute": 5,
+                "is24Hour": "true"
               }
             }
           ]

@@ -64,6 +64,7 @@ Variante `range`: Não exige opt-in. O estado vem de `val state = rememberDateRa
 - **Um dia**: headline=qua., 15 de out., displayedMonth=Outubro de 2025, selection=single, selectedDay=15
 - **Intervalo**: headline=9 out – 16 out, displayedMonth=Outubro de 2025, selection=range, rangeStartDay=9, rangeEndDay=16
 - **Sem escolha**: displayedMonth=Outubro de 2025, selection=single, showModeToggle=false
+- **Intervalo até o fim do mês**: headline=27 out – 31 out, displayedMonth=Outubro de 2025, selection=range, rangeStartDay=27, rangeEndDay=31
 
 ## Fidelidade
 
@@ -88,9 +89,9 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **O que ainda difere do Compose**
 
-- A grade reserva 6 linhas no Compose (288, `MaxCalendarRows`), o que dá 512 de altura; o desenho tem as 5 linhas que o mês de 31 dias começando na quarta ocupa (240) e o conteúdo mede 464 (single) e 417 (range). O `size` da especialização é 360 × 469 e não muda nesta fase, então a sexta linha não cabe; o fundo preenche a caixa e sobram 5 embaixo do single.
+- A grade reserva 6 linhas no Compose (`RecommendedSizeForAccessibility` 48 × `MaxCalendarRows` 6, `DatePicker.kt` linhas 2293 e 2303), o que dá 512 de altura, e o `size` é 360 × 512. O desenho tem as 5 linhas que o mês de 31 dias começando na quarta ocupa (240) e o conteúdo mede 464 (single) e 417 (range): o fundo preenche a caixa e sobram 48 embaixo do single (efeito aceito, como na #863).
 - Sem o dia de hoje: o Compose desenha o contorno de 1 em `primary` e o número em `primary` (`DateTodayContainerOutlineColor`, `DateTodayLabelTextColor`), mas o tipo não tem campo que diga qual é o dia de hoje (os campos não mudaram), então nenhum dia leva o contorno.
-- Os dias dentro do intervalo, entre as pontas, ficam com o número em `on-surface`; o Compose usa `on-secondary-container` (`SelectionDateInRangeLabelTextColor`). O formato 4 não compara números nem faz conta numa expressão (só `$eq` e `$switch` sobre o valor exato), então decidir se um dia está entre `rangeStartDay` e `rangeEndDay` pediria uma condição enumerada por dia (centenas de termos). A faixa, que só precisa da posição das pontas, é exata. A diferença de cor é pequena (`on-surface` e `on-secondary-container` quase se confundem em light e em dark).
+- Os dias dentro do intervalo, entre as pontas (o exemplo "Intervalo até o fim do mês" mostra o limite; a roadmap #897 o resolve com comparação e aritmética), ficam com o número em `on-surface`; o Compose usa `on-secondary-container` (`SelectionDateInRangeLabelTextColor`). O formato 4 não compara números nem faz conta numa expressão (só `$eq` e `$switch` sobre o valor exato), então decidir se um dia está entre `rangeStartDay` e `rangeEndDay` pediria uma condição enumerada por dia (centenas de termos). A faixa, que só precisa da posição das pontas, é exata. A diferença de cor é pequena (`on-surface` e `on-secondary-container` quase se confundem em light e em dark).
 - A posição do círculo, da faixa e da semana vem de tabelas `$switch` de 31 casos sobre `selectedDay`, `rangeStartDay` e `rangeEndDay`, porque o formato não faz conta (coluna e linha do dia) nem repete uma célula N vezes sem um campo `table`. Um dia fora de 1 a 31 não desenha a faixa e o motor avisa `conteúdo maior que a caixa` no círculo.
 - Sem o estado desabilitado dos dias (`SelectableDates`) e do mês (`previousAvailable` e `nextAvailable` das setas), sem o seletor de anos aberto, sem o modo de digitação (`DateInput`), sem as sombras, as camadas de estado e as animações (a troca de mês, o `animateChecked` do dia).
 - Sem os botões do diálogo (`DatePickerDialog`: OK e Cancelar, `ContainerHeight` 568 do token) nem o fechar e o salvar da tela cheia do `DateRangePicker`, que o `HeaderHeightOffset` já desconta.

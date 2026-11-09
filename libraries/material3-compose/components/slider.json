@@ -4,8 +4,8 @@
   "id": "slider",
   "name": "Slider",
   "description": "Slider de 44: trilha de 16 em secondary container, trecho ativo em primary e alça de 4 × 44 com vão de 6 (SliderTokens). No intervalo há duas alças; os valores vão de 0 a 1 em décimos e as marcas de steps aparecem de 1 a 9 passos.",
-  "size": { "width": 328, "height": 44 },
-  "sizing": { "width": "fill", "height": 44 },
+  "size": { "width": 328, "height": 48 },
+  "sizing": { "width": "fill", "height": 48 },
   "preview": {
     "type": "single",
     "value": "0.5",
@@ -24,7 +24,7 @@
         "name": "faixa",
         "height": 44,
         "layout": { "type": "none" },
-        "anchors": { "left": 2, "right": 2 },
+        "anchors": { "left": 2, "right": 2, "centerY": true },
         "children": [
           {
             "type": "frame",

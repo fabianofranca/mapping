@@ -150,12 +150,12 @@ describe('M5 grupo A — alert-dialog', () => {
     }
   });
 
-  it('altura abraça o conteúdo: 24 + ícone 24 + 16 + título 32 + 16 + texto 20 + 24 + botões 40 + 24', () => {
+  it('altura abraça o conteúdo: 24 + ícone 24 + 16 + título 32 + 16 + texto 20 + 24 + botões 48 + 24', () => {
     expect(hugHeight('alert-dialog', full, WIDTH)).toBe(
-      24 + (24 + 16) + (32 + 16) + (20 + 24) + 40 + 24,
+      24 + (24 + 16) + (32 + 16) + (20 + 24) + 48 + 24,
     );
     // sem ícone, sem título e sem texto sobram a margem e a linha dos botões
-    expect(hugHeight('alert-dialog', { confirmButton: 'OK' }, WIDTH)).toBe(24 + 40 + 24);
+    expect(hugHeight('alert-dialog', { confirmButton: 'OK' }, WIDTH)).toBe(24 + 48 + 24);
   });
 
   it('ícone de 24 centralizado, em secondary (DialogTokens.IconColor), com 16 até o título', () => {
@@ -215,7 +215,9 @@ describe('M5 grupo A — alert-dialog', () => {
       // TextButton: 12 de cada lado e 40 de altura (ButtonDefaults.MinHeight)
       expect(absOf(d, textIn(d, 'confirmar')!).x - confirm.x).toBe(12);
       expect(confirm.height).toBe(40);
-      expect(box(d, 'botões').y + 40 + 24).toBe(d.root.height);
+      // a linha mede 48 (minimumInteractiveComponentSize, ME2 da etapa Material 3 com estados); o botão fica com 40, centrado
+      expect(box(d, 'botões').height).toBe(48);
+      expect(box(d, 'botões').y + 48 + 24).toBe(d.root.height);
     }
   });
 

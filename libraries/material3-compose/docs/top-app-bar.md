@@ -79,7 +79,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 **O que ainda difere do Compose**
 
-- A altura de medium (112) e large (152) vem do retângulo da marcação: o `size` e o `sizing` seguem em 64 (dados preservados da etapa), então no tamanho inicial o título grande sobrepõe a linha de cima. Desenhado num retângulo de 112 ou 152, fica como o Compose.
+- O `size` e o `sizing` são 412 × 152, a `ContainerHeight` da large (`AppBarLargeTokens.kt` linha 25; a medium é 112, linha 25 de `AppBarMediumTokens.kt`, e a small, 64, linha 25 de `AppBarSmallTokens.kt`), a maior das três: o medium e o large cabem sem sobrepor a linha de cima (o título grande fica ancorado embaixo, a 16 e a 20). O efeito aceito é o da #863: a barra small e a centralizada têm 64 no topo e a sobra fica embaixo, só com o fundo `surface`; para uma barra de uma linha, desenhe a marcação com 64 de altura.
 - Sem o recuo e o colapso ao rolar (`scrollBehavior`), a cor `surface-container` de quando o conteúdo passa por baixo e o título pequeno que aparece ao colapsar: o desenho é a barra expandida.
 - O título tem `maxLines = 1` e `…` como nos exemplos oficiais; o `code` do tipo (`Text(<title>)`) não os passa, e sem eles o `Text` do Compose quebra em várias linhas.
 - Um título tão comprido que ocupa todo o vão ganha no Compose um deslocamento de 8 para a esquerda (o `Box` do título, com 12 de início, passa de `largura - fim` e é empurrado); o desenho trunca o texto na margem calculada. Na centralizada, um título maior que o vão simétrico mas que cabe no vão assimétrico é empurrado para um lado no Compose; aqui ele é truncado com `…`.

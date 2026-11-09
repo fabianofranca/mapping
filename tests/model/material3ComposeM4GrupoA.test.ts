@@ -100,7 +100,8 @@ describe('M4 grupo A — top-app-bar', () => {
     for (const mode of MODES) {
       const d = both('top-app-bar', { title: 'Início', navigationIcon: 'Menu' })[mode];
       expect(box(d, 'barra').height).toBe(64);
-      expect(d.root.height).toBe(64);
+      // a raiz tem a altura da large (152, ME2); a barra de uma linha fica no topo
+      expect(d.root.height).toBe(152);
       expect(fillOf(d, 'top app bar')).toBe(tok('surface', mode));
       expect(d.warnings.filter((w) => /ícone desconhecido|não cabe/.test(w))).toEqual([]);
     }

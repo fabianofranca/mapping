@@ -229,7 +229,7 @@ describe('M5 date-picker — grade de dias', () => {
   it('o conteúdo mede 360 × 464 (cabeçalho 120 + mês 56 + semana 48 + cinco linhas de 48) e o fundo ocupa a caixa de 469', () => {
     const d = draw(SINGLE);
     expect(rect(d, 'grade')).toEqual([0, 224, 360, 240]);
-    expect([d.root.width, d.root.height]).toEqual([360, 469]);
+    expect([d.root.width, d.root.height]).toEqual([360, 512]);
     expect(d.warnings.filter((w) => /conteúdo maior que a caixa/.test(w))).toEqual([]);
   });
 

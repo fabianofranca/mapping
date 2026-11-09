@@ -9,6 +9,7 @@ import {
   files,
   text,
   v1WithEstados,
+  COMPOSE_SIZES,
 } from '../support/material3Library';
 import v1 from '../fixtures/material3-m5-v1.json';
 
@@ -54,7 +55,7 @@ describe('M5 — superfícies e seletores no formato 4', () => {
     expect(actual).toEqual(expected);
     expect(now.preview).toEqual(before.preview);
     expect(now.minSize).toEqual(before.minSize);
-    expect(now.size).toEqual(before.size);
+    expect(now.size).toEqual(COMPOSE_SIZES[id] ?? before.size);
   });
 
   it.each(M5)('%s: o padrão e os exemplos desenham sem aviso em light e dark', (id) => {

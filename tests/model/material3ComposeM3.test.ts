@@ -9,6 +9,7 @@ import {
   files,
   text,
   v1WithEstados,
+  COMPOSE_SIZES,
 } from '../support/material3Library';
 import v1 from '../fixtures/material3-m3-v1.json';
 
@@ -57,7 +58,8 @@ describe('M3 — seleção e entrada no formato 4', () => {
     // #863: o text-field e o secure-text-field passam de 76 (v1) a 84, que comporta o outlined com apoio.
     const heightFixed = id === 'text-field' || id === 'secure-text-field';
     expect(now.size).toEqual(
-      heightFixed ? { ...(before.size as object), height: 84 } : before.size,
+      COMPOSE_SIZES[id] ??
+        (heightFixed ? { ...(before.size as object), height: 84 } : before.size),
     );
   });
 

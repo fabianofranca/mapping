@@ -80,5 +80,5 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - No desabilitado a alça é `on-surface` a 0,38 sobre o que estiver atrás; o Compose compõe essa cor sobre `surface` e a entrega opaca. As marcas também empilham a transparência (a fileira de baixo e a de cima se somam nos trechos de fora).
 - Marcas ao lado da alça: o Compose pula as marcas a menos de 8 da alça; o desenho só cobre a que está sob ela (a alça tem a largura da marca). Com a alça numa ponta e `steps` ligado, a primeira marca (a 8 da borda) aparece no vão.
 - Um range com início maior que o fim, ou valores iguais, é desenhado sem tratamento especial (o trecho ativo some ou fica de largura 0).
-- O `Slider` do Compose mede 48 de altura (`minimumInteractiveComponentSize`) com a alça de 44 centrada; o componente mantém os 44 do tipo.
+- O `Slider` do Compose mede 48 de altura (`minimumInteractiveComponentSize`, `Slider.kt` linhas 789 e 1023, no `Slider` e no `RangeSlider`) com a alça de 44 (`SliderTokens.HandleHeight`) centrada, e o `size` e o `sizing` são 328 × 48: a faixa de 44 fica centrada, com 2 de sobra em cima e embaixo.
 - Sem estados de pressionado, foco e passar o mouse (a alça de 2 de largura ao pressionar), sem o rótulo de valor (`ValueIndicator`) e sem o `valueRange` livre: o tipo só tem valores de 0 a 1 em décimos.

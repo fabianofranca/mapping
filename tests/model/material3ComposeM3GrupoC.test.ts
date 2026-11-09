@@ -64,12 +64,12 @@ describe('M3 grupo C — slider', () => {
 
   it('single contínuo: trilha de 16 (inativa secondary-container, ativa primary), alça 4 por 44 e indicador de parada', () => {
     const { light, dark } = both('slider', { type: 'single', value: '0.5' });
-    expect([light.root.width, light.root.height]).toEqual([W, 44]);
+    expect([light.root.width, light.root.height]).toEqual([W, 48]);
 
     const active = box(light, 'trilho ativo');
-    // SliderTokens.ActiveTrackHeight / InactiveTrackHeight = 16; trilho a 2 da borda, centrado nos 44
+    // SliderTokens.ActiveTrackHeight / InactiveTrackHeight = 16; trilho a 2 da borda, centrado nos 44 da faixa, que fica centrada nos 48 (ME2): 2 + 14
     near(active.x, 2);
-    near(active.y, 14);
+    near(active.y, 16);
     expect(active.height).toBe(16);
     // drawTrack: ativa vai de 0 até (valor * largura do trilho) - endGap
     near(active.width, T * 0.5 - GAP);
@@ -88,7 +88,7 @@ describe('M3 grupo C — slider', () => {
 
     // alça: HandleWidth 4, HandleHeight 44, forma CornerFull, cor primary; centro em 2 + largura do trilho * valor
     const thumb = box(light, 'alça');
-    expect([thumb.width, thumb.height, thumb.y]).toEqual([4, 44, 0]);
+    expect([thumb.width, thumb.height, thumb.y]).toEqual([4, 44, 2]);
     near(thumb.x, T * 0.5);
     expect(fillOf(thumb.node)).toBe(tok('primary', 'light'));
     expect(fillOf(box(dark, 'alça').node)).toBe(tok('primary', 'dark'));
@@ -106,7 +106,7 @@ describe('M3 grupo C — slider', () => {
     const stop = stops.map((n) => ({ n, ...boxOf(light, n) })).at(-1)!;
     expect([stop.width, stop.height]).toEqual([4, 4]);
     near(stop.x + 2, 2 + T - 8);
-    near(stop.y + 2, 22);
+    near(stop.y + 2, 24);
     expect(fillOf(stop.n)).toBe(tok('primary', 'light'));
   });
 

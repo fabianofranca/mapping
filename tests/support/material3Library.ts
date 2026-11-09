@@ -130,7 +130,12 @@ export const MIGRATED = [
   'swipe-to-dismiss',
 ];
 
-type Raw = { key?: string; description?: string; values?: Record<string, unknown> };
+type Raw = {
+  key?: string;
+  name?: string;
+  description?: string;
+  values?: Record<string, unknown>;
+};
 
 /** Descrições de campo que a etapa Material 3 com estados (#869, ME1) corrigiu em relação à v1 (decisão 10). */
 const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
@@ -150,8 +155,24 @@ const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
 
 /**
  * Compara os campos e os exemplos de um tipo com os da v1, sem o que a etapa Material 3 com estados acrescentou
- * (o campo `interaction` e os exemplos que o usam) e com as descrições corrigidas de `V1_DESCRIPTION_FIXES`.
+ * (o campo `interaction` e os exemplos que o usam, e os exemplos dos limites da ME2) e com as descrições corrigidas de `V1_DESCRIPTION_FIXES`.
  */
+/** Exemplos que a ME2 (#913) acrescentou para mostrar limites conhecidos, por tipo. */
+export const LIMIT_EXAMPLES: Record<string, string> = {
+  button: 'Rótulo longo',
+  'time-picker': '24 horas, campos',
+  'date-picker': 'Intervalo até o fim do mês',
+};
+
+/** Tamanhos que a ME2 (#913) subiu aos do Compose (decisão 9); os demais ficam os da v1. */
+export const COMPOSE_SIZES: Record<string, { width: number; height: number }> = {
+  'top-app-bar': { width: 412, height: 152 },
+  'date-picker': { width: 360, height: 512 },
+  'time-picker': { width: 328, height: 528 },
+  'alert-dialog': { width: 312, height: 248 },
+  slider: { width: 328, height: 48 },
+};
+
 export function v1WithEstados(
   id: string,
   nowType: unknown,
@@ -169,7 +190,9 @@ export function v1WithEstados(
   return {
     actual: {
       fields: now.fields.filter((f) => f.key !== 'interaction'),
-      examples: (now.examples ?? []).filter((e) => !isState(e)),
+      examples: (now.examples ?? []).filter(
+        (e) => !isState(e) && e.name !== LIMIT_EXAMPLES[id],
+      ),
     },
     expected: { fields: expectedFields, examples: before.examples ?? [] },
   };
