@@ -3,7 +3,6 @@ import {
   addAnnotation,
   createArrow,
   getBacklinks,
-  getProjectIssues,
   projectIndex,
   projectIssues,
   typeKey,
@@ -74,8 +73,6 @@ describe('projectIndex', () => {
 
   it('pendências e backlinks são memoizados por versão', () => {
     expect(projectIssues(p)).toBe(projectIssues(p));
-    expect(getProjectIssues(p)).not.toBe(getProjectIssues(p));
-    expect(getProjectIssues(p)).toEqual(new Map(projectIssues(p)));
     expect(getBacklinks(p, 'AU').map((b) => b.source.id)).toEqual(['AIN', 'AII']);
     expect(getBacklinks(p, 'AU')).not.toBe(getBacklinks(p, 'AU'));
   });

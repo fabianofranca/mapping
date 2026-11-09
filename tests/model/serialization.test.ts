@@ -15,6 +15,31 @@ function ok(text: string, registry?: ReadonlyMap<number, Migration>) {
 }
 
 describe('serialização', () => {
+  it('ida e volta preserva a ordem das chaves dos values aninhados', () => {
+    const base = sampleProject();
+    const [first, ...rest] = base.annotations;
+    if (!first) throw new Error('fixture');
+    const values = {
+      zeta: 1,
+      alfa: { z: 'a', b: [{ y: 1, a: 2 }], m: null },
+      meio: { k2: true, k1: false },
+    };
+    const p = {
+      ...base,
+      annotations: [
+        { ...first, type: { specId: 's', typeId: 't' }, values, entries: [] },
+        ...rest,
+      ],
+    };
+    const text = serialize(p);
+    const again = serialize(ok(text).project);
+    expect(again).toBe(text);
+    const read = ok(text).project.annotations[0]?.values;
+    expect(Object.keys(read ?? {})).toEqual(['zeta', 'alfa', 'meio']);
+    expect(Object.keys((read?.alfa ?? {}) as object)).toEqual(['z', 'b', 'm']);
+    expect(Object.keys((read?.meio ?? {}) as object)).toEqual(['k2', 'k1']);
+  });
+
   it('round-trip do JSON é idêntico', () => {
     const text = serialize(sampleProject());
     const loaded = ok(text);

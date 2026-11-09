@@ -11,7 +11,6 @@ import {
   setBackgroundContainer,
   setImageLocked,
   setMarkingLocked,
-  canPlaceContainer,
   containerDeletionImpact,
   containerLockStates,
   isSameAspect,
@@ -82,7 +81,6 @@ describe('imagens: mover e redimensionar sem sobreposição', () => {
 
   it('rejeita posição que sobrepõe outra imagem', () => {
     const p = sampleProject();
-    expect(canPlaceContainer(p, 'I2', { x: 999, y: 0, scale: 1 })).toBe(false);
     expect(() => moveContainer(p, 'I2', 999, 0)).toThrow('image-overlap');
   });
 

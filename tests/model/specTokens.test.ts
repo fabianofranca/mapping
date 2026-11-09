@@ -54,6 +54,14 @@ describe('formatVersion 15: tokens', () => {
     expect(issuesOf(spec(bad)).map((i) => i.path)).toContain('tokens.values.size');
   });
 
+  it('chave desconhecida em tokens é erro no caminho dela (CR #945, item 45)', () => {
+    const bad = { ...GOOD, extra: 1 };
+    const r = parseSpec(spec(bad));
+    expect(r.ok).toBe(false);
+    const issue = (r.ok ? [] : r.issues).find((i) => i.path === 'tokens.extra');
+    expect(issue?.message).toBe('chave desconhecida: extra');
+  });
+
   it('modes vazio e modo repetido falham', () => {
     expect(issuesOf(spec({ modes: [], values: {} })).map((i) => i.path)).toContain(
       'tokens.modes',

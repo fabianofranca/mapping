@@ -1,16 +1,11 @@
 import type { IconNodeRef, IconSet } from './components/icons';
 import type { LibraryIssue } from './library';
 import type { SpecAnnotationType } from './spec';
+import { isRecord } from './isRecord';
 
 // Conferência dos ícones na biblioteca (CF7). Puro; `library.ts` chama estas funções com o que
 // já leu. Nível 2: todo nome LITERAL de um nó `icon` existe no conjunto declarado em `icons`.
 // Nível 3: um campo `enum` lido pelo `name` do nó cujas `options` não estão no conjunto avisa.
-
-type Rec = Record<string, unknown>;
-
-function isRecord(value: unknown): value is Rec {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** Um nome de ícone escrito direto (texto) na expressão do `name`, com o caminho dele. */
 export interface NameLiteral {

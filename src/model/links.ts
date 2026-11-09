@@ -83,7 +83,8 @@ function roleAfterOwnerChange(p: Project, role: string | null, ownerId: string |
 
 /**
  * Define (ou, com `null`, remove) a dona da anotação, respeitando os invariantes. O papel atual
- * fica só se a nova dona o oferece; tirar a dona limpa o papel (tudo na mesma operação).
+ * fica só se a nova dona o oferece; tirar a dona limpa o papel (tudo na mesma operação). A dona
+ * que não muda não é mudança: devolve `p` como está.
  */
 export function setAnnotationParent(
   p: Project,
@@ -99,6 +100,7 @@ export function setAnnotationParent(
   } else if (typeOfAnnotation(p, annotation)?.type.requiresOwner) {
     fail('owner-required', annotationId);
   }
+  if (annotation.parentAnnotationId === ownerId) return p;
   return {
     ...p,
     annotations: updateById(p.annotations, annotationId, (a) => ({

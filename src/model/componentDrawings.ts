@@ -12,6 +12,8 @@ import {
   type MarkingComponent,
 } from './componentCatalog';
 import { drawingValues } from './componentValues';
+import { rawMessage, type ModelMessage } from './modelMessage';
+import { DEFAULT_LABEL_TEXTS } from './refs';
 import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
@@ -31,7 +33,8 @@ export interface ComponentDrawing {
   readonly layerId: string;
   /** Cena instanciada na caixa = retângulo da marcação (pixels da imagem ou unidades do canvas). */
   readonly root: FrameNode;
-  readonly warnings: readonly string[];
+  /** Avisos do motor (sem código, em texto) e das referências dos valores (com código). */
+  readonly warnings: readonly ModelMessage[];
   /** Não cabe: aviso "conteúdo maior que a caixa" do motor ou filha fora da caixa do slot. */
   readonly overflow: boolean;
   /**
@@ -54,14 +57,13 @@ export const NO_DRAWINGS: ComponentDrawings = new Map();
 /** Tolerância (px) entre a caixa do slot (decimal) e o retângulo inteiro de uma filha. */
 const SLOT_TOLERANCE = 1;
 
-/** Avisos do motor que são a pendência "o componente não cabe". */
-const OVERFLOW_WARNINGS = ['conteúdo maior que a caixa', 'texto maior que a caixa'];
-
 export type DrawingCache = (
   p: Project | null,
   catalog: ComponentCatalog,
   measure: TextMeasurer,
   epoch: number,
+  /** Rótulo de anotação livre sem nome nos valores `ref`; o padrão é o do MCP (pt-BR). */
+  untitled?: string,
 ) => ComponentDrawings;
 
 interface Entry {
@@ -71,7 +73,7 @@ interface Entry {
   readonly rect: Rect;
   readonly component: ComponentFile;
   readonly values: FieldValues;
-  readonly valueWarnings: readonly string[];
+  readonly valueWarnings: readonly ModelMessage[];
   readonly measure: TextMeasurer;
   readonly epoch: number;
   /** Modo do desenho efetivo da marcação (`undefined` = o primeiro modo). */
@@ -133,15 +135,13 @@ function slotExcess(root: FrameNode, childRects: readonly Rect[]): number {
 
 /** Os "não cabe" do desenho: o aviso do motor (com quanto falta) e a filha fora do slot. */
 function overflowsOf(
-  warnings: readonly string[],
+  overflowWarnings: readonly string[],
   shortfalls: Readonly<Record<string, number>>,
   root: FrameNode,
   childRects: readonly Rect[],
 ): Record<string, number> {
   const found: Record<string, number> = {};
-  for (const w of warnings) {
-    if (OVERFLOW_WARNINGS.some((o) => w.startsWith(o))) found[w] = shortfalls[w] ?? 0;
-  }
+  for (const w of overflowWarnings) found[w] = shortfalls[w] ?? 0;
   const excess = childRects.length > 0 ? slotExcess(root, childRects) : 0;
   if (excess > 0) found[SLOT_OVERFLOW] = excess;
   return found;
@@ -153,7 +153,7 @@ function draw(
   containerId: string | null,
   rect: Rect,
   values: FieldValues,
-  valueWarnings: readonly string[],
+  valueWarnings: readonly ModelMessage[],
   childRects: readonly Rect[],
   measure: TextMeasurer,
   mode: string | undefined,
@@ -163,21 +163,28 @@ function draw(
   const screen = mc.component.screen;
   // Em pixels de tela o desenho mede o `size` do componente, na origem (o canvas o ancora).
   const box: Rect = screen === undefined ? rect : { x: 0, y: 0, ...mc.component.size };
-  const { root, warnings, shortfalls } = instantiate(mc.component, values, box, {
-    measure,
-    idPrefix: markingId,
-    ...(tokens === undefined ? {} : { tokens }),
-  });
+  const { root, warnings, shortfalls, overflowWarnings } = instantiate(
+    mc.component,
+    values,
+    box,
+    {
+      measure,
+      idPrefix: markingId,
+      ...(tokens === undefined ? {} : { tokens }),
+    },
+  );
   // Com `screen` o desenho pode passar do retângulo da marcação: não há pendência "não cabe".
   const found =
-    screen === undefined ? overflowsOf(warnings, shortfalls ?? {}, root, childRects) : {};
+    screen === undefined
+      ? overflowsOf(overflowWarnings ?? [], shortfalls ?? {}, root, childRects)
+      : {};
   return {
     markingId,
     containerId,
     annotationId: mc.annotation.id,
     layerId: mc.annotation.layerId,
     root,
-    warnings: [...warnings, ...valueWarnings],
+    warnings: [...warnings.map(rawMessage), ...valueWarnings],
     overflow: Object.keys(found).length > 0,
     shortfalls: found,
     ...(screen === undefined
@@ -200,22 +207,24 @@ export function createDrawingCache(): DrawingCache {
     catalog: ComponentCatalog;
     measure: TextMeasurer;
     epoch: number;
+    untitled: string;
     result: ComponentDrawings;
   } | null = null;
 
-  return (p, catalog, measure, epoch) => {
+  return (p, catalog, measure, epoch, untitled = DEFAULT_LABEL_TEXTS.untitled) => {
     if (
       last !== null &&
       last.p === p &&
       last.catalog === catalog &&
       last.measure === measure &&
-      last.epoch === epoch
+      last.epoch === epoch &&
+      last.untitled === untitled
     ) {
       return last.result;
     }
     if (p === null) {
       entries = new Map();
-      last = { p, catalog, measure, epoch, result: NO_DRAWINGS };
+      last = { p, catalog, measure, epoch, untitled, result: NO_DRAWINGS };
       return NO_DRAWINGS;
     }
 
@@ -229,6 +238,7 @@ export function createDrawingCache(): DrawingCache {
         p,
         mc.annotation,
         mc.type,
+        { ...DEFAULT_LABEL_TEXTS, untitled },
       );
       const childRects =
         findSlot(mc.component) === undefined
@@ -248,7 +258,7 @@ export function createDrawingCache(): DrawingCache {
         before.mode === mode &&
         shallowEqual(before.values, values) &&
         before.valueWarnings.length === valueWarnings.length &&
-        before.valueWarnings.every((w, i) => w === valueWarnings[i]) &&
+        before.valueWarnings.every((w, i) => w.text === valueWarnings[i]?.text) &&
         sameRects(before.childRects, childRects)
       ) {
         next.set(marking.id, before);
@@ -294,7 +304,7 @@ export function createDrawingCache(): DrawingCache {
       );
       if (same) result = previous;
     }
-    last = { p, catalog, measure, epoch, result };
+    last = { p, catalog, measure, epoch, untitled, result };
     return result;
   };
 }

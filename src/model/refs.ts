@@ -1,4 +1,5 @@
 import { fail, ModelError } from './errors';
+import { isRecord } from './isRecord';
 import { memoByProject, projectIndex } from './projectIndex';
 import type {
   Spec,
@@ -34,10 +35,6 @@ export const DEFAULT_LABEL_TEXTS: LabelTexts = {
   untitled: 'Anotação',
   broken: '(referência quebrada)',
 };
-
-export function isRecord(value: unknown): value is { readonly [key: string]: JsonValue } {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** Linhas válidas (objetos com `_id` texto) de um valor de `table`. */
 export function tableRows(value: JsonValue | undefined): TableRow[] {
@@ -129,7 +126,7 @@ function resolveValueRef(
     const row = rows[index];
     return row ? { kind: 'row', annotation, key: ref.key, row, index, field } : null;
   }
-  if (!field && !(ref.key in annotation.values)) return null;
+  if (!field && !Object.hasOwn(annotation.values, ref.key)) return null;
   return { kind: 'field', annotation, key: ref.key, field };
 }
 
@@ -531,3 +528,5 @@ export function refsBrokenBy(p: Project, op: (p: Project) => Project): number {
     throw e;
   }
 }
+
+export { isRecord };

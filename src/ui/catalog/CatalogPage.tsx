@@ -5,6 +5,7 @@ import {
   type CatalogCodeVariants,
   type CatalogEntry,
   type CatalogField,
+  type ModelMessage,
   type Project,
   codeLink,
   exampleDrawing,
@@ -12,6 +13,7 @@ import {
 import { docFolderAccess, type DocFolderAccess } from '../../storage/docRepoFolders';
 import { ContainerMark } from '../ContainerMark';
 import { Button } from '../controls';
+import { messageText } from '../modelMessage';
 import { Markdown } from '../markdown/Markdown';
 import { ExternalDoc } from './ExternalDoc';
 import { Playground } from './Playground';
@@ -298,7 +300,7 @@ interface GalleryItem {
   readonly name: string;
   readonly description?: string;
   readonly url: string | null;
-  readonly warnings: readonly string[];
+  readonly warnings: readonly ModelMessage[];
 }
 
 function Gallery({
@@ -377,7 +379,7 @@ function Gallery({
           {item.warnings.length > 0 && (
             <ul class="catalog-warnings">
               {item.warnings.map((warning, i) => (
-                <li key={i}>{warning}</li>
+                <li key={i}>{messageText(warning)}</li>
               ))}
             </ul>
           )}
@@ -429,7 +431,9 @@ export function CatalogPage({
         {entry.type.description !== undefined && <p>{entry.type.description}</p>}
         {entry.componentProblem !== undefined && (
           <p class="field-error" role="alert">
-            {t('catalog.page.componentProblem', { problem: entry.componentProblem })}
+            {t('catalog.page.componentProblem', {
+              problem: messageText(entry.componentProblem),
+            })}
           </p>
         )}
       </header>

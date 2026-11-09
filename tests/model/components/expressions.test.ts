@@ -135,6 +135,14 @@ describe('evaluate', () => {
     expect(evaluate(noDefault, {}, '#000000')).toBe('#000000');
   });
 
+  it('$switch com valor herdado de Object.prototype cai no default', () => {
+    const expr: Expr<string> = { $switch: 'v', cases: { a: 'A' }, default: 'D' };
+    for (const key of ['toString', 'constructor', '__proto__', 'hasOwnProperty'])
+      expect(evaluate(expr, { v: key }, '-')).toBe('D');
+    const noDefault: Expr<string> = { $switch: 'v', cases: { a: 'A' } };
+    expect(evaluate(noDefault, { v: 'toString' }, '-')).toBe('-');
+  });
+
   it('expressões aninhadas', () => {
     const expr: Expr<string> = {
       $if: { $has: 'variant' },

@@ -1,3 +1,4 @@
+import { fold } from './fold';
 // Subconjunto de markdown para os documentos da biblioteca (Catálogo). Puro: só dados,
 // nenhum HTML. HTML cru é texto; só links `mapping://`, âncoras `#…` e `http(s)://` absolutos viram link.
 // Nunca lança: entrada hostil devolve algo, com limites de profundidade e de tamanho.
@@ -57,6 +58,8 @@ export interface MarkdownOptions {
 /** Profundidade máxima de inlines aninhados e de listas aninhadas. */
 const MAX_INLINE_DEPTH = 6;
 const MAX_LIST_DEPTH = 6;
+/** Profundidade máxima de citações (`>`) aninhadas. */
+const MAX_QUOTE_DEPTH = 6;
 /** Trecho de texto inline analisado de uma vez (o resto vira outro trecho). */
 const MAX_INLINE_CHUNK = 20000;
 /** Janela de busca do fechamento de colchetes, parênteses e ênfase. */
@@ -82,10 +85,7 @@ export function isSafeLinkTarget(href: string): boolean {
 
 /** Slug estável para âncora de título. */
 export function slugifyHeading(text: string): string {
-  const slug = text
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
+  const slug = fold(text)
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
   return slug === '' ? 'secao' : slug;
@@ -292,11 +292,58 @@ function parseInlineChunk(s: string, depth: number): MarkdownInline[] {
   return out;
 }
 
+/** Estado da varredura de `chunkEnd`: o que ficou aberto e os melhores pontos de corte vistos. */
+interface ChunkScan {
+  brackets: number;
+  marks: number;
+  /** Depois do último espaço da metade final em que nada ficou aberto (`-1`: nenhum). */
+  safe: number;
+  /** Depois do último espaço da metade final, aberto ou não (`-1`: nenhum). */
+  anySpace: number;
+}
+
+/** Um caractere de marcação: abre/fecha colchete ou parêntese, ou conta um marcador de ênfase. */
+function scanMark(scan: ChunkScan, c: string): void {
+  if (c === '[' || c === '(') scan.brackets++;
+  else if (c === ']' || c === ')') scan.brackets = Math.max(0, scan.brackets - 1);
+  else if (c === '*' || c === '_' || c === '`' || c === '~') scan.marks++;
+}
+
+/** Registra o corte logo depois do espaço em `i`, se cair na metade final da janela. */
+function scanSpace(scan: ChunkScan, i: number, floor: number): void {
+  if (i + 1 <= floor) return;
+  scan.anySpace = i + 1;
+  if (scan.brackets === 0 && scan.marks % 2 === 0) scan.safe = i + 1;
+}
+
+/**
+ * Onde termina o trecho que começa em `start`: logo depois do último espaço (ou quebra de linha)
+ * da metade final da janela em que nenhum colchete, parêntese de link, crase nem marcador de
+ * ênfase ficou aberto. Sem espaço assim, o corte nunca parte um par substituto.
+ */
+function chunkEnd(source: string, start: number): number {
+  const hardEnd = start + MAX_INLINE_CHUNK;
+  if (hardEnd >= source.length) return source.length;
+  const floor = start + MAX_INLINE_CHUNK / 2;
+  const scan: ChunkScan = { brackets: 0, marks: 0, safe: -1, anySpace: -1 };
+  for (let i = start; i < hardEnd; i++) {
+    const c = source[i] as string;
+    if (c === '\\') i++;
+    else if (c === ' ' || c === '\n') scanSpace(scan, i, floor);
+    else scanMark(scan, c);
+  }
+  const cut = [scan.safe, scan.anySpace].find((n) => n > 0) ?? hardEnd;
+  const last = source.charCodeAt(cut - 1);
+  return last >= 0xd800 && last <= 0xdbff ? cut - 1 : cut;
+}
+
 export function parseInlines(source: string): MarkdownInline[] {
   if (source.length <= MAX_INLINE_CHUNK) return parseInlineChunk(source, 0);
   const out: MarkdownInline[] = [];
-  for (let i = 0; i < source.length; i += MAX_INLINE_CHUNK) {
-    pushAll(out, parseInlineChunk(source.slice(i, i + MAX_INLINE_CHUNK), 0));
+  for (let i = 0; i < source.length;) {
+    const end = chunkEnd(source, i);
+    pushAll(out, parseInlineChunk(source.slice(i, end), 0));
+    i = end;
   }
   return out;
 }
@@ -404,8 +451,9 @@ function parseList(lines: readonly string[], start: number): [MarkdownBlock[], n
     }
     const indent = (m[1] as string).length;
     const ordered = /\d/.test(m[2] as string);
+    // A raiz fica: recuo que volta abaixo do primeiro item continua na mesma lista.
     while (
-      stack.length > 0 &&
+      stack.length > 1 &&
       indent < (stack[stack.length - 1] as { indent: number }).indent
     ) {
       stack.pop();
@@ -570,7 +618,7 @@ function parseBlocks(
       i++;
       continue;
     }
-    if (quoteDepth < MAX_LIST_DEPTH && QUOTE.test(line)) {
+    if (quoteDepth < MAX_QUOTE_DEPTH && QUOTE.test(line)) {
       const [body, next] = takeQuote(lines, i);
       blocks.push({
         type: 'quote',

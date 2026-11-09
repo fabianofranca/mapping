@@ -1,4 +1,4 @@
-import { compareThreadMessages, type Thread } from './thread';
+import { firstThreadMessage, type Thread } from './thread';
 import { initials } from './threadUsers';
 import { awaiting, hostKey, hostOf, type ThreadHost } from './threadView';
 import type { Project } from './types';
@@ -44,10 +44,6 @@ function colorOf(thread: Thread): PinColor {
   return waiting === 'agent' ? 'awaitingAgent' : 'resolved';
 }
 
-function opener(thread: Thread) {
-  return [...thread.messages].sort(compareThreadMessages)[0];
-}
-
 function describeGroup(
   hostKeyValue: string,
   host: ThreadHost,
@@ -58,7 +54,7 @@ function describeGroup(
     .map(colorOf)
     .reduce((best, c) => (URGENCY[c] > URGENCY[best] ? c : best));
   const only = members.length === 1 ? members[0] : undefined;
-  const author = only ? opener(only)?.author : undefined;
+  const author = only ? firstThreadMessage(only)?.author : undefined;
   const who = author ? initials(author) : null;
   const messages = only ? only.messages.length : null;
   return {

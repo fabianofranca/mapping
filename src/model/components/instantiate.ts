@@ -52,6 +52,7 @@ import type {
   FillSpec,
   FontSpec,
   FrameTemplate,
+  LayoutSpec,
   GradientSpec,
   IconTemplate,
   ImageTemplate,
@@ -63,6 +64,7 @@ import type {
   TextRunTemplate,
   TextTemplate,
 } from './componentFormat';
+import type { Box } from './box';
 import { STROKE_SIDES } from './componentFormat';
 import { clipBoxOf } from './clipBox';
 import { DEFAULT_ICON_VIEWBOX, resolveIcon, type IconPath, type IconSet } from './icons';
@@ -88,6 +90,7 @@ import {
   type RichBase,
   type RichRun,
   type RunLayout,
+  dropLastChar,
 } from './richText';
 import {
   type CornerRadius,
@@ -108,12 +111,7 @@ import {
 const STROKE_CAPS = ['butt', 'round', 'square'] as const;
 const STROKE_JOINS = ['miter', 'round', 'bevel'] as const;
 
-export interface Box {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
+export type { Box };
 
 export interface TextMetrics {
   readonly width: number;
@@ -174,6 +172,11 @@ export interface Instantiated {
    * que a caixa: …`), pela mensagem do aviso; o maior, se o mesmo aviso se repete. Ausente = vazio.
    */
   readonly shortfalls?: Readonly<Record<string, number>>;
+  /**
+   * Os avisos (entre `warnings`) que são "não cabe", em ordem de criação (`warnShort`): é por
+   * aqui, e não pelo texto da mensagem, que o desenho reconhece o estouro. Ausente = vazio.
+   */
+  readonly overflowWarnings?: readonly string[];
 }
 
 // ---------------------------------------------------------------------------------------
@@ -215,7 +218,7 @@ function withEllipsis(
     kept.length > 0 &&
     widthOf(`${kept}…`) > maxWidth + 1e-9
   )
-    kept = kept.slice(0, -1).trimEnd();
+    kept = dropLastChar(kept).trimEnd();
   return `${kept}…`;
 }
 
@@ -655,6 +658,13 @@ function createEngine(
   const clampSize = (node: TemplateNode, axis: Axis, size: number): number =>
     clampTo(limitOf(node, axis), size);
 
+  /** `padding` (também de `$field`): texto numérico vira número, o resto vira 0, piso em 0. */
+  const paddingOf = (expr: LayoutSpec['padding']): Padding => {
+    const value: unknown = evaluate(expr, values, 0);
+    const side = (v: unknown) => Math.max(0, num(v as Expr<number>, 0));
+    return normalizePadding(Array.isArray(value) ? value.map(side) : side(value));
+  };
+
   const layoutOf = (frame: FrameTemplate): FrameLayout => {
     const spec = frame.layout;
     const kind = checked(spec?.type, LAYOUT_TYPES, 'none', 'layout.type');
@@ -663,7 +673,7 @@ function createEngine(
       kind,
       main: kind === 'row' ? 'w' : 'h',
       gap: Math.max(0, num(spec.gap, 0)),
-      pad: normalizePadding(evaluate(spec.padding, values, 0)),
+      pad: paddingOf(spec.padding),
       align: checked(spec.align, LAYOUT_ALIGNS, 'start', 'layout.align'),
       justify: checked(spec.justify, LAYOUT_JUSTIFIES, 'start', 'layout.justify'),
     };
@@ -1049,8 +1059,9 @@ function createEngine(
   // --- estilo ---------------------------------------------------------------------------
 
   /**
-   * Gradiente linear pela convenção do CSS: a linha passa pelo centro da caixa, na direção do
-   * ângulo (0° = esquerda→direita, 90° = cima→baixo), com comprimento que cobre os cantos.
+   * Gradiente linear pela convenção SVG/Figma (não a do CSS `linear-gradient`): o ângulo cresce no
+   * sentido horário com o eixo y para baixo (0° = esquerda→direita, 90° = cima→baixo); a linha
+   * passa pelo centro da caixa, com comprimento que cobre os cantos.
    */
   const gradientPaint = (gradient: GradientSpec, w: number, h: number): Paint => {
     const rad = (gradient.angle * Math.PI) / 180;
@@ -1510,6 +1521,7 @@ export function instantiate(
     root,
     warnings: [...engine.warnings],
     shortfalls: Object.fromEntries(engine.shortfalls),
+    overflowWarnings: [...engine.shortfalls.keys()],
   };
 }
 

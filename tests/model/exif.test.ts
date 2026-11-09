@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { readExifOrientation, swapsAxes } from '../../src/model/exif';
+import { readExifOrientation } from '../../src/model/exif';
 
 /** JPEG mínimo: SOI + (APP0 opcional) + APP1 Exif com a tag de orientação + SOS. */
 function jpegWithOrientation(
@@ -44,16 +44,5 @@ describe('readExifOrientation', () => {
     expect(readExifOrientation(jpegWithOrientation(6).slice(0, 20))).toBe(1);
     expect(readExifOrientation(jpegWithOrientation(42))).toBe(1);
     expect(readExifOrientation(new ArrayBuffer(0))).toBe(1);
-  });
-
-  it('identifica as orientações que trocam largura e altura', () => {
-    expect([1, 2, 3, 4].map((o) => swapsAxes(o as 1 | 2 | 3 | 4))).toEqual([
-      false,
-      false,
-      false,
-      false,
-    ]);
-    expect(swapsAxes(5)).toBe(true);
-    expect(swapsAxes(8)).toBe(true);
   });
 });

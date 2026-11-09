@@ -2,6 +2,7 @@ import type { ComponentFile } from './components/componentFormat';
 import { applyTokens, type ResolvedTokens } from './components/tokens';
 import { fail } from './errors';
 import { updateById } from './project';
+import { projectIndex } from './projectIndex';
 import type { Project } from './types';
 
 // Modo do desenho (schema v18, etapa "componentes fiéis"): escolhe o modo dos `tokens` das
@@ -56,7 +57,7 @@ export function effectiveDrawingMode(
   containerId: string | null,
 ): string | undefined {
   if (containerId !== null) {
-    const fixed = p.containers.find((c) => c.id === containerId)?.drawingMode;
+    const fixed = projectIndex(p).containers.get(containerId)?.drawingMode;
     if (fixed != null) return fixed;
   }
   return p.drawingMode;

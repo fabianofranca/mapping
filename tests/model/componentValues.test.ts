@@ -5,6 +5,7 @@ import {
   addTypedAnnotation,
   createMarking,
   drawingValues,
+  modelMessage,
   setFieldValue,
   setTableCell,
   type JsonValue,
@@ -116,6 +117,12 @@ describe('drawingValues: tipos simples', () => {
   });
 });
 
+const BROKEN_TARGET = modelMessage(
+  'value.refBroken',
+  { key: 'target' },
+  'referência quebrada: target',
+);
+
 describe('drawingValues: referências', () => {
   it('FieldRef: o valor simples do campo alvo', () => {
     let p = base();
@@ -162,28 +169,36 @@ describe('drawingValues: referências', () => {
     p = withValues(p, 'A1', { target: { annotationId: 'A3', key: 'target' } });
     const { values, warnings } = valuesOf(p);
     expect(values.target).toBeNull();
-    expect(warnings).toEqual(['referência em mais de um nível: target']);
+    expect(warnings).toEqual([
+      modelMessage(
+        'value.refDeep',
+        { key: 'target' },
+        'referência em mais de um nível: target',
+      ),
+    ]);
   });
 
   it('ciclo: o alvo volta à própria anotação', () => {
     const p = withValues(base(), 'A1', { target: { annotationId: 'A1', key: 'label' } });
     const { values, warnings } = valuesOf(p);
     expect(values.target).toBeNull();
-    expect(warnings).toEqual(['referência em ciclo: target']);
+    expect(warnings).toEqual([
+      modelMessage('value.refCycle', { key: 'target' }, 'referência em ciclo: target'),
+    ]);
   });
 
   it('referência quebrada: alvo que não existe, ou formato que não é referência', () => {
     let p = withValues(base(), 'A1', { target: { annotationId: 'ZZ', key: 'label' } });
     expect(valuesOf(p).values.target).toBeNull();
-    expect(valuesOf(p).warnings).toEqual(['referência quebrada: target']);
+    expect(valuesOf(p).warnings).toEqual([BROKEN_TARGET]);
     p = withValues(p, 'A1', {
       target: { annotationId: 'A3', key: 'items', rowId: 'inexistente' },
     });
-    expect(valuesOf(p).warnings).toEqual(['referência quebrada: target']);
+    expect(valuesOf(p).warnings).toEqual([BROKEN_TARGET]);
     p = withValues(p, 'A1', { target: 'texto solto' });
-    expect(valuesOf(p).warnings).toEqual(['referência quebrada: target']);
+    expect(valuesOf(p).warnings).toEqual([BROKEN_TARGET]);
     p = withValues(p, 'A1', { target: { annotationId: 'A2', entryId: 'EX' } });
-    expect(valuesOf(p).warnings).toEqual(['referência quebrada: target']);
+    expect(valuesOf(p).warnings).toEqual([BROKEN_TARGET]);
   });
 
   it('referência vazia não avisa', () => {

@@ -226,7 +226,11 @@ describe('pacote quebrado de propósito', () => {
     expect(broken.report.ok).toBe(false);
     const button = findEntry(broken, 'm3-button');
     expect(button?.component).toBeNull();
-    expect(button?.componentProblem).toMatch(/ausente/);
+    expect(button?.componentProblem?.text).toMatch(/ausente/);
+    expect(button?.componentProblem?.code).toBe('catalog.fileMissing');
+    expect(button?.componentProblem?.params).toEqual({
+      path: 'components/m3-button.json',
+    });
     expect(button?.container).toBe(false);
     expect(exampleDrawing(broken, button!, undefined, approximateMeasurer)).toBeNull();
     expect(findEntry(broken, 'm3-card')?.component).not.toBeNull();
