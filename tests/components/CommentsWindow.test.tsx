@@ -425,27 +425,22 @@ describe('apagar conversas em lote', () => {
     ]);
   });
 
-  it('a data vale como meia-noite local: 31/10 depois das 21h em UTC-3 entra "antes de 01/11"', async () => {
-    const prevTz = process.env.TZ;
-    process.env.TZ = 'America/Sao_Paulo';
-    try {
-      // 31/10 23:30 em São Paulo = 01/11 02:30Z; "antes de 01/11" local (03:00Z) inclui.
-      const LATE = sampleThread({
-        id: 'tf',
-        resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
-        messages: [message('f1', '2026-11-01T02:30:00.000Z', HUMAN, 'tarde')],
-      });
-      const { user } = await mount([LATE]);
-      const dialog = await openMenu(user);
-      await user.type(
-        within(dialog).getByLabelText(t('comments.bulk.before')),
-        '2026-11-01',
-      );
-      expect(dialog.textContent).toContain(t('comments.bulk.threadsOne'));
-    } finally {
-      if (prevTz === undefined) delete process.env.TZ;
-      else process.env.TZ = prevTz;
-    }
+  it('a data vale como meia-noite local: a mensagem das 23h30 de 31/10 entra em "antes de 01/11"', async () => {
+    // Construída no fuso local: em UTC−3 é 02h30Z de 01/11, depois da meia-noite UTC que o
+    // `Date.parse` de "2026-11-01" daria (o teste só distingue a correção em fuso a oeste de UTC).
+    const late = new Date(2026, 9, 31, 23, 30).toISOString();
+    const LATE = sampleThread({
+      id: 'tf',
+      resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
+      messages: [message('f1', late, HUMAN, 'tarde')],
+    });
+    const { user } = await mount([LATE]);
+    const dialog = await openMenu(user);
+    await user.type(
+      within(dialog).getByLabelText(t('comments.bulk.before')),
+      '2026-11-01',
+    );
+    expect(dialog.textContent).toContain(t('comments.bulk.threadsOne'));
   });
 
   it('zero candidatas desabilita o Apagar', async () => {
