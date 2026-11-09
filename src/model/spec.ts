@@ -743,7 +743,7 @@ function checkField(
 
 /** Valida e normaliza os campos de um tipo (inclusive colunas de table). */
 type ColumnParse = ReturnType<typeof fieldShape.safeParse>;
-const columnParses = new WeakMap<object, ColumnParse>();
+let columnParses = new WeakMap<object, ColumnParse>();
 
 /** Lê uma coluna de `table` pela forma dos campos; a mesma coluna é lida uma vez só. */
 function parseColumn(raw: unknown): ColumnParse {
@@ -2067,7 +2067,13 @@ function checkMigrations(
 
 /** Cada problema `"caminho: mensagem"` do `parseOrigins` vira uma issue no caminho exato. */
 type OriginsParse = ReturnType<typeof parseOrigins>;
-const originParses = new WeakMap<object, OriginsParse>();
+let originParses = new WeakMap<object, OriginsParse>();
+
+/** Zera as leituras guardadas: valem só dentro de uma validação (o JSON pode mudar entre elas). */
+function resetParseCaches(): void {
+  columnParses = new WeakMap();
+  originParses = new WeakMap();
+}
 
 /** `parseOrigins(raw)` com o caminho padrão, lido uma vez por lista de origens. */
 function originsOf(raw: unknown): OriginsParse {
@@ -2570,6 +2576,7 @@ export const specSchema = z
   })
   .strict()
   .superRefine((spec, ctx) => {
+    resetParseCaches();
     if (spec.platforms !== undefined && spec.formatVersion < 2) {
       ctx.addIssue({
         code: 'custom',
