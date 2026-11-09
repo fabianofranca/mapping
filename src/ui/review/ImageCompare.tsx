@@ -16,6 +16,12 @@ export type CompareMode = 'side' | 'slide' | 'overlay';
 /** Passo das setas na alça (porcentagem). */
 const STEP = 5;
 
+/** A alça segue a divisória, mas fica inteira dentro da área, também em 0% e 100%. */
+function gripLeft(value: number): string {
+  const half = 'calc(var(--control-height) / 2)';
+  return `clamp(${half}, ${value}%, calc(100% - ${half}))`;
+}
+
 function BitmapCanvas({
   image,
   label,
@@ -162,7 +168,7 @@ export function ImageCompare({
           )}
           <span
             class="image-compare-grip"
-            style={mode === 'slide' ? { left: `${value}%` } : { left: '50%' }}
+            style={{ left: mode === 'slide' ? gripLeft(value) : '50%' }}
             role="slider"
             tabIndex={0}
             aria-label={t(

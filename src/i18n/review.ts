@@ -417,6 +417,7 @@ export const reviewPtBR = {
     'Esta proposta não está aberta: o que foi aceito não pode mais ser aplicado.',
   'review.issue.generic':
     'As mudanças aceitas deixariam o projeto inválido em {name} ({code}).',
+  'review.issue.missingImage': '{name} depende de uma imagem que não está no projeto.',
   'review.issue.acceptMissing': 'Aceitar a(s) que falta(m) ({count})',
   'review.issue.rejectCause': 'Rejeitar a(s) que causa(m) ({count})',
   'review.locked.title': 'Item trancado',
@@ -905,6 +906,7 @@ export const reviewEnUS: Record<keyof typeof reviewPtBR, string> = {
     'This proposal is not open: what was accepted can no longer be applied.',
   'review.issue.generic':
     'The accepted changes would make the project invalid at {name} ({code}).',
+  'review.issue.missingImage': '{name} depends on an image that is not in the project.',
   'review.issue.acceptMissing': 'Accept the missing one(s) ({count})',
   'review.issue.rejectCause': 'Reject the cause ({count})',
   'review.locked.title': 'Locked item',
