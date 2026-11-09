@@ -16,7 +16,7 @@ A primeira linha é:
 # <Etapa> — <AAAA-MM-DD | [Não lançado]> (épico `epic/<nome>`, PR #<n>, MCP <versão>, schema v<n>)
 ```
 
-Depois vêm as categorias `## Adicionado`, `## Alterado` e `## Corrigido` (só as que têm itens), com bullets voltados a quem usa a app e o MCP. Entradas antigas, de antes dos épicos, mantêm só os campos que tinham.
+Depois vêm as categorias `## Adicionado`, `## Alterado` e `## Corrigido` (só as que têm itens), com bullets voltados a quem usa a app e o MCP. O épico que só mexe no fluxo de entrega (skills do fluxo, CI, `docs/FLOW.md`, regras do `CLAUDE.md`) escreve as categorias para quem conduz o fluxo (o dono e os agentes). Entradas antigas, de antes dos épicos, mantêm só os campos que tinham.
 
 ## Ordem
 

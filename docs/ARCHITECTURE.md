@@ -135,6 +135,12 @@ leitura, na migração nem na abertura (ler nunca grava e nunca muda dado), e a 
 nas prévias de gesto. Sem a tolerância: o modelo só conhece "totalmente contido"; a ferramenta (a interação) é que ajuda a pessoa
 a chegar lá.
 
+**O desenho durante o gesto.** A prévia (`settle: false`) só decide onde as coisas aparecem: o pertencimento não muda até
+soltar, e o canvas não decide quem contém quem. Para o custo do quadro depender do que se arrasta, e não do projeto, o canvas
+leva os nós do que se move para um grupo no fundo da camada de sobreposições (ver "Desempenho", "Grupo de arrasto") e os
+devolve às camadas de onde saíram quando o gesto termina ou é cancelado; a ordem de desenho de sempre (flutuantes acima das
+demais, componentes abaixo das bordas) só vale de novo ao soltar.
+
 **O assentar recortado (`settleFrom`, #882).** O assentar do fim de uma operação não olha o projeto inteiro: `settleFrom(before,
 next)` compara os dois por objeto (`src/model/settleDelta.ts`) e assenta só o que a operação mexeu, com o **mesmo resultado** do
 assentar inteiro (`settleHierarchy(next)`, que sem `before` continua assentando tudo: reparo, testes, quem chama de fora). Espaço
@@ -369,11 +375,69 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   agrupa os atributos numa cascata só, e cada atributo de transformação aplicado à parte limparia o cache de transformação de todos
   os nós (milhares, num projeto grande) e dispararia `absoluteTransformChange` neles; o zoom passou de 3 cascatas por quadro para 1
   (`tests/canvas/CanvasController.test.ts` conta: zoom 1, pan 1, edição 0).
+- **Camadas sujas** (`CanvasController.render`): o palco tem 5 camadas (`images`, `components`, `markings`, `floating`,
+  `overlay`) e o quadro redesenha só as que mudaram, com `layer.batchDraw()` em cada uma, no lugar de `stage.batchDraw()`. Cada
+  renderizador diz se mexeu em algum nó: `ImageRenderer.changed` e `MarkingRenderer.render` (devolve `main` e `floating`, a pilha da
+  camada das marcações e a da flutuante) reaproveitam o `sameInputs` e não refazem o nó cujas entradas não mudaram (nem o texto do
+  nome); `ComponentLayerRenderer.render`, `setZoom` e `refreshImages` já devolviam o booleano; as setas (o traçado sai de dados, não
+  de atributos do Konva), as marcas da revisão, os pinos, as marcas de chegada e as sobreposições só rodam, e só sujam a camada
+  deles, quando o que leem mudou (`REVIEW_KEYS`, `PIN_KEYS`, `ARRIVAL_KEYS`, `OVERLAY_KEYS`). Pan, zoom e mudança de tamanho
+  mexem na transformação do palco e sujam todas (`stage.batchDraw()`). O Konva também agenda o desenho da camada de um nó cujo
+  atributo mudou; a marcação explícita cobre o que ele não enxerga. Efeito: editar o nome de uma marcação redesenha `markings` e
+  `overlay` (não `images` nem `components`), mudar a seleção redesenha só essas duas, e um quadro sem mudança não redesenha
+  nenhuma (`tests/canvas/dirtyLayers.test.ts`).
+- **Nível de detalhe pelo zoom** (`canvas/renderers/levelOfDetail.ts`, usado por `MarkingRenderer.render`): pelo tamanho da
+  marcação na tela, `full`, `border` ou `hidden`. Abaixo de 24 px na largura **ou** na altura (token `size-lod-min-marking`)
+  desenha só a borda (sem halo, linha dupla, selo "a revisar" nem ⚠); abaixo de 2 px nas **duas** medidas
+  (`size-lod-hide-marking`) o grupo fica invisível, como o de fora da tela. A selecionada (inclusive na seleção múltipla,
+  `frame.items`), a sob o mouse e a com marca da revisão ficam completas em qualquer tamanho; o nível entra nas entradas do nó
+  (`inputs`), então cruzar um limite refaz o nó. O Konva percorre todo filho de um grupo, visível ou não, então o nó só pendura
+  no grupo as partes visíveis (`syncParts`): de longe um grupo tem só a borda, e o `drawScene` da camada das marcações do cenário
+  de 2.000 caiu de ~21 para ~9 ms (18 mil para 4 mil nós). Aproximado (≥ 24 px) nada muda. O `size-indicator-min-marking`
+  continua como estava.
+- **Nós sob demanda** (`MarkingRenderer.render`, decisão 8 da etapa canvas-escala): o nó do Konva de uma marcação só é criado
+  no primeiro quadro em que ela é desenhada (visível, nível de detalhe ≠ `hidden`, dentro da área da tela); fora disso não há
+  nó, e `node(id)` e `headers.get(id)` devolvem `undefined` (o overlay e quem mais lê tratam o `undefined`). O nó criado
+  fica até a marcação sair do projeto (não é destruído ao sair da tela), é criado já no pai certo (`parentFor`, o grupo de
+  arrasto se ela se move) e só os nós existentes contam na ordem da pilha. Selecionar uma marcação sem nó (Árvore, Lista) leva
+  o canvas até ela (`centerSelection`), e o quadro seguinte a cria. `MarkingRenderer.shown` conta as desenhadas e o
+  `CanvasController` o publica em `data-drawn-markings` no `.canvas-host`. Efeito: abrir já aproximado cria só os nós à vista
+  (65 de 2.000 no cenário de teste, ~50 ms contra ~175 a 285 ms de quadro); com **Enquadrar tudo** todas passam de 2 px e
+  todas ganham nó, então abrir inteiro à vista não encurta (`tests/canvas/lazyNodes.test.ts`).
+- **Orçamentos da etapa canvas-escala (conferência final, DA5):** arrasto ≤ 16 ms (atingido: ~3 a 4 ms em jsdom, 2 camadas
+  redesenhadas); pan e zoom inteiro à vista ≤ 33 ms (jsdom: atingido; Chromium com 2.000: ~42 e ~45 ms, não atingido); edição ≤
+  16 ms (jsdom 16 a 24 ms com teto de 35 ms em `renderPerformance.test.ts`; Chromium com 2.000: ~17 ms); abrir ≤ metade da linha
+  de base (atingido aproximado; não atingido em **Enquadrar tudo**). Medições e linha de base na issue #888; `npm run perf:canvas`
+  gera a tabela do Chromium.
+- **Grupo de arrasto** (`CanvasController.syncDrag`/`applyDrag`, `canvas/dragSet.ts`; decisões 5 a 7 da etapa canvas-escala):
+  durante um gesto do store (`store.gestureActive`: mover ou redimensionar marcação, mover itens ou container, rota e ponta de
+  seta), o que se move vai para um **grupo no fundo da camada de sobreposições** (abaixo da faixa de chegada, das marcas da
+  revisão, dos pinos e das alças); o palco continua com 5 camadas (#476, #517) e, a cada `pointermove`, só `overlay` é
+  redesenhada. O conjunto que se move é a **diferença entre o projeto desenhado de antes do gesto e o da prévia**
+  (`dragSetOf`, função pura): a marcação, o container e a seta cujo objeto mudou, mais as marcações de um container que se move
+  (elas andam com a imagem sem mudar de objeto) e as setas que tocam qualquer marcação que se move. O conjunto só cresce até
+  soltar. O canvas não escolhe nada do modelo: pertencimento e posição final continuam do `finish…` e do assentar. Cada
+  renderizador recebe o conjunto (`setDragged`) e, no `render` de sempre, **move o mesmo nó** com `moveTo` (nunca clona) para o
+  subgrupo da sua pilha, na ordem de desenho de sempre (imagens, desenhos de componente, setas, marcações, desenhos e marcações
+  flutuantes); o nó que se move não conta na posição da pilha de onde saiu e é atualizado onde estiver. Ao soltar ou cancelar o
+  conjunto esvazia, o quadro passa por todos os renderizadores (mesmo sem mudança de projeto) e os nós voltam ao pai e ao índice
+  de antes, redesenhando as camadas envolvidas. Detalhes: o desenho de componente que se move fica num grupo por container com
+  a posição e a escala do grupo da imagem (`ComponentLayerRenderer.mirrors`); as setas que se movem têm um corpo e um grupo de
+  rótulos próprios (`ArrowRenderer.liftedDrawn`), e o corpo das paradas mantém o array e o traçado enquanto elas não mudam, então
+  um quadro de arrasto não repinta a camada das marcações. Consequência aceita: durante o gesto, o que se arrasta fica por cima
+  de tudo até soltar (inclusive das flutuantes e dos desenhos de componente que não se movem). Numa perspectiva aberta o
+  recorte (`perspectiveView`) refaz os objetos do que ela mostra, então o conjunto é a vista toda: correto, só não é o mínimo.
+  Provado em `tests/canvas/dragGroup.test.ts` (camadas redesenhadas por `pointermove`, posição dos nós, volta ao pai e ao índice
+  ao soltar e ao cancelar).
 - **Orçamentos** (medidos em testes, ligados por `npm run test:perf` e desligados com `--coverage` porque o código instrumentado
   é mais lento): índice, pendências, indicadores e visibilidade de um projeto grande (500 marcações, 1.500 anotações, metade
   tipadas, e 500 referências) em menos de 8 ms (`tests/model/performance.test.ts`, mediana de várias rodadas, cada uma numa versão
   nova do projeto); uma renderização do canvas com o projeto já indexado em menos de 16 ms (`tests/canvas/renderPerformance.test.ts`,
   Konva em jsdom com contexto 2D falso). Cada teste repete uma vez para separar ruído do runner de regressão real.
+  Com o projeto inteiro à vista (cenário de 2.000 marcações e 1.000 setas, `tests/canvas/wholeProjectScenario.ts`), pan e zoom
+  têm a meta de 33 ms, o quadro de edição, a de 16 ms e o quadro de arrasto (depois do que leva os nós ao grupo), a de 16 ms: o
+  arrasto mede ~3 a 4 ms em jsdom (antes ~14 a 17 ms, com as 5 camadas redesenhadas). Depois do nível de detalhe o quadro de edição mede ~16 a 24 ms em jsdom
+  (antes ~22 a 28 ms): o teto do teste é 35 ms (guarda contra regressão) até a DA5 (nós sob demanda); a #888 registra o número.
   O teste do canvas com 200 setas mede como os irmãos: 3 rodadas de aquecimento descartadas e a mediana de 15, uma por métrica
   (pan, zoom, edição), com a métrica no `expect`. No `npm test` os 3 arquivos de orçamento (`tests/model/performance.test.ts`,
   `tests/canvas/renderPerformance.test.ts`, `tests/store/reviewPerf.test.ts`) rodam em projetos próprios do Vitest (`perf-model`

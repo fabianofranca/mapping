@@ -8,7 +8,7 @@ import { approximateMeasurer } from '../../../src/model/components/instantiate';
 import {
   type LayoutNode,
   type LayoutRoot,
-  type ScreenAnchor,
+  type LayoutAnchor,
   layoutScreen,
 } from '../../../src/model/components/layout';
 import { type Library, loadLibrary } from '../../../src/model/components/library';
@@ -431,7 +431,7 @@ describe('layoutScreen: Box (none)', () => {
 // --- raízes ancoradas, scrim e tela -------------------------------------------------------------
 
 describe('layoutScreen: raízes ancoradas', () => {
-  const anchored = (anchor: ScreenAnchor, margin?: number) =>
+  const anchored = (anchor: LayoutAnchor, margin?: number) =>
     run(
       [
         root(node('flow', 'fixed')),
@@ -446,7 +446,7 @@ describe('layoutScreen: raízes ancoradas', () => {
     expect(boxOf(result, 'flow')).toEqual({ x: 0, y: 0, width: 100, height: 40 });
   });
 
-  it.each<[ScreenAnchor, number, number, number]>([
+  it.each<[LayoutAnchor, number, number, number]>([
     ['top-start', 16, 16, 16],
     ['top', 16, 150, 16],
     ['top-end', 8, 292, 8],
@@ -741,5 +741,64 @@ describe('layoutScreen: cartão do Material 3 dentro de uma coluna', () => {
       expect(ok.y + ok.height).toBeCloseTo(cardBox.y + cardBox.height - 16);
       expect(ok.x + ok.width).toBeCloseTo(cardBox.x + cardBox.width - 16);
     }
+  });
+});
+
+describe('layoutScreen: fill com minSize e âncora (#CR-13, #CR-14)', () => {
+  it('a raiz fill ancorada com margem maior que a tela não fica negativa', () => {
+    const result = run(
+      [root(node('f', 'filler'), { anchor: 'center', margin: 500 })],
+      400,
+      800,
+    );
+    const box = boxOf(result, 'f');
+    expect(box.width).toBeGreaterThanOrEqual(0);
+    expect(box.height).toBeGreaterThanOrEqual(0);
+  });
+
+  it('fill no eixo principal redistribui o excedente quando um filho bate no minSize', () => {
+    // Coluna de 100 px: um filho fill com minSize 80 e outro sem mínimo.
+    // distributeFill: 80 e 20 (soma 100); sem redistribuir seriam 80 e 50.
+    const lib = build(
+      [
+        ...COMPONENTS,
+        component(
+          'fill-min80',
+          {},
+          {
+            size: { width: 10, height: 80 },
+            sizing: { width: 'fill', height: 'fill' },
+            minSize: { width: 10, height: 80 },
+          },
+        ),
+      ],
+      {
+        ...SPEC,
+        layers: [
+          {
+            ...SPEC.layers[0]!,
+            annotationTypes: [
+              ...SPEC.layers[0]!.annotationTypes,
+              {
+                id: 'fill-min80',
+                name: 'fill-min80',
+                component: 'components/fill-min80.json',
+                fields: [],
+              },
+            ],
+          },
+        ],
+      },
+    );
+    const result = run(
+      [root(node('c', 'col-px', {}, [node('a', 'fill-min80'), node('b', 'filler')]))],
+      300,
+      600,
+      lib,
+    );
+    expect(lib.problems).toEqual([]);
+    expect(boxOf(result, 'a').height).toBe(80);
+    expect(boxOf(result, 'b').height).toBe(20);
+    // O mesmo no eixo horizontal (row com largura 300).
   });
 });

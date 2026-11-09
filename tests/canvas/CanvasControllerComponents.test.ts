@@ -67,9 +67,12 @@ describe('CanvasController: componentes', () => {
       markings: MarkingRenderer;
     };
     const componentLayer = () => internals.stage.getLayers()[1];
-    /** O nó do Konva de uma marcação desenhada (ou `undefined` se não está montado). */
+    /**
+     * O nó do Konva de uma marcação desenhada (ou `undefined` se não está montado). Procura no palco
+     * todo: durante um gesto o desenho de quem se move fica no grupo de arrasto (sobreposições).
+     */
     const drawing = (id: string) =>
-      componentLayer()?.find((n: Konva.Node) => n.getAttr('markingId') === id)[0];
+      internals.stage.find((n: Konva.Node) => n.getAttr('markingId') === id)[0];
     const border = (id: string) => internals.markings.node(id)?.border.visible();
     flush();
     return {
@@ -277,6 +280,9 @@ describe('CanvasController: componentes', () => {
       expect(markingNodes(layers[3], regular.value)).toHaveLength(0);
       // T1, T2 e as duas do canvas (a do canvas desenha sempre: não há foto por baixo).
       expect(container.dataset.components).toBe('4');
+      // Os nós das bordas nascem sob demanda: leva as duas à vista.
+      controller.centerOnPoint({ x: 3000, y: 250 });
+      flush();
       // As bordas da flutuante ficam no grupo de cima, depois do desenho dela.
       const floatingLayer = layers[3] as Konva.Layer;
       expect(floatingLayer.getChildren()).toHaveLength(2);

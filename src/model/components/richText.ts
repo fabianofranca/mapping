@@ -254,6 +254,11 @@ const sumWidths = (segs: readonly Seg[]): number =>
 const isBlank = (seg: Seg | undefined): boolean =>
   seg !== undefined && !seg.chip && seg.text.trim() === '';
 
+/** Tira o último ponto de código (emoji e pares substitutos saem inteiros). */
+export function dropLastChar(text: string): string {
+  return [...text].slice(0, -1).join('');
+}
+
 /**
  * Tira do fim da linha (chips inteiros, letras do último texto) até a linha + `…` caber em
  * `limit`; o `…` usa a fonte do último pedaço que sobrou.
@@ -268,7 +273,7 @@ function ellipsize(line: readonly Seg[], ctx: Context, limit: number): Seg[] {
     run = tail.run;
     if (sumWidths(kept) + ctx.textWidth(run, '…') <= limit + EPS) break;
     kept.pop();
-    const shorter = tail.chip ? '' : tail.text.slice(0, -1).trimEnd();
+    const shorter = tail.chip ? '' : dropLastChar(tail.text).trimEnd();
     if (shorter !== '') kept.push(ctx.seg(tail.run, shorter));
   }
   return [...kept, { run, text: '…', width: ctx.textWidth(run, '…'), chip: false }];

@@ -31,3 +31,9 @@
 - Um `mapping.json` mais novo que a v10 ou a v12, editado à mão com `urlTemplate` em `platformRepos` ou `inherit` numa anotação, deixa de ganhar o aviso de dados descartados na migração.
 - Uma anotação removida numa proposta anterior à v14 (sem `parentRole` no valor de antes) deixa de aparecer como conflito falso na revisão: `parentRole` ausente vale `null`, dos dois lados.
 - Uma anotação tipada com um campo chamado `toString` (ou outro nome herdado de `Object.prototype`) ausente deixa de derrubar `computeChanges` e o `propose_changes` do MCP.
+- Um componente com `$switch` num campo cujo valor é `toString`, `constructor` ou outro nome herdado de `Object.prototype` cai no `default`, em vez de devolver uma função.
+- O `padding` do `layout` vindo de `$field` aceita texto numérico (`"16"`): texto não numérico vale 0 e o valor nunca fica abaixo de 0, como o `gap`.
+- As reticências (`ellipsis`) de um texto cortado no meio de um emoji deixam de produzir um caractere quebrado: o corte é por ponto de código.
+- Uma tela com raiz `fill` ancorada nunca fica com largura ou altura negativa.
+- Num `layout` de tela, os filhos `fill` no eixo principal com `minSize` redistribuem o excedente (o tamanho final respeita o `minSize` e a soma cabe no pai), como na instanciação de um componente.
+- Mover uma instância da tela uma posição para baixo (`moveSibling` com `delta` positivo) a coloca depois do irmão seguinte, em vez de pular outro.
