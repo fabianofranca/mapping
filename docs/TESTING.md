@@ -869,7 +869,7 @@ Prepare um segundo print de tela, `login.png` (qualquer tela de login; pode ser 
 
 **O que cobre:** a etapa Proposto com componentes (PC1 e PC2): na revisão de uma proposta, a visão **Proposto** desenha os componentes que a proposta cria, com as marcas da revisão por cima. Cada passo confere um caso: criado **pendente**, **aceito**, **rejeitado** (só o fantasma), **inválido**, **existente alterado**, com **campo obrigatório faltando**, de um tipo que vem **no pacote da proposta**; depois a visão **Atual**, o que fica no disco e a legenda nas duas línguas.
 
-**Preparo.** O arquivo é `proposta-componentes.zip` (no repositório, em `examples/`; seção 2). Ele traz o projeto **Telas** (uma tela em branco **Tela**, 360 × 800, com a biblioteca `material3-compose` aplicada e o componente existente **Existente**, um `button` com Rótulo `Antigo`) e a proposta aberta **Componentes novos**, com as decisões já gravadas. Ela cria seis `button` e altera o Rótulo do **Existente** para `Novo valor`:
+**Preparo.** O arquivo é `proposta-componentes.zip` (no repositório, em `examples/`; seção 2). Ele traz o projeto **Telas** (uma tela em branco **Tela**, 360 × 800, com a biblioteca `material3-compose` aplicada e o componente existente **Existente**, um `button` com Rótulo `Antigo`) e a proposta aberta **Componentes novos**, com as decisões já gravadas. Ela cria cinco `button` e um `chip` e altera o Rótulo do **Existente** para `Novo valor`:
 
 | Marcação | Caso | Decisão gravada |
 | --- | --- | --- |
@@ -877,7 +877,7 @@ Prepare um segundo print de tela, `login.png` (qualquer tela de login; pode ser 
 | **Pendente** | criado, Rótulo `Pendente` | sem decisão |
 | **Aceito** | criado, Rótulo `Aceito` | aceita |
 | **Rejeitado** | criado, Rótulo `Rejeitado` | rejeitada |
-| **Inválido** | criado, com a anotação numa camada que não existe (`missing-layer`) | aceita (entra no conjunto inválido) |
+| **Inválido** | criado, um `chip` (Rótulo `Inválido`) de 40×32, menor que o conteúdo (o componente não cabe), com a anotação numa camada que não existe (`missing-layer`) | aceita (entra no conjunto inválido) |
 | **Sem rótulo** | criado sem o Rótulo, que é obrigatório | sem decisão |
 | **Do pacote** | criado de um tipo do pacote `m3novo`, que a proposta traz em `proposals/componentes-novos/specs/m3novo/` e o projeto não tem | sem decisão |
 
