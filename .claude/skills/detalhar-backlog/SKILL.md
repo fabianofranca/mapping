@@ -30,7 +30,7 @@ Toda pergunta ao dono passa pela ferramenta de perguntas (`AskUserQuestion`), **
 - vão no máximo 4 perguntas por chamada. Se houver mais, faça outra chamada, uma issue (ou grupo) por chamada sempre que der;
 - a resposta em "Outro" e as notas do dono vão para a filha **sem mudar nenhuma palavra**.
 
-Antes de cada chamada, mande um `PushNotification` curto, por exemplo "Detalhamento: 2 perguntas da #896". O dono usa o celular e pode não estar olhando o chat. Carregue `AskUserQuestion` e `PushNotification` com o `ToolSearch` se ainda não estiverem carregadas.
+Antes de cada chamada, mande um `PushNotification` curto, por exemplo "Detalhamento: 2 perguntas da #896". O dono usa o celular e pode não estar olhando o chat. Carregue o `PushNotification` com o `ToolSearch` se ainda não estiver carregado; o `AskUserQuestion` só se ele aparecer na lista de ferramentas adiadas.
 
 ## Esforço do detalhamento
 
@@ -76,6 +76,7 @@ Você é o agente de agrupamento do backlog do `fabianofranca/mapping`. Ninguém
    - mesma área, os mesmos arquivos ou a mesma ordem proposta: menos conflito e menos merge da `main` no épico;
    - mesmo formato ou schema: uma subida de versão e uma migração só;
    - o custo de juntar: o épico grande demora mais a chegar à `main` e uma falha segura todo mundo. Recomende no máximo umas 8 fases por épico e não junte o que tem condição de entrada não cumprida.
+   - grupo com algum `bug`: a principal é o `bug` de maior severidade (no empate, o menor número), porque a etapa fica `bug` com a maior severidade do grupo.
 3. Diga também quais issues `ready` (não `in-progress`) entrariam bem num grupo. Juntar uma `ready` muda um plano já fechado, e isso é do dono: proponha, não decida.
 4. Marque como bloqueada a candidata com condição de entrada não cumprida (dependência externa, decisão anterior pendente), com o motivo.
 5. Para cada grupo e cada sozinha, diga se o detalhamento pede esforço high, pelos critérios de "Esforço do detalhamento" do skill `.claude/skills/detalhar-backlog/SKILL.md`, com o motivo em uma linha. Avalie o grupo como ficaria se o dono o aprovasse.
@@ -84,7 +85,7 @@ Você é o agente de agrupamento do backlog do `fabianofranca/mapping`. Ninguém
 AGRUPAMENTO
 G1. <nome curto> — #a, #b, #c<, + ready #d>
   Por quê: <versões e rodada que economiza, área comum, riscos>
-  Principal: #a (a que vira a etapa; as outras fecham como duplicadas dela)
+  Principal: #a (a que vira a etapa; as outras fecham como duplicadas dela; em grupo com `bug`, o `bug` de maior severidade e, no empate, o de menor número)
   Pergunta: #a, #b, #c — <pergunta autossuficiente> | Cabeçalho: <até 12 caracteres>
     - <opção recomendada> (Recomendado): <consequência>
     - <outra opção>: <consequência>
@@ -143,7 +144,7 @@ Mensagem:
 Você é o agente de detalhamento <da issue #n | do grupo #a (principal), #b, #c> do `fabianofranca/mapping` (CLAUDE.md, "Detalhar uma etapa" e "Fluxo automatizado", item 2). Ninguém está olhando esta sessão: não pergunte nada no chat e não use a ferramenta de perguntas; as perguntas vão ao coordenador. Não crie branch, commit nem PR: o detalhamento só mexe em issues ("Nenhum PR existe só para mexer em plano").
 
 1. Leia o `CLAUDE.md`, as issues da unidade com os comentários, as que elas citam e os títulos das `ready` e `in-progress` abertas, para achar sobreposição. Leia o código e os docs que o plano vai tocar: o "Toca em:" de cada fase cita arquivos que existem.
-<Só em grupo: 2. O grupo foi aprovado pelo dono: <decisão, com as palavras do dono se ele escreveu>. A #a vira a etapa. O conteúdo de cada outra entra no corpo como item numerado, com a origem, o rótulo e a severidade ou o impacto. As outras fecham como duplicadas da #a (`state_reason: duplicate`, `duplicate_of`), cada uma com um comentário que diz para onde foi. A etapa fica com o tipo e o rótulo da #a; em "Absorvidas", o corpo lista a severidade ou o impacto de cada uma. Um `bug` absorvido mantém os passos para reproduzir e a evidência. <Se o grupo traz uma `ready`: o plano dela muda; diga isso num comentário nela, com o porquê e a decisão do dono.>>
+<Só em grupo: 2. O grupo foi aprovado pelo dono: <decisão, com as palavras do dono se ele escreveu>. A #a vira a etapa. O conteúdo de cada outra entra no corpo como item numerado, com a origem, o rótulo e a severidade ou o impacto. As outras fecham como duplicadas da #a (`state_reason: duplicate`, `duplicate_of`), cada uma com um comentário que diz para onde foi. Grupo com algum `bug`: a etapa é `bug`, com a maior severidade do grupo e sem `impact:`; se um absorvido tem severidade maior que a da principal, troque o `severity:` dela e diga por quê no comentário; o impacto de cada `roadmap` absorvida fica em "Absorvidas". Grupo sem `bug`: a etapa fica com o tipo e o rótulo da #a. Em "Absorvidas", o corpo lista a severidade ou o impacto de cada uma. Um `bug` absorvido mantém os passos para reproduzir e a evidência. <Se o grupo traz uma `ready`: o plano dela muda; diga isso num comentário nela, com o porquê e a decisão do dono. Sub-issues `step` abertas: (a) de uma `ready` absorvida, a fase que continua no plano novo passa para a principal (`sub_issue_write` `add` com `replace_parent: true`) e tem o corpo atualizado, e a que sai fecha `not_planned` com um comentário que aponta a principal; (b) de uma `ready` principal cujo plano muda, a fase que continua tem o corpo atualizado, a que sai fecha `not_planned` com o comentário, e as novas são criadas e postas na ordem (`sub_issue_write` `reprioritize`). No fim, nenhuma `step` aberta fica pendurada numa issue fechada.>>
 3. Rascunhe o plano inteiro antes de criar qualquer coisa: objetivo, o que fica fora, decisões numeradas, épico (`epic/<nome>`), versões (schema, formatos e MCP: **uma** versão do MCP para a etapa toda, escrita como o tipo da subida — `MCP: minor`, `MCP: patch` ou `MCP: sem mudança` — e nunca como número, porque outras etapas detalhadas em paralelo pegariam o mesmo; o número é fixado quando o épico começa), registros (changelog e DS), a linha `Impacto:` (ou a severidade) e a tabela de modelos e esforço (linha Orquestrador, uma linha por fase e a coluna Testador). Para cada fase: a linha da tabela, o "Toca em:", os checkboxes e o aceite. A última fase traz a seção **Testador**, com os roteiros e a linha "Passada visual: <lista>" (ou "nenhuma"). Com várias issues, junte os roteiros numa rodada só.
    Antes de seguir, confira o rascunho contra o código da `main` (Grep e Read), item por item, e corrija o que não bater:
    - todo arquivo, função, teste, passo do `docs/TESTING.md` e versão citada existe e diz o que o plano afirma (os valores atuais de schema, `formatVersion`, MCP e `version` das bibliotecas, lidos no código);
@@ -161,7 +162,7 @@ P1. #<principal> — <pergunta autossuficiente, com o contexto que o dono precis
 (de 2 a 4 opções, a recomendada primeiro; até 4 perguntas por mensagem; com mais, mande em rodadas)
 
    Decisão pequena você toma, segue e registra como decisão numerada. Não crie nada no GitHub antes das respostas.
-6. Com as respostas: edite o corpo da issue principal com o plano, crie cada fase como sub-issue `step` (`issue_write` e depois `sub_issue_write` com a principal como pai), na ordem, troque `roadmap` por `ready` (o `bug`, o `severity:` e o `impact:` ficam; uma `ready` que não é `bug` leva o `impact:`) e registre num comentário as decisões do dono, com a data e o porquê.
+6. Com as respostas: edite o corpo da issue principal com o plano, crie cada fase como sub-issue `step` (`issue_write` e depois `sub_issue_write` com a principal como pai), na ordem, troque `roadmap` por `ready` (o `bug` e o `severity:` ficam; o `impact:` fica numa `roadmap` sem `bug` no grupo, e a etapa que é `bug` não o leva; uma `ready` que não é `bug` leva o `impact:`) e registre num comentário as decisões do dono, com a data e o porquê.
 7. Todo texto que você escreve no GitHub termina com o rodapé de atribuição. Nunca escreva o número de um PR ou de uma issue que ainda não existe (o do PR do épico, por exemplo): diga "o PR do épico", e quem o abrir põe o número.
 8. Ao terminar, avise o coordenador por `send_message` com uma destas mensagens, e termine:
 
@@ -189,7 +190,7 @@ Para cada mensagem que chega:
 
 - **`INICIADA #n — <id>`**: o dono abriu a sessão do prompt. Cancele a conferência do prompt e agende a de reserva da sessão, como a de uma filha (abaixo). As perguntas dessa sessão vão direto ao dono, e não passam por você.
 - **`PERGUNTAS #n`**: notificação, depois `AskUserQuestion` com as perguntas como vieram. Responda à filha por `send_message` com `RESPOSTAS #n` e, para cada `Pk`, o rótulo escolhido e as notas do dono, ou o texto dele em "Outro". Se chegarem perguntas de duas filhas juntas, faça uma chamada por issue.
-- **`PRONTA #n`**: confira com `issue_read` que a issue tem `ready` e não tem `roadmap`, que as sub-issues `step` existem (`issue_read` das sub-issues) e, em grupo, que as absorvidas fecharam como duplicadas, e que a mensagem traz a linha `Conferência:`. Se faltar algo, mande à filha o que falta e espere de novo. Com tudo certo, comece a próxima unidade.
+- **`PRONTA #n`**: confira com `issue_read` que a issue tem `ready` e não tem `roadmap`, que as sub-issues `step` existem (`issue_read` das sub-issues) e, em grupo, que as absorvidas fecharam como duplicadas e não têm `step` aberta (nem as de uma `ready` absorvida), e que a mensagem traz a linha `Conferência:`. Se faltar algo, mande à filha o que falta e espere de novo. Com tudo certo, comece a próxima unidade.
 - **`BLOQUEADA #n`** ou **`FALHOU #n`**: anote e comece a próxima. Uma falha vai para o resumo final; não tente de novo sem perguntar ao dono.
 
 Para cada filha criada (e cada sessão de prompt que mandou `INICIADA`), agende uma conferência de reserva (`send_later`, 45 min). Se a filha não avisou até lá, leia `get_session` (`status_bucket`) e `list_events`:
