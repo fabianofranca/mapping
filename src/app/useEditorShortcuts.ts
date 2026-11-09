@@ -326,6 +326,8 @@ export function useEditorShortcuts(
           return moveSelection(false);
         case 'zoom':
           return canvas.current?.zoomBy(shortcut.factor);
+        case 'fit-all':
+          return canvas.current?.fitAll();
         case 'fit-selection':
           return canvas.current?.fitSelection();
         case 'zoom-reset':

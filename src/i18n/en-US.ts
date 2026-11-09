@@ -581,6 +581,7 @@ export const enUS: Dictionary = {
   'shortcuts.zoomIn': 'Zoom in',
   'shortcuts.zoomOut': 'Zoom out',
   'shortcuts.zoomReset': 'Zoom to 100%',
+  'shortcuts.fitAll': 'Fit all',
   'shortcuts.fitSelection': 'Fit the selection',
   'shortcuts.export': 'Export the project',
   'shortcuts.layers': 'Open layers',
