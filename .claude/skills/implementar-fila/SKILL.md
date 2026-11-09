@@ -94,6 +94,7 @@ Siga o `CLAUDE.md` ("Fluxo automatizado", item 3) e as mensagens do `docs/FLOW.m
    A mensagem é a "Para a sessão da fase" do `docs/FLOW.md`, com estas linhas antes de "Coordenador":
    - sem `modelo=tabela`: "O dono decidiu rodar esta fase em Sonnet, mesmo que a tabela defina outro modelo: não recuse nem pare por modelo.";
    - "Não edite a seção **Testador** da sub-issue: ela é do coordenador.";
+   - quando a coluna Esforço da linha da fase na tabela é `high`, `xhigh` ou `max`, o item condicional da revisão `/code-review` de "Para a sessão da fase" do `docs/FLOW.md`, com o nível da tabela e `<base>` = `git merge-base origin/epic/<nome> HEAD`. Vale também sem `modelo=tabela`, porque o esforço sai da tabela de qualquer forma. A fase de correção não tem linha na tabela e segue sem o item;
    - só na última fase, e só se o épico muda o MCP: "ponha o rótulo `mcp-rc` no PR". Sem mudança no MCP não há rótulo; com ele, sairia uma rc espúria.
 
    Agende a conferência de reserva (`send_later`, 30 a 60 min). ▸ fase aberta.
