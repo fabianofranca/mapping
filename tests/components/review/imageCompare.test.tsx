@@ -37,6 +37,28 @@ describe('ImageCompare', () => {
     ).toBe('Imagem indisponível');
   });
 
+  it('aria-valuetext por modo: Deslizar diz % do antes, Sobrepor % do depois', () => {
+    render(
+      <ImageCompare
+        before={undefined}
+        after={undefined}
+        beforeName="a.png"
+        afterName="b.png"
+      />,
+    );
+    const slide = screen.getByRole('slider', { name: 'Divisória entre antes e depois' });
+    const layer = () => document.querySelector<HTMLElement>('.image-compare-before')!;
+    fireEvent.keyDown(slide, { key: 'Home' });
+    expect(slide.getAttribute('aria-valuetext')).toBe('0% do antes');
+    expect(layer().style.clipPath).toBe('inset(0 100% 0 0)'); // só o depois
+    fireEvent.keyDown(slide, { key: 'End' });
+    expect(slide.getAttribute('aria-valuetext')).toBe('100% do antes');
+    expect(layer().style.clipPath).toBe('inset(0 0% 0 0)'); // só o antes
+    fireEvent.click(screen.getByRole('button', { name: 'Sobrepor' }));
+    const blend = screen.getByRole('slider', { name: 'Mistura entre antes e depois' });
+    expect(blend.getAttribute('aria-valuetext')).toBe('100% do depois');
+  });
+
   it('lado a lado e sobrepor', () => {
     render(
       <ImageCompare

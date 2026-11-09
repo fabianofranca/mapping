@@ -5,9 +5,11 @@ import { Segmented } from '../controls';
 import { Icon } from '../icons';
 
 // Comparação antes/depois de uma imagem trocada (HANDOFF-PROPOSALS 2.1, ImageCompare):
-// lado a lado, deslizar (padrão) e sobrepor. A alça é um `role="slider"` (← → movem,
-// Home mostra só o antes, End só o depois). Os bitmaps são os de exibição, desenhados em
-// `<canvas>` (sem URL nem requisição: vale em `file://` e com a CSP).
+// lado a lado, deslizar (padrão) e sobrepor. A alça é um `role="slider"` (← → movem; no
+// Deslizar a alça mede o recorte do antes, então Home mostra só o depois e End só o antes;
+// no Sobrepor ela mede o depois, então Home mostra só o antes e End só o depois).
+// Os bitmaps são os de exibição, desenhados em `<canvas>` (sem URL nem requisição:
+// vale em `file://` e com a CSP).
 
 export type CompareMode = 'side' | 'slide' | 'overlay';
 
@@ -169,7 +171,12 @@ export function ImageCompare({
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={value}
-            aria-valuetext={t('review.compare.valueText', { value })}
+            aria-valuetext={t(
+              mode === 'slide'
+                ? 'review.compare.valueTextBefore'
+                : 'review.compare.valueText',
+              { value },
+            )}
             onKeyDown={onKeyDown}
           >
             <Icon name="compare" />

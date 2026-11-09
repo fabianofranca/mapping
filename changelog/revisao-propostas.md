@@ -12,3 +12,4 @@
 - Revisão de propostas, árvore dos níveis: Enter, Espaço e as setas nos botões ✓/✕ de uma linha agora decidem (ou nada fazem) sem mover a seleção nem o foco; as teclas da árvore só valem com o foco nela.
 - Revisão de propostas: o leitor de tela anuncia a linha selecionada da árvore (`aria-activedescendant`, com posição e total do nível, também na lista virtualizada).
 - Revisão de propostas: "Aceitar as N que faltam" e "Rejeitar as N que causam" decidem tudo numa gravação só, e o Desfazer do aviso devolve todas ao estado anterior; um erro é relatado uma vez.
+- Revisão de propostas, comparação de imagem no modo Deslizar: a alça anuncia "{N}% do antes" (era "do depois", que contradizia o recorte); `Home` mostra só o depois e `End` só o antes. O modo Sobrepor continua "do depois".
