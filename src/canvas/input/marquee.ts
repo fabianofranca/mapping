@@ -109,9 +109,8 @@ export function marqueeItems(
     );
   });
   const moving = movingItems(project, candidates);
+  const movingKeys = new Set(moving.map((m) => `${m.kind}:${m.id}`));
   return candidates.filter(
-    (item) =>
-      item.kind === 'arrow' ||
-      moving.some((m) => m.kind === item.kind && m.id === item.id),
+    (item) => item.kind === 'arrow' || movingKeys.has(`${item.kind}:${item.id}`),
   );
 }

@@ -9,6 +9,14 @@ export function isEditable(target: EventTarget | null): boolean {
   );
 }
 
+/** Link e botão (inclusive `role=button`) usam o Espaço para ativar: o `keydown` não é cancelado neles. */
+function isInteractive(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    target.closest('a[href], button, [role="button"]') !== null
+  );
+}
+
 export interface SpaceKey {
   /** Espaço pressionado agora. */
   readonly down: () => boolean;
@@ -22,9 +30,17 @@ export interface SpaceKey {
 export function watchSpaceKey(onChange: () => void, target: Window = window): SpaceKey {
   let down = false;
   const onKey = (e: KeyboardEvent) => {
-    if (e.code !== 'Space' || isEditable(e.target)) return;
-    down = e.type === 'keydown';
-    e.preventDefault();
+    if (e.code !== 'Space') return;
+    if (e.type === 'keyup') {
+      // Solta em qualquer alvo (o foco pode ter ido para um campo depois do keydown).
+      const wasDown = down;
+      down = false;
+      if (wasDown) onChange();
+      return;
+    }
+    if (isEditable(e.target)) return;
+    down = true;
+    if (!isInteractive(e.target)) e.preventDefault();
     onChange();
   };
   const onBlur = () => (down = false);

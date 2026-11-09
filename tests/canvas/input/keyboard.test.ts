@@ -42,6 +42,51 @@ describe('watchSpaceKey', () => {
   });
 });
 
+describe('watchSpaceKey: foco em campo (CR canvas/store, item 18)', () => {
+  it('soltar o Espaço num campo zera o estado', () => {
+    const space = watchSpaceKey(() => undefined);
+    window.dispatchEvent(key('keydown'));
+    expect(space.down()).toBe(true);
+    const input = document.createElement('input');
+    document.body.append(input);
+    input.dispatchEvent(key('keyup'));
+    expect(space.down()).toBe(false);
+    input.remove();
+    space.dispose();
+  });
+
+  it('o keydown não é cancelado num link, botão ou role=button, nem em campo', () => {
+    const space = watchSpaceKey(() => undefined);
+    for (const make of [
+      () => document.createElement('input'),
+      () => document.createElement('button'),
+      () => {
+        const a = document.createElement('a');
+        a.href = '#x';
+        return a;
+      },
+      () => {
+        const d = document.createElement('div');
+        d.setAttribute('role', 'button');
+        return d;
+      },
+    ]) {
+      const el = make();
+      document.body.append(el);
+      const e = key('keydown');
+      el.dispatchEvent(e);
+      expect(e.defaultPrevented).toBe(false);
+      el.remove();
+      el.dispatchEvent(key('keyup'));
+    }
+    const plain = key('keydown');
+    document.body.dispatchEvent(plain);
+    expect(plain.defaultPrevented).toBe(true);
+    window.dispatchEvent(key('keyup'));
+    space.dispose();
+  });
+});
+
 describe('isEditable', () => {
   it('campos de texto, botões e conteúdo editável', () => {
     expect(isEditable(document.createElement('textarea'))).toBe(true);
