@@ -836,13 +836,13 @@ describe('TR3 — preparos que não sobrescrevem e mensagens alinhadas', () => {
     expect(cloud).toMatch(/mensagem[^\n]*vale[^\n]*diverg/i);
   });
 
-  it('toda mensagem de dirigida e de bloco traz a lacuna da tag da release, e o prompt diz o que fazer com "sem R21" (decisão 14)', () => {
+  it('toda mensagem de dirigida, de grupo e de bloco traz a lacuna da tag da release, e o prompt diz o que fazer com "sem R21" (decisão 14)', () => {
     const tester = flow.slice(
       flow.indexOf('## Para o testador'),
       flow.indexOf('### Rodada avulsa'),
     );
     const messages = tester.match(/```text\n[\s\S]*?```/g) ?? [];
-    expect(messages.length).toBe(3);
+    expect(messages.length).toBe(4);
     for (const m of messages) {
       expect(m).toContain('Tag da release: <mcp-v…-rc.n, ou "sem R21">');
     }
@@ -1095,5 +1095,59 @@ describe('GT2 — guia acertado com a app (etapa #482)', () => {
         new RegExp(`Ctrl\\+Shift\\+${n}\\b|\`${n}\`(?![\\d])`),
       );
     }
+  });
+});
+
+// Etapa #1148 (TR4, decisões 15 a 20): rodada dirigida em grupos e reteste junto.
+describe('TR4 — rodada dirigida em grupos e reteste junto', () => {
+  const cloud = read('docs/TESTING-NUVEM.md');
+  const flow = read('docs/FLOW.md');
+  const claude = read('CLAUDE.md');
+  const skill = read('.claude/skills/implementar-fila/SKILL.md');
+
+  it('o prompt tem o limite (40 passos sem o R0, até 5 sessões) e o modo "grupo k de n"', () => {
+    const section = cloud.slice(cloud.indexOf('## Rodada dirigida em grupos'));
+    expect(section).toMatch(/passa de \*\*40 passos\*\*/);
+    expect(section).toMatch(/no máximo \*\*5 sessões/);
+    expect(section).toContain('round-guide.mjs --grupos');
+    expect(cloud).toContain('execute no modo dirigido, grupo k de n');
+    expect(cloud).toContain('Modo: dirigido, grupo k de n (<roteiros>)');
+    expect(cloud).toContain('Rodada dirigida — grupo k de n');
+    expect(cloud).toMatch(/aviso ao coordenador[^\n]*grupo/i);
+    expect(section).toMatch(/grupo 1[^\n]*R0 inteiro/);
+    expect(section).toMatch(/R0\.1/);
+  });
+
+  it('o FLOW.md tem a mensagem por grupo, o título, a reserva de 60 min e o resumo com "Grupo"', () => {
+    expect(flow).toMatch(
+      /execute no modo dirigido, grupo <k> de <n>:[^\n]*Branch `[^`]+`, commit `[^`]+`\. Relato na sub-issue #[^\n]+Tag da release:[^\n]+Coordenador: `/,
+    );
+    expect(flow).toContain('Testador — <alvo>, grupo <k> de <n>');
+    const section = flow.slice(
+      flow.indexOf('## Rodada dirigida em grupos'),
+      flow.indexOf('## Reteste junto'),
+    );
+    expect(section).toMatch(/60 min/);
+    expect(section).toMatch(/n avisos/);
+    expect(section).toMatch(/"Grupo" no lugar de "Bloco"/);
+  });
+
+  it('o reteste é uma sessão só, com os achados de todos os grupos ou blocos, e a correção mesclada entra', () => {
+    const section = flow.slice(flow.indexOf('## Reteste junto'));
+    expect(section).toMatch(/uma sessão só/);
+    expect(section).toMatch(/todos\*\* os grupos ou blocos/);
+    expect(section).toMatch(/enquanto o reteste ainda não começou/);
+  });
+
+  it('o CLAUDE.md e a skill implementar-fila citam a rodada em grupos e o reteste junto', () => {
+    expect(claude).toContain('round-guide.mjs --grupos');
+    expect(claude).toMatch(
+      /numa sessão só\*\* com os achados de todos os grupos ou blocos/,
+    );
+    expect(claude).toMatch(/grupo k de n/);
+    expect(skill).toContain('round-guide.mjs --grupos');
+    expect(skill).toMatch(
+      /numa sessão só\*\* com os achados de todos os grupos ou blocos/,
+    );
   });
 });
