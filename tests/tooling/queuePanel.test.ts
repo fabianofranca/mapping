@@ -88,3 +88,32 @@ describe('painel.py (FC1)', () => {
     expect(() => run('row', dir, '#10', 'childAt=ontem')).toThrow();
   });
 });
+
+// Etapa #1298 (FT1): a fila troca de coordenador assim que o skill muda na main.
+describe('implementar-fila: troca de coordenador por skill novo (FT1)', () => {
+  const skill = readFileSync('.claude/skills/implementar-fila/SKILL.md', 'utf8');
+  const troca = skill.slice(skill.indexOf('## Troca de sessão'));
+  const CHECK = 'git diff --quiet HEAD origin/main -- .claude/skills/implementar-fila';
+
+  it('"Troca de sessão" manda conferir o skill da main e trocar quando ele mudou', () => {
+    expect(troca).toContain(CHECK);
+    expect(troca).toMatch(/mesmo abaixo de 60%/);
+    expect(troca).toContain(
+      'git checkout origin/main -- .claude/skills/implementar-fila',
+    );
+    expect(troca).toContain('skill atualizado na main');
+  });
+
+  it('a conferência de reserva e o passo "Entre etapas" fazem a mesma conferência', () => {
+    const entre = skill.slice(
+      skill.indexOf('7. **Entre etapas:**'),
+      skill.indexOf('**Conferências de reserva:**'),
+    );
+    expect(entre).toMatch(/skill mudou na `main`/);
+    const conferencia = skill.slice(
+      skill.indexOf('**Conferências de reserva:**'),
+      skill.indexOf('**CI vermelho'),
+    );
+    expect(conferencia).toMatch(/skill mudou na `main`/);
+  });
+});
