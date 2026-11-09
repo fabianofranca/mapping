@@ -81,6 +81,7 @@ As duas tools de imagem devolvem a **imagem** (conteúdo `image`) e, antes dela,
   - `drawingMode`: um dos `modes` dos `tokens` das especializações aplicadas (`light`, `dark`…); o padrão é o modo efetivo do container. Modo que nenhuma especialização declara: `invalid-arguments`.
   - `background`: `image` (padrão) pinta por baixo o arquivo do container (ou a cor de fundo, num container sem arquivo); `none` devolve fundo transparente com só os componentes (png ou webp).
   - `padding` (só no `render_marking`): margem em volta da marcação; um traço `outside` ou uma sombra passam do retângulo dela, então dê uns pixels de `padding` para vê-los.
+  - Se o arquivo da imagem tiver dimensões diferentes das do `mapping.json`, o fundo é ajustado na proporção e a resposta traz um `warning` (o mesmo do `get_marking_image`); o desenho dos componentes segue as coordenadas do projeto.
 
 **`url` e `markdown`** (nas duas tools, a menos que o servidor rode com `--no-http`) acompanham o conteúdo `image` no texto JSON: `url` é um endereço `http://127.0.0.1:<porta>/<token>/<chave>.<ext>` e `markdown` é `![nome](url)`, pronto para colar. A imagem fica só em memória no servidor e a `url` vale enquanto o processo do servidor MCP roda, só neste computador (ao reiniciar o cliente, as imagens de um chat antigo deixam de carregar). Use quando o seu cliente não mostra a imagem no chat (como o Cursor): cole o `markdown` na resposta para o usuário ver o recorte. Os mesmos bytes dão a mesma URL.
 

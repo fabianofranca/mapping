@@ -12,6 +12,7 @@ import {
 } from '../../src/model/components/scene';
 import { createRaster, type Raster } from '../../mcp/image/raster';
 import {
+  bounds,
   flattenPath,
   paintScene,
   parseColor,
@@ -78,6 +79,15 @@ describe('cor', () => {
 });
 
 describe('caminho SVG', () => {
+  it('flags de arco sem separador são lidas como no SVG (achado 5 da CR)', () => {
+    const spaced = flattenPath('M0 0 a5 5 0 1 1 10 0');
+    expect(spaced[0]?.points.at(-1)).toEqual({ x: 10, y: 0 });
+    expect(flattenPath('M0 0 a5 5 0 1110 0')).toEqual(spaced);
+    expect(flattenPath('M0 0 A5,5,0,0110,0 L10 10')).toEqual(
+      flattenPath('M0 0 A5 5 0 0 1 10 0 L10 10'),
+    );
+  });
+
   it('número solto depois de Z termina o caminho em vez de travar', () => {
     const closed = flattenPath('M0 0 L10 0 L10 10 Z');
     expect(flattenPath('M0 0 L10 0 L10 10 Z 5')).toEqual(closed);
@@ -721,5 +731,60 @@ describe('traço com cap, join e sides (formato 4)', () => {
     const clipped = canvas(40, 40);
     paint(clipped, make());
     expect(pixel(clipped, 5, 16)).toEqual(WHITE);
+  });
+});
+
+describe('achados 4, 6 e 7 da CR do MCP', () => {
+  const INK = '#FF00FF';
+  const isInk = (p: number[]): boolean => p[0] === 255 && p[1] === 0 && p[2] === 255;
+
+  function polyline(
+    points: { x: number; y: number }[],
+    stroke: Partial<NonNullable<SceneNode['stroke']>>,
+    closed: boolean,
+  ): SceneNode {
+    return {
+      ...baseNode({ id: 'l', name: 'l', width: 40, height: 40 }),
+      type: 'line',
+      points,
+      closed,
+      stroke: { paints: [solid(INK)], width: 4, align: 'center', ...stroke },
+    };
+  }
+
+  it('caminho fechado com o último ponto igual ao primeiro tem o canto inicial como o sem repetição', () => {
+    const a = { x: 10, y: 10 };
+    const b = { x: 30, y: 10 };
+    const c = { x: 10, y: 30 };
+    const plain = canvas(40, 40);
+    paint(plain, polyline([a, b, c], { join: 'miter' }, true));
+    const repeated = canvas(40, 40);
+    paint(repeated, polyline([a, b, c, a], { join: 'miter' }, true));
+    expect(isInk(pixel(plain, 8, 8))).toBe(true);
+    expect(isInk(pixel(repeated, 8, 8))).toBe(true);
+    expect(repeated.data).toEqual(plain.data);
+  });
+
+  it('stroke.scale === false mantém a largura em pixels de saída, em qualquer escala', () => {
+    const line = [
+      { x: 2, y: 10 },
+      { x: 30, y: 10 },
+    ];
+    const countInk = (r: Raster): number => {
+      let n = 0;
+      for (let y = 0; y < r.height; y++) if (isInk(pixel(r, 20, y))) n++;
+      return n;
+    };
+    const scaled = canvas(160, 80);
+    paint(scaled, polyline(line, { width: 2 }, false), 4);
+    const fixed = canvas(160, 80);
+    paint(fixed, polyline(line, { width: 2, scale: false }, false), 4);
+    expect(countInk(scaled)).toBe(8);
+    expect(countInk(fixed)).toBe(2);
+  });
+
+  it('limites com mais de 200 mil pontos não estouram a pilha', () => {
+    const points = Array.from({ length: 300_000 }, (_, i) => ({ x: i % 1000, y: i % 7 }));
+    expect(bounds(points)).toEqual({ x: 0, y: 0, width: 999, height: 6 });
   });
 });

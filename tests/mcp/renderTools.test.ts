@@ -12,6 +12,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   addContainer,
   applySpecialization,
+  createMarking,
   createProject,
   parseSpecText,
   serialize,
@@ -19,19 +20,25 @@ import {
 import { runBatch, type BatchResult } from '../../mcp/batch';
 import { decodeImage, encodeImage } from '../../mcp/image/codecs';
 import { createRaster, type Raster } from '../../mcp/image/raster';
-import { markingImage } from '../../mcp/imageTools';
+import { imageFile, markingImage } from '../../mcp/imageTools';
 import { Refs } from '../../mcp/items';
 import type { Operation } from '../../mcp/operations';
 import { Roots } from '../../mcp/paths';
 import { findProject, loadProject, type LoadedProject } from '../../mcp/projects';
 import { renderContainer, renderMarking } from '../../mcp/renderImage';
 import { NOW } from '../model/fixtures';
+import { encodeJpegWithExif } from './images';
 
 // CF9 (decisão 32): `render_marking` e `render_container`, o `get_marking_image` de um container sem
 // arquivo com o mesmo desenho e as `fonts` da biblioteca no lugar da embutida.
 
 const LAYER = 'cccccccc-0000-4000-8000-000000000001';
 const PHOTO = 'bbbbbbbb-0000-4000-8000-000000000001';
+// Arquivo com a metade das dimensões registradas (100×50 contra 200×100).
+const SMALL = 'bbbbbbbb-0000-4000-8000-000000000002';
+const SMALL_MARKING = 'aaaaaaaa-0000-4000-8000-000000000002';
+// JPEG de 40×20 com orientação EXIF 6 (vista como 20×40), registrado como 20×40.
+const ROTATED = 'bbbbbbbb-0000-4000-8000-000000000003';
 
 const SPEC = {
   format: 'mapping-spec',
@@ -140,6 +147,15 @@ beforeAll(async () => {
     photo.data.set([16, 160, 48, 255], i);
   }
   writeFileSync(join(dir, 'images', 'foto.png'), await encodeImage(photo, 'png'));
+  // 100×50: faixa esquerda de 30 px vermelha, o resto verde.
+  const small = createRaster(100, 50);
+  for (let y = 0; y < 50; y++)
+    for (let x = 0; x < 100; x++)
+      small.data.set(x < 30 ? [200, 32, 32, 255] : [16, 160, 48, 255], (y * 100 + x) * 4);
+  writeFileSync(join(dir, 'images', 'menor.png'), await encodeImage(small, 'png'));
+  const rotated = createRaster(40, 20);
+  rotated.data.fill(200);
+  writeFileSync(join(dir, 'images', 'girada.jpg'), await encodeJpegWithExif(rotated, 6));
   const parsed = parseSpecText(readFileSync(join(lib, 'lib.spec.json'), 'utf8'));
   if (!parsed.ok) throw new Error(`spec inválida: ${JSON.stringify(parsed)}`);
   let p = createProject({
@@ -148,6 +164,14 @@ beforeAll(async () => {
     firstLayer: { id: LAYER, name: 'Camada 1', color: '#D32F2F' },
   });
   p = addContainer(p, { id: PHOTO, file: 'images/foto.png', width: 200, height: 100 });
+  p = addContainer(p, { id: SMALL, file: 'images/menor.png', width: 200, height: 100 });
+  p = addContainer(p, { id: ROTATED, file: 'images/girada.jpg', width: 20, height: 40 });
+  p = createMarking(p, {
+    id: SMALL_MARKING,
+    containerId: SMALL,
+    rect: { x: 51, y: 0, width: 20, height: 20 },
+    name: 'Faixa',
+  });
   p = applySpecialization(p, parsed.spec, { packageSpecName: 'lib.spec.json' });
   writeFileSync(join(dir, 'mapping.json'), serialize(p));
   roots = new Roots([base]);
@@ -361,5 +385,45 @@ describe('render_container', () => {
       }
     }
     expect(different).toBe(0);
+  });
+});
+
+describe('arquivo com dimensões diferentes do projeto e EXIF (achados 25 e 26 da CR do MCP)', () => {
+  it('render_container e render_marking avisam, como get_marking_image', async () => {
+    const { refs, project } = await setup([SCREEN]);
+    const small = project.containers.find((c) => c.id === SMALL)!;
+    const marking = project.markings.find((m) => m.id === SMALL_MARKING)!;
+    const expected = expect.stringContaining('100×50, mas o projeto registra 200×100');
+    const whole = await renderContainer(roots, refs, small, {});
+    expect(whole.json.warning).toEqual(expected);
+    const part = await renderMarking(roots, refs, marking, {});
+    expect(part.json.warning).toEqual(expected);
+    expect((await markingImage(roots, refs, marking, {})).json.warning).toEqual(expected);
+    const matching = project.containers.find((c) => c.id === PHOTO)!;
+    expect((await renderContainer(roots, refs, matching, {})).json).not.toHaveProperty(
+      'warning',
+    );
+  });
+
+  it('região que cai no meio de um pixel do arquivo não desalinha o fundo', async () => {
+    const { refs, project } = await setup([SCREEN]);
+    const marking = project.markings.find((m) => m.id === SMALL_MARKING)!;
+    const out = await renderMarking(roots, refs, marking, {});
+    const { raster } = await decodeImage(out.image.bytes);
+    // A faixa vermelha termina em x = 60 do container: coluna 9 da saída (que começa em 51).
+    const at = (x: number) =>
+      [...raster.data.subarray((5 * raster.width + x) * 4)].slice(0, 3);
+    expect(at(8)).toEqual([200, 32, 32]);
+    expect(at(9)).toEqual([16, 160, 48]);
+  });
+
+  it('get_container_file de JPEG com orientação não devolve bytes que contradigam o JSON', async () => {
+    const { refs, project } = await setup([SCREEN]);
+    const rotated = project.containers.find((c) => c.id === ROTATED)!;
+    const out = await imageFile(roots, refs, rotated, {});
+    expect(out.json).toMatchObject({ width: 20, height: 40, recoded: true });
+    const decoded = await decodeImage(out.image.bytes);
+    expect(decoded.orientation).toBe(1);
+    expect([decoded.raster.width, decoded.raster.height]).toEqual([20, 40]);
   });
 });
