@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import type { DirectoryHandleLike, ExistingImage } from '../storage/folder';
 import { locale } from '../store/settings';
+import { projectNotice } from '../store/banners';
 import { Button, TextField } from '../ui/controls';
 import { Dialog } from '../ui/Dialog';
 import { DialogSlotContext, FOCUSABLE, useDialogSlot } from '../ui/focus';
@@ -81,7 +82,6 @@ export function Home() {
   const reopen = useReopenTrace(dialog?.kind === 'folder-unavailable');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [query, setQuery] = useState('');
   const zipInput = useRef<HTMLInputElement>(null);
@@ -122,7 +122,7 @@ export function Home() {
   const run = async <T,>(action: () => Promise<AppResult<T>>): Promise<T | null> => {
     setBusy(true);
     setMessage(null);
-    setInfo(null);
+    projectNotice.value = null;
     try {
       const result = await action();
       if (result.ok) return result.value;
@@ -313,11 +313,6 @@ export function Home() {
           {message}
         </p>
       )}
-      {info && (
-        <p class="notice" role="status">
-          {info}
-        </p>
-      )}
     </>
   );
   const zipField = (
@@ -490,7 +485,7 @@ export function Home() {
                   closeDialog();
                   void run(() => createFolderProject(handle, name, images)).then(
                     (result) => {
-                      if (result?.existing) setInfo(t('home.folderHasProject'));
+                      if (result?.existing) projectNotice.value = 'home.folderHasProject';
                       else if (result && result.skipped.length > 0) {
                         setMessage(
                           t('home.folderSkipped', { count: result.skipped.length }),
