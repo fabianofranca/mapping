@@ -36,18 +36,54 @@ export function placeCreatedMarkings(
   markings: readonly Marking[],
   anchors: ReadonlyMap<string, string>,
 ): Marking[] {
-  const list = [...markings];
-  for (const [id, anchor] of anchors) {
-    const at = list.findIndex((m) => m.id === id);
-    if (at < 0 || !list.some((m) => m.id === anchor)) continue;
-    const [marking] = list.splice(at, 1);
-    list.splice(
-      list.findIndex((m) => m.id === anchor),
-      0,
-      marking as Marking,
-    );
+  // Lista encadeada por id: cada movimento é O(1), em vez de `findIndex`/`splice` por âncora.
+  const list = new LinkedMarkings(markings);
+  // A âncora igual ao próprio id não move nada.
+  for (const [id, anchor] of anchors) if (id !== anchor) list.moveBefore(id, anchor);
+  return list.toArray();
+}
+
+interface Node {
+  readonly marking: Marking;
+  prev: Node | null;
+  next: Node | null;
+}
+
+class LinkedMarkings {
+  private head: Node | null = null;
+  private readonly nodes = new Map<string, Node>();
+
+  constructor(markings: readonly Marking[]) {
+    let tail: Node | null = null;
+    for (const marking of markings) {
+      const node: Node = { marking, prev: tail, next: null };
+      if (tail) tail.next = node;
+      else this.head = node;
+      tail = node;
+      if (!this.nodes.has(marking.id)) this.nodes.set(marking.id, node);
+    }
   }
-  return list;
+
+  /** Move `id` para antes de `anchor`; sem um dos dois na lista, não faz nada. */
+  moveBefore(id: string, anchor: string): void {
+    const node = this.nodes.get(id);
+    const target = this.nodes.get(anchor);
+    if (!node || !target) return;
+    if (node.prev) node.prev.next = node.next;
+    else this.head = node.next;
+    if (node.next) node.next.prev = node.prev;
+    node.prev = target.prev;
+    node.next = target;
+    if (target.prev) target.prev.next = node;
+    else this.head = node;
+    target.prev = node;
+  }
+
+  toArray(): Marking[] {
+    const out: Marking[] = [];
+    for (let n = this.head; n; n = n.next) out.push(n.marking);
+    return out;
+  }
 }
 
 /** As âncoras que as mudanças de criação de marcação trazem (`insertBefore`), na ordem delas. */

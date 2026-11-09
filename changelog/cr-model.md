@@ -22,3 +22,5 @@
 - Um link de arquivo de código cujo `urlTemplate` tem `{line}` na query e no fragmento deixa de sobrar `{line}` literal: os dois saem.
 - Imagens remotas de hosts `.home.arpa`, `.lan` e `.intranet` passam a ser tratadas como rede local (recusadas com o interruptor desligado), como `.local` e `.internal`.
 - Um `mapping.json` mais novo que a v10 ou a v12, editado à mão com `urlTemplate` em `platformRepos` ou `inherit` numa anotação, deixa de ganhar o aviso de dados descartados na migração.
+- Uma anotação removida numa proposta anterior à v14 (sem `parentRole` no valor de antes) deixa de aparecer como conflito falso na revisão: `parentRole` ausente vale `null`, dos dois lados.
+- Uma anotação tipada com um campo chamado `toString` (ou outro nome herdado de `Object.prototype`) ausente deixa de derrubar `computeChanges` e o `propose_changes` do MCP.
