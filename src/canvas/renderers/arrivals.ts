@@ -107,7 +107,7 @@ export class ArrivalRenderer {
     const seen = new Set<string>();
     for (const badge of arrivals?.badges ?? []) {
       seen.add(badge.root);
-      this.drawBadge(badge, zoom, tokens, view, avoid);
+      this.drawBadge(badge, zoom, tokens, view, avoid, arrivals?.roots);
     }
     for (const [root, node] of this.badges) {
       if (seen.has(root)) continue;
@@ -154,6 +154,7 @@ export class ArrivalRenderer {
     tokens: CanvasTokens,
     view: Rect,
     avoid: Rect | undefined,
+    roots: readonly Rect[] | undefined,
   ): void {
     const node = this.badgeFor(badge.root);
     const text = t('perspective.canvas.cameFrom', { name: badge.name });
@@ -163,7 +164,7 @@ export class ArrivalRenderer {
       arrivalBadgeWidth(text),
       node.label.getTextWidth() + 2 * BADGE_PAD,
     );
-    const at = arrivalBadgeSpot(badge.rect, zoom, width, view, avoid);
+    const at = arrivalBadgeSpot(badge.rect, zoom, width, view, avoid, roots);
     node.group.setAttrs({ x: at.x, y: at.y, scaleX: 1 / zoom, scaleY: 1 / zoom });
     node.box.setAttrs({
       width,

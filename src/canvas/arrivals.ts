@@ -19,6 +19,10 @@ const BADGE_CHAR = 7;
 const BADGE_PAD = 8;
 /** Vão entre o selo e o canto da raiz (px de tela). */
 const BADGE_GAP = 4;
+/** Vão do selo abaixo de uma raiz pequena: cobre as alças da seleção (px de tela). */
+const BADGE_GAP_BELOW = 10;
+/** Faixa do nome do container, logo acima de cada raiz (px de tela): o selo não cai nela. */
+const NAME_BAND = 24;
 /** Folga da faixa em volta das raízes com marca (unidades do canvas). */
 export const ARRIVAL_BAND_PAD = 24;
 /** Folga a mais (px de tela) que Enquadrar tudo deixa em volta quando há faixa: cabe o rótulo dela. */
@@ -35,6 +39,8 @@ export interface ArrivalMarks {
   readonly badges: readonly ArrivalBadge[];
   /** A faixa "Área de chegada" (canvas, com folga); `null` quando não há o que envolver. */
   readonly band: Rect | null;
+  /** A pegada de cada raiz (canvas): o selo de uma raiz pequena foge delas. */
+  readonly roots: readonly Rect[];
 }
 
 const right = (r: Rect) => r.x + r.width;
@@ -91,7 +97,12 @@ function compute(project: Project): ArrivalMarks | null {
   const orphans = new Set(
     badges.filter((b) => !arrivalHasReference(project, b.root)).map((b) => b.root),
   );
-  return { badges, band: bandOf(project, orphans) };
+  const roots: Rect[] = [];
+  for (const id of projectIndex(project).roots) {
+    const rect = rootFootprint(project, id);
+    if (rect) roots.push(rect);
+  }
+  return { badges, band: bandOf(project, orphans), roots };
 }
 
 const memo = new WeakMap<Project, ArrivalMarks | null>();
@@ -121,17 +132,52 @@ export function arrivalBadgeSpot(
   width: number,
   view?: Rect,
   avoid?: Rect,
+  roots: readonly Rect[] = [],
 ): Point {
   const gap = BADGE_GAP / zoom;
   const height = ARRIVAL_BADGE_HEIGHT / zoom;
+  const w = width / zoom;
   const small =
     rect.width * zoom < 2 * width || rect.height * zoom < 2 * ARRIVAL_BADGE_HEIGHT;
   const at = small
-    ? { x: rect.x, y: bottom(rect) + gap }
+    ? smallSpot(rect, zoom, w, height, roots)
     : { x: rect.x + gap, y: bottom(rect) - gap - height };
   if (!view) return at;
-  const inside = keepInside(at, width / zoom, height, view);
-  return avoid ? clearOf(inside, width / zoom, height, view, avoid) : inside;
+  const inside = keepInside(at, w, height, view);
+  return avoid ? clearOf(inside, w, height, view, avoid) : inside;
+}
+
+/**
+ * Lugar do selo de uma raiz pequena: abaixo do canto de baixo à esquerda; se isso cai sobre outra
+ * raiz ou sobre o nome dela (a faixa logo acima), à direita da raiz e, depois, à esquerda.
+ */
+function smallSpot(
+  rect: Rect,
+  zoom: number,
+  w: number,
+  h: number,
+  roots: readonly Rect[],
+): Point {
+  const below = { x: rect.x, y: bottom(rect) + BADGE_GAP_BELOW / zoom };
+  const gap = BADGE_GAP / zoom;
+  const candidates = [
+    below,
+    { x: right(rect) + gap, y: bottom(rect) + gap - h },
+    { x: rect.x - gap - w, y: bottom(rect) + gap - h },
+  ];
+  const nameBand = NAME_BAND / zoom;
+  const blocked = (at: Point): boolean =>
+    roots.some(
+      (r) =>
+        r !== rect &&
+        hits(at, w, h, {
+          x: r.x,
+          y: r.y - nameBand,
+          width: r.width,
+          height: r.height + nameBand,
+        }),
+    );
+  return candidates.find((c) => !blocked(c)) ?? below;
 }
 
 const hits = (at: Point, w: number, h: number, r: Rect): boolean =>

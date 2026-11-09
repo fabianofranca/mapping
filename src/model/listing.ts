@@ -157,6 +157,24 @@ export interface IncompleteImage {
 }
 
 /**
+ * A camada da anotação; se ela não existe (`missing-layer`), uma camada de mentira com o id, para a
+ * pendência aparecer na lista e o contador e a lista concordarem.
+ */
+function layerOrOrphan(
+  layers: ReadonlyMap<string, Layer>,
+  annotation: Annotation,
+): Layer {
+  return (
+    layers.get(annotation.layerId) ?? {
+      id: annotation.layerId,
+      name: annotation.layerId,
+      color: 'currentColor',
+      spec: null,
+    }
+  );
+}
+
+/**
  * Pendências agrupadas por imagem (janela "Incompletas"): imagens na ordem do projeto,
  * marcações em profundidade (o pai antes das filhas) e, em cada uma, as anotações na
  * ordem do projeto. Com `onlyLayers`, só entram anotações dessas camadas (as
@@ -179,16 +197,16 @@ export function buildIncompleteList(
       const path = [...parents, marking];
       for (const annotation of index.annotationsByMarking.get(marking.id) ?? []) {
         const found = issues.get(annotation.id);
-        const layer = index.layers.get(annotation.layerId);
-        if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
+        const layer = layerOrOrphan(index.layers, annotation);
+        if (!found || (allowed && !allowed.has(layer.id))) continue;
         items.push({ annotation, marking, path, layer, issues: found });
       }
       for (const arrow of index.arrowsByMarking.get(marking.id) ?? []) {
         if (arrow.from !== marking.id) continue;
         for (const annotation of index.annotationsByMarking.get(arrow.id) ?? []) {
           const found = issues.get(annotation.id);
-          const layer = index.layers.get(annotation.layerId);
-          if (!found || !layer || (allowed && !allowed.has(layer.id))) continue;
+          const layer = layerOrOrphan(index.layers, annotation);
+          if (!found || (allowed && !allowed.has(layer.id))) continue;
           items.push({ annotation, marking, path, layer, issues: found, arrow });
         }
       }

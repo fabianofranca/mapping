@@ -73,17 +73,17 @@ Reteste, depois da correção (R0 reduzido ao R0.1 e aos passos de que os achado
 Leia `docs/TESTING-NUVEM.md` e execute no modo dirigido: os achados <números> do relato em <link do comentário><e os passos <lista> que as correções dos defeitos pendentes afetam>. Branch `epic/<nome>`, commit `<hash da correção>`. Relato na sub-issue #<fase de correção>. Coordenador: `<id da sessão do orquestrador>`.
 ```
 
-## Rodada completa em 3 blocos
+## Rodada completa em 5 blocos
 
-Quando a seção **Testador** da sub-issue da última fase pede a rodada completa, o orquestrador (o **coordenador**) cria **três** sessões do testador de uma vez, uma por bloco da tabela de [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md) ("Rodada completa em blocos"). Cada uma usa `list_environments` ("Mapping - testes"), `create_session` com `source_url` do repositório, `source_revision` = `epic/<nome>`, o mesmo commit nas três e o título "Testador — <alvo>, bloco <k> de 3". Mensagem do bloco `<k>` (1, 2 ou 3):
+Quando a seção **Testador** da sub-issue da última fase pede a rodada completa, o orquestrador (o **coordenador**) cria **cinco** sessões do testador de uma vez, uma por bloco da tabela de [`docs/TESTING-NUVEM.md`](TESTING-NUVEM.md) ("Rodada completa em blocos"). Cada uma usa `list_environments` ("Mapping - testes"), `create_session` com `source_url` do repositório, `source_revision` = `epic/<nome>`, o mesmo commit nas cinco e o título "Testador — <alvo>, bloco <k> de 5". Mensagem do bloco `<k>` (1 a 5):
 
 ```text
-Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco <k> de 3. Passada visual: <lista da sub-issue, no bloco 2; "no bloco 2" nos blocos 1 e 3>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do coordenador>`.
+Leia `docs/TESTING-NUVEM.md` e execute o modo completo, bloco <k> de 5. Passada visual: <lista da sub-issue, no bloco 4; "no bloco 4" nos blocos 1, 2, 3 e 5>. Branch `epic/<nome>`, commit `<hash>`. Relato na sub-issue #<última fase>. Coordenador: `<id da sessão do coordenador>`.
 ```
 
-- **Conferência de reserva:** agenda um `send_later` de 60 min e só segue com os **três avisos** (um por bloco, cada um cita o bloco). Bloco que não avisou até lá: `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, chama o dono.
-- **Com os três avisos,** posta o resumo (abaixo) na mesma sub-issue. O coordenador não reescreve os relatos.
-- **Com ❌,** o fluxo de sempre: uma fase de correção com os achados dos três blocos (códigos `k.n`, com o link do comentário de cada um) e o reteste dirigido numa sessão só, pelos achados `k.n`, na mensagem de reteste acima.
+- **Conferência de reserva:** agenda um `send_later` de 60 min e só segue com os **cinco avisos** (um por bloco, cada um cita o bloco). Bloco que não avisou até lá: `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, chama o dono.
+- **Com os cinco avisos,** posta o resumo (abaixo) na mesma sub-issue. O coordenador não reescreve os relatos.
+- **Com ❌,** o fluxo de sempre: uma fase de correção com os achados dos cinco blocos (códigos `k.n`, com o link do comentário de cada um) e o reteste dirigido numa sessão só, pelos achados `k.n`, na mensagem de reteste acima.
 
 ### Rodada avulsa (do dono)
 
@@ -93,11 +93,11 @@ O dono manda num chat Sonnet no modo **Auto**:
 Rode a rodada completa do testador em blocos no branch `<branch>`, commit `<hash>`. Resumo e relatos na issue #<N>.
 ```
 
-Esse chat é o coordenador: cria os três blocos como acima (relato na issue `#<N>`, coordenador = o id dele), espera os três avisos, posta o resumo e, para cada ❌, abre uma issue `bug` com a busca de duplicadas do `CLAUDE.md` ("Bugs e evidência visual"), com a severidade e o link do relato. Não corrige nada e não abre fase de correção.
+Esse chat é o coordenador: cria os cinco blocos como acima (relato na issue `#<N>`, coordenador = o id dele), espera os cinco avisos, posta o resumo e, para cada ❌, abre uma issue `bug` com a busca de duplicadas do `CLAUDE.md` ("Bugs e evidência visual"), com a severidade e o link do relato. Não corrige nada e não abre fase de correção.
 
 ## Resumo da rodada em blocos
 
-Um comentário curto na mesma sub-issue (ou issue), depois dos três avisos. O coordenador não reescreve os relatos: só soma e aponta para eles.
+Um comentário curto na mesma sub-issue (ou issue), depois dos cinco avisos. O coordenador não reescreve os relatos: só soma e aponta para eles.
 
 ```markdown
 ## Rodada completa em blocos — resumo
@@ -109,12 +109,14 @@ Branch `<branch>`, commit `<hash>`.
 | 1     | N   | N   | N             | <min>             |
 | 2     | N   | N   | N             | <min>             |
 | 3     | N   | N   | N             | <min>             |
+| 4     | N   | N   | N             | <min>             |
+| 5     | N   | N   | N             | <min>             |
 | Total | N   | N   | N             | <soma dos blocos> |
 
 - **Achados por severidade:** bloqueia N, alta N, média N, baixa N.
   - <k.n> — <título> — <severidade> — <link do comentário>
 - **Tempo:** soma dos blocos <min>; tempo de parede <min> (da criação do primeiro bloco ao último aviso). Os tempos de cada bloco são os do relato ("Tempo por roteiro"); sem o dado, "tempo não medido".
-- **Relatos:** bloco 1 <link>, bloco 2 <link>, bloco 3 <link>.
+- **Relatos:** bloco 1 <link>, bloco 2 <link>, bloco 3 <link>, bloco 4 <link>, bloco 5 <link>.
 
 <rodapé de atribuição>
 ```

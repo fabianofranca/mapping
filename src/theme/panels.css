@@ -596,6 +596,24 @@ button.tree-toggle:hover {
   padding-left: var(--space-4);
 }
 
+/* Incompletas: os motivos são o texto longo, então ficam com mais coluna que na Lista; a camada
+   (que já corta com reticências) e a marcação cedem. Sem isso, a 900×720 a palavra quebra no meio. */
+.incomplete-table .list-col-marking {
+  width: 20%;
+}
+
+.incomplete-table .list-col-layer {
+  width: 16%;
+}
+
+.incomplete-table .list-col-annotation {
+  width: 18%;
+}
+
+.incomplete-table .list-cell {
+  overflow-wrap: break-word;
+}
+
 /* Diagnóstico */
 .diagnostics-status {
   font: var(--t-text-small);

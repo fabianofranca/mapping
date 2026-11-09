@@ -145,6 +145,30 @@ describe('lista de incompletas', () => {
     expect(list[0]?.items[0]?.marking.id).toBe('C1');
   });
 
+  it('anotação numa camada que não existe também é listada (o contador e a lista concordam)', () => {
+    const orphan = {
+      ...(p.annotations.find((x) => x.id === 'A3') as (typeof p.annotations)[number]),
+      id: 'AX',
+      layerId: 'LX',
+    };
+    const q = { ...p, annotations: [...p.annotations, orphan] };
+    const list = buildIncompleteList(
+      q,
+      new Map([['AX', [{ code: 'component-overflow' as const }]]]),
+    );
+    expect(
+      list.flatMap((i) => i.items.map((x) => [x.annotation.id, x.layer.id])),
+    ).toEqual([['AX', 'LX']]);
+    // Com "Só camadas visíveis" ela fica de fora: a camada não existe, não está visível.
+    expect(
+      buildIncompleteList(
+        q,
+        new Map([['AX', [{ code: 'component-overflow' as const }]]]),
+        [],
+      ),
+    ).toEqual([]);
+  });
+
   it('sem pendências a lista é vazia', () => {
     expect(buildIncompleteList(p, new Map())).toEqual([]);
   });
