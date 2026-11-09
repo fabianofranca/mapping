@@ -2316,7 +2316,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 
 - **O que é:** o passo usa um diálogo do sistema ou do navegador que a página não opera: o seletor de pasta ou de arquivo, a permissão da pasta ("Permitir que o site veja/edite os arquivos?"), o "Salvar como" da exportação, a confirmação de instalar o app e o "Sair da página?". Nos roteiros principais (R0 a R25), todo passo [pessoa] tem um substituto para o agente (receita da nuvem abaixo, shell ou cliente por stdio), e um teste do repositório impede passo "sem substituto" ali. A marca **[pessoa]** fica no guia para quem testa à mão.
 - **Nome da ação nos roteiros:** o "ou `select_folder`", "ou `open_file`", "ou `save_file`", "ou `accept_permission_prompt`" e "ou `cancel_dialog`" que acompanham a marca [pessoa] nomeiam a receita da nuvem que faz o papel da pessoa (tabela em "Diálogos nativos na nuvem (Xvfb)", mais abaixo).
-- **`data-arrows`, `data-components`, `data-viewport` e `data-selection-box` do `.canvas-host` atualizam um quadro depois da ação** (clique, atalho, gravação): leia depois de esperar um quadro (`requestAnimationFrame`, como na receita abaixo; `waitForTimeout(100)` também serve); a leitura imediata devolve o valor anterior.
+- **`data-arrows`, `data-components`, `data-viewport` e `data-selection-box` do `.canvas-host` atualizam um quadro depois da ação** (clique, atalho, gravação): leia depois de `await settle(page)` (auxiliar de `scripts/testing/cloud.mjs`: sem "Salvando…", dois quadros e 200 ms sem mutação do DOM; o `state()` já o chama antes de ler); a leitura imediata devolve o valor anterior. Não use `waitForTimeout`.
 - **Atalhos de uma letra** (V, R, A…) só valem com **nenhum campo focado**: com o foco num campo de texto a letra é digitada. Clique no canvas ou no título de uma janela antes de usar o atalho.
 - **Nenhum passo dos roteiros principais é inteiro da pessoa.** O R0.5 (`index.html` por `file://`) e o R6.2 (fechar a aba no meio da gravação) não funcionaram sozinhos e foram para os roteiros sob demanda RF e RA, por decisão do dono. O R6.2 ganhou o e2e `tests/e2e/folder.spec.ts` no lugar.
 - **Se um passo novo não funcionar sozinho** (o endereço não abre; o diálogo nativo não aparece), marque "não executado (vai para os roteiros sob demanda)", registre o que falhou e proponha mover o passo. Se o teste for relevante (perda de dados, integridade do `mapping.json`, segurança), **avise o dono** no relato, pela regra das convenções da seção 8; não decida sozinho.
@@ -2387,13 +2387,7 @@ Para o agente testador: a sessão do Claude Code na nuvem (ambiente "Mapping - t
 // page: Playwright por CDP; a marcação aparece na Árvore (Ctrl+Shift+1) como "Marcação sem nome" ou pelo nome dela
 const host = page.locator('.canvas-host');
 await page.getByText('Marcação sem nome').first().click(); // 1. seleciona pela Árvore
-await page.evaluate(
-  () =>
-    new Promise((ok) =>
-      // 2. espera um quadro (sem tempo fixo)
-      requestAnimationFrame(() => requestAnimationFrame(ok)),
-    ),
-);
+await settle(page); // 2. espera a app assentar (sem tempo fixo)
 const [l, t, w, h] = (await host.getAttribute('data-selection-box'))
   .split(' ')
   .map(Number);
@@ -2492,6 +2486,13 @@ GTK_A11Y=atspi ACCESSIBILITY_ENABLED=1 nohup /opt/pw-browsers/chromium --no-sand
 ### Seletores e nomes que enganam
 
 - **Janelas:** cada janela de ferramenta é uma `section` com `[data-window=tree|layers|details|list|incomplete|notices|diagnostics|proposals|catalog]` (use um valor por vez: `[data-window="tree"]`). As janelas da coluna esquerda são exclusivas: `Ctrl+Shift+1` e `Ctrl+Shift+9` trocam a Árvore e as Camadas pelo Catálogo, que volta na aba **Componentes**.
+- **Nomes repetidos e o localizador que funciona** (conferidos em `src/ui/`; `cloud.mjs find <texto>` lista os candidatos):
+  - **Revisar:** o botão do aviso "Nova proposta" é `Revisar` (`getByRole('button', { name: 'Revisar', exact: true })`); o da linha em Propostas é `Revisar: <título>` (`locator('[data-window="proposals"]').getByRole('button', { name: /^Revisar: / })`).
+  - **Mostrar todas:** o ícone de olho de Camadas (`locator('[data-window="layers"]').getByRole('button', { name: 'Mostrar todas' })`) e o botão do aviso de camadas ocultas na Lista (`[data-window="list"]`, mesmo `getByRole`).
+  - **Conversas:** o botão da barra que liga os marcadores (`getByRole('button', { name: 'Conversas', exact: true })`); a janela é **Comentários** (`openWindow(page, 'comments')`). `getByText('Conversas')` casa também os títulos de seção.
+  - **Árvore sem `treeitem`:** a linha é `button.tree-item` em `ul.tree`; use `locator('.tree-item', { hasText: 'Nome' })`.
+  - **Compositor `contenteditable`:** `getByRole('textbox', { name: /^(Comentar|Responder) como / })`, com `click()` e `keyboard.type(...)`, não `fill()`.
+  - **Dois `dialog[open]`:** `getByRole('dialog')` viola o modo estrito; use `getByRole('dialog', { name: 'Configurações' })` ou `locator('dialog[open]').last()`.
 - **Diálogos:** são `<dialog>` (`getByRole('dialog')`). A confirmação de exclusão tem `role="alertdialog"` (`getByRole('alertdialog')`, não `dialog`). A linha da Árvore é `button.tree-item`, sem `role=treeitem`.
 - **Página local sem o app (R25.59):** o headless-shell do Playwright não está na imagem; abra a `pagina.html` com o Chrome for Testing (`--headless=new --no-sandbox`, `executablePath` do `chromium` do `/opt/pw-browsers`) e rode o trecho do guia nele.
 - **Coordenadas:** as de `page.mouse` são do viewport, não da captura (`import -window root` inclui a moldura do Chrome, que desloca cerca de (4, 144)).
@@ -2617,7 +2618,12 @@ WS=<pasta de trabalho> MAPPING_MCP_ARGS='["<clone>/dist-mcp/mapping-mcp.js","--r
 - **Capturas que falham** logo depois de abrir um diálogo ou recarregar: espere e tente de novo antes de registrar.
 - **Uma aba só da app.** Navegue a mesma aba com `page.goto`; uma aba antiga do Mapping pode segurar o projeto. Antes de cada ação que muda algo, confira que o título da aba ainda é o da app; se mudou, pare e reconecte pelo CDP. As decisões de uma revisão em andamento ficam gravadas na proposta e voltam com **Continuar**. Reabrir o projeto numa aba nova **perde o histórico de desfazer**: não reinicie o Chrome nem recarregue antes dos passos de desfazer.
 - **Atalhos de janela com o foco num campo:** antes de atalhos como `Ctrl+Shift+N` ou `Ctrl+Shift+6`, tire o foco dos campos de texto ou número (Esc ou um clique no canvas): o envio do atalho pode digitar o número no campo (Y 340 virou 760; Altura 56 virou 566).
-- **Atalhos de janela pelo Playwright:** `page.keyboard.press('Control+Shift+1')` não funciona (o `key` vira `!`); use `Control+Shift+Digit<n>` ou o auxiliar `windowShortcut(page, n)` de `scripts/testing/cloud.mjs`.
+- **Atalhos de janela pelo Playwright:** `page.keyboard.press('Control+Shift+1')` não funciona (o `key` vira `!`); use `Control+Shift+Digit<n>`. O atalho **alterna** a janela (aberta, ela fecha): para abrir ou fechar de forma segura use `openWindow(page, id)` e `closeWindow(page, id)` de `scripts/testing/cloud.mjs`, idempotentes (só clicam quando o estado é outro; ids e atalhos na tabela abaixo).
+
+  Ids e atalhos: `tree` 1, `layers` 2, `details` 3, `list` 4, `incomplete` 5, `diagnostics` 6, `proposals` 7, `notices` 8, `catalog` 9, `comments` 0 (todos `Ctrl+Shift+<n>`).
+
+- **Arrastar e redimensionar a janela:** `drag(page, de, para, { select, steps })` (pontos de `ponto`) avisa se `de` cair a até 8 px de uma alça da seleção: parta do centro da marcação. `setViewport(page, largura, altura)` põe a janela em `innerWidth × innerHeight` (soma a moldura): use-o nas passadas a 1280×720 e 900×720.
+- **Localizador que falhou:** o `cloud.mjs run` lista até 10 candidatos (papel, nome, região) depois do erro; fora dele, `cloud.mjs find <texto>`.
 
 <!-- roteiros: R11 -->
 

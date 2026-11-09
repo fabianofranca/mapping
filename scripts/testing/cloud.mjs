@@ -10,6 +10,7 @@
 //   node scripts/testing/cloud.mjs tempos <apoio>               (duração por roteiro, do tempos.log)
 //   node scripts/testing/cloud.mjs state [<pasta-do-projeto>]    (conecta, imprime o estado, sai)
 //   node scripts/testing/cloud.mjs run [<pasta-do-projeto>] [--prazo=<s>] < corpo.js   (corpo do passo pela entrada padrão)
+//   node scripts/testing/cloud.mjs find <texto>                  (candidatos cujo nome contém o texto)
 //   node scripts/testing/cloud.mjs help                          (comandos e exports, da tabela HELP)
 //
 // Pasta de apoio: toda função que precisa de disco recebe `apoioDir` (a pasta `apoio/` da
@@ -20,7 +21,7 @@
 // Nunca: registrar `page.on('filechooser')` ou `waitForEvent('filechooser')`, nem usar
 // `setInputFiles` como atalho (regra do "Nunca" do docs/TESTING-NUVEM.md); nunca enviar Enter a
 // um seletor de arquivo/pasta ou a um "Salvar como" do GTK — só alt+o / alt+s / alt+c.
-/* global document, location, CSS -- só dentro de `readAppDom`, que roda na página */
+/* global document, location, CSS, MutationObserver -- só dentro das funções que rodam na página */
 import { chromium } from 'playwright';
 import { createHash } from 'node:crypto';
 import { execFile, execFileSync, spawnSync } from 'node:child_process';
@@ -900,6 +901,7 @@ async function readMapping(projectDir) {
  */
 export async function state(page, apoioDir, { projectDir } = {}) {
   loadEnv(apoioDir);
+  await settle(page, { timeoutMs: STATE_SETTLE_MS });
   const dom = await page.evaluate(readAppDom);
   let windows;
   try {
@@ -1042,6 +1044,303 @@ export async function ponto(
   });
 }
 
+/** Prazo do `settle` que o `state()` faz antes de ler (abaixo dos 3 s do estado do `runStep`). */
+const STATE_SETTLE_MS = 2000;
+
+/**
+ * Roda na página (etapa #1148, decisão 7): espera a barra de status sem "Salvando…", dois quadros e
+ * o DOM sem mutação por 200 ms. Devolve `null` ao cumprir tudo, ou o texto da condição que faltou
+ * ao estourar `timeoutMs`. Não usa nada fora do próprio corpo (o Playwright a serializa).
+ */
+function settleInPage({ timeoutMs, savingPattern }) {
+  return new Promise((resolve) => {
+    const saving = new RegExp(savingPattern, 'i');
+    let lastMutation = Date.now();
+    let frames = 0;
+    const observer = new MutationObserver(() => {
+      lastMutation = Date.now();
+    });
+    observer.observe(document, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      characterData: true,
+    });
+    const isSaving = () =>
+      [...document.querySelectorAll('.status-item')].some((el) =>
+        saving.test(el.textContent ?? ''),
+      );
+    const finish = (value) => {
+      observer.disconnect();
+      resolve(value);
+    };
+    const started = Date.now();
+    const tick = () => {
+      frames += 1;
+      const quiet = Date.now() - lastMutation >= 200;
+      if (frames >= 2 && quiet && !isSaving()) return finish(null);
+      if (Date.now() - started >= timeoutMs) {
+        if (isSaving()) return finish('a barra de status continuou em "Salvando…"');
+        if (!quiet) return finish('o DOM continuou mudando (sem 200 ms de silêncio)');
+        return finish('os dois quadros não se completaram');
+      }
+      globalThis.requestAnimationFrame(tick);
+    };
+    globalThis.requestAnimationFrame(tick);
+  });
+}
+
+/**
+ * Espera a app assentar (etapa #1148, decisão 7): sem "Salvando…", dois quadros e 200 ms sem
+ * mutação do DOM. Estouro do prazo não é erro: devolve e escreve (`warn`) o aviso com a condição
+ * que faltou. Devolve `null` quando assentou. Use no lugar de `waitForTimeout`.
+ */
+export async function settle(
+  page,
+  { timeoutMs = 5000, warn = (m) => console.error(m) } = {},
+) {
+  const unmet = await page.evaluate(settleInPage, {
+    timeoutMs,
+    savingPattern: 'Salvando…|Saving…',
+  });
+  if (!unmet) return null;
+  const message = `Aviso: settle esgotou ${timeoutMs} ms: ${unmet}`;
+  warn(message);
+  return message;
+}
+
+/** Ids das janelas de ferramenta (`src/store/toolWindows.ts`), os de `[data-strip-window]`. */
+export const TOOL_WINDOW_IDS = [
+  'tree',
+  'layers',
+  'details',
+  'list',
+  'incomplete',
+  'diagnostics',
+  'proposals',
+  'notices',
+  'comments',
+  'catalog',
+];
+
+async function setWindowOpen(page, id, wanted) {
+  if (!TOOL_WINDOW_IDS.includes(id)) {
+    throw new Error(`janela desconhecida: ${id}. Ids: ${TOOL_WINDOW_IDS.join(', ')}`);
+  }
+  const button = page.locator(`[data-strip-window="${id}"]`);
+  const pressed = (await button.getAttribute('aria-pressed')) === 'true';
+  if (pressed !== wanted) await button.click();
+  await page
+    .locator(`[data-window="${id}"]`)
+    .waitFor({ state: wanted ? 'visible' : 'hidden' });
+}
+
+/** Abre a janela de ferramenta `id` só se estiver fechada (idempotente; nunca alterna). */
+export async function openWindow(page, id) {
+  await setWindowOpen(page, id, true);
+}
+
+/** Fecha a janela de ferramenta `id` só se estiver aberta (idempotente; nunca alterna). */
+export async function closeWindow(page, id) {
+  await setWindowOpen(page, id, false);
+}
+
+/** Distância (px) até uma alça da caixa de seleção que faz o `drag` avisar. */
+const HANDLE_REACH = 8;
+
+/**
+ * Nome da alça (`nw`, `n`, `ne`, `e`, `se`, `s`, `sw`, `w`) da caixa (`{ x, y, width, height }`
+ * em px de tela) a até 8 px de `point`, ou `null`. Pura.
+ */
+export function nearHandle(box, point) {
+  const xs = [box.x, box.x + box.width / 2, box.x + box.width];
+  const ys = [box.y, box.y + box.height / 2, box.y + box.height];
+  const names = [
+    ['nw', 'n', 'ne'],
+    ['w', null, 'e'],
+    ['sw', 's', 'se'],
+  ];
+  for (let row = 0; row < 3; row += 1) {
+    for (let col = 0; col < 3; col += 1) {
+      const name = names[row][col];
+      if (!name) continue;
+      if (Math.hypot(point.x - xs[col], point.y - ys[row]) <= HANDLE_REACH) return name;
+    }
+  }
+  return null;
+}
+
+/**
+ * Arrasta de `de` até `para` (pontos de tela `{ x, y }`, por exemplo do `ponto`; etapa #1148,
+ * decisão 9): clica em `de` para selecionar (com `select`), espera `settle`, `mouse.down`, um
+ * quadro, `mouse.move` em `steps` passos e `mouse.up`. Se `de` cair a até 8 px de uma alça da
+ * `data-selection-box`, avisa (`warn`) que o arrasto pode redimensionar, e segue.
+ */
+export async function drag(
+  page,
+  de,
+  para,
+  { select = true, steps = 10, warn = (m) => console.error(m) } = {},
+) {
+  if (select) {
+    await page.mouse.click(de.x, de.y);
+    await settle(page);
+  }
+  const host = page.locator('.canvas-host');
+  const text = await host.getAttribute('data-selection-box');
+  const hostBox = text ? await host.boundingBox() : null;
+  if (text && hostBox) {
+    const [l, t, w, h] = text.split(' ').map(Number);
+    const handle = nearHandle(
+      { x: hostBox.x + l, y: hostBox.y + t, width: w, height: h },
+      de,
+    );
+    if (handle) warn(`perto da alça ${handle}: o arrasto pode redimensionar`);
+  }
+  await page.mouse.move(de.x, de.y);
+  await page.mouse.down();
+  await page.evaluate(
+    () => new Promise((ok) => globalThis.requestAnimationFrame(() => ok(null))),
+  );
+  for (let i = 1; i <= steps; i += 1) {
+    await page.mouse.move(
+      de.x + ((para.x - de.x) * i) / steps,
+      de.y + ((para.y - de.y) * i) / steps,
+    );
+  }
+  await page.mouse.up();
+}
+
+/**
+ * Ajusta a janela do Chrome para o `innerWidth × innerHeight` pedido (etapa #1148, decisão 10):
+ * CDP `Browser.getWindowForTarget` + `Browser.setWindowBounds` somando a moldura medida
+ * (`outerWidth − innerWidth`, `outerHeight − innerHeight`). Erro com os valores obtidos se a
+ * janela não deu o pedido.
+ */
+export async function setViewport(page, largura, altura) {
+  const session = await page.context().newCDPSession(page);
+  try {
+    const { windowId } = await session.send('Browser.getWindowForTarget');
+    const frame = await page.evaluate(() => ({
+      outerWidth: globalThis.outerWidth,
+      innerWidth: globalThis.innerWidth,
+      outerHeight: globalThis.outerHeight,
+      innerHeight: globalThis.innerHeight,
+    }));
+    await session.send('Browser.setWindowBounds', {
+      windowId,
+      bounds: {
+        windowState: 'normal',
+        width: largura + (frame.outerWidth - frame.innerWidth),
+        height: altura + (frame.outerHeight - frame.innerHeight),
+      },
+    });
+  } finally {
+    await session.detach().catch(() => {});
+  }
+  await settle(page, { timeoutMs: 1000 });
+  const got = await page.evaluate(() => ({
+    innerWidth: globalThis.innerWidth,
+    innerHeight: globalThis.innerHeight,
+  }));
+  if (got.innerWidth !== largura || got.innerHeight !== altura) {
+    throw new Error(
+      `setViewport: pedido ${largura}×${altura}, a janela deu ${got.innerWidth}×${got.innerHeight}`,
+    );
+  }
+}
+
+/** Roda na página: até 10 elementos cujo nome acessível contém `needle` (papel, nome, região). */
+function findInPage({ needle }) {
+  const implicit = {
+    BUTTON: 'button',
+    A: 'link',
+    SELECT: 'combobox',
+    TEXTAREA: 'textbox',
+    SUMMARY: 'button',
+    DIALOG: 'dialog',
+    INPUT: 'textbox',
+  };
+  const text = (el) => (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+  const nameOf = (el) => {
+    const label = el.getAttribute('aria-label');
+    if (label) return label;
+    const ids = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
+    const byIds = ids
+      .map((id) => text(document.getElementById(id) ?? document.createElement('i')))
+      .join(' ')
+      .trim();
+    return (
+      byIds || el.getAttribute('title') || el.getAttribute('placeholder') || text(el)
+    );
+  };
+  const regionOf = (el) => {
+    const host = el.parentElement?.closest(
+      'dialog, [role="dialog"], [role="alertdialog"], [data-window], [role="region"], nav, [role="navigation"], header, main, aside, footer, section[aria-label]',
+    );
+    if (!host) return '';
+    return (
+      host.getAttribute('aria-label') ||
+      host.getAttribute('data-window') ||
+      host.tagName.toLowerCase()
+    );
+  };
+  const visible = (el) =>
+    !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  const found = [];
+  for (const el of document.querySelectorAll(
+    'button, a, input, select, textarea, summary, dialog, [role], [contenteditable="true"], [data-strip-window]',
+  )) {
+    if (!visible(el)) continue;
+    const name = nameOf(el);
+    if (!name || !name.toLowerCase().includes(needle)) continue;
+    const input =
+      el.tagName === 'INPUT' ? (el.type === 'checkbox' ? 'checkbox' : 'textbox') : null;
+    const role =
+      el.getAttribute('role') ||
+      input ||
+      (el.getAttribute('contenteditable') === 'true' ? 'textbox' : null) ||
+      implicit[el.tagName] ||
+      el.tagName.toLowerCase();
+    found.push({ role, name: name.slice(0, 80), region: regionOf(el) });
+    if (found.length >= 10) break;
+  }
+  return found;
+}
+
+/**
+ * Os candidatos que o localizador devia ter achado (etapa #1148, decisão 11): até 10 elementos
+ * visíveis cujo nome acessível contém `texto` (sem diferença de caixa), cada um com papel, nome e
+ * região (o `aria-label` do diálogo, da janela ou do landmark mais próximo).
+ */
+export async function find(page, texto) {
+  return page.evaluate(findInPage, { needle: String(texto).toLowerCase() });
+}
+
+/** Texto da lista de `find`, uma linha por candidato (`papel "nome" em região`). */
+export function formatCandidates(candidates, texto) {
+  if (!candidates || candidates.length === 0) {
+    return `nenhum candidato com "${texto}" no nome na tela`;
+  }
+  const lines = candidates.map(
+    (c) => `  ${c.role} "${c.name}"${c.region ? ` em ${c.region}` : ''}`,
+  );
+  return [`candidatos com "${texto}" (${candidates.length}):`, ...lines].join('\n');
+}
+
+/**
+ * O texto que o localizador do Playwright procurava, tirado da mensagem de um timeout ou de uma
+ * violação do modo estrito (`getByRole('button', { name: 'Revisar' })`, `getByText('Conversas')`);
+ * `null` se a mensagem não for desse tipo ou não trouxer texto. Pura.
+ */
+export function locatorTextFromError(message) {
+  const text = String(message);
+  if (!/Timeout \d+ms exceeded|strict mode violation/.test(text)) return null;
+  const match =
+    /name:\s*(['"])(.+?)\1/.exec(text) ?? /getBy\w+\(\s*(['"])(.+?)\1/.exec(text);
+  return match ? match[2] : null;
+}
+
 /**
  * A pasta de apoio quando `APOIO` não está exportado (etapa #841, decisão 3): a `apoio/` da rodada
  * mais recente em `~/mapping-testes/<AAAA-MM-DD>-<alvo>/apoio`, o mesmo caminho que o `cloud-up.sh`
@@ -1115,7 +1414,16 @@ export async function runStep(
       code = 124;
     }
   } catch (error) {
-    io.error(error instanceof Error ? error.message : String(error));
+    const message = error instanceof Error ? error.message : String(error);
+    io.error(message);
+    const wanted = locatorTextFromError(message);
+    if (wanted) {
+      try {
+        io.error(formatCandidates(await find(page, wanted), wanted));
+      } catch {
+        // Sem resposta da página: a lista de candidatos não sai.
+      }
+    }
     code = 1;
   } finally {
     clearTimeout(timer);
@@ -1147,6 +1455,16 @@ function exportsOf() {
     allowPermission,
     screenshot,
     windowShortcut,
+    settle,
+    openWindow,
+    closeWindow,
+    TOOL_WINDOW_IDS,
+    drag,
+    nearHandle,
+    setViewport,
+    find,
+    formatCandidates,
+    locatorTextFromError,
     makeCadastroPng,
     mark,
     temposFromLog,
@@ -1241,7 +1559,47 @@ export const HELP = {
   },
   windowShortcut: {
     sig: 'windowShortcut(page, n)',
-    desc: 'atalho Ctrl+Shift+N da janela de ferramenta (alterna)',
+    desc: 'atalho Ctrl+Shift+N da janela de ferramenta (ALTERNA: prefira openWindow/closeWindow)',
+  },
+  settle: {
+    sig: 'settle(page, { timeoutMs? = 5000, warn? })',
+    desc: 'espera sem "Salvando…", 2 quadros e 200 ms sem mutação; estouro vira aviso (use no lugar de waitForTimeout)',
+  },
+  openWindow: {
+    sig: 'openWindow(page, id)',
+    desc: 'abre a janela de ferramenta só se fechada (idempotente); id: tree, layers, details, list, incomplete, diagnostics, proposals, notices, comments, catalog',
+  },
+  closeWindow: {
+    sig: 'closeWindow(page, id)',
+    desc: 'fecha a janela de ferramenta só se aberta (idempotente)',
+  },
+  TOOL_WINDOW_IDS: {
+    sig: 'TOOL_WINDOW_IDS',
+    desc: 'os ids das janelas de ferramenta aceitos por openWindow e closeWindow',
+  },
+  drag: {
+    sig: 'drag(page, de, para, { select? = true, steps? = 10, warn? })',
+    desc: 'arrasta entre dois pontos de tela ({x, y}); avisa se de cair a 8 px de uma alça da seleção',
+  },
+  nearHandle: {
+    sig: 'nearHandle(box, ponto)',
+    desc: 'nome da alça (nw, n, ne, e, se, s, sw, w) a até 8 px do ponto, ou null',
+  },
+  setViewport: {
+    sig: 'setViewport(page, largura, altura)',
+    desc: 'ajusta a janela do Chrome ao innerWidth × innerHeight pedido (soma a moldura; confere)',
+  },
+  find: {
+    sig: 'find(page, texto)',
+    desc: 'até 10 elementos visíveis cujo nome contém o texto (papel, nome, região)',
+  },
+  formatCandidates: {
+    sig: 'formatCandidates(candidatos, texto)',
+    desc: 'texto da lista de find, uma linha por candidato',
+  },
+  locatorTextFromError: {
+    sig: 'locatorTextFromError(mensagem)',
+    desc: 'o texto do localizador num erro de timeout ou de modo estrito, ou null',
   },
   makeCadastroPng: {
     sig: 'makeCadastroPng(destino)',
@@ -1295,6 +1653,10 @@ const CLI_HELP = [
   [
     'run [<pasta-do-projeto>] [--prazo=<s>]',
     "executa o corpo do script lido da entrada padrão (heredoc <<'JS'), com page, browser, apoioDir, projectDir e os exports em escopo; imprime o estado; prazo 90 s",
+  ],
+  [
+    'find <texto>',
+    'lista até 10 elementos visíveis cujo nome contém o texto (papel, nome, região)',
   ],
   ['help', 'esta lista'],
 ];
@@ -1398,6 +1760,22 @@ async function runCli(argv) {
     }
     return;
   }
+  if (command === 'find') {
+    const texto = rest.join(' ').trim();
+    const apoioDir = texto ? resolveApoio() : null;
+    if (!texto || !apoioDir) {
+      if (!texto) console.error('Uso: node cloud.mjs find <texto>');
+      process.exitCode = 2;
+      return;
+    }
+    const { browser, page } = await connect(apoioDir);
+    try {
+      console.log(formatCandidates(await find(page, texto), texto));
+    } finally {
+      await browser.close();
+    }
+    return;
+  }
   if (command === 'help') {
     console.log(formatHelp());
     return;
@@ -1434,7 +1812,7 @@ async function runCli(argv) {
     return;
   }
   console.error(
-    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto, run, help.`,
+    `Comando desconhecido: ${command}. Comandos: mark, state, tempos, ponto, run, find, help.`,
   );
   process.exitCode = 2;
 }
