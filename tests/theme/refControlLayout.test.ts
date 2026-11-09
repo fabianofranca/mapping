@@ -20,3 +20,14 @@ describe('campo de referência em largura estreita', () => {
     expect(layer).toMatch(/min-width:\s*0/);
   });
 });
+
+// R24.14/R24.15 (achado 3.1 da #954): "(referência quebrada)" aparecia cortado ("(referência qu…")
+// a 1280 e a 900 px. O texto da referência quebrada quebra de linha em vez de ser cortado.
+describe('célula de referência quebrada', () => {
+  it('o texto quebra de linha em vez de ser cortado com reticências', () => {
+    const text = rule('.ref-control.is-broken .ref-control-text');
+    expect(text).toMatch(/white-space:\s*normal/);
+    expect(text).toMatch(/text-overflow:\s*clip/);
+    expect(text).toMatch(/overflow-wrap:\s*anywhere/);
+  });
+});

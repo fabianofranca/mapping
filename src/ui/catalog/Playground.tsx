@@ -16,6 +16,7 @@ import {
 import { messageText } from '../modelMessage';
 import { Button, TextField } from '../controls';
 import { TypedForm } from '../TypedForm';
+import { drawWarningText } from './drawWarnings';
 import type { CatalogRenderer } from './renderer';
 
 // Playground do Catálogo: os campos do tipo (TypedForm) ao lado do desenho, que se refaz a
@@ -72,10 +73,12 @@ export function Playground({ entry, renderer, fontsEpoch = 0 }: PlaygroundProps)
           setDrawn({ url: null, warnings: [] });
           return;
         }
-        setDrawn({
-          url: renderer.rasterize(drawing.root, {}),
-          warnings: drawing.warnings,
+        const renderWarnings: ModelMessage[] = [];
+        const url = renderer.rasterize(drawing.root, {
+          onWarnings: (found) =>
+            renderWarnings.push(...found.map((w) => rawMessage(drawWarningText(w)))),
         });
+        setDrawn({ url, warnings: [...drawing.warnings, ...renderWarnings] });
       } catch {
         setDrawn({
           url: null,

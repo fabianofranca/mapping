@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from '@testing-library/preact';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { t } from '../../src/i18n';
@@ -326,5 +326,47 @@ describe('Diagnóstico: arquivo não encontrado em en-US', () => {
     expect(screen.getByText(/file not found: components\/button\.json/)).toBeTruthy();
     expect(screen.queryByText(/não encontrado/)).toBeNull();
     locale.value = 'pt-BR';
+  });
+});
+
+// Fase 1 da #954 (item 7): o "Copiado" volta ao normal e não sobra para um registro vazio.
+describe('Diagnóstico: o resultado da cópia some sozinho', () => {
+  function mockWrite() {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn(async () => undefined) },
+      configurable: true,
+    });
+  }
+
+  it('o "Copiado" volta a vazio depois de 2 s', async () => {
+    vi.useFakeTimers();
+    mockWrite();
+    reportError('local.open', new Error('bloqueado'));
+    render(<Diagnostics />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: t('diagnostics.copy') }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getByRole('status').textContent).toBe(t('diagnostics.copied'));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(screen.getByRole('status').textContent).toBe('');
+  });
+
+  it('Copiar e depois Limpar não deixa "Copiado" para um registro vazio', async () => {
+    vi.useFakeTimers();
+    mockWrite();
+    reportError('local.open', new Error('bloqueado'));
+    render(<Diagnostics />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: t('diagnostics.copy') }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: t('diagnostics.clear') }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getByRole('status').textContent).toBe('');
   });
 });

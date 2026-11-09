@@ -30,11 +30,25 @@ export interface RemoteImageIssue {
 
 const SHORT_URL_MAX = 80;
 
+/**
+ * Origem e caminho de URLs http(s); nas demais a origem é `'null'`, então mostra o esquema:
+ * `data:` só com o tipo (o conteúdo não aparece), `file:` inteiro, o resto só o esquema.
+ */
+function readableUrl(parsed: URL): string {
+  if (parsed.origin !== 'null') return `${parsed.origin}${parsed.pathname}`;
+  if (parsed.protocol === 'data:') {
+    return `data:${parsed.pathname.split(/[;,]/, 1)[0] ?? ''}…`;
+  }
+  return parsed.href.startsWith(`${parsed.protocol}//`)
+    ? `${parsed.protocol}//${parsed.host}${parsed.pathname}`
+    : `${parsed.protocol}…`;
+}
+
 function shortenUrl(url: string): string {
   let text = url;
   try {
     const parsed = new URL(url);
-    text = `${parsed.origin}${parsed.pathname}`;
+    text = readableUrl(parsed);
   } catch {
     // URL ilegível: encurta o texto como está.
   }

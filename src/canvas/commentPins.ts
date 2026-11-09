@@ -13,18 +13,19 @@ import {
   type Rect,
 } from '../model';
 import { visibleArrowShapes } from './arrowGeometry';
+import type { CanvasTokens } from './theme';
 import type { Point } from './viewport';
 
-/** Altura do pino (px de tela). */
-export const PIN_HEIGHT = 20;
-/** Largura de cada caractere do rótulo e respiro dos lados (px de tela), para a largura da caixa. */
-const PIN_CHAR = 7;
-const PIN_PAD = 8;
-/** Glifo do estado à esquerda do rótulo (px de tela): o lado dele e a folga até o rótulo. */
-export const PIN_GLYPH_SIZE = 12;
-const PIN_GLYPH_GAP = 2;
-/** O que o glifo acrescenta à largura do pino. */
-export const PIN_GLYPH_EXTRA = PIN_GLYPH_SIZE + PIN_GLYPH_GAP;
+/** As medidas do pino (px de tela), dos tokens do canvas (`size-cv-pin-*`). */
+export type PinMetrics = Pick<
+  CanvasTokens['pin'],
+  'height' | 'pad' | 'glyph' | 'glyphGap' | 'charWidth'
+>;
+
+/** O que o glifo do estado acrescenta à largura do pino. */
+export function pinGlyphExtra(pin: PinMetrics): number {
+  return pin.glyph + pin.glyphGap;
+}
 
 /** `corner`: o pino fica fora do item, com o canto de baixo à esquerda no canto de cima à direita. */
 export type PinAlign = 'corner' | 'center';
@@ -41,9 +42,9 @@ export interface PinPlace {
  * Largura do pino (px de tela): cresce com o rótulo e, quando há, com o glifo do estado (o rascunho
  * não tem: `glyph` falso), nunca menos que a altura.
  */
-export function pinWidth(label: string, glyph = true): number {
-  const extra = glyph ? PIN_GLYPH_EXTRA : 0;
-  return Math.max(PIN_HEIGHT, label.length * PIN_CHAR + 2 * PIN_PAD + extra);
+export function pinWidth(label: string, pin: PinMetrics, glyph = true): number {
+  const extra = glyph ? pinGlyphExtra(pin) : 0;
+  return Math.max(pin.height, label.length * pin.charWidth + 2 * pin.pad + extra);
 }
 
 /** O ponto `x`,`y` de um container (pixels dele) ou do canvas (`containerId` nulo), em unidades do canvas. */
@@ -139,9 +140,9 @@ export function pinPlaces(
 }
 
 /** A caixa do pino em unidades do canvas, com o tamanho fixo em pixels de tela (`zoom`). */
-export function pinBox(place: PinPlace, zoom: number): Rect {
-  const width = pinWidth(place.group.label) / zoom;
-  const height = PIN_HEIGHT / zoom;
+export function pinBox(place: PinPlace, zoom: number, pin: PinMetrics): Rect {
+  const width = pinWidth(place.group.label, pin) / zoom;
+  const height = pin.height / zoom;
   return place.align === 'corner'
     ? { x: place.origin.x, y: place.origin.y - height, width, height }
     : { x: place.origin.x - width / 2, y: place.origin.y - height / 2, width, height };
@@ -152,11 +153,12 @@ export function pinHit(
   places: readonly PinPlace[],
   c: Point,
   zoom: number,
+  pin: PinMetrics,
 ): PinPlace | null {
   for (let i = places.length - 1; i >= 0; i--) {
     const place = places[i];
     if (!place) continue;
-    const box = pinBox(place, zoom);
+    const box = pinBox(place, zoom, pin);
     if (
       c.x >= box.x &&
       c.x <= box.x + box.width &&

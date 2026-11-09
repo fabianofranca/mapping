@@ -134,15 +134,46 @@ function optionTagText(project: Project, target: RefTarget): string {
   return target.tags.length > 0 ? target.tags.join(', ') : t('ref.freeTag');
 }
 
+/**
+ * Onde `needle` (já em minúsculas) aparece em `text` ignorando maiúsculas, como índices do
+ * texto original. O minúsculo de alguns caracteres tem outro tamanho ("İ" vira dois), então o
+ * índice achado no texto minúsculo é levado de volta ao original, caractere a caractere.
+ */
+function findFolded(
+  text: string,
+  needle: string,
+): { readonly start: number; readonly end: number } | null {
+  if (needle === '') return null;
+  let lowered = '';
+  const starts: number[] = [];
+  const ends: number[] = [];
+  let at = 0;
+  for (const char of text) {
+    const folded = char.toLocaleLowerCase();
+    for (let i = 0; i < folded.length; i++) {
+      starts.push(at);
+      ends.push(at + char.length);
+    }
+    lowered += folded;
+    at += char.length;
+  }
+  const found = lowered.indexOf(needle);
+  if (found < 0) return null;
+  return {
+    start: starts[found] ?? 0,
+    end: ends[found + needle.length - 1] ?? text.length,
+  };
+}
+
 /** Texto com o trecho buscado em `<mark>`. */
 function Highlight({ text, needle }: { readonly text: string; readonly needle: string }) {
-  const at = needle === '' ? -1 : text.toLocaleLowerCase().indexOf(needle);
-  if (at < 0) return <>{text}</>;
+  const match = findFolded(text, needle);
+  if (!match) return <>{text}</>;
   return (
     <>
-      {text.slice(0, at)}
-      <mark>{text.slice(at, at + needle.length)}</mark>
-      {text.slice(at + needle.length)}
+      {text.slice(0, match.start)}
+      <mark>{text.slice(match.start, match.end)}</mark>
+      {text.slice(match.end)}
     </>
   );
 }
@@ -251,6 +282,8 @@ export function RefPicker({
         ?.scrollIntoView({ block: 'nearest' });
     } else if (e.key === 'Enter') {
       e.preventDefault();
+      // Enter (com ou sem Alt) só escolhe o alvo: não sobe ao campo da tabela, que acrescentaria uma linha.
+      e.stopPropagation();
       choose(options[activeIndex], e.ctrlKey || e.metaKey);
     }
   };
@@ -370,16 +403,17 @@ export function RefPicker({
         {!compact && (
           <div class="picker-foot" aria-hidden="true">
             <span>
-              <kbd class="kbd">↑</kbd> <kbd class="kbd">↓</kbd> {t('ref.keyNavigate')}
+              <kbd class="kbd">{t('ref.keyUp')}</kbd>{' '}
+              <kbd class="kbd">{t('ref.keyDown')}</kbd> {t('ref.keyNavigate')}
             </span>
             <span>
-              <kbd class="kbd">Enter</kbd> {t('ref.keyChoose')}
+              <kbd class="kbd">{t('ref.keyEnter')}</kbd> {t('ref.keyChoose')}
             </span>
             <span>
-              <kbd class="kbd">Ctrl+Enter</kbd> {t('ref.keyGoTo')}
+              <kbd class="kbd">{t('ref.keyCtrlEnter')}</kbd> {t('ref.keyGoTo')}
             </span>
             <span>
-              <kbd class="kbd">Esc</kbd> {t('ref.keyClose')}
+              <kbd class="kbd">{t('ref.keyEsc')}</kbd> {t('ref.keyClose')}
             </span>
           </div>
         )}

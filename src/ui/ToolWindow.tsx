@@ -86,6 +86,29 @@ function growth(side: ToolWindowSide, delta: number): number {
 }
 
 /**
+ * Arrasto de uma divisória com captura de ponteiro (sair da divisória não a solta): só o botão
+ * principal; `onMove` recebe o ponteiro a cada movimento até soltar ou cancelar.
+ */
+function startDrag(e: PointerEvent, onMove: (move: PointerEvent) => void): void {
+  if (e.button !== 0) return;
+  const handle = e.currentTarget as HTMLElement;
+  e.preventDefault();
+  try {
+    handle.setPointerCapture(e.pointerId);
+  } catch {
+    // Sem captura: o arrasto termina se o ponteiro sair da divisória.
+  }
+  const stop = () => {
+    handle.removeEventListener('pointermove', onMove);
+    handle.removeEventListener('pointerup', stop);
+    handle.removeEventListener('pointercancel', stop);
+  };
+  handle.addEventListener('pointermove', onMove);
+  handle.addEventListener('pointerup', stop);
+  handle.addEventListener('pointercancel', stop);
+}
+
+/**
  * Divisória: arrastar redimensiona, duplo clique volta ao padrão. O arrasto usa
  * captura de ponteiro, então sair da janela não solta a divisória.
  */
@@ -97,29 +120,13 @@ function ToolResizer({
   readonly name: string;
 }) {
   const onPointerDown = (e: PointerEvent) => {
-    if (e.button !== 0) return;
-    const handle = e.currentTarget as HTMLElement;
-    const space = spaceFor(handle, side);
+    const space = spaceFor(e.currentTarget as HTMLElement, side);
     const from = side === 'bottom' ? toolWindowSizes.peek().bottom : sideWidth(side);
     const origin = side === 'bottom' ? e.clientY : e.clientX;
-    e.preventDefault();
-    try {
-      handle.setPointerCapture(e.pointerId);
-    } catch {
-      // Sem captura: o arrasto termina se o ponteiro sair da divisória.
-    }
-    const onMove = (move: PointerEvent) => {
+    startDrag(e, (move) => {
       const delta = (side === 'bottom' ? move.clientY : move.clientX) - origin;
       resizeToolWindow(side, from + growth(side, delta), space);
-    };
-    const stop = () => {
-      handle.removeEventListener('pointermove', onMove);
-      handle.removeEventListener('pointerup', stop);
-      handle.removeEventListener('pointercancel', stop);
-    };
-    handle.addEventListener('pointermove', onMove);
-    handle.addEventListener('pointerup', stop);
-    handle.addEventListener('pointercancel', stop);
+    });
   };
 
   return (
@@ -145,28 +152,10 @@ function columnHeight(el: Element): number {
  */
 function ToolSplitter({ name }: { readonly name: string }) {
   const onPointerDown = (e: PointerEvent) => {
-    if (e.button !== 0) return;
-    const handle = e.currentTarget as HTMLElement;
-    const column = columnHeight(handle);
+    const column = columnHeight(e.currentTarget as HTMLElement);
     const from = layersWindowHeight.peek();
     const origin = e.clientY;
-    e.preventDefault();
-    try {
-      handle.setPointerCapture(e.pointerId);
-    } catch {
-      // Sem captura: o arrasto termina se o ponteiro sair da divisória.
-    }
-    const onMove = (move: PointerEvent) => {
-      resizeLayersWindow(from - (move.clientY - origin), column);
-    };
-    const stop = () => {
-      handle.removeEventListener('pointermove', onMove);
-      handle.removeEventListener('pointerup', stop);
-      handle.removeEventListener('pointercancel', stop);
-    };
-    handle.addEventListener('pointermove', onMove);
-    handle.addEventListener('pointerup', stop);
-    handle.addEventListener('pointercancel', stop);
+    startDrag(e, (move) => resizeLayersWindow(from - (move.clientY - origin), column));
   };
 
   return (

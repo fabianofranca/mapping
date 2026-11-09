@@ -212,8 +212,8 @@ describe('renderScene', () => {
     const photo = byId.get('photo')?.getChildren() ?? [];
     expect(photo).toHaveLength(2);
     expect((photo[0] as Konva.Rect).cornerRadius()).toEqual([4, 4, 0, 0]);
-    expect(warnings).toContain('imagem sem pixels desenhada como reservado');
-    expect(warnings).toContain('nó não desenhado (STICKY): só a caixa');
+    expect(warnings).toContainEqual({ code: 'image-without-pixels' });
+    expect(warnings).toContainEqual({ code: 'unknown-node', params: { type: 'STICKY' } });
   });
 
   it('um grupo com sombra repassa a sombra à primeira forma descendente', () => {
@@ -253,7 +253,7 @@ describe('renderScene', () => {
       fills: [{ type: 'solid', color: '#f00' }],
     };
     const { warnings, byId } = renderScene(scene(node));
-    expect(warnings).toContain('sombra interna não existe no canvas 2D: ignorada');
+    expect(warnings).toContainEqual({ code: 'inner-shadow' });
     expect((byId.get('r')?.getChildren()[0] as Konva.Rect).shadowEnabled()).toBe(true);
     expect((byId.get('r')?.getChildren()[0] as Konva.Rect).shadowBlur()).toBe(0);
   });

@@ -462,6 +462,71 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
         }
       };
 
+      const prepare = async (): Promise<ApplyError | null> => {
+        // 0. Os pacotes de biblioteca são lidos, validados e entregues à sessão, que os
+        // grava em `specs/<pasta>/` junto com o projeto (copiados: ficam na proposta).
+        for (const pkg of applying.packages) {
+          const read = await readProposalPackage(storage, pkg, base, id);
+          if (typeof read === 'string') {
+            failedPath = pkg.from;
+            return read;
+          }
+          deps.stagePackage({ id: pkg.specId, version: pkg.version }, read);
+        }
+        // 1. As imagens vão para o lugar definitivo (copiadas; a origem só sai no fim).
+        const taken = new Set<string>();
+        for (const file of await deps.takenImageFiles()) taken.add(fileNameKey(file));
+        for (const image of base.containers) {
+          if (image.file !== null) taken.add(fileNameKey(image.file));
+        }
+        for (const move of applying.files) {
+          if (taken.has(fileNameKey(move.to))) {
+            failedPath = move.to;
+            await rollback();
+            return 'image-exists';
+          }
+          const source = await storage.readImage(move.from);
+          if (!source) {
+            failedPath = move.from;
+            await rollback();
+            return 'image-missing';
+          }
+          // Cópia em memória: ler de novo depois de apagar a origem, no desfazer, não pode falhar.
+          const blob = new Blob([await source.arrayBuffer()], {
+            type: source.type || imageMimeType(move.to),
+          });
+          await deps.putProjectImage(move.to, blob);
+          moved.push({ from: move.from, to: move.to, blob });
+          taken.add(fileNameKey(move.to));
+        }
+        // 2. O projeto, numa entrada de desfazer. Se mudou enquanto copiávamos, desiste.
+        if (store.project.peek() !== base) {
+          await rollback();
+          return 'stale';
+        }
+        if (applying.applied.length > 0) {
+          const result = store.apply(() => applying.project, { link });
+          if (!result.ok) {
+            await rollback();
+            return result.error === 'read-only' ? 'read-only' : 'failed';
+          }
+          applied = store.project.peek();
+        }
+        // 3. O `mapping.json` primeiro: a proposta só diz "aplicada" se ele gravou. Senão,
+        // desfaz a entrada (sem "refazer"), devolve as cópias e não grava a proposta.
+        const saved = await deps.flush();
+        if (!saved.ok) {
+          abandoned = true;
+          const undone = applied !== null && store.project.peek() === applied;
+          if (undone) store.undo();
+          store.discardRedoOf(id);
+          // Projeto já trocado (o undo foi pulado): ele pode citar as cópias, que ficam.
+          if (undone) await rollback();
+          return 'save-failed';
+        }
+        return null;
+      };
+
       const unchanged =
         applying.applied.length === 0 && applying.proposal.status === p.status;
       return {
@@ -469,66 +534,15 @@ export function createProposalActions(deps: ProposalActionsDeps): ProposalAction
         proposal: unchanged ? p : applying.proposal,
         value: { applied: applying.applied.length, files: applying.files.length },
         before: async () => {
-          // 0. Os pacotes de biblioteca são lidos, validados e entregues à sessão, que os
-          // grava em `specs/<pasta>/` junto com o projeto (copiados: ficam na proposta).
-          for (const pkg of applying.packages) {
-            const read = await readProposalPackage(storage, pkg, base, id);
-            if (typeof read === 'string') {
-              failedPath = pkg.from;
-              return read;
-            }
-            deps.stagePackage({ id: pkg.specId, version: pkg.version }, read);
-          }
-          // 1. As imagens vão para o lugar definitivo (copiadas; a origem só sai no fim).
-          const taken = new Set<string>();
-          for (const file of await deps.takenImageFiles()) taken.add(fileNameKey(file));
-          for (const image of base.containers) {
-            if (image.file !== null) taken.add(fileNameKey(image.file));
-          }
-          for (const move of applying.files) {
-            if (taken.has(fileNameKey(move.to))) {
-              failedPath = move.to;
-              await rollback();
-              return 'image-exists';
-            }
-            const source = await storage.readImage(move.from);
-            if (!source) {
-              failedPath = move.from;
-              await rollback();
-              return 'image-missing';
-            }
-            // Cópia em memória: ler de novo depois de apagar a origem, no desfazer, não pode falhar.
-            const blob = new Blob([await source.arrayBuffer()], {
-              type: source.type || imageMimeType(move.to),
-            });
-            await deps.putProjectImage(move.to, blob);
-            moved.push({ from: move.from, to: move.to, blob });
-            taken.add(fileNameKey(move.to));
-          }
-          // 2. O projeto, numa entrada de desfazer. Se mudou enquanto copiávamos, desiste.
-          if (store.project.peek() !== base) {
+          try {
+            return await prepare();
+          } catch (e) {
+            // Exceção de armazenamento (leitura do pacote ou da imagem, gravação da cópia):
+            // vira a falha de gravação tipada e as cópias já feitas saem.
+            reportError('proposals.apply', e);
             await rollback();
-            return 'stale';
+            return 'write-failed';
           }
-          if (applying.applied.length > 0) {
-            const result = store.apply(() => applying.project, { link });
-            if (!result.ok) {
-              await rollback();
-              return result.error === 'read-only' ? 'read-only' : 'failed';
-            }
-            applied = store.project.peek();
-          }
-          // 3. O `mapping.json` primeiro: a proposta só diz "aplicada" se ele gravou. Senão,
-          // desfaz a entrada (sem "refazer"), devolve as cópias e não grava a proposta.
-          const saved = await deps.flush();
-          if (!saved.ok) {
-            abandoned = true;
-            if (applied !== null && store.project.peek() === applied) store.undo();
-            store.discardRedoOf(id);
-            await rollback();
-            return 'save-failed';
-          }
-          return null;
         },
         // 4. O `mapping.json` gravou, mas o `proposal.json` falhou (fase 8.2, P7): o projeto
         // não pode ficar aplicado com a proposta sem `applied`. Desfaz a entrada (a sessão

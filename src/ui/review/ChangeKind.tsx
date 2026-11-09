@@ -6,7 +6,7 @@ import { Icon, type IconName } from '../icons';
 // cor (verde e vermelho ficam para aceita e rejeitada). + criada, − removida, ⇄ movida,
 // ∿ alterada, duas molduras para imagem trocada.
 
-const ICONS: Readonly<Record<ChangeType, IconName>> = {
+export const CHANGE_KIND_ICONS: Readonly<Record<ChangeType, IconName>> = {
   created: 'plus',
   removed: 'minus',
   moved: 'moved',
@@ -40,7 +40,7 @@ export function ChangeKind({
       title={decorative ? undefined : label}
       data-kind={type}
     >
-      <Icon name={ICONS[type]} />
+      <Icon name={CHANGE_KIND_ICONS[type]} />
     </span>
   );
 }

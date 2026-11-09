@@ -5,6 +5,7 @@ import type { NewPerspectiveStart } from '../store/perspectiveActions';
 import { Button, Choice, Segmented, Select, TextField } from './controls';
 import { Dialog } from './Dialog';
 import { useEditor } from './EditorContext';
+import { perspectiveNameMessage } from './perspectiveNameMessage';
 
 const MAIN = 'main';
 const EMPTY = 'empty';
@@ -24,12 +25,6 @@ function hiddenFrom(project: Project, value: string): readonly string[] {
   if (!value.startsWith(PREFIX)) return [];
   const source = project.perspectives.find((x) => x.id === value.slice(PREFIX.length));
   return source ? source.hiddenLayers : [];
-}
-
-function nameMessage(issue: 'empty' | 'taken', name: string): string {
-  return issue === 'empty'
-    ? t('perspective.new.nameEmpty')
-    : t('perspective.new.nameTaken', { name: name.trim() });
 }
 
 /**
@@ -109,7 +104,7 @@ export function NewPerspectiveDialog({ onClose }: { readonly onClose: () => void
             />
             {touched && issue !== null && (
               <p class="field-error" role="alert">
-                {nameMessage(issue, name)}
+                {perspectiveNameMessage(issue, name)}
               </p>
             )}
           </div>

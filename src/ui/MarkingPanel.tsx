@@ -152,9 +152,7 @@ export function MarkingPanel({
   );
   const where = [
     containerName,
-    ...ancestorsOf(project, marking.id)
-      .reverse()
-      .map((m) => markingLabel(project, m)),
+    ...[...ancestors].reverse().map((m) => markingLabel(project, m)),
   ].join(t('marking.pathSeparator'));
 
   return (

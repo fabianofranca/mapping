@@ -41,6 +41,7 @@ import type { Box, Screen } from '../src/model/components/screen';
 import { type SourceResult, screenFromSource } from '../src/model/components/origin';
 import type { AllowOrigin } from './allowOrigin';
 import { createViewerRemoteImages } from './remoteImages';
+import { VIEWER_LABELS } from './labels';
 import { konvaMeasurer } from '../src/canvas/components/konvaMeasurer';
 import {
   type InstanceWarnings,
@@ -254,6 +255,7 @@ export function createViewer(
     ? createViewerRemoteImages(options.allowOrigin)
     : undefined;
   const renderer = new ScreenRenderer(screenGroup, {
+    labels: VIEWER_LABELS,
     measure,
     pixelSafe: true,
     ...(images ? { remoteImage: (url: string) => images.resolve(url) } : {}),

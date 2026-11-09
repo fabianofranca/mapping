@@ -559,7 +559,9 @@ export function openSession(options: SessionOptions): ProjectSession {
   const stampOf = (path: string): Promise<string | null> =>
     storage.statImage ? storage.statImage(path).catch(() => null) : Promise.resolve(null);
   const stampImages = async (paths: readonly string[]) => {
-    for (const path of paths) imageStamps.set(path, await stampOf(path));
+    // Em paralelo (um `stat` por imagem, sem dependência entre elas); grava na ordem.
+    const stamps = await Promise.all(paths.map(stampOf));
+    paths.forEach((path, i) => imageStamps.set(path, stamps[i] ?? null));
   };
   const initialStamps = watchable
     ? stampImages(imageFileNames(options.project.containers)).catch(reportCleanupFailure)
@@ -1006,9 +1008,11 @@ export function openSession(options: SessionOptions): ProjectSession {
     components.invalidate();
     catalogs.invalidate();
     libraryIssues.value = loaded.libraryIssues;
-    if (loaded.migratedFrom !== null) {
-      pendingBackup = { version: loaded.migratedFrom, text: loaded.text };
-    }
+    // Arquivo que já está no schema atual não precisa de backup: zera o que sobrou da abertura.
+    pendingBackup =
+      loaded.migratedFrom === null
+        ? null
+        : { version: loaded.migratedFrom, text: loaded.text };
     disk = {
       revision: readRevision(loaded.text) ?? 0,
       text: loaded.text,
@@ -1032,9 +1036,14 @@ export function openSession(options: SessionOptions): ProjectSession {
     await initialStamps;
     const changed: string[] = [];
     const current = new Set<string>();
-    for (const file of imageFileNames(project.containers)) {
+    // Os carimbos são independentes: lidos juntos, comparados na ordem dos containers.
+    const stamped = await Promise.all(
+      imageFileNames(project.containers).map(
+        async (file) => [file, await stampOf(file)] as const,
+      ),
+    );
+    for (const [file, stamp] of stamped) {
       current.add(file);
-      const stamp = await stampOf(file);
       const known = imageStamps.has(file);
       if (known ? imageStamps.get(file) !== stamp : all) changed.push(file);
       imageStamps.set(file, stamp);
@@ -1117,13 +1126,17 @@ export function openSession(options: SessionOptions): ProjectSession {
         // refeitas sobre a versão do disco, então não há "alteração local pendente" a proteger.
         // Fora da fila da sessão: a fila das propostas pode esperar por ela (`flush`), nunca o
         // contrário.
-        if (!closed && storage.statProposal) {
-          await proposals.scan().catch((e: unknown) => reportError('proposals.scan', e));
-        }
         // As conversas também: só `comments/`, pelo carimbo, lendo só o arquivo que mudou.
-        if (!closed && storage.statThread) {
-          await threads.scan().catch((e: unknown) => reportError('threads.scan', e));
-        }
+        // As duas varreduras não compartilham arquivo, fila nem estado (`proposals/` e
+        // `comments/`, cada uma com a sua fila): rodam juntas.
+        await Promise.all([
+          !closed && storage.statProposal
+            ? proposals.scan().catch((e: unknown) => reportError('proposals.scan', e))
+            : undefined,
+          !closed && storage.statThread
+            ? threads.scan().catch((e: unknown) => reportError('threads.scan', e))
+            : undefined,
+        ]);
         return result;
       });
     pendingSync = entry;

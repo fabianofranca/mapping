@@ -109,6 +109,49 @@ describe('Camadas com perspectiva aberta', () => {
   });
 });
 
+describe('Camadas somente leitura com perspectiva aberta (CR #954, item 19)', () => {
+  it('a caixa e "Mostrar todas" ficam desabilitadas e nada muda no DOM', async () => {
+    const harness = await createLocalHarness(cadastroProject());
+    const { session } = harness.context;
+    const created = session.perspectiveActions.createPerspective({
+      name: 'Fluxo A',
+      startFrom: 'empty',
+      local: false,
+    });
+    if (!created.ok) throw new Error('perspectiva não criada');
+    const layer = harness.project().layers[0];
+    if (!layer) throw new Error('sem camada');
+    act(() => void session.perspective.open(created.value));
+    renderLive(harness, (p) => (
+      <>
+        <LayerActions project={p} readOnly />
+        <LayersPanel project={p} readOnly />
+      </>
+    ));
+    const box = await screen.findByRole('checkbox', {
+      name: `Mostrar a camada ${layer.name}`,
+    });
+    expect(box).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Mostrar todas' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    await userEvent.setup().click(box);
+    expect((box as HTMLInputElement).checked).toBe(true);
+  });
+
+  it('na Principal a visibilidade, que é só da interface, segue habilitada', async () => {
+    const harness = await createLocalHarness(cadastroProject());
+    const layer = harness.project().layers[0];
+    if (!layer) throw new Error('sem camada');
+    renderLive(harness, (p) => <LayersPanel project={p} readOnly />);
+    const box = screen.getByRole('checkbox', { name: `Mostrar a camada ${layer.name}` });
+    expect(box).toHaveProperty('disabled', false);
+    await userEvent.setup().click(box);
+    expect([...harness.ui.hiddenLayers.value]).toEqual([layer.id]);
+  });
+});
+
 describe('"Mostrar todas" dos Detalhes com perspectiva aberta (CE4, #956)', () => {
   it('tira as camadas escondidas da perspectiva, numa entrada de desfazer', async () => {
     const harness = await createLocalHarness(cadastroProject());

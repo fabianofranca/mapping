@@ -3,7 +3,7 @@ import { t } from '../i18n';
 import type { Project } from '../model';
 import { Select } from './controls';
 import { useEditor } from './EditorContext';
-import { declaredDrawingModes } from './drawingModes';
+import { declaredDrawingModes, drawingModeLabel } from './drawingModes';
 
 // Modo do desenho do projeto (schema v18), nas Configurações do editor: escolhe o modo dos
 // `tokens` das especializações aplicadas. Não depende do tema claro/escuro da interface.
@@ -41,11 +41,13 @@ export function DrawingModeSettings({ project, readOnly }: DrawingModeSettingsPr
       >
         {declared.map((mode) => (
           <option key={mode} value={mode}>
-            {mode}
+            {drawingModeLabel(mode)}
           </option>
         ))}
         {undeclared && (
-          <option value={stored}>{t('drawingMode.undeclared', { mode: stored })}</option>
+          <option value={stored}>
+            {t('drawingMode.undeclared', { mode: drawingModeLabel(stored) })}
+          </option>
         )}
       </Select>
     </section>

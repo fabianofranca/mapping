@@ -61,7 +61,6 @@ export function ReviewLevelPanel({ target }: { readonly target: ReviewTarget }) 
   if (!names || !tree || !p) return null;
   const { header, others, images } = plan(target, change?.imageId, change?.markingId);
   const ids = tree.changeIdsOf(others);
-  const whole = null;
 
   let identity;
   if (header.level === 'proposal') {
@@ -71,7 +70,7 @@ export function ReviewLevelPanel({ target }: { readonly target: ReviewTarget }) 
         name={p.title}
         sub={joinParts([p.origin, p.author, formatFullDate(p.createdAt, locale.value)])}
         id={p.id}
-        flags={<IdentityFlags target={header} whole={whole} />}
+        flags={<IdentityFlags target={header} />}
       />
     );
   } else {
@@ -86,7 +85,7 @@ export function ReviewLevelPanel({ target }: { readonly target: ReviewTarget }) 
               ? 'review.panel.canvasSub'
               : 'review.panel.levelSub',
         )}
-        flags={<IdentityFlags target={header} whole={whole} />}
+        flags={<IdentityFlags target={header} />}
       />
     );
   }
@@ -100,7 +99,7 @@ export function ReviewLevelPanel({ target }: { readonly target: ReviewTarget }) 
             {header.level === 'proposal' && p.description && (
               <p class="review-description">{p.description}</p>
             )}
-            <ReviewHeader target={header} whole={whole} />
+            <ReviewHeader target={header} />
             <OtherChangesSection ids={ids} />
             {images && <ImagesSection />}
           </div>

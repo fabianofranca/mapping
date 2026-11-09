@@ -1,9 +1,10 @@
 // A fonte de imagens remotas: as duas portas da app e o carregador, num só lugar.
 import { signal } from '@preact/signals';
 import { describe, expect, it, vi } from 'vitest';
-import type {
-  RemoteImageLoader,
-  RemoteImageView,
+import {
+  REMOTE_IMAGE_LIMITS,
+  type RemoteImageLoader,
+  type RemoteImageView,
 } from '../../../src/canvas/components/imageLoader';
 import { createRemoteImageSource } from '../../../src/canvas/components/remoteImages';
 import {
@@ -182,5 +183,26 @@ describe('Diagnóstico: a imagem que passou a ser mostrada sai da lista (R15.5)'
     expect(remoteImageIssues.value.map((i) => i.reason)).toEqual(['timeout']);
     expect(gate.value).toBe(allow);
     clearRemoteImageIssues();
+  });
+
+  it('guarda o mapa de URLs normalizadas só até o limite do carregador (as mais antigas saem)', () => {
+    const normalized = (raw: string) => `norm:${raw}`;
+    const ctx = setup((raw) => ({
+      allowed: true,
+      url: normalized(raw),
+      origin: 'https://cdn.exemplo.com',
+    }));
+    const heard: string[] = [];
+    ctx.source.subscribe((u) => heard.push(u));
+    const total = REMOTE_IMAGE_LIMITS.failureEntries + 100;
+    for (let i = 0; i < total; i += 1) ctx.source.resolve(`https://cdn.exemplo.com/${i}`);
+    // A recente ainda traduz a URL normalizada para a do campo...
+    ctx.emit(normalized(`https://cdn.exemplo.com/${total - 1}`));
+    // ...a mais antiga já saiu do mapa: o aviso vai com a normalizada.
+    ctx.emit(normalized('https://cdn.exemplo.com/0'));
+    expect(heard).toEqual([
+      `https://cdn.exemplo.com/${total - 1}`,
+      normalized('https://cdn.exemplo.com/0'),
+    ]);
   });
 });

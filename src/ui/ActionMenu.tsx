@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { IconButton } from './controls';
 import { assignRef, returnFocusToTrigger } from './focus';
 import { createOpenScrollGuard } from './openScrollGuard';
+import { place } from './Popover';
 import { menuKeyDown, useFocusFirstItem } from './useMenuNavigation';
 
 // Menu ⋯ de uma linha (KeyValueGrid e DataGrid): subir, descer, remover. Popover
@@ -25,25 +26,6 @@ interface ActionMenuProps {
   readonly disabled?: boolean;
   /** O botão que abre o menu (ex.: alvo do foco depois de um diálogo aberto pelo item). */
   readonly triggerRef?: Ref<HTMLButtonElement>;
-}
-
-const GAP = 4;
-const EDGE = 8;
-
-/** Põe a lista (fixed) abaixo do gatilho, alinhada à direita; sobe se não couber. */
-function place(list: HTMLElement, anchor: HTMLElement): void {
-  const box = anchor.getBoundingClientRect();
-  const width = list.offsetWidth;
-  const height = list.offsetHeight;
-  const vw = globalThis.innerWidth || document.documentElement.clientWidth;
-  const vh = globalThis.innerHeight || document.documentElement.clientHeight;
-  const left = Math.max(EDGE, Math.min(box.right - width, vw - width - EDGE));
-  const below = box.bottom + GAP;
-  const above = box.top - GAP - height;
-  const fitsBelow = below + height <= vh - EDGE;
-  const top = fitsBelow || above < EDGE ? below : above;
-  list.style.left = `${left}px`;
-  list.style.top = `${Math.max(EDGE, Math.min(top, vh - height - EDGE))}px`;
 }
 
 export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuProps) {
@@ -70,7 +52,7 @@ export function ActionMenu({ label, items, disabled, triggerRef }: ActionMenuPro
       if (scrollCloses(e)) close();
     };
     const onMove = () => close();
-    if (list.current && trigger.current) place(list.current, trigger.current);
+    if (list.current && trigger.current) place(trigger.current, list.current, 'end');
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('scroll', onScroll, true);
     globalThis.addEventListener('resize', onMove);

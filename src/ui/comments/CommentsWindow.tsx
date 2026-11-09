@@ -265,7 +265,9 @@ function AnchorCell({ anchor, plain, selected, unread }: AnchorCellProps) {
           type="button"
           class="link comments-anchor-button"
           aria-current={selected || undefined}
-          aria-label={t('comments.row.open', { anchor })}
+          aria-label={t(unread ? 'comments.row.openUnread' : 'comments.row.open', {
+            anchor,
+          })}
         >
           {anchor}
         </button>

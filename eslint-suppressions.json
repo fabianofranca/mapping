@@ -139,11 +139,6 @@
       "count": 1
     }
   },
-  "src/app/useReviewSync.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/canvas/CanvasController.ts": {
     "complexity": {
       "count": 2
@@ -486,7 +481,7 @@
   },
   "src/store/proposedCatalog.ts": {
     "complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "src/store/review.ts": {
@@ -554,16 +549,6 @@
       "count": 3
     }
   },
-  "src/ui/LibraryPalette.tsx": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "src/ui/ListView.tsx": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/ui/MarkingPanel.tsx": {
     "complexity": {
       "count": 1
@@ -601,7 +586,7 @@
   },
   "src/ui/SpecsDialog.tsx": {
     "complexity": {
-      "count": 5
+      "count": 3
     }
   },
   "src/ui/TableField.tsx": {
@@ -696,7 +681,7 @@
   },
   "src/ui/review/changeText.ts": {
     "complexity": {
-      "count": 10
+      "count": 7
     }
   },
   "src/ui/review/reviewExtension.tsx": {

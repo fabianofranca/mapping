@@ -15,6 +15,8 @@ import Konva from 'konva/lib/Core';
 import { Rect as KonvaRect } from 'konva/lib/shapes/Rect';
 import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { type RemoteImageResult, renderScene } from './renderScene';
+import { DEFAULT_PALETTE, type RenderPalette } from './palette';
+import type { RenderWarning } from './renderWarnings';
 import type { FieldValues } from '../../model/components/componentFormat';
 import { type TextMeasurer, instantiate } from '../../model/components/instantiate';
 import {
@@ -25,13 +27,34 @@ import {
 import { type Instance, type Screen, renderOrder } from '../../model/components/screen';
 import { konvaMeasurer } from './konvaMeasurer';
 
-const MISSING_COLOR = '#D81B60';
-const MISSING_FILL = 'rgba(216, 27, 96, 0.06)';
+/** Área clicável da instância: transparente, mas que recebe o ponteiro. */
+const HIT_FILL = 'transparent';
 
 /** Avisos da instanciação por instância (só as que têm aviso). */
 export type InstanceWarnings = ReadonlyMap<string, readonly string[]>;
 
+/**
+ * Os textos que o renderer desenha ou devolve (a caixa de tipo ausente e os avisos): quem chama
+ * os fornece, no idioma dele. O renderer não tem texto de interface próprio.
+ */
+export interface ScreenRendererLabels {
+  /** Texto da caixa de uma instância cujo tipo não tem componente. */
+  typeWithoutComponent(typeName: string): string;
+  /** Texto da caixa de uma instância cujo tipo a biblioteca não tem. */
+  unknownType(typeId: string): string;
+  /** Aviso da instância de tipo sem componente. */
+  readonly warningTypeWithoutComponent: string;
+  /** Aviso da instância de tipo que a biblioteca não tem. */
+  readonly warningUnknownType: string;
+  /** Texto de um aviso do desenho da cena (`renderScene`). */
+  drawWarning(warning: RenderWarning): string;
+}
+
 export interface ScreenRendererOptions {
+  /** Textos do renderer, no idioma de quem chama. */
+  readonly labels: ScreenRendererLabels;
+  /** Cores e medidas do reservado e da caixa de tipo ausente (padrão: `DEFAULT_PALETTE`). */
+  readonly palette?: Partial<RenderPalette>;
   /** Medidor de texto (padrão: `konvaMeasurer`). */
   readonly measure?: TextMeasurer;
   /** Chamado uma vez por instância, quando o grupo dela é criado (o editor liga o arrasto aqui). */
@@ -62,6 +85,7 @@ interface Mounted {
 
 export class ScreenRenderer {
   private readonly measure: TextMeasurer;
+  private readonly palette: RenderPalette;
   private readonly mounted = new Map<string, Mounted>();
   private readonly warningsById = new Map<string, readonly string[]>();
   private order: string[] = [];
@@ -70,9 +94,10 @@ export class ScreenRenderer {
 
   constructor(
     private readonly group: Konva.Group,
-    private readonly options: ScreenRendererOptions = {},
+    private readonly options: ScreenRendererOptions,
   ) {
     this.measure = options.measure ?? konvaMeasurer;
+    this.palette = { ...DEFAULT_PALETTE, ...options.palette };
   }
 
   /**
@@ -234,32 +259,32 @@ export class ScreenRenderer {
     const local = { x: 0, y: 0, width: instance.box.width, height: instance.box.height };
     if (!type?.component) {
       // Tipo sem componente (ou biblioteca sem o tipo): a caixa tracejada com o nome.
+      const { labels } = this.options;
+      const { palette } = this;
       node.add(
         new KonvaRect({
           ...local,
-          stroke: MISSING_COLOR,
+          stroke: palette.unknownLine,
           strokeWidth: 1,
           dash: [6, 4],
           strokeScaleEnabled: false,
-          fill: MISSING_FILL,
+          fill: palette.unknownFill,
         }),
         new KonvaText({
           ...local,
           text: type
-            ? `${type.name}\n(sem componente)`
-            : `${instance.typeId}\n(tipo desconhecido)`,
-          fontSize: 12,
-          fontFamily: 'system-ui, sans-serif',
-          fill: MISSING_COLOR,
+            ? labels.typeWithoutComponent(type.name)
+            : labels.unknownType(instance.typeId),
+          fontSize: palette.labelFontSize,
+          fontFamily: palette.labelFontFamily,
+          fill: palette.unknownLine,
           align: 'center',
           verticalAlign: 'middle',
           listening: false,
         }),
       );
       this.warningsById.set(instance.id, [
-        type
-          ? 'tipo sem componente na especialização'
-          : 'tipo não existe na especialização',
+        type ? labels.warningTypeWithoutComponent : labels.warningUnknownType,
       ]);
       entry.label = type ? instanceLabel(type, instance.values) : instance.typeId;
       node.setAttr('label', entry.label);
@@ -271,16 +296,21 @@ export class ScreenRenderer {
     });
     const rendered = renderScene(
       { root: result.root, warnings: [] },
-      { remoteImage: this.options.remoteImage, pixelSafe: this.options.pixelSafe },
+      {
+        remoteImage: this.options.remoteImage,
+        pixelSafe: this.options.pixelSafe,
+        palette: this.palette,
+      },
     );
     entry.imageUrls = rendered.imageUrls;
     rendered.root.listening(true);
     node.add(rendered.root);
     // Área de clique inteira (mesmo com fundo transparente).
-    node.add(
-      new KonvaRect({ ...local, fill: 'rgba(0,0,0,0)', name: 'hit', listening: true }),
-    );
-    const all = [...result.warnings, ...rendered.warnings];
+    node.add(new KonvaRect({ ...local, fill: HIT_FILL, name: 'hit', listening: true }));
+    const all = [
+      ...result.warnings,
+      ...rendered.warnings.map((w) => this.options.labels.drawWarning(w)),
+    ];
     if (all.length > 0) this.warningsById.set(instance.id, all);
     else this.warningsById.delete(instance.id);
     entry.label = instanceLabel(type, instance.values);

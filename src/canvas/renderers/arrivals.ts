@@ -8,7 +8,6 @@ import { Text as KonvaText } from 'konva/lib/shapes/Text';
 import { t } from '../../i18n';
 import type { Rect } from '../../model';
 import {
-  ARRIVAL_BADGE_HEIGHT,
   arrivalBadgeSpot,
   arrivalBadgeWidth,
   arrivalBandLabelSpot,
@@ -23,7 +22,6 @@ const BAND_DASH = [6, 4];
 const BAND_STROKE = 1.5;
 const TITLE_GAP = 4;
 const BADGE_RADIUS = 4;
-const BADGE_PAD = 8;
 
 export type ArrivalFrame = Pick<
   Frame,
@@ -53,16 +51,15 @@ function textAttrs(tokens: CanvasTokens, fill: string, weight: number) {
   };
 }
 
-/** `box` (tela) em unidades do canvas, dado o canto `origin` do canvas na tela; `undefined` se vazio. */
+/** `box` (px de tela, relativo ao canto do canvas) em unidades do canvas; `undefined` se vazio. */
 function screenToCanvasRect(
-  box: DOMRect,
-  origin: DOMRect,
+  box: Rect,
   { x, y, scale }: Frame['viewport'],
 ): Rect | undefined {
   if (box.width === 0 || box.height === 0) return undefined;
   return {
-    x: (box.left - origin.left - x) / scale,
-    y: (box.top - origin.top - y) / scale,
+    x: (box.x - x) / scale,
+    y: (box.y - y) / scale,
     width: box.width / scale,
     height: box.height / scale,
   };
@@ -72,9 +69,22 @@ export class ArrivalRenderer {
   private readonly layer: Konva.Container;
   private readonly badges = new Map<string, ArrivalBadgeNode>();
   readonly band: ArrivalBandNode;
+  /**
+   * Retângulo do minimapa (HTML sobre o canvas) em px de tela, relativo ao canvas: guardado e
+   * refeito só quando o canvas ou o próprio minimapa mudam de tamanho (nada de `querySelector`
+   * nem `getBoundingClientRect` por quadro, que forçam o layout).
+   */
+  private minimapBox: Rect | undefined;
+  private minimapStale = true;
+  private measuredSize: Frame['size'] | null = null;
+  private watched: Element | null = null;
+  private watcher: ResizeObserver | null = null;
+  /** Avisa quem desenha que o minimapa mudou de tamanho: o selo precisa de um quadro novo. */
+  private readonly onMinimapResize: (() => void) | undefined;
 
-  constructor(layer: Konva.Container) {
+  constructor(layer: Konva.Container, onMinimapResize?: () => void) {
     this.layer = layer;
+    this.onMinimapResize = onMinimapResize;
     this.band = {
       group: new Konva.Group({ listening: false, visible: false }),
       box: new KonvaRect({ listening: false }),
@@ -120,14 +130,53 @@ export class ArrivalRenderer {
   /** O minimapa (HTML sobre o canvas) em unidades do canvas, ou `undefined` sem ele. */
   private minimapArea(frame: ArrivalFrame): Rect | undefined {
     if (!frame.arrivals?.badges.length) return undefined;
+    if (this.measuredSize !== frame.size) {
+      this.measuredSize = frame.size;
+      this.minimapStale = true;
+    }
+    if (this.minimapStale || (this.watched === null && this.minimapBox === undefined)) {
+      this.measureMinimap();
+    }
+    return this.minimapBox && screenToCanvasRect(this.minimapBox, frame.viewport);
+  }
+
+  private measureMinimap(): void {
+    this.minimapStale = false;
     const host = this.layer.getStage()?.container();
-    const map = host?.parentElement?.querySelector('.minimap');
-    if (!host || !map) return undefined;
-    return screenToCanvasRect(
-      map.getBoundingClientRect(),
-      host.getBoundingClientRect(),
-      frame.viewport,
-    );
+    const map = host?.parentElement?.querySelector('.minimap') ?? null;
+    this.watch(map);
+    if (!host || !map) {
+      this.minimapBox = undefined;
+      return;
+    }
+    const origin = host.getBoundingClientRect();
+    const box = map.getBoundingClientRect();
+    this.minimapBox = {
+      x: box.left - origin.left,
+      y: box.top - origin.top,
+      width: box.width,
+      height: box.height,
+    };
+  }
+
+  /** Acompanha o tamanho do elemento do minimapa: ele cresce e encolhe com a vista. */
+  private watch(map: Element | null): void {
+    if (map === this.watched) return;
+    this.watcher?.disconnect();
+    this.watched = map;
+    if (!map || typeof ResizeObserver === 'undefined') return;
+    this.watcher ??= new ResizeObserver(() => {
+      this.minimapStale = true;
+      this.onMinimapResize?.();
+    });
+    this.watcher.observe(map);
+  }
+
+  /** Solta o acompanhamento do minimapa. */
+  destroy(): void {
+    this.watcher?.disconnect();
+    this.watcher = null;
+    this.watched = null;
   }
 
   private badgeFor(root: string): ArrivalBadgeNode {
@@ -158,17 +207,29 @@ export class ArrivalRenderer {
   ): void {
     const node = this.badgeFor(badge.root);
     const text = t('perspective.canvas.cameFrom', { name: badge.name });
-    node.label.setAttrs({ text });
+    // A fonte do token entra antes de medir: o primeiro desenho mediria com a fonte padrão.
+    node.label.setAttrs({
+      ...textAttrs(tokens, tokens.line, tokens.type.name.weight),
+      text,
+    });
     // O texto medido pode passar da estimativa (letras largas): o selo cresce com ele.
     const width = Math.max(
-      arrivalBadgeWidth(text),
-      node.label.getTextWidth() + 2 * BADGE_PAD,
+      arrivalBadgeWidth(text, tokens.arrival),
+      node.label.getTextWidth() + 2 * tokens.arrival.pad,
     );
-    const at = arrivalBadgeSpot(badge.rect, zoom, width, view, avoid, roots);
+    const at = arrivalBadgeSpot(
+      badge.rect,
+      zoom,
+      width,
+      tokens.arrival,
+      view,
+      avoid,
+      roots,
+    );
     node.group.setAttrs({ x: at.x, y: at.y, scaleX: 1 / zoom, scaleY: 1 / zoom });
     node.box.setAttrs({
       width,
-      height: ARRIVAL_BADGE_HEIGHT,
+      height: tokens.arrival.height,
       cornerRadius: BADGE_RADIUS,
       fill: tokens.badge,
       stroke: tokens.halo,
@@ -177,7 +238,7 @@ export class ArrivalRenderer {
     node.label.setAttrs({
       ...textAttrs(tokens, tokens.line, tokens.type.name.weight),
       width,
-      height: ARRIVAL_BADGE_HEIGHT,
+      height: tokens.arrival.height,
       text,
     });
   }
@@ -219,7 +280,14 @@ export class ArrivalRenderer {
       width: Math.max(node.title.getTextWidth(), node.hint.getTextWidth()),
       height: 2 * line,
     };
-    const at = arrivalBandLabelSpot(band, zoom, size, view, line + TITLE_GAP);
+    const at = arrivalBandLabelSpot(
+      band,
+      zoom,
+      size,
+      view,
+      line + TITLE_GAP,
+      tokens.arrival,
+    );
     node.title.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom });
     node.hint.setAttrs({ scaleX: 1 / zoom, scaleY: 1 / zoom });
     node.title.x(at.x - band.x);

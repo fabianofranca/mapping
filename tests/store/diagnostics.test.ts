@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { diagnosticsUnseen, markDiagnosticsSeen } from '../../src/store/diagnostics';
+import {
+  diagnosticsUnseen,
+  markDiagnosticsSeen,
+  remoteImageIssues,
+  reportRemoteImageIssue,
+} from '../../src/store/diagnostics';
 import { clearReportedErrors, reportError } from '../../src/utils/report';
 
 beforeEach(() => {
@@ -32,5 +37,30 @@ describe('diagnóstico: erros vistos (B4)', () => {
     reportError('save', new Error('falhou'));
     clearReportedErrors();
     expect(diagnosticsUnseen.value).toBe(false);
+  });
+});
+
+describe('diagnóstico: URL de imagem remota inválida (32)', () => {
+  const shown = (url: string) => {
+    reportRemoteImageIssue(url, 'invalid');
+    return remoteImageIssues.value.at(-1)?.url;
+  };
+
+  it('data: aparece com o esquema e o tipo, sem o conteúdo', () => {
+    expect(shown('data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==')).toBe(
+      'data:image/png…',
+    );
+  });
+
+  it('file: aparece inteiro', () => {
+    expect(shown('file:///x.png')).toBe('file:///x.png');
+  });
+
+  it('nenhuma linha começa com null', () => {
+    reportRemoteImageIssue('data:image/svg+xml,<svg/>', 'invalid');
+    reportRemoteImageIssue('file:///y.png', 'invalid');
+    expect(remoteImageIssues.value.some((item) => item.url.startsWith('null'))).toBe(
+      false,
+    );
   });
 });

@@ -1,5 +1,6 @@
 import { t } from '../i18n';
 import { rawValueLines, typeOfAnnotation, type Annotation, type Project } from '../model';
+import { Icon } from './icons';
 import { annotationDisplayName, displayLines, issueMessage, issuesOf } from './typedText';
 
 /** Ícone de alerta de anotação incompleta, com os motivos no `title`. */
@@ -20,7 +21,7 @@ export function IssueBadge({
       aria-label={`${t('issue.badge')}: ${reasons}`}
       title={`${t('issue.badge')}\n${reasons}`}
     >
-      ⚠
+      <Icon name="warning" />
     </span>
   );
 }

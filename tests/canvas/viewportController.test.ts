@@ -30,6 +30,19 @@ describe('ViewportController', () => {
     stop();
   });
 
+  it('measure() sem mudança de tamanho não reescreve o sinal `size`', () => {
+    const view = new ViewportController(container(380, 700), () => canvasProject());
+    view.measure();
+    const writes: unknown[] = [];
+    const stop = view.size.subscribe((size) => writes.push(size));
+    writes.length = 0;
+    view.measure();
+    view.measure();
+    stop();
+    expect(writes).toEqual([]);
+    expect(view.size.value).toEqual(SIZE);
+  });
+
   it('sem tamanho, não enquadra; canvas vazio enquadra a área padrão', () => {
     const el = container(0, 0);
     const view = new ViewportController(el, () => null);

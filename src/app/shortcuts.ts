@@ -116,6 +116,12 @@ export function ariaKeys(label: string | undefined): string | undefined {
   return name === undefined ? undefined : [...modifiers, name].join('+');
 }
 
+/** `aria-keyshortcuts` de vários atalhos de uma ação (separados por espaço, como a ARIA pede). */
+export function ariaKeysAll(labels: readonly string[]): string | undefined {
+  const keys = labels.map((label) => ariaKeys(label)).filter((k) => k !== undefined);
+  return keys.length > 0 ? keys.join(' ') : undefined;
+}
+
 type KeyInfo = Pick<
   KeyboardEvent,
   'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'

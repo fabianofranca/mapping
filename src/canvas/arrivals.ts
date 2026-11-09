@@ -5,24 +5,20 @@
 // desenhar. O renderer só desenha.
 import {
   arrivalHasReference,
+  boundingBox,
+  bottom,
   projectIndex,
+  right,
   rootFootprint,
   type Project,
   type Rect,
 } from '../model';
+import type { CanvasTokens } from './theme';
 import type { Point } from './viewport';
 
-/** Altura do selo (px de tela). */
-export const ARRIVAL_BADGE_HEIGHT = 20;
-/** Largura de cada caractere do texto e respiro dos lados (px de tela), para a largura do selo. */
-const BADGE_CHAR = 7;
-const BADGE_PAD = 8;
-/** Vão entre o selo e o canto da raiz (px de tela). */
-const BADGE_GAP = 4;
-/** Vão do selo abaixo de uma raiz pequena: cobre as alças da seleção (px de tela). */
-const BADGE_GAP_BELOW = 10;
-/** Faixa do nome do container, logo acima de cada raiz (px de tela): o selo não cai nela. */
-const NAME_BAND = 24;
+/** As medidas do selo (px de tela), dos tokens do canvas (`size-cv-arrival-*`). */
+export type ArrivalMetrics = CanvasTokens['arrival'];
+
 /** Folga da faixa em volta das raízes com marca (unidades do canvas). */
 export const ARRIVAL_BAND_PAD = 24;
 /** Folga a mais (px de tela) que Enquadrar tudo deixa em volta quando há faixa: cabe o rótulo dela. */
@@ -43,20 +39,6 @@ export interface ArrivalMarks {
   readonly roots: readonly Rect[];
 }
 
-const right = (r: Rect) => r.x + r.width;
-const bottom = (r: Rect) => r.y + r.height;
-
-function boxOf(rects: readonly Rect[]): Rect {
-  const x = Math.min(...rects.map((r) => r.x));
-  const y = Math.min(...rects.map((r) => r.y));
-  return {
-    x,
-    y,
-    width: Math.max(...rects.map(right)) - x,
-    height: Math.max(...rects.map(bottom)) - y,
-  };
-}
-
 /**
  * A faixa: `project.arrivals` não grava se a raiz foi para a área de chegada ou para perto da
  * referência; isso se deduz das setas de agora (`arrivalHasReference`, a mesma regra da busca de
@@ -71,8 +53,8 @@ function bandOf(project: Project, orphans: ReadonlySet<string>): Rect | null {
     const rect = rootFootprint(project, id);
     if (rect) rects.push(rect);
   }
-  if (rects.length === 0) return null;
-  const area = boxOf(rects);
+  const area = boundingBox(rects);
+  if (!area) return null;
   for (const id of projectIndex(project).roots) {
     if (orphans.has(id)) continue;
     const rect = rootFootprint(project, id);
@@ -115,8 +97,8 @@ export function arrivalMarks(project: Project | null): ArrivalMarks | null {
 }
 
 /** Largura do selo (px de tela): cresce com o texto. */
-export function arrivalBadgeWidth(text: string): number {
-  return text.length * BADGE_CHAR + 2 * BADGE_PAD;
+export function arrivalBadgeWidth(text: string, metrics: ArrivalMetrics): number {
+  return text.length * metrics.charWidth + 2 * metrics.pad;
 }
 
 /**
@@ -130,17 +112,17 @@ export function arrivalBadgeSpot(
   rect: Rect,
   zoom: number,
   width: number,
+  metrics: ArrivalMetrics,
   view?: Rect,
   avoid?: Rect,
   roots: readonly Rect[] = [],
 ): Point {
-  const gap = BADGE_GAP / zoom;
-  const height = ARRIVAL_BADGE_HEIGHT / zoom;
+  const gap = metrics.gap / zoom;
+  const height = metrics.height / zoom;
   const w = width / zoom;
-  const small =
-    rect.width * zoom < 2 * width || rect.height * zoom < 2 * ARRIVAL_BADGE_HEIGHT;
+  const small = rect.width * zoom < 2 * width || rect.height * zoom < 2 * metrics.height;
   const at = small
-    ? smallSpot(rect, zoom, w, height, roots)
+    ? smallSpot(rect, zoom, w, height, roots, metrics)
     : { x: rect.x + gap, y: bottom(rect) - gap - height };
   if (!view) return at;
   const inside = keepInside(at, w, height, view);
@@ -157,15 +139,16 @@ function smallSpot(
   w: number,
   h: number,
   roots: readonly Rect[],
+  metrics: ArrivalMetrics,
 ): Point {
-  const below = { x: rect.x, y: bottom(rect) + BADGE_GAP_BELOW / zoom };
-  const gap = BADGE_GAP / zoom;
+  const below = { x: rect.x, y: bottom(rect) + metrics.gapBelow / zoom };
+  const gap = metrics.gap / zoom;
   const candidates = [
     below,
     { x: right(rect) + gap, y: bottom(rect) + gap - h },
     { x: rect.x - gap - w, y: bottom(rect) + gap - h },
   ];
-  const nameBand = NAME_BAND / zoom;
+  const nameBand = metrics.nameBand / zoom;
   const blocked = (at: Point): boolean =>
     roots.some(
       (r) =>
@@ -221,11 +204,12 @@ export function arrivalBandLabelSpot(
   size: { readonly width: number; readonly height: number },
   view: Rect,
   nameClear: number,
+  metrics: ArrivalMetrics,
 ): Point {
   const w = size.width / zoom;
   const h = size.height / zoom;
-  const lift = (nameClearance(zoom, nameClear) + BADGE_GAP) / zoom;
+  const lift = (nameClearance(zoom, nameClear) + metrics.gap) / zoom;
   const above = band.y - lift - h;
-  const y = above >= view.y ? above : bottom(band) + BADGE_GAP / zoom;
+  const y = above >= view.y ? above : bottom(band) + metrics.gap / zoom;
   return keepInside({ x: band.x, y }, w, h, view);
 }

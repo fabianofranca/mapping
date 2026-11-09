@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import {
   codeLink,
@@ -11,6 +10,7 @@ import {
 import { writeClipboardText } from '../utils/clipboard';
 import { IconButton, IconLink, Tooltip } from './controls';
 import { Property } from './PropertyGrid';
+import { useCopyResult } from './useCopyResult';
 
 // "Definição" de uma anotação tipada (etapa 9): o arquivo que define o símbolo do `code` do
 // tipo em cada plataforma, com "Abrir no repositório" e "Copiar caminho". Os nomes de
@@ -32,16 +32,7 @@ export function codeDefinitionTooltip(
 
 /** Copia o caminho: ícone de confirmação por um instante e a dica diz o resultado. */
 export function CopyPathButton({ path }: { readonly path: string }) {
-  const [state, setState] = useState<'ok' | 'failed' | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
-  useEffect(() => () => clearTimeout(timer.current), []);
-
-  const copy = async () => {
-    const ok = await writeClipboardText(path);
-    setState(ok ? 'ok' : 'failed');
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setState(null), 2000);
-  };
+  const { result: state, copy } = useCopyResult();
 
   const result =
     state === 'ok'
@@ -55,7 +46,7 @@ export function CopyPathButton({ path }: { readonly path: string }) {
         icon={state === 'ok' ? 'check' : state === 'failed' ? 'warning' : 'copy'}
         label={t('code.copyPathNamed', { path })}
         tooltip={result || t('code.copyPath')}
-        onClick={() => void copy()}
+        onClick={() => void copy(() => writeClipboardText(path))}
       />
       <span class="visually-hidden" role="status">
         {result}

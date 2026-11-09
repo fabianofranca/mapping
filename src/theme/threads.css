@@ -101,18 +101,18 @@
 }
 
 .thread-state-agent {
-  background: var(--color-warning-bg);
-  color: var(--color-warning);
+  background: var(--color-thread-agent-bg);
+  color: var(--color-thread-agent);
 }
 
 .thread-state-human {
-  background: var(--color-selection);
-  color: var(--color-accent);
+  background: var(--color-thread-human-bg);
+  color: var(--color-thread-human);
 }
 
 .thread-state-resolved {
-  background: var(--color-success-bg);
-  color: var(--color-success);
+  background: var(--color-thread-resolved-bg);
+  color: var(--color-thread-resolved);
 }
 
 .thread-resolved-by {
