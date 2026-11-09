@@ -44,5 +44,15 @@ describe('CLAUDE.md enxuto', () => {
     const process = read('docs/PROCESS.md');
     expect(process).not.toContain('git worktree add');
     expect(process).toContain('docs/FLOW.md');
+    // cada ponteiro do PROCESS.md aponta para um título que existe no FLOW.md
+    for (const title of [
+      'Orquestrador — passo a passo',
+      'Bug: busca de duplicadas',
+      'Bug: corpo e evidência',
+      'Evidência de bug',
+      'CI e preview',
+    ]) {
+      expect(process, title).toContain(title);
+    }
   });
 });

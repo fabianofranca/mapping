@@ -1,6 +1,6 @@
 # Fluxo automatizado — mensagens prontas
 
-As regras estão no `docs/PROCESS.md` ("Fluxo automatizado"); aqui ficam só as mensagens. Os trechos `<…>` são lacunas a preencher.
+As regras estão no `docs/PROCESS.md`; aqui ficam as mensagens prontas e o passo a passo (orquestrador, busca de duplicadas e evidência de bug, CI e preview). Os trechos `<…>` são lacunas a preencher.
 
 ## Para o dono, nos três chats
 
@@ -44,11 +44,7 @@ As regras estão no `docs/PROCESS.md` ("Fluxo automatizado"); o skill `implement
 - notifica o dono no celular (`PushNotification`) com o resumo e o link do PR do épico, e mescla o épico na `main` **só depois de o dono responder "pode mesclar" no chat**;
 - depois do merge, confere a Release do MCP (parágrafo "Depois do merge" acima).
 
-A **sessão da fase** implementa com os subagentes e o esforço da sub-issue, roda os gates, abre o PR para o épico ("Parte de #N"), acompanha o CI (`subscribe_pr_activity`) e, com o CI verde, mescla o próprio PR no épico; depois marca os checkboxes, fecha a sub-issue e avisa o orquestrador por `send_message`.
-
-**Limites:** `create_session` escolhe o modelo, não o esforço: o esforço do coordenador na tabela é referência (de `high` para cima, vira o nível da revisão `/code-review` do diff da fase, item 10 de "Para a sessão da fase"), e o dos subagentes vai no briefing. O `.claude/settings.json` libera em `permissions.allow` os comandos de sempre (gates, `npx`, git sem push forçado) e nega o push forçado, para as fases não pararem nesses pedidos. Fase que não avisa até a conferência de reserva: `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, chama o dono.
-
-**Rodada em blocos ou grupos (resumo):** as sessões do testador de uma rodada completa (5 blocos) ou dirigida grande (grupos) saem de uma vez, no mesmo commit, com o título "Testador — <alvo>, bloco k de 5" (ou "grupo k de n"); a passada visual vai só no bloco que a tabela de `docs/TESTING-NUVEM.md` diz, hoje o 4. Um chat avulso do dono pode ser o coordenador ("Rodada avulsa (do dono)").
+**Limites:** o `.claude/settings.json` libera em `permissions.allow` os comandos de sempre (gates, `npx`, git sem push forçado) e nega o push forçado, para as fases não pararem nesses pedidos. Fase que não avisa até a conferência de reserva (`send_later`, 30 a 60 min): `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, o orquestrador chama o dono.
 
 ## Bug: busca de duplicadas
 
