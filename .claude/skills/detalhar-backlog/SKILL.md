@@ -119,11 +119,11 @@ Antes de criar as filhas, pergunte ao dono, com `AskUserQuestion`, como detalhar
 - "Filha no esforço padrão": vira uma filha como as outras;
 - "Pular nesta rodada": a unidade fica fora e entra no resumo.
 
-Para cada "Prompt para eu abrir", mande ao dono **uma mensagem por unidade**, com uma linha de instrução e o prompt num bloco só, para ele copiar inteiro pelo celular. A instrução: "Abra uma sessão nova do Claude Code no `fabianofranca/mapping`, branch `main`, modelo Opus, esforço high, e cole:". O prompt:
+Para cada "Prompt para eu abrir", mande ao dono **uma mensagem por unidade**, todas logo depois da resposta, com uma linha de instrução e o prompt num bloco só, para ele copiar inteiro pelo celular. A instrução: "Abra uma sessão nova do Claude Code no `fabianofranca/mapping`, branch `main`, modelo Opus, esforço high, e cole:". O prompt leva preenchido tudo o que, na mensagem das filhas, só o coordenador sabe (a unidade, a decisão do grupo, quem roda em paralelo e o id do coordenador):
 
 ```text
-Detalhe <a issue #n | o grupo #a (principal), #b, #c> do `fabianofranca/mapping` como etapa `ready`, nesta sessão. Siga a mensagem de detalhamento do skill `.claude/skills/detalhar-backlog/SKILL.md` (seção 3, o bloco de texto de "Detalhamento"), preenchendo você as lacunas com os dados abaixo, com estas diferenças:
-- Eu estou olhando esta sessão: as decisões de produto (passo 5) você me pergunta direto, pela ferramenta de perguntas, com as regras de "Regra das perguntas ao dono" do mesmo skill, em vez de mandar PERGUNTAS ao coordenador.
+Detalhe <a issue #n | o grupo #a (principal), #b, #c> do `fabianofranca/mapping` como etapa `ready`, nesta sessão. Siga a mensagem de detalhamento do skill `.claude/skills/detalhar-backlog/SKILL.md` (seção 3, o bloco de texto de "Filhas"), com os dados abaixo e estas diferenças:
+- Eu estou olhando esta sessão. Não vale a frase de abertura "Ninguém está olhando esta sessão … as perguntas vão ao coordenador": no passo 5, as decisões de produto você me pergunta direto, pela ferramenta de perguntas, com as regras de "Regra das perguntas ao dono" do mesmo skill, e segue com as respostas sem esperar "RESPOSTAS".
 - Antes de tudo, mande ao coordenador por `send_message` "INICIADA #<principal> — <id desta sessão>" (o id vem do `get_session` sem `session_id`). No fim, mande PRONTA, BLOQUEADA ou FALHOU como o passo 8 diz.
 <Só em grupo: - O grupo foi aprovado por mim: <decisão, com as palavras do dono se ele escreveu>.>
 <- Em paralelo com você: #x, #y.>
@@ -145,6 +145,12 @@ Você é o agente de detalhamento <da issue #n | do grupo #a (principal), #b, #c
 1. Leia o `CLAUDE.md`, as issues da unidade com os comentários, as que elas citam e os títulos das `ready` e `in-progress` abertas, para achar sobreposição. Leia o código e os docs que o plano vai tocar: o "Toca em:" de cada fase cita arquivos que existem.
 <Só em grupo: 2. O grupo foi aprovado pelo dono: <decisão, com as palavras do dono se ele escreveu>. A #a vira a etapa. O conteúdo de cada outra entra no corpo como item numerado, com a origem, o rótulo e a severidade ou o impacto. As outras fecham como duplicadas da #a (`state_reason: duplicate`, `duplicate_of`), cada uma com um comentário que diz para onde foi. A etapa fica com o tipo e o rótulo da #a; em "Absorvidas", o corpo lista a severidade ou o impacto de cada uma. Um `bug` absorvido mantém os passos para reproduzir e a evidência. <Se o grupo traz uma `ready`: o plano dela muda; diga isso num comentário nela, com o porquê e a decisão do dono.>>
 3. Rascunhe o plano inteiro antes de criar qualquer coisa: objetivo, o que fica fora, decisões numeradas, épico (`epic/<nome>`), versões (schema, formatos e MCP: **uma** versão do MCP para a etapa toda, escrita como o tipo da subida — `MCP: minor`, `MCP: patch` ou `MCP: sem mudança` — e nunca como número, porque outras etapas detalhadas em paralelo pegariam o mesmo; o número é fixado quando o épico começa), registros (changelog e DS), a linha `Impacto:` (ou a severidade) e a tabela de modelos e esforço (linha Orquestrador, uma linha por fase e a coluna Testador). Para cada fase: a linha da tabela, o "Toca em:", os checkboxes e o aceite. A última fase traz a seção **Testador**, com os roteiros e a linha "Passada visual: <lista>" (ou "nenhuma"). Com várias issues, junte os roteiros numa rodada só.
+   Antes de seguir, confira o rascunho contra o código da `main` (Grep e Read), item por item, e corrija o que não bater:
+   - todo arquivo, função, teste, passo do `docs/TESTING.md` e versão citada existe e diz o que o plano afirma (os valores atuais de schema, `formatVersion`, MCP e `version` das bibliotecas, lidos no código);
+   - nenhuma decisão admite duas implementações razoáveis diferentes; o que admitir vira decisão numerada ou pergunta ao dono;
+   - cada fase cabe numa sessão (um PR revisável) e nenhuma depende de uma posterior;
+   - roteiro novo é "o próximo número livre", entra num bloco da rodada completa (`docs/TESTING-NUVEM.md`) e o testador da nuvem consegue executá-lo sozinho;
+   - a "Sobreposição" cita as `ready` e `in-progress` que mexem nos mesmos arquivos, roteiros ou versões, com o estado atual delas (não o de quando foram citadas).
 4. Acrescente no corpo a linha `**Depende de:** #x, #y` (ou `**Depende de:** nenhuma`): a etapa ou o que precisa estar na `main` antes de ela começar. O skill que implementa as etapas em sequência lê essa linha.
 5. Decisão de produto (CLAUDE.md: o esperado não está em issue, doc nem spec; há mais de uma leitura razoável; muda uma decisão já tomada; mexe em schema ou formato): não decida sozinho. Junte as perguntas numa mensagem ao coordenador, por `send_message`, neste formato, e termine o turno. A resposta chega como uma mensagem "RESPOSTAS #<principal>".
 
@@ -166,6 +172,7 @@ PRONTA #<principal> — <link>
   Absorvidas: <#b, #c ou nenhuma>
   Decisões do dono aplicadas: <lista curta ou nenhuma>
   Sobreposição: <arquivos ou roteiros em comum com outras ready, ou nenhuma>
+  Conferência: <o que a conferência do passo 3 corrigiu, ou "nada a corrigir">
   Issues novas: <o que você separou em roadmap ou bug, ou nenhuma>
 
 BLOQUEADA #<principal> — <motivo>   (condição de entrada não cumprida; não comente na issue)
@@ -182,7 +189,7 @@ Para cada mensagem que chega:
 
 - **`INICIADA #n — <id>`**: o dono abriu a sessão do prompt. Cancele a conferência do prompt e agende a de reserva da sessão, como a de uma filha (abaixo). As perguntas dessa sessão vão direto ao dono, e não passam por você.
 - **`PERGUNTAS #n`**: notificação, depois `AskUserQuestion` com as perguntas como vieram. Responda à filha por `send_message` com `RESPOSTAS #n` e, para cada `Pk`, o rótulo escolhido e as notas do dono, ou o texto dele em "Outro". Se chegarem perguntas de duas filhas juntas, faça uma chamada por issue.
-- **`PRONTA #n`**: confira com `issue_read` que a issue tem `ready` e não tem `roadmap`, que as sub-issues `step` existem (`issue_read` das sub-issues) e, em grupo, que as absorvidas fecharam como duplicadas. Se faltar algo, mande à filha o que falta e espere de novo. Com tudo certo, comece a próxima unidade.
+- **`PRONTA #n`**: confira com `issue_read` que a issue tem `ready` e não tem `roadmap`, que as sub-issues `step` existem (`issue_read` das sub-issues) e, em grupo, que as absorvidas fecharam como duplicadas, e que a mensagem traz a linha `Conferência:`. Se faltar algo, mande à filha o que falta e espere de novo. Com tudo certo, comece a próxima unidade.
 - **`BLOQUEADA #n`** ou **`FALHOU #n`**: anote e comece a próxima. Uma falha vai para o resumo final; não tente de novo sem perguntar ao dono.
 
 Para cada filha criada (e cada sessão de prompt que mandou `INICIADA`), agende uma conferência de reserva (`send_later`, 45 min). Se a filha não avisou até lá, leia `get_session` (`status_bucket`) e `list_events`:
