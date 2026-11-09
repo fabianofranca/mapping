@@ -7,7 +7,7 @@ import {
   type ListedMarking,
   type Project,
 } from '../model';
-import { toggleLayerVisible, type Selection } from '../store/ui';
+import type { Selection } from '../store/ui';
 import { AnnotationLines, AnnotationTitle, IssueBadge } from './AnnotationSummary';
 import { Choice } from './controls';
 import { useEditor } from './EditorContext';
@@ -86,7 +86,7 @@ function AnnotationCell({
  */
 export function ListView({ onSelect }: ListViewProps) {
   // Camadas visíveis (a lista respeita esse filtro) e os dados já montados da lista.
-  const { review, ui, derived } = useEditor();
+  const { review, ui, derived, layers: layerVisibility } = useEditor();
   // O projeto à vista, o mesmo de `derived.listing` (na visão Proposto, o "como ficaria").
   const project = review.derived.shownProject.value;
   const selection: Selection = ui.selection.value;
@@ -122,7 +122,7 @@ export function ListView({ onSelect }: ListViewProps) {
               checked={shownIds.has(layer.id)}
               aria-label={t('layer.visible', { name: layer.name })}
               label={<LayerCell layer={layer} />}
-              onChange={() => toggleLayerVisible(ui, layer.id)}
+              onChange={() => layerVisibility.toggle(layer.id)}
             />
           ))}
         </div>

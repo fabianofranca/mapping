@@ -427,15 +427,17 @@ export type AnnotationLocation = Pick<Annotation, 'id' | 'markingId' | 'layerId'
  * Vai até a anotação (backlinks, "Ir para o alvo", vinculadas, pendências): mostra a
  * camada dela, abre as seções recolhidas que a escondem, seleciona a marcação (ou a seta, se a
  * dona é uma seta do `project` dado) e pede ao painel para rolar até ela (e focar `field`, se
- * houver).
+ * houver). `show`: como a camada é mostrada (com uma perspectiva aberta, `layers.show` do editor
+ * grava nas escondidas dela; o padrão é a Principal).
  */
 export function goToAnnotation(
   ui: EditorUi,
   annotation: AnnotationLocation,
   field: string | null = null,
   project: Project | null = null,
+  show: (layerId: string) => void = (layerId) => showLayer(ui, layerId),
 ): void {
-  showLayer(ui, annotation.layerId);
+  show(annotation.layerId);
   expandSections(ui, [
     { kind: 'annotations' },
     { kind: 'layer', id: annotation.layerId },

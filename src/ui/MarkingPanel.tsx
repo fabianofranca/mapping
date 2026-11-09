@@ -12,7 +12,7 @@ import {
   type Rect,
 } from '../model';
 import type { ActionResult } from '../store/history';
-import { showLayer, type AnnotationLocation } from '../store/ui';
+import type { AnnotationLocation } from '../store/ui';
 import { AnnotationsPanel } from './AnnotationsPanel';
 import { ArrivalNotice } from './ArrivalNotice';
 import { ArrowLinksSection } from './ArrowLinksSection';
@@ -66,7 +66,7 @@ export function MarkingPanel({
   onOpenSettings,
 }: MarkingPanelProps) {
   const editor = useEditor();
-  const { actions, ui, derived } = editor;
+  const { actions, ui, derived, layers } = editor;
   const ext = useDetailsExtension();
   // O Editor recria o painel (via `key`) ao trocar de marcação, o que limpa o erro.
   const [error, setError] = useState<string | null>(null);
@@ -318,7 +318,7 @@ export function MarkingPanel({
         marking={marking}
         layers={derived.visibleLayers.value}
         readOnly={readOnly}
-        onShowLayer={(layerId) => showLayer(ui, layerId)}
+        onShowLayer={layers.show}
         onGoToAnnotation={onGoToAnnotation}
         focusAnnotation={ui.focusAnnotation.value}
         onFocusDone={() => (ui.focusAnnotation.value = null)}

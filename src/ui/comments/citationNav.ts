@@ -1,6 +1,6 @@
 import { projectIndex, type CitationTarget, type Project } from '../../model';
 import { selectThread } from '../../store/threadUi';
-import { expandSections, goToAnnotation, showLayer } from '../../store/ui';
+import { expandSections, goToAnnotation } from '../../store/ui';
 import type { EditorContextValue } from '../EditorContext';
 import { openReviewIn } from '../review/useReviewCommands';
 import { openToolWindow } from '../toolWindowLayout';
@@ -12,7 +12,7 @@ type PartTarget = Extract<CitationTarget, { kind: 'field' | 'entry' | 'row' }>;
 
 function goToLayer(editor: EditorContextValue, id: string): void {
   const { ui } = editor;
-  showLayer(ui, id);
+  editor.layers.show(id);
   expandSections(ui, [{ kind: 'annotations' }, { kind: 'layer', id }]);
   openToolWindow('layers');
 }
@@ -26,7 +26,7 @@ function goToPart(
   const annotation = projectIndex(project).annotations.get(target.annotationId);
   if (!annotation) return;
   const field = target.kind === 'entry' ? null : target.key;
-  goToAnnotation(editor.ui, annotation, field, project);
+  goToAnnotation(editor.ui, annotation, field, project, editor.layers.show);
 }
 
 function goToItem(
@@ -40,7 +40,7 @@ function goToItem(
   const { ui } = editor;
   if (target.kind === 'annotation') {
     const annotation = projectIndex(project).annotations.get(target.id);
-    if (annotation) goToAnnotation(ui, annotation, null, project);
+    if (annotation) goToAnnotation(ui, annotation, null, project, editor.layers.show);
     return;
   }
   ui.selection.value = {

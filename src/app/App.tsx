@@ -1,3 +1,5 @@
+import { useEffect } from 'preact/hooks';
+import { installFileDropGuard } from './fileDropGuard';
 import { PreviewBanner } from '../ui/PreviewBanner';
 import { UpdateBanner } from '../ui/UpdateBanner';
 import { openLibrary, openProject } from './controller';
@@ -6,6 +8,7 @@ import { Editor } from './Editor';
 import { Home } from './Home';
 
 export function App() {
+  useEffect(() => installFileDropGuard(), []);
   const open = openProject.value;
   if (open) {
     return (

@@ -50,7 +50,7 @@ export function Editor({ open }: { readonly open: OpenProject }) {
  * montado uma vez e a seleção e o viewport continuam ao alargar a janela.
  */
 export function EditorScreen() {
-  const { store, ui, canvas, review } = useEditor();
+  const { store, ui, canvas, review, layers } = useEditor();
   const narrow = useNarrowWindow();
   // Faixa do desktop compacto (900 a 1199px): abaixo dela a janela é estreita.
   const compact = useMediaQuery(
@@ -94,7 +94,7 @@ export function EditorScreen() {
     const sameMarking =
       (selection?.kind === 'marking' || selection?.kind === 'arrow') &&
       selection.id === annotation.markingId;
-    goToAnnotation(ui, annotation, null, store.committed.peek());
+    goToAnnotation(ui, annotation, null, store.committed.peek(), layers.show);
     if (!sameMarking) canvas.current?.centerSelection();
   };
 

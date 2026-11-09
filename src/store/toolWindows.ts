@@ -135,7 +135,8 @@ export function clampWindowSize(
 }
 
 interface StoredLayout {
-  readonly open?: readonly string[];
+  /** Lido do `localStorage` sem garantia de tipo: `storedOpen` valida. */
+  readonly open?: unknown;
   readonly bottomTab?: string;
   readonly left?: number;
   readonly right?: number;
@@ -179,11 +180,15 @@ const stored = readStored();
 /** Havia layout guardado: o desktop compacto não mexe no que o usuário escolheu. */
 const hadStored = readSetting(KEY) !== null;
 
-const openIds = signal<ReadonlySet<ToolWindowId>>(
-  new Set(
-    stored.open?.map((id) => RENAMED[id] ?? id).filter(isToolWindow) ?? DEFAULT_OPEN,
-  ),
-);
+/** `open` só vale como lista; qualquer outro tipo guardado cai no padrão (#943). */
+function storedOpen(value: unknown): readonly ToolWindowId[] {
+  if (!Array.isArray(value)) return DEFAULT_OPEN;
+  return value
+    .map((id: unknown) => (typeof id === 'string' ? (RENAMED[id] ?? id) : id))
+    .filter(isToolWindow);
+}
+
+const openIds = signal<ReadonlySet<ToolWindowId>>(new Set(storedOpen(stored.open)));
 
 /** Altura inicial da janela inferior em modo revisão (`--size-tw-bottom-review`). */
 export const REVIEW_BOTTOM_DEFAULT = px('size-tw-bottom-review');
