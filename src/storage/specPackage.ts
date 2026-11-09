@@ -16,8 +16,8 @@ import type { ProjectStorage } from './types';
  * `message` fica como reserva (logs). O código vive aqui e não em `src/model/` porque o modelo
  * é entrada da release do MCP.
  */
-export interface AppLibraryIssue extends LibraryIssue {
-  readonly code?: 'package-too-big';
+export interface AppLibraryIssue extends Omit<LibraryIssue, 'code'> {
+  readonly code?: LibraryIssue['code'] | 'package-too-big';
 }
 
 /** Problemas da biblioteca aplicada (níveis 1 e 2) por id de especialização. */

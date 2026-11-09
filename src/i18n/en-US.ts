@@ -511,6 +511,7 @@ export const enUS: Dictionary = {
   'library.warning': 'warning',
   'library.package': 'Package',
   'library.packageTooBig': 'package too big to check (file or byte limit)',
+  'library.fileNotFound': 'file not found: {path}',
   'library.issues': 'Package issues',
   'spec.removeTitle': 'Remove "{name}"?',
   'spec.removeChoose': 'What to do with the specialization layers and annotations?',
