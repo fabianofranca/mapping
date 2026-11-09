@@ -886,6 +886,8 @@ export const ptBR = {
   'typed.removeRow': 'Remover linha',
   'typed.moveRowUp': 'Subir linha',
   'typed.moveRowDown': 'Descer linha',
+  'typed.rowNumber': '#',
+  'typed.requiredMark': ' *',
   'typed.row': 'Linha {n}',
   'typed.noRows': 'Nenhuma linha.',
   'typed.rowsOne': '1 linha',
@@ -981,6 +983,11 @@ export const ptBR = {
   'ref.keyNavigate': 'navegar',
   'ref.keyChoose': 'escolher',
   'ref.keyGoTo': 'ir para o alvo',
+  'ref.keyUp': '↑',
+  'ref.keyDown': '↓',
+  'ref.keyEnter': 'Enter',
+  'ref.keyCtrlEnter': 'Ctrl+Enter',
+  'ref.keyEsc': 'Esc',
   'ref.keyClose': 'fechar',
 
   // Trava (etapa 2.5)

@@ -882,6 +882,8 @@ export const enUS: Dictionary = {
   'typed.removeRow': 'Remove row',
   'typed.moveRowUp': 'Move row up',
   'typed.moveRowDown': 'Move row down',
+  'typed.rowNumber': '#',
+  'typed.requiredMark': ' *',
   'typed.row': 'Row {n}',
   'typed.noRows': 'No rows.',
   'typed.rowsOne': '1 row',
@@ -977,6 +979,11 @@ export const enUS: Dictionary = {
   'ref.keyNavigate': 'navigate',
   'ref.keyChoose': 'choose',
   'ref.keyGoTo': 'go to target',
+  'ref.keyUp': '↑',
+  'ref.keyDown': '↓',
+  'ref.keyEnter': 'Enter',
+  'ref.keyCtrlEnter': 'Ctrl+Enter',
+  'ref.keyEsc': 'Esc',
   'ref.keyClose': 'close',
 
   // Lock (stage 2.5)
