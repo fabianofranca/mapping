@@ -210,6 +210,16 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(rowOf('ta').dataset.orphan).toBeUndefined();
     // A última de `ta` é do agente e Marina nunca leu: não lida.
     expect(rowOf('ta').dataset.unread).toBe('');
+    // O nome acessível do botão da âncora diz que há mensagem não lida (item 47).
+    const anchorA = anchorLabel(harness.project(), WAITING_HUMAN.anchor);
+    expect(
+      within(rowOf('ta')).getByRole('button', {
+        name: t('comments.row.openUnread', { anchor: anchorA }),
+      }),
+    ).toBeTruthy();
+    expect(
+      within(rowOf('tb')).queryByRole('button', { name: /(não lida|unread)/ }),
+    ).toBeNull();
     // A resolvida de Marina é lida para ela.
     expect(rowOf('tb').dataset.unread).toBeUndefined();
     expect(harness.context.derived.threads.unreadIds.value.has('ta')).toBe(true);
@@ -222,7 +232,9 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     const { user, harness } = await mount();
     const label = anchorLabel(harness.project(), WAITING_HUMAN.anchor);
     await user.click(
-      screen.getByRole('button', { name: t('comments.row.open', { anchor: label }) }),
+      screen.getByRole('button', {
+        name: t('comments.row.openUnread', { anchor: label }),
+      }),
     );
     expect(selectedThreadId(harness.ui)).toBe('ta');
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
@@ -411,6 +423,29 @@ describe('apagar conversas em lote', () => {
       'tb',
       'tc',
     ]);
+  });
+
+  it('a data vale como meia-noite local: 31/10 depois das 21h em UTC-3 entra "antes de 01/11"', async () => {
+    const prevTz = process.env.TZ;
+    process.env.TZ = 'America/Sao_Paulo';
+    try {
+      // 31/10 23:30 em São Paulo = 01/11 02:30Z; "antes de 01/11" local (03:00Z) inclui.
+      const LATE = sampleThread({
+        id: 'tf',
+        resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
+        messages: [message('f1', '2026-11-01T02:30:00.000Z', HUMAN, 'tarde')],
+      });
+      const { user } = await mount([LATE]);
+      const dialog = await openMenu(user);
+      await user.type(
+        within(dialog).getByLabelText(t('comments.bulk.before')),
+        '2026-11-01',
+      );
+      expect(dialog.textContent).toContain(t('comments.bulk.threadsOne'));
+    } finally {
+      if (prevTz === undefined) delete process.env.TZ;
+      else process.env.TZ = prevTz;
+    }
   });
 
   it('zero candidatas desabilita o Apagar', async () => {

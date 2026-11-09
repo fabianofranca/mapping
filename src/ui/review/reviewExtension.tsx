@@ -120,11 +120,6 @@ function entityCount(e: EntityChanges | undefined): number {
   return e ? e.fields.size + (e.whole ? 1 : 0) : 0;
 }
 
-/** Camada de uma mudança de anotação no projeto mostrado (ou na própria mudança). */
-function layerOf(c: Change, project: Project): string | null {
-  return changeLayerId(c, project);
-}
-
 export interface ReviewExtensionArgs {
   readonly kind: 'marking' | 'image';
   readonly id: string;
@@ -163,7 +158,7 @@ function changesByLayer(
     ...(args.index.leaving.get(args.id) ?? []).filter((c) => c.kind !== 'remove'),
   ];
   for (const c of list) {
-    const layer = layerOf(c, args.project) ?? layerOf(c, args.current);
+    const layer = changeLayerId(c, args.project) ?? changeLayerId(c, args.current);
     if (layer === null) continue;
     const bucket = result.get(layer);
     if (bucket) bucket.push(c);

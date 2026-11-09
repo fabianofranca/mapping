@@ -217,6 +217,8 @@ Decisão do dono de 2026-11-08 (etapa #954, item 38): o `<button>` de **ação c
 | `src/ui/TypedForm.tsx`, `src/ui/TableField.tsx` | campo `ref` desabilitado (formulário de tipo e coluna da tabela sem seletor) | o mesmo `.ref-control` |
 | `src/ui/TableField.tsx` | alça da linha | alça de arraste (`.grid-grip`) |
 | `src/ui/catalog/CatalogView.tsx` | tipo da lista | opção de lista (`.catalog-entry`) |
+| `src/ui/review/ChangeMark.tsx` | marcador de mudança | abre o popover da mudança e leva os atalhos A, R e Backspace (`.change-mark`) |
+| `src/ui/review/ReviewBar.tsx` | "N conjuntos inválidos" | selo de problema clicável (`.flag.flag-danger`) |
 
 ## Pendências
 

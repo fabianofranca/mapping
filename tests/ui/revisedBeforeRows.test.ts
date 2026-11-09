@@ -21,7 +21,7 @@ const names = (): ReviewNames => ({
   proposal: { changes: [] } as unknown as Proposal,
 });
 
-const textOf = (rows: ReturnType<typeof beforeRows>) =>
+const textOf = ({ rows }: ReturnType<typeof beforeRows>) =>
   rows.map((r) => `${r.label}=${r.parts.map((p) => p.text).join('')}`);
 
 function label(key: string): string {
@@ -57,6 +57,7 @@ describe('beforeRows: criação de anotação tipada', () => {
   it('lista só os campos de values que mudaram, pelo rótulo do campo', () => {
     const c = create('AIE', typedTo(now));
     const before = typedTo({ ...now, tipo: 'text', obrigatorio: 'nao' });
+    expect(beforeRows(names(), c, before).perField).toBe(true);
     const rows = textOf(beforeRows(names(), c, before));
     expect(rows).toEqual([`${label('tipo')}=text`, `${label('obrigatorio')}=nao`]);
     for (const row of rows) {

@@ -656,6 +656,7 @@ export const enUS: Dictionary = {
   'comments.empty': 'No conversations yet.',
   'comments.emptyFiltered': 'No conversations match these filters.',
   'comments.row.open': 'Open the conversation on {anchor}',
+  'comments.row.openUnread': 'Open the conversation on {anchor} (unread)',
   'comments.row.more': 'Actions for the conversation on {anchor}',
   'comments.row.delete': 'Delete',
   'comments.layer': 'Comment',
