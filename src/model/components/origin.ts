@@ -962,23 +962,42 @@ function describeSourceKey(source: ValueSource, fallback: string): string {
   return typeof source === 'object' ? source.path : fallback;
 }
 
+/**
+ * A origem que traduz o JSON: a de `system`; sem ele, a primeira de `kind` `tree` (a `measured`
+ * não gera tela). Só com origens `measured`, o erro manda passar o `system`.
+ */
+function pickOrigin(
+  origins: readonly Origin[],
+  system: string | undefined,
+):
+  | { readonly origin: Origin; readonly error?: never }
+  | { readonly origin?: never; readonly error: string } {
+  if (system) {
+    const found = origins.find((o) => o.system === system);
+    return found
+      ? { origin: found }
+      : { error: `origem não declarada na especialização: ${system}` };
+  }
+  const tree = origins.find((o) => o.kind !== 'measured');
+  if (tree) return { origin: tree };
+  return {
+    error:
+      origins.length === 0
+        ? 'a especialização não declara origens'
+        : 'a especialização só declara origens measured (que não geram tela); passe o system da origem',
+  };
+}
+
 function translate(
   library: Library,
   json: unknown,
   options: SourceOptions,
 ): TranslateResult {
   const warnings: string[] = [];
-  const origin = options.system
-    ? library.origins.find((o) => o.system === options.system)
-    : library.origins[0];
-  if (!origin) {
-    return {
-      warnings,
-      error: options.system
-        ? `origem não declarada na especialização: ${options.system}`
-        : 'a especialização não declara origens',
-    };
-  }
+  const picked = pickOrigin(library.origins, options.system);
+  if (!picked.origin) return { warnings, error: picked.error };
+  const origin = picked.origin;
+
   const width = positiveNumber(readSource(origin.screen.width, json));
   if (width === undefined) {
     return {

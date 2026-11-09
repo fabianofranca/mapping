@@ -555,6 +555,30 @@ describe('parseFieldSources: path', () => {
   });
 });
 
+describe('translateSource: sem system vale a primeira origem tree', () => {
+  const MEASURED_ORIGIN = { system: 'dom', kind: 'measured' };
+
+  it('pula as origens measured que vêm antes', () => {
+    const spec = miniSpec({ origins: [MEASURED_ORIGIN, MINI_ORIGIN] });
+    const result = translate(DOC, spec);
+    expect(result.error).toBeUndefined();
+    expect(result.layout?.id).toBe('s1');
+  });
+
+  it('só com origens measured, o erro manda passar o system', () => {
+    const spec = miniSpec({ origins: [MEASURED_ORIGIN] });
+    const result = translate(DOC, spec);
+    expect(result.layout).toBeUndefined();
+    expect(result.error).toContain('system');
+    expect(result.error).toContain('measured');
+  });
+
+  it('com system, a origem pedida vale como antes', () => {
+    const spec = miniSpec({ origins: [MEASURED_ORIGIN, MINI_ORIGIN] });
+    expect(translate(DOC, spec, 'sdui').error).toBeUndefined();
+  });
+});
+
 describe('translateSource: o caminho do campo vem de path, nunca de name', () => {
   const specWithField = (source: Record<string, unknown>) => {
     const spec = miniSpec();

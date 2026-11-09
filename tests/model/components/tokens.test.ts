@@ -98,6 +98,19 @@ describe('$token: validação do arquivo', () => {
     ).toBeGreaterThan(0);
   });
 
+  it('o padding de um trecho de runs aceita $token de número', () => {
+    const r = parseComponent(
+      withChild({
+        type: 'text',
+        runs: [{ text: 'x', background: '#eee', padding: { $token: 'radius' } }],
+      }),
+    );
+    if (!r.ok) throw new Error(r.errors.join('\n'));
+    expect(r.tokenRefs).toEqual([
+      { path: 'template.children[0].runs[0].padding', name: 'radius', kind: 'number' },
+    ]);
+  });
+
   it('o resultado lista as referências com caminho, nome e tipo esperado', () => {
     const r = parseComponent(
       withChild({

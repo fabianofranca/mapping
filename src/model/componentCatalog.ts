@@ -1,7 +1,7 @@
 import { findSlot } from './components/arrange';
 import type { ComponentFile } from './components/componentFormat';
 import { parseIconsText, type IconSet } from './components/icons';
-import { resolvePath } from './components/library';
+import { resolvePathChecked } from './components/library';
 import { parseComponentText } from './components/parseComponent';
 import { resolveTokens, type HostFonts, type ResolvedTokens } from './components/tokens';
 import { MIN_STORED_MARKING_SIZE } from './geometry';
@@ -53,10 +53,13 @@ function typesWithComponent(
 export function componentPaths(spec: Spec, specFile: string): string[] {
   const paths = new Set<string>();
   for (const type of typesWithComponent(spec)) {
-    paths.add(resolvePath(specFile, type.component));
+    const path = resolvePathChecked(specFile, type.component);
+    if (path !== undefined) paths.add(path);
   }
   // O conjunto de ícones (`icons`) é lido junto: os componentes dependem dele para desenhar.
-  if (spec.icons !== undefined) paths.add(resolvePath(specFile, spec.icons));
+  const icons =
+    spec.icons === undefined ? undefined : resolvePathChecked(specFile, spec.icons);
+  if (icons !== undefined) paths.add(icons);
   return [...paths];
 }
 
@@ -68,7 +71,11 @@ function loadIcons(
   problems: string[],
 ): IconSet | undefined {
   if (spec.icons === undefined) return undefined;
-  const path = resolvePath(specFile, spec.icons);
+  const path = resolvePathChecked(specFile, spec.icons);
+  if (path === undefined) {
+    problems.push(`icons: caminho fora da biblioteca: ${spec.icons}`);
+    return undefined;
+  }
   const text = readText(path);
   if (text === undefined) {
     problems.push(`icons: arquivo ausente (${path})`);
@@ -120,7 +127,11 @@ export function loadSpecComponents(
   if (spec.formatVersion >= 4) {
     const resolvedIcons = loadIcons(spec, specFile, readText, problems);
     for (const type of typesWithComponent(spec)) {
-      const path = resolvePath(specFile, type.component);
+      const path = resolvePathChecked(specFile, type.component);
+      if (path === undefined) {
+        problems.push(`${type.id}: caminho fora da biblioteca: ${type.component}`);
+        continue;
+      }
       const text = readText(path);
       if (text === undefined) {
         problems.push(`${type.id}: arquivo ausente (${path})`);

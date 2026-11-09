@@ -111,7 +111,25 @@ function parseJson(file: TextFile): unknown {
   }
 }
 
-/** Resolve `ref` relativo ao diretório de `from` (`a/b/spec.json` + `components/x.json` → `a/b/components/x.json`). */
+/**
+ * Resolve `ref` relativo ao diretório de `from` (`a/b/spec.json` + `components/x.json` →
+ * `a/b/components/x.json`). Devolve `undefined` quando um `..` sai da raiz da biblioteca.
+ */
+export function resolvePathChecked(from: string, ref: string): string | undefined {
+  const dir = from.includes('/') ? from.slice(0, from.lastIndexOf('/') + 1) : '';
+  const parts: string[] = [];
+  for (const part of `${dir}${ref}`.split('/')) {
+    if (part === '' || part === '.') continue;
+    if (part !== '..') parts.push(part);
+    else if (parts.pop() === undefined) return undefined;
+  }
+  return parts.join('/');
+}
+
+/**
+ * Como `resolvePathChecked`, mas um `..` que sai da raiz é descartado. Quem valida a biblioteca
+ * (`loadLibrary`) usa a versão conferida e registra o problema.
+ */
 export function resolvePath(from: string, ref: string): string {
   const dir = from.includes('/') ? from.slice(0, from.lastIndexOf('/') + 1) : '';
   const parts: string[] = [];
@@ -122,6 +140,8 @@ export function resolvePath(from: string, ref: string): string {
   }
   return parts.join('/');
 }
+
+const outsideLibrary = (ref: string): string => `caminho fora da biblioteca: ${ref}`;
 
 function readField(
   raw: unknown,
@@ -254,9 +274,11 @@ export function loadLibrary(files: readonly TextFile[]): Library {
         typeof type.component === 'string' ? type.component : undefined;
       let component: ComponentFile | undefined;
       if (componentPath) {
-        const full = resolvePath(specPath, componentPath);
-        const json = parsed.get(full);
-        if (json === undefined) {
+        const full = resolvePathChecked(specPath, componentPath);
+        const json = full === undefined ? undefined : parsed.get(full);
+        if (full === undefined) {
+          problems.push(`${type.id}: ${outsideLibrary(componentPath)}`);
+        } else if (json === undefined) {
           problems.push(`${type.id}: arquivo do componente não encontrado: ${full}`);
         } else {
           const result = parseComponent(json);
@@ -284,9 +306,10 @@ export function loadLibrary(files: readonly TextFile[]): Library {
       });
     });
   });
+  const typeIds = new Set(types.map((t) => t.id));
   origins.forEach((origin, oi) => {
     origin.screen.roots.forEach((root, ri) => {
-      if (root.scrim !== undefined && !types.some((t) => t.id === root.scrim)) {
+      if (root.scrim !== undefined && !typeIds.has(root.scrim)) {
         problems.push(
           `origins[${oi}].screen.roots[${ri}].scrim: tipo inexistente: ${root.scrim}`,
         );
@@ -318,7 +341,11 @@ function readIcons(
   problems: string[],
 ): IconSet | undefined {
   if (typeof raw !== 'string') return undefined;
-  const path = resolvePath(specPath, raw);
+  const path = resolvePathChecked(specPath, raw);
+  if (path === undefined) {
+    problems.push(`icons: ${outsideLibrary(raw)}`);
+    return undefined;
+  }
   const json = parsed.get(path);
   if (json === undefined) {
     problems.push(`arquivo de ícones não encontrado: ${path}`);
@@ -409,7 +436,11 @@ function readFonts(
           ? entry.weight.trim()
           : '400';
     const style = entry.style === 'italic' ? 'italic' : 'normal';
-    const path = resolvePath(specPath, entry.file);
+    const path = resolvePathChecked(specPath, entry.file);
+    if (path === undefined) {
+      problems.push(`fonts[${index}]: ${outsideLibrary(entry.file)}`);
+      return;
+    }
     const bytes = byPath.get(path) ?? byName.get(path.slice(path.lastIndexOf('/') + 1));
     out.push({ family: entry.family, weight, style, path, bytes });
   });
@@ -433,7 +464,8 @@ export function instanceLabel(
 ): string {
   const key = type.labelField;
   const value = key ? values[key] : undefined;
-  return value === null || value === undefined || String(value).trim() === ''
-    ? type.name
-    : String(value);
+  // Só texto e número entram no rótulo; valor de tabela (lista) conta como vazio.
+  const text =
+    typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+  return text.trim() === '' ? type.name : text;
 }
