@@ -3,6 +3,7 @@ import { act, cleanup, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { locale } from '../../src/store/settings';
+import { AnnotationsPanel } from '../../src/ui/AnnotationsPanel';
 import { LayerActions, LayersPanel } from '../../src/ui/LayersPanel';
 import { ListView } from '../../src/ui/ListView';
 import { cadastroProject } from '../model/specFixtures';
@@ -105,5 +106,46 @@ describe('Camadas com perspectiva aberta', () => {
     expect(harness.context.derived.visibleLayers.value.map((l) => l.id)).not.toContain(
       layer.id,
     );
+  });
+});
+
+describe('"Mostrar todas" dos Detalhes com perspectiva aberta (CE4, #956)', () => {
+  it('tira as camadas escondidas da perspectiva, numa entrada de desfazer', async () => {
+    const harness = await createLocalHarness(cadastroProject());
+    const { session } = harness.context;
+    const created = session.perspectiveActions.createPerspective({
+      name: 'Fluxo A',
+      startFrom: 'empty',
+      local: false,
+    });
+    if (!created.ok) throw new Error('perspectiva não criada');
+    const all = harness.project().layers.map((l) => l.id);
+    const marking = harness.project().markings[0];
+    if (!marking) throw new Error('sem marcação');
+    session.perspectiveActions.setPerspectiveHiddenLayers(created.value, all);
+    act(() => void session.perspective.open(created.value));
+    renderLive(harness, (p) => (
+      <AnnotationsPanel
+        project={p}
+        marking={marking}
+        layers={[]}
+        readOnly={false}
+        onShowLayer={() => undefined}
+        onGoToAnnotation={() => undefined}
+        focusAnnotation={null}
+        onFocusDone={() => undefined}
+      />
+    ));
+    const hiddenOf = () =>
+      harness.project().perspectives.find((x) => x.id === created.value)?.hiddenLayers ??
+      [];
+    expect(hiddenOf()).toEqual(all);
+    await userEvent
+      .setup()
+      .click(await screen.findByRole('button', { name: 'Mostrar todas' }));
+    expect(hiddenOf()).toEqual([]);
+    expect(harness.ui.hiddenLayers.value.size).toBe(0);
+    act(() => void harness.store.undo());
+    expect(hiddenOf()).toEqual(all);
   });
 });

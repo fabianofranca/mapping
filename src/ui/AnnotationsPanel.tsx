@@ -17,7 +17,6 @@ import {
 import {
   goToAnnotation,
   isSectionCollapsed,
-  showAllLayers,
   toggleSection,
   type AnnotationLocation,
 } from '../store/ui';
@@ -89,7 +88,8 @@ export function AnnotationsPanel({
   focusAnnotation,
   onFocusDone,
 }: AnnotationsPanelProps) {
-  const { actions, ui } = useEditor();
+  const editor = useEditor();
+  const { actions, ui } = editor;
   const ext = useDetailsExtension();
   // Com a extensão (revisão), ela diz que camadas mostrar (ex.: uma escondida com mudanças).
   const layers = ext ? ext.layers(visible) : visible;
@@ -198,7 +198,7 @@ export function AnnotationsPanel({
               onClick={() => {
                 // O botão some quando as camadas voltam: o foco fica na seção, não vai ao body.
                 root.current?.focus();
-                showAllLayers(ui);
+                editor.layers.showAll();
               }}
             >
               {t('layer.showAll')}
