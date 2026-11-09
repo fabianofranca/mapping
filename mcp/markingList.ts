@@ -1,5 +1,6 @@
 import {
   matchShortCode,
+  parseRef,
   projectIndex,
   projectIssues,
   typeOfAnnotation,
@@ -80,13 +81,24 @@ export function containersNamed(p: Project, query: string): ProjectContainer[] {
   );
 }
 
-function findContainer(p: Project, query: string): ProjectContainer {
+/** Código curto ou referência completa (`mapping://projeto/i/código`); a de outro projeto não casa. */
+function matchContainerCode(refs: Refs, query: string) {
+  const parsed = parseRef(query);
+  if (parsed?.kind !== 'i')
+    return matchShortCode(refs.project, 'i', query.replace(/^i\//, ''));
+  if (parsed.project !== null && fold(parsed.project) !== fold(refs.projectName))
+    return [];
+  return matchShortCode(refs.project, 'i', parsed.code);
+}
+
+function findContainer(refs: Refs, query: string): ProjectContainer {
+  const p = refs.project;
   const index = projectIndex(p);
   const direct = index.containers.get(query);
   if (direct) return direct;
   const byName = containersNamed(p, query);
   if (byName.length === 1) return byName[0]!;
-  const coded = matchShortCode(p, 'i', query.replace(/^i\//, ''));
+  const coded = matchContainerCode(refs, query);
   if (coded.length === 1) return index.containers.get(coded[0]!.id)!;
   throw new ToolError(
     byName.length > 1 || coded.length > 1 ? 'ambiguous-image' : 'not-found',
@@ -153,7 +165,7 @@ export function listMarkings(
     );
   }
   const container =
-    containerQuery !== undefined ? findContainer(p, containerQuery) : null;
+    containerQuery !== undefined ? findContainer(refs, containerQuery) : null;
   let layerId: string | null = null;
   if (filters.layer !== undefined) {
     const wanted = fold(filters.layer);

@@ -129,6 +129,85 @@ describe('sessão de projeto', () => {
     expect(await root.read('images/ruim.jpg')).toBeNull();
   });
 
+  describe('nome livre de verdade ao importar e substituir', () => {
+    it('apagar o container, importar outro foo.png e desfazer: a original volta intacta', async () => {
+      const root = new MemoryDirectory('p');
+      session = start(root);
+      await session.addImages([file('foo.png', '400x300')]);
+      await session.flush();
+      const containerId = session.store.project.value?.containers[0]?.id ?? '';
+      session.actions.removeContainer(containerId);
+      await session.flush();
+      expect(await root.read('images/foo.png')).toBeNull();
+
+      const result = await session.addImages([file('foo.png', '100x100')]);
+      expect(result.added).toEqual(['images/foo-2.png']);
+      await session.flush();
+
+      session.store.undo(); // desfaz a importação
+      session.store.undo(); // desfaz a remoção
+      await session.flush();
+      expect(await root.read('images/foo.png')).toBe('400x300');
+      expect(await root.read('images/foo-2.png')).toBeNull();
+    });
+
+    it('duas importações concorrentes com o mesmo nome gravam arquivos diferentes', async () => {
+      const root = new MemoryDirectory('p');
+      session = start(root);
+      const [a, b] = await Promise.all([
+        session.addImages([file('image.png', '100x100')]),
+        session.addImages([file('image.png', '200x200')]),
+      ]);
+      await session.flush();
+      expect([...a.added, ...b.added].sort()).toEqual([
+        'images/image-2.png',
+        'images/image.png',
+      ]);
+      const contents = [
+        await root.read('images/image.png'),
+        await root.read('images/image-2.png'),
+      ];
+      expect(contents.sort()).toEqual(['100x100', '200x200']);
+    });
+
+    it('um arquivo solto em images/ (mesmo com outra caixa) não é sobrescrito', async () => {
+      const root = new MemoryDirectory('p');
+      root.put('images/Solto.png', 'do usuario');
+      session = start(root);
+      const result = await session.addImages([file('solto.png', '100x100')]);
+      expect(result.added).toEqual(['images/solto-2.png']);
+      await session.flush();
+      expect(await root.read('images/Solto.png')).toBe('do usuario');
+      expect(await root.read('images/solto-2.png')).toBe('100x100');
+    });
+
+    it('replaceImage escolhe o nome pela mesma regra', async () => {
+      const root = new MemoryDirectory('p');
+      session = start(root);
+      await session.addImages([file('a.png', '400x300')]);
+      await session.flush();
+      root.put('images/B.png', 'do usuario');
+      const containerId = session.store.project.value?.containers[0]?.id ?? '';
+      const outcome = await session.replaceImage(
+        containerId,
+        file('b.png', '400x300'),
+        async () => true,
+      );
+      expect(outcome).toBe('replaced');
+      expect(session.store.project.value?.containers[0]?.file).toBe('images/b-2.png');
+      expect(await root.read('images/B.png')).toBe('do usuario');
+    });
+
+    it('o nome reservado é liberado quando a gravação falha', async () => {
+      const root = new MemoryDirectory('p');
+      session = start(root);
+      const failed = await session.addImages([file('x.png', 'ruim')]);
+      expect(failed.failed).toEqual(['x.png']);
+      const ok = await session.addImages([file('x.png', '10x10')]);
+      expect(ok.added).toEqual(['images/x.png']);
+    });
+  });
+
   it('remove a imagem excluída só depois de salvar e a restaura no desfazer', async () => {
     const root = new MemoryDirectory('p');
     session = start(root);

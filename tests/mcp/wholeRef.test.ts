@@ -433,6 +433,61 @@ describe('get_code_hints: targets', () => {
     expect(back!.annotation).toBeUndefined();
   });
 
+  it('ciclo pela hierarquia (filha que aponta para a dona): termina com nó repeated', async () => {
+    const created = await apply([
+      {
+        op: 'create_marking',
+        as: '$mp',
+        rect: { x: 0, y: 1000, width: 200, height: 100 },
+        annotationAs: '$ap',
+        annotation: { type: 'sdui/item', values: { titulo: 'Dona A' } },
+      },
+      {
+        op: 'create_marking',
+        rect: { x: 10, y: 1010, width: 50, height: 30 },
+        annotationAs: '$ac',
+        annotation: {
+          type: 'sdui/replace-plugins',
+          values: { titulo: 'Filha A', unico: { annotation: '$ap' } },
+        },
+      },
+    ]);
+    const hints = ok(
+      await mcp.call<Hints>('get_code_hints', {
+        ref: mRef(byTitle(created, 'Dona A').markingId),
+        platform: 'web',
+      }),
+    );
+    expect(JSON.stringify(hints)).toContain('"repeated":true');
+  });
+
+  it('ciclo pelo vínculo dona/filha (ref inteiro para a dona): termina com nó repeated', async () => {
+    const created = await apply([
+      {
+        op: 'create_marking',
+        as: '$mp',
+        rect: { x: 0, y: 1200, width: 200, height: 100 },
+        annotationAs: '$ap',
+        annotation: { type: 'sdui/item', values: { titulo: 'Dona B' } },
+      },
+      {
+        op: 'create_annotation',
+        marking: '$mp',
+        type: 'sdui/replace-plugins',
+        owner: '$ap',
+        role: 'click',
+        values: { titulo: 'Vinculada B', unico: { annotation: '$ap' } },
+      },
+    ]);
+    const hints = ok(
+      await mcp.call<Hints>('get_code_hints', {
+        ref: mRef(byTitle(created, 'Dona B').markingId),
+        platform: 'web',
+      }),
+    );
+    expect(JSON.stringify(hints)).toContain('"repeated":true');
+  });
+
   it('ref de campo (key) não é expandido', async () => {
     const hints = ok(
       await mcp.call<Hints>('get_code_hints', {

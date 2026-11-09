@@ -1,4 +1,5 @@
 import { fail } from './errors';
+import { fileNameKey } from './containers';
 import { projectIssues, type AnnotationIssue } from './issues';
 import {
   runLibraryMigrations,
@@ -49,18 +50,22 @@ export function specFileFor(
   specId: string,
   packageSpecName?: string,
 ): string {
+  // Nomes de arquivo comparados sem diferenciar a caixa (`Material` e `material` são o mesmo).
+  const key = (f: string | undefined) => (f === undefined ? f : fileNameKey(f));
   const base = specId.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^\.+/, '') || 'spec';
   const others = p.specializations.filter((s) => s.id !== specId).map((s) => s.file);
   if (packageSpecName !== undefined) {
     const name = packageSpecName.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^\.+/, '');
-    const takenDirs = new Set(others.map((f) => /^specs\/([^/]+)\//.exec(f)?.[1]));
+    const takenDirs = new Set(
+      others.map((f) => /^specs\/([^/]+)\//.exec(f)?.[1]).map((d) => key(d)),
+    );
     let dir = base;
-    for (let n = 2; takenDirs.has(dir); n++) dir = `${base}-${n}`;
+    for (let n = 2; takenDirs.has(key(dir)); n++) dir = `${base}-${n}`;
     return `${SPECS_DIR}/${dir}/${name || 'spec.json'}`;
   }
-  const taken = new Set(others);
+  const taken = new Set(others.map(key));
   let file = `${SPECS_DIR}/${base}.json`;
-  for (let n = 2; taken.has(file); n++) file = `${SPECS_DIR}/${base}-${n}.json`;
+  for (let n = 2; taken.has(key(file)); n++) file = `${SPECS_DIR}/${base}-${n}.json`;
   return file;
 }
 
@@ -307,7 +312,7 @@ export interface SpecUpdateImpact {
   readonly migrations: readonly SpecMigrationStep[];
   /** `false` quando a cópia aplicada não está disponível (`spec: null`): não dá para comparar. */
   readonly comparable: boolean;
-  /** Comparável e sem quebra: a atualização aplica direto, sem diálogo de impacto. */
+  /** Comparável, sem quebra e sem camada que vira livre: a atualização aplica direto, sem diálogo de impacto. */
   readonly additive: boolean;
   /** O contrato recusa: v4, comparável e com quebra sem migração (`spec-missing-migrations`). */
   readonly refused: boolean;
@@ -357,6 +362,13 @@ function newIssues(
   return pending;
 }
 
+/** Aditiva: comparável, sem quebra e sem camada que vira livre (as anotações dela virariam livres). */
+const isAdditive = (
+  comparable: boolean,
+  breaking: readonly SpecChange[],
+  freed: readonly Layer[],
+): boolean => comparable && breaking.length === 0 && freed.length === 0;
+
 /**
  * Efeito de atualizar para `spec` (que precisa ter `version` maior). Não lança por causa do
  * contrato: quando a atualização seria recusada, `refused` é `true` e o resto descreve o que
@@ -371,12 +383,13 @@ export function specializationUpdateImpact(p: Project, spec: Spec): SpecUpdateIm
   const applied = getSpecialization(p, spec.id)?.spec ?? null;
   const changes = applied ? diffSpecs(applied, spec) : [];
   const breaking = changes.filter((c) => c.kind === 'breaking');
+  const freedLayers = p.layers.filter(
+    (l) => l.spec?.specId === spec.id && !next.has(l.spec.layerId),
+  );
   const missing = applied ? missingMigrations(applied, spec) : [];
   return {
     addedLayers: spec.layers.filter((l) => !current.has(l.id)),
-    freedLayers: p.layers.filter(
-      (l) => l.spec?.specId === spec.id && !next.has(l.spec.layerId),
-    ),
+    freedLayers,
     brokenRefs: countBrokenRefs(p, after),
     changes,
     breaking,
@@ -385,7 +398,7 @@ export function specializationUpdateImpact(p: Project, spec: Spec): SpecUpdateIm
       ? (migrationChain(spec, applied.version) ?? []).flatMap((m) => m.steps)
       : [],
     comparable: applied !== null,
-    additive: applied !== null && breaking.length === 0,
+    additive: isAdditive(applied !== null, breaking, freedLayers),
     refused: applied !== null && spec.formatVersion >= 4 && missing.length > 0,
     steps: run.steps,
     losses: run.losses,

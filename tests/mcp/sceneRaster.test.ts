@@ -78,6 +78,12 @@ describe('cor', () => {
 });
 
 describe('caminho SVG', () => {
+  it('número solto depois de Z termina o caminho em vez de travar', () => {
+    const closed = flattenPath('M0 0 L10 0 L10 10 Z');
+    expect(flattenPath('M0 0 L10 0 L10 10 Z 5')).toEqual(closed);
+    expect(flattenPath('M0 0 L10 0 L10 10 z 5 6 L1 1')).toEqual(closed);
+  }, 2000);
+
   it('achata M L H V Z e curvas em segmentos', () => {
     const [square] = flattenPath('M 0 0 H 10 V 10 L 0 10 Z');
     expect(square?.closed).toBe(true);

@@ -469,6 +469,15 @@ function sameRemoved(c: Change, current: JsonValue): boolean {
       { ...c.from, needsReview: false },
     );
   }
+  if (c.entity === 'image' && isRecord(current) && isRecord(c.from)) {
+    // `parentId` é derivado da geometria (schema 13): a leitura da proposta o completa só
+    // no `from`, então não entra na comparação, de nenhum dos lados.
+    const { parentId: ignoredCurrent, ...ownCurrent } = current;
+    const { parentId: ignoredFrom, ...ownFrom } = c.from;
+    void ignoredCurrent;
+    void ignoredFrom;
+    return jsonEqual(ownCurrent, ownFrom);
+  }
   if (c.entity === 'arrow' && isRecord(current) && isRecord(c.from)) {
     const { points: ignoredCurrent, ...ownCurrent } = current;
     const { points: ignoredFrom, ...ownFrom } = c.from;

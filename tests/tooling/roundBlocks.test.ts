@@ -122,7 +122,7 @@ describe('divisão da rodada completa em 5 blocos (etapas #424 e #841)', () => {
       expect(where.has(undefined), `${group.join(', ')} fora da tabela`).toBe(false);
       expect([...where], group.join(', ')).toHaveLength(1);
     };
-    together(['R1', 'R3', 'R5', 'R6.3 a R6.7', 'R7', 'R8']);
+    together(['R1', 'R3', 'R5', 'R6.3 a R6.7', 'R6.12 a R6.13', 'R7', 'R8']);
     together(['R4', 'R6.8a a R6.11']);
     together(['R9', 'R10']);
   });

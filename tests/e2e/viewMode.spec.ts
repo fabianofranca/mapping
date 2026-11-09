@@ -170,7 +170,7 @@ test('entrar, desmarcar Contorno e uma camada com desenho, Só as telas, Esc, e 
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: /: ações do projeto$/ }).click();
   await page.getByRole('menuitem', { name: 'Fechar projeto', exact: true }).click();
-  await page.getByRole('button', { name: 'Abrir', exact: true }).first().click();
+  await page.locator('[data-recent-open]').first().click();
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
   await page.getByRole('button', { name: 'Visualizar', exact: true }).click();
   await expect(panel(page)).toBeVisible();

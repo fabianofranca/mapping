@@ -288,7 +288,24 @@ export function CompareDialog() {
       title={t('review.compare.title', { name })}
       size="lg"
       onCancel={close}
-      actions={<Button onClick={close}>{t('common.close')}</Button>}
+      actions={
+        <>
+          <div class="image-compare-decision">
+            <ChangeKind type="replaced" />
+            <span>{t('review.compare.decide')}</span>
+            <DecisionControl
+              variant="text"
+              value={decision}
+              name={name}
+              acceptText={t('review.compare.accept')}
+              rejectText={t('review.compare.reject')}
+              disabled={p.status !== 'open'}
+              onDecide={(state) => decide({ level: 'change', id: change.id }, state)}
+            />
+          </div>
+          <Button onClick={close}>{t('common.close')}</Button>
+        </>
+      }
     >
       <ImageCompare
         before={image?.file ? bitmaps.get(image.file) : undefined}
@@ -296,19 +313,6 @@ export function CompareDialog() {
         beforeName={image?.file ?? ''}
         afterName={newFile}
       />
-      <div class="image-compare-decision">
-        <ChangeKind type="replaced" />
-        <span>{t('review.compare.decide')}</span>
-        <DecisionControl
-          variant="text"
-          value={decision}
-          name={name}
-          acceptText={t('review.compare.accept')}
-          rejectText={t('review.compare.reject')}
-          disabled={p.status !== 'open'}
-          onDecide={(state) => decide({ level: 'change', id: change.id }, state)}
-        />
-      </div>
     </Dialog>
   );
 }

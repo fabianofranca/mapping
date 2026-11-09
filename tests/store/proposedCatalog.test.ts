@@ -27,6 +27,7 @@ import {
 import { emptyProject } from '../model/fixtures';
 import { changeOf, propose } from '../model/proposalFixtures';
 import { openHarness, type Harness } from './proposalHarness';
+import { proposalFilePath, serializeProposal } from '../../src/model';
 
 // Etapa Proposto com componentes (PC1): na visão Proposto o catálogo inclui os pacotes que a
 // proposta cria ou atualiza, lidos de `proposals/<id>/<pasta>/`, sem gravar nada em `specs/`.
@@ -338,6 +339,47 @@ describe('catálogo do Proposto: identidade e leituras', () => {
     expect(derived.componentScenes.value.get('E1')).toBe(e1);
   });
 
+  it('revise_proposal na revisão aberta (mesmo id@versão, spec e arquivos novos) relê o pacote', async () => {
+    const base = baseProject();
+    const { proposal } = createsExtra(base);
+    const h = await openHarness({
+      project: base,
+      proposals: [proposal],
+      files: packageFiles('extra', 'proposals/P1/'),
+    });
+    const { components } = setup(h);
+    const reads = countReads(h);
+    await open(h, 'proposed');
+    expect(components.catalog.value.get('extra')?.byType.get('text')?.name).not.toBe(
+      'Texto revisado',
+    );
+    const n = reads.length;
+
+    // O agente revisa a proposta: mesma especialização e versão, outro conteúdo.
+    const revisedSpec: Spec = { ...specOf('extra', 1), name: 'extra revisada' };
+    const after = withMarking(
+      withSpec(base, revisedSpec, 'extra.spec.json'),
+      'E1',
+      'extra',
+    );
+    const revised = propose(base, after, { id: 'P1' });
+    const staged = packageFiles('extra', 'proposals/P1/', {
+      'specs/test/components/text.json': JSON.stringify({
+        ...(COMPONENTS.text as Record<string, unknown>),
+        name: 'Texto revisado',
+      }),
+    });
+    for (const [path, text] of Object.entries(staged)) h.root.put(path, text);
+    h.root.put(proposalFilePath('P1'), serializeProposal(revised));
+    await h.session.proposals.scan();
+    await h.review.components.whenIdle();
+
+    expect(reads.length).toBeGreaterThan(n);
+    expect(components.catalog.value.get('extra')?.byType.get('text')?.name).toBe(
+      'Texto revisado',
+    );
+  });
+
   it('especialização rejeitada com a marcação pendente: a marcação fica sem desenho', async () => {
     const { proposal } = await withExtra();
     const specChange = changeOf(proposal, 'specialization', 'extra').id;
@@ -416,6 +458,54 @@ describe('catálogo do Proposto: fontes', () => {
     expect(fake.register).toHaveBeenLastCalledWith([]);
     own.dispose();
     expect(fake.clear).toHaveBeenCalled();
+  });
+});
+
+describe('catálogo do Proposto: fontes após revise_proposal', () => {
+  it('a fonte nova de uma proposta revisada (mesmo id@versão) é registrada de novo', async () => {
+    const register = vi.fn(async (fonts: readonly LoadedFont[]) =>
+      fonts.map((font) => ({ font, status: 'loaded' as const })),
+    );
+    const registry = { register, clear: vi.fn() } as unknown as FontRegistry;
+    const withFont = (family: string): Spec => ({
+      ...specOf('extra', 1),
+      fonts: [{ family, file: 'fonts/test.ttf', weight: 400 }],
+    });
+    const base = baseProject();
+    const build = (family: string) =>
+      propose(
+        base,
+        withMarking(withSpec(base, withFont(family), 'extra.spec.json'), 'E1', 'extra'),
+        { id: 'P1' },
+      );
+    const h = await openHarness({
+      project: base,
+      proposals: [build('Test Sans')],
+      files: {
+        ...packageFiles('extra', 'proposals/P1/'),
+        'proposals/P1/specs/extra/fonts/test.ttf': 'FONTBYTES',
+      },
+    });
+    const own = createProposedComponents({
+      base: h.session.components,
+      proposal: h.review.derived.proposal,
+      view: h.review.view,
+      shown: h.review.derived.shownProject,
+      read: (path) => h.session.readImage(path),
+      fonts: registry,
+    });
+    expect(h.review.open('P1').ok).toBe(true);
+    await own.whenIdle();
+    expect(register).toHaveBeenCalledTimes(1);
+
+    h.root.put(proposalFilePath('P1'), serializeProposal(build('Outra Sans')));
+    await h.session.proposals.scan();
+    await own.whenIdle();
+    expect(register).toHaveBeenCalledTimes(2);
+    expect((register.mock.calls[1]?.[0] ?? []).map((f) => f.family)).toEqual([
+      'Outra Sans',
+    ]);
+    own.dispose();
   });
 });
 

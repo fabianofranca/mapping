@@ -9,3 +9,13 @@ export const previewBannerDismissed = signal(false);
 export function dismissPreviewBanner(): void {
   previewBannerDismissed.value = true;
 }
+
+/** Chaves de aviso de abertura que podem ficar no topo depois de a tela inicial sair. */
+export type ProjectNoticeKey = 'home.folderHasProject';
+
+/** Aviso da última abertura de projeto (estado de UI da sessão; a chave, para seguir o idioma). */
+export const projectNotice = signal<ProjectNoticeKey | null>(null);
+
+export function dismissProjectNotice(): void {
+  projectNotice.value = null;
+}

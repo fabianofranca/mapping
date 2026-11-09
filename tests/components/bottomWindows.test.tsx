@@ -251,14 +251,17 @@ describe('janela inferior: abas e faixa', () => {
     const name = t('diagnostics.title');
     const stripButton = () =>
       screen.getByRole('button', {
-        name: new RegExp(`^${t('window.show', { name })}`),
+        name: new RegExp(`^${name}`),
       });
-    expect(stripButton().getAttribute('aria-label')).toBe(t('window.show', { name }));
+    expect(stripButton().getAttribute('aria-label')).toBe(name);
     reportError('save', new Error('falhou'));
     await vi.waitFor(() =>
       expect(stripButton().getAttribute('aria-label')).toContain(t('diagnostics.unseen')),
     );
     await userEvent.click(stripButton());
     expect(isToolWindowOpen('diagnostics')).toBe(true);
+    // Aberta, o nome continua o mesmo; só o aria-pressed muda.
+    expect(stripButton().getAttribute('aria-label')).toBe(name);
+    expect(stripButton().getAttribute('aria-pressed')).toBe('true');
   });
 });

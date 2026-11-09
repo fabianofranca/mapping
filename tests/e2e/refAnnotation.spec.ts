@@ -84,7 +84,7 @@ test('seletor e linha Referenciada por sem barra horizontal a 900 px', async ({
   await addImage(page);
   await drawMarking(page, await canvasPoint(page, 1 / 4));
   await applySpecialization(page, file);
-  await page.getByRole('button', { name: 'Mostrar Detalhes' }).click();
+  await page.getByRole('button', { name: 'Detalhes', exact: true }).click();
 
   // O item: anotação tipada da camada Componentes, com o título longo.
   await page
@@ -146,7 +146,7 @@ test('o nome do alvo do campo ref cabe a 900 e a 1280 px', async ({ page }, info
   await addImage(page);
   await drawMarking(page, await canvasPoint(page, 1 / 4));
   await applySpecialization(page, file);
-  await page.getByRole('button', { name: 'Mostrar Detalhes' }).click();
+  await page.getByRole('button', { name: 'Detalhes', exact: true }).click();
   await page
     .getByRole('button', { name: /Adicionar anotação na camada Componentes/ })
     .first()

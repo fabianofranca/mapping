@@ -1,5 +1,5 @@
-import { signal } from '@preact/signals';
-import { cleanup, render, screen } from '@testing-library/preact';
+import { effect, signal } from '@preact/signals';
+import { act, cleanup, render, screen } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { t } from '../../src/i18n';
@@ -78,5 +78,97 @@ describe('faixa de consentimento de imagens remotas', () => {
     expect(dismissedOrigins.value.has('https://a.com')).toBe(true);
     expect(localStorage.getItem(channelStorageKey(IMAGE_ORIGINS_KEY))).toBeNull();
     dismissOrigins([]);
+  });
+});
+
+// NE1 (#538, item 3): fechar a faixa devolve o foco a quem o tinha quando ela apareceu.
+describe('foco ao fechar a faixa de consentimento', () => {
+  let field: HTMLInputElement;
+  let canvas: HTMLElement;
+
+  /** O campo já tem o foco quando a faixa aparece (o caso do R15.3). */
+  function appear(origin = 'https://a.com') {
+    renderBanner();
+    field.focus();
+    act(() => {
+      pending.value = [{ origin, local: false, insecure: false }];
+    });
+  }
+
+  let stopFilter: () => void;
+
+  beforeEach(() => {
+    // Como o derivado real: origem dispensada ou permitida sai da lista de pendentes.
+    stopFilter = effect(() => {
+      const dismissed = dismissedOrigins.value;
+      const allowed = allowedOrigins.value;
+      pending.value = pending
+        .peek()
+        .filter((o) => !dismissed.has(o.origin) && !allowed.includes(o.origin));
+    });
+    field = document.createElement('input');
+    canvas = document.createElement('main');
+    canvas.tabIndex = -1;
+    canvas.setAttribute('data-canvas-area', '');
+    document.body.append(field, canvas);
+  });
+  afterEach(() => {
+    stopFilter();
+    field.remove();
+    canvas.remove();
+  });
+
+  it.each(['imageConsent.dismiss', 'imageConsent.allow'] as const)(
+    '%s devolve o foco ao campo, nunca ao body',
+    async (key) => {
+      const user = userEvent.setup();
+      for (let i = 0; i < 3; i += 1) {
+        appear(`https://a${i}.com`);
+        expect(document.activeElement).toBe(field);
+        await user.click(screen.getByRole('button', { name: t(key) }));
+        expect(screen.queryByRole('status')).toBeNull();
+        expect(document.activeElement).toBe(field);
+        expect(document.activeElement).not.toBe(document.body);
+        cleanup();
+      }
+    },
+  );
+
+  it('sem o campo no DOM, o foco vai ao canvas', async () => {
+    const user = userEvent.setup();
+    appear();
+    field.remove();
+    await user.click(screen.getByRole('button', { name: t('imageConsent.dismiss') }));
+    expect(document.activeElement).toBe(canvas);
+  });
+
+  // CL1 (#1144): URL com mais de 60 caracteres troca o campo de `input` para `textarea`
+  // (mesmo id) enquanto a faixa está aberta; o foco volta ao campo novo, não ao canvas.
+  it.each([
+    ['com o foco já no campo novo', true],
+    ['com o campo novo ainda sem foco', false],
+  ] as const)('campo trocado por um textarea %s', async (_name, focusNew) => {
+    const user = userEvent.setup();
+    field.id = 'url-da-imagem';
+    appear();
+    const area = document.createElement('textarea');
+    area.id = 'url-da-imagem';
+    field.replaceWith(area);
+    if (focusNew) area.focus();
+    await user.click(screen.getByRole('button', { name: t('imageConsent.dismiss') }));
+    expect(document.activeElement).toBe(area);
+    area.remove();
+  });
+
+  it('se o foco não estava na faixa, nada é mexido', () => {
+    appear();
+    const other = document.createElement('input');
+    document.body.append(other);
+    other.focus();
+    act(() => {
+      pending.value = [];
+    });
+    expect(document.activeElement).toBe(other);
+    other.remove();
   });
 });
