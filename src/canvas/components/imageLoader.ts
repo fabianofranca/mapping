@@ -19,18 +19,73 @@ export interface EmbeddedImageHandlers {
   onError?(): void;
 }
 
+/** Imagens embutidas guardadas por URL (as menos recentes saem; ninguém redecodifica a cada desenho). */
+export const EMBEDDED_IMAGE_CACHE_ENTRIES = 64;
+
+const embeddedReady = new Map<string, HTMLImageElement>();
+const embeddedWaiting = new Map<string, EmbeddedImageHandlers[]>();
+const embeddedEpochSignal = signal(0);
+
+/** Sobe quando uma imagem embutida termina de carregar (a galeria do Catálogo refaz o PNG). */
+export const embeddedImageEpoch: ReadonlySignal<number> = embeddedEpochSignal;
+
+/** A imagem embutida já carregada (e a torna a mais recente); `undefined` se ainda não está. */
+export function cachedEmbeddedImage(src: string): HTMLImageElement | undefined {
+  const element = embeddedReady.get(src);
+  if (element) {
+    embeddedReady.delete(src);
+    embeddedReady.set(src, element);
+  }
+  return element;
+}
+
+/** Esquece as imagens embutidas (testes e troca de projeto). */
+export function clearEmbeddedImages(): void {
+  embeddedReady.clear();
+  embeddedWaiting.clear();
+}
+
+function settleEmbedded(src: string, element: HTMLImageElement | null): void {
+  const waiting = embeddedWaiting.get(src) ?? [];
+  embeddedWaiting.delete(src);
+  if (element === null) {
+    for (const handlers of waiting) handlers.onError?.();
+    return;
+  }
+  embeddedReady.set(src, element);
+  while (embeddedReady.size > EMBEDDED_IMAGE_CACHE_ENTRIES) {
+    const oldest = embeddedReady.keys().next();
+    if (oldest.done) break;
+    embeddedReady.delete(oldest.value);
+  }
+  embeddedEpochSignal.value += 1;
+  for (const handlers of waiting) handlers.onLoad(element);
+}
+
 /**
  * Carrega uma imagem embutida (`data:`). Devolve `null` para qualquer outro esquema
- * (defesa a mais: o renderizador já cai no reservado antes de chamar).
+ * (defesa a mais: o renderizador já cai no reservado antes de chamar). Quem pede enquanto a
+ * mesma URL carrega divide a mesma `Image`; a carregada fica guardada (`cachedEmbeddedImage`).
  */
 export function loadEmbeddedImage(
   src: string,
   handlers: EmbeddedImageHandlers,
 ): HTMLImageElement | null {
   if (!DATA_URL.test(src)) return null;
+  const ready = embeddedReady.get(src);
+  if (ready) {
+    handlers.onLoad(ready);
+    return ready;
+  }
+  const waiting = embeddedWaiting.get(src);
+  if (waiting) {
+    waiting.push(handlers);
+    return null;
+  }
+  embeddedWaiting.set(src, [handlers]);
   const element = new Image();
-  element.onload = () => handlers.onLoad(element);
-  if (handlers.onError) element.onerror = () => handlers.onError?.();
+  element.onload = () => settleEmbedded(src, element);
+  element.onerror = () => settleEmbedded(src, null);
   element.src = src;
   return element;
 }
@@ -121,6 +176,14 @@ export class RemoteImageLoader {
   private readonly listeners = new Set<(url: string) => void>();
   private readonly toClose: ImageBitmap[] = [];
   private closeScheduled = false;
+  /**
+   * URLs pedidas no quadro atual e no anterior: o cache não despeja nenhuma delas (despejar uma
+   * URL à vista só a faria ser pedida de novo, em ciclo). Com mais URLs à vista que o limite, o
+   * cache passa do limite até elas saírem de vista.
+   */
+  private seen = new Set<string>();
+  private seenBefore = new Set<string>();
+  private seenScheduled = false;
   /** Último valor do interruptor de CORS visto num `request` (a nova tentativa depende dele). */
   private noCorsAllowed = false;
   private readonly epochSignal = signal(0);
@@ -138,6 +201,7 @@ export class RemoteImageLoader {
    */
   request(url: string, { allowNoCors }: RemoteImageRequest): RemoteImageView {
     this.noCorsAllowed = allowNoCors;
+    this.markSeen(url);
     const ready = this.ready.get(url);
     if (ready) {
       // Imagem carregada sem CORS só aparece com o interruptor ligado.
@@ -185,6 +249,24 @@ export class RemoteImageLoader {
     this.ready.clear();
     this.failures.clear();
     this.listeners.clear();
+    this.seen.clear();
+    this.seenBefore.clear();
+  }
+
+  /** Marca a URL como à vista; a cada quadro as marcas envelhecem uma geração. */
+  private markSeen(url: string): void {
+    this.seen.add(url);
+    if (this.seenScheduled) return;
+    this.seenScheduled = true;
+    this.deps.requestFrame(() => this.ageSeen());
+  }
+
+  private ageSeen(): void {
+    this.seenBefore = this.seen;
+    this.seen = new Set();
+    // Enquanto sobrar marca da geração anterior, mais um quadro a faz sair de vista.
+    if (this.seenBefore.size > 0) this.deps.requestFrame(() => this.ageSeen());
+    else this.seenScheduled = false;
   }
 
   private enqueue(url: string, noCors: boolean): void {
@@ -334,10 +416,17 @@ export class RemoteImageLoader {
 
   private store(url: string, entry: Ready): void {
     this.ready.set(url, entry);
-    while (this.ready.size > REMOTE_IMAGE_LIMITS.cacheEntries) {
-      const oldest = this.ready.entries().next();
-      if (oldest.done) break;
-      const [evictedUrl, evicted] = oldest.value;
+    if (this.ready.size <= REMOTE_IMAGE_LIMITS.cacheEntries) return;
+    // Da menos para a mais recente, só as que não estão à vista; acima do limite, para quando
+    // não houver mais nenhuma fora de vista.
+    for (const [evictedUrl, evicted] of [...this.ready]) {
+      if (this.ready.size <= REMOTE_IMAGE_LIMITS.cacheEntries) break;
+      if (
+        evictedUrl === url ||
+        this.seen.has(evictedUrl) ||
+        this.seenBefore.has(evictedUrl)
+      )
+        continue;
       this.ready.delete(evictedUrl);
       // Um nó do Konva pode estar usando o bitmap neste quadro: o `close()` espera o próximo.
       this.release(evicted);

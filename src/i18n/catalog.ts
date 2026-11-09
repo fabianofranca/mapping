@@ -77,6 +77,23 @@ export const catalogPtBR = {
   'catalog.playground.drawing': 'Desenhando…',
   'catalog.playground.warnings': 'Avisos do desenho',
   'catalog.playground.drawFailed': 'Não foi possível desenhar com estes valores.',
+
+  'catalog.drawWarning.empty-group-shadow': 'Sombra num grupo vazio ignorada.',
+  'catalog.drawWarning.inner-shadow': 'Sombra interna não existe no canvas 2D: ignorada.',
+  'catalog.drawWarning.extra-shadows':
+    'Só a primeira sombra externa de cada nó foi desenhada.',
+  'catalog.drawWarning.unknown-node': 'Nó não desenhado ({type}): só a caixa.',
+  'catalog.drawWarning.image-without-pixels':
+    'Imagem sem pixels desenhada como reservado.',
+  'catalog.drawWarning.image-decode-failed':
+    'Uma imagem embutida não pôde ser decodificada.',
+  'catalog.drawWarning.stroke-extra-paints':
+    'Só o primeiro preenchimento do traço foi usado.',
+  'catalog.drawWarning.stroke-align-centered':
+    'Traço por dentro ou por fora em caminho ou linha foi centralizado.',
+  'catalog.drawWarning.stroke-radial-first-color':
+    'Traço com gradiente radial desenhado com a primeira cor.',
+  'catalog.drawWarning.stroke-image-gray': 'Traço com imagem desenhado em cinza.',
 } as const;
 
 export const catalogEnUS: Record<keyof typeof catalogPtBR, string> = {
@@ -152,4 +169,19 @@ export const catalogEnUS: Record<keyof typeof catalogPtBR, string> = {
   'catalog.playground.drawing': 'Drawing…',
   'catalog.playground.warnings': 'Drawing warnings',
   'catalog.playground.drawFailed': 'Could not draw with these values.',
+
+  'catalog.drawWarning.empty-group-shadow': 'Shadow on an empty group ignored.',
+  'catalog.drawWarning.inner-shadow': 'Inner shadows do not exist in canvas 2D: ignored.',
+  'catalog.drawWarning.extra-shadows':
+    'Only the first outer shadow of each node was drawn.',
+  'catalog.drawWarning.unknown-node': 'Node not drawn ({type}): only its box is shown.',
+  'catalog.drawWarning.image-without-pixels':
+    'Image without pixels drawn as a placeholder.',
+  'catalog.drawWarning.image-decode-failed': 'An embedded image could not be decoded.',
+  'catalog.drawWarning.stroke-extra-paints': 'Only the first stroke paint was used.',
+  'catalog.drawWarning.stroke-align-centered':
+    'Inside/outside stroke on a path or line was centered.',
+  'catalog.drawWarning.stroke-radial-first-color':
+    'Stroke with a radial gradient drawn with its first color.',
+  'catalog.drawWarning.stroke-image-gray': 'Stroke with an image drawn in gray.',
 };

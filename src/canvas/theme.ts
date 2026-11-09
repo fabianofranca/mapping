@@ -37,11 +37,18 @@ export interface CanvasTokens {
   readonly nameTagText: string;
   /** Fundo dos selos de revisão sobre a foto (`cv-badge`, revisão de propostas). */
   readonly badge: string;
-  /** Cores do desenho dos componentes: reservado de imagem, seu contorno e o nó desconhecido. */
+  /**
+   * Desenho dos componentes (`RenderPalette`): reservado de imagem e seu contorno, o nó
+   * desconhecido, o preenchimento e o texto da caixa de tipo ausente e a opacidade do slot.
+   */
   readonly component: {
     readonly placeholderFill: string;
     readonly placeholderLine: string;
     readonly unknownLine: string;
+    readonly unknownFill: string;
+    readonly slotOpacity: number;
+    readonly labelFontSize: number;
+    readonly labelFontFamily: string;
   };
   // Superfícies do tema (cartão, espaço reservado das imagens, rótulos).
   readonly surface: string;
@@ -149,6 +156,10 @@ export function canvasTokensFrom(read: TokenReader): CanvasTokens {
       placeholderFill: read('--cv-component-placeholder'),
       placeholderLine: read('--cv-component-placeholder-line'),
       unknownLine: read('--cv-component-unknown'),
+      unknownFill: read('--cv-component-unknown-fill'),
+      slotOpacity: number(read, '--opacity-slot'),
+      labelFontSize: number(read, '--t-cv-image-size'),
+      labelFontFamily: read('--font-sans'),
     },
     surface: read('--color-surface'),
     card: read('--color-card'),

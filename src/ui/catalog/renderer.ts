@@ -6,7 +6,9 @@ import {
   renderSceneToDataUrl,
 } from '../../canvas/components/exampleImages';
 import { konvaMeasurer } from '../../canvas/components/konvaMeasurer';
+import { embeddedImageEpoch } from '../../canvas/components/imageLoader';
 import { sharedRemoteImageSource } from '../../canvas/components/remoteImages';
+import { readCanvasTokens } from '../../canvas/theme';
 import type { TextMeasurer } from '../../model';
 
 // O que o Catálogo usa para medir texto e rasterizar desenhos. Injetável nos testes (o jsdom
@@ -32,12 +34,13 @@ export function createCatalogRenderer(
   return { measure, rasterize, cache: createExampleImageCache(rasterize), imagesEpoch };
 }
 
-/** A época das imagens de produção: carregador mais as duas portas (consentimento, interruptores). */
+/** A época das imagens de produção: carregador, imagens embutidas e as duas portas (consentimento, interruptores). */
 function productionImagesEpoch(): ReadonlySignal<number> {
   const source = sharedRemoteImageSource();
   let version = 0;
   return computed(() => {
     void source.epoch.value;
+    void embeddedImageEpoch.value;
     void source.gate.value;
     return ++version;
   });
@@ -54,6 +57,8 @@ export function defaultCatalogRenderer(): CatalogRenderer {
     konvaMeasurer,
     (root, options) =>
       renderSceneToDataUrl(root, {
+        // As cores do reservado e da caixa de nó desconhecido são as do tema de agora.
+        palette: readCanvasTokens().component,
         ...options,
         remoteImage: options.remoteImage ?? ((url) => source.resolve(url)),
       }),

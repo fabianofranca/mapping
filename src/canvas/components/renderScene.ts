@@ -31,28 +31,16 @@ import {
 } from '../../model/components/scene';
 import type { RunPiece } from '../../model/components/richText';
 import { textBoxLimits } from './textLimits';
-import { loadEmbeddedImage } from './imageLoader';
+import { cachedEmbeddedImage, loadEmbeddedImage } from './imageLoader';
+import { DEFAULT_PALETTE, type RenderPalette } from './palette';
+import type { RenderWarning, RenderWarningCode } from './renderWarnings';
 import type { RemoteImageView, RemoteImageViewState } from './remoteImageTypes';
 
 /** Única origem de imagem que o renderizador carrega sozinho (herança do laboratório). */
 const DATA_URL = /^data:/i;
 
-/** Cores do reservado de imagem e da caixa de nó desconhecido. */
-export interface RenderPalette {
-  /** Preenchimento do reservado de imagem. */
-  readonly placeholderFill: string;
-  /** Contorno do reservado (X, traço de imagem, slot). */
-  readonly placeholderLine: string;
-  /** Contorno da caixa de nó que o desenho não conhece. */
-  readonly unknownLine: string;
-}
-
-/** Padrão do laboratório (sem tema próprio). O produto passa as cores dos tokens do tema. */
-export const DEFAULT_PALETTE: RenderPalette = {
-  placeholderFill: 'rgba(128, 128, 128, 0.25)',
-  placeholderLine: 'rgba(128, 128, 128, 0.8)',
-  unknownLine: '#d81b60',
-};
+export { DEFAULT_PALETTE, type RenderPalette };
+export type { RenderWarning, RenderWarningCode };
 
 /** O que a função de imagem remota devolve: a vista completa ou só o estado (reservado). */
 export type RemoteImageResult = RemoteImageView | RemoteImageViewState;
@@ -81,13 +69,16 @@ export interface RenderResult {
   readonly root: Konva.Group;
   /** Contêiner Konva de cada nó da cena, pelo id. */
   readonly byId: ReadonlyMap<string, Konva.Group>;
-  /** Aproximações feitas ao desenhar (além das do conversor). */
-  readonly warnings: readonly string[];
+  /** Aproximações feitas ao desenhar (além das do conversor), com código e parâmetros. */
+  readonly warnings: readonly RenderWarning[];
   /** URLs remotas (`url` do preenchimento `image`) que a cena usa, sem repetir. */
   readonly imageUrls: readonly string[];
 }
 
 export const SCENE_ID_ATTR = 'sceneId';
+
+/** Forma que só existe para receber o ponteiro: não pinta nem recebe sombra. */
+const HIT_ONLY_ATTR = 'hitOnly';
 
 interface Box {
   readonly width: number;
@@ -98,13 +89,22 @@ type ShapeWithFill = Konva.Shape;
 
 class Renderer {
   readonly byId = new Map<string, Konva.Group>();
-  readonly warnings = new Set<string>();
+  private readonly warned = new Map<string, RenderWarning>();
   readonly imageUrls = new Set<string>();
 
   private readonly palette: RenderPalette;
 
   constructor(private readonly options: RenderOptions) {
     this.palette = { ...DEFAULT_PALETTE, ...options.palette };
+  }
+
+  get warnings(): readonly RenderWarning[] {
+    return [...this.warned.values()];
+  }
+
+  private warn(code: RenderWarningCode, params?: RenderWarning['params']): void {
+    const key = params ? `${code}|${JSON.stringify(params)}` : code;
+    if (!this.warned.has(key)) this.warned.set(key, params ? { code, params } : { code });
   }
 
   render(node: SceneNode, pendingShadow?: Shadow): Konva.Group {
@@ -135,7 +135,10 @@ class Renderer {
     }
 
     const shapes = this.shapesOf(node);
-    const shadowOwner = shadow ? shapes[0] : undefined;
+    // A área clicável invisível de um quadro transparente não pinta: não é dona da sombra.
+    const shadowOwner = shadow
+      ? shapes.find((s) => !s.getAttr(HIT_ONLY_ATTR))
+      : undefined;
     for (const shape of shapes) {
       shape.setAttr(SCENE_ID_ATTR, node.id);
       container.add(shape);
@@ -149,7 +152,7 @@ class Renderer {
         forward = undefined;
       }
       if (shadow && !shadowOwner && node.children.length === 0) {
-        this.warnings.add('sombra num grupo vazio foi ignorada');
+        this.warn('empty-group-shadow');
       }
     }
 
@@ -157,13 +160,18 @@ class Renderer {
     return container;
   }
 
+  private hitOnly(shape: Konva.Shape): Konva.Shape {
+    shape.setAttr(HIT_ONLY_ATTR, true);
+    return shape;
+  }
+
   private pickShadow(shadows: readonly Shadow[]): Shadow | undefined {
     const outer = shadows.filter((s) => !s.inner);
     if (shadows.some((s) => s.inner)) {
-      this.warnings.add('sombra interna não existe no canvas 2D: ignorada');
+      this.warn('inner-shadow');
     }
     if (outer.length > 1) {
-      this.warnings.add('só a primeira sombra externa de cada nó foi desenhada');
+      this.warn('extra-shadows');
     }
     return outer[0];
   }
@@ -191,11 +199,13 @@ class Renderer {
         if (node.fills.length === 0 && !node.stroke && node.type === 'frame') {
           // Quadro transparente: uma área clicável invisível, para o hover achar o quadro.
           shapes.push(
-            new KonvaRect({
-              width: node.width,
-              height: node.height,
-              fill: 'transparent',
-            }),
+            this.hitOnly(
+              new KonvaRect({
+                width: node.width,
+                height: node.height,
+                fill: 'transparent',
+              }),
+            ),
           );
         }
         return shapes;
@@ -297,7 +307,7 @@ class Renderer {
         if (slot && this.options.showSlots === false) return shapes;
         // O ícone desconhecido já levou o aviso do motor (`ícone desconhecido: <nome>`).
         if (!slot && node.sourceType !== 'icon') {
-          this.warnings.add(`nó não desenhado (${node.sourceType}): só a caixa`);
+          this.warn('unknown-node', { type: node.sourceType });
         }
         shapes.push(
           new KonvaRect({
@@ -306,7 +316,7 @@ class Renderer {
             stroke: slot ? this.palette.placeholderLine : this.palette.unknownLine,
             strokeWidth: 1,
             dash: slot ? [3, 5] : [4, 4],
-            opacity: slot ? 0.6 : 1,
+            opacity: slot ? this.palette.slotOpacity : 1,
             strokeScaleEnabled: false,
           }),
         );
@@ -331,9 +341,13 @@ class Renderer {
         if (!run) continue;
         const top = line.y + (line.height - piece.height) / 2 + shift;
         if (piece.chip) shapes.push(chipShape(piece, run, top));
-        const text = runTextShape(node, run, piece, top);
-        if (node.stroke) this.applyStroke(text, node.stroke, 'path');
-        shapes.push(text);
+        shapes.push(runTextShape(node, run, piece, top));
+        if (node.stroke) {
+          // Como no texto simples: o preenchimento e o contorno são formas separadas.
+          const outline = runTextShape(node, run, piece, top);
+          this.applyStroke(outline, node.stroke, 'path');
+          shapes.push(outline);
+        }
       }
     }
     return shapes;
@@ -375,10 +389,11 @@ class Renderer {
     }
     // Só a imagem embutida (`data:`) é carregada aqui; qualquer outro esquema vira reservado.
     if (!paint.src || !DATA_URL.test(paint.src)) {
-      this.warnings.add('imagem sem pixels desenhada como reservado');
+      this.warn('image-without-pixels');
       return placeholder(shape, box, this.palette);
     }
     if (shape instanceof KonvaRect) {
+      const fit = paint.fit ?? 'cover';
       const image = new KonvaImage({
         image: undefined,
         width: box.width,
@@ -386,13 +401,26 @@ class Renderer {
         cornerRadius: shape.cornerRadius(),
         opacity: paint.opacity ?? 1,
       });
+      const apply = (element: HTMLImageElement): void => {
+        const size = { width: element.naturalWidth, height: element.naturalHeight };
+        image.setAttrs({
+          image: element,
+          ...(size.width > 0 && size.height > 0 ? imageFit(fit, box, size) : {}),
+        });
+      };
+      const ready = cachedEmbeddedImage(paint.src);
+      if (ready) {
+        // Já decodificada: usa de imediato (sem pedir quadro, senão o desenho se repetiria).
+        apply(ready);
+        return [image];
+      }
       loadEmbeddedImage(paint.src, {
         onLoad: (element) => {
-          image.image(element);
+          apply(element);
           this.options.onImageLoaded?.();
         },
         onError: () => {
-          this.warnings.add('uma imagem embutida não pôde ser decodificada');
+          this.warn('image-decode-failed');
         },
       });
       return [image];
@@ -479,10 +507,9 @@ class Renderer {
     sideLine = false,
   ): void {
     const [paint, ...rest] = stroke.paints;
-    if (rest.length > 0)
-      this.warnings.add('só o primeiro preenchimento do traço foi usado');
+    if (rest.length > 0) this.warn('stroke-extra-paints');
     if (kind !== 'box' && !sideLine && stroke.align !== 'center') {
-      this.warnings.add('traço por dentro/por fora em caminho ou linha foi centralizado');
+      this.warn('stroke-align-centered');
     }
     shape.strokeWidth(stroke.width);
     // `scale: false`: a largura é em pixels de tela, em qualquer zoom.
@@ -503,12 +530,12 @@ class Renderer {
         shape.strokeLinearGradientColorStops(flattenStops(paint.stops));
         return;
       case 'radial': {
-        this.warnings.add('traço com gradiente radial desenhado com a primeira cor');
+        this.warn('stroke-radial-first-color');
         shape.stroke(paint.stops[0]?.color ?? this.palette.placeholderLine);
         return;
       }
       case 'image':
-        this.warnings.add('traço com imagem desenhado em cinza');
+        this.warn('stroke-image-gray');
         shape.stroke(this.palette.placeholderLine);
         return;
     }
@@ -786,7 +813,7 @@ export function renderScene(scene: Scene, options: RenderOptions = {}): RenderRe
   return {
     root,
     byId: renderer.byId,
-    warnings: [...renderer.warnings],
+    warnings: renderer.warnings,
     imageUrls: [...renderer.imageUrls],
   };
 }

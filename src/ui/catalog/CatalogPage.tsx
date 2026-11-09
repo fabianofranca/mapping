@@ -15,6 +15,7 @@ import { Button } from '../controls';
 import { Markdown } from '../markdown/Markdown';
 import { ExternalDoc } from './ExternalDoc';
 import { Playground } from './Playground';
+import { drawWarningText } from './drawWarnings';
 import type { CatalogRenderer } from './renderer';
 
 // Página de um componente do Catálogo: cabeçalho, documento, propriedades, código por
@@ -329,24 +330,23 @@ function Gallery({
       const base = { key, name, ...(description === undefined ? {} : { description }) };
       if (drawing === null) return { ...base, url: null, warnings: [] };
       let url: string | null;
+      const cacheKey = {
+        specId,
+        version,
+        typeId: entry.type.id,
+        example: example?.name ?? 'preview',
+        width: drawing.root.width,
+        height: drawing.root.height,
+        fontsEpoch,
+        imagesEpoch,
+      };
       try {
-        url = renderer.cache.get(
-          {
-            specId,
-            version,
-            typeId: entry.type.id,
-            example: example?.name ?? 'preview',
-            width: drawing.root.width,
-            height: drawing.root.height,
-            fontsEpoch,
-            imagesEpoch,
-          },
-          () => drawing.root,
-        );
+        url = renderer.cache.get(cacheKey, () => drawing.root);
       } catch {
         url = null;
       }
-      return { ...base, url, warnings: drawing.warnings };
+      const renderWarnings = renderer.cache.warnings(cacheKey).map(drawWarningText);
+      return { ...base, url, warnings: [...drawing.warnings, ...renderWarnings] };
     };
     const list: GalleryItem[] = [];
     if (entry.component !== null) {

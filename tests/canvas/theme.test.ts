@@ -55,6 +55,17 @@ describe('canvasTokensFrom', () => {
     expect(t.fontFamily).toBe(tokenValue('font-sans', 'light'));
   });
 
+  it('o desenho dos componentes lê cor, preenchimento, opacidade do slot e fonte do tema', () => {
+    for (const theme of ['light', 'dark'] as const) {
+      const { component } = canvasTokensFrom(reader(theme));
+      expect(component.unknownLine).toBe(tokenValue('cv-component-unknown', theme));
+      expect(component.unknownFill).toBe(tokenValue('cv-component-unknown-fill', theme));
+      expect(component.slotOpacity).toBe(Number(tokenValue('opacity-slot', theme)));
+      expect(component.labelFontSize).toBe(12);
+      expect(component.labelFontFamily).toBe(tokenValue('font-sans', theme));
+    }
+  });
+
   it('nenhum valor vazio ou NaN, nos dois temas', () => {
     for (const theme of ['light', 'dark'] as const) {
       for (const [path, value] of leaves(canvasTokensFrom(reader(theme)))) {
