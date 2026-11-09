@@ -174,8 +174,8 @@ Na mesma data entraram no DS os sete que faltavam: `size-grid-col-min` (`96px`) 
 | `spacing`                          | 8     | 8              |
 | `radius`                           | 7     | 7              |
 | `shadow`                           | 1     | 1              |
-| `size`                             | 44    | 44             |
-| `opacity`                          | 8     | 8              |
+| `size`                             | 44    | 43             |
+| `opacity`                          | 8     | 7              |
 | `duration`                         | 6     | 6              |
 | `zIndex`                           | 8     | 8              |
 | `breakpoint`                       | 2     | 2              |

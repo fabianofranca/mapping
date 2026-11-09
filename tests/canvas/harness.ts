@@ -99,7 +99,6 @@ export const TOKENS: CanvasTokens = {
     image: { size: 12, line: 16, weight: 600 },
   },
   handleSize: 10,
-  indicatorMinMarking: 24,
   lodMinMarking: 24,
   lodHideMarking: 2,
   arrow: {

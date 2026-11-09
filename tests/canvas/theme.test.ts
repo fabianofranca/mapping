@@ -112,14 +112,6 @@ describe('tokens do cadeado', () => {
   });
 });
 
-describe('limite dos indicadores de camada', () => {
-  it('vem do token size-indicator-min-marking (3× o diâmetro da bolinha) nos dois temas', () => {
-    for (const theme of ['light', 'dark'] as const) {
-      expect(canvasTokensFrom(reader(theme)).indicatorMinMarking).toBe(24);
-    }
-  });
-});
-
 describe('nível de detalhe das marcações', () => {
   it('os limites vêm dos tokens size-lod-min-marking (24) e size-lod-hide-marking (2) nos dois temas', () => {
     for (const theme of ['light', 'dark'] as const) {
