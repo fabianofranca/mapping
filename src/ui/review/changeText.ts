@@ -9,6 +9,7 @@ import {
   isRecord,
   parseRefValue,
   projectIndex,
+  proposalIndex,
   refLabel,
   roleNameOf,
   type Annotation,
@@ -55,6 +56,37 @@ function entityRecord(c: Change): Record<string, JsonValue> | null {
 const text = (v: JsonValue | undefined): string | null =>
   typeof v === 'string' && v !== '' ? v : null;
 
+interface EntityLookup {
+  /** A primeira mudança de cada entidade (pelo id). */
+  readonly firstOf: ReadonlyMap<string, Change>;
+  /** A mudança da entidade inteira (criação ou remoção: `field` nulo), pelo id. */
+  readonly wholeOf: ReadonlyMap<string, Change>;
+}
+
+const lookups = new WeakMap<readonly Change[], EntityLookup>();
+
+/** Índices das mudanças por id de entidade, montados uma vez por lista (sem `find` por linha). */
+function entityLookup(names: ReviewNames): EntityLookup {
+  const changes = names.proposal.changes;
+  const cached = lookups.get(changes);
+  if (cached) return cached;
+  const firstOf = new Map<string, Change>();
+  const wholeOf = new Map<string, Change>();
+  for (const c of changes) {
+    if (!firstOf.has(c.entityId)) firstOf.set(c.entityId, c);
+    if (c.field === null && !wholeOf.has(c.entityId)) wholeOf.set(c.entityId, c);
+  }
+  const built = { firstOf, wholeOf };
+  lookups.set(changes, built);
+  return built;
+}
+
+/** A mudança da entidade inteira se for da `entity` dada. */
+function wholeChange(names: ReviewNames, entity: Change['entity'], id: string) {
+  const c = entityLookup(names).wholeOf.get(id);
+  return c?.entity === entity ? c : undefined;
+}
+
 /**
  * Nome de uma seta: o `name` dela, senão "Origem → Destino" (as pontas pelos nomes das
  * marcações). `null` se a seta não está no projeto nem em uma criação ou remoção da proposta.
@@ -63,13 +95,10 @@ function arrowName(names: ReviewNames, id: string): string | null {
   let source: { readonly name: string | null; from: string; to: string } | null =
     lookup(names, (p) => projectIndex(p).arrows.get(id)) ?? null;
   if (!source) {
-    for (const c of names.proposal.changes) {
-      if (c.entity !== 'arrow' || c.entityId !== id || c.field !== null) continue;
-      const record = entityRecord(c);
-      if (record && typeof record.from === 'string' && typeof record.to === 'string') {
-        source = { name: text(record.name), from: record.from, to: record.to };
-        break;
-      }
+    const c = wholeChange(names, 'arrow', id);
+    const record = c && entityRecord(c);
+    if (record && typeof record.from === 'string' && typeof record.to === 'string') {
+      source = { name: text(record.name), from: record.from, to: record.to };
     }
   }
   if (!source) return null;
@@ -91,13 +120,9 @@ export function markingName(names: ReviewNames, id: string): string {
   }
   const arrow = arrowName(names, id);
   if (arrow !== null) return arrow;
-  for (const c of names.proposal.changes) {
-    if (c.entity === 'marking' && c.entityId === id && c.field === null) {
-      const name = text(entityRecord(c)?.name);
-      if (name) return name;
-    }
-  }
-  return t('marking.unnamed');
+  const created = wholeChange(names, 'marking', id);
+  const name = created && text(entityRecord(created)?.name);
+  return name || t('marking.unnamed');
 }
 
 /** Container sem arquivo criada pela proposta (imagem sem arquivo): o nome padrão dela. */
@@ -112,18 +137,17 @@ function backgroundName(
 export function imageName(names: ReviewNames, id: string): string {
   const found = lookup(names, (p) => projectIndex(p).containers.get(id));
   if (found) return imageLabel(found);
-  for (const c of names.proposal.changes) {
-    if (c.entity === 'image' && c.entityId === id && c.field === null) {
-      const record = entityRecord(c);
-      const name = text(record?.name) ?? text(record?.file) ?? backgroundName(record);
-      if (name) return name;
-    }
+  const c = wholeChange(names, 'image', id);
+  if (c) {
+    const record = entityRecord(c);
+    const name = text(record?.name) ?? text(record?.file) ?? backgroundName(record);
+    if (name) return name;
   }
   return id;
 }
 
 function layerName(names: ReviewNames, id: string): string {
-  return lookup(names, (p) => p.layers.find((l) => l.id === id))?.name ?? id;
+  return lookup(names, (p) => projectIndex(p).layers.get(id))?.name ?? id;
 }
 
 function annotationName(names: ReviewNames, id: string): string {
@@ -134,15 +158,14 @@ function annotationName(names: ReviewNames, id: string): string {
     const project = inPreview ? (names.preview ?? names.current) : names.current;
     return annotationTitle(project, found) ?? t('annotation.unnamed');
   }
-  for (const c of names.proposal.changes) {
-    if (c.entity === 'annotation' && c.entityId === id && c.field === null) {
-      const record = entityRecord(c);
-      const name = text(record?.name);
-      if (name) return name;
-      const type = record?.type;
-      if (isRecord(type) && typeof type.typeId === 'string') {
-        return typeName(names, type.specId, type.typeId);
-      }
+  const c = wholeChange(names, 'annotation', id);
+  if (c) {
+    const record = entityRecord(c);
+    const name = text(record?.name);
+    if (name) return name;
+    const type = record?.type;
+    if (isRecord(type) && typeof type.typeId === 'string') {
+      return typeName(names, type.specId, type.typeId);
     }
   }
   return t('annotation.unnamed');
@@ -218,7 +241,7 @@ export function targetName(names: ReviewNames, target: ReviewTarget): string {
       const c =
         target.id === null
           ? undefined
-          : names.proposal.changes.find((x) => x.id === target.id);
+          : proposalIndex(names.proposal).changes.get(target.id);
       return c ? changeTitle(names, c) : '';
     }
   }
@@ -274,7 +297,7 @@ export function entityLabel(entity: Change['entity']): string {
 
 /** O tipo da entidade que a proposta cita com esse id (pela primeira mudança nela). */
 export function entityKindOf(names: ReviewNames, id: string): Change['entity'] | null {
-  return names.proposal.changes.find((c) => c.entityId === id)?.entity ?? null;
+  return entityLookup(names).firstOf.get(id)?.entity ?? null;
 }
 
 /**
@@ -295,8 +318,8 @@ export function entityName(names: ReviewNames, id: string): string | null {
     const spec = index.specializations.get(id)?.spec;
     if (spec) return spec.name;
   }
-  for (const c of names.proposal.changes) {
-    if (c.entityId !== id || c.field !== null) continue;
+  const c = entityLookup(names).wholeOf.get(id);
+  if (c) {
     const record = entityRecord(c);
     if (c.entity === 'annotation') return annotationName(names, id);
     if (c.entity === 'arrow') return arrowName(names, id);
@@ -591,7 +614,9 @@ export function valueParts(
   return [{ text: compact(value) }];
 }
 
-const partsText = (parts: readonly ValuePart[]) => parts.map((p) => p.text).join('');
+/** O texto corrido das partes de um valor. */
+export const partsText = (parts: readonly ValuePart[]) =>
+  parts.map((p) => p.text).join('');
 
 /** Resumo de uma linha da mudança: "y 476 → 532", "primary → secondary", "nova". */
 export function changeSummary(names: ReviewNames, c: Change): string {

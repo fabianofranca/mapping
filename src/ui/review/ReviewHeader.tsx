@@ -43,6 +43,15 @@ import { useDecide, useDecideMany, useReviewNames } from './useReview';
 /** Quantas mudanças aparecem por extenso nas listas curtas ("e mais N"). */
 const LIST_MAX = 4;
 
+/** Quantas marcações (ou setas) a lista "Aceitar remove junto" mostra antes do "e mais N". */
+const REMOVAL_MAX = LIST_MAX * 3;
+
+/** A linha "e mais N" das listas de marcações e setas cortadas em `REMOVAL_MAX`. */
+function MoreItem({ total }: { readonly total: number }) {
+  if (total <= REMOVAL_MAX) return null;
+  return <li class="muted">{t('review.panel.more', { count: total - REMOVAL_MAX })}</li>;
+}
+
 /** Quantos nomes de dependências aparecem no aviso "junto". */
 const TOGETHER_NAMES = 4;
 
@@ -183,7 +192,7 @@ function IssueNotices({
     <>
       {issues.map((issue) => (
         <Notice
-          key={`${issue.code}:${issue.id}`}
+          key={`${issue.code}:${issue.id}:${issue.otherId ?? ''}`}
           tone="error"
           size="sm"
           title={t('review.issue.title')}
@@ -303,7 +312,7 @@ function RemovalList({
     <div class="review-header-info">
       <b>{t('review.panel.removesWith')}</b>
       <ul class="review-removal-list">
-        {markings.slice(0, LIST_MAX * 3).map((id) => (
+        {markings.slice(0, REMOVAL_MAX).map((id) => (
           <li key={id}>
             <Icon name="marking" />
             <Button
@@ -315,7 +324,8 @@ function RemovalList({
             </Button>
           </li>
         ))}
-        {arrows.slice(0, LIST_MAX * 3).map((id) => (
+        <MoreItem total={markings.length} />
+        {arrows.slice(0, REMOVAL_MAX).map((id) => (
           <li key={id}>
             <Icon name="arrow" />
             <Button
@@ -327,6 +337,7 @@ function RemovalList({
             </Button>
           </li>
         ))}
+        <MoreItem total={arrows.length} />
         {[...byLayer].map(([layer, list]) => (
           <li key={layer}>
             <Icon name="layers" />
@@ -437,10 +448,10 @@ function ProposalStatusNotice({ names }: { readonly names: ReviewNames }) {
 /** Selos embaixo do nome do item: criada, será removida, trancada e bloqueia aplicar. */
 export function IdentityFlags({
   target,
-  whole,
+  whole = null,
 }: {
   readonly target: ReviewTarget;
-  readonly whole: Change | null;
+  readonly whole?: Change | null;
 }) {
   const { review } = useEditor();
   const d = review.derived;

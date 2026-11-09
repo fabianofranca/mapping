@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { ariaKeys } from '../../app/shortcuts';
 import { t } from '../../i18n';
 import { hasActiveFilters } from '../../model';
 import { BREAKPOINTS } from '../../theme/breakpoints';
@@ -176,6 +177,7 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
       </div>
       <div class="review-bar-actions">
         {applyState.blocked && (
+          /* Exceção ao Button: selo de problema clicável (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
           <button
             type="button"
             class="flag flag-danger review-bar-problem"
@@ -197,7 +199,7 @@ export function ReviewBar({ onExit }: { readonly onExit: () => void }) {
           variant="primary"
           disabled={applyState.disabled}
           title={`${applyState.tooltip}  ${REVIEW_KEYS.apply}`}
-          aria-keyshortcuts="Control+Enter"
+          aria-keyshortcuts={ariaKeys(REVIEW_KEYS.apply)}
           onClick={() => void apply()}
         >
           <Icon name="check" />

@@ -13,8 +13,9 @@ export function CitedIn({ thread }: { readonly thread: Thread }) {
   const ctx = useCitationContext();
   const ids = derived.threads.citedIn.value.get(thread.id);
   if (ctx === null || ids === undefined) return null;
+  const byId = new Map(ctx.threads.map((th) => [th.id, th]));
   const chips = ids.flatMap((id) => {
-    const other = ctx.threads.find((th) => th.id === id);
+    const other = byId.get(id);
     const url = other
       ? citationUrl(ctx.projectName, ctx.project, ctx.threads, { kind: 'thread', id })
       : null;

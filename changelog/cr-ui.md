@@ -15,3 +15,9 @@
 - Seletor de referência: o trecho buscado é destacado no lugar certo também em textos com letras como "İ".
 - Seletor de referência: Enter (com ou sem Alt) só escolhe o alvo; Alt+Enter dentro do seletor não acrescenta mais uma linha vazia à tabela.
 - Tabela, "Referências vão quebrar": o nome da linha na confirmação vem sempre da linha atual, também depois de uma recarga externa com o diálogo aberto (antes podia aparecer "Linha 0").
+- Comentários, "Apagar conversas…": a data de "Com a última mensagem antes de" vale como meia-noite do seu fuso; a prévia e o apagar usam o mesmo limite (em UTC-3, "antes de 01/11" passa a incluir as mensagens de 31/10 depois das 21h).
+- Comentários, campo com citações (@): o campo não anuncia mais atributos que não existem para ele; a lista de opções só é apontada enquanto está aberta.
+- Janela Comentários: o nome acessível do botão da conversa diz "(não lida)" quando há mensagem não lida, em português e em inglês.
+- Revisão, avisos de dependência: dois avisos que só diferem no outro item envolvido não trocam de lugar quando um deles some.
+- Revisão, "Aceitar remove junto": as listas de marcações e de setas que saem com a imagem dizem "e mais N" quando passam de 12, como a de anotações.
+- Revisão, Detalhes: clicar no fundo e depois trocar de item por N ou C não leva mais o foco para os Detalhes.

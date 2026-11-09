@@ -6,6 +6,7 @@ import { Dialog } from '../Dialog';
 import { useEditor } from '../EditorContext';
 import { actionErrorText } from './commentsText';
 import { impactText } from './deleteText';
+import { localDayStart } from './localDay';
 
 // Apagar conversas em lote (decisão 23): "Só as resolvidas" (marcado) e, opcional, "Com a última
 // mensagem antes de". Os critérios são só esses dois; o filtro da janela não entra. O foco volta
@@ -23,7 +24,7 @@ export function BulkDeleteDialog({ threads, onClose }: BulkDeleteDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const found = bulkDeleteCandidates(threads, {
     onlyResolved,
-    ...(before === '' ? {} : { lastMessageBefore: before }),
+    ...(before === '' ? {} : { lastMessageBefore: localDayStart(before) }),
   });
   const count = found.threads.length;
 

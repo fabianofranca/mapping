@@ -1,12 +1,7 @@
 import { signal, type Signal } from '@preact/signals';
 import { useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../../i18n';
-import {
-  projectIndex,
-  proposalIndex,
-  type Project,
-  type ReviewTarget,
-} from '../../model';
+import { projectIndex, proposalIndex, type Project } from '../../model';
 import type { ReviewView } from '../../store/derived';
 import {
   collapseSections,
@@ -23,6 +18,7 @@ import { MarkingPanel } from '../MarkingPanel';
 import { Notice } from '../Notice';
 import { SelectionPanel } from '../SelectionPanel';
 import { createOpenMark, OpenMarkContext } from './ChangeMark';
+import { canvasSelectionOf } from './canvasSelection';
 import { ReviewDetails } from './ReviewDetails';
 import {
   isChangeLayerHidden,
@@ -90,18 +86,6 @@ function shownItem(
   );
 }
 
-/** O item de um nível da revisão (imagem, item, ou o item de uma mudança). */
-function itemOfTarget(
-  target: ReviewTarget | null,
-  changeItem: (id: string) => Selection,
-): Selection {
-  if (!target || target.id === null) return null;
-  if (target.level === 'item') return { kind: 'marking', id: target.id };
-  if (target.level === 'image') return { kind: 'image', id: target.id };
-  if (target.level === 'change') return changeItem(target.id);
-  return null;
-}
-
 interface ReviewPanelProps {
   readonly onGoToAnnotation: (annotation: AnnotationLocation) => void;
 }
@@ -116,23 +100,17 @@ export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
   const view = review.view.value;
   const shown = d.shownProject.value;
   const current = store.committed.value;
-  const proposal = d.proposal.peek();
-  const changeItem = (id: string): Selection => {
-    const c = proposal?.changes.find((x) => x.id === id);
-    if (c?.markingId) return { kind: 'marking', id: c.markingId };
-    if (c?.imageId) return { kind: 'image', id: c.imageId };
-    return null;
-  };
+  const fromTarget = canvasSelectionOf(review, target);
   // Proposta, Projeto e Canvas não têm painel normal; uma mudança sem item (camada,
   // especialização, repositório) também não.
   const levelOnly =
     target?.level === 'proposal' ||
     target?.level === 'project' ||
     target?.level === 'canvas' ||
-    (target?.level === 'change' && changeItem(target.id ?? '') === null);
+    (target?.level === 'change' && fromTarget === undefined);
   // A seleção do canvas acompanha o nível (`useReviewSync`) e também pode ser um item sem
   // mudanças, que o nível não segue: ela é quem diz o item.
-  const sel = levelOnly ? null : (ui.selection.value ?? itemOfTarget(target, changeItem));
+  const sel = levelOnly ? null : (ui.selection.value ?? fromTarget ?? null);
   const item = sel
     ? shownItem(
         sel,
@@ -187,8 +165,23 @@ export function ReviewPanel({ onGoToAnnotation }: ReviewPanelProps) {
       onFocusIn={() => (hadFocus.current = true)}
       onFocusOut={(e) => {
         const next = e.relatedTarget;
-        if (next instanceof Node && !host.current?.contains(next))
-          hadFocus.current = false;
+        if (next instanceof Node) {
+          if (!host.current?.contains(next)) hadFocus.current = false;
+          return;
+        }
+        // Sem `relatedTarget` o foco foi para lugar nenhum: clique no fundo (o elemento segue na
+        // página) ou o próprio elemento focado foi removido pela troca de item (aí o foco volta
+        // ao contêiner). Só o primeiro caso zera; a diferença aparece depois da remoção.
+        const from = e.target;
+        queueMicrotask(() => {
+          if (
+            from instanceof Node &&
+            from.isConnected &&
+            !host.current?.contains(document.activeElement)
+          ) {
+            hadFocus.current = false;
+          }
+        });
       }}
     >
       {panel ?? <ReviewDetails />}

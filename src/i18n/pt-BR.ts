@@ -656,6 +656,7 @@ export const ptBR = {
   'comments.empty': 'Nenhuma conversa ainda.',
   'comments.emptyFiltered': 'Nenhuma conversa com esses filtros.',
   'comments.row.open': 'Abrir a conversa em {anchor}',
+  'comments.row.openUnread': 'Abrir a conversa em {anchor} (não lida)',
   'comments.row.more': 'Ações da conversa em {anchor}',
   'comments.row.delete': 'Apagar',
   'comments.layer': 'Comentar',

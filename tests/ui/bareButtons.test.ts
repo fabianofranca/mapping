@@ -13,6 +13,8 @@ const FILES = [
   'TableField.tsx',
   'RefCell.tsx',
   'catalog/CatalogView.tsx',
+  'review/ChangeMark.tsx',
+  'review/ReviewBar.tsx',
 ];
 
 describe('botões avulsos (item 38)', () => {
