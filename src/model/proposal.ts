@@ -1,3 +1,4 @@
+import { HEX_COLOR_RE } from './hexColor';
 import { z } from 'zod';
 import {
   annotationSchema,
@@ -23,11 +24,15 @@ import type { JsonValue } from './types';
 export const PROPOSAL_FORMAT = 'mapping-proposal';
 export const PROPOSAL_FORMAT_VERSION = 4;
 /**
- * Versões lidas: a 4 acrescenta `insertBefore` à criação de marcação (a posição dela no array);
- * uma app antiga recusa a 4 em vez de descartar o campo ao regravar as decisões. A 3 não tem `inherit` na anotação nem `parentId` comparado na marcação (a
- * mudança de uma proposta antiga é ignorada, com aviso), e traz o nível `canvas`, a mudança
- * composta `space` e `floating`, e as mudanças `create-arrow` e `delete-arrow` (entidade `arrow`,
- * ME4); a 2 acrescenta `add_container` às `operations`; a 1 continua válida.
+ * Versões lidas, de 1 a 6: a 6 acrescenta o modo do desenho (a entidade `project` e o campo
+ * `drawingMode` do container) e só é gravada quando a proposta o usa; a 5 acrescenta `revisions`
+ * (a revisão do agente); a 4 acrescenta `insertBefore` à criação de marcação (a posição dela no
+ * array; uma app antiga recusa a 4 em vez de descartar o campo ao regravar as decisões). A 3 não
+ * tem `inherit` na anotação nem `parentId` comparado na marcação (a mudança de uma proposta
+ * antiga é ignorada, com aviso), e traz o nível `canvas`, a mudança composta `space` e
+ * `floating`, e as mudanças `create-arrow` e `delete-arrow` (entidade `arrow`, ME4); a 2
+ * acrescenta `add_container` às `operations`; a 1 continua válida. A criação grava a 4 (a 6, com
+ * o modo do desenho).
  */
 export const PROPOSAL_FORMAT_VERSIONS = [1, 2, 3, 4, 5, 6] as const;
 
@@ -60,9 +65,9 @@ function hasDrawingMode(value: JsonValue): boolean {
 }
 
 /**
- * Versão gravada pela revisão do agente (`reviseProposal`): a 4 com `revisions` na raiz. A
- * criação continua gravando `PROPOSAL_FORMAT_VERSION` (4); quem regrava decisões e notas
- * mantém a versão do arquivo. Ver docs/PROPOSAL-FORMAT.md, "Revisão pelo agente".
+ * Versão gravada pela revisão do agente (`reviseProposal`): a 5, com `revisions` na raiz (a 6,
+ * quando a proposta usa o modo do desenho, mantém a 6). A criação continua gravando
+ * `PROPOSAL_FORMAT_VERSION` (4); quem regrava decisões e notas mantém a versão do arquivo. Ver docs/PROPOSAL-FORMAT.md, "Revisão pelo agente".
  */
 export const PROPOSAL_REVISED_FORMAT_VERSION = 5;
 /** Pasta das propostas, relativa à raiz do projeto. */
@@ -326,7 +331,7 @@ const proposalId = z
 const isoDate = z.iso
   .datetime({ offset: true, error: 'data inválida; use ISO 8601 (UTC)' })
   .transform(normalizeIsoDate);
-const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'cor inválida; use #RRGGBB');
+const hexColor = z.string().regex(HEX_COLOR_RE, 'cor inválida; use #RRGGBB');
 const optionalText = z.string().nullable();
 
 const imageFileValue = z.object({
@@ -614,8 +619,7 @@ const changeSchema = z
     // Criação e remoção levam a entidade inteira: o id dela é o `entityId`.
     for (const side of ['from', 'to'] as const) {
       const value = c[side];
-      if (value === null || (c.kind === 'update' && c.entity !== 'specialization'))
-        continue;
+      if (value === null) continue;
       const valueId = idOf(value);
       if (valueId !== undefined && valueId !== c.entityId) {
         add([side, 'id'], `deve ser "${c.entityId}"`);

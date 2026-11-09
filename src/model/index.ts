@@ -1,6 +1,7 @@
 // API pública do modelo: tipos, operações puras, validação e serialização.
 export * from './types';
 export * from './errors';
+export * from './modelMessage';
 export * from './geometry';
 export * from './hierarchy';
 export * from './hierarchySettle';

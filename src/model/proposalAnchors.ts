@@ -251,6 +251,10 @@ function solve(s: Slots, up: boolean): Map<string, number> | null {
 export function proposalAnchors(base: Project, after: Project): Map<string, string> {
   const baseIds = new Set(base.markings.map((m) => m.id));
   const defaults = insertAnchors(baseIds, after.markings);
+  // Sem marcação criada não há âncora a empatar: o mapa dos padrões já é o final.
+  if (defaults.size === 0 && after.markings.every((m) => baseIds.has(m.id))) {
+    return defaults;
+  }
   const constraints = tieConstraints(base, after);
   if (constraints.length === 0) return defaults;
   const afterIds = new Set(after.markings.map((m) => m.id));

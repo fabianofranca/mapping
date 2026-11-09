@@ -221,6 +221,23 @@ function sameBox(a: Box, b: Box): boolean {
   );
 }
 
+/** Os alvos das filhas de uma instância com slot row/column, ou `null` quando não há o que arrumar. */
+function childTargets(
+  instance: Instance,
+  raw: ComponentFile | undefined,
+  children: readonly Instance[],
+  measure: TextMeasurer,
+): Box[] | null {
+  if (!raw || children.length === 0) return null;
+  const component = tokenizedComponent(raw);
+  const slot = findSlot(component);
+  if (!slot) return null;
+  const layout = resolveSlotLayout(slot, instance.values);
+  if (layout.type === 'none') return null;
+  const box = slotBox(component, instance, measure);
+  return box ? layoutChildren(box, layout, children) : null;
+}
+
 /** Recalcula e grava os retângulos dos filhos de todos os componentes com slot com layout row/column. Puro; devolve o MESMO objeto quando nada muda. */
 export function arrange(screen: Screen, library: Library, measure: TextMeasurer): Screen {
   const types = new Map(library.types.map((t) => [t.id, t]));
@@ -228,25 +245,25 @@ export function arrange(screen: Screen, library: Library, measure: TextMeasurer)
   // Pais antes dos filhos; a ordem é fixada no início, as instâncias são relidas a cada passo
   // (o pai pode ter movido o componente com slot ao organizar os filhos dele).
   const ids = renderOrder(screen).map((i) => i.id);
+  // Estrutura (pais e ordem dos filhos) não muda ao arrumar, só as caixas: um índice por id
+  // (refeito quando uma caixa muda); os filhos vêm do índice de `childrenOf` da tela original.
+  let byId = new Map(current.instances.map((i) => [i.id, i]));
   for (const id of ids) {
-    const instance = current.instances.find((i) => i.id === id);
+    const instance = byId.get(id);
     if (!instance) continue;
-    const raw = types.get(instance.typeId)?.component;
-    if (!raw) continue;
-    const component = tokenizedComponent(raw);
-    const slot = findSlot(component);
-    if (!slot) continue;
-    const layout = resolveSlotLayout(slot, instance.values);
-    if (layout.type === 'none') continue;
-    const children = childrenOf(current, id);
-    if (children.length === 0) continue;
-    const box = slotBox(component, instance, measure);
-    if (!box) continue;
-    const targets = layoutChildren(box, layout, children);
+    const children = childrenOf(screen, id).map((k) => byId.get(k.id) as Instance);
+    const targets = childTargets(
+      instance,
+      types.get(instance.typeId)?.component,
+      children,
+      measure,
+    );
+    if (!targets) continue;
     children.forEach((child, i) => {
       const target = targets[i];
       if (!target || sameBox(child.box, target)) return;
       current = updateBox(current, child.id, target);
+      byId = new Map(current.instances.map((x) => [x.id, x]));
     });
   }
   return current;

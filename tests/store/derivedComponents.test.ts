@@ -427,7 +427,9 @@ describe('derivado: tamanho mínimo, paleta e avisos', () => {
     const { derived } = setup(add(screen(), 'W', 'wide', box(500, 100, 100, 40)));
     const warnings = derived.componentWarnings.value;
     expect(warnings.map((w) => w.markingId)).toEqual(['W']);
-    expect(warnings[0]?.warnings.join(' ')).toContain('conteúdo maior que a caixa');
+    expect(warnings[0]?.warnings.map((w) => w.text).join(' ')).toContain(
+      'conteúdo maior que a caixa',
+    );
   });
 });
 

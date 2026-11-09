@@ -56,11 +56,10 @@ export function topDown(markings: readonly Marking[]): Marking[] {
   const index = childrenIndex(markings);
   const roots = markings.filter((m) => m.parentId === null || !ids.has(m.parentId));
   const result: Marking[] = [];
-  const queue = [...roots];
-  while (queue.length > 0) {
-    const m = queue.shift() as Marking;
-    result.push(m);
-    queue.push(...(index.get(m.id) ?? []));
+  // A fila é o próprio resultado, lido por um índice (sem `shift`, que seria O(n) por item).
+  result.push(...roots);
+  for (let read = 0; read < result.length; read++) {
+    for (const child of index.get((result[read] as Marking).id) ?? []) result.push(child);
   }
   return result;
 }

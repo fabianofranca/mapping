@@ -176,7 +176,8 @@ Uma mesclagem do git, ou uma mudança de pasta que falhou no meio (resolver ou r
 - **Duas cópias:**
   - as mensagens são a **união por `id`** (um id repetido é a mesma mensagem; vale a da cópia aberta);
   - a `revision` é a **maior** das duas (sem somar: quem grava o resultado é que soma);
-  - a conversa fica **resolvida só se** o `resolved.at` da cópia resolvida é **posterior à última mensagem** da união; senão fica aberta, com `resolved: null` (alguém escreveu depois de resolverem, o que equivale a reabrir);
+  - se as duas cópias têm **as mesmas mensagens** e `revision` diferente, a cópia de **maior `revision`** decide: aberta (a reabertura interrompida, aberta na `revision` 6 e resolvida na 5, não se perde) ou resolvida (com o `resolved` dela);
+  - nos demais casos (mensagens diferentes, ou a mesma `revision`), a conversa fica **resolvida só se** o `resolved.at` da cópia resolvida é **posterior à última mensagem** da união; senão fica aberta, com `resolved: null` (alguém escreveu depois de resolverem, o que equivale a reabrir);
   - a âncora e o `createdAt` vêm da cópia de maior `revision` (a aberta, no empate).
 - A próxima gravação da app grava no lugar certo (a pasta que o campo `resolved` indica) e apaga a outra cópia. O MCP lê do mesmo jeito.
 - Cópias de ids diferentes, ou nenhuma cópia, são `invalid-thread`.

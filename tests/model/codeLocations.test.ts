@@ -300,6 +300,16 @@ describe('codeLink', () => {
     expect(codeLink(plain, at('B.kt'))).toBe('https://git.interno/B.kt');
   });
 
+  it('{line} na query e no fragmento: tira os dois, nenhum {line} sobra', () => {
+    const both = withTemplate('https://git.interno/{path}?linha={line}#L{line}');
+    expect(codeLink(both, at('B.kt'))).toBe('https://git.interno/B.kt?linha=');
+    const link = codeLink(
+      withTemplate('https://git.interno/{path}?a={line}&b={line}'),
+      at('B.kt'),
+    );
+    expect(link).toBe('https://git.interno/B.kt?a=&b=');
+  });
+
   it('codifica cada segmento do caminho e preserva as /', () => {
     expect(codeLink(codeProject(), at('src/Minha Tela#1/Ação?.kt'))).toBe(
       'https://github.com/org/app-android/blob/main/src/Minha%20Tela%231/A%C3%A7%C3%A3o%3F.kt',

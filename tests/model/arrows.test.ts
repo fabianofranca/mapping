@@ -3,7 +3,6 @@ import {
   addAnnotation,
   addTypedAnnotation,
   arrowDeletionImpact,
-  arrowLabel,
   arrowLinksOf,
   arrowPointsSpace,
   arrowRoute,
@@ -12,7 +11,7 @@ import {
   canEditArrow,
   createArrow,
   createMarking,
-  getProjectIssues,
+  projectIssues,
   projectIndex,
   removeArrow,
   setArrowEndpoint,
@@ -233,12 +232,12 @@ describe('anotação tipada numa seta', () => {
       layerId,
       type: { specId: 'sdui', typeId: 'text' },
     });
-    expect(getProjectIssues(p).get('AX')).not.toContainEqual({
+    expect(projectIssues(p).get('AX')).not.toContainEqual({
       code: 'type-not-applicable',
     });
     const narrowed = withTextOn(p, ['marking']);
     expect(validateProject(narrowed)).toEqual([]);
-    expect(getProjectIssues(narrowed).get('AX')).toContainEqual({
+    expect(projectIssues(narrowed).get('AX')).toContainEqual({
       code: 'type-not-applicable',
     });
   });
@@ -266,7 +265,7 @@ describe('anotação tipada numa seta', () => {
         ?.map((a) => a.id),
     ).toEqual(['AX']);
     // Os campos obrigatórios vazios do Text são pendências da anotação da seta.
-    expect(getProjectIssues(p).get('AX')).toEqual(
+    expect(projectIssues(p).get('AX')).toEqual(
       expect.arrayContaining([{ code: 'required-empty', key: 'conteudo' }]),
     );
     // Dona inexistente continua falhando.
@@ -439,7 +438,7 @@ describe('setArrowRoute, setArrowStyle, setArrowName, setArrowLocked', () => {
   });
 });
 
-describe('arrowsOf e arrowLabel', () => {
+describe('arrowsOf', () => {
   it('separa as que saem das que chegam, na ordem do array', () => {
     let p = arrowProject();
     p = withArrow(p, 'r2', 'a3', 'a1');
@@ -450,18 +449,6 @@ describe('arrowsOf e arrowLabel', () => {
     expect(arrowsOf(p, 'a3').incoming.map((a) => a.id)).toEqual(['r1']);
     expect(arrowsOf(p, 'a2')).toEqual({ outgoing: [], incoming: [] });
     expect(arrowsOf(p, 'zz')).toEqual({ outgoing: [], incoming: [] });
-  });
-
-  it('o rótulo devolve os dados: o nome e as marcações das pontas', () => {
-    const p = setArrowName(arrowProject(), 'r1', 'abre');
-    const label = arrowLabel(p, arrow(p, 'r1'));
-    expect(label.name).toBe('abre');
-    expect(label.from?.id).toBe('a1');
-    expect(label.to?.id).toBe('a3');
-    expect(arrowLabel(p, { name: null, from: 'zz', to: 'a1' })).toMatchObject({
-      name: null,
-      from: null,
-    });
   });
 });
 

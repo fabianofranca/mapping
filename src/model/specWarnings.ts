@@ -3,6 +3,7 @@ import {
   REMOVED_FIELD_TYPE,
   type IgnoredSpecField,
   type Spec,
+  type SpecCode,
 } from './spec';
 
 // Avisos de uma especialização válida (etapa 4): coisas que não impedem a importação, mas
@@ -106,6 +107,14 @@ function unusedDocRepoWarnings(spec: Spec): SpecWarning[] {
   return warnings;
 }
 
+/** Quantos `path` a entrada de `code` declara: o dela e o de cada caso de `variants`. */
+function codePathCount(entry: SpecCode): number {
+  const cases = Object.values(entry.variants?.cases ?? {});
+  return (
+    (entry.path !== undefined ? 1 : 0) + cases.filter((c) => c.path !== undefined).length
+  );
+}
+
 /**
  * Avisos da especialização (já validada), na ordem do arquivo (os de tipo, depois
  * `unused-platform` e `path-without-repo`, por plataforma, e por fim os da v11:
@@ -135,9 +144,8 @@ export function specWarnings(
     layer.annotationTypes.forEach((type, ti) => {
       for (const [platform, entry] of Object.entries(type.code ?? {})) {
         used.add(platform);
-        if (entry.path !== undefined) {
-          withPath.set(platform, (withPath.get(platform) ?? 0) + 1);
-        }
+        const paths = codePathCount(entry);
+        if (paths > 0) withPath.set(platform, (withPath.get(platform) ?? 0) + paths);
       }
       if (platforms.length > 0 && Object.keys(type.code ?? {}).length === 0) {
         warnings.push({

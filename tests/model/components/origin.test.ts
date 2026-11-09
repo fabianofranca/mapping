@@ -117,6 +117,10 @@ describe('parseOrigins', () => {
         'origins[0].screen.roots[0].anchor: âncora inválida: meio',
       ],
       [
+        [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', margin: 8 }] } }],
+        'origins[0].screen.roots[0].margin: margin só vale com anchor',
+      ],
+      [
         [{ ...ORIGIN, screen: { ...SCREEN, roots: [{ path: 'a', scrim: '' }] } }],
         'origins[0].screen.roots[0].scrim',
       ],
@@ -552,6 +556,30 @@ describe('parseFieldSources: path', () => {
       'f.sources[2].path: esperava um caminho (texto não vazio)',
       'f.sources[3]: precisa de name ou path',
     ]);
+  });
+});
+
+describe('translateSource: sem system vale a primeira origem tree', () => {
+  const MEASURED_ORIGIN = { system: 'dom', kind: 'measured' };
+
+  it('pula as origens measured que vêm antes', () => {
+    const spec = miniSpec({ origins: [MEASURED_ORIGIN, MINI_ORIGIN] });
+    const result = translate(DOC, spec);
+    expect(result.error).toBeUndefined();
+    expect(result.layout?.id).toBe('s1');
+  });
+
+  it('só com origens measured, o erro manda passar o system', () => {
+    const spec = miniSpec({ origins: [MEASURED_ORIGIN] });
+    const result = translate(DOC, spec);
+    expect(result.layout).toBeUndefined();
+    expect(result.error).toContain('system');
+    expect(result.error).toContain('measured');
+  });
+
+  it('com system, a origem pedida vale como antes', () => {
+    const spec = miniSpec({ origins: [MEASURED_ORIGIN, MINI_ORIGIN] });
+    expect(translate(DOC, spec, 'sdui').error).toBeUndefined();
   });
 });
 

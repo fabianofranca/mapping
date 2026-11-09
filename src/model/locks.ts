@@ -2,7 +2,7 @@ import { fail } from './errors';
 import { ancestorsOf } from './hierarchy';
 import { projectIndex } from './projectIndex';
 import { findById, updateById } from './project';
-import type { Marking, Project } from './types';
+import type { Marking, Placement, Project } from './types';
 
 // Trava (etapa 2.5): `locked` em marcações e imagens bloqueia mover, redimensionar e
 // excluir **o próprio item**. Selecionar, renomear e anotar seguem livres. Trancar um pai
@@ -15,7 +15,7 @@ import type { Marking, Project } from './types';
 
 /** A marcação ou algum ancestral está trancado: a geometria dela não pode mudar. */
 export function isMarkingGeometryLocked(p: Project, markingId: string): boolean {
-  const marking = findById(p.markings, markingId);
+  const marking = projectIndex(p).markings.get(markingId) ?? fail('not-found', markingId);
   return marking.locked || ancestorsOf(p, markingId).some((a) => a.locked);
 }
 
@@ -29,14 +29,24 @@ export type MarkingLockState = 'self' | 'inherited';
 export function markingLockStates(p: Project): Map<string, MarkingLockState> {
   const children = projectIndex(p).children;
   const states = new Map<string, MarkingLockState>();
-  const visit = (parentLocked: boolean, markings: readonly Marking[] | undefined) => {
-    for (const m of markings ?? []) {
-      if (m.locked) states.set(m.id, 'self');
-      else if (parentLocked) states.set(m.id, 'inherited');
-      visit(parentLocked || m.locked, children.get(m.id));
+  // Pilha explícita (hierarquia funda não estoura a pilha de chamadas), em pré-ordem: o
+  // primeiro filho sai primeiro, como na recursão.
+  const stack: { readonly parentLocked: boolean; readonly marking: Marking }[] = [];
+  const pushAll = (parentLocked: boolean, markings: readonly Marking[] | undefined) => {
+    for (let i = (markings?.length ?? 0) - 1; i >= 0; i--) {
+      stack.push({
+        parentLocked,
+        marking: (markings as readonly Marking[])[i] as Marking,
+      });
     }
   };
-  visit(false, children.get(null));
+  pushAll(false, children.get(null));
+  for (let top = stack.pop(); top !== undefined; top = stack.pop()) {
+    const { parentLocked, marking: m } = top;
+    if (m.locked) states.set(m.id, 'self');
+    else if (parentLocked) states.set(m.id, 'inherited');
+    pushAll(parentLocked || m.locked, children.get(m.id));
+  }
   return states;
 }
 
@@ -70,7 +80,8 @@ export function canEditMarkingGeometry(p: Project, markingId: string): boolean {
  * ancestral é de geometria, e descendentes trancados são excluídos junto com o pai.
  */
 export function canDeleteMarking(p: Project, markingId: string): boolean {
-  return !findById(p.markings, markingId).locked;
+  return !(projectIndex(p).markings.get(markingId) ?? fail('not-found', markingId))
+    .locked;
 }
 
 /**
@@ -78,7 +89,7 @@ export function canDeleteMarking(p: Project, markingId: string): boolean {
  * seta impede. A trava das marcações das pontas não conta, e renomear e anotar seguem livres.
  */
 export function canEditArrow(p: Project, arrowId: string): boolean {
-  return !findById(p.arrows, arrowId).locked;
+  return !(projectIndex(p).arrows.get(arrowId) ?? fail('not-found', arrowId)).locked;
 }
 
 /**
@@ -88,35 +99,51 @@ export function canEditArrow(p: Project, arrowId: string): boolean {
  * `placement` dela, mas mover o que está dentro é.
  */
 export function canEditImagePlacement(p: Project, containerId: string): boolean {
-  const container = findById(p.containers, containerId);
+  const index = projectIndex(p);
+  const container = index.containers.get(containerId) ?? fail('not-found', containerId);
   if (container.locked) return false;
   if (container.parentId === null) return true;
   // Pai inexistente (projeto inválido): o reparo resolve; aqui não trava.
-  if (!projectIndex(p).markings.has(container.parentId)) return true;
+  if (!index.markings.has(container.parentId)) return true;
   return !isMarkingGeometryLocked(p, container.parentId);
 }
 
 /** Excluir a imagem leva as marcações, trancadas ou não: só a imagem trancada bloqueia. */
 export function canDeleteImage(p: Project, containerId: string): boolean {
-  return !findById(p.containers, containerId).locked;
+  return !(projectIndex(p).containers.get(containerId) ?? fail('not-found', containerId))
+    .locked;
 }
 
 /**
  * Trocar o arquivo reescala as marcações quando as dimensões mudam: bloqueia se a
  * imagem ou alguma marcação dela estiver trancada (a troca mexeria na geometria de
  * marcações revisadas). Reapontar um arquivo do mesmo tamanho não muda a geometria e
- * fica livre.
+ * fica livre. Com `placement` (o que `replaceContainer` vai gravar), a imagem que muda de lugar
+ * ou de escala também precisa poder ser movida no canvas (`canEditImagePlacement`: imagem
+ * trancada ou sob marcação trancada).
  */
 export function canReplaceImage(
   p: Project,
   containerId: string,
-  next: { readonly width: number; readonly height: number },
+  next: {
+    readonly width: number;
+    readonly height: number;
+    readonly placement?: Placement;
+  },
 ): boolean {
-  const image = findById(p.containers, containerId);
+  const image =
+    projectIndex(p).containers.get(containerId) ?? fail('not-found', containerId);
+  const moves =
+    next.placement !== undefined && !samePlacement(image.placement, next.placement);
+  if (moves && !canEditImagePlacement(p, containerId)) return false;
   if (image.width === next.width && image.height === next.height) return true;
   return (
     !image.locked && !p.markings.some((m) => m.containerId === containerId && m.locked)
   );
+}
+
+function samePlacement(a: Placement, b: Placement): boolean {
+  return a.x === b.x && a.y === b.y && a.scale === b.scale;
 }
 
 export function setMarkingLocked(

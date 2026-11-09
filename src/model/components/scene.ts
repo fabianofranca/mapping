@@ -15,6 +15,7 @@
  *   separada da do nó.
  */
 
+import type { Box } from './box';
 import type { RunLayout } from './richText';
 
 export interface Point {
@@ -258,12 +259,6 @@ export function* walk(node: SceneNode): Generator<SceneNode> {
   if (hasChildren(node)) for (const child of node.children) yield* walk(child);
 }
 
-export function countNodes(node: SceneNode): number {
-  let n = 0;
-  for (const found of walk(node)) if (found) n++;
-  return n;
-}
-
 /** Valores padrão para montar nós sem repetir campos nos conversores e nos testes. */
 export function baseNode(
   partial: Partial<NodeBase> & Pick<NodeBase, 'id' | 'name'>,
@@ -280,12 +275,7 @@ export function baseNode(
   };
 }
 
-export interface AbsoluteBox {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-}
+export type AbsoluteBox = Box;
 
 /**
  * Caixa de cada nó no espaço da raiz, compondo só as translações (rotação e escala são

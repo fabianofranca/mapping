@@ -1,3 +1,4 @@
+import { isRecord } from '../isRecord';
 /**
  * Conjunto de ícones da biblioteca (formato do componente 4, etapa "componentes fiéis", CF7).
  *
@@ -50,12 +51,6 @@ export interface IconsIssue {
 export type IconsParseResult =
   { ok: true; set: IconSet } | { ok: false; issues: IconsIssue[]; errors: string[] };
 
-type Rec = Record<string, unknown>;
-
-function isRecord(value: unknown): value is Rec {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 const join = (path: string, key: string | number): string =>
   path === ''
     ? String(key)
@@ -96,7 +91,7 @@ function checkWidth(value: unknown, path: string, out: IconsIssue[]): void {
 }
 
 function checkUnknownKeys(
-  value: Rec,
+  value: Record<string, unknown>,
   allowed: readonly string[],
   path: string,
   out: IconsIssue[],
@@ -107,7 +102,11 @@ function checkUnknownKeys(
 }
 
 /** `fill`, `stroke`, `width`, `cap` e `join` de um caminho (todos opcionais). */
-function checkPathStyle(value: Rec, path: string, out: IconsIssue[]): void {
+function checkPathStyle(
+  value: Record<string, unknown>,
+  path: string,
+  out: IconsIssue[],
+): void {
   if ('fill' in value) checkPaint(value.fill, join(path, 'fill'), out);
   if ('stroke' in value) checkPaint(value.stroke, join(path, 'stroke'), out);
   if ('width' in value) checkWidth(value.width, join(path, 'width'), out);
@@ -135,7 +134,7 @@ function checkIcon(value: unknown, path: string, out: IconsIssue[]): void {
   value.paths.forEach((p: unknown, i) => checkIconPath(p, join(at, i), out));
 }
 
-function checkHeader(input: Rec, out: IconsIssue[]): void {
+function checkHeader(input: Record<string, unknown>, out: IconsIssue[]): void {
   if (input.format !== ICONS_FORMAT)
     out.push({ path: 'format', message: `deve ser "${ICONS_FORMAT}"` });
   if (input.formatVersion !== ICONS_FORMAT_VERSION)

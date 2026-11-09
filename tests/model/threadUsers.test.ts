@@ -68,3 +68,32 @@ describe('threadUsers', () => {
     expect(threadUsers([])).toEqual([]);
   });
 });
+
+describe('threadUsers: rótulo e ordem (item 50)', () => {
+  it('o rótulo é o nome da última mensagem do usuário, na ordem da entrada', () => {
+    const renamed = { ...HUMAN, name: 'Marina A. Silva' };
+    const t1 = sampleThread({
+      id: 't1',
+      messages: [message('m1', T0), message('m2', T1, renamed)],
+    });
+    const t2 = sampleThread({ id: 't2', messages: [message('m1', T0, HUMAN)] });
+    expect(threadUsers([t1])[0]).toMatchObject({ label: 'Marina A. Silva', count: 1 });
+    // Na entrada, t2 vem depois: a última mensagem da Marina é a dela.
+    expect(threadUsers([t1, t2])[0]).toMatchObject({ label: 'Marina Alves', count: 2 });
+  });
+
+  it('a ordenação dos nomes é a do locale fixo (acento não vai para o fim)', () => {
+    const names = ['Zélia', 'Álvaro', 'Bruno'];
+    const threads = names.map((name, i) =>
+      sampleThread({
+        id: `t${i}`,
+        messages: [message('m1', T0, { ...HUMAN, name, email: `u${i}@exemplo.com` })],
+      }),
+    );
+    expect(threadUsers(threads).map((u) => u.label)).toEqual([
+      'Álvaro',
+      'Bruno',
+      'Zélia',
+    ]);
+  });
+});

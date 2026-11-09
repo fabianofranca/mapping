@@ -6,6 +6,7 @@ import type {
   ReviewTarget,
 } from './proposal';
 import type { ReviewProgress } from './proposalReview';
+import { isAcceptedPending } from './proposalApply';
 import { projectIndex } from './projectIndex';
 import { isRecord } from './refs';
 import type { Project } from './types';
@@ -214,11 +215,7 @@ export function undecidedChanges(p: Proposal): string[] {
 
 /** Aceitas que ainda não foram aplicadas. */
 export function acceptedPendingIds(p: Proposal): string[] {
-  return p.changes
-    .filter(
-      (c) => p.decisions[c.id]?.state === 'accepted' && !Object.hasOwn(p.applied, c.id),
-    )
-    .map((c) => c.id);
+  return p.changes.filter(isAcceptedPending(p)).map((c) => c.id);
 }
 
 /**

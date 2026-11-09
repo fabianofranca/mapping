@@ -248,6 +248,50 @@ describe('mergeThreadCopies', () => {
     expect(merged.thread.revision).toBe(5);
   });
 
+  it('mesmas mensagens: a reabertura interrompida (aberta rev 6, resolvida rev 5) fica aberta', () => {
+    const open = deepFreeze(sampleThread({ revision: 6, messages: m(['m1', 'm2']) }));
+    const resolved = deepFreeze(
+      sampleThread({
+        revision: 5,
+        messages: m(['m1', 'm2']),
+        resolved: { by: BY, at: '2026-11-06T20:00:00.000Z' }, // depois de m2
+      }),
+    );
+    const merged = mergeThreadCopies(open, resolved);
+    expect(merged.location).toBe('open');
+    expect(merged.resolved).toBe(false);
+    expect(merged.thread.resolved).toBeNull();
+    expect(merged.thread.revision).toBe(6);
+  });
+
+  it('mesmas mensagens: a cópia resolvida de maior revision mantém a resolução', () => {
+    const open = deepFreeze(sampleThread({ revision: 5, messages: m(['m1', 'm2']) }));
+    const resolved = deepFreeze(
+      sampleThread({
+        revision: 6,
+        messages: m(['m1', 'm2']),
+        resolved: { by: BY, at: '2026-11-06T20:00:00.000Z' },
+      }),
+    );
+    const merged = mergeThreadCopies(open, resolved);
+    expect(merged.location).toBe('resolved');
+    expect(merged.thread.resolved).toEqual({ by: BY, at: '2026-11-06T20:00:00.000Z' });
+  });
+
+  it('mensagem nova depois da resolução reabre, mesmo com a resolvida de maior revision', () => {
+    const open = deepFreeze(
+      sampleThread({ revision: 5, messages: m(['m1', 'm2', 'm3']) }),
+    );
+    const resolved = deepFreeze(
+      sampleThread({
+        revision: 6,
+        messages: m(['m1', 'm2']),
+        resolved: { by: BY, at: '2026-11-06T11:30:00.000Z' },
+      }),
+    );
+    expect(mergeThreadCopies(open, resolved).location).toBe('open');
+  });
+
   it('resolved.at igual à última mensagem não é posterior: fica aberta', () => {
     const open = deepFreeze(sampleThread({ messages: m(['m1', 'm2']) }));
     const resolved = deepFreeze(

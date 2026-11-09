@@ -44,13 +44,13 @@ export function layerDotsByMarking(
   return result;
 }
 
+const NO_ALWAYS_SHOWN: ReadonlySet<string> = new Set();
+
 /**
  * `full`: desenhada normalmente. `dim`: esmaecida. `outline`: só a borda esmaecida,
  * sem texto nem indicadores (ancestral de uma marcação visível, no modo Ocultar).
  * `hidden`: não aparece nem recebe toque.
  */
-const NO_ALWAYS_SHOWN: ReadonlySet<string> = new Set();
-
 export type MarkingVisibility = 'full' | 'dim' | 'outline' | 'hidden';
 
 /**

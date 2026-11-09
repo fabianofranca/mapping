@@ -6,6 +6,7 @@ import {
   applySpecialization,
   approximateMeasurer,
   arrangeMarking,
+  modelMessage,
   canArrange,
   createMarking,
   loadSpecComponents,
@@ -240,10 +241,19 @@ describe('arrangeMarking: hug', () => {
     ]);
     const { project, warnings } = arrange(p, 'C');
     expect(rectOf(project, 'C')).toEqual(box(100, 100, 300, 100));
-    expect(warnings).toContain('Linha: conteúdo maior que o container');
+    expect(warnings.map((w) => w.text)).toContain(
+      'Linha: conteúdo maior que o container',
+    );
     // A terceira passaria de 400: é empurrada para dentro do container, com aviso.
     expect(rectOf(project, 'T3')).toEqual(box(300, 100, 100, 40));
-    expect(warnings).toContain('T3: não cabe em Linha');
+    expect(warnings.map((w) => w.text)).toContain('T3: não cabe em Linha');
+    expect(warnings).toContainEqual(
+      modelMessage(
+        'arrange.outside',
+        { label: 'T3', where: 'Linha' },
+        'T3: não cabe em Linha',
+      ),
+    );
     expectValid(project);
   });
 
@@ -257,8 +267,8 @@ describe('arrangeMarking: hug', () => {
     expect(rectOf(project, 'C')).toEqual(box(900, 100, 100, 40));
     expect(rectOf(project, 'T1')).toEqual(box(900, 100, 100, 40));
     expect(rectOf(project, 'T2')).toEqual(box(900, 100, 100, 40));
-    expect(warnings).toContain('Linha: não cabe em I1');
-    expect(warnings).toContain('T2: não cabe em Linha');
+    expect(warnings.map((w) => w.text)).toContain('Linha: não cabe em I1');
+    expect(warnings.map((w) => w.text)).toContain('T2: não cabe em Linha');
     expectValid(project);
   });
 
@@ -273,7 +283,7 @@ describe('arrangeMarking: hug', () => {
     expect(marking(p, 'T2').parentId).toBe('C');
     const { project, warnings } = arrange(p, 'C');
     expect(rectOf(project, 'C')).toEqual(box(100, 100, 150, 40));
-    expect(warnings).toContain('Linha: não cabe em Pai');
+    expect(warnings.map((w) => w.text)).toContain('Linha: não cabe em Pai');
     expectValid(project);
   });
 });
@@ -297,7 +307,7 @@ describe('arrangeMarking: no canvas e assentar', () => {
     const { project, warnings } = arrange(p, 'C');
     // 2 × 100 + gap 8, a partir de x = 3000; a mesma largura que o teste dentro da imagem pediria.
     expect(rectOf(project, 'C')).toEqual(box(3000, 100, 208, 40));
-    expect(warnings.some((w) => w.includes('não cabe'))).toBe(false);
+    expect(warnings.some((w) => w.text.includes('não cabe'))).toBe(false);
     expectValid(project);
   });
 

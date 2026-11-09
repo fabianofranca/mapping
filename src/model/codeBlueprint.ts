@@ -43,7 +43,7 @@ export interface BlueprintAnnotation {
   readonly type: string;
   /** Rótulo da instância (`name` ou `labelField`); `null` sem rótulo. */
   readonly label: string | null;
-  /** Nome da camada no projeto (nas vinculadas, é o nome da propriedade na dona). */
+  /** Nome da camada no projeto, da anotação; `null` se a camada não existe. */
   readonly layer: string | null;
   /** `code.<plataforma>.symbol`; `null` = o tipo não tem `code` para a plataforma. */
   readonly symbol: string | null;
@@ -115,14 +115,15 @@ export interface CodeBlueprint {
   readonly root: BlueprintNode;
 }
 
-/** Valor do campo no blueprint: `ref` pelo rótulo, `table` sem `_id`, vazio `null`. */
 /** O rótulo do alvo de uma referência (campo ou célula); `null` se vazia ou quebrada. */
 function refText(p: Project, value: JsonValue | undefined): JsonValue {
   if (value === undefined || isEmptyValue(value)) return null;
   const ref = parseRefValue(value);
+  // O rótulo usa os textos padrão (pt-BR): este módulo só é usado pelo MCP.
   return ref && resolveRef(p, ref) ? refLabel(p, ref) : null;
 }
 
+/** Valor do campo no blueprint: `ref` pelo rótulo, `table` sem `_id`, vazio `null`. */
 function mappingValue(
   p: Project,
   field: SpecField,
@@ -210,9 +211,8 @@ function wholeSites(
 /**
  * Planta de código da marcação `markingId` para a plataforma `platformId` (declarada por
  * alguma especialização aplicada; senão falha com `unknown-platform`). Em cada marcação
- * da árvore (ela e as descendentes, na ordem do projeto), as anotações tipadas próprias
- * (as herdadas aparecem na marcação de origem); anotações livres e de tipo inexistente
- * ficam de fora, mas os `ref` que apontam para elas aparecem pelo rótulo.
+ * da árvore (ela e as descendentes, na ordem do projeto), as anotações tipadas próprias;
+ * anotações livres e de tipo inexistente ficam de fora, mas os `ref` que apontam para elas aparecem pelo rótulo.
  */
 export function codeBlueprint(
   p: Project,
@@ -294,6 +294,7 @@ export function codeBlueprint(
       field: site.field,
       row: site.row,
       column: site.column,
+      // Textos padrão (pt-BR): só o MCP usa este módulo.
       label: refLabel(p, site.ref),
     };
     if (path.has(target.id)) {

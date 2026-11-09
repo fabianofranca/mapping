@@ -1,4 +1,5 @@
 import { hasSlotComponent } from './componentCatalog';
+import { modelMessage, rawMessage, type ModelMessage } from './modelMessage';
 import type { ComponentFile, FieldValues } from './components/componentFormat';
 import {
   type TextMeasurer,
@@ -119,7 +120,7 @@ export interface CatalogEntry {
   readonly layerId: string;
   readonly component: ComponentFile | null;
   /** Por que não há componente (arquivo ausente ou inválido); ausente se o tipo não declara `component`. */
-  readonly componentProblem?: string;
+  readonly componentProblem?: ModelMessage;
   readonly container: boolean;
   /** Texto do `.md` do tipo; `null` sem `doc` ou com o arquivo ausente. */
   readonly docText: string | null;
@@ -271,9 +272,7 @@ function parseJsonOrUndefined(text: string | undefined): unknown {
 }
 
 /** Caminho do arquivo da especialização dentro do pacote. */
-function locateSpecPath(files: readonly LibraryFile[], spec: Spec): string {
-  const texts = new Map<string, unknown>();
-  for (const file of files) if (file.text !== undefined) texts.set(file.path, file.text);
+function locateSpecPath(texts: ReadonlyMap<string, unknown>, spec: Spec): string {
   const root = packageSpecNameOf(texts, spec.id);
   if (texts.has(root)) return root;
   for (const [path, text] of texts) {
@@ -296,9 +295,9 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
   const spec = report.spec ?? null;
   if (spec === null) return { spec: null, report, layers: [], library: null };
 
-  const specPath = locateSpecPath(files, spec);
   const texts = new Map<string, string>();
   for (const file of files) if (file.text !== undefined) texts.set(file.path, file.text);
+  const specPath = locateSpecPath(texts, spec);
   const resolve = (ref: string): string => resolvePath(specPath, ref);
 
   const library = ((): Library | null => {
@@ -329,16 +328,20 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
     color: layer.color,
     entries: layer.annotationTypes.map((type): CatalogEntry => {
       let component: ComponentFile | null = null;
-      let componentProblem: string | undefined;
+      let componentProblem: ModelMessage | undefined;
       if (type.component !== undefined) {
         const path = resolve(type.component);
         const text = texts.get(path);
         if (text === undefined) {
-          componentProblem = `arquivo ausente (${path})`;
+          componentProblem = modelMessage(
+            'catalog.fileMissing',
+            { path },
+            `arquivo ausente (${path})`,
+          );
         } else {
           const parsed = parseComponentText(text);
           if (parsed.ok) component = themed(parsed.component);
-          else componentProblem = parsed.errors[0] ?? 'componente inválido';
+          else componentProblem = parseProblem(parsed.errors[0]);
         }
       }
       const examples = (type.examples ?? []).map((example): CatalogExample => {
@@ -388,12 +391,28 @@ export function buildCatalog(files: readonly LibraryFile[]): Catalog {
 
 /** A entrada do tipo `typeId` (em qualquer camada), ou `undefined`. */
 export function findEntry(catalog: Catalog, typeId: string): CatalogEntry | undefined {
-  for (const layer of catalog.layers) {
-    const found = layer.entries.find((entry) => entry.type.id === typeId);
-    if (found !== undefined) return found;
+  let byId = entryIndexes.get(catalog);
+  if (byId === undefined) {
+    byId = new Map();
+    for (const layer of catalog.layers) {
+      for (const entry of layer.entries) {
+        if (!byId.has(entry.type.id)) byId.set(entry.type.id, entry);
+      }
+    }
+    entryIndexes.set(catalog, byId);
   }
-  return undefined;
+  return byId.get(typeId);
 }
+
+/** O problema de um componente que não passou no parse: o erro vem do parser, em texto. */
+function parseProblem(error: string | undefined): ModelMessage {
+  return error === undefined
+    ? modelMessage('catalog.invalidComponent', {}, 'componente inválido')
+    : rawMessage(error);
+}
+
+/** Entradas por id de tipo, uma vez por catálogo (o catálogo é imutável). */
+const entryIndexes = new WeakMap<Catalog, Map<string, CatalogEntry>>();
 
 // ---------------------------------------------------------------------------------------
 // Desenho
@@ -401,7 +420,7 @@ export function findEntry(catalog: Catalog, typeId: string): CatalogEntry | unde
 
 export interface CatalogDrawing {
   readonly root: FrameNode;
-  readonly warnings: readonly string[];
+  readonly warnings: readonly ModelMessage[];
 }
 
 /** Intervalo do playground: do `minSize` (ou 1×1) ao dobro do `size`. */
@@ -490,9 +509,14 @@ export function drawEntry(
 ): CatalogDrawing | null {
   if (entry.component === null) return null;
   const box = { x: 0, y: 0, ...(size ?? entry.component.size) };
-  return instantiate(entry.component, { ...defaultValues(entry.type), ...values }, box, {
-    measure,
-  });
+  const drawn = instantiate(
+    entry.component,
+    { ...defaultValues(entry.type), ...values },
+    box,
+    { measure },
+  );
+  // Os avisos do motor não têm código: seguem em texto.
+  return { root: drawn.root, warnings: drawn.warnings.map(rawMessage) };
 }
 
 /**
@@ -547,7 +571,9 @@ function systemDrawing(
     { node: example.json },
     { system: origin.system, measure },
   );
-  const warnings = (result.warnings ?? []).map(withoutNodePrefix);
+  const warnings: ModelMessage[] = (result.warnings ?? []).map((w) =>
+    rawMessage(withoutNodePrefix(w)),
+  );
   if (result.error !== undefined) {
     return null;
   }
@@ -558,7 +584,13 @@ function systemDrawing(
   for (const instance of instances) {
     const entry = findEntry(catalog, instance.typeId);
     if (entry === undefined) {
-      warnings.push(`tipo "${instance.typeId}" fora da especialização`);
+      warnings.push(
+        modelMessage(
+          'catalog.typeOutside',
+          { typeId: instance.typeId },
+          `tipo "${instance.typeId}" fora da especialização`,
+        ),
+      );
       continue;
     }
     const drawn = drawEntry(entry, instance.values, measure, {
@@ -566,7 +598,13 @@ function systemDrawing(
       height: instance.box.height,
     });
     if (drawn === null) {
-      warnings.push(`tipo "${instance.typeId}" sem componente`);
+      warnings.push(
+        modelMessage(
+          'catalog.typeNoComponent',
+          { typeId: instance.typeId },
+          `tipo "${instance.typeId}" sem componente`,
+        ),
+      );
       continue;
     }
     warnings.push(...drawn.warnings);

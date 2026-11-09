@@ -211,7 +211,7 @@ describe('reviseProposal: classificação das mudanças', () => {
 
   it('criação nova num grupo de irmãs com position: aplicar dá o mesmo do lote', () => {
     let base: Project = { ...emptyProject(), containers: [CONTAINER] };
-    ['A', 'B', 'C'].forEach((id, i) => {
+    ['A', 'B', 'K'].forEach((id, i) => {
       base = createMarking(base, {
         id,
         containerId: 'C',
@@ -223,7 +223,7 @@ describe('reviseProposal: classificação das mudanças', () => {
       containerId: 'C',
       rect: { x: 0, y: 50, width: 20, height: 20 },
     });
-    after = reorderMarking(reorderMarking(after, 'N1', 0), 'C', 1);
+    after = reorderMarking(reorderMarking(after, 'N1', 0), 'K', 1);
     const p = propose(base, after);
     expect(p.changes.some((c) => c.field === 'position')).toBe(true);
 
