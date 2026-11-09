@@ -1,4 +1,4 @@
-# Coordenador da fila enxuto — [Não lançado] (épico `epic/fila-contexto`, PR #0, MCP 0.28.12, schema v18)
+# Coordenador da fila enxuto — 2026-11-09 (épico `epic/fila-contexto`, PR #1290, MCP 0.28.12, schema v18)
 
 ## Alterado
 
