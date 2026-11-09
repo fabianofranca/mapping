@@ -19,6 +19,7 @@ import {
   type ReviewTarget,
 } from '../../model';
 import { imageLabel, markingLabel } from '../labels';
+import { labelTexts } from '../typedText';
 import { joinParts } from './format';
 
 // Textos das mudanças na revisão (títulos, valores antes/depois e o resumo de uma
@@ -439,7 +440,7 @@ function placementParts(
 function cellText(names: ReviewNames, value: JsonValue): string {
   if (typeof value === 'string') return value;
   const ref = parseRefValue(value);
-  if (ref) return refLabel(names.preview ?? names.current, ref);
+  if (ref) return refLabel(names.preview ?? names.current, ref, labelTexts());
   return JSON.stringify(value);
 }
 

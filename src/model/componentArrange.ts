@@ -25,6 +25,7 @@ import {
 } from './geometry';
 import { settleFrom, type SettleOptions } from './hierarchySettle';
 import { markingLockStates } from './locks';
+import { modelMessage, type ModelMessage } from './modelMessage';
 import { projectIndex } from './projectIndex';
 import type { Marking, Project, Rect } from './types';
 
@@ -35,8 +36,8 @@ import type { Marking, Project, Rect } from './types';
 
 export interface ArrangeResult {
   readonly project: Project;
-  /** O que não coube ou foi preso, um aviso por linha, sem repetição. */
-  readonly warnings: readonly string[];
+  /** O que não coube ou foi preso, um aviso por linha, sem repetição (de texto igual). */
+  readonly warnings: readonly ModelMessage[];
 }
 
 /** Voltas no máximo até os tamanhos estabilizarem (um componente com slot esticado pelo pai rearruma as filhas). */
@@ -194,7 +195,11 @@ export function arrangeMarking(
     return axis === (parent.layout.type === 'row' ? 'height' : 'width');
   };
 
-  let warnings = new Set<string>();
+  // Por texto, para não repetir o mesmo aviso entre as voltas.
+  let warnings = new Map<string, ModelMessage>();
+  const warn = (message: ModelMessage): void => {
+    warnings.set(message.text, message);
+  };
 
   /**
    * Remede as filhas folha cujo componente é `hug` num eixo: o eixo vira o tamanho medido
@@ -282,7 +287,13 @@ export function arrangeMarking(
       (!hugW && slotContent.width > box.width + 0.5) ||
       (!hugH && slotContent.height > box.height + 0.5)
     ) {
-      warnings.add(`${info.label}: conteúdo maior que o container`);
+      warn(
+        modelMessage(
+          'arrange.overflow',
+          { label: info.label },
+          `${info.label}: conteúdo maior que o container`,
+        ),
+      );
     }
     const targets = layoutChildren(
       box,
@@ -301,7 +312,7 @@ export function arrangeMarking(
   const snapshot = () => postOrder.map((id) => rects.get(id) as Rect);
   for (let pass = 0; pass < MAX_PASSES; pass++) {
     const before = snapshot();
-    warnings = new Set();
+    warnings = new Map();
     for (const id of postOrder) arrangeOne(id);
     const after = snapshot();
     if (after.every((r, i) => sameRect(r, before[i] as Rect))) break;
@@ -332,13 +343,19 @@ export function arrangeMarking(
     if (sameRect(rect, fixed)) continue;
     rects.set(id, fixed);
     translate(id, fixed.x - rect.x, fixed.y - rect.y);
-    warnings.add(`${labelOf(id)}: não cabe em ${where}`);
+    warn(
+      modelMessage(
+        'arrange.outside',
+        { label: labelOf(id), where },
+        `${labelOf(id)}: não cabe em ${where}`,
+      ),
+    );
   }
 
   const changed = topDownIds.filter(
     (id) => !sameRect(rects.get(id) as Rect, (index.markings.get(id) as Marking).rect),
   );
-  if (changed.length === 0) return { project: p, warnings: [...warnings] };
+  if (changed.length === 0) return { project: p, warnings: [...warnings.values()] };
   const locks = markingLockStates(p);
   if (changed.some((id) => locks.has(id))) fail('locked');
   const next = new Set(changed);
@@ -353,6 +370,6 @@ export function arrangeMarking(
       },
       options,
     ),
-    warnings: [...warnings],
+    warnings: [...warnings.values()],
   };
 }

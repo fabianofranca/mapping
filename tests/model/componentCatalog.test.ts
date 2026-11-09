@@ -12,6 +12,7 @@ import {
   loadSpecComponents,
   markingComponent,
   markingTypeName,
+  modelMessage,
   parseSpecText,
   setFieldValue,
   type ComponentCatalog,
@@ -93,6 +94,32 @@ describe('loadSpecComponents', () => {
     );
     expect(loaded.problems[1]).toMatch(/^wide: JSON inválido/);
     expect(loaded.problems[2]).toMatch(/^row: .+/);
+    // Os mesmos problemas com código e parâmetros (#945): mesmo tamanho e ordem.
+    expect(loaded.problemMessages.map((m) => m.text)).toEqual(loaded.problems);
+    expect(loaded.problemMessages[0]).toEqual(
+      modelMessage(
+        'components.fileMissing',
+        { typeId: 'text', path: 'specs/test/components/text.json' },
+        'text: arquivo ausente (specs/test/components/text.json)',
+      ),
+    );
+    expect(loaded.problemMessages[1]).toMatchObject({
+      code: 'components.invalid',
+      params: { typeId: 'wide' },
+    });
+  });
+
+  it('problemMessages tem o tamanho e a ordem de problems (ícones e caminhos fora)', () => {
+    const spec = { ...testSpec(), icons: 'icons.json' };
+    const loaded = loadSpecComponents(
+      spec,
+      SPEC_FILE,
+      1,
+      read({ 'specs/test/components/text.json': undefined }),
+    );
+    expect(loaded.problems.length).toBeGreaterThan(1);
+    expect(loaded.problemMessages.map((m) => m.text)).toEqual(loaded.problems);
+    expect(loaded.problemMessages.some((m) => m.code === 'icons.fileMissing')).toBe(true);
   });
 
   it('especialização v1 a v3 não carrega componente', () => {

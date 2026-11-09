@@ -33,7 +33,7 @@ describe('Catálogo: Galeria e Experimentar com o tema da especialização', () 
     const example = button.examples.find((e) => /ícone/i.test(e.name))!;
     expect(example).toBeDefined();
     const drawing = exampleDrawing(catalog, button, example, approximateMeasurer)!;
-    expect(drawing.warnings.filter((w) => /ícone desconhecido/.test(w))).toEqual([]);
+    expect(drawing.warnings.filter((w) => /ícone desconhecido/.test(w.text))).toEqual([]);
   });
 
   it('o Experimentar (drawEntry) também usa o tema', () => {

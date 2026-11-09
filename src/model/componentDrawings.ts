@@ -12,6 +12,8 @@ import {
   type MarkingComponent,
 } from './componentCatalog';
 import { drawingValues } from './componentValues';
+import { rawMessage, type ModelMessage } from './modelMessage';
+import { DEFAULT_LABEL_TEXTS } from './refs';
 import { effectiveDrawingMode } from './drawingMode';
 import { topDown } from './hierarchy';
 import { projectIndex } from './projectIndex';
@@ -31,7 +33,8 @@ export interface ComponentDrawing {
   readonly layerId: string;
   /** Cena instanciada na caixa = retângulo da marcação (pixels da imagem ou unidades do canvas). */
   readonly root: FrameNode;
-  readonly warnings: readonly string[];
+  /** Avisos do motor (sem código, em texto) e das referências dos valores (com código). */
+  readonly warnings: readonly ModelMessage[];
   /** Não cabe: aviso "conteúdo maior que a caixa" do motor ou filha fora da caixa do slot. */
   readonly overflow: boolean;
   /**
@@ -59,6 +62,8 @@ export type DrawingCache = (
   catalog: ComponentCatalog,
   measure: TextMeasurer,
   epoch: number,
+  /** Rótulo de anotação livre sem nome nos valores `ref`; o padrão é o do MCP (pt-BR). */
+  untitled?: string,
 ) => ComponentDrawings;
 
 interface Entry {
@@ -68,7 +73,7 @@ interface Entry {
   readonly rect: Rect;
   readonly component: ComponentFile;
   readonly values: FieldValues;
-  readonly valueWarnings: readonly string[];
+  readonly valueWarnings: readonly ModelMessage[];
   readonly measure: TextMeasurer;
   readonly epoch: number;
   /** Modo do desenho efetivo da marcação (`undefined` = o primeiro modo). */
@@ -148,7 +153,7 @@ function draw(
   containerId: string | null,
   rect: Rect,
   values: FieldValues,
-  valueWarnings: readonly string[],
+  valueWarnings: readonly ModelMessage[],
   childRects: readonly Rect[],
   measure: TextMeasurer,
   mode: string | undefined,
@@ -179,7 +184,7 @@ function draw(
     annotationId: mc.annotation.id,
     layerId: mc.annotation.layerId,
     root,
-    warnings: [...warnings, ...valueWarnings],
+    warnings: [...warnings.map(rawMessage), ...valueWarnings],
     overflow: Object.keys(found).length > 0,
     shortfalls: found,
     ...(screen === undefined
@@ -202,22 +207,24 @@ export function createDrawingCache(): DrawingCache {
     catalog: ComponentCatalog;
     measure: TextMeasurer;
     epoch: number;
+    untitled: string;
     result: ComponentDrawings;
   } | null = null;
 
-  return (p, catalog, measure, epoch) => {
+  return (p, catalog, measure, epoch, untitled = DEFAULT_LABEL_TEXTS.untitled) => {
     if (
       last !== null &&
       last.p === p &&
       last.catalog === catalog &&
       last.measure === measure &&
-      last.epoch === epoch
+      last.epoch === epoch &&
+      last.untitled === untitled
     ) {
       return last.result;
     }
     if (p === null) {
       entries = new Map();
-      last = { p, catalog, measure, epoch, result: NO_DRAWINGS };
+      last = { p, catalog, measure, epoch, untitled, result: NO_DRAWINGS };
       return NO_DRAWINGS;
     }
 
@@ -231,6 +238,7 @@ export function createDrawingCache(): DrawingCache {
         p,
         mc.annotation,
         mc.type,
+        { ...DEFAULT_LABEL_TEXTS, untitled },
       );
       const childRects =
         findSlot(mc.component) === undefined
@@ -250,7 +258,7 @@ export function createDrawingCache(): DrawingCache {
         before.mode === mode &&
         shallowEqual(before.values, values) &&
         before.valueWarnings.length === valueWarnings.length &&
-        before.valueWarnings.every((w, i) => w === valueWarnings[i]) &&
+        before.valueWarnings.every((w, i) => w.text === valueWarnings[i]?.text) &&
         sameRects(before.childRects, childRects)
       ) {
         next.set(marking.id, before);
@@ -296,7 +304,7 @@ export function createDrawingCache(): DrawingCache {
       );
       if (same) result = previous;
     }
-    last = { p, catalog, measure, epoch, result };
+    last = { p, catalog, measure, epoch, untitled, result };
     return result;
   };
 }

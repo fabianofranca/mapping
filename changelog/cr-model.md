@@ -37,3 +37,5 @@
 - Uma tela com raiz `fill` ancorada nunca fica com largura ou altura negativa.
 - Num `layout` de tela, os filhos `fill` no eixo principal com `minSize` redistribuem o excedente (o tamanho final respeita o `minSize` e a soma cabe no pai), como na instanciação de um componente.
 - Mover uma instância da tela uma posição para baixo (`moveSibling` com `delta` positivo) a coloca depois do irmão seguinte, em vez de pular outro.
+- As mensagens do catálogo (componente que não carregou, tipo fora da especialização), do Arrumar, das referências quebradas, em ciclo ou em mais de um nível e dos problemas de componentes e ícones da biblioteca aparecem no idioma da app; com a app em English (US) deixam de sair em português. A saída do MCP não muda.
+- O desenho de um componente reconhece o "não cabe" por um campo do motor, e não mais pelo início do texto do aviso.

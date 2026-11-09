@@ -102,7 +102,8 @@ describe('createDrawingCache: o que desenha e em que ordem', () => {
       })),
     };
     const drawing = createDrawingCache()(p, catalog, approximateMeasurer, 0).get('T1')!;
-    expect(drawing.warnings).toEqual(['referência quebrada: target']);
+    expect(drawing.warnings.map((w) => w.text)).toEqual(['referência quebrada: target']);
+    expect(drawing.warnings[0]?.code).toBe('value.refBroken');
     expect(drawing.overflow).toBe(false);
   });
 });
@@ -270,7 +271,13 @@ describe('overflow', () => {
       approximateMeasurer,
     );
     const drawing = createDrawingCache()(p, tall, approximateMeasurer, 0).get('T1')!;
-    expect(drawing.warnings).toContain('texto maior que a caixa: rotulo');
+    expect(drawing.warnings.map((w) => w.text)).toContain(
+      'texto maior que a caixa: rotulo',
+    );
+    // Aviso do motor: sem código, segue em texto.
+    expect(drawing.warnings.find((w) => w.text.startsWith('texto maior'))?.code).toBe(
+      'raw',
+    );
     expect(drawing.overflow).toBe(true);
   });
 
@@ -281,9 +288,9 @@ describe('overflow', () => {
     expect(drawings.get('T1')?.overflow).toBe(false);
     const wide = drawings.get('W')!;
     expect(wide.overflow).toBe(true);
-    expect(wide.warnings.some((w) => w.startsWith('conteúdo maior que a caixa'))).toBe(
-      true,
-    );
+    expect(
+      wide.warnings.some((w) => w.text.startsWith('conteúdo maior que a caixa')),
+    ).toBe(true);
   });
 
   it('container: filha com o retângulo fora da caixa do slot estoura', () => {

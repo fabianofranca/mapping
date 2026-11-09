@@ -420,6 +420,6 @@ describe('valores do desenho (motor de componentes)', () => {
       { nota: null, alvo: null },
       { nota: null, alvo: 'nome' },
     ]);
-    expect(warnings).toEqual(['referência quebrada: alvos[1].alvo']);
+    expect(warnings.map((w) => w.text)).toEqual(['referência quebrada: alvos[1].alvo']);
   });
 });

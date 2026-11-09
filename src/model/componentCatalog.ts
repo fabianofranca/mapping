@@ -5,6 +5,7 @@ import { resolvePathChecked } from './components/library';
 import { parseComponentText } from './components/parseComponent';
 import { resolveTokens, type HostFonts, type ResolvedTokens } from './components/tokens';
 import { MIN_STORED_MARKING_SIZE } from './geometry';
+import { modelMessage, type ModelMessage } from './modelMessage';
 import { projectIndex } from './projectIndex';
 import type { Spec, SpecAnnotationType } from './spec';
 import { findSpecType } from './specLookup';
@@ -21,8 +22,10 @@ export interface SpecComponents {
   readonly version: number;
   /** Id do tipo → componente válido. */
   readonly byType: ReadonlyMap<string, ComponentFile>;
-  /** `"tipo: motivo"` dos componentes que não carregaram. */
+  /** `"tipo: motivo"` dos componentes que não carregaram (texto pt-BR; o MCP lê este). */
   readonly problems: readonly string[];
+  /** Os mesmos problemas, com código e parâmetros para a interface: mesmo tamanho e ordem. */
+  readonly problemMessages: readonly ModelMessage[];
 }
 
 /** Por id de especialização. */
@@ -63,27 +66,66 @@ export function componentPaths(spec: Spec, specFile: string): string[] {
   return [...paths];
 }
 
+/** Os problemas de carga: o texto pt-BR e a mensagem com código, sempre empurrados juntos. */
+export interface LoadProblems {
+  readonly texts: string[];
+  readonly messages: ModelMessage[];
+}
+
+/** Único ponto que registra um problema (mantém `problems` e `problemMessages` pareados). */
+export function pushProblem(problems: LoadProblems, message: ModelMessage): void {
+  problems.texts.push(message.text);
+  problems.messages.push(message);
+}
+
+/** O componente que não passou no parse: o erro vem do parser (texto); sem erro, o padrão. */
+function invalidComponent(typeId: string, reason: string | undefined): ModelMessage {
+  return reason === undefined
+    ? modelMessage(
+        'components.invalidFallback',
+        { typeId },
+        `${typeId}: componente inválido`,
+      )
+    : modelMessage('components.invalid', { typeId, reason }, `${typeId}: ${reason}`);
+}
+
 /** O conjunto de ícones da especialização; arquivo ausente ou inválido vira um problema `icons: …`. */
 function loadIcons(
   spec: Spec,
   specFile: string,
   readText: (projectPath: string) => string | undefined,
-  problems: string[],
+  problems: LoadProblems,
 ): IconSet | undefined {
   if (spec.icons === undefined) return undefined;
   const path = resolvePathChecked(specFile, spec.icons);
   if (path === undefined) {
-    problems.push(`icons: caminho fora da biblioteca: ${spec.icons}`);
+    pushProblem(
+      problems,
+      modelMessage(
+        'icons.outsideLibrary',
+        { path: spec.icons },
+        `icons: caminho fora da biblioteca: ${spec.icons}`,
+      ),
+    );
     return undefined;
   }
   const text = readText(path);
   if (text === undefined) {
-    problems.push(`icons: arquivo ausente (${path})`);
+    pushProblem(
+      problems,
+      modelMessage('icons.fileMissing', { path }, `icons: arquivo ausente (${path})`),
+    );
     return undefined;
   }
   const parsed = parseIconsText(text);
   if (parsed.ok) return parsed.set;
-  problems.push(`icons: ${parsed.errors[0] ?? 'conjunto de ícones inválido'}`);
+  const reason = parsed.errors[0];
+  pushProblem(
+    problems,
+    reason === undefined
+      ? modelMessage('icons.invalidFallback', {}, 'icons: conjunto de ícones inválido')
+      : modelMessage('icons.invalid', { reason }, `icons: ${reason}`),
+  );
   return undefined;
 }
 
@@ -120,7 +162,7 @@ export function loadSpecComponents(
   options: LoadOptions = {},
 ): SpecComponents {
   const byType = new Map<string, ComponentFile>();
-  const problems: string[] = [];
+  const problems: LoadProblems = { texts: [], messages: [] };
   const fonts = options.fonts ?? {};
   const resolvedTokens = resolveTokens(spec.tokens, fonts, options.mode);
   const resolvedTokensByMode = tokensByMode(spec, fonts);
@@ -129,17 +171,31 @@ export function loadSpecComponents(
     for (const type of typesWithComponent(spec)) {
       const path = resolvePathChecked(specFile, type.component);
       if (path === undefined) {
-        problems.push(`${type.id}: caminho fora da biblioteca: ${type.component}`);
+        pushProblem(
+          problems,
+          modelMessage(
+            'components.outsideLibrary',
+            { typeId: type.id, path: type.component },
+            `${type.id}: caminho fora da biblioteca: ${type.component}`,
+          ),
+        );
         continue;
       }
       const text = readText(path);
       if (text === undefined) {
-        problems.push(`${type.id}: arquivo ausente (${path})`);
+        pushProblem(
+          problems,
+          modelMessage(
+            'components.fileMissing',
+            { typeId: type.id, path },
+            `${type.id}: arquivo ausente (${path})`,
+          ),
+        );
         continue;
       }
       const parsed = parseComponentText(text);
       if (!parsed.ok) {
-        problems.push(`${type.id}: ${parsed.errors[0] ?? 'componente inválido'}`);
+        pushProblem(problems, invalidComponent(type.id, parsed.errors[0]));
         continue;
       }
       byType.set(type.id, {
@@ -150,7 +206,13 @@ export function loadSpecComponents(
       });
     }
   }
-  return { specId: spec.id, version, byType, problems };
+  return {
+    specId: spec.id,
+    version,
+    byType,
+    problems: problems.texts,
+    problemMessages: problems.messages,
+  };
 }
 
 export interface MarkingComponent {
