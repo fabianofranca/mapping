@@ -64,6 +64,16 @@ const EXPECTED_EXPORTS = [
   'runStep',
   'waitForWindow',
   'windowShortcut',
+  'settle',
+  'openWindow',
+  'closeWindow',
+  'TOOL_WINDOW_IDS',
+  'drag',
+  'nearHandle',
+  'setViewport',
+  'find',
+  'formatCandidates',
+  'locatorTextFromError',
 ].sort();
 
 describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
@@ -1048,7 +1058,7 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
     });
     expect(r.status).toBe(0);
     for (const name of names) expect(r.stdout, name).toContain(name);
-    for (const cmd of ['mark', 'state', 'tempos', 'ponto', 'run', 'help']) {
+    for (const cmd of ['mark', 'state', 'tempos', 'ponto', 'run', 'find', 'help']) {
       expect(r.stdout, cmd).toMatch(new RegExp(`cloud\\.mjs ${cmd}\\b`));
     }
     const dts = read('scripts/testing/cloud.d.mts');
@@ -1065,6 +1075,7 @@ describe('cloud.mjs run, --prazo e help (etapa #1148, TR1)', () => {
             'TesterState',
             'TempoItem',
             'HelpEntry',
+            'Candidate',
             'Tempos',
           ].includes(n),
       );
@@ -1089,5 +1100,353 @@ describe('cloud-up.sh: env.sh e build.log (etapa #1148, TR1)', () => {
     for (const cmd of ['npm ci', 'npm run build', 'npm run build:mcp']) {
       expect(up, cmd).toMatch(new RegExp(`run_logged ${cmd}`));
     }
+  });
+});
+
+// Etapa #1148 (TR2, decisões 7 a 11): esperas e gestos que não falham.
+describe('settle, openWindow, drag, setViewport e find (etapa #1148, TR2)', () => {
+  type Fn = (...args: unknown[]) => unknown;
+  type Mod = {
+    TOOL_WINDOW_IDS: string[];
+    settle: Fn;
+    state: Fn;
+    openWindow: Fn;
+    closeWindow: Fn;
+    drag: Fn;
+    nearHandle: Fn;
+    setViewport: Fn;
+    find: Fn;
+    formatCandidates: Fn;
+    locatorTextFromError: Fn;
+    runStep: Fn;
+  };
+  const load = async (): Promise<Mod> => {
+    process.env.DISPLAY ??= ':99';
+    return (await import('../../scripts/testing/cloud.mjs')) as unknown as Mod;
+  };
+
+  describe('settle', () => {
+    const g = globalThis as Record<string, unknown>;
+    const saved: Record<string, unknown> = {};
+    const stub = (status: string, mutating: boolean) => {
+      for (const k of ['document', 'MutationObserver', 'requestAnimationFrame']) {
+        saved[k] = g[k];
+      }
+      g.document = {
+        querySelectorAll: () => [{ textContent: status }],
+      };
+      g.requestAnimationFrame = (cb: () => void) => setTimeout(cb, 1);
+      g.MutationObserver = class {
+        constructor(cb: () => void) {
+          if (mutating) setInterval(cb, 20).unref();
+        }
+        observe() {}
+        disconnect() {}
+      };
+    };
+    afterEach(() => {
+      for (const [k, v] of Object.entries(saved)) {
+        if (v === undefined) delete g[k];
+        else g[k] = v;
+      }
+    });
+    const pageRunning = {
+      evaluate: (fn: Fn, arg: unknown) => fn(arg),
+    };
+
+    it('sem "Salvando…" e sem mutação devolve null depois de ~200 ms', async () => {
+      const mod = await load();
+      stub('Salvo', false);
+      const t0 = Date.now();
+      const warning = await mod.settle(pageRunning, { timeoutMs: 2000 });
+      expect(warning).toBeNull();
+      expect(Date.now() - t0).toBeGreaterThanOrEqual(190);
+    });
+
+    it('"Salvando…" que não sai estoura o prazo com aviso que cita a condição', async () => {
+      const mod = await load();
+      stub('Salvando…', false);
+      const warnings: string[] = [];
+      const warning = await mod.settle(pageRunning, {
+        timeoutMs: 300,
+        warn: (m: string) => warnings.push(m),
+      });
+      expect(String(warning)).toMatch(/Salvando/);
+      expect(warnings).toHaveLength(1);
+    });
+
+    it('DOM que não para de mudar estoura o prazo com aviso de mutação', async () => {
+      const mod = await load();
+      stub('Salvo', true);
+      const warning = await mod.settle(pageRunning, { timeoutMs: 400, warn: () => {} });
+      expect(String(warning)).toMatch(/mud/);
+    });
+
+    it('state() espera o settle antes de ler o DOM', async () => {
+      const mod = await load();
+      const calls: unknown[] = [];
+      const page = {
+        evaluate: async (_fn: Fn, arg: unknown) => {
+          calls.push(arg);
+          return arg && typeof arg === 'object' && 'timeoutMs' in arg
+            ? null
+            : { title: 'Mapping', url: 'x', dialogs: [], notices: [], focus: null };
+        },
+      };
+      const apoio = mkdtempSync(path.join(tmpdir(), 'mapping-st-'));
+      try {
+        await mod.state(page, apoio);
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+      }
+      expect(calls.length).toBeGreaterThanOrEqual(2);
+      expect(calls[0]).toHaveProperty('timeoutMs');
+    });
+  });
+
+  describe('openWindow e closeWindow', () => {
+    function fakeWindowPage(initial: Record<string, string>) {
+      const pressed = { ...initial };
+      const clicks: string[] = [];
+      const waits: string[] = [];
+      const page = {
+        locator: (sel: string) => {
+          const id = /"(\w+)"/.exec(sel)?.[1] ?? '';
+          return {
+            getAttribute: async () => pressed[id] ?? 'false',
+            click: async () => {
+              clicks.push(id);
+              pressed[id] = pressed[id] === 'true' ? 'false' : 'true';
+            },
+            waitFor: async ({ state }: { state: string }) => {
+              waits.push(`${sel}:${state}`);
+            },
+          };
+        },
+        evaluate: async () => null,
+      };
+      return { page, clicks, waits };
+    }
+
+    it('openWindow só clica quando a janela está fechada (idempotente)', async () => {
+      const mod = await load();
+      const a = fakeWindowPage({ tree: 'false' });
+      await mod.openWindow(a.page, 'tree');
+      await mod.openWindow(a.page, 'tree');
+      expect(a.clicks).toEqual(['tree']);
+      expect(a.waits[0]).toContain('visible');
+    });
+
+    it('closeWindow só clica quando a janela está aberta e espera sumir', async () => {
+      const mod = await load();
+      const a = fakeWindowPage({ layers: 'true' });
+      await mod.closeWindow(a.page, 'layers');
+      await mod.closeWindow(a.page, 'layers');
+      expect(a.clicks).toEqual(['layers']);
+      expect(a.waits[0]).toContain('hidden');
+    });
+
+    it('id desconhecido dá erro com a lista dos ids', async () => {
+      const mod = await load();
+      const a = fakeWindowPage({});
+      await expect(mod.openWindow(a.page, 'arvore')).rejects.toThrow(
+        /arvore.*tree.*layers.*details.*list.*incomplete.*diagnostics.*proposals.*notices.*comments.*catalog/s,
+      );
+      expect(a.clicks).toEqual([]);
+    });
+
+    it('os ids são os de src/store/toolWindows.ts', async () => {
+      const mod = await load();
+      const src = read('src/store/toolWindows.ts');
+      const block = /TOOL_WINDOWS = \[([^\]]+)\]/.exec(src)?.[1] ?? '';
+      const ids = [...block.matchAll(/'(\w+)'/g)].map((m) => m[1]).sort();
+      expect([...mod.TOOL_WINDOW_IDS].sort()).toEqual(ids);
+    });
+  });
+
+  describe('drag e nearHandle', () => {
+    function fakeDragPage(selectionBox: string | null) {
+      const events: string[] = [];
+      const page = {
+        mouse: {
+          click: async (x: number, y: number) => events.push(`click ${x},${y}`),
+          down: async () => events.push('down'),
+          move: async (x: number, y: number) => events.push(`move ${x},${y}`),
+          up: async () => events.push('up'),
+        },
+        locator: () => ({
+          getAttribute: async () => selectionBox,
+          boundingBox: async () => ({ x: 100, y: 50, width: 800, height: 600 }),
+        }),
+        evaluate: async () => null,
+      };
+      return { page, events };
+    }
+
+    it('clica, segura, move em `steps` passos até `para` e solta', async () => {
+      const mod = await load();
+      const d = fakeDragPage(null);
+      await mod.drag(d.page, { x: 300, y: 300 }, { x: 340, y: 380 }, { steps: 4 });
+      expect(d.events[0]).toBe('click 300,300');
+      expect(d.events[1]).toBe('move 300,300');
+      expect(d.events[2]).toBe('down');
+      expect(d.events.slice(3, 7)).toEqual([
+        'move 310,320',
+        'move 320,340',
+        'move 330,360',
+        'move 340,380',
+      ]);
+      expect(d.events[7]).toBe('up');
+    });
+
+    it('select: false não clica antes', async () => {
+      const mod = await load();
+      const d = fakeDragPage(null);
+      await mod.drag(d.page, { x: 1, y: 2 }, { x: 3, y: 4 }, { select: false, steps: 1 });
+      expect(d.events.slice(0, 2)).toEqual(['move 1,2', 'down']);
+    });
+
+    it('avisa quando `de` cai a até 8 px de uma alça da caixa da seleção', async () => {
+      const mod = await load();
+      // caixa da seleção (relativa ao host): 100 100 200 100 → canto nw na tela: (200, 150)
+      const d = fakeDragPage('100 100 200 100');
+      const warnings: string[] = [];
+      await mod.drag(
+        d.page,
+        { x: 205, y: 154 },
+        { x: 260, y: 154 },
+        {
+          steps: 1,
+          warn: (m: string) => warnings.push(m),
+        },
+      );
+      expect(warnings.join('')).toMatch(/perto da alça nw: o arrasto pode redimensionar/);
+      expect(d.events).toContain('up');
+    });
+
+    it('não avisa longe das alças; nearHandle devolve o nome da alça ou null', async () => {
+      const mod = await load();
+      const box = { x: 200, y: 150, width: 200, height: 100 };
+      expect(mod.nearHandle(box, { x: 300, y: 200 })).toBeNull();
+      expect(mod.nearHandle(box, { x: 400, y: 250 })).toBe('se');
+      expect(mod.nearHandle(box, { x: 300, y: 146 })).toBe('n');
+      expect(mod.nearHandle(box, { x: 209, y: 200 })).toBeNull();
+    });
+  });
+
+  describe('setViewport', () => {
+    function fakeCdpPage(sequence: Array<Record<string, number>>) {
+      const sent: Array<[string, unknown]> = [];
+      let i = 0;
+      const page = {
+        context: () => ({
+          newCDPSession: async () => ({
+            send: async (method: string, params: unknown) => {
+              sent.push([method, params]);
+              return method === 'Browser.getWindowForTarget'
+                ? { windowId: 7, bounds: {} }
+                : {};
+            },
+            detach: async () => {},
+          }),
+        }),
+        evaluate: async () => sequence[Math.min(i++, sequence.length - 1)],
+      };
+      return { page, sent };
+    }
+
+    it('soma a moldura medida e confere innerWidth/innerHeight', async () => {
+      const mod = await load();
+      const p = fakeCdpPage([
+        { outerWidth: 1300, innerWidth: 1284, outerHeight: 840, innerHeight: 700 },
+        { innerWidth: 1280, innerHeight: 720 },
+      ]);
+      await mod.setViewport(p.page, 1280, 720);
+      const bounds = p.sent.find(([m]) => m === 'Browser.setWindowBounds')?.[1] as {
+        windowId: number;
+        bounds: { width: number; height: number };
+      };
+      expect(bounds.windowId).toBe(7);
+      expect(bounds.bounds.width).toBe(1280 + 16);
+      expect(bounds.bounds.height).toBe(720 + 140);
+    });
+
+    it('erro com os valores obtidos quando a janela não deu o pedido', async () => {
+      const mod = await load();
+      const p = fakeCdpPage([
+        { outerWidth: 1300, innerWidth: 1284, outerHeight: 840, innerHeight: 700 },
+        { innerWidth: 1200, innerHeight: 700 },
+      ]);
+      await expect(mod.setViewport(p.page, 1280, 720)).rejects.toThrow(
+        /1280.*720.*1200.*700/s,
+      );
+    });
+  });
+
+  describe('find e localizador que diz o que existe', () => {
+    const candidates = [
+      { role: 'button', name: 'Revisar', region: 'Propostas' },
+      { role: 'button', name: 'Revisar proposta', region: 'Janelas de ferramenta' },
+    ];
+
+    it('find devolve os candidatos da página; formatCandidates os lista', async () => {
+      const mod = await load();
+      const page = {
+        evaluate: async (_fn: Fn, arg: { needle: string }) => {
+          expect(arg.needle).toBe('revisar');
+          return candidates;
+        },
+      };
+      const found = await mod.find(page, 'Revisar');
+      expect(found).toEqual(candidates);
+      const text = String(mod.formatCandidates(found, 'Revisar'));
+      expect(text).toContain('button "Revisar" em Propostas');
+      expect(mod.formatCandidates([], 'Nada')).toMatch(/nenhum candidato.*Nada/);
+    });
+
+    it('locatorTextFromError tira o nome do localizador da mensagem do Playwright', async () => {
+      const mod = await load();
+      expect(
+        mod.locatorTextFromError(
+          "locator.click: Timeout 5000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Revisar' })",
+        ),
+      ).toBe('Revisar');
+      expect(
+        mod.locatorTextFromError(
+          "strict mode violation: getByText('Conversas') resolved to 2 elements",
+        ),
+      ).toBe('Conversas');
+      expect(mod.locatorTextFromError('algum outro erro')).toBeNull();
+    });
+
+    it('run: timeout de localizador é seguido da lista de candidatos', async () => {
+      const mod = await load();
+      const page = {
+        evaluate: async (_fn: Fn, arg: { needle?: string; timeoutMs?: number }) => {
+          if (arg && 'needle' in arg) return candidates;
+          if (arg && 'timeoutMs' in arg) return null;
+          return { title: 'Mapping', url: 'x', dialogs: [], notices: [], focus: null };
+        },
+      };
+      const apoio = mkdtempSync(path.join(tmpdir(), 'mapping-find-'));
+      const out: string[] = [];
+      const err: string[] = [];
+      try {
+        const code = await mod.runStep(
+          `throw new Error("locator.click: Timeout 5000ms exceeded.\\n  - waiting for getByRole('button', { name: 'Revisar' })")`,
+          {
+            apoioDir: apoio,
+            connectFn: async () => ({ browser: { close: async () => {} }, page }),
+            io: { log: (m: string) => out.push(m), error: (m: string) => err.push(m) },
+          },
+        );
+        expect(code).toBe(1);
+      } finally {
+        rmSync(apoio, { recursive: true, force: true });
+      }
+      const all = err.join('\n');
+      expect(all).toContain('Timeout 5000ms');
+      expect(all).toContain('button "Revisar" em Propostas');
+    });
   });
 });
