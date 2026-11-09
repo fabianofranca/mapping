@@ -23,6 +23,7 @@ import { chromium } from 'playwright';
 import { createHash } from 'node:crypto';
 import { execFile, execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { promisify } from 'node:util';
@@ -934,14 +935,51 @@ export async function state(page, apoioDir, { projectDir } = {}) {
   return result;
 }
 
-/** Roda a CLI (`mark` e `state`); lê a pasta de apoio da variável de ambiente `APOIO`. */
+/**
+ * A pasta de apoio quando `APOIO` não está exportado (etapa #841, decisão 3): a `apoio/` da rodada
+ * mais recente em `~/mapping-testes/<AAAA-MM-DD>-<alvo>/apoio`, o mesmo caminho que o `cloud-up.sh`
+ * monta. `null` se não houver nenhuma.
+ */
+export function defaultApoioDir(home = os.homedir()) {
+  const root = path.join(home, 'mapping-testes');
+  let entries;
+  try {
+    entries = fs.readdirSync(root);
+  } catch {
+    return null;
+  }
+  const dirs = entries
+    .map((name) => path.join(root, name, 'apoio'))
+    .filter((dir) => fs.existsSync(dir))
+    .map((dir) => ({ dir, mtime: fs.statSync(dir).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime);
+  return dirs[0]?.dir ?? null;
+}
+
+/** `APOIO`, ou a pasta padrão com um aviso; `null` (e a explicação no stderr) se não achar. */
+function resolveApoio(explicit) {
+  const apoioDir = explicit ?? process.env.APOIO;
+  if (apoioDir) return apoioDir;
+  const found = defaultApoioDir();
+  if (found) {
+    console.error(
+      `Aviso: APOIO não está definido; usando ${found} (a rodada mais recente).`,
+    );
+    return found;
+  }
+  console.error(
+    'APOIO (a pasta apoio/ da rodada) não está definido e não há ~/mapping-testes/*/apoio.',
+  );
+  return null;
+}
+
+/** Roda a CLI (`mark` e `state`); lê a pasta de apoio de `APOIO` (ou, sem ela, da rodada mais recente). */
 async function runCli(argv) {
   const [command, ...rest] = argv;
   if (command === 'mark') {
     const [roteiro, fase] = rest;
-    const apoioDir = process.env.APOIO;
+    const apoioDir = resolveApoio();
     if (!apoioDir) {
-      console.error('APOIO (a pasta apoio/ da rodada) precisa estar definida.');
       process.exitCode = 2;
       return;
     }
@@ -955,9 +993,8 @@ async function runCli(argv) {
     return;
   }
   if (command === 'state') {
-    const apoioDir = process.env.APOIO;
+    const apoioDir = resolveApoio();
     if (!apoioDir) {
-      console.error('APOIO (a pasta apoio/ da rodada) precisa estar definida.');
       process.exitCode = 2;
       return;
     }
@@ -970,9 +1007,9 @@ async function runCli(argv) {
     return;
   }
   if (command === 'tempos') {
-    const apoioDir = rest[0] ?? process.env.APOIO;
+    const apoioDir = resolveApoio(rest[0]);
     if (!apoioDir) {
-      console.error('Uso: node cloud.mjs tempos <apoio>');
+      console.error('Uso: node cloud.mjs tempos [<apoio>]');
       process.exitCode = 2;
       return;
     }

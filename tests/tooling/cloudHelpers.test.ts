@@ -2,12 +2,15 @@
 // Fase TR1 (etapa #359): os auxiliares da nuvem em `scripts/testing/` (decisão 2) existem, o
 // `cloud.mjs` importa sem efeito colateral e exporta os nomes certos, o guia aponta para eles
 // (decisão 4) e a parte pura de `cloud.mjs` (`mark`) tem teste unitário.
+import { spawnSync } from 'node:child_process';
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -35,6 +38,7 @@ const EXPECTED_EXPORTS = [
   'clickNoWait',
   'connect',
   'connectGuide',
+  'defaultApoioDir',
   'diffJson',
   'formatState',
   'loadEnv',
@@ -755,5 +759,60 @@ describe('janela da nuvem passa do mínimo da app (etapa #604, GN1, decisão 1)'
 
   it('o cloud-up.sh e a receita 2 usam o mesmo tamanho', () => {
     expect(sizes(read(CLOUD_UP)).xvfb).toEqual(sizes(recipe2).xvfb);
+  });
+});
+
+// Etapa #841 (RB1, decisão 3): `mark` e `tempos` sem `APOIO` exportado acham a pasta padrão.
+describe('cloud.mjs sem APOIO exportado (RB1, decisão 3)', () => {
+  let home: string;
+
+  afterEach(() => {
+    if (home) rmSync(home, { recursive: true, force: true });
+  });
+
+  function run(args: string[]): {
+    status: number | null;
+    stdout: string;
+    stderr: string;
+  } {
+    const env: Record<string, string | undefined> = { ...process.env, HOME: home };
+    delete env.APOIO;
+    const r = spawnSync('node', ['scripts/testing/cloud.mjs', ...args], {
+      env,
+      encoding: 'utf8',
+    });
+    return { status: r.status, stdout: r.stdout, stderr: r.stderr };
+  }
+
+  it('mark grava na pasta apoio/ da rodada mais recente e avisa', () => {
+    home = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-home-'));
+    const old = path.join(home, 'mapping-testes', '2026-01-01-velha', 'apoio');
+    const recent = path.join(home, 'mapping-testes', '2026-02-02-nova', 'apoio');
+    mkdirSync(old, { recursive: true });
+    mkdirSync(recent, { recursive: true });
+    utimesSync(old, new Date('2026-01-01'), new Date('2026-01-01'));
+    const r = run(['mark', 'R1', 'start']);
+    expect(r.status ?? 0).toBe(0);
+    expect(r.stderr).toMatch(/APOIO/);
+    expect(r.stderr).toContain(recent);
+    expect(read(path.join(recent, 'tempos.log'))).toMatch(/^R1 start \d{4}-/);
+  });
+
+  it('tempos sem APOIO lê a mesma pasta; sem nenhuma pasta, falha com a explicação', () => {
+    home = mkdtempSync(path.join(tmpdir(), 'mapping-cloud-home-'));
+    const apoio = path.join(home, 'mapping-testes', '2026-02-02-nova', 'apoio');
+    mkdirSync(apoio, { recursive: true });
+    writeFileSync(
+      path.join(apoio, 'tempos.log'),
+      'R1 start 2026-02-02T10:00:00.000Z\nR1 end 2026-02-02T10:01:00.000Z\n',
+    );
+    const ok = run(['tempos']);
+    expect(ok.status ?? 0).toBe(0);
+    expect(ok.stdout).toContain('R1');
+    expect(ok.stderr).toMatch(/APOIO/);
+    rmSync(path.join(home, 'mapping-testes'), { recursive: true, force: true });
+    const none = run(['mark', 'R1', 'start']);
+    expect(none.status).toBe(2);
+    expect(none.stderr).toMatch(/APOIO/);
   });
 });

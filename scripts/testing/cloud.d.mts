@@ -127,4 +127,6 @@ export interface Tempos {
 }
 export function temposFromLog(text: string): Tempos;
 export function temposFromDir(apoioDir: string): Tempos;
+/** A `apoio/` da rodada mais recente em `~/mapping-testes`, ou `null` (usada quando `APOIO` não está exportado). */
+export function defaultApoioDir(home?: string): string | null;
 export function formatTempos(tempos: Tempos): string;
