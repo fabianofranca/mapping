@@ -92,7 +92,9 @@
           "$if": {
             "$eq": ["enabled", "false"]
           },
-          "then": { "$token": "state-disabled-container-filled" },
+          "then": {
+            "$token": "state-disabled-container-filled"
+          },
           "else": 1
         },
         "cornerRadius": {
@@ -132,6 +134,94 @@
             "$token": "on-surface"
           },
           "width": 1
+        }
+      },
+      {
+        "type": "rect",
+        "name": "estado",
+        "fill": {
+          "$switch": "style",
+          "cases": {
+            "standard": {
+              "$if": {
+                "$eq": ["checked", "true"]
+              },
+              "then": {
+                "$token": "primary"
+              },
+              "else": {
+                "$token": "on-surface-variant"
+              }
+            },
+            "filled": {
+              "$if": {
+                "$eq": ["checked", "true"]
+              },
+              "then": {
+                "$token": "on-primary"
+              },
+              "else": {
+                "$token": "on-surface-variant"
+              }
+            },
+            "tonal": {
+              "$if": {
+                "$eq": ["checked", "true"]
+              },
+              "then": {
+                "$token": "on-secondary"
+              },
+              "else": {
+                "$token": "on-secondary-container"
+              }
+            },
+            "outlined": {
+              "$if": {
+                "$eq": ["checked", "true"]
+              },
+              "then": {
+                "$token": "inverse-on-surface"
+              },
+              "else": {
+                "$token": "on-surface-variant"
+              }
+            }
+          },
+          "default": {
+            "$token": "on-surface-variant"
+          }
+        },
+        "opacity": {
+          "$switch": "interaction",
+          "cases": {
+            "hovered": {
+              "$token": "state-hover"
+            },
+            "focused": {
+              "$token": "state-focus"
+            },
+            "pressed": {
+              "$token": "state-pressed"
+            }
+          },
+          "default": 0
+        },
+        "cornerRadius": {
+          "$token": "corner-full"
+        },
+        "visible": {
+          "$and": [
+            {
+              "$not": {
+                "$eq": ["enabled", "false"]
+              }
+            },
+            {
+              "$not": {
+                "$eq": ["interaction", "none"]
+              }
+            }
+          ]
         }
       },
       {

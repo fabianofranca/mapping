@@ -132,7 +132,23 @@
         },
         "then": "none",
         "else": {
-          "$token": "outline-variant"
+          "$if": {
+            "$eq": ["interaction", "focused"]
+          },
+          "then": {
+            "$if": {
+              "$eq": ["style", "assist"]
+            },
+            "then": {
+              "$token": "on-surface"
+            },
+            "else": {
+              "$token": "on-surface-variant"
+            }
+          },
+          "else": {
+            "$token": "outline-variant"
+          }
         }
       },
       "width": 1,
@@ -142,6 +158,141 @@
       "color": {
         "$if": {
           "$and": [
+            {
+              "$not": {
+                "$eq": ["enabled", "false"]
+              }
+            },
+            {
+              "$or": [
+                {
+                  "$and": [
+                    {
+                      "$or": [
+                        {
+                          "$eq": ["style", "assist-elevated"]
+                        },
+                        {
+                          "$eq": ["style", "filter-elevated"]
+                        },
+                        {
+                          "$eq": ["style", "suggestion-elevated"]
+                        }
+                      ]
+                    },
+                    {
+                      "$not": {
+                        "$or": [
+                          {
+                            "$eq": ["interaction", "hovered"]
+                          },
+                          {
+                            "$eq": ["interaction", "dragged"]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                {
+                  "$and": [
+                    {
+                      "$eq": ["style", "filter"]
+                    },
+                    {
+                      "$eq": ["selected", "true"]
+                    },
+                    {
+                      "$eq": ["interaction", "hovered"]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "then": {
+          "$token": "elevation-shadow"
+        },
+        "else": "none"
+      },
+      "y": 1,
+      "blur": 2
+    },
+    "children": [
+      {
+        "type": "rect",
+        "name": "sombra nível 2",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$if": {
+            "$eq": ["enabled", "false"]
+          },
+          "then": "none",
+          "else": {
+            "$if": {
+              "$and": [
+                {
+                  "$eq": ["selected", "true"]
+                },
+                {
+                  "$or": [
+                    {
+                      "$or": [
+                        {
+                          "$eq": ["style", "filter"]
+                        },
+                        {
+                          "$eq": ["style", "filter-elevated"]
+                        }
+                      ]
+                    },
+                    {
+                      "$eq": ["style", "input"]
+                    }
+                  ]
+                }
+              ]
+            },
+            "then": {
+              "$token": "secondary-container"
+            },
+            "else": {
+              "$if": {
+                "$or": [
+                  {
+                    "$eq": ["style", "assist-elevated"]
+                  },
+                  {
+                    "$eq": ["style", "filter-elevated"]
+                  },
+                  {
+                    "$eq": ["style", "suggestion-elevated"]
+                  }
+                ]
+              },
+              "then": {
+                "$token": "surface-container-low"
+              },
+              "else": "none"
+            }
+          }
+        },
+        "cornerRadius": {
+          "$token": "corner-small"
+        },
+        "visible": {
+          "$and": [
+            {
+              "$not": {
+                "$eq": ["enabled", "false"]
+              }
+            },
             {
               "$or": [
                 {
@@ -156,21 +307,158 @@
               ]
             },
             {
-              "$not": {
-                "$eq": ["enabled", "false"]
-              }
+              "$eq": ["interaction", "hovered"]
             }
           ]
         },
-        "then": {
-          "$token": "elevation-shadow"
-        },
-        "else": "none"
+        "shadow": {
+          "color": {
+            "$token": "elevation-shadow"
+          },
+          "y": 2,
+          "blur": 6
+        }
       },
-      "y": 1,
-      "blur": 2
-    },
-    "children": [
+      {
+        "type": "rect",
+        "name": "sombra nível 4",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$if": {
+            "$eq": ["enabled", "false"]
+          },
+          "then": "none",
+          "else": {
+            "$if": {
+              "$and": [
+                {
+                  "$eq": ["selected", "true"]
+                },
+                {
+                  "$or": [
+                    {
+                      "$or": [
+                        {
+                          "$eq": ["style", "filter"]
+                        },
+                        {
+                          "$eq": ["style", "filter-elevated"]
+                        }
+                      ]
+                    },
+                    {
+                      "$eq": ["style", "input"]
+                    }
+                  ]
+                }
+              ]
+            },
+            "then": {
+              "$token": "secondary-container"
+            },
+            "else": {
+              "$if": {
+                "$or": [
+                  {
+                    "$eq": ["style", "assist-elevated"]
+                  },
+                  {
+                    "$eq": ["style", "filter-elevated"]
+                  },
+                  {
+                    "$eq": ["style", "suggestion-elevated"]
+                  }
+                ]
+              },
+              "then": {
+                "$token": "surface-container-low"
+              },
+              "else": "none"
+            }
+          }
+        },
+        "cornerRadius": {
+          "$token": "corner-small"
+        },
+        "visible": {
+          "$and": [
+            {
+              "$not": {
+                "$eq": ["enabled", "false"]
+              }
+            },
+            {
+              "$eq": ["interaction", "dragged"]
+            }
+          ]
+        },
+        "shadow": {
+          "color": {
+            "$token": "elevation-shadow"
+          },
+          "y": 4,
+          "blur": 16
+        },
+        "stroke": {
+          "color": {
+            "$if": {
+              "$or": [
+                {
+                  "$or": [
+                    {
+                      "$eq": ["style", "assist-elevated"]
+                    },
+                    {
+                      "$eq": ["style", "filter-elevated"]
+                    },
+                    {
+                      "$eq": ["style", "suggestion-elevated"]
+                    }
+                  ]
+                },
+                {
+                  "$and": [
+                    {
+                      "$eq": ["selected", "true"]
+                    },
+                    {
+                      "$or": [
+                        {
+                          "$or": [
+                            {
+                              "$eq": ["style", "filter"]
+                            },
+                            {
+                              "$eq": ["style", "filter-elevated"]
+                            }
+                          ]
+                        },
+                        {
+                          "$eq": ["style", "input"]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "$eq": ["enabled", "false"]
+                }
+              ]
+            },
+            "then": "none",
+            "else": {
+              "$token": "outline-variant"
+            }
+          },
+          "width": 1,
+          "align": "inside"
+        }
+      },
       {
         "type": "rect",
         "name": "contêiner desabilitado",
@@ -307,6 +595,94 @@
                     ]
                   }
                 ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "rect",
+        "name": "estado",
+        "anchors": {
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "bottom": 0
+        },
+        "fill": {
+          "$if": {
+            "$and": [
+              {
+                "$eq": ["selected", "true"]
+              },
+              {
+                "$or": [
+                  {
+                    "$or": [
+                      {
+                        "$eq": ["style", "filter"]
+                      },
+                      {
+                        "$eq": ["style", "filter-elevated"]
+                      }
+                    ]
+                  },
+                  {
+                    "$eq": ["style", "input"]
+                  }
+                ]
+              }
+            ]
+          },
+          "then": {
+            "$token": "on-secondary-container"
+          },
+          "else": {
+            "$switch": "style",
+            "cases": {
+              "assist": {
+                "$token": "on-surface"
+              },
+              "assist-elevated": {
+                "$token": "on-surface"
+              }
+            },
+            "default": {
+              "$token": "on-surface-variant"
+            }
+          }
+        },
+        "opacity": {
+          "$switch": "interaction",
+          "cases": {
+            "hovered": {
+              "$token": "state-hover"
+            },
+            "focused": {
+              "$token": "state-focus"
+            },
+            "pressed": {
+              "$token": "state-pressed"
+            },
+            "dragged": {
+              "$token": "state-dragged"
+            }
+          },
+          "default": 0
+        },
+        "cornerRadius": {
+          "$token": "corner-small"
+        },
+        "visible": {
+          "$and": [
+            {
+              "$not": {
+                "$eq": ["enabled", "false"]
+              }
+            },
+            {
+              "$not": {
+                "$eq": ["interaction", "none"]
               }
             }
           ]

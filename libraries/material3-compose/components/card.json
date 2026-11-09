@@ -45,7 +45,15 @@
           "$eq": ["style", "outlined"]
         },
         "then": {
-          "$token": "outline-variant"
+          "$if": {
+            "$eq": ["interaction", "focused"]
+          },
+          "then": {
+            "$token": "on-surface"
+          },
+          "else": {
+            "$token": "outline-variant"
+          }
         },
         "else": "none"
       },
@@ -55,7 +63,44 @@
     "shadow": {
       "color": {
         "$if": {
-          "$eq": ["style", "elevated"]
+          "$or": [
+            {
+              "$and": [
+                {
+                  "$eq": ["style", "elevated"]
+                },
+                {
+                  "$not": {
+                    "$or": [
+                      {
+                        "$eq": ["interaction", "hovered"]
+                      },
+                      {
+                        "$eq": ["interaction", "dragged"]
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "$and": [
+                {
+                  "$or": [
+                    {
+                      "$eq": ["style", "filled"]
+                    },
+                    {
+                      "$eq": ["style", "outlined"]
+                    }
+                  ]
+                },
+                {
+                  "$eq": ["interaction", "hovered"]
+                }
+              ]
+            }
+          ]
         },
         "then": {
           "$token": "elevation-shadow"
@@ -66,120 +111,298 @@
       "blur": 2
     },
     "layout": {
-      "type": "column",
-      "gap": 0
+      "type": "none"
     },
     "children": [
       {
-        "type": "image",
-        "name": "mídia",
-        "src": {
-          "$field": "media"
-        },
-        "fit": "cover",
-        "width": "fill",
-        "height": 140,
+        "type": "rect",
+        "name": "sombra nível 2",
         "fill": {
-          "$token": "surface-container-highest"
+          "$switch": "style",
+          "cases": {
+            "elevated": {
+              "$token": "surface-container-low"
+            },
+            "outlined": {
+              "$token": "surface"
+            }
+          },
+          "default": {
+            "$token": "surface-container-highest"
+          }
+        },
+        "cornerRadius": {
+          "$token": "corner-medium"
         },
         "visible": {
-          "$has": "media"
+          "$and": [
+            {
+              "$eq": ["style", "elevated"]
+            },
+            {
+              "$eq": ["interaction", "hovered"]
+            }
+          ]
+        },
+        "shadow": {
+          "color": {
+            "$token": "elevation-shadow"
+          },
+          "y": 2,
+          "blur": 6
+        }
+      },
+      {
+        "type": "rect",
+        "name": "sombra nível 3",
+        "fill": {
+          "$switch": "style",
+          "cases": {
+            "elevated": {
+              "$token": "surface-container-low"
+            },
+            "outlined": {
+              "$token": "surface"
+            }
+          },
+          "default": {
+            "$token": "surface-container-highest"
+          }
+        },
+        "cornerRadius": {
+          "$token": "corner-medium"
+        },
+        "visible": {
+          "$and": [
+            {
+              "$or": [
+                {
+                  "$eq": ["style", "filled"]
+                },
+                {
+                  "$eq": ["style", "outlined"]
+                }
+              ]
+            },
+            {
+              "$eq": ["interaction", "dragged"]
+            }
+          ]
+        },
+        "shadow": {
+          "color": {
+            "$token": "elevation-shadow"
+          },
+          "y": 3,
+          "blur": 12
+        },
+        "stroke": {
+          "color": {
+            "$if": {
+              "$eq": ["style", "outlined"]
+            },
+            "then": {
+              "$token": "outline-variant"
+            },
+            "else": "none"
+          },
+          "width": 1,
+          "align": "inside"
+        }
+      },
+      {
+        "type": "rect",
+        "name": "sombra nível 4",
+        "fill": {
+          "$switch": "style",
+          "cases": {
+            "elevated": {
+              "$token": "surface-container-low"
+            },
+            "outlined": {
+              "$token": "surface"
+            }
+          },
+          "default": {
+            "$token": "surface-container-highest"
+          }
+        },
+        "cornerRadius": {
+          "$token": "corner-medium"
+        },
+        "visible": {
+          "$and": [
+            {
+              "$eq": ["style", "elevated"]
+            },
+            {
+              "$eq": ["interaction", "dragged"]
+            }
+          ]
+        },
+        "shadow": {
+          "color": {
+            "$token": "elevation-shadow"
+          },
+          "y": 4,
+          "blur": 16
         }
       },
       {
         "type": "frame",
-        "name": "conteúdo",
+        "name": "corpo",
         "width": "fill",
         "height": "hug",
         "layout": {
           "type": "column",
-          "gap": 4,
-          "padding": 16
+          "gap": 0
         },
         "children": [
           {
-            "type": "text",
-            "name": "título",
-            "text": {
-              "$field": "title",
-              "default": "Title"
+            "type": "image",
+            "name": "mídia",
+            "src": {
+              "$field": "media"
             },
-            "font": {
-              "size": {
-                "$token": "title-medium-size"
-              },
-              "weight": {
-                "$token": "title-medium-weight"
-              },
-              "lineHeight": {
-                "$token": "title-medium-line-height"
-              },
-              "letterSpacing": {
-                "$token": "title-medium-tracking"
-              }
-            },
-            "color": {
-              "$token": "on-surface"
-            },
-            "width": "fill"
-          },
-          {
-            "type": "text",
-            "name": "subtítulo",
-            "text": {
-              "$field": "subtitle"
-            },
-            "font": {
-              "size": {
-                "$token": "body-medium-size"
-              },
-              "weight": {
-                "$token": "body-medium-weight"
-              },
-              "lineHeight": {
-                "$token": "body-medium-line-height"
-              },
-              "letterSpacing": {
-                "$token": "body-medium-tracking"
-              }
-            },
-            "color": {
-              "$token": "on-surface-variant"
-            },
+            "fit": "cover",
             "width": "fill",
+            "height": 140,
+            "fill": {
+              "$token": "surface-container-highest"
+            },
             "visible": {
-              "$has": "subtitle"
+              "$has": "media"
             }
           },
           {
-            "type": "text",
-            "name": "apoio",
-            "text": {
-              "$field": "supportingText"
-            },
-            "font": {
-              "size": {
-                "$token": "body-medium-size"
-              },
-              "weight": {
-                "$token": "body-medium-weight"
-              },
-              "lineHeight": {
-                "$token": "body-medium-line-height"
-              },
-              "letterSpacing": {
-                "$token": "body-medium-tracking"
-              }
-            },
-            "color": {
-              "$token": "on-surface-variant"
-            },
+            "type": "frame",
+            "name": "conteúdo",
             "width": "fill",
-            "visible": {
-              "$has": "supportingText"
-            }
+            "height": "hug",
+            "layout": {
+              "type": "column",
+              "gap": 4,
+              "padding": 16
+            },
+            "children": [
+              {
+                "type": "text",
+                "name": "título",
+                "text": {
+                  "$field": "title",
+                  "default": "Title"
+                },
+                "font": {
+                  "size": {
+                    "$token": "title-medium-size"
+                  },
+                  "weight": {
+                    "$token": "title-medium-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "title-medium-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "title-medium-tracking"
+                  }
+                },
+                "color": {
+                  "$token": "on-surface"
+                },
+                "width": "fill"
+              },
+              {
+                "type": "text",
+                "name": "subtítulo",
+                "text": {
+                  "$field": "subtitle"
+                },
+                "font": {
+                  "size": {
+                    "$token": "body-medium-size"
+                  },
+                  "weight": {
+                    "$token": "body-medium-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-medium-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-medium-tracking"
+                  }
+                },
+                "color": {
+                  "$token": "on-surface-variant"
+                },
+                "width": "fill",
+                "visible": {
+                  "$has": "subtitle"
+                }
+              },
+              {
+                "type": "text",
+                "name": "apoio",
+                "text": {
+                  "$field": "supportingText"
+                },
+                "font": {
+                  "size": {
+                    "$token": "body-medium-size"
+                  },
+                  "weight": {
+                    "$token": "body-medium-weight"
+                  },
+                  "lineHeight": {
+                    "$token": "body-medium-line-height"
+                  },
+                  "letterSpacing": {
+                    "$token": "body-medium-tracking"
+                  }
+                },
+                "color": {
+                  "$token": "on-surface-variant"
+                },
+                "width": "fill",
+                "visible": {
+                  "$has": "supportingText"
+                }
+              }
+            ]
           }
         ]
+      },
+      {
+        "type": "rect",
+        "name": "estado",
+        "fill": {
+          "$token": "on-surface"
+        },
+        "opacity": {
+          "$switch": "interaction",
+          "cases": {
+            "hovered": {
+              "$token": "state-hover"
+            },
+            "focused": {
+              "$token": "state-focus"
+            },
+            "pressed": {
+              "$token": "state-pressed"
+            },
+            "dragged": {
+              "$token": "state-dragged"
+            }
+          },
+          "default": 0
+        },
+        "cornerRadius": {
+          "$token": "corner-medium"
+        },
+        "visible": {
+          "$not": {
+            "$eq": ["interaction", "none"]
+          }
+        }
       }
     ]
   }

@@ -1995,6 +1995,13 @@ const erro = process.argv[3] === 'erro';
 const specFile = dir + '/material3-compose.spec.json';
 const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
 spec.formatVersion = 15;
+// O card.json mínimo mais abaixo não desenha o `interaction`: sem tirar o campo do tipo, o validador avisa.
+for (const layer of spec.layers)
+  for (const type of layer.annotationTypes)
+    if (type.id === 'card') {
+      type.fields = type.fields.filter((f) => f.key !== 'interaction');
+      type.examples = type.examples.filter((e) => e.values?.interaction === undefined);
+    }
 // O pacote já traz `tokens` (~130 chaves) e `icons`: os quatro valores abaixo são MESCLADOS nos
 // existentes (trocar `spec.tokens` inteiro apaga os que os outros componentes usam).
 const base = spec.tokens ?? { modes: ['light', 'dark'], values: {} };

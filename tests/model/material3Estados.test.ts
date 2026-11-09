@@ -22,6 +22,17 @@ const tokenValues = (spec.tokens?.values ?? {}) as Record<string, unknown>;
 /** Opções do `interaction` por tipo que já o recebeu (decisão 2 da #869); cresce a cada fase. */
 const INTERACTION_OPTIONS: Record<string, string[]> = {
   button: ['none', 'hovered', 'focused', 'pressed'],
+  fab: ['none', 'hovered', 'focused', 'pressed'],
+  'extended-fab': ['none', 'hovered', 'focused', 'pressed'],
+  'icon-button': ['none', 'hovered', 'focused', 'pressed'],
+  'icon-toggle-button': ['none', 'hovered', 'focused', 'pressed'],
+  chip: ['none', 'hovered', 'focused', 'pressed', 'dragged'],
+  card: ['none', 'hovered', 'focused', 'pressed', 'dragged'],
+  checkbox: ['none', 'hovered', 'focused', 'pressed'],
+  'radio-button': ['none', 'hovered', 'focused', 'pressed'],
+  switch: ['none', 'hovered', 'focused', 'pressed'],
+  slider: ['none', 'hovered', 'focused', 'pressed'],
+  'segmented-button': ['none', 'hovered', 'focused', 'pressed'],
 };
 
 describe('tokens de estado (StateTokens.kt)', () => {
