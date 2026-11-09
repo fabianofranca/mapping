@@ -1,4 +1,4 @@
-# CR da interface — [Não lançado] (épico `epic/cr-ui`, PR #0, MCP 0.28.11, schema v18)
+# CR da interface — [Não lançado] (épico `epic/cr-ui`, PR #1236, MCP 0.28.11, schema v18)
 
 ## Corrigido
 
