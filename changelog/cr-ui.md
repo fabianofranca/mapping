@@ -21,3 +21,6 @@
 - Revisão, avisos de dependência: dois avisos que só diferem no outro item envolvido não trocam de lugar quando um deles some.
 - Revisão, "Aceitar remove junto": as listas de marcações e de setas que saem com a imagem dizem "e mais N" quando passam de 12, como a de anotações.
 - Revisão, Detalhes: clicar no fundo e depois trocar de item por N ou C não leva mais o foco para os Detalhes.
+- Revisão, árvore de uma proposta substituída: a lista mede a altura da linha por uma linha de item (não pelo cabeçalho de grupo), e a rolagem e os espaços batem com as linhas.
+- Revisão, rodapé de atalhos: passa a ser um grupo nomeado, anunciado por leitor de tela.
+- Revisão, árvore: ao abrir uma proposta com a seleção além das primeiras linhas, a lista rola até a selecionada depois da medição; expandir ou recolher um grupo não faz a lista pular de volta.
