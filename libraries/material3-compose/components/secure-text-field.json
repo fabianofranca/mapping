@@ -6,7 +6,7 @@
   "description": "Campo de senha: filled (fundo e indicador) ou outlined (contorno com o rótulo na borda). O texto digitado aparece mascarado (••••••••); aceita ícones, texto de apoio e estado de erro.",
   "size": {
     "width": 280,
-    "height": 76
+    "height": 84
   },
   "minSize": {
     "width": 280,
@@ -14,7 +14,7 @@
   },
   "sizing": {
     "width": "fill",
-    "height": 76
+    "height": 84
   },
   "preview": {
     "label": "Senha",
