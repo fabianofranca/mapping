@@ -239,6 +239,8 @@ export const ptBR = {
   'crumbs.image': 'Imagem {name}',
   'crumbs.marking': 'Marcação {name}',
   'crumbs.canvas': 'Canvas',
+  'crumbs.showFull': 'Mostrar o caminho inteiro',
+  'crumbs.menu': 'Caminho inteiro',
 
   'zoom.value': '{percent}%',
   'zoom.reset': '{percent}%: zoom atual; clique para voltar a 100%',

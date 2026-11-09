@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { addImage, canvasPoint, createProject, drawMarking, setMode } from './helpers';
+import { readFileSync } from 'node:fs';
 import { fixtureZip } from './proposalFixture';
 
 // Barra de status e caminho do canvas (etapa #675): a 900×720 os estados curtos (Salvo, o
@@ -254,5 +255,89 @@ test.describe('a 1440×900', () => {
     await expect(bar.locator('.status-wide:visible')).toHaveCount(2);
     await expect(bar).toContainText('schema v');
     expectBarHealthy(await measureBar(page));
+  });
+});
+
+// BC1 (#1064): na barra do canvas estreita o caminho recolhe o meio num "…" que abre o caminho
+// inteiro; na larga, nada muda. jsdom não tem layout: a medida é aqui.
+
+async function openExample(page: Page): Promise<void> {
+  await page.goto('/');
+  await page
+    .locator('input[type=file][accept^=".zip"]:not([data-library-zip])')
+    .setInputFiles({
+      name: 'exemplo-completo.zip',
+      mimeType: 'application/zip',
+      buffer: readFileSync('examples/exemplo-completo.zip'),
+    });
+  await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
+}
+
+async function selectCadastrar(page: Page): Promise<void> {
+  const tree = page.getByRole('list', { name: 'Árvore de marcações' });
+  await tree.getByRole('button', { name: 'Cadastrar', exact: true }).click();
+}
+
+test.describe('caminho recolhido a 900×720 fora da revisão (BC1)', () => {
+  test.use({ viewport: { width: 900, height: 720 } });
+
+  test('Canvas › … › Cadastrar; o Enter no "…" abre o caminho inteiro e o Esc devolve o foco', async ({
+    page,
+  }) => {
+    await openExample(page);
+    for (const key of ['1', '2', '7', '3'])
+      await page.keyboard.press(`Control+Shift+Digit${key}`);
+    await selectCadastrar(page);
+    const more = page.getByRole('button', { name: 'Mostrar o caminho inteiro' });
+    await expect(more).toBeVisible();
+    const m = await page.locator('.canvas-bar').evaluate((bar) => {
+      const items = [...bar.querySelectorAll<HTMLElement>('.crumb-item')];
+      const last = items.at(-1)!.querySelector<HTMLElement>('.crumb-name')!;
+      return {
+        middle: items.slice(1, -1).map((el) => el.getBoundingClientRect().width),
+        last: last.clientWidth,
+        lastTitle: last.getAttribute('title') ?? '',
+        barScroll: bar.scrollWidth,
+        barClient: bar.clientWidth,
+      };
+    });
+    expect(m.middle.length, JSON.stringify(m)).toBeGreaterThan(0);
+    expect(
+      m.middle.every((w) => w === 0),
+      JSON.stringify(m),
+    ).toBe(true);
+    expect(m.last, JSON.stringify(m)).toBeGreaterThanOrEqual(40);
+    expect(m.lastTitle).toBe('Cadastrar');
+    expect(m.barScroll, JSON.stringify(m)).toBeLessThanOrEqual(m.barClient);
+    await more.focus();
+    await page.keyboard.press('Enter');
+    const menu = page.getByRole('menu', { name: 'Caminho inteiro' });
+    await expect(menu.getByRole('menuitem')).toHaveCount(4);
+    await expect(menu.getByRole('menuitem')).toHaveText([
+      'Canvas',
+      'Cadastro',
+      'Formulário',
+      'Cadastrar',
+    ]);
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    await expect(more).toBeFocused();
+  });
+});
+
+test.describe('caminho inteiro a 1440×900 (BC1)', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('sem "…": todos os trechos visíveis, como hoje', async ({ page }) => {
+    await openExample(page);
+    await selectCadastrar(page);
+    await expect(
+      page.getByRole('button', { name: 'Mostrar o caminho inteiro' }),
+    ).toBeHidden();
+    const widths = await page
+      .locator('.crumbs .crumb-item')
+      .evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width));
+    expect(widths.length).toBeGreaterThanOrEqual(4);
+    expect(widths.every((w) => w > 0)).toBe(true);
   });
 });

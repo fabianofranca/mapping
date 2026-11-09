@@ -240,6 +240,8 @@ export const enUS: Dictionary = {
   'crumbs.image': 'Image {name}',
   'crumbs.marking': 'Marking {name}',
   'crumbs.canvas': 'Canvas',
+  'crumbs.showFull': 'Show full path',
+  'crumbs.menu': 'Full path',
 
   'zoom.value': '{percent}%',
   'zoom.reset': '{percent}%: current zoom; click to go back to 100%',
