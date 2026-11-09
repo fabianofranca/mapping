@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   addAnnotation,
   addContainer,
@@ -792,6 +792,8 @@ describe('retomar por cópia e blob v2', () => {
       id: proposal.changes[0]?.id,
     });
     expect(review.filters.value.decision).toBe('all');
+    // A gravação do retomar é agrupada por quadro; fechar a revisão a grava já.
+    review.close();
     const stored = blob();
     expect(stored.v).toBe(2);
     expect(Object.keys(stored.resume)).toHaveLength(1);
@@ -1863,5 +1865,36 @@ describe('decideMany da revisão (etapa #950, item 6)', () => {
       expect(review.derived.proposal.value?.decisions[id]).toBeUndefined();
     }
     expect(await review.decideMany([], 'accepted')).toMatchObject({ ok: false });
+  });
+});
+
+// Item 35 (CR do canvas e do store): segurar a seta muda a seleção a cada tecla; o blob do
+// retomar é gravado agrupado, no máximo uma vez por quadro, e a revisão fechada o grava já.
+describe('retomar: gravação agrupada (item 35)', () => {
+  const RESUME_KEY = 'mapping.reviewResume';
+
+  it('10 mudanças de seleção gravam o blob no máximo uma vez por quadro e o fechar grava o último estado', async () => {
+    const { proposal } = richScenario();
+    const h = await openHarness({ proposals: [proposal], copyId: 'copia-35' });
+    h.review.open('P1');
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const writes = vi.spyOn(Storage.prototype, 'setItem');
+    const ids = proposal.changes.map((c) => c.id);
+    for (let i = 0; i < 10; i++) {
+      h.review.select({ level: 'change', id: ids[i % ids.length] ?? '' });
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const count = () =>
+      writes.mock.calls.filter(([key]) => String(key).includes(RESUME_KEY)).length;
+    expect(count()).toBeLessThanOrEqual(1);
+
+    h.review.select({ level: 'change', id: ids[2] ?? '' });
+    h.review.close();
+    const stored = JSON.parse(localStorage.getItem(RESUME_KEY) ?? 'null');
+    expect(stored.resume['copia-35|P1'].selected).toEqual({
+      level: 'change',
+      id: ids[2],
+    });
+    writes.mockRestore();
   });
 });
