@@ -32,6 +32,58 @@ Para implementar em sequência todas as `ready` (num chat Sonnet no modo Auto): 
 
 Depois do merge, o orquestrador confere a Release do MCP: acha a execução do "MCP release" do commit do merge (`actions_list`), espera por ela (`send_later` de 15 min) e, com versão nova, confere que `mcp-v<versão>` existe (`get_release_by_tag`), não é pre-release, traz `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` e `watch-comments.mjs` (cada um com o `.sha256`) e que as rc da versão sumiram; sem versão nova, que o `release` foi pulado. Em falha, ou com a execução ausente, notifica o dono com o link da execução e o plano B manual do `docs/MCP.md`. O resultado entra no comentário de fechamento e na notificação final.
 
+## Orquestrador — passo a passo
+
+As regras estão no `docs/PROCESS.md` ("Fluxo automatizado"); o skill `implementar-fila` faz o mesmo para uma fila de etapas. O **orquestrador** (o chat de implementação):
+
+- lê a issue da etapa (que precisa estar `ready`), troca `ready` por `in-progress`, cria o `epic/<nome>` da `main` atualizada e abre o PR do épico para a `main` assim que houver diferença;
+- para cada fase, na ordem, cria uma sessão filha (`create_session` com o `model` da tabela, `source_url` do repositório e `source_revision` no épico; nunca `permission_mode: plan`) com a mensagem da fase, que termina com "Coordenador: `<id do orquestrador>`"; agenda uma conferência de reserva (`send_later`, 30 a 60 min) e só passa à fase seguinte depois do aviso da anterior;
+- depois da última fase, acha o ambiente "Mapping - testes" (`list_environments`) e cria a sessão do testador com os roteiros e a passada visual listados na sub-issue da última fase (lista de mais de 40 passos sem o R0: roda `node scripts/testing/round-guide.mjs --grupos <roteiros>` e cria uma sessão por grupo, até 5, como em "Rodada dirigida em grupos");
+- **com ❌** no relato **ou com defeito pendente**, abre **uma** fase de correção ("Fase de correção") e retesta só os roteiros que falharam e os passos que as correções afetam, **numa sessão só** com os achados de todos os grupos ou blocos ("Reteste junto"; a correção mesclada antes de o reteste começar entra nele; sem passo de roteiro afetado, o teste automatizado da correção basta). Chama o dono se falhar de novo, se o achado for de perda de dados, integridade do `mapping.json` ou segurança, ou se a correção pedir decisão de produto;
+- **sem ❌ e sem defeito pendente**, faz o fechamento: renomeia o arquivo do épico em `changelog/` com a data (`git mv`, e a data no título), aplica as pendências do DS no artefato e renomeia o registro do épico em `docs/design-system/` com a data, escreve a descrição final do PR do épico com "Closes #<etapa>", comenta o fechamento na issue da etapa e abre uma issue `roadmap` (com o rótulo de impacto) ou `bug` para cada item que ficou para depois;
+- notifica o dono no celular (`PushNotification`) com o resumo e o link do PR do épico, e mescla o épico na `main` **só depois de o dono responder "pode mesclar" no chat**;
+- depois do merge, confere a Release do MCP (parágrafo "Depois do merge" acima).
+
+A **sessão da fase** implementa com os subagentes e o esforço da sub-issue, roda os gates, abre o PR para o épico ("Parte de #N"), acompanha o CI (`subscribe_pr_activity`) e, com o CI verde, mescla o próprio PR no épico; depois marca os checkboxes, fecha a sub-issue e avisa o orquestrador por `send_message`.
+
+**Limites:** `create_session` escolhe o modelo, não o esforço: o esforço do coordenador na tabela é referência (de `high` para cima, vira o nível da revisão `/code-review` do diff da fase, item 10 de "Para a sessão da fase"), e o dos subagentes vai no briefing. O `.claude/settings.json` libera em `permissions.allow` os comandos de sempre (gates, `npx`, git sem push forçado) e nega o push forçado, para as fases não pararem nesses pedidos. Fase que não avisa até a conferência de reserva: `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, chama o dono.
+
+**Rodada em blocos ou grupos (resumo):** as sessões do testador de uma rodada completa (5 blocos) ou dirigida grande (grupos) saem de uma vez, no mesmo commit, com o título "Testador — <alvo>, bloco k de 5" (ou "grupo k de n"); a passada visual vai só no bloco que a tabela de `docs/TESTING-NUVEM.md` diz, hoje o 4. Um chat avulso do dono pode ser o coordenador ("Rodada avulsa (do dono)").
+
+## Bug: busca de duplicadas
+
+Antes de criar um `bug` (`docs/PROCESS.md`, "Bugs e evidência visual"), procure duplicadas nas issues abertas (`list_issues` com o rótulo `bug`, lendo título e corpo, e também as `roadmap`, `ready` e `in-progress`) e, por palavra-chave (componente, arquivo, passo do roteiro, texto do erro), nas abertas e fechadas (`gh api -X GET search/issues -f q='repo:fabianofranca/mapping is:issue <termos>'`):
+
+- **igual** (mesmo comportamento, mesma causa): não cria. Comenta na existente a origem nova, o branch e commit e a evidência; se a severidade nova for maior, troca o rótulo e diz por quê;
+- **agrupável** (mesmo componente ou arquivo, mesma causa provável, mesmo passo do roteiro, ou a correção de um mexe no outro): se a existente ainda não é `ready` nem `in-progress`, o defeito entra nela como item numerado (origem, severidade do item, evidência), com um comentário dizendo o que entrou; o título se ajusta se precisar. Se ela já é `ready` ou `in-progress`, o plano não muda sozinho: cria a issue nova com "Relacionada: #N" e comenta o link na existente; o detalhamento decide se junta;
+- **regressão** (o defeito de uma issue fechada voltou): issue nova que cita a fechada; não se reabre a antiga;
+- duas abertas que são o mesmo defeito: o conteúdo vai para a mais completa e a outra fecha como duplicada (`state_reason: duplicate`, `duplicate_of`), como a #405 fez com a #387 a #390;
+- o corpo (ou o comentário) registra a busca: "Duplicadas: nenhuma (busca: <termos>)" ou "Relacionada: #N".
+
+## Bug: corpo e evidência
+
+- **Corpo do bug:** o que acontece; o que era esperado e de onde vem (passo do `docs/TESTING.md`, doc, spec); passos para reproduzir; branch e commit; origem (link do relato ou do PR); a severidade e o porquê; a busca de duplicadas.
+- **Evidência, quando der:** defeito visível na tela leva captura PNG recortada na área do problema (Playwright `page.screenshot({ clip })` ou `import -window root` + `convert -crop`), sem dado pessoal nem segredo. Defeito que não se vê (teste instável, acessibilidade lida pelo DOM) leva a saída do teste ou o trecho do DOM num bloco de código, no lugar da imagem.
+
+## Evidência de bug
+
+A imagem vai para o branch órfão `evidencias`, em `<issue>/<nome>.png`, onde `<issue>` é o número da issue (ou sub-issue) em que ela aparece primeiro; cria-se a issue primeiro, para ter o número.
+
+```bash
+git fetch origin evidencias
+git worktree add <scratchpad>/evidencias origin/evidencias  # o worktree é a exceção do "Início de sessão"
+cd <scratchpad>/evidencias && git switch -c evidencias-<issue>
+mkdir -p <issue> && cp <captura>.png <issue>/<nome>.png
+git add <issue> && git commit -m "Evidência de #<issue>: <nome>"
+git push -u origin HEAD:evidencias
+```
+
+Depois edita-se o corpo da issue com `![descrição curta](https://github.com/fabianofranca/mapping/blob/evidencias/<issue>/<nome>.png?raw=true)` e remove-se o worktree (`git worktree remove`). Push recusado porque o branch andou: `git pull --rebase origin evidencias` e push de novo (os commits ainda são só seus; nunca push forçado). O `evidencias` só recebe imagens, num commit por issue; nunca vira PR nem é mesclado; não se apaga imagem de issue fechada.
+
+## CI e preview
+
+O CI roda só nos PRs (`pull_request`), uma vez por commit: branch sem PR não tem CI. Quando o CI de um PR termina verde, o `preview-on-pr.yml` (por `workflow_run`) dispara o Deploy com o branch e o SHA, que publica esse commit no preview (`/preview/`) sem validar de novo; há um preview só, o do último PR com CI verde. O `workflow_dispatch` do Deploy (sem `sha`) continua para publicar outro branch, rodando o `ci.yml` antes.
+
 ## Para a sessão da fase
 
 O orquestrador cria a sessão com `create_session`: `model` da tabela, `source_url` do repositório, `source_revision` = `epic/<nome>`, nunca `permission_mode: plan`. Mensagem:
