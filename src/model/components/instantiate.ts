@@ -792,7 +792,8 @@ function createEngine(
   ): number => {
     const edge = (anchors?.start ?? 0) + (anchors?.end ?? 0);
     if (space.content !== null) return Math.max(0, space.content - edge);
-    if (space.bound === null) return 0;
+    // Pai hug sem limite: o filho `fill` (ou esticado por âncoras) pede o que abraçaria, não 0.
+    if (space.bound === null) return Math.max(0, hugSize(node, axis, otherSize, null));
     return fillContribution(node, axis, Math.max(0, space.bound - edge), otherSize);
   };
 
