@@ -3,7 +3,6 @@ import {
   addAnnotation,
   addTypedAnnotation,
   arrowDeletionImpact,
-  arrowLabel,
   arrowLinksOf,
   arrowPointsSpace,
   arrowRoute,
@@ -439,7 +438,7 @@ describe('setArrowRoute, setArrowStyle, setArrowName, setArrowLocked', () => {
   });
 });
 
-describe('arrowsOf e arrowLabel', () => {
+describe('arrowsOf', () => {
   it('separa as que saem das que chegam, na ordem do array', () => {
     let p = arrowProject();
     p = withArrow(p, 'r2', 'a3', 'a1');
@@ -450,18 +449,6 @@ describe('arrowsOf e arrowLabel', () => {
     expect(arrowsOf(p, 'a3').incoming.map((a) => a.id)).toEqual(['r1']);
     expect(arrowsOf(p, 'a2')).toEqual({ outgoing: [], incoming: [] });
     expect(arrowsOf(p, 'zz')).toEqual({ outgoing: [], incoming: [] });
-  });
-
-  it('o rótulo devolve os dados: o nome e as marcações das pontas', () => {
-    const p = setArrowName(arrowProject(), 'r1', 'abre');
-    const label = arrowLabel(p, arrow(p, 'r1'));
-    expect(label.name).toBe('abre');
-    expect(label.from?.id).toBe('a1');
-    expect(label.to?.id).toBe('a3');
-    expect(arrowLabel(p, { name: null, from: 'zz', to: 'a1' })).toMatchObject({
-      name: null,
-      from: null,
-    });
   });
 });
 

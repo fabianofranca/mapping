@@ -1,9 +1,12 @@
 import { arrowIdsAttachedTo, withoutArrows } from './arrows';
 import { fail } from './errors';
+import { HEX_COLOR_RE } from './hexColor';
+import { idInUse } from './projectIndex';
 import {
   MIN_MARKING_SIZE,
   bottom,
   clamp,
+  EPSILON,
   containsRect,
   effectiveMinSize,
   imageCanvasRect,
@@ -51,11 +54,9 @@ function checkDimensions({
   if (!ok(width) || !ok(height)) fail('invalid-dimensions');
 }
 
-const COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
-
 /** Cor de fundo válida (`#RRGGBB`), em maiúsculas. */
 function checkBackground(color: string): string {
-  if (!COLOR_RE.test(color)) fail('invalid-color');
+  if (!HEX_COLOR_RE.test(color)) fail('invalid-color');
   return color.toUpperCase();
 }
 
@@ -88,6 +89,45 @@ function placementAtRight(p: Project, scale: number, excludeId?: string): Placem
   return snapPlacement({ x: right(rightmost) + IMAGE_GAP, y: rightmost.y, scale });
 }
 
+/** Intervalo aberto de `y` (do canto de cima) que sobrepõe um obstáculo. */
+type YSpan = readonly [number, number];
+
+/** Intervalos de `y` barrados pelos obstáculos que cruzam a coluna de `x` a `x + width`, ordenados e fundidos. */
+function forbiddenYs(
+  obstacles: readonly Rect[],
+  x: number,
+  width: number,
+  height: number,
+): YSpan[] {
+  const spans: [number, number][] = [];
+  for (const o of obstacles) {
+    if (!rectsOverlap({ x, y: o.y, width, height: o.height }, o)) continue;
+    spans.push([o.y - height + EPSILON, bottom(o) - EPSILON]);
+  }
+  spans.sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const span of spans) {
+    const last = merged[merged.length - 1];
+    if (last && span[0] < last[1]) last[1] = Math.max(last[1], span[1]);
+    else merged.push([span[0], span[1]]);
+  }
+  return merged;
+}
+
+/** `y` cai dentro de algum intervalo aberto (busca binária nos intervalos fundidos). */
+function isBlocked(spans: readonly YSpan[], y: number): boolean {
+  let lo = 0;
+  let hi = spans.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const [from, to] = spans[mid] as YSpan;
+    if (y <= from) hi = mid - 1;
+    else if (y >= to) lo = mid + 1;
+    else return true;
+  }
+  return false;
+}
+
 /**
  * O lugar livre mais próximo de `wanted` (canto de cima à esquerda) para um retângulo de
  * `width` × `height` que não sobreponha nenhum dos `obstacles`. Testa o ponto pedido e os
@@ -111,9 +151,11 @@ export function nearestFreeSpot(
   let best: { x: number; y: number } | null = null;
   let bestDistance = Infinity;
   for (const x of xs) {
+    // Só os obstáculos que cruzam a coluna [x, x + width) barram algum y; cada um barra o
+    // intervalo aberto de y em que o retângulo o sobreporia.
+    const blocked = forbiddenYs(obstacles, x, width, height);
     for (const y of ys) {
-      const rect = { x, y, width, height };
-      if (obstacles.some((o) => rectsOverlap(rect, o))) continue;
+      if (isBlocked(blocked, y)) continue;
       const distance = Math.hypot(x - wanted.x, y - wanted.y);
       if (distance < bestDistance) {
         best = { x, y };
@@ -166,15 +208,6 @@ export function overlappingContainer(
         rectsOverlap(rect, imageCanvasRect(other, other.placement)),
     ) ?? null
   );
-}
-
-/** `true` se a imagem pode ocupar `placement` sem sobrepor outra imagem. */
-export function canPlaceContainer(
-  p: Project,
-  containerId: string,
-  placement: Placement,
-): boolean {
-  return overlappingContainer(p, containerId, placement) === null;
 }
 
 function failOverlap(other: ProjectContainer): never {
@@ -244,7 +277,7 @@ export function addContainer(
   },
   options?: SettleOptions,
 ): Project {
-  if (p.containers.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
+  if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   checkDimensions(args);
   if (p.containers.some((i) => i.file !== null && sameFile(i.file, args.file))) {
     fail('duplicate-file');
@@ -270,7 +303,7 @@ export function addContainer(
 
 /**
  * Adiciona um container sem arquivo (imagem sem arquivo, só com cor de fundo), com a mesma
- * colocação de `addImage`: lado maior de `INITIAL_IMAGE_SIZE` unidades do canvas.
+ * colocação de `addContainer`: lado maior de `INITIAL_IMAGE_SIZE` unidades do canvas.
  */
 export function addBackgroundContainer(
   p: Project,
@@ -286,7 +319,7 @@ export function addBackgroundContainer(
   },
   options?: SettleOptions,
 ): Project {
-  if (p.containers.some((i) => i.id === args.id)) fail('duplicate-id', args.id);
+  if (idInUse(p, args.id)) fail('duplicate-id', args.id);
   checkBackgroundDimensions(args);
   const background = checkBackground(args.background);
   const name = normalizeOptionalName(args.name ?? null);
@@ -409,7 +442,7 @@ export function setContainerMarkingColor(
   containerId: string,
   color: string | null,
 ): Project {
-  if (color !== null && !/^#[0-9A-Fa-f]{6}$/.test(color)) fail('invalid-color');
+  if (color !== null && !HEX_COLOR_RE.test(color)) fail('invalid-color');
   const normalized = color === null ? null : color.toUpperCase();
   return {
     ...p,
@@ -664,6 +697,9 @@ export function replaceContainer(
     placement = placementAtRight(p, scale, containerId);
   }
 
+  // A troca pode mover a imagem no canvas (escala e lugar): trava de cima também impede.
+  requireUnlocked(canReplaceImage(p, containerId, { ...next, placement }));
+
   const ownIds = new Set(own.map((m) => m.id));
   const sx = next.width / image.width;
   const sy = next.height / image.height;
@@ -682,12 +718,7 @@ export function replaceContainer(
         );
 
   const updated: ProjectContainer = {
-    id: image.id,
-    name: image.name,
-    parentId: image.parentId,
-    markingColor: image.markingColor,
-    locked: image.locked,
-    source: image.source,
+    ...image,
     file: next.file,
     background: null,
     width: next.width,
