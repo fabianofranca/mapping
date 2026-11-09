@@ -109,7 +109,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: mcp-snapshot-assets
           path: release-assets
@@ -262,7 +262,7 @@ jobs:
       RC_TAG: ${{ needs.rc-build.outputs.rc_tag }}
       SERVER_VERSION: ${{ needs.rc-build.outputs.version }}
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: mcp-rc-assets
           path: release-assets
