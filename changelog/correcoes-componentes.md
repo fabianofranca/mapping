@@ -1,4 +1,4 @@
-# Correções no motor de componentes — [Não lançado] (épico `epic/correcoes-componentes`, PR #0, MCP 0.28.9, schema v18)
+# Correções no motor de componentes — [Não lançado] (épico `epic/correcoes-componentes`, PR #1173, MCP 0.28.9, schema v18)
 
 ## Corrigido
 
