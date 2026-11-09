@@ -106,6 +106,9 @@ export default defineConfig({
           include: perfModelFiles,
           fileParallelism: false,
           sequence: { groupOrder: perfGroupOrder },
+          // Os casos de crescimento (`tests/support/growth.ts`) coletam o lixo entre os pares (`globalThis.gc`) e o
+          // semi-espaço grande tira o scavenge do tempo medido: os mesmos argumentos dos projetos de escala.
+          execArgv: ['--expose-gc', '--max-semi-space-size=128'],
         },
       },
       {

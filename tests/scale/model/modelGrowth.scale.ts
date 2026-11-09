@@ -14,7 +14,7 @@ import {
 import { buildScaleProject } from '../../model/scaleProject';
 import { GROWTH_OPTIONS, expectLinearGrowth } from '../../support/growth';
 
-// Casos do modelo do teste de crescimento (#881): a mesma operação com 1.250 e 5.000 marcações, razão < 5×.
+// Casos do modelo do teste de crescimento (#881): a mesma operação com 1.250 e 5.000 marcações, razão < 6×.
 // O fixture é assentado uma vez; cada rodada mede uma versão nova do projeto (`{ ...p }`).
 const build = (markings: number): Project => buildScaleProject({ markings });
 
