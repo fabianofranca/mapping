@@ -48,6 +48,13 @@
           "then": 64,
           "else": 56
         },
+        "maxHeight": {
+          "$if": {
+            "$eq": ["style", "outlined"]
+          },
+          "then": 64,
+          "else": 56
+        },
         "layout": {
           "type": "none"
         },
