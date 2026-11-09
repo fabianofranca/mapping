@@ -101,7 +101,7 @@ Nos três casos, **não peça confirmação**: monte a lista e ponha-a no começ
 - **Rodada completa:** a lista padrão; se a mensagem trouxer "passada visual: `<lista>`", use essa em vez da padrão.
 - **Rodada completa em blocos:** só o **bloco 4** faz a passada visual (lista padrão, ou a da mensagem); nos blocos 1, 2, 3 e 5, o relato diz "Passada visual: no bloco 4".
 
-**Lista padrão:** as oito janelas (**Árvore**, **Camadas**, **Detalhes**, **Lista**, **Incompletas**, **Diagnóstico**, **Propostas** e **Comentários**) e os diálogos **Configurações**, **Exportar**, **Especializações**, **Pasta indisponível** e **Sair da revisão?**.
+**Lista padrão:** as oito janelas (**Árvore**, **Camadas**, **Detalhes**, **Lista**, **Incompletas**, **Diagnóstico**, **Propostas** e **Comentários**) e os diálogos **Configurações**, **Exportar**, **Especializações**, **Pasta indisponível** e **Sair da revisão?**. Entra também a barra dos breadcrumbs com o **Enquadrar seleção**, habilitado (com uma marcação selecionada) e desabilitado (sem seleção), com o tooltip do **Shift+2**, a 1280×720 e a 900×720.
 
 **Perspectivas:** o R23.12 e o R23.13 trazem a passada própria delas (seletor aberto, **Nova perspectiva…**, **Gerenciar perspectivas…**, a confirmação de apagar, o menu **Enviar para perspectiva** e a Principal com a área de chegada), a 1280×720 e a 900×720. Elas fazem parte do R23, entram em qualquer rodada que o rode (o bloco 5 na rodada em blocos) e não mudam a lista padrão acima.
 
