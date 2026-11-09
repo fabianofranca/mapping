@@ -1,7 +1,8 @@
 import { snapNearInteger } from './geometry';
 import { rootPosition } from './perspective';
 import { projectIndex } from './projectIndex';
-import type { Arrival, Perspective, PerspectiveItem, Project } from './types';
+import type { SettleDelta } from './settleDelta';
+import type { Arrival, Marking, Perspective, PerspectiveItem, Project } from './types';
 
 // Reconciliação das perspectivas com o projeto (v16, decisão 4): depois de qualquer operação
 // que muda a geometria (`settleHierarchy`), as raízes de cada perspectiva e as marcas "Veio de…"
@@ -177,6 +178,35 @@ export function reconcilePerspectives(before: Project, after: Project): Project 
     perspectives: samePerspectives ? after.perspectives : perspectives,
     arrivals: arrivals.length === after.arrivals.length ? after.arrivals : arrivals,
   };
+}
+
+/**
+ * Como `reconcilePerspectives`, mas sem montar o índice do projeto inteiro (#882, decisão 6): `delta` é
+ * a diferença entre `before` e `after` (`settleDelta`). Uma raiz de perspectiva ou de marca de chegada
+ * é container ou marcação do canvas, e a raiz de um item só muda se algo da cadeia dele mudou; então o
+ * mesmo algoritmo roda sobre uma visão enxuta dos dois projetos, só com os containers, as marcações do
+ * canvas e as marcações que a operação trocou (sem anotações nem setas), e o resultado dá o mesmo que
+ * o do projeto inteiro. O custo deixa de seguir o número de marcações dos containers.
+ */
+export function reconcilePerspectivesFrom(
+  before: Project,
+  after: Project,
+  delta: SettleDelta,
+): Project {
+  if (after.perspectives.length === 0 && after.arrivals.length === 0) return after;
+  const changed = new Set(delta.changed);
+  const gone = new Set<Marking>(delta.old);
+  const lean = (p: Project, keep: (m: Marking, i: number) => boolean): Project => ({
+    ...p,
+    markings: p.markings.filter(keep),
+    annotations: [],
+    arrows: [],
+  });
+  const leanBefore = lean(before, (m) => m.containerId === null || gone.has(m));
+  const leanAfter = lean(after, (m, i) => m.containerId === null || changed.has(i));
+  const result = reconcilePerspectives(leanBefore, leanAfter);
+  if (result === leanAfter) return after;
+  return { ...after, perspectives: result.perspectives, arrivals: result.arrivals };
 }
 
 /**

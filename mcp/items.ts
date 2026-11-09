@@ -73,6 +73,14 @@ export class Refs {
     return refImageLabel(image) ?? CONTAINER_LABEL;
   }
 
+  /** `imageLabel` sem o índice do projeto (o lote do MCP rotula a marcação que acabou de criar sem reconstruí-lo). */
+  imageLabelNoIndex(containerId: string | null): string {
+    if (containerId === null) return CANVAS_LABEL;
+    const image = this.project.containers.find((c) => c.id === containerId);
+    if (!image) return containerId;
+    return refImageLabel(image) ?? CONTAINER_LABEL;
+  }
+
   /** Texto da seta: o nome dela ou "Origem → Destino" ("Seta <código>" se uma ponta sumiu). */
   arrowName(arrowId: string): string {
     const arrow = projectIndex(this.project).arrows.get(arrowId);
