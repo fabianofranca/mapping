@@ -122,6 +122,14 @@ describe('dicionários', () => {
       'comments.col.status',
       'comments.filter.status',
       'comments.filter.userOption',
+      // Rótulos de tecla e marcadores iguais nos dois idiomas (seletor de referência e tabela).
+      'ref.keyUp',
+      'ref.keyDown',
+      'ref.keyEnter',
+      'ref.keyCtrlEnter',
+      'ref.keyEsc',
+      'typed.rowNumber',
+      'typed.requiredMark',
       // O nome do produto é "Mapping" nos dois idiomas.
       'app.title',
       'editor.appName',

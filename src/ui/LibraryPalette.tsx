@@ -1,6 +1,12 @@
 import { COMPONENT_DRAG_MIME, setDraggedComponent } from '../app/componentDrag';
 import { t } from '../i18n';
-import { findSpecType, type ComponentType, type Project } from '../model';
+import {
+  findSpecType,
+  projectIndex,
+  typeKey,
+  type ComponentType,
+  type Project,
+} from '../model';
 import { ContainerMark } from './ContainerMark';
 import { useEditor } from './EditorContext';
 import { Button } from './controls';
@@ -26,24 +32,29 @@ function groupTypes(
   project: Project,
   types: readonly ComponentType[],
 ): readonly LibraryGroup[] {
+  const specs = projectIndex(project).specializations;
   const groups: {
     specId: string;
     specName: string;
     layers: { layerId: string; layerName: string; types: ComponentType[] }[];
   }[] = [];
+  // Um mapa por especialização e por camada, em vez de `find` a cada tipo.
+  const groupById = new Map<string, (typeof groups)[number]>();
+  const layerByKey = new Map<string, (typeof groups)[number]['layers'][number]>();
   for (const type of types) {
-    let group = groups.find((g) => g.specId === type.specId);
+    const spec = specs.get(type.specId)?.spec;
+    let group = groupById.get(type.specId);
     if (!group) {
-      const spec = project.specializations.find((s) => s.id === type.specId)?.spec;
       group = { specId: type.specId, specName: spec?.name ?? type.specId, layers: [] };
+      groupById.set(type.specId, group);
       groups.push(group);
     }
-    let layer = group.layers.find((l) => l.layerId === type.layerId);
+    const layerKey = typeKey(type.specId, type.layerId);
+    let layer = layerByKey.get(layerKey);
     if (!layer) {
-      const name = project.specializations
-        .find((s) => s.id === type.specId)
-        ?.spec?.layers.find((l) => l.id === type.layerId)?.name;
+      const name = spec?.layers.find((l) => l.id === type.layerId)?.name;
       layer = { layerId: type.layerId, layerName: name ?? type.layerId, types: [] };
+      layerByKey.set(layerKey, layer);
       group.layers.push(layer);
     }
     layer.types.push(type);

@@ -461,10 +461,8 @@ export function CitationEditor({
         aria-multiline="true"
         aria-label={label}
         aria-describedby={hintId}
-        aria-haspopup="listbox"
         aria-autocomplete="list"
-        aria-expanded={showing}
-        aria-controls={listId}
+        aria-controls={showing ? listId : undefined}
         aria-activedescendant={showing ? optionId(listId, picker.active) : undefined}
         contenteditable="true"
         tabIndex={0}

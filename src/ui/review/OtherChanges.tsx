@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { t } from '../../i18n';
-import { reviewKey, type Change, type ReviewTarget } from '../../model';
+import { proposalIndex, reviewKey, type Change, type ReviewTarget } from '../../model';
 import { Button } from '../controls';
 import { Section } from '../DetailsSection';
 import { useEditor } from '../EditorContext';
@@ -42,7 +42,7 @@ export function OtherChangesSection({ ids }: { readonly ids: readonly string[] }
   const names = useReviewNames();
   const [limit, setLimit] = useState(MAX_ROWS);
   if (!names || ids.length === 0) return null;
-  const byId = new Map(names.proposal.changes.map((c) => [c.id, c]));
+  const byId = proposalIndex(names.proposal).changes;
   const changes = ids.flatMap((id) => {
     const c = byId.get(id);
     return c ? [c] : [];

@@ -61,7 +61,6 @@ export function SelectionPanel({
   const widthId = useId();
   const heightId = useId();
   const backgroundId = useId();
-  const [backgroundError, setBackgroundError] = useState<string | null>(null);
   if (!image) {
     return (
       <div class="details-empty">
@@ -170,11 +169,10 @@ export function SelectionPanel({
           )}
           {image.file === null && image.background !== null ? (
             <ContainerFields
+              key={image.id}
               image={image}
               ids={{ width: widthId, height: heightId, background: backgroundId }}
               disabled={disabled}
-              error={backgroundError}
-              setError={setBackgroundError}
             />
           ) : (
             <Property label={t('image.size')}>
@@ -240,28 +238,29 @@ interface ContainerFieldsProps {
     readonly background: string;
   };
   readonly disabled: boolean;
-  readonly error: string | null;
-  readonly setError: (message: string | null) => void;
 }
 
+type ContainerField = 'width' | 'height' | 'background';
+
 /** Largura, altura e cor de fundo do container sem arquivo (no lugar de Arquivo e Tamanho). */
-function ContainerFields({
-  image,
-  ids,
-  disabled,
-  error,
-  setError,
-}: ContainerFieldsProps) {
+function ContainerFields({ image, ids, disabled }: ContainerFieldsProps) {
   const { actions } = useEditor();
-  const commit = (patch: BackgroundContainerChanges): boolean => {
+  // Um erro por campo, sob o próprio campo; o `key` do container zera tudo na troca.
+  const [errors, setErrors] = useState<Partial<Record<ContainerField, string | null>>>(
+    {},
+  );
+  const setError = (field: ContainerField, message: string | null) =>
+    setErrors((prev) => ({ ...prev, [field]: message }));
+  const commit = (field: ContainerField, patch: BackgroundContainerChanges): boolean => {
     const result = actions.setBackgroundContainer(image.id, patch);
-    setError(result.ok ? null : containerErrorMessage(result.error));
+    setError(field, result.ok ? null : containerErrorMessage(result.error));
     return result.ok;
   };
   const side = (key: 'width' | 'height', id: string) => (
     <Property
       label={t(key === 'width' ? 'container.width' : 'container.height')}
       for={id}
+      error={errors[key]}
     >
       <TextField
         id={id}
@@ -276,10 +275,10 @@ function ContainerFields({
           const value = parseContainerSide(text);
           if (value === image[key]) return false;
           if (value === null) {
-            setError(containerErrorMessage('invalid-dimensions'));
+            setError(key, containerErrorMessage('invalid-dimensions'));
             return false;
           }
-          return commit(key === 'width' ? { width: value } : { height: value });
+          return commit(key, key === 'width' ? { width: value } : { height: value });
         }}
       />
     </Property>
@@ -288,7 +287,11 @@ function ContainerFields({
     <>
       {side('width', ids.width)}
       {side('height', ids.height)}
-      <Property label={t('container.background')} for={ids.background} error={error}>
+      <Property
+        label={t('container.background')}
+        for={ids.background}
+        error={errors.background}
+      >
         <TextField
           id={ids.background}
           size="sm"
@@ -298,10 +301,10 @@ function ContainerFields({
             const color = parseContainerColor(text);
             if (color === image.background) return false;
             if (color === null) {
-              setError(containerErrorMessage('invalid-color'));
+              setError('background', containerErrorMessage('invalid-color'));
               return false;
             }
-            return commit({ background: color });
+            return commit('background', { background: color });
           }}
         />
       </Property>

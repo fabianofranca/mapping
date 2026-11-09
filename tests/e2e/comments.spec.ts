@@ -165,7 +165,7 @@ test('o @ abre a lista de itens e o Enter troca o @termo por um chip', async ({
   await composer.pressSequentially('Veja @Por');
   const picker = page.getByRole('listbox', { name: 'Itens para citar' });
   await expect(picker).toBeVisible();
-  await expect(composer).toHaveAttribute('aria-expanded', 'true');
+  await expect(composer).toHaveAttribute('aria-controls', /./);
   await expect(picker.getByRole('option').first()).toBeVisible();
 
   await composer.press('Enter');
@@ -274,8 +274,10 @@ test('papéis e nomes acessíveis do campo, do chip e da lista', async ({ page }
 
   await expect(composer).toHaveAttribute('role', 'textbox');
   await expect(composer).toHaveAttribute('aria-multiline', 'true');
-  await expect(composer).toHaveAttribute('aria-haspopup', 'listbox');
-  await expect(composer).toHaveAttribute('aria-expanded', 'false');
+  // role=textbox não admite aria-haspopup/aria-expanded; aria-controls só com a lista aberta.
+  await expect(composer).not.toHaveAttribute('aria-haspopup', /./);
+  await expect(composer).not.toHaveAttribute('aria-expanded', /./);
+  await expect(composer).not.toHaveAttribute('aria-controls', /./);
   await expect(composer).not.toHaveAttribute('aria-activedescendant', /./);
 
   await composer.pressSequentially('@');
@@ -283,7 +285,6 @@ test('papéis e nomes acessíveis do campo, do chip e da lista', async ({ page }
   await expect(picker).toBeVisible();
   const options = picker.getByRole('option');
   expect(await options.count()).toBeGreaterThan(1);
-  await expect(composer).toHaveAttribute('aria-expanded', 'true');
   await expect(composer).toHaveAttribute(
     'aria-controls',
     (await picker.getAttribute('id')) ?? '',
@@ -308,7 +309,7 @@ test('papéis e nomes acessíveis do campo, do chip e da lista', async ({ page }
   // Depois de escolher, o chip é lido como "<nome>, citação" e a lista fecha.
   await composer.press('Enter');
   await expect(picker).toBeHidden();
-  await expect(composer).toHaveAttribute('aria-expanded', 'false');
+  await expect(composer).not.toHaveAttribute('aria-controls', /./);
   const chip = composer.locator(CHIP);
   await expect(chip).toHaveCount(1);
   const name = await chip.textContent();

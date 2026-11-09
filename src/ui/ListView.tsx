@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { t } from '../i18n';
 import {
+  projectIndex,
   roleLabelOf,
   type Annotation,
+  type Arrow,
   type Layer,
   type ListedMarking,
+  type Marking,
   type Project,
 } from '../model';
 import type { Selection } from '../store/ui';
@@ -35,12 +38,61 @@ function rowsOf({ sections }: ListedMarking): readonly ListRow[] {
   return rows.length > 0 ? rows : [{ kind: 'empty' }];
 }
 
-function LayerCell({ layer }: { readonly layer: Layer }) {
+/** A etiqueta da camada (bolinha e nome) das tabelas da Lista, das Incompletas e dos Avisos. */
+export function LayerCell({ layer }: { readonly layer: Layer }) {
   return (
     <span class="list-layer-tag" style={{ '--layer-color': layer.color }}>
       <span class="layer-dot" aria-hidden="true" />
       <span class="list-layer-name">{layer.name}</span>
     </span>
+  );
+}
+
+/** Caminho de pertencimento da marcação, com a seta (se houver) no fim: "Origem › → Destino". */
+export function markingPathLabel(
+  project: Project,
+  path: readonly Marking[],
+  arrow?: Arrow,
+): string {
+  return [
+    ...path.map((m) => markingLabel(project, m)),
+    ...(arrow ? [arrowShort(project, arrow)] : []),
+  ].join(t('marking.pathSeparator'));
+}
+
+interface MarkingCellProps {
+  /** O texto visível (caminho ou nome). */
+  readonly label: string;
+  /** O nome acessível do botão. */
+  readonly name: string;
+  readonly arrow?: boolean;
+  readonly current?: boolean;
+  readonly needsReview?: boolean;
+}
+
+/** O botão da primeira coluna: a marcação (ou a seta) que a linha descreve. */
+export function MarkingCell({
+  label,
+  name,
+  arrow,
+  current,
+  needsReview,
+}: MarkingCellProps) {
+  return (
+    <button
+      type="button"
+      class="list-marking"
+      aria-current={current || undefined}
+      aria-label={name}
+    >
+      {arrow && <Icon name="arrow" />}
+      {needsReview && (
+        <span class="tree-warning" title={t('marking.needsReview')}>
+          ⚠{' '}
+        </span>
+      )}
+      {label}
+    </button>
   );
 }
 
@@ -62,7 +114,7 @@ function AnnotationCell({
 }) {
   const { annotation: a } = row;
   const owner = a.parentAnnotationId
-    ? project.annotations.find((other) => other.id === a.parentAnnotationId)
+    ? projectIndex(project).annotations.get(a.parentAnnotationId)
     : undefined;
   // Sem nome nem tipo, mostra só o selo de pendência.
   const named = a.type !== null || a.name !== null;
@@ -192,22 +244,15 @@ export function ListView({ onSelect }: ListViewProps) {
                         data-label={t('list.col.marking')}
                       >
                         {i === 0 && (
-                          <button
-                            type="button"
-                            class="list-marking"
-                            aria-current={selectedId === ownerId || undefined}
-                            aria-label={t('list.select', {
+                          <MarkingCell
+                            label={label}
+                            name={t('list.select', {
                               name: arrow ? arrowText(project, arrow) : label,
                             })}
-                          >
-                            {arrow && <Icon name="arrow" />}
-                            {marking.needsReview && (
-                              <span class="tree-warning" title={t('marking.needsReview')}>
-                                ⚠{' '}
-                              </span>
-                            )}
-                            {label}
-                          </button>
+                            arrow={arrow !== undefined}
+                            current={selectedId === ownerId}
+                            needsReview={marking.needsReview}
+                          />
                         )}
                       </td>
                       {row.kind === 'empty' ? (

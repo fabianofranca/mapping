@@ -63,6 +63,18 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'color-warning-bg': { light: '#fff4d6', dark: '#3a2f14' },
   'color-success': { light: '#1e7a46', dark: '#7ad3a0' },
   'color-success-bg': { light: '#e3f4ea', dark: '#163325' },
+  /**
+   * Selo de estado da conversa (janela Comentários e seção Conversas dos Detalhes): texto e fundo por
+   * estado, do mesmo matiz do `cv-pin-*` do estado (laranja = aguardando você, ciano = aguardando
+   * agente, cinza = resolvida), escurecidos no claro e clareados no escuro para o texto passar de
+   * 4,5:1 sobre o fundo. O pino do canvas (`cv-pin-*`) não muda.
+   */
+  'color-thread-human': { light: '#84590b', dark: '#f0b242' },
+  'color-thread-human-bg': { light: '#fcf2de', dark: '#413215' },
+  'color-thread-agent': { light: '#136c5e', dark: '#52e0ca' },
+  'color-thread-agent-bg': { light: '#e1faf6', dark: '#193e38' },
+  'color-thread-resolved': { light: '#4f5e72', dark: '#9fabbc' },
+  'color-thread-resolved-bg': { light: '#eaedf0', dark: '#272b30' },
   'color-backdrop': { light: 'rgba(0, 0, 0, 0.45)', dark: 'rgba(0, 0, 0, 0.6)' },
   'color-tooltip': { light: '#1b1f24', dark: '#e8eaed' },
   'color-tooltip-text': { light: '#ffffff', dark: '#12151a' },
@@ -262,6 +274,9 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-arrow-stroke': '2px',
   'size-arrow-stroke-selected': '3px',
   'size-arrow-head': '10px',
+  /** Caixa máxima do minimapa (largura e altura, px): o conteúdo cabe nela, na proporção. */
+  'size-minimap-width': '132px',
+  'size-minimap-height': '96px',
   'size-tw-left': '264px',
   'size-tw-right': '360px',
   /** Altura inicial da janela inferior: 4 linhas inteiras da lista da Comentários, com filtros e cabeçalho, a 900 × 720 (decisão 6 da #734). Medido: a lista ganha 1 px por px de janela e 357 px dão 148 px (4 × 37 px); 360 px cabem em 60% do corpo do editor a 900 × 720 (`BOTTOM_MAX_FRACTION`). Com os filtros do layout estreito em duas linhas (CL3) a lista tem 207 px, 4 linhas inteiras mesmo com âncoras quebradas (37 + 3 × 53 px); o token não sobe: 360 px é o teto de 60%. */

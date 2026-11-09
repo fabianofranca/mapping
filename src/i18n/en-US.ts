@@ -218,6 +218,7 @@ export const enUS: Dictionary = {
   'annotation.owner': 'Linked to',
   'annotation.noOwner': 'None',
   'annotation.ownerOption': '{layer}: {name}',
+  'annotation.ownerOptionInvalid': '{layer}: {name} (invalid owner)',
   'annotation.ownerHelp':
     'Only annotations of this same marking appear. For typed ones the owner can be in another layer or in the same one, when its type accepts this one; free ones only link to other layers.',
   'annotation.ownerEmpty':
@@ -657,6 +658,7 @@ export const enUS: Dictionary = {
   'comments.empty': 'No conversations yet.',
   'comments.emptyFiltered': 'No conversations match these filters.',
   'comments.row.open': 'Open the conversation on {anchor}',
+  'comments.row.openUnread': 'Open the conversation on {anchor} (unread)',
   'comments.row.more': 'Actions for the conversation on {anchor}',
   'comments.row.delete': 'Delete',
   'comments.layer': 'Comment',
@@ -883,6 +885,8 @@ export const enUS: Dictionary = {
   'typed.removeRow': 'Remove row',
   'typed.moveRowUp': 'Move row up',
   'typed.moveRowDown': 'Move row down',
+  'typed.rowNumber': '#',
+  'typed.requiredMark': ' *',
   'typed.row': 'Row {n}',
   'typed.noRows': 'No rows.',
   'typed.rowsOne': '1 row',
@@ -978,6 +982,11 @@ export const enUS: Dictionary = {
   'ref.keyNavigate': 'navigate',
   'ref.keyChoose': 'choose',
   'ref.keyGoTo': 'go to target',
+  'ref.keyUp': '↑',
+  'ref.keyDown': '↓',
+  'ref.keyEnter': 'Enter',
+  'ref.keyCtrlEnter': 'Ctrl+Enter',
+  'ref.keyEsc': 'Esc',
   'ref.keyClose': 'close',
 
   // Lock (stage 2.5)
@@ -1170,6 +1179,8 @@ export const enUS: Dictionary = {
   'drawingMode.intro':
     'Picks the mode (light, dark…) of the specializations tokens the components are drawn with. It does not change the interface theme.',
   'drawingMode.label': 'Drawing mode',
+  'drawingMode.light': 'Light',
+  'drawingMode.dark': 'Dark',
   'drawingMode.followProject': 'Follow the project',
   'drawingMode.undeclared': '{mode} (not declared)',
   'drawingMode.containerHint':

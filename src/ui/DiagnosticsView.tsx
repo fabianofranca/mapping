@@ -1,10 +1,11 @@
-import { useContext, useEffect, useState } from 'preact/hooks';
+import { useContext, useEffect } from 'preact/hooks';
 import { t } from '../i18n';
-import { SCHEMA_VERSION, undeclaredDrawingMode } from '../model';
+import { SCHEMA_VERSION, projectIndex, undeclaredDrawingMode } from '../model';
 import { markDiagnosticsSeen, remoteImageIssues } from '../store/diagnostics';
 import { allowedOrigins } from '../store/imagePermissions';
 import { locale, theme } from '../store/settings';
 import { BUILD_ID } from '../utils/build';
+import { writeClipboardText } from '../utils/clipboard';
 import { CHANNEL } from '../utils/channel';
 import {
   clearReportedErrors,
@@ -17,6 +18,7 @@ import { EditorContext, type EditorContextValue } from './EditorContext';
 import { declaredDrawingModes } from './drawingModes';
 import { LibraryIssueList } from './LibraryIssueList';
 import { markingLabel } from './labels';
+import { useCopyResult } from './useCopyResult';
 import { messageText } from './modelMessage';
 
 function formatTime(iso: string): string {
@@ -54,27 +56,26 @@ function diagnosticsInfo(editor: EditorContextValue | null): DiagnosticsInfo {
 
 /**
  * Copiar o cabeçalho do ambiente e o registro como texto; `copied` guarda o resultado
- * para o aviso.
+ * para o aviso (volta a vazio depois de 2 s ou ao limpar o registro).
  */
 export function useCopyErrors() {
   const editor = useContext(EditorContext);
-  const [copied, setCopied] = useState<'ok' | 'failed' | null>(null);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(
-        formatDiagnosticsReport(diagnosticsInfo(editor), reportedErrors.peek()),
-      );
-      setCopied('ok');
-    } catch {
-      // Sem a API (ou sem permissão): a tabela continua na tela para copiar à mão.
-      setCopied('failed');
-    }
-  };
-  return { copied, copy };
+  const { result, copy, reset } = useCopyResult();
+  // Sem a API (ou sem permissão), `writeClipboardText` devolve `false` e registra o erro no
+  // Diagnóstico; a tabela continua na tela para copiar à mão.
+  const write = () =>
+    writeClipboardText(
+      formatDiagnosticsReport(diagnosticsInfo(editor), reportedErrors.peek()),
+    );
+  return { copied: result, copy: () => copy(write), reset };
 }
 
 /** Copiar e Limpar (e o resultado da cópia): vão no cabeçalho da janela ou no rodapé do diálogo. */
-export function DiagnosticsActions({ copied, copy }: ReturnType<typeof useCopyErrors>) {
+export function DiagnosticsActions({
+  copied,
+  copy,
+  reset,
+}: ReturnType<typeof useCopyErrors>) {
   const empty = reportedErrors.value.length === 0;
   return (
     <>
@@ -85,7 +86,14 @@ export function DiagnosticsActions({ copied, copy }: ReturnType<typeof useCopyEr
             ? t('common.copyFailed')
             : ''}
       </span>
-      <Button size="sm" disabled={empty} onClick={clearReportedErrors}>
+      <Button
+        size="sm"
+        disabled={empty}
+        onClick={() => {
+          clearReportedErrors();
+          reset();
+        }}
+      >
         {t('diagnostics.clear')}
       </Button>
       {/* Copiar vale mesmo sem erros: o cabeçalho identifica o ambiente do relato. */}
@@ -166,6 +174,7 @@ export function DiagnosticsLibrary() {
   const project = editor?.store.project.value;
   const rows = [...(issues ?? [])].filter(([, list]) => list.length > 0);
   if (rows.length === 0) return null;
+  const specs = project && projectIndex(project).specializations;
   return (
     <section class="diagnostics-library" aria-label={t('diagnostics.library')}>
       <h3>{t('diagnostics.library')}</h3>
@@ -174,9 +183,7 @@ export function DiagnosticsLibrary() {
         <div key={specId}>
           <p>
             {t('diagnostics.libraryItem', {
-              name:
-                project?.specializations.find((s) => s.id === specId)?.spec?.name ??
-                specId,
+              name: specs?.get(specId)?.spec?.name ?? specId,
               errors: list.filter((i) => i.severity === 'error').length,
               warnings: list.filter((i) => i.severity === 'warning').length,
             })}
@@ -206,8 +213,9 @@ export function DiagnosticsComponents() {
 
   // Os nomes e a contagem vêm do projeto à vista (lido pelo derivado de pendências).
   const shown = editor.review.derived.shownProject.value;
+  const shownMarkings = shown && projectIndex(shown).markings;
   const nameOf = (markingId: string) => {
-    const marking = shown?.markings.find((m) => m.id === markingId);
+    const marking = shownMarkings?.get(markingId);
     return marking && shown ? markingLabel(shown, marking) : markingId;
   };
   const overflow = [...derived.componentScenes.value.values()].filter(

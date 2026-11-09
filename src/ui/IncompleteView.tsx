@@ -3,8 +3,8 @@ import type { AnnotationLocation } from '../store/ui';
 import { AnnotationTitle } from './AnnotationSummary';
 import { Choice } from './controls';
 import { useEditor } from './EditorContext';
-import { Icon } from './icons';
-import { arrowShort, arrowText, imageLabel, markingLabel } from './labels';
+import { LayerCell, MarkingCell, markingPathLabel } from './ListView';
+import { arrowText, imageLabel } from './labels';
 import { issueMessage } from './typedText';
 
 interface IncompleteViewProps {
@@ -68,10 +68,7 @@ export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
                 </tr>
                 {items.map(({ annotation, path, layer, issues, arrow }) => {
                   // Anotação de seta: a origem e a seta ("Origem › → Destino").
-                  const label = [
-                    ...path.map((m) => markingLabel(project, m)),
-                    ...(arrow ? [arrowShort(project, arrow)] : []),
-                  ].join(t('marking.pathSeparator'));
+                  const label = markingPathLabel(project, path, arrow);
                   return (
                     <tr
                       key={annotation.id}
@@ -82,28 +79,19 @@ export function IncompleteView({ onGoToAnnotation }: IncompleteViewProps) {
                         class="list-cell list-cell-marking"
                         data-label={t('list.col.marking')}
                       >
-                        <button
-                          type="button"
-                          class="list-marking"
-                          aria-label={t('incomplete.go', {
+                        <MarkingCell
+                          label={label}
+                          name={t('incomplete.go', {
                             name: arrow ? arrowText(project, arrow) : label,
                           })}
-                        >
-                          {arrow && <Icon name="arrow" />}
-                          {label}
-                        </button>
+                          arrow={arrow !== undefined}
+                        />
                       </td>
                       <td
                         class="list-cell list-cell-layer"
                         data-label={t('list.col.layer')}
                       >
-                        <span
-                          class="list-layer-tag"
-                          style={{ '--layer-color': layer.color }}
-                        >
-                          <span class="layer-dot" aria-hidden="true" />
-                          <span class="list-layer-name">{layer.name}</span>
-                        </span>
+                        <LayerCell layer={layer} />
                       </td>
                       <td class="list-cell" data-label={t('list.col.annotation')}>
                         <AnnotationTitle

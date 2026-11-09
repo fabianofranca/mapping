@@ -77,6 +77,7 @@ function TypedFormField({ field, value, readOnly, onChange }: FieldProps) {
       notices={field.notices}
     >
       {field.type === 'ref' ? (
+        /* Exceção ao Button: campo de referência (cara de select), desabilitado (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
         <button
           id={id}
           type="button"
