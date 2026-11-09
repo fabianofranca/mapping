@@ -24,3 +24,4 @@
 - Revisão, árvore de uma proposta substituída: a lista mede a altura da linha por uma linha de item (não pelo cabeçalho de grupo), e a rolagem e os espaços batem com as linhas.
 - Revisão, rodapé de atalhos: passa a ser um grupo nomeado, anunciado por leitor de tela.
 - Revisão, árvore: ao abrir uma proposta com a seleção além das primeiras linhas, a lista rola até a selecionada depois da medição; expandir ou recolher um grupo não faz a lista pular de volta.
+- Referência quebrada numa célula de tabela: o texto "(referência quebrada)" quebra de linha em vez de aparecer cortado com reticências, a 1280 e a 900 px.
