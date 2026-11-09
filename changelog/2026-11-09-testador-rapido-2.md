@@ -1,4 +1,4 @@
-# Testador da nuvem mais rápido, parte 2 — [Não lançado] (épico `epic/testador-rapido-2`, PR #1245, MCP 0.28.11, schema v18)
+# Testador da nuvem mais rápido, parte 2 — 2026-11-09 (épico `epic/testador-rapido-2`, PR #1245, MCP 0.28.11, schema v18)
 
 ## Adicionado
 

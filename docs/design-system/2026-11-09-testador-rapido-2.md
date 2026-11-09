@@ -1,4 +1,4 @@
-# Testador da nuvem mais rápido, parte 2 — [Não lançado] (épico `epic/testador-rapido-2`)
+# Testador da nuvem mais rápido, parte 2 — 2026-11-09 (épico `epic/testador-rapido-2`)
 
 ## Pendências
 
