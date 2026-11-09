@@ -14,4 +14,5 @@
 - Incompletas: a anotação numa camada que não existe também aparece na lista (antes o contador somava e a lista a omitia).
 - Detalhes e Incompletas a 900×720: a coluna de motivos da Incompletas ganha mais largura e não quebra mais a palavra no meio.
 - Componentes: um trecho de texto literal só de espaços (o vão entre uma palavra em negrito e um chip, por exemplo) não some mais do layout; o campo vazio ou só de espaços continua caindo no padrão.
+- Componentes: o **Arrumar** de um Row com chips (o Row "Filtros" do exemplo) não grava mais largura 1 nos chips: um componente `hug` cujo conteúdo é um quadro esticado por âncoras volta a medir o conteúdo.
 - Canvas, perspectivas: o selo "Veio de …" de uma raiz pequena fica 10 px abaixo do canto (livre das alças da seleção) e, se isso cairia sobre outra raiz ou o nome dela, vai para o lado.
