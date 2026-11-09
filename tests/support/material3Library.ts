@@ -149,31 +149,28 @@ const V1_DESCRIPTION_FIXES: Record<string, Record<string, string>> = {
 };
 
 /**
- * Os campos e os exemplos de um tipo iguais aos da v1, mais o que a etapa Material 3 com estados acrescentou:
- * o campo `interaction` e os exemplos com `interaction` (cada fase que dá o campo a um tipo), e as descrições
- * corrigidas de `V1_DESCRIPTION_FIXES`. Devolve o que se espera de `fields` e `examples` agora.
+ * Compara os campos e os exemplos de um tipo com os da v1, sem o que a etapa Material 3 com estados acrescentou
+ * (o campo `interaction` e os exemplos que o usam) e com as descrições corrigidas de `V1_DESCRIPTION_FIXES`.
  */
 export function v1WithEstados(
   id: string,
   nowType: unknown,
   beforeType: unknown,
-): { fields: unknown; examples: unknown } {
+): { actual: unknown; expected: unknown } {
   const now = nowType as { fields: Raw[]; examples?: Raw[] };
   const before = beforeType as { fields: Raw[]; examples?: Raw[] };
   const fixes = V1_DESCRIPTION_FIXES[id] ?? {};
-  const base = before.fields.map((f) =>
+  const expectedFields = before.fields.map((f) =>
     f.key !== undefined && fixes[f.key] !== undefined
       ? { ...f, description: fixes[f.key] }
       : f,
   );
-  const hasInteraction = now.fields.some((f) => f.key === 'interaction');
-  const field = now.fields.find((f) => f.key === 'interaction');
-  const insertAt = now.fields.findIndex((f) => f.key === 'interaction');
-  const fields = hasInteraction
-    ? [...base.slice(0, insertAt), field, ...base.slice(insertAt)]
-    : base;
-  const stateExamples = (now.examples ?? []).filter(
-    (e) => e.values?.interaction !== undefined,
-  );
-  return { fields, examples: [...(before.examples ?? []), ...stateExamples] };
+  const isState = (e: Raw): boolean => e.values?.interaction !== undefined;
+  return {
+    actual: {
+      fields: now.fields.filter((f) => f.key !== 'interaction'),
+      examples: (now.examples ?? []).filter((e) => !isState(e)),
+    },
+    expected: { fields: expectedFields, examples: before.examples ?? [] },
+  };
 }

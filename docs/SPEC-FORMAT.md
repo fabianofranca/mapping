@@ -129,7 +129,7 @@ Na raiz: `format` (sempre `"mapping-spec"`), `formatVersion` (`1` a `15`), `id`,
 - `string`: texto.
 - `number`: número, inteiro ou decimal.
 - `date`: data ISO `AAAA-MM-DD`.
-- `enum`: uma das `options`. Booleanos são `enum` (ex: `["sim", "não"]`). **Estados de um componente:** O desenho é um quadro parado: sem animação, ripple animado nem troca de estado pelo mouse. A **aparência** de um estado de interação (hover, foco, pressionado, arrastado) é desenhável e, quando a origem a define (tokens de estado do design system), entra como um campo `enum` opcional do tipo, fora do `code`, como o desabilitado e o selecionado. Ao listar o que fica fora num plano ou na Fidelidade, separe movimento (fora) de aparência de estado (campo).
+- `enum`: uma das `options`. Booleanos são `enum` (ex: `["sim", "não"]`). **Estados de um componente:** o desenho é um quadro parado: sem animação, ripple animado nem troca de estado pelo mouse. A **aparência** de um estado de interação (hover, foco, pressionado, arrastado) é desenhável e, quando a origem a define (tokens de estado do design system), entra como um campo `enum` opcional do tipo, fora do `code`, como o desabilitado e o selecionado. Ao listar o que fica fora num plano ou na Fidelidade, separe movimento (fora) de aparência de estado (campo).
 - `table`: lista de linhas; cada linha é um objeto com as chaves das `columns` (mais o id interno `_id`).
 - `ref`: **referência forte** a uma tupla de outra anotação. O valor do campo é a referência.
 

@@ -50,9 +50,8 @@ describe('M3 — seleção e entrada no formato 4', () => {
     const before = (v1.components as Record<string, Rec>)[id]!;
     const type = rawTypes[id]!;
     const now = component(id);
-    const expected = v1WithEstados(id, type, before);
-    expect(type.fields).toEqual(expected.fields);
-    expect(type.examples).toEqual(expected.examples);
+    const { actual, expected } = v1WithEstados(id, type, before);
+    expect(actual).toEqual(expected);
     expect(now.preview).toEqual(before.preview);
     expect(now.minSize).toEqual(before.minSize);
     // #863: o text-field e o secure-text-field passam de 76 (v1) a 84, que comporta o outlined com apoio.

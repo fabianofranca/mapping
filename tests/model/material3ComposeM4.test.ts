@@ -50,9 +50,8 @@ describe('M4 — navegação e listas no formato 4', () => {
     const before = (v1.components as Record<string, Rec>)[id]!;
     const type = rawTypes[id]!;
     const now = component(id);
-    const expected = v1WithEstados(id, type, before);
-    expect(type.fields).toEqual(expected.fields);
-    expect(type.examples).toEqual(expected.examples);
+    const { actual, expected } = v1WithEstados(id, type, before);
+    expect(actual).toEqual(expected);
     expect(now.preview).toEqual(before.preview);
     expect(now.minSize).toEqual(before.minSize);
     expect(now.size).toEqual(before.size);

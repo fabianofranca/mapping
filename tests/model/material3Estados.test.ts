@@ -6,10 +6,16 @@ import { validateLibrary } from '../../src/model/library';
 import type { Spec } from '../../src/model/spec';
 import { buildCatalog, findEntry } from '../../src/model/catalog';
 import { missingMigrations } from '../../src/model/specVersions';
-import { SPEC_FILE, drawIn, files, spec, typeOf } from '../support/material3Library';
+import {
+  ROOT,
+  SPEC_FILE,
+  drawIn,
+  files,
+  spec,
+  typeOf,
+} from '../support/material3Library';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { ROOT } from '../support/material3Library';
 
 const tokenValues = (spec.tokens?.values ?? {}) as Record<string, unknown>;
 
@@ -63,6 +69,7 @@ const OPACITY_ALLOWED: Record<string, string> = {
 };
 const RADIUS_ALLOWED: Record<string, string> = {
   'bottom-sheet': 'quatro raios por lista: a lista não aceita token por item',
+  'navigation-drawer': 'quatro raios por lista (o modal arredonda só o lado de fora)',
   slider: 'trilho com raios internos de 2 e externos de 8 (lista de quatro raios)',
 };
 
@@ -87,9 +94,7 @@ describe('nenhum literal que o Material 3 nomeie', () => {
           )
           .map(([, v]) => v as number),
       );
-      const literal = collect(template, 'cornerRadius').flatMap((v) =>
-        typeof v === 'number' || Array.isArray(v) ? numbers(v) : [],
-      );
+      const literal = collect(template, 'cornerRadius').flatMap((v) => numbers(v));
       const bad = literal.filter((n) => n > 0 && n < 1000);
       // O raio de 2 do checkbox e o de 3 do indicador do tabs não têm nome no conjunto de formas, mas o
       // checkbox ganha token próprio (CheckboxTokens.ContainerShape): nenhum raio literal positivo sobra.
