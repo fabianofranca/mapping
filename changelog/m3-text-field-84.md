@@ -1,4 +1,4 @@
-# Material 3: text-field com altura 84 — [Não lançado] (épico `epic/m3-text-field-84`, PR #0, MCP 0.28.11 (sem versão nova), schema v18)
+# Material 3: text-field com altura 84 — [Não lançado] (épico `epic/m3-text-field-84`, PR #1235, MCP 0.28.11 (sem versão nova), schema v18)
 
 ## Corrigido
 
