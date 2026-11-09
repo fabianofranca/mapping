@@ -1,4 +1,4 @@
-# Painel da fila agrupado por status — [Não lançado] (épico `epic/painel-ordem`, PR #0, MCP 0.28.12, schema v18)
+# Painel da fila agrupado por status — 2026-11-09 (épico `epic/painel-ordem`, PR #1321, MCP 0.28.12, schema v18)
 
 ## Alterado
 
