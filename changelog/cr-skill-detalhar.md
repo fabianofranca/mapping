@@ -1,4 +1,4 @@
-# CR do skill de detalhamento — [Não lançado] (épico `epic/cr-skill-detalhar`, PR #0, MCP 0.28.10 sem mudança, schema v18)
+# CR do skill de detalhamento — [Não lançado] (épico `epic/cr-skill-detalhar`, PR #1218, MCP 0.28.10 sem mudança, schema v18)
 
 ## Alterado
 
