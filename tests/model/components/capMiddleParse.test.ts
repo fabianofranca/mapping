@@ -104,4 +104,18 @@ describe('font.verticalAlign: "cap-middle"', () => {
     ).toBe('cap-middle');
     expect(style('middle')).toBe('middle');
   });
+
+  it('numa versão 1 a 3, o cap-middle vindo de expressão fica fora do conjunto e cai em top', () => {
+    const { root } = instantiate(
+      component(
+        { $switch: 'modo', cases: { a: 'cap-middle' }, default: 'top' },
+        3,
+      ) as never,
+      { modo: 'a' },
+      { x: 0, y: 0, width: 100, height: 30 },
+      { measure: approximateMeasurer },
+    );
+    const text = [...walk(root)].find((n): n is TextNode => n.type === 'text');
+    expect(text?.style.verticalAlign).toBe('top');
+  });
 });

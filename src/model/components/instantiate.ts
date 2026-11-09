@@ -1395,7 +1395,10 @@ function createEngine(
       align: oneOf(font0.align, ['left', 'center', 'right'], 'left'),
       verticalAlign: oneOf(
         font0.verticalAlign,
-        ['top', 'middle', 'bottom', 'cap-middle'],
+        // `cap-middle` só existe na formatVersion 4; antes, vindo de expressão, é valor fora do conjunto.
+        original.formatVersion >= 4
+          ? ['top', 'middle', 'bottom', 'cap-middle']
+          : ['top', 'middle', 'bottom'],
         'top',
       ),
       ...(decoration === 'none' ? {} : { decoration }),
