@@ -227,8 +227,6 @@ export const enUS: Dictionary = {
   'annotation.showLayer': 'Show layer {layer}',
 
   'window.stripLabel': 'Tool windows',
-  'window.show': 'Show {name}',
-  'window.hide': 'Hide {name}',
   'window.resize': 'Drag to resize {name} (double click resets it)',
   'window.closeWindow': 'Close the {name} window',
   'window.bottomTabs': 'Bottom windows',
@@ -793,6 +791,9 @@ export const enUS: Dictionary = {
   'home.colOrigin': 'Source',
   'home.colUsed': 'Last used',
   'home.forgetFolder': 'Remove from list',
+  'home.openNamed': 'Open {name}',
+  'home.deleteNamed': 'Delete {name}',
+  'home.forgetNamed': 'Remove from list: {name}',
   'home.folderUnavailableTitle': 'Folder unavailable',
   'home.folderDenied':
     'The browser did not grant access to the folder "{folder}". Click Open again and choose Allow, or locate the folder.',

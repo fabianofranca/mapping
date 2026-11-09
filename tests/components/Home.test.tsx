@@ -32,6 +32,10 @@ import { Home } from '../../src/app/Home';
 const features = app.features as unknown as { value: unknown };
 const recentProjects = app.recentProjects as unknown as { value: unknown[] };
 
+/** O botão Abrir de uma linha: o texto visível seguido do nome do projeto (NE1). */
+const OPEN_NAMED = new RegExp(`^${t('common.open')} `);
+const DELETE_NAMED = new RegExp(`^${t('common.delete')} `);
+const FORGET_NAMED = new RegExp(`^${t('home.forgetFolder')}: `);
 const ok = (value?: unknown) => Promise.resolve({ ok: true, value });
 const fail = (error: string) => Promise.resolve({ ok: false, error });
 
@@ -116,7 +120,9 @@ describe('Home', () => {
   it('Excluir é um alertdialog descrito pelo corpo', async () => {
     render(<Home />);
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: t('common.delete') }));
+    await user.click(
+      screen.getByRole('button', { name: t('home.deleteNamed', { name: 'Carro' }) }),
+    );
     await screen.findByText(t('home.deleteMessage', { name: 'Carro' }));
     const dialog = document.querySelector('dialog') as HTMLElement;
     expect(dialog.getAttribute('role')).toBe('alertdialog');
@@ -127,7 +133,9 @@ describe('Home', () => {
   it('abrir projeto local; erro aparece traduzido', async () => {
     controller.openLocalProject.mockReturnValue(fail('not-found'));
     render(<Home />);
-    await userEvent.click(screen.getByRole('button', { name: t('common.open') }));
+    await userEvent.click(
+      screen.getByRole('button', { name: t('home.openNamed', { name: 'Carro' }) }),
+    );
     expect((await screen.findByRole('alert')).textContent).toBe(t('error.not-found'));
     expect(controller.openLocalProject).toHaveBeenCalledWith('p1');
   });
@@ -136,7 +144,9 @@ describe('Home', () => {
     controller.deleteLocalProject.mockReturnValue(ok());
     render(<Home />);
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: t('common.delete') }));
+    await user.click(
+      screen.getByRole('button', { name: t('home.deleteNamed', { name: 'Carro' }) }),
+    );
     expect(controller.deleteLocalProject).not.toHaveBeenCalled();
     await screen.findByText(t('home.deleteMessage', { name: 'Carro' }));
     const dialog = document.querySelector('dialog') as HTMLElement;
@@ -230,7 +240,7 @@ describe('Home (B10)', () => {
     const row = within(table).getByRole('row', { name: /Carro/ });
     expect(within(row).getByText(t('status.targetLocal'))).toBeTruthy();
     expect(within(row).getByText(t('status.unexported'))).toBeTruthy();
-    await userEvent.click(within(row).getByRole('button', { name: t('common.open') }));
+    await userEvent.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     expect(controller.openLocalProject).toHaveBeenCalledWith('p1');
   });
 
@@ -310,11 +320,73 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     const row = rows[0] as HTMLElement;
     expect(within(row).getByText(t('status.targetFolder'))).toBeTruthy();
     expect(within(row).getByText('principal-pasta')).toBeTruthy();
-    expect(within(row).queryByRole('button', { name: t('common.delete') })).toBeNull();
-    await userEvent.click(
-      within(row).getByRole('button', { name: t('home.forgetFolder') }),
-    );
+    expect(within(row).queryByRole('button', { name: DELETE_NAMED })).toBeNull();
+    await userEvent.click(within(row).getByRole('button', { name: FORGET_NAMED }));
     expect(controller.forgetFolder).toHaveBeenCalledWith('f1');
+  });
+
+  // NE1 (#538, item 2): linhas de mesmo nome se distinguem pelo nome e pela descrição dos botões.
+  it('duas linhas "Loja" (local e pasta) têm botões com o nome do projeto e descrições diferentes', async () => {
+    controller.openLocalProject.mockReturnValue(ok());
+    controller.forgetFolder.mockReturnValue(ok());
+    recentProjects.value = [
+      {
+        kind: 'folder',
+        id: 'f9',
+        name: 'Loja',
+        folderName: 'loja',
+        showFolderName: true,
+        usedAt: '2026-09-21T10:00:00.000Z',
+      },
+      {
+        kind: 'local',
+        id: 'p9',
+        name: 'Loja',
+        usedAt: '2026-09-20T18:30:00.000Z',
+        unexported: false,
+      },
+    ];
+    render(<Home />);
+    const [folderRow, localRow] = within(screen.getByRole('table'))
+      .getAllByRole('row')
+      .slice(1) as [HTMLElement, HTMLElement];
+    const open = (row: HTMLElement) =>
+      within(row).getByRole('button', { name: t('home.openNamed', { name: 'Loja' }) });
+    const description = (button: HTMLElement) =>
+      (button.getAttribute('aria-describedby') ?? '')
+        .split(' ')
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ');
+    expect(
+      within(folderRow).getByRole('button', {
+        name: t('home.forgetNamed', { name: 'Loja' }),
+      }),
+    ).toBeTruthy();
+    expect(
+      within(localRow).getByRole('button', {
+        name: t('home.deleteNamed', { name: 'Loja' }),
+      }),
+    ).toBeTruthy();
+    const folderText = description(open(folderRow));
+    const localText = description(open(localRow));
+    expect(folderText).toContain(t('status.targetFolder'));
+    expect(folderText).toContain('loja');
+    expect(localText).toContain(t('status.targetLocal'));
+    expect(localText).not.toBe(folderText);
+    // Os três botões da linha apontam para a mesma descrição, e os ids são únicos entre as linhas.
+    const forget = within(folderRow).getByRole('button', {
+      name: t('home.forgetNamed', { name: 'Loja' }),
+    });
+    expect(description(forget)).toBe(folderText);
+    const ids = [...document.querySelectorAll('[aria-describedby]')]
+      .flatMap((el) => (el.getAttribute('aria-describedby') ?? '').split(' '))
+      .filter((id) => id !== '');
+    for (const id of ids) {
+      expect(document.querySelectorAll(`[id="${id}"]`)).toHaveLength(1);
+      expect(id).toMatch(/^[A-Za-z][\w-]*$/);
+    }
+    await userEvent.click(open(localRow));
+    expect(controller.openLocalProject).toHaveBeenCalledWith('p9');
   });
 
   // Etapa 8 (8.4), R7: duas pastas com o mesmo nome (do projeto e da pasta) mostram o nome
@@ -356,16 +428,14 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       });
     const openOf = (name: RegExp) =>
       within(screen.getByRole('row', { name })).getByRole('button', {
-        name: t('common.open'),
+        name: OPEN_NAMED,
       });
 
     it('vai ao Abrir da linha seguinte', async () => {
       forgetting();
       render(<Home />);
       const row = screen.getByRole('row', { name: /Principal/ });
-      await userEvent.click(
-        within(row).getByRole('button', { name: t('home.forgetFolder') }),
-      );
+      await userEvent.click(within(row).getByRole('button', { name: FORGET_NAMED }));
       await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
       await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
     });
@@ -375,9 +445,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       recentProjects.value = [...recentProjects.value].reverse();
       render(<Home />);
       const row = screen.getByRole('row', { name: /Principal/ });
-      await userEvent.click(
-        within(row).getByRole('button', { name: t('home.forgetFolder') }),
-      );
+      await userEvent.click(within(row).getByRole('button', { name: FORGET_NAMED }));
       await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
       await waitFor(() => expect(document.activeElement).toBe(openOf(/Carro/)));
     });
@@ -386,7 +454,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       forgetting();
       recentProjects.value = [folder];
       render(<Home />);
-      await userEvent.click(screen.getByRole('button', { name: t('home.forgetFolder') }));
+      await userEvent.click(screen.getByRole('button', { name: FORGET_NAMED }));
       await waitFor(() => expect(screen.queryByText('Principal')).toBeNull());
       await waitFor(() =>
         expect(document.activeElement).toBe(
@@ -406,7 +474,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       render(<Home />);
       const user = userEvent.setup();
       const row = screen.getByRole('row', { name: /Carro/ });
-      await user.click(within(row).getByRole('button', { name: t('common.delete') }));
+      await user.click(within(row).getByRole('button', { name: DELETE_NAMED }));
       const dialog = document.querySelector('dialog') as HTMLElement;
       await user.click(
         within(dialog).getByRole('button', { name: t('common.delete'), hidden: true }),
@@ -423,7 +491,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
       render(<Home />);
       const user = userEvent.setup();
       const row = screen.getByRole('row', { name: /Principal/ });
-      await user.click(within(row).getByRole('button', { name: t('common.open') }));
+      await user.click(within(row).getByRole('button', { name: OPEN_NAMED }));
       await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
       const dialog = document.querySelector('dialog') as HTMLElement;
       await user.click(
@@ -502,7 +570,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
         render(<Home />);
         const user = userEvent.setup();
         const row = screen.getByRole('row', { name: /Carro/ });
-        await user.click(within(row).getByRole('button', { name: t('common.delete') }));
+        await user.click(within(row).getByRole('button', { name: DELETE_NAMED }));
         const dialog = await waitFor(() => {
           const el = document.querySelector('dialog');
           if (!el?.contains(document.activeElement)) throw new Error('não abriu');
@@ -544,7 +612,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     controller.openRecentFolder.mockReturnValue(ok({ kind: 'opened' }));
     render(<Home />);
     const row = screen.getByRole('row', { name: /Principal/ });
-    await userEvent.click(within(row).getByRole('button', { name: t('common.open') }));
+    await userEvent.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     // Com o rastro do Abrir (devolução do portão da 8.4), que segue junto no mesmo clique.
     expect(controller.openRecentFolder).toHaveBeenCalledWith(
       'f1',
@@ -562,7 +630,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     render(<Home />);
     const user = userEvent.setup();
     const row = screen.getByRole('row', { name: /Principal/ });
-    await user.click(within(row).getByRole('button', { name: t('common.open') }));
+    await user.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
     const dialog = document.querySelector('dialog') as HTMLElement;
 
@@ -589,7 +657,7 @@ describe('Home: recentes de pasta (fase 6.6)', () => {
     );
     render(<Home />);
     const row = screen.getByRole('row', { name: /Principal/ });
-    await userEvent.click(within(row).getByRole('button', { name: t('common.open') }));
+    await userEvent.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     expect(
       await screen.findByText(t('home.folderDenied', { folder: 'principal-pasta' })),
     ).toBeTruthy();
@@ -648,7 +716,7 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
   const openAndWaitDialog = async () => {
     const user = userEvent.setup();
     const row = screen.getByRole('row', { name: /Principal/ });
-    await user.click(within(row).getByRole('button', { name: t('common.open') }));
+    await user.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     await screen.findByText(t('home.folderMissing', { folder: 'principal-pasta' }));
     return { user, dialog: document.querySelector('dialog') as HTMLDialogElement };
   };
@@ -717,7 +785,7 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     );
     render(<Home />);
     const row = screen.getByRole('row', { name: /Principal/ });
-    await userEvent.click(within(row).getByRole('button', { name: t('common.open') }));
+    await userEvent.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     await waitFor(() => expect(controller.openRecentFolder).toHaveBeenCalled());
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(lines()).toEqual([]);
@@ -727,7 +795,7 @@ describe('Home: rastro do Abrir de pasta (folders.reopen)', () => {
     answers(['handle=memory', 'query=granted'], fail('storage-failed'));
     render(<Home />);
     const row = screen.getByRole('row', { name: /Principal/ });
-    await userEvent.click(within(row).getByRole('button', { name: t('common.open') }));
+    await userEvent.click(within(row).getByRole('button', { name: OPEN_NAMED }));
     await screen.findByText(t('error.storage-failed'));
     expect(lines()).toHaveLength(1);
     expect(lines()[0]).toContain('home=message:storage-failed');

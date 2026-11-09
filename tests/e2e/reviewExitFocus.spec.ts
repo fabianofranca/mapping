@@ -59,7 +59,7 @@ test('Sair da revisão pelo botão, com Propostas fechada: foco no canvas', asyn
     .first()
     .click();
   // Fecha a janela Propostas pelo botão da faixa, com a revisão em curso.
-  await page.getByRole('button', { name: /^Esconder Propostas/ }).click();
+  await page.locator('[data-strip-window="proposals"]').click();
   await expect(page.locator('[data-window="proposals"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'Sair da revisão' }).click();
   await expect(page.getByRole('button', { name: 'Sair da revisão' })).toHaveCount(0);

@@ -127,7 +127,7 @@ test('perspectivas: criar, enviar, mover dentro dela, chegada na Principal, apag
   await createProject(page, 'Perspectivas');
   const host = page.locator('.canvas-host');
   // Os Detalhes abertos desde o início: abrir depois mudaria o tamanho do canvas.
-  await page.getByRole('button', { name: 'Mostrar Detalhes' }).click();
+  await page.getByRole('button', { name: 'Detalhes', exact: true }).click();
   for (const name of ['Tela A', 'Tela B', 'Tela C']) await addContainer(page, host, name);
   await fitAll(page, host);
 
