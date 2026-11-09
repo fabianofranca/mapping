@@ -5,7 +5,7 @@ import type { RemoteImageOrigin } from '../store/derived';
 import { Button } from './controls';
 import { Notice } from './Notice';
 import { useEditor } from './EditorContext';
-import { captureFocusOrigin } from './focus';
+import { captureFocusOrigin, FOCUSABLE } from './focus';
 import { focusCanvasArea } from './toolWindowLayout';
 
 /** A origem por extenso, marcando `http` ("sem criptografia") e rede local. */
@@ -39,11 +39,36 @@ export function ImageConsentBanner() {
     document.activeElement !== null &&
     (document.activeElement === dismissRef.current ||
       document.activeElement === allowRef.current);
-  // Quem tinha o foco quando a faixa apareceu (ex.: o campo URL da imagem).
+  // Quem tinha o foco quando a faixa apareceu (ex.: o campo URL da imagem), e o `id` dele:
+  // o campo pode ser trocado por outro (`input` ↔ `textarea`, URL com mais de 60 caracteres).
   const previous = useRef<Element | null>(null);
+  const previousId = useRef('');
+  const previousParent = useRef<Element | null>(null);
   useLayoutEffect(() => {
-    previous.current = focusInBanner() ? null : captureFocusOrigin().opener;
+    const remember = (el: Element | null) => {
+      previous.current = el;
+      previousId.current = el?.id ?? '';
+      previousParent.current = el?.parentElement ?? null;
+    };
+    remember(focusInBanner() ? null : captureFocusOrigin().opener);
+    if (!visible) return;
+    // Enquanto a faixa está aberta, acompanha o foco fora dela: o campo trocado pega o foco
+    // depois de a faixa aparecer.
+    const onFocusIn = (e: FocusEvent) => {
+      const target = e.target;
+      const inBanner = target === dismissRef.current || target === allowRef.current;
+      if (target instanceof Element && !inBanner) remember(target);
+    };
+    document.addEventListener('focusin', onFocusIn);
+    return () => document.removeEventListener('focusin', onFocusIn);
   }, [visible]);
+  // O campo foi trocado e o novo não recebeu o foco: acha-o pelo mesmo `id`, ao lado do antigo.
+  const target = (): Element | null => {
+    if (previous.current?.isConnected || previousId.current === '')
+      return previous.current;
+    const found = [...(previousParent.current?.querySelectorAll(FOCUSABLE) ?? [])];
+    return found.find((el) => el.id === previousId.current) ?? null;
+  };
   if (!visible) return null;
   const origins = pending.map((o) => o.origin);
   // Ao fechar com o foco na faixa, ele volta a quem o tinha (se ainda está no DOM) ou ao
@@ -51,7 +76,7 @@ export function ImageConsentBanner() {
   const close = (action: (origins: readonly string[]) => void) => () => {
     const inside = focusInBanner();
     action(origins);
-    if (inside && !tryFocus(previous.current)) focusCanvasArea();
+    if (inside && !tryFocus(target())) focusCanvasArea();
   };
   return (
     <Notice
