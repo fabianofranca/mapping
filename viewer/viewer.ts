@@ -28,14 +28,17 @@
  * `allowOrigin` do hospedeiro (sem ela, tudo é recusado e o componente desenha o reservado). A
  * CSP (`img-src`) é do site hospedeiro. Ver `remoteImages.ts` e o `PACKAGE-README.md`.
  */
-import Konva from 'konva';
+import Konva from 'konva/lib/Core';
+import { Group } from 'konva/lib/Group';
+import { Layer } from 'konva/lib/Layer';
+import { Rect } from 'konva/lib/shapes/Rect';
+import { Stage } from 'konva/lib/Stage';
 import { type Library, withHostTokens } from '../src/model/components/library';
 import type { HostFonts } from '../src/model/components/tokens';
 import { tokenValue } from '../src/theme/tokens';
 import type { TextMeasurer } from '../src/model/components/instantiate';
 import type { Box, Screen } from '../src/model/components/screen';
 import { type SourceResult, screenFromSource } from '../src/model/components/origin';
-import { capPixelRatio } from './pinch';
 import type { AllowOrigin } from './allowOrigin';
 import { createViewerRemoteImages } from './remoteImages';
 import { konvaMeasurer } from '../src/canvas/components/konvaMeasurer';
@@ -43,8 +46,6 @@ import {
   type InstanceWarnings,
   ScreenRenderer,
 } from '../src/canvas/components/screenRenderer';
-
-export type { InstanceWarnings } from '../src/canvas/components/screenRenderer';
 
 export interface ViewerInput {
   readonly library: Library | undefined;
@@ -138,10 +139,30 @@ export interface Viewer {
   dispose(): void;
 }
 
-capPixelRatio(Konva);
+/** Teto do pixel ratio do Konva: telas 3× redesenham 2,25× mais pixels que 2× por nada visível no visualizador. */
+const MAX_PIXEL_RATIO = 2;
+let pixelRatioCapped = false;
 
-const SELECT_COLOR = '#1A63CC';
-const HOVER_COLOR = 'rgba(26, 99, 204, 0.8)';
+/** Aplica o teto uma vez, na criação do primeiro visualizador (importar o módulo não mexe no Konva). */
+function capPixelRatio(): void {
+  if (pixelRatioCapped) return;
+  pixelRatioCapped = true;
+  const device = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
+  Konva.pixelRatio = Math.min(device, MAX_PIXEL_RATIO);
+}
+
+/** `#rrggbb` + alfa → `rgba(r, g, b, a)`. */
+function withAlpha(hex: string, alpha: number): string {
+  const value = Number.parseInt(hex.slice(1), 16);
+  return `rgba(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255}, ${alpha})`;
+}
+
+/** Cores padrão do realce: o acento do tema claro; o hover leva a opacidade do token. */
+const SELECT_COLOR = tokenValue('color-accent', 'light');
+const HOVER_COLOR = withAlpha(
+  SELECT_COLOR,
+  Number(tokenValue('opacity-viewer-hover', 'light')),
+);
 const DEFAULT_PADDING = 16;
 const MIN_SCALE = 0.01;
 /** Tela "vazia" entregue ao renderer quando o hospedeiro limpa a tela. */
@@ -158,6 +179,7 @@ export function createViewer(
   container: HTMLElement,
   options: ViewerOptions = {},
 ): Viewer {
+  capPixelRatio();
   const selectionColor = options.selectionColor ?? SELECT_COLOR;
   const hoverColor = options.hoverColor ?? HOVER_COLOR;
   const padding = options.padding ?? DEFAULT_PADDING;
@@ -165,18 +187,42 @@ export function createViewer(
 
   let interactive = options.interactive ?? true;
 
-  const stage = new Konva.Stage({
+  /** Área útil do contêiner: o `clientWidth/Height` sem o padding, e a origem depois da borda e do padding. */
+  const contentBox = (): { width: number; height: number; left: number; top: number } => {
+    const style = getComputedStyle(container);
+    const px = (value: string): number => Number.parseFloat(value) || 0;
+    const left = px(style.borderLeftWidth) + px(style.paddingLeft);
+    const top = px(style.borderTopWidth) + px(style.paddingTop);
+    return {
+      width: Math.max(
+        1,
+        container.clientWidth - px(style.paddingLeft) - px(style.paddingRight),
+      ),
+      height: Math.max(
+        1,
+        container.clientHeight - px(style.paddingTop) - px(style.paddingBottom),
+      ),
+      left,
+      top,
+    };
+  };
+
+  const initialBox = contentBox();
+  const stage = new Stage({
     container: container as HTMLDivElement,
-    width: Math.max(1, container.clientWidth),
-    height: Math.max(1, container.clientHeight),
+    width: initialBox.width,
+    height: initialBox.height,
   });
-  const content = new Konva.Layer();
-  const overlay = new Konva.Layer({ listening: false });
-  const screenGroup = new Konva.Group();
-  const artboard = new Konva.Rect({ fill: '#FFFFFF', visible: false });
+  // O tamanho muda por `resizeStage`, que redesenha uma vez só (o ouvinte do Konva redesenharia
+  // de forma síncrona a cada uma das duas propriedades).
+  stage.off('widthChange.konva heightChange.konva');
+  const content = new Layer();
+  const overlay = new Layer({ listening: false });
+  const screenGroup = new Group();
+  const artboard = new Rect({ fill: '#FFFFFF', visible: false });
   screenGroup.add(artboard);
   content.add(screenGroup);
-  const hoverRect = new Konva.Rect({
+  const hoverRect = new Rect({
     stroke: hoverColor,
     strokeWidth: 1,
     strokeScaleEnabled: false,
@@ -212,7 +258,7 @@ export function createViewer(
     pixelSafe: true,
     ...(images ? { remoteImage: (url: string) => images.resolve(url) } : {}),
   });
-  const selectionRects = new Map<string, Konva.Rect>();
+  const selectionRects = new Map<string, Rect>();
 
   let library: Library | undefined = options.library;
   let passedScreen: Screen | undefined = options.screen;
@@ -240,33 +286,42 @@ export function createViewer(
     });
   };
 
-  const syncSize = (): void => {
-    const width = Math.max(1, container.clientWidth);
-    const height = Math.max(1, container.clientHeight);
-    if (stage.width() !== width || stage.height() !== height)
-      stage.size({ width, height });
+  /** Ajusta o tamanho do stage ao do contêiner; `true` se mudou (quem chama redesenha, uma vez). */
+  const syncSize = (): boolean => {
+    const { width, height } = contentBox();
+    if (stage.width() === width && stage.height() === height) return false;
+    stage.setAttrs({ width, height });
+    return true;
   };
 
+  /** Chave do enquadramento: tamanho da tela e do stage (contêiner mudou = enquadrar de novo). */
+  const fitKeyOf = (current: Screen): string =>
+    `${current.width}x${current.height}@${stage.width()}x${stage.height()}`;
+
   const applyFit = (): void => {
-    syncSize();
-    if (!screen) return;
-    const scale =
-      fitMode === 'contain'
-        ? Math.max(
-            MIN_SCALE,
-            Math.min(
-              (stage.width() - padding * 2) / screen.width,
-              (stage.height() - padding * 2) / screen.height,
-            ),
-          )
-        : Math.max(MIN_SCALE, fitMode);
-    stage.scale({ x: scale, y: scale });
-    stage.position({
-      x: (stage.width() - screen.width * scale) / 2,
-      y: (stage.height() - screen.height * scale) / 2,
-    });
-    fittedKey = `${screen.width}x${screen.height}`;
-    draw();
+    const resized = syncSize();
+    if (screen) {
+      const scale =
+        fitMode === 'contain'
+          ? Math.max(
+              MIN_SCALE,
+              Math.min(
+                (stage.width() - padding * 2) / screen.width,
+                (stage.height() - padding * 2) / screen.height,
+              ),
+            )
+          : Math.max(MIN_SCALE, fitMode);
+      stage.scale({ x: scale, y: scale });
+      stage.position({
+        x: (stage.width() - screen.width * scale) / 2,
+        y: (stage.height() - screen.height * scale) / 2,
+      });
+      fittedKey = fitKeyOf(screen);
+    }
+    // O Konva redesenha as camadas na hora ao redimensionar (uma vez, já com a escala nova);
+    // sem mudança de tamanho, o quadro cuida disso.
+    if (resized) stage._resizeDOM();
+    else if (screen) draw();
   };
 
   const boxOf = (id: string): Box | undefined => renderer.instanceOf(id)?.box;
@@ -284,7 +339,7 @@ export function createViewer(
       if (!box) continue;
       let rect = selectionRects.get(id);
       if (!rect) {
-        rect = new Konva.Rect({
+        rect = new Rect({
           stroke: selectionColor,
           strokeWidth: 2,
           strokeScaleEnabled: false,
@@ -331,7 +386,7 @@ export function createViewer(
       visible: screen !== undefined,
     });
     const changed = renderer.update(withFonts(library), current, { force, zBase: 1 });
-    if (screen && fittedKey !== `${screen.width}x${screen.height}`) applyFit();
+    if (screen && fittedKey !== fitKeyOf(screen)) applyFit();
     syncOverlay();
     if (changed || force) emitWarnings();
   };
@@ -343,7 +398,11 @@ export function createViewer(
 
   const clientToScreen = (client: { x: number; y: number }): { x: number; y: number } => {
     const rect = container.getBoundingClientRect();
-    return toScreen({ x: client.x - rect.left, y: client.y - rect.top });
+    const box = contentBox();
+    return toScreen({
+      x: client.x - rect.left - box.left,
+      y: client.y - rect.top - box.top,
+    });
   };
 
   const setPointer = (id: string | undefined): void => {
@@ -381,11 +440,21 @@ export function createViewer(
   });
 
   let observer: ResizeObserver | undefined;
-  if (typeof ResizeObserver !== 'undefined') {
-    observer = new ResizeObserver(() => {
-      if (disposed) return;
+  /** O redimensionamento é aplicado no próximo quadro, uma vez, por mais avisos que cheguem. */
+  let resizeFrame = 0;
+  const scheduleResize = (): void => {
+    if (disposed || resizeFrame) return;
+    if (typeof requestAnimationFrame !== 'function') {
       applyFit();
+      return;
+    }
+    resizeFrame = requestAnimationFrame(() => {
+      resizeFrame = 0;
+      if (!disposed) applyFit();
     });
+  };
+  if (typeof ResizeObserver !== 'undefined') {
+    observer = new ResizeObserver(scheduleResize);
     observer.observe(container);
   }
 
@@ -476,9 +545,12 @@ export function createViewer(
       observer?.disconnect();
       unsubscribeImages?.();
       images?.dispose();
-      if (frame && typeof cancelAnimationFrame === 'function')
-        cancelAnimationFrame(frame);
+      if (typeof cancelAnimationFrame === 'function') {
+        if (frame) cancelAnimationFrame(frame);
+        if (resizeFrame) cancelAnimationFrame(resizeFrame);
+      }
       frame = 0;
+      resizeFrame = 0;
       renderer.dispose();
       selectionRects.clear();
       stage.destroy();

@@ -1,5 +1,5 @@
 /**
- * Imagens remotas do visualizador embutível Desligadas por padrão:
+ * Imagens remotas do visualizador embutível. Desligadas por padrão:
  * sem a opção `remoteImages`, nenhum `Image` é criado e nada vai à rede.
  *
  * Ligadas, valem as duas portas, na versão do hospedeiro: a URL passa na política pura do
@@ -44,6 +44,12 @@ export function createViewerRemoteImages(
 ): ViewerRemoteImages {
   // O carregador trabalha com a URL normalizada pela política; o desenho, com a do campo.
   const rawUrls = new Map<string, Set<string>>();
+  // URLs normalizadas que o carregador já avisou uma vez (carregou ou falhou). Um segundo aviso
+  // da mesma URL é a expulsão do cache (limite de 64): a tela não recarrega a imagem por causa
+  // disso, senão com mais URLs distintas que o cache ela entraria em recarga contínua.
+  const announced = new Set<string>();
+  // Normalizadas cujo aviso de expulsão está sendo repassado à tela agora.
+  const evicting = new Set<string>();
   return {
     resolve(url) {
       const check = checkRemoteImageUrl(url, {
@@ -55,15 +61,26 @@ export function createViewerRemoteImages(
       const known = rawUrls.get(check.url);
       if (known) known.add(url);
       else rawUrls.set(check.url, new Set([url]));
+      // A tela só repinta o que acabou de ser expulso com o reservado; quem pede de novo é ela.
+      if (evicting.has(check.url)) return { state: 'loading' };
       return loader.request(check.url, { allowNoCors: false });
     },
     subscribe: (listener) =>
-      loader.subscribe((loaded) => {
-        for (const url of rawUrls.get(loaded) ?? [loaded]) listener(url);
+      loader.subscribe((changed) => {
+        const evicted = announced.delete(changed);
+        if (!evicted) announced.add(changed);
+        else evicting.add(changed);
+        try {
+          for (const url of rawUrls.get(changed) ?? [changed]) listener(url);
+        } finally {
+          evicting.delete(changed);
+        }
       }),
     dispose() {
       loader.dispose();
       rawUrls.clear();
+      announced.clear();
+      evicting.clear();
     },
   };
 }

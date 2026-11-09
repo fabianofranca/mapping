@@ -18,6 +18,27 @@ export interface LoadFromUrlOptions {
   readonly fonts?: boolean;
 }
 
+/** Pedidos simultâneos de `loadLibraryFromUrl` (componentes, ícones e fontes). */
+export const MAX_PARALLEL_REQUESTS = 6;
+
+/** Executa as tarefas com no máximo `limit` em andamento; devolve os resultados na ordem. */
+async function runLimited<T>(
+  tasks: readonly (() => Promise<T>)[],
+  limit: number,
+): Promise<T[]> {
+  const results = new Array<T>(tasks.length);
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    while (next < tasks.length) {
+      const index = next;
+      next += 1;
+      results[index] = await tasks[index]!();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
+  return results;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -48,7 +69,12 @@ function collectRefs(spec: unknown): {
       if (isRecord(font) && typeof font.file === 'string') fonts.push(font.file);
     }
   }
-  return { components, fonts, icons };
+  // Referências iguais valem um pedido só.
+  return {
+    components: [...new Set(components)],
+    fonts: [...new Set(fonts)],
+    icons: [...new Set(icons)],
+  };
 }
 
 /** Nome do arquivo sem a codificação da URL (`my%20spec.json` → `my spec.json`). */
@@ -112,13 +138,24 @@ export async function loadLibraryFromUrl(
     }
   };
 
-  const [components, icons, fonts] = await Promise.all([
-    Promise.all(refs.components.map((ref) => get(ref, (r) => r.text()))),
-    Promise.all(refs.icons.map((ref) => get(ref, (r) => r.text()))),
-    options.fonts === false
-      ? Promise.resolve([])
-      : Promise.all(refs.fonts.map((ref) => get(ref, (r) => r.arrayBuffer()))),
-  ]);
+  // Um conjunto só de pedidos (componentes, ícones, fontes), com o limite de simultâneos.
+  const fontRefs = options.fonts === false ? [] : refs.fonts;
+  const fetched = await runLimited<string | ArrayBuffer | undefined>(
+    [
+      ...refs.components.map((ref) => () => get(ref, (r) => r.text())),
+      ...refs.icons.map((ref) => () => get(ref, (r) => r.text())),
+      ...fontRefs.map((ref) => () => get(ref, (r) => r.arrayBuffer())),
+    ],
+    MAX_PARALLEL_REQUESTS,
+  );
+  const components = fetched.slice(0, refs.components.length) as (string | undefined)[];
+  const icons = fetched.slice(
+    refs.components.length,
+    refs.components.length + refs.icons.length,
+  ) as (string | undefined)[];
+  const fonts = fetched.slice(refs.components.length + refs.icons.length) as (
+    ArrayBuffer | undefined
+  )[];
   refs.components.forEach((ref, index) => {
     const text = components[index];
     if (text !== undefined) files.push({ path: resolvePath(specName, ref), text });
