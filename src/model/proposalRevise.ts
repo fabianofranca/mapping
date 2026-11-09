@@ -247,7 +247,9 @@ function structure(p: Project): string {
   const groups = new Map<string, string[]>();
   for (const m of p.markings) {
     const key = `${m.containerId ?? ''}|${m.parentId ?? ''}|${String(m.floating)}`;
-    groups.set(key, [...(groups.get(key) ?? []), m.id]);
+    const group = groups.get(key);
+    if (group) group.push(m.id);
+    else groups.set(key, [m.id]);
   }
   const parents = (items: readonly { id: string; parentId: string | null }[]) =>
     items
