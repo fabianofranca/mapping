@@ -10,7 +10,7 @@ import { hexToRgb } from './image/compose';
 import { declaredModes, paintContainerDrawings } from './image/containerDrawing';
 import { MAX_PIXELS, MIME, type ImageFormat } from './image/formats';
 import { clampRect, createRaster, crop, resize, type PixelRect } from './image/raster';
-import { loadImage, rectJson, scaleRect, urlFields } from './imageTools';
+import { loadImage, rectJson, scaleRect, sizeWarning, urlFields } from './imageTools';
 import type { ImageResult } from './imageTools';
 import type { ImageServer } from './imageServer';
 import type { Refs } from './items';
@@ -78,11 +78,41 @@ async function backdrop(
     return { raster: out, warning: undefined };
   }
   const loaded = await loadImage(roots, refs, container);
-  const source = clampRect(scaleRect(region, loaded), loaded.raster);
-  if (source === null) return { raster: out, warning: undefined };
+  const warning = sizeWarning(loaded, container).warning;
+  const scaled = scaleRect(region, loaded);
+  const source = clampRect(scaled, loaded.raster);
+  if (source === null) return { raster: out, warning };
   const cut = crop(loaded.raster, source);
-  const raster = resize(cut, size.width, size.height);
-  return { raster, warning: undefined };
+  // A janela fracionária dentro do recorte inteiro: o fundo alinha com o desenho em qualquer escala.
+  const area = {
+    x: scaled.x - source.x,
+    y: scaled.y - source.y,
+    width: Math.min(scaled.width, source.width - (scaled.x - source.x)),
+    height: Math.min(scaled.height, source.height - (scaled.y - source.y)),
+  };
+  const raster = resize(cut, size.width, size.height, area);
+  return { raster, warning };
+}
+
+/** Recusa a saída com pixels demais ou o fundo transparente em JPEG. */
+function checkLimits(
+  size: { width: number; height: number; zoom: number },
+  background: 'image' | 'none',
+  format: ImageFormat,
+): void {
+  if (size.width * size.height > MAX_PIXELS) {
+    throw new ToolError(
+      'image-too-large',
+      `imagem com pixels demais (${size.width}×${size.height}; máximo ${MAX_PIXELS}): reduza o zoom ou a região`,
+      size,
+    );
+  }
+  if (background === 'none' && format === 'jpeg') {
+    throw new ToolError(
+      'invalid-arguments',
+      'fundo transparente (`background: "none"`) pede png ou webp: o jpeg não tem transparência',
+    );
+  }
 }
 
 async function renderRegion(
@@ -98,22 +128,10 @@ async function renderRegion(
   const zoom = options.zoom ?? 1;
   const width = Math.max(1, Math.round(region.width * zoom));
   const height = Math.max(1, Math.round(region.height * zoom));
-  if (width * height > MAX_PIXELS) {
-    throw new ToolError(
-      'image-too-large',
-      `imagem com pixels demais (${width}×${height}; máximo ${MAX_PIXELS}): reduza o zoom ou a região`,
-      { width, height, zoom },
-    );
-  }
   const background = options.background ?? 'image';
   const format = options.format ?? 'png';
-  if (background === 'none' && format === 'jpeg') {
-    throw new ToolError(
-      'invalid-arguments',
-      'fundo transparente (`background: "none"`) pede png ou webp: o jpeg não tem transparência',
-    );
-  }
-  const { raster } = await backdrop(
+  checkLimits({ width, height, zoom }, background, format);
+  const { raster, warning } = await backdrop(
     roots,
     refs,
     container,
@@ -151,6 +169,7 @@ async function renderRegion(
       drawingMode: options.drawingMode ?? null,
       region: rectJson(region),
       drawings: drawn,
+      ...(warning === undefined ? {} : { warning }),
       note: 'desenho do servidor (fonte livre embutida ou a da biblioteca), não uma captura da app; imagem remota vira um reservado e o gradiente vale a primeira cor',
       ...(await urlFields(images, bytes, format, 'desenho')),
     },

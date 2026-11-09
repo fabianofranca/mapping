@@ -107,20 +107,31 @@ export function createFontBook(extra: readonly LoadedFont[] = []): FontBook {
     )[0];
     return best?.font ?? null;
   };
+  const resolved = new Map<string, Font>();
+  const resolve = (family: string, weight: number, italic: boolean): Font => {
+    const names = familyNames(family);
+    for (const name of names) {
+      const hit = fromLibrary(name, weight, italic);
+      if (hit !== null) return hit;
+      if (MONO_FAMILY.test(name)) {
+        const b = builtinFonts();
+        return weight >= BOLD_FROM ? b.monoBold : b.mono;
+      }
+    }
+    const b = builtinFonts();
+    return weight >= BOLD_FROM ? b.sansBold : b.sans;
+  };
   return {
     hasLibraryFonts: candidates.length > 0,
+    // Cache por família/peso/itálico: o medidor pede a fonte uma vez por palavra.
     fontFor(family, weight, italic) {
-      const names = familyNames(family);
-      for (const name of names) {
-        const hit = fromLibrary(name, weight, italic);
-        if (hit !== null) return hit;
-        if (MONO_FAMILY.test(name)) {
-          const b = builtinFonts();
-          return weight >= BOLD_FROM ? b.monoBold : b.mono;
-        }
+      const key = `${family}|${weight}|${italic}`;
+      let font = resolved.get(key);
+      if (font === undefined) {
+        font = resolve(family, weight, italic);
+        resolved.set(key, font);
       }
-      const b = builtinFonts();
-      return weight >= BOLD_FROM ? b.sansBold : b.sans;
+      return font;
     },
   };
 }
