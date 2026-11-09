@@ -20,7 +20,9 @@ import {
   replaceContainer,
   resizeContainer,
   settleHierarchy,
+  fileNameKey,
   uniqueImageFile,
+  validateProject,
 } from '../../src/model';
 import { emptyProject, expectValid, image, marking, sampleProject } from './fixtures';
 
@@ -530,5 +532,74 @@ describe('containers: pertencimento a marcações do canvas', () => {
     expect(marking(next, 'M3').rect).toEqual({ x: 154, y: 134, width: 8, height: 8 });
     // M2 (120..160 × 120..140) não contém mais M3; a menor que contém é M1 (100..200 × 100..200).
     expect(marking(next, 'M3').parentId).toBe('M1');
+  });
+});
+
+describe('imagens: nome livre sem diferenciar maiúsculas e minúsculas', () => {
+  const withFile = (file: string) =>
+    addContainer(emptyProject(), { id: 'I1', file, width: 10, height: 10 });
+
+  it('fileNameKey: NFC e minúsculas', () => {
+    expect(fileNameKey('images/Foto.JPG')).toBe('images/foto.jpg');
+    expect(fileNameKey('images/caf\u0065\u0301.png')).toBe(
+      fileNameKey('images/caf\u00e9.png'),
+    );
+  });
+
+  it('o projeto com images/Foto.jpg dá foto-2.jpg para foto.jpg (a caixa pedida se mantém)', () => {
+    const p = withFile('images/Foto.jpg');
+    expect(uniqueImageFile(p, 'foto.jpg')).toBe('images/foto-2.jpg');
+    expect(uniqueImageFile(p, 'Outra.JPG')).toBe('images/Outra.JPG');
+  });
+
+  it('taken com images/TELA.png faz tela.png virar tela-2.png', () => {
+    expect(
+      uniqueImageFile(emptyProject(), 'tela.png', new Set(['images/TELA.png'])),
+    ).toBe('images/tela-2.png');
+  });
+
+  it('NFC composto e decomposto contam como iguais', () => {
+    const p = withFile('images/caf\u00e9.png');
+    expect(uniqueImageFile(p, 'caf\u0065\u0301.png')).toBe(
+      'images/caf\u0065\u0301-2.png',
+    );
+  });
+
+  it('os candidatos -2, -3… também ignoram a caixa', () => {
+    const taken = new Set(['images/A.png', 'images/a-2.PNG']);
+    expect(uniqueImageFile(emptyProject(), 'a.png', taken)).toBe('images/a-3.png');
+  });
+
+  it('addContainer e replaceContainer recusam arquivo que só difere na caixa', () => {
+    const p = withFile('images/Foto.jpg');
+    expect(() =>
+      addContainer(p, { id: 'I2', file: 'images/foto.jpg', width: 10, height: 10 }),
+    ).toThrow('duplicate-file');
+    const q = addContainer(p, {
+      id: 'I2',
+      file: 'images/outra.jpg',
+      width: 10,
+      height: 10,
+    });
+    expect(() =>
+      replaceContainer(q, 'I2', { file: 'images/FOTO.JPG', width: 10, height: 10 }),
+    ).toThrow('duplicate-file');
+    // Trocar pelo próprio nome, mudando só a caixa, é permitido.
+    expect(
+      replaceContainer(q, 'I2', { file: 'images/OUTRA.jpg', width: 10, height: 10 })
+        .containers[1]?.file,
+    ).toBe('images/OUTRA.jpg');
+  });
+
+  it('a validação ao abrir continua aceitando o projeto antigo com os dois (decisão 2)', () => {
+    const p = withFile('images/Foto.jpg');
+    const old = {
+      ...p,
+      containers: [
+        ...p.containers,
+        { ...p.containers[0]!, id: 'I2', file: 'images/foto.jpg' },
+      ],
+    };
+    expect(validateProject(old).map((i) => i.code)).not.toContain('duplicate-file');
   });
 });

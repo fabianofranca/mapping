@@ -292,6 +292,15 @@ export function createFolderStorage(
       return file ? `${file.size}:${file.lastModified ?? 0}` : null;
     },
     writeImage: (path, data) => writeFile(root, path, data),
+    async listImages() {
+      const dir = await resolveDir(root, [IMAGES_DIR], false);
+      if (!dir) return [];
+      const found: string[] = [];
+      for await (const entry of dir.values()) {
+        if (entry.kind === 'file') found.push(`${IMAGES_DIR}/${entry.name}`);
+      }
+      return found.sort();
+    },
     removeImage: (path) => removeFile(root, path),
     async readSpec(path) {
       assertSpecPath(path, 'file');

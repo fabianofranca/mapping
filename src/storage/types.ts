@@ -56,6 +56,12 @@ export interface ProjectStorage {
    * Mudou entre duas leituras = o arquivo foi trocado por fora. Opcional, como `statMapping`.
    */
   statImage?(path: string): Promise<string | null>;
+  /**
+   * Caminhos (`images/foto.jpg`) de todos os arquivos que estão em `images/`, citados ou não
+   * pelo projeto, em ordem alfabética: é o que a escolha de um nome livre precisa saber.
+   * `[]` se a pasta não existir.
+   */
+  listImages(): Promise<string[]>;
   /** Remove a imagem. Não falha se ela já não existir. */
   removeImage(path: string): Promise<void>;
   /**
