@@ -1,4 +1,5 @@
 import { signal, type ReadonlySignal } from '@preact/signals';
+import { createSerialQueue, newestFirst, stampOr } from './serialQueue';
 import {
   canRemoveProposal,
   changeImageFile,
@@ -184,10 +185,6 @@ export interface ProposalStoreOptions {
   readonly onChanged?: () => void;
 }
 
-function newestFirst(a: Proposal, b: Proposal): number {
-  return b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
-}
-
 /** `specs/<pasta>` da especialização que a mudança cria ou atualiza, se for um pacote. */
 function specPackageDir(change: Change): string | null {
   if (change.entity !== 'specialization' || change.kind === 'remove') return null;
@@ -254,21 +251,10 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
   load(options.initial);
 
   // Fila única: gravações e conferências nunca rodam em paralelo.
-  let tail: Promise<unknown> = Promise.resolve();
-  const enqueue = <T>(job: () => Promise<T>): Promise<T> => {
-    const run = tail.then(job, job);
-    tail = run.catch(() => undefined);
-    return run;
-  };
+  const enqueue = createSerialQueue();
 
-  const stampOf = async (id: string): Promise<string | null> => {
-    if (!storage.statProposal) return null;
-    try {
-      return await storage.statProposal(id);
-    } catch {
-      return null;
-    }
-  };
+  const stampOf = (id: string): Promise<string | null> =>
+    stampOr(storage.statProposal ? () => storage.statProposal!(id) : null);
 
   const adopt = (item: LoadedProposal) => {
     known.set(item.proposal.id, item);

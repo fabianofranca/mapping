@@ -1,4 +1,5 @@
 import { signal, type ReadonlySignal } from '@preact/signals';
+import { createSerialQueue, newestFirst, stampOr } from './serialQueue';
 import {
   ThreadError,
   mergeThreadCopies,
@@ -121,10 +122,6 @@ export interface ThreadStoreOptions {
   readonly onChanged?: () => void;
 }
 
-function newestFirst(a: Thread, b: Thread): number {
-  return b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
-}
-
 const slot = (resolvedDir: boolean): 'open' | 'resolved' =>
   resolvedDir ? 'resolved' : 'open';
 
@@ -223,21 +220,10 @@ export function createThreadStore(options: ThreadStoreOptions): ThreadStore {
   publish();
 
   // Fila única: gravações e conferências nunca rodam em paralelo.
-  let tail: Promise<unknown> = Promise.resolve();
-  const enqueue = <T>(job: () => Promise<T>): Promise<T> => {
-    const run = tail.then(job, job);
-    tail = run.catch(() => undefined);
-    return run;
-  };
+  const enqueue = createSerialQueue();
 
-  const stampOf = async (id: string, resolved: boolean): Promise<string | null> => {
-    if (!storage.statThread) return null;
-    try {
-      return await storage.statThread(id, resolved);
-    } catch {
-      return null;
-    }
-  };
+  const stampOf = (id: string, resolved: boolean): Promise<string | null> =>
+    stampOr(storage.statThread ? () => storage.statThread!(id, resolved) : null);
 
   /** Texto cru de uma cópia, `undefined` se a leitura falhou. */
   const rawOf = async (
