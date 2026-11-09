@@ -1,4 +1,4 @@
-# Coordenador da fila: ajustes finos de contexto — [Não lançado] (épico `epic/fila-contexto-2`)
+# Coordenador da fila: ajustes finos de contexto — 2026-11-09 (épico `epic/fila-contexto-2`)
 
 ## Pendências
 
