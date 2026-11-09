@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/preact';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { signal } from '@preact/signals';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -295,6 +295,86 @@ describe('ManagePerspectivesDialog', () => {
       }),
     );
     expect(perspectives(ctx).map((p) => p.name)).toEqual(['Fachada', 'Sala']);
+  });
+
+  // Fase 1 da #954 (itens 23 e 24).
+  it('Quem vê: se a gravação falha, o select volta ao valor da perspectiva e o erro some na troca seguinte', async () => {
+    const ctx = await makeContext(true);
+    const id = seed(ctx, 'Fachada');
+    mount(ctx, <ManagePerspectivesDialog {...props()} />);
+    const who = () =>
+      dlg().getByRole<HTMLSelectElement>('combobox', {
+        name: t('perspective.manage.who', { name: 'Fachada' }),
+        hidden: true,
+      });
+    const spy = vi
+      .spyOn(ctx.session.perspectiveActions, 'setPerspectiveLocal')
+      .mockResolvedValueOnce({ ok: false, error: 'write-failed' } as never);
+    await userEvent.selectOptions(who(), t('perspective.new.whoMine'));
+    await waitFor(() =>
+      expect(dlg().getByRole('alert', { hidden: true }).textContent).toBe(
+        t('perspective.error'),
+      ),
+    );
+    expect(who().value).toBe('all');
+    spy.mockRestore();
+    await userEvent.selectOptions(who(), t('perspective.new.whoMine'));
+    await waitFor(() =>
+      expect(ctx.session.perspective.localIds.value.has(id)).toBe(true),
+    );
+    expect(dlg().queryByRole('alert', { hidden: true })).toBeNull();
+  });
+
+  it('renomear: cancelar e reabrir recomeça do nome atual', async () => {
+    const ctx = await makeContext(true);
+    seed(ctx, 'Fachada');
+    mount(ctx, <ManagePerspectivesDialog {...props()} />);
+    const open = () =>
+      userEvent.click(
+        dlg().getByRole('button', {
+          name: t('perspective.manage.rename', { name: 'Fachada' }),
+          hidden: true,
+        }),
+      );
+    await open();
+    const field = () =>
+      dlg().getByRole<HTMLInputElement>('textbox', {
+        name: t('perspective.manage.renameField', { name: 'Fachada' }),
+        hidden: true,
+      });
+    await userEvent.clear(field());
+    await userEvent.type(field(), 'Rascunho');
+    await userEvent.click(
+      dlg().getByRole('button', {
+        name: t('perspective.manage.renameCancel'),
+        hidden: true,
+      }),
+    );
+    await open();
+    expect(field().value).toBe('Fachada');
+  });
+
+  it('renomear: o nome que muda por fora (desfazer, recarga) aparece no campo', async () => {
+    const ctx = await makeContext(true);
+    const id = seed(ctx, 'Fachada');
+    mount(ctx, <ManagePerspectivesDialog {...props()} />);
+    await userEvent.click(
+      dlg().getByRole('button', {
+        name: t('perspective.manage.rename', { name: 'Fachada' }),
+        hidden: true,
+      }),
+    );
+    act(() => {
+      expect(ctx.session.perspectiveActions.renamePerspective(id, 'Frente').ok).toBe(
+        true,
+      );
+    });
+    expect(
+      dlg().getByRole<HTMLInputElement>('textbox', {
+        name: t('perspective.manage.renameField', { name: 'Frente' }),
+        hidden: true,
+      }).value,
+    ).toBe('Frente');
   });
 
   it('Apagar chama onDelete com o id; Nova chama onNew', async () => {

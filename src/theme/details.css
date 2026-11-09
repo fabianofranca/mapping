@@ -939,6 +939,13 @@ button.layer-group-label:hover {
   white-space: nowrap;
 }
 
+/* Referência quebrada: o aviso inteiro importa mais que a linha única; quebra em vez de cortar. */
+.ref-control.is-broken .ref-control-text {
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .ref-control-layer {
   /* Em largura estreita a camada cede primeiro: o nome do alvo é o que importa. */
   flex: 0 100 auto;

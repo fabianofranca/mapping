@@ -108,6 +108,31 @@ describe('Enviar para perspectiva', () => {
     expect(send.getAttribute('aria-expanded')).toBe('true');
   });
 
+  // Fase 1 da #954 (item 31): o hover que abre também fecha, e o ← não deixa a marca para trás.
+  it('na Principal, sair do item com o ponteiro fecha o submenu aberto por hover', () => {
+    const { harness } = setup({ others: 1 });
+    openMenu(harness, 'i', 'I1');
+    const host = sendItem().parentElement as HTMLElement;
+    fireEvent.pointerEnter(host);
+    expect(screen.getByRole('menu', { name: t('perspective.menu.send') })).toBeTruthy();
+    fireEvent.pointerLeave(host);
+    expect(screen.queryByRole('menu', { name: t('perspective.menu.send') })).toBeNull();
+  });
+
+  it('fechar com ← depois do hover não engole o clique seguinte', () => {
+    const { harness } = setup({ others: 1 });
+    openMenu(harness, 'i', 'I1');
+    const send = sendItem();
+    fireEvent.pointerEnter(send.parentElement as HTMLElement);
+    const sub = screen.getByRole('menu', { name: t('perspective.menu.send') });
+    fireEvent.keyDown(within(sub).getAllByRole('menuitemcheckbox')[0] as HTMLElement, {
+      key: 'ArrowLeft',
+    });
+    expect(screen.queryByRole('menu', { name: t('perspective.menu.send') })).toBeNull();
+    fireEvent.click(send);
+    expect(screen.getByRole('menu', { name: t('perspective.menu.send') })).toBeTruthy();
+  });
+
   it('perto da borda direita, o submenu abre à esquerda do item', () => {
     const { harness } = setup({ others: 1 });
     openMenu(harness, 'i', 'I1');

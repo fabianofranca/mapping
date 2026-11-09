@@ -63,6 +63,18 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'color-warning-bg': { light: '#fff4d6', dark: '#3a2f14' },
   'color-success': { light: '#1e7a46', dark: '#7ad3a0' },
   'color-success-bg': { light: '#e3f4ea', dark: '#163325' },
+  /**
+   * Selo de estado da conversa (janela Comentários e seção Conversas dos Detalhes): texto e fundo por
+   * estado, do mesmo matiz do `cv-pin-*` do estado (laranja = aguardando você, ciano = aguardando
+   * agente, cinza = resolvida), escurecidos no claro e clareados no escuro para o texto passar de
+   * 4,5:1 sobre o fundo. O pino do canvas (`cv-pin-*`) não muda.
+   */
+  'color-thread-human': { light: '#84590b', dark: '#f0b242' },
+  'color-thread-human-bg': { light: '#fcf2de', dark: '#413215' },
+  'color-thread-agent': { light: '#136c5e', dark: '#52e0ca' },
+  'color-thread-agent-bg': { light: '#e1faf6', dark: '#193e38' },
+  'color-thread-resolved': { light: '#4f5e72', dark: '#9fabbc' },
+  'color-thread-resolved-bg': { light: '#eaedf0', dark: '#272b30' },
   'color-backdrop': { light: 'rgba(0, 0, 0, 0.45)', dark: 'rgba(0, 0, 0, 0.6)' },
   'color-tooltip': { light: '#1b1f24', dark: '#e8eaed' },
   'color-tooltip-text': { light: '#ffffff', dark: '#12151a' },
@@ -141,6 +153,8 @@ const COLORS: Readonly<Record<string, TokenValue>> = {
   'cv-component-placeholder': 'rgba(128, 128, 128, 0.25)',
   'cv-component-placeholder-line': 'rgba(128, 128, 128, 0.8)',
   'cv-component-unknown': '#d81b60',
+  /** Preenchimento da caixa de uma instância cujo tipo não tem componente ou não existe (o contorno e o texto são `cv-component-unknown`). */
+  'cv-component-unknown-fill': 'rgba(216, 27, 96, 0.06)',
   // Espelho do DS, sem uso no código: as cores `layer-NN` vêm de `LAYER_COLORS` (o código de camadas usa a paleta de `src/model/layers.ts`).
   ...Object.fromEntries(
     LAYER_COLORS.map((c, i) => [`layer-${String(i + 1).padStart(2, '0')}`, c]),
@@ -239,6 +253,19 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-handle': '10px',
   /** Emblema do cadeado no canvas (px de tela). */
   'size-lock-badge': '20px',
+  /** Pino de conversa no canvas (px de tela): altura, respiro dos lados, glifo do estado e vão entre o glifo e o rótulo. A largura é estimada: `size-cv-pin-char` por letra do rótulo. */
+  'size-cv-pin-height': '20px',
+  'size-cv-pin-pad': '8px',
+  'size-cv-pin-glyph': '12px',
+  'size-cv-pin-glyph-gap': '2px',
+  'size-cv-pin-char': '7px',
+  /** Selo "Veio de <nome>" no canvas (px de tela): altura, respiro dos lados, vão até o canto da raiz (e, abaixo de uma raiz pequena, `gap-below`), faixa do nome do container que o selo evita e largura estimada por letra. */
+  'size-cv-arrival-height': '20px',
+  'size-cv-arrival-pad': '8px',
+  'size-cv-arrival-gap': '4px',
+  'size-cv-arrival-gap-below': '10px',
+  'size-cv-arrival-name-band': '24px',
+  'size-cv-arrival-char': '7px',
   /** Nível de detalhe do canvas: marcação menor que isto na tela (largura ou altura) desenha só a borda (sem halo, linha dupla, selo nem ⚠). */
   'size-lod-min-marking': '24px',
   /** Nível de detalhe do canvas: marcação menor que isto na tela nas duas medidas não é desenhada. */
@@ -247,6 +274,9 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-arrow-stroke': '2px',
   'size-arrow-stroke-selected': '3px',
   'size-arrow-head': '10px',
+  /** Caixa máxima do minimapa (largura e altura, px): o conteúdo cabe nela, na proporção. */
+  'size-minimap-width': '132px',
+  'size-minimap-height': '96px',
   'size-tw-left': '264px',
   'size-tw-right': '360px',
   /** Altura inicial da janela inferior: 4 linhas inteiras da lista da Comentários, com filtros e cabeçalho, a 900 × 720 (decisão 6 da #734). Medido: a lista ganha 1 px por px de janela e 357 px dão 148 px (4 × 37 px); 360 px cabem em 60% do corpo do editor a 900 × 720 (`BOTTOM_MAX_FRACTION`). Com os filtros do layout estreito em duas linhas (CL3) a lista tem 207 px, 4 linhas inteiras mesmo com âncoras quebradas (37 + 3 × 53 px); o token não sobe: 360 px é o teto de 60%. */
@@ -294,6 +324,8 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'opacity-dimmed': '0.35',
   'opacity-ancestor': '0.75',
   'opacity-inherited': '0.7',
+  /** Contorno do `slot` (espaço reservado) do desenho dos componentes. */
+  'opacity-slot': '0.6',
   'opacity-card': String(CARD_ALPHA),
   /** Retângulo da vista no minimapa. */
   'opacity-grabbed': '0.25',

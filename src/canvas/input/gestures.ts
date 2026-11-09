@@ -31,6 +31,8 @@ export type Gesture =
       readonly kind: 'pending';
       readonly pointerId: number;
       readonly start: Point;
+      /** Botão apertado: o clique curto do botão do meio (pan) não é um toque. */
+      readonly button: number;
       /** O que o arrasto faria. */
       intent: Intent;
     }

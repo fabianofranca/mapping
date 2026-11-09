@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'preact/hooks';
+import { useId, useMemo, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
 import { projectIndex, type Marking, type Project } from '../model';
 import { IconButton } from './controls';
@@ -60,7 +60,8 @@ export function MarkingPicker({
   const origin = useFocusOrigin();
   useModal(dialog, origin, returnFocus, () => input.current?.focus());
 
-  const all = markingOptions(project, source.id);
+  // Memorizado: o hover só troca o item ativo e não deve refazer a lista.
+  const all = useMemo(() => markingOptions(project, source.id), [project, source.id]);
   const needle = query.trim().toLocaleLowerCase();
   const options =
     needle === ''

@@ -36,7 +36,7 @@ describe('Configurações: modo do desenho do projeto', () => {
 
   it('lista a união dos modos declarados e troca o modo pela action', async () => {
     const { harness, user } = setup();
-    expect(options(select())).toEqual(['light', 'dark']);
+    expect(options(select())).toEqual(['Claro', 'Escuro']);
     expect(select().value).toBe('light');
     await user.selectOptions(select(), 'dark');
     expect(harness.project().drawingMode).toBe('dark');
@@ -46,8 +46,8 @@ describe('Configurações: modo do desenho do projeto', () => {
   it('modo gravado que nenhuma especialização declara aparece marcado', () => {
     setup({ ...projectWithModes(), drawingMode: 'solar' });
     expect(options(select())).toEqual([
-      'light',
-      'dark',
+      'Claro',
+      'Escuro',
       t('drawingMode.undeclared', { mode: 'solar' }),
     ]);
     expect(select().value).toBe('solar');
@@ -60,6 +60,12 @@ describe('Configurações: modo do desenho do projeto', () => {
     cleanup();
     setup(projectWithModes(), true);
     expect(select().disabled).toBe(true);
+  });
+
+  it('em en-US as opções também vêm de t(), com inicial maiúscula', () => {
+    locale.value = 'en-US';
+    setup();
+    expect(options(select())).toEqual(['Light', 'Dark']);
   });
 
   it('os textos existem nos dois idiomas', () => {
@@ -101,7 +107,11 @@ describe('Detalhes do container: modo do desenho', () => {
 
   it('"Seguir o projeto" é a primeira opção; trocar fixa o modo e voltar remove', async () => {
     const { harness, user } = setup();
-    expect(options(select())).toEqual([t('drawingMode.followProject'), 'light', 'dark']);
+    expect(options(select())).toEqual([
+      t('drawingMode.followProject'),
+      'Claro',
+      'Escuro',
+    ]);
     expect(select().value).toBe('');
     await user.selectOptions(select(), 'dark');
     expect(harness.project().containers[0]?.drawingMode).toBe('dark');

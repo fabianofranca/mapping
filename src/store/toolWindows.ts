@@ -177,8 +177,6 @@ function storedSize(value: unknown, side: ToolWindowSide): number {
 const DEFAULT_OPEN: readonly ToolWindowId[] = ['tree', 'layers', 'details'];
 
 const stored = readStored();
-/** Havia layout guardado: o desktop compacto não mexe no que o usuário escolheu. */
-const hadStored = readSetting(KEY) !== null;
 
 /** `open` só vale como lista; qualquer outro tipo guardado cai no padrão (#943). */
 function storedOpen(value: unknown): readonly ToolWindowId[] {
@@ -413,6 +411,8 @@ export function resetToolWindowSize(side: ToolWindowSide, space: LayoutSpace): v
  * primeira visita; depois vale o layout guardado.
  */
 export function collapseDetailsOnCompact(): void {
-  if (hadStored) return;
+  // Relê o armazenamento a cada chamada: o primeiro `persist()` já marca o layout como
+  // guardado, e a primeira visita não se repete ao trocar de projeto.
+  if (readSetting(KEY) !== null) return;
   hideToolWindow('details');
 }

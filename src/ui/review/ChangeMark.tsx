@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from 'preact/hooks';
+import { ariaKeysAll } from '../../app/shortcuts';
 import { t } from '../../i18n';
 import { reviewKey } from '../../model';
 import { tokenValue } from '../../theme/tokens';
@@ -25,7 +26,8 @@ import {
   popoverTitle,
   type MarkSubject,
 } from './ChangePopover';
-import { entityName, type ReviewNames } from './changeText';
+import { entityName, partsText, type ReviewNames } from './changeText';
+import { REVIEW_KEYS } from './DecisionControl';
 import { DecisionMark } from './DecisionMark';
 import { belowReviewBar } from './reviewBarRef';
 import { useReviewNames } from './useReview';
@@ -105,8 +107,8 @@ function markLabel(
   })}`;
 }
 
-const partsText = (parts: readonly { text: string }[]) =>
-  parts.map((p) => p.text).join('');
+/** Os atalhos que agem sobre a mudança do marcador focado (aceitar, rejeitar e limpar). */
+const MARK_KEYS = [REVIEW_KEYS.accept, REVIEW_KEYS.reject, REVIEW_KEYS.clear];
 
 export function ChangeMark(subject: MarkSubject) {
   const { change, field, part } = subject;
@@ -217,6 +219,7 @@ export function ChangeMark(subject: MarkSubject) {
         limit={belowReviewBar}
         label={popoverTitle(names, subject)}
         trigger={() => (
+          /* Exceção ao Button: marcador de mudança (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
           <button
             ref={button}
             type="button"
@@ -233,7 +236,7 @@ export function ChangeMark(subject: MarkSubject) {
             aria-controls={open ? panelId : undefined}
             aria-label={label}
             aria-current={target ? 'true' : undefined}
-            aria-keyshortcuts="A R Backspace"
+            aria-keyshortcuts={ariaKeysAll(MARK_KEYS)}
             data-change={change.id}
             data-part={part ? '' : undefined}
             data-state={part ? undefined : (decision ?? 'undecided')}

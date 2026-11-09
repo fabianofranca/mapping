@@ -45,6 +45,7 @@ export function ReferencedByRow({
         const name = annotationDisplayName(project, source);
         const marking = markings.get(source.markingId);
         return (
+          /* Exceção ao Button: link de texto: item da lista "Referenciada por" (docs/DESIGN-SYSTEM.md, "Botões avulsos") */
           <button
             key={source.id}
             type="button"

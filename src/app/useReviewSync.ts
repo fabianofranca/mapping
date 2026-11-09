@@ -1,48 +1,15 @@
 import { effect } from '@preact/signals';
 import { useEffect } from 'preact/hooks';
 import { projectIndex, type ReviewTarget, type ReviewTree } from '../model';
-import type { ReviewState } from '../store/review';
 import { setReviewLayout } from '../store/toolWindows';
 import { resolveSelection, type Selection } from '../store/ui';
 import { useEditor } from '../ui/EditorContext';
+import { canvasSelectionOf } from '../ui/review/canvasSelection';
 
 // Liga a revisão ao resto do editor: o layout da janela inferior (altura da revisão), o
 // modo Navegar (Desenhar não existe em somente leitura) e a seleção nos dois sentidos —
 // escolher um nível na janela Propostas seleciona o item no canvas, e tocar num item do
 // canvas (ou da Árvore) seleciona o nível dele na revisão.
-
-/**
- * O item da revisão no canvas: a marcação, ou a seta (v13; os ids dividem o espaço), seja ela
- * do projeto à vista ou criada pela proposta.
- */
-function itemSelection(
-  review: Pick<ReviewState, 'derived'>,
-  id: string,
-): NonNullable<Selection> {
-  const shown = review.derived.shownProject.peek();
-  const isArrow =
-    (shown !== null && projectIndex(shown).arrows.has(id)) ||
-    review.derived.proposal
-      .peek()
-      ?.changes.some((c) => c.entity === 'arrow' && c.entityId === id) === true;
-  return { kind: isArrow ? 'arrow' : 'marking', id };
-}
-
-/** Seleção do canvas que corresponde a um nível da revisão (`undefined`: não muda). */
-export function canvasSelectionOf(
-  review: Pick<ReviewState, 'derived'>,
-  target: ReviewTarget | null,
-): Selection | undefined {
-  if (!target) return undefined;
-  if (target.level === 'item' && target.id) return itemSelection(review, target.id);
-  if (target.level === 'image' && target.id) return { kind: 'image', id: target.id };
-  if (target.level === 'change' && target.id) {
-    const c = review.derived.proposal.peek()?.changes.find((x) => x.id === target.id);
-    if (c?.markingId) return itemSelection(review, c.markingId);
-    if (c?.imageId) return { kind: 'image', id: c.imageId };
-  }
-  return undefined;
-}
 
 const sameSelection = (a: Selection | undefined, b: Selection | undefined) =>
   a === b || (!!a && !!b && a.kind === b.kind && a.id === b.id);

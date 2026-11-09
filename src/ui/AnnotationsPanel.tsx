@@ -403,7 +403,7 @@ function LayerGroup({
           aria-label={t('issue.badge')}
           title={t('issue.badge')}
         >
-          ⚠
+          <Icon name="warning" />
         </span>
       )}
     </>

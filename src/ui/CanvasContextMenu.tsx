@@ -16,6 +16,7 @@ import { CopyMenuItems } from './CopyActions';
 import { Button } from './controls';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
+import { createOpenScrollGuard } from './openScrollGuard';
 import { placeComment } from '../store/threadUi';
 import { peekSelectedItems, isItemSelected } from '../store/ui';
 import {
@@ -208,13 +209,18 @@ export function CanvasContextMenu() {
     };
     document.addEventListener('pointerdown', onDown);
     document.addEventListener('keydown', onKey, true);
-    document.addEventListener('scroll', close, true);
+    // A rolagem que a própria abertura provoca não conta (openScrollGuard).
+    const scrollCloses = createOpenScrollGuard(() => panel.current);
+    const onScroll = (e: Event) => {
+      if (scrollCloses(e)) close();
+    };
+    document.addEventListener('scroll', onScroll, true);
     globalThis.addEventListener('resize', close);
     globalThis.addEventListener('blur', close);
     return () => {
       document.removeEventListener('pointerdown', onDown);
       document.removeEventListener('keydown', onKey, true);
-      document.removeEventListener('scroll', close, true);
+      document.removeEventListener('scroll', onScroll, true);
       globalThis.removeEventListener('resize', close);
       globalThis.removeEventListener('blur', close);
     };

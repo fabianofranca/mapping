@@ -177,8 +177,8 @@ export function MarkingTree({ project, selection, onSelect }: MarkingTreeProps) 
   /** Marcações da raiz de cada container, agrupadas uma vez por desenho. */
   const rootsByContainer = new Map<string | null, Marking[]>();
   for (const m of index.get(null) ?? []) {
-    const list = rootsByContainer.get(m.containerId);
-    if (list) list.push(m);
+    const siblings = rootsByContainer.get(m.containerId);
+    if (siblings) siblings.push(m);
     else rootsByContainer.set(m.containerId, [m]);
   }
 

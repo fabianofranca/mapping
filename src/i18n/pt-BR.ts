@@ -217,6 +217,7 @@ export const ptBR = {
   'annotation.owner': 'Vinculada a',
   'annotation.noOwner': 'Nenhuma',
   'annotation.ownerOption': '{layer}: {name}',
+  'annotation.ownerOptionInvalid': '{layer}: {name} (dona inválida)',
   'annotation.ownerHelp':
     'Só aparecem anotações desta mesma marcação. Nas tipadas, a dona pode ser de outra camada ou da mesma, quando o tipo dela aceita este; nas livres, só de outras camadas.',
   'annotation.ownerEmpty':
@@ -657,6 +658,7 @@ export const ptBR = {
   'comments.empty': 'Nenhuma conversa ainda.',
   'comments.emptyFiltered': 'Nenhuma conversa com esses filtros.',
   'comments.row.open': 'Abrir a conversa em {anchor}',
+  'comments.row.openUnread': 'Abrir a conversa em {anchor} (não lida)',
   'comments.row.more': 'Ações da conversa em {anchor}',
   'comments.row.delete': 'Apagar',
   'comments.layer': 'Comentar',
@@ -887,6 +889,8 @@ export const ptBR = {
   'typed.removeRow': 'Remover linha',
   'typed.moveRowUp': 'Subir linha',
   'typed.moveRowDown': 'Descer linha',
+  'typed.rowNumber': '#',
+  'typed.requiredMark': ' *',
   'typed.row': 'Linha {n}',
   'typed.noRows': 'Nenhuma linha.',
   'typed.rowsOne': '1 linha',
@@ -982,6 +986,11 @@ export const ptBR = {
   'ref.keyNavigate': 'navegar',
   'ref.keyChoose': 'escolher',
   'ref.keyGoTo': 'ir para o alvo',
+  'ref.keyUp': '↑',
+  'ref.keyDown': '↓',
+  'ref.keyEnter': 'Enter',
+  'ref.keyCtrlEnter': 'Ctrl+Enter',
+  'ref.keyEsc': 'Esc',
   'ref.keyClose': 'fechar',
 
   // Trava (etapa 2.5)
@@ -1175,6 +1184,8 @@ export const ptBR = {
   'drawingMode.intro':
     'Escolhe o modo (claro, escuro…) dos tokens das especializações com que os componentes são desenhados. Não muda o tema da interface.',
   'drawingMode.label': 'Modo do desenho',
+  'drawingMode.light': 'Claro',
+  'drawingMode.dark': 'Escuro',
   'drawingMode.followProject': 'Seguir o projeto',
   'drawingMode.undeclared': '{mode} (não declarado)',
   'drawingMode.containerHint':

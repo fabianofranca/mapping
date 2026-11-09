@@ -355,7 +355,24 @@
           });
         const tb = document.querySelector('#mp-table tbody');
         tb.replaceChildren();
-        for (const r of q('queue')) {
+        // Grupos (#1318): em andamento, depois o que pede o dono, a fila e as concluídas.
+        const GROUP = {
+          'em andamento': 0,
+          'esperando dono': 1,
+          falhou: 1,
+          aguardando: 2,
+          concluída: 3,
+        };
+        const group = (r) => (r.status in GROUP ? GROUP[r.status] : 2);
+        const rowsSorted = q('queue')
+          .slice()
+          .sort(
+            (a, b) =>
+              group(a) - group(b) ||
+              (group(a) === 3 ? (t(b.ended) || 0) - (t(a.ended) || 0) : 0) ||
+              (+a.order || 0) - (+b.order || 0),
+          );
+        for (const r of rowsSorted) {
           const tr = document.createElement('tr');
           tr.dataset.key = r.issue;
           tr.dataset.s = t(r.started) || '';

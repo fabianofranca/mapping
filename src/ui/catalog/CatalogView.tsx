@@ -100,7 +100,7 @@ export function CatalogView({
         .filter((layer) => layer.entries.length > 0),
     [catalog, needle],
   );
-  const firstEntry = catalog.layers.flatMap((l) => l.entries)[0];
+  const firstEntry = catalog.layers.find((l) => l.entries.length > 0)?.entries[0];
   const selected =
     (selectedId === null ? undefined : findEntry(catalog, selectedId)) ??
     (layout === 'split' ? firstEntry : undefined);
@@ -229,6 +229,7 @@ export function CatalogView({
                     {layer.entries.map((entry) => {
                       return (
                         <li key={entry.type.id}>
+                          {/* Exceção ao Button: opção da lista de tipos do catálogo (docs/DESIGN-SYSTEM.md, "Botões avulsos") */}
                           <button
                             type="button"
                             class="catalog-entry"

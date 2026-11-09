@@ -1,7 +1,8 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
 import { t } from '../i18n';
+import { writeClipboardText } from '../utils/clipboard';
 import { Icon, type IconName } from './icons';
+import { useCopyResult } from './useCopyResult';
 
 // Bloco de identidade de Detalhes: ícone, nome (15px), caminho e o ID em mono com
 // copiar no mesmo bloco (o ID serve para citar o item numa conversa com um agente).
@@ -49,21 +50,8 @@ export function DetailsIdentity({
 }
 
 function CopyIdButton({ id }: { readonly id: string }) {
-  const [copied, setCopied] = useState<'ok' | 'failed' | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
-  useEffect(() => () => clearTimeout(timer.current), []);
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(id);
-      setCopied('ok');
-    } catch {
-      // Sem a API (ou sem permissão): o ID continua no `title` para copiar à mão.
-      setCopied('failed');
-    }
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied(null), 2000);
-  };
+  // Sem a API (ou sem permissão): o ID continua no `title` para copiar à mão.
+  const { result: copied, copy } = useCopyResult();
 
   return (
     <>
@@ -72,7 +60,7 @@ function CopyIdButton({ id }: { readonly id: string }) {
         class="identity-id"
         title={`${t('common.copyId')}: ${id}`}
         aria-label={`${t('common.copyId')}: ${id}`}
-        onClick={() => void copy()}
+        onClick={() => void copy(() => writeClipboardText(id))}
       >
         <span class="identity-id-text">{id}</span>
         <Icon name={copied === 'ok' ? 'check' : 'copy'} />

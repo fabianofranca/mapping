@@ -14,10 +14,11 @@ import { locale } from '../../store/settings';
 import { Button, IconButton } from '../controls';
 import { useEditor } from '../EditorContext';
 import { Icon, type IconName } from '../icons';
-import { ChangeKind } from './ChangeKind';
+import { CHANGE_KIND_ICONS, ChangeKind } from './ChangeKind';
 import { ChangeNotices } from './ChangeNotices';
 import {
   changeTitle,
+  partsText,
   tableLines,
   valueParts,
   type ReviewNames,
@@ -88,14 +89,6 @@ const LONG_LINES = 6;
 /** Até quantas linhas de uma tabela aparecem antes do "Ver tudo". */
 const TABLE_ROWS = 5;
 
-const GLYPHS: Readonly<Record<ChangeType, IconName>> = {
-  created: 'plus',
-  removed: 'minus',
-  moved: 'moved',
-  changed: 'changed',
-  replaced: 'replaced',
-};
-
 /** Tipo do marcador: o da mudança; num par livre, novo ou removido pelo lado vazio. */
 export function markType(subject: MarkSubject): ChangeType {
   const c = subject.change;
@@ -108,7 +101,7 @@ export function markType(subject: MarkSubject): ChangeType {
 
 /** Glifo do tipo (o mesmo do `ChangeKind`). */
 export function markGlyph(type: ChangeType): IconName {
-  return GLYPHS[type];
+  return CHANGE_KIND_ICONS[type];
 }
 
 /** A mudança vista como a alteração de um campo (para títulos e valores de uma parte). */
@@ -122,8 +115,6 @@ function asField(subject: MarkSubject): Change {
 export function markFieldLabel(names: ReviewNames, subject: MarkSubject): string {
   return changeTitle(names, asField(subject));
 }
-
-const text = (parts: readonly ValuePart[]) => parts.map((p) => p.text).join('');
 
 /** Os dois lados de um marcador: o valor atual e o proposto, em partes. */
 export function markSides(
@@ -223,7 +214,7 @@ function TableSides({
 
 /** O texto passa do limite do popover fechado (o resto vem por "Ver tudo"). */
 function isLong(parts: readonly ValuePart[]): boolean {
-  const value = text(parts);
+  const value = partsText(parts);
   return value.length > LONG_TEXT || value.split('\n').length > LONG_LINES;
 }
 
@@ -255,8 +246,8 @@ function effectHint(
   const c = subject.change;
   if (!subject.part && situation?.conflict) {
     if (c.kind !== 'update') return t('review.hint.conflictEntity');
-    const current = text(valueParts(names, c, situation.current, c.to));
-    const after = text(valueParts(names, c, c.to, c.from));
+    const current = partsText(valueParts(names, c, situation.current, c.to));
+    const after = partsText(valueParts(names, c, c.to, c.from));
     return t('review.hint.conflict', { current, after });
   }
   if (subject.field === 'rect') return t('review.pop.rectHint');
@@ -322,8 +313,8 @@ function PopoverDecision({
   let acceptHint = t('review.decide.acceptConflictHint');
   let rejectHint = t('review.decide.rejectConflictHint');
   if (conflict && c.kind === 'update') {
-    const current = text(valueParts(names, c, situation.current, c.to));
-    const after = text(valueParts(names, c, c.to, c.from));
+    const current = partsText(valueParts(names, c, situation.current, c.to));
+    const after = partsText(valueParts(names, c, c.to, c.from));
     acceptHint = t('review.pop.acceptConflict', { current, after });
     rejectHint = t('review.pop.rejectConflict', { current });
   }
@@ -499,10 +490,8 @@ export function ChangePopover({
   const disabled = !open || applied;
   const reason = applied
     ? t('review.appliedReason')
-    : p.status === 'superseded'
-      ? decision === null
-        ? t('review.pop.supersededPending')
-        : t('review.closedReason')
+    : p.status === 'superseded' && decision === null
+      ? t('review.pop.supersededPending')
       : t('review.closedReason');
   // Aplicada ou retirada: o popover só mostra a decisão e as datas, sem botões.
   const closedForGood = p.status === 'applied' || p.status === 'withdrawn';

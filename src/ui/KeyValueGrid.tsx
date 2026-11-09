@@ -2,7 +2,13 @@ import type { ComponentChildren } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { ariaKeys, SHORTCUT_LABELS } from '../app/shortcuts';
 import { t } from '../i18n';
-import { getBacklinks, type Annotation, type Entry, type Project } from '../model';
+import {
+  getBacklinks,
+  type Annotation,
+  type Backlink,
+  type Entry,
+  type Project,
+} from '../model';
 import type { AnnotationLocation } from '../store/ui';
 import { ActionMenu } from './ActionMenu';
 import { useCiteMenuItems } from './CiteMenuItems';
@@ -90,7 +96,16 @@ function EntryRow({
     key: entry?.key ?? '',
     value: entry?.value ?? '',
   });
-  const [error, setError] = useState<string | null>(null);
+  // O erro é do par (pelo id; o par novo, sem id, usa `null`), não da posição: ao remover uma
+  // linha, a mensagem não passa para o par que ocupa o lugar dela.
+  const owner = entry?.id ?? null;
+  const [errorState, setErrorState] = useState<{
+    readonly owner: string | null;
+    readonly message: string;
+  } | null>(null);
+  const error = errorState?.owner === owner ? errorState.message : null;
+  const setError = (message: string | null) =>
+    setErrorState(message === null ? null : { owner, message });
   // O rascunho vale só enquanto o par gravado for o mesmo (ex.: some após desfazer).
   const current =
     draft.base === base
@@ -314,6 +329,18 @@ function RemovedEntryRow({
   );
 }
 
+/** As referências recebidas, agrupadas pelo id do par (uma vez por render, não uma por par). */
+function backlinksByEntry(backlinks: readonly Backlink[]): Map<string, Backlink[]> {
+  const byEntry = new Map<string, Backlink[]>();
+  for (const b of backlinks) {
+    if (!('entryId' in b.ref)) continue;
+    const list = byEntry.get(b.ref.entryId);
+    if (list) list.push(b);
+    else byEntry.set(b.ref.entryId, [b]);
+  }
+  return byEntry;
+}
+
 /** Pares de uma anotação livre, com as referências recebidas por par. */
 export function KeyValueGrid({
   project,
@@ -352,10 +379,9 @@ export function KeyValueGrid({
 
   // Lista única, com o par novo na posição que terá depois de gravado: a linha
   // mantém a mesma chave (e o foco) quando a chave é gravada ao passar para o valor.
+  const receivedByEntry = backlinksByEntry(backlinks);
   const rows = annotation.entries.map((entry, index) => {
-    const received = backlinks.filter(
-      (b) => 'entryId' in b.ref && b.ref.entryId === entry.id,
-    );
+    const received = receivedByEntry.get(entry.id) ?? [];
     return (
       <EntryRow
         key={`${annotation.id}:${index}`}

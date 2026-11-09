@@ -97,8 +97,11 @@ describe('CitationEditor › o campo', () => {
     expect(editor.tagName).toBe('DIV');
     expect(editor.getAttribute('contenteditable')).toBe('true');
     expect(editor.getAttribute('aria-multiline')).toBe('true');
-    expect(editor.getAttribute('aria-haspopup')).toBe('listbox');
-    expect(editor.getAttribute('aria-expanded')).toBe('false');
+    // role=textbox não permite aria-expanded/aria-haspopup; aria-controls só com o seletor aberto.
+    expect(editor.hasAttribute('aria-haspopup')).toBe(false);
+    expect(editor.hasAttribute('aria-expanded')).toBe(false);
+    expect(editor.hasAttribute('aria-controls')).toBe(false);
+    expect(editor.hasAttribute('aria-activedescendant')).toBe(false);
     const hint = document.getElementById(editor.getAttribute('aria-describedby')!);
     expect(hint?.textContent).toBe(t('thread.editorHint'));
   });
@@ -279,8 +282,9 @@ describe('CitationEditor › @', () => {
     const { editor } = setup();
     typeIn(editor, '@');
     const list = screen.getByRole('listbox', { name: t('citation.picker') });
-    expect(editor.getAttribute('aria-expanded')).toBe('true');
+    expect(editor.hasAttribute('aria-expanded')).toBe(false);
     expect(editor.getAttribute('aria-controls')).toBe(list.id);
+    expect(document.getElementById(list.id)).toBe(list);
     const options = within(list).getAllByRole('option');
     expect(options[0]!.getAttribute('aria-selected')).toBe('true');
     expect(editor.getAttribute('aria-activedescendant')).toBe(options[0]!.id);
@@ -295,7 +299,7 @@ describe('CitationEditor › @', () => {
     expect(optionNames().some((n) => n.startsWith('Porta'))).toBe(false);
     typeIn(editor, 'x');
     expect(screen.queryByRole('listbox')).toBeNull();
-    expect(editor.getAttribute('aria-expanded')).toBe('false');
+    expect(editor.hasAttribute('aria-controls')).toBe(false);
   });
 
   it('↑ e ↓ circulam pelas opções', () => {

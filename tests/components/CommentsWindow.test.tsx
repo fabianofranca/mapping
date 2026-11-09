@@ -141,6 +141,13 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(glyphOf('tc').d).toBe(AWAITING_AGENT_PATHS[0]);
   });
 
+  it('o selo de cada estado usa a classe do estado (a cor do pino)', async () => {
+    await mount();
+    const badgeOf = (id: string) => rowOf(id).querySelector('.comments-badge');
+    expect(badgeOf('ta')?.classList.contains('comments-badge-human')).toBe(true);
+    expect(badgeOf('tc')?.classList.contains('comments-badge-agent')).toBe(true);
+  });
+
   it('filtro de status: todas, resolvidas, aguardando agente e humano', async () => {
     const { user } = await mount();
     const status = screen.getByLabelText(t('comments.filter.status'));
@@ -210,6 +217,16 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(rowOf('ta').dataset.orphan).toBeUndefined();
     // A última de `ta` é do agente e Marina nunca leu: não lida.
     expect(rowOf('ta').dataset.unread).toBe('');
+    // O nome acessível do botão da âncora diz que há mensagem não lida (item 47).
+    const anchorA = anchorLabel(harness.project(), WAITING_HUMAN.anchor);
+    expect(
+      within(rowOf('ta')).getByRole('button', {
+        name: t('comments.row.openUnread', { anchor: anchorA }),
+      }),
+    ).toBeTruthy();
+    expect(
+      within(rowOf('tb')).queryByRole('button', { name: /(não lida|unread)/ }),
+    ).toBeNull();
     // A resolvida de Marina é lida para ela.
     expect(rowOf('tb').dataset.unread).toBeUndefined();
     expect(harness.context.derived.threads.unreadIds.value.has('ta')).toBe(true);
@@ -222,7 +239,9 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     const { user, harness } = await mount();
     const label = anchorLabel(harness.project(), WAITING_HUMAN.anchor);
     await user.click(
-      screen.getByRole('button', { name: t('comments.row.open', { anchor: label }) }),
+      screen.getByRole('button', {
+        name: t('comments.row.openUnread', { anchor: label }),
+      }),
     );
     expect(selectedThreadId(harness.ui)).toBe('ta');
     expect(harness.ui.selection.value).toEqual({ kind: 'marking', id: 'M1' });
@@ -411,6 +430,24 @@ describe('apagar conversas em lote', () => {
       'tb',
       'tc',
     ]);
+  });
+
+  it('a data vale como meia-noite local: a mensagem das 23h30 de 31/10 entra em "antes de 01/11"', async () => {
+    // Construída no fuso local: em UTC−3 é 02h30Z de 01/11, depois da meia-noite UTC que o
+    // `Date.parse` de "2026-11-01" daria (o teste só distingue a correção em fuso a oeste de UTC).
+    const late = new Date(2026, 9, 31, 23, 30).toISOString();
+    const LATE = sampleThread({
+      id: 'tf',
+      resolved: { by: { name: 'Marina Alves', email: 'marina@exemplo.com' }, at: T1 },
+      messages: [message('f1', late, HUMAN, 'tarde')],
+    });
+    const { user } = await mount([LATE]);
+    const dialog = await openMenu(user);
+    await user.type(
+      within(dialog).getByLabelText(t('comments.bulk.before')),
+      '2026-11-01',
+    );
+    expect(dialog.textContent).toContain(t('comments.bulk.threadsOne'));
   });
 
   it('zero candidatas desabilita o Apagar', async () => {

@@ -1,4 +1,5 @@
 import { signal, type ReadonlySignal } from '@preact/signals';
+import { createSerialQueue, newestFirst, stampOr } from './serialQueue';
 import {
   canRemoveProposal,
   changeImageFile,
@@ -184,10 +185,6 @@ export interface ProposalStoreOptions {
   readonly onChanged?: () => void;
 }
 
-function newestFirst(a: Proposal, b: Proposal): number {
-  return b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
-}
-
 /** `specs/<pasta>` da especialização que a mudança cria ou atualiza, se for um pacote. */
 function specPackageDir(change: Change): string | null {
   if (change.entity !== 'specialization' || change.kind === 'remove') return null;
@@ -210,6 +207,10 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
     list.value = [...known.values()].map((k) => k.proposal).sort(newestFirst);
     problems.value = [...problemMap.values()].map((p) => p.problem);
   };
+
+  /** Identifica o conjunto de problemas (ids e erros): muda quando um conserta e outro quebra. */
+  const problemsKey = () =>
+    JSON.stringify([...problemMap.values()].map((p) => [p.problem.id, p.problem.errors]));
 
   const notify = (kind: ProposalNoticeKind, id: string, title: string) => {
     notices.value = [...notices.value, { kind, id, title, at: now() }].slice(
@@ -250,21 +251,10 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
   load(options.initial);
 
   // Fila única: gravações e conferências nunca rodam em paralelo.
-  let tail: Promise<unknown> = Promise.resolve();
-  const enqueue = <T>(job: () => Promise<T>): Promise<T> => {
-    const run = tail.then(job, job);
-    tail = run.catch(() => undefined);
-    return run;
-  };
+  const enqueue = createSerialQueue();
 
-  const stampOf = async (id: string): Promise<string | null> => {
-    if (!storage.statProposal) return null;
-    try {
-      return await storage.statProposal(id);
-    } catch {
-      return null;
-    }
-  };
+  const stampOf = (id: string): Promise<string | null> =>
+    stampOr(storage.statProposal ? () => storage.statProposal!(id) : null);
 
   const adopt = (item: LoadedProposal) => {
     known.set(item.proposal.id, item);
@@ -393,6 +383,7 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
       return { added, changed, removed };
     }
     const present = new Set(ids);
+    const problemsBefore = problemsKey();
     for (const id of ids) {
       const stamp = await stampOf(id);
       const entry = known.get(id);
@@ -436,7 +427,7 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
       if (!present.has(id)) problemMap.delete(id);
     }
     if (added.length > 0 || changed.length > 0 || removed.length > 0) publish();
-    else if (problemMap.size !== problems.value.length) publish();
+    else if (problemsKey() !== problemsBefore) publish();
     return { added, changed, removed };
   };
 
@@ -462,29 +453,17 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
       return enqueue(async () => {
         const proposals = new Map<string, string>();
         const images = new Map<string, Blob>();
+        const read = async (path: string) => {
+          if (images.has(path)) return;
+          const blob = await storage.readImage(path).catch((e: unknown) => {
+            reportError('proposals.readImage', e);
+            return null;
+          });
+          if (blob) images.set(path, blob);
+        };
         for (const [id, entry] of known) {
           proposals.set(`proposals/${id}/proposal.json`, entry.text);
-          for (const change of entry.proposal.changes) {
-            if (Object.hasOwn(entry.proposal.applied, change.id)) continue;
-            const read = async (path: string) => {
-              if (images.has(path)) return;
-              const blob = await storage.readImage(path).catch((e: unknown) => {
-                reportError('proposals.readImage', e);
-                return null;
-              });
-              if (blob) images.set(path, blob);
-            };
-            const file = changeImageFile(change);
-            if (file !== null) await read(proposalImagePath(id, file));
-            const dir = specPackageDir(change);
-            if (dir === null) continue;
-            const from = `${proposalPackageDir(id, dir)}/`;
-            const listed = await storage.listProposalFiles(id).catch((e: unknown) => {
-              reportError('proposals.listFiles', e);
-              return [];
-            });
-            for (const path of listed) if (path.startsWith(from)) await read(path);
-          }
+          await readPending(storage, id, entry.proposal, read);
         }
         for (const [id, item] of problemMap) {
           if (item.text !== null)
@@ -494,4 +473,28 @@ export function createProposalStore(options: ProposalStoreOptions): ProposalStor
       });
     },
   };
+}
+
+/** Lê (por `read`) as imagens e os arquivos de pacote das mudanças ainda não aplicadas. */
+async function readPending(
+  storage: ProjectStorage,
+  id: string,
+  proposal: Proposal,
+  read: (path: string) => Promise<void>,
+): Promise<void> {
+  let listed: readonly string[] | undefined;
+  for (const change of proposal.changes) {
+    if (Object.hasOwn(proposal.applied, change.id)) continue;
+    const file = changeImageFile(change);
+    if (file !== null) await read(proposalImagePath(id, file));
+    const dir = specPackageDir(change);
+    if (dir === null) continue;
+    const from = `${proposalPackageDir(id, dir)}/`;
+    // Uma listagem por proposta, não por mudança.
+    listed ??= await storage.listProposalFiles(id).catch((e: unknown) => {
+      reportError('proposals.listFiles', e);
+      return [];
+    });
+    for (const path of listed) if (path.startsWith(from)) await read(path);
+  }
 }

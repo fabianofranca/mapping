@@ -149,7 +149,7 @@ describe('aria-keyshortcuts sempre na sintaxe ARIA (F5)', () => {
   it('todo uso é um literal ARIA ou passa por ariaKeys()', () => {
     const wrong = uses.filter(({ value }) => {
       if (value.startsWith('"')) return !ARIA_KEYS.test(value.slice(1, -1));
-      return !/^\{ariaKeys\(/.test(value);
+      return !/^\{ariaKeys(?:All)?\(/.test(value);
     });
     expect(wrong).toEqual([]);
   });

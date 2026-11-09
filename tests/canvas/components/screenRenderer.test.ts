@@ -11,15 +11,28 @@ import {
   type Screen,
   renderOrder,
 } from '../../../src/model/components/screen';
-import { ScreenRenderer } from '../../../src/canvas/components/screenRenderer';
+import { DEFAULT_PALETTE } from '../../../src/canvas/components/palette';
+import {
+  ScreenRenderer,
+  type ScreenRendererLabels,
+} from '../../../src/canvas/components/screenRenderer';
 
 beforeAll(() => installFakeCanvas());
 
 const library = loadLibrary(SAMPLE_FILES);
 
-function setup(options: ConstructorParameters<typeof ScreenRenderer>[1] = {}) {
+const LABELS: ScreenRendererLabels = {
+  typeWithoutComponent: (name) => `${name}\n(sem componente)`,
+  unknownType: (id) => `${id}\n(tipo desconhecido)`,
+  warningTypeWithoutComponent: 'tipo sem componente na especialização',
+  warningUnknownType: 'tipo não existe na especialização',
+  drawWarning: ({ code }) => code,
+};
+
+function setup(options: Partial<ConstructorParameters<typeof ScreenRenderer>[1]> = {}) {
   const group = new Konva.Group();
   const renderer = new ScreenRenderer(group, {
+    labels: LABELS,
     measure: approximateMeasurer,
     ...options,
   });
@@ -147,7 +160,7 @@ describe('ScreenRenderer', () => {
     const node = renderer.nodeOf('x');
     const rect = node?.findOne<Konva.Rect>('Rect');
     expect(rect?.dash()).toEqual([6, 4]);
-    expect(rect?.stroke()).toBe('#D81B60');
+    expect(rect?.stroke()).toBe(DEFAULT_PALETTE.unknownLine);
     expect(node?.findOne<Konva.Text>('Text')?.text()).toContain('nao-existe');
     expect(renderer.warnings().get('x')).toEqual(['tipo não existe na especialização']);
     // Sem biblioteca nenhuma: todos viram reservado.
@@ -211,6 +224,54 @@ describe('ScreenRenderer', () => {
     renderer.update(loadLibrary(SAMPLE_FILES), SAMPLE_SCREEN);
     expect(onInstanceCreated).toHaveBeenCalledTimes(SAMPLE_SCREEN.instances.length);
     expect(new Set(created).size).toBe(created.length);
+  });
+
+  it('os textos da caixa de tipo ausente e dos avisos vêm dos rótulos do chamador', () => {
+    const { renderer } = setup({
+      labels: {
+        ...LABELS,
+        typeWithoutComponent: (name) => `${name}\n(no component)`,
+        unknownType: (id) => `${id}\n(unknown type)`,
+        warningUnknownType: 'type is not in the specialization',
+      },
+    });
+    const unknown: Instance = {
+      id: 'x',
+      typeId: 'nao-existe',
+      box: { x: 5, y: 6, width: 100, height: 40 },
+      values: {},
+    };
+    renderer.update(library, { ...SAMPLE_SCREEN, instances: [unknown] });
+    expect(renderer.nodeOf('x')?.findOne<Konva.Text>('Text')?.text()).toBe(
+      'nao-existe\n(unknown type)',
+    );
+    expect(renderer.warnings().get('x')).toEqual(['type is not in the specialization']);
+  });
+
+  it('cor, preenchimento, fonte e tamanho da caixa de tipo ausente vêm da paleta', () => {
+    const { renderer } = setup({
+      palette: {
+        unknownLine: '#123456',
+        unknownFill: '#abcdef',
+        labelFontSize: 20,
+        labelFontFamily: 'Fonte Teste',
+      },
+    });
+    const unknown: Instance = {
+      id: 'x',
+      typeId: 'nao-existe',
+      box: { x: 0, y: 0, width: 100, height: 40 },
+      values: {},
+    };
+    renderer.update(library, { ...SAMPLE_SCREEN, instances: [unknown] });
+    const node = renderer.nodeOf('x');
+    const rect = node?.findOne<Konva.Rect>('Rect');
+    const text = node?.findOne<Konva.Text>('Text');
+    expect(rect?.stroke()).toBe('#123456');
+    expect(rect?.fill()).toBe('#abcdef');
+    expect(text?.fill()).toBe('#123456');
+    expect(text?.fontSize()).toBe(20);
+    expect(text?.fontFamily()).toBe('Fonte Teste');
   });
 
   it('dispose destrói os grupos das instâncias', () => {

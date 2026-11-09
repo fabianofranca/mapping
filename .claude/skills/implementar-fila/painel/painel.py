@@ -3,7 +3,8 @@
 
 Arquivos numa pasta: queue.json, meta.json, log.json, issues.json (listas JSON).
 Cada comando imprime, no fim, `alterados: <arquivos gravados>`.
-Só biblioteca padrão. Uso: painel.py <subcomando> DIR ...
+Só biblioteca padrão. Uso: painel.py [--now ISO] <subcomando> DIR ...
+(o subcomando vem ANTES da pasta: `painel.py row <pasta> '#n' status=...`).
 """
 import argparse
 import datetime
@@ -22,7 +23,13 @@ QUEUE_EMPTY = {
     "order": 0, "issue": "", "title": "", "kind": "etapa", "step": "",
     "status": "aguardando", "pr": "", "started": "", "ended": "",
     "phases": "", "phasesTotal": 0, "phasesDone": 0, "stage": "",
+    # Ficha da etapa (dependências, fases, Toca em, Testador), para não reler a issue.
+    "plan": "",
+    # Filhas que ainda devem aviso (ids separados por espaço) e desde quando.
+    "child": "", "childAt": "",
 }
+TIME_FIELDS = ["started", "ended", "childAt"]
+LATE_MINUTES = 60
 ISSUE_EMPTY = {
     "etapa": "", "etapaTitle": "", "number": "", "title": "", "url": "",
     "kind": "bug", "level": "", "state": "aberta", "detail": "",
@@ -182,7 +189,9 @@ def cmd_row(a):
         validate_choice("kind", pairs["kind"], KINDS)
     if "stage" in pairs:
         validate_choice("stage", pairs["stage"], STAGES)
-    for k in ("started", "ended"):
+    if pairs.get("child") == "":
+        pairs["childAt"] = ""
+    for k in TIME_FIELDS:
         if k in pairs:
             pairs[k] = now() if pairs[k] == "now" else (check_iso(pairs[k]) if pairs[k] else "")
     for k in INT_FIELDS:
@@ -262,6 +271,31 @@ def cmd_current(a):
     s.commit()
 
 
+def cmd_reserve(a):
+    s = Sessao(a.dir)
+    s.get("meta")[0]["reserve"] = a.trigger
+    s.touch("meta")
+    s.commit()
+
+
+def minutes_since(iso):
+    t = datetime.datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ")
+    n = datetime.datetime.strptime(now(), "%Y-%m-%dT%H:%M:%SZ")
+    return int((n - t).total_seconds() // 60)
+
+
+def late_rows(q):
+    return [r for r in q if r.get("child") and r.get("childAt")
+            and minutes_since(r["childAt"]) > LATE_MINUTES]
+
+
+def show_row(r):
+    print(f"{r['issue']} {r['title']}")
+    for k, v in r.items():
+        if k not in ("issue", "title") and v not in ("", 0):
+            print(f"  {k}: {v}")
+
+
 def cmd_issue(a):
     s = Sessao(a.dir)
     rows = s.get("issues")
@@ -287,12 +321,25 @@ def cmd_issue(a):
 
 def cmd_show(a):
     q, m, lg, iss = (load(a.dir, n) for n in FILES)
+    if a.issue:
+        row = find_row(q, norm_issue(a.issue))
+        if row is None:
+            raise Erro(f"{a.issue} não está na fila")
+        show_row(row)
+        return
     print(f"fila: {len(q)} linhas")
     for st in STATUS:
         print(f"  {st}: {sum(1 for r in q if r['status'] == st)}")
     meta = m[0] if m else {}
     print(f"atual: {meta.get('current') or '—'}")
     print(f"início: {meta.get('runStart') or '—'}  atualizado: {meta.get('updatedAt', '—')}")
+    print(f"reserva: {meta.get('reserve') or '—'}")
+    for r in q:
+        if r["status"] == "em andamento":
+            print(f"  {r['issue']} {r['stage']} · {r['step']} · filhas: {r.get('child') or '—'}")
+    late = late_rows(q)
+    print("atrasadas: " + ("; ".join(
+        f"{r['issue']} {r['child']} ({minutes_since(r['childAt'])} min)" for r in late) or "nenhuma"))
     print(f"issues registradas: {len(iss)}")
     print("últimas do log:")
     for e in lg[-5:]:
@@ -327,7 +374,10 @@ def build_parser():
     sp.add_argument("text")
     sp = add("issue", cmd_issue, "insere ou atualiza um bug/roadmap")
     sp.add_argument("pairs", nargs="+")
-    add("show", cmd_show, "resumo legível")
+    sp = add("reserve", cmd_reserve, "guarda o id da conferência de reserva da sessão")
+    sp.add_argument("trigger")
+    sp = add("show", cmd_show, "resumo legível; com '#n', a linha inteira (com a ficha)")
+    sp.add_argument("issue", nargs="?")
     return p
 
 

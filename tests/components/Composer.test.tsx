@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { t } from '../../src/i18n';
-import { citationUrl } from '../../src/model';
+import { citationUrl, type ThreadAnchor } from '../../src/model';
 import { composerOpen } from '../../src/store/composerBridge';
 import { clearIdentity, setIdentity } from '../../src/store/identity';
 import { locale } from '../../src/store/settings';
@@ -124,5 +124,22 @@ describe('Composer › ponte', () => {
     mount({ kind: 'new', anchor: { kind: 'marking', id: 'M1' } });
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(composerOpen.value).toBe(false);
+  });
+});
+
+describe('Composer › foco', () => {
+  it('reposicionar o rascunho (nova âncora) devolve o foco ao compositor', () => {
+    const harness = createHarness(sampleProject());
+    const view = (anchor: ThreadAnchor) => (
+      <EditorContext.Provider value={harness.context}>
+        <Composer target={{ kind: 'new', anchor }} autoFocus />
+      </EditorContext.Provider>
+    );
+    const { rerender } = render(view({ kind: 'point', containerId: null, x: 1, y: 1 }));
+    const field = screen.getByRole('textbox');
+    expect(document.activeElement).toBe(field);
+    (document.activeElement as HTMLElement).blur();
+    rerender(view({ kind: 'point', containerId: null, x: 5, y: 5 }));
+    expect(document.activeElement).toBe(screen.getByRole('textbox'));
   });
 });
