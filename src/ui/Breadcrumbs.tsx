@@ -1,6 +1,7 @@
 import { t } from '../i18n';
 import { ancestorsOf, type Marking, type Project, type ProjectContainer } from '../model';
 import { resolveSelection, type Selection } from '../store/ui';
+import { drawHintVisible } from '../store/drawHint';
 import { selectionProject } from '../store/shownSelection';
 import { useEditor } from './EditorContext';
 import { Icon } from './icons';
@@ -94,16 +95,23 @@ export function Breadcrumbs({
 }: {
   readonly onSelect: (selection: NonNullable<Selection>) => void;
 }) {
-  const { review, ui } = useEditor();
+  const { review, store, ui } = useEditor();
   // O projeto à vista: na visão Proposto da revisão, o item que só existe na proposta
   // também tem caminho (fase 8.2, P1), e o de uma criação rejeitada, pela prévia sem decisões.
   const selection = ui.selection.value;
   const crumbs = crumbsOf(selectionProject(review, selection), selection);
+  const hint = drawHintVisible({
+    mode: ui.mode.value,
+    locked: store.locked.value,
+    selection,
+    shownProject: review.derived.shownProject.value,
+  });
+  const emptyText = hint ? t('editor.drawHint') : t('panel.nothingSelected');
   return (
     <nav class="crumbs" aria-label={t('crumbs.label')}>
       {crumbs.length === 0 && (
-        <span class="crumbs-empty" title={t('panel.nothingSelected')}>
-          {t('panel.nothingSelected')}
+        <span class="crumbs-empty" title={emptyText}>
+          {emptyText}
         </span>
       )}
       {crumbs.map((crumb, i) => {

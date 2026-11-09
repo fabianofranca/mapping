@@ -54,12 +54,6 @@
   pointer-events: auto;
 }
 
-.canvas-overlay .canvas-hint {
-  align-self: center;
-  pointer-events: none;
-  font: var(--t-text-small);
-}
-
 .canvas-area[hidden] {
   display: none;
 }
