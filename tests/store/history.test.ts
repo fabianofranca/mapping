@@ -820,6 +820,67 @@ describe('store: vínculo assíncrono do histórico (desfazer espera a gravaçã
     expect(store.linkFailure.value?.error).toBe('write-failed');
   });
 
+  it('commit, undo e redo escrevem os sinais num batch: um effect que lê os quatro roda uma vez', () => {
+    const { store } = setup();
+    let runs = 0;
+    const stop = effect(() => {
+      void store.project.value;
+      void store.revision.value;
+      void store.canUndo.value;
+      void store.canRedo.value;
+      runs++;
+    });
+    try {
+      for (const step of [
+        () => store.apply((p) => renameLayer(p, 'L1', 'Um')),
+        () => store.undo(),
+        () => store.redo(),
+      ]) {
+        const before = runs;
+        step();
+        expect(runs - before).toBe(1);
+      }
+    } finally {
+      stop();
+    }
+  });
+
+  it('falha síncrona (exceção) no desfazer: o passo é revertido e linkFailure é definido', () => {
+    const { store } = setup();
+    const boom = () => {
+      throw new Error('sync');
+    };
+    store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), {
+      link: { tag: 'P1', undo: boom, redo: boom },
+    });
+
+    expect(store.undo()).toBe(true);
+    expect(project(store).layers.find((l) => l.id === 'L1')?.name).toBe('Aplicado');
+    expect(store.canUndo.value).toBe(true);
+    expect(store.canRedo.value).toBe(false);
+    expect(store.linkFailure.value?.error).toBe('failed');
+  });
+
+  it('falha síncrona (exceção) no refazer: o passo é revertido e linkFailure é definido', async () => {
+    const { store } = setup();
+    const { pending, link } = asyncLinked();
+    const boom = () => {
+      throw new Error('sync');
+    };
+    store.apply((p) => renameLayer(p, 'L1', 'Aplicado'), {
+      link: { ...link, redo: boom },
+    });
+    store.undo();
+    pending[0]?.resolve({ ok: true });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(store.redo()).toBe(true);
+    expect(project(store).layers.find((l) => l.id === 'L1')?.name).not.toBe('Aplicado');
+    expect(store.canRedo.value).toBe(true);
+    expect(store.linkFailure.value?.error).toBe('failed');
+  });
+
   it('falha da gravação no refazer: o passo é revertido e o erro fica à vista', async () => {
     const { store } = setup();
     const { pending, link } = asyncLinked();

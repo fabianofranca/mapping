@@ -205,6 +205,9 @@ export function sameItem(a: SelectionItem | null, b: SelectionItem | null): bool
   return a !== null && b !== null && a.kind === b.kind && a.id === b.id;
 }
 
+/** Chave de um item para `Set`/`Map` (`kind:id`). */
+const itemKey = (item: SelectionItem): string => `${item.kind}:${item.id}`;
+
 /** A seleção inteira a partir do primário e do grupo: os outros primeiro, o primário por último. */
 export function itemsOf(
   selection: Selection,
@@ -239,9 +242,12 @@ export function isItemSelected(
  */
 export function selectItems(ui: EditorUi, items: readonly SelectionItem[]): void {
   const unique: SelectionItem[] = [];
+  const keys = new Set<string>();
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i] as SelectionItem;
-    if (!isItemSelected(unique, item)) unique.unshift(item);
+    if (keys.has(itemKey(item))) continue;
+    keys.add(itemKey(item));
+    unique.unshift(item);
   }
   const primary = unique.at(-1);
   batch(() => {
@@ -281,10 +287,13 @@ export function toggleSelectedItem(ui: EditorUi, item: SelectionItem): void {
  */
 export function addSelectedItems(ui: EditorUi, items: readonly SelectionItem[]): void {
   const current = peekSelectedItems(ui);
-  const fresh = items.filter(
-    (item, i) =>
-      !isItemSelected(current, item) && items.findIndex((o) => sameItem(o, item)) === i,
-  );
+  const known = new Set(current.map(itemKey));
+  const fresh = items.filter((item) => {
+    const key = itemKey(item);
+    if (known.has(key)) return false;
+    known.add(key);
+    return true;
+  });
   const [first, ...rest] = fresh;
   if (!first) return;
   selectItems(ui, current.length > 0 ? [...fresh, ...current] : [...rest, first]);
@@ -474,7 +483,7 @@ export function resolveSelection(
 ): ResolvedSelection {
   if (!project || !selection) return null;
   if (selection.kind === 'image') {
-    const image = project.containers.find((i) => i.id === selection.id);
+    const image = projectIndex(project).containers.get(selection.id);
     return image ? { kind: 'image', image } : null;
   }
   const index = projectIndex(project);
