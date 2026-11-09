@@ -58,10 +58,15 @@ export function createProjectCatalogs(deps: ProjectCatalogsDeps): ProjectCatalog
   const withPackage = (p: Project): ProjectSpecialization[] =>
     p.specializations.filter((s) => s.spec !== null && packageDirOf(s.file) !== null);
 
-  async function load(owners: readonly ProjectSpecialization[], mine: number) {
+  async function load(
+    owners: readonly ProjectSpecialization[],
+    mine: number,
+    current: string,
+  ) {
     // Deixa a interface pintar antes do trabalho síncrono de montar o catálogo.
     await Promise.resolve();
     const out: ProjectCatalog[] = [];
+    let failed = false;
     for (const owner of owners) {
       try {
         const files = await deps.read(owner);
@@ -74,10 +79,13 @@ export function createProjectCatalogs(deps: ProjectCatalogsDeps): ProjectCatalog
           catalog,
         });
       } catch (error) {
+        failed = true;
         reportError('catalog.load', error);
       }
     }
     if (disposed || mine !== run) return;
+    // Um dono que falhou não marca a chave: o próximo pedido tenta de novo (decisão 16).
+    if (failed && doneKey === current) doneKey = null;
     entries.value = out;
   }
 
@@ -98,7 +106,7 @@ export function createProjectCatalogs(deps: ProjectCatalogsDeps): ProjectCatalog
       if (current === doneKey) return;
       doneKey = current;
       run += 1;
-      const task = load(owners, run);
+      const task = load(owners, run, current);
       pending.add(task);
       const done = () => void pending.delete(task);
       task.then(done, done);
