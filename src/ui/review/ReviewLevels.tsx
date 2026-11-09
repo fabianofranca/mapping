@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/ho
 import { t } from '../../i18n';
 import { BREAKPOINTS } from '../../theme/breakpoints';
 import {
-  activeFilterConditions,
   CANVAS_FILTER,
   CHANGE_TYPES,
   hasActiveFilters,
@@ -120,6 +119,23 @@ function useVirtualWindow(count: number, scroller: { current: HTMLElement | null
  */
 export function activeFilterGroups(f: ReviewFiltersState): number {
   return activeFilterConditions(f).filter(Boolean).length;
+}
+
+/**
+ * Uma condição por grupo de filtro (decisão, tipos, imagem, camada, só conflitos, só
+ * revisadas): `true` quando o grupo está ativo. `hasActiveFilters`
+ * (`src/model/proposalView.ts`) tem a mesma lista; o teste de `activeFilterGroups` confere
+ * as duas.
+ */
+export function activeFilterConditions(f: ReviewFiltersState): readonly boolean[] {
+  return [
+    f.decision !== 'all',
+    f.types.length > 0,
+    f.imageId !== null,
+    f.layerId !== null,
+    f.onlyConflicts,
+    f.onlyRevised,
+  ];
 }
 
 /**

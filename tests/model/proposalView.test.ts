@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   NO_FILTERS,
-  activeFilterConditions,
   addAnnotation,
   addContainer,
   canRemoveProposal,
@@ -334,22 +333,5 @@ describe('canRemoveProposal (fase 9.2)', () => {
     expect(canRemoveProposal({ ...proposal, status: 'withdrawn' })).toBe(true);
     expect(canRemoveProposal({ ...proposal, status: 'superseded' })).toBe(true);
     expect(canRemoveProposal({ ...proposal, status: 'applied' })).toBe(true);
-  });
-});
-
-describe('activeFilterConditions', () => {
-  it('é a fonte de hasActiveFilters: uma condição por grupo', () => {
-    expect(activeFilterConditions(NO_FILTERS)).toEqual([
-      false,
-      false,
-      false,
-      false,
-      false,
-      false,
-    ]);
-    expect(hasActiveFilters(NO_FILTERS)).toBe(false);
-    const f = { ...NO_FILTERS, onlyRevised: true, layerId: 'L1' };
-    expect(activeFilterConditions(f).filter(Boolean)).toHaveLength(2);
-    expect(hasActiveFilters(f)).toBe(true);
   });
 });
