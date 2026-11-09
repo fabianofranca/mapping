@@ -28,6 +28,9 @@ vi.mock('../../src/app/controller', async () => {
 
 import * as app from '../../src/app/controller';
 import { Home } from '../../src/app/Home';
+import { ProjectNoticeBanner } from '../../src/ui/ProjectNoticeBanner';
+import { projectNotice } from '../../src/store/banners';
+import { signal } from '@preact/signals';
 
 const features = app.features as unknown as { value: unknown };
 const recentProjects = app.recentProjects as unknown as { value: unknown[] };
@@ -166,20 +169,35 @@ describe('Home', () => {
     );
   });
 
-  it('pasta que ganhou projeto: abre o existente e mostra o aviso (sem erro)', async () => {
+  it('pasta que ganhou projeto: o aviso sobrevive à saída da tela inicial (abre o editor)', async () => {
     const handle = { name: 'minha-pasta' };
+    const editorOpen = signal(false);
     controller.openFolder.mockReturnValue(
       ok({ kind: 'needs-setup', handle, images: [] }),
     );
-    controller.createFolderProject.mockReturnValue(ok({ skipped: [], existing: true }));
-    render(<Home />);
+    controller.createFolderProject.mockImplementation(() => {
+      editorOpen.value = true; // a tela inicial é desmontada, como no App
+      return ok({ skipped: [], existing: true });
+    });
+    projectNotice.value = null;
+    function Shell() {
+      return (
+        <>
+          <ProjectNoticeBanner />
+          {editorOpen.value ? <p>editor</p> : <Home />}
+        </>
+      );
+    }
+    render(<Shell />);
     const user = userEvent.setup();
     await user.click(screen.getByText(t('home.openFolder')));
     await user.click(await screen.findByRole('button', { name: t('common.create') }));
-    const notice = await screen.findByText(t('home.folderHasProject'));
-    expect(notice.getAttribute('role')).toBe('status');
-    expect(notice.classList.contains('notice-error')).toBe(false);
-    expect(screen.queryByRole('alert')).toBeNull();
+    await screen.findByText('editor');
+    expect((await screen.findByRole('status')).textContent).toContain(
+      t('home.folderHasProject'),
+    );
+    await user.click(screen.getByRole('button', { name: t('editor.dismiss') }));
+    expect(screen.queryByRole('status')).toBeNull();
   });
 
   it('abrir zip chama importZip com o arquivo escolhido', async () => {
