@@ -143,6 +143,31 @@ describe('scripts/testing/: auxiliares da nuvem (TR1)', () => {
       ).toEqual({ x: 10 + 110 * 2.5 - 20, y: 20 + 64 * 2.5 + 8.5 });
     });
 
+    it('container com name nulo (imagem do seletor) não derruba a busca por id ou nome', async () => {
+      const mod = await import('../../scripts/testing/cloud.mjs');
+      const withNull = {
+        ...mapping,
+        containers: [
+          { id: 'c3', name: null, placement: { x: 0, y: 0, scale: 1 } },
+          ...mapping.containers,
+        ],
+        markings: [{ id: 'm3', name: null, containerId: 'c1', rect: { x: 0, y: 0 } }],
+      };
+      const point = (container: string, marking?: boolean) =>
+        mod.containerScreenPoint({
+          mapping: withNull as never,
+          container,
+          x: 1,
+          y: 1,
+          viewport: '0 0 1',
+          host,
+          ...(marking ? { marking: true } : {}),
+        });
+      expect(point('c3')).toEqual({ x: 11, y: 21 });
+      expect(point('cadastro')).toEqual({ x: 10 + 102, y: 20 + 52 });
+      expect(point('m3', true)).toEqual({ x: 10 + 102, y: 20 + 52 });
+    });
+
     it('com marcacao, soma o canto da marcação e a colocação do container dela', async () => {
       const mod = await import('../../scripts/testing/cloud.mjs');
       // canvas = (100 + (10+3)*2, 50 + (20+4)*2) = (126, 98)
