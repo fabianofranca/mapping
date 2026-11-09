@@ -258,8 +258,15 @@ export function memoByProject<T>(fn: (p: Project) => T): (p: Project) => T {
 /** Índice do projeto, montado na primeira consulta de cada versão. */
 export const projectIndex: (p: Project) => ProjectIndex = memoByProject(buildIndex);
 
-/** O id já é de uma marcação, de uma seta ou de um container (`projectIndex` os trata como um espaço só). */
+/**
+ * O id já é de uma marcação, de uma seta ou de um container (`projectIndex` os trata como um
+ * espaço só). Varre os arrays em vez de usar o índice: quem cria um item a cada versão do
+ * projeto não pode pagar a montagem do índice por criação.
+ */
 export function idInUse(p: Project, id: string): boolean {
-  const index = projectIndex(p);
-  return index.markings.has(id) || index.arrows.has(id) || index.containers.has(id);
+  return (
+    p.markings.some((m) => m.id === id) ||
+    p.arrows.some((a) => a.id === id) ||
+    p.containers.some((c) => c.id === id)
+  );
 }
