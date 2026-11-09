@@ -76,6 +76,8 @@ describe('devolver o foco ao fechar', () => {
     );
     await settle();
     expect(active()).toBe(stripButton('tree'));
+    // Fechada, o botão da faixa reflete isso: aria-pressed "false".
+    expect(stripButton('tree')?.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('Árvore aberta por atalho com o foco no canvas, fechar → canvas', async () => {

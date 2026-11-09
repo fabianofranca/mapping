@@ -512,6 +512,7 @@ export const ptBR = {
   'library.package': 'Pacote',
   'library.packageTooBig':
     'pacote grande demais para conferir (limite de arquivos ou de bytes)',
+  'library.fileNotFound': 'arquivo não encontrado: {path}',
   'library.issues': 'Problemas do pacote',
   'spec.removeTitle': 'Remover "{name}"?',
   'spec.removeChoose': 'O que fazer com as camadas e anotações da especialização?',

@@ -1,6 +1,15 @@
 import { t } from '../i18n';
 import type { AppLibraryIssue } from '../storage/specPackage';
 
+/** Texto do problema: os que têm código saem traduzidos; o resto vem do validador. */
+function issueText(issue: AppLibraryIssue): string {
+  if (issue.code === 'package-too-big') return t('library.packageTooBig');
+  if (issue.code === 'file-not-found' && issue.target !== undefined) {
+    return t('library.fileNotFound', { path: issue.target });
+  }
+  return issue.message;
+}
+
 /** Agrupa por arquivo, na ordem em que cada arquivo aparece pela primeira vez. */
 function groupByFile(
   issues: readonly AppLibraryIssue[],
@@ -45,10 +54,7 @@ export function LibraryIssueList({
                 >
                   {t(issue.severity === 'error' ? 'library.error' : 'library.warning')}
                 </span>{' '}
-                {issue.path !== '' && <code>{issue.path}</code>}{' '}
-                {issue.code === 'package-too-big'
-                  ? t('library.packageTooBig')
-                  : issue.message}
+                {issue.path !== '' && <code>{issue.path}</code>} {issueText(issue)}
               </li>
             ))}
           </ul>

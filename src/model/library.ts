@@ -72,6 +72,12 @@ export interface LibraryIssue {
   readonly path: string;
   readonly message: string;
   readonly severity: 'error' | 'warning';
+  /**
+   * Código estável de problemas que a interface exibe traduzidos; `message` continua com o
+   * texto em português (MCP e testes). `target` é o dado que entra na tradução.
+   */
+  readonly code?: 'file-not-found';
+  readonly target?: string;
 }
 
 export interface LibraryInput {
@@ -240,6 +246,17 @@ class Collector {
   error(file: string, path: string, message: string): void {
     this.issues.push({ file, path, message, severity: 'error' });
   }
+  /** Arquivo citado que não está no pacote (a interface traduz pelo `code`). */
+  fileNotFound(file: string, path: string, target: string): void {
+    this.issues.push({
+      file,
+      path,
+      message: `arquivo não encontrado: ${target}`,
+      severity: 'error',
+      code: 'file-not-found',
+      target,
+    });
+  }
   warning(file: string, path: string, message: string): void {
     this.issues.push({ file, path, message, severity: 'warning' });
   }
@@ -342,7 +359,7 @@ function level1(
       referenced.add(path);
       const file = byPath.get(path);
       if (file === undefined) {
-        out.error(specPath, `${base}.component`, `arquivo não encontrado: ${path}`);
+        out.fileNotFound(specPath, `${base}.component`, path);
       } else if (!readComponents.has(path)) {
         readComponents.add(path);
         readComponent(file, pkg, out);
@@ -354,7 +371,7 @@ function level1(
       referenced.add(path);
       const file = byPath.get(path);
       if (file === undefined) {
-        out.error(specPath, `${base}.doc`, `arquivo não encontrado: ${path}`);
+        out.fileNotFound(specPath, `${base}.doc`, path);
       } else if ((file.text ?? '').trim() === '') {
         out.warning(path, '', 'documento vazio');
       }
@@ -388,7 +405,7 @@ function readIcons(pkg: Package, out: Collector): void {
   if (path === undefined) return;
   const file = pkg.byPath.get(path);
   if (file === undefined) {
-    out.error(pkg.specPath, 'icons', `arquivo não encontrado: ${path}`);
+    out.fileNotFound(pkg.specPath, 'icons', path);
     return;
   }
   if (file.text === undefined) return void out.error(path, '', NOT_READ);
@@ -440,7 +457,7 @@ function readJsonFile(
   const full = pkg.resolve(ref);
   const file = pkg.byPath.get(full);
   if (file === undefined) {
-    out.error(pkg.specPath, path, `arquivo não encontrado: ${full}`);
+    out.fileNotFound(pkg.specPath, path, full);
     return;
   }
   if (seen.has(full)) return;

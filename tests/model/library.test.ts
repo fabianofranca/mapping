@@ -422,6 +422,14 @@ describe('validateLibrary: nível 1 (cada arquivo)', () => {
     ]);
   });
 
+  it('o erro de arquivo ausente traz código e alvo para a interface traduzir', () => {
+    const report = validate(without(miniPackage(), 'components/mini-card.json'));
+    expect(report.errors[0]).toMatchObject({
+      code: 'file-not-found',
+      target: 'components/mini-card.json',
+    });
+  });
+
   it('doc para arquivo que não existe', () => {
     const report = validate(without(miniPackage(), 'docs/mini-button.md'));
     expect(report.errors.map(brief)).toEqual([

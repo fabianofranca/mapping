@@ -298,3 +298,33 @@ describe('Diagnóstico: pacote grande demais em en-US', () => {
     locale.value = 'pt-BR';
   });
 });
+
+describe('Diagnóstico: arquivo não encontrado em en-US', () => {
+  it('a mensagem sai traduzida, sem o texto fixo em português', () => {
+    locale.value = 'en-US';
+    const issues = new Map([
+      [
+        'sdui',
+        [
+          {
+            file: 'sdui.spec.json',
+            path: 'layers[2].annotationTypes[1].component',
+            message: 'arquivo não encontrado: components/button.json',
+            severity: 'error' as const,
+            code: 'file-not-found' as const,
+            target: 'components/button.json',
+          },
+        ],
+      ],
+    ]);
+    const harness = createHarness(sampleProject(), false, { libraryIssues: issues });
+    render(
+      <EditorContext.Provider value={harness.context}>
+        <Diagnostics />
+      </EditorContext.Provider>,
+    );
+    expect(screen.getByText(/file not found: components\/button\.json/)).toBeTruthy();
+    expect(screen.queryByText(/não encontrado/)).toBeNull();
+    locale.value = 'pt-BR';
+  });
+});
