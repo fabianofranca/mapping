@@ -25,6 +25,7 @@ vi.mock('../../src/app/controller', async () => {
 });
 
 import { CanvasNotices } from '../../src/app/CanvasNotices';
+import { Breadcrumbs } from '../../src/ui/Breadcrumbs';
 import { EditorDialogs as EditorDialogsView } from '../../src/app/EditorDialogs';
 import { useEditorDialogs } from '../../src/app/useEditorDialogs';
 import { EditorMainBar } from '../../src/app/EditorMainBar';
@@ -285,7 +286,8 @@ describe('CanvasNotices', () => {
     withContext(harness, <CanvasNotices notices={notices} />);
     expect(screen.getByRole('alert').textContent).toContain('Deu ruim');
     expect(screen.getByText('Importando')).toBeTruthy();
-    expect(screen.getByText(t('editor.drawHint'))).toBeTruthy();
+    // A dica do Desenhar vive na barra do canvas (Breadcrumbs), nunca sobre o canvas.
+    expect(screen.queryByText(t('editor.drawHint'))).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: t('editor.dismiss') }));
     expect(notices.setMessage).toHaveBeenCalledWith(null);
   });
@@ -296,6 +298,64 @@ describe('CanvasNotices', () => {
     withContext(harness, <CanvasNotices notices={fakeNotices()} />);
     expect(screen.getByText(t('editor.readOnlyNotice'))).toBeTruthy();
     expect(screen.queryByText(t('editor.drawHint'))).toBeNull();
+  });
+});
+
+describe('dica do Desenhar na barra do canvas', () => {
+  function crumbsNav() {
+    return screen.getByRole('navigation', { name: t('crumbs.label') });
+  }
+
+  it('em Desenhar, sem seleção, a dica está no caminho e não no overlay do canvas', () => {
+    const harness = createHarness(sampleProject());
+    harness.ui.mode.value = 'draw';
+    harness.ui.selection.value = null;
+    const { container } = withContext(
+      harness,
+      <>
+        <Breadcrumbs onSelect={vi.fn()} />
+        <CanvasNotices notices={fakeNotices()} />
+      </>,
+    );
+    const hint = within(crumbsNav()).getByText(t('editor.drawHint'));
+    expect(hint.getAttribute('title')).toBe(t('editor.drawHint'));
+    expect(within(crumbsNav()).queryByText(t('panel.nothingSelected'))).toBeNull();
+    const overlay = container.querySelector('.canvas-overlay');
+    expect(overlay?.querySelector('.canvas-hint')).toBeNull();
+    expect(overlay?.textContent).not.toContain(t('editor.drawHint'));
+  });
+
+  it('com seleção, o caminho volta e a dica some', () => {
+    const harness = createHarness(sampleProject());
+    harness.ui.mode.value = 'draw';
+    harness.ui.selection.value = { kind: 'marking', id: 'M1' };
+    withContext(harness, <Breadcrumbs onSelect={vi.fn()} />);
+    expect(within(crumbsNav()).queryByText(t('editor.drawHint'))).toBeNull();
+    expect(within(crumbsNav()).getAllByRole('button').length).toBeGreaterThan(0);
+  });
+
+  it('em Navegar, mostra "Nada selecionado"', () => {
+    const harness = createHarness(sampleProject());
+    harness.ui.mode.value = 'navigate';
+    withContext(harness, <Breadcrumbs onSelect={vi.fn()} />);
+    expect(within(crumbsNav()).getByText(t('panel.nothingSelected'))).toBeTruthy();
+    expect(within(crumbsNav()).queryByText(t('editor.drawHint'))).toBeNull();
+  });
+
+  it('com o projeto trancado, mostra "Nada selecionado"', () => {
+    const harness = createHarness(sampleProject(), true);
+    harness.ui.mode.value = 'draw';
+    withContext(harness, <Breadcrumbs onSelect={vi.fn()} />);
+    expect(within(crumbsNav()).getByText(t('panel.nothingSelected'))).toBeTruthy();
+    expect(within(crumbsNav()).queryByText(t('editor.drawHint'))).toBeNull();
+  });
+
+  it('sem imagens, mostra "Nada selecionado"', () => {
+    const harness = createHarness({ ...sampleProject(), containers: [], markings: [] });
+    harness.ui.mode.value = 'draw';
+    withContext(harness, <Breadcrumbs onSelect={vi.fn()} />);
+    expect(within(crumbsNav()).getByText(t('panel.nothingSelected'))).toBeTruthy();
+    expect(within(crumbsNav()).queryByText(t('editor.drawHint'))).toBeNull();
   });
 });
 
