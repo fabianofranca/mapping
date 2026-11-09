@@ -1,10 +1,12 @@
-# Rodada completa em 4 blocos — [Não lançado] (épico `epic/rodada-4-blocos`, PR #1145, MCP 0.28.6, schema v18)
+# Rodada completa em 5 blocos — [Não lançado] (épico `epic/rodada-4-blocos`, PR #1145, MCP 0.28.6, schema v18)
 
 ## Adicionado
 
 - `Shift+1` enquadra tudo (o botão **Enquadrar tudo** mostra o atalho e a Ajuda o lista), no par do `Shift+2` (**Enquadrar seleção**), pela tecla física, e nunca com o foco num campo de texto.
 
 ## Alterado
+
+- A rodada completa do testador roda em 5 blocos (antes, 3), com limite de 200 mil caracteres no guia gerado de cada bloco, conferido por teste; a passada visual fica no bloco 4.
 
 ## Corrigido
 

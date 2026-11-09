@@ -102,7 +102,7 @@ Siga o `CLAUDE.md` ("Fluxo automatizado", item 3) e as mensagens do `docs/FLOW.m
 
 3. **Testador.**
    - `list_environments`: use o "Mapping - testes".
-   - A mensagem é a do `docs/FLOW.md`, com os roteiros e a passada visual da seção **Testador**. A rodada completa vai em 3 blocos.
+   - A mensagem é a do `docs/FLOW.md`, com os roteiros e a passada visual da seção **Testador**. A rodada completa vai em 5 blocos.
    - Agende a conferência de reserva (60 min na rodada completa). ▸ `stage: Testador`.
    - Quando o testador avisar: ▸ log com o total de ✅/❌ e o tempo.
 4. **Correção** (regra 2), enquanto houver ❌, observação que é defeito ou defeito pendente:
