@@ -132,9 +132,8 @@ function typeEntries(
 /** `list_components`: um item por tipo com componente. */
 export async function listComponents(roots: Roots, args: ComponentArgs): Promise<Json> {
   const { source } = await openPackage(roots, args);
-  const withComponent = typeEntries(source.spec).filter(
-    (e) => e.type.component !== undefined,
-  );
+  const entries = typeEntries(source.spec);
+  const withComponent = entries.filter((e) => e.type.component !== undefined);
   const components: Json[] = [];
   for (const { layerId, layerName, type } of withComponent) {
     const loaded = await loadComponent(source, type);
@@ -154,7 +153,7 @@ export async function listComponents(roots: Roots, args: ComponentArgs): Promise
       examples: (type.examples ?? []).length,
     });
   }
-  const without = typeEntries(source.spec).length - withComponent.length;
+  const without = entries.length - withComponent.length;
   return {
     spec: { id: source.spec.id, name: source.spec.name, version: source.spec.version },
     count: components.length,

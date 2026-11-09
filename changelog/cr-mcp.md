@@ -19,6 +19,9 @@
 - O bundle `mapping-mcp.js` volta a levar os avisos de licença (Apache-2.0, MIT) das dependências embutidas, no fim do arquivo (`legalComments: 'eof'` e os `LICENSE` dos pacotes); a lista de arquivos da release não muda.
 - A descrição de `get_project` diz `repos` (como o código devolve), no lugar de `repo`.
 
+- `validate_library`, `plan_library_update` e o lote que aplica ou atualiza uma biblioteca avisam (`ignored-paths`) quais pastas do pacote a leitura pulou (subpastas além de 8 níveis, ocultas e `node_modules`); antes ficavam de fora sem aviso.
+- `plan_library_update` lê o pacote como `validate_library` (sem ler os binários e sem o limite de 500 arquivos da app): um pacote que `validate_library` aceita não é mais recusado pela prévia com `package-too-large`.
+
 ## Alterado
 
 - `find_by_code`: cada match traz também `path` (o caminho da pasta do projeto relativo à raiz, como em `list_projects`), para distinguir pastas homônimas.
@@ -26,3 +29,4 @@
 
 - `render_*` e `get_marking_image`: menos trabalho repetido (cache de fontes por família, peso e itálico; leitura da imagem confere o tamanho antes de ler e não copia os bytes; a prova do `component-overflow` reaproveita o cache de desenhos).
 - `plan_changes` e o lote: menos trabalho repetido (os valores de uma anotação resolvem o tipo uma vez por chamada, os tipos com componente são indexados uma vez e as mudanças são calculadas uma vez por `plan_changes`).
+- `list_markings`, `get_marking`, `list_components` e a leitura do pacote: a posição entre as irmãs vem de um índice montado uma vez por chamada, `get_marking` monta a lista de filhas uma só vez e o pacote lido não copia os buffers (saída idêntica).
