@@ -236,30 +236,73 @@
                   "children": [
                     {
                       "type": "frame",
-                      "name": "pílula",
-                      "width": "hug",
-                      "height": "hug",
+                      "name": "indicador",
+                      "width": 56,
+                      "height": 32,
+                      "cornerRadius": {
+                        "$token": "corner-full"
+                      },
+                      "fill": {
+                        "$if": {
+                          "$field": "selected"
+                        },
+                        "then": {
+                          "$token": "secondary-container"
+                        },
+                        "else": "none"
+                      },
                       "layout": {
                         "type": "none"
                       },
                       "children": [
                         {
-                          "type": "frame",
-                          "name": "indicador",
-                          "width": 56,
-                          "height": 32,
+                          "type": "rect",
+                          "name": "estado",
+                          "anchors": {
+                            "left": 0,
+                            "right": 0,
+                            "top": 0,
+                            "bottom": 0
+                          },
                           "cornerRadius": {
                             "$token": "corner-full"
                           },
                           "fill": {
-                            "$if": {
-                              "$field": "selected"
-                            },
-                            "then": {
-                              "$token": "secondary-container"
-                            },
-                            "else": "none"
+                            "$token": "on-surface"
                           },
+                          "opacity": {
+                            "$switch": "interaction",
+                            "cases": {
+                              "hovered": {
+                                "$token": "state-hover"
+                              },
+                              "focused": {
+                                "$token": "state-focus"
+                              },
+                              "pressed": {
+                                "$token": "state-pressed"
+                              }
+                            },
+                            "default": 0
+                          },
+                          "visible": {
+                            "$and": [
+                              {
+                                "$field": "selected"
+                              },
+                              {
+                                "$not": {
+                                  "$eq": ["interaction", "none"]
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "type": "frame",
+                          "name": "conteúdo",
+                          "width": "fill",
+                          "height": "fill",
                           "layout": {
                             "type": "row",
                             "align": "center",
@@ -458,49 +501,6 @@
                               }
                             }
                           ]
-                        },
-                        {
-                          "type": "rect",
-                          "name": "estado",
-                          "anchors": {
-                            "left": 0,
-                            "right": 0,
-                            "top": 0,
-                            "bottom": 0
-                          },
-                          "cornerRadius": {
-                            "$token": "corner-full"
-                          },
-                          "fill": {
-                            "$token": "on-surface"
-                          },
-                          "opacity": {
-                            "$switch": "interaction",
-                            "cases": {
-                              "hovered": {
-                                "$token": "state-hover"
-                              },
-                              "focused": {
-                                "$token": "state-focus"
-                              },
-                              "pressed": {
-                                "$token": "state-pressed"
-                              }
-                            },
-                            "default": 0
-                          },
-                          "visible": {
-                            "$and": [
-                              {
-                                "$field": "selected"
-                              },
-                              {
-                                "$not": {
-                                  "$eq": ["interaction", "none"]
-                                }
-                              }
-                            ]
-                          }
                         }
                       ]
                     },
@@ -564,9 +564,9 @@
                 },
                 {
                   "type": "frame",
-                  "name": "pílula",
+                  "name": "indicador",
                   "width": "hug",
-                  "height": "hug",
+                  "height": 56,
                   "visible": {
                     "$not": {
                       "$or": [
@@ -579,27 +579,70 @@
                       ]
                     }
                   },
+                  "cornerRadius": {
+                    "$token": "corner-full"
+                  },
+                  "fill": {
+                    "$if": {
+                      "$field": "selected"
+                    },
+                    "then": {
+                      "$token": "secondary-container"
+                    },
+                    "else": "none"
+                  },
                   "layout": {
                     "type": "none"
                   },
                   "children": [
                     {
-                      "type": "frame",
-                      "name": "indicador",
-                      "width": "hug",
-                      "height": 56,
+                      "type": "rect",
+                      "name": "estado",
+                      "anchors": {
+                        "left": 0,
+                        "right": 0,
+                        "top": 0,
+                        "bottom": 0
+                      },
                       "cornerRadius": {
                         "$token": "corner-full"
                       },
                       "fill": {
-                        "$if": {
-                          "$field": "selected"
-                        },
-                        "then": {
-                          "$token": "secondary-container"
-                        },
-                        "else": "none"
+                        "$token": "on-surface"
                       },
+                      "opacity": {
+                        "$switch": "interaction",
+                        "cases": {
+                          "hovered": {
+                            "$token": "state-hover"
+                          },
+                          "focused": {
+                            "$token": "state-focus"
+                          },
+                          "pressed": {
+                            "$token": "state-pressed"
+                          }
+                        },
+                        "default": 0
+                      },
+                      "visible": {
+                        "$and": [
+                          {
+                            "$field": "selected"
+                          },
+                          {
+                            "$not": {
+                              "$eq": ["interaction", "none"]
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "name": "conteúdo",
+                      "width": "hug",
+                      "height": "fill",
                       "layout": {
                         "type": "row",
                         "gap": 8,
@@ -834,49 +877,6 @@
                           }
                         }
                       ]
-                    },
-                    {
-                      "type": "rect",
-                      "name": "estado",
-                      "anchors": {
-                        "left": 0,
-                        "right": 0,
-                        "top": 0,
-                        "bottom": 0
-                      },
-                      "cornerRadius": {
-                        "$token": "corner-full"
-                      },
-                      "fill": {
-                        "$token": "on-surface"
-                      },
-                      "opacity": {
-                        "$switch": "interaction",
-                        "cases": {
-                          "hovered": {
-                            "$token": "state-hover"
-                          },
-                          "focused": {
-                            "$token": "state-focus"
-                          },
-                          "pressed": {
-                            "$token": "state-pressed"
-                          }
-                        },
-                        "default": 0
-                      },
-                      "visible": {
-                        "$and": [
-                          {
-                            "$field": "selected"
-                          },
-                          {
-                            "$not": {
-                              "$eq": ["interaction", "none"]
-                            }
-                          }
-                        ]
-                      }
                     }
                   ]
                 }

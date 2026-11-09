@@ -86,7 +86,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `variants`. As opções são `none`, `hovered`, `focused` e `pressed`: o `NavigationBarTokens.kt` e o `NavigationItem.kt` **não nomeiam** estados do item; a camada é o ripple do indicador (`StateTokens.kt`). **Este tipo não tem `enabled`**, então não existe um desabilitado que vença: o estado sempre desenha.
 
 - **Camada de estado:** o nó `estado` é um `rect` do tamanho do indicador, por cima dele e com o raio `corner-full` — o de 56 × 32 do ícone acima do rótulo, ou a pílula de 40 do ícone ao lado —, na cor do ripple sem cor própria, o `contentColor` da barra, `on-surface`. A opacidade vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10).
-- **Item do estado:** vale para o item selecionado (decisão 6 da etapa); com nenhum item selecionado nada muda. O Compose desenha o estado no item que o mouse, o foco ou o toque alcança; escolher "o primeiro" pediria o índice do item no `repeat` (#897), e um campo de índice do item fica fora.
+- **Item do estado:** vale para o item selecionado (decisão 6 da etapa); com nenhum item selecionado nada muda. O Compose desenha o estado no item que o mouse, o foco ou o toque alcança; escolher "o primeiro" pediria o índice do item no `repeat` (#897), e um campo de índice do item fica fora. Os exemplos de estado guardam só valores simples e a tabela `items` não cabe neles: no Catálogo o exemplo desenha o tipo sem destinos, e o estado aparece na prévia (Playground, com os `items` do `preview`) e na marcação com `items`.
 
 **O que ainda difere do Compose**
 

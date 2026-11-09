@@ -126,6 +126,58 @@ function suite({ id, variants, color }: Suite) {
   });
 }
 
+/** O primeiro nó cujo ramo `children` contém o `estado` e o conteúdo (ícone) dele. */
+function drawOrder(node: SceneNode, out: string[] = []): string[] {
+  if ('children' in node) {
+    const names = node.children.filter((c) => c.visible).map((c) => c.name ?? c.type);
+    if (names.includes('estado')) out.push(names.join('>'));
+    node.children.forEach((c) => drawOrder(c, out));
+  }
+  return out;
+}
+
+describe('a camada fica atrás do conteúdo onde o Compose a desenha atrás (ripple do indicador)', () => {
+  const cases: [string, Values][] = [
+    ['navigation-bar', { items, interaction: 'pressed' }],
+    [
+      'short-navigation-bar',
+      { items, arrangement: 'EqualWeight', iconPosition: 'Top', interaction: 'pressed' },
+    ],
+    [
+      'short-navigation-bar',
+      { items, arrangement: 'Centered', iconPosition: 'Start', interaction: 'pressed' },
+    ],
+    ['navigation-rail', { items, style: 'rail', interaction: 'pressed' }],
+    [
+      'navigation-rail',
+      { items, style: 'wide', initialValue: 'Expanded', interaction: 'pressed' },
+    ],
+  ];
+  it.each(cases)('%s: o estado vem antes do conteúdo', (id, values) => {
+    for (const mode of MODES) {
+      const orders = drawOrder(draw(id, values, mode).root);
+      expect(orders, id).toHaveLength(1);
+      expect(orders[0]?.startsWith('estado>'), orders[0]).toBe(true);
+    }
+  });
+});
+
+describe('o catálogo mostra o estado na prévia (a tabela vem do preview)', () => {
+  it.each([
+    'tabs',
+    'navigation-bar',
+    'short-navigation-bar',
+    'navigation-rail',
+    'navigation-drawer',
+  ])('%s: previewValues + interaction desenha a camada', (id) => {
+    const entry = entryOf(id);
+    for (const mode of MODES) {
+      const values = { ...(entry.previewValues ?? {}), interaction: 'pressed' };
+      expect(layers(id, values, mode), id).toHaveLength(1);
+    }
+  });
+});
+
 describe('tabs (PrimaryNavigationTabTokens.kt, SecondaryNavigationTabTokens.kt)', () => {
   const tabStyle = (style: string, iconPosition: string): Values => ({
     items,
@@ -204,6 +256,7 @@ describe('navigation-drawer (NavigationDrawerTokens.kt)', () => {
         mode,
       );
       expect(layer?.height).toBe(56);
+      expect(layer).toMatchObject({ cornerRadius: tokenValues['corner-full'] });
     }
   });
 });
