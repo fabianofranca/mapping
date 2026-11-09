@@ -6,16 +6,17 @@ Tipo de anotação: `card` (camada Componentes).
 
 ## Campos
 
-| Chave            | Rótulo        | Tipo   | Obrigatório | Opções                           | Padrão   | Descrição                                                                                             |
-| ---------------- | ------------- | ------ | ----------- | -------------------------------- | -------- | ----------------------------------------------------------------------------------------------------- |
-| `title`          | Título        | string | sim         |                                  |          | Título do cartão.                                                                                     |
-| `subtitle`       | Subtítulo     | string | não         |                                  |          | Linha de apoio abaixo do título.                                                                      |
-| `supportingText` | Texto         | string | não         |                                  |          | Parágrafo de apoio do cartão.                                                                         |
-| `media`          | Imagem (URL)  | string | não         |                                  |          | Endereço https:// da imagem no topo do cartão. Vazio = sem imagem.                                    |
-| `style`          | Estilo        | enum   | não         | `filled`, `elevated`, `outlined` | `filled` | filled (Card), elevated ou outlined.                                                                  |
-| `width`          | Largura       | enum   | não         | `wrap`, `fill`, `fixed`          | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp). |
-| `height`         | Altura        | enum   | não         | `wrap`, `fill`, `fixed`          | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).   |
-| `weight`         | Peso (weight) | number | não         |                                  |          | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                     |
+| Chave            | Rótulo        | Tipo   | Obrigatório | Opções                                             | Padrão   | Descrição                                                                                                                                                                                                                                                          |
+| ---------------- | ------------- | ------ | ----------- | -------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `title`          | Título        | string | sim         |                                                    |          | Título do cartão.                                                                                                                                                                                                                                                  |
+| `subtitle`       | Subtítulo     | string | não         |                                                    |          | Linha de apoio abaixo do título.                                                                                                                                                                                                                                   |
+| `supportingText` | Texto         | string | não         |                                                    |          | Parágrafo de apoio do cartão.                                                                                                                                                                                                                                      |
+| `media`          | Imagem (URL)  | string | não         |                                                    |          | Endereço https:// da imagem no topo do cartão. Vazio = sem imagem.                                                                                                                                                                                                 |
+| `style`          | Estilo        | enum   | não         | `filled`, `elevated`, `outlined`                   | `filled` | filled (Card), elevated ou outlined.                                                                                                                                                                                                                               |
+| `interaction`    | Interação     | enum   | não         | `none`, `hovered`, `focused`, `pressed`, `dragged` | `none`   | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused), pressionado (pressed) ou arrastado (dragged); none = sem camada de estado. Só muda o desenho, não entra no código. Este tipo não tem enabled, então não há desabilitado que vença. |
+| `width`          | Largura       | enum   | não         | `wrap`, `fill`, `fixed`                            | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a largura disponível e fixed usa a largura da marcação (dp).                                                                                                                                                              |
+| `height`         | Altura        | enum   | não         | `wrap`, `fill`, `fixed`                            | `wrap`   | wrap ajusta ao conteúdo, fill ocupa toda a altura disponível e fixed usa a altura da marcação (dp).                                                                                                                                                                |
+| `weight`         | Peso (weight) | number | não         |                                                    |          | Fatia do espaço que sobra numa Row ou Column (Modifier.weight). Vazio = sem peso.                                                                                                                                                                                  |
 
 ## Compose
 
@@ -58,6 +59,10 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Cartão simples**: title=Resumo da semana, subtitle=12 a 18 de outubro, supportingText=Você concluiu 8 de 10 tarefas., style=filled, width=fill
 - **Com imagem**: title=Praia do Rosa, supportingText=Fim de semana de sol., media=https://example.com/praia.jpg, style=elevated, width=fill
 - **Contornado**: title=Plano gratuito, style=outlined, width=fill
+- **Mouse sobre**: title=Resumo da semana, subtitle=12 a 18 de outubro, style=elevated, width=fill, interaction=hovered
+- **Com foco**: title=Plano gratuito, style=outlined, width=fill, interaction=focused
+- **Pressionado**: title=Resumo da semana, subtitle=12 a 18 de outubro, style=filled, width=fill, interaction=pressed
+- **Arrastado**: title=Praia do Rosa, supportingText=Fim de semana de sol., style=elevated, width=fill, interaction=dragged
 
 ## Fidelidade
 
@@ -67,7 +72,7 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 
 - `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/FilledCardTokens.kt` (linhas 24 a 26: `ContainerColor = SurfaceContainerHighest`, `ContainerElevation = Level0`, `ContainerShape = CornerMedium`).
 - `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/ElevatedCardTokens.kt` (linhas 24 a 26: `SurfaceContainerLow`, `ContainerElevation = Level1`, `CornerMedium`).
-- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedCardTokens.kt` (linhas 24 a 26: `Surface`, `Level0`, `CornerMedium`; linhas 38 e 39: `OutlineColor = OutlineVariant`, `OutlineWidth = 1.0.dp`).
+- `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/OutlinedCardTokens.kt` (linhas 24 a 26: `Surface`, `Level0`, `CornerMedium`; linhas 38 e 39: `OutlineColor = OutlineVariant`, `OutlineWidth = 1.0.dp`; as elevações e os contornos por estado do campo `interaction`, linhas 30 a 41).
 - `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/Card.kt` (linhas 80 a 98: `Card` é um `Surface` com `shape`, `color`, `contentColor`, `shadowElevation` e `border` sobre uma `Column`; linhas 370 a 379: `CardDefaults.shape`, `elevatedShape`, `outlinedShape`; linhas 486 a 517, 531 a 565 e 580 a 610: `contentColor = contentColorFor(containerColor)`; linhas 614 a 624: `outlinedCardBorder`).
 
 **Como o desenho segue o Compose**
@@ -79,9 +84,18 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - O `Surface` recorta o conteúdo na forma; a raiz do desenho também recorta, então a mídia do topo fica com os cantos arredondados do cartão.
 - A mídia remota (`image` do formato) fica sobre `surface-container-highest` enquanto não carrega; é o carregador de imagens do app (`AsyncImage`) que a busca, fora do androidx.
 
+**Estado de interação (campo `interaction`)**
+
+O campo escolhe a aparência parada de um estado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que os `*CardTokens.kt` do commit definem para o cartão: `hovered`, `focused`, `pressed` e `dragged`. **Este tipo não tem `enabled`**, então não existe um desabilitado que vença: o estado sempre desenha.
+
+- **Camada de estado:** o nó `estado` é um `rect` da forma do cartão (`corner-medium`), por cima do corpo (mídia e texto), como o indicador do Compose, com a cor do conteúdo do cartão, `on-surface` (`contentColorFor` do fundo; os `*CardTokens.kt` não nomeiam outra) e `opacity` pelos tokens `state-hover` (0,08), `state-focus` (0,10), `state-pressed` (0,10) e `state-dragged` (0,16), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25). Para isso o corpo (a coluna de mídia e texto) passou a ser o nó `corpo`, filho da raiz, que agora empilha camadas (`layout: none`); o tamanho do cartão não muda.
+- **Elevação por estado** (`FilledCardTokens.kt`, `ElevatedCardTokens.kt` e `OutlinedCardTokens.kt`, linhas `*ContainerElevation`): o filled e o outlined vão de 0 para o nível 1 com o mouse (`HoverContainerElevation`, linha 33 no filled e 34 no outlined), ficam em 0 no foco e pressionado (linhas 31 e 36 no filled, 32 e 40 no outlined) e vão ao nível 3 arrastados (`DraggedContainerElevation`, linha 30 nos dois); o elevated vai de 1 (linha 25) para o nível 2 com o mouse (linha 33), fica em 1 no foco e pressionado (linhas 31 e 36) e vai ao nível 4 arrastado (linha 30). Níveis em `ElevationTokens.kt` (`Level1` 1 dp, `Level2` 3 dp, `Level3` 6 dp e `Level4` 8 dp). O `shadow` do formato só aceita número literal: o nível 1 é a sombra da raiz (y 1, blur 2) e os outros são nós à parte, `sombra nível 2` (y 2, blur 6), `sombra nível 3` (y 3, blur 12) e `sombra nível 4` (y 4, blur 16, os valores de `elevation-2-*`, `elevation-3-*` e `elevation-4-*`), cada um com o fundo (e o contorno, no outlined) do cartão, visíveis só no estado que pede o nível.
+- **Cor do contorno** (outlined, `OutlinedCardTokens.kt`): `OutlineColor` (`outline-variant`, linha 38) parado, com o mouse (`HoverOutlineColor`, linha 35), pressionado (linha 41) e arrastado (`DraggedOutlineColor`, linha 31); no foco, `on-surface` (`FocusOutlineColor`, linha 33). O filled e o elevated não têm contorno.
+
 **O que ainda difere do Compose**
 
 - O `shadow` do formato só aceita número literal em `x`, `y` e `blur` (não aceita `$token` nem expressão): a sombra do nível 1 está escrita como 1 e 2 no componente, com a cor pelo token `elevation-shadow`. Os tokens `elevation-1-y` e `elevation-1-blur` guardam os mesmos valores, mas o desenho não os lê.
 - A sombra é uma só, em preto a 30%; o Compose compõe duas sombras (ambiente e ponto) que o canvas 2D não reproduz.
 - O espaçamento de 16 entre as bordas e o texto e o vão de 4 entre as linhas são do desenho: o `Card` do Compose não tem padding, quem escreve a `Column` decide. A mídia tem altura fixa de 140.
-- Sem estados (desabilitado, pressionado, focado, arrastado) nem `onClick`; o desenho é estático.
+- Sem desabilitado (o tipo não tem `enabled`) nem `onClick`. Os estados de interação são quadros parados: sem ripple animado e sem transição, e o anel de foco por fora do cartão não é desenhado, porque a raiz recorta (#896).
+- O `Card.kt` não lê todos os tokens de estado do cartão: o `outlinedCardElevation` (linhas 452 a 458) usa a elevação padrão (0) no mouse, no foco e pressionado, e o `outlinedCardBorder` (linhas 614 a 623) só distingue habilitado e desabilitado, sem a cor do foco. O desenho segue os `OutlinedCardTokens.kt`, como a etapa pede, então o outlined sobe ao nível 1 com o mouse e ganha o contorno `on-surface` no foco.

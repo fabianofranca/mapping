@@ -7,6 +7,7 @@
 - Skill `spec-author`, `docs/COMPONENT-FORMAT.md` e `docs/SPEC-FORMAT.md`: a regra "movimento fora do desenho, aparência de estado como campo `enum` opcional".
 - Biblioteca `material3-compose`: tamanhos iniciais do Compose em cinco tipos — `top-app-bar` 412 × 152 (a altura da large; o medium e o large cabem sem sobrepor a linha de cima), `date-picker` 360 × 512 (a sexta linha da grade), `time-picker` 328 × 528 (a margem do relógio e a linha de ações do diálogo), `alert-dialog` 312 × 248 (linha de botões de 48) e `slider` 328 × 48 (a faixa de 44 fica centrada). Marcações já criadas guardam o próprio retângulo e não mudam; o tamanho novo vale para as próximas.
 - Exemplos dos limites conhecidos: `button` "Rótulo longo", `time-picker` "24 horas, campos" e `date-picker` "Intervalo até o fim do mês"; a Fidelidade de cada um cita a roadmap que resolveria (#897, #898). O de três linhas do `snackbar` espera a #898 (hoje o motor avisa que o conteúdo passa da caixa).
+- Biblioteca `material3-compose`: o campo `interaction` chega a mais onze tipos — `fab`, `extended-fab`, `icon-button`, `icon-toggle-button`, `chip`, `card`, `checkbox`, `radio-button`, `switch`, `slider` e `segmented-button` (`none`, `hovered`, `focused`, `pressed`; `chip` e `card` também `dragged`). Desenham a camada de estado, a elevação por estado (FABs, chip, card), o contorno do foco, a alça de 28 do `switch` pressionado e a alça estreita do `slider`. No `segmented-button` vale para os segmentos selecionados. Um exemplo por estado em cada tipo.
 
 ## Alterado
 

@@ -6,12 +6,13 @@ Tipo de anotação: `icon-button` (camada Componentes).
 
 ## Campos
 
-| Chave                | Rótulo     | Tipo   | Obrigatório | Opções                                                         | Padrão     | Descrição                                                                                                         |
-| -------------------- | ---------- | ------ | ----------- | -------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------- |
-| `icon`               | Ícone      | string | sim         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) | `Favorite` | Ícone do botão.                                                                                                   |
-| `contentDescription` | Descrição  | string | não         |                                                                |            | Texto de acessibilidade do botão (vai no `contentDescription` do Icon). Vazio = sem nome para leitores de tela.   |
-| `style`              | Estilo     | enum   | não         | `standard`, `filled`, `tonal`, `outlined`                      | `standard` | standard (IconButton), filled (FilledIconButton), tonal (FilledTonalIconButton) ou outlined (OutlinedIconButton). |
-| `enabled`            | Habilitado | enum   | não         | `true`, `false`                                                | `true`     | false desabilita o botão.                                                                                         |
+| Chave                | Rótulo     | Tipo   | Obrigatório | Opções                                                         | Padrão     | Descrição                                                                                                                                                                                                                                |
+| -------------------- | ---------- | ------ | ----------- | -------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `icon`               | Ícone      | string | sim         | texto livre; sugestões de ícones (`Home`, `Search`, `Person`…) | `Favorite` | Ícone do botão.                                                                                                                                                                                                                          |
+| `contentDescription` | Descrição  | string | não         |                                                                |            | Texto de acessibilidade do botão (vai no `contentDescription` do Icon). Vazio = sem nome para leitores de tela.                                                                                                                          |
+| `style`              | Estilo     | enum   | não         | `standard`, `filled`, `tonal`, `outlined`                      | `standard` | standard (IconButton), filled (FilledIconButton), tonal (FilledTonalIconButton) ou outlined (OutlinedIconButton).                                                                                                                        |
+| `enabled`            | Habilitado | enum   | não         | `true`, `false`                                                | `true`     | false desabilita o botão.                                                                                                                                                                                                                |
+| `interaction`        | Interação  | enum   | não         | `none`, `hovered`, `focused`, `pressed`                        | `none`     | Aparência parada do estado de interação: mouse sobre (hovered), foco (focused) ou pressionado (pressed); none = sem camada de estado. Só muda o desenho, não entra no código. Com enabled false não desenha nada (o desabilitado vence). |
 
 ## Compose
 
@@ -46,6 +47,9 @@ Notas do `code` (o que a ferramenta entrega ao agente):
 - **Padrão**: icon=Edit, contentDescription=Editar, style=standard
 - **Preenchido**: icon=Add, contentDescription=Adicionar, style=filled
 - **Contornado desabilitado**: icon=Settings, contentDescription=Ajustes, style=outlined, enabled=false
+- **Mouse sobre**: icon=Edit, contentDescription=Editar, style=standard, interaction=hovered
+- **Com foco**: icon=Settings, contentDescription=Ajustes, style=outlined, interaction=focused
+- **Pressionado**: icon=Add, contentDescription=Adicionar, style=tonal, interaction=pressed
 
 ## Fidelidade
 
@@ -63,9 +67,18 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - Standard: sem fundo e ícone `on-surface`. Filled: `primary` / `on-primary`. Tonal: `secondary-container` / `on-secondary-container`. Outlined: sem fundo, ícone e contorno de 1 em `on-surface` (o `outlinedIconButtonBorder` do commit usa a cor do conteúdo, não o token `outline-variant`).
 - Desabilitado: filled e tonal viram `on-surface` a 0,1 no contêiner; o ícone e o contorno vão a 0,38 (`state-disabled-content`) sobre `on-surface`.
 
+**Estado de interação (campo `interaction`)**
+
+O campo escolhe a aparência parada de um estado, como o `enabled` escolhe o desabilitado; não entra no `code` nem nas `variants`. As opções são `none` e os estados que os `*IconButtonTokens.kt` do commit definem: `hovered` (`Hovered*`), `focused` (`Focused*`) e `pressed` (`Pressed*`); não há `Dragged*` nos tokens do botão de ícone, então não há `dragged`.
+
+- **Camada de estado:** o nó `estado` é um `rect` da forma do botão (`corner-full`), entre o contorno e o ícone, com a cor de conteúdo do estilo que os tokens dão ao estado: `on-surface-variant` no standard e no outlined (`IconButtonTokens.kt` e `OutlinedIconButtonTokens.kt`, `HoveredColor`, `FocusedColor` e `PressedColor`, linhas 24, 25 e 27 e 25, 26 e 29), `on-primary` no filled (`FilledIconButtonTokens.kt`, linhas 27, 28 e 30) e `on-secondary-container` no tonal (`FilledTonalIconButtonTokens.kt`, linhas 27, 28 e 30). A `opacity` vem dos tokens `state-hover` (0,08), `state-focus` (0,10) e `state-pressed` (0,10), que espelham `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens/StateTokens.kt` (linhas 22 a 25: `HoverStateLayerOpacity`, `FocusStateLayerOpacity`, `PressedStateLayerOpacity`; `DraggedStateLayerOpacity` 0,16 é o `state-dragged`).
+- **Elevação e contorno:** os tokens do botão de ícone não mudam a elevação nem a cor do contorno entre os estados (o contorno do outlined é `OutlineVariant` nos três, `OutlinedIconButtonTokens.kt`, linha 28); só a camada aparece.
+- **Desabilitado vence:** com `enabled` `false` o nó `estado` fica invisível, então o desenho é o do desabilitado, qualquer que seja o `interaction`.
+
 **O que ainda difere do Compose**
 
-- Sem estados de pressionado, foco e passar o mouse.
+- Sem ripple animado e sem transição entre estados (o desenho é um quadro parado). O anel de foco por fora do botão não é desenhado: a raiz recorta (#896).
+- A camada de estado do standard e do outlined usa `on-surface-variant`, a cor que os tokens dão ao estado; o ícone e o contorno parados continuam em `on-surface` (a divergência acima), então a camada não tem a mesma cor do ícone nesses dois estilos.
 - O conteúdo do Compose herda `LocalContentColor`, que é `on-surface` dentro de um `Surface`; o desenho fixa `on-surface` e não herda a cor de quem o contém.
 - O desabilitado de 0,1 no contêiner é literal no componente (o token `state-disabled-container` vale 0,12).
 - `minimumInteractiveComponentSize` (48 de área de toque) e as larguras `Narrow` e `Wide` não são campos do tipo.
