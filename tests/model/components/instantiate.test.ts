@@ -331,6 +331,16 @@ describe('instantiate: cartão', () => {
     expect(warnings).toContain('conteúdo maior que a caixa: card');
   });
 
+  it('overflowWarnings lista exatamente os avisos de "não cabe", sem os outros', () => {
+    const { warnings, overflowWarnings } = run(
+      card,
+      {},
+      { x: 0, y: 0, width: 300, height: 40 },
+    );
+    expect(overflowWarnings).toEqual(['conteúdo maior que a caixa: card']);
+    expect(warnings.length).toBeGreaterThan(overflowWarnings?.length ?? 0);
+  });
+
   it('space-between com dois filhos de largura fixa os afasta para as pontas', () => {
     const row: FrameTemplate = {
       type: 'frame',

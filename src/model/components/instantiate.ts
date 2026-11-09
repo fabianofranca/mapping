@@ -172,6 +172,11 @@ export interface Instantiated {
    * que a caixa: …`), pela mensagem do aviso; o maior, se o mesmo aviso se repete. Ausente = vazio.
    */
   readonly shortfalls?: Readonly<Record<string, number>>;
+  /**
+   * Os avisos (entre `warnings`) que são "não cabe", em ordem de criação (`warnShort`): é por
+   * aqui, e não pelo texto da mensagem, que o desenho reconhece o estouro. Ausente = vazio.
+   */
+  readonly overflowWarnings?: readonly string[];
 }
 
 // ---------------------------------------------------------------------------------------
@@ -1516,6 +1521,7 @@ export function instantiate(
     root,
     warnings: [...engine.warnings],
     shortfalls: Object.fromEntries(engine.shortfalls),
+    overflowWarnings: [...engine.shortfalls.keys()],
   };
 }
 

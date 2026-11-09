@@ -54,9 +54,6 @@ export const NO_DRAWINGS: ComponentDrawings = new Map();
 /** Tolerância (px) entre a caixa do slot (decimal) e o retângulo inteiro de uma filha. */
 const SLOT_TOLERANCE = 1;
 
-/** Avisos do motor que são a pendência "o componente não cabe". */
-const OVERFLOW_WARNINGS = ['conteúdo maior que a caixa', 'texto maior que a caixa'];
-
 export type DrawingCache = (
   p: Project | null,
   catalog: ComponentCatalog,
@@ -133,15 +130,13 @@ function slotExcess(root: FrameNode, childRects: readonly Rect[]): number {
 
 /** Os "não cabe" do desenho: o aviso do motor (com quanto falta) e a filha fora do slot. */
 function overflowsOf(
-  warnings: readonly string[],
+  overflowWarnings: readonly string[],
   shortfalls: Readonly<Record<string, number>>,
   root: FrameNode,
   childRects: readonly Rect[],
 ): Record<string, number> {
   const found: Record<string, number> = {};
-  for (const w of warnings) {
-    if (OVERFLOW_WARNINGS.some((o) => w.startsWith(o))) found[w] = shortfalls[w] ?? 0;
-  }
+  for (const w of overflowWarnings) found[w] = shortfalls[w] ?? 0;
   const excess = childRects.length > 0 ? slotExcess(root, childRects) : 0;
   if (excess > 0) found[SLOT_OVERFLOW] = excess;
   return found;
@@ -163,14 +158,21 @@ function draw(
   const screen = mc.component.screen;
   // Em pixels de tela o desenho mede o `size` do componente, na origem (o canvas o ancora).
   const box: Rect = screen === undefined ? rect : { x: 0, y: 0, ...mc.component.size };
-  const { root, warnings, shortfalls } = instantiate(mc.component, values, box, {
-    measure,
-    idPrefix: markingId,
-    ...(tokens === undefined ? {} : { tokens }),
-  });
+  const { root, warnings, shortfalls, overflowWarnings } = instantiate(
+    mc.component,
+    values,
+    box,
+    {
+      measure,
+      idPrefix: markingId,
+      ...(tokens === undefined ? {} : { tokens }),
+    },
+  );
   // Com `screen` o desenho pode passar do retângulo da marcação: não há pendência "não cabe".
   const found =
-    screen === undefined ? overflowsOf(warnings, shortfalls ?? {}, root, childRects) : {};
+    screen === undefined
+      ? overflowsOf(overflowWarnings ?? [], shortfalls ?? {}, root, childRects)
+      : {};
   return {
     markingId,
     containerId,
