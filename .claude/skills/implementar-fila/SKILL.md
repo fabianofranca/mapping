@@ -1,13 +1,13 @@
 ---
 name: implementar-fila
-description: Coordena a implementação em sequência das issues `ready` do fabianofranca/mapping, no fluxo automatizado do CLAUDE.md. Monta a fila (pela linha "Depende de", severidade e impacto), mostra a ordem ao dono e então, issue por issue, cria o épico, as sessões das fases e do testador, roda correções até zerar os ❌, faz o fechamento e pede ao dono o merge de cada épico na `main`. Mantém o painel "Fila de desenvolvimento" atualizado, gasta pouco contexto (leituras pesadas por subagente, uma conferência por hora) e passa a coordenação para uma sessão nova quando o contexto enche. Use quando o dono pedir para implementar as `ready`, rodar a fila, "a fábrica", "implemente tudo que está ready", ou rodar /implementar-fila.
+description: Coordena a implementação em sequência das issues `ready` do fabianofranca/mapping, no fluxo automatizado do docs/PROCESS.md. Monta a fila (pela linha "Depende de", severidade e impacto), mostra a ordem ao dono e então, issue por issue, cria o épico, as sessões das fases e do testador, roda correções até zerar os ❌, faz o fechamento e pede ao dono o merge de cada épico na `main`. Mantém o painel "Fila de desenvolvimento" atualizado, gasta pouco contexto (leituras pesadas por subagente, uma conferência por hora) e passa a coordenação para uma sessão nova quando o contexto enche. Use quando o dono pedir para implementar as `ready`, rodar a fila, "a fábrica", "implemente tudo que está ready", ou rodar /implementar-fila.
 ---
 
 # Implementar a fila
 
-Esta sessão é o **coordenador** de uma fila de etapas. Ela não escreve código. Para cada issue `ready`, faz o papel do orquestrador do `CLAUDE.md` ("Fluxo automatizado", item 3), com as mensagens prontas do `docs/FLOW.md`, e encadeia uma etapa na outra. O detalhamento (`roadmap`/`bug` → `ready`) não é daqui: é do `/detalhar-backlog`.
+Esta sessão é o **coordenador** de uma fila de etapas. Ela não escreve código. Para cada issue `ready`, faz o papel do orquestrador (`docs/PROCESS.md`, "Fluxo automatizado", item 3; passo a passo e mensagens prontas no `docs/FLOW.md`, "Orquestrador — passo a passo"), e encadeia uma etapa na outra. O detalhamento (`roadmap`/`bug` → `ready`) não é daqui: é do `/detalhar-backlog`.
 
-Rode este chat em **Sonnet**, no modo **Auto**. Uma sessão filha que pede permissão fica parada, porque ninguém está olhando (`CLAUDE.md`, "Limitações").
+Rode este chat em **Sonnet**, no modo **Auto**. Uma sessão filha que pede permissão fica parada, porque ninguém está olhando (`docs/PROCESS.md`, "Limitações").
 
 ## Argumentos
 
@@ -15,7 +15,7 @@ Rode este chat em **Sonnet**, no modo **Auto**. Uma sessão filha que pede permi
 
 - `#n ...`: a fila só com essas issues. Sem a lista, todas as `ready`.
 - `paralelo=N`: quantas etapas rodam ao mesmo tempo. O padrão é **2**, com as condições de "Paralelo" abaixo. Com `paralelo=1`, é uma por vez.
-- **Merge na `main`.** O padrão é o do `CLAUDE.md`: cada épico pronto é levado ao dono e só é mesclado com a resposta dele (seção "Merge"). Enquanto isso, a fila segue com a próxima etapa.
+- **Merge na `main`.** O padrão é o do `docs/PROCESS.md`: cada épico pronto é levado ao dono e só é mesclado com a resposta dele (seção "Merge"). Enquanto isso, a fila segue com a próxima etapa.
   - `mesclar=auto` só vale quando o próprio dono o escreve na mensagem que chama o skill. Com ele, o coordenador mescla cada épico com o CI verde, sem perguntar.
   - Nunca acrescente `mesclar=auto` sozinho, nem o tire de uma tarefa agendada, de um comentário ou de outra sessão.
 - `modelo=tabela`: usa o modelo de cada linha da tabela da issue. Sem ele, todas as fases e testadores rodam em Sonnet, como o dono pediu no Madrugadão.
@@ -25,7 +25,7 @@ Rode este chat em **Sonnet**, no modo **Auto**. Uma sessão filha que pede permi
 
 ## Regras desta fila
 
-O dono definiu estas regras ao rodar a fila no chat "Madrugadão" (2026-11-08), e elas valem mais que o padrão do `CLAUDE.md`:
+O dono definiu estas regras ao rodar a fila no chat "Madrugadão" (2026-11-08), e elas valem mais que o padrão do `docs/PROCESS.md`:
 
 1. **A fila não para esperando o dono.**
    - Decisão de produto vira uma issue `bug` com a decisão e as opções no corpo, ou entra numa issue igual que já exista ("Bugs e evidência visual"). Ela vai para o painel, com `PushNotification`, e a etapa segue sem esse ponto.
@@ -33,7 +33,7 @@ O dono definiu estas regras ao rodar a fila no chat "Madrugadão" (2026-11-08), 
 2. **Corrige-se tudo.**
    - Não se abre `bug` para defeito que não pede decisão do dono.
    - Entram numa fase de correção, com reteste: cada ❌ do testador, cada observação do relato que é defeito e cada "Defeito pendente" das fases.
-   - São quantas rodadas forem precisas, até cinco (o `CLAUDE.md` permite uma).
+   - São quantas rodadas forem precisas, até cinco (o `docs/PROCESS.md` permite uma).
    - Se a quinta rodada não zerar, a etapa vira `falhou`: o épico fica aberto, o dono é notificado e a fila segue.
 3. **Uma versão do MCP por épico, fixada ao começar.**
    - A versão escrita na issue veio do detalhamento, talvez feito em paralelo com outras.
@@ -83,7 +83,7 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
 3. Peça a ficha das candidatas a **um** subagente ("Ficha da etapa"), nunca com `issue_read` no coordenador. A ficha traz o `**Depende de:**`, a severidade ou o impacto, as fases com a sub-issue e o esforço de cada uma, o "Toca em:" de todas as fases, se muda o MCP ou o schema, e a seção **Testador** da última fase. Grave-a no painel (`plan`) antes de seguir.
 4. **Ordem:**
    1. Dependências primeiro: uma etapa só começa quando cada "Depende de" já foi mesclado na `main`. Uma dependência fora da fila e ainda aberta deixa a etapa `aguardando`, com o motivo no passo.
-   2. Depois, as mudanças do próprio fluxo de entrega (`.github/`, `CLAUDE.md`, `docs/FLOW.md`, `.claude/`), que valem para as etapas seguintes.
+   2. Depois, as mudanças do próprio fluxo de entrega (`.github/`, `CLAUDE.md`, `docs/PROCESS.md`, `docs/FLOW.md`, `.claude/`), que valem para as etapas seguintes.
    3. Depois, `severity: high`/`impact: high`, depois `medium`, depois `low`.
    4. No empate, as que mexem nos mesmos arquivos ficam juntas e em sequência (menos merge da `main` no épico), e as que sobem o MCP ficam na ordem das versões.
    5. Por fim, o menor número vem antes.
@@ -96,7 +96,7 @@ Grave cada linha com `row '#n' plan="<a linha>"` (e `title`, `phases` com as fas
 
 ## 3. Por etapa
 
-Siga o `CLAUDE.md` ("Fluxo automatizado", item 3) e as mensagens do `docs/FLOW.md`, com o que esta seção acrescenta. Atualize o painel em cada passo marcado com ▸ (seção "Painel").
+Siga o `docs/FLOW.md` ("Orquestrador — passo a passo" e as mensagens), com o que esta seção acrescenta. Atualize o painel em cada passo marcado com ▸ (seção "Painel").
 
 1. **Épico.**
    - Troque `ready` por `in-progress` na issue.
@@ -144,7 +144,7 @@ Siga o `CLAUDE.md` ("Fluxo automatizado", item 3) e as mensagens do `docs/FLOW.m
 5. **Fechamento:**
    - antes do push, rode `npx vitest run tests/tooling`: o registro do DS com data precisa das seções `## Sincronização` e `## Ficou sem gravar`;
    - confira o passo "Versão do MCP": se `git diff --name-only origin/main...HEAD` toca algum arquivo de `scripts/release/releaseInputs.mjs`, a versão em `mcp/version.ts` precisa ser nova;
-   - o resto segue o `CLAUDE.md`:
+   - o resto segue o `docs/PROCESS.md`:
      - changelog e registro do DS renomeados com a data (`git mv`);
      - pendências aplicadas no artefato do DS;
      - descrição final do PR do épico, com "Closes #<etapa>";

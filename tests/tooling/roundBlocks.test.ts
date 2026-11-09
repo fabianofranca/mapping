@@ -169,6 +169,7 @@ describe('divisão da rodada completa em 5 blocos (etapas #424 e #841)', () => {
     for (const [name, text] of [
       ['TESTING-NUVEM', NUVEM],
       ['FLOW', readFileSync('docs/FLOW.md', 'utf8')],
+      ['PROCESS', readFileSync('docs/PROCESS.md', 'utf8')],
       ['CLAUDE', readFileSync('CLAUDE.md', 'utf8')],
     ] as const) {
       expect(text, name).not.toMatch(/passada visual[^.\n]{0,40}só[^.\n]{0,20}bloco 1/i);

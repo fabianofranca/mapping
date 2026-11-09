@@ -1,6 +1,6 @@
 # Fluxo automatizado — mensagens prontas
 
-As regras estão no `CLAUDE.md` ("Fluxo automatizado"); aqui ficam só as mensagens. Os trechos `<…>` são lacunas a preencher.
+As regras estão no `docs/PROCESS.md`; aqui ficam as mensagens prontas e o passo a passo (orquestrador, busca de duplicadas e evidência de bug, CI e preview). Os trechos `<…>` são lacunas a preencher.
 
 ## Para o dono, nos três chats
 
@@ -10,7 +10,7 @@ As regras estão no `CLAUDE.md` ("Fluxo automatizado"); aqui ficam só as mensag
 Crie uma issue roadmap (ou bug, se for defeito): <ideia ou problema>. Origem: <de onde veio>.
 ```
 
-Para um bug, o agente procura antes uma issue igual ou que o agrupe e põe o rótulo de severidade (`severity: high`, `severity: medium` ou `severity: low`), como diz o `CLAUDE.md` ("Bugs e evidência visual"). A `roadmap` nasce com o rótulo de impacto (`impact: high`, `impact: medium` ou `impact: low`) e a linha `Impacto:` no corpo ("Planejamento nas issues" › Impacto); a mensagem não precisa pedir.
+Para um bug, o agente procura antes uma issue igual ou que o agrupe e põe o rótulo de severidade (`severity: high`, `severity: medium` ou `severity: low`), como diz o `docs/PROCESS.md` ("Bugs e evidência visual"). A `roadmap` nasce com o rótulo de impacto (`impact: high`, `impact: medium` ou `impact: low`) e a linha `Impacto:` no corpo ("Planejamento nas issues" › Impacto); a mensagem não precisa pedir.
 
 2. Detalhamento (Fable ou Opus):
 
@@ -32,23 +32,71 @@ Para implementar em sequência todas as `ready` (num chat Sonnet no modo Auto): 
 
 Depois do merge, o orquestrador confere a Release do MCP: acha a execução do "MCP release" do commit do merge (`actions_list`), espera por ela (`send_later` de 15 min) e, com versão nova, confere que `mcp-v<versão>` existe (`get_release_by_tag`), não é pre-release, traz `mapping-mcp.js`, `setup.sh`, `SKILL.md`, `AGENTS.mapping.md` e `watch-comments.mjs` (cada um com o `.sha256`) e que as rc da versão sumiram; sem versão nova, que o `release` foi pulado. Em falha, ou com a execução ausente, notifica o dono com o link da execução e o plano B manual do `docs/MCP.md`. O resultado entra no comentário de fechamento e na notificação final.
 
+## Orquestrador — passo a passo
+
+As regras estão no `docs/PROCESS.md` ("Fluxo automatizado"); o skill `implementar-fila` faz o mesmo para uma fila de etapas. O **orquestrador** (o chat de implementação):
+
+- lê a issue da etapa (que precisa estar `ready`), troca `ready` por `in-progress`, cria o `epic/<nome>` da `main` atualizada e abre o PR do épico para a `main` assim que houver diferença;
+- para cada fase, na ordem, cria uma sessão filha (`create_session` com o `model` da tabela, `source_url` do repositório e `source_revision` no épico; nunca `permission_mode: plan`) com a mensagem da fase, que termina com "Coordenador: `<id do orquestrador>`"; agenda uma conferência de reserva (`send_later`, 30 a 60 min) e só passa à fase seguinte depois do aviso da anterior;
+- depois da última fase, acha o ambiente "Mapping - testes" (`list_environments`) e cria a sessão do testador com os roteiros e a passada visual listados na sub-issue da última fase (lista de mais de 40 passos sem o R0: roda `node scripts/testing/round-guide.mjs --grupos <roteiros>` e cria uma sessão por grupo, até 5, como em "Rodada dirigida em grupos");
+- **com ❌** no relato **ou com defeito pendente**, abre **uma** fase de correção ("Fase de correção") e retesta só os roteiros que falharam e os passos que as correções afetam, **numa sessão só** com os achados de todos os grupos ou blocos ("Reteste junto"; a correção mesclada antes de o reteste começar entra nele; sem passo de roteiro afetado, o teste automatizado da correção basta). Chama o dono se falhar de novo, se o achado for de perda de dados, integridade do `mapping.json` ou segurança, ou se a correção pedir decisão de produto;
+- **sem ❌ e sem defeito pendente**, faz o fechamento: renomeia o arquivo do épico em `changelog/` com a data (`git mv`, e a data no título), aplica as pendências do DS no artefato e renomeia o registro do épico em `docs/design-system/` com a data, escreve a descrição final do PR do épico com "Closes #<etapa>", comenta o fechamento na issue da etapa e abre uma issue `roadmap` (com o rótulo de impacto) ou `bug` para cada item que ficou para depois;
+- notifica o dono no celular (`PushNotification`) com o resumo e o link do PR do épico, e mescla o épico na `main` **só depois de o dono responder "pode mesclar" no chat**;
+- depois do merge, confere a Release do MCP (parágrafo "Depois do merge" acima).
+
+**Limites:** o `.claude/settings.json` libera em `permissions.allow` os comandos de sempre (gates, `npx`, git sem push forçado) e nega o push forçado, para as fases não pararem nesses pedidos. Fase que não avisa até a conferência de reserva (`send_later`, 30 a 60 min): `get_session` (`status_bucket`) e `list_events`; com falha ou sessão parada, o orquestrador chama o dono.
+
+## Bug: busca de duplicadas
+
+Antes de criar um `bug` (`docs/PROCESS.md`, "Bugs e evidência visual"), procure duplicadas nas issues abertas (`list_issues` com o rótulo `bug`, lendo título e corpo, e também as `roadmap`, `ready` e `in-progress`) e, por palavra-chave (componente, arquivo, passo do roteiro, texto do erro), nas abertas e fechadas (`gh api -X GET search/issues -f q='repo:fabianofranca/mapping is:issue <termos>'`):
+
+- **igual** (mesmo comportamento, mesma causa): não cria. Comenta na existente a origem nova, o branch e commit e a evidência; se a severidade nova for maior, troca o rótulo e diz por quê;
+- **agrupável** (mesmo componente ou arquivo, mesma causa provável, mesmo passo do roteiro, ou a correção de um mexe no outro): se a existente ainda não é `ready` nem `in-progress`, o defeito entra nela como item numerado (origem, severidade do item, evidência), com um comentário dizendo o que entrou; o título se ajusta se precisar. Se ela já é `ready` ou `in-progress`, o plano não muda sozinho: cria a issue nova com "Relacionada: #N" e comenta o link na existente; o detalhamento decide se junta;
+- **regressão** (o defeito de uma issue fechada voltou): issue nova que cita a fechada; não se reabre a antiga;
+- duas abertas que são o mesmo defeito: o conteúdo vai para a mais completa e a outra fecha como duplicada (`state_reason: duplicate`, `duplicate_of`), como a #405 fez com a #387 a #390;
+- o corpo (ou o comentário) registra a busca: "Duplicadas: nenhuma (busca: <termos>)" ou "Relacionada: #N".
+
+## Bug: corpo e evidência
+
+- **Corpo do bug:** o que acontece; o que era esperado e de onde vem (passo do `docs/TESTING.md`, doc, spec); passos para reproduzir; branch e commit; origem (link do relato ou do PR); a severidade e o porquê; a busca de duplicadas.
+- **Evidência, quando der:** defeito visível na tela leva captura PNG recortada na área do problema (Playwright `page.screenshot({ clip })` ou `import -window root` + `convert -crop`), sem dado pessoal nem segredo. Defeito que não se vê (teste instável, acessibilidade lida pelo DOM) leva a saída do teste ou o trecho do DOM num bloco de código, no lugar da imagem.
+
+## Evidência de bug
+
+A imagem vai para o branch órfão `evidencias`, em `<issue>/<nome>.png`, onde `<issue>` é o número da issue (ou sub-issue) em que ela aparece primeiro; cria-se a issue primeiro, para ter o número.
+
+```bash
+git fetch origin evidencias
+git worktree add <scratchpad>/evidencias origin/evidencias  # o worktree é a exceção do "Início de sessão"
+cd <scratchpad>/evidencias && git switch -c evidencias-<issue>
+mkdir -p <issue> && cp <captura>.png <issue>/<nome>.png
+git add <issue> && git commit -m "Evidência de #<issue>: <nome>"
+git push -u origin HEAD:evidencias
+```
+
+Depois edita-se o corpo da issue com `![descrição curta](https://github.com/fabianofranca/mapping/blob/evidencias/<issue>/<nome>.png?raw=true)` e remove-se o worktree (`git worktree remove`). Push recusado porque o branch andou: `git pull --rebase origin evidencias` e push de novo (os commits ainda são só seus; nunca push forçado). O `evidencias` só recebe imagens, num commit por issue; nunca vira PR nem é mesclado; não se apaga imagem de issue fechada.
+
+## CI e preview
+
+O CI roda só nos PRs (`pull_request`), uma vez por commit: branch sem PR não tem CI. Quando o CI de um PR termina verde, o `preview-on-pr.yml` (por `workflow_run`) dispara o Deploy com o branch e o SHA, que publica esse commit no preview (`/preview/`) sem validar de novo; há um preview só, o do último PR com CI verde. O `workflow_dispatch` do Deploy (sem `sha`) continua para publicar outro branch, rodando o `ci.yml` antes.
+
 ## Para a sessão da fase
 
 O orquestrador cria a sessão com `create_session`: `model` da tabela, `source_url` do repositório, `source_revision` = `epic/<nome>`, nunca `permission_mode: plan`. Mensagem:
 
 ```text
-Você é o agente da fase <código> — <título> da etapa #<etapa> do repositório `fabianofranca/mapping`, no fluxo automatizado (CLAUDE.md, "Fluxo automatizado"). Ninguém está olhando esta sessão: não pergunte nada ao dono.
+Você é o agente da fase <código> — <título> da etapa #<etapa> do repositório `fabianofranca/mapping`, no fluxo automatizado (docs/PROCESS.md, "Fluxo automatizado"). Ninguém está olhando esta sessão: não pergunte nada ao dono.
 
-1. Leia o `CLAUDE.md`, a issue #<etapa> com os comentários e a sub-issue #<fase>, que é o seu plano. Siga-a; não reabra decisões já tomadas.
+1. Leia o `CLAUDE.md`, o `docs/PROCESS.md`, a issue #<etapa> com os comentários e a sub-issue #<fase>, que é o seu plano. Siga-a; não reabra decisões já tomadas.
 2. Branch `<branch curto>`, saído do `epic/<nome>` atualizado. PR com base `epic/<nome>`, título "<código> — <título>", corpo começando com "Parte de #<fase>" e as seções de sempre (Resumo, Como testar, Decisões tomadas, Impacto no DS, Impacto nos agentes).
 3. Subagentes e esforço: <da sub-issue, ex.: Sonnet medium; mecânicos Haiku low>.
-4. Todo briefing de mudança de comportamento ou correção segue a regra "teste primeiro" do `CLAUDE.md` ("Uso de modelos"): teste visto falhando antes do código, e o subagente devolve o nome dele e a falha.
+4. Todo briefing de mudança de comportamento ou correção segue a regra "teste primeiro" do `docs/PROCESS.md` ("Uso de modelos"): teste visto falhando antes do código, e o subagente devolve o nome dele e a falha.
 5. Antes do PR: `npm run lint && npm run typecheck && npm test && npm run build`.
 6. Acompanhe o PR (`subscribe_pr_activity`) e corrija o CI. Com o CI verde, mescle o PR no épico, marque os checkboxes e feche a sub-issue (`completed`).
 7. Avise o coordenador por `send_message`: o link do PR mesclado, um resumo de 5 a 10 linhas, as decisões tomadas fora da sub-issue e os "Defeitos pendentes" (ou "Defeitos pendentes: nenhum").
 8. Decisão de produto que a sub-issue não cobre: não invente. Mande a pergunta e as opções ao coordenador por `send_message` e espere a resposta.
-9. Defeito achado no caminho, fora do plano (CLAUDE.md, "Defeito achado durante a etapa"): se não pede decisão do dono e cabe no que a fase toca, corrija neste PR, com teste primeiro, e cite-o em "Corrigido fora do plano" no Resumo; se não cabe, liste-o nos "Defeitos pendentes" do aviso (o que acontece, onde, como reproduzir). Não abra issue `bug`, salvo para o que pede decisão do dono.
-<Só quando a linha da fase pede coordenador high, xhigh ou max: 10. Revisão de código: depois dos gates e antes do push do PR, rode a skill `/code-review <nível da tabela> <base>..HEAD`, com `<base>` = `git merge-base origin/epic/<nome> HEAD`, sem `--comment` nem `--fix`. Cada achado segue esta regra: defeito que se confirma lendo o código, corrija no próprio PR, com teste primeiro (CLAUDE.md, "Defeito achado durante a etapa"); simplificação ou eficiência dentro do que a fase toca, aplique; o resto, descarte, com o motivo. Depois das correções, rode os gates de novo. O Resumo do PR ganha a linha "Revisão `/code-review <nível>`: N achados, X corrigidos, Y aplicados, Z descartados (motivos)".>
+9. Defeito achado no caminho, fora do plano (docs/PROCESS.md, "Defeito achado durante a etapa"): se não pede decisão do dono e cabe no que a fase toca, corrija neste PR, com teste primeiro, e cite-o em "Corrigido fora do plano" no Resumo; se não cabe, liste-o nos "Defeitos pendentes" do aviso (o que acontece, onde, como reproduzir). Não abra issue `bug`, salvo para o que pede decisão do dono.
+<Só quando a linha da fase pede coordenador high, xhigh ou max: 10. Revisão de código: depois dos gates e antes do push do PR, rode a skill `/code-review <nível da tabela> <base>..HEAD`, com `<base>` = `git merge-base origin/epic/<nome> HEAD`, sem `--comment` nem `--fix`. Cada achado segue esta regra: defeito que se confirma lendo o código, corrija no próprio PR, com teste primeiro (docs/PROCESS.md, "Defeito achado durante a etapa"); simplificação ou eficiência dentro do que a fase toca, aplique; o resto, descarte, com o motivo. Depois das correções, rode os gates de novo. O Resumo do PR ganha a linha "Revisão `/code-review <nível>`: N achados, X corrigidos, Y aplicados, Z descartados (motivos)".>
 <Só na última fase: ponha o rótulo `mcp-rc` no PR.>
 
 Coordenador: `<id da sessão do orquestrador>`
@@ -56,7 +104,7 @@ Coordenador: `<id da sessão do orquestrador>`
 
 ## Fase de correção
 
-Com ❌ no relato **ou com defeito pendente** (os "Defeitos pendentes" dos avisos das fases e as observações do relato que são defeito e não pedem decisão do dono; CLAUDE.md, "Defeito achado durante a etapa"), o orquestrador cria uma sub-issue `step` de correção (com `parent_issue_number` da etapa, a lista dos achados com o link do comentário do relato, a dos defeitos pendentes com a origem de cada um e o aceite "os roteiros que falharam passam e cada defeito tem um teste que o cobre") e uma sessão filha com a mesma mensagem da fase, apontando essa sub-issue. Só uma correção por etapa: defeito achado depois dela vira issue `bug`. O que pede decisão do dono também vira issue `bug`, com a decisão e as opções no corpo, e entra no "ficou para depois" do fechamento. Na segunda falha, em achado de perda de dados, integridade do `mapping.json` ou segurança, ou se a correção pedir decisão de produto, o orquestrador chama o dono.
+Com ❌ no relato **ou com defeito pendente** (os "Defeitos pendentes" dos avisos das fases e as observações do relato que são defeito e não pedem decisão do dono; docs/PROCESS.md, "Defeito achado durante a etapa"), o orquestrador cria uma sub-issue `step` de correção (com `parent_issue_number` da etapa, a lista dos achados com o link do comentário do relato, a dos defeitos pendentes com a origem de cada um e o aceite "os roteiros que falharam passam e cada defeito tem um teste que o cobre") e uma sessão filha com a mesma mensagem da fase, apontando essa sub-issue. Só uma correção por etapa: defeito achado depois dela vira issue `bug`. O que pede decisão do dono também vira issue `bug`, com a decisão e as opções no corpo, e entra no "ficou para depois" do fechamento. Na segunda falha, em achado de perda de dados, integridade do `mapping.json` ou segurança, ou se a correção pedir decisão de produto, o orquestrador chama o dono.
 
 ## Para o testador
 
@@ -112,7 +160,7 @@ O dono manda num chat Sonnet no modo **Auto**:
 Rode a rodada completa do testador em blocos no branch `<branch>`, commit `<hash>`. Resumo e relatos na issue #<N>.
 ```
 
-Esse chat é o coordenador: cria os cinco blocos como acima (relato na issue `#<N>`, coordenador = o id dele), espera os cinco avisos, posta o resumo e, para cada ❌, abre uma issue `bug` com a busca de duplicadas do `CLAUDE.md` ("Bugs e evidência visual"), com a severidade e o link do relato. Não corrige nada e não abre fase de correção.
+Esse chat é o coordenador: cria os cinco blocos como acima (relato na issue `#<N>`, coordenador = o id dele), espera os cinco avisos, posta o resumo e, para cada ❌, abre uma issue `bug` com a busca de duplicadas do `docs/PROCESS.md` ("Bugs e evidência visual"), com a severidade e o link do relato. Não corrige nada e não abre fase de correção.
 
 ## Resumo da rodada em blocos
 
@@ -150,7 +198,7 @@ Etapa #<etapa> pronta: <resumo em uma linha>. PR do épico: <link>. Responda "po
 
 ## Revisão de código
 
-As regras estão no `CLAUDE.md` ("Revisão de código"). O revisor só lê o código: não corrige nada, não faz commit, push nem PR e não comenta PRs. A saída é uma issue da rodada e as issues `bug`, todas com o rótulo `code-review`.
+As regras estão no `docs/PROCESS.md` ("Revisão de código"). O revisor só lê o código: não corrige nada, não faz commit, push nem PR e não comenta PRs. A saída é uma issue da rodada e as issues `bug`, todas com o rótulo `code-review`.
 
 ### Como roda
 
@@ -172,15 +220,15 @@ Revisão única da `main` inteira no commit `4532e7519cc06c9adf849ee254be1ed636f
 ### Para o revisor do CR por épico
 
 ```text
-Você é o revisor do CR por épico do repositório fabianofranca/mapping: épico `epic/<nome>`, PR #<pr>, commit de merge `<sha>`. Ninguém está acompanhando: não faça perguntas. Leia o CLAUDE.md antes de começar.
+Você é o revisor do CR por épico do repositório fabianofranca/mapping: épico `epic/<nome>`, PR #<pr>, commit de merge `<sha>`. Ninguém está acompanhando: não faça perguntas. Leia o CLAUDE.md e o docs/PROCESS.md antes de começar.
 
 Esta revisão é SOMENTE LEITURA no código: não corrija nada, não faça commit nem push, não abra PR, não comente PRs. O único efeito permitido são issues novas e comentários em issues `bug` existentes.
 
 1. O código revisado é o diff do épico: `git fetch origin main && git diff <sha>^1 <sha>` (o que o épico mudou em relação à `main` daquele momento). Leia a descrição do PR #<pr> e a issue da etapa ("Closes #N"), com as sub-issues das fases, para saber a intenção e as decisões. Arquivos inteiros só para contexto.
 2. Diff até 3 mil linhas de produção: revise com a skill `/code-review` no nível high, alvo `<sha>^1..<sha>` (sem --comment e sem --fix); se a skill devolver achados de arquivos fora do diff, descarte-os e revise lendo o diff. Maior que isso: divida por área em pedaços de até 3 mil linhas, um subagente Sonnet por pedaço (até 5 em paralelo, esforço high), cada um revisando o diff do seu pedaço (`git diff <sha>^1 <sha> -- <arquivos>`) com os arquivos inteiros para contexto. Testes: só para entender a intenção e apontar caso não coberto de comportamento novo. Procure: defeitos de corretude e regressões; violações das regras de arquitetura e de código do CLAUDE.md (model sem API de navegador, mutação fora de action do store, Konva fora de src/canvas, consulta por id fora do projectIndex, string de UI fora de t(), valor de design fora dos tokens, regras de CSP, complexidade acima de 10 fora das supressões); simplificação, reuso e eficiência. Cada achado: arquivo:linha, o que está errado ou pode melhorar, categoria (defeito, simplificação, eficiência, estilo), severidade (high, medium ou low, conforme o CLAUDE.md) para defeito, e o trecho que sustenta.
 3. Confirme cada defeito lendo o código no commit `<sha>` (você ou um subagente de conferência, esforço high). Descarte o que não se sustentar.
-4. Crie UMA issue "CR épico <nome> (PR #<pr>)" com os rótulos `roadmap` e `code-review`, exatamente um rótulo `impact:` e a linha `Impacto: <nível> — <porquê>` (seção "Impacto" do CLAUDE.md). O corpo, em pt-BR, traz o épico, o PR, a issue da etapa, o commit e os achados numerados e agrupados por arquivo, cada um com o link `https://github.com/fabianofranca/mapping/blob/<sha>/<arquivo>#L<linha>`, o que é, a categoria e a severidade (para defeito). Sem achados, a issue diz "sem achados". Termine o corpo, antes do rodapé, com `<!-- cr-epic: pr=<pr> sha=<sha> -->`.
-5. Para cada DEFEITO CONFIRMADO de severidade high ou medium, siga "Bugs e evidência visual" do CLAUDE.md: procure duplicadas nas issues abertas e fechadas (inclusive as com o rótulo `code-review`); sem duplicada, crie uma issue `bug` com os rótulos `bug`, `code-review` e exatamente um rótulo de severidade, e o corpo completo (o que acontece, o esperado e de onde vem, passos para reproduzir, commit, origem com o link da issue da rodada e do PR, severidade e porquê, "Duplicadas: nenhuma (busca: <termos>)"); com duplicada ou agrupável, comente nela. Defeitos low ficam só na issue da rodada. Na issue da rodada, aponte cada `bug` criado ou comentado.
+4. Crie UMA issue "CR épico <nome> (PR #<pr>)" com os rótulos `roadmap` e `code-review`, exatamente um rótulo `impact:` e a linha `Impacto: <nível> — <porquê>` (seção "Impacto" do `docs/PROCESS.md`). O corpo, em pt-BR, traz o épico, o PR, a issue da etapa, o commit e os achados numerados e agrupados por arquivo, cada um com o link `https://github.com/fabianofranca/mapping/blob/<sha>/<arquivo>#L<linha>`, o que é, a categoria e a severidade (para defeito). Sem achados, a issue diz "sem achados". Termine o corpo, antes do rodapé, com `<!-- cr-epic: pr=<pr> sha=<sha> -->`.
+5. Para cada DEFEITO CONFIRMADO de severidade high ou medium, siga "Bugs e evidência visual" do `docs/PROCESS.md`: procure duplicadas nas issues abertas e fechadas (inclusive as com o rótulo `code-review`); sem duplicada, crie uma issue `bug` com os rótulos `bug`, `code-review` e exatamente um rótulo de severidade, e o corpo completo (o que acontece, o esperado e de onde vem, passos para reproduzir, commit, origem com o link da issue da rodada e do PR, severidade e porquê, "Duplicadas: nenhuma (busca: <termos>)"); com duplicada ou agrupável, comente nela. Defeitos low ficam só na issue da rodada. Na issue da rodada, aponte cada `bug` criado ou comentado.
 6. GitHub só pela API REST: `gh api -X POST repos/fabianofranca/mapping/issues -f title=... -f body=... -f 'labels[]=...'` e `gh api -X POST repos/fabianofranca/mapping/issues/<n>/comments -f body=...`. `gh issue create`, `gh repo clone` e GraphQL não funcionam nesta sessão. Busca: `gh api -X GET search/issues -f q='repo:fabianofranca/mapping is:issue <termos>'` (com `-X GET` explícito; sem ele o `-f` vira POST).
 7. Todo texto no GitHub termina com o rodapé: linha `---` e `_Generated by [Claude Code](https://claude.ai/code)_`.
 8. Ao terminar (ou se travar), avise o coordenador por `send_message` (session_id <id da coordenadora>) com: link da issue, total de achados por categoria, os `bug` criados ou comentados, e o que falhou. Coordenador: `<id da coordenadora>`.
