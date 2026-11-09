@@ -123,17 +123,24 @@ describe('texto rico no Konva', () => {
     expect(texts.every((t) => t.letterSpacing() === 1)).toBe(true);
   });
 
-  it('o traço do nó vale para cada pedaço de texto', () => {
+  it('o traço do nó vale para cada pedaço de texto, numa forma de contorno à parte do preenchimento', () => {
     const { scene } = build({
       stroke: { color: '#00ff00', width: 1 },
       runs: [{ text: 'a ' }, { text: 'b', color: '#ff0000' }],
     });
     const { texts } = drawn(scene);
-    expect(texts).toHaveLength(2);
-    expect(texts.every((t) => t.stroke() === '#00ff00' && t.strokeWidth() === 1)).toBe(
+    // Por pedaço: o texto com o preenchimento e, por cima, o mesmo texto só com o contorno.
+    expect(texts).toHaveLength(4);
+    const fills = texts.filter((t) => t.fillEnabled());
+    const outlines = texts.filter((t) => !t.fillEnabled());
+    expect(fills).toHaveLength(2);
+    expect(outlines).toHaveLength(2);
+    expect(outlines.every((t) => t.stroke() === '#00ff00' && t.strokeWidth() === 1)).toBe(
       true,
     );
-    expect(texts[1]?.fill()).toBe('#ff0000');
+    expect(fills.every((t) => !t.stroke())).toBe(true);
+    expect(fills[1]?.fill()).toBe('#ff0000');
+    expect(outlines.map((t) => t.text())).toEqual(fills.map((t) => t.text()));
   });
 
   it('o chip vira um KonvaRect com fundo, raio e a caixa do layout; o texto fica padding[1] para dentro', () => {

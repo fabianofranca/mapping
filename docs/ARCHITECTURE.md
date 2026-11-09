@@ -393,8 +393,8 @@ Vale para toda imagem que entra pela app (arquivo, câmera, colar, arrastar e tr
   `frame.items`), a sob o mouse e a com marca da revisão ficam completas em qualquer tamanho; o nível entra nas entradas do nó
   (`inputs`), então cruzar um limite refaz o nó. O Konva percorre todo filho de um grupo, visível ou não, então o nó só pendura
   no grupo as partes visíveis (`syncParts`): de longe um grupo tem só a borda, e o `drawScene` da camada das marcações do cenário
-  de 2.000 caiu de ~21 para ~9 ms (18 mil para 4 mil nós). Aproximado (≥ 24 px) nada muda. O `size-indicator-min-marking`
-  continua como estava.
+  de 2.000 caiu de ~21 para ~9 ms (18 mil para 4 mil nós). Aproximado (≥ 24 px) nada muda. O token `size-indicator-min-marking`
+  saiu (sem uso no desenho).
 - **Nós sob demanda** (`MarkingRenderer.render`, decisão 8 da etapa canvas-escala): o nó do Konva de uma marcação só é criado
   no primeiro quadro em que ela é desenhada (visível, nível de detalhe ≠ `hidden`, dentro da área da tela); fora disso não há
   nó, e `node(id)` e `headers.get(id)` devolvem `undefined` (o overlay e quem mais lê tratam o `undefined`). O nó criado

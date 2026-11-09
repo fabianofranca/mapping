@@ -13,9 +13,16 @@ export type { AllowOrigin } from './allowOrigin';
 export { ScreenRenderer } from '../src/canvas/components/screenRenderer';
 export type {
   InstanceWarnings,
+  ScreenRendererLabels,
   ScreenRendererOptions,
   ScreenRendererUpdateOptions,
 } from '../src/canvas/components/screenRenderer';
+export type { RenderPalette } from '../src/canvas/components/palette';
+export type {
+  RenderWarning,
+  RenderWarningCode,
+} from '../src/canvas/components/renderWarnings';
+export { VIEWER_LABELS } from './labels';
 export { konvaMeasurer } from '../src/canvas/components/konvaMeasurer';
 export { instanceLabel, loadLibrary, resolvePath } from '../src/model/components/library';
 export type {

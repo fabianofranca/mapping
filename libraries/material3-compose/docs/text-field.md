@@ -94,6 +94,6 @@ Referência: Compose `material3` 1.4.0, commit `5113b82a4ed6416d6344efa50e41db8c
 - O contêiner desabilitado do filled segue o código (`TextFieldDefaults.colors` usa `ContainerColor` também desabilitado), não o token `DisabledContainerOpacity` de 0,04 sobre `on-surface`.
 - No vão do contorno do outlined os cantos ficam quadrados: `stroke.sides` traça segmentos retos, sem arco no canto. Sem valor nem dica o contorno inteiro tem o raio 4.
 - A lista de 4 raios (`cornerRadius`) não aceita `$token`: o raio superior do filled vem de um retângulo com raio 4 por token, 4 mais alto que o contêiner, que o recorta.
-- Os mínimos de `TextFieldDefaults` (280 por 56) valem no contêiner e no `minSize`; a raiz sempre tem o tamanho da marcação, então `minWidth` na raiz não agiria. O tamanho inicial de 76 comporta o filled com apoio (56 + 4 + 16), mas o outlined com apoio pede 84 (8 + 56 + 4 + 16): o apoio passa da caixa de 76.
+- Os mínimos de `TextFieldDefaults` (280 por 56) valem no contêiner e no `minSize`; a raiz sempre tem o tamanho da marcação, então `minWidth` na raiz não agiria. O tamanho inicial de 84 comporta o outlined com apoio (8 + 56 + 4 + 16); o desenho sempre tem a altura do `size`, então o filled com apoio (76) fica com 8 vazios embaixo e o filled sem apoio (56) com 28.
 - `singleLine` mostra o começo do texto (o `BasicTextField` rola até o cursor); `maxLines` corta o texto, sem rolagem vertical.
 - Sem prefixo, sufixo, contador, `labelPosition` acima, área de toque de 48 dos ícones e demais parâmetros de `TextField`.

@@ -85,6 +85,10 @@ export const TOKENS: CanvasTokens = {
     placeholderFill: 'rgba(120, 121, 122, 0.25)',
     placeholderLine: 'rgba(120, 121, 122, 0.8)',
     unknownLine: '#d81b61',
+    unknownFill: 'rgba(216, 27, 97, 0.06)',
+    slotOpacity: 0.6,
+    labelFontSize: 12,
+    labelFontFamily: 'system-ui, sans-serif',
   },
   surface: '#ffffff',
   card: 'rgba(250, 250, 250, 0.9)',
@@ -99,7 +103,6 @@ export const TOKENS: CanvasTokens = {
     image: { size: 12, line: 16, weight: 600 },
   },
   handleSize: 10,
-  indicatorMinMarking: 24,
   lodMinMarking: 24,
   lodHideMarking: 2,
   arrow: {
