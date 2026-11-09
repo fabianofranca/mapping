@@ -141,6 +141,13 @@ describe.each(['pt-BR', 'en-US'] as const)('Janela Comentários (%s)', (lang) =>
     expect(glyphOf('tc').d).toBe(AWAITING_AGENT_PATHS[0]);
   });
 
+  it('o selo de cada estado usa a classe do estado (a cor do pino)', async () => {
+    await mount();
+    const badgeOf = (id: string) => rowOf(id).querySelector('.comments-badge');
+    expect(badgeOf('ta')?.classList.contains('comments-badge-human')).toBe(true);
+    expect(badgeOf('tc')?.classList.contains('comments-badge-agent')).toBe(true);
+  });
+
   it('filtro de status: todas, resolvidas, aguardando agente e humano', async () => {
     const { user } = await mount();
     const status = screen.getByLabelText(t('comments.filter.status'));
