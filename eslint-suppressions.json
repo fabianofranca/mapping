@@ -559,16 +559,6 @@
       "count": 3
     }
   },
-  "src/ui/LibraryPalette.tsx": {
-    "complexity": {
-      "count": 1
-    }
-  },
-  "src/ui/ListView.tsx": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/ui/MarkingPanel.tsx": {
     "complexity": {
       "count": 1

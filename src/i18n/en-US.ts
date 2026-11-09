@@ -216,6 +216,7 @@ export const enUS: Dictionary = {
   'annotation.owner': 'Linked to',
   'annotation.noOwner': 'None',
   'annotation.ownerOption': '{layer}: {name}',
+  'annotation.ownerOptionInvalid': '{layer}: {name} (invalid owner)',
   'annotation.ownerHelp':
     'Only annotations of this same marking appear. For typed ones the owner can be in another layer or in the same one, when its type accepts this one; free ones only link to other layers.',
   'annotation.ownerEmpty':

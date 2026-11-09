@@ -100,7 +100,7 @@ export function CatalogView({
         .filter((layer) => layer.entries.length > 0),
     [catalog, needle],
   );
-  const firstEntry = catalog.layers.flatMap((l) => l.entries)[0];
+  const firstEntry = catalog.layers.find((l) => l.entries.length > 0)?.entries[0];
   const selected =
     (selectedId === null ? undefined : findEntry(catalog, selectedId)) ??
     (layout === 'split' ? firstEntry : undefined);

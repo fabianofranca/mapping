@@ -5,6 +5,7 @@ import {
   MARKING_DISPLAY_MODES,
   layerDeletionImpact,
   nextLayerColor,
+  projectIndex,
   type Layer,
   type Project,
 } from '../model';
@@ -35,19 +36,22 @@ interface LayersProps {
  * Visibilidade das camadas: com uma perspectiva aberta (etapa #659, decisão 11), as escondidas
  * são as dela e mudam no projeto (com desfazer); na Principal, as da interface (`ui.hiddenLayers`).
  */
-function useLayerVisibility() {
-  const { layers } = useEditor();
+function useLayerVisibility(readOnly: boolean) {
+  const { layers, session } = useEditor();
   return {
     hidden: layers.hidden(),
     toggle: layers.toggle,
     showAll: layers.showAll,
+    // Com perspectiva aberta a escrita vai ao projeto e é recusada somente leitura (ou na
+    // revisão); na Principal é só da interface e segue valendo.
+    disabled: readOnly && session.perspective.id.value !== null,
   };
 }
 
 /** Nova camada e Mostrar todas: ícones no cabeçalho da janela. */
 export function LayerActions({ project, readOnly }: LayersProps) {
   const { actions } = useEditor();
-  const visibility = useLayerVisibility();
+  const visibility = useLayerVisibility(readOnly);
   const onAdd = () => {
     actions.addLayer(
       t('layer.newName', { n: project.layers.length + 1 }),
@@ -62,7 +66,12 @@ export function LayerActions({ project, readOnly }: LayersProps) {
         disabled={readOnly}
         onClick={onAdd}
       />
-      <IconButton icon="eye" label={t('layer.showAll')} onClick={visibility.showAll} />
+      <IconButton
+        icon="eye"
+        label={t('layer.showAll')}
+        disabled={visibility.disabled}
+        onClick={visibility.showAll}
+      />
     </>
   );
 }
@@ -70,7 +79,7 @@ export function LayerActions({ project, readOnly }: LayersProps) {
 /** Nome da especialização dona da camada (ou o id, se a cópia não estiver disponível). */
 function specName(project: Project, layer: Layer): string {
   const id = layer.spec?.specId ?? '';
-  return project.specializations.find((s) => s.id === id)?.spec?.name ?? id;
+  return projectIndex(project).specializations.get(id)?.spec?.name ?? id;
 }
 
 /** Paleta padrão mais uma cor livre, dentro do popover do botão de cor. */
@@ -114,6 +123,7 @@ interface LayerRowProps extends LayersProps {
   readonly layer: Layer;
   readonly index: number;
   readonly hidden: boolean;
+  readonly visibilityDisabled: boolean;
   readonly onToggle: (layerId: string) => void;
   readonly onDelete: (layer: Layer) => void;
 }
@@ -124,6 +134,7 @@ function LayerRow({
   layer,
   index,
   hidden,
+  visibilityDisabled,
   onToggle,
   onDelete,
 }: LayerRowProps) {
@@ -143,6 +154,7 @@ function LayerRow({
         <input
           type="checkbox"
           checked={!hidden}
+          disabled={visibilityDisabled}
           aria-label={t('layer.visible', { name: layer.name })}
           onChange={() => onToggle(layer.id)}
         />
@@ -243,19 +255,23 @@ function LayerRow({
         )}
       </Popover>
 
-      {layer.spec && (
-        <Tooltip label={t('layer.specBadge', { name: specName(project, layer) })}>
-          <span class="layer-badge">{specName(project, layer)}</span>
-        </Tooltip>
-      )}
+      {layer.spec && <SpecBadge name={specName(project, layer)} />}
     </li>
+  );
+}
+
+function SpecBadge({ name }: { readonly name: string }) {
+  return (
+    <Tooltip label={t('layer.specBadge', { name })}>
+      <span class="layer-badge">{name}</span>
+    </Tooltip>
   );
 }
 
 /** Lista de camadas, modo de exibição e a confirmação de exclusão. */
 export function LayersPanel({ project, readOnly }: LayersProps) {
   const [deleting, setDeleting] = useState<Layer | null>(null);
-  const { hidden, toggle } = useLayerVisibility();
+  const { hidden, toggle, disabled: visibilityDisabled } = useLayerVisibility(readOnly);
 
   return (
     <div class="layers-panel">
@@ -268,6 +284,7 @@ export function LayersPanel({ project, readOnly }: LayersProps) {
             layer={layer}
             index={index}
             hidden={hidden.has(layer.id)}
+            visibilityDisabled={visibilityDisabled}
             onToggle={toggle}
             onDelete={setDeleting}
           />

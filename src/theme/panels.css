@@ -748,6 +748,8 @@ button.tree-toggle:hover {
 }
 
 .issue-badge {
+  display: inline-flex;
+  align-items: center;
   flex: none;
   margin-right: var(--space-1);
   color: var(--color-warning);
