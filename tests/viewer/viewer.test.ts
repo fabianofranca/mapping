@@ -147,6 +147,10 @@ describe('createViewer', () => {
         disconnect = disconnect;
       },
     );
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => {
+      callback();
+      return 1;
+    });
     const el = container(800, 600);
     const viewer = make(el, { library, screen: SAMPLE_SCREEN });
     const before = viewer.scale();
@@ -161,6 +165,92 @@ describe('createViewer', () => {
 
     viewer.dispose();
     expect(disconnect).toHaveBeenCalledOnce();
+  });
+
+  it('a tela que some e volta com o mesmo tamanho depois de o contêiner mudar é reenquadrada', () => {
+    let notify: (() => void) | undefined;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          notify = callback;
+        }
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => {
+      callback();
+      return 1;
+    });
+    const el = container(800, 600);
+    const viewer = make(el, { library, screen: SAMPLE_SCREEN });
+    const before = viewer.scale();
+    viewer.update({ screen: undefined });
+    Object.defineProperty(el, 'clientHeight', { value: 300, configurable: true });
+    notify?.();
+    viewer.update({ screen: SAMPLE_SCREEN });
+    expect(viewer.scale()).toBeLessThan(before);
+    expect(viewer.scale()).toBeCloseTo((300 - 32) / SAMPLE_SCREEN.height, 6);
+  });
+
+  it('o tamanho do stage desconta padding e borda do contêiner', () => {
+    const el = container(800, 600);
+    el.style.padding = '10px 20px';
+    el.style.border = '5px solid black';
+    const viewer = make(el, { library, screen: SAMPLE_SCREEN });
+    const stage = stageOf(el);
+    // clientWidth/Height incluem o padding e não incluem a borda.
+    expect(stage.size()).toEqual({ width: 800 - 40, height: 600 - 20 });
+    vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({
+      left: 100,
+      top: 50,
+      right: 900,
+      bottom: 650,
+      x: 100,
+      y: 50,
+      width: 810,
+      height: 610,
+      toJSON: () => ({}),
+    });
+    // A origem do stage fica depois da borda (5) e do padding (20 e 10).
+    const origin = viewer.clientToScreen({
+      x: 100 + 5 + 20 + stage.x(),
+      y: 50 + 5 + 10 + stage.y(),
+    });
+    expect(origin.x).toBeCloseTo(0, 6);
+    expect(origin.y).toBeCloseTo(0, 6);
+  });
+
+  it('o redimensionamento redesenha uma vez por quadro, não de forma síncrona', () => {
+    let notify: (() => void) | undefined;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          notify = callback;
+        }
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+    const frames: (() => void)[] = [];
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    const el = container(800, 600);
+    make(el, { library, screen: SAMPLE_SCREEN });
+    frames.splice(0).forEach((frame) => frame());
+    const draw = vi.spyOn(stageOf(el).getLayers()[0] as Konva.Layer, 'draw');
+    Object.defineProperty(el, 'clientWidth', { value: 500, configurable: true });
+    Object.defineProperty(el, 'clientHeight', { value: 300, configurable: true });
+    notify?.();
+    notify?.();
+    expect(draw).not.toHaveBeenCalled();
+    frames.splice(0).forEach((frame) => frame());
+    expect(stageOf(el).size()).toEqual({ width: 500, height: 300 });
+    expect(draw).toHaveBeenCalledTimes(1);
   });
 
   it('setSelection e setHover criam retângulos no overlay, nas caixas certas', () => {
@@ -181,7 +271,7 @@ describe('createViewer', () => {
         y: box?.y,
         width: box?.width,
         height: box?.height,
-        stroke: '#1A63CC',
+        stroke: '#1a63cc',
         strokeScaleEnabled: false,
       });
     }

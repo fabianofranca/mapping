@@ -29,6 +29,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
@@ -139,18 +140,30 @@ export async function waitForWindow(
   throw new Error(message);
 }
 
-/** Lista {id, name} de toda janela visível (via `xdotool getwindowname`). */
+/**
+ * Lista {id, name} de toda janela visível. Os nomes vêm de um comando só
+ * (`xdotool search ... getwindowname %@`, uma linha por janela, na ordem do `search`), em vez de
+ * um `getwindowname` por janela a cada tentativa do `waitUntil`.
+ */
 function listWindows() {
   const search = spawnSync('xdotool', ['search', '--onlyvisible', '--name', '.'], {
     encoding: 'utf8',
   });
   const ids = search.stdout.trim().split('\n').filter(Boolean);
-  return ids.map((id) => {
-    const name = spawnSync('xdotool', ['getwindowname', id], {
-      encoding: 'utf8',
-    }).stdout.trim();
-    return { id, name };
-  });
+  if (ids.length === 0) return [];
+  const names = spawnSync(
+    'xdotool',
+    ['search', '--onlyvisible', '--name', '.', 'getwindowname', '%@'],
+    { encoding: 'utf8' },
+  )
+    .stdout.trim()
+    .split('\n');
+  if (names.length === ids.length) return ids.map((id, i) => ({ id, name: names[i] }));
+  // A lista mudou entre os dois comandos (janela abriu ou fechou): volta ao nome por janela.
+  return ids.map((id) => ({
+    id,
+    name: spawnSync('xdotool', ['getwindowname', id], { encoding: 'utf8' }).stdout.trim(),
+  }));
 }
 
 /** Geometria {x, y, width, height} de uma janela (via `xdotool getwindowgeometry --shell`). */
@@ -463,7 +476,14 @@ export async function saveFile(apoioDir, targetPath, { timeoutMs } = {}) {
       `saveFile: ${targetPath} já existe no disco; o GTK sobrescreveria sem perguntar.`,
     );
   }
-  const windowId = await waitForWindow(['Aviso: este site'], { timeoutMs });
+  let windowId;
+  try {
+    windowId = await waitForWindow(['Aviso: este site'], { timeoutMs });
+  } catch {
+    throw new Error(
+      `saveFile: o diálogo de salvar ("Aviso: este site…") não apareceu; confira se o Exportar › Baixar foi acionado (janela ativa: "${activeWindowTitle()}").`,
+    );
+  }
   execFileSync('xdotool', ['windowactivate', '--sync', windowId]);
   execFileSync('xdotool', ['key', '--clearmodifiers', 'Home', 'shift+End', 'BackSpace']);
   execFileSync('xdotool', ['type', '--delay', '20', targetPath]);
@@ -541,7 +561,7 @@ async function runAllowPermissionOnce(scriptPath) {
 export async function allowPermission(apoioDir) {
   loadEnv(apoioDir);
   const scriptPath = path.join(
-    path.dirname(new URL(import.meta.url).pathname),
+    path.dirname(fileURLToPath(import.meta.url)),
     'atspi-allow.py',
   );
   const logFile = path.join(apoioDir, 'console.log');
@@ -1817,6 +1837,6 @@ async function runCli(argv) {
   process.exitCode = 2;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await runCli(process.argv.slice(2));
 }

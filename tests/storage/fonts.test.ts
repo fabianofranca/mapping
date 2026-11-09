@@ -1,7 +1,7 @@
 // Fontes do design system: FontFace a partir dos bytes, sem rede; o registro é de quem o cria.
 import { describe, expect, it, vi } from 'vitest';
 import type { LoadedFont } from '../../src/model/components/library';
-import { createFontRegistry, describeFont } from '../../src/storage/fonts';
+import { createFontRegistry } from '../../src/storage/fonts';
 
 const bytes = new Uint8Array([0, 1, 0, 0]).buffer;
 
@@ -49,8 +49,11 @@ describe('registro de fontes', () => {
       font('Ruim', { style: 'italic' }),
     ]);
     expect(first.map((s) => s.status)).toEqual(['loaded', 'missing', 'failed']);
-    expect(first[1]?.detail).toContain('fonts/b.ttf');
-    expect(first[2]?.detail).toContain('formato inválido');
+    expect(first[1]?.problem).toEqual({ code: 'missing', path: 'fonts/b.ttf' });
+    expect(first[2]?.problem).toEqual({
+      code: 'load-failed',
+      message: 'formato inválido',
+    });
     expect(added).toHaveLength(1);
     expect((added[0] as FakeFace).descriptors).toEqual({
       weight: '400',
@@ -60,7 +63,6 @@ describe('registro de fontes', () => {
     const second = await registry.register([font('Inter')]);
     expect(second[0]?.status).toBe('loaded');
     expect(deleted).toEqual([added[0]]);
-    expect(describeFont(first[2]!.font)).toBe('Ruim 400 itálico');
   });
 
   it('clear tira as faces do registro e não mexe nas de outro registro', async () => {
@@ -81,9 +83,6 @@ describe('registro de fontes', () => {
 
   it('sem FontFace no ambiente, o status é "failed" com explicação', async () => {
     const out = await createFontRegistry({}).register([font('Roboto')]);
-    expect(out[0]).toMatchObject({
-      status: 'failed',
-      detail: expect.stringContaining('FontFace'),
-    });
+    expect(out[0]).toMatchObject({ status: 'failed', problem: { code: 'no-fontface' } });
   });
 });

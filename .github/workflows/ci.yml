@@ -84,7 +84,13 @@ jobs:
             *) echo "PR de $HEAD: o changelog só é exigido nos épicos."; exit 0 ;;
           esac
           name="${HEAD#epic/}"
-          if gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep -qxE "changelog/([0-9]{4}-[0-9]{2}-[0-9]{2}-)?$name\.md"; then
+          if ! files="$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' 2>&1)"; then
+            echo "::error::Não foi possível listar os arquivos do PR #$PR: $files"
+            exit 1
+          fi
+          # O nome do épico é comparado como texto (`-F`), nunca como regex; só a data opcional
+          # do começo do arquivo sai por `sed`.
+          if printf '%s\n' "$files" | sed -n 's#^changelog/\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}-\)\{0,1\}##p' | grep -qxF "$name.md"; then
             echo "changelog do épico $name presente neste PR."
           else
             echo "::error::A entrega de $HEAD para a main precisa trazer changelog/$name.md (ou changelog/AAAA-MM-DD-$name.md)."
@@ -112,7 +118,11 @@ jobs:
             *) echo "PR de $HEAD: o registro do design system só é exigido nos épicos."; exit 0 ;;
           esac
           name="${HEAD#epic/}"
-          if gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' | grep -qxE "docs/design-system/([0-9]{4}-[0-9]{2}-[0-9]{2}-)?$name\.md"; then
+          if ! files="$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' 2>&1)"; then
+            echo "::error::Não foi possível listar os arquivos do PR #$PR: $files"
+            exit 1
+          fi
+          if printf '%s\n' "$files" | sed -n 's#^docs/design-system/\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}-\)\{0,1\}##p' | grep -qxF "$name.md"; then
             echo "registro do design system do épico $name presente neste PR."
           else
             echo "::error::A entrega de $HEAD para a main precisa trazer docs/design-system/$name.md (ou docs/design-system/AAAA-MM-DD-$name.md): pendências aplicadas e sincronização, ou o registro de que não houve impacto."
@@ -142,21 +152,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
-      # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
-      - uses: actions/setup-node@v7
-        id: node
-        with:
-          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
-          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
-          cache: npm
-      # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
-      - uses: actions/cache@v5
-        id: modules
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
-      - if: steps.modules.outputs.cache-hit != 'true'
-        run: npm ci
+      # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
+      - uses: ./.github/actions/setup-deps
       # Caches do ESLint e do Prettier (`lint:ci`); o `npm run lint` local não usa cache.
       - uses: actions/cache@v5
         with:
@@ -181,21 +178,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
-      # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
-      - uses: actions/setup-node@v7
-        id: node
-        with:
-          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
-          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
-          cache: npm
-      # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
-      - uses: actions/cache@v5
-        id: modules
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
-      - if: steps.modules.outputs.cache-hit != 'true'
-        run: npm ci
+      # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
+      - uses: ./.github/actions/setup-deps
       - run: npx vitest run --coverage --shard=${{ matrix.shard }}/4 --reporter=blob
         env:
           COVERAGE_REPORT: off
@@ -216,21 +200,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
-      # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
-      - uses: actions/setup-node@v7
-        id: node
-        with:
-          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
-          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
-          cache: npm
-      # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
-      - uses: actions/cache@v5
-        id: modules
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
-      - if: steps.modules.outputs.cache-hit != 'true'
-        run: npm ci
+      # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
+      - uses: ./.github/actions/setup-deps
       - uses: actions/download-artifact@v7
         with:
           pattern: vitest-blob${{ inputs.label && format('-{0}', inputs.label) || '' }}-*
@@ -265,21 +236,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
-      # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
-      - uses: actions/setup-node@v7
-        id: node
-        with:
-          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
-          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
-          cache: npm
-      # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
-      - uses: actions/cache@v5
-        id: modules
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
-      - if: steps.modules.outputs.cache-hit != 'true'
-        run: npm ci
+      # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
+      - uses: ./.github/actions/setup-deps
       # Orçamentos de desempenho por quadro: sem cobertura (ela deixa o código mais lento).
       - run: npm run test:perf
       # Testes de crescimento: a mesma operação com n e 4n marcações, razão das medianas abaixo de 6×.
@@ -330,21 +288,8 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
-      # Refs anteriores à fase 5.6 (preview de branch antigo) não têm .nvmrc: Node 22.
-      - uses: actions/setup-node@v7
-        id: node
-        with:
-          node-version-file: ${{ hashFiles('.nvmrc') != '' && '.nvmrc' || '' }}
-          node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}
-          cache: npm
-      # node_modules em cache (SO, Node e package-lock.json); `npm ci` só sem hit.
-      - uses: actions/cache@v5
-        id: modules
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
-      - if: steps.modules.outputs.cache-hit != 'true'
-        run: npm ci
+      # Node, cache de node_modules e `npm ci` (ação local; refs anteriores à fase 5.6 caem no Node 22).
+      - uses: ./.github/actions/setup-deps
       - name: Versão do Playwright
         id: playwright
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"

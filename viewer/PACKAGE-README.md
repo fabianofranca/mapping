@@ -8,13 +8,13 @@ Dentro de `dist-viewer/` (a pasta gerada por `npm run build:viewer` no repositó
 
 ```bash
 npm pack
-# gera mapping-viewer-0.4.1.tgz
+# gera mapping-viewer-0.4.2.tgz
 ```
 
 No projeto que vai usar:
 
 ```bash
-npm install ./mapping-viewer-0.4.1.tgz
+npm install ./mapping-viewer-0.4.2.tgz
 ```
 
 Também dá para copiar a pasta `dist-viewer/` inteira para o projeto e importar `mapping-viewer.js` por caminho.
@@ -118,7 +118,7 @@ createViewer(container, {
 });
 ```
 
-(No React: `<MappingViewer remoteImages allowOrigin={...} />`; as duas props valem na criação.)
+(No React: `<MappingViewer remoteImages allowOrigin={...} />`. `remoteImages` vale só na criação; `allowOrigin` é lida a cada pedido, então uma função nova a cada render não recria o visualizador. Com `createViewer` direto, a função passada na criação é a que vale.)
 
 Com `remoteImages: true`, a imagem só é pedida quando as **duas portas** concordam:
 

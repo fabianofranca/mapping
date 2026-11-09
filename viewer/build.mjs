@@ -7,18 +7,21 @@
 //   package.json, README.md  o manifesto do pacote (exports "." e "./react") e o guia de uso
 // Cada .js é autocontido (com o Konva e o motor embutidos): o hospedeiro usa um OU outro.
 // ESM de propósito: `dist-viewer/package.json` declara "type": "module".
-// Minificado, com mapas: núcleo ~ 227 kB (mapa ~ 1,2 MB) e invólucro React ~ 228 kB
-// (mapa ~ 1,2 MB); sem minificar eram ~ 487 kB e ~ 489 kB. Os mapas não pesam no site do
+// Minificado, com mapas: núcleo ~ 275 kB (mapa ~ 1,5 MB) e invólucro React ~ 276 kB
+// (mapa ~ 1,5 MB). Os mapas não pesam no site do
 // hospedeiro (o navegador só os baixa com o DevTools aberto).
 // O tsc roda primeiro (e verifica os tipos); se falhar, nada é gerado. Depois do esbuild, o
 // script confere que todo arquivo apontado por `exports` existe.
 import { execFileSync } from 'node:child_process';
 import process from 'node:process';
-import { access, copyFile, writeFile } from 'node:fs/promises';
+import { access, copyFile, rm, writeFile } from 'node:fs/promises';
 import { build } from 'esbuild';
 import { packageJson } from './packageManifest.mjs';
 
 const OUT = 'dist-viewer';
+
+// Limpa a saída antes: `.d.ts` e mapas de uma versão anterior não entram no pacote.
+await rm(OUT, { recursive: true, force: true });
 
 execFileSync(
   process.execPath,
@@ -41,7 +44,8 @@ await build({
   target: 'es2022',
   external: ['react', 'react/jsx-runtime', 'react-dom'],
   jsx: 'automatic',
-  legalComments: 'none',
+  // 'eof': o aviso de licença do Konva embutido vai para o fim do bundle.
+  legalComments: 'eof',
   minify: true,
   sourcemap: true,
   logLevel: 'info',

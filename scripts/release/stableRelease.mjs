@@ -4,6 +4,8 @@
 //     Job `decide` do `mcp-release.yml` (push na main): a tag `mcp-v<versão>` existe? Sem
 //     `--tags-file`, lê as tags do remoto (`git ls-remote --tags origin`). Escreve `tag`, `sha` e
 //     `publish` em `--output` (o `$GITHUB_OUTPUT`) e imprime o aviso quando pula.
+//   version --version-file <mcp/version.ts>
+//     Imprime a `SERVER_VERSION` (os workflows de release a leem daqui, sem `sed`).
 //   epic --version-file <mcp/version.ts>
 //     Passo "Versão do MCP" do job `epic` do `ci.yml`: sai com 1 e `::error::` se o épico muda
 //     entrada da release e mantém a versão que já tem estável (ou se a versão nova não é maior).
@@ -158,7 +160,7 @@ function runEpic(version) {
   const tags = parseTags(git('tag', '-l', 'mcp-v*'));
   const tag = `mcp-v${version}`;
   const changed = tags.includes(tag)
-    ? git('diff', '--name-only', tag, 'HEAD').split('\n').filter(Boolean)
+    ? git('diff', '--name-only', '--no-renames', tag, 'HEAD').split('\n').filter(Boolean)
     : [];
   const verdict = checkEpicVersion({ version, tags, changed });
   annotate(verdict.level, verdict.message);
@@ -168,12 +170,16 @@ function runEpic(version) {
 function main(argv) {
   const command = argv[0];
   const versionFile = option(argv, '--version-file');
-  if ((command !== 'decide' && command !== 'epic') || !versionFile) {
+  if (!['decide', 'epic', 'version'].includes(command) || !versionFile) {
     throw new Error(
-      'Uso: node scripts/release/stableRelease.mjs <decide|epic> --version-file <mcp/version.ts> [...]',
+      'Uso: node scripts/release/stableRelease.mjs <decide|epic|version> --version-file <mcp/version.ts> [...]',
     );
   }
   const version = readServerVersion(readFileSync(versionFile, 'utf8'));
+  if (command === 'version') {
+    process.stdout.write(`${version}\n`);
+    return 0;
+  }
   return command === 'decide' ? runDecide(argv, version) : runEpic(version);
 }
 

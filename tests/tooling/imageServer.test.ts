@@ -1,7 +1,7 @@
 // @vitest-environment node
 // O servidor de imagens do roteiro R15: responde o PNG sem CORS, anota cada pedido (com o
 // `Origin`) e encerra em /parar.
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AddressInfo } from 'node:net';
@@ -25,7 +25,7 @@ async function start() {
     server.closeAllConnections();
   };
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  return { base, logFile };
+  return { base, logFile, dir };
 }
 
 describe('scripts/servidor-imagens.mjs', () => {
@@ -50,5 +50,14 @@ describe('scripts/servidor-imagens.mjs', () => {
     expect((await fetch(`${base}/outra.png`)).status).toBe(404);
     expect(await (await fetch(`${base}/parar`)).text()).toBe('parado');
     await expect(fetch(`${base}/foto.png`)).rejects.toThrow();
+  });
+
+  it('foto.png ausente responde 404 com mensagem e o servidor segue de pé (item 60)', async () => {
+    const { base, dir } = await start();
+    rmSync(join(dir, 'foto.png'));
+    const missing = await fetch(`${base}/foto.png`);
+    expect(missing.status).toBe(404);
+    expect(await missing.text()).toMatch(/foto\.png/);
+    expect((await fetch(`${base}/outra.png`)).status).toBe(404);
   });
 });

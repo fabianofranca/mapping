@@ -215,6 +215,8 @@ export function shortcutFor(e: KeyInfo, altNumbers = true): Shortcut | null {
 
   if (mod && e.shiftKey) {
     if (key === 'z') return { kind: 'redo' };
+    // Ctrl+Shift+= (Ctrl++): aproxima, como Ctrl+=; senão cai no zoom do navegador.
+    if (key === '+' || key === '=') return MOD_KEYS['=']!;
     const n = numberOf(e);
     const window = n === null ? null : toolWindowByNumber(n);
     if (window) return { kind: 'toggle-window', window };

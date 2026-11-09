@@ -54,7 +54,28 @@ function declarations(file: string): Declaration[] {
   }));
 }
 
-const all = files.flatMap(declarations);
+/**
+ * O `<style>` do guia interativo (`scripts/guia/template.html`) também entra na varredura
+ * (etapa #971, decisão 12). Os breakpoints do `@media` ficam (CSS não aceita `var()` ali).
+ */
+function guideDeclarations(): Declaration[] {
+  const html = readFileSync('scripts/guia/template.html', 'utf8');
+  const css = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)]
+    .map((m) => m[1] ?? '')
+    .join('\n')
+    .replaceAll(/\/\*[\s\S]*?\*\//g, '');
+  return [...css.matchAll(/([a-z-]+)\s*:\s*([^;{}]+);/g)].map((m) => ({
+    file: 'scripts/guia/template.html',
+    property: m[1]!,
+    // O `0px` de reserva do `env()` (área segura) não é valor de design.
+    value: m[2]!
+      .replaceAll(/env\([^)]*\)/g, '')
+      .replaceAll(/\s+/g, ' ')
+      .trim(),
+  }));
+}
+
+const all = [...files.flatMap(declarations), ...guideDeclarations()];
 
 /**
  * `font: inherit` e `font: var(--t-…)` são os únicos valores aceitos. Opacidade `0` e `1`
@@ -86,6 +107,8 @@ describe('literais fora dos tokens', () => {
   it('todo var(--token) usado existe (ou é local ao componente)', () => {
     const local = new Set([
       '--layer-color',
+      // Cor da anotação do guia, escrita pelo script da página.
+      '--c',
       '--cols',
       '--depth',
       // Medidas da legenda da revisão, escritas pelo `ReviewLegend`.

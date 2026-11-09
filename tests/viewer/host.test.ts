@@ -244,7 +244,10 @@ describe('registerLibraryFonts', () => {
       fonts: { add: (f) => added.push(f), delete: () => true },
     });
     expect(status.map((s) => s.status)).toEqual(['loaded', 'missing']);
-    expect(status[1]?.detail).toContain('fonts/Roboto-Medium.ttf');
+    expect(status[1]?.problem).toEqual({
+      code: 'missing',
+      path: expect.stringContaining('fonts/Roboto-Medium.ttf'),
+    });
     expect(added).toHaveLength(1);
     expect((added[0] as FakeFace).family).toBe('Roboto');
     expect((added[0] as FakeFace).source).toBe(fontBytes);
@@ -252,5 +255,61 @@ describe('registerLibraryFonts', () => {
 
   it('biblioteca sem fontes: lista vazia', async () => {
     expect(await registerLibraryFonts(loadLibrary(SAMPLE_FILES), {})).toEqual([]);
+  });
+});
+
+describe('loadLibraryFromUrl: pedidos', () => {
+  /** Especialização com `refs` componentes distintos (o mesmo arquivo servido por todos) e os tipos repetidos. */
+  function manyComponents(distinct: number, repeats: number): Map<string, Body> {
+    const bodies = sampleBodies();
+    const spec = JSON.parse(SAMPLE_FILES[0]!.text) as {
+      layers: { annotationTypes: Record<string, unknown>[] }[];
+    };
+    const template = SAMPLE_FILES[1]!.text;
+    const types: Record<string, unknown>[] = [];
+    for (let i = 0; i < distinct; i += 1) {
+      for (let r = 0; r < repeats; r += 1) {
+        types.push({
+          id: `t${i}-${r}`,
+          name: `T${i}-${r}`,
+          component: `components/c${i}.json`,
+        });
+      }
+      bodies.set(`${BASE}components/c${i}.json`, template);
+    }
+    spec.layers = [{ ...spec.layers[0]!, annotationTypes: types }];
+    bodies.set(SPEC_URL, JSON.stringify(spec));
+    return bodies;
+  }
+
+  it('referências iguais são pedidas uma vez só', async () => {
+    const { fetch, calls } = fakeFetch(manyComponents(3, 4));
+    await loadLibraryFromUrl(SPEC_URL, { fetch });
+    const component = calls.filter((url) => url.includes('/components/'));
+    expect(component).toHaveLength(3);
+    expect(new Set(component).size).toBe(3);
+  });
+
+  it('limita os pedidos simultâneos', async () => {
+    const bodies = manyComponents(30, 1);
+    let inFlight = 0;
+    let peak = 0;
+    const slow = vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      inFlight -= 1;
+      const body = bodies.get(String(input));
+      if (body === undefined) return { ok: false, status: 404 } as Response;
+      return {
+        ok: true,
+        status: 200,
+        text: async () => (typeof body === 'string' ? body : ''),
+        arrayBuffer: async () => (typeof body === 'string' ? new ArrayBuffer(0) : body),
+      } as Response;
+    });
+    await loadLibraryFromUrl(SPEC_URL, { fetch: slow as unknown as typeof fetch });
+    expect(slow.mock.calls.length).toBeGreaterThan(30);
+    expect(peak).toBeLessThanOrEqual(6);
   });
 });

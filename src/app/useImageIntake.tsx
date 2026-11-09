@@ -80,12 +80,16 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
   // O listener é inscrito uma vez; `pasteFiles` aponta para a versão atual de `addAtViewCenter`.
   const pasteFiles = useRef<(files: readonly File[]) => void>(() => {});
   pasteFiles.current = (files) => void addAtViewCenter(files);
+  const busyRef = useRef(busy);
+  busyRef.current = busy;
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
       if (isTextInput(e.target) || modalOpen.peek() > 0) return;
       const files = imagesFromPaste(e.clipboardData);
       if (files.length === 0 || !store.project.peek() || store.locked.peek()) return;
       e.preventDefault();
+      // Importação em curso: ignora, como o soltar (duas importações zerariam o progresso uma da outra).
+      if (busyRef.current) return;
       pasteFiles.current(files);
     };
     window.addEventListener('paste', onPaste);
@@ -140,7 +144,8 @@ export function useImageIntake({ dialogs, notices }: ImageIntakeOptions): ImageI
         setMessage(t('editor.dropIgnored', { names: ignored.join(', ') }));
     };
     if (!only) return warn();
-    if (images.length === 1 && overImage) {
+    // Troca só com exatamente um arquivo solto, a mesma regra do destaque do `dragover`.
+    if ((e.dataTransfer?.files.length ?? 0) === 1 && images.length === 1 && overImage) {
       void replaceWith(overImage, only).then(warn);
       return;
     }

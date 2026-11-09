@@ -9,6 +9,7 @@ import { StrictMode, act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { installFakeCanvas } from '../canvas/harness';
+import { approximateMeasurer } from '../../src/model/components/instantiate';
 import { SAMPLE_FILES, SAMPLE_SCREEN } from '../../viewer/samples/samples';
 import settings from '../../viewer/samples/settings.sdui.json';
 import { M3_FILES, M3_SCREEN } from '../../viewer/samples/samplesMaterial3';
@@ -67,7 +68,7 @@ function instanceCount(stage: Konva.Stage): number {
 function selectionRects(stage: Konva.Stage): Konva.Rect[] {
   const overlay = stage.getLayers()[1];
   return (overlay?.find<Konva.Rect>('Rect') ?? []).filter(
-    (r) => r.stroke() === '#1A63CC',
+    (r) => r.stroke() === '#1a63cc',
   );
 }
 
@@ -174,6 +175,29 @@ describe('<MappingViewer/>', () => {
     await render({ library, screen: SAMPLE_SCREEN, onHover, hover: id });
     expect(hoverRects().length).toBe(1);
     expect(onHover).not.toHaveBeenCalled();
+  });
+
+  it('repassa fonts, measure, selectionColor e hoverColor ao viewer', async () => {
+    const id = SAMPLE_SCREEN.instances[0]?.id ?? '';
+    const measure = vi.fn(approximateMeasurer);
+    await mount({
+      library,
+      screen: SAMPLE_SCREEN,
+      measure,
+      fonts: { sans: 'FontePropriaSans', mono: 'FontePropriaMono' },
+      selectionColor: '#112233',
+      hoverColor: '#445566',
+      selection: [id],
+      hover: SAMPLE_SCREEN.instances[1]?.id,
+    });
+    const stage = stageOf(viewerDiv());
+    const strokes = (stage.getLayers()[1]?.find<Konva.Rect>('Rect') ?? [])
+      .filter((r) => r.visible())
+      .map((r) => r.stroke());
+    expect(strokes).toContain('#112233');
+    expect(strokes).toContain('#445566');
+    expect(measure).toHaveBeenCalled();
+    expect(JSON.stringify(measure.mock.calls)).toContain('FontePropriaSans');
   });
 
   it('trocar o callback não recria o viewer; o novo callback é o que recebe os eventos', async () => {

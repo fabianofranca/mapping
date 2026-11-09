@@ -8,6 +8,39 @@ import { describe, expect, it, vi } from 'vitest';
 const read = (path: string): string => readFileSync(path, 'utf8');
 const ci = read('.github/workflows/ci.yml');
 const deploy = read('.github/workflows/deploy.yml');
+const setupAction = read('.github/actions/setup-deps/action.yml');
+
+/** Bloco de um job de primeiro nível (`  nome:` até o próximo job), com as linhas de comentário. */
+const jobOf = (yaml: string, name: string): string => {
+  const start = yaml.indexOf(`\n  ${name}:\n`);
+  expect(start, `job ${name}`).toBeGreaterThan(-1);
+  const rest = yaml.slice(start + 1);
+  const end = rest.slice(1).search(/\n {2}[a-z0-9-]+:\n/);
+  return end < 0 ? rest : rest.slice(0, end + 1);
+};
+
+/** Corpo dos `run:` do arquivo (uma linha ou bloco `|`), para conferir interpolações. */
+const runBodies = (yaml: string): string[] => {
+  const lines = yaml.split('\n');
+  const bodies: string[] = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const match = /^(\s*)(?:- )?run:\s*(.*)$/.exec(lines[i] ?? '');
+    if (!match) continue;
+    const indent = (match[1] ?? '').length;
+    if (match[2] && match[2] !== '|') {
+      bodies.push(match[2]);
+      continue;
+    }
+    const body: string[] = [];
+    for (let j = i + 1; j < lines.length; j += 1) {
+      const line = lines[j] ?? '';
+      if (line.trim() !== '' && line.search(/\S/) <= indent) break;
+      body.push(line);
+    }
+    bodies.push(body.join('\n'));
+  }
+  return bodies;
+};
 
 describe('deploy.yml roda o mesmo que o ci.yml antes de publicar', () => {
   it('o ci.yml pode ser chamado por outro workflow, com o ref a validar', () => {
@@ -70,7 +103,7 @@ describe('Node fixado no repositório', () => {
   });
 
   it('os workflows leem a versão do .nvmrc', () => {
-    for (const workflow of [ci, deploy]) {
+    for (const workflow of [setupAction, deploy]) {
       expect(workflow).toContain('node-version-file:');
       expect(workflow).not.toMatch(/node-version: \d/);
     }
@@ -159,7 +192,7 @@ describe('mcp-release.yml anexa o mapping-mcp.js à Release', () => {
   // Etapa #920: a estável sai sozinha no merge do épico na main.
   it('dispara no push na main, além da tag mcp-v*', () => {
     expect(release).toMatch(/^ {4}branches: \[main\]$/m);
-    expect(release).toMatch(/^ {4}tags: \['mcp-v\*'\]$/m);
+    expect(release).toMatch(/^ {4}tags: \['mcp-v\*', '!mcp-v\*-\*'\]$/m);
   });
 
   it('tem os jobs decide (contents: read) e release (contents: write, needs, if)', () => {
@@ -221,9 +254,8 @@ describe('ci.yml exige o changelog do épico nos PRs de épico para a main', () 
     expect(job).toContain('Changelog atualizado');
     expect(step).toMatch(/pulls\/\$PR\/files/);
     expect(step).toContain('name="${HEAD#epic/}"');
-    expect(step).toContain(
-      'grep -qxE "changelog/([0-9]{4}-[0-9]{2}-[0-9]{2}-)?$name\\.md"',
-    );
+    expect(step).toContain('grep -qxF "$name.md"');
+    expect(step).not.toMatch(/grep -qxE/);
     expect(step).not.toMatch(/grep -qx 'CHANGELOG\.md'/);
   });
 
@@ -252,9 +284,8 @@ describe('ci.yml exige o registro do DS do épico nos PRs de épico para a main'
   it('o job epic confere o arquivo docs/design-system/<nome>.md do próprio épico', () => {
     expect(step).toMatch(/pulls\/\$PR\/files/);
     expect(step).toContain('name="${HEAD#epic/}"');
-    expect(step).toContain(
-      'grep -qxE "docs/design-system/([0-9]{4}-[0-9]{2}-[0-9]{2}-)?$name\\.md"',
-    );
+    expect(step).toContain('grep -qxF "$name.md"');
+    expect(step).not.toMatch(/grep -qxE/);
     expect(step).not.toContain("grep -qx 'docs/DESIGN-SYSTEM.md'");
   });
 
@@ -430,10 +461,10 @@ describe('job check em paralelo e caches', () => {
     for (const name of ['static', 'test', 'coverage', 'build', 'e2e']) {
       const job = block(name);
       expect(job, name).toContain('ref: ${{ inputs.ref }}');
-      expect(job, name).toContain(
-        "node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}",
-      );
     }
+    expect(setupAction).toContain(
+      "node-version: ${{ hashFiles('.nvmrc') == '' && '22' || '' }}",
+    );
     const blobs = block('test');
     expect(blobs).toMatch(
       /name: vitest-blob\$\{\{ inputs\.label && format\('-\{0\}', inputs\.label\) \|\| '' \}\}-\$\{\{ matrix\.shard \}\}/,
@@ -453,11 +484,10 @@ describe('job check em paralelo e caches', () => {
 
   it('caches: node_modules (npm ci só sem hit), lint e navegador do Playwright', () => {
     for (const name of ['static', 'test', 'coverage', 'build', 'e2e']) {
-      expect(block(name), name).toContain('path: node_modules');
-      expect(block(name), name).toContain(
-        "if: steps.modules.outputs.cache-hit != 'true'",
-      );
+      expect(block(name), name).toContain('uses: ./.github/actions/setup-deps');
     }
+    expect(setupAction).toContain('path: node_modules');
+    expect(setupAction).toContain("if: steps.modules.outputs.cache-hit != 'true'");
     expect(block('static')).toContain('path: .cache');
     expect(block('e2e')).toContain('path: ~/.cache/ms-playwright');
     expect(block('e2e')).toContain('playwright install-deps chromium');
@@ -482,5 +512,218 @@ describe('job check em paralelo e caches', () => {
     expect(deploy).toMatch(/checks-main:/);
     expect(deploy).toMatch(/checks-preview:/);
     expect(deploy).not.toMatch(/needs\.(static|coverage)/);
+  });
+});
+
+// Etapa #971, fase 4 (item 73): o bloco de preparo do Node e das dependências é uma ação composta.
+describe('ação composta setup-deps', () => {
+  const jobs = ['static', 'test', 'coverage', 'build', 'e2e'];
+
+  it('os cinco jobs a usam depois do checkout, e nenhum repete setup-node nem npm ci', () => {
+    for (const name of jobs) {
+      const job = jobOf(ci, name);
+      expect(job, name).toContain('uses: ./.github/actions/setup-deps');
+      expect(job.indexOf('actions/checkout'), name).toBeLessThan(
+        job.indexOf('uses: ./.github/actions/setup-deps'),
+      );
+      expect(job, name).not.toContain('actions/setup-node');
+      expect(job, name).not.toMatch(/run: npm ci/);
+    }
+    expect(ci.match(/uses: \.\/\.github\/actions\/setup-deps/g)).toHaveLength(5);
+  });
+
+  it('a ação é composta, mantém as chaves do cache e não restaura o cache do npm à toa', () => {
+    expect(setupAction).toContain('using: composite');
+    expect(setupAction).toContain(
+      "key: node-modules-${{ runner.os }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}",
+    );
+    expect(setupAction).toContain('run: npm ci');
+    expect(setupAction).toMatch(/shell: bash/);
+    expect(setupAction).not.toMatch(/^\s+cache: npm/m);
+    expect(ci).not.toMatch(/^\s+cache: npm/m);
+  });
+
+  it('os nomes dos checks obrigatórios não mudam', () => {
+    for (const name of ['check', 'e2e', 'epic']) {
+      expect(ci).toMatch(new RegExp(`^ {2}${name}:\\n`, 'm'));
+      expect(jobOf(ci, name)).not.toMatch(/^ {4}name:/m);
+    }
+  });
+});
+
+// Etapa #971, fase 4 (item 72): o nome do épico é comparado sem regex e a falha da API aparece.
+describe('ci.yml: changelog e DS do épico sem regex e sem mascarar falha da API', () => {
+  const epic = jobOf(ci, 'epic');
+  for (const [title, next] of [
+    ['Changelog atualizado', 'Design system registrado'],
+    ['Design system registrado', 'A estável do MCP'],
+  ] as const) {
+    const step = epic.slice(epic.indexOf(title), epic.indexOf(next));
+
+    it(`${title}: usa grep -qxF e falha o passo com a mensagem do gh api`, () => {
+      expect(step).toContain('grep -qxF "$name.md"');
+      expect(step).not.toMatch(/grep -qxE/);
+      expect(step).toMatch(/if ! files="\$\(gh api /);
+      expect(step).toContain('Não foi possível listar os arquivos do PR');
+      expect(step).toContain('$files');
+    });
+  }
+});
+
+// Etapa #971, fase 4 (itens 74 e 75, decisão 10): permissões por job e Deploy sem cancelar o deploy.
+describe('deploy.yml: permissões e concorrência', () => {
+  it('o nível do workflow é só contents: read; pages: write e id-token: write ficam no job deploy', () => {
+    const top = deploy.slice(deploy.indexOf('\npermissions:'), deploy.indexOf('\njobs:'));
+    expect(top).toMatch(/^permissions:\n {2}contents: read\n/m);
+    expect(top).not.toMatch(/^ {2}(pages|id-token):/m);
+    const job = jobOf(deploy, 'deploy');
+    expect(job).toMatch(
+      /permissions:\n {6}contents: read\n {6}pages: write\n {6}id-token: write/,
+    );
+    for (const name of ['plan', 'build', 'checks-main', 'checks-preview']) {
+      expect(jobOf(deploy, name), name).not.toMatch(/pages: write|id-token/);
+    }
+  });
+
+  it('o job deploy tem o grupo pages sem cancel-in-progress; o resto do pipeline não usa esse grupo', () => {
+    const job = jobOf(deploy, 'deploy');
+    expect(job).toMatch(/concurrency:\n {6}group: pages\n {6}cancel-in-progress: false/);
+    const rest = deploy.replace(job, '');
+    expect(rest).not.toMatch(/group: pages\n/);
+  });
+
+  it('a fase plan/build ainda cancela a execução superada, num grupo próprio', () => {
+    const build = jobOf(deploy, 'build');
+    expect(build).toMatch(
+      /concurrency:\n {6}group: pages-build\n {6}cancel-in-progress: true/,
+    );
+    const top = deploy.slice(deploy.indexOf('\npermissions:'), deploy.indexOf('\njobs:'));
+    expect(top).not.toContain('concurrency:');
+  });
+});
+
+// Etapa #971, fase 4 (itens 76 a 79, decisão 11): pre-releases do MCP.
+describe('mcp-prerelease.yml', () => {
+  const pre = read('.github/workflows/mcp-prerelease.yml');
+
+  it('o nível do workflow é contents: read; só os jobs que publicam e o cleanup escrevem', () => {
+    const top = pre.slice(pre.indexOf('\npermissions:'), pre.indexOf('\njobs:'));
+    expect(top).toMatch(/^permissions:\n {2}contents: read\n/m);
+    for (const name of ['snapshot-build', 'rc-build']) {
+      expect(jobOf(pre, name), name).toMatch(/permissions:\n {6}contents: read\n/);
+      expect(jobOf(pre, name), name).not.toContain('contents: write');
+    }
+    for (const name of ['snapshot-publish', 'rc-publish', 'cleanup']) {
+      expect(jobOf(pre, name), name).toMatch(/permissions:\n {6}contents: write\n/);
+    }
+  });
+
+  it('o código do PR é compilado sem credencial persistida e o job que publica não faz checkout', () => {
+    for (const name of ['snapshot-build', 'rc-build']) {
+      const job = jobOf(pre, name);
+      expect(job, name).toContain('persist-credentials: false');
+      expect(job, name).toContain('actions/upload-artifact');
+      expect(job, name).not.toMatch(/gh release (create|upload|edit|delete)/);
+    }
+    for (const name of ['snapshot-publish', 'rc-publish']) {
+      const job = jobOf(pre, name);
+      expect(job, name).not.toContain('actions/checkout');
+      expect(job, name).not.toMatch(/npm (ci|run|test)/);
+      expect(job, name).toContain('actions/download-artifact');
+      expect(job, name).toMatch(/needs: [a-z]+-build/);
+    }
+  });
+
+  it('o snapshot e o cleanup do mesmo PR dividem o grupo e cancelam o que está em andamento', () => {
+    const concurrency = pre.slice(pre.indexOf('\nconcurrency:'), pre.indexOf('\njobs:'));
+    expect(concurrency).toContain('mcp-snapshot-pr{0}');
+    expect(concurrency).toContain('github.event.pull_request.number');
+    expect(concurrency).toMatch(/cancel-in-progress: true/);
+    expect(jobOf(pre, 'cleanup')).not.toMatch(/concurrency:/);
+  });
+
+  it('a rc usa o mesmo grupo no PR e no workflow_dispatch (nome do branch, sem refs/heads/)', () => {
+    for (const name of ['rc-build', 'rc-publish']) {
+      const job = jobOf(pre, name);
+      expect(job, name).toContain(
+        'group: mcp-rc-${{ github.event.pull_request.base.ref || github.ref_name }}',
+      );
+      expect(job, name).toMatch(/cancel-in-progress: false/);
+      expect(job, name).not.toMatch(/group: mcp-rc-[^\n]*github\.ref\b/);
+    }
+  });
+
+  it('os jobs que publicam conferem o conjunto exato de arquivos do artifact antes de publicar', () => {
+    for (const name of ['snapshot-publish', 'rc-publish']) {
+      const job = jobOf(pre, name);
+      expect(job, name).toContain('Conferir os arquivos baixados');
+      for (const file of [
+        'AGENTS.mapping.md',
+        'SKILL.md',
+        'mapping-mcp.js',
+        'setup.sh',
+        'watch-comments.mjs',
+      ]) {
+        expect(job, `${name} ${file}`).toContain(`${file} ${file}.sha256`);
+      }
+      expect(job.indexOf('Conferir os arquivos baixados'), name).toBeLessThan(
+        job.indexOf('gh release create'),
+      );
+    }
+  });
+
+  it('o número do PR entra em run: só por env:', () => {
+    for (const body of runBodies(pre)) expect(body).not.toContain('${{');
+  });
+
+  it('o workspaceAssets roda uma vez por job e não há sed da versão', () => {
+    for (const name of ['snapshot-build', 'rc-build']) {
+      const job = jobOf(pre, name);
+      expect(job.match(/workspaceAssets\.mjs/g) ?? [], name).toHaveLength(1);
+      expect(job, name).toContain(
+        'stableRelease.mjs version --version-file mcp/version.ts',
+      );
+    }
+    expect(pre).not.toContain('sed -n "s/.*SERVER_VERSION');
+  });
+});
+
+// Etapa #971, fase 4 (itens 80 a 82): estável do MCP.
+describe('mcp-release.yml: tags de rc, tag que aparece no meio e uma passada por script', () => {
+  const release = read('.github/workflows/mcp-release.yml');
+
+  it('o push de tag não casa as rc (mcp-v*-rc.N)', () => {
+    expect(release).toMatch(/^ {4}tags: \['mcp-v\*', '!mcp-v\*-\*'\]$/m);
+  });
+
+  it('nenhum passo só emite ::notice::; a tag que aparece no meio só anexa', () => {
+    expect(release).not.toContain('::notice::');
+    expect(release).not.toContain('apareceu durante a execução; só anexa');
+    expect(release).toMatch(/gh release view/);
+    expect(release).toMatch(/gh release upload [^\n]*--clobber/);
+  });
+
+  it('o workspaceAssets roda uma vez e a versão vem de readServerVersion (sem sed)', () => {
+    expect(release.match(/workspaceAssets\.mjs/g)).toHaveLength(1);
+    expect(release).toContain('stableRelease.mjs version --version-file mcp/version.ts');
+    expect(release).not.toContain('sed -n "s/.*SERVER_VERSION');
+  });
+});
+
+// Etapa #971, fase 4 (decisão 12 da #920): nenhum dado de PR entra em run: por interpolação.
+describe('nenhum workflow interpola dado de PR, entrada ou evento em run:', () => {
+  const files = [
+    'ci.yml',
+    'deploy.yml',
+    'mcp-prerelease.yml',
+    'mcp-release.yml',
+    'preview-on-pr.yml',
+  ];
+  it.each(files)('%s', (file) => {
+    for (const body of runBodies(read(`.github/workflows/${file}`))) {
+      expect(body).not.toMatch(
+        /\$\{\{[^}]*(github\.event|github\.head_ref|github\.base_ref|inputs\.)/,
+      );
+    }
   });
 });

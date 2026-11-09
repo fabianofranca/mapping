@@ -19,7 +19,9 @@ name: MCP release
 on:
   push:
     branches: [main]
-    tags: ['mcp-v*']
+    # `!mcp-v*-*` deixa as rc (`mcp-v<versão>-rc.<n>`) de fora: uma rc empurrada à mão não
+    # dispara a estável nem deixa uma execução vermelha.
+    tags: ['mcp-v*', '!mcp-v*-*']
   workflow_dispatch:
     inputs:
       tag:
@@ -102,7 +104,7 @@ jobs:
       - name: Conferir a versão da tag
         run: |
           tag_version="${TAG#mcp-v}"
-          code_version="$(sed -n "s/.*SERVER_VERSION = '\(.*\)';/\1/p" mcp/version.ts)"
+          code_version="$(node scripts/release/stableRelease.mjs version --version-file mcp/version.ts)"
           if [ "$tag_version" != "$code_version" ]; then
             echo "A tag $TAG não bate com SERVER_VERSION ($code_version) em mcp/version.ts." >&2
             exit 1
@@ -130,27 +132,27 @@ jobs:
         working-directory: dist-mcp
         run: sha256sum mapping-mcp.js > mapping-mcp.js.sha256
 
-      - name: Arquivos do workspace
-        run: node scripts/release/workspaceAssets.mjs dist-mcp
+      # Os arquivos publicados ficam juntos em `release-assets/`: o servidor, o `.sha256` e os do
+      # workspace (o script dos arquivos do workspace roda uma vez).
+      - name: Arquivos da Release
+        run: |
+          mkdir release-assets
+          cp dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 release-assets/
+          node scripts/release/workspaceAssets.mjs release-assets > /dev/null
 
       - name: Publicar na Release
         env:
           GH_TOKEN: ${{ github.token }}
-          FROM_MAIN: ${{ needs.decide.outputs.sha != '' }}
         run: |
-          if [ "$FROM_MAIN" = true ] && git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
-            # Outra execução criou a tag no meio do caminho: a Release sai nela, sem mover a tag.
-            echo "::notice::A tag $TAG apareceu durante a execução; só anexa os arquivos."
-          fi
-          assets="$(node scripts/release/workspaceAssets.mjs dist-mcp)"
-          mapfile -t assets <<< "$assets"
+          assets=(release-assets/*)
           if gh release view "$TAG" > /dev/null 2>&1; then
-            # Criada pela tela do GitHub (ou numa execução anterior): só anexa os arquivos.
-            gh release upload "$TAG" dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" --clobber
+            # Criada pela tela do GitHub, numa execução anterior ou por outra execução que
+            # publicou a mesma tag no meio do caminho: só anexa os arquivos (decisão 3 da #920).
+            gh release upload "$TAG" "${assets[@]}" --clobber
             gh release edit "$TAG" --title "$TAG"
           else
             gh release create "$TAG" \
-              dist-mcp/mapping-mcp.js dist-mcp/mapping-mcp.js.sha256 "${assets[@]}" \
+              "${assets[@]}" \
               --title "$TAG" \
               --target "$(git rev-parse HEAD)" \
               --notes "Servidor MCP do Mapping. Copie \`mapping-mcp.js\` para \`tools/\` do seu repositório e registre-o no \`.mcp.json\`. Traz também o \`setup.sh\`, a skill \`SKILL.md\`, as regras \`AGENTS.mapping.md\` e o watcher \`watch-comments.mjs\` do workspace, cada um com o \`.sha256\`. Instruções em docs/MCP.md. Atualizar um workspace que ainda tem o \`setup.sh\` antigo, uma vez: \`curl -fsSL https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/setup.sh -o setup.sh && chmod +x setup.sh && ./setup.sh\`."

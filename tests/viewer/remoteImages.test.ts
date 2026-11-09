@@ -177,6 +177,28 @@ describe('imagens remotas do visualizador', () => {
     expect(FakeImage.requested()).toEqual([`${CDN}/a.png`]);
   });
 
+  it('com mais URLs distintas que o cache (64), não entra em recarga contínua', async () => {
+    vi.stubGlobal('Image', FakeImage);
+    const urls = Array.from({ length: 70 }, (_, i) => `${CDN}/p${i}.png`);
+    make({ remoteImages: true, allowOrigin: () => true }, urls);
+    const loaded = new Set<FakeImage>();
+    // Termina de carregar tudo o que foi pedido, rodada a rodada, até não haver mais pedidos.
+    for (let round = 0; round < 40; round += 1) {
+      const waiting = FakeImage.created.filter(
+        (image) => image.src !== '' && !loaded.has(image),
+      );
+      if (waiting.length === 0) break;
+      for (const image of waiting) {
+        loaded.add(image);
+        image.naturalWidth = 64;
+        image.naturalHeight = 64;
+        image.onload?.();
+      }
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    expect(FakeImage.requested()).toHaveLength(70);
+  });
+
   it('dispose cancela o que está em andamento', () => {
     vi.stubGlobal('Image', FakeImage);
     const viewer = make({ remoteImages: true, allowOrigin: () => true }, [

@@ -219,6 +219,7 @@ Decisão do dono de 2026-11-08 (etapa #954, item 38): o `<button>` de **ação c
 | `src/ui/catalog/CatalogView.tsx` | tipo da lista | opção de lista (`.catalog-entry`) |
 | `src/ui/review/ChangeMark.tsx` | marcador de mudança | abre o popover da mudança e leva os atalhos A, R e Backspace (`.change-mark`) |
 | `src/ui/review/ReviewBar.tsx` | "N conjuntos inválidos" | selo de problema clicável (`.flag.flag-danger`) |
+| `src/app/Home.tsx` | itens da faixa lateral (Projetos, Ajuda, Configurações) | item de navegação, com `aria-current="page"` no atual (`.home-nav-item`) |
 
 ## Pendências
 

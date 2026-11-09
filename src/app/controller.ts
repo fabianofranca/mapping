@@ -550,9 +550,13 @@ export function buildExport(): Promise<AppResult<ExportedProject>> {
     pendingExport = { session: current.session, snapshot: files.snapshot };
     const blob = await writeProjectZip(files);
     return ok({
-      file: new File([blob], zipFileName(project.project.name), {
-        type: 'application/zip',
-      }),
+      file: new File(
+        [blob],
+        zipFileName(project.project.name, t('export.defaultZipName')),
+        {
+          type: 'application/zip',
+        },
+      ),
       missingImages: files.missingImages,
       saved: files.saved,
     });

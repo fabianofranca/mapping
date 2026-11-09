@@ -79,6 +79,13 @@ describe('entradas da release do MCP', () => {
     for (const path of WORKSPACE_SOURCES) expect(isReleaseInput(path), path).toBe(true);
   });
 
+  it('as fontes do workspace vêm de WORKSPACE_SOURCES, sem lista duplicada no arquivo', async () => {
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync('scripts/release/releaseInputs.mjs', 'utf8');
+    for (const path of WORKSPACE_SOURCES) expect(source, path).not.toContain(`'${path}'`);
+    for (const path of WORKSPACE_SOURCES) expect(RELEASE_INPUTS).toContain(path);
+  });
+
   it('o que não vai na release fica fora (app, store, docs de processo, lockfile)', () => {
     for (const path of [
       'src/store/history.ts',

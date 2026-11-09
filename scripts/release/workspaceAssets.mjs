@@ -19,7 +19,7 @@ export const BLOCK_END = '<!-- mapping:end -->';
 
 const AGENTS_PATH = 'examples/workspace/AGENTS.md';
 
-/** Origens (relativas à raiz) dos arquivos publicados: entram na lista de `releaseInputs.mjs`. */
+/** Origens (relativas à raiz) dos arquivos publicados: `releaseInputs.mjs` as espalha na lista de entradas. */
 export const WORKSPACE_SOURCES = [
   'examples/workspace/setup.sh',
   '.claude/skills/spec-author/SKILL.md',

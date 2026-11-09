@@ -185,12 +185,10 @@ function createLibrary(db: Db): LocalLibrary {
         },
         async listImages() {
           const prefix = `${IMAGES_DIR}/`;
-          const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
+          const keys = await db.getAllKeys('files', prefixRange(id, prefix));
           return keys
             .map(([, path]) => path)
-            .filter(
-              (path) => path.startsWith(prefix) && !path.includes('/', prefix.length),
-            )
+            .filter((path) => !path.includes('/', prefix.length))
             .sort();
         },
         async removeImage(path) {
@@ -213,11 +211,8 @@ function createLibrary(db: Db): LocalLibrary {
         async listSpecDir(dir) {
           assertSpecPath(dir, 'dir');
           const prefix = `${dir}/`;
-          const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
-          return keys
-            .map(([, path]) => path)
-            .filter((path) => path.startsWith(prefix))
-            .sort();
+          const keys = await db.getAllKeys('files', prefixRange(id, prefix));
+          return keys.map(([, path]) => path).sort();
         },
         async readSpecFile(path) {
           assertSpecPath(path, 'package');
@@ -262,8 +257,7 @@ function createLibrary(db: Db): LocalLibrary {
           const meta = await tx.objectStore('projects').get(id);
           if (!meta) throw new Error(`local project not found: ${id}`);
           const files = tx.objectStore('files');
-          const keys = await files.index('byProject').getAllKeys(id);
-          const doomed = keys.filter(([, path]) => path.startsWith(prefix));
+          const doomed = await files.getAllKeys(prefixRange(id, prefix));
           await Promise.all([
             ...(doomed.length > 0
               ? [tx.objectStore('projects').put({ ...meta, unexported: true })]
@@ -308,12 +302,10 @@ function createLibrary(db: Db): LocalLibrary {
           const meta = await tx.objectStore('projects').get(id);
           if (!meta) throw new Error(`local project not found: ${id}`);
           const files = tx.objectStore('files');
-          const keys = await files.index('byProject').getAllKeys(id);
+          const keys = await files.getAllKeys(prefixRange(id, prefix));
           await Promise.all([
             tx.objectStore('projects').put({ ...meta, unexported: true }),
-            ...keys
-              .filter(([, path]) => path.startsWith(prefix))
-              .map((key) => files.delete(key)),
+            ...keys.map((key) => files.delete(key)),
             tx.done,
           ]);
         },
@@ -322,11 +314,8 @@ function createLibrary(db: Db): LocalLibrary {
             throw new Error(`invalid proposal id: ${proposalId}`);
           }
           const prefix = `${proposalDir(proposalId)}/`;
-          const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
-          return keys
-            .map(([, path]) => path)
-            .filter((path) => path.startsWith(prefix))
-            .sort();
+          const keys = await db.getAllKeys('files', prefixRange(id, prefix));
+          return keys.map(([, path]) => path).sort();
         },
         async listThreads(resolved) {
           const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
@@ -379,10 +368,9 @@ function createLibrary(db: Db): LocalLibrary {
           const stored = await toStoredFile(id, `${BACKUP_PREFIX}${name}`, blob);
           const tx = db.transaction('files', 'readwrite');
           await tx.store.put(stored);
-          const keys = await tx.store.index('byProject').getAllKeys(id);
+          const keys = await tx.store.getAllKeys(prefixRange(id, BACKUP_PREFIX));
           const old = keys
             .map(([, path]) => path)
-            .filter((path) => path.startsWith(BACKUP_PREFIX))
             .sort(byNewestBackup)
             .slice(MAX_LOCAL_BACKUPS);
           await Promise.all([...old.map((path) => tx.store.delete([id, path])), tx.done]);
@@ -417,11 +405,9 @@ function createLibrary(db: Db): LocalLibrary {
     },
 
     async listBackups(id) {
-      const keys = await db.getAllKeysFromIndex('files', 'byProject', id);
+      const keys = await db.getAllKeys('files', prefixRange(id, BACKUP_PREFIX));
       return keys
-        .map(([, path]) => path)
-        .filter((path) => path.startsWith(BACKUP_PREFIX))
-        .map((path) => path.slice(BACKUP_PREFIX.length))
+        .map(([, path]) => path.slice(BACKUP_PREFIX.length))
         .sort(byNewestBackup);
     },
 
@@ -457,6 +443,14 @@ export async function openLocalLibrary(): Promise<LocalLibrary | null> {
 /** O navegador tem IndexedDB? (O acesso ao global fica neste arquivo: regra de lint da fase 8.4.) */
 export function hasIndexedDb(): boolean {
   return typeof indexedDB !== 'undefined';
+}
+
+/**
+ * Faixa da chave primária (`[projeto, caminho]`) com todos os caminhos do projeto que começam
+ * por `prefix`: o IndexedDB entrega só essas chaves, sem carregar as de todas as imagens.
+ */
+function prefixRange(projectId: string, prefix: string): IDBKeyRange {
+  return IDBKeyRange.bound([projectId, prefix], [projectId, `${prefix}\uffff`]);
 }
 
 /** A abertura do banco, ou `null` se demorar mais que `OPEN_TIMEOUT_MS`. */

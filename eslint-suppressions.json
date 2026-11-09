@@ -454,11 +454,6 @@
       "count": 2
     }
   },
-  "src/storage/zip.ts": {
-    "complexity": {
-      "count": 1
-    }
-  },
   "src/store/derived.ts": {
     "complexity": {
       "count": 2

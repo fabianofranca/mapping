@@ -31,12 +31,20 @@ export function createImageServer({ dir, logFile }) {
       response.end('não há');
       return;
     }
+    let photo;
+    try {
+      photo = readFileSync(join(dir, 'foto.png'));
+    } catch {
+      response.writeHead(404, { 'content-type': 'text/plain' });
+      response.end('foto.png não está na pasta do servidor');
+      return;
+    }
     // Sem `Access-Control-Allow-Origin` de propósito, e sem cache (cada pedido aparece no log).
     response.writeHead(200, {
       'content-type': 'image/png',
       'cache-control': 'no-store',
     });
-    response.end(readFileSync(join(dir, 'foto.png')));
+    response.end(photo);
   });
   return server;
 }
