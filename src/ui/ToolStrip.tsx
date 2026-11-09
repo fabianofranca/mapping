@@ -8,7 +8,8 @@ import { toggleToolWindowFocus } from './toolWindowLayout';
 import { toolWindowMeta, toolWindowShortcut, windowsOfSide } from './toolWindowMeta';
 
 // Faixas de 40px nas laterais: um botão por janela de ferramenta, com o atalho na
-// dica. Na esquerda, as janelas laterais ficam em cima e as da janela inferior
+// dica. O nome acessível é fixo (o título da janela, mais o sufixo informativo); o estado
+// aberto/fechado fica só no `aria-pressed`. Na esquerda, as janelas laterais ficam em cima e as da janela inferior
 // embaixo (seção Layouts do DS 2.0).
 
 /** Texto acessível a mais do botão: erro novo, propostas novas ou conversas abertas. */
@@ -25,7 +26,6 @@ function StripButton({ id }: { readonly id: ToolWindowId }) {
   const open = isToolWindowOpen(id);
   // Erro novo no registro e a janela Diagnóstico fechada: ponto de alerta (B4).
   const alert = id === 'diagnostics' && diagnosticsUnseen.value && !open;
-  const label = t(open ? 'window.hide' : 'window.show', { name });
   // Propostas novas: selo numérico informativo (`mp-sb__badge--info`).
   const fresh = id === 'proposals' ? review.derived.freshIds.value.length : 0;
   // Conversas abertas: selo numérico na janela Comentários.
@@ -35,7 +35,7 @@ function StripButton({ id }: { readonly id: ToolWindowId }) {
   return (
     <IconButton
       icon={icon}
-      label={`${label}${extra}`}
+      label={`${name}${extra}`}
       alert={alert}
       badge={badge > 0 ? String(badge) : undefined}
       tooltip={name}

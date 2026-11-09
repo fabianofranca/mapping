@@ -59,6 +59,13 @@ function focusIfOutside(el: Element | null | undefined, scope: Element): boolean
   return document.activeElement === el;
 }
 
+/** Leva o foco à área do canvas (o alvo de reserva de quem fecha algo com o foco nele). */
+export function focusCanvasArea(): boolean {
+  const canvas = document.querySelector<HTMLElement>(`[${CANVAS_AREA_ATTR}]`);
+  canvas?.focus();
+  return canvas !== null && document.activeElement === canvas;
+}
+
 /**
  * Se o foco está dentro da janela `id`, leva-o, ainda com a janela no DOM, a: quem abriu →
  * botão da janela na faixa → canvas. Síncrono: não há quadro com o foco no `body`.

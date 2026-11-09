@@ -36,10 +36,12 @@ test('Árvore: fechar pelo atalho e pelo X mantém o foco fora do body', async (
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeFocused();
 
   // Pelo X, com a janela aberta pela faixa: o foco volta ao botão da faixa.
-  await page.getByRole('button', { name: /Mostrar Árvore/ }).click();
+  await page.getByRole('button', { name: 'Árvore de marcações', exact: true }).click();
   await tree.getByRole('button').first().focus();
   await page.getByRole('button', { name: /Fechar.*Árvore/ }).click();
   await expect(tree).toBeHidden();
   expect(await activeTag(page)).not.toBe('BODY');
-  await expect(page.getByRole('button', { name: /Mostrar Árvore/ })).toBeFocused();
+  await expect(
+    page.getByRole('button', { name: 'Árvore de marcações', exact: true }),
+  ).toBeFocused();
 });

@@ -529,7 +529,7 @@ test.describe('recentes de pasta', () => {
     await expect(row.getByText('Pasta', { exact: true })).toBeVisible();
     await expect(row.getByText('pasta-guardada')).toBeVisible();
 
-    await row.getByRole('button', { name: 'Abrir', exact: true }).click();
+    await row.getByRole('button', { name: /^Abrir /, exact: false }).click();
     const dialog = page.getByRole('dialog', { name: 'Pasta indisponível' });
     await expect(dialog).toBeVisible();
 

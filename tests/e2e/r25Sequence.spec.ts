@@ -173,7 +173,7 @@ async function selectInTree(page: Page, name: string): Promise<void> {
   const rows = page.locator('.tree-row');
   // A Árvore abre uma vez (pelo botão da faixa de janelas: o atalho é ignorado com o foco num campo).
   if ((await rows.count()) === 0)
-    await page.getByRole('button', { name: 'Mostrar Árvore de marcações' }).click();
+    await page.getByRole('button', { name: 'Árvore de marcações', exact: true }).click();
   await rows.filter({ hasText: name }).first().click();
 }
 

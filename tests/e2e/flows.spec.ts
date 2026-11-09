@@ -152,7 +152,7 @@ test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', as
   await expect(tree).toBeVisible();
   await expect(page.getByRole('region', { name: 'Detalhes' })).toBeVisible();
   await expect(list).toBeHidden();
-  await page.getByRole('button', { name: 'Mostrar Lista de anotações' }).click();
+  await page.getByRole('button', { name: 'Lista de anotações', exact: true }).click();
   await expect(list).toBeVisible();
 
   // Fechar pelo cabeçalho; reabrir pelo atalho oficial (Ctrl+Shift+4).
@@ -181,7 +181,7 @@ test('desktop: janelas de ferramenta abrem, redimensionam e ficam guardadas', as
   // O layout fica guardado: volta à tela inicial e abre o projeto de novo.
   await page.getByRole('button', { name: /: ações do projeto$/ }).click();
   await page.getByRole('menuitem', { name: 'Fechar projeto', exact: true }).click();
-  await page.getByRole('button', { name: 'Abrir', exact: true }).first().click();
+  await page.locator('[data-recent-open]').first().click();
   await expect(page.getByRole('main', { name: 'Canvas do projeto' })).toBeVisible();
   await expect(list).toBeVisible();
   expect(await width()).toBe(before + 16);
