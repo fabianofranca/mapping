@@ -1,4 +1,4 @@
-# Troca de coordenador por skill novo — [Não lançado] (épico `epic/fila-troca-skill`, PR #0, MCP 0.28.12, schema v18)
+# Troca de coordenador por skill novo — 2026-11-09 (épico `epic/fila-troca-skill`, PR #1303, MCP 0.28.12, schema v18)
 
 ## Alterado
 
