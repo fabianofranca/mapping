@@ -1,4 +1,4 @@
-# Roteiros que batem com a app — [Não lançado] (épico `epic/roteiros-preparo`, PR #1244, MCP 0.28.11, schema v18)
+# Roteiros que batem com a app — 2026-11-09 (épico `epic/roteiros-preparo`, PR #1244, MCP 0.28.11, schema v18)
 
 ## Corrigido
 
