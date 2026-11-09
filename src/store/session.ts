@@ -426,6 +426,10 @@ export function openSession(options: SessionOptions): ProjectSession {
   // Arquivos de imagem que a sessão gravou e que nenhum `mapping.json` gravado cita ainda: se
   // o projeto for recarregado do disco antes de a gravação citá-los, são órfãos e saem.
   const pendingFiles = new Set<string>();
+  // Caminhos já escolhidos para uma imagem que está sendo importada ou substituída e ainda não
+  // foi gravada: reservados no mesmo passo síncrono da escolha, para duas importações
+  // concorrentes nunca receberem o mesmo nome.
+  const reservedFiles = new Set<string>();
   // Conteúdo das imagens removidas do armazenamento, para o desfazer restaurar.
   // Só guarda arquivos que algum snapshot do histórico ainda referencia.
   const trash = new Map<string, Blob>();
@@ -564,6 +568,39 @@ export function openSession(options: SessionOptions): ProjectSession {
     await storage.writeImage(path, data);
     pendingFiles.add(path);
     if (watchable) imageStamps.set(path, await stampOf(path));
+  };
+  /** Arquivos de `images/` no armazenamento; ilegível = lista vazia (a escolha segue com o que a sessão sabe). */
+  const listStoredImages = async (): Promise<string[]> => {
+    try {
+      return await storage.listImages();
+    } catch (e) {
+      reportError('session.listImages', e);
+      return [];
+    }
+  };
+  /** Tudo que ocupa um nome em `images/` e a sessão sabe sem ler a pasta. */
+  const sessionImageFiles = (): string[] => [
+    ...store.referencedImageFiles(),
+    ...stored,
+    ...pendingFiles,
+    ...trash.keys(),
+    ...reservedFiles,
+  ];
+  /**
+   * Escolhe e reserva o caminho de uma imagem nova: livre entre os containers, o histórico de
+   * desfazer, a lixeira, as gravações em curso e os arquivos que já estão na pasta (citados ou
+   * não), sem diferenciar maiúsculas e minúsculas. A reserva acontece antes de qualquer outro
+   * `await`; quem chama a libera (`reservedFiles.delete`) ao terminar.
+   */
+  const reserveImageFile = async (name: string): Promise<string> => {
+    const listed = await listStoredImages();
+    const path = uniqueImageFile(
+      currentProject(store),
+      safeFileName(name),
+      new Set([...listed, ...sessionImageFiles()]),
+    );
+    reservedFiles.add(path);
+    return path;
   };
   const statMapping = (): Promise<number | null> =>
     storage.statMapping ? storage.statMapping().catch(() => null) : Promise.resolve(null);
@@ -844,6 +881,8 @@ export function openSession(options: SessionOptions): ProjectSession {
     newId: options.newId ?? (() => crypto.randomUUID()),
     // A imagem aceita entra no projeto como as da importação: a sessão passa a geri-la
     // (e o desfazer a remove e restaura pelo mesmo caminho das demais imagens).
+    takenImageFiles: async () =>
+      new Set([...(await listStoredImages()), ...sessionImageFiles()]),
     putProjectImage: async (path, data) => {
       await putImage(path, data);
       stored.add(path);
@@ -1172,7 +1211,7 @@ export function openSession(options: SessionOptions): ProjectSession {
         let path: string | null = null;
         try {
           const prepared = await prepareImage(file);
-          path = uniqueImageFile(currentProject(store), safeFileName(prepared.name));
+          path = await reserveImageFile(prepared.name);
           await putImage(path, prepared.data);
           stored.add(path);
           const result = actions.addContainer(
@@ -1188,6 +1227,8 @@ export function openSession(options: SessionOptions): ProjectSession {
             pendingFiles.delete(path);
             await storage.removeImage(path).catch(reportCleanupFailure);
           }
+        } finally {
+          if (path) reservedFiles.delete(path);
         }
       }
       // Operação cara: grava sem esperar o debounce (ver `saveNow`).
@@ -1219,7 +1260,7 @@ export function openSession(options: SessionOptions): ProjectSession {
           const from = { width: image.width, height: image.height };
           if (!(await confirmAspectChange({ from, to: next }))) return 'cancelled';
         }
-        path = uniqueImageFile(currentProject(store), safeFileName(prepared.name));
+        path = await reserveImageFile(prepared.name);
         await putImage(path, prepared.data);
         stored.add(path);
         const result = actions.replaceContainer(
@@ -1237,6 +1278,8 @@ export function openSession(options: SessionOptions): ProjectSession {
           await storage.removeImage(path).catch(reportCleanupFailure);
         }
         return 'failed';
+      } finally {
+        if (path) reservedFiles.delete(path);
       }
     },
 

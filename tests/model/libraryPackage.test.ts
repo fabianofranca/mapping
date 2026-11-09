@@ -190,3 +190,23 @@ describe('usesPackageFiles', () => {
     expect(usesPackageFiles(material3Spec())).toBe(true);
   });
 });
+
+describe('specFileFor sem diferenciar maiúsculas e minúsculas', () => {
+  it('Material já no projeto: material ganha outro arquivo', () => {
+    const base = {
+      ...emptyProject(),
+      specializations: [{ id: 'Material', file: 'specs/Material.json' }] as never,
+    };
+    expect(specFileFor(base, 'material')).toBe('specs/material-2.json');
+  });
+
+  it('a pasta do pacote também ignora a caixa', () => {
+    const base = {
+      ...emptyProject(),
+      specializations: [{ id: 'Material', file: 'specs/Material/m.spec.json' }] as never,
+    };
+    expect(specFileFor(base, 'material', 'm.spec.json')).toBe(
+      'specs/material-2/m.spec.json',
+    );
+  });
+});

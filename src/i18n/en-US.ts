@@ -55,6 +55,8 @@ export const enUS: Dictionary = {
     'The folder "{folder}" has no mapping.json. {count} image(s) found will be added to the project (those in the root move to images/).',
   'home.folderSkipped':
     '{count} image(s) could not be read and were left out of the project.',
+  'home.folderHasProject':
+    'This folder already has a project; it was opened instead of a new one.',
 
   'status.saved': 'Saved',
   'status.saving': 'Saving…',

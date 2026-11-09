@@ -252,7 +252,7 @@ export function codeBlueprint(
     const linked = (index.annotationsByOwner.get(a.id) ?? []).flatMap((child) => {
       const childType = included.get(child.id);
       return childType && !seen.has(child.id)
-        ? [annotationOf(child, childType, included, seen, path)]
+        ? [annotationOf(child, childType, included, seen, here)]
         : [];
     });
     return {
@@ -299,15 +299,17 @@ export function codeBlueprint(
     if (path.has(target.id)) {
       return { ...base, repeated: true, annotation: null, children: [] };
     }
+    // O alvo entra no caminho ao descer: um `ref` que volta a ele vira nó `repeated`.
+    const here = new Set(path).add(target.id);
     const annotation = annotationOf(
       target,
       resolved,
       includedFor(target.markingId),
       new Set(),
-      path,
+      here,
     );
     const children = (index.children.get(target.markingId) ?? []).map((child) =>
-      nodeOf(child, new Set(), path),
+      nodeOf(child, new Set(), here),
     );
     return { ...base, repeated: false, annotation, children };
   };

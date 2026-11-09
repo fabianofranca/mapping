@@ -319,7 +319,7 @@ Onde uma operação pede um item (`container`, `marking`, `parent`, `annotation`
 ]
 ```
 
-**Imagens.** Como na app: a orientação EXIF é aplicada, o lado maior fica em no máximo 2560 px e o arquivo é recodificado em WebP (sem perdas para PNG; com perdas, qualidade 0,85, para fotos), sem metadados. Sem redução nem rotação, o original é mantido se o WebP não ficar menor. `width` e `height` do container com arquivo (e as coordenadas das marcações) são os do arquivo gravado. O nome em `images/` nunca sobrescreve um arquivo existente (`foto-2.webp`…). `file` é relativo à pasta do projeto ou a uma raiz, ou absoluto dentro das raízes.
+**Imagens.** Como na app: a orientação EXIF é aplicada, o lado maior fica em no máximo 2560 px e o arquivo é recodificado em WebP (sem perdas para PNG; com perdas, qualidade 0,85, para fotos), sem metadados. Sem redução nem rotação, o original é mantido se o WebP não ficar menor. `width` e `height` do container com arquivo (e as coordenadas das marcações) são os do arquivo gravado. O nome em `images/` nunca sobrescreve um arquivo existente, sem diferenciar maiúsculas e minúsculas (`Tela.png` com `tela.png` no disco vira `Tela-2.webp`…), e `file` explícito igual a outro container, também sem diferenciar a caixa, dá `duplicate-file`. `file` é relativo à pasta do projeto ou a uma raiz, ou absoluto dentro das raízes.
 
 **Travas.** Item trancado não é movido, redimensionado, trocado nem excluído (`locked`): destranque na mesma operação (`"locked": false` é aplicado primeiro; `true`, por último) ou numa anterior. Nome e anotações seguem livres. Repetir a geometria atual (`rect` igual ao atual, `move: {dx: 0, dy: 0}`) não é mudança e passa mesmo trancado, então a reexportação completa pode repetir o `rect` de tudo.
 

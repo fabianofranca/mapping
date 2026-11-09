@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   addAnnotation,
+  addContainer,
   addLayer,
   deserialize,
   moveContainer,
@@ -1358,6 +1359,56 @@ describe('aplicar aceitas', () => {
     });
     expect(await root.read('images/frente.jpg')).toBe('ORIGINAL');
     expect(session.store.project.value).toBe(before);
+  });
+
+  it.each([
+    ['um arquivo solto em images/', 'images/nova.webp'],
+    ['um arquivo que só difere na caixa', 'images/NOVA.webp'],
+  ])('destino ocupado por %s: image-exists, sem gravar nada', async (_name, occupied) => {
+    const { proposal } = richScenario();
+    const { review, session, root } = await openHarness({
+      proposals: [proposal],
+      files: { [NEW_IMAGE_PATH]: 'WEBP', [occupied]: 'DO USUARIO' },
+    });
+    review.open('P1');
+    await review.decide({ level: 'proposal', id: null }, 'accepted');
+    const before = session.store.project.value;
+    const result = await review.apply();
+    expect(result).toMatchObject({
+      ok: false,
+      error: 'image-exists',
+      path: 'images/nova.webp',
+    });
+    expect(await root.read(occupied)).toBe('DO USUARIO');
+    expect(await root.read(NEW_IMAGE_PATH)).toBe('WEBP');
+    expect(session.store.project.value).toBe(before);
+    expect((await diskProposal(root)).applied).toEqual({});
+  });
+
+  it('destino que a lixeira da sessão guarda (imagem apagada, desfazer possível): image-exists', async () => {
+    const { proposal } = richScenario();
+    const { review, session, root } = await openHarness({
+      proposals: [proposal],
+      files: { [NEW_IMAGE_PATH]: 'WEBP', 'images/nova.webp': 'ANTIGA' },
+      project: addContainer(sampleProject(), {
+        id: 'IX',
+        file: 'images/nova.webp',
+        width: 100,
+        height: 100,
+      }),
+    });
+    session.actions.removeContainer('IX');
+    await session.flush();
+    expect(await root.read('images/nova.webp')).toBeNull();
+    review.open('P1');
+    await review.decide({ level: 'proposal', id: null }, 'accepted');
+    const result = await review.apply();
+    expect(result).toMatchObject({ ok: false, error: 'image-exists' });
+    expect(await root.read('images/nova.webp')).toBeNull();
+    review.close();
+    session.store.undo();
+    await session.flush();
+    expect(await root.read('images/nova.webp')).toBe('ANTIGA');
   });
 
   it('nada aceito: aplicar não cria entrada de desfazer nem grava a proposta', async () => {

@@ -54,6 +54,8 @@ export const ptBR = {
     'A pasta "{folder}" não tem um mapping.json. {count} imagem(ns) encontrada(s) serão adicionadas ao projeto (as da raiz vão para images/).',
   'home.folderSkipped':
     '{count} imagem(ns) não puderam ser lidas e ficaram fora do projeto.',
+  'home.folderHasProject':
+    'Esta pasta já tem um projeto; ele foi aberto no lugar de um novo.',
 
   'status.saved': 'Salvo',
   'status.saving': 'Salvando…',

@@ -1,4 +1,4 @@
-# Revisão de propostas — [Não lançado] (épico `epic/revisao-propostas`, PR #1158, MCP 0.28.8, schema v18)
+# Revisão de propostas — 2026-11-09 (épico `epic/revisao-propostas`, PR #1158, MCP 0.28.8, schema v18)
 
 ## Adicionado
 
