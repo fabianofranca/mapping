@@ -1,10 +1,11 @@
-import { act, cleanup, screen, within } from '@testing-library/preact';
+import { act, cleanup, render, screen, within } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { addTypedAnnotation, createMarking, type Project } from '../../src/model';
 import { t } from '../../src/i18n';
 import { locale } from '../../src/store/settings';
 import { AnnotationEditor } from '../../src/ui/AnnotationEditor';
+import { IssueBadge } from '../../src/ui/AnnotationSummary';
 import { sampleProject } from '../model/fixtures';
 import { addChild, roleProject, withRoles } from '../model/roleFixtures';
 import { cadastroProject, layerOf } from '../model/specFixtures';
@@ -329,6 +330,60 @@ describe('AnnotationEditor — "Vinculada a"', () => {
     setup('AX', p);
     expect(owner().disabled).toBe(true);
     expect(screen.getByText(t('annotation.ownerEmpty'))).toBeTruthy();
+  });
+
+  it('dono armazenado que deixou de ser válido continua no select, marcado como inválido (CR #954, item 2)', () => {
+    // A3 é de outra marcação (M2): não é um dono válido da A1, mas é o que está gravado.
+    const p = sampleProject();
+    setup('A1', {
+      ...p,
+      annotations: p.annotations.map((a) =>
+        a.id === 'A1' ? { ...a, parentAnnotationId: 'A3' } : a,
+      ),
+    });
+    expect(owner().value).toBe('A3');
+    const selected = owner().selectedOptions[0];
+    expect(selected?.textContent).toContain('(dona inválida)');
+    expect([...owner().options].map((o) => o.value)).toContain('');
+  });
+
+  it('o selo de pendência usa o ícone de alerta e mantém o nome acessível (CR #954, itens 3 e 4)', () => {
+    let p = cadastroProject();
+    p = createMarking(p, {
+      id: 'MX',
+      containerId: 'I1',
+      rect: { x: 10, y: 10, width: 20, height: 20 },
+      name: 'Solta',
+    });
+    p = addTypedAnnotation(p, {
+      id: 'AY',
+      markingId: 'MX',
+      layerId: layerOf(p, 'sdui', 'componentes'),
+      type: { specId: 'sdui', typeId: 'button' },
+      parentAnnotationId: null,
+    });
+    p = addTypedAnnotation(p, {
+      id: 'AX',
+      markingId: 'MX',
+      layerId: layerOf(p, 'sdui', 'eventos'),
+      type: { specId: 'sdui', typeId: 'onClick' },
+      parentAnnotationId: 'AY',
+    });
+    // Órfã: a dona some e a pendência "sem dona" aparece.
+    p = {
+      ...p,
+      annotations: p.annotations
+        .filter((a) => a.id !== 'AY')
+        .map((a) => (a.id === 'AX' ? { ...a, parentAnnotationId: null } : a)),
+    };
+    const annotation = annotationOf(p, 'AX');
+    const { container } = render(<IssueBadge project={p} annotation={annotation} />);
+    const badge = screen.getByRole('img');
+    expect(badge.getAttribute('aria-label')).toMatch(
+      new RegExp(`^${t('issue.badge')}: `),
+    );
+    expect(badge.textContent).toBe('');
+    expect(container.querySelector('svg.icon')).not.toBeNull();
   });
 
   it('a anotação com dona continua mostrando o campo', () => {

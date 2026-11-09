@@ -215,6 +215,7 @@ export const ptBR = {
   'annotation.owner': 'Vinculada a',
   'annotation.noOwner': 'Nenhuma',
   'annotation.ownerOption': '{layer}: {name}',
+  'annotation.ownerOptionInvalid': '{layer}: {name} (dona inválida)',
   'annotation.ownerHelp':
     'Só aparecem anotações desta mesma marcação. Nas tipadas, a dona pode ser de outra camada ou da mesma, quando o tipo dela aceita este; nas livres, só de outras camadas.',
   'annotation.ownerEmpty':

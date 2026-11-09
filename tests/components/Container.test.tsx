@@ -30,6 +30,9 @@ afterEach(cleanup);
 
 const dialogEl = () => document.querySelector('dialog') as HTMLElement;
 const inDialog = () => within(dialogEl());
+/** O erro mostrado sob o campo (ou `null`): o aviso fica na mesma célula do controle. */
+const alertOf = (control: HTMLElement): string | null =>
+  control.closest('.props-value')?.querySelector('[role="alert"]')?.textContent ?? null;
 const field = (name: string) => inDialog().getByLabelText<HTMLInputElement>(name);
 
 function renderDialog(harness: Harness, onClose = vi.fn()) {
@@ -263,10 +266,59 @@ describe('Detalhes do container', () => {
     const height = screen.getByLabelText<HTMLInputElement>(t('container.height'));
     await user.clear(height);
     await user.type(height, '0{Enter}');
-    expect(screen.getByRole('alert').textContent).toBe(
-      t('container.error.size', { max: MAX_CONTAINER_SIZE }),
-    );
+    expect(alertOf(height)).toBe(t('container.error.size', { max: MAX_CONTAINER_SIZE }));
+    expect(alertOf(color)).toBe(t('container.error.color'));
     expect(image().height).toBe(800);
+  });
+
+  it('o erro de largura, de altura e de cor aparece sob o próprio campo (CR #954, item 36)', async () => {
+    const { user } = renderContainer();
+    const width = screen.getByLabelText<HTMLInputElement>(t('container.width'));
+    const height = screen.getByLabelText<HTMLInputElement>(t('container.height'));
+    const color = screen.getByLabelText<HTMLInputElement>(t('container.background'));
+    await user.clear(width);
+    await user.type(width, '0{Enter}');
+    expect(alertOf(width)).toBe(t('container.error.size', { max: MAX_CONTAINER_SIZE }));
+    expect(alertOf(height)).toBeNull();
+    expect(alertOf(color)).toBeNull();
+  });
+
+  it('trocar o container selecionado zera os erros (CR #954, item 36)', async () => {
+    const harness = createHarness(sampleProject());
+    const ids = ['Home', 'Perfil'].map((name) => {
+      const created = harness.actions.addBackgroundContainer({
+        name,
+        width: 360,
+        height: 800,
+        background: '#FFFFFF',
+      });
+      if (!created.ok) throw new Error(created.error);
+      return created.value;
+    });
+    const panel = (id: string | undefined) => {
+      const image = harness.project().containers.find((i) => i.id === id);
+      if (!image) throw new Error('sem tela');
+      return (
+        <EditorContext.Provider value={harness.context}>
+          <SelectionPanel
+            image={image}
+            display={undefined}
+            readOnly={false}
+            busy={false}
+            onReplace={() => undefined}
+            onDelete={() => undefined}
+          />
+        </EditorContext.Provider>
+      );
+    };
+    const { rerender } = render(panel(ids[0]));
+    const user = userEvent.setup();
+    const color = screen.getByLabelText<HTMLInputElement>(t('container.background'));
+    await user.clear(color);
+    await user.type(color, 'vermelho{Enter}');
+    expect(screen.getByRole('alert').textContent).toBe(t('container.error.color'));
+    rerender(panel(ids[1]));
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('uma foto continua com Arquivo e Tamanho, sem os campos da tela', () => {

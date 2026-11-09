@@ -239,6 +239,9 @@ const SCALES: Readonly<Record<string, TokenValue>> = {
   'size-arrow-stroke': '2px',
   'size-arrow-stroke-selected': '3px',
   'size-arrow-head': '10px',
+  /** Caixa máxima do minimapa (largura e altura, px): o conteúdo cabe nela, na proporção. */
+  'size-minimap-width': '132px',
+  'size-minimap-height': '96px',
   'size-tw-left': '264px',
   'size-tw-right': '360px',
   /** Altura inicial da janela inferior: 4 linhas inteiras da lista da Comentários, com filtros e cabeçalho, a 900 × 720 (decisão 6 da #734). Medido: a lista ganha 1 px por px de janela e 357 px dão 148 px (4 × 37 px); 360 px cabem em 60% do corpo do editor a 900 × 720 (`BOTTOM_MAX_FRACTION`). Com os filtros do layout estreito em duas linhas (CL3) a lista tem 207 px, 4 linhas inteiras mesmo com âncoras quebradas (37 + 3 × 53 px); o token não sobe: 360 px é o teto de 60%. */
